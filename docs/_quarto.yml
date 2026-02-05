@@ -1,0 +1,88 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Bioinformatics Dashboard: Technical Spec"
+  author: 
+    - name: "Eve Fiskebeck"
+    - name: "Gemini (2026-02): DashBoard Architect Agent."" 
+  date: last-modified
+
+chapters:
+  - index.qmd
+
+  - part: "Architecture & Designs"
+    chapters:
+      - specifications.qmd
+      - architecture/c4_model.qmd
+      - architecture/data_contract.qmd
+
+  - part: "Module Reference"
+    chapters:
+      - modules/discovery.qmd
+      - modules/wrangling.qmd
+      - modules/viz_core.qmd
+
+  - part: "Development Guide"
+    chapters:
+      - guide/development_rules.qmd
+      - guide/testing.qmd
+      - guide/new_species.qmd
+
+  - part: "Appendix" "AI usage during the development process"
+    chapters:
+      - appendix/AI_and_development_process.qmd
+      - appendix/terminology.qmd
+      - appendix/resources.qmd
+
+  # - part: "Introduction"
+  #   chapters:
+  #     - index.qmd
+  
+  # sidebar:
+  #   style: "floating"
+  #   search: true
+  #   collapse-level: 2
+  #   contents:
+  #     - text: "Introduction"
+  #       file: index.qmd
+      
+  #     - part: "Architecture & Design"
+  #       contents:
+  #         - file: specifications.qmd
+  #         - text: "The C4 Model"
+  #           file: architecture/c4_model.qmd
+  #         - text: "Data Contract"
+  #           file: architecture/data_contract.qmd
+
+  #     - part: "Module Reference"
+  #       contents:
+  #         - text: "Discovery Engine"
+  #           file: modules/discovery.qmd
+  #         - text: "Wrangling (Polars)"
+  #           file: modules/wrangling.qmd
+  #         - text: "Viz Core (Plotnine)"
+  #           file: modules/viz_core.qmd
+
+  #     - part: "Development Guide"
+  #       contents:
+  #         - text: "Testing Strategy"
+  #           file: guide/testing.qmd
+  #         - text: "Adding a New Species"
+  #           file: guide/new_species.qmd
+
+format:
+  html:
+    theme: 
+      light: flatly
+      dark: darkly
+    code-fold: true
+    code-summary: "Show Code"
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    highlight-style: github
+
+execute:
+  freeze: auto  # Re-renders only when source files change

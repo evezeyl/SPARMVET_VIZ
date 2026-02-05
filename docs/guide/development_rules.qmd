@@ -1,0 +1,65 @@
+
+# How to contribute
+
+> you are welcome but please follow the "imperative rules"!
+
+## Imperative Development Rules
+
+### Contact with developpers (lead)
+- If you think that something does not make sense and is stupidely designed, report ASAP to lead developper
+(who is trying hard to do some good work but it still quite novice in that field !). Please share your knowledge to improve the project.
+
+
+### Separation of Concerns : "Clean Library" rules
+
+Code in `libs/` must be **environment-agnostic**.
+    - bio_viz_core/  must not depend on Shiny
+    - bio_wrangling/  must not depend on Shiny
+
+- **Do:** Write functions that take a Polars DataFrame and return a Figure.   
+- **Don't:** Import `shiny` or use `input.variable_name` inside `libs/`.
+
+### Document your code 
+> basically fill this book. 
+
+- Thinking about the purpose and the choices, and adding those in this book is important to allow
+consistency of purpose checking, 
+
+
+### The "Fail-Fast" Ingestion Rule
+
+For production: (when prototype advanced enough)
+
+All data must pass through `src/utils/schema.py` before hitting the rest of the app.
+
+- If a new species is added, you **must** update the YAML manifest.   
+- The Ingestion Adapter `src/ingestion/adapters_?.py` is responsible for catching "Dirty Data" before it reaches `bio_wrangling` (aka. it checks compliance to the data contract of the species defined in `config/species_manifests/species_X.yaml`).
+
+- [ ] What we here by dirty data : not conforming by the data contract defined in `config/species_manifests`
+
+> in case of manual upload: the user is responsible of ensuring that the uploaded data conforms to the data contract of the species. 
+
+### No real data / infrastructure details in the repo
+
+- [ ] **Do:** Use mock data for development and testing.
+
+Because we relied heavily on AI (gemini) for the design of the app and the code, we wanted to avoid as much as possible to have real data in the repo, to avoid any potential issue with data privacy.
+
+See section: 
+
+### Testing Rules
+
+
+We use a "Bottom-Up" testing approach:
+
+1. **Run Library Tests:** `pytest libs/` (Check the engine).
+2. **Run App Tests:** `pytest src/` (Check the glue).
+3. **Run Integration:** `pytest tests/` (Check the whole skeleton).
+
+
+|**Level**|**Location**|**Purpose**|
+|---|---|---|
+|**Unit Tests**|`libs/*/tests/`|Does the bio-math work? Does the plot generate?|
+|**Component Tests**|`src/app_shell/tests/`|Does the UI layout load without crashing?|
+|**Adapter Tests**|`src/ingestion/tests/`|Can we successfully "talk" to the Galaxy API?|
+|**Global/E2E**|`tests/`|If I pick "E. coli" in the UI, do I see a Bar Plot?|

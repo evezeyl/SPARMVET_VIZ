@@ -1,0 +1,13 @@
+# Specifications {.unnumbered}
+ 
+## Layered architecture : in short
+
+- `bio_wrangling`: **data preparation**. Independent module that takes raw data and transforms it into tidy data. `Polar` is the library of choice. This module offers different cleaning logics, depending on the data source. **It returns a tidy dataframe as output**.
+
+> Prototyping option: Ecoli sample data + minimal metadata
+
+- `bio_viz_core`: **Visualisation factory**. Independent module that takes tidy data and a manifest (labels, colors) and **returns Figure objects**. `plotnine` is the library of choice, as we aimed to employ the grammar of graphics approach. It is however not excluded to include some support for Plotly. This module will offer plot factory and a shared logic for metadata injection. 
+
+We aim this module to be data agnostic. It will only require tidy data and a manifest (labels, colors) to produce plots, and will offer different plotting logics (bar, scatter, etc). 
+
+> Prototyping option: Produces bar/stacked barplot. 

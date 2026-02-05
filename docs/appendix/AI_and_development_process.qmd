@@ -1,0 +1,9 @@
+# AI usage during the development process
+
+Gemini was used extensively during the development process, for both architectural design and code generation.
+
+1. Phase 1: Gaining general knowledge about Dashboard development. First Architectural Design thinking
+2. Phase 2: Development of specialized agent for development: See [DashBoard_Architect_v1](./DashBoard_Architect_v1.md) (Februar 2026)
+- iteratively to refine requirements and design understanding 
+- used to create basic architectural structure and broiler plates. 
+

@@ -1,0 +1,19 @@
+## Preface {.unnumbered}
+
+This documentation is intended for  ...
+
+
+# Introduction {.unnumbered}
+
+We aimed to build a proffessional dashbord that could be employed to visualize data produced by bioinformatic pipelines hosted:  
+- on "Use Galaxy" based platform
+- local "IRIDA" based platform
+- Or to allow user to upload results produced by galaxy pipelines and visualize them on the dashboard. 
+
+> Prototyping option: User upload results and metadata
+
+
+We hoped that this work will not only be a deliverable of a short-term project. Consequently we attempted to build a professional, scalable app. Thus we have built a "Walking Skeleton", and adopted a **Layered Architecture**.
+
+The **Decoupling approach** of the different aspects of the app should improve layer reusability and maintainability. 
+
