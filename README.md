@@ -2,14 +2,12 @@
 
 VIZ: Visualization
 
-Requirement definitions : 
-- Please use the WIKI - With GIT version control
-
-
+Please use the quarto documentation 
+for description of requirement and app documentation
 Test Repo to build Visualizations 
 
 - for EU-Galaxy
-- Adaptation for VIGAS-P
+- Adaptation for IRIDA/VIGAS-P
 
 
 
