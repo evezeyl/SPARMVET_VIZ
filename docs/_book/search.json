@@ -1,0 +1,244 @@
+[
+  {
+    "objectID": "appendix/AI_and_development_process.html",
+    "href": "appendix/AI_and_development_process.html",
+    "title": "11  AI usage during the development process",
+    "section": "",
+    "text": "Gemini was used extensively during the development process, for both architectural design and code generation.\nGemini Pro (personal abonment - via google one 2T) was used in web-browser (Brave / Google chrome).\nChats and Specialized assistant chats were exported as markdown files (not always working perfectly) using the browser extension AI Chat Exporter\nBoth Fast and Thinking models were used, depending on the needs.\n\nPhase 1: Gaining general knowledge about Dashboard development. First Architectural Design thinking\nPhase 2: Development of specialized agent for development: See DashBoard_Architect_v1 (Februar 2026)\n\n\niteratively to refine requirements and design understanding\nreviewing notes and asking new questions, clarification, details, reviewing strategy\nused to create basic architectural structure and broiler plates.\ncreating repository structure : role of the structure to reflect intended architecture, and to make it easier to maintain and scale.",
+    "crumbs": [
+      "Appendix",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>AI usage during the development process</span>"
+    ]
+  },
+  {
+    "objectID": "architecture/specifications.html",
+    "href": "architecture/specifications.html",
+    "title": "Specifications",
+    "section": "",
+    "text": "Layered architecture : in short\nOrganized in different independent modules:",
+    "crumbs": [
+      "Architecture & Designs",
+      "Specifications"
+    ]
+  },
+  {
+    "objectID": "architecture/specifications.html#layered-architecture-in-short",
+    "href": "architecture/specifications.html#layered-architecture-in-short",
+    "title": "Specifications",
+    "section": "",
+    "text": "libs: libraries that can be considered as independent modules\n\nbio_wrangling: data preparation\nbio_viz_core: visualization factory\n\nsrc\n\napp_shell: shiny app UI\ningestion: data ingestion adapters\nutils: shared utilities",
+    "crumbs": [
+      "Architecture & Designs",
+      "Specifications"
+    ]
+  },
+  {
+    "objectID": "modules/ingestion.html",
+    "href": "modules/ingestion.html",
+    "title": "Bioinformatics Dashboard: Technical Spec",
+    "section": "",
+    "text": "#REVIEW - Temp paste\nData contract config files for each species (YAML) are the single source of truth for all species-specific logic.\nconfig file (e.g., “What is the primary metadata column for this species?”) allows for dynamic graph generation based on user selection without hardcoding specific logic for each species.",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>ingestion.html</span>"
+    ]
+  },
+  {
+    "objectID": "modules/wrangling.html",
+    "href": "modules/wrangling.html",
+    "title": "5  Data Preparation Layer : bio_wrangling module",
+    "section": "",
+    "text": "5.1 Role\nThe bio_wranglingmodule is the data preparation.\nAn independent module that takes raw data and transforms it into tidy data. Polar is the library of choice. This module offers different cleaning logics, depending on the data source. It returns a tidy dataframe as output.\nThe “Cleaner.” It takes messy bioinformatics outputs (TSV/CSV) and converts them into a standardized Polars DataFrame.\nTransformation eg. in tidy long format necessary for visualization layer",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Data Preparation Layer : `bio_wrangling` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/wrangling.html#placement",
+    "href": "modules/wrangling.html#placement",
+    "title": "5  Data Preparation Layer : bio_wrangling module",
+    "section": "5.2 Placement",
+    "text": "5.2 Placement\n\nServer-side functions.",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Data Preparation Layer : `bio_wrangling` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/wrangling.html#architectural-benefit",
+    "href": "modules/wrangling.html#architectural-benefit",
+    "title": "5  Data Preparation Layer : bio_wrangling module",
+    "section": "5.3 Architectural Benefit",
+    "text": "5.3 Architectural Benefit\n#REVIEW - placement of verification of data contract By forcing every dataset into a “Data Contract” (e.g., always having a minimum set of fixed columns sample_id, species, value), the visualization functions don’t need to know where the data came from.\nBy placing on the server-side. It allows to: - plan for up-scallability - lazy eval using Polars dataframes - keep the client-side thin and fast (only handles UI and reactivity)\nAdvantages: Inconvenients:",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Data Preparation Layer : `bio_wrangling` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/visualisation_factory.html",
+    "href": "modules/visualisation_factory.html",
+    "title": "6  Visualisation Factory Layer: bio_viz_core module",
+    "section": "",
+    "text": "6.1 Role\nThe bio_viz_core is the Visualisation factory. An independent module that takes tidy data and a manifest (labels, colors) and returns Figure objects.\nWe aim this module to be data agnostic. It will only require tidy data and a manifest (labels, colors) to produce plots, and will offer different plotting logics (bar, scatter, etc).\nFactory Pattern that creates visualization objects, independently of the data. Only depends on the data contract. - eg. create_species_distribution(df, config). - eg. Instead of hardcoding “Show Serotype for E. coli,” you pass a Config Object. The function asks the Config: “What is the primary metadata column for this species?” and the Config replies “Serotype.”",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Visualisation Factory Layer: `bio_viz_core` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/visualisation_factory.html#placement",
+    "href": "modules/visualisation_factory.html#placement",
+    "title": "6  Visualisation Factory Layer: bio_viz_core module",
+    "section": "6.2 Placement",
+    "text": "6.2 Placement",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Visualisation Factory Layer: `bio_viz_core` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/visualisation_factory.html#architectural-benefits",
+    "href": "modules/visualisation_factory.html#architectural-benefits",
+    "title": "6  Visualisation Factory Layer: bio_viz_core module",
+    "section": "6.3 Architectural Benefits",
+    "text": "6.3 Architectural Benefits\n\nAdding a new species (e.g., Listeria monocytogenes) only requires updating the data contract (YAML config file), not writing new Python functions.\nEg. Change in AMR columns to be visualized only requires updating the config, not the whole code.",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Visualisation Factory Layer: `bio_viz_core` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/dashboard_app.html",
+    "href": "modules/dashboard_app.html",
+    "title": "7  Dashboard App Layer: app_shell module",
+    "section": "",
+    "text": "7.1 Architecture context",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Dashboard App Layer:  `app_shell` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/dashboard_app.html#architecture-context",
+    "href": "modules/dashboard_app.html#architecture-context",
+    "title": "7  Dashboard App Layer: app_shell module",
+    "section": "",
+    "text": "7.1.1 Role\nProvides the Dashboard User Interface (UI) and handles Reactivity.\n\nWe choose to use Shiny Express for prototyping. But changes are not excluded should this app evolve into a more complex app.\nIt handles the sidebar, the file upload buttons, and the “Reactivity” (e.g., “When the user clicks E. coli, update the graph”).\n\n\n\n7.1.2 Placement\n\nserver\n\n\n\n7.1.3 Architectural Benefit\nKeeping this file “thin” (only UI and reactivity) makes it much easier to debug, faster tp o load, and easier to maintain.\n\nTidy data preparation BEFORE it touches the UI (shiny express app) makes it much faster to load (more data) and easier to debug.\nTODO will require Docker to run into Galaxy (worse case scenario we go back to Shiny Core)\nTODO : persistence eg. user preferences -&gt; account (could be in a YAML file)\nShiny Express (the language) and Standard Shiny (the deployment),",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Dashboard App Layer:  `app_shell` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/dashboard_app.html#a-reminder-note-on-the-different-shinny-flavors",
+    "href": "modules/dashboard_app.html#a-reminder-note-on-the-different-shinny-flavors",
+    "title": "7  Dashboard App Layer: app_shell module",
+    "section": "7.2 A reminder note on the different Shinny flavors",
+    "text": "7.2 A reminder note on the different Shinny flavors\n\n\n\n\n\n\n\n\n\n\nFlavor\nArchitecture\nPros (Advantages)\nCons (Inconveniences)\nBest Use Case\n\n\n\n\nStandard Shiny (Server)\nClient-Server: Python runs on a remote server/container.\nHigh performance for large genomic data; keeps source code/data secure on server.\nRequires a live server or Docker container (GxIT) running 24/7.\nLarge datasets or BioBlend integrations.\n\n\nShinylive (WASM)\nServerless: Python is compiled to WASM and runs in the user’s browser.\nNo server needed; can be shared as a single static HTML file or via GitHub Pages.\nSlow initial load (downloads Python runtime); limited by user’s RAM/CPU.\nLightweight reports or “frozen” results for a paper.\n\n\nShiny Express\nDeveloper API: A streamlined way to write either of the above.\nFastest way to build; very little boilerplate code; highly readable.\nLess “fine-grained” control over complex nested layouts compared to “Core.”\nWalking Skeletons and rapid prototyping.",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Dashboard App Layer:  `app_shell` module</span>"
+    ]
+  },
+  {
+    "objectID": "modules/dashboard_app.html#implementation-choices",
+    "href": "modules/dashboard_app.html#implementation-choices",
+    "title": "7  Dashboard App Layer: app_shell module",
+    "section": "7.3 Implementation choices",
+    "text": "7.3 Implementation choices\n\nSpecies switch\n\nToDecide -&gt; need to look at the data –&gt; choices\n\nIncluded in data (specified in Data contract for each species specified in YAML config file)\nspecified by user (dropdown in Dashboard)",
+    "crumbs": [
+      "Module Reference",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Dashboard App Layer:  `app_shell` module</span>"
+    ]
+  },
+  {
+    "objectID": "guide/development_rules.html",
+    "href": "guide/development_rules.html",
+    "title": "8  How to contribute",
+    "section": "",
+    "text": "8.1 Imperative Development Rules",
+    "crumbs": [
+      "Development Guide",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>How to contribute</span>"
+    ]
+  },
+  {
+    "objectID": "guide/development_rules.html#imperative-development-rules",
+    "href": "guide/development_rules.html#imperative-development-rules",
+    "title": "8  How to contribute",
+    "section": "",
+    "text": "8.1.1 Contact with developpers (lead)\n\nIf you think that something does not make sense and is stupidely designed, report ASAP to lead developper (who is trying hard to do some good work but it still quite novice in that field !). Please share your knowledge to improve the project.\n\n\n\n8.1.2 Separation of Concerns : “Clean Library” rules\nCode in libs/ must be environment-agnostic. - bio_viz_core/ must not depend on Shiny - bio_wrangling/ must not depend on Shiny\n\nDo: Write functions that take a Polars DataFrame and return a Figure.\n\nDon’t: Import shiny or use input.variable_name inside libs/.\n\n\n\n8.1.3 Document your code\n\nbasically fill this book.\n\n\nThinking about the purpose and the choices, and adding those in this book is important to allow consistency of purpose checking,\n\n\n\n8.1.4 The “Fail-Fast” Ingestion Rule\nFor production: (when prototype advanced enough)\nAll data must pass through src/utils/schema.py before hitting the rest of the app.\n\nIf a new species is added, you must update the YAML manifest.\n\nThe Ingestion Adapter src/ingestion/adapters_?.py is responsible for catching “Dirty Data” before it reaches bio_wrangling (aka. it checks compliance to the data contract of the species defined in config/species_manifests/species_X.yaml).\nWhat we here by dirty data : not conforming by the data contract defined in config/species_manifests\n\n\nin case of manual upload: the user is responsible of ensuring that the uploaded data conforms to the data contract of the species.\n\n\n\n8.1.5 No real data / infrastructure details in the repo\n\nDo: Use mock data for development and testing.\n\nBecause we relied heavily on AI (gemini) for the design of the app and the code, we wanted to avoid as much as possible to have real data in the repo, to avoid any potential issue with data privacy.\nSee section:\n\n\n8.1.6 Testing Rules\nWe use a “Bottom-Up” testing approach:\n\nRun Library Tests: pytest libs/ (Check the engine).\nRun App Tests: pytest src/ (Check the glue).\nRun Integration: pytest tests/ (Check the whole skeleton).\n\n\n\n\n\n\n\n\n\nLevel\nLocation\nPurpose\n\n\n\n\nUnit Tests\nlibs/*/tests/\nDoes the bio-math work? Does the plot generate?\n\n\nComponent Tests\nsrc/app_shell/tests/\nDoes the UI layout load without crashing?\n\n\nAdapter Tests\nsrc/ingestion/tests/\nCan we successfully “talk” to the Galaxy API?\n\n\nGlobal/E2E\ntests/\nIf I pick “E. coli” in the UI, do I see a Bar Plot?",
+    "crumbs": [
+      "Development Guide",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>How to contribute</span>"
+    ]
+  },
+  {
+    "objectID": "appendix/DashBoard_Architect_v1.html",
+    "href": "appendix/DashBoard_Architect_v1.html",
+    "title": "12  Identity & Mission",
+    "section": "",
+    "text": "12.1 Operational Modes (The Two-Mode Protocol)\nYou are a senior Software Architect specializing in Bioinformatics dashboards for Galaxy and IRIDA. Your mission is to help a novice designer build a “Walking Skeleton”—a modular, multi-species dashboard prototype—while adhering to the “Smart Simplicity” principle: decoupled, reusable, and easy to maintain.",
+    "crumbs": [
+      "Appendix",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Identity & Mission</span>"
+    ]
+  },
+  {
+    "objectID": "appendix/DashBoard_Architect_v1.html#operational-modes-the-two-mode-protocol",
+    "href": "appendix/DashBoard_Architect_v1.html#operational-modes-the-two-mode-protocol",
+    "title": "12  Identity & Mission",
+    "section": "",
+    "text": "Teacher Mode (Default): Before providing code, explain the “why” using the C4 model or Design Patterns (e.g., Separation of Concerns, Tidy Data). Focus on “Deep Modules” (simple interfaces, hidden complexity).\nLead Dev Mode (On Request): When the user says “Let’s build,” provide highly efficient, PEP8-compliant Python code using Shiny for Python (Express) and Plotly.",
+    "crumbs": [
+      "Appendix",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Identity & Mission</span>"
+    ]
+  },
+  {
+    "objectID": "appendix/DashBoard_Architect_v1.html#requirement-discovery-implication-coaching-mandatory",
+    "href": "appendix/DashBoard_Architect_v1.html#requirement-discovery-implication-coaching-mandatory",
+    "title": "12  Identity & Mission",
+    "section": "12.2 Requirement Discovery & Implication Coaching (Mandatory)",
+    "text": "12.2 Requirement Discovery & Implication Coaching (Mandatory)\nSince the user is a novice, you must proactively identify “unknown unknowns.” Do not assume requirements are complete.\n\nProactive Inquiry: Before finalizing any design, ask targeted questions about data volume, user interaction, and platform constraints.\nTrade-off Analysis: For every major architectural recommendation, explicitly state the pros and cons. Ensure the user understands how a choice today (e.g., static vs. dynamic) impacts future scalability or maintenance effort.",
+    "crumbs": [
+      "Appendix",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Identity & Mission</span>"
+    ]
+  },
+  {
+    "objectID": "appendix/DashBoard_Architect_v1.html#technical-requirements-constraints",
+    "href": "appendix/DashBoard_Architect_v1.html#technical-requirements-constraints",
+    "title": "12  Identity & Mission",
+    "section": "12.3 Technical Requirements & Constraints",
+    "text": "12.3 Technical Requirements & Constraints\n\nDecoupled Architecture: Strictly separate data preparation/cleaning (data_prep.py) from visualization logic (viz_core.py).\nGrammar of Graphics: Design plotting functions to be data-agnostic so one dataset can feed multiple plot types.\nGalaxy/IRIDA Compatibility: * Prioritize outputs for Shinylive (static HTML) or at lower priority Galaxy Interactive Tools (GxIT/Docker).\n\nUse BioBlend for dynamic Galaxy API data fetching where necessary.\n\nR-to-Python Porting: When provided with R code, identify the data structures and “Grammar of Graphics” elements (Aesthetics, Geoms) to translate them into Python equivalents.",
+    "crumbs": [
+      "Appendix",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Identity & Mission</span>"
+    ]
+  },
+  {
+    "objectID": "appendix/DashBoard_Architect_v1.html#mandatory-design-patterns",
+    "href": "appendix/DashBoard_Architect_v1.html#mandatory-design-patterns",
+    "title": "12  Identity & Mission",
+    "section": "12.4 Mandatory Design Patterns",
+    "text": "12.4 Mandatory Design Patterns\n\nData Contract: Define a standard “Tidy” CSV/JSON format that all pipelines must produce as an interface for the visualization layer.\nFactory Pattern & Metadata Injection: * Use a “Factory” where a configuration script tells reusable plotting functions which metadata columns to use based on the bacterial species (e.g., “For E. coli, use Serotype; for S. aureus, use Resistance_Gene”).\nVisualization Module: Create functions like draw_barplot(df, x_var, y_var, color_var) that are species-independent.",
+    "crumbs": [
+      "Appendix",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Identity & Mission</span>"
+    ]
+  },
+  {
+    "objectID": "appendix/DashBoard_Architect_v1.html#interaction-rules",
+    "href": "appendix/DashBoard_Architect_v1.html#interaction-rules",
+    "title": "12  Identity & Mission",
+    "section": "12.5 Interaction Rules",
+    "text": "12.5 Interaction Rules\n\nAvoid over-engineering; always favor the simplest design that meets the requirement.\nAlways explain the architectural benefit of a suggestion before providing code.",
+    "crumbs": [
+      "Appendix",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Identity & Mission</span>"
+    ]
+  }
+]

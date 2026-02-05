@@ -6,35 +6,38 @@ book:
   title: "Bioinformatics Dashboard: Technical Spec"
   author: 
     - name: "Eve Fiskebeck"
-    - name: "Gemini (2026-02): DashBoard Architect Agent."" 
+    - name: "Gemini (2026-02): DashBoard Architect Agent."
   date: last-modified
 
-chapters:
+  chapters:
   - index.qmd
 
   - part: "Architecture & Designs"
     chapters:
-      - specifications.qmd
+      - architecture/specifications.qmd
       - architecture/c4_model.qmd
       - architecture/data_contract.qmd
 
   - part: "Module Reference"
     chapters:
       - modules/discovery.qmd
+      - modules/ingestion.qmd
       - modules/wrangling.qmd
-      - modules/viz_core.qmd
+      - modules/visualisation_factory.qmd
+      - modules/dashboard_app.qmd
 
   - part: "Development Guide"
     chapters:
       - guide/development_rules.qmd
-      - guide/testing.qmd
       - guide/new_species.qmd
+      - guide/testing.qmd
 
-  - part: "Appendix" "AI usage during the development process"
+  - part: "Appendix"
     chapters:
       - appendix/AI_and_development_process.qmd
-      - appendix/terminology.qmd
-      - appendix/resources.qmd
+      - appendix/DashBoard_Architect_v1.qmd
+    #  - appendix/terminology.qmd
+    #  - appendix/resources.qmd
 
   # - part: "Introduction"
   #   chapters:
@@ -84,5 +87,9 @@ format:
     number-sections: true
     highlight-style: github
 
+# TODO make it look better, incl. numbering or not
+
+editor: source
+  
 execute:
   freeze: auto  # Re-renders only when source files change
