@@ -1,0 +1,84 @@
+
+```text
+project_root/
+├── libs/                                   # Independent Modules (NO GIT SUBMODULES) Business Logic: Each folder is a "Candidate Submodule"
+│   ├── bio_wrangling/                      # The "Logic" Unit
+│   │   ├── src/                            # Polars logic (Independent) - Wrangling logic -> to tidy format
+│   │   │   ├── __init__.py
+│   │   │   ├── clean_logicA.py
+│   │   │   ├── clean_logicB.py
+│   │   │   └── clean_logicC.py
+│   │   └── tests/                          # Unit tests for cleaning/wrangling
+│   │       └── test_bio_wrangling.py (one or several files)
+│   └── bio_viz_core/                       # The "Visual" Unit : Plotting logic (Independent) : takes tidy data and manifest (labels, colors) and returns Figure objects 
+│        ├── src/                           # Plotnine/Plotly code
+│        │   ├──  __init__.py
+│        │   ├── plot_factory.py            # handles metadata injection
+│        │   ├── base.py                    # Shared logic (e.g., themes, color palettes)
+│        │   ├── geoms.py                   # plotnine : data and primitives and return a Figure object (data agnostic  )
+│        │   ├── bar_logic.py               # plotnine : data and primitives and return a Figure object 
+│        │   ├── scatter_logic.py           # plotnine : data and primitives and return a Figure object
+│        └── tests/                         # Unit tests for plot generation
+│          └──test_viz_core.py             #(one or several files)
+├── src/                                    # Shiny-app specific glue
+│   ├── app_shell/                          # Shiny UI
+│   │   │   ├── __init__.py
+│   │   │   ├── ui_components.py
+│   │   └── tests/  
+│   │       └── test_ui_render.py           # shiny.pytest or playwright tools to run a simple test that starts the app and checks if the title or a specific sidebar component is visible. (eg. if did not break the code). (can add more tests if more functionality is added to the UI)
+│   ├── ingestion/                          # Data ingestion adapters (External bridges) for validation) validate_data_species_metadata_manifest() 
+│   │   │   ├── __init__.py 
+│   │   │   ├── adapter_A.py                # Connects to a fixed Galaxy History (-> to clean logicA.py) - (talk to galaxy API -> to clean logicA.py)
+│   │   │   ├── adapter_B.py                # Lists all available Histories and lets the user pick one. (talk to galaxy API -> to clean logicB.py)
+│   │   │   ├── adapter_C.py                # Reads a local CSV for offline development.(talk to local CSV)
+│   │   │   ├── adapter_D.py                # talks to IRIDA         
+│   │   │   ├── adapter_metadata.py         # Ingest metadata from Galaxy or local CSV (will always be given by user - will use schema.
+│   │   └── tests/  
+│   │       └──test_ingestion.py            # Tests the if adapters work (can be multiple files, one per adapter)
+│   └── utils/                              # Shared utilities
+│           ├── __init__.py
+│           ├──discovery.py                 # Species discovery engine
+│           ├──loaders.py                   # Data loading utilities (internal)
+│           ├──schema.py                    # Validation (only valid data passes): YAML schema validation with Pydantic (for species manifests) -> validate_data_species_manifest() & validate_data_species_metadata_manifest() (runtime validation)  
+│           └── tests/  
+│              └── test_utils.py               # Unit tests for utils
+├── tests/                    # GLOBAL Integration Tests
+│   ├── test_skeleton_flow.py # Tests: Ingestion -> Wrangling -> Viz
+│   └── test_configuration.py # Pytest fixtures (shared mock data) (build time validation,tests if system works given a specific YAML) 
+├── pyproject.toml            # Configures how these modules see each other.
+├── .git/    
+├── data/
+│   ├── mock_bio_data.csv           # Tidy bio_data for testing
+│   └── mock_metadata.csv           # Tidy metadata for testing
+├── config/                         # Species Templates and  Manifests (YAML)
+│   ├── templates/                  # YAML templates for species
+│   │   └── species_schema.yaml     # Master YAML schema
+│   └── species_manifests/          # One file per species
+│       ├── ecoli.yaml
+│       └── saureus.yaml
+├── misc/                         # Helper for me to make as much as possible here automatically ... nothing to do with App
+├── _book/ 
+├── docs/                         # Quarto Documentation (This Book)
+│   ├── _quarto.yml               # Quarto config for the HTML book
+│   ├── index.qmd                 # Home page
+│   ├── architecture.qmd          # Technical C4 diagrams
+│   ├── contribution_rules.qmd    # Imperative to read before contributing
+│   ├── tree.qmd                  # (Auto-updated/generated repo tree)
+│   └── modules/                  # Auto-generated docs for your libs
+├── app.py                        # Entry point
+├── Makefile                      # Automation for: test, docs-build, app-run (maybe)
+├── requirements.txt              # Dependencies
+├── .quarto/                      # Quarto system files
+├── .venv/                        # Virtual Environment
+├── manifest.json                 # For publishing on Connect
+├── README.md                     # Project overview and setup instructions
+├── LICENSE                       # License file
+├── CREDITS.md                    # Credits and acknowledgments
+└── .github/workflows/            # GitHub Actions workflows
+│   ├── test_suite.yml            # Runs pytest on every push to ensure no module broke.
+│   ├── lint_and_format.yml       # Runs ruff or black to keep your code clean.
+│   ├── docs_build.yml            # Automatically builds your Quarto books (_book/)
+│   └── deploy-connect.yml        # CI for deploying to RStudio Connect
+└── .gitignore                    # Git ignore rules
+
+```
