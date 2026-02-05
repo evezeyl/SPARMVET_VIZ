@@ -9,17 +9,28 @@ This module offers different cleaning logics, depending on the data source. **It
 
 > Prototyping option: Ecoli sample data + minimal metadata
 
+## Architecture context
 
-
-## Role
+### Role
 The "Cleaner." It takes messy bioinformatics outputs (TSV/CSV) and converts them into a standardized **Polars DataFrame**.
 
 Transformation eg. in tidy long format necessary for visualization layer
 
-## Placement
+Pre-join (no join with metadata) #REVIEW - 
+
+
+**Input:** Raw IRIDA/Galaxy outputs (e.g., assembly stats, AMR gene tables).
+
+**Action:** Filters out "noise," enforces the Data Contract, and converts everything to a standardized "Tidy" `Polars DataFrame`.
+
+**Result:** A clean, species-specific reduced dataset (that we call **_Bio_data_**).
+
+- [ ] TODO still unsure on where we do the metadata check and join --> because we could have sublayers here: 1. tidy Bio_Data 2. tidy_metadata  3.joined_data 4. joined_data_filters  (eg. user wants only some cols -> then process) - problem will have to communicate with the shiny 
+
+### Placement
 - Server-side functions.
 
-## Architectural Benefit
+### Architectural Benefit
 
 #REVIEW - placement of verification of data contract 
 By forcing every dataset into a "Data Contract" (e.g., always having a minimum set of fixed columns `sample_id`, `species`, `value`), the visualization functions don't need to know where the data came from.
@@ -31,3 +42,9 @@ By placing on the server-side. It allows to:
 
 Advantages: 
 Inconvenients: 
+
+## Implementation choices 
+
+#TODO #REVIEW: Implementation 
+- [ ] Selecting out columns that will NOT be employed in any visualisation
+- [ ]

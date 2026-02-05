@@ -6,10 +6,19 @@
 
 Provides the Dashboard User Interface (UI) and handles Reactivity.
 
-
 - We choose to use **Shiny Express** for prototyping. But changes are not excluded should this app evolve into a more complex app.
 
 - It handles the sidebar, the file upload buttons, and the "Reactivity" (e.g., "When the user clicks E. coli, update the graph").
+
+
+#REVIEW
+- **Input:** Filtered, joined data from (bio_wranling : data, + metadata_wrangling).
+- **Action:** Uses the **Graph Factory** to turn that data into Plotnine (evt. Plotly) objects.  
+-  **Role:** Purely a "Window." It handles the buttons, sliders, and the rendering of the plots.
+
+We favors usage of plotnine because it is an implementation of the grammar of graphics, which allows us to separate the "what" (data) from the "how" (visualization). Can also help producing publication ready figures. 
+> At least for prototyping 
+BUT inconvenient is that it creates static plots. Data exploration expected by use of filters and selection of axes. Preview data datable 
 
 ### Placement
 - server 
@@ -24,7 +33,21 @@ faster tp o load, and easier to maintain.
 - [ ] TODO will require Docker to run into Galaxy (worse case scenario we go back to Shiny Core)
 - [ ] TODO : persistence eg. user preferences -> account (could be in a YAML file)
 
-- Shiny Express (the language) and Standard Shiny (the deployment),
+- Shiny Express (the language) and Standard Shiny (the deployment)
+
+
+
+### Data Flow from dashboard
+
+| User Action (Shiny UI) | Signal Sent to Server | Server Action (Polars/Python) | UI Result |
+| --- | --- | --- | --- |
+| **Uploads CSV** | File Stream | Validate headers + Join with bio_data | Show "Success" message |
+| **Selects Species** | String: `"S. aureus"` | `df.filter(pl.col("species") == "S. aureus")` | Update all plots |
+| **Filters by Date** | Range: `[2023, 2024]` | `df.filter(pl.col("year").is_between(2023, 2024))` | Re-render Plotly graph |
+
+
+### Requirements 
+- Running server (Docker container, Galaxy Interactive Tool)
 
 
 ## A reminder note on the different Shinny flavors 

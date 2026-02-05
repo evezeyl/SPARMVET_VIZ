@@ -1,0 +1,9 @@
+# Unknown and Expansion
+
+- We have tried to find the balance between modularization, letting the possibility to expand the app in the future, not over-engineering it (unsure about that), and speed of obtaining a prototype.
+
+Further requirements to take into consideration (if upscaling) : 
+
+- [ ] Data volume -> polars should be ok, lazy evaluation 
+- [ ] Data variety : Species gap (Table structure) 
+

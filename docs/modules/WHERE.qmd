@@ -1,0 +1,15 @@
+### Tier 2: The Orchestrator (Metadata Join & Filter)
+
+*   **Input:**  bio_wrangle (tidy_data + User uploaded metadata).
+
+*   **Action:** This layer validates the metadata. If the user uploads "messy" data, this layer catches it and sends a "Tidy your data!" error back to the UI.
+*   **Crucial Logic:** This is where **Server-Side Filtering** happens. When a user clicks a filter in Shiny, we don't filter in the browser; we tell Polars on the server: `df.filter(pl.col("species") == "E. coli")`.
+*   **Why:** This keeps the browser light. You can process millions of rows in Polars on the server, and the user's computer only sees the final 1,000 rows.
+
+
+- [ ] TODO include report : **"Data Health Report"** -> data and metadata failed to join: cols, row (will be sample_id)
+
+
+`MetadataManager` that handles the Polars join and validation logic?** ->  "Server-side" engine.
+
+
