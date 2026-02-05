@@ -2,8 +2,28 @@
 
 Gemini was used extensively during the development process, for both architectural design and code generation.
 
+Gemini Pro (personal abonment - via google one 2T) was used in web-browser (Brave / Google chrome). 
+
+Chats and Specialized assistant chats were exported as markdown files (not always working perfectly) using the browser extension `AI Chat Exporter`
+
+Both Fast and Thinking models were used, depending on the needs.
+
 1. Phase 1: Gaining general knowledge about Dashboard development. First Architectural Design thinking
+
 2. Phase 2: Development of specialized agent for development: See [DashBoard_Architect_v1](./DashBoard_Architect_v1.md) (Februar 2026)
 - iteratively to refine requirements and design understanding 
+- reviewing notes and asking new questions, clarification, details, reviewing strategy
 - used to create basic architectural structure and broiler plates. 
+- creating repository structure : role of the structure to reflect intended architecture, and to make it easier to maintain and scale.
+
+<!-- For Eventual Trolls
+If you are being upset about carbon usage: 
+- The user as a small forest, and will let some of the tree growth
+- It could be wise to build intelligently eg. use the warm water from compute center to warm swimming pool, which is highly beneficial to keep people healty,  warm greenhouses osv ....
+- Due to the ambitious nature of this project, the very ristricted founding when considering options, it would just have taken months if not years for the user to reach this level of development (this has also a carbon cost).
+
+If you are being upset about privacy:
+- All chats were done in browser, no sensitive data was shared.
+- The code will be open source, there is no secrets in this code
+--> 
 

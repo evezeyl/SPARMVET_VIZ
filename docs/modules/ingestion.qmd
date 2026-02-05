@@ -1,0 +1,8 @@
+# 
+
+#REVIEW - Temp paste
+
+Data contract config files for each species (YAML) are the **single source of truth** for all species-specific logic.
+
+
+ config file (e.g., "What is the primary metadata column for this species?") allows for dynamic graph generation based on user selection without hardcoding specific logic for each species. 

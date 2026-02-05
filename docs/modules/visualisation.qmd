@@ -1,0 +1,30 @@
+# Visualisation Factory Layer: `bio_viz_core` module
+
+
+The `bio_viz_core` is the **Visualisation factory**. 
+An independent module that takes tidy data and a manifest (labels, colors) and **returns Figure objects**. 
+
+- `plotnine` is the library of choice, as we aimed to employ **the grammar of graphics approach**. 
+- It is however not excluded to include some support for `plotly`. This module will offer plot factory and a shared logic for metadata injection. # REVIEW - metadata injection - what is meant here? its because of contract or are we talking about color palettes? (palletes can be determined by manifest - can include user preferences)
+
+We aim this module to be **data agnostic**. It will only require tidy data and a manifest (labels, colors) to produce plots, and will offer different **plotting logics** (bar, scatter, etc). 
+
+> Prototyping option: Produces bar/stacked barplot. 
+
+
+## Role
+
+**Factory Pattern** that creates visualization objects, independently of the data. Only depends on the data contract. 
+- eg. `create_species_distribution(df, config)`.
+- eg. Instead of hardcoding "Show Serotype for E. coli," you pass a **Config Object**. The function asks the Config: _"What is the primary metadata column for this species?"_ and the Config replies _"Serotype."_
+
+
+## Placement
+
+
+## Architectural Benefits
+- Adding a new species (e.g., _Listeria monocytogenes_) only requires updating the data contract (YAML config file), not writing new Python functions.
+- Eg. Change in AMR columns to be visualized only requires updating the config, not the whole code.
+
+
+

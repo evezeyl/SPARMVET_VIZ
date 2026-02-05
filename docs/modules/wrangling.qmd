@@ -1,0 +1,33 @@
+# Data Preparation Layer : `bio_wrangling` module
+
+The `bio_wrangling`module is the **data preparation**. 
+
+An independent module that takes raw data and transforms it into tidy data. 
+`Polar` is the library of choice. 
+This module offers different cleaning logics, depending on the data source. **It returns a tidy dataframe as output**.
+
+
+> Prototyping option: Ecoli sample data + minimal metadata
+
+
+
+## Role
+The "Cleaner." It takes messy bioinformatics outputs (TSV/CSV) and converts them into a standardized **Polars DataFrame**.
+
+Transformation eg. in tidy long format necessary for visualization layer
+
+## Placement
+- Server-side functions.
+
+## Architectural Benefit
+
+#REVIEW - placement of verification of data contract 
+By forcing every dataset into a "Data Contract" (e.g., always having a minimum set of fixed columns `sample_id`, `species`, `value`), the visualization functions don't need to know where the data came from.
+
+
+By placing on the server-side. It allows to:
+- plan for up-scallability - lazy eval using  Polars dataframes
+- keep the client-side thin and fast (only handles UI and reactivity)
+
+Advantages: 
+Inconvenients: 

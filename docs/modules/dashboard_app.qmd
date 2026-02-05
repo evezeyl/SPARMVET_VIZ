@@ -1,0 +1,44 @@
+# Dashboard App Layer:  `app_shell` module
+
+## Architecture context
+
+### Role
+
+Provides the Dashboard User Interface (UI) and handles Reactivity.
+
+
+- We choose to use **Shiny Express** for prototyping. But changes are not excluded should this app evolve into a more complex app.
+
+- It handles the sidebar, the file upload buttons, and the "Reactivity" (e.g., "When the user clicks E. coli, update the graph").
+
+### Placement
+- server 
+
+### Architectural Benefit
+
+Keeping this file "thin" (only UI and reactivity) makes it much easier to debug,
+faster tp o load, and easier to maintain.
+
+- Tidy data preparation BEFORE it touches the UI (shiny express app) makes it much faster to load (more data) and easier to debug. 
+
+- [ ] TODO will require Docker to run into Galaxy (worse case scenario we go back to Shiny Core)
+- [ ] TODO : persistence eg. user preferences -> account (could be in a YAML file)
+
+- Shiny Express (the language) and Standard Shiny (the deployment),
+
+
+## A reminder note on the different Shinny flavors 
+
+| Flavor | Architecture | Pros (Advantages) | Cons (Inconveniences) | Best Use Case |
+| --- | --- | --- | --- | --- |
+| **Standard Shiny (Server)** | **Client-Server:** Python runs on a remote server/container. | High performance for large genomic data; keeps source code/data secure on server. | Requires a live server or Docker container (GxIT) running 24/7. | **Large datasets** or BioBlend integrations. |
+| **Shinylive (WASM)** | **Serverless:** Python is compiled to WASM and runs in the user's browser. | No server needed; can be shared as a single static HTML file or via GitHub Pages. | Slow initial load (downloads Python runtime); limited by user's RAM/CPU. | **Lightweight reports** or "frozen" results for a paper. |
+| **Shiny Express** | **Developer API:** A streamlined way to write either of the above. | Fastest way to build; very little boilerplate code; highly readable. | Less "fine-grained" control over complex nested layouts compared to "Core." | **Walking Skeletons** and rapid prototyping. |
+
+
+## Implementation choices
+
+- **Species switch**
+    - [ ] ToDecide -> need to look at the data --> choices
+        - Included in data (specified in Data contract for each species specified in YAML config file)
+        - specified by user (dropdown in Dashboard)
