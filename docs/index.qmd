@@ -1,7 +1,11 @@
 ## Preface {.unnumbered}
 
+
 This documentation is intended for  ...
 
+#TODO 
+- [ ] continue /home/evezeyl/Documents/Insync/gdrive/OBSWORK/10_ACTIVE_PROJECTS/01_Dashboard_330403/AI/Chats/20260205_Gemini-Building_Interactive_IRIDA_Galaxy_Dashboards.md
+Search for # HERE #TODO
 
 # Introduction {.unnumbered}
 
@@ -16,4 +20,3 @@ We aimed to build a proffessional dashbord that could be employed to visualize d
 We hoped that this work will not only be a deliverable of a short-term project. Consequently we attempted to build a professional, scalable app. Thus we have built a "Walking Skeleton", and adopted a **Layered Architecture**.
 
 The **Decoupling approach** of the different aspects of the app should improve layer reusability and maintainability. 
-
