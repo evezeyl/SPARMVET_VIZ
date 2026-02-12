@@ -19,11 +19,12 @@ Code in `libs/` must be **environment-agnostic**.
 - **Do:** Write functions that take a Polars DataFrame and return a Figure.   
 - **Don't:** Import `shiny` or use `input.variable_name` inside `libs/`.
 
-### Document your code 
-> basically fill this book. 
-
-- Thinking about the purpose and the choices, and adding those in this book is important to allow
+### Do not start coding at once
+- start defining what you want to achieve and what are the requireemnts
+- take into consideration the requirements of the app : 
+Thinking about the purpose and the choices, and adding those in this book is important to allow
 consistency of purpose checking, 
+- **documentation (basically fill this book), before and while you are coding**
 
 
 ### The "Fail-Fast" Ingestion Rule
