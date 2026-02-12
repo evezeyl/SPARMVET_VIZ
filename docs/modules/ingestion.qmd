@@ -1,8 +1,42 @@
-# 
+# Data ingestion process 
 
-#REVIEW - Temp paste
+## Adapters 
 
-Data contract config files for each species (YAML) are the **single source of truth** for all species-specific logic.
+Provide external bridges for connections (eg. fetching data) from 
+
+- IRDIA
+- GALAXY
+- USER provided data (csv)
+- USER provided metadata 
+...
 
 
- config file (e.g., "What is the primary metadata column for this species?") allows for dynamic graph generation based on user selection without hardcoding specific logic for each species. 
+#REVIEW : at one point must validate data - When ? 
+
+
+
+## Data contract (configuration)
+
+Data contract config files for data type.
+
+A YAML configuration files (or species manifest) are the **single source of truth** for all species-specific logic.
+# REVIEW Did I understood correctly ? the YAML config is the species manifest ?
+
+Those YAML config files define: eg
+- primary data column (eg. sample_ID, species)
+- other data columns (eg. AMR markers)
+- minimal set of metadata that will be provided (eg. by user)
+
+
+Allows for for dynamic graph generation based on defaults settings, but also can be used for specific user selection without hardcoding specific logic for each species. 
+
+#TODO A template file
+#REVIEW - should it be a general one and then subparts ?
+
+- Data contract must be quite flexible to allow extension (will always require a unique primary key eg. sample_id)
+
+
+## Utilities
+- species discovery engine
+- data loading utilities
+- validation of species manifest (YAML)

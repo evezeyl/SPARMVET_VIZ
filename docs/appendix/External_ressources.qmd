@@ -1,8 +1,14 @@
 # External ressources worth to look at 
 
+## Similar apps
 
 - **Microreact:** It uses a "Data Contract" (CSV + Newick tree) - Learn from their CSV structure. #TODO - 
 
 - **Dash Bio:** (unknown to me) Great for specific plots (Volcano, Manhattan) but lacks the easy multi-page layout of Shiny. #TODO
 
 - **Galaxy Interactive Tools (GxIT):** Most existing GxITs use R/Shiny. By using **Shiny for Python**, you are at the cutting edge of the Galaxy ecosystem. #TODO
+
+
+## Videos 
+
+- [Shiny for Python: Building Interactive Dashboards](https://www.youtube.com/watch?v=InyYw5Ii14U) : practical walkthrough of how to structure a Shiny for Python application and understanding the "Visualization Layer"

@@ -1,4 +1,7 @@
-# Dashboard App Layer:  `app_shell` module
+# Dashboard App Layer:  `scr/app_shell` module
+ The Shiny Layer (Visual Interaction)
+
+ #REVIEW : tree placement for code of the app ? cannot be only one script can it ?
 
 ## Architecture context
 
@@ -10,39 +13,45 @@ Provides the Dashboard User Interface (UI) and handles Reactivity.
 
 - It handles the sidebar, the file upload buttons, and the "Reactivity" (e.g., "When the user clicks E. coli, update the graph").
 
+**Input:** Filtered, joined data from (bio_wranling : data_tier2) 
 
-#REVIEW
-- **Input:** Filtered, joined data from (bio_wranling : data, + metadata_wrangling).
-- **Action:** Uses the **Graph Factory** to turn that data into Plotnine (evt. Plotly) objects.  
--  **Role:** Purely a "Window." It handles the buttons, sliders, and the rendering of the plots.
+**Action:** Uses the **Graph Factory** to turn that data into Plotnine (evt. Plotly) objects.  
 
-We favors usage of plotnine because it is an implementation of the grammar of graphics, which allows us to separate the "what" (data) from the "how" (visualization). Can also help producing publication ready figures. 
-> At least for prototyping 
-BUT inconvenient is that it creates static plots. Data exploration expected by use of filters and selection of axes. Preview data datable 
+**Role:** Purely a "Window." It handles the buttons, sliders, and the rendering of the plots.
 
 ### Placement
-- server 
+- app server 
 
 ### Architectural Benefit
 
-Keeping this file "thin" (only UI and reactivity) makes it much easier to debug,
-faster tp o load, and easier to maintain.
+Keeping this file "thin" (only UI and reactivity) makes it much easier to debug, faster to load, and easier to maintain.
 
+Because: 
 - Tidy data preparation BEFORE it touches the UI (shiny express app) makes it much faster to load (more data) and easier to debug. 
 
 - [ ] TODO will require Docker to run into Galaxy (worse case scenario we go back to Shiny Core)
 - [ ] TODO : persistence eg. user preferences -> account (could be in a YAML file)
+#REVIEW -  where should we put eventual persistence of user preferences ? a YAML config file likely 
 
 - Shiny Express (the language) and Standard Shiny (the deployment)
 
 
+#### Remarks
+
+- We favors usage of plotnine because it is an implementation of the grammar of graphics, which allows us to separate the "what" (data) from the "how" (visualization). Can also help producing publication ready figures. 
+> We will start with this for prototyping 
+BUT inconvenient is that it creates static plots. Data exploration expected by use of filters and selection of axes. Preview data datable 
+
+- It is possible to further extends using plotly
+- It is also possible to integrate python and R to create another plot factory for specialized plots. 
+- It can be possible to refactor to standard shiny at a later stage, should the need arise. Keeping this layer thing should allow easier extension.
 
 ### Data Flow from dashboard
 
 | User Action (Shiny UI) | Signal Sent to Server | Server Action (Polars/Python) | UI Result |
 | --- | --- | --- | --- |
-| **Uploads CSV** | File Stream | Validate headers + Join with bio_data | Show "Success" message |
-| **Selects Species** | String: `"S. aureus"` | `df.filter(pl.col("species") == "S. aureus")` | Update all plots |
+| **Uploads CSV** | File Stream | Validate headers + Join with data_tier1 | Show "Success" message |
+| **Selects Species** | String: `"S. aureus"` | `df.filter(pl.col("country") == "Norway")` | Update all plots |
 | **Filters by Date** | Range: `[2023, 2024]` | `df.filter(pl.col("year").is_between(2023, 2024))` | Re-render Plotly graph |
 
 

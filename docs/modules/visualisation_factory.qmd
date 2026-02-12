@@ -1,5 +1,4 @@
-# Visualisation Factory Layer: `bio_viz_core` module
-
+# Visualisation Factory Layer: `libs/bio_viz_core` module
 
 The `bio_viz_core` is the **Visualisation factory**. 
 An independent module that takes tidy data and a manifest (labels, colors) and **returns Figure objects**. 
@@ -11,10 +10,10 @@ We aim this module to be **data agnostic**. It will only require tidy data and a
 
 > Prototyping option: Produces bar/stacked barplot. 
 
-
 ## Role
 
 **Factory Pattern** that creates visualization objects, independently of the data. Only depends on the data contract. 
+
 - eg. `create_species_distribution(df, config)`.
 - eg. Instead of hardcoding "Show Serotype for E. coli," you pass a **Config Object**. The function asks the Config: _"What is the primary metadata column for this species?"_ and the Config replies _"Serotype."_
 
@@ -23,8 +22,9 @@ We aim this module to be **data agnostic**. It will only require tidy data and a
 
 
 ## Architectural Benefits
-- Adding a new species (e.g., _Listeria monocytogenes_) only requires updating the data contract (YAML config file), not writing new Python functions.
+- Adding a new species (e.g., _Listeria monocytogenes_) only requires updating the data contract (YAML config file), not writing new (Python) functions.
 - Eg. Change in AMR columns to be visualized only requires updating the config, not the whole code.
 
+- This module should be treated as independent library. It can be splitted as git submodules if the library develops well
 
 

@@ -19,4 +19,78 @@ We aimed to build a proffessional dashbord that could be employed to visualize d
 
 We hoped that this work will not only be a deliverable of a short-term project. Consequently we attempted to build a professional, scalable app. Thus we have built a "Walking Skeleton", and adopted a **Layered Architecture**.
 
-The **Decoupling approach** of the different aspects of the app should improve layer reusability and maintainability. 
+The **Decoupling approach** of the different aspects of the app should improve layer reusability, maintainability while allowing for further extensions.
+
+**Goals for initial development are indicated with[^1] ** 
+
+## General Architectural Organigram (Layered Model)
+
+
+# TODO we need an adaptation with queries that can be sent to the 
+Layer 1 or an additional layer eg. for filters and data selection, to be able to change the static plot for data exploration
+# REVIEW : where should we send the filter, selections of data ?
+# REVIEW - Layer 1: I THINK the config o eg species should also be used here maybe ? applying certain filters osv 
+
+
+
+```mermaid
+graph TD
+    subgraph "Layer 1: Data Ingestion (Adapters to External World)"
+        A[IRIDA API / Galaxy History / User Upload / Metadata]
+    end
+
+    subgraph "Layer 2: Data Wrangling (bio_wrangling)"
+        B1[Polars Loader] --> C1[data_tier1 : tidy data set] 
+        C1 --> B2[Polars orchestrator] 
+        M[Metadata] --> B2
+        B2 --> C2[data_tier2 : User queried data set]
+    end
+
+    subgraph "Layer 3: Visualisation Factory (Ploting logic : bio_viz_core)"
+        D[Config (eg.species)] --> E[Plot/Graph Factory]
+        C2 --> E
+    end
+
+    subgraph "Layer 4: Dashboard app: Display (app.py)"
+        F[Shiny Express UI] --> G[Reactive Outputs]
+        E --> G
+    end
+
+    A -- "Raw Data" --> B
+    B -- "Tidy-Data" --> C2
+    C2 -- "Graph/Figure Object"
+    G -- "Static** (evt. interactive) HTML" --> H[User Browser / ShinyExpress]
+```
+
+### Links to layer descriptions
+
+- [Layer 1: Data Ingestion](./modules/ingestion.qmd) 
+- [Layer 2: Data Wrangling](./modules/wrangling.qmd)
+- [Layer 3: Plotting logic](./modules/visualisation_factory.qmd)
+- [Layer 4: Dashboard app](./modules/dashboard_app.qmd)
+
+
+### Decoupling data preparation and visualisation layers
+
+
+Shiny is run on a standard server (#REVIEW -  need to be decided eg. FastAPI-based) where the "Server" handles the heavy Polars lifting, and only the results (JSON/HTML) are sent to the user's browser. 
+
+We wont use WASM (no havy data manipulation/exploration on browser) because we need scalability. 
+
+- "Server logic" for data preparation (Polars library)
+    - getting data
+    - filtering unsuable data, tidying data 
+    - joining with metadata
+
+
+Advantages: 
+- alows reduce load on visualisation app
+- better scability in case of implementation of compute heavy features (eg. increase of data volumne). 
+- Polars allows lazy evaluation (allowin)
+
+
+### CodeBase organisation
+
+- [Commented tree](tree.qmd)
+
+

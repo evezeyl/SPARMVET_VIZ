@@ -2,7 +2,7 @@
 ```text
 project_root/
 ├── libs/                                   # Independent Modules (NO GIT SUBMODULES) Business Logic: Each folder is a "Candidate Submodule"
-│   ├── bio_wrangling/                      # The "Logic" Unit
+│   ├── bio_wrangling/                      # Data Wrangling
 │   │   ├── src/                            # Polars logic (Independent) - Wrangling logic -> to tidy format
 │   │   │   ├── __init__.py
 │   │   │   ├── clean_logicA.py
@@ -10,7 +10,7 @@ project_root/
 │   │   │   └── clean_logicC.py
 │   │   └── tests/                          # Unit tests for cleaning/wrangling
 │   │       └── test_bio_wrangling.py (one or several files)
-│   └── bio_viz_core/                       # The "Visual" Unit : Plotting logic (Independent) : takes tidy data and manifest (labels, colors) and returns Figure objects 
+│   └── bio_viz_core/                       # Visualisation factory (Plotting logic) : takes tidy data and manifest (labels, colors) and returns Figure objects 
 │        ├── src/                           # Plotnine/Plotly code
 │        │   ├──  __init__.py
 │        │   ├── plot_factory.py            # handles metadata injection
@@ -26,7 +26,7 @@ project_root/
 │   │   │   ├── ui_components.py
 │   │   └── tests/  
 │   │       └── test_ui_render.py           # shiny.pytest or playwright tools to run a simple test that starts the app and checks if the title or a specific sidebar component is visible. (eg. if did not break the code). (can add more tests if more functionality is added to the UI)
-│   ├── ingestion/                          # Data ingestion adapters (External bridges) for validation) validate_data_species_metadata_manifest() 
+│   ├── ingestion/                          # Data Ingestion Adapters (External bridges) for validation) validate_data_species_metadata_manifest() 
 │   │   │   ├── __init__.py 
 │   │   │   ├── adapter_A.py                # Connects to a fixed Galaxy History (-> to clean logicA.py) - (talk to galaxy API -> to clean logicA.py)
 │   │   │   ├── adapter_B.py                # Lists all available Histories and lets the user pick one. (talk to galaxy API -> to clean logicB.py)

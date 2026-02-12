@@ -11,34 +11,56 @@ This module offers different cleaning logics, depending on the data source. **It
 
 ## Architecture context
 
-### Role
-The "Cleaner." It takes messy bioinformatics outputs (TSV/CSV) and converts them into a standardized **Polars DataFrame**.
+### 1. Bio-wramgler (Pre-join)
+
+Role : The "Cleaner." It takes messy bioinformatics outputs (TSV/CSV/json files/pipelines results...) and converts them into a standardized **Polars DataFrame**.
 
 Transformation eg. in tidy long format necessary for visualization layer
 
 Pre-join (no join with metadata) #REVIEW - 
 
-
 **Input:** Raw IRIDA/Galaxy outputs (e.g., assembly stats, AMR gene tables).
 
 **Action:** Filters out "noise," enforces the Data Contract, and converts everything to a standardized "Tidy" `Polars DataFrame`.
 
-**Result:** A clean, species-specific reduced dataset (that we call **_Bio_data_**).
+**Result:** A clean, species-specific reduced dataset (that we call **data_tier1**).
 
-- [ ] TODO still unsure on where we do the metadata check and join --> because we could have sublayers here: 1. tidy Bio_Data 2. tidy_metadata  3.joined_data 4. joined_data_filters  (eg. user wants only some cols -> then process) - problem will have to communicate with the shiny 
+
+### 2. Bio-Orchestrator (Metadata Join & exploratory Filters and Select)
+> metadata and queries
+
+**Input:** `data_tier1 + User-uploaded Metadata.
+
+**Action:** 
+- validates the metadata.
+- rejects "messy" data 
+    - gives information about where the problem is: message " please tidy your data! ..." error back to the UI.
+- Joins data_teir1 to metadata 
+
+**Server-Side Filtering** for data exploration by the user.
+When a user clicks a filter/selection in Shiny, a request is sent to Polars on the server: `df.filter(pl.col("Year") == 2002)`.
+
+**Result** A clean tidy data joined with metadata. Queries/User filtering applied or not (that we call **data_tier2**)
+
+
+- # REVIEW Can this work like this ? still unsure on where we do the metadata check and join --> because we could have sublayers here: 1. tidy Bio_Data 2. tidy_metadata  3.joined_data 4. joined_data_filters  (eg. user wants only some cols -> then process) - problem will have to communicate with the shiny 
 
 ### Placement
 - Server-side functions.
 
 ### Architectural Benefit
 
+
+
 #REVIEW - placement of verification of data contract 
 By forcing every dataset into a "Data Contract" (e.g., always having a minimum set of fixed columns `sample_id`, `species`, `value`), the visualization functions don't need to know where the data came from.
 
 
 By placing on the server-side. It allows to:
-- plan for up-scallability - lazy eval using  Polars dataframes
-- keep the client-side thin and fast (only handles UI and reactivity)
+- plan for up-scallability - lazy eval using  Polars dataframes. It becomes then possible to prep-process large data sets.
+- It allows further exploration of dataset even on relatively large tidy data (using Polars on the server)
+- keep the (webbrowser) client-side thin and fast (only handles UI and reactivity)
+
 
 Advantages: 
 Inconvenients: 
@@ -48,3 +70,6 @@ Inconvenients:
 #TODO #REVIEW: Implementation 
 - [ ] Selecting out columns that will NOT be employed in any visualisation
 - [ ]
+
+
+- This module should be treated as independent library. It can be splitted as git submodules if the library develops well
