@@ -1,0 +1,6 @@
+# Libraries choices
+
+
+- Polars : for data tidying and querying 
+- plotnine : to allow grammar of graphics factory ploats
+- plotly : at a later stage to  allow interactive exploration

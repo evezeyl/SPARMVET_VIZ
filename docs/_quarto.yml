@@ -29,13 +29,19 @@ book:
   - part: "Development Guide"
     chapters:
       - guide/development_rules.qmd
+      - guide/libraries choices.qmd
       - guide/new_species.qmd
       - guide/testing.qmd
+
 
   - part: "Appendix"
     chapters:
       - appendix/AI_and_development_process.qmd
       - appendix/DashBoard_Architect_v1.qmd
+      - appendix/Shiny_flavors.md
+      - appendix/Unknowns_and_Expansion.md
+
+
     #  - appendix/terminology.qmd
     #  - appendix/resources.qmd
 

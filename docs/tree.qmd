@@ -47,7 +47,8 @@ project_root/
 │   └── test_configuration.py # Pytest fixtures (shared mock data) (build time validation,tests if system works given a specific YAML) 
 ├── pyproject.toml            # Configures how these modules see each other.
 ├── .git/    
-├── data/
+├── assets/                         # Docker build recipes - Static images - CSS ---
+├── data/                           # test data 
 │   ├── mock_bio_data.csv           # Tidy bio_data for testing
 │   └── mock_metadata.csv           # Tidy metadata for testing
 ├── config/                         # Species Templates and  Manifests (YAML)

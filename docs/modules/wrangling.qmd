@@ -34,7 +34,7 @@ Pre-join (no join with metadata) #REVIEW -
 **Action:** 
 - validates the metadata.
 - rejects "messy" data 
-    - gives information about where the problem is: message " please tidy your data! ..." error back to the UI.
+    - gives information about where the problem is: message " please tidy your data! ..." error back to the UI. (**"MetadaData Health Report"** in the dashboard )
 - Joins data_teir1 to metadata 
 
 **Server-Side Filtering** for data exploration by the user.
