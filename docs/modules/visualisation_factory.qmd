@@ -17,7 +17,6 @@ We aim this module to be **data agnostic**. It will only require tidy data and a
 - eg. `create_species_distribution(df, config)`.
 - eg. Instead of hardcoding "Show Serotype for E. coli," you pass a **Config Object**. The function asks the Config: _"What is the primary metadata column for this species?"_ and the Config replies _"Serotype."_
 
-
 ## Placement
 
 

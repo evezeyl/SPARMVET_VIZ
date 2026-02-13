@@ -54,12 +54,14 @@ graph TD
     subgraph "Layer 4: Dashboard app: Display (app.py)"
         F[Shiny Express UI] --> G[Reactive Outputs]
         E --> G
+        #REVIEW - needs draw interaction with shiny for select and data filtering
     end
 
     A -- "Raw Data" --> B
     B -- "Tidy-Data" --> C2
     C2 -- "Graph/Figure Object"
     G -- "Static** (evt. interactive) HTML" --> H[User Browser / ShinyExpress]
+    
 ```
 
 ### Links to layer descriptions

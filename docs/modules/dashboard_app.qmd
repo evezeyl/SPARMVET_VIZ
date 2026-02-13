@@ -5,6 +5,17 @@
 
 ## Architecture context
 
+ **Decoupling Rendering:** 
+ - Plotnine (first implementation of visualizations) creates static images (or SVGs). 
+ These images are generated on the server, thus limiting calculations on the users's browser.
+ This should provide the ability to visualize graphics for large datasets.
+
+
+**Tidy Data Interface:** Plotnine _requires_ tidy data. 
+ forces your 
+
+
+
 ### Role
 
 Provides the Dashboard User Interface (UI) and handles Reactivity.
@@ -48,6 +59,10 @@ BUT inconvenient is that it creates static plots. Data exploration expected by u
 - It can be possible to refactor to standard shiny at a later stage, should the need arise. Keeping this layer thing should allow easier extension.
 
 ### Data Flow from dashboard
+
+ **The "Instructions" Flow:**
+ eg. When a user interacts with a Shiny slider, Shiny sends a small message (e.g., `{"species": "E. coli", "threshold": 5}`) to the server. The server runs the Polars filter, generates a _new_ Plotnine object, and sends the updated image back. #TODO this need to be on the graph in index.md
+
 
 | User Action (Shiny UI) | Signal Sent to Server | Server Action (Polars/Python) | UI Result |
 | --- | --- | --- | --- |

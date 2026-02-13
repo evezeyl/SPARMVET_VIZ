@@ -32,7 +32,9 @@ Pre-join (no join with metadata) #REVIEW -
 **Input:** `data_tier1 + User-uploaded Metadata.
 
 **Action:** 
-- validates the metadata.
+- validates the metadata. Plotnine requieres tidydata, if the data isn't tidy, it wont be possible to draw. 
+
+
 - rejects "messy" data 
     - gives information about where the problem is: message " please tidy your data! ..." error back to the UI. (**"MetadaData Health Report"** in the dashboard )
 - Joins data_teir1 to metadata 
