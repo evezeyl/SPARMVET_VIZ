@@ -1,16 +1,48 @@
 # Data contract
 
+The process is described for bacterial AMR species analysis.
+But, it could be used for any kind of data, as long as the output is tabular. 
+
+
+## Data specifications for data_tier1 
+Structured YAML data configuration
+(YAML instead of Json because its easier to understand for non-coders) 
+
+**Required Columns:** A primary key (e.g., `sample_id`) and other mandatory columns (eg.  `species_name`, `any_column_to_results`).
+
+
+1. Data Contract for tidying ? 
+2. Rules for plot factory (to use which columns to plot by default)
+3. **Metadata Mapping** : Categories -> eg AMR (genes) -> for specialized plots : creates a **metadata translation layer** eg. instead of "Look for _bla\_CTX-M-15_,", the code says, "Look for everything categorized as _AMR_ for this species."
+This is **Role** based **metadata injection** -> that will be used for the visualisation factory
+Roles are e.g., "The X-axis variable," "The Color variable," "The AMR Column List". 
+
+Reasons:
+- this enables fast prototyping of adding new species while reusing the sames plotting functions
+- this allows fast adjustments (eg. new AMR gene set to look at). Basically easily updatable, even by people who do not understand coding. Updating by config.
+
+#TODO Here I would like one config file though per species (or any other data type)
+
+
+## User metadata specifications 
+
+1. **Required Columns** Primary key is **The Join Key:** Explicitly stating that the user's metadata _must_ have a column that matches the bio-pipeline output.
+
+
+
+## User preferences
+#REVIEW - should we put eventual user preferences here ? or should it be in a different part. Its also a configuration file. 
+
 
 
 ## Specifications 
 
 A YAML 
 
-1 **Required Columns:** (e.g., `sample_id`, `species_name`).
 
-2.  **The Join Key:** Explicitly stating that the user's metadata _must_ have a column that matches the bio-pipeline output.
+## Workflow protocol 
 
-3.  **The Protocol:** Shiny (UI) → Signal → Polars (Filter) → Plotnine (Render) → Shiny (Display).
+
 
 
 #REVIEW -  

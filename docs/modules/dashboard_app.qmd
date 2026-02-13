@@ -1,6 +1,11 @@
 # Dashboard App Layer:  `scr/app_shell` module
  The Shiny Layer (Visual Interaction) and User Interface (UI)
 
+
+Workflow: Shiny (UI) eg. metadata upload → Signal → Polars (Filter) → Plotnine (Render) → Shiny (Display).
+
+
+
  #REVIEW : tree placement for code of the app ? cannot be only one script can it ?
 
 ## Architecture context

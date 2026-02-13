@@ -63,6 +63,8 @@ graph TD
     G -- "Static** (evt. interactive) HTML" --> H[User Browser / ShinyExpress]
     
 ```
+#TODO - place the "Metadata Translation Layer. (for datatier metadata and user metadata)
+
 
 ### Links to layer descriptions
 

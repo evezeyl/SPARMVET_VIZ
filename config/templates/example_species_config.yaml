@@ -1,0 +1,18 @@
+# species_config.yaml
+E_coli:
+  categories:
+    AMR:
+      columns: ["bla_CTX-M", "ndm-1", "tetA"]
+      plot_type: "heatmap"
+    Classification:
+      columns: ["serotype", "phylogroup"]
+      plot_type: "bar"
+  
+S_aureus:
+  categories:
+    AMR:
+      columns: ["mecA", "vanA"]
+      plot_type: "heatmap"
+    Classification:
+    columns: ["spa_type", "sccmec_type"]
+    plot_type: "bar"

@@ -4,3 +4,7 @@
 - Polars : for data tidying and querying 
 - plotnine : to allow grammar of graphics factory plots: you’re prioritizing high-quality, publication-ready visuals and a very clean, declarative syntax.
 - plotly : at a later stage to  allow interactive exploration
+
+
+Possibilities
+- `plotly.tools.mpl_to_plotly` OR hybrid approach. (To increase interactivity)
