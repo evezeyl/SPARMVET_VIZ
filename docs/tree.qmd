@@ -55,8 +55,10 @@ project_root/
 │   ├── templates/                  # YAML templates for species
 │   │   └── species_schema.yaml     # Master YAML schema
 │   └── species_manifests/          # One file per species
-│       ├── ecoli.yaml
-│       └── saureus.yaml
+        ├── galaxy                  # config files can be specific by platform
+│       ├    ├── ecoli.yaml
+│       ├    └── saureus.yaml
+        ├── irida
 ├── misc/                         # Helper for me to make as much as possible here automatically ... nothing to do with App
 ├── _book/ 
 ├── docs/                         # Quarto Documentation (This Book)

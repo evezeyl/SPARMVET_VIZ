@@ -14,4 +14,3 @@ def draw_species_plot(df: pl.DataFrame, x_col: str, fill_col: str):
         + theme_minimal()
     )
     return plot
-

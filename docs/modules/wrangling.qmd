@@ -26,7 +26,8 @@ Pre-join (no join with metadata) #REVIEW -
 **Result:** A clean, species-specific reduced dataset (that we call **data_tier1**).
 
 
-### 2. Bio-Orchestrator (Metadata Join & exploratory Filters and Select)
+### 2. Metadata Manager (Orchestrator: Metadata Join & exploratory Filters and Select) `metadata_mgr.py` 
+#REVIEW - It is still unclear if it should be on this layer but it seems to me
 > metadata and queries
 
 **Input:** `data_tier1 + User-uploaded Metadata.

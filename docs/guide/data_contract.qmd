@@ -1,0 +1,16 @@
+# Data contract
+
+
+
+## Specifications 
+
+A YAML 
+
+1 **Required Columns:** (e.g., `sample_id`, `species_name`).
+
+2.  **The Join Key:** Explicitly stating that the user's metadata _must_ have a column that matches the bio-pipeline output.
+
+3.  **The Protocol:** Shiny (UI) → Signal → Polars (Filter) → Plotnine (Render) → Shiny (Display).
+
+
+#REVIEW -  
