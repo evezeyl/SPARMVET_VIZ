@@ -65,6 +65,7 @@ graph TD
 ```
 #TODO - place the "Metadata Translation Layer. (for datatier metadata and user metadata)
 #TODO - Place the "configuration loader on the graph above
+#TODO - where to put the user-preference config (to eg. add other defaults for plots, eg: color/fill/shape?)
 
 
 Implementation: The "Graph Factory" logic : 
@@ -75,6 +76,17 @@ When the user selects eg species: "E. coli" and "AMR" in the Shiny UI, the serve
 3.  **Wrangle:** Tell Polars to select those specific columns from the main dataset. Eventually tidy transformation eg. long format
 4.  **Plot:** Pass those columns to a Plotnine function designed to handle "Category: AMR."
 
+### Summary of architecture compoents
+
+| path/name | Role component | Responsibility | Technology | 
+| --- | --- | --- | --- |
+| libs/bio_wrangling | **Data Wrangler** | Enforce Data Contract (Tidy data) | Polars |
+| ? #REVIEW -   | **Config Loader** | Map Categories (AMR) to Column Names | YAML / Python Dict |
+| libs/bio_wrangling #REVIEW -  should we put at different place ? | **Metadata Manager** | Join Bio-data + User CSV | Polars |
+|  | **Graph Factory** | Turn "Roles" into Plots | Plotnine |
+| | **Shiny App** | Capture User Input & Show Results | Shiny Express |
+
+#REVIEW : I think we should really split by function, the tree organisation as per now is a bit unclear - should we not all keep in libs and only keep src for the shiny app ? 
 
 ### Links to layer descriptions
 

@@ -3,6 +3,8 @@
 The `bio_viz_core` is the **Visualisation factory**. 
 An independent module that takes tidy data and a manifest (labels, colors) and **returns Figure objects**. 
 
+Coding methode: **Dependency Injection** `style_config` object: taken from a YAML configuration file (sets plots defaults) OR user preferences (if provided) [so there is a priority] as an optional argument. If the user hasn't set preferences, the function uses the defaults specified in the YAML file. 
+
 - `plotnine` is the library of choice, as we aimed to employ **the grammar of graphics approach**. 
 - It is however not excluded to include some support for `plotly`. This module will offer plot factory and a shared logic for metadata injection. # REVIEW - metadata injection - what is meant here? its because of contract or are we talking about color palettes? (palletes can be determined by manifest - can include user preferences)
 
@@ -19,13 +21,28 @@ We aim this module to be **data agnostic**. It will only require tidy data and a
 - eg. `create_species_distribution(df, config)`.
 - eg. Instead of hardcoding "Show Serotype for E. coli," you pass a **Config Object**. The function asks the Config: _"What is the primary metadata column for this species?"_ and the Config replies _"Serotype."_
 
-## Placement
 
+
+## Data flow 
+The `visualization/graph Factory` becomes a pure function that takes three things:
+
+1.  **The Data:** A Tidy Polars DataFrame (data_tier2).
+2.  **The Mapping:** Which columns represent which roles (from YAML configuration file).
+3.  **The Theme:** (Optional) Visual preferences like color scales or font sizes.
+
+> Relies on **YAML-to-Dictionary** allows to swap species-specific configuration logic
+
+
+## Placement
+- Server 
 
 ## Architectural Benefits
 - Adding a new species (e.g., _Listeria monocytogenes_) only requires updating the data contract (YAML config file), not writing new (Python) functions.
 - Eg. Change in AMR columns to be visualized only requires updating the config, not the whole code.
+- It is human-readable (easy for you to edit without breaking code), making it easier for non coders to adapt to their own species.
+- It supports nested categories (e.g., `AMR` -\> `Columns`).
+- It is the standard for bioinformatics pipelines (Nextflow/Snakemake).
 
-- This module should be treated as independent library. It can be splitted as git submodules if the library develops well
-
+## Remarks 
+This module should be treated as independent library. It can be splitted as git submodules if the library develops well
 

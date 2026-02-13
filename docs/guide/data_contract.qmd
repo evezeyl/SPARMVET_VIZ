@@ -31,13 +31,17 @@ Reasons:
 
 
 ## User preferences
-#REVIEW - should we put eventual user preferences here ? or should it be in a different part. Its also a configuration file. 
+#REVIEW - should we put eventual user preferences here ? or should it be in a different part, different layer ? eg. errase defaults settings. Its also a configuration file. 
+*   **User Preference:** Defined by the _user_ during their session (e.g., "I want the bars to be Blue instead of Red"). This is **Dependency Injection** : this will pass a `style_config` object as an optional argument. The function uses defaults unless it has uploaded user preferences.
 
+> **Session State:** Shiny can store a "User Config" dictionary in the Shiny session that overrides the "Species Config" defaults.
+> will need to provide the default template so they can edit (but maybe not all parts)
 
 ## Configuration loader 
  Between Data Layer and your Graph Factory.
 
  #REVIEW  but for the tidy data we would need to say which columns eg we want to have tidy and eventual format -> can we use a part of config for that ? eg. Wrangling: instructions, Plot_factory: instructions ? 
+ #REVIEW where to place the `config_loader.py` 
 
 - keep columns defined
 - tidy data
