@@ -64,6 +64,16 @@ graph TD
     
 ```
 #TODO - place the "Metadata Translation Layer. (for datatier metadata and user metadata)
+#TODO - Place the "configuration loader on the graph above
+
+
+Implementation: The "Graph Factory" logic : 
+When the user selects eg species: "E. coli" and "AMR" in the Shiny UI, the server performs the following logic:
+
+1.  **Lookup:** Find `E_coli` YAML configuration file and Categories with columns to keep -\> `AMR` as described in the YAML.
+2.  **Retrieve:** Get the list columns it will keep`["bla_CTX-M", "ndm-1", "tetA"]`.
+3.  **Wrangle:** Tell Polars to select those specific columns from the main dataset. Eventually tidy transformation eg. long format
+4.  **Plot:** Pass those columns to a Plotnine function designed to handle "Category: AMR."
 
 
 ### Links to layer descriptions

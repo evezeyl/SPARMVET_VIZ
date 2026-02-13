@@ -34,6 +34,14 @@ Reasons:
 #REVIEW - should we put eventual user preferences here ? or should it be in a different part. Its also a configuration file. 
 
 
+## Configuration loader 
+ Between Data Layer and your Graph Factory.
+
+ #REVIEW  but for the tidy data we would need to say which columns eg we want to have tidy and eventual format -> can we use a part of config for that ? eg. Wrangling: instructions, Plot_factory: instructions ? 
+
+- keep columns defined
+- tidy data
+- default plot 
 
 ## Specifications 
 

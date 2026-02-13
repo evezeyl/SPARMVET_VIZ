@@ -14,3 +14,20 @@ def draw_species_plot(df: pl.DataFrame, x_col: str, fill_col: str):
         + theme_minimal()
     )
     return plot
+
+
+def plot_amr_presence(df, amr_columns):
+    """
+    Generic AMR plotter. 
+    'amr_columns' is a list provided by the Config Loader.
+    """
+    # Convert wide data to long (tidy) for Plotnine
+    df_long = df.select(amr_columns).melt() 
+    
+    plot = (
+        ggplot(df_long, aes(x="variable", fill="value"))
+        + geom_bar(position="fill")
+        + labs(x="Resistance Gene", y="Proportion")
+    )
+    return plot
+
