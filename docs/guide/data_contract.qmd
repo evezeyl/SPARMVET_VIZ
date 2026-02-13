@@ -10,6 +10,9 @@ Structured YAML data configuration
 
 **Required Columns:** A primary key (e.g., `sample_id`) and other mandatory columns (eg.  `species_name`, `any_column_to_results`).
 
+**Recommendation:** Use a prefix for all Bio-data columns (e.g., `bio_serotype`, `bio_amr_gene`). This prevents the app from crashing if a user uploads a CSV that also has a column named "Species" or "ID."
+#REVIEW (should we instead rename the usermetadata except the minimal required columns that should not be in double ! by eg using `um_` prefix for user metadata ?) 
+
 
 1. Data Contract for tidying ? 
 2. Rules for plot factory (to use which columns to plot by default)
@@ -27,6 +30,8 @@ Reasons:
 ## User metadata specifications 
 
 1. **Required Columns** Primary key is **The Join Key:** Explicitly stating that the user's metadata _must_ have a column that matches the bio-pipeline output.
+
+(um: user metadata) -> ` um_sanitization.py` :  sanitization function, can automatically handle column name conflics. It should also verify the format of metadata 
 
 
 
