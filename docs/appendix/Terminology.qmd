@@ -1,0 +1,4 @@
+# Terminology 
+
+-  WASM (Shinylive) :  data included on the html webpage
+- UI : user interface

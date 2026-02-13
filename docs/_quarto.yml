@@ -40,9 +40,7 @@ book:
       - appendix/DashBoard_Architect_v1.qmd
       - appendix/Shiny_flavors.md
       - appendix/Unknowns_and_Expansion.md
-
-
-    #  - appendix/terminology.qmd
+      - appendix/terminology.qmd
     #  - appendix/resources.qmd
 
   # - part: "Introduction"

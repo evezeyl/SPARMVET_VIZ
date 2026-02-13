@@ -1,5 +1,5 @@
 # Dashboard App Layer:  `scr/app_shell` module
- The Shiny Layer (Visual Interaction)
+ The Shiny Layer (Visual Interaction) and User Interface (UI)
 
  #REVIEW : tree placement for code of the app ? cannot be only one script can it ?
 
@@ -17,7 +17,8 @@ Provides the Dashboard User Interface (UI) and handles Reactivity.
 
 **Action:** Uses the **Graph Factory** to turn that data into Plotnine (evt. Plotly) objects.  
 
-**Role:** Purely a "Window." It handles the buttons, sliders, and the rendering of the plots.
+**Role:**
+- A "remote control" for User Interaction for exploration (filters, selections, sliders and buttons) and "window for display"
 
 ### Placement
 - app server 
@@ -66,6 +67,7 @@ BUT inconvenient is that it creates static plots. Data exploration expected by u
         - Included in data (specified in Data contract for each species specified in YAML config file)
         - specified by user (dropdown in Dashboard)
 
+. decided against WASM (Shinylive) BECAUSE we are leaning towards a server-side model for scalability. The architecture actually gets _more_ robust
 
 ## DEVELOPMENT 
 
