@@ -170,7 +170,7 @@ Five pure functions in `app/modules/manifest_navigator.py` provide the manifest 
 
 | Function | Keyed by | Value summary |
 | :--- | :--- | :--- |
-| `build_sibling_map(manifest_path_str)` | `rel_path` (str) | `{role, schema_id, schema_type, siblings, ingredients}`. Role values: `input_fields`, `output_fields`, `wrangling`, `assembly`, `plot_spec`. |
+| `build_sibling_map(manifest_path_str)` | `rel_path` (str) | `{role, schema_id, schema_type, siblings, ingredients}`. Role values: `input_fields`, `output_fields`, `wrangling`, `join`, `plot_spec`. |
 | `build_schema_registry(manifest_path_str, includes_map)` | `schema_id` (str) | Full slot map: each slot is `str` (rel_path), `{"inline": val}`, or `None`. |
 | `build_lineage_chain(selected_rel, ctx_map)` | — | Ordered `list[node_dict]` for the Rail; `is_active` marks the selected node. |
 | `load_fields_file(abs_path)` | — | Reads standalone fields YAML with ADR-014 unnesting. |
@@ -178,9 +178,9 @@ Five pure functions in `app/modules/manifest_navigator.py` provide the manifest 
 
 **Key constraint**: Only `str` rel-paths are used as ctx dict keys. Inline YAML content (`{"inline": val}`) is stored in the `siblings` dict only — never as a dict key (unhashable).
 
-**Assembly ingredient resolution**: Assembly wrangling files have `role="assembly"` and `ingredients=[schema_ids]`. To load ingredient fields in the upstream accordion, resolve `schema_id → output_fields rel_path` by scanning `ctx_map` for matching `schema_id` + `role="output_fields"`.
+**Join ingredient resolution**: Join wrangling files have `role="join"` and `ingredients=[schema_ids]`. To load ingredient fields in the upstream accordion, resolve `schema_id → output_fields rel_path` by scanning `ctx_map` for matching `schema_id` + `role="output_fields"`. (Renamed from "assembly" — ADR-066, 2026-05-04)
 
-**Plot spec `target_dataset` resolution**: `target_dataset` names a data schema (e.g. `"FastP"`), not necessarily an assembly. Upstream lookup tries three passes: (1) assembly output_fields, (2) any output_fields for matching schema_id, (3) input_fields fallback.
+**Plot spec `target_dataset` resolution**: `target_dataset` names a data schema (e.g. `"FastP"`), not necessarily a join. Upstream lookup tries three passes: (1) join output_fields, (2) any output_fields for matching schema_id, (3) input_fields fallback.
 
 **Sidebar display labels**: `_update_dataset_pipelines` shows `"{schema_id} — {role}"` labels. Option value stays as `rel_path` for `inc_map` lookup.
 

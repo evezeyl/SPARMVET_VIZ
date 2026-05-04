@@ -878,7 +878,7 @@ Per the documentation standard: `ManifestNavigator (manifest_navigator.py)` for 
 
 ## ADR-047: Tier-Aware Export Bundle
 
-**Status:** IMPLEMENTED (2026-04-23)
+**Status:** IMPLEMENTED (2026-04-23) — **Extended 2026-05-04** (EXPORT-REDESIGN-1/2)
 **Context:** Users require a reproducible, self-contained output package from the Home Theater — plots, data, recipes, and a Quarto report — that can be used for publication and archiving without re-running the full pipeline.
 
 **Decision:**
@@ -909,10 +909,32 @@ If any row filters are applied at the time of export, their full trace (column /
 ### 5. Deferred Elements
 - Ghost save to `user_sessions` location — deferred.
 - Per-plot checkbox selection — all plots always exported for now.
-- T3 recipe serialization of filter steps (21-F-5) — deferred; when implemented, the updated recipe steps will be included in `recipes/`.
+- ~~T3 recipe serialization~~ — **implemented 2026-05-04** (see §7 below).
 
 ### 6. Implementation Location
-`app/handlers/home_theater.py`: `system_tools_ui` (UI), `export_bundle_download` (`@render.download` async generator), `_export_bundle_filename()` (helper).
+`app/handlers/export_handlers.py`: `system_tools_ui` (UI), `export_bundle_download` (`@render.download` async generator), `_export_bundle_filename()` (helper).
+
+### 7. Extensions (2026-05-04 — EXPORT-REDESIGN-1/2)
+
+**Scope toggle (3-way):** `[Global project | Active group | Active plot]`
+- Shown only when persona has both `export_bundle_enabled` + `export_graph_enabled`.
+- Active group = group the active plot tab belongs to; lineage backtraced per plot.
+- Active plot = current plot tab (`active_home_subtab`).
+- "Active group" hidden when manifest has no `analysis_groups` or active plot has no group.
+- Falls back to Global at download time if no active plot tab.
+- Spec: `.antigravity/design/export_specification.md`
+
+**T3 audit trail in report.qmd:**
+- Section `## T3 Audit Trail` appended when `t3_sandbox_enabled` AND any plot in scope has committed active T3 nodes.
+- Per-plot table: Step / Action / Details / Justification. Deactivated nodes excluded.
+- Keys in `t3_recipe_by_plot` are subtab IDs (`subtab_{plot_id}`).
+
+**`recipes/t3_steps.yaml`:**
+- Written when T3 has committed active nodes. Scoped to export scope.
+- Structure: `generated`, `export_scope`, `t3_steps: {plot_id: [{action, params…, reason, committed_at}]}`.
+
+**Single Graph Export accordion removed** from sidebar — superseded by scope toggle.
+**`export_audit_report_ui/download` deleted** — audit trail now lives inside `report.qmd`.
 
 ---
 
@@ -1283,12 +1305,13 @@ Sub-handlers are called from inside `home_theater.define_server()`, not from `se
 
 **`app/handlers/export_handlers.py`** (Step 24-C) — export pipeline:
 - `define_export_server(...)` registers `system_tools_ui`,
-  `export_bundle_download`, `export_audit_report_ui`,
-  `export_audit_report_download`, `export_audit_docx`,
-  `_audit_report_filename`, `_export_bundle_filename`.
-- Kwargs (12): `bootloader`, `orchestrator`, `viz_factory`, `current_persona`,
+  `export_bundle_download`, `_export_bundle_filename`.
+- `export_audit_report_ui`, `export_audit_report_download`, `_audit_report_filename`
+  **deleted 2026-05-04** (EXPORT-REDESIGN-1) — audit trail now auto-included in
+  `report.qmd` T3 Audit Trail section; see `.antigravity/design/export_specification.md`.
+- Kwargs (13): `bootloader`, `orchestrator`, `viz_factory`, `current_persona`,
   `active_cfg`, `tier1_anchor`, `tier_reference`, `tier3_leaf`, `tier_toggle`,
-  `applied_filters`, `home_state`, `safe_input`.
+  `applied_filters`, `home_state`, `safe_input`, `active_home_subtab`.
 
 **`app/handlers/filter_and_audit_handlers.py`** (Step 24-D) — filter UI + T3
 audit + propagation modal kept in **one file** (deviation from initial plan).
@@ -1926,3 +1949,36 @@ Additionally, CSS `border-radius: 0 0 7px 7px` was applied to inner navset-cards
 - Visual language is now consistent: `#345beb` blue = all semantic labels across all 4 views.
 - Developer documentation exists: `docs/reference/ui_style_guide.qmd` is the single reference for "what selector do I need and can I safely change it?"
 - ADR-064 Python changes deferred — the collapsible Home plot card is `THEATER-1` in the open backlog.
+
+---
+
+## ADR-066: Rename `assembly_manifests` → `join_manifests` (2026-05-04)
+
+**Status:** IMPLEMENTED (2026-05-04)
+
+**Context:** The term "assembly" has a precise and well-known meaning in bioinformatics (genome/contig assembly from sequencing reads). Using it for the dataset-joining section of manifests creates confusion, particularly in the Cytoscape TubeMap which is visible to the whole team.
+
+**Decision:** Rename all occurrences of the `assembly` concept (where it refers to joining datasets) to `join`.
+
+| Old | New |
+|-----|-----|
+| YAML key `assembly_manifests:` | `join_manifests:` |
+| Python dict key `"assembly_manifests"` | `"join_manifests"` |
+| Role string `"assembly"` | `"join"` |
+| TubeMap node label `…\nAssembly` | `…\nJoin` |
+| TubeMap node label `…\nAssembly Wrangling` | `…\nJoin Wrangling` |
+| UI label `◆ Assembly` | `◆ Join` |
+| UI label `Assembly Output (Input)` | `Join Output (Input)` |
+| Variable `assemblies` | `join_defs` |
+| Variable `asm_block` | `join_block` |
+| Variable `is_assembly` | `is_join_step` |
+| Variable `assembly_rels` | `join_rels` |
+
+**Exception — not renamed:**
+- `session_manager.py` and `debug_session_flow.py`: `{"assembly": ..., "contracted": ...}` — these are Parquet file path labels internal to the session ghost save mechanism, unrelated to the manifest role.
+
+**Variable name rule:** Never use bare `join` as a Python variable name — it shadows `str.join()` and is confusing adjacent to Polars. Use `join_defs`, `join_block`, `join_step`, `is_join_step`.
+
+**Scope:** ~35 files, ~65 occurrences. Config manifests, test fixtures, app/, libs/, docs. EVE_WORK/ historical daily logs left unchanged.
+
+**Consequences:** Existing session ghost saves referencing `assembly_manifests` in serialised state will fail to find `join_manifests` on restore. Any manifests not in this repo still using the old key will fail to load. See `changelog.md` for full record.
