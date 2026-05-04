@@ -5,15 +5,24 @@
 
 ---
 
-## Detected changes & after demo notes - to review
+## 2026-05-04 Detected changes & after demo notes - to review
 
-- [ ] Verification: Manifest 1_test_data_ST22_dummy: seems that the main manifest became a huge chunk instead of using the !include Tag. We need to ensure that main manifest links to appropriate directory and file substructure - no huge chunk. Can you verify this ? Create additional directories. The goal is to provide a human redeable structure of the main manifest, so it can understand the general idea of what the manifest does. Eg. Groups in main, plots definitions via !include. 
+- [x] Verification: Manifest 1_test_data_ST22_dummy: seems that the main manifest became a huge chunk instead of using the !include Tag. We need to ensure that main manifest links to appropriate directory and file substructure - no huge chunk. Can you verify this ? Create additional directories. The goal is to provide a human redeable structure of the main manifest, so it can understand the general idea of what the manifest does. Eg. Groups in main, plots definitions via !include. Fixed all manifests and Clarified ADRs good. 
 
-- [ ] There has been a duplication / missunderstanding in the Global Project Export. I was not like that Saturday or sunday morning I think. The  gloal export should export everything. 
-The selectors are correct Except for the Export Audit Report. The audit report should always be included as export when T3 has been activated AND that there has been some changes to T3.
-The export format should follow the Report format, and should be included in the report - with the justifications provided by the user. AND the recipe of the T3 changes should also be included as part of the manifest (T3 - steps included). So there should be only one Export Bundle button that exports EVERYTHING, but it should include everything (data, plots, recipes, audit report) when T3 has been activated. We might adjust content of export later on by configuration IF we get more funding / other use cases - for now it is how it should be used. The readme and everything defined. We need a place with a file where we define what is exported - as permanent memory. 
+- [ ] **EXPORT-REDESIGN-1**: Consolidate export UI into one panel with scope toggle.
+  **Design agreed 2026-05-04 — spec:** `.antigravity/design/export_specification.md`
+  - Remove separate "Export Audit Report" button from `export_audit_report_ui()` — delete that render fn
+  - Single "💾 Export Bundle" button with presentation controls only (quality, plot format, report format)
+  - Add scope toggle `[Global project | Active plot]` — only visible when persona has BOTH `export_bundle_enabled` + `export_graph_enabled`
+  - "Active plot" disabled with tooltip when no plot tab is open
+  - **Impl:** `app/handlers/export_handlers.py` → `system_tools_ui()` + `export_bundle_download()`
 
-- [ ] The single graph export should export the manifest including T3 changes - backtracing the complete recipe for this plot. Should produce a report with the T3 changes and user reasons in the report. Same as before above, except that its only the manifest for the specific lineage of the plot.  Same buttons OR we change The Global Project Export and add a toogle : Global project / Active plot toogle. But some personalities config will only allow global export while other will allow both. 
+- [ ] **EXPORT-REDESIGN-2**: Auto-include T3 audit trail in report.qmd when T3 active + has changes.
+  - T3 audit trail = section at end of `report.qmd` — NOT a separate file
+  - Section: per-plot table of committed T3 steps + user justifications (deactivated nodes excluded)
+  - Add `recipes/t3_steps.yaml` to bundle when T3 has changes (see spec §4)
+  - Active plot mode: scope to that plot's lineage only
+  - **Impl:** `export_bundle_download()` in `export_handlers.py`
 
 
 - [ ] Assembly : was it the joining part of the data ? if so Assembly should be renamed Joining everywhere where it is found (incl. code - to make that clearerer) or similar ... boss hooked on this (because assembly means something totally different in bioinformatics)
