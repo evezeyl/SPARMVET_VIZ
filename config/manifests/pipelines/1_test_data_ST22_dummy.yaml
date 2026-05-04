@@ -6,6 +6,9 @@ info:
   description: Hyper-modular manifest structure with dedicated subdirectories and
     annotated assembly recipes.
   version: '1.8'
+
+# ── Data Schemas ──────────────────────────────────────────────────────────────
+# Fragment files: 1_test_data_ST22_dummy/{input_fields,wrangling,output_fields}/
 data_schemas:
   Summary:
     info:
@@ -14,169 +17,20 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      quality_module:
-        original_name: Quality Module
-        type: categorical
-        label: Quality Module
-      taxon:
-        original_name: Detected main taxon
-        type: categorical
-        label: Detected Main Taxon
-      genotype:
-        original_name: Genotype
-        type: categorical
-        label: Genotype
-      phenotype:
-        original_name: Predicted Phenotype
-        type: categorical
-        label: Phenotype
-      cge_phenotype:
-        original_name: CGE Predicted Phenotype
-        type: categorical
-        label: Cge Phenotype
-      plasmid:
-        original_name: Plasmid
-        type: categorical
-        label: Plasmid
-      ST:
-        original_name: Sequence Type
-        type: categorical
-        label: ST
-      genome_length:
-        original_name: Genome Length
-        type: numeric
-        label: Genome Length
-      N50:
-        original_name: N50 value
-        type: numeric
-        label: N50 value
-      contigs_sup300bp:
-        original_name: Number of Contigs Greater Than Or Equal To 300 bp
-        type: numeric
-        label: Contigs >= 300bp
-    wrangling:
-      tier1:
-      - action: unpivot
-        index:
-        - sample_id
-        - ST
-        true:
-        - genotype
-        - phenotype
-        - cge_phenotype
-        - plasmid
-        variable_name: category
-        value_name: value
-      - action: split_and_explode
-        column: value
-        separator: ', '
-      - action: strip_whitespace
-        columns:
-        - category
-        - value
-      - action: drop_duplicates
-        columns:
-        - sample_id
-        - ST
-        - category
-        - value
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      ST:
-        original_name: ST
-        type: categorical
-        label: St
-      category:
-        type: categorical
-        label: Feature Category
-        original_name: category
-      value:
-        type: categorical
-        label: Feature Value
-        original_name: value
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Summary_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_output_fields.yaml'
+
   Summary_quality:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      quality_module:
-        original_name: Quality Module
-        type: categorical
-        label: Quality Module
-      taxon:
-        original_name: Detected main taxon
-        type: categorical
-        label: Detected Main Taxon
-      genotype:
-        original_name: Genotype
-        type: categorical
-        label: Genotype
-      phenotype:
-        original_name: Predicted Phenotype
-        type: categorical
-        label: Phenotype
-      cge_phenotype:
-        original_name: CGE Predicted Phenotype
-        type: categorical
-        label: Cge Phenotype
-      plasmid:
-        original_name: Plasmid
-        type: categorical
-        label: Plasmid
-      ST:
-        original_name: Sequence Type
-        type: categorical
-        label: ST
-      genome_length:
-        original_name: Genome Length
-        type: numeric
-        label: Genome Length
-      N50:
-        original_name: N50 value
-        type: numeric
-        label: N50 value
-      contigs_sup300bp:
-        original_name: Number of Contigs Greater Than Or Equal To 300 bp
-        type: numeric
-        label: Contigs >= 300bp
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
     wrangling:
       tier1: []
       tier2: []
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      quality_module:
-        original_name: quality_module
-        type: categorical
-        label: Quality Module
-      genome_length:
-        original_name: genome_length
-        type: categorical
-        label: Genome Length
-      N50:
-        original_name: N50
-        type: categorical
-        label: N50
-      contigs_sup300bp:
-        original_name: contigs_sup300bp
-        type: categorical
-        label: Contigs Sup300Bp
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_quality_output_fields.yaml'
+
   Quality_metrics:
     info:
       category: Quality Control
@@ -184,98 +38,10 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quality_metrics_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-        is_primary_key: true
-      quality_module:
-        original_name: Quality_Module
-        type: categorical
-        label: Quality Module
-      quality_feedback:
-        original_name: Quality_Feedback
-        type: categorical
-        label: Quality Feedback
-      total_reads_after:
-        original_name: total_reads_after
-        type: numeric
-        label: Total Reads After
-      ratio_reads_after:
-        original_name: ratio_reads_after
-        type: numeric
-        label: Ratio Reads After
-      bracken_main_taxon:
-        original_name: bracken_main_taxon
-        type: categorical
-        label: Bracken Main Taxon
-      proportion_of_main_taxon:
-        original_name: proportion_of_main_taxon
-        type: numeric
-        label: Proportion Of Main Taxon
-      reads_gc_content:
-        original_name: reads_gc_content
-        type: numeric
-        label: Reads Gc Content
-      n50:
-        original_name: N50
-        type: numeric
-        label: N50
-      total_length:
-        original_name: Total_length
-        type: numeric
-        label: Total Length
-      largest_contig:
-        original_name: Largest_contig
-        type: numeric
-        label: Largest Contig
-      num_contigs_500bp:
-        original_name: num_contigs_500bp
-        type: numeric
-        label: Num Contigs 500Bp
-      num_contigs_0bp:
-        original_name: num_contigs_0bp
-        type: numeric
-        label: Num Contigs 0Bp
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Quality_metrics_input_fields.yaml'
     wrangling: []
-    output_fields:
-      sample_id:
-        label: Sample ID
-        original_name: sample_id
-        type: categorical
-      quality_module:
-        label: Quality Module
-        original_name: quality_module
-        type: categorical
-      quality_feedback:
-        label: Quality Feedback
-        original_name: quality_feedback
-        type: categorical
-      total_reads_after:
-        label: Total Reads After
-        original_name: total_reads_after
-        type: categorical
-      ratio_reads_after:
-        label: Ratio Reads After
-        original_name: ratio_reads_after
-        type: categorical
-      bracken_main_taxon:
-        label: Bracken Main Taxon
-        original_name: bracken_main_taxon
-        type: categorical
-      proportion_of_main_taxon:
-        label: Proportion Of Main Taxon
-        original_name: proportion_of_main_taxon
-        type: categorical
-      n50:
-        label: N50
-        original_name: n50
-        type: categorical
-      total_length:
-        label: Total Length
-        original_name: total_length
-        type: categorical
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quality_metrics_output_fields.yaml'
+
   Detailed_summary:
     info:
       category: Gene detection
@@ -285,126 +51,10 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Detailed_Summary_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-        is_primary_key: true
-      data:
-        original_name: Data
-        type: categorical
-        label: Data
-      data_type:
-        original_name: Data Type
-        type: categorical
-        label: Data Type
-      predicted_phenotype:
-        original_name: Predicted Phenotype
-        type: categorical
-        label: Predicted Phenotype
-      cge_predicted_phenotype:
-        original_name: CGE Predicted Phenotype
-        type: categorical
-        label: Cge Predicted Phenotype
-      identity:
-        original_name: '%Identity'
-        type: numeric
-        label: '%Identity'
-      overlap:
-        original_name: '%Overlap'
-        type: numeric
-        label: '%Overlap'
-      hsp_lengthtotal_length:
-        original_name: HSP Length/Total Length
-        type: categorical
-        label: Hsp Length/Total Length
-      contig:
-        original_name: Contig
-        type: categorical
-        label: Contig
-      start:
-        original_name: Start
-        type: numeric
-        label: Start
-      end:
-        original_name: End
-        type: numeric
-        label: End
-      accession:
-        original_name: Accession
-        type: categorical
-        label: Accession
-    wrangling:
-      tier1:
-      - action: split_column_to_parts
-        column: hsp_lengthtotal_length
-        separator: /
-        new_columns:
-        - hsp_len
-        - total_len
-      - action: cast
-        columns:
-        - identity
-        - overlap
-        dtype: Float64
-      - action: divide_columns
-        numerator: hsp_len
-        denominator: total_len
-        new_column: length_ratio
-      - action: filter_range
-        columns:
-        - identity
-        min: 90
-      - action: filter_range
-        columns:
-        - overlap
-        min: 85
-      - action: filter_range
-        columns:
-        - length_ratio
-        min: 0.8
-      - action: drop_columns
-        columns:
-        - hsp_len
-        - total_len
-    output_fields:
-      sample_id:
-        label: Sample ID
-        original_name: sample_id
-        type: categorical
-      predicted_phenotype:
-        label: Predicted Phenotype
-        original_name: predicted_phenotype
-        type: categorical
-      data_type:
-        label: Data Type
-        original_name: data_type
-        type: categorical
-      identity:
-        label: '%Identity'
-        original_name: identity
-        type: categorical
-      overlap:
-        label: '%Overlap'
-        original_name: overlap
-        type: categorical
-      length_ratio:
-        label: Length Ratio
-        original_name: length_ratio
-        type: categorical
-      source:
-        label: Sample Source
-        original_name: source
-        type: categorical
-      country:
-        label: Country
-        original_name: country
-        type: categorical
-      year:
-        label: Year
-        original_name: year
-        type: categorical
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Detailed_summary_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Detailed_summary_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Detailed_summary_output_fields.yaml'
+
   FastP:
     info:
       category: Quality Control
@@ -412,43 +62,10 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_FastP_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      total_reads:
-        original_name: total_reads
-        type: numeric
-        label: Total Reads
-      q30_rate:
-        original_name: q30_rate
-        type: numeric
-        label: Q30 Rate
-      gc_content:
-        original_name: gc_content
-        type: numeric
-        label: GC Content
-    wrangling:
-      tier1: []
-    output_fields:
-      sample_id:
-        type: categorical
-        original_name: sample_id
-        label: Sample Id
-      total_reads:
-        type: numeric
-        original_name: total_reads
-        label: Total Reads
-      q30_rate:
-        type: numeric
-        original_name: q30_rate
-        label: Q30 Rate
-      gc_content:
-        type: numeric
-        original_name: gc_content
-        label: Gc Content
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/FastP_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/FastP_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/FastP_output_fields.yaml'
+
   Quast:
     info:
       category: Quality Control
@@ -456,44 +73,10 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quast_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      n50:
-        original_name: N50
-        type: numeric
-        label: N50
-      total_length:
-        original_name: Total_length
-        type: numeric
-        label: Total Length
-      largest_contig:
-        original_name: Largest_contig
-        type: numeric
-        label: Largest Contig
-    wrangling:
-      tier1:
-      - action: strip_whitespace
-    output_fields:
-      sample_id:
-        type: categorical
-        original_name: sample_id
-        label: Sample Id
-      n50:
-        type: numeric
-        original_name: n50
-        label: N50
-      total_length:
-        type: numeric
-        original_name: total_length
-        label: Total Length
-      largest_contig:
-        type: numeric
-        original_name: largest_contig
-        label: Largest Contig
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Quast_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Quast_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quast_output_fields.yaml'
+
   Bracken:
     info:
       category: Quality Control
@@ -501,35 +84,10 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Bracken_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      taxon_1:
-        original_name: taxon_1
-        type: categorical
-        label: Primary Taxon
-      proportion_1:
-        original_name: proportion_1
-        type: numeric
-        label: Primary Proportion
-    wrangling:
-      tier1: []
-    output_fields:
-      sample_id:
-        type: categorical
-        original_name: sample_id
-        label: Sample Id
-      taxon_1:
-        type: categorical
-        original_name: taxon_1
-        label: Taxon 1
-      proportion_1:
-        type: numeric
-        original_name: proportion_1
-        label: Proportion 1
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Bracken_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Bracken_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Bracken_output_fields.yaml'
+
   ResFinder:
     info:
       category: Gene detection
@@ -537,66 +95,10 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      gene:
-        original_name: Gene
-        type: categorical
-        label: AMR Gene
-      phenotype:
-        original_name: Predicted Phenotype
-        type: categorical
-        label: Predicted Phenotype
-      identity:
-        original_name: '%Identity'
-        type: numeric
-        label: Identity %
-      overlap:
-        original_name: '%Overlap'
-        type: numeric
-        label: Overlap %
-    wrangling:
-      tier1:
-      - action: cast
-        columns:
-        - sample_id
-        dtype: String
-      - action: add_constant
-        new_column: status
-        value: Detected
-      tier2:
-      - action: count_by_group
-        group_by:
-        - sample_id
-        new_column: total_gene_count
-      - action: sort
-        columns:
-        - total_gene_count
-        - sample_id
-        descending:
-        - true
-        - false
-    output_fields:
-      sample_id:
-        type: numeric
-        original_name: sample_id
-        label: Sample Id
-      gene:
-        type: categorical
-        original_name: gene
-        label: Gene
-      phenotype:
-        type: categorical
-        original_name: phenotype
-        label: Phenotype
-      status:
-        type: categorical
-        original_name: status
-        label: Status
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/ResFinder_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/ResFinder_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/ResFinder_output_fields.yaml'
+
   MLST:
     info:
       category: Strain Classification
@@ -604,78 +106,11 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      scheme:
-        original_name: Scheme
-        type: categorical
-        label: MLST Scheme
-      sequence_type:
-        original_name: Sequence Type
-        type: categorical
-        label: Sequence Type
-      locus_1:
-        original_name: Locus 1
-        type: categorical
-        label: Locus 1
-      locus_2:
-        original_name: Locus 2
-        type: categorical
-        label: Locus 2
-      locus_3:
-        original_name: Locus 3
-        type: categorical
-        label: Locus 3
-      locus_4:
-        original_name: Locus 4
-        type: categorical
-        label: Locus 4
-      locus_5:
-        original_name: Locus 5
-        type: categorical
-        label: Locus 5
-      locus_6:
-        original_name: Locus 6
-        type: categorical
-        label: Locus 6
-      locus_7:
-        original_name: Locus 7
-        type: categorical
-        label: Locus 7
-    wrangling:
-      tier1:
-      - action: keep_columns
-        columns:
-        - sample_id
-        - scheme
-        - sequence_type
-      - action: recode_values
-        column: sequence_type
-        rules:
-        - matches: '-'
-          value: Non Determined
-        - matches: NA
-          value: Non Determined
-        - matches: unknown
-          value: Non Determined
-        - default: keep
-    output_fields:
-      sample_id:
-        type: categorical
-        original_name: sample_id
-        label: Sample Id
-      scheme:
-        type: categorical
-        original_name: scheme
-        label: Scheme
-      sequence_type:
-        type: categorical
-        original_name: sequence_type
-        label: Sequence Type
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
+
+# ── Additional Datasets ───────────────────────────────────────────────────────
 additional_datasets_schemas:
   VirulenceFinder:
     info:
@@ -684,60 +119,10 @@ additional_datasets_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      serotype:
-        original_name: serotypefinder_serotype
-        type: categorical
-        label: Serotype (Finder)
-      virulence_raw:
-        original_name: virulence_finder_virulencegenes_proteinname
-        type: categorical
-        label: Raw Virulence Hit
-    wrangling:
-      tier1:
-      - action: keep_columns
-        columns:
-        - sample_id
-        - serotype
-        - virulence_raw
-      - action: split_and_explode
-        columns:
-        - virulence_raw
-        separator: ','
-      - action: strip_whitespace
-        columns:
-        - virulence_raw
-      - action: split_column
-        source: virulence_raw
-        new_columns:
-        - VF_gene
-        - VF_protein
-        delimiter: ': '
-        drop_source: true
-      - action: strip_whitespace
-      - action: unique_rows
-    output_fields:
-      sample_id:
-        type: numeric
-        original_name: sample_id
-        label: Sample Id
-      serotype:
-        type: categorical
-        original_name: serotype
-        label: Serotype
-      VF_gene:
-        type: categorical
-        original_name: VF_gene
-        label: Vf Gene
-      VF_protein:
-        type: categorical
-        original_name: VF_protein
-        label: Vf Protein
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
+
   APEC_STEC_virulence_genes:
     info:
       category: Gene detection
@@ -746,27 +131,13 @@ additional_datasets_schemas:
     source:
       type: local_tsv
       path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
-    input_fields:
-      Gene_name:
-        original_name: Gene_name
-        type: categorical
-        label: Gene Name
-      Location:
-        original_name: Location
-        type: categorical
-        label: Location
-      Name_plasmid:
-        original_name: Name_plasmid
-        type: categorical
-        label: Name Plasmid
-      VirulenceFinder:
-        original_name: VirulenceFinder
-        type: categorical
-        label: Virulencefinder
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/APEC_STEC_virulence_genes_input_fields.yaml'
     wrangling:
       tier1:
         - action: strip_whitespace
     output_fields: {}
+
+# ── Metadata Schema ───────────────────────────────────────────────────────────
 metadata_schema:
   info:
     category: Metadata
@@ -774,145 +145,52 @@ metadata_schema:
   source:
     type: local_tsv
     path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
-  input_fields:
-    sample_id:
-      original_name: Sample_ID
-      type: categorical
-      label: Sample ID
-      is_primary_key: true
-    source:
-      original_name: Source
-      type: categorical
-      label: Biological Source
-    year:
-      original_name: Year
-      type: numeric
-      label: Collection Year
-    country:
-      original_name: Country
-      type: categorical
-      label: Origin Country
-  wrangling:
-    tier1:
-    - action: cast
-      columns: [year]
-      dtype: Int64
-  output_fields:
-    sample_id:
-      type: numeric
-      original_name: sample_id
-      label: Sample Id
-    source:
-      type: categorical
-      original_name: source
-      label: Source
-    year:
-      type: numeric
-      original_name: year
-      label: Year
-    country:
-      type: categorical
-      original_name: country
-      label: Country
+  input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
+  wrangling: !include '1_test_data_ST22_dummy/wrangling/metadata_schema_wrangling.yaml'
+  output_fields: !include '1_test_data_ST22_dummy/output_fields/metadata_schema_output_fields.yaml'
+
+# ── Assembly Manifests ────────────────────────────────────────────────────────
+# Simple joins: see wrangling/ for each recipe.
+# Complex assemblies (ST22_Anchor, AR1) also have final_contract in output_fields/.
 assembly_manifests:
   FastP_with_metadata:
     ingredients:
     - dataset_id: FastP
     - dataset_id: metadata_schema
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: metadata_schema
-        'on':
-        - sample_id
+    recipe: !include '1_test_data_ST22_dummy/wrangling/FastP_Metadata_wrangling.yaml'
+
   Quast_with_metadata:
     ingredients:
     - dataset_id: Quast
     - dataset_id: metadata_schema
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: metadata_schema
-        'on':
-        - sample_id
-      - action: unpivot
-        index:
-        - sample_id
-        - source
-        - country
-        'on':
-        - n50
-        - total_length
-        - largest_contig
-        variable_name: metric
-        value_name: value
-      # Defensive: ensure value is Float64 for geom_violin/boxplot kernel density.
-      - action: cast
-        columns: [value]
-        dtype: Float64
+    recipe: !include '1_test_data_ST22_dummy/wrangling/Quast_Metadata_wrangling.yaml'
+
   Bracken_with_metadata:
     ingredients:
     - dataset_id: Bracken
     - dataset_id: metadata_schema
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: metadata_schema
-        'on':
-        - sample_id
+    recipe: !include '1_test_data_ST22_dummy/wrangling/Bracken_Metadata_wrangling.yaml'
+
   ResFinder_with_metadata:
     ingredients:
     - dataset_id: ResFinder
     - dataset_id: metadata_schema
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: metadata_schema
-        'on':
-        - sample_id
+    recipe: !include '1_test_data_ST22_dummy/wrangling/ResFinder_Metadata_wrangling.yaml'
+
   MLST_with_metadata:
     ingredients:
     - dataset_id: MLST
     - dataset_id: metadata_schema
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: metadata_schema
-        'on':
-        - sample_id
-      # DATA-2 (2026-04-30): purposeful T2 transforms so users can SEE the
-      # T1 → T2 difference when toggling the tier in the UI. Without this,
-      # T1 and T2 produce the exact same frame for this assembly.
-      tier2:
-      # 1. Add an `era` derived column visible in the data preview
-      - action: mutate
-        column: era
-        expression: "pl.when(pl.col('year') < 2024).then(pl.lit('Early')).otherwise(pl.lit('Recent'))"
-      # 2. Filter to recent samples only — visibly drops some rows in T2 view
-      - action: filter_range
-        columns: [year]
-        min: 2023
-        max: 2025
+    recipe: !include '1_test_data_ST22_dummy/wrangling/MLST_Metadata_wrangling.yaml'
+
   QC_Reads_Anchor:
     ingredients:
     - dataset_id: FastP
     - dataset_id: Quast
     - dataset_id: Bracken
     - dataset_id: metadata_schema
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: Quast
-        'on':
-        - sample_id
-      - action: join
-        right_ingredient: Bracken
-        'on':
-        - sample_id
-      - action: join
-        right_ingredient: metadata_schema
-        'on':
-        - sample_id
+    recipe: !include '1_test_data_ST22_dummy/wrangling/QC_Reads_Anchor_wrangling.yaml'
+
   Summary_phenotype_length_fragmentation:
     info: 'Demo: Assembly to prepare plot attempting to link some predicted phenotype
       categories to some quality metrics. in relation to genome length, and fragmentation
@@ -920,62 +198,9 @@ assembly_manifests:
     ingredients:
     - dataset_id: Summary
     - dataset_id: Summary_quality
-    recipe:
-    - action: filter_eq
-      column: category
-      value: phenotype
-    - action: recode_values
-      column: value
-      new_column: resistance_points
-      rules:
-      - matches: Susceptible
-        value: 0
-      - starts_with: unknown
-        value: null
-      - default: 1
-    - action: summarize
-      group_by:
-      - sample_id
-      - ST
-      columns:
-      - resistance_points
-      agg: sum
-      new_name: phenotype_count
-    - action: join
-      right_ingredient: Summary_quality
-      'on': sample_id
-    - action: unpivot
-      index:
-      - sample_id
-      - ST
-      - phenotype_count
-      true:
-      - genome_length
-      - N50
-      - contigs_sup300bp
-      variable_name: quality_metric
-      value_name: quality_value
-    output_fields:
-      sample_id:
-        type: categorical
-        label: Sample ID
-        original_name: sample_id
-      ST:
-        type: categorical
-        label: Sequence Type
-        original_name: ST
-      phenotype_count:
-        type: numeric
-        label: Resistance Score
-        original_name: phenotype_count
-      quality_metric:
-        type: categorical
-        label: Metric
-        original_name: quality_metric
-      quality_value:
-        type: numeric
-        label: Value
-        original_name: quality_value
+    recipe: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly_output_fields.yaml'
+
   ST22_Anchor:
     description: Primary joined dataset for ST22 Dummy analysis.
     ingredients:
@@ -985,82 +210,9 @@ assembly_manifests:
     - dataset_id: MLST
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
-    recipe:
-      tier1:
-      - action: cast
-        columns:
-        - sample_id
-        dtype: String
-      - action: join
-        right_ingredient: FastP
-        'on':
-        - sample_id
-      - action: join
-        right_ingredient: ResFinder
-        'on':
-        - sample_id
-      - action: join
-        right_ingredient: MLST
-        'on':
-        - sample_id
-      - action: join
-        right_ingredient: VirulenceFinder
-        'on':
-        - sample_id
-      - action: join_filter
-        right_ingredient: APEC_STEC_virulence_genes
-        left_on: VF_gene
-        right_on: Gene_name
-      - action: rename
-        mapping:
-          VF_gene: Selected_Virulence_Genes
-      tier2:
-      - action: count_by_group
-        group_by:
-        - sample_id
-        new_column: virulence_count
-      - action: sort
-        columns:
-        - virulence_count
-        - sample_id
-        descending:
-        - true
-        - false
-    final_contract:
-      sample_id:
-        type: numeric
-        label: Sample ID
-        is_primary_key: true
-      source:
-        type: categorical
-        label: Biological Source
-      year:
-        type: numeric
-        label: Collection Year
-      country:
-        type: categorical
-        label: Origin Country
-      sequence_type:
-        type: categorical
-        label: MLST Sequence Type
-      serotype:
-        type: categorical
-        label: Serotype
-      Selected_Virulence_Genes:
-        type: categorical
-        label: Gene (VirulenceFinder)
-      VF_protein:
-        type: categorical
-        label: Protein (VirulenceFinder)
-      gene:
-        type: categorical
-        label: AMR Gene
-      status:
-        type: categorical
-        label: Phenotype Status
-      phenotype:
-        type: categorical
-        label: AMR Class / Phenotype
+    recipe: !include '1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/output_fields/ST22_Anchor_final_output_fields.yaml'
+
   AR1_MLST_Serotype_Virulence:
     description: Production-grade Sample-to-Gene Mapping (Abromics Pilot).
     ingredients:
@@ -1068,231 +220,48 @@ assembly_manifests:
     - dataset_id: metadata_schema
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: MLST
-        'on': sample_id
-        how: left
-      - action: join
-        right_ingredient: metadata_schema
-        'on': sample_id
-        how: left
-      - action: join
-        right_ingredient: VirulenceFinder
-        'on': sample_id
-        how: left
-      - action: join_filter
-        right_ingredient: APEC_STEC_virulence_genes
-        left_on: VF_gene
-        right_on: Gene_name
-        how: inner
-      - action: rename
-        mapping:
-          VF_gene: selected_virulence_genes
-          VF_protein: vf_protein
-    final_contract:
-      sample_id:
-        type: categorical
-        label: Sample ID
-        is_primary_key: true
-      source:
-        type: categorical
-        label: Biological Source
-      year:
-        type: numeric
-        label: Collection Year
-      country:
-        type: categorical
-        label: Origin Country
-      sequence_type:
-        type: categorical
-        label: MLST Sequence Type
-      serotype:
-        type: categorical
-        label: Serotype
-      selected_virulence_genes:
-        type: categorical
-        label: Gene (VirulenceFinder)
-      vf_protein:
-        type: categorical
-        label: Protein (VirulenceFinder)
+    recipe: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
+
+# ── Analysis Groups ───────────────────────────────────────────────────────────
+# Plot specs: see plots/ for each spec file.
 analysis_groups:
   Quality Control:
     description: 📊 Quality Control
     plots:
       qc_reads_horizontal_barplot:
         info: Provides a distribution of total reads per sample by taxonomy proportion.
-        spec:
-          factory_id: bar_logic
-          target_dataset: QC_Reads_Anchor
-          x: total_reads
-          y: sample_id
-          fill: proportion_1
-          title: Reads Quality & Taxonomy Proportion
-          coordinate_flip: true
-          family: Distribution
-          pattern: 1 Numeric, 2 Categorical
-          description: Shows total reads (FastP) colored by the proportion of the
-            top-ranking taxon (Bracken).
-          difficulty: Intermediate
+        spec: !include '1_test_data_ST22_dummy/plots/FastP_reads_horizontal_barplot.yaml'
       assembly_quality_dotplot:
         info: Provides a distribution of assembly quality metrics per sample.
-        spec:
-          factory_id: boxplot_logic
-          target_dataset: Quast_with_metadata
-          x: metric
-          y: value
-          facet_by: metric
-          facet_scales: free_y
-          fill: metric
-          title: Assembly Quality Metrics (Quast)
-          family: Distribution
-          pattern: 1 Numeric, 1 Categorical
-          description: Facetted boxplot to identify assembly outliers across metrics
-            (N50, Length, etc.).
-          difficulty: Intermediate
+        spec: !include '1_test_data_ST22_dummy/plots/Quast_assembly_quality_barplot.yaml'
+
   Curiosity:
     description: ❓ Curiosity plots
     plots:
       phenotype_genome_length_fragmentation:
         info: Provides a distribution of genome length per sample by phenotype.
-        spec:
-          title: Phenotype Score correlation with Assembly Metrics
-          target_dataset: Summary_phenotype_length_fragmentation
-          mapping:
-            x: phenotype_count
-            y: quality_value
-            color: ST
-          layers:
-          - name: geom_point
-            params:
-              alpha: 0.6
-              size: 2.5
-              position: jitter
-          - name: geom_smooth
-            params:
-              method: lm
-              se: true
-              color: black
-              alpha: 0.2
-          - name: facet_wrap
-            params:
-              facets: ~ quality_metric
-              scales: free_y
-              ncol: 1
-          labs:
-            x: Resistance Score (Count of Resistance Phenotypes)
-            y: Metric Value
-            title: How Resistance Phenotype Count influences Assembly Quality
+        spec: !include '1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml'
+
   Results:
     description: 💊 AMR and ☠️ Virulence
     plots:
       amr_heatmap:
         info: Heatmap showing AMR gene presence across samples.
-        spec:
-          title: AMR Genes Presence by Category
-          target_dataset: ResFinder
-          x: gene
-          y: sample_id
-          fill: phenotype
-          layers:
-          - name: geom_tile
-            params:
-              color: white
-              size: 0.1
-          - name: element_text
-            params:
-              target: axis_text_x
-              angle: 90
-              hjust: 1
-              vjust: 0.5
-              size: 8
-          - name: element_text
-            params:
-              target: axis_text_y
-              size: 4
-          - name: theme_minimal
-            params: {}
-          family: Correlation
-          pattern: 1 Numeric, 2 Categorical
-          difficulty: Intermediate
+        spec: !include '1_test_data_ST22_dummy/plots/ResFinder_genes_heatmap.yaml'
       virulence_bar:
         info: Bar chart counting selected virulence genes.
-        spec:
-          title: Selected Virulence Genes Count
-          target_dataset: ST22_Anchor
-          x: sample_id
-          fill: Selected_Virulence_Genes
-          layers:
-          - name: theme_minimal
-            params: {}
-          - name: geom_bar
-            params:
-              stat: count
-              width: 0.7
-          - name: labs
-            params:
-              x: Sample Id
-              y: Count
-              fill: Selected Virulence Genes
-          - name: element_text
-            params:
-              target: axis_text_x
-              angle: 90
-              hjust: 1
-              vjust: 0.5
-              size: 6
-          - name: theme_legend_position
-            params:
-              position: bottom
-          family: Ranking
-          pattern: 1 Numeric, 1 Categorical
-          difficulty: Intermediate
+        spec: !include '1_test_data_ST22_dummy/plots/VirulenceFinder_counts_bar.yaml'
       mlst_bar:
         info: Bar chart showing frequency of sequence types by territory.
-        spec:
-          factory_id: bar_logic
-          target_dataset: MLST_with_metadata
-          x: sequence_type
-          fill: country
-          title: MLST Sequence Type Distribution by Country
-          family: Ranking
-          pattern: 2 Categorical
-          description: Bar chart showing the frequency of MLST sequence types, filled
-            by the origin country.
-          difficulty: Simple
+        spec: !include '1_test_data_ST22_dummy/plots/MLST_counts_bar.yaml'
       year_distribution:
         info: "T1/T2 tier-toggle test: T1 shows all years, T2 filters to 2023-2025 only. Missing bars prove the toggle works."
-        spec:
-          factory_id: bar_logic
-          target_dataset: MLST_with_metadata
-          x: year
-          fill: country
-          title: "Sample Count by Year (T1 = all years, T2 = 2023–2025 only)"
-          family: Ranking
-          pattern: 1 Numeric, 1 Categorical
-          description: "Use this plot to verify T1↔T2 toggle. T2 drops rows outside 2023-2025 — earlier years disappear."
-          difficulty: Simple
-          layers:
-            - name: scale_x_continuous
-              params:
-                breaks_integer: true
+        spec: !include '1_test_data_ST22_dummy/plots/year_distribution.yaml'
       virulence_variants:
         info: Integration plot showing AMR + Virulence + MLST.
-        spec:
-          factory_id: heatmap_logic
-          target_dataset: ST22_Anchor
-          x: Selected_Virulence_Genes
-          y: sample_id
-          facet_by: sequence_type
-          color: status
-          title: Integrated Virulence & MLST Typing
-          family: Correlation
-          pattern: 2 Categorical
-          description: Heatmap showing the distribution of whitelisted virulence genes,
-            facetted by the MLST sequence type.
-          difficulty: Advanced
+        spec: !include '1_test_data_ST22_dummy/plots/integration_plot.yaml'
+
   Cat 🐱:
     label: "🐱 Cat"
     description: The boss's favourite — violin plots
@@ -1301,26 +270,14 @@ analysis_groups:
         label: "Miaou 🐈"
         info: Miaou! Distribution of assembly metrics across sources — the boss's
           favourite shape.
-        spec:
-          factory_id: violin_logic
-          target_dataset: Quast_with_metadata
-          x: source
-          y: value
-          fill: source
-          facet_by: metric
-          facet_scales: free_y
-          title: 🐱 Miaou — Assembly Metric Distributions by Source
-          family: Distribution
-          pattern: 1 Numeric, 1 Categorical
-          description: Violin plot showing the distribution of n50, total_length,
-            and largest_contig per source, facetted by metric. Wide bellies = wide
-            spread, narrow tails = consistent values.
-          difficulty: Intermediate
+        spec: !include '1_test_data_ST22_dummy/plots/miaou.yaml'
+
 plot_defaults:
   height: 450
   theme: theme_minimal
   show_legend: true
   default_font_family: "Liberation Sans"
+
 wrangling:
   tier1: []
   tier2: []

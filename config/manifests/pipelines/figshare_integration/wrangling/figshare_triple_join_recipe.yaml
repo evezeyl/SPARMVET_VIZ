@@ -1,0 +1,9 @@
+tier1:
+  - action: join
+    right_ingredient: fg_phenotypes
+    'on': sample_id
+    how: left
+  - action: join
+    right_ingredient: fg_genotypes
+    'on': sample_id
+    how: left

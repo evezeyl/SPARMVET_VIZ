@@ -1,42 +1,91 @@
+# Audit / Quality Control Manifest Template
+# Use for auditing lab submission logs, pipeline run records, or QC dashboards.
+
 id: "audit_01"
 type: "audit"
-metadata:
+info:
   display_name: "Lab Submission Audit"
   category: "Quality Control"
-  description: "Configuration for auditing lab submission data, including expected data schema and default visualizations for performance monitoring."
+  description: "Template for auditing lab submission data: TAT monitoring, throughput, and status tracking."
   version: "1.0"
 
-
-# 1. DATA CONTRACT: What do the lab logs look like?
 data_schemas:
   submission_logs:
-    lab_id: { type: "categorical", label: "Source Laboratory", is_primary_key: true }
-    submission_date: { type: "date", label: "Date of Submission", format: "%Y-%m-%d" }
-    status: { type: "categorical", label: "Processing Status" }
-    turnaround_time: { type: "numeric", label: "TAT (Days)" }
+    source:
+      type: "local_tsv"
+      path: "./assets/audit_data/submission_logs.tsv"
+    input_fields:
+      lab_id:
+        original_name: "lab_id"
+        type: "categorical"
+        is_primary_key: true
+        label: "Source Laboratory"
+      submission_date:
+        original_name: "submission_date"
+        type: "categorical"
+        label: "Date of Submission"
+      status:
+        original_name: "status"
+        type: "categorical"
+        label: "Processing Status"
+      turnaround_time:
+        original_name: "turnaround_time"
+        type: "numeric"
+        label: "TAT (Days)"
+    wrangling:
+      tier1:
+        - action: "strip_whitespace"
+    output_fields:
+      lab_id:
+        original_name: "lab_id"
+        type: "categorical"
+        label: "Source Laboratory"
+      submission_date:
+        original_name: "submission_date"
+        type: "categorical"
+        label: "Date of Submission"
+      status:
+        original_name: "status"
+        type: "categorical"
+        label: "Processing Status"
+      turnaround_time:
+        original_name: "turnaround_time"
+        type: "numeric"
+        label: "TAT (Days)"
 
-# 2. ANALYSIS HIERARCHY: Organized by management needs
 plot_defaults:
   height: 500
   theme: "theme_minimal"
-  colorscale: "Portland" # High contrast for status reports
+  show_legend: true
 
 analysis_groups:
   Performance:
-    description: "Lab Speed and Efficiency"
+    description: "⏱️ Lab Speed and Efficiency"
     plots:
-      tat_over_time: # Unique ID
-        factory_id: "scatter_logic"
-        x_axis: "submission_date"
-        y_axis: "turnaround_time"
-        color_by: "lab_id"
-        title: "Turnaround Time Trends"
-  
+      tat_distribution:
+        info: "Distribution of turnaround times per laboratory."
+        spec:
+          factory_id: "boxplot_logic"
+          target_dataset: "submission_logs"
+          x: "lab_id"
+          y: "turnaround_time"
+          fill: "lab_id"
+          title: "Turnaround Time by Laboratory"
+          family: Distribution
+          pattern: "1 Numeric, 1 Categorical"
+          difficulty: Simple
+
   Volumes:
-    description: "Throughput and Backlogs"
+    description: "📦 Throughput and Backlogs"
     plots:
-      submission_status: # Unique ID
-        factory_id: "bar_logic"
-        target_dataset: "submission_logs"
-        target_col: "status"
-        title: "Submissions by Current Status"
+      submission_status:
+        info: "Submissions by current processing status."
+        spec:
+          factory_id: "bar_logic"
+          target_dataset: "submission_logs"
+          x: "status"
+          fill: "lab_id"
+          title: "Submissions by Current Status"
+          family: Ranking
+          pattern: "2 Categorical"
+          difficulty: Beginner

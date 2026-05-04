@@ -1,0 +1,16 @@
+sample_id:
+  original_name: sample_id
+  type: categorical
+  label: Sample Id
+gene:
+  original_name: gene
+  type: categorical
+  label: Gene
+gene_name_family:
+  original_name: gene_name_family
+  type: categorical
+  label: Gene Name Family
+resistance_class:
+  original_name: resistance_class
+  type: categorical
+  label: Resistance Class

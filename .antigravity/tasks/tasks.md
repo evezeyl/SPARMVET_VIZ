@@ -5,39 +5,20 @@
 
 ---
 
-## 🟣 Completed Phases — Archived
+## Detected changes & after demo notes - to review
 
-| Phase | Description | Completed | Archive |
-|---|---|---|---|
-| Phases 16–18, 21-A–B | Nav/routing, manifest-driven tabs, tier toggle, layout | 2026-04-23 | [tasks_archive_2026-04-10.md](archives/tasks_archive_2026-04-10.md) |
-| Phase 21-C–I, IU-1–7 | Comparison mode, filters, right sidebar, export bundle, VizFactory | 2026-04-23–30 | [tasks_archive_2026-04-14.md](archives/tasks_archive_2026-04-14.md) |
-| Phase 22 (A–J) | Session mgmt, T3 audit, per-plot scoping, propagation | 2026-04-25 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
-| Phase 23-A/B | Deployment profile, connector library | 2026-04-30 | [tasks_archive_phase24.md](archives/tasks_archive_phase24.md) |
-| Phase 24 | `home_theater.py` decomposition (ADR-051) | 2026-05-01 | [tasks_archive_phase24.md](archives/tasks_archive_phase24.md) |
-| Phase 25 (A–O) | Left sidebar restructure, persona flag gating, ADR-052+053 | 2026-05-01 | [tasks_archive_phase25.md](archives/tasks_archive_phase25.md) |
-| Phase 26 CSS | UI harmonisation: view banners, button colours, Gallery sidebar refactor, sidebar toggle, modal radio spacing | 2026-05-02 | ADR-056, ADR-057 |
-| DEMO-1..4 | Monday demo render/filter bugs — all fixed | 2026-04-30 | commits `55ab1c5` `33afa1b` `b91dfc9` `4c962e6` `8b4f3a4` |
-| AUDIT-1 | Allow PK-column filters with warning (ADR-049 amended) | 2026-04-30 | commit `3c6195f` |
-| PROP-1 | Per-plot column-presence preview in propagation modal | 2026-04-30 | commit `b4dcd10` |
-| UX-3/5 | Filter row 🗑 icon + right sidebar header bold/yellow | 2026-05-01 | commit `294814e` |
-| UX-4 | "➜ Send to Audit (N)" rename in T3 mode | 2026-05-02 | `filter_and_audit_handlers.py` |
-| UX-2 | Data preview selectize width — covered by `.column-picker-container` CSS | 2026-05-02 | `theme.css` Phase 26 |
-| PERSONA-1b | Persona-name gate doc-drift | 2026-05-01 | commit `7344951` |
-| STARTUP-SORT | Duplicate `sort` registration warning on startup | 2026-05-02 | commit `130f4f5` |
-| SESSION-1 | Session reimport fails (no assembly.json) | 2026-05-02 | `session_manager.py`, `home_theater.py` |
-| EXPORT-SGE-1/5/6 | Single graph export: plot/data filenames + README hashes | 2026-05-02 | `single_graph_export_handlers.py` |
-| EXPORT-SGE-3 | Apply button vestigial — confirmed absent, closed | 2026-05-02 | no code change |
-| UX-FONT-1 | `default_font_family: "Liberation Sans"` in test manifests | 2026-05-02 | `1/2_test_data_ST22_dummy`, `stress_test_master` |
-| persona_selector orphan | Removed dead `update_persona_context` handler | 2026-05-02 | `ingestion_handlers.py` |
-| VizFactory timedelta | `scale_x/y_timedelta` — works in plotnine 0.15.3, smoke-tested | 2026-05-01 | 42/42 pass |
-| Bugs/Export/Import/UX resolved 2026-05-02 | STATE-T2, STATE-1/2, BUG-PERF-1, AUDIT-2/3/4, PROP-4, EXPORT-TIERS/SGE-2/4/7, IMPORT-1, UX-1, UX-NOTIF-1 | 2026-05-02 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
-| Wave 1 Remediation | §1A §2B §3B §3D §5 §6A/B/C §7A/B §8 + test fixes | 2026-05-03 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
-| CSS / Gallery Sprint 2026-05-03 | CSS-TOGGLE, GALLERY-ICONS/SELECTALL/PIVOT/PANES/META/RECIPES-13/TAXONOMY-6/CHEAT/PREVIEWS/META-6AXIS, CSS-ACCORDION-HARM, HOME-PLOT-COLLAPSE, BLUEPRINT-WORK-COLLAPSE, REVERT-ADR064-COLLAPSE, CSS-BLUE-HARM/FIXES, UI-STYLE-GUIDE | 2026-05-03 | ADR-056..065 |
+- [ ] Verification: Manifest 1_test_data_ST22_dummy: seems that the main manifest became a huge chunk instead of using the !include Tag. We need to ensure that main manifest links to appropriate directory and file substructure - no huge chunk. Can you verify this ? Create additional directories. The goal is to provide a human redeable structure of the main manifest, so it can understand the general idea of what the manifest does. Eg. Groups in main, plots definitions via !include. 
 
-**Phase 24 commits:** `89bb5ef` `890b609` `f540cbf` `d50197e` `4c38f26` `18dbd46` `f0f7d92` `2393e50` `0b50fbd`
-**Phase 25 commits:** `294814e` `9b66656` `72726df` `45591ac` `95b48ac` `dc4464c` `320f6bf`
+- [ ] There has been a duplication / missunderstanding in the Global Project Export. I was not like that Saturday or sunday morning I think. The  gloal export should export everything. 
+The selectors are correct Except for the Export Audit Report. The audit report should always be included as export when T3 has been activated AND that there has been some changes to T3.
+The export format should follow the Report format, and should be included in the report - with the justifications provided by the user. AND the recipe of the T3 changes should also be included as part of the manifest (T3 - steps included). So there should be only one Export Bundle button that exports EVERYTHING, but it should include everything (data, plots, recipes, audit report) when T3 has been activated. We might adjust content of export later on by configuration IF we get more funding / other use cases - for now it is how it should be used. The readme and everything defined. We need a place with a file where we define what is exported - as permanent memory. 
 
----
+- [ ] The single graph export should export the manifest including T3 changes - backtracing the complete recipe for this plot. Should produce a report with the T3 changes and user reasons in the report. Same as before above, except that its only the manifest for the specific lineage of the plot.  Same buttons OR we change The Global Project Export and add a toogle : Global project / Active plot toogle. But some personalities config will only allow global export while other will allow both. 
+
+
+- [ ] Assembly : was it the joining part of the data ? if so Assembly should be renamed Joining everywhere where it is found (incl. code - to make that clearerer) or similar ... boss hooked on this (because assembly means something totally different in bioinformatics)
+
+
 
 ## 🟡 Active Lineage Build: ST22
 
@@ -159,6 +140,43 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 - [ ] **Field Gap Analysis tool**: Field name → walk lineage to earliest insertion point.
 - [ ] **Forward propagation hint**: Show which output_fields / final_contract files need updating.
 - [ ] **UX-NOTIF-3**: Project-load notification for Blueprint Architect manifest reload. Hook into `blueprint_handlers.py` after a successful manifest import (`btn_import_manifest` path). Low priority; tackle during Blueprint debug pass.
+
+
+---
+
+## 🟣 Completed Phases — Archived
+
+| Phase | Description | Completed | Archive |
+|---|---|---|---|
+| Phases 16–18, 21-A–B | Nav/routing, manifest-driven tabs, tier toggle, layout | 2026-04-23 | [tasks_archive_2026-04-10.md](archives/tasks_archive_2026-04-10.md) |
+| Phase 21-C–I, IU-1–7 | Comparison mode, filters, right sidebar, export bundle, VizFactory | 2026-04-23–30 | [tasks_archive_2026-04-14.md](archives/tasks_archive_2026-04-14.md) |
+| Phase 22 (A–J) | Session mgmt, T3 audit, per-plot scoping, propagation | 2026-04-25 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
+| Phase 23-A/B | Deployment profile, connector library | 2026-04-30 | [tasks_archive_phase24.md](archives/tasks_archive_phase24.md) |
+| Phase 24 | `home_theater.py` decomposition (ADR-051) | 2026-05-01 | [tasks_archive_phase24.md](archives/tasks_archive_phase24.md) |
+| Phase 25 (A–O) | Left sidebar restructure, persona flag gating, ADR-052+053 | 2026-05-01 | [tasks_archive_phase25.md](archives/tasks_archive_phase25.md) |
+| Phase 26 CSS | UI harmonisation: view banners, button colours, Gallery sidebar refactor, sidebar toggle, modal radio spacing | 2026-05-02 | ADR-056, ADR-057 |
+| DEMO-1..4 | Monday demo render/filter bugs — all fixed | 2026-04-30 | commits `55ab1c5` `33afa1b` `b91dfc9` `4c962e6` `8b4f3a4` |
+| AUDIT-1 | Allow PK-column filters with warning (ADR-049 amended) | 2026-04-30 | commit `3c6195f` |
+| PROP-1 | Per-plot column-presence preview in propagation modal | 2026-04-30 | commit `b4dcd10` |
+| UX-3/5 | Filter row 🗑 icon + right sidebar header bold/yellow | 2026-05-01 | commit `294814e` |
+| UX-4 | "➜ Send to Audit (N)" rename in T3 mode | 2026-05-02 | `filter_and_audit_handlers.py` |
+| UX-2 | Data preview selectize width — covered by `.column-picker-container` CSS | 2026-05-02 | `theme.css` Phase 26 |
+| PERSONA-1b | Persona-name gate doc-drift | 2026-05-01 | commit `7344951` |
+| STARTUP-SORT | Duplicate `sort` registration warning on startup | 2026-05-02 | commit `130f4f5` |
+| SESSION-1 | Session reimport fails (no assembly.json) | 2026-05-02 | `session_manager.py`, `home_theater.py` |
+| EXPORT-SGE-1/5/6 | Single graph export: plot/data filenames + README hashes | 2026-05-02 | `single_graph_export_handlers.py` |
+| EXPORT-SGE-3 | Apply button vestigial — confirmed absent, closed | 2026-05-02 | no code change |
+| UX-FONT-1 | `default_font_family: "Liberation Sans"` in test manifests | 2026-05-02 | `1/2_test_data_ST22_dummy`, `stress_test_master` |
+| persona_selector orphan | Removed dead `update_persona_context` handler | 2026-05-02 | `ingestion_handlers.py` |
+| VizFactory timedelta | `scale_x/y_timedelta` — works in plotnine 0.15.3, smoke-tested | 2026-05-01 | 42/42 pass |
+| Bugs/Export/Import/UX resolved 2026-05-02 | STATE-T2, STATE-1/2, BUG-PERF-1, AUDIT-2/3/4, PROP-4, EXPORT-TIERS/SGE-2/4/7, IMPORT-1, UX-1, UX-NOTIF-1 | 2026-05-02 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
+| Wave 1 Remediation | §1A §2B §3B §3D §5 §6A/B/C §7A/B §8 + test fixes | 2026-05-03 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
+| CSS / Gallery Sprint 2026-05-03 | CSS-TOGGLE, GALLERY-ICONS/SELECTALL/PIVOT/PANES/META/RECIPES-13/TAXONOMY-6/CHEAT/PREVIEWS/META-6AXIS, CSS-ACCORDION-HARM, HOME-PLOT-COLLAPSE, BLUEPRINT-WORK-COLLAPSE, REVERT-ADR064-COLLAPSE, CSS-BLUE-HARM/FIXES, UI-STYLE-GUIDE | 2026-05-03 | ADR-056..065 |
+
+**Phase 24 commits:** `89bb5ef` `890b609` `f540cbf` `d50197e` `4c38f26` `18dbd46` `f0f7d92` `2393e50` `0b50fbd`
+**Phase 25 commits:** `294814e` `9b66656` `72726df` `45591ac` `95b48ac` `dc4464c` `320f6bf`
+
+
 
 ---
 

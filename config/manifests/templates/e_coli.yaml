@@ -1,79 +1,154 @@
-# IMPORTANT: MUST BE WRITTEN AS DICTIONARY (so indentation and : and not - which is yaml list)
+# E. coli Species Template
+# Domain-specific starting point for STEC / E. coli AMR pipeline manifests.
+# Replace paths and field names with real pipeline outputs.
+
 id: "ecoli_v1"
 type: "species"
-metadata:
+info:
   display_name: "E. coli Comprehensive Analysis"
-  category: "AMR analysis"
-  description: "Configuration for E. coli data, including data contract and plotting defaults. And include more specifics"
+  category: "AMR Analysis"
+  description: "Template for E. coli data: AMR genes, MLST, serotype, and growth phenotype."
   version: "1.0"
 
-# 1. DATA CONTRACT: What columns exist and what is their nature? 
-data_schemas: # Dictionary mapping dataset names to their respective column schemas
-  legacy_results:
-    sample_id: { type: "character", label: "Sample ID", is_primary_key: true }
-    serotype: { type: "categorical", label: "Serotype" }
-    ST: { type: "categorical", label: "Sequence Type" }
-    "bla_CTX-M": { type: "boolean", label: "CTX-M Gene" }
-    "growth_rate": { type: "numeric", label: "Growth Rate (OD600)" }
-
-metadata_schema: # ingestion of metadata - contract
-  required_id_column: "isolate_id"  # defines what metadata fields are expected for this species
-  fields:
-    collection_date: { type: "date", label: "Collection Date", format: "%Y-%m-%d", mandatory: true }
-    country_of_origin: { type: "categorical", label: "Country of Origin", mandatory: false }
-    hospital_site: { type: "categorical", label: "Hospital Site", mandatory: false }
-    patient_age: { type: "numeric", label: "Patient Age", mandatory: false }   
-    patient_outcome: # other way to write the dictionary 
-        label: "Outcome"
+data_schemas:
+  amr_results:
+    source:
+      type: "local_tsv"
+      path: "./assets/pipeline_output/ecoli_amr_results.tsv"
+    input_fields:
+      sample_id:
+        original_name: "sample_id"
         type: "categorical"
-        mandatory: false
-        options: ["recovered", "deceased", "ongoing"]
+        is_primary_key: true
+        label: "Sample ID"
+      serotype:
+        original_name: "serotype"
+        type: "categorical"
+        label: "Serotype"
+      sequence_type:
+        original_name: "ST"
+        type: "categorical"
+        label: "Sequence Type"
+      ctx_m_gene:
+        original_name: "bla_CTX-M"
+        type: "categorical"
+        label: "CTX-M Gene"
+      growth_rate:
+        original_name: "growth_rate"
+        type: "numeric"
+        label: "Growth Rate (OD600)"
+    wrangling:
+      tier1:
+        - action: "strip_whitespace"
+    output_fields:
+      sample_id:
+        original_name: "sample_id"
+        type: "categorical"
+        label: "Sample ID"
+      serotype:
+        original_name: "serotype"
+        type: "categorical"
+        label: "Serotype"
+      sequence_type:
+        original_name: "sequence_type"
+        type: "categorical"
+        label: "Sequence Type"
+      ctx_m_gene:
+        original_name: "ctx_m_gene"
+        type: "categorical"
+        label: "CTX-M Gene"
+      growth_rate:
+        original_name: "growth_rate"
+        type: "numeric"
+        label: "Growth Rate (OD600)"
 
-# 2. ANALYSIS HIERARCHY: How should the UI organize these? Plotting
+metadata_schema:
+  source:
+    type: "local_tsv"
+    path: "./assets/pipeline_output/ecoli_metadata.tsv"
+  input_fields:
+    sample_id:
+      original_name: "isolate_id"
+      type: "categorical"
+      is_primary_key: true
+    collection_date:
+      original_name: "collection_date"
+      type: "categorical"
+      label: "Collection Date"
+    country_of_origin:
+      original_name: "country_of_origin"
+      type: "categorical"
+      label: "Country of Origin"
+    hospital_site:
+      original_name: "hospital_site"
+      type: "categorical"
+      label: "Hospital Site"
+    patient_age:
+      original_name: "patient_age"
+      type: "numeric"
+      label: "Patient Age"
+    patient_outcome:
+      original_name: "patient_outcome"
+      type: "categorical"
+      label: "Outcome"
+  wrangling:
+    tier1: []
+  output_fields:
+    sample_id:
+      original_name: "sample_id"
+      type: "categorical"
+      label: "Sample ID"
+    country_of_origin:
+      original_name: "country_of_origin"
+      type: "categorical"
+      label: "Country of Origin"
+    patient_outcome:
+      original_name: "patient_outcome"
+      type: "categorical"
+      label: "Outcome"
+
+assembly_manifests:
+  amr_with_metadata:
+    description: "Join AMR results with metadata."
+    ingredients:
+      - dataset_id: "amr_results"
+      - dataset_id: "metadata_schema"
+    recipe:
+      tier1:
+        - action: "join"
+          right_ingredient: "metadata_schema"
+          'on': "sample_id"
+          how: "left"
+
 plot_defaults:
   height: 450
   theme: "theme_minimal"
-  colorscale: "Viridis"
   show_legend: true
-
 
 analysis_groups:
   AMR:
-    description: "Antimicrobial Resistance Genes"
+    description: "💊 Antimicrobial Resistance"
     plots:
-      amr_heatmap: # <--- Unique ID (The Key)
-        factory_id: "heatmap_logic"
-        columns: ["bla_CTX-M", "ndm-1", "tetA"]
-        title: "AMR Gene Presence Heatmap"
-        height: 800  
-        colorscale: "Magma"
-  
-  Classification:
-    description: "Lineage and Serotyping"
-    plots:
-      serotype_dist: # <--- Unique ID
-        factory_id: "bar_logic"
-        target_dataset: "legacy_results"
-        target_col: "serotype"
-        color_by: "phylogroup"
-        title: "Serotype Distribution"
-      st_frequency: # <--- Unique ID
-        factory_id: "bar_logic"
-        target_dataset: "legacy_results"
-        target_col: "ST"
-        title: "Sequence Type Frequency"
-
-  Phenotype:
-    description: "Laboratory Growth Data"
-    plots:
-      growth_rate_scatter: # <--- Unique ID
-        factory_id: "scatter_logic"
-        x_axis: "ST"
-        y_axis: "growth_rate"
-        title: "Growth Rate by Sequence Type"
-
-
-# Ingestion: fields -> [column_id] -> {rules}
-# Analysis: plots -> [plot_id] -> {visual_intent}
-
-
+      serotype_dist:
+        info: "Distribution of serotypes across samples."
+        spec:
+          factory_id: "bar_logic"
+          target_dataset: "amr_with_metadata"
+          x: "serotype"
+          fill: "country_of_origin"
+          title: "Serotype Distribution by Country"
+          family: Distribution
+          pattern: "2 Categorical"
+          difficulty: Beginner
+      growth_rate_by_st:
+        info: "Growth rate distribution by sequence type."
+        spec:
+          factory_id: "boxplot_logic"
+          target_dataset: "amr_with_metadata"
+          x: "sequence_type"
+          y: "growth_rate"
+          fill: "sequence_type"
+          title: "Growth Rate by Sequence Type"
+          family: Distribution
+          pattern: "1 Numeric, 1 Categorical"
+          difficulty: Simple

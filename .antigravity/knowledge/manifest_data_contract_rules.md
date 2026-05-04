@@ -1,7 +1,7 @@
 # Manifest Data Contract — Structure, Inheritance & Resolution Rules
 
 **Authority:** ADR-004, ADR-024, ADR-041  
-**Last updated:** 2026-04-21 (Session 7)  
+**Last updated:** 2026-05-04 (manifest modularisation sprint)  
 **Status:** Active — authoritative reference for Blueprint Architect implementation
 
 ---
@@ -199,12 +199,23 @@ Result: UNION of {MLST.input_fields} ∪ {metadata_schema.output_fields}
 
 ## 6. The Two Manifest Styles: Inline vs. Modular
 
+### 6.0 Choosing a style
+
+| Manifest size / complexity | Recommended style |
+|---|---|
+| ≤ ~80 lines, ≤ 2 schemas, ≤ 3 plots | **Inline** — no `!include` needed; entire manifest is self-contained |
+| > ~80 lines OR > 2 schemas OR > 3 plots | **Modular** — use `!include` to keep the master manifest readable at a glance |
+
+Canonical examples:
+- **Inline showcase:** `config/manifests/templates/simple_project_template.yaml` — 1 schema, 1 plot, all inline
+- **Modular showcase:** `config/manifests/pipelines/1_test_data_ST22_dummy.yaml` — 9 schemas, 9 assemblies, 9 plots (290 lines via `!include`)
+
 ### 6.1 Inline (monolithic)
 
 Everything in one YAML file. Typical for prototypes, small projects, or auto-generated manifests.
 
 ```
-config/manifests/pipelines/1_test_data_ST22_dummy.yaml   (1200+ lines)
+config/manifests/templates/simple_project_template.yaml   (~80 lines, self-contained)
 ```
 
 - ctx_map stores schema_ids as keys: `ctx_map["MLST"] = {role: "wrangling", siblings: ...}`
@@ -215,31 +226,69 @@ config/manifests/pipelines/1_test_data_ST22_dummy.yaml   (1200+ lines)
 
 Master YAML contains `!include 'subdir/file.yaml'` markers. Components live in their own files.
 
+#### Directory layout convention
+
+Fragment files live in a subdirectory named after the master manifest (without `.yaml`):
+
 ```
-config/manifests/VIGAS-P/
-  master.yaml
-  VIGAS_VirulenceFinder/
-    input_fields/VIGAS_VirulenceFinder_input_fields.yaml
-    wrangling/VIGAS_VirulenceFinder_wrangling.yaml
-    output_fields/VIGAS_VirulenceFinder_output_fields.yaml
+config/manifests/pipelines/
+  1_test_data_ST22_dummy.yaml          ← master (290 lines)
+  1_test_data_ST22_dummy/
+    input_fields/
+      Summary_input_fields.yaml
+      MLST_input_fields.yaml
+      ...
+    wrangling/
+      Summary_wrangling.yaml
+      MLST_Metadata_wrangling.yaml     ← assembly recipe
+      ST22_Anchor_wrangling.yaml
+      ...
+    output_fields/
+      Summary_output_fields.yaml
+      ST22_Anchor_final_output_fields.yaml   ← final_contract
+      ...
+    plots/
+      MLST_counts_bar.yaml
+      miaou.yaml
+      ...
+    assembly/
+      Summary_phenotype_length_fragmentation_assembly.yaml
+      Summary_phenotype_length_fragmentation_assembly_output_fields.yaml
 ```
 
-- ctx_map stores rel_paths as keys: `ctx_map["VIGAS_VirulenceFinder/output_fields/...yaml"] = {...}`
+#### Naming convention for fragment files
+
+| Fragment role | Naming pattern | Example |
+|---|---|---|
+| `input_fields` | `{SchemaID}_input_fields.yaml` | `MLST_input_fields.yaml` |
+| `wrangling` (schema) | `{SchemaID}_wrangling.yaml` | `MLST_wrangling.yaml` |
+| `wrangling` (assembly recipe) | `{AssemblyID}_wrangling.yaml` or `{AssemblyID}_recipe.yaml` | `MLST_Metadata_wrangling.yaml` |
+| `output_fields` | `{SchemaID}_output_fields.yaml` | `MLST_output_fields.yaml` |
+| `final_contract` | `{AssemblyID}_final_output_fields.yaml` or `{AssemblyID}_final_contract.yaml` | `ST22_Anchor_final_output_fields.yaml` |
+| plot `spec` | `{plot_id}.yaml` | `MLST_counts_bar.yaml` |
+| assembly `recipe` (flat list) | `{AssemblyID}_assembly.yaml` | `Summary_phenotype_length_fragmentation_assembly.yaml` |
+
+#### `!include` path resolution
+
+Paths are **relative to the master manifest directory**. `ConfigManager` resolves them via a custom `!include` constructor on `yaml.SafeLoader`.
+
+```yaml
+# In 1_test_data_ST22_dummy.yaml (located in config/manifests/pipelines/)
+input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
+#                       ↑ relative to config/manifests/pipelines/
+```
+
+#### Auto-unnesting of wrapper keys
+
+`ConfigManager` silently strips a redundant top-level wrapper key when the fragment's root key matches one of: `input_fields`, `output_fields`, `wrangling`, `source`, `recipe`, `spec`. This means a fragment can optionally start with its own section key and still be included correctly. **Flat fragments (no wrapper) are preferred** per ADR-041.
+
+- ctx_map stores rel_paths as keys: `ctx_map["1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml"] = {...}`
 - `inc_map` maps rel_path → absolute file path
 - Mode A load path in `_do_load_component`
 
-### 6.3 Hybrid (modular assembly in inline manifest)
+### 6.3 Hybrid (partial `!include` in otherwise inline manifest)
 
-The `1_test_data_ST22_dummy` manifest has some assemblies that reference separate files:
-
-```yaml
-Summary_phenotype_length_fragmentation:
-  output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_phenotype_length_fragmentation_output_fields.yaml'
-  recipe:
-    tier1: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
-```
-
-This is fully supported: `_build_sibling_map` registers the rel_path in ctx_map and inc_map for those specific slots.
+A manifest may mix inline sections and `!include` markers — for example, keeping `info:` and `source:` inline while externalising `input_fields`/`wrangling`/`output_fields`. This is fully supported: `_build_sibling_map` registers the rel_path in ctx_map and inc_map for those specific slots, and inline siblings are stored as `{"inline": value}`.
 
 ---
 

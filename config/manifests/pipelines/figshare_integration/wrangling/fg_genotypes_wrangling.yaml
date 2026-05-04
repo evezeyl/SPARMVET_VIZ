@@ -1,0 +1,5 @@
+tier1:
+  - action: strip_whitespace
+  - action: drop_columns
+    columns:
+      - host_animal_common

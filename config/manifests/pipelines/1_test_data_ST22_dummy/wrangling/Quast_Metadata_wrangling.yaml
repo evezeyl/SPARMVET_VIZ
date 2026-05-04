@@ -2,12 +2,14 @@ tier1:
   - action: "join"
     right_ingredient: "metadata_schema"
     "on": ["sample_id"]
-# tier2: transform to long format for faceted quality plotting
-tier2:
   - action: "unpivot"
     index: ["sample_id", "source", "country"]
     "on": ["n50", "total_length", "largest_contig"]
     variable_name: "metric"
     value_name: "value"
+  # Defensive: ensure value is Float64 for geom_violin/boxplot kernel density.
+  - action: "cast"
+    columns: ["value"]
+    dtype: "Float64"
 
 

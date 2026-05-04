@@ -10,215 +10,60 @@ info:
   - E. coli
   - demo
   description: 'Triple-source integration of AMR metadata, phenotypic resistance,
-    and genotypic resistance data from Chung (2023). CC-BY 4.0. https://doi.org/10.6084/m9.figshare.21737288.v1
-
-    '
+    and genotypic resistance data from Chung (2023). CC-BY 4.0. https://doi.org/10.6084/m9.figshare.21737288.v1'
   version: '1.0'
+
+# ── Data Schemas ──────────────────────────────────────────────────────────────
+# Fragment files: figshare_integration/{input_fields,wrangling,output_fields}/
 data_schemas:
   fg_metadata:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_metadata.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      host_animal_species:
-        original_name: host_animal_species
-        type: categorical
-        label: Host Animal Species
-      host_animal_common:
-        original_name: host_animal_common
-        type: categorical
-        label: Host Animal Common
-      specimen_source_tissue:
-        original_name: specimen_source_tissue
-        type: categorical
-        label: Specimen Source Tissue
-      final_diagnosis:
-        original_name: final_diagnosis
-        type: categorical
-        label: Final Diagnosis
-      animal_infection_site_uti:
-        original_name: animal_infection_site_uti
-        type: categorical
-        label: Animal Infection Site Uti
-    wrangling:
-      tier1:
-        - action: strip_whitespace
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      host_animal_common:
-        original_name: host_animal_common
-        type: categorical
-        label: Host Animal Common
-      specimen_source_tissue:
-        original_name: specimen_source_tissue
-        type: categorical
-        label: Specimen Source Tissue
-      animal_infection_site_uti:
-        original_name: animal_infection_site_uti
-        type: categorical
-        label: Animal Infection Site Uti
+    input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
+    wrangling: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
+    output_fields: !include 'figshare_integration/output_fields/fg_metadata_output_fields.yaml'
+
   fg_phenotypes:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_phenotypes.tsv
-    input_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      mic_id:
-        original_name: mic_id
-        type: categorical
-        label: Mic Id
-      breakpoint:
-        original_name: breakpoint
-        type: categorical
-        label: Breakpoint
-      predicted_phenotype:
-        original_name: phenotype
-        type: categorical
-        label: Phenotype
-    wrangling:
-      tier1:
-        - action: strip_whitespace
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      mic_id:
-        original_name: mic_id
-        type: categorical
-        label: Mic Id
-      breakpoint:
-        original_name: breakpoint
-        type: categorical
-        label: Breakpoint
-      predicted_phenotype:
-        original_name: phenotype
-        type: categorical
-        label: Phenotype
+    input_fields: !include 'figshare_integration/input_fields/fg_phenotypes_input_fields.yaml'
+    wrangling: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
+    output_fields: !include 'figshare_integration/output_fields/fg_phenotypes_output_fields.yaml'
+
   fg_genotypes:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_genotypes.tsv
-    input_fields:
-      host_animal_common:
-        original_name: host_animal_common
-        type: categorical
-        label: Host Animal Common
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      gene:
-        original_name: gene
-        type: categorical
-        label: Gene
-      gene_type:
-        original_name: gene_type
-        type: categorical
-        label: Gene Type
-      gene_identifier:
-        original_name: gene_identifier
-        type: categorical
-        label: Gene Identifier
-      gene_name_family:
-        original_name: gene_name_family
-        type: categorical
-        label: Gene Name Family
-      resistance_class:
-        original_name: resistance_class
-        type: categorical
-        label: Resistance Class
-    wrangling:
-      tier1:
-        - action: strip_whitespace
-        - action: drop_columns
-          columns:
-            - host_animal_common
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample Id
-      gene:
-        original_name: gene
-        type: categorical
-        label: Gene
-      gene_name_family:
-        original_name: gene_name_family
-        type: categorical
-        label: Gene Name Family
-      resistance_class:
-        original_name: resistance_class
-        type: categorical
-        label: Resistance Class
+    input_fields: !include 'figshare_integration/input_fields/fg_genotypes_input_fields.yaml'
+    wrangling: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'
+    output_fields: !include 'figshare_integration/output_fields/fg_genotypes_output_fields.yaml'
+
+# ── Assembly Manifests ────────────────────────────────────────────────────────
 assembly_manifests:
   figshare_triple_join:
-    description: '3-way left join: metadata (anchor) -> phenotypes -> genotypes. Phenotypes
-      expand rows per antibiotic (MIC). Genotypes expand rows per detected gene. The
-      join is intentionally "long" to enable faceted visualisation.
-
-      '
+    description: '3-way left join: metadata (anchor) -> phenotypes -> genotypes.
+      Phenotypes expand rows per antibiotic (MIC). Genotypes expand rows per detected
+      gene. The join is intentionally "long" to enable faceted visualisation.'
     ingredients:
     - dataset_id: fg_metadata
     - dataset_id: fg_phenotypes
     - dataset_id: fg_genotypes
-    recipe:
-      tier1:
-      - action: join
-        right_ingredient: fg_phenotypes
-        'on': sample_id
-        how: left
-      - action: join
-        right_ingredient: fg_genotypes
-        'on': sample_id
-        how: left
+    recipe: !include 'figshare_integration/wrangling/figshare_triple_join_recipe.yaml'
+
+# ── Analysis Groups ───────────────────────────────────────────────────────────
+# Plot specs: see figshare_integration/plots/
 analysis_groups:
   AMR Integration:
     description: 🧬 AMR Phenotype × Genotype × Host Integration
     plots:
       plot_A_phenotype_bar:
         info: Phenotypic resistance distribution per antibiotic.
-        spec:
-          factory_id: bar_logic
-          target_dataset: figshare_triple_join
-          x: mic_id
-          fill: predicted_phenotype
-          title: Phenotypic Resistance per Antibiotic
-          family: Distribution
-          pattern: 2 Categorical
-          description: Count of phenotype (R/S/I) per antibiotic (mic_id).
-          difficulty: Beginner
+        spec: !include 'figshare_integration/plots/plot_A_phenotype_bar.yaml'
       plot_B_genotype_bar:
         info: Resistance gene families distribution by host animal.
-        spec:
-          factory_id: bar_logic
-          target_dataset: figshare_triple_join
-          x: host_animal_common
-          fill: gene_name_family
-          title: Resistance Gene Families by Host
-          family: Distribution
-          pattern: 2 Categorical
-          description: Count of gene_name_family per host species.
-          difficulty: Beginner
+        spec: !include 'figshare_integration/plots/plot_B_genotype_bar.yaml'
       plot_C_resistance_class:
         info: Resistance class distribution by host animal.
-        spec:
-          factory_id: bar_logic
-          target_dataset: figshare_triple_join
-          x: resistance_class
-          fill: host_animal_common
-          title: Resistance Class by Host Animal
-          family: Distribution
-          pattern: 2 Categorical
-          description: Count of resistance_class faceted by host_animal_common.
-          difficulty: Beginner
+        spec: !include 'figshare_integration/plots/plot_C_resistance_class.yaml'

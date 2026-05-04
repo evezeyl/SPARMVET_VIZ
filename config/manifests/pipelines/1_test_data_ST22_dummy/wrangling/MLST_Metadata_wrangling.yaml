@@ -3,4 +3,13 @@ tier1:
   right_ingredient: metadata_schema
   'on':
   - sample_id
-tier2: []
+# DATA-2 (2026-04-30): purposeful T2 transforms so users can SEE the
+# T1 → T2 difference when toggling the tier in the UI.
+tier2:
+- action: mutate
+  column: era
+  expression: "pl.when(pl.col('year') < 2024).then(pl.lit('Early')).otherwise(pl.lit('Recent'))"
+- action: filter_range
+  columns: [year]
+  min: 2023
+  max: 2025

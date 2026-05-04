@@ -2,7 +2,7 @@ title: "AMR Genes Presence by Category"
 target_dataset: "ResFinder"
 x: "gene"
 y: "sample_id"
-fill: "predicted_phenotype"  # Categorical fill per AMR class
+fill: "phenotype"  # Categorical fill per AMR class
 layers:
   - name: "geom_tile"
     params: {color: "white", size: 0.1}

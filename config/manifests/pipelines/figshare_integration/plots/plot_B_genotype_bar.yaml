@@ -1,0 +1,9 @@
+factory_id: bar_logic
+target_dataset: figshare_triple_join
+x: host_animal_common
+fill: gene_name_family
+title: Resistance Gene Families by Host
+family: Distribution
+pattern: 2 Categorical
+description: Count of gene_name_family per host species.
+difficulty: Beginner

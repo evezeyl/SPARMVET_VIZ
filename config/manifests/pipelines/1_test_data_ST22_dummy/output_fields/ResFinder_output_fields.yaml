@@ -1,8 +1,16 @@
 sample_id:
   type: numeric
+  original_name: sample_id
+  label: Sample Id
 gene:
   type: categorical
-predicted_phenotype:
+  original_name: gene
+  label: Gene
+phenotype:
   type: categorical
+  original_name: phenotype
+  label: Phenotype
 status:
   type: categorical
+  original_name: status
+  label: Status
