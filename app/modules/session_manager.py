@@ -96,19 +96,19 @@ def extract_primary_keys(manifest_raw_config: dict) -> list[str]:
     """Return the union of join-key column names across all assembly recipes.
 
     A column is a primary key if it appears as `on`/`left_on`/`right_on` in any
-    `assembly_manifests.*.recipe[*]` step. This includes both true PKs
+    `join_manifests.*.recipe[*]` step. This includes both true PKs
     (sample_id) and secondary/accessory keys for long-format joins (gene_id).
 
     See ADR-049 / §12g.2.
     """
     keys: set[str] = set()
-    assemblies = manifest_raw_config.get("assembly_manifests", {})
-    if not isinstance(assemblies, dict):
+    join_defs = manifest_raw_config.get("join_manifests", {})
+    if not isinstance(join_defs, dict):
         return []
-    for asm in assemblies.values():
-        if not isinstance(asm, dict):
+    for join_def in join_defs.values():
+        if not isinstance(join_def, dict):
             continue
-        recipe = asm.get("recipe", [])
+        recipe = join_def.get("recipe", [])
         if not isinstance(recipe, list):
             continue
         for step in recipe:

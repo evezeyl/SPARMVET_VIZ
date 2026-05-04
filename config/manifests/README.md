@@ -19,7 +19,7 @@ To ensure high performance in the backend engine and a cohesive development expe
 
 ### 2. Logic Blocks (Sequential List Format)
 
-**Used for:** `wrangling` (tier1, tier2), `assembly_manifests.recipe`.
+**Used for:** `wrangling` (tier1, tier2), `join_manifests.recipe`.
 
 - **Structure**: A tiered dictionary containing ordered lists of actions.
 - **Mandatory Wrapper**: All wrangling logic must be nested under `tier1` (mandatory) or `tier2` (optional).

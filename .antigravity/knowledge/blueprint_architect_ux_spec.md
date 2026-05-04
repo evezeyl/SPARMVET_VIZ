@@ -53,7 +53,7 @@ Primary navigation surface. Clicking any node in the DAG drives the entire UI: l
 | `wrangle` — wrangling step | `[...]` rect | `#ffc107` (amber) | `schema_id__wrn` composite ID |
 | `ref` — additional dataset | `([...])` rounded rect | `#6c757d` (grey) | `additional_datasets_schemas` |
 | `meta` — metadata schema | `([...])` rounded rect | `#fd7e14` (orange) | `metadata_schema` singleton |
-| `branch` — assembly | `{...}` rhombus | `#9c27b0` (purple) | `assembly_manifests` entries |
+| `branch` — assembly | `{...}` rhombus | `#9c27b0` (purple) | `join_manifests` entries |
 | `plot` — terminal plot | `[[...]]` stadium | `#198754` (green) | Per-plot nodes in subgraphs |
 | `activeNode` overlay | dashed border | stroke `#212529` 4px | Applied on top of base class; also on `__wrn` sub-node |
 | `info` — missing target | `[...]` rect | `#e3f2fd` / `#1976d2` | Warning node when `target_dataset` unset |
@@ -177,7 +177,7 @@ plot.spec.target_dataset  →  assembly.final_contract        (if declared)
 
 **Critical:** `target_dataset` is at `plot_spec["spec"]["target_dataset"]` (under the `spec:` wrapper), NOT at `plot_spec["target_dataset"]`. Both levels must be checked.
 
-**Implementation:** `_resolve_fields_for_schema(target_dataset_id, ctx_map, inc_map)` in `server.py` handles this recursion. For Mode B (inline manifests), the fallback also reads directly from `raw_config["assembly_manifests"][target_ds].get("output_fields")`.
+**Implementation:** `_resolve_fields_for_schema(target_dataset_id, ctx_map, inc_map)` in `server.py` handles this recursion. For Mode B (inline manifests), the fallback also reads directly from `raw_config["join_manifests"][target_ds].get("output_fields")`.
 
 **Materialization for plot preview:** `orchestrator.materialize_tier1(collection_id=target_dataset_id)` — NOT `plot_id`. The parquet is stored as `anchors/{target_dataset_id}.parquet`.
 
@@ -265,7 +265,7 @@ All colours defined in `CSS_THEME` in `app/src/ui.py` and `classDef` blocks in `
 | Active buttons | `#0d6efd` | Bootstrap primary |
 | Source nodes (TubeMap) | `#0d6efd` | Bootstrap primary |
 | Wrangling nodes (TubeMap) | `#ffc107` | Bootstrap warning |
-| Assembly nodes (TubeMap) | `#9c27b0` | Material purple |
+| Join nodes (TubeMap) | `#9c27b0` | Material purple |
 | Plot nodes (TubeMap) | `#198754` | Bootstrap success |
 | Ref/Additional nodes | `#6c757d` | Bootstrap secondary |
 | Metadata node | `#fd7e14` | Bootstrap orange |

@@ -48,9 +48,9 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
         print(f"  └── ❌ Manifest Error: Failed to load {manifest_path}. {e}")
         sys.exit(1)
 
-    assemblies = manifest.get("assembly_manifests", {})
+    assemblies = manifest.get("join_manifests", {})
     if not assemblies:
-        print("  └── ❌ Error: No 'assembly_manifests' found in manifest.")
+        print("  └── ❌ Error: No 'join_manifests' found in manifest.")
         return
 
     # 2. Initialize Ingestor

@@ -36,7 +36,7 @@ additional_datasets_schemas:  # Extra reference datasets (also Tier 0)
 metadata_schema:     # Singleton metadata source (Tier 0, special)
   ...
 
-assembly_manifests:  # Joined datasets (Tier 1)
+join_manifests:  # Joined datasets (Tier 1)
   <assembly_id>: ...
 
 analysis_groups:     # Grouped plots (Tier 2/3)
@@ -56,7 +56,7 @@ analysis_groups:     # Grouped plots (Tier 2/3)
 | `data_schemas` | `wrangling` (primary) + `input_fields` + `output_fields` | blue (source) / amber (wrangle) | No |
 | `additional_datasets_schemas` | same as data_schemas | grey | No |
 | `metadata_schema` | same as data_schemas | orange | No |
-| `assembly_manifests` | `assembly` | purple | No |
+| `join_manifests` | `assembly` | purple | No |
 | `analysis_groups.*.plots` | `plot_spec` | green | Yes — no output |
 | `plots.*.pre_plot_wrangling` | `plot_wrangling` | amber | Yes — no output |
 
@@ -141,7 +141,7 @@ Resolution priority (first non-empty result wins):
 
 **Key insight:** An empty `output_fields: {}` or `output_fields: []` is NOT the contract — it is a placeholder. The actual contract is resolved by backtracking to `input_fields`.
 
-### 5.2 For an `assembly_manifests` node
+### 5.2 For an `join_manifests` node
 
 Resolution priority:
 
@@ -301,7 +301,7 @@ ctx_map[key] = {
     "role": "input_fields" | "output_fields" | "wrangling" | "assembly"
              | "plot_spec" | "plot_wrangling",
     "schema_id": str,         # The parent schema ID (e.g. "MLST")
-    "schema_type": str,       # "data_schemas" | "assembly_manifests" | "plots" | ...
+    "schema_type": str,       # "data_schemas" | "join_manifests" | "plots" | ...
     "siblings": {
         "input_fields": str | {"inline": dict} | None,
         "output_fields": str | {"inline": dict} | None,
@@ -348,7 +348,7 @@ Both are valid. `_build_sibling_map` normalises them: `effective_out = out or co
 
 ### 8.5 Inline plot `target_dataset` scan timing in Mode B
 
-In Mode B, the analysis_groups scan must run **unconditionally** (not only when `target is None`), because `mlst_bar` might also be found in `assembly_manifests` (it won't, but the scan must not be gated on `target`).
+In Mode B, the analysis_groups scan must run **unconditionally** (not only when `target is None`), because `mlst_bar` might also be found in `join_manifests` (it won't, but the scan must not be gated on `target`).
 
 ---
 
@@ -366,7 +366,7 @@ In Mode B, the analysis_groups scan must run **unconditionally** (not only when 
       │
       │  (+ other ingredients)
       ▼
-[assembly_manifests.Y]
+[join_manifests.Y]
   ingredients: [X, metadata_schema, ...]
   recipe        ──► joins, aggregations across ingredients
   output_fields / final_contract
@@ -413,7 +413,7 @@ When implementing any feature that reads or displays field contracts:
 
 ### Path A — Bare data_schema / additional_dataset / metadata_schema
 
-When `collection_id` does NOT appear in `assembly_manifests` but DOES exist as an ingredient (i.e. it was ingested and wrangled as a raw source), it is written directly to parquet without any assembly step.
+When `collection_id` does NOT appear in `join_manifests` but DOES exist as an ingredient (i.e. it was ingested and wrangled as a raw source), it is written directly to parquet without any assembly step.
 
 **Use case:** A plot's `target_dataset` points to a raw `data_schemas` entry (e.g. `amr_heatmap` → `ResFinder`).
 
@@ -426,11 +426,11 @@ if collection_spec is None and collection_id in ingredients:
 
 ### Path B — Named assembly
 
-`collection_id` found in `assembly_manifests`. Uses the declared `ingredients` list in declaration order, runs the recipe, sinks to parquet.
+`collection_id` found in `join_manifests`. Uses the declared `ingredients` list in declaration order, runs the recipe, sinks to parquet.
 
 ### Path C — Fallback (legacy)
 
-`collection_id` not found anywhere. Falls back to the first declared assembly. This is a compatibility path only — if `assembly_manifests` is empty, raises `ValueError`.
+`collection_id` not found anywhere. Falls back to the first declared assembly. This is a compatibility path only — if `join_manifests` is empty, raises `ValueError`.
 
 **Critical:** Path C should never be reached in a well-formed manifest. If it fires, the manifest has a `target_dataset` pointing to a non-existent collection.
 
@@ -444,7 +444,7 @@ if collection_spec is None and collection_id in ingredients:
 - All other ingredients are joined onto it via the recipe steps
 - Columns from later ingredients shadow same-named columns from earlier ones (Polars `how='left'` keeps left column)
 
-**Rule:** The `ingredients:` list in an assembly manifest MUST declare the primary/base ingredient first. The orchestrator preserves declaration order by using an `OrderedDict`-equivalent comprehension:
+**Rule:** The `ingredients:` list in an join manifest MUST declare the primary/base ingredient first. The orchestrator preserves declaration order by using an `OrderedDict`-equivalent comprehension:
 
 ```python
 ingredient_ids = [

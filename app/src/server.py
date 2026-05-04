@@ -35,7 +35,7 @@ def server(input, output, session):
     def active_collection_id():
         """Agnostic Discovery: fetches the first collection in the manifest."""
         cfg = active_cfg()
-        collections = list(cfg.raw_config.get("assembly_manifests", {}).keys())
+        collections = list(cfg.raw_config.get("join_manifests", {}).keys())
         if not collections:
             return "Untitled_Collection"
         return collections[0]

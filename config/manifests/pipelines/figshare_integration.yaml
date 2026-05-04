@@ -41,7 +41,7 @@ data_schemas:
     output_fields: !include 'figshare_integration/output_fields/fg_genotypes_output_fields.yaml'
 
 # ── Assembly Manifests ────────────────────────────────────────────────────────
-assembly_manifests:
+join_manifests:
   figshare_triple_join:
     description: '3-way left join: metadata (anchor) -> phenotypes -> genotypes.
       Phenotypes expand rows per antibiotic (MIC). Genotypes expand rows per detected

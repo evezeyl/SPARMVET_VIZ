@@ -247,7 +247,7 @@ def define_server(input, output, session, *,
                 from transformer.data_wrangler import DataWrangler
                 recipe_raw = (
                     active_cfg().raw_config
-                    .get("assembly_manifests", {})
+                    .get("join_manifests", {})
                     .get(target_ds, {})
                     .get("recipe", [])
                 )

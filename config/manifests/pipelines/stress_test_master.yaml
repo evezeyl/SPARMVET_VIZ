@@ -12,7 +12,7 @@ data_schemas:
     wrangling: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
     output_fields: !include 'stress_test_master/output_fields/Stress_Source_output_fields.yaml'
 
-assembly_manifests:
+join_manifests:
   Master_Collection:
     ingredients:
       - dataset_id: "Stress_Source"

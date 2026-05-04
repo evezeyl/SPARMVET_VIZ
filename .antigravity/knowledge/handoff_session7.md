@@ -77,7 +77,7 @@ assembly_ingredients = {
 
 **Symptom:** `amr_heatmap` (targets `ResFinder`, a `data_schema`) rendered "Aesthetic 'x' references unknown column 'gene'" and the Live Data Glimpse showed `FastP_with_metadata` data instead of `ResFinder`.
 
-**Root cause:** When `collection_id` was not found in `assembly_manifests`, orchestrator fell through to the legacy fallback (Path C), which picked the first declared assembly (`FastP_with_metadata`). `ResFinder` is a bare data schema — it should be materialised directly without any assembly step.
+**Root cause:** When `collection_id` was not found in `join_manifests`, orchestrator fell through to the legacy fallback (Path C), which picked the first declared assembly (`FastP_with_metadata`). `ResFinder` is a bare data schema — it should be materialised directly without any assembly step.
 
 **Fix:** Added Path A — checks `collection_id in ingredients` before falling to Path C:
 

@@ -29,13 +29,13 @@ class PipelineExecutor:
     def __init__(self, ingestor: "DataIngestor"):
         self.ingestor = ingestor
 
-    def run_pipeline(self, manifest_path: Path, assembly_id: str | None = None) -> pl.LazyFrame:
+    def run_pipeline(self, manifest_path: Path, join_id: str | None = None) -> pl.LazyFrame:
         """
         Loads a manifest, ingests all components, wrangles them, and assembles the result.
 
         Args:
             manifest_path: Path to the YAML pipeline manifest.
-            assembly_id: Specific assembly to run. Defaults to the first one found if None.
+            join_id: Specific assembly to run. Defaults to the first one found if None.
 
         Returns:
             A Polars LazyFrame of the assembled data.
@@ -63,18 +63,18 @@ class PipelineExecutor:
             ingredients[ds_id] = lf
 
         # 2. Relational Assembly (Layer 2)
-        if not assembly_id:
-            assemblies = manifest.get("assembly_manifests", {})
-            if not assemblies:
+        if not join_id:
+            join_defs = manifest.get("join_manifests", {})
+            if not join_defs:
                 raise ValueError(
-                    f"No assemblies defined in manifest {manifest_path}")
-            assembly_id = list(assemblies.keys())[0]
+                    f"No join_defs defined in manifest {manifest_path}")
+            join_id = list(join_defs.keys())[0]
 
         assembly_spec = manifest.get(
-            "assembly_manifests", {}).get(assembly_id, {})
+            "join_manifests", {}).get(join_id, {})
         if not assembly_spec:
             raise ValueError(
-                f"Assembly '{assembly_id}' not found in manifest.")
+                f"Assembly '{join_id}' not found in manifest.")
 
         recipe_data = assembly_spec.get("recipe", [])
         if isinstance(recipe_data, dict) and "steps" in recipe_data:

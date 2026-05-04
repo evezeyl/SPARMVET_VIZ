@@ -53,7 +53,7 @@ analysis_groups_structure:
   plot_spec_file_format: |
     spec:
       factory_id: bar_logic              # Registered: bar_logic, scatter_logic, heatmap_logic
-      target_dataset: <assembly_id>      # Must match an assembly_manifests key
+      target_dataset: <assembly_id>      # Must match an join_manifests key
       x: <column>
       fill: <column>
       facet_by: <column>                 # Optional

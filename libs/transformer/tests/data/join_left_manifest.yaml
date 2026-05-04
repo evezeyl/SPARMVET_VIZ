@@ -17,7 +17,7 @@ data_schemas:
     wrangling:
       tier1: []
     output_fields: {}
-assembly_manifests:
+join_manifests:
   left:
     description: Verify that 'left' join keeps all Table A keys (IDs 1, 2, 3), with
       nulls for B.

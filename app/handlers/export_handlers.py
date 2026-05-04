@@ -441,7 +441,7 @@ def define_export_server(input, output, session, *,
                         from transformer.data_wrangler import DataWrangler
                         collection_spec = (
                             active_cfg().raw_config
-                            .get("assembly_manifests", {})
+                            .get("join_manifests", {})
                             .get(target_ds or "", {})
                         )
                         recipe_raw = collection_spec.get("recipe", [])

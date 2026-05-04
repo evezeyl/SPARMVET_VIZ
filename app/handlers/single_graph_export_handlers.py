@@ -134,7 +134,7 @@ def define_single_graph_export_server(input, output, session, *,
             target_ds = (spec or {}).get("target_dataset", "")
             recipe_raw = (
                 active_cfg().raw_config
-                .get("assembly_manifests", {})
+                .get("join_manifests", {})
                 .get(target_ds, {})
                 .get("recipe", [])
             )
@@ -220,7 +220,7 @@ def define_single_graph_export_server(input, output, session, *,
                     "plot_id": p_id,
                     "target_dataset": target_ds,
                     "data_schema": raw.get("data_schemas", {}).get(target_ds, {}),
-                    "assembly": raw.get("assembly_manifests", {}).get(target_ds, {}),
+                    "join": raw.get("join_manifests", {}).get(target_ds, {}),
                     "t3_nodes": t3_nodes,
                     "plot_spec": spec,
                 }

@@ -107,7 +107,7 @@ metadata_schema:
       type: "categorical"
       label: "Outcome"
 
-assembly_manifests:
+join_manifests:
   amr_with_metadata:
     description: "Join AMR results with metadata."
     ingredients:

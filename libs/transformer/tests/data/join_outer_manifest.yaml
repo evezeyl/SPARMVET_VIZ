@@ -17,7 +17,7 @@ data_schemas:
     wrangling:
       tier1: []
     output_fields: {}
-assembly_manifests:
+join_manifests:
   outer:
     description: Verify that 'outer' join keeps all IDs from both tables (IDs 1, 2,
       3, 4).

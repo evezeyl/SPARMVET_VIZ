@@ -127,7 +127,7 @@ class ManifestBootstrapper:
                 "wrangling": [],
                 "output_fields": []
             },
-            "assembly_manifests": {},
+            "join_manifests": {},
             "plotting": {}
         }
 

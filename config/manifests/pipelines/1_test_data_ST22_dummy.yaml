@@ -152,7 +152,7 @@ metadata_schema:
 # ── Assembly Manifests ────────────────────────────────────────────────────────
 # Simple joins: see wrangling/ for each recipe.
 # Complex assemblies (ST22_Anchor, AR1) also have final_contract in output_fields/.
-assembly_manifests:
+join_manifests:
   FastP_with_metadata:
     ingredients:
     - dataset_id: FastP

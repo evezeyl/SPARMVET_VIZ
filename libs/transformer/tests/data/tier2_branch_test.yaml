@@ -5,7 +5,7 @@ data_schemas:
       type: "local_parquet"
       path: "tmp/session_anchor_test.parquet"
 
-assembly_manifests:
+join_manifests:
   Tier2_Branch:
     ingredients:
       - dataset_id: "Trunk"

@@ -606,13 +606,13 @@ Renders a `<button>` per chain node with role icon, label, role tag. Active node
 
 ### Phase 18-G Detail (Session 5, 2026-04-20)
 
-#### Bug: Assembly node "unable to find column 'category'" error
+#### Bug: Join node "unable to find column 'category'" error
 
 **Root cause:** `processed_data_surgical` in `wrangle_studio.py` called `apply_logic(lf)` unconditionally on the materialized parquet. For an `assembly` node, the parquet IS the final assembled output; re-running the assembly recipe (which starts with `filter_eq column: category` on the pre-unpivot data) against the already-assembled columns caused the column-not-found error.
 
 **Fix:** `processed_data_surgical` now only calls `apply_logic` when `active_component_info.role` ∈ `{"wrangling", "plot_wrangling"}`. For all other roles (`assembly`, `plot_spec`, `output_fields`, `input_fields`) the parquet is served as-is.
 
-#### Bug: Assembly node never materialised / Live Data Glimpse empty
+#### Bug: Join node never materialised / Live Data Glimpse empty
 
 **Root cause:** The `assembly` role handler in Mode A (`_handle_manifest_import`) set `active_upstream`/`active_downstream` but never called `orchestrator.materialize_tier1` or set `active_anchor_path`.
 
@@ -862,7 +862,7 @@ Per the documentation standard: `ManifestNavigator (manifest_navigator.py)` for 
 
 ### 2. The Column Retention Policy
 - **Decision:** "Identity" columns (sample_id, gene, accession) SHOULD be retained in Tier 1 and Tier 2 wrangling to facilitate row-level audit. 
-- **Filtering Rule:** Dropping unnecessary columns is deferred to the **final_contract** of the Assembly manifest, ensuring they are only pruned after all biological plots are finalized.
+- **Filtering Rule:** Dropping unnecessary columns is deferred to the **final_contract** of the Join manifest, ensuring they are only pruned after all biological plots are finalized.
 
 ### 3. Precision Renaming Standard
 - **Decision:** Use biologically precise and source-aware column names. 
@@ -1158,7 +1158,7 @@ The "All except" choice captures the justification-plot case directly without re
 
 **Linked-id propagation**: a node "applied to N plots" is N RecipeNode dicts sharing the same `id`. Linked deletion: clicking 🗑 on any copy removes all copies. Edits propagate by id.
 
-**Primary-key set**: union of all join keys declared in `assembly_manifests.*.recipe[*].on/left_on/right_on`. Includes long-format secondary keys.
+**Primary-key set**: union of all join keys declared in `join_manifests.*.recipe[*].on/left_on/right_on`. Includes long-format secondary keys.
 
 **Authoring rules around primary keys**:
 - Drop column on PK: blocked absolutely.
@@ -1216,15 +1216,15 @@ The "All except" choice captures the justification-plot case directly without re
 
 1. **Wrong base ingredient**: `DataAssembler` uses `list(ingredients.keys())[0]` as the base frame for all joins. The orchestrator was passing all project `data_schemas` in manifest iteration order, so the alphabetically/order-first schema became the assembly base — not the collection's declared first ingredient.
 
-2. **No path for bare data schemas**: when a plot's `target_dataset` pointed to a `data_schemas` entry (not an `assembly_manifests` entry), the orchestrator fell to a legacy fallback that picked the first declared assembly — completely wrong data.
+2. **No path for bare data schemas**: when a plot's `target_dataset` pointed to a `data_schemas` entry (not an `join_manifests` entry), the orchestrator fell to a legacy fallback that picked the first declared assembly — completely wrong data.
 
 3. **Join key dtype mismatch**: Polars requires join key columns to have matching dtypes across left/right frames. `Categorical` ≠ `String` even when both hold string data, causing `SchemaError` on multi-ingredient assemblies.
 
 ### Decision
 
-**Path A — Bare data schema**: when `collection_id` is not in `assembly_manifests` but IS in `ingredients` (ingested raw sources), write the ingredient directly to parquet without any assembly step.
+**Path A — Bare data schema**: when `collection_id` is not in `join_manifests` but IS in `ingredients` (ingested raw sources), write the ingredient directly to parquet without any assembly step.
 
-**Path B — Named assembly**: `collection_id` found in `assembly_manifests`. Build `assembly_ingredients` as an ordered dict of ONLY the collection's declared `ingredients:` list in declaration order — preserving the intended base frame.
+**Path B — Named assembly**: `collection_id` found in `join_manifests`. Build `assembly_ingredients` as an ordered dict of ONLY the collection's declared `ingredients:` list in declaration order — preserving the intended base frame.
 
 **Path C — Legacy fallback**: `collection_id` not found anywhere. Falls to first declared assembly for backward compat. Should never fire in a well-formed manifest.
 

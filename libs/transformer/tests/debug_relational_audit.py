@@ -47,7 +47,7 @@ def perform_relational_audit(manifest_path: str, output_dir: str):
         all_schemas["metadata_schema"] = manifest["metadata_schema"]
     all_schemas.update(manifest.get("additional_datasets_schemas", {}))
 
-    assemblies = manifest.get("assembly_manifests", {})
+    assemblies = manifest.get("join_manifests", {})
 
     os.makedirs(output_dir, exist_ok=True)
     report_path = os.path.join(output_dir, "relational_audit_report.txt")

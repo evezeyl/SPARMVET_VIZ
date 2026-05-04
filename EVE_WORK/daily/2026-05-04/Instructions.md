@@ -18,24 +18,15 @@ So : I reviewed the scoping and the personalities configuration definitions. Not
 
 I am thinking functionalities : user side - And then for you one functionality might associated to diffently to my view. So you will certainly need to trace back some of what you call functionalities. 
 
+I changeds to yes/no for higher functions, activated for our test persona
+I removed personalities to keep it where I clearly see usage cases right now for our users. 
+
+DEFAULT_TIER is always T2 
+
+All those bellow will need to be able to be turned on/off via persona profile
 
 
-Here our pesonalites definitions are more functional examples what I was more interested in is which functionalities need to work together or not bit eg I could have a project-independent-advanced	
-Here the whole point of defining group is that we allow flexibility of things that are can be activated independently to adjust for usage / while ensuring a desired usage do not lack the proper functionality	
-A13	
-yes	functionality on
-- 	functionality off
-*	will depends at time of implementation ¨
-some people might want to have small variations of those configurations, my main goal is to see what should be grouped and what should need to be independent / active deactivate	
-    
-Web-demo TODO : I do not really think need to work on this right now we can remove	existing
-    
-Definitions: and all those need to be able to be turned on/off via persona profile – Here I define the groups that work together / independently from each other	
-PASSIVE_INTERACT	passive interaction (filter, drops) but do not modify data
-DEFAULT_TIER	always T2
-ACTIVE_INTERACT (T3) + CMP_MODE + AUTOSAVE + HASHES_EXPORT (link to audit)	always associated with T3 functionality : T3_SAND + CMP_MODE + AUD_RPT + SESS_MGT
-EXP_BNDL (export bundle)	For now not associated BUT need to decide if on/off by persona configuration file
-EXP_GRF (export individual graph)	
+
 META_ING – allow metadata update 	#TO REVIEW → should we bundle with the import ? BUT sometimes I do not want users to add other data than metadata – but we could have a dependent mapping of the import possibility if only user authorized to import metadata or if would be authorized to import all data, would allow to remove one import field.
 IMP_HLP – allow import data (corresponding to manifest schema)	# TO REVIEW : (see META_ING) – we need to allow import in several steps, eg from several location, if we keep META_ING as separate import then wen need to remove the metadata from the automatic mapping 
 Note : META_ING , IMP_HELP → DATA_ING always on (so DATA_ING is not a user functionality is a app functionality) – IMP_PNL must be visible if DATA_ING is on, but as we will discuss with the correct functionalities either BOTH META_ING / OR both META_ING and IMP_HLP depending on our discussion	

@@ -278,7 +278,7 @@ def define_server(input, output, session, *,
     def audit_nodes_tier2():
         cfg = active_cfg()
         collection_id = _active_target_ds()
-        collections = cfg.raw_config.get("assembly_manifests", {})
+        collections = cfg.raw_config.get("join_manifests", {})
         recipe = []
         if collection_id in collections:
             raw_recipe = collections[collection_id].get("recipe", [])

@@ -86,7 +86,7 @@ additional_datasets_schemas:
 # !SECTION END Additional Datasets
 
 # SECTION ASSEMBLY MANIFESTS RECIPES
-assembly_manifests:
+join_manifests:
   AR1_MLST_Serotype_Virulence: # This is the id
     description: "Joins MLST results with metadata for the main distribution plot."
     ingredients:

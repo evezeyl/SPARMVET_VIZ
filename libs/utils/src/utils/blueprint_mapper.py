@@ -40,7 +40,7 @@ class BlueprintMapper:
     [ADR-039] Generates a DAG-based 'TubeMap' visualization for SPARMVET manifests.
 
     Parses the full manifest structure (data_schemas, additional_datasets_schemas,
-    metadata_schema, assembly_manifests, and plots flattened by ConfigManager from
+    metadata_schema, join_manifests, and plots flattened by ConfigManager from
     analysis_groups) and outputs:
       - generate_mermaid()      → Mermaid LR DAG string (legacy, kept for reference)
       - generate_cy_elements()  → Cytoscape.js elements JSON (primary, tube-map UI)
@@ -52,7 +52,7 @@ class BlueprintMapper:
     Node types:
       trunk    (blue)   — raw data source (data_schemas)
       wrangle  (yellow) — wrangling step
-      branch   (purple) — assembly_manifests join node
+      branch   (purple) — join_manifests join node
       plot     (green)  — terminal plot node
       ref      (grey)   — additional_datasets_schemas
       meta     (orange) — metadata_schema
@@ -154,7 +154,7 @@ class BlueprintMapper:
                 _add_edge("metadata_schema", wrn_id)
 
         # ── 4. Assembly Manifests ──────────────────────────────────────────────
-        assemblies = self.cfg.get("assembly_manifests", {})
+        join_defs = self.cfg.get("join_manifests", {})
 
         def _upstream_node(parent_raw: str) -> str:
             """Return the last node in the parent schema's chain."""
@@ -162,9 +162,9 @@ class BlueprintMapper:
             wrn_id = self._n(parent_raw, "wrn")
             return wrn_id if wrn_id in all_known else safe
 
-        for asid, details in assemblies.items():
+        for asid, details in join_defs.items():
             safe = self._safe_node_id(asid)
-            _add_node(safe, f'{safe}{{"{asid}\\nAssembly"}}', "branch", asid)
+            _add_node(safe, f'{safe}{{"{asid}\\nJoin"}}', "branch", asid)
 
             ingredients = []
             if isinstance(details, dict):
@@ -186,7 +186,7 @@ class BlueprintMapper:
                 details.get("wrangling") or details.get("recipe"))
             if has_wrn:
                 wrn_id = self._n(asid, "wrn")
-                _add_node(wrn_id, f'{wrn_id}["{asid}\\nAssembly Wrangling"]',
+                _add_node(wrn_id, f'{wrn_id}["{asid}\\nJoin Wrangling"]',
                           "wrangle", asid)
                 _add_edge(safe, wrn_id)
 
@@ -226,7 +226,7 @@ class BlueprintMapper:
             target_raw = None
             if isinstance(pspec, dict):
                 target_raw = (pspec.get("target_dataset")
-                              or pspec.get("assembly_id"))
+                              or pspec.get("join_id"))
 
             if target_raw:
                 # Connect from assembly wrangling output if present, else assembly
@@ -382,14 +382,14 @@ class BlueprintMapper:
                 all_known.add(wid)
 
         # ── 4. Assembly Manifests (tier 2) ─────────────────────────────────────
-        assemblies = self.cfg.get("assembly_manifests", {})
+        join_defs = self.cfg.get("join_manifests", {})
 
         def _upstream(parent_raw: str) -> str:
             """Last node in a parent schema's chain (wrangling if present)."""
             wid = _wrn_id(parent_raw)
             return wid if wid in all_known else _safe(parent_raw)
 
-        for asid, details in assemblies.items():
+        for asid, details in join_defs.items():
             safe = _safe(asid)
             elements.append(_node(safe, asid, "branch", asid, 2))
             all_known.add(safe)
@@ -444,7 +444,7 @@ class BlueprintMapper:
 
             target_raw = None
             if isinstance(pspec, dict):
-                target_raw = pspec.get("target_dataset") or pspec.get("assembly_id")
+                target_raw = pspec.get("target_dataset") or pspec.get("join_id")
 
             if target_raw:
                 asm_wrn = _wrn_id(target_raw)

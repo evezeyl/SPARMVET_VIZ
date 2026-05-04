@@ -88,7 +88,7 @@ class WrangleStudio:
                                     style="font-size:0.65rem;color:#fff;background:#0d6efd;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("● Wrangle",
                                     style="font-size:0.65rem;color:#212529;background:#ffc107;border-radius:8px;padding:1px 6px;"),
-                                ui.tags.span("◆ Assembly",
+                                ui.tags.span("◆ Join",
                                     style="font-size:0.65rem;color:#fff;background:#9c27b0;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("■ Plot",
                                     style="font-size:0.65rem;color:#fff;background:#198754;border-radius:8px;padding:1px 6px;"),
@@ -264,9 +264,9 @@ class WrangleStudio:
             found_logic = []
 
             # 1. Check Assemblies (Tier 2 Junctions)
-            assemblies = full_cfg.get("assembly_manifests", {})
-            if node_id in assemblies:
-                recipe = assemblies[node_id].get("recipe", [])
+            join_defs = full_cfg.get("join_manifests", {})
+            if node_id in join_defs:
+                recipe = join_defs[node_id].get("recipe", [])
                 from transformer.data_wrangler import DataWrangler
                 found_logic = DataWrangler._resolve_tier(recipe, "tier1")
                 self.active_viz_id.set(None)  # Not a plot
@@ -695,7 +695,7 @@ class WrangleStudio:
                 schema_id = info.get("schema_id", "")
                 role_colors = {
                     "input_fields": "primary", "output_fields": "success",
-                    "wrangling": "warning", "assembly": "info",
+                    "wrangling": "warning", "join": "info",
                     "plot_wrangling": "warning", "plot_spec": "secondary",
                 }
                 return ui.div(
@@ -707,12 +707,12 @@ class WrangleStudio:
 
             role_colors = {
                 "input_fields": "#0d6efd", "output_fields": "#198754",
-                "wrangling": "#ffc107", "assembly": "#0dcaf0",
+                "wrangling": "#ffc107", "join": "#0dcaf0",
                 "plot_wrangling": "#fd7e14", "plot_spec": "#6c757d",
             }
             role_icons = {
                 "input_fields": "📥", "output_fields": "📤",
-                "wrangling": "⚙️", "assembly": "🔗",
+                "wrangling": "⚙️", "join": "🔗",
                 "plot_wrangling": "🔧", "plot_spec": "📊",
             }
             nodes_ui = []
@@ -768,10 +768,10 @@ class WrangleStudio:
         def upstream_label_ui():
             info = self.active_component_info.get()
             role = info.get("role", "") if info else ""
-            if role == "assembly":
+            if role == "join":
                 label = "Ingredients"
             elif role == "plot_wrangling":
-                label = "Assembly Output (Input)"
+                label = "Join Output (Input)"
             else:
                 label = "Upstream Contract"
             return ui.span(label)
@@ -787,7 +787,7 @@ class WrangleStudio:
                 return ui.p("No upstream contract.", class_="text-muted italic small")
 
             # Assembly: multi-ingredient accordion
-            if role == "assembly" and isinstance(upstream, list) and upstream:
+            if role == "join" and isinstance(upstream, list) and upstream:
                 panels = []
                 for item in upstream:
                     if isinstance(item, dict) and "id" in item:
@@ -881,7 +881,7 @@ class WrangleStudio:
         def downstream_label_ui():
             info = self.active_component_info.get()
             role = info.get("role", "") if info else ""
-            if role in ("input_fields", "wrangling", "assembly"):
+            if role in ("input_fields", "wrangling", "join"):
                 label = "Output Fields"
             elif role == "plot_wrangling":
                 label = "→ Plot Spec (Terminal)"

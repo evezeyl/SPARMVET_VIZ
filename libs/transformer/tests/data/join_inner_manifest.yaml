@@ -17,7 +17,7 @@ data_schemas:
     wrangling:
       tier1: []
     output_fields: {}
-assembly_manifests:
+join_manifests:
   inner:
     description: Verify that 'inner' join keeps only matching keys (IDs 1, 2).
     ingredients:

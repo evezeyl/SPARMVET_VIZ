@@ -25,7 +25,7 @@
   - **Impl:** `export_bundle_download()` in `export_handlers.py`
 
 
-- [ ] **ASSEMBLY-RENAME**: Rename `assembly_manifests` → `join_manifests` and role string `"assembly"` → `"join"` everywhere. Use VSCode find-and-replace across files.
+- [x] **ASSEMBLY-RENAME**: ✅ 2026-05-04 Rename `assembly_manifests` → `join_manifests` and role string `"assembly"` → `"join"` everywhere. Use VSCode find-and-replace across files.
   **Agreed name:** `join_manifests` (checked: not a Polars keyword conflict at dict-key level)
   **Scope (~35 files, ~65 occurrences):**
 

@@ -22,7 +22,7 @@ metadata_schema:
   wrangling: [ ]
   output_fields: [ ]
 
-assembly_manifests:
+join_manifests:
   demo_join: 
     description: "Joins MLST and Metadata for demo summary."
     ingredients:

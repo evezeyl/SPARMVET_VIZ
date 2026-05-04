@@ -124,8 +124,8 @@ def build_sibling_map(manifest_path_str: str) -> dict:
                "wrangling": effective_wrn}
         ings = ingredients or []
 
-        is_assembly = section_type == "assembly_manifests"
-        wrn_role = "assembly" if is_assembly else "wrangling"
+        is_join_step = section_type == "join_manifests"
+        wrn_role = "join" if is_join_step else "wrangling"
 
         def _reg_if_file(slot_val, role):
             if isinstance(slot_val, str):
@@ -155,9 +155,9 @@ def build_sibling_map(manifest_path_str: str) -> dict:
     if isinstance(meta, dict):
         _register("metadata_schema", "metadata_schema", meta)
 
-    for aid, adict in (tree.get("assembly_manifests") or {}).items():
+    for aid, adict in (tree.get("join_manifests") or {}).items():
         ings = _extract_ingredients(adict) if isinstance(adict, dict) else []
-        _register("assembly_manifests", aid, adict, ingredients=ings)
+        _register("join_manifests", aid, adict, ingredients=ings)
 
     # analysis_groups → plots: register each plot spec and optional pre_plot_wrangling
     for group_id, group_spec in (tree.get("analysis_groups") or {}).items():
@@ -229,10 +229,10 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
         by_schema.setdefault(sid, []).append(rel)
 
     # assembly schema_id → its assembly wrangling rel
-    assembly_rels: dict[str, str] = {
+    join_rels: dict[str, str] = {
         e["schema_id"]: rel
         for rel, e in ctx_map.items()
-        if e.get("role") == "assembly"
+        if e.get("role") == "join"
     }
 
     # For each assembly schema_id, which plot specs reference it (via target_dataset)?
@@ -263,7 +263,7 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
         if target_ds:
             # Recursively find the "best" anchor/assembly node for this target
             origin_rels = by_schema.get(target_ds, [])
-            priority = ["assembly", "output_fields", "wrangling", "input_fields"]
+            priority = ["join", "output_fields", "wrangling", "input_fields"]
             best_origin = None
             for p in priority:
                 match = [r for r in origin_rels if ctx_map[r]["role"] == p]
@@ -282,7 +282,7 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
             chain.append(_node(pre_wrn_rel, False))
         chain.append(_node(selected_rel, True))
 
-    elif role == "assembly":
+    elif role == "join":
         # Chain: [ingredient_wranglings..., assembly, ?plots]
         for ing_id in entry.get("ingredients", []):
             ing_rels = by_schema.get(ing_id, [])
@@ -301,7 +301,7 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
         # Walk backward: find the wrangling/assembly sibling for the same schema_id
         # then build that chain with output_fields appended
         wrn_rels = [r for r in by_schema.get(schema_id, [])
-                    if ctx_map[r]["role"] in ("wrangling", "assembly")]
+                    if ctx_map[r]["role"] in ("wrangling", "join")]
         if wrn_rels:
             # Recurse on the wrangling node, then replace its is_active with False
             sub = build_lineage_chain(wrn_rels[0], ctx_map)
@@ -325,10 +325,10 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
             chain.append(_node(wrn_rel, wrn_rel == selected_rel))
 
         # Check if this schema_id is an ingredient in any assembly
-        for asm_sid, asm_rel in assembly_rels.items():
-            asm_entry = ctx_map[asm_rel]
+        for join_sid, join_rel in join_rels.items():
+            asm_entry = ctx_map[join_rel]
             if schema_id in asm_entry.get("ingredients", []):
-                chain.append(_node(asm_rel, False))
+                chain.append(_node(join_rel, False))
                 asm_out = asm_entry["siblings"].get("output_fields")
                 if isinstance(asm_out, str) and asm_out in ctx_map:
                     chain.append(_node(asm_out, False))
@@ -339,7 +339,7 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
             chain = [_node(selected_rel, True)]
 
         if isinstance(out_rel, str) and out_rel in ctx_map and not any(
-                n["role"] in ("assembly", "output_fields") for n in chain):
+                n["role"] in ("join", "output_fields") for n in chain):
             chain.append(_node(out_rel, False))
 
     # Deduplicate while preserving order
@@ -457,8 +457,8 @@ def build_schema_registry(manifest_path_str: str,
     if isinstance(meta, dict):
         _add("metadata_schema", "metadata_schema", meta)
 
-    for aid, adict in (tree.get("assembly_manifests") or {}).items():
-        _add(aid, "assembly_manifests", adict)
+    for aid, adict in (tree.get("join_manifests") or {}).items():
+        _add(aid, "join_manifests", adict)
 
     for group_id, group_spec in (tree.get("analysis_groups") or {}).items():
         if not isinstance(group_spec, dict):
@@ -554,7 +554,7 @@ def resolve_fields_for_schema(schema_id: str, ctx_map: dict, inc_map: dict,
 
     # Pass 4: transparent assembly — merge ingredients' output fields
     for r in rels:
-        if ctx_map[r].get("role") == "assembly":
+        if ctx_map[r].get("role") == "join":
             combined: dict = {}
             for ing_id in ctx_map[r].get("ingredients", []):
                 combined.update(

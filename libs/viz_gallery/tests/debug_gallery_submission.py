@@ -50,14 +50,14 @@ cmd = [
         manifest_data = yaml.safe_load(f)
 
     # Discovery logic for recipe (ADR-024)
-    # If it's a project manifest, it might be in assembly_manifests.
+    # If it's a project manifest, it might be in join_manifests.
     # We'll take the first one found or a 'wrangling' key.
     recipe = []
     if "wrangling" in manifest_data:
         recipe = manifest_data["wrangling"]
-    elif "assembly_manifests" in manifest_data:
-        first_key = list(manifest_data["assembly_manifests"].keys())[0]
-        recipe = manifest_data["assembly_manifests"][first_key].get(
+    elif "join_manifests" in manifest_data:
+        first_key = list(manifest_data["join_manifests"].keys())[0]
+        recipe = manifest_data["join_manifests"][first_key].get(
             "recipe", [])
 
     # 3. Load Processed Data

@@ -97,7 +97,7 @@ def define_server(input, output, session, *,
         if not target:
             target = cfg.raw_config.get("additional_datasets_schemas", {}).get(lid)
         if not target:
-            target = cfg.raw_config.get("assembly_manifests", {}).get(lid)
+            target = cfg.raw_config.get("join_manifests", {}).get(lid)
         if not target and lid == "metadata_schema":
             target = cfg.raw_config.get("metadata_schema")
         if not target:
@@ -175,7 +175,7 @@ def define_server(input, output, session, *,
                     wrangle_studio.active_upstream.set(in_fields)
                     wrangle_studio.active_downstream.set(out_fields)
 
-                elif role == "assembly":
+                elif role == "join":
                     ctx_map_now = component_ctx_map.get()
                     id_to_out_rel = {}
                     for rel, entry in ctx_map_now.items():
@@ -214,7 +214,7 @@ def define_server(input, output, session, *,
                         anchor_dir.mkdir(parents=True, exist_ok=True)
                         out_p = anchor_dir / f"{schema_id}.parquet"
                         bp_project_id = Path(master_path).stem
-                        print(f"🚀 [Architect] Materializing assembly '{schema_id}'")
+                        print(f"🚀 [Architect] Materializing join '{schema_id}'")
                         orchestrator.materialize_tier1(
                             project_id=bp_project_id,
                             collection_id=schema_id,
@@ -222,7 +222,7 @@ def define_server(input, output, session, *,
                         )
                         wrangle_studio.active_anchor_path.set(str(out_p))
                     except Exception as e:
-                        print(f"⚠️ Assembly materialization failed: {e}")
+                        print(f"⚠️ Join materialization failed: {e}")
 
                 elif role == "plot_spec":
                     target_ds = file_content.get("target_dataset") \
@@ -337,7 +337,7 @@ def define_server(input, output, session, *,
             schema_id = selected
             target = (raw.get("data_schemas", {}).get(selected)
                       or raw.get("additional_datasets_schemas", {}).get(selected)
-                      or raw.get("assembly_manifests", {}).get(selected))
+                      or raw.get("join_manifests", {}).get(selected))
 
             plot_target_ds = None
             for grp_spec in raw.get("analysis_groups", {}).values():
@@ -373,12 +373,12 @@ def define_server(input, output, session, *,
             in_f = target.get("input_fields", {}) if isinstance(target, dict) else {}
             out_f = target.get("output_fields", {}) if isinstance(target, dict) else {}
 
-            if role_b == "assembly":
+            if role_b == "join":
                 ing_items_b = []
                 for ing_id in ingredients_b:
                     ing_block = (raw.get("data_schemas", {}).get(ing_id)
                                  or raw.get("additional_datasets_schemas", {}).get(ing_id)
-                                 or raw.get("assembly_manifests", {}).get(ing_id))
+                                 or raw.get("join_manifests", {}).get(ing_id))
                     fields = ing_block.get("output_fields", {}) \
                         if isinstance(ing_block, dict) else {}
                     ing_items_b.append({"id": ing_id, "fields": fields})
@@ -390,7 +390,7 @@ def define_server(input, output, session, *,
                     anchor_dir.mkdir(parents=True, exist_ok=True)
                     out_p = anchor_dir / f"{selected}.parquet"
                     bp_project_id = Path(master_path).stem
-                    print(f"🚀 [Architect Mode B] Materializing assembly '{selected}'")
+                    print(f"🚀 [Architect Mode B] Materializing join '{selected}'")
                     orchestrator.materialize_tier1(
                         project_id=bp_project_id,
                         collection_id=selected,
@@ -398,16 +398,16 @@ def define_server(input, output, session, *,
                     )
                     wrangle_studio.active_anchor_path.set(str(out_p))
                 except Exception as e:
-                    print(f"⚠️ Assembly materialization failed (Mode B): {e}")
+                    print(f"⚠️ Join materialization failed (Mode B): {e}")
             elif role_b in ("plot_spec", "plot_wrangling"):
                 upstream_b: dict = {}
                 if plot_target_ds:
                     upstream_b = resolve_fields_for_schema(plot_target_ds, ctx_map_b, inc_map)
                 if not upstream_b:
-                    asm_block = (raw.get("assembly_manifests") or {}).get(
+                    join_block = (raw.get("join_manifests") or {}).get(
                         plot_target_ds or selected)
-                    if isinstance(asm_block, dict):
-                        upstream_b = asm_block.get("output_fields", {}) or {}
+                    if isinstance(join_block, dict):
+                        upstream_b = join_block.get("output_fields", {}) or {}
                 wrangle_studio.active_upstream.set(upstream_b)
                 wrangle_studio.active_downstream.set([])
                 wrangle_studio.active_fields.set({"input": upstream_b, "output": {}})
@@ -560,8 +560,8 @@ def define_server(input, output, session, *,
                     inline_groups.setdefault("data_schemas", {})[sid] = f"{sid} — wrangling"
                 for sid in raw.get("additional_datasets_schemas", {}):
                     inline_groups.setdefault("additional_datasets_schemas", {})[sid] = f"{sid} — wrangling"
-                for sid in raw.get("assembly_manifests", {}):
-                    inline_groups.setdefault("assembly_manifests", {})[sid] = f"{sid} — assembly"
+                for sid in raw.get("join_manifests", {}):
+                    inline_groups.setdefault("join_manifests", {})[sid] = f"{sid} — join"
                 ag = raw.get("analysis_groups", {})
                 for grp, gspec in ag.items():
                     if isinstance(gspec, dict):
@@ -605,7 +605,7 @@ def define_server(input, output, session, *,
                 component_ctx_map.set(ctx_map)
 
             _PRIORITY = {
-                "assembly": 0, "wrangling": 1, "plot_spec": 2,
+                "join": 0, "wrangling": 1, "plot_spec": 2,
                 "plot_wrangling": 3, "output_fields": 4, "input_fields": 5,
             }
 

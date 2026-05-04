@@ -23,7 +23,7 @@ metadata:
     path: "./assets/test_data/metadata.tsv"
   input_fields: !include 'complex_demo/metadata_input.yaml'
 
-assembly_manifests:
+join_manifests:
   master_assembly:
     description: "Joins genomics with metadata."
     ingredients:

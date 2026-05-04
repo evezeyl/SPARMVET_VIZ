@@ -69,7 +69,7 @@ metadata_schema:
       type: "categorical"
       label: "Biological Category"
 
-assembly_manifests:
+join_manifests:
   main_collection:
     description: "Joins primary data with metadata."
     ingredients:

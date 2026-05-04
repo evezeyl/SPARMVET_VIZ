@@ -33,7 +33,7 @@ data_schemas:
     input_fields: !include 2_test_data_ST22_dummy/input_fields/plasmid_data.yaml
     wrangling: !include 2_test_data_ST22_dummy/wrangling/plasmid_data.yaml
 
-assembly_manifests:
+join_manifests:
   AMR_Profile_Joint:
     ingredients:
       - dataset_id: amr_data

@@ -41,7 +41,7 @@ data_schemas:
         original_name: source
         type: categorical
         label: Source
-assembly_manifests:
+join_manifests:
   audit_relational:
     ingredients:
     - dataset_id: relational_left

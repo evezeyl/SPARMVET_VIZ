@@ -88,7 +88,7 @@ class DataOrchestrator:
                 continue
 
         # 3. Resolve target — may be an assembly OR a bare data_schema
-        collection_spec = manifest.get("assembly_manifests", {}).get(collection_id)
+        collection_spec = manifest.get("join_manifests", {}).get(collection_id)
 
         # Path A: bare data_schema / additional_dataset / metadata_schema
         # (e.g. a plot's target_dataset points directly to a source schema)
@@ -101,7 +101,7 @@ class DataOrchestrator:
 
         # Path B: assembly not found — old fallback (agnostic discovery)
         if collection_spec is None:
-            collections = manifest.get("assembly_manifests", {})
+            collections = manifest.get("join_manifests", {})
             if collections:
                 collection_id = list(collections.keys())[0]
                 collection_spec = collections[collection_id]

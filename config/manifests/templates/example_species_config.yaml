@@ -32,7 +32,7 @@ data_schemas:
 additional_datasets_schemas: {}
 
 # SECTION 4: COLLECTIONS (ASSEMBLY)
-assembly_manifests:
+join_manifests:
   Main_Collection:
     description: "Default assembly for the project."
     ingredients:

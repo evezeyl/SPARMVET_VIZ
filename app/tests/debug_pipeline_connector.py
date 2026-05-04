@@ -154,7 +154,7 @@ try:
 
         lf = orchestrator.materialize_tier1(
             project_id=manifest_id,
-            collection_id=list(manifest.get("assembly_manifests", {}).keys())[0],
+            collection_id=list(manifest.get("join_manifests", {}).keys())[0],
             output_path=out_path,
         )
 
