@@ -1,29 +1,11 @@
-GROUP|FLAG|pipeline-static|demo-vetinst|web-demo|pipeline-expl-simple|pipeline-expl-advanced|project-independent|developer|qa|NOTES
-VIEW|interactivity_enabled|N|N|Y|Y|Y|Y|Y|Y|master gate — too coarse; proposed for decomposition
-VIEW|[P] tier_toggle_enabled|?|N|?|Y|Y|Y|Y|Y|explicit T1<->T2 toggle; decoupled from filter access
-VIEW|[P] default_tier|?|T2|T2|?|?|?|?|?|which tier renders on first load
-FILTER|[P] passive_filter_enabled|N|N|?|?|?|?|Y|Y|ephemeral curiosity exploration — does NOT change data; no audit trail
-T3-AUDIT|t3_sandbox_enabled|N|N|N|N|Y|Y|Y|Y|active filter — creates T3 branch; requires justification; writes to audit
-T3-AUDIT|comparison_mode_enabled|N|N|N|N|Y|Y|Y|Y|requires t3_sandbox_enabled to be meaningful
-T3-AUDIT|audit_report_enabled|N|N|N|N|Y|Y|Y|Y|export consolidated audit report
-SESSION|session_management_enabled|N|N|N|N|Y|Y|Y|Y|UI accordion visibility
-SESSION|ghost_save.enabled|N|N|N|N|Y|Y|Y|N|autosave — must be gated on t3_sandbox_enabled (SESSION-PERSONA-1 open)
-EXPORT|export_bundle_enabled|Y|N|N|Y|Y|Y|Y|Y|global ZIP export
-EXPORT|export_graph_enabled|N|N|N|N|Y|Y|Y|Y|single graph export
-INGEST|metadata_ingestion_enabled|N|N|N|N|Y|Y|Y|Y|upload replacement metadata (triggers T1 rebuild)
-INGEST|import_helper_enabled|N|N|N|N|N|Y|Y|Y|external import helper panel
-INGEST|data_ingestion_enabled|N|N|N|N|N|Y|Y|Y|raw data file / Excel upload
-INGEST|data_import_panel_visible|Y|N|N|Y|Y|Y|Y|Y|parent accordion panel visibility
-DEV|gallery_enabled|N|N|N|N|N|Y|Y|Y|gallery browser (34 recipes)
-DEV|developer_mode_enabled|N|N|N|N|N|N|Y|Y|enables Blueprint + Test Lab
-DEV|wrangle_studio_enabled|N|N|N|N|N|N|Y|Y|advanced recipe editor
-DEV|test_lab (derived from dev_mode)|N|N|N|N|N|N|Y|Y|no separate flag yet
-UI-LAYOUT|show_persona_badge|Y|N|N|Y|Y|Y|Y|Y|Active: persona-name in nav header
-UI-LAYOUT|manifest_selector.visible|N|N|N|N|Y|Y|Y|Y|manifest choice dropdown
-UI-LAYOUT|manifest_selector.fixed_manifest|set|set|set|set|set|null|null|null|if set: locks manifest; null = free choice
-UI-LAYOUT|ui_branding.title|--|--|""|--|--|--|--|--|web-demo already has this field; proposed to standardize
-UI-LAYOUT|ui_branding.subtitle|--|--|""|--|--|--|--|--|same as above
-UI-LAYOUT|[P] show_navigation|?|N|N|?|?|?|Y|Y|hides nav pills strip (Home/Blueprint/etc)
-UI-LAYOUT|[P] sidebar_profile|?|?|?|?|?|?|?|?|future: named sidebar layout profile; deferred Phase 27+
-PROPOSED-PERSONA|[P] web-project-showcase|N|N|-|N|N|N|N|N|static webpage: T2 default + branding title + no nav + optional export
-PROPOSED-PERSONA|[P] lightweight-exploration|N|N|-|?|N|N|N|N|passive filter + T2 default + no T3 + optional export
+PERSONA|TYPE|INTERACT|TIER_TOG|DEF_TIER|PAS_FILT|T3_SAND|CMP_MODE|AUD_RPT|SESS_MGT|AUTOSAVE|EXP_BNDL|EXP_GRF|META_ING|IMP_HLP|DAT_ING|IMP_PNL|GALLERY|DEV_MODE|WRNG_STU|TEST_LAB|PRS_BADGE|MAN_SEL|MAN_FIX|UI_TITLE|UI_SUBT|SHOW_NAV|SDB_PROF|NOTES
+pipeline-static|existing|-|-|?|-|-|-|-|-|-|EXP|-|-|-|-|ING|-|-|-|-|UI|-|set|-|-|?|?|automated pipeline output; view only
+demo-vetinst|existing|-|-|T2|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|set|-|-|-|-|NVI-branded static presentation; no export; no badge
+web-demo|existing|VIEW|?|T2|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|set|UI|UI|-|-|public-facing web page; has UI_TITLE/UI_SUBT fields already
+pipeline-expl-simple|existing|VIEW|VIEW|?|-|-|-|-|-|-|EXP|-|-|-|-|ING|-|-|-|-|UI|-|set|-|-|?|?|T1<->T2 toggle; no T3; pipeline context
+pipeline-expl-advanced|existing|VIEW|VIEW|?|-|T3|T3|T3|SESS|SESS|EXP|EXP|ING|-|-|ING|-|-|-|-|UI|UI|set|-|-|?|?|full T3 sandbox; no gallery; no developer tools
+project-independent|existing|VIEW|VIEW|?|-|T3|T3|T3|SESS|SESS|EXP|EXP|ING|ING|ING|ING|DEV|-|-|-|UI|UI|null|-|-|?|?|researcher: T3 + gallery + full ingest
+developer|existing|VIEW|VIEW|?|-|T3|T3|T3|SESS|SESS|EXP|EXP|ING|ING|ING|ING|DEV|DEV|DEV|DEV|UI|UI|null|-|-|UI|?|all features
+qa|existing|VIEW|VIEW|?|-|T3|T3|T3|SESS|-|EXP|EXP|ING|ING|ING|ING|DEV|DEV|DEV|DEV|UI|UI|null|-|-|UI|?|mirrors developer; autosave off for test stability
+[P] web-project-showcase|proposed|-|-|T2|-|-|-|-|-|-|?|-|-|-|-|-|-|-|-|-|-|-|set|UI|UI|-|-|static project webpage with branding; fill EXP_BNDL based on use case
+[P] lightweight-exploration|proposed|-|-|T2|FILTER|-|-|-|-|-|?|-|-|-|-|-|-|-|-|-|-|?|null|-|-|?|?|passive filter + T2 default; no T3; no audit
