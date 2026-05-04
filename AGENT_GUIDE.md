@@ -92,6 +92,7 @@ To prevent AI Drift when switching between Gemini and Claude, follow this mailbo
     1. Before stopping, the active agent MUST write the current status, specific file paths modified, and the "Next Step" prompt to the Handoff File.
     2. Upon starting, the new agent MUST read `handoff_active.md` to resume the "Stream of Consciousness."
 - **Conflict Resolution**: If instructions in chat conflict with this file, HALT and request `@sync`.
+- **Tasks**: For every tasks to be done, you will suggest which agent model (sonet/opus) to use and which thinking effort it requires (low/medium/high/extremely high). 
 
 ## 3. Temporary Workspace Governance
 
