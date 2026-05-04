@@ -113,6 +113,21 @@ These items require a design decision or scope confirmation before implementatio
 - [ ] Ensure can fix project selector to project while being "autonomous" and add metadata update / choose data for the specific manifest. Choosen 
 
 
+### 🔵 REVIEW tasks — design discussions needed (2026-05-04)
+
+- [ ] **REVIEW-SCOPING-1 — T3 bundle dependency rule**: Confirm the rule: if `t3_sandbox_enabled` is on, then `comparison_mode_enabled` + `audit_report_enabled` + `session_management_enabled` must also be on. These are the computer functionalities that must be activated together as a group when T3 is activated. Need to verify current persona templates enforce this and document it as a formal scoping rule. Related: `SESSION-PERSONA-1` (ghost_save gating).
+
+- [ ] **REVIEW-EXPORT-FLAGS — EXP_GROUP as separate persona flag**: Currently `Active group` export scope is gated on `export_graph_enabled` (same as Active plot). The matrix lists `EXP_GROUP` as a distinct column from `EXP_GRF`. Decision: add a dedicated `export_group_enabled` persona flag, or keep current behaviour (lineage backtrace works for both → one flag is enough)? Eve's note: as long as lineage works for all scopes, activating all export types together is acceptable.
+
+- [ ] **REVIEW-IMPORT-PANEL — META_ING / IMP_HLP / single import UI**: One import panel with mapping that determines what's available. Rule proposed: `IMP_HLP` on → full import (all datasets + metadata); `META_ING` on alone → mapping shows metadata only, no extra import button. Decision needed on: (1) whether the mapping panel auto-filters available schemas based on flags, (2) whether metadata schema stays separate in mapping or merges with full import flow.
+
+- [ ] **REVIEW-AUTOSAVE-CACHE — caching vs autosave separation**: Is the Parquet cache (T1 materialisation) always written for performance, independent of the `autosave` flag? If yes: cache-write is always on; `autosave` flag only controls ghost-save (session JSON). If loaded once on same system, cached Parquet avoids recalculating wrangling + plots on tab switch — good for responsiveness. Need to decide separation before fixing `SESSION-PERSONA-1`.
+
+- [ ] **REVIEW-HASH-EXPORT — hash visibility and export gating**: Hashes (manifest SHA256, data batch SHA256, recipe hash) are always computed. Question: should the export of all 3 hashes (in README + report) be gated by a flag, or always included in bundle? T3 recipe hash needs T3 active. Further discussion needed to clarify what Eve expects to see and when.
+
+- [ ] **REVIEW-UI-TITLE-SUBT — manifest-driven UI title/subtitle**: `UI_TITLE` and `UI_SUBT` could be read from a field in the manifest (e.g. `info.display_name`, `info.description`) when `MAN_SEL` is active, rather than from persona config alone. Decision: define the field name convention and whether persona config can override manifest value.
+
+
 ### UI - Functionality debugging (TODO / User )
 - [ ] Exports -> retest / debug
 - [ ] proper definition of the session ghost save and save function when Tier 3 activated
