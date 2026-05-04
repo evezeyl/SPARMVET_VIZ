@@ -39,8 +39,8 @@ Open `persona_capability_matrix.csv` with `|` as delimiter in LibreOffice / Exce
 | Abbrev | Full name | What it covers |
 |---|---|---|
 | `VIEW` | View / tier display | Tier toggle, default tier, data visibility |
-| `FILTER` | Passive filter | Ephemeral curiosity exploration — no data change, no audit |
-| `T3` | T3-Audit / active filter | Justified edits, T3 branch, audit trail, propagation, comparison |
+| `FILTER` | Passive filter | passive column drop | Ephemeral curiosity exploration — no data change, no audit |
+| `T3` | T3-Audit / active filter / active column drop | Justified edits, T3 branch, audit trail, propagation, comparison |
 | `SESS` | Session | Save/restore work-in-progress; autosave |
 | `EXP` | Export | Bundle ZIP, single graph export |
 | `ING` | Ingest | Metadata upload, import helper, raw data ingest |
@@ -56,12 +56,13 @@ Open `persona_capability_matrix.csv` with `|` as delimiter in LibreOffice / Exce
 | Abbrev | Full flag | Notes |
 |---|---|---|
 | `INTERACT` | `interactivity_enabled` | Master gate — too coarse; proposed for decomposition |
-| `TIER_TOG` | `[P] tier_toggle_enabled` | Explicit T1↔T2 toggle; proposed |
+| `TIER_T1/T2_TOG` | `[P] tier_toggle_enabled` | Explicit T1↔T2 toggle; proposed |
 | `DEF_TIER` | `[P] default_tier` | T1 or T2 on load; proposed |
 
 **Dependency:** `TIER_TOG` off → `DEF_TIER` is the only tier shown (no toggle).  
 **Open question:** retire `INTERACT` and replace with `TIER_TOG` + `PAS_FILT`, or keep as legacy alias?
 
+TODO default tier should always be T2 Because it is the result from the manifest. No matter what
 ---
 
 ### GROUP: FILTER — Passive (view-only, no data change)
@@ -69,6 +70,7 @@ Open `persona_capability_matrix.csv` with `|` as delimiter in LibreOffice / Exce
 | Abbrev | Full flag | Notes |
 |---|---|---|
 | `PAS_FILT` | `[P] passive_filter_enabled` | Column drop + row filter, ephemeral; proposed |
+
 
 **Key distinction:**
 - **Passive filter** (`PAS_FILT`) = user **explores** the data; view changes, nothing recorded, resets on reload

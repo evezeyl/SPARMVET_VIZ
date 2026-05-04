@@ -10,12 +10,12 @@ institute: "Norwegian Veterinary Institute (NVI)"
 format:
   revealjs:
     embed-resources: true
-    logo: "./img/logo.png"
+    logo: "../img/logo.png"
     slide-number: c/t
     incremental: false
     theme: default
     title-slide-attributes:
-      data-background-image: "./img/front_page.png"
+      data-background-image: "../img/front_page.png"
       data-background-size: "40%"
       data-background-position: "50% 95%"
     css: demo_styles.css
