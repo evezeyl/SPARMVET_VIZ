@@ -231,7 +231,10 @@
       "Bash(distrobox list *)",
       "Read(//run/host/usr/local/bin/**)",
       "Read(//var/lib/**)",
-      "Bash(distrobox enter *)"
+      "Bash(distrobox enter *)",
+      "Bash(python3 -c \"import polars as pl; print\\(dir\\(pl.LazyFrame\\)\\)\")",
+      "Bash(python3 -c \"import polars as pl; print\\([x for x in dir\\(pl.LazyFrame\\) if 'join' in x.lower\\(\\)]\\)\")",
+      "Bash(.venv/bin/python3 -c \"import polars as pl; print\\([x for x in dir\\(pl.LazyFrame\\) if 'join' in x.lower\\(\\)]\\)\")"
     ],
     "additionalDirectories": [
       "/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/projects"

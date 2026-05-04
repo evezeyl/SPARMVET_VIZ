@@ -9,23 +9,50 @@
 
 - [x] Verification: Manifest 1_test_data_ST22_dummy: seems that the main manifest became a huge chunk instead of using the !include Tag. We need to ensure that main manifest links to appropriate directory and file substructure - no huge chunk. Can you verify this ? Create additional directories. The goal is to provide a human redeable structure of the main manifest, so it can understand the general idea of what the manifest does. Eg. Groups in main, plots definitions via !include. Fixed all manifests and Clarified ADRs good. 
 
-- [ ] **EXPORT-REDESIGN-1**: Consolidate export UI into one panel with scope toggle.
+- [x] **EXPORT-REDESIGN-1**: Consolidate export UI into one panel with scope toggle. ✅ 2026-05-04
   **Design agreed 2026-05-04 — spec:** `.antigravity/design/export_specification.md`
-  - Remove separate "Export Audit Report" button from `export_audit_report_ui()` — delete that render fn
-  - Single "💾 Export Bundle" button with presentation controls only (quality, plot format, report format)
-  - Add scope toggle `[Global project | Active plot]` — only visible when persona has BOTH `export_bundle_enabled` + `export_graph_enabled`
-  - "Active plot" disabled with tooltip when no plot tab is open
-  - **Impl:** `app/handlers/export_handlers.py` → `system_tools_ui()` + `export_bundle_download()`
+  - Deleted `export_audit_report_ui()`, `export_audit_report_download()`, `_audit_report_filename()`
+  - Single "💾 Export Bundle" button with presentation controls only
+  - 3-way scope toggle `[Global project | Active group | Active plot]` — shown when persona has BOTH flags
+  - Dynamic choices: Active group hidden when no analysis_groups or plot has no group
+  - Removed Single Graph Export accordion panel from sidebar (superseded by scope toggle)
+  - **Impl:** `app/handlers/export_handlers.py`, `app/handlers/home_theater.py`
 
-- [ ] **EXPORT-REDESIGN-2**: Auto-include T3 audit trail in report.qmd when T3 active + has changes.
-  - T3 audit trail = section at end of `report.qmd` — NOT a separate file
-  - Section: per-plot table of committed T3 steps + user justifications (deactivated nodes excluded)
-  - Add `recipes/t3_steps.yaml` to bundle when T3 has changes (see spec §4)
-  - Active plot mode: scope to that plot's lineage only
+- [x] **EXPORT-REDESIGN-2**: Auto-include T3 audit trail in report.qmd when T3 active + has changes. ✅ 2026-05-04
+  - T3 audit trail section added to end of `report.qmd` — per-plot table (Step, Action, Details, Justification)
+  - `recipes/t3_steps.yaml` generated when T3 has committed active nodes
+  - Scope (global/group/plot) applied consistently to both the audit section and t3_steps.yaml
   - **Impl:** `export_bundle_download()` in `export_handlers.py`
 
 
-- [ ] Assembly : was it the joining part of the data ? if so Assembly should be renamed Joining everywhere where it is found (incl. code - to make that clearerer) or similar ... boss hooked on this (because assembly means something totally different in bioinformatics)
+- [ ] **ASSEMBLY-RENAME**: Rename `assembly_manifests` → `join_manifests` and role string `"assembly"` → `"join"` everywhere. Use VSCode find-and-replace across files.
+  **Agreed name:** `join_manifests` (checked: not a Polars keyword conflict at dict-key level)
+  **Scope (~35 files, ~65 occurrences):**
+
+  **Pass 1 — zero-ambiguity, replace-all:**
+  - `assembly_manifests` → `join_manifests` (YAML key + all Python `.get()` calls)
+
+  **Pass 2 — role string, replace with care:**
+  - `"assembly"` → `"join"` (role string in blueprint_handlers, manifest_navigator, wrangle_studio)
+  - ⚠️ EXCEPTION: `session_manager.py` line ~213 — `{"assembly": ..., "contracted": ...}` is a Parquet path label, NOT the manifest role — leave it as-is
+
+  **Pass 3 — UI label strings (manual, ~7 hits):**
+  - `"◆ Assembly"` → `"◆ Join"` (wrangle_studio.py)
+  - `"Assembly Output (Input)"` → `"Join Output (Input)"` (wrangle_studio.py)
+  - `f"{sid} — assembly"` → `f"{sid} — join"` (blueprint_handlers.py)
+  - ⭐ TubeMap node labels (what the boss sees in Cytoscape) — `libs/utils/src/utils/blueprint_mapper.py`:
+    - line ~167: `"{asid}\\nAssembly"` → `"{asid}\\nJoin"`
+    - line ~189: `"{asid}\\nAssembly Wrangling"` → `"{asid}\\nJoin Wrangling"`
+
+  **Pass 4 — variable names in Python scripts (rename carefully):**
+  - ⚠️ NEVER use bare `join` as a variable name — shadows `str.join()` and is confusing next to Polars
+  - `assemblies` → `join_defs` or `join_specs`
+  - `asm_block` → `join_block`
+  - `is_assembly` → `is_join_step`
+  - `assembly_rels` → `join_rels`
+
+  **Pass 5 — docs (.antigravity/*.md):**
+  - `architecture_decisions.md`, `manifest_data_contract_rules.md`, `blueprint_architect_ux_spec.md`, `handoff_session7.md`
 
 
 

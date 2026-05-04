@@ -1135,26 +1135,15 @@ def define_server(input, output, session, *,
                 icon=ui.tags.i(class_="bi bi-filter-circle-fill")
             ))
 
-        # Global Project Export — gated by export_bundle_enabled
+        # Export — gated by export_bundle_enabled
         if bootloader.is_enabled("export_bundle_enabled"):
             panels.append(ui.accordion_panel(
-                "Global Project Export",
+                "Export",
                 ui.div(
                     ui.output_ui("system_tools_ui"),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-box-arrow-up")
-            ))
-
-        # Single Graph Export — gated by export_graph_enabled
-        if bootloader.is_enabled("export_graph_enabled"):
-            panels.append(ui.accordion_panel(
-                "Single Graph Export",
-                ui.div(
-                    ui.output_ui("single_graph_export_ui"),
-                    class_="d-flex flex-column gap-1"
-                ),
-                icon=ui.tags.i(class_="bi bi-image")
             ))
 
         # Session Management — gated by flag
@@ -1357,6 +1346,7 @@ def define_server(input, output, session, *,
         applied_filters=applied_filters,
         home_state=home_state,
         safe_input=safe_input,
+        active_home_subtab=active_home_subtab,
         notification_log=notification_log,
     )
 

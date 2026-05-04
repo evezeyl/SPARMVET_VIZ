@@ -11,10 +11,10 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:export_audit_report_ui, output:export_audit_report_download
+# provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download
 # consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, polars, shiny
 # consumed_by: app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-051
+# doc: .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-051, .antigravity/design/export_specification.md
 # @end_deps
 
 from pathlib import Path
@@ -31,22 +31,24 @@ def define_export_server(input, output, session, *,
                          tier1_anchor, tier_reference, tier3_leaf,
                          tier_toggle, applied_filters,
                          home_state, safe_input,
+                         active_home_subtab=None,
                          notification_log=None):
-    """Register export-bundle + audit-report + system-tools handlers.
+    """Register export-bundle + system-tools handlers.
 
     Reactive deps (kwargs):
-      bootloader      : Path Authority (ADR-031)
-      orchestrator    : tier1/tier2 materialiser
-      viz_factory     : plot renderer
-      current_persona : reactive.Value[str]
-      active_cfg      : reactive.Calc[ConfigManager]
-      tier1_anchor    : reactive.Calc[LazyFrame]
-      tier_reference  : reactive.Calc[LazyFrame | None]
-      tier3_leaf      : reactive.Calc[DataFrame | None]
-      tier_toggle     : reactive.Value[str]   ("T1"|"T2"|"T3")
-      applied_filters : reactive.Value[list]
-      home_state      : reactive.Value[dict] | None
-      safe_input      : helper (input, key, default) → value
+      bootloader         : Path Authority (ADR-031)
+      orchestrator       : tier1/tier2 materialiser
+      viz_factory        : plot renderer
+      current_persona    : reactive.Value[str]
+      active_cfg         : reactive.Calc[ConfigManager]
+      tier1_anchor       : reactive.Calc[LazyFrame]
+      tier_reference     : reactive.Calc[LazyFrame | None]
+      tier3_leaf         : reactive.Calc[DataFrame | None]
+      tier_toggle        : reactive.Value[str]   ("T1"|"T2"|"T3")
+      applied_filters    : reactive.Value[list]
+      home_state         : reactive.Value[dict] | None
+      safe_input         : helper (input, key, default) → value
+      active_home_subtab : reactive.Value[str] | None  — current plot subtab id
     """
     from app.handlers.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -56,6 +58,7 @@ def define_export_server(input, output, session, *,
     def system_tools_ui():
         if not bootloader.is_enabled("export_bundle_enabled"):
             return ui.div()
+
         n_active = len(applied_filters.get())
         filter_warning = ui.div()
         if n_active:
@@ -64,14 +67,76 @@ def define_export_server(input, output, session, *,
                 class_="text-warning d-block mb-1",
                 style="font-size:0.7em;"
             )
+
+        # 3-way scope toggle — only when persona has BOTH export_bundle + export_graph
+        scope_toggle = ui.div()
+        if bootloader.is_enabled("export_graph_enabled") and active_home_subtab is not None:
+            cfg = active_cfg()
+            groups = cfg.raw_config.get("analysis_groups", {})
+            has_groups = bool(groups)
+
+            subtab = active_home_subtab.get() or ""
+            active_pid = subtab.removeprefix("subtab_") if subtab.startswith("subtab_") else ""
+
+            # Determine which group the active plot belongs to
+            active_gid = None
+            if active_pid and has_groups:
+                for gid, gspec in groups.items():
+                    if active_pid in gspec.get("plots", {}):
+                        active_gid = gid
+                        break
+
+            scope_choices: dict = {
+                "global": ui.span(
+                    "Global project",
+                    title="Export everything in the active project",
+                )
+            }
+            # Active group: only shown when manifest has groups AND active plot has a group
+            if has_groups and active_gid is not None:
+                scope_choices["group"] = ui.span(
+                    f"Active group ({active_gid})",
+                    title="Export all plots in the current group (e.g. all Quality Control plots)",
+                )
+            elif has_groups and not active_pid:
+                # Groups exist but no plot tab open — show disabled-looking label
+                scope_choices["group"] = ui.span(
+                    "Active group",
+                    title="Switch to a plot tab to enable scoped export.",
+                    style="opacity:0.45; cursor:not-allowed;",
+                )
+            # Active plot
+            if active_pid:
+                scope_choices["plot"] = ui.span(
+                    f"Active plot ({active_pid})",
+                    title="Export only the plot you are currently viewing",
+                )
+            else:
+                scope_choices["plot"] = ui.span(
+                    "Active plot",
+                    title="Switch to a plot tab to enable scoped export.",
+                    style="opacity:0.45; cursor:not-allowed;",
+                )
+
+            scope_toggle = ui.div(
+                ui.input_radio_buttons(
+                    "export_scope",
+                    label="Scope",
+                    choices=scope_choices,
+                    selected="global",
+                    inline=True,
+                ),
+                class_="mb-1",
+            )
+
         return ui.div(
-            # ── Export Results Bundle ─────────────────────────────────────
             ui.div(
                 ui.input_text(
                     "export_user_name", label="Bundle label / name",
                     placeholder="label (no spaces, no special characters)…",
                     value="",
                 ),
+                scope_toggle,
                 ui.input_radio_buttons(
                     "export_preset",
                     label="Quality",
@@ -107,8 +172,6 @@ def define_export_server(input, output, session, *,
                 class_="mb-2 px-2",
                 style="font-size:0.8em;"
             ),
-            # ── Export Audit Report (22-E) ────────────────────────────────
-            ui.output_ui("export_audit_report_ui"),
         )
 
     @render.download(filename=lambda: _export_bundle_filename())
@@ -160,6 +223,40 @@ def define_export_server(input, output, session, *,
         if not all_plots:
             for p_id, spec in top_plots.items():
                 all_plots.append((p_id, spec))
+
+        # ── Apply export scope (Global / Active group / Active plot) ──────
+        export_scope = safe_input(input, "export_scope", "global")
+        scope_label = "global"
+        _subtab = (active_home_subtab.get() or "") if active_home_subtab is not None else ""
+        active_pid = _subtab.removeprefix("subtab_") if _subtab.startswith("subtab_") else ""
+
+        if export_scope == "plot" and active_pid:
+            _filtered = [(p, s) for p, s in all_plots if p == active_pid]
+            if _filtered:
+                all_plots = _filtered
+                scope_label = active_pid
+        elif export_scope == "group" and active_pid and groups:
+            _active_gid = None
+            for _gid, _gspec in groups.items():
+                if active_pid in _gspec.get("plots", {}):
+                    _active_gid = _gid
+                    break
+            if _active_gid:
+                _gplot_ids = set(groups[_active_gid].get("plots", {}).keys())
+                _filtered = [(p, s) for p, s in all_plots if p in _gplot_ids]
+                if _filtered:
+                    all_plots = _filtered
+                    scope_label = _active_gid
+
+        # ── Collect T3 audit data (per-plot active nodes) ─────────────────
+        _t3_by_plot: dict[str, list[dict]] = {}
+        if home_state is not None and bootloader.is_enabled("t3_sandbox_enabled"):
+            _state = home_state.get()
+            _rbp = _state.get("t3_recipe_by_plot", {}) or {}
+            for _pid, _ in all_plots:
+                _nodes = [n for n in _rbp.get(f"subtab_{_pid}", []) if n.get("active", True)]
+                if _nodes:
+                    _t3_by_plot[_pid] = _nodes
 
         # Dataset → plots mapping (used for folder structure + README + report)
         import re as _re
@@ -412,6 +509,33 @@ def define_export_server(input, output, session, *,
                 except Exception as e:
                     zf.writestr(f"{bundle_dir}/recipes/ERROR.txt", str(e))
 
+                # ── t3_steps.yaml (when T3 has committed changes) ─────────
+                if _t3_by_plot:
+                    try:
+                        import yaml as _yaml
+                        t3_steps_data = {
+                            "generated": now.isoformat(),
+                            "export_scope": scope_label,
+                            "t3_steps": {
+                                _pid: [
+                                    {
+                                        "action": n.get("node_type", "unknown"),
+                                        **n.get("params", {}),
+                                        "reason": n.get("reason", ""),
+                                        "committed_at": n.get("created_at", ""),
+                                    }
+                                    for n in _nodes
+                                ]
+                                for _pid, _nodes in _t3_by_plot.items()
+                            },
+                        }
+                        zf.writestr(
+                            f"{bundle_dir}/recipes/t3_steps.yaml",
+                            _yaml.safe_dump(t3_steps_data, sort_keys=False, allow_unicode=True),
+                        )
+                    except Exception as e:
+                        zf.writestr(f"{bundle_dir}/recipes/t3_steps_ERROR.txt", str(e))
+
             # ── Compute hashes for reproducibility ────────────────────────
             import hashlib as _hashlib
             manifest_sha = ""
@@ -568,6 +692,32 @@ def define_export_server(input, output, session, *,
                     )
                 qmd_lines.append("")
 
+            # ── T3 Audit Trail section ────────────────────────────────────
+            if _t3_by_plot:
+                qmd_lines += ["## T3 Audit Trail", ""]
+                for _pid, _nodes in _t3_by_plot.items():
+                    _spec_title = next(
+                        (s.get("title") for p, s in all_plots if p == _pid), None
+                    )
+                    _section_label = _spec_title or _pid.replace("_", " ").title()
+                    qmd_lines += [
+                        f"### {_section_label}",
+                        "",
+                        "| Step | Action | Details | Justification |",
+                        "|------|--------|---------|---------------|",
+                    ]
+                    for _i, _n in enumerate(_nodes, 1):
+                        _action = _n.get("node_type", "?")
+                        _params = _n.get("params", {})
+                        _details = "; ".join(
+                            f"{k}={v}" for k, v in _params.items()
+                        ) if _params else "—"
+                        _reason = (_n.get("reason") or "—").replace("|", "\\|")
+                        qmd_lines.append(
+                            f"| {_i} | `{_action}` | {_details} | {_reason} |"
+                        )
+                    qmd_lines.append("")
+
             qmd_lines += [
                 "---",
                 "",
@@ -688,110 +838,6 @@ def define_export_server(input, output, session, *,
 
         buf.seek(0)
         yield buf.read()
-
-    # ── 22-E: Export Audit Report ─────────────────────────────────────────────
-
-    @output
-    @render.ui
-    def export_audit_report_ui():
-        """Audit Report export — single format selector + one download button.
-
-        Phase 25-G: consolidated radio (HTML/PDF/DOCX) + single download button.
-        The download handler dispatches on `export_audit_format` and renders all
-        three formats via Quarto natively (ADR-052-FOLLOWUP-1 closed: no Pandoc
-        fallback).
-
-        Phase 25-K (FOLLOWUP-2): persona visibility now gated by
-        `audit_report_enabled` rather than a hardcoded persona-name set, so
-        templates control this independently of code changes.
-        """
-        if not bootloader.is_enabled("audit_report_enabled"):
-            return ui.div()
-
-        discarded_warning = ui.div()
-        if home_state is not None:
-            state = home_state.get()
-            all_committed = [
-                n for nodes in (state.get("t3_recipe_by_plot", {}) or {}).values()
-                for n in nodes
-            ]
-            n_discarded = sum(1 for n in all_committed if not n.get("active", True))
-            if n_discarded:
-                discarded_warning = ui.tags.small(
-                    f"⚠️ {n_discarded} deactivated node(s) — they will NOT appear in the report.",
-                    class_="text-warning d-block mb-1",
-                    style="font-size:0.7em;",
-                )
-
-        return ui.div(
-            ui.p("Export Audit Report", class_="ultra-small fw-bold mb-1"),
-            discarded_warning,
-            ui.input_radio_buttons(
-                "export_audit_format",
-                label="Format",
-                choices={"html": "HTML", "pdf": "PDF", "docx": "DOCX"},
-                selected="html",
-                inline=True,
-            ),
-            ui.download_button(
-                "export_audit_report_download",
-                "💾 Export Audit Report",
-                class_="btn-info btn-sm w-100",
-            ),
-            class_="mb-3 px-2",
-            style="font-size:0.8em;",
-        )
-
-    @render.download(filename=lambda: _audit_report_filename(
-        safe_input(input, "export_audit_format", "html")
-    ))
-    async def export_audit_report_download():
-        """Render the audit report in the selected format and stream the bytes.
-
-        Phase 25-K (ADR-052-FOLLOWUP-1 closed): Quarto renders HTML/PDF/DOCX
-        natively via `quarto render --to <fmt>`. No Pandoc fallback. If the
-        render fails, the user is notified and the .qmd source is streamed so
-        the failure is visible rather than silent.
-        """
-        import tempfile
-        from app.modules.exporter import render_audit_report
-
-        if home_state is None:
-            yield b""
-            return
-
-        state = home_state.get()
-        proj_id = safe_input(input, "project_id", "")
-        fmt = safe_input(input, "export_audit_format", "html")
-
-        msig = state.get("manifest_sha256") or ""
-        dbh = state.get("data_batch_hash") or ""
-        session_key = ""
-        if msig and dbh:
-            from app.modules.session_manager import SessionManager
-            session_key = SessionManager.compute_session_key(msig, dbh)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            out_path = render_audit_report(
-                home_state=state,
-                session_key=session_key,
-                output_dir=tmpdir,
-                manifest_id=proj_id,
-                fmt=fmt,
-            )
-            if Path(out_path).suffix.lstrip(".") != fmt:
-                _notify(
-                    f"⚠️ Quarto could not render {fmt.upper()} — streaming the .qmd source.",
-                    type="warning", duration=8,
-                )
-            yield Path(out_path).read_bytes()
-
-    def _audit_report_filename(fmt: str) -> str:
-        import datetime, re
-        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        proj_id = safe_input(input, "project_id", "report")
-        safe_id = re.sub(r"[^A-Za-z0-9_-]", "_", proj_id)[:30]
-        return f"{ts}_{safe_id}_audit_report.{fmt}"
 
     def _export_bundle_filename() -> str:
         """Generate timestamped zip filename for the export bundle."""
