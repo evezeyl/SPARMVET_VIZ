@@ -220,6 +220,19 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 
 - [ ] **Unified Materialization** `[haiku/low]`: `debug_wrangler.py` / `debug_assembler.py` — auto-create dated `tmpAI/{date}/{lineage}/` subfolders (use `get_debug_out_dir()` from `libs/utils`).
 - [ ] **T3 lf threading** `[sonnet/medium]`: When new T3 node types (rename, derive, pivot) are added, thread them through `_apply_t3_to_lf`. Design in `.claude/tasks/design_sge_lineage_t3.md`.
+- [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: The following imports violate the "no cross-lib" rule and should be resolved (move shared types to `utils` or inject via app layer):
+  - `libs/blueprint_arch/blueprint_mapper.py` → `utils.config_loader.ConfigManager`
+  - `libs/transformer/pipeline.py` → `utils.config_loader.ConfigManager`, `ingestion.ingestor.DataIngestor`
+  - `libs/transformer/data_assembler.py` → `utils.hashing`
+  - `libs/transformer/data_wrangler.py`, `metadata_validator.py` → `utils.errors`
+  - `libs/viz_factory/viz_factory.py` → `utils.errors`
+  - Pragmatic note: `utils.errors` and `utils.hashing` could be promoted to a `libs/shared_types` mini-lib, or violations accepted as `utils` being a "base" lib with no upstream deps (no violations in `libs/utils/` itself).
+- [ ] **UTILS-RELOC-2** `[haiku/low]`: `gallery_manager.py` exists in both `libs/utils/src/utils/` and `libs/viz_gallery/src/viz_gallery/` — deduplicate. Decide canonical copy; delete the other and fix all imports.
+- [ ] **In-app contextual help** `[sonnet/high]` `[ux]` `[new]`: Each user space (HOME, BLUEPRINT, GALLERY, TEST_LAB) should have a help button that opens / links to the relevant documentation section. Design question unresolved: bundle docs with app (Quarto HTML rendered locally, served by Shiny static assets) vs. deploy docs separately (docs server or GitHub Pages) with deep-links. Options:
+  1. Ship `docs/_site/` alongside app, serve via `ui.tags.iframe` or `ui.HTML()`.
+  2. Deploy docs to GitHub Pages; link out from app (simple, but requires internet).
+  3. Generate per-space summary markdown, render inline in a modal (`ui.modal_show()`).
+  Decision gate: confirm deployment context (air-gapped Galaxy vs. internet-connected) before implementing.
 
 ### Blueprint Architect
 

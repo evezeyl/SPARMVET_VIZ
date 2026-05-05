@@ -259,7 +259,14 @@
       "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js\" -o cytoscape-dagre.js)",
       "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css\" -o bootstrap-icons.css)",
       "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/fonts/bootstrap-icons.woff2\" -o fonts/bootstrap-icons.woff2)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "Bash(chmod +x /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/scripts/install_libs.sh)",
+      "Bash(bash /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/scripts/install_libs.sh)",
+      "Bash(PYTHONPATH=. .venv/bin/python -m pytest app/tests/test_persona_validator.py -v --tb=short)",
+      "Bash(PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_persona_validator.py app/tests/test_filter_operators.py libs/connector/tests/ libs/viz_factory/tests/test_deco2_components.py -q)",
+      "Bash([ -f \"$lib/README.md\" ])",
+      "Bash([ -f \"$lib/pyproject.toml\" ])",
+      "Bash([ -d \"$lib/tests\" ])"
     ],
     "additionalDirectories": [
       "/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/projects",
