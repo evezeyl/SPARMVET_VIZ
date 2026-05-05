@@ -147,7 +147,7 @@ These items require a design decision or scope confirmation before implementatio
 
 - [x] **VENDOR-MANIFEST-1**: Created `app/src/www/vendor/VENDOR_MANIFEST.md` — records all vendored assets with version, source URL, licence, and date. Must be updated whenever a vendor asset is added/upgraded. ✅ 2026-05-05
 
-- [ ] **DEPLOY-LIBS-1** `[haiku/low]`: Provide a clean lib install path for fresh deployments. Currently each `libs/` package requires a separate `pip install -e ./libs/X`. Fix: add a `scripts/install_libs.sh` (or `Makefile` target) that installs all editable libs in dependency order. Optionally: declare all libs as `[tool.uv.sources]` workspace members in root `pyproject.toml`.
+- [x] **DEPLOY-LIBS-1** `[haiku/low]`: Created `scripts/install_libs.sh` — installs all 8 editable libs in one command, VENV-overridable, exits on error, smoke-tested. ✅ 2026-05-05
 - [ ] **TO DISCUSS**: Toggle "show all data" — data shown only abstract; discuss what is exposed and when
 - [ ] **TO DISCUSS — lab script**: Extract pilot manifest (reconstitution of lineage) — improve reusability (e.g. manifest for results from a specific tool)
 - [ ] **TO DISCUSS — lab script**: Create tool-specific manifest (e.g. single-sheet variant of above)
@@ -267,6 +267,9 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 
 **Phase 24 commits:** `89bb5ef` `890b609` `f540cbf` `d50197e` `4c38f26` `18dbd46` `f0f7d92` `2393e50` `0b50fbd`
 **Phase 25 commits:** `294814e` `9b66656` `72726df` `45591ac` `95b48ac` `dc4464c` `320f6bf`
+**Phase 30 — Agent infra + deployment hardening (2026-05-05):**
+- `891f157` — agentic reorg: `.antigravity/` + `.agents/` → `.claude/`, `AGENT_GUIDE.md` → `CLAUDE.md`. **Recovery reference: if any path looks broken, `git show 891f157 --stat` lists every rename with similarity score.**
+- `2dcd1c2` — DEPLOY-MODULES-1: persona-gated module registration, gallery→T3 dead code removed, ~2600 path refs updated.
 
 
 
