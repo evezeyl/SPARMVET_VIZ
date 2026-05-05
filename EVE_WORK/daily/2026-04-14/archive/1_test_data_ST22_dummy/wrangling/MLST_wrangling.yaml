@@ -1,4 +1,0 @@
-tier1:
-  - action: "keep_columns"
-    columns: ["sample_id", "scheme", "sequence_type"]
-# tier2: not needed — data ready for tabular display as-is

@@ -1,8 +1,0 @@
-sample_id:
-  type: numeric
-serotype:
-  type: categorical
-VF_gene:
-  type: categorical
-VF_protein:
-  type: categorical

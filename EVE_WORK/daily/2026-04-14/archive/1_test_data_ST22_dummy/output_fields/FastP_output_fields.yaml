@@ -1,8 +1,0 @@
-sample_id:
-  type: numeric
-total_reads:
-  type: numeric
-q30_rate:
-  type: numeric
-gc_content:
-  type: numeric

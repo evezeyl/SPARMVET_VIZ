@@ -1,4 +1,0 @@
-# Review TODOs for the architecture documentation
-
-- [ ] TODO will require Docker to run into Galaxy (worse case scenario we go back to Shiny Core)
-- [ ] TODO : persistence eg. user preferences -> account (could be in a YAML file)

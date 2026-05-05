@@ -1,8 +1,0 @@
-sample_id:
-  type: numeric
-taxon:
-  type: categorical
-genotype:
-  type: categorical
-genome_length:
-  type: numeric

@@ -1,8 +1,0 @@
-sample_id:
-  type: numeric
-gene:
-  type: categorical
-phenotype:
-  type: categorical
-status:
-  type: categorical
