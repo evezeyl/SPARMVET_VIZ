@@ -10,18 +10,18 @@ IDENTITY: You are the Lead Architect for SPARMVET_VIZ. Your priority is to recon
 
 
 1. MANDATORY SYNC:
-- Read files in .agents/rules/, .agents/workflows/, .antigravity/knowledge/, .antigravity/tasks and .antigravity/plans
+- Read files in .claude/rules/, .claude/workflows/, .claude/knowledge/, .claude/tasks and .claude/plans
 
 2. index the following files to establish the current 'Source of Truth':
 - .agent/workspace_standard.md (outdated - defines the initial state of the workspace - important to update with the necessary information from the following files)
-- .agents/rules/ui_implementation_contract.md (new : PRIMARY AUTHORITY - v1.9)
-- .agents/rules/rules_ui_dashboard.md (updated : Behavioral Standards)
+- .claude/rules/ui_implementation_contract.md (new : PRIMARY AUTHORITY - v1.9)
+- .claude/rules/rules_ui_dashboard.md (updated : Behavioral Standards)
 - tmp/extra/ui_reactivity_persona.md (new : additional file provided by the user tried to specify and associate persona with ui implementation - vision of how it should behave)
-- .antigravity/knowledge/protocol_tier_data.md (requires review and consistency check with ui_implementation_contract.md)
-- .agents/workflows/ui_manifest_integration_testing.md (outdated)
-- .antigravity/knowledge/ui_traceability_matrix (outdated)
-- .antigravity/knowledge/project_tasks/ui_manifest_integration_testing.md (outdated)
-- .antigravity/knowledge/project_conventions.md (outdated - must be adjusted and completed last, when everything is understandable and decided)
+- .claude/knowledge/protocol_tier_data.md (requires review and consistency check with ui_implementation_contract.md)
+- .claude/workflows/ui_manifest_integration_testing.md (outdated)
+- .claude/knowledge/ui_traceability_matrix (outdated)
+- .claude/knowledge/project_tasks/ui_manifest_integration_testing.md (outdated)
+- .claude/knowledge/project_conventions.md (outdated - must be adjusted and completed last, when everything is understandable and decided)
 
 3. CORE MISSION:
 Perform a 'Consistency & Hygiene Check' (#hygiene) across all UI and data-wrestling files. 
@@ -54,37 +54,37 @@ Perform the Audit, list inconsistencies, and HALT for @verify before proposing t
 
 *Searched filesystem*
 
-*Listed directory [rules](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules) *
+*Listed directory [rules](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules) *
 
-*Listed directory [workflows](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/workflows) *
+*Listed directory [workflows](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/workflows) *
 
-*Listed directory [project_tasks](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/project_tasks) *
+*Listed directory [project_tasks](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/project_tasks) *
 
-*Listed directory [knowledge](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge) *
+*Listed directory [knowledge](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge) *
 
-*Listed directory [plans](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans) *
+*Listed directory [plans](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans) *
 
 *Listed directory [.antigravity](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity) *
 
-*Viewed [workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/workspace_standard.md) *
+*Viewed [workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/workspace_standard.md) *
 
-*Viewed [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/ui_implementation_contract.md) *
+*Viewed [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/ui_implementation_contract.md) *
 
-*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_ui_dashboard.md) *
+*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_ui_dashboard.md) *
 
 *Viewed [ui_reactivity_persona.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/tmp/extra/ui_reactivity_persona.md) *
 
-*Viewed [protocol_tiered_data.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/protocol_tiered_data.md) *
+*Viewed [protocol_tiered_data.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/protocol_tiered_data.md) *
 
-*Viewed [ui_manifest_integration_testing.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/workflows/ui_manifest_integration_testing.md) *
+*Viewed [ui_manifest_integration_testing.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/workflows/ui_manifest_integration_testing.md) *
 
-*Viewed [ui_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/ui_traceability_matrix.md) *
+*Viewed [ui_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/ui_traceability_matrix.md) *
 
-*Viewed [project_conventions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/project_conventions.md) *
+*Viewed [project_conventions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/project_conventions.md) *
 
-*Listed directory [tasks](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks) *
+*Listed directory [tasks](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks) *
 
-*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) *
+*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) *
 
 *Viewed [task.md](file:///home/evezeyl/.gemini/antigravity/brain/98022a18-6816-4d45-b48a-34af3bb72302/task.md) *
 
@@ -103,7 +103,7 @@ Perform the Audit, list inconsistencies, and HALT for @verify before proposing t
 ok, this is a good start, but I want you to review my comment and really try to understand the intend of the project, including the bifurcating point of the blueprint. 
 
 For this you need to review in detail and very thoroughly the following files: 
-- .agents/rules/ui_implementation_contract.md (new : PRIMARY AUTHORITY - v1.9)
+- .claude/rules/ui_implementation_contract.md (new : PRIMARY AUTHORITY - v1.9)
 - tmp/extra/ui_reactivity_persona.md
 I add an additional file to the review (which might clarify the intend of the project, this was an early attempt to define the ui implementation plan)  I grant you access to the file (without request) in: `./EVE_WORK/daily/2026-04-09/
 Comparison_SideDataPolts_Tiers_Claude_implementation_plan.md`
@@ -134,11 +134,11 @@ ok, this is good enough, please procede
 
 *Viewed [task.md](file:///home/evezeyl/.gemini/antigravity/brain/98022a18-6816-4d45-b48a-34af3bb72302/task.md) *
 
-*User accepted the command `rm -f /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/ui_traceability_matrix.md`*
+*User accepted the command `rm -f /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/ui_traceability_matrix.md`*
 
 *Edited relevant file*
 
-*User accepted the command `cat /home/evezeyl/.gemini/antigravity/brain/98022a18-6816-4d45-b48a-34af3bb72302/refined_rules_ui_dashboard.md > /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_ui_dashboard.md`*
+*User accepted the command `cat /home/evezeyl/.gemini/antigravity/brain/98022a18-6816-4d45-b48a-34af3bb72302/refined_rules_ui_dashboard.md > /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_ui_dashboard.md`*
 
 *Edited relevant file*
 
@@ -156,14 +156,14 @@ ok, this is good enough, please procede
 
 The Reorganization Plan has been fully executed!
 
-1. **Deprecated**: [.antigravity/knowledge/ui_traceability_matrix.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/ui_traceability_matrix.md:0:0-0:0) has been successfully deleted.
-2. **Created**: [.antigravity/knowledge/persona_traceability_matrix.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/persona_traceability_matrix.md:0:0-0:0) has been generated, comprehensively mapping all Left/Right UI interactions to the 5 Persona Profiles.
-3. **Overwritten**: [.agents/rules/rules_ui_dashboard.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_ui_dashboard.md:0:0-0:0) has been updated with the finalized Revision 3 rules to lock in the aesthetic, functional, and masking contracts.
+1. **Deprecated**: [.claude/knowledge/ui_traceability_matrix.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/ui_traceability_matrix.md:0:0-0:0) has been successfully deleted.
+2. **Created**: [.claude/knowledge/persona_traceability_matrix.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/persona_traceability_matrix.md:0:0-0:0) has been generated, comprehensively mapping all Left/Right UI interactions to the 5 Persona Profiles.
+3. **Overwritten**: [.claude/rules/rules_ui_dashboard.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_ui_dashboard.md:0:0-0:0) has been updated with the finalized Revision 3 rules to lock in the aesthetic, functional, and masking contracts.
 4. **Updated Plans & Conventions**: 
-   - [implementation_plan_master.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md:0:0-0:0) now features the revised Phase 12 tracking metrics.
-   - [project_conventions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/project_conventions.md:0:0-0:0) shell architecture successfully updated to rely purely on [ui_implementation_contract.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/ui_implementation_contract.md:0:0-0:0).
-   - [workspace_standard.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/workspace_standard.md:0:0-0:0) successfully updated its Master Index.
-   - [ui_manifest_integration_testing.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/workflows/ui_manifest_integration_testing.md:0:0-0:0) updated to document the headless persona-testing strategy via `shiny test`/`pytest-playwright`.
+   - [implementation_plan_master.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md:0:0-0:0) now features the revised Phase 12 tracking metrics.
+   - [project_conventions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/project_conventions.md:0:0-0:0) shell architecture successfully updated to rely purely on [ui_implementation_contract.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/ui_implementation_contract.md:0:0-0:0).
+   - [workspace_standard.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/workspace_standard.md:0:0-0:0) successfully updated its Master Index.
+   - [ui_manifest_integration_testing.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/workflows/ui_manifest_integration_testing.md:0:0-0:0) updated to document the headless persona-testing strategy via `shiny test`/`pytest-playwright`.
 
 This concludes the architectural audit. We are now fundamentally synchronized on Phase 12-B and the Data Safety Sandbox. We can proceed with executing the development or setup tasks whenever you're ready!
 
@@ -182,10 +182,10 @@ You can add a config file for additional settings. Please check https://github.c
 📈 Top 5 Files by Token Count:
 ──────────────────────────────
 1.  tree.txt (17,970 tokens, 45,618 chars, 44.4%)
-2.  .antigravity/knowledge/architecture_decisions.md (7,102 tokens, 31,081 chars, 17.5%)
-3.  .antigravity/plans/implementation_plan_master.md (2,980 tokens, 11,883 chars, 7.4%)
-4.  .antigravity/knowledge/project_conventions.md (1,483 tokens, 5,770 chars, 3.7%)
-5.  .agents/rules/rules_verification_testing.md (974 tokens, 4,371 chars, 2.4%)
+2.  .claude/knowledge/architecture_decisions.md (7,102 tokens, 31,081 chars, 17.5%)
+3.  .claude/plans/implementation_plan_master.md (2,980 tokens, 11,883 chars, 7.4%)
+4.  .claude/knowledge/project_conventions.md (1,483 tokens, 5,770 chars, 3.7%)
+5.  .claude/rules/rules_verification_testing.md (974 tokens, 4,371 chars, 2.4%)
 🔎 Security Check:
 ──────────────────
 ✔ No suspicious files detected.
@@ -206,10 +206,10 @@ Your repository has been successfully packed.
 
 @Agent: @dasharch - ARCHITECTURAL ALIGNMENT (PHASE 12-A).
 
-Context: We are standardizing the UI Persona templates to match the Persona Traceability Matrix in .antigravity/knowledge/persona_traceability_matrix.md and ADR-029a.
+Context: We are standardizing the UI Persona templates to match the Persona Traceability Matrix in .claude/knowledge/persona_traceability_matrix.md and ADR-029a.
 
 Task: 
-1. Read .antigravity/knowledge/persona_traceability_matrix.md and .agents/rules/rules_ui_dashboard.md.
+1. Read .claude/knowledge/persona_traceability_matrix.md and .claude/rules/rules_ui_dashboard.md.
 2. Review the files in config/ui/templates/.
 3. Delete any legacy templates that do not map to the 5 authorized personas.
 4. Rename or Create the following 5 files to ensure 1:1 parity with the Matrix:
@@ -221,7 +221,7 @@ Task:
 5. Inside each file, ensure the 'persona_name' key matches the filename prefix and 'logic_access' levels (None, Basic, Advanced, Full) reflect the matrix requirements.
 
 Follow: 
-- Workspace Standard: .agents/rules/workspace_standard.md
+- Workspace Standard: .claude/rules/workspace_standard.md
 - Verification Protocol: Do not implement Python logic. This is a YAML-only configuration task. 
 
 HALT for @verify after updating the directory structure and file contents.
@@ -229,9 +229,9 @@ HALT for @verify after updating the directory structure and file contents.
 
 *Listed directory [templates](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/config/ui/templates) *
 
-*Viewed [persona_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/persona_traceability_matrix.md) *
+*Viewed [persona_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/persona_traceability_matrix.md) *
 
-*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_ui_dashboard.md) *
+*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_ui_dashboard.md) *
 
 *Viewed [ui_persona_template.yaml](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/config/ui/templates/ui_persona_template.yaml) *
 
@@ -538,7 +538,7 @@ Requirement:
 
 *Viewed [pipeline-exploration-advanced_template.yaml](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/config/ui/templates/pipeline-exploration-advanced_template.yaml) *
 
-*Viewed [persona_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/persona_traceability_matrix.md) *
+*Viewed [persona_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/persona_traceability_matrix.md) *
 
 ### User Input
 
@@ -587,7 +587,7 @@ The system is now ready for Phase 12-B (Theater Recalculation & Interaction).
 
 for the imput_fields in the manifest, what are the data types we can use for strings ? 
 
-*Viewed [rules_data_engine.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_data_engine.md) *
+*Viewed [rules_data_engine.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_data_engine.md) *
 
 ### Planner Response
 
@@ -3921,7 +3921,7 @@ ok, you have done a fantastic work today, there are things that are not good yet
 Context: We have identified critical nuances in manifest construction, specifically regarding input wrangling, multi-source joins (Layer 2), and Plotnine layering (Layer 3). These must be codified before the session ends.
 
 Tasks:
-1. Audit Log: Append a technical summary of the "ST22_dummy" refactoring and the multi-source join subtleties discovered in this session to ./.antigravity/logs/audit_{{YYYY-MM-DD}}.md.
+1. Audit Log: Append a technical summary of the "ST22_dummy" refactoring and the multi-source join subtleties discovered in this session to ./.claude/logs/audit_{{YYYY-MM-DD}}.md.
 2. Library READMEs: Update the 'Key Components' and 'Usage' sections of libs/transformer/README.md and libs/viz_factory/README.md to reflect the newly verified tiered manifest patterns.
 3. User Docs: Update ./docs/workflows/wrangling.qmd and ./docs/workflows/visualisation_factory.qmd with the "tricks" found for complex joins and aesthetic mapping. Use the Violet Law format for component references.
 4. FAQ Generation: Create a new file ./docs/appendix/FAQ.qmd. 
@@ -3931,7 +3931,7 @@ Tasks:
 Follow:
 - Violet Law: ComponentName (file_name.py) in all .qmd/README files.
 - Documentation DRY Rule: Use {{< include >}} where possible; do not repeat source code.
-- Workspace Standard: .agents/rules/workspace_standard.md
+- Workspace Standard: .claude/rules/workspace_standard.md
 
 HALT for @verify once the FAQ.qmd is ready for review.
 
@@ -3951,7 +3951,7 @@ I'm moving into **Full Documentation Mode** to ensure every "hard-won trick" (es
 
 I'll start by appending the technical summary to the audit log. 📝📦start
 
-*User accepted the command `mkdir -p ./.antigravity/logs && echo -e "\n## Audit: 2026-04-14 - ST22 Relational Pipeline & Gallery Materialization\n\n### Summary\nFinalized the ST22 'Phenotype Curiosity' pipeline, resolving critical failures in join keys and unpivot logic. Established a standard for 'Headless Art Audits' via a new gallery materialization utility.\n\n### Technical Nuances Discovered\n- **YAML Boolean Trap (ADR-012b)**: The unquoted 'on:' key in manifests is interpreted as 'True' by standard YAML parsers. Hardened DataAssembler (data_assembler.py) and reshaping actions (reshaping/core.py) to resolve both 'on' and 'True'.\n- **Case-Insensitive Ingestion**: Standardized the Ingestor (ingestor.py) to map original TSV headers to slugs case-insensitively, preventing pipeline breaks from minor caption differences.\n- **Join-Filter Scoping**: Verified that 'join_filter' effectively prevents Cartesian products when merging 'Long' format datasets (AMR + Virulence).\n- **Categorical Null Handling**: Adopted a policy of recoding placeholders ('-', 'unknown') to 'Non Determined' to preserve visibility in legends.\n\n### Artifacts Materialized\n- assets/scripts/materialize_manifest_plots.py (Gallery Utility)\n- tmp/materialized_gallery/ST22_dummy_manifest/ (7/7 Plots Verified)" >> ./.antigravity/logs/audit_2026-04-14.md`*
+*User accepted the command `mkdir -p ./.claude/logs && echo -e "\n## Audit: 2026-04-14 - ST22 Relational Pipeline & Gallery Materialization\n\n### Summary\nFinalized the ST22 'Phenotype Curiosity' pipeline, resolving critical failures in join keys and unpivot logic. Established a standard for 'Headless Art Audits' via a new gallery materialization utility.\n\n### Technical Nuances Discovered\n- **YAML Boolean Trap (ADR-012b)**: The unquoted 'on:' key in manifests is interpreted as 'True' by standard YAML parsers. Hardened DataAssembler (data_assembler.py) and reshaping actions (reshaping/core.py) to resolve both 'on' and 'True'.\n- **Case-Insensitive Ingestion**: Standardized the Ingestor (ingestor.py) to map original TSV headers to slugs case-insensitively, preventing pipeline breaks from minor caption differences.\n- **Join-Filter Scoping**: Verified that 'join_filter' effectively prevents Cartesian products when merging 'Long' format datasets (AMR + Virulence).\n- **Categorical Null Handling**: Adopted a policy of recoding placeholders ('-', 'unknown') to 'Non Determined' to preserve visibility in legends.\n\n### Artifacts Materialized\n- assets/scripts/materialize_manifest_plots.py (Gallery Utility)\n- tmp/materialized_gallery/ST22_dummy_manifest/ (7/7 Plots Verified)" >> ./.claude/logs/audit_2026-04-14.md`*
 
 ### Planner Response
 
@@ -4106,7 +4106,7 @@ Knowledge Capture & Documentation Sync: **COMPLETE.** 🔐📚🏛️✨🚀🎯
 I have successfully codified the "ST22 Audit" lessons into the SPARMVET Bible. Every critical nuance—from the "Boolean Shield" to the "Cartesian Join Guardrails"—is now permanently documented for researchers and developers alike.
 
 ### 🏛️ Knowledge Capture Summary:
-- **✅ Technical Audit Log**: Appended the ST22 refactoring summary to [./.antigravity/logs/audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-14.md:0:0-0:0), highlighting the `ADR-012b` resolution.
+- **✅ Technical Audit Log**: Appended the ST22 refactoring summary to [./.claude/logs/audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-14.md:0:0-0:0), highlighting the `ADR-012b` resolution.
 - **✅ Library READMEs**: Updated [libs/transformer/README.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/transformer/README.md:0:0-0:0) and [libs/viz_factory/README.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/viz_factory/README.md:0:0-0:0) with the newly verified tiered manifest patterns.
 - **✅ User Workflows**: Injected "Manifest Hacks & Hazards" into [wrangling.qmd](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/docs/workflows/wrangling.qmd:0:0-0:0) and documented the `labs` layer and `GalleryMaterializer` in [visualisation_factory.qmd](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/docs/workflows/visualisation_factory.qmd:0:0-0:0) (following the **Violet Law**).
 - **✅ Project FAQ**: Created a premium [docs/appendix/FAQ.qmd](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/docs/appendix/FAQ.qmd:0:0-0:0) addressing the "Whys" of the platform with the **Deep Violet** CSS aesthetic.
@@ -4451,7 +4451,7 @@ I'm headed into the **Final Wrap-Up** now to summarize everything we've achieved
 
 (Executing...) 📦✨🎬start
 
-*Viewed [audit_2026-04-14.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-14.md) *
+*Viewed [audit_2026-04-14.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-14.md) *
 
 ### Planner Response
 
@@ -4483,7 +4483,7 @@ The platform is now scientifically robust, architecturally sound, and ready for 
 
 ### User Input
 
-ok, we have updated the requirements and design of ui and its functioning, the ui has not been verified you have everything you need in .agents/rules and .agents/workflows and .antigravity/knowledge to verify the build of the ui if it function as it should and if it should be improved. If you can manage to test one component at the time that would be best, in oder not to make everything failt. 
+ok, we have updated the requirements and design of ui and its functioning, the ui has not been verified you have everything you need in .claude/rules and .claude/workflows and .claude/knowledge to verify the build of the ui if it function as it should and if it should be improved. If you can manage to test one component at the time that would be best, in oder not to make everything failt. 
 
 ### Planner Response
 
@@ -4500,7 +4500,7 @@ I'm starting by reading the **`ui_implementation_contract.md`** and **`rules_ui_
 
 (Executing...) 📦✨🎬start
 
-*Viewed [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/ui_implementation_contract.md) *
+*Viewed [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/ui_implementation_contract.md) *
 
 ### Planner Response
 
@@ -4510,7 +4510,7 @@ Now, I'm heading into the **`rules_ui_dashboard.md`** to see if there are any sp
 
 (Executing...) 📦✨🎬
 
-*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_ui_dashboard.md) *
+*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_ui_dashboard.md) *
 
 ### Planner Response
 
@@ -4986,15 +4986,15 @@ I'm finalizing the **Task Registry** and **Audit Log** now so you can see the fu
 
 (Executing...) 📦✨🎬start
 
-*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md) *
+*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md) *
 
 ### Planner Response
 
-I'm performing a comprehensive update to **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)** right now! 🏛️🛠️✨ 
+I'm performing a comprehensive update to **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)** right now! 🏛️🛠️✨ 
 
 I'm moving the **Persona Baseline** and **Agnostic Discovery** tasks to [COMPLETED] and adding a new, specialized section for **"Phase 12-A: Comparison Theater & Relational Audit Hardening"**. 🏁🏗️🔄🛡️ This will give you 100% visibility into today's verified structural wins and our upcoming roadmap for pure persona-based "Stress Testing". 🏎️📦🏁👨‍💻📜✨🏁🛰️
 
-#### 🏛️ Updating the Project Task Registry in [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)
+#### 🏛️ Updating the Project Task Registry in [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)
 
 (Executing...) 📦✨🎬
 
@@ -5002,7 +5002,7 @@ I'm moving the **Persona Baseline** and **Agnostic Discovery** tasks to [COMPLET
 
 ### Planner Response
 
-I've finalized our **Structural Hardening**! 🧱🔗 Every architectural goal for today—from the mandatory **Join Audit** to the **2x2 Comparison Grid**—is now verified and logged in **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)**. 🏁🏗️✅🛣️📜✨🕵️‍♂️🚀
+I've finalized our **Structural Hardening**! 🧱🔗 Every architectural goal for today—from the mandatory **Join Audit** to the **2x2 Comparison Grid**—is now verified and logged in **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)**. 🏁🏗️✅🛣️📜✨🕵️‍♂️🚀
 
 #### 🏛️ Today's Verified Wins:
 - **[x] Mandatory Audit Gate**: Joins and transformations now require justification before execution. 🔐📜✨
@@ -5018,23 +5018,23 @@ I'm appending these results to the **Audit Log** now! 🖋️📜🖋️✨📉
 
 ### Planner Response
 
-I'm taking a quick second look at **[audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-14.md:0:0-0:0)** to ensure I have the exact content for my final update! 🧭🛠️✨ 
+I'm taking a quick second look at **[audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-14.md:0:0-0:0)** to ensure I have the exact content for my final update! 🧭🛠️✨ 
 
 I'll be re-verifying the summary so I can seamlessly append our **Hardened UI** wins and finally clear today's **Forensic Audit**! 🏛️🛡️🏁🗺️🚀🖋️📜✨
 
 (Executing...) 📦✨🎬start
 
-*Viewed [audit_2026-04-14.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-14.md) *
+*Viewed [audit_2026-04-14.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-14.md) *
 
 ### Planner Response
 
-I'm appending today's **Forensic UI Audit** results to the end of **[audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-14.md:0:0-0:0)** now! 🏆🖋️📜✨ 
+I'm appending today's **Forensic UI Audit** results to the end of **[audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-14.md:0:0-0:0)** now! 🏆🖋️📜✨ 
 
 I'll be finalizing the logs with our successful verification of the **Audit Gatekeeper**, the **Reactive Persona Switch**, and the **2x2 Comparison Theater**. 🏎️🏁✅🛣️📊 This confirms that our UI baseline is hardened, verified, and ready for the next phase of relational stress testing! 🧱🔗🛰️🏁
 
 (Executing...) 📦✨🎬start
 
-*User accepted the command `cat <<EOF >> /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-14.md
+*User accepted the command `cat <<EOF >> /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-14.md
 
 ## Final Audit: 2026-04-14 - UI Forensic Hardening & Persona Masking
 
@@ -5067,7 +5067,7 @@ Your dashboard is now a perfectly balanced, architecturally compliant workspace 
 
 #### 🧪 Verified Integrity:
 - **Headless Forensic Audit**: I've created and successfully executed **[app/tests/test_ui_persona_masking.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/tests/test_ui_persona_masking.py:0:0-0:0)** to prove that restricted personas are perfectly gated from advanced features. 🕵️‍♂️🛡️🚀🏁🗺️🔍📊
-- **Task & Audit Sync**: I've synchronized **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)** and **[audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-14.md:0:0-0:0)** to reflect today's verified wins and establish a clear roadmap for our next phase: "Relational Row-Explosion Stress Testing". 🏎️📦🏁👨‍💻📜✨🏗️
+- **Task & Audit Sync**: I've synchronized **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)** and **[audit_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-14.md:0:0-0:0)** to reflect today's verified wins and establish a clear roadmap for our next phase: "Relational Row-Explosion Stress Testing". 🏎️📦🏁👨‍💻📜✨🏗️
 
 I'm standing by, ready for our next sprint into **Relational Data Integrity**! 🏎️🏁🛰️🏁🧱🔗🚀🏛️🛡️✨🏁
 
@@ -5536,7 +5536,7 @@ Status: You are currently hanging on terminal I/O. We need to reset the executio
 Rules for Recovery:
 1. Process Termination: Terminate any active background processes or terminal reads that are currently non-responsive.
 2. Background Mandate: Moving forward, for any script execution (Wrangler, Assembler, or Viz Runner), you MUST use background execution flags to ensure the UI remains responsive.
-3. Context Purge: Read .antigravity/tasks/tasks.md and move all 100% completed items to the archives/ directory per the Active Visibility Protocol (rules_verification_testing.md). This will clear your active memory.
+3. Context Purge: Read .claude/tasks/tasks.md and move all 100% completed items to the archives/ directory per the Active Visibility Protocol (rules_verification_testing.md). This will clear your active memory.
 4. Logic Lock: Confirm you are strictly using ./.venv/bin/python for all future calls.
 
 Current Priority: Resume what you were doing
@@ -5545,7 +5545,7 @@ Current Priority: Resume what you were doing
 
 I'm executing a **Full Execution Reset** right now! 🏁🏗️🔄👨‍💻🔐 
 
-I'm terminating all background processes and clearing our **Execution Stack** to restore zero-latency performance. 🏎️🚀✨ I'm also headed into **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)** to perform the **Context Purge**, moving every 100% completed structural win into the `archives/` per our **Active Visibility Protocol**. 🗺️🔍🏛️🛡️
+I'm terminating all background processes and clearing our **Execution Stack** to restore zero-latency performance. 🏎️🚀✨ I'm also headed into **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)** to perform the **Context Purge**, moving every 100% completed structural win into the `archives/` per our **Active Visibility Protocol**. 🗺️🔍🏛️🛡️
 
 This will lock in our current **UI Forensic Baseline** and clear my memory for the next specialized sprint using our authoritative [./.venv/bin/python](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.venv/bin/python:0:0-0:0). 🏎️📦🏁📖✨🏁
 
@@ -5563,7 +5563,7 @@ I'm performing a quick **`command_status`** on all active background IDs right n
 
 I'm terminating the hanging **`pip install`** process right now! 🏁🏗️🔄👨‍💻🔐 
 
-I'm clearing our **Execution Stack** to restore zero-latency performance. 🏎️🚀✨ I'm also headed into **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)** to perform the **Context Purge**, moving every 100% completed structural win into the `archives/` per our **Active Visibility Protocol**. 🗺️🔍🏛️🛡️📊🏎️🏗️🎯🔍🏁📊
+I'm clearing our **Execution Stack** to restore zero-latency performance. 🏎️🚀✨ I'm also headed into **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)** to perform the **Context Purge**, moving every 100% completed structural win into the `archives/` per our **Active Visibility Protocol**. 🗺️🔍🏛️🛡️📊🏎️🏗️🎯🔍🏁📊
 
 (Executing...) 📦✨🎬start
 
@@ -5579,7 +5579,7 @@ I'm re-checking the **`pip install`** status now! 🎯🛡️📊🏎️🏗️�
 
 I'm executing the **Context Purge** right now! 🏁🏗️🔄👨‍💻🔐 
 
-I've cleared the hanging background tasks and I'm headed into **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)** to move our 100% completed **UI Forensic Audit** wins into the `archives/2026-04-14` per our **Active Visibility Protocol**. 🗺️🔍🏛️🛡️📊 
+I've cleared the hanging background tasks and I'm headed into **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)** to move our 100% completed **UI Forensic Audit** wins into the `archives/2026-04-14` per our **Active Visibility Protocol**. 🗺️🔍🏛️🛡️📊 
 
 This will lock in our current **UI Baseline** and prep my memory for the next specialized sprint using our authoritative [./.venv/bin/python](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.venv/bin/python:0:0-0:0). 🏎️📦🏁📖✨🏁
 
@@ -5589,7 +5589,7 @@ This will lock in our current **UI Baseline** and prep my memory for the next sp
 
 ### Planner Response
 
-I'm updating **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)** now! 🏛️🛠️✨ 
+I'm updating **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)** now! 🏛️🛠️✨ 
 
 I'm implementing the **Skeletal Pointer** for our 2026-04-14 wins, moving the full history to the `archives/` per our **Active Visibility Protocol**. 🏁🏗️🔄 This ensures that our active roadmap is clean, lean, and 100% focused on our next specialized sprint. 🏎️🚀✨🏁🌉🔐
 
@@ -5603,7 +5603,7 @@ I've executed the **Full Execution Recovery & Context Purge**! 🏁🏗️🔄�
 
 I've successfully:
 1.  **Terminated non-responsive processes**: Clearing the execution stack to ensure zero-latency for our next sprint. 🏎️🚀✨
-2.  **Archived Completed Wins**: I've moved the 2026-04-14 **UI Forensic Audit** history to the `archives/` and updated **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)** with the required **Skeletal Pointer**. 🏛️🔍🗺️📜
+2.  **Archived Completed Wins**: I've moved the 2026-04-14 **UI Forensic Audit** history to the `archives/` and updated **[tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)** with the required **Skeletal Pointer**. 🏛️🔍🗺️📜
 3.  **Standardized Logic Lock**: I've confirmed that all future calls will strictly invoke [./.venv/bin/python](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.venv/bin/python:0:0-0:0) per your **Execution Recovery Rules**. 🏎️🏁📖✨🏁🏛️🛡️🚀✨🏁
 
 Your roadmap is now clean, your memory is purged, and the **Persona-Gated UI** is fully verified and documented. 🏁🏎️🏗️🎯🔍🏁📊
@@ -5624,7 +5624,7 @@ I'm executing a **Self-Audit & Verification Gate** right now! 🏛️🛠️✨
 
 I'll be performing a forensic check of every structural win we've claimed today to ensure that no "hanging" task has left a logical hole in the system. 🕵️‍♂️🛡️🚀 I'm headed into **[server.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/src/server.py:0:0-0:0)** and **[wrangle_studio.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/modules/wrangle_studio.py:0:0-0:0)** to confirm the **Audit Gatekeeper** logic is 100% committed and justification-locked. 🏁🏗️🔄🔐🏎️ 
 
-If I find even a single line that doesn't meet our verified architectural standards, I'll restore the task to [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0) for immediate resolution. 🏛️🛡️📊🏎️🏗️🎯🔍🏁📊
+If I find even a single line that doesn't meet our verified architectural standards, I'll restore the task to [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0) for immediate resolution. 🏛️🛡️📊🏎️🏗️🎯🔍🏁📊
 
 #### 🏛️ Verifying Component 1: Audit Gatekeeper in [server.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/src/server.py:0:0-0:0)
 
@@ -5754,6 +5754,6 @@ Every single structural win we've claimed today has been forensically verified a
 - **[x] Agnostic Discovery**: The [group_stats](cci:1://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/src/server.py:305:4-339:78) calculation is correctly mapping manifest-driven counts to our group tabs. ✅🏗️✨
 - **[x] Multi-Layer Documentation**: READMEs, QMDs, and the Grand FAQ are 100% synchronized with the new architecture. 🖋️📖🏆
 
-I've already archived the completed tasks to [archives/tasks_archive_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/archives/tasks_archive_2026-04-14.md:0:0-0:0) and left a **Skeletal Pointer** in our active roadmap. 🏎️📦🏁👨‍💻📜✨
+I've already archived the completed tasks to [archives/tasks_archive_2026-04-14.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/archives/tasks_archive_2026-04-14.md:0:0-0:0) and left a **Skeletal Pointer** in our active roadmap. 🏎️📦🏁👨‍💻📜✨
 
 I'm standing by to assist with any **Relational Stress Tests** or to begin our next phase: **Gallery Submission Integration**! 🧱🔗🛰️🏁🏛️🛡️🚀✨🏁_

@@ -8,21 +8,21 @@
 1. Rule Update: `docs/guide/workspace_standard.md`
 - ADD Section: "Knowledge Mirroring Protocol".
 - Rule: `docs/*/*.qmd` is the Master Source (The "Long Memory").
-- Rule: `.antigravity/knowledge/*.md` is the Compressed Summary (The "Combat Log").
+- Rule: `.claude/knowledge/*.md` is the Compressed Summary (The "Combat Log").
 - Requirement: The Combat Log MUST stay 100% synced with the Master Source but in a bulleted, ultra-concise format for the user and AI.
 
 2. Task: Restore & Sync.
 - ENSURE `docs/guide/verification_protocol.qmd` is the primary source for all testing rules (the user restored the file).
-- RE-GENERATE `.antigravity/knowledge/project_conventions.md` as a compressed "Cheat Sheet" that mirrors the verification protocol and assembler logic. 
+- RE-GENERATE `.claude/knowledge/project_conventions.md` as a compressed "Cheat Sheet" that mirrors the verification protocol and assembler logic. 
 
 3. Task: Gap Analysis & Promotion.
-- Compare EVERY file in `.antigravity/knowledge/*.md` against `docs/guide/*/*.qmd`.
+- Compare EVERY file in `.claude/knowledge/*.md` against `docs/guide/*/*.qmd`.
 - Rule: If a technical detail, file summary, or protocol (like the 'verification_protocol') is more up-to-date or detailed in the Combat Log, PROMOTE it to the Quarto Master.
 - Requirement: Expand the "Combat Log" bullets into full, professional documentation in the .qmd files.
 
 4. Task: Document the File Registry.
 - Ensure the 3-5 line summaries for every script (Wrangler, Assembler, etc.) are mirrored in BOTH locations:
-    - Compressed Table in: `.antigravity/knowledge/project_conventions.md`
+    - Compressed Table in: `.claude/knowledge/project_conventions.md`
     - Detailed Definition List in: `docs/guide/development_rules.qmd`
 
 
@@ -35,7 +35,7 @@
 @Agent: @dasharch - ARCHITECTURAL AUDIT & SURGICAL REFACTOR.
 
 1. Prerequisite: The "Memory Bank" Sync.
-- Read `.agents/rules/workspace_standard.md`. Read all the files mentioned in it
+- Read `.claude/rules/workspace_standard.md`. Read all the files mentioned in it
 - Compare these rules against the current file tree and logic in `./libs/`.
 
 2. Task: The Inconsistency Audit.
@@ -51,17 +51,17 @@
 @Agent: @dasharch - KNOWLEDGE CONSOLIDATION & WORKSPACE AUDIT.
 
 1. CRITICAL: Quarto Integration (No Duplicates).
-- Files in `.antigravity/knowledge/` development_rules.qmd, new_data_contract.qmd and wrangling.qmd are FRAGMENTS thould be incorporated into the Quarto docs and then deleted.
+- Files in `.claude/knowledge/` development_rules.qmd, new_data_contract.qmd and wrangling.qmd are FRAGMENTS thould be incorporated into the Quarto docs and then deleted.
 - Task: Read all fragments and SURGICALLY MERGE their content into:
     - `docs/guide/development_rules.qmd`
     - `docs/guide/new_data_contract.qmd`
     - `docs/modules/wrangling.qmd`
 - Preservation: Keep all original user text (especially the "Large Sense" philosophy). Append technical specs as subsections.
-- Purge: Once merged, DELETE the .md files from both the docs folder and .antigravity/knowledge/.
+- Purge: Once merged, DELETE the .md files from both the docs folder and .claude/knowledge/.
 
 2. Task: The "Knowledge Bank" File Registry.
 - Generate a full directory tree of: `./libs/`, `./assets/scripts/`, and `./config/manifests/`.
-- For EVERY file, provide a 3-5 line summary in the `./.antigravity/knowledge/project_conventions.md`:
+- For EVERY file, provide a 3-5 line summary in the `./.claude/knowledge/project_conventions.md`:
     - Purpose: (e.g., Atomic wrangling vs. Relational assembly)
     - Inputs/Outputs: (What manifests or TSVs does it touch?)
     - Key Logic: (e.g., "Uses Key-as-ID pattern for Polars joins").
@@ -70,7 +70,7 @@ We need to keep track of the important rules and syntaxic elements that will all
 
 3. Task: Latent Rule Extraction.
 - Identify implicit rules in the code (e.g., how sample_ids are synced, how decorators are registered).
-- Formalize these into a the `./.antigravity/knowledge/project_conventions.md` file. 
+- Formalize these into a the `./.claude/knowledge/project_conventions.md` file. 
 - Add relevant section to `./.docs/guide/development_rules.qmd` and other documentation files if necessary.
 
 5. HALT:
@@ -86,7 +86,7 @@ We need to keep track of the important rules and syntaxic elements that will all
 - Confirm: Relational decorators (join_filter) are implemented and verified via 'assembler_debug.py'.
 
 2. Log Entry (The Handover):
-- Write a file `./.antigravity/logs/session_20260327_Phase4_Complete.md`.
+- Write a file `./.claude/logs/session_20260327_Phase4_Complete.md`.
 - Include:
     a) The exact CLI command used for the successful Abromics Assembly.
     b) A note on the "Large Sense" of Wrangling philosophy integrated into the Quarto docs.
@@ -94,7 +94,7 @@ We need to keep track of the important rules and syntaxic elements that will all
 3. Persistence & Mirroring:
 - Ensure `docs/guide/development_rules.qmd` and `docs/guide/new_data_contract.qmd` are the ONLY sources of truth.
 - Verify all stray .md files have been deleted.
-- Mirror the final Quarto files to ./.antigravity/knowledge/.
+- Mirror the final Quarto files to ./.claude/knowledge/.
 
 4. HALT:
 - Report "Session State Frozen. Handover Log Created. Architecture Locked." @verify
@@ -200,7 +200,7 @@ Option B (The Mapping Join): If you want to keep the data but add a "Category" (
 
 3. Knowledge Mirroring:
 - Update `docs/guide/new_data_contract.qmd` to include the `assembly_manifests` schema (lowercase).
-- MIRROR both updated .qmd files to ./.antigravity/knowledge/.
+- MIRROR both updated .qmd files to ./.claude/knowledge/.
 
 4. Final Cleanup:
 - Confirm that NO redundant .md files remain.
@@ -219,7 +219,7 @@ Option B (The Mapping Join): If you want to keep the data but add a "Category" (
 2. Task: Document Synthesis (Context Preservation).
 - Read `docs/guide/development_rules.qmd` and the recent `wrangling.md`.
 - INTEGRATE the "Wrangling in a Large Sense" section from to the docs/modules/wrangling.qmd or the docs/ relevant .qmd files. 
-- INTEGRATE the two files you created into .antigravity/knowledge/ as .qmd files into the equivalent docs/*/*.qmd files, then remove those files from .antigravity/knowledge. 
+- INTEGRATE the two files you created into .claude/knowledge/ as .qmd files into the equivalent docs/*/*.qmd files, then remove those files from .claude/knowledge. 
 - USE this philosophy to frame the new "Phase 4: Data Assembly" documentation.
 - Do NOT delete the user's existing text. If a section exists, APPEND the new technical specs (join_filter, assembler_debug.py) as subsections.
 
@@ -230,7 +230,7 @@ Option B (The Mapping Join): If you want to keep the data but add a "Category" (
 4. Validation & Cleanup:
 - Confirm that the Quarto callouts (::: {.callout-note}) are used for new ADRs.
 - DELETE the redundant `.md` files once the `.qmd` is verified as a complete superset.
-- MIRROR the final merged Quarto files to ./.antigravity/knowledge/.
+- MIRROR the final merged Quarto files to ./.claude/knowledge/.
 
 5. HALT:
 - Report "Surgical Merge Complete. Philosophical Context Preserved. Quarto is the Master Source." @verify
@@ -259,7 +259,7 @@ Option B (The Mapping Join): If you want to keep the data but add a "Category" (
 4. Evidence & Mirroring:
 - Provide the exact command-line output from the successful run.
 - Confirm `tmp/MLST_results_debug.tsv` (or the deduced ID) was created.
-- Mirror the updated `.qmd` files to ./.antigravity/knowledge/.
+- Mirror the updated `.qmd` files to ./.claude/knowledge/.
 
 5. HALT:
 - Report "Quarto Consolidation Complete. Redundant MD Files Deleted. Testing Standardized." @verify
@@ -299,7 +299,7 @@ Option B (The Mapping Join): If you want to keep the data but add a "Category" (
 1. Environment Lock (Rule 5):
 - Use ONLY ./.venv/bin/python.
 
-2. Task: Update `./.agents/rules/workspace_standard.md`.
+2. Task: Update `./.claude/rules/workspace_standard.md`.
 - Section: "ADR-013: The Manifest Data Contract"
     - Rule: All manifests MUST follow the structure: Header (ID/Desc) -> input_fields -> wrangling -> output_fields.
     - Rule: 'output_fields' is a strict Polars .select() contract. It is the final guard against Column Drift.
@@ -317,7 +317,7 @@ Option B (The Mapping Join): If you want to keep the data but add a "Category" (
 
 4. Verification:
 - Read back the newly added sections to confirm they match the "Clear Lines" philosophy.
-- Mirror changes to ./.antigravity/knowledge/.
+- Mirror changes to ./.claude/knowledge/.
 
 HALT: Report "Workspace Rules Codified. Boundaries Enforced." @verify
 
@@ -388,7 +388,7 @@ HALT: Report "Workspace Rules Codified. Boundaries Enforced. Documentation updat
 - Ensure the documentation matches the actual logic in `libs/ingestion/` and `assets/scripts/wrangle_debug.py`.
 
 5. HALT:
-- Mirror the file to ./.antigravity/knowledge/ for session persistence.
+- Mirror the file to ./.claude/knowledge/ for session persistence.
 - Provide a 3-sentence summary of the new guide. @verify
 
 ----
@@ -470,7 +470,7 @@ The user will create the wrangling and output_fields manifests
 
 5. Metadata Extraction (Conceptual):
 - Identify the unique value in the 'Scheme' column of the MLST data.
-- Do NOT implement a solution yet. Log this requirement in ./.antigravity/knowledge/blockers.md as: "ST22-001: Implement Metadata Constant Extraction for global plot labels."
+- Do NOT implement a solution yet. Log this requirement in ./.claude/knowledge/blockers.md as: "ST22-001: Implement Metadata Constant Extraction for global plot labels."
 
 6. HALT:
 - Confirm both YAML files exist in the target directory.
@@ -482,9 +482,9 @@ The user will create the wrangling and output_fields manifests
 
 @Agent: @dasharch - SYSTEM INITIALIZATION 
 1. Mandatory Context Injection (Read First):
-- ./.agents/rules/workspace_standard.md (The Law)
-- ./.antigravity/knowledge/architecture_decisions.md (The History)
--  ./.agents/workflows/verification_protocol.md (procedure)
+- ./.claude/rules/workspace_standard.md (The Law)
+- ./.claude/knowledge/architecture_decisions.md (The History)
+-  ./.claude/workflows/verification_protocol.md (procedure)
 
 2. Environment Lock ( NON-NEGOTIABLE):
 - You MUST use the root `./.venv/bin/python`. 

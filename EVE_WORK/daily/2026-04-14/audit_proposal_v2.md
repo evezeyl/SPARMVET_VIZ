@@ -20,7 +20,7 @@
 
 ## A. Reorganization Plan (Move/Merge Strategy)
 1. **Merge & Deprecate**: Replace the old traceability matrix with a `persona_traceability_matrix.md` based strictly on the 5 persona profiles.
-2. **Consolidate 'Source of Truth'**: Remove outdated UI Phase sections from [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) and [project_conventions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/project_conventions.md). Rely fully on [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/ui_implementation_contract.md).
+2. **Consolidate 'Source of Truth'**: Remove outdated UI Phase sections from [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) and [project_conventions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/project_conventions.md). Rely fully on [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/ui_implementation_contract.md).
 3. **Headless/UI Testing Workflows**: Implement `shiny test` or `pytest-playwright` addons to minimize browser interaction. This allows automated verification of the persona masking logic and UI states without massive manual labor.
 
 ---

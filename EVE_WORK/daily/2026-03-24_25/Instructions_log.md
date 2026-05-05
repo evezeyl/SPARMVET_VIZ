@@ -98,7 +98,7 @@
 ---
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [keep_columns] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [keep_columns] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **Standard Entry Template:** For each 'keep_columns' decorator, include:
    - **Description:** A clear functional summary.
@@ -222,7 +222,7 @@
 ---
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [derive_categories] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [derive_categories] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **Standard Entry Template:** For each 'derive_categories' decorator, include:
    - **Description:** A clear functional summary.
@@ -252,7 +252,7 @@
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [split_and_explode] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [split_and_explode] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **Standard Entry Template:** For each 'split_and_explode' decorator, include:
    - **Description:** A clear functional summary.
@@ -264,7 +264,7 @@
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [summarize] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [summarize] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **Standard Entry Template:** For each 'summarize' decorator, include:
    - **Description:** A clear functional summary.
@@ -311,7 +311,7 @@
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [drop_duplicates] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [drop_duplicates] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **The Universal Testing Command:** Document the standard execution path:
    `.venv/bin/python libs/transformer/tests/test_wrangler.py --data [INPUT_FILE] --manifest [YAML_FILE] --output tmp/USER_debug_view.tsv`
@@ -343,7 +343,7 @@
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [rename] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [rename] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **The Universal Testing Command:** Document the standard execution path:
    `.venv/bin/python libs/transformer/tests/test_wrangler.py --data [INPUT_FILE] --manifest [YAML_FILE] --output tmp/USER_debug_view.tsv`
@@ -377,7 +377,7 @@
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [replace_values] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [replace_values] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **The Universal Testing Command:** Document the standard execution path:
    `.venv/bin/python libs/transformer/tests/test_wrangler.py --data [INPUT_FILE] --manifest [YAML_FILE] --output tmp/USER_debug_view.tsv`
@@ -411,7 +411,7 @@
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [drop_nulls] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [drop_nulls] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **The Universal Testing Command:** Document the standard execution path:
    `.venv/bin/python libs/transformer/tests/test_wrangler.py --data [INPUT_FILE] --manifest [YAML_FILE] --output tmp/USER_debug_view.tsv`
@@ -457,7 +457,7 @@
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify ok. Mark [fill_nulls] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify ok. Mark [fill_nulls] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **The Universal Testing Command:** Document the standard execution path:
    `.venv/bin/python libs/transformer/tests/test_wrangler.py --data [INPUT_FILE] --manifest [YAML_FILE] --output tmp/USER_debug_view.tsv`
@@ -514,9 +514,9 @@
 > for this used planning and high model 
 
 @Agent: @dasharch - Full Project & Documentation Congruence Audit (The "Zero-Debt" Scan).
-1. Read : `./.antigravity/rules/workspace_standard.md` and `./.antigravity/workflows/verification_protocol.md`
+1. Read : `./.claude/rules/workspace_standard.md` and `./.claude/workflows/verification_protocol.md`
 2. **The Vision-Reality Audit:** Use a deep-thinking model to cross-reference our 'Planned Logic' against our 'Current Implementation'.
-   - **Plans:** `./.antigravity/plans/implementation_plan_master.md`, `./.antigravity/knowledge/architecture_decisions.md`, and `./.antigravity/tasks/tasks.md`.
+   - **Plans:** `./.claude/plans/implementation_plan_master.md`, `./.claude/knowledge/architecture_decisions.md`, and `./.claude/tasks/tasks.md`.
    - **Implementation:** All files in `./libs/`, `./app/`, `./assets/`, and `./config/`.
    - **Documentation:** All files in `./docs/`.
 
@@ -543,27 +543,27 @@
 
 @Agent: @dasharch - Execute Knowledge Audit & Rule Formalization.
 
-1. **Audit Knowledge Directory:** Scan all Markdown files in `./.antigravity/knowledge/`.
+1. **Audit Knowledge Directory:** Scan all Markdown files in `./.claude/knowledge/`.
 2. **Define Usage Rules:** For each file found, determine its unique role in our workflow (e.g., ADRs, long-term memory, technical constraints).
 3. **Update Workspace Standard:** 
    - Edit './agents/rules/workspace_standard.md' to include the 'Logic Source of Truth' section.
    - List each path with a short description of its content AND a specific 'Rule of Usage' (e.g., 'Check this file before every new implementation').
 4. **Clean & Consolidate:** 
    - If any information is duplicated between files, consolidate it into the most logical human-readable file.
-   - Delete any empty or redundant sub-directories in `./.antigravity/knowledge/`.
+   - Delete any empty or redundant sub-directories in `./.claude/knowledge/`.
 5. **STOP:** Present the new 'Logic Source of Truth' table from the workspace standard and confirm your commitment to using these files consistently.
 
 
 
 @Agent: @dasharch - Permanent Path Authority Lock.
 
-1. **Acknowledge Current Tree:** Note the existing structure in ./.antigravity/. This is now the ONLY authorized pathing schema.
+1. **Acknowledge Current Tree:** Note the existing structure in ./.claude/. This is now the ONLY authorized pathing schema.
 2. **Consolidation Finalization:**
-   - Use `./.antigravity/tasks/tasks.md` as the sole source of truth for execution.
-   - Use `./.antigravity/plans/implementation_plan_master.md` as the sole roadmap.
-   - Delete `./.antigravity/tasks/initialization_task.md` once its contents are merged into the main `tasks.md`.
+   - Use `./.claude/tasks/tasks.md` as the sole source of truth for execution.
+   - Use `./.claude/plans/implementation_plan_master.md` as the sole roadmap.
+   - Delete `./.claude/tasks/initialization_task.md` once its contents are merged into the main `tasks.md`.
    - homogenize usage of each required artifact, log and knowledge files
-3. **Update Workspace Standard:** Ensure ./.agents/rules/workspace_standard.md reflects these exact paths and forbids the creation of any new top-level folders in ./.antigravity/.
+3. **Update Workspace Standard:** Ensure ./.claude/rules/workspace_standard.md reflects these exact paths and forbids the creation of any new top-level folders in ./.claude/.
 
 
 
@@ -574,7 +574,7 @@
 
 @Agent: @dasharch - ARCHITECTURAL CONSOLIDATION REQUIRED.
 
-1. **The Goal:** Merge `implementation_plan_current.md`, `implementation_plan_restoration.md`, and `implementation_plan_v2.md` into ONE file: `./.antigravity/plans/implementation_plan_master.md`.
+1. **The Goal:** Merge `implementation_plan_current.md`, `implementation_plan_restoration.md`, and `implementation_plan_v2.md` into ONE file: `./.claude/plans/implementation_plan_master.md`.
 2. **Priority Logic:**
    - Favor **v2** for high-level architecture.
    - Favor the **restoration** plan for the root .venv and modular lib setup.

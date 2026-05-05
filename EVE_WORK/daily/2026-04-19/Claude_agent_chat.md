@@ -18,7 +18,7 @@
 - All scripts via `./.venv/bin/python` — system `python3` is strictly prohibited.
 - Background execution for all script runs.
 - Paths relative to project root — absolute paths forbidden.
-- All logs → `./.antigravity/logs/audit_{YYYY-MM-DD}.md` (append-only).
+- All logs → `./.claude/logs/audit_{YYYY-MM-DD}.md` (append-only).
 
 Ready. What is the active task?
 
@@ -2865,7 +2865,7 @@ Bash
 
 IN
 
-cat .antigravity/plans/implementation_plan_master.md | tail -80
+cat .claude/plans/implementation_plan_master.md | tail -80
 
 OUT
 
@@ -2908,7 +2908,7 @@ OUT
 
 ## Phase 12: UI Orchestration & Aesthetics (ADR-027)
 
-*IMPORTANT: The specific layout configurations, sandbox gating logic, and persona mappings are defined authoritatively in `[ui_implementation_contract.md](../../.agents/rules/ui_implementation_contract.md)`. This section serves only as an implementation tracker.*
+*IMPORTANT: The specific layout configurations, sandbox gating logic, and persona mappings are defined authoritatively in `[ui_implementation_contract.md](../../.claude/rules/ui_implementation_contract.md)`. This section serves only as an implementation tracker.*
 
 ### Phase 12-A: Comparison Theater & Persona Scaffolding (DONE)
 
@@ -2953,8 +2953,8 @@ Bash
 
 IN
 
-cat .antigravity/logs/audit_2026-04-19.md 2>/dev/null | tail -30 || echo "FILE MISSING OR EMPTY"
-ls .antigravity/logs/ 2>&1
+cat .claude/logs/audit_2026-04-19.md 2>/dev/null | tail -30 || echo "FILE MISSING OR EMPTY"
+ls .claude/logs/ 2>&1
 
 OUT
 
@@ -3032,9 +3032,9 @@ Let me write:
 
 Actually, looking at the AGENT_GUIDE structure, I should:
 
-- Create an ADR entry in `.antigravity/knowledge/architecture_decisions.md`
-- Update `.antigravity/tasks/tasks.md`
-- Append to `.antigravity/logs/audit_2026-04-19.md`
+- Create an ADR entry in `.claude/knowledge/architecture_decisions.md`
+- Update `.claude/tasks/tasks.md`
+- Append to `.claude/logs/audit_2026-04-19.md`
 
 Let me check the ADR log format first. </thinking>
 
@@ -3044,7 +3044,7 @@ Bash
 
 IN
 
-grep -n "ADR-03[5-9]\|ADR-04" .antigravity/knowledge/architecture_decisions.md | head -20
+grep -n "ADR-03[5-9]\|ADR-04" .claude/knowledge/architecture_decisions.md | head -20
 
 OUT
 
@@ -3057,7 +3057,7 @@ Bash
 
 IN
 
-sed -n '456,500p' .antigravity/knowledge/architecture_decisions.md
+sed -n '456,500p' .claude/knowledge/architecture_decisions.md
 
 OUT
 
@@ -3079,7 +3079,7 @@ Bash
 
 IN
 
-tail -5 .antigravity/knowledge/architecture_decisions.md
+tail -5 .claude/knowledge/architecture_decisions.md
 
 OUT
 
@@ -3109,7 +3109,7 @@ Bash
 
 IN
 
-cat >> .antigravity/logs/audit_2026-04-19.md << 'EOF'
+cat >> .claude/logs/audit_2026-04-19.md << 'EOF'
 
 ## Session Phase 18-A: Blueprint Architect — Field Materialization & Design Consensus (2026-04-19)
 
@@ -3180,7 +3180,7 @@ Write [handoff_active.md](vscode-webview://03ggl9e3k05bkcrmeuu8hun5hugd7v9jcecj
 - `app/assets/normalize_manifest_fields.py` moved from `assets/scripts/`; importable `normalize_file()` API; rich dict format fix applied.
 - `wrangle_studio.py` — `_parse_fields_safe` fixed for rich `{col: {type, label}}` dict format.
 - `server.py` — added `_build_sibling_map()`, `_load_fields_file()`, `_component_ctx_map`, role-aware field loading in `_handle_manifest_import`, `_handle_normalize_fields` effect.
-- **ADR-040** written in `.antigravity/knowledge/architecture_decisions.md` — full design for Bidirectional Lineage Rail.
+- **ADR-040** written in `.claude/knowledge/architecture_decisions.md` — full design for Bidirectional Lineage Rail.
 - **tasks.md** updated — Phase 18 fully decomposed into sub-phases 18-A through 18-F.
 - App verified running on port 8081.
 
@@ -3207,7 +3207,7 @@ Write [handoff_active.md](vscode-webview://03ggl9e3k05bkcrmeuu8hun5hugd7v9jcecj
 **Reference files:**
 - `config/manifests/pipelines/1_test_data_ST22_dummy.yaml` — best test manifest (has multiple assemblies, plots with `target_dataset`, branching).
 - `config/manifests/pipelines/1_test_data_ST22_dummy/plots/FastP_reads_horizontal_barplot.yaml` — example plot spec with `target_dataset: "QC_Reads_Anchor"`.
-- `.antigravity/tasks/tasks.md` — Phase 18-A remaining tasks listed explicitly.
+- `.claude/tasks/tasks.md` — Phase 18-A remaining tasks listed explicitly.
 
 ---
 

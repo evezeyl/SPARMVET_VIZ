@@ -47,13 +47,13 @@ We will need plots defaults ... box plots, histograms, etc. for each type of dat
    - Standardize Component Naming: Use the 'Violet Component' format [e.g., DataWrangler (data_wrangler.py)] for:
      - The Transformer components (DataWrangler, DataAssembler).
      - The Registry logic (ActionRegistry).
-   - Update ./.agents/rules/workspace_standard.md to codify this as the "Component Reference Standard".
+   - Update ./.claude/rules/workspace_standard.md to codify this as the "Component Reference Standard".
 
 4. Library README Architecture:
    - For every library in ./libs/ (transformer, generator_utils, viz_factory, etc.):
      - Create or augment a README.md.
      - Content must include: Purpose, Key Components (Violet Standard), I/O summary, and how to run 'Editable Mode' installation.
-   - Add a rule to ./.agents/rules/workspace_standard.md: "Every internal library MUST contain a README.md detailing its specific implementation and local CLI runners."
+   - Add a rule to ./.claude/rules/workspace_standard.md: "Every internal library MUST contain a README.md detailing its specific implementation and local CLI runners."
 
 5. Cleanup & Appendix Audit:
    - Resolve footnote [^1] in the Preface.
@@ -153,7 +153,7 @@ HALT: Do not edit files. I will review this 'Deep Audit Matrix' before we commit
 @Agent: @dasharch - GLOBAL SOURCE AUDIT & REORGANIZATION PLAN.
 
 1. Source-Only Scan:
-   - Perform a full audit of all SOURCE files in ./.antigravity/, ./.agents/, and the .qmd files in ./docs/.
+   - Perform a full audit of all SOURCE files in ./.claude/, ./.claude/, and the .qmd files in ./docs/.
    - STRICT EXCLUSION: Do not scan ./docs/_book/, ./docs/.quarto/, or any other build/cache directories.
 
 2. Consistency Check:
@@ -201,11 +201,11 @@ HALT: I will review your plan before you begin the rewriting/refactoring process
    - Add instructions for using 'debug_reconciler.py' and 'debug_ambiguity.py'.
    - List the mandatory TSV outputs in /tmp/reconciler/ and what they represent (conflicts.tsv, orphans_target.tsv).
 
-3. Update Internal Rules (./.agents/rules/workspace_standard.md):
+3. Update Internal Rules (./.claude/rules/workspace_standard.md):
    - Section 8 (Naming): Formally codify the 'debug_' prefix for interactive CLI tools that materialize TSV evidence.
    - Section 12 (Data Integrity): Add the 'Ambiguity Check' requirement: "Any fuzzy join must be audited for AMBIGUOUS matches where one reference ID maps to multiple target IDs."
 
-4. Update Combat Log (./.antigravity/knowledge/project_conventions.md):
+4. Update Combat Log (./.claude/knowledge/project_conventions.md):
    - Summarize the 'Reconciler Workflow': 
      Scan -> Intersection Analysis -> Regex Generation -> Boundary Check -> TSV Materialization.
 
@@ -320,11 +320,11 @@ Any good ideas on how to do this?  We need at least to improve the current proce
    - aqua_synthesizer.py: Logic for Relational Test Data generation (PK Anchoring).
 
 3. Strategic Rule Update:
-   - Update ./.agents/rules/workspace_standard.md (Section 13).
+   - Update ./.claude/rules/workspace_standard.md (Section 13).
    - Add: "The Generator SDK (libs/generator_utils) is the sole authorized engine for scaffolding new projects and generating synthetic test data. It must remain UI-agnostic to support future Shiny/GUI integration."
 
 4. Feature Roadmap Entry:
-   - Update ./.antigravity/plans/implementation_plan_master.md.
+   - Update ./.claude/plans/implementation_plan_master.md.
    - Add 'Phase 7: Visual Pipeline Builder (SDK)' to the roadmap.
    - Note the 'Aqua Suite' as the solution for the PK Mismatch blocker.
 
@@ -352,7 +352,7 @@ Any good ideas on how to do this?  We need at least to improve the current proce
    - Add a mandatory note below the table: "Important Order: If you need to clean a name (String), do it in the 'wrangling' block first. Then, set it to 'categorical' in the 'output_fields' to lock it in for the dashboard." [Section 12].
 
 4. Mirroring:
-   - Sync this simplified table to ./.antigravity/knowledge/project_conventions.md for quick AI reference [Section 15].
+   - Sync this simplified table to ./.claude/knowledge/project_conventions.md for quick AI reference [Section 15].
 
 5. HALT: 
    - Print the table and confirm that all legacy technical jargon (like 'Int64' or 'character') has been moved to the technical appendix, leaving this guide simple for the user.
@@ -367,7 +367,7 @@ Any good ideas on how to do this?  We need at least to improve the current proce
    - Run the ./libs/transformer/tests/test_decorator_suite.py one last time.
    - Confirm all 'Clean-then-Cast' logic passes for Categorical types [ADR-013].
 
-2. Update Audit Log (./.antigravity/logs/audit_{{YYYY-MM-DD}}.md):
+2. Update Audit Log (./.claude/logs/audit_{{YYYY-MM-DD}}.md):
    - Document the migration of test runners (test_wrangler.py -> wrangler_debug.py) [ADR-005, 016].
    - Document the new 1:1:1 Naming Law for decorators [Section 8].
    - Document the Categorical vs. String "Order of Operations" standard [Section 12].
@@ -379,7 +379,7 @@ Any good ideas on how to do this?  We need at least to improve the current proce
      - ./docs/appendix/data_types_philosophy.qmd
 
 4. HALT: 
-   - Confirm all .antigravity/ files are mirrored and provide the summary of the 'Current State of Truth'.
+   - Confirm all .claude/ files are mirrored and provide the summary of the 'Current State of Truth'.
 
 --- 
 
@@ -393,7 +393,7 @@ You have incorrectly genericized test paths. You must restore the 1:1:1 mapping 
    - Example: 'strip_whitespace_manifest.yaml' MUST point to 'strip_whitespace_test.tsv'.
 
 2. Codify the Naming Law:
-   - Update ./.agents/rules/workspace_standard.md (Section 8: Decorator Standards).
+   - Update ./.claude/rules/workspace_standard.md (Section 8: Decorator Standards).
    - Add the following rule: 
      "Naming Convention for Atomic Testing: Every registered action MUST have a corresponding test pair using the exact action name:
       - Logic: @register_action('my_action')
@@ -404,7 +404,7 @@ You have incorrectly genericized test paths. You must restore the 1:1:1 mapping 
    - Ensure the 'test_decorator_suite.py' uses this naming convention to dynamically find and execute tests for all registered actions.
 
 4. Documentation Update:
-   - Reflect this strict naming convention in ./.antigravity/knowledge/project_conventions.md and the user docs.
+   - Reflect this strict naming convention in ./.claude/knowledge/project_conventions.md and the user docs.
 
 5. HALT for @verify:
    - Print a table showing: [Action Name | Manifest Path | Data Path] for all currently implemented decorators to confirm the 1:1:1 mapping is restored.
@@ -432,11 +432,11 @@ You have incorrectly genericized test paths. You must restore the 1:1:1 mapping 
    - Validation: It must catch and report any decorator that fails to return a LazyFrame or violates the output contract.
 
 3. Codify the "Testing Rule":
-   - Update ./.agents/rules/workspace_standard.md (Section 8: Decorator Standards).
+   - Update ./.claude/rules/workspace_standard.md (Section 8: Decorator Standards).
    - Add: "Mandatory Testing: Every new registered action MUST be added to the test_decorator_suite.py registry to ensure continuous integration of atomic logic."
 
 4. Knowledge Mirroring:
-   - Document the suite in ./.antigravity/knowledge/project_conventions.md.
+   - Document the suite in ./.claude/knowledge/project_conventions.md.
    - Add a technical guide in ./docs/ describing how to add new decorators to the automated test loop.
 
 5. HALT for @verify:
@@ -457,16 +457,16 @@ Due to the consolidation of test runners, we have renamed and moved core debuggi
 
 2. Update Targets (Absolute Source of Truth):
    - Mirror these changes in:
-     - ./.agents/rules/workspace_standard.md
-     - ./.antigravity/knowledge/project_conventions.md
-     - ./.antigravity/tasks/tasks.md
+     - ./.claude/rules/workspace_standard.md
+     - ./.claude/knowledge/project_conventions.md
+     - ./.claude/tasks/tasks.md
      - All relevant files in ./docs/ (Maintaining Documentation Integrity [Section 7]).
 
 3. Knowledge Update: 
    - Update your internal 'databank' and context to reflect that wrangler_debug.py is now the official 'Universal Wrangler Runner' [ADR 005].
 
 4. HALT for @verify: 
-   - Provide a list of all files modified and confirm that no legacy paths remain in the .antigravity/ hierarchy.
+   - Provide a list of all files modified and confirm that no legacy paths remain in the .claude/ hierarchy.
    
 ---
 

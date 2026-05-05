@@ -1,0 +1,56 @@
+---
+trigger: always_on
+deps:
+  provides: [rule:venv_path_mandate, rule:no_discovery, rule:pinned_versions, rule:library_autonomy]
+  documents: [.venv/]
+  consumed_by: [.claude/knowledge/dependency_index.md]
+---
+
+# Runtime & Environment Authority (rules_runtime_environment.md)
+
+**Authority:** Defines constraints on python environments, dependency locators, and module isolation.
+
+## 1. System & IDE Truths (Pinned Lifecycle)
+
+- **IDE Version:** Antigravity v1.19.6 (STABLE/PINNED).
+- **OS:** Fedora 43 KDE X1 (Velocifero Compute).
+- **Update Policy:** `update.mode: none` (DNF pinned). Do not attempt to upgrade generic apt/dnf OS layers outside of explicit commands.
+- **VENV Enforcement:** All execution MUST occur exclusively within the `./.venv/bin/python` environment at the project root.
+- **Verification Rule:** Do NOT repeatedly re-run virtual environment checks if the status is already known to be successfully locked.
+- **Execution Authority**: ALL commands must prefix with `./.venv/bin/python`. Using the system `python3` is strictly PROHIBITED.
+- **Path Map**: Use `tree.txt` in the root as the primary filesystem reference. Do not run `ls -R` or `find` commands to discover the project structure.
+
+## 2. Directory Governance (The Master Root)
+
+The following paths in the project root are the **ONLY Authorized** core operational centers. The creation of arbitrary top-level folders within `./.claude/` without explicit authorization is strictly FORBIDDEN.
+
+**Boundary Lock (`.aiignore`):** The agent MUST strictly respect the `.aiignore` file located at the project root. Do not scan directories like `EVE_WORK`, `archives`, or `.claude/embeddings/` unless the user explicitly grants a "Border-Crossing Permit" for a specific file.
+
+- **`./.claude/plans/`**: `implementation_plan_master.md` (Sole authoritative roadmap).
+- **`./.claude/tasks/`**: `tasks.md` (Sole execution status authority).
+- **`./.claude/knowledge/`**: Persistent codebase intelligence logs and KIs.
+- **`./.claude/logs/`**: **Log Authority**. ALL session audits and daily logs MUST be stored in `./.claude/logs/audit_{YYYY-MM-DD}.md`. Content in these logs is **APPEND-ONLY**; deleting or replacing previous session entries is strictly FORBIDDEN. The creation of log files in the project root or `EVE_WORK/` is strictly FORBIDDEN.
+- **`./docs/`**: The absolute single source of truth for all human-facing project knowledge, diagrams, and API boundaries.
+- **Zero-Discovery Rule**: The agent must NOT perform "exploratory" reads. If a file is not in `tree.txt` or the `Master Index`, halt and ask the user.
+- **Context Loading**: Upon initialization, the agent MUST read the `Master Index` (workspace_standard.md) before any other action.
+
+## 3. Modular Monorepo & Editable Packages (ADR-011 / ADR-016)
+
+The `/libs/` directory contains highly autonomous logic modules. Each directory within must be treated as a wholly independent python package.
+
+- **Editable Mode Mandate**: All core libraries (`ingestion`, `transformer`, `utils`, `viz_factory`) MUST be installed in 'Editable Mode' (`pip install -e`).
+- **Dependencies (`pyproject.toml`)**: Libraries must declare their dependencies strictly inside their respective `pyproject.toml` files, bypassing archaic `requirements.txt`.
+- **No Path Hacking (Testing Violation Ban)**: The use of `sys.path.append` or `sys.path.insert` is completely PROHIBITED across the entire project structure. This explicit ban **EXTENDS STRICTLY** to all testing scripts (`tests/` directories). All components, including test suites, MUST rely on standard cross-references and standard module resolution after `pip install -e`. If a test suite imports fail, fix the environment hook; do NOT hack the path.
+
+## 4. The "Clear Lines" Library Policy
+
+To retain decoupling between data transformation paradigms and visualization architectures:
+
+- **Standalone Constraint:** Libraries within `./libs/` must be entirely data-agnostic.
+- **No Cross-Library Internal Imports:** One library in `./libs/` MUST NEVER import code from another library (`transformer` is strictly forbidden from importing from `ingestion`).
+- **The Orchestrator Privilege:** Multi-library dependencies and coordination scripts belong strictly within the **App Layer** (`app/`) or root **Execution Scripts** (`assets/scripts/`).
+
+## 5. Python Interpreter Authority
+
+- The path to the active Python interpreter MUST be defined in config/connectors/ (e.g., python_path: "./.venv/bin/python").
+- UI components and scripts MUST fetch this path via the Bootloader rather than hardcoding environment-specific strings.

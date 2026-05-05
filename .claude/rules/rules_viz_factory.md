@@ -1,0 +1,49 @@
+---
+trigger: always_on
+deps:
+  provides: [rule:artist_pillar, rule:plotnine_parity, rule:core_geoms_standard]
+  documents: [libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/registry.py]
+  consumed_by: [.claude/rules/rules_persona_bioscientist.md, .claude/knowledge/dependency_index.md]
+---
+
+# Viz Factory & Artist Pillar Protocols (rules_viz_factory.md)
+
+**Authority:** Defines the Artist Pillar standards and Plotnine parity requirements.
+
+## 1. The Artist Parity Mandate (ADR-036)
+
+To ensure the SPARMVET visualization layer remains a competitive alternative to native Python plotting, the `viz_factory` MUST maintain **1:1 Functional Parity** with the Plotnine (ggplot2) API.
+
+- **Parity Rule**: Every Geometry (`geom_*`), Statistic (`stat_*`), Scale (`scale_*`), Coordinate (`coord_*`), and Theme (`theme_*`) available in the stable Plotnine release MUST have a corresponding registration in the Viz Factory.
+- **Maintenance**: Upon Plotnine library updates, the agent MUST perform an integrity audit to identify new visual components or parameter changes.
+- **Verification**: All new components MUST pass the 1:1:1 evidence loop (Manifest -> Data -> Plot) before being marked as [DONE].
+
+## 2. The Law of Aesthetics (Manifest Mapping)
+
+- **Agnostic Mapping**: Component wrappers MUST NOT hardcode aesthetic defaults unless required for stability. Parameters must be passed through from the YAML `spec`.
+- **Typo Defense**: All component handlers MUST be registered via `@register_plot_component`. Invalid components requested in a manifest MUST trigger a `VisualizationError` with closest-match suggestions.
+
+## 3. The 1:1:1 Evidence Loop (Testing)
+
+No visual component is considered verified without:
+
+1. **A YAML Manifest**: Located in `tests/test_data/` demonstrating the component usage.
+2. **A TSV Dataset**: Providing the minimum required aesthetics for that component.
+3. **A Rendered PNG**: Materialized during the `viz_factory_integrity_suite.py` execution.
+
+## 4. Predicate Pushdown — UI Filter Contract
+
+`VizFactory.render()` accepts a `filters` key in the plot config dict. This is the Tier 3 predicate pushdown interface (ADR-024). Filters are applied to the Polars LazyFrame before Pandas hand-off.
+
+**Authoritative op list:** `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`.
+
+- `in` / `not_in`: `value` must be a Python list; `pl.col(col).is_in(val)`.
+- Adding new ops requires updating `viz_factory.py:render()` **and** documenting here.
+- The `dtype` key from the filter recipe builder is UI-layer metadata — strip it before injecting into `plot_config["filters"]`.
+
+**Auto axis label rule:** `_auto_adjust_axis_labels()` runs at the end of every `render()` unless an `element_text` layer for that axis is already in the manifest. See `libs/viz_factory/README.md` for thresholds.
+
+## 5. Theme Sovereignty
+
+- **Custom Themes**: The `theme_dashboard` is the authoritative style for the SPARMVET UI.
+- **3rd-Party Parity**: Support for Seaborn, 538, and Tufte themes must be maintained to ensure legacy compatibility.

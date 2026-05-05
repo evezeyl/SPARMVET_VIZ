@@ -43,7 +43,7 @@ The following core components will be referenced using the Violet Law throughout
 ## 3. Migration Schedule
 
 1. **Verification**: User reviews this inventory.
-2. **Execution**: Upon `@verify`, create the 4 modular files in `./.agents/rules/`.
+2. **Execution**: Upon `@verify`, create the 4 modular files in `./.claude/rules/`.
 3. **Master Index**: Update `workspace_standard.md` to point to the new rulebooks.
 4. **Cleanup**: Remove legacy sections from the master file.
 

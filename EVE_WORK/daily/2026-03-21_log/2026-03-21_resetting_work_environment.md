@@ -3,7 +3,7 @@ I have initiated the History Restoration Protocol and completed the requested au
 1. Conversation Log Scan & Indexing
 I scanned the workspace and identified the following chat logs, including a "stray" legacy log containing critical architectural decisions:
 
-Identified in .antigravity/conversations/:
+Identified in .claude/conversations/:
 
 5f6e2848-32c4-4ed2-bf50-24a3144ee29a.md
 : Initialization Log. Covers the initial workspace sync and .antigravity setup.
@@ -13,10 +13,10 @@ Identified Legacy/Stray Log:
 : Architectural Deep-Dive. This file contains the foundational discussion on the Four-Pillar Registration Strategy (Action Registry, YAML Cookbook, In-App Help, and Schema).
 IMPORTANT
 
-Action Recommendation: I recommend moving the legacy 2026-03-08 log into the .antigravity/conversations/ directory to ensure it is correctly picked up by the IDE's history indexing.
+Action Recommendation: I recommend moving the legacy 2026-03-08 log into the .claude/conversations/ directory to ensure it is correctly picked up by the IDE's history indexing.
 
 2. Memory Bank Context Verification
-I have confirmed that the Memory Bank is actively pulling context from the .antigravity/knowledge/ artifacts. The following state has been verified:
+I have confirmed that the Memory Bank is actively pulling context from the .claude/knowledge/ artifacts. The following state has been verified:
 
 Knowledge Source	Status	Key Artifacts
 Cloud Embedding	ACTIVE	Verified via 

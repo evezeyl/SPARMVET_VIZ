@@ -24,16 +24,16 @@
 
 To prevent duplication and solidify the new "Source of Truth":
 
-1. **Merge & Deprecate [ui_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/ui_traceability_matrix.md)**:
-   - Replace with `persona_traceability_matrix.md` based strictly on the 5 persona profiles. Delete [.antigravity/knowledge/ui_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/ui_traceability_matrix.md).
+1. **Merge & Deprecate [ui_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/ui_traceability_matrix.md)**:
+   - Replace with `persona_traceability_matrix.md` based strictly on the 5 persona profiles. Delete [.claude/knowledge/ui_traceability_matrix.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/ui_traceability_matrix.md).
 2. **Consolidate 'Source of Truth' via Referencing**:
-   - Remove outdated UI Phase sections from [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) and [project_conventions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/project_conventions.md).
-   - Replace them exclusively with references to the [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/ui_implementation_contract.md) to ensure only one authoritative, complete source of truth remains.
-3. **Update Workflows ([ui_manifest_integration_testing.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/workflows/ui_manifest_integration_testing.md))**:
+   - Remove outdated UI Phase sections from [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) and [project_conventions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/project_conventions.md).
+   - Replace them exclusively with references to the [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/ui_implementation_contract.md) to ensure only one authoritative, complete source of truth remains.
+3. **Update Workflows ([ui_manifest_integration_testing.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/workflows/ui_manifest_integration_testing.md))**:
    - Standardize a testing strategy to optimize GUI testing without manual web browser interactions (e.g., headless Shiny API or a Shiny addon).
    - Tests must evaluate **ONE persona at a time**.
-4. **Refresh [workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/workspace_standard.md)**:
-   - Add [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/ui_implementation_contract.md) to the Master Index. Ensure the UI Reactivity/Persona logic definitions are correctly scoped.
+4. **Refresh [workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/workspace_standard.md)**:
+   - Add [ui_implementation_contract.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/ui_implementation_contract.md) to the Master Index. Ensure the UI Reactivity/Persona logic definitions are correctly scoped.
 
 ---
 

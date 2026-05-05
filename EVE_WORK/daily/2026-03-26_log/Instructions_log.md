@@ -139,7 +139,7 @@ The command for `create_manifest.py` failed to produce an output.
 
 @Agent: @dasharch - Documentation Update: Decorator Registry & CLI Usage.
 
-1. **Task Completion:** @verify. Mark [split_column] as [DONE] in './.antigravity/tasks/tasks.md'.
+1. **Task Completion:** @verify. Mark [split_column] as [DONE] in './.claude/tasks/tasks.md'.
 2. **Update Documentation:** Augment the 'Decorator Registry' in './docs/modules/wrangling.qmd' appropriate existing guide.
 3. **Standard Entry Template:** For each 'split_column' decorator, include:
    - **Description:** A clear functional summary. Explain processing of edge case (truncation, abscence of delimiter, etc.)
@@ -152,9 +152,9 @@ The command for `create_manifest.py` failed to produce an output.
 
 @Agent: @dasharch - SYSTEM INITIALIZATION 
 1. Mandatory Context Injection (Read First):
-- ./.agents/rules/workspace_standard.md (The Law)
-- ./.antigravity/knowledge/architecture_decisions.md (The History)
--  ./.agents/workflows/verification_protocol.md (procedure)
+- ./.claude/rules/workspace_standard.md (The Law)
+- ./.claude/knowledge/architecture_decisions.md (The History)
+-  ./.claude/workflows/verification_protocol.md (procedure)
 
 2. Environment Lock ( NON-NEGOTIABLE):
 - You MUST use the root `./.venv/bin/python`. 
@@ -172,7 +172,7 @@ Confirm your environment is locked to ./.venv and you are ready for Phase 3 manu
 @Agent: @dasharch - ARCHITECTURAL REFACTOR (ADR-013: Dual-State Schema).
 
 1. Update Source of Truth:
-- Read ./.antigravity/knowledge/architecture_decisions.md and ./.antigravity/knowledge/blockers.md.
+- Read ./.claude/knowledge/architecture_decisions.md and ./.claude/knowledge/blockers.md.
 - Create ADR-013: "Dual-Validation Manifests".
     - Rule: Manifests must use `input_fields` (Raw/Ingestion), `wrangling` (Logic), and `output_fields` (Final Contract).
 - Remove the Blocker regarding "DataSchema representation" from blockers.md as it is now resolved by this Hybrid approach.
@@ -198,10 +198,10 @@ Confirm your environment is locked to ./.venv and you are ready for Phase 3 manu
 Assume persona @dasharch.
 
 Welcome back. Before generating any code or executing steps, you MUST fulfill the following contextual handoff requirements:
-1. **Read `./.agents/rules/workspace_standard.md`
-2. **Read `./.antigravity/knowledge/architecture_decisions.md`**. Align your understanding with the Sequential Staging logic for YAML manifests.
-3. Review `./.antigravity/knowledge/blockers.md` carefully: there is an active blocker regarding Manifest Consistency (`VIGAS_VirulenceFinder` pipeline paths and schema field discrepancies).
-4. **Read `./.agents/workflows/verification_protocol.md`**
+1. **Read `./.claude/rules/workspace_standard.md`
+2. **Read `./.claude/knowledge/architecture_decisions.md`**. Align your understanding with the Sequential Staging logic for YAML manifests.
+3. Review `./.claude/knowledge/blockers.md` carefully: there is an active blocker regarding Manifest Consistency (`VIGAS_VirulenceFinder` pipeline paths and schema field discrepancies).
+4. **Read `./.claude/workflows/verification_protocol.md`**
 5. Report any architectural divergence immediately upon starting your work. If user prompts contradict established rules, invoke the Halt & Verify protocol.
 
 ---

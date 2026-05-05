@@ -38,7 +38,7 @@ Objectives:
 3. Apply UI 'Inspection Only' branding.
 
 Requirements:
-1. Read: ./.antigravity/plans/implementation_plan_master.md (Phase 12-B) and ADR-024.
+1. Read: ./.claude/plans/implementation_plan_master.md (Phase 12-B) and ADR-024.
 2. Logic Implementation (app/src/server.py):
    - Refactor _apply_tier2_transforms: Call DataWrangler.apply_recipe() using the list of nodes from Wrangle Studio.
    - Logic: Ensure Tier 3 Leaf inherits Tier 1/2 parity before applying user nodes.
@@ -51,7 +51,7 @@ Requirements:
 Follow Evidence Loop:
 - Demonstrate applying a 'rename' node in Tier 3 and seeing the change reflected ONLY in the right-hand plot/table.
 - Verify the 'Soft Note' appears if an invalid filter is applied.
-- Update ./.antigravity/logs/audit_{YYYY-MM-DD}.md.
+- Update ./.claude/logs/audit_{YYYY-MM-DD}.md.
 - HALT for @verify.
 ```
 
@@ -64,7 +64,7 @@ Follow Evidence Loop:
 - Generate a list of all .py scripts referenced in:
   - All libs/**/README.md files.
   - All docs/**/*.qmd files.
-  - .agents/rules/, .agents/workflows/, .antigravity/plans/, .antigravity/knowledge/, .antigravity/tasks/.
+  - .claude/rules/, .claude/workflows/, .claude/plans/, .claude/knowledge/, .claude/tasks/.
 - Use a grep/find command to list all .py scripts that PHYSICALLY exist in the project root.
 
 1. CROSS-CHECK & RECONCILIATION:
@@ -82,7 +82,7 @@ Follow Evidence Loop:
 1. LOGGING:
 
 - Create a summary of changes in inconsistency_report.md (resolved section).
-- Update the daily log: ./.antigravity/logs/audit_{{YYYY-MM-DD}}.md.
+- Update the daily log: ./.claude/logs/audit_{{YYYY-MM-DD}}.md.
 
 FOLLOW VERIFICATION PROTOCOL: Provide a "Mapping of Fixes" (Doc Ref -> Physical File -> Resolution) -> HALT for @verify."
 
@@ -154,9 +154,9 @@ FOLLOW VERIFICATION PROTOCOL: List detected data files and manifest status -> HA
 
 1. READ AUTHORITY FILES:
 
-- ./.agents/rules/workspace_standard.md (Master Index)
-- ./.antigravity/knowledge/architecture_decisions.md (ADRs 027-031)
-- ./.antigravity/plans/implementation_plan_master.md (Phase 11-C Focus)
+- ./.claude/rules/workspace_standard.md (Master Index)
+- ./.claude/knowledge/architecture_decisions.md (ADRs 027-031)
+- ./.claude/plans/implementation_plan_master.md (Phase 11-C Focus)
 
 1. CONTEXT:
 We are entering Phase 11-C: UI Shell & Module Orchestration. The goal is to build the "Thin Shiny Frontend" (ADR-003) using a modular approach.
@@ -179,7 +179,7 @@ We are entering Phase 11-C: UI Shell & Module Orchestration. The goal is to buil
 
 1. LOGGING:
 
-- Append session audit to ./.antigravity/logs/audit_2026-04-09.md.
+- Append session audit to ./.claude/logs/audit_2026-04-09.md.
 - Update docs/workflows/dashboard_app.qmd with the new shell architecture.
 
 FOLLOW VERIFICATION PROTOCOL: MATERIALIZE UI SKELETON -> HALT FOR @verify.
@@ -191,11 +191,11 @@ FOLLOW VERIFICATION PROTOCOL: MATERIALIZE UI SKELETON -> HALT FOR @verify.
 **Phase 1: Deep Scan & Inconsistency Audit**
 Perform a comprehensive read of the files in the following directories to synchronize your internal state with my recent manual changes:
 
-- `./.agents/rules
-- `./.agents/workflows
-- `./.antigravity/knowledge
-- `./.antigravity/plans
-- `./.antigravity/tasks
+- `./.claude/rules
+- `./.claude/workflows
+- `./.claude/knowledge
+- `./.claude/plans
+- `./.claude/tasks
 
 **Phase 2: Logic Verification & Strategic Advice**
 Analyze the current codebase and provide a report on the following pillars:

@@ -34,7 +34,7 @@ You mentioned making the UI design configurable via YAML. In **Antigravity/Shiny
 Your definition of Tier 3 as "Filtered & Formatted" is spot on.
 
 *   **The Efficiency Win:** Because we use **Polars**, the UI doesn't need to "process" data. It just needs to send a **Predicate** (the filter rule) to the `VizFactory`.
-*   **The "Ghost" State:** You mentioned "Ghost Manifests." This is critical. If the user accidentally closes a tab, we need that `.antigravity/tmp/last_state.yaml` to recover the interactive session immediately.
+*   **The "Ghost" State:** You mentioned "Ghost Manifests." This is critical. If the user accidentally closes a tab, we need that `.claude/tmp/last_state.yaml` to recover the interactive session immediately.
 
 ### 3\. The "Recipe" Transparency
 
@@ -332,7 +332,7 @@ To set up your **@dasharch** agent for this implementation, we need to formalize
 
 * * *
 
-### 1\. Update: `.antigravity/knowledge/architecture_decisions.md`
+### 1\. Update: `.claude/knowledge/architecture_decisions.md`
 
 Add these two new ADRs to establish the technical foundation for the UI and Gallery.
 
@@ -361,7 +361,7 @@ Add these two new ADRs to establish the technical foundation for the UI and Gall
 
 * * *
 
-### 2\. Update: `.antigravity/plans/implementation_plan_master.md`
+### 2\. Update: `.claude/plans/implementation_plan_master.md`
 
 Append these phases to the roadmap to give the agent a step-by-step path.
 
@@ -380,7 +380,7 @@ Append these phases to the roadmap to give the agent a step-by-step path.
 
 * * *
 
-### 3\. Update: `.antigravity/tasks/tasks.md`
+### 3\. Update: `.claude/tasks/tasks.md`
 
 Move these into the **ACTIVE** section to trigger agent execution.
 
@@ -395,7 +395,7 @@ Move these into the **ACTIVE** section to trigger agent execution.
 
 * * *
 
-### 4\. Update: `.agents/rules/workspace_standard.md`
+### 4\. Update: `.claude/rules/workspace_standard.md`
 
 Add a brief aesthetic mandate under a new section to prevent "Deep Violet" drift in the UI.
 
@@ -453,7 +453,7 @@ Here is how the UI modules will interact with the existing layers shown in your 
 
 I have updated the Markdown content to explicitly state that the agent must **use the existing libraries** as the source of truth.
 
-### 1\. Update: `.antigravity/knowledge/architecture_decisions.md`
+### 1\. Update: `.claude/knowledge/architecture_decisions.md`
 
 ```
 ## ADR 027: Multi-Module UI Orchestration
@@ -465,7 +465,7 @@ I have updated the Markdown content to explicitly state that the agent must **us
 - **State Management:** The UI manages the "Interactive Recipe" (YAML), while the `DataAssembler` handles the Polars execution of that recipe.
 ```
 
-### 2\. Update: `.antigravity/plans/implementation_plan_master.md`
+### 2\. Update: `.claude/plans/implementation_plan_master.md`
 
 ```
 ### Phase 11-C: UI Shell & Library Integration
@@ -474,7 +474,7 @@ I have updated the Markdown content to explicitly state that the agent must **us
 - [ ] **Reactive Tiered Handoff:** Connect the Shiny sidebar filters to the `DataAssembler` logic to trigger the Tier 3 (Leaf) Predicate Pushdown.
 ```
 
-### 3\. Update: `.agents/rules/workspace_standard.md`
+### 3\. Update: `.claude/rules/workspace_standard.md`
 
 ```
 ## 16. UI Orchestration Protocol
@@ -505,7 +505,7 @@ I understand perfectly. To ensure your **@dasharch** agent executes this vision 
 
 * * *
 
-### 1\. Update: `./.antigravity/knowledge/architecture_decisions.md`
+### 1\. Update: `./.claude/knowledge/architecture_decisions.md`
 
 **Append to the bottom of the file:**
 
@@ -535,7 +535,7 @@ I understand perfectly. To ensure your **@dasharch** agent executes this vision 
 
 * * *
 
-### 2\. Update: `./.antigravity/plans/implementation_plan_master.md`
+### 2\. Update: `./.claude/plans/implementation_plan_master.md`
 
 **Append to the bottom of the "Technical Roadmap" section:**
 
@@ -555,7 +555,7 @@ I understand perfectly. To ensure your **@dasharch** agent executes this vision 
 
 * * *
 
-### 3\. Update: `./.antigravity/tasks/tasks.md`
+### 3\. Update: `./.claude/tasks/tasks.md`
 
 **Add to the bottom of the "🔴 Frontend & Visualisation (ACTIVE)" section:**
 
@@ -570,7 +570,7 @@ I understand perfectly. To ensure your **@dasharch** agent executes this vision 
 
 * * *
 
-### 4\. Update: `./.agents/rules/workspace_standard.md`
+### 4\. Update: `./.claude/rules/workspace_standard.md`
 
 **Add a new section at the end:**
 
@@ -610,13 +610,13 @@ hum, 4. I do not see anymore thoe ADR in the workspace standard, do you still ha
 ## Response:
 You are absolutely right to double-check. Because we moved to a **Modular Rule System**, the `workspace_standard.md` now acts only as the **Master Index** for rulebooks. It no longer lists individual architectural decisions (ADRs).
 
-The **ADRs (Architecture Decision Records)** now live exclusively in `./.antigravity/knowledge/architecture_decisions.md`. In the file you uploaded, it currently only goes up to **ADR 026**. The new ones (027 and 028) are currently only in our conversation history—they haven't been physically added to your files yet.
+The **ADRs (Architecture Decision Records)** now live exclusively in `./.claude/knowledge/architecture_decisions.md`. In the file you uploaded, it currently only goes up to **ADR 026**. The new ones (027 and 028) are currently only in our conversation history—they haven't been physically added to your files yet.
 
 To keep it perfectly clear and avoid any "messing up," here is the exact content to add to your three main files.
 
 * * *
 
-### 1\. Add to: `./.antigravity/knowledge/architecture_decisions.md`
+### 1\. Add to: `./.claude/knowledge/architecture_decisions.md`
 
 **Place this at the very end of the file to establish the new UI laws.**
 
@@ -646,7 +646,7 @@ To keep it perfectly clear and avoid any "messing up," here is the exact content
 
 * * *
 
-### 2\. Add to: `./.antigravity/plans/implementation_plan_master.md`
+### 2\. Add to: `./.claude/plans/implementation_plan_master.md`
 
 **Place this at the end of section "4. Technical Roadmap" to give the agent its new steps.**
 
@@ -666,7 +666,7 @@ To keep it perfectly clear and avoid any "messing up," here is the exact content
 
 * * *
 
-### 3\. Add to: `./.agents/rules/workspace_standard.md`
+### 3\. Add to: `./.claude/rules/workspace_standard.md`
 
 **Add this new section at the very bottom. This ensures the agent follows the "Thin UI" law.**
 
@@ -698,7 +698,7 @@ Here is the detailed content for the "Design & Interaction" layer. You can add t
 
 * * *
 
-### 1\. Add to: `./.antigravity/knowledge/architecture_decisions.md`
+### 1\. Add to: `./.claude/knowledge/architecture_decisions.md`
 
 **Detailed Layout & Component Logic**
 
@@ -725,7 +725,7 @@ Here is the detailed content for the "Design & Interaction" layer. You can add t
 
 * * *
 
-### 2\. Add to: `./.agents/rules/rules_documentation_aesthetics.md`
+### 2\. Add to: `./.claude/rules/rules_documentation_aesthetics.md`
 
 **Since this file governs aesthetics, we will add the "UI Visual Guide" here.**
 
@@ -739,7 +739,7 @@ Here is the detailed content for the "Design & Interaction" layer. You can add t
 
 * * *
 
-### 3\. Add to: `./.antigravity/plans/implementation_plan_master.md`
+### 3\. Add to: `./.claude/plans/implementation_plan_master.md`
 
 **Detailed UI Component Tasks**
 
@@ -778,7 +778,7 @@ These final layers integrate your persistence strategy, the "Headless-to-UI" bri
 
 * * *
 
-### 1\. Add to: `./.antigravity/knowledge/architecture_decisions.md`
+### 1\. Add to: `./.claude/knowledge/architecture_decisions.md`
 
 **Persistence and Developer Tooling Logic**
 
@@ -802,7 +802,7 @@ These final layers integrate your persistence strategy, the "Headless-to-UI" bri
 
 * * *
 
-### 2\. Add to: `./.agents/rules/workspace_standard.md`
+### 2\. Add to: `./.claude/rules/workspace_standard.md`
 
 **Persistence and Developer Protocols**
 
@@ -821,7 +821,7 @@ These final layers integrate your persistence strategy, the "Headless-to-UI" bri
 
 * * *
 
-### 3\. Add to: `./.antigravity/plans/implementation_plan_master.md`
+### 3\. Add to: `./.claude/plans/implementation_plan_master.md`
 
 **Final Roadmap: Persistence & Dev Studio**
 
@@ -838,7 +838,7 @@ These final layers integrate your persistence strategy, the "Headless-to-UI" bri
 
 * * *
 
-### 4\. Add to: `./.antigravity/knowledge/project_conventions.md`
+### 4\. Add to: `./.claude/knowledge/project_conventions.md`
 
 **Update the Registry for UI Modules**
 
@@ -883,7 +883,7 @@ Here are the finalized, granular instruction blocks for your files.
 
 * * *
 
-### 1\. Update: `./.antigravity/knowledge/architecture_decisions.md`
+### 1\. Update: `./.claude/knowledge/architecture_decisions.md`
 
 ```
 ## ADR 029: Dashboard Theater & Dynamic Discovery
@@ -902,7 +902,7 @@ Here are the finalized, granular instruction blocks for your files.
 
 * * *
 
-### 2\. Update: `./.agents/rules/workspace_standard.md`
+### 2\. Update: `./.claude/rules/workspace_standard.md`
 
 ```
 ## 15. Dynamic UI & Ingestion Standards (ADR-029/030)
@@ -914,7 +914,7 @@ Here are the finalized, granular instruction blocks for your files.
 
 * * *
 
-### 3\. Update: `./.antigravity/plans/implementation_plan_master.md`
+### 3\. Update: `./.claude/plans/implementation_plan_master.md`
 
 ```
 ### Phase 11-E: Dynamic Discovery & External Ingestion
@@ -926,7 +926,7 @@ Here are the finalized, granular instruction blocks for your files.
 
 * * *
 
-### 4\. Update: `./.antigravity/tasks/tasks.md`
+### 4\. Update: `./.claude/tasks/tasks.md`
 
 ```
 ### [ACTIVE] UI Discovery & External Data (Phase 11-E)
@@ -1020,7 +1020,7 @@ I have also merged the "Discovery" and "Interaction" logic into a single cohesiv
 
 * * *
 
-### 1\. Update: `./.antigravity/knowledge/architecture_decisions.md`
+### 1\. Update: `./.claude/knowledge/architecture_decisions.md`
 
 **Append this to the bottom of the file.**
 
@@ -1067,7 +1067,7 @@ I have also merged the "Discovery" and "Interaction" logic into a single cohesiv
 
 * * *
 
-### 2\. Update: `./.antigravity/plans/implementation_plan_master.md`
+### 2\. Update: `./.claude/plans/implementation_plan_master.md`
 
 **Add this to the Roadmap to guide the agent's build order.**
 
@@ -1089,7 +1089,7 @@ I have also merged the "Discovery" and "Interaction" logic into a single cohesiv
 
 * * *
 
-### 3\. Update: `./.agents/rules/workspace_standard.md`
+### 3\. Update: `./.claude/rules/workspace_standard.md`
 
 **Append this at the bottom to enforce the final UI constraints.**
 
@@ -1132,13 +1132,13 @@ ok, we are getting closer, I reorganized a bit --- now we need to be sure we hav
 
 \\>
 
-\\> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_infrastructure.md\]
+\\> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_infrastructure.md\]
 
 \## 🟢 Layer 1/2 & Assembly Audit (COMPLETED)
 
 \\>
 
-\\> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_infrastructure.md\]
+\\> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_infrastructure.md\]
 
 \## 🟡 Backend & Decorator-First (COMPLETED)
 
@@ -1174,19 +1174,19 @@ ok, we are getting closer, I reorganized a bit --- now we need to be sure we hav
 
 \\>
 
-\\> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_integration\_qa.md\]
+\\> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_integration\_qa.md\]
 
 \## 🛡️ Library Integrity & QA (COMPLETED)
 
 \\>
 
-\\> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_integration\_qa.md\]
+\\> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_integration\_qa.md\]
 
 \## VIZ\_FACTORY IMPLEMENTATION (COMPLETED)
 
 \\>
 
-\\> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_viz\_factory.md\]
+\\> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_viz\_factory.md\]
 
 \## 🔴 Frontend & Visualisation (ACTIVE)
 
@@ -1242,7 +1242,7 @@ ok, we are getting closer, I reorganized a bit --- now we need to be sure we hav
 
 \\>
 
-\\> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_viz\_factory.md\] and \[./.antigravity/tasks/archives/tasks\_archive\_integration\_qa.md\]
+\\> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_viz\_factory.md\] and \[./.claude/tasks/archives/tasks\_archive\_integration\_qa.md\]
 
 \## ⚪ Deferred & Phase 3
 
@@ -1271,12 +1271,12 @@ Tasks (SOLE SOURCE OF TRUTH)
 🟢 Infrastructure & Recovery (COMPLETED)
 ----------------------------------------
 
-> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_infrastructure.md\]
+> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_infrastructure.md\]
 
 🟢 Layer 1/2 & Assembly Audit (COMPLETED)
 -----------------------------------------
 
-> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_infrastructure.md\]
+> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_infrastructure.md\]
 
 🟡 Backend & Decorator-First (COMPLETED)
 ----------------------------------------
@@ -1286,7 +1286,7 @@ Tasks (SOLE SOURCE OF TRUTH)
 🟢 Phase 9: Triple-Source AMR Integration (COMPLETED)
 -----------------------------------------------------
 
-> Status: COMPLETED. Detailed history moved to: \[./.antigravity/tasks/archives/tasks\_archive\_integration\_qa.md\]
+> Status: COMPLETED. Detailed history moved to: \[./.claude/tasks/archives/tasks\_archive\_integration\_qa.md\]
 
 🛡️ Library Integrity & QA (COMPLETED)
 --------------------------------------

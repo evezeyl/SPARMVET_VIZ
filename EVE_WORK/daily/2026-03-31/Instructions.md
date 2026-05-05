@@ -4,11 +4,11 @@
 @Agent: @dasharch - FINAL SESSION LOG & SHUTDOWN.
 
 1. DOCUMENTATION & RULE FINALIZATION:
-- VERIFY INTEGRATION OR INTEGRATE the 'Split-Documentation Strategy' into ./.agents/rules/documentation_standards.md.
-- VERIFY/UPDATE ./.antigravity/knowledge/project_conventions.md to reflect the new .agents/ and .antigravity/ split.
+- VERIFY INTEGRATION OR INTEGRATE the 'Split-Documentation Strategy' into ./.claude/rules/documentation_standards.md.
+- VERIFY/UPDATE ./.claude/knowledge/project_conventions.md to reflect the new .claude/ and .claude/ split.
 
 2. GENERATE COMBAT LOG (TEMPLATE STANDARD):
-Create a new entry in ./.antigravity/logs/{date}_session_logs.md (or create the file if missing) using the following format:
+Create a new entry in ./.claude/logs/{date}_session_logs.md (or create the file if missing) using the following format:
 
 ## 📅 Session Log: 2026-03-31 [TRANSFORMER REFACTOR]
 - **Status**: 🟢 SUCCESSFUL REORG & INTEGRITY AUDIT.
@@ -36,7 +36,7 @@ Ensure complete, redeable, reorganize for good flow if necessary and register fi
 @Agent: @dasharch - DOCS INTEGRITY & QUARTO SYNC.
 
 1. AUDIT & HARVEST:
-Read all files in ./.agents/ (rules, workflows) and ./.antigravity/ (knowledge, plans, tasks, logs (yesterdays log only)). 
+Read all files in ./.claude/ (rules, workflows) and ./.claude/ (knowledge, plans, tasks, logs (yesterdays log only)). 
 Ensure the following specific updates from at least the last 48 hours are captured:
 
 2. QMD CONTENT REORGANIZATION:
@@ -84,21 +84,21 @@ I can use a thinking agent for this.
 
 1. MANDATE: CLEAR SEPARATION OF CONCERNS
 Reorganize the workspace configuration directories to enforce the following hierarchy:
-- ./.agents/  => DIRECTIVES (rules/, workflows/)
-- ./.antigravity/ => PROJECT STATE (knowledge/, plans/, tasks/, logs/)
+- ./.claude/  => DIRECTIVES (rules/, workflows/)
+- ./.claude/ => PROJECT STATE (knowledge/, plans/, tasks/, logs/)
 
 2. AUDIT & MOVE (Step-by-Step):
 Read the content of all files in these directories and MOVE them to their compliant locations:
-- MOVE: Any 'workflow' or 'protocol' file (e.g., ./.antigravity/plans/implementation_workflow_transformer.md) to ./.agents/workflows/.
-- MOVE: Any 'rule' or 'standard' file to ./.agents/rules/.
-- ENSURE: architecture_decisions.md, project_conventions.md, and protocol_tiered_data.md remain in ./.antigravity/knowledge/.
-- ENSURE: implementation_plan_master.md remains in ./.antigravity/plans/.
-- ENSURE: tasks.md remains in ./.antigravity/tasks/.
+- MOVE: Any 'workflow' or 'protocol' file (e.g., ./.claude/plans/implementation_workflow_transformer.md) to ./.claude/workflows/.
+- MOVE: Any 'rule' or 'standard' file to ./.claude/rules/.
+- ENSURE: architecture_decisions.md, project_conventions.md, and protocol_tiered_data.md remain in ./.claude/knowledge/.
+- ENSURE: implementation_plan_master.md remains in ./.claude/plans/.
+- ENSURE: tasks.md remains in ./.claude/tasks/.
 
 3. REFERENCE UPDATE (CRITICAL):
-- SCAN all files in the new ./.agents/ and ./.antigravity/ directories.
+- SCAN all files in the new ./.claude/ and ./.claude/ directories.
 - UPDATE any relative paths or cross-references inside the markdown files to reflect the new structure.
-- UPDATE the 'File Registry' in ./.antigravity/knowledge/project_conventions.md to match the final physical state.
+- UPDATE the 'File Registry' in ./.claude/knowledge/project_conventions.md to match the final physical state.
 
 4. LOGGING & VERIFICATION:
 - CREATE 'tmp/reorg_audit.txt' listing: [OLD PATH] -> [NEW PATH].
@@ -111,7 +111,7 @@ HALT and present the finalized directory tree and the 'reorg_audit.txt' for @ver
 @Agent: @dasharch - NEW MANDATE: THE INTEGRITY SUITE PROTOCOL.
 
 1. UPDATE STANDARDS:
-- ADD the 'Integrity Suite Mandate' to ./.antigravity/knowledge/project_conventions.md.
+- ADD the 'Integrity Suite Mandate' to ./.claude/knowledge/project_conventions.md.
 "## 10. The Integrity Suite Mandate (Standardization)
 **Authority:** Mandatory for all packages in `./libs/`
 **Goal:** Automated discovery and validation of all registered decorators.
@@ -178,8 +178,8 @@ Before we implement Phase 3 (Persistence), we require a master sanity check to e
 ## Extracting list of missing decorators for the transformer - polar library 
 https://pola.rs/
 
-- ./.agents/workflows/transformer_implementation.md (procedure)
-- ./.antigravity/plans/implementation_plan_master.md (implementation plan) - updated 
+- ./.claude/workflows/transformer_implementation.md (procedure)
+- ./.claude/plans/implementation_plan_master.md (implementation plan) - updated 
 
 --- 
 > verification status 
@@ -235,9 +235,9 @@ HALT and present the 'tmp/{date}_audit_log.txt' and registry list. DO NOT procee
 @Agent: @dasharch - SYSTEM RESET & PHASE 10 DEPLOYMENT.
 
 1. FILE INTEGRATION & SYNC:
-- USER moved the provided 'implementation_workflow_transformer.md' to ./.antigravity/plans/.
-- User has overwritten ./.antigravity/knowledge/project_conventions.md with the 'project_conventions_updated.md' content
-- READ ./.antigravity/knowledge/protocol_tiered_data.md to internalize the Anchor vs. View logic.
+- USER moved the provided 'implementation_workflow_transformer.md' to ./.claude/plans/.
+- User has overwritten ./.claude/knowledge/project_conventions.md with the 'project_conventions_updated.md' content
+- READ ./.claude/knowledge/protocol_tiered_data.md to internalize the Anchor vs. View logic.
 
 2. DOCUMENTATION COMPLIANCE:
 - Verify that the 'File Registry' in project_conventions.md correctly lists all Tiered Data components.
@@ -263,15 +263,15 @@ Once Phase 1 is verified with @glimpse() results in the terminal, HALT for @veri
 
 1. RE-ESTABLISH SOURCE OF TRUTH (READ ONLY):
 Execute a full read of the following updated files to align with ADR-024 (Tiered Data Lifecycle):
-- ./.antigravity/knowledge/architecture_decisions.md (Review ADR-024)
-- ./.antigravity/knowledge/protocol_tiered_data.md (NEW Logic Protocol)
-- ./.antigravity/plans/implementation_plan_master.md (Phase 10 Roadmap)
-- ./.antigravity/tasks/tasks.md (Updated 'Transformer Reorganization & Tiering' header)
+- ./.claude/knowledge/architecture_decisions.md (Review ADR-024)
+- ./.claude/knowledge/protocol_tiered_data.md (NEW Logic Protocol)
+- ./.claude/plans/implementation_plan_master.md (Phase 10 Roadmap)
+- ./.claude/tasks/tasks.md (Updated 'Transformer Reorganization & Tiering' header)
 
 2. MANDATORY DOCUMENTATION TASKS:
 Before any logic execution, update the workspace documentation to reflect the new architecture:
-- UPDATE ./.antigravity/knowledge/project_conventions.md: Add 'protocol_tiered_data.md' to the File Registry and update the 'Wrangling' section to acknowledge the Tier 1 (Anchor) vs. Tier 2 (View) logic.
-- CREATE ./.antigravity/plans/implementation_workflow_transformer.md: Use the structure from viz_factory_implementation.md. Define 4 Phases: 
+- UPDATE ./.claude/knowledge/project_conventions.md: Add 'protocol_tiered_data.md' to the File Registry and update the 'Wrangling' section to acknowledge the Tier 1 (Anchor) vs. Tier 2 (View) logic.
+- CREATE ./.claude/plans/implementation_workflow_transformer.md: Use the structure from viz_factory_implementation.md. Define 4 Phases: 
     - Phase 1: Structural (unpivot, explode, unnest)
     - Phase 2: Atomic Expressions (coalesce, cast, regex_extract)
     - Phase 3: Persistence (sink_parquet, scan_parquet)
@@ -292,7 +292,7 @@ Follow Verification Protocol: Materialize doc changes to tmp/ for @verify before
 
 ## Reminder 
 ⚖️ The Logic Behind the Move
-The "Technical Bible" Rule: According to the Workspace Standard, the ./.antigravity/knowledge/ directory is the designated home for the Primary Technical Bible, including architecture decisions. Since this file serves as the specific technical implementation logic for ADR-024, it belongs right next to the architecture decisions.
+The "Technical Bible" Rule: According to the Workspace Standard, the ./.claude/knowledge/ directory is the designated home for the Primary Technical Bible, including architecture decisions. Since this file serves as the specific technical implementation logic for ADR-024, it belongs right next to the architecture decisions.
 
 Naming Consistency: Your existing files follow a noun_description.md pattern (e.g., architecture_decisions.md, project_conventions.md). protocol_tiered_data.md fits this rhythm perfectly while mirroring the "Protocol" terminology used in the agent's workflow.
 

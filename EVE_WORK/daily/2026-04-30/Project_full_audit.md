@@ -32,7 +32,7 @@ There are multiple desynchronizations between the high-level roadmap (`implement
 ## 4. Tooling / Dependency Graph Logic Error
 The script `assets/scripts/build_dep_graph.py` contains a parsing flaw that corrupts the dependency graph.
 * **Issue:** It blindly parses `@deps` blocks inside markdown code blocks. 
-* **Evidence:** In `dependency_index.md`, `.agents/rules/workspace_standard.md` is listed as *providing* `action:cast` and *mirroring* `app/modules/orchestrator.py`. This is because the parser picked up the instructional example inside `workspace_standard.md` section 5-B. The same error occurs for `EVE_WORK/daily/2026-04-24/GEM_CONTEXT_2026-04-24_072114.md`.
+* **Evidence:** In `dependency_index.md`, `.claude/rules/workspace_standard.md` is listed as *providing* `action:cast` and *mirroring* `app/modules/orchestrator.py`. This is because the parser picked up the instructional example inside `workspace_standard.md` section 5-B. The same error occurs for `EVE_WORK/daily/2026-04-24/GEM_CONTEXT_2026-04-24_072114.md`.
 * **Impact:** The auto-generated Sync Risk Register is polluted with false positives.
 
 ## 5. Architectural Law Drift (The Monolith Returns)

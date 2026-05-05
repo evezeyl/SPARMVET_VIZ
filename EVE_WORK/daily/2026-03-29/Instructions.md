@@ -23,7 +23,7 @@ Ok, what I would like to do now, its to get the implementation of the polar libr
    - Mention that the 'Triple-Source Integration' (Metadata/Phenotypes/Genotypes) is the premier example in this gallery.
 
 4. LOG & CLOSEOUT:
-   - Finalize './.antigravity/logs/audit_2026-03-29.md' with this roadmap.
+   - Finalize './.claude/logs/audit_2026-03-29.md' with this roadmap.
    - Generate the 'Resume Prompt' for the next session to focus on 'Gallery Implementation'.
 
 Provide the one-line 'State of Truth' and HALT.
@@ -46,8 +46,8 @@ Mission: Evaluate 'tmp/' Scripts for Promotion to 'assets/scripts/'.
    - Every script MUST include a '--help' description that explains its role in the SPARMVET_VIZ pipeline.
 
 4. UPDATES:
-   - Update './.antigravity/knowledge/project_conventions.md' to reflect the new capabilities of the scripts in 'assets/scripts/'.
-   - Document the promotion in the daily audit log: './.antigravity/logs/audit_2026-03-29.md'.
+   - Update './.claude/knowledge/project_conventions.md' to reflect the new capabilities of the scripts in 'assets/scripts/'.
+   - Document the promotion in the daily audit log: './.claude/logs/audit_2026-03-29.md'.
 
 5. TASK BLOCKER:
    - Stop activity once the 'assets/scripts/' have been updated and the 'tmp/' directory is cleaned.
@@ -60,7 +60,7 @@ HALT for @verify before deleting any script from 'tmp/' (we will KEEP the plots)
 Mission: Viz_Factory Integrity Audit & Default Logic Implementation.
 
 1. DEFERRED/FAILED CLASSIFICATION:
-   - Audit all [ ] and [FAILED] tasks in ./.antigravity/tasks/tasks.md.
+   - Audit all [ ] and [FAILED] tasks in ./.claude/tasks/tasks.md.
    - Investigate Plotnine/Mizani capabilities for each.
    - RECLASSIFY: If the feature (e.g., specific geom or scale) is missing in Plotnine, mark as: [DEFERRED - FEATURE NOT YET IMPLEMENTED IN PLOTNINE].
    - REMEDIATE: If it is a logic error in our implementation, FIX IT IMMEDIATELY and verify.
@@ -119,9 +119,9 @@ docs/workflows/vizualisation_factory.qmd and docs/appendix/viz_factory_rationale
 Mission: Iterative Completion of Viz_Factory Layers.
 
 1. READ CORE PROTOCOLS:
-   - ./.antigravity/workflows/viz_factory_implementation.md (Mandatory Test Loop)
-   - ./.agents/rules/rules_behavior.md (The @verify Protocol)
-   - ./.antigravity/tasks/tasks.md (Target List: Geoms, Scales, Themes, Facets, Coords, Positions, Guides, Stats)
+   - ./.claude/workflows/viz_factory_implementation.md (Mandatory Test Loop)
+   - ./.claude/rules/rules_behavior.md (The @verify Protocol)
+   - ./.claude/tasks/tasks.md (Target List: Geoms, Scales, Themes, Facets, Coords, Positions, Guides, Stats)
 
 2. OPERATIONAL PIPELINE (ITERATE PER COMPONENT):
    For every [ ] task in the Viz_Factory section:
@@ -150,7 +150,7 @@ HALT for @verify after the first 3 successful components to ensure the 'Deep Vio
 @Agent: @dasharch - CRITICAL RULE CORRECTION & AUDIT.
 
 1. **Update Authority**:
-    - Open `/.agents/rules/rules_aesthetic.md`.
+    - Open `/.claude/rules/rules_aesthetic.md`.
     - Explicitly clarify Section 1 (The Violet Law): "This is a DOCUMENTATION-ONLY standard. It applies to .qmd files, intended for USER/HUMAN consumption only (NOT to  READMEs, and high-level Docstrings). It MUST NOT be used for functional variable names, filenames, or class definitions within the logic."
 
 2. **Re-Audit Functional Logic**:
@@ -159,7 +159,7 @@ HALT for @verify after the first 3 successful components to ensure the 'Deep Vio
     - Logic must remain clean; documentation must remain "Violet."
 
 3. **Verify Documentation Sync**:
-    - Ensure `/.antigravity/knowledge/project_conventions.md` accurately describes this boundary.
+    - Ensure `/.claude/knowledge/project_conventions.md` accurately describes this boundary.
     - Confirm that `libs/viz_factory/README.md` uses the Violet Law for its "Key Components" list, but the actual code it points to is standard Python.
 
 4. **Self-Correction Report**:
@@ -172,11 +172,11 @@ HALT for @verify after the first 3 successful components to ensure the 'Deep Vio
 @Agent: @dasharch - DEEP ARCHITECTURAL CONSISTENCY & DOCUMENTATION AUDIT.
 
 1.  **Read Sources of Truth**:
-   - ./.agents/rules/workspace_standard.md (Master Authority)
-   - ./.antigravity/knowledge/architecture_decisions.md (Technical Bible)
-   - ./.antigravity/plans/implementation_plan_master.md (Roadmap)
-   - ./.antigravity/workflows/viz_factory_implementation.md (testing plotocol for viz_factory implementation)
-    - ./.antigravity/tasks/tasks.md (Current List)
+   - ./.claude/rules/workspace_standard.md (Master Authority)
+   - ./.claude/knowledge/architecture_decisions.md (Technical Bible)
+   - ./.claude/plans/implementation_plan_master.md (Roadmap)
+   - ./.claude/workflows/viz_factory_implementation.md (testing plotocol for viz_factory implementation)
+    - ./.claude/tasks/tasks.md (Current List)
     - ./libs/viz_factory/src/registry.py (Component Registry)
     - ./libs/viz_factory/tests/test_data/ (Verification Evidence)
 
@@ -196,17 +196,17 @@ HALT for @verify after the first 3 successful components to ensure the 'Deep Vio
     - Search for any "leakage" of Pandas logic outside of the final visualization rendering; replace with Polars LazyFrame equivalents where found.
 
 5. **Documentation Mirroring & Broken Links**:
-    - Audit `./.antigravity/knowledge/project_conventions.md` against the current file tree. Update any stale file paths or I/O descriptions.
-    - Check for "Ghost State": Technical decisions mentioned in chat but missing from `./.antigravity/knowledge/architecture_decisions.md`.
+    - Audit `./.claude/knowledge/project_conventions.md` against the current file tree. Update any stale file paths or I/O descriptions.
+    - Check for "Ghost State": Technical decisions mentioned in chat but missing from `./.claude/knowledge/architecture_decisions.md`.
     - Ensure every library in `libs/` has a `README.md` that correctly lists its Key Components.
 
 6. **Refactoring & Remediation**:
     - If you find a component that is implemented but undocumented, fix the documentation immediately.
-    - If you find a component that violates the 'Clear Lines' Policy (cross-library imports), log it as a CRITICAL BLOCKER in `./.antigravity/knowledge/blockers.md`.
+    - If you find a component that violates the 'Clear Lines' Policy (cross-library imports), log it as a CRITICAL BLOCKER in `./.claude/knowledge/blockers.md`.
 
 7. **Final Output**:
     - Update `tasks.md` and `implementation_plan_master.md` to reflect the absolute current state of truth.
-    - Generate a `/.antigravity/logs/audit_{{YYYY-MM-DD}}.md` documenting all fixes made during this consistency sweep.
+    - Generate a `/.claude/logs/audit_{{YYYY-MM-DD}}.md` documenting all fixes made during this consistency sweep.
 
 HALT for @verify before committing major file rewrites.
 ### Guides implementation 
@@ -216,8 +216,8 @@ HALT for @verify before committing major file rewrites.
 @Agent: @dasharch - AUDIT AND RECONCILE TASK STATE.
 
 1.  **Read Sources of Truth**:
-    - ./.antigravity/tasks/tasks.md (Current List)
-    - ./.antigravity/plans/implementation_plan_master.md (Roadmap)
+    - ./.claude/tasks/tasks.md (Current List)
+    - ./.claude/plans/implementation_plan_master.md (Roadmap)
     - ./libs/viz_factory/src/registry.py (Component Registry)
     - ./libs/viz_factory/tests/test_data/ (Verification Evidence)
 
@@ -344,7 +344,7 @@ to implement the scales  - following the same logic as the geoms and implement n
    - Include a 'Usage' example using the exact YAML structure from 'geom_point_test.yaml' (import the yaml file in the qmd file - rule: no code duplication).
 
 2. **Task Management**:
-   - Open './.antigravity/tasks/tasks.md'.
+   - Open './.claude/tasks/tasks.md'.
    - Mark '- [x] geom_point' as completed.
    - Identify the next incomplete Geom on the list (e.g., geom_line or geom_bar).
 
@@ -380,7 +380,7 @@ cd tmp/
 @Agent: @dasharch - SYSTEM UPDATE & VIZ FACTORY ARCHITECTURE (Data-Manifest Coupling).
 
 PART 1: SYSTEM UPDATE (Hard Requirement)
-1. Open './.antigravity/docs/rules_behavior.md'.
+1. Open './.claude/docs/rules_behavior.md'.
 2. Append the following 'Artist Law' section exactly:
 
 ### 📜 Artist Law: The Evidence-Driven Visual Contract
@@ -401,7 +401,7 @@ PART2: Verify the implementation of geom_point and ensure the implementation log
 Please improve this prompt so I we can start the implementation of the viz factory.
 
 We will start to implement each geom one by one (follwoing the order in the 
-./.antigravity/tasks/tasks.md file). 
+./.claude/tasks/tasks.md file). 
 Process : implementation 
 Invidual tests for each geom (data, manifest everything must be created in the same go) must go in ./.libs/viz_factory/tests/test_data/
 
@@ -439,7 +439,7 @@ Verification: Materialize a plot to tmp/ for human review.
 @Agent: @dasharch - SYSTEM UPDATE & VIZ FACTORY INITIALIZATION.
 
 PART 1: SYSTEM UPDATE (Hard Requirement)
-1. Open './.antigravity/docs/rules_behavior.md'.
+1. Open './.claude/docs/rules_behavior.md'.
 2. Append the following section exactly:
 
 ### 📜 Artist Law: The Evidence-Driven Visual Contract
@@ -527,13 +527,13 @@ HALT for @verify:
 so now we need it to make a pass at : 
 
 
-./.antigravity/knowledge/architecture_decisions.md
-./.antigravity/knowledge/project_conventions.md
-./.agents/workflows/verification_protocol.md"
+./.claude/knowledge/architecture_decisions.md
+./.claude/knowledge/project_conventions.md
+./.claude/workflows/verification_protocol.md"
 To ensure that they do not contain rules that should be integrated into the new modular rule files.
 
-Moreover, the agent yesterday started to create new directories. I moved that into ./.antigravity/backups 
-We need to make sure that the all information is either captured in the new modular rule files or in the corresponding files that the normal aligned agent should be using in the following directories: ./.antigravity/knowledge, ./.antigravity/plans and ./.antigravity/tasks 
+Moreover, the agent yesterday started to create new directories. I moved that into ./.claude/backups 
+We need to make sure that the all information is either captured in the new modular rule files or in the corresponding files that the normal aligned agent should be using in the following directories: ./.claude/knowledge, ./.claude/plans and ./.claude/tasks 
 
 
 @Agent: @dasharch - POST-REORGANIZATION AUDIT & CLEANUP.
@@ -541,12 +541,12 @@ We need to make sure that the all information is either captured in the new modu
 The modular rule files are created, but we must now verify 'Logic Density' and remove redundancy.
 
 1.  **Re-Check Modular Rules**: Compare 'rules_runtime.md', 'rules_wrangling.md', 'rules_behavior.md', and 'rules_aesthetic.md' against:
-    - ./.antigravity/knowledge/architecture_decisions.md (Check ADR-013/014 integration)
-    - ./.antigravity/knowledge/project_conventions.md (Check Type Selection Guide)
-    - ./.agents/workflows/verification_protocol.md (Check @verify Evidence Loop)
+    - ./.claude/knowledge/architecture_decisions.md (Check ADR-013/014 integration)
+    - ./.claude/knowledge/project_conventions.md (Check Type Selection Guide)
+    - ./.claude/workflows/verification_protocol.md (Check @verify Evidence Loop)
 
-2.  **Audit Backups**: Read everything in './.antigravity/backups'. 
-    - Is there any logic or task state there NOT present in the active ./.antigravity/ or ./.agents/ directories? 
+2.  **Audit Backups**: Read everything in './.claude/backups'. 
+    - Is there any logic or task state there NOT present in the active ./.claude/ or ./.claude/ directories? 
     - If YES: Move it to the correct authorized file now.
     - If NO: Prepare the directory for deletion.
 
@@ -566,9 +566,9 @@ HALT and provide a 'Gap Report'—list what was missing and where you moved it.
 1. Read the user backup of the latest workspace_standard in './EVE_WORK/daily/2026-03-28/workspace_standard_backup.md'. 
 We need to refactor the workspace rules and standards to be more modular.
 
-2. To prevent architectural drift during the modularization of our rules, you must create a temporary file: './.agents/rules/migration_inventory.md'.
+2. To prevent architectural drift during the modularization of our rules, you must create a temporary file: './.claude/rules/migration_inventory.md'.
 
-3. **Map Every Component**: Document the transition of Sections 1-17 of 'workspace_standard.md' and the 'ANTIGRAVITY_GEM_context.md' system state into the following 4 sub-files in the .agents/rules/ directory:
+3. **Map Every Component**: Document the transition of Sections 1-17 of 'workspace_standard.md' and the 'ANTIGRAVITY_GEM_context.md' system state into the following 4 sub-files in the .claude/rules/ directory:
     - rules_runtime.md
     - rules_wrangling.md
     - rules_behavior.md
@@ -598,28 +598,28 @@ We need to refactor the workspace rules and standards to be more modular.
 
 ---- 
 
-2. Create './.agents/rules/rules_runtime.md' and include these SYSTEM TRUTHS:
+2. Create './.claude/rules/rules_runtime.md' and include these SYSTEM TRUTHS:
    - IDE Version: Antigravity v1.19.6 (STABLE/PINNED).
    - OS: Fedora 43 KDE (Velocifero Compute).
    - Update Policy: 'update.mode: none' (DNF pinned).
    - VENV: All execution MUST use './.venv/bin/python'. No path hacking (sys.path).
 
-3. Create './.agents/rules/rules_wrangling.md':
+3. Create './.claude/rules/rules_wrangling.md':
    - Include Section 8 (Decorators), Section 9 (Transformation), and Section 12 (ADR-013 Manifest Contract).
-   - Pull the 'Data Type Selection' and '1:1:1 Naming Law' from `./.antigravity/knowledge/project_conventions.md` into `rules_wrangling.md`.
+   - Pull the 'Data Type Selection' and '1:1:1 Naming Law' from `./.claude/knowledge/project_conventions.md` into `rules_wrangling.md`.
 
-4. Create './.agents/rules/rules_behavior.md':
+4. Create './.claude/rules/rules_behavior.md':
    - Include the @verify Protocol: Generate Test Data/Manifest -> Execute CLI -> Materialize to tmp/ -> df.glimpse() -> HALT.
    - Include the 'Halt & Verify' Protocol for rule changes.
-   - Pull the 'Evidence Loop' from `./.agents/workflows/verification_protocol.md` into `rules_behavior.md`.
+   - Pull the 'Evidence Loop' from `./.claude/workflows/verification_protocol.md` into `rules_behavior.md`.
 
 
-5. Create './.agents/rules/rules_aesthetic.md` (Violet Law, Documentation, Quarto/Mermaid). 
+5. Create './.claude/rules/rules_aesthetic.md` (Violet Law, Documentation, Quarto/Mermaid). 
 
 
 
 6. **Clean Up**: 
-    - Once the new ./.agents/rules/ directory is verified, update the main workspace_standard.md to be a 'Master Index' that mandates reading these sub-files.
+    - Once the new ./.claude/rules/ directory is verified, update the main workspace_standard.md to be a 'Master Index' that mandates reading these sub-files.
     - Reference all components using the Violet Law: ComponentName (file_name.py).
     - Strip the old monolithic sections.
     - Ensure no component are missing - only reorganized.

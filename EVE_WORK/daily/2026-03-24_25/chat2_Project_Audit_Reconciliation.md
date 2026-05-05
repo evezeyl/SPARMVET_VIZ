@@ -5,9 +5,9 @@ Note: _This is purely the output of the chat conversation and does not contain a
 ### User Input
 
 @Agent: @dasharch - Full Project & Documentation Congruence Audit (The "Zero-Debt" Scan).
-1. Read : `./.antigravity/rules/workspace_standard.md` and `./.antigravity/workflows/verification_protocol.md`
+1. Read : `./.claude/rules/workspace_standard.md` and `./.claude/workflows/verification_protocol.md`
 2. **The Vision-Reality Audit:** Use a deep-thinking model to cross-reference our 'Planned Logic' against our 'Current Implementation'.
-   - **Plans:** `./.antigravity/plans/implementation_plan_master.md`, `./.antigravity/knowledge/architecture_decisions.md`, and `./.antigravity/tasks/tasks.md`.
+   - **Plans:** `./.claude/plans/implementation_plan_master.md`, `./.claude/knowledge/architecture_decisions.md`, and `./.claude/tasks/tasks.md`.
    - **Implementation:** All files in `./libs/`, `./app/`, `./assets/`, and `./config/`.
    - **Documentation:** All files in `./docs/`.
 
@@ -32,15 +32,15 @@ Note: _This is purely the output of the chat conversation and does not contain a
 
 *Listed directory [.antigravity](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity) *
 
-*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) *
+*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) *
 
-*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md) *
+*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md) *
 
-*Viewed [blockers.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/blockers.md) *
+*Viewed [blockers.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/blockers.md) *
 
-*Viewed [milestones.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/milestones.md) *
+*Viewed [milestones.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/milestones.md) *
 
-*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md) *
+*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md) *
 
 *Searched filesystem*
 

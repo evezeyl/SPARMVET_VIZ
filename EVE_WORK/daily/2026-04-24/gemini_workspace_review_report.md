@@ -9,7 +9,7 @@
 
 ### 🔴 Critical Inconsistencies & Cross-Reference Errors
 1. **Workspace Standard Sections Missing**: 
-   - [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md) (ADR 014) references "Section 12 of the Workspace Standard", but the file [.agents/rules/workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/workspace_standard.md) contains no such section (it has `#REVIEW` comments acknowledging this gap).
+   - [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md) (ADR 014) references "Section 12 of the Workspace Standard", but the file [.claude/rules/workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/workspace_standard.md) contains no such section (it has `#REVIEW` comments acknowledging this gap).
    - ADR 016 similarly references "Section 13, Workspace Standard", which is missing. These referential pointers are broken, likely due to recent modularization of the rulebooks (`rules_data_engine.md`, etc.).
 2. **Assets/Scripts Deprecation Contradiction (ADR-032 vs. Workspace Standard)**: 
    - ADR-032 states that `assets/scripts/` is **deprecated** and its deletion is mandatory, migrating logic to library-internal modules.
@@ -61,7 +61,7 @@
 The **SPARMVET_VIZ** workspace is mathematically robust in the Backend/Transformer architecture and adheres strongly to the Decorator-First Polars processing rules.
 
 **Immediate actions for developers are required in Documentation Alignment:**
-1. Rectify the rulebook cross-references (`Section 12`, `Section 13`) in `architecture_decisions.md` to point to the correct modular `.agents/rules/` files.
+1. Rectify the rulebook cross-references (`Section 12`, `Section 13`) in `architecture_decisions.md` to point to the correct modular `.claude/rules/` files.
 2. Resolve the `assets/scripts/` contradiction. Either formally reinstate the folder for workspace-global scripts (like dependency graphing), or fully migrate them to `libs/utils/` and strictly adhere to ADR-032.
 3. Align the `connectors/` vs. `deployment/` terminology across `bootloader.py` and directory structures.
 

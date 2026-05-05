@@ -29,7 +29,7 @@ Remove `sys.path` injection statements from the header of all relevant test scri
 - **Gallery Refactoring:** Strip the active rendering logic from the gallery observer. The Gallery must exclusively display pre-existing Location 5 components and provide a targeted copy-action to push the recipe steps into the Tier 3 wrangle studio ([logic_stack](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/modules/wrangle_studio.py#166-193)). 
 
 ### Project Architecture Rules
-#### [MODIFY] [.agents/rules/rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_ui_dashboard.md)
+#### [MODIFY] [.claude/rules/rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_ui_dashboard.md)
 - Add a new section enforcing the **Gallery Isolation Boundaries**.
 - Add the **Hierarchical Cache Architecture** (`project -> dataset -> plot`) to ensure agents universally respect and utilize the shared Bootloader cache structures properly without recalculating static Tier 1/2 outputs.
 

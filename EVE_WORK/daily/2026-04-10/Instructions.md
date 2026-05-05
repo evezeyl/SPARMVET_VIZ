@@ -68,12 +68,12 @@ Can we add that to the decisions development plan / architecture and tasks list 
 Context:
 
 - User has requested a structured 'Visual Cookbook' extension to ADR-025/028.
-- Document this in ./.antigravity/knowledge/architecture_decisions.md as ADR-033.
+- Document this in ./.claude/knowledge/architecture_decisions.md as ADR-033.
 
 Objective:
 
-1. Update Implementation Plan: Add 'Phase 14-B: Educational Gallery Engine' to ./.antigravity/plans/implementation_plan_master.md.
-2. Update Tasks: Add the following under Phase 14 in ./.antigravity/tasks/tasks.md:
+1. Update Implementation Plan: Add 'Phase 14-B: Educational Gallery Engine' to ./.claude/plans/implementation_plan_master.md.
+2. Update Tasks: Add the following under Phase 14 in ./.claude/tasks/tasks.md:
    - [ ] Build 'recipe_meta.md' parser in app/modules/gallery_viewer.py.
    - [ ] Implement 50/50 Split-Pane Gallery UI (Technical Left / Educational Right).
    - [ ] Enforce mandatory Markdown template for Gallery submissions.

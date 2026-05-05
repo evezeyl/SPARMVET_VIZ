@@ -8,11 +8,11 @@ Note: _This is purely the output of the chat conversation and does not contain a
 
 1. MANDATORY KNOWLEDGE SYNC (READ BEFORE ACTION):
 To prevent AI Drift and ensure ADR compliance, you MUST read the following files before proposing any logic:
-- ./.agents/rules/workspace_standard.md (The Master Index)
-- ./.agents/rules/rules_runtime_environment.md (VENV & Command Authority)
-- ./.agents/rules/rules_verification_testing.md (@verify Protocol)
-- ./.antigravity/knowledge/architecture_decisions.md (ADRs 001-032)
-- ./.antigravity/plans/implementation_plan_master.md (Current Roadmap)
+- ./.claude/rules/workspace_standard.md (The Master Index)
+- ./.claude/rules/rules_runtime_environment.md (VENV & Command Authority)
+- ./.claude/rules/rules_verification_testing.md (@verify Protocol)
+- ./.claude/knowledge/architecture_decisions.md (ADRs 001-032)
+- ./.claude/plans/implementation_plan_master.md (Current Roadmap)
 
 2. OPERATIONAL CONSTRAINTS:
 - RUNTIME: All execution MUST use `./.venv/bin/python`. Internal python calls or 'os' movements are PROHIBITED.
@@ -24,13 +24,13 @@ To prevent AI Drift and ensure ADR compliance, you MUST read the following files
 - Data paths and system locations MUST be resolved via `config/connectors/local/local_connector.yaml`.
 - Metadata and Additional Data are OPTIONAL. Default to Identity Logic if missing. 4. SECONDARY RULE HIERARCHY (READ ON-DEMAND):
 Before executing any task, you must cross-reference the following specialized rulebooks if relevant:
-- UI/Aesthetics: ./.agents/rules/rules_ui_dashboard.md & rules_documentation_aesthetics.md
-- Data Lifecycle: ./.agents/rules/rules_data_engine.md (ADR-024 Tiering)
-- Script Governance: ./.agents/rules/rules_asset_scripts.md (For all CLI tools)
-- Implementation Workflows: ./.agents/workflows/ (Specific to Transformer or Viz_Factory)
+- UI/Aesthetics: ./.claude/rules/rules_ui_dashboard.md & rules_documentation_aesthetics.md
+- Data Lifecycle: ./.claude/rules/rules_data_engine.md (ADR-024 Tiering)
+- Script Governance: ./.claude/rules/rules_asset_scripts.md (For all CLI tools)
+- Implementation Workflows: ./.claude/workflows/ (Specific to Transformer or Viz_Factory)
 
 5. DEPENDENCY VERIFICATION:
-Before beginning a task, STATE which rulebook you are consulting. If a task involves creating a new plot component, you MUST read ./.agents/workflows/viz_factory_implementation.md first. YOUR CURRENT TASK: DEEP SANITATION & INTEGRITY AUDIT.
+Before beginning a task, STATE which rulebook you are consulting. If a task involves creating a new plot component, you MUST read ./.claude/workflows/viz_factory_implementation.md first. YOUR CURRENT TASK: DEEP SANITATION & INTEGRITY AUDIT.
 
 Context: 
 We are performing a full project sanitation. You must identify inconsistencies caused by the recent migration to Library Autonomy (ADR-032) and the Project-Agnostic mandate (ADR-003).
@@ -40,35 +40,35 @@ Detect and fix any 'Ghost State' in the tasks, configuration, and UI modules.
 
 Controls to Execute:
 1. Hardcoding Audit: Use 'grep' or 'find' to locate any remaining hardcoded paths to 'assets/scripts/' or strings like 'sample_id' and 'species' in the app/ directory. 
-2. Task Ledger Audit: Compare ./.antigravity/tasks/tasks.md against the Implementation Plan Master. Restore any [ ] items that were prematurely moved to archives (e.g., check status of the Join Preview Modal).
+2. Task Ledger Audit: Compare ./.claude/tasks/tasks.md against the Implementation Plan Master. Restore any [ ] items that were prematurely moved to archives (e.g., check status of the Join Preview Modal).
 3. Import Logic Audit: Verify that app/modules/dev_studio.py and app/modules/orchestrator.py are using the new internal library paths (e.g., ingestion.excel_handler) and NOT assets/.
 4. Configuration Sync: Ensure config/connectors/local/local_connector.yaml contains the mandatory 'runtime' and 'scripts' blocks.
-5. Rule Hygiene (@hygiene): Review ./.agents/rules/ for duplicate instructions. Consolidate into the modular rule system defined in the Workspace Standard.
+5. Rule Hygiene (@hygiene): Review ./.claude/rules/ for duplicate instructions. Consolidate into the modular rule system defined in the Workspace Standard.
 
 Follow Evidence Loop:
 - Provide an 'Inconsistency Report' listing every violation found.
 - Fix violations and provide a 'Resolution Log'.
-- Update ./.antigravity/logs/audit_{YYYY-MM-DD}.md with the sanitation results.
+- Update ./.claude/logs/audit_{YYYY-MM-DD}.md with the sanitation results.
 - HALT for @verify.
 
 
-*Viewed [workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/workspace_standard.md) *
+*Viewed [workspace_standard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/workspace_standard.md) *
 
-*Viewed [rules_runtime_environment.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_runtime_environment.md) *
+*Viewed [rules_runtime_environment.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_runtime_environment.md) *
 
-*Viewed [rules_verification_testing.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_verification_testing.md) *
+*Viewed [rules_verification_testing.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_verification_testing.md) *
 
 ### Planner Response
 
 Now let me read the remaining mandatory files in parallel:
 
-*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md) *
+*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md) *
 
-*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) *
+*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) *
 
 *Viewed [tree.txt](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/tree.txt) *
 
-*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md) *
+*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md) *
 
 *Viewed [local_connector.yaml](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/config/connectors/local/local_connector.yaml) *
 
@@ -100,13 +100,13 @@ Critical `sys.path.append` violation found in [help_registry.py](cci:7://file://
 
 *Viewed [ui.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/src/ui.py) *
 
-*Listed directory [rules](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules) *
+*Listed directory [rules](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules) *
 
 ### Planner Response
 
-Now I have all the data I need. Let me also check the [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/dasharch.md:0:0-0:0) for any duplicate hygiene issues, read the `dev_studio.py` module (which may exist), and check imports in surviving files:
+Now I have all the data I need. Let me also check the [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/dasharch.md:0:0-0:0) for any duplicate hygiene issues, read the `dev_studio.py` module (which may exist), and check imports in surviving files:
 
-*Viewed [dasharch.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/dasharch.md) *
+*Viewed [dasharch.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/dasharch.md) *
 
 *Grep searched codebase*
 
@@ -125,7 +125,7 @@ Now let me apply the two code fixes in parallel:
 **Fix 1:** [help_registry.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/modules/help_registry.py:0:0-0:0) — remove `sys.path` hack + fix import to use clean package path
 **Fix 2:** [ui.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/src/ui.py:0:0-0:0) — replace hardcoded `species, amr_class` with a generic placeholder
 
-Note on [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/dasharch.md:0:0-0:0): it has some operational/role-based content (bioinformatic persona, "Teacher Mode") that is unique — but section 7 (Workspace Context & Pathing Rule) partially duplicates [workspace_standard.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/workspace_standard.md:0:0-0:0). I'll note this in the hygiene report but will NOT delete content without explicit user authorization (Double-Confirmation rule from `rules_verification_testing.md §5`).
+Note on [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/dasharch.md:0:0-0:0): it has some operational/role-based content (bioinformatic persona, "Teacher Mode") that is unique — but section 7 (Workspace Context & Pathing Rule) partially duplicates [workspace_standard.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/workspace_standard.md:0:0-0:0). I'll note this in the hygiene report but will NOT delete content without explicit user authorization (Double-Confirmation rule from `rules_verification_testing.md §5`).
 
 *Edited relevant file*
 
@@ -139,7 +139,7 @@ Now fix [ui.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_
 
 Both code fixes are applied. Now write the audit log and the task.md update:
 
-*User accepted the command `cat >> .antigravity/logs/audit_2026-04-09.md << 'AUDIT_EOF'
+*User accepted the command `cat >> .claude/logs/audit_2026-04-09.md << 'AUDIT_EOF'
 
 ---
 
@@ -204,7 +204,7 @@ All ADR-031 required blocks verified:
 
 ### Control 5 — Rule Hygiene (@hygiene)
 
-**Files in `.agents/rules/`:** `dasharch.md`, `rules_asset_scripts.md`, `rules_data_engine.md`, `rules_documentation_aesthetics.md`, `rules_runtime_environment.md`, `rules_ui_dashboard.md`, `rules_verification_testing.md`, `workspace_standard.md`
+**Files in `.claude/rules/`:** `dasharch.md`, `rules_asset_scripts.md`, `rules_data_engine.md`, `rules_documentation_aesthetics.md`, `rules_runtime_environment.md`, `rules_ui_dashboard.md`, `rules_verification_testing.md`, `workspace_standard.md`
 
 | File | Finding | Action |
 |---|---|---|
@@ -244,7 +244,7 @@ The heredoc command seems stuck (likely due to the `cat >>` with heredoc needing
 *User accepted the command `./.venv/bin/python -c "
 import pathlib, datetime
 
-log_path = pathlib.Path('.antigravity/logs/audit_2026-04-09.md')
+log_path = pathlib.Path('.claude/logs/audit_2026-04-09.md')
 log_path.parent.mkdir(parents=True, exist_ok=True)
 
 entry = '''
@@ -291,7 +291,7 @@ Result: ALIGNED. Join Preview Modal [DONE] in both docs. Gallery Engine, Outlier
 
 ### Control 5 — Rule Hygiene
 
-`.agents/rules/dasharch.md` Section 7 contains cosmetic overlap with workspace_standard.md (boundary lock, path governance). Flagged for Double-Confirmation per rules_verification_testing.md sec 5. No autonomous deletion taken.
+`.claude/rules/dasharch.md` Section 7 contains cosmetic overlap with workspace_standard.md (boundary lock, path governance). Flagged for Double-Confirmation per rules_verification_testing.md sec 5. No autonomous deletion taken.
 
 ### Resolution Log
 
@@ -337,7 +337,7 @@ The python command is still hanging. Let me write the audit entry directly as a 
 
 Let me view the current audit log to find the right append position, then write the entry directly:
 
-*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-09.md) *
+*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-09.md) *
 
 ### Planner Response
 
@@ -368,8 +368,8 @@ Requirements:
    - Perform a cat/grep on app/modules/wrangle_studio.py for the Join Preview Modal logic. 
    - If not found, change the status in tasks.md from [x] back to [ ] and mark as 'DEBT'.
 2. Rule Consolidation (Double-Confirmation Granted):
-   - Remove Section 7 (Path Governance/Boundary Lock) from .agents/rules/dasharch.md.
-   - Reference .agents/rules/workspace_standard.md as the sole authority for those rules.
+   - Remove Section 7 (Path Governance/Boundary Lock) from .claude/rules/dasharch.md.
+   - Reference .claude/rules/workspace_standard.md as the sole authority for those rules.
 3. Server implementation:
    - Add a skeleton @output @render.ui('audit_nodes_tier2') to app/src/server.py to satisfy the new ui.py dependency.
 4. Documentation Cross-Check:
@@ -395,7 +395,7 @@ Evidence gathered. Join Preview Modal is **physically present and complete** (li
 ### Planner Response
 
 I have all the data I need. Three fixes to apply in sequence:
-1. Remove [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/dasharch.md:0:0-0:0) §7
+1. Remove [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/dasharch.md:0:0-0:0) §7
 2. Add `audit_nodes_tier2` skeleton to [server.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/src/server.py:0:0-0:0) (after the existing [audit_nodes_tier3](cci:1://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/app/src/server.py:313:4-347:29) block at line 349)
 
 *Edited relevant file*
@@ -408,15 +408,15 @@ The MD025 lint warning is cosmetic (persona file uses `#` for section headers, n
 
 ### Planner Response
 
-The MD025 lint on [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/dasharch.md:0:0-0:0) is an expected warning for a persona rules file that uses `#` section headers — it is NOT a [.qmd](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/docs/appendix/Terminology.qmd:0:0-0:0) documentation file, so enforcing single-H1 is not applicable. No fix needed. All 3 fixes are now done. Let me now append the final resolution entry to the audit log:
+The MD025 lint on [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/dasharch.md:0:0-0:0) is an expected warning for a persona rules file that uses `#` section headers — it is NOT a [.qmd](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/docs/appendix/Terminology.qmd:0:0-0:0) documentation file, so enforcing single-H1 is not applicable. No fix needed. All 3 fixes are now done. Let me now append the final resolution entry to the audit log:
 
-*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-09.md) *
+*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-09.md) *
 
 ### Planner Response
 
 Appending the final resolution block directly to the log file:
 
-*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-09.md) *
+*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-09.md) *
 
 *Edited relevant file*
 
@@ -424,13 +424,13 @@ Appending the final resolution block directly to the log file:
 
 The file ends with a blank line whose content differs from a plain newline. I'll just write to the end using a larger range view:
 
-*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-09.md) *
+*Viewed [audit_2026-04-09.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-09.md) *
 
 *Edited relevant file*
 
 ### Planner Response
 
-The lint warnings on [audit_2026-04-09.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-09.md:0:0-0:0) are all cosmetic markdown style issues in an append-only session log file (compact table borders, blank lines between sections from prior `cat >>` heredocs). These are not actionable — the log is APPEND-ONLY (per `rules_runtime_environment.md §2`) and cannot be retroactively reformatted. The `MD025` on [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/dasharch.md:0:0-0:0) is acceptable for a persona file using numbered sections with `#` headers. No fixes will be applied.
+The lint warnings on [audit_2026-04-09.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-09.md:0:0-0:0) are all cosmetic markdown style issues in an append-only session log file (compact table borders, blank lines between sections from prior `cat >>` heredocs). These are not actionable — the log is APPEND-ONLY (per `rules_runtime_environment.md §2`) and cannot be retroactively reformatted. The `MD025` on [dasharch.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/dasharch.md:0:0-0:0) is acceptable for a persona file using numbered sections with `#` headers. No fixes will be applied.
 
 All work is complete. Notifying the user:
 
@@ -454,7 +454,7 @@ Objectives:
 2. Update ADR-029a and Implementation Plan for 'Comparison Theater' logic.
 
 Requirements:
-1. Read: ./.antigravity/knowledge/protocol_tiered_data.md (ADR-024) and ./.agents/rules/rules_ui_dashboard.md.
+1. Read: ./.claude/knowledge/protocol_tiered_data.md (ADR-024) and ./.claude/rules/rules_ui_dashboard.md.
 
 2. Documentation Lock:
    - Update architecture_decisions.md (ADR-029a): Add specs for the Dual-Column Theater (Reference vs. Active).
@@ -473,9 +473,9 @@ Follow Evidence Loop:
 - Show the updated ADR and Implementation Plan entries.
 - HALT for @verify.
 
-*Viewed [protocol_tiered_data.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/protocol_tiered_data.md) *
+*Viewed [protocol_tiered_data.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/protocol_tiered_data.md) *
 
-*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/rules_ui_dashboard.md) *
+*Viewed [rules_ui_dashboard.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/rules_ui_dashboard.md) *
 
 ### Planner Response
 
@@ -517,9 +517,9 @@ I have revised your plan, and added more comments, I think you generally underst
 
 Now update both governance files in parallel:
 
-*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md) *
+*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md) *
 
-*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) *
+*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) *
 
 ### Planner Response
 
@@ -531,7 +531,7 @@ Now apply both governance updates in parallel:
 
 ### Planner Response
 
-Governance done. The MD025 lint in [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md:0:0-0:0) is pre-existing (line 3 is a `# Last Updated` date line below the H1 — not a new issue introduced by this edit). Now implement the UI and server changes:
+Governance done. The MD025 lint in [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md:0:0-0:0) is pre-existing (line 3 is a `# Last Updated` date line below the H1 — not a new issue introduced by this edit). Now implement the UI and server changes:
 
 ### Planner Response
 

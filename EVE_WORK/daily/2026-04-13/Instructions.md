@@ -47,9 +47,9 @@ Report the success/failure of each Step. List any UI elements that appeared when
 1. CONTEXT SYNC (NEW STANDARDS):
 Read and strictly enforce:
 
-- ./.agents/rules/rules_manifest_structure.md (Basename Mirroring Mandate)
-- ./.agents/rules/rules_verification_testing.md (Phase-Gating Protocol)
-- ./.agents/workflows/ui_manifest_integration_testing.md (The Master Gate)
+- ./.claude/rules/rules_manifest_structure.md (Basename Mirroring Mandate)
+- ./.claude/rules/rules_verification_testing.md (Phase-Gating Protocol)
+- ./.claude/workflows/ui_manifest_integration_testing.md (The Master Gate)
 
 1. GOAL: REWRITE & VERIFY MANIFESTS
 The 'STRESS_FINAL.yaml' was unsuccessful. You must refactor it and the primary 'ST22_dummy_manifest' to match the official structural authority (assets/template_manifests/1_test_data_ST22_dummy.yaml).
@@ -87,29 +87,29 @@ Halt and wait for @verify. DO NOT proceed to app/src/main.py. UI testing is stri
 
 1. CONTEXT SYNC:
 
-- Read: ./.agents/rules/workspace_standard.md
-- Read: ./.antigravity/plans/implementation_plan_master.md
-- Read: ./.antigravity/knowledge/architecture_decisions.md (Focus on ADR-011, ADR-024, ADR-031)
+- Read: ./.claude/rules/workspace_standard.md
+- Read: ./.claude/plans/implementation_plan_master.md
+- Read: ./.claude/knowledge/architecture_decisions.md (Focus on ADR-011, ADR-024, ADR-031)
 
 1. GOAL: RESTRUCTURE TESTING & MANIFEST RULES
 You must refactor the rulebooks to eliminate duplication and enforce strict phase-gating.
 
 A. BASE AUTHORITY REFACTOR:
 
-- Consolidate universal "Evidence Loop" logic (Contract -> CLI -> Materialize -> Glimpse -> Halt) into ./.agents/rules/rules_verification_testing.md.
+- Consolidate universal "Evidence Loop" logic (Contract -> CLI -> Materialize -> Glimpse -> Halt) into ./.claude/rules/rules_verification_testing.md.
 - Ensure all other workflows reference this base protocol.
 
 B. SPECIFIC WORKFLOW EXTENSIONS:
 Create or refine the following modular workflows. Each must define the specific 'Engine' (debug_*.py) to use:
 
-- ./.agents/workflows/ingestion_testing.md (Engine: debug_ingestor.py)
-- ./.agents/workflows/transformer_testing.md (Engine: debug_assembler.py)
-- ./.agents/workflows/viz_factory_testing.md (Engine: debug_runner.py)
-- ./.agents/workflows/ui_manifest_integration_testing.md (The "Master Gate")
+- ./.claude/workflows/ingestion_testing.md (Engine: debug_ingestor.py)
+- ./.claude/workflows/transformer_testing.md (Engine: debug_assembler.py)
+- ./.claude/workflows/viz_factory_testing.md (Engine: debug_runner.py)
+- ./.claude/workflows/ui_manifest_integration_testing.md (The "Master Gate")
 
 C. MANIFEST STRUCTURAL STANDARD:
 
-- Create ./.agents/rules/rules_manifest_structure.md.
+- Create ./.claude/rules/rules_manifest_structure.md.
 - MANDATE: "Basename Mirroring". A manifest (main.yaml) MUST have its !include components in a directory named 'main/' at the same level.
 - Reference assets/template_manifests/1_test_data_ST22_dummy.yaml as the structure authority.
 

@@ -7,9 +7,9 @@ date:: 2026-04-07
 @Agent: Assume persona @dasharch. SYSTEM RESET.
 
 1. Context Alignment (READ ONLY):
-   - ./.agents/rules/workspace_standard.md (Authority)
-   - ./.antigravity/knowledge/architecture_decisions.md (ADR-024: Tiered Lifecycle)
-   - ./.antigravity/tasks/tasks.md (Current Focus: Tier 2 Branching)
+   - ./.claude/rules/workspace_standard.md (Authority)
+   - ./.claude/knowledge/architecture_decisions.md (ADR-024: Tiered Lifecycle)
+   - ./.claude/tasks/tasks.md (Current Focus: Tier 2 Branching)
 
 2. Task Objective:
    Implement and verify the 'Tier 2 Branch' materialization logic within the Transformer.
@@ -32,12 +32,12 @@ Model: Gemini 3 Flash. Mode: Fast.
 @Agent: @dasharch - TASK VISIBILITY & DEFERRED LOGIC RESTORATION.
 
 1. RULE UPDATE: THE ACTIVE VISIBILITY PROTOCOL
-   - Update Section 4 of './.agents/rules/rules_verification_testing.md'.
+   - Update Section 4 of './.claude/rules/rules_verification_testing.md'.
    - Rename the rule to: "Active Visibility Protocol (Skeletal-Archive)".
    - Mandate: "Only 100% completed [x] items may be moved to archives. ANY task that is either in-progress [ ] or [DEFERRED] MUST remain in the main tasks.md under its original logical header to ensure immediate visibility."
 
 2. SURGICAL RESTORATION (CRITICAL):
-   - Review the newly created archives in './.antigravity/tasks/archives/'.
+   - Review the newly created archives in './.claude/tasks/archives/'.
    - Identify any [ ] or [DEFERRED] tasks that were moved.
    - MOVE THEM BACK to their respective headers in 'tasks.md'.
    - Ensure the progress status of active phases is fully visible again.
@@ -55,7 +55,7 @@ HALT for @verify. Do not proceed until 'tasks.md' correctly shows the 'Deferred'
 @Agent: @dasharch - FINAL VERIFICATION & RULE CODIFICATION.
 
 1. CODIFY ARCHIVING RULE:
-   - Add the 'Task Archiving Protocol (Skeletal-First)' to './.agents/rules/rules_verification_testing.md' as Section 4.
+   - Add the 'Task Archiving Protocol (Skeletal-First)' to './.claude/rules/rules_verification_testing.md' as Section 4.
 
 2. TRACEABILITY CARD (Tier 1):
    - As per the Transparency Mandate, explicitly list:
@@ -75,7 +75,7 @@ HALT for @verify. Once you provide the paths and confirm the rule update, we are
 @Agent: @dasharch - FINAL TASK RECONCILIATION & INTEGRITY PROOF.
 
 1. DATA RECONCILIATION (CRITICAL):
-   - Perform a cross-check between the original 'tasks.md' (prior to skeletonization) and the new archive files in './.antigravity/tasks/archives/'.
+   - Perform a cross-check between the original 'tasks.md' (prior to skeletonization) and the new archive files in './.claude/tasks/archives/'.
    - OUTPUT to terminal:
      - Total count of [x] completed tasks BEFORE migration.
      - Total count of [x] completed tasks NOW residing in archives.
@@ -101,10 +101,10 @@ HALT for @verify. Provide the "Zero-Loss Confirmation" message in the terminal b
 
 1. SURGICAL MIGRATION (Preserve the Skeleton):
    - For every logical unit (Header) that is 100% complete:
-     - Create a corresponding archive file: './.antigravity/tasks/archives/tasks_archive_[unit_name].md'.
+     - Create a corresponding archive file: './.claude/tasks/archives/tasks_archive_[unit_name].md'.
      - Move the detailed '[x]' checklist items to that archive.
      - In the main 'tasks.md', KEEP the Header/Title but replace the body with:
-       "> Status: COMPLETED. Detailed history moved to: [./.antigravity/tasks/archives/tasks_archive_[unit_name].md]"
+       "> Status: COMPLETED. Detailed history moved to: [./.claude/tasks/archives/tasks_archive_[unit_name].md]"
 
 2. REORGANIZE ACTIVE FOCUS:
    - Re-index 'Backend & Decorator-First' using the ADR-024 3-Tier terminology:
@@ -129,11 +129,11 @@ HALT for @verify. Provide a terminal count of how many logical units were archiv
 @Agent: @dasharch - TASK ARCHIVE & RESET.
 
 1. CREATE ARCHIVE DIRECTORY:
-   - Ensure './.antigravity/tasks/archives/' exists.
+   - Ensure './.claude/tasks/archives/' exists.
 
 2. MIGRATE COMPLETED TASKS:
-   - Move all [x] completed items from 'Infrastructure & Recovery' to './.antigravity/tasks/archives/tasks_archive_infrastructure.md'.
-   - Move the 'Phase 9: Triple-Source AMR Integration' block to './.antigravity/tasks/archives/tasks_archive_phase9.md'.
+   - Move all [x] completed items from 'Infrastructure & Recovery' to './.claude/tasks/archives/tasks_archive_infrastructure.md'.
+   - Move the 'Phase 9: Triple-Source AMR Integration' block to './.claude/tasks/archives/tasks_archive_phase9.md'.
    - In 'tasks.md', keep the headers but replace the content with: "Archive: [Link to file path]".
 
 3. RESTRUCTURE ACTIVE TASKS (tasks.md):
@@ -143,7 +143,7 @@ HALT for @verify. Provide a terminal count of how many logical units were archiv
      - [PLANNED] Tier 3 (The Leaf): UI-driven Predicate Pushdown.
 
 4. TRANSPARENCY MANDATE:
-   - Update './.agents/rules/rules_verification_testing.md' Section 3 to include:
+   - Update './.claude/rules/rules_verification_testing.md' Section 3 to include:
      "Transparency Mandate: Every @verify result MUST list the exact file paths used for Data, Manifests, and Resulting Artifacts."
 
 5. CLARIFY PREVIOUS RUN (Transparency Rule Test):
@@ -158,7 +158,7 @@ HALT for @verify once the folder structure is cleaned and the tasks are archived
 @verify
 
 1. UPDATE INTERACTION RULES:
-   - Add the following to './.agents/rules/rules_verification_testing.md' under Section 3:
+   - Add the following to './.claude/rules/rules_verification_testing.md' under Section 3:
      "Transparency Mandate: Every @verify signal MUST explicitly list the file paths of all test data and manifests used."
 
 2. DOCUMENTATION SYNC:
@@ -173,7 +173,7 @@ HALT for @verify once the folder structure is cleaned and the tasks are archived
 
 Context:
 We are verifying Phase 10 (Tiering Layer) and ADR-024.
-Documentation: ./.antigravity/knowledge/protocol_tiered_data.md and rules_data_engine.md.
+Documentation: ./.claude/knowledge/protocol_tiered_data.md and rules_data_engine.md.
 
 Task:
 
@@ -197,10 +197,10 @@ HALT for @verify once the Short-Circuit logic is proven in the terminal logs.
 
 Read and Align with:
 
-1. ./.agents/rules/workspace_standard.md (Authority)
-2. ./.antigravity/plans/implementation_plan_master.md (Roadmap)
-3. ./.antigravity/knowledge/architecture_decisions.md (ADRs 001-025)
-4. ./.antigravity/tasks/tasks.md (Current Focus)
+1. ./.claude/rules/workspace_standard.md (Authority)
+2. ./.claude/plans/implementation_plan_master.md (Roadmap)
+3. ./.claude/knowledge/architecture_decisions.md (ADRs 001-025)
+4. ./.claude/tasks/tasks.md (Current Focus)
 
 Current Environment:
 
@@ -244,7 +244,7 @@ The current 'transformer -> src' and 'viz_factory -> src' structure is incorrect
 
 III. TASK 2: TASK LEDGER RECONCILIATION (tasks.md)
 
-1. Read ./.antigravity/tasks/tasks.md.
+1. Read ./.claude/tasks/tasks.md.
 2. Identify and DELETE all duplicated task blocks.
 3. Re-index Phase 3 (Persistence Layer) to reflect the new doctrine:
    - "Implement Tier 1 (Trunk) persistence (sink_parquet) anchored on Common Data Source ID/Path."
@@ -274,7 +274,7 @@ II. MANDATORY UPDATES
 
 1. Boundary Lock (.aiignore at Root):
    - Update `rules_runtime_environment.md` and `dasharch.md`.
-   - Command: "The agent MUST strictly respect the .aiignore file located at the project root. Do not scan directories like EVE_WORK, archives, or .antigravity/embeddings/ unless the user explicitly grants a 'Border-Crossing Permit' for a specific file."
+   - Command: "The agent MUST strictly respect the .aiignore file located at the project root. Do not scan directories like EVE_WORK, archives, or .claude/embeddings/ unless the user explicitly grants a 'Border-Crossing Permit' for a specific file."
 
 2. Tiered Data (Data-Source Centric Sharing):
    - Update `rules_data_engine.md`.
@@ -285,7 +285,7 @@ II. MANDATORY UPDATES
 
 3. Persona Entry Protocol (Token & Logic Efficiency):
    - Update `dasharch.md`.
-   - Command: "SESSION START: Your absolute first action is to read ./.agents/rules/workspace_standard.md. Based on the task at hand, selectively ingest only the relevant rules and workflows to conserve tokens and prevent knowledge drift. Do not scan the entire workspace by default."
+   - Command: "SESSION START: Your absolute first action is to read ./.claude/rules/workspace_standard.md. Based on the task at hand, selectively ingest only the relevant rules and workflows to conserve tokens and prevent knowledge drift. Do not scan the entire workspace by default."
 
 4. Testing Hierarchy (Engines vs. Orchestrators):
    - Replace the 'Testing Protocols' section in `rules_verification_testing.md` with this logic:
@@ -303,7 +303,7 @@ IV. FINAL HALT
 
 - Provide a summary of updated files.
 - Provide a "One-line State of Truth" regarding the new boundary and data sharing rules.
-- Await @verify before updating .antigravity/tasks/tasks.md.
+- Await @verify before updating .claude/tasks/tasks.md.
 
 -----
 Improvement / clarification - modulation
@@ -340,14 +340,14 @@ Restructure all project rules, workflows, and test naming conventions to align w
 
 II. MANDATORY READS (CURRENT STATE)
 
-- ./.agents/rules/ (all files)
-- ./.antigravity/knowledge/architecture_decisions.md
-- ./.antigravity/knowledge/project_conventions.md
+- ./.claude/rules/ (all files)
+- ./.claude/knowledge/architecture_decisions.md
+- ./.claude/knowledge/project_conventions.md
 - ./libs/transformer/tests/
 - ./libs/viz_factory/tests/
 
 III. TASK 1: THE 5-FILE RULEBOOK SPLIT
-Delete all existing files in ./.agents/rules/ and replace them with these 5 authoritative files (Max 12k chars each):
+Delete all existing files in ./.claude/rules/ and replace them with these 5 authoritative files (Max 12k chars each):
 
 1. rules_documentation_aesthetics.md:
    - Merge rules_aesthetic.md and rules_documentation_standards.md.
@@ -380,7 +380,7 @@ Delete all existing files in ./.agents/rules/ and replace them with these 5 auth
    - Differentiate "Suggestive Tools" (Synthetic data) from "Functional Assistants" (Manifest bootstrappers).
 
 IV. TASK 2: WORKFLOW REFACTORING
-Update ./.agents/workflows/ (implementation_workflow_transformer.md and visualisation_factory.md) to:
+Update ./.claude/workflows/ (implementation_workflow_transformer.md and visualisation_factory.md) to:
 
 - Use the 3-Tier Tree logic (Trunk -> Branch -> Leaf).
 - Reference the new standardized test naming (lib_integrity_suite.py).
@@ -388,15 +388,15 @@ Update ./.agents/workflows/ (implementation_workflow_transformer.md and visualis
 V. TASK 3: CODEBASE & INDEX CLEANUP
 
 - Rename all existing integrity suites to follow the {lib}_integrity_suite.py pattern.
-- Update ./.agents/rules/workspace_standard.md (The Master Index) to point to the 5 new rulebooks.
-- Update ./.agents/rules/dasharch.md: Add "Integrity Guardian" instructions: check integrity_report.txt before writing code; enforce naming laws.
+- Update ./.claude/rules/workspace_standard.md (The Master Index) to point to the 5 new rulebooks.
+- Update ./.claude/rules/dasharch.md: Add "Integrity Guardian" instructions: check integrity_report.txt before writing code; enforce naming laws.
 
 VI. FINAL HALT
-Provide a summary of deleted/renamed files and a "One-line State of Truth." Await @verify before committing changes to .antigravity/tasks/tasks.md.
+Provide a summary of deleted/renamed files and a "One-line State of Truth." Await @verify before committing changes to .claude/tasks/tasks.md.
 
 ## Stage 1
 
-- [ ] Review all rules for AI context (first pass). In .agents/rules/
+- [ ] Review all rules for AI context (first pass). In .claude/rules/
   - [x] rules_documentation_standards.md
   - [x] rules_aesthetic.md -
   - [x] rules_behavior.md
@@ -404,19 +404,19 @@ Provide a summary of deleted/renamed files and a "One-line State of Truth." Awai
   - [x] rules_tiered_data.md
   - [x] rules_wrangling.md
   - [x] workspace_standard.md
-- [ ] in .agents/workflows/
+- [ ] in .claude/workflows/
   - [ ] implementation_workflow_transformer.md
   - [ ] verification_protocol.md
   - [ ] viz_factory_implementation.md
-- [ ] in .antigravity/knowledge/
+- [ ] in .claude/knowledge/
   - [ ] architecture_decisions.md
   - [ ] blockers.md
   - [ ] milestones.md  
   - [ ] project_conventions.md
   - [ ] protocol_tiered_data.md
-- [ ] in .antigravity/plans/
+- [ ] in .claude/plans/
   - [ ] implementation_plan_master.md
-- [ ] in .antigravity/tasks/
+- [ ] in .claude/tasks/
   - [ ] tasks.md
 
 AI TO DO :
@@ -435,7 +435,7 @@ B. we need to ensure homogeneity in development rules : for the tests scripts eg
 C. It is important that a rule is given to ensure that all python scripts use argparse, because it needs to be possible for the user to use via command line. Wrappers scripts must adapt to this, running all individual tests via argparse.
 D. rules_behavior.md : violet law ? shoult it only appear in the docs ? or should it refered to when necessary (avoid redundancy when not necessary)
 E. tiered data protocol : note that a plot might reuse the same basic wrangling, so tier data might need to be stopped at a certain level, which will allow bifurcating the data transformation for different plots. We will need a solution after for update of the tier data2 from user (but need to be at a later stage)
-F. should the rules_tiered_data.md merged or at least be mentionned in rules_wrangling.md ? should the context .antigravity/knowledge/protocol_tiered_data.md be mentionned or partially merged with rules_tiered_data.md ... and rules_wrangling.md ... ?
+F. should the rules_tiered_data.md merged or at least be mentionned in rules_wrangling.md ? should the context .claude/knowledge/protocol_tiered_data.md be mentionned or partially merged with rules_tiered_data.md ... and rules_wrangling.md ... ?
 G. we need to create rules for the development of helper scripts for the user, in order consistency and their usage and purpose must also be documented. Scripts to assist uers are in .assets/scripts and I added those scripts to the context file.
-H. At the end,  you will need to review the antigravity agent definition (.agents/rules/dasharch.md), and propose improvements of its definition so it can better assist the user in its tasks.
-I. When this is settled , .agents/rules/workspace_standard.md will need to be updated, to ensure that the agent has to review the appropriate context files and rules ... as this is the main entry point for the agent (the file that explain what the agent must read and ingest before starting to work)
+H. At the end,  you will need to review the antigravity agent definition (.claude/rules/dasharch.md), and propose improvements of its definition so it can better assist the user in its tasks.
+I. When this is settled , .claude/rules/workspace_standard.md will need to be updated, to ensure that the agent has to review the appropriate context files and rules ... as this is the main entry point for the agent (the file that explain what the agent must read and ingest before starting to work)

@@ -43,7 +43,7 @@ BUT produced csv - need to motify
 3. **Environment Re-Sync:**
    - From the root `.venv`, run `pip install -e ./libs/transformer`, `pip install -e ./libs/viz_factory`, and `pip install -e ./app` to ensure the registry is based on the TOML files.
 4. **Memory Bank Correction:**
-   - Update ./.antigravity/knowledge/architecture_decisions.md to state: "Legacy requirements files are forbidden; pyproject.toml is the sole source of truth for module dependencies".
+   - Update ./.claude/knowledge/architecture_decisions.md to state: "Legacy requirements files are forbidden; pyproject.toml is the sole source of truth for module dependencies".
 5. **STOP:** Confirm once the TOML files are updated and the 'requires.txt' files are deleted. Do not proceed to wrangling until the file structure is clean.
 
 
@@ -52,7 +52,7 @@ BUT produced csv - need to motify
 @Agent: @dasharch - Permanent Memory Update: Modular Monorepo Strategy.
 
 1. **Document Architecture Decision:**
-   - Update ./.antigravity/knowledge/architecture_decisions.md.
+   - Update ./.claude/knowledge/architecture_decisions.md.
    - **Title:** ADR-005: Modular Monorepo & Independent Package Management.
    - **Context:** The project is a monorepo where each subdirectory in `libs/` is an independent Python package.
    - **Decision:** Each library MUST maintain its own `pyproject.toml`. The global `.venv` at the root will install these libraries in 'editable mode' (`pip install -e ./libs/transformer`).
@@ -64,12 +64,12 @@ BUT produced csv - need to motify
    - If `polars` is missing from `libs/transformer/pyproject.toml`, add it.
    - If `plotnine` is missing from `libs/viz_factory/pyproject.toml`, add it.
 4. **Implementation Plan Update:**
-   - Update ./.antigravity/plans/implementation_plan_v2.md to include 'Module Dependency Management' as a core development rule.
+   - Update ./.claude/plans/implementation_plan_v2.md to include 'Module Dependency Management' as a core development rule.
 5. **STOP:** Confirm these files are mirrored and the paths are correctly recorded. Do not build the .venv until I verify this ADR.
 
 ## 1. restarting - new chat - avoiding long context
 @Agent: Assume persona @dasharch.
-1. Read the Recovery Toolkit in ./.antigravity/ (specifically tasks.md and implementation_plan_v2.md).
+1. Read the Recovery Toolkit in ./.claude/ (specifically tasks.md and implementation_plan_v2.md).
 2. Perform a Consistency Check between the YAML manifests in ./config/manifests/pipelines/ and the code in ./transformer/ and ./libs/viz_factory/.
 3. Verify that the Decorator Registry is ready for the first implementation: drop_duplicates and summarize.
 4. Initialize libs/transformer/src/actions/core/duplicates.py and summarize.py.

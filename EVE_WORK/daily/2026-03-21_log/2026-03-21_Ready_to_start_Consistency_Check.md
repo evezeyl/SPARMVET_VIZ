@@ -4,11 +4,11 @@ Note: _This is purely the output of the chat conversation and does not contain a
 
 ### User Input
 
-Assume persona @dasharch. Read ./.antigravity/logs/audit_handoff.md and ./.antigravity/tasks/tasks.md. Perform a consistency check between these plans and the code in ./libs/ and ./transformer/ and current documentation in docs/
+Assume persona @dasharch. Read ./.claude/logs/audit_handoff.md and ./.claude/tasks/tasks.md. Perform a consistency check between these plans and the code in ./libs/ and ./transformer/ and current documentation in docs/
 
-*Viewed [audit_handoff.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_handoff.md) *
+*Viewed [audit_handoff.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_handoff.md) *
 
-*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md) *
+*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md) *
 
 *Listed directory [SPARMVET_VIZ](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ) *
 
@@ -74,11 +74,11 @@ Assume persona @dasharch. Read ./.antigravity/logs/audit_handoff.md and ./.antig
 
 ### Planner Response
 
-Assuming the persona of **@dasharch**, I have performed a comprehensive consistency check between the project's reconstitution plans ([audit_handoff.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_handoff.md:0:0-0:0), [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0)) and the current state of the codebase.
+Assuming the persona of **@dasharch**, I have performed a comprehensive consistency check between the project's reconstitution plans ([audit_handoff.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_handoff.md:0:0-0:0), [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0)) and the current state of the codebase.
 
 ### 🔍 Consistency Audit Report
 
-The project is in a high-fidelity state of transition toward the **'Decorator-First'** and **'Polars-Lazy'** architectural vision. Most core infrastructure is in place, and the discrepancies found are correctly identified as "Pending" or "Active" tasks in the [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0) file.
+The project is in a high-fidelity state of transition toward the **'Decorator-First'** and **'Polars-Lazy'** architectural vision. Most core infrastructure is in place, and the discrepancies found are correctly identified as "Pending" or "Active" tasks in the [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0) file.
 
 ---
 
@@ -92,7 +92,7 @@ The architecture strictly follows the decentralized plugin pattern described in 
 #### 2. Visualization Factory (Consistency: **90% - Status: Placeholder**)
 The handoff warned that the visualization layer was being refactored.
 - **Active Conflict**: [libs/viz_factory/src/base.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/viz_factory/src/base.py:0:0-0:0) still contains the legacy `if-elif` logic (e.g., `if fid == "bar_logic"`).
-- **Alignment**: This confirms the [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0) item to **"Replace viz_factory placeholders with Plotnine decorator logic"** is correctly prioritized as a "Current Blocker."
+- **Alignment**: This confirms the [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0) item to **"Replace viz_factory placeholders with Plotnine decorator logic"** is correctly prioritized as a "Current Blocker."
 - **Plotting**: [plot_factory.py](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/viz_factory/src/plot_factory.py:0:0-0:0) already imports `plotnine`, aligning with the phase 1 artist selection.
 
 #### 3. Configuration & Manifests (Consistency: **100%**)

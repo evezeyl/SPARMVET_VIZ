@@ -17,21 +17,21 @@ Note: _This is purely the output of the chat conversation and does not contain a
    - Ensure the 'DataWrangler' can loop through a list of datasets, apply rules to each. Report if the joining of LazyFrames has been implemented or if it is pending. 
 6. **STOP:** Confirm the plan is updated and the logic is sound. Do NOT write code yet. I will @verify the architectural shift first.
 
-*Listed directory [knowledge](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge) *
+*Listed directory [knowledge](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge) *
 
-*Listed directory [plans](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans) *
+*Listed directory [plans](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans) *
 
 *Listed directory [1_Abromics_general_pipeline](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/config/manifests/pipelines/1_Abromics_general_pipeline) *
 
-*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md) *
+*Viewed [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md) *
 
 *Viewed [data_wrangler.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/transformer/src/data_wrangler.py) *
 
 *Viewed [1_Abromics_general_pipeline.yaml](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/config/manifests/pipelines/1_Abromics_general_pipeline.yaml) *
 
-*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) *
+*Viewed [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) *
 
-*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md) *
+*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md) *
 
 *Viewed [ResFinder_fields.yaml](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/config/manifests/pipelines/1_Abromics_general_pipeline/ResFinder_fields.yaml) *
 
@@ -60,18 +60,18 @@ Summary of Architectural Expansion: Multi-Source Support
 I have completed the architectural re-sync and implementation plan updates to support Multi-Source Ingestion.
 
 ### 1. Updated Architecture Decisions (ADR 009)
-I have added **ADR 009: Multi-Source Ingestion** to [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md:0:0-0:0) and renumbered subsequent ADRs (010 and 011).
+I have added **ADR 009: Multi-Source Ingestion** to [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md:0:0-0:0) and renumbered subsequent ADRs (010 and 011).
 - **Core Rules:**
     - Additional datasets must use the same '@decorator' wrangler logic.
     - Joins must be explicitly requested via a `join_on` key in the manifest.
     - `join_on` columns must be verified against `is_primary_key: true` in the field schema.
-- **Reference:** [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md)
+- **Reference:** [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md)
 
 ### 2. Updated Implementation Plan & Task Tracker
 The **'Joiner Phase'** has been officially integrated into the roadmap as Phase C.
 - **New Phase C (Joiner Orchestration):** Focuses on multi-source logic, primary key enforcement, and LazyFrame join propagation.
-- **Task Tracking:** Added respective tasks to [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0) under a new Phase 3 section.
-- **Reference:** [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) and [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md)
+- **Task Tracking:** Added respective tasks to [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0) under a new Phase 3 section.
+- **Reference:** [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) and [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md)
 
 ### 3. Logic Check: DataWrangler Status
 I evaluated [data_wrangler.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/transformer/src/data_wrangler.py) and the current manifests:
@@ -107,7 +107,7 @@ I evaluated [data_wrangler.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSW
 
 *Edited relevant file*
 
-*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md) *
+*Viewed [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md) *
 
 *Edited relevant file*
 
@@ -118,17 +118,17 @@ I evaluated [data_wrangler.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSW
 Following your vision for an **Atomic Wrangler** and a **Staged Assembly Layer**, I have updated the project's core documentation and roadmaps.
 
 ### 1. Architectural Decisions (ADR 012)
-I have added **ADR 012: Staged Pipeline Architecture** to [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md:0:0-0:0).
+I have added **ADR 012: Staged Pipeline Architecture** to [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md:0:0-0:0).
 - **Layer 1: Atomic Cleaning (The Wrangler):** Restricted to "One Input -> One Output" logic. Join operations are strictly forbidden at this level to maintain modularity and testability.
 - **Layer 2: Orchestrated Assembly (The Assembler):** A new component responsible for coordinating multiple Wrangler instances, executing joins via `join_on`, and applying final cross-dataset transformations.
-- **Reference:** [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md)
+- **Reference:** [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md)
 
 ### 2. Implementation Plan & Task Updates (T-010)
 The Roadmap now reflects this multi-stage approach:
 - **Phase 3: Atomic Layer Optimization (ACTIVE):** Focuses on completing core actions like `unique_rows` while enforcing the atomic contract.
 - **Phase 4: The Assembly Factory (NEW):** Includes task **T-010: DataAssembler Implementation** for the Layer 2 orchestrator.
 - **Renumbered Phases:** Frontend and Guardrails have been shifted to Phases 5 and 6 respectively.
-- **Reference:** [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md) and [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md)
+- **Reference:** [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md) and [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md)
 
 ### 3. Logic Check: Universal Runner Callability
 I reviewed [test_wrangler.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/transformer/tests/test_wrangler.py).
@@ -183,10 +183,10 @@ I reviewed [test_wrangler.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSWO
 I have completed the architectural cleanup and documentation alignment to ensure the "Staged Pipeline" model is strictly enforced.
 
 ### 1. Architectural Alignment
-- **Architecture Decisions:** Renamed ADR 012 to **"Staged Data Assembly"** in [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md:0:0-0:0). It now explicitly defines the boundary between Layer 1 (Atomic) and Layer 2 (Orchestrated).
+- **Architecture Decisions:** Renamed ADR 012 to **"Staged Data Assembly"** in [architecture_decisions.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md:0:0-0:0). It now explicitly defines the boundary between Layer 1 (Atomic) and Layer 2 (Orchestrated).
 - **Implementation Plan:** Phase 4 is now designated as **"The Assembly Factory (Orchestration)"**, which will house the `DataAssembler` script.
 - **Constraint Verified:** Confirmed that [DataWrangler](cci:2://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/transformer/src/data_wrangler.py:6:0-96:34) ([data_wrangler.py](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/transformer/src/data_wrangler.py)) remains **Atomic**. It performs "One Input -> One Cleaned Output" and contains zero join logic for external datasets.
-- **Reference:** [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md) and [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md)
+- **Reference:** [architecture_decisions.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md) and [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md)
 
 ### 2. Documentation Updates
 I have updated the Transformation documentation to reflect the new layered model:
@@ -202,7 +202,7 @@ I have updated the Transformation documentation to reflect the new layered model
 | ✅ **DONE** | **ADR 012** | Defined "Staged Data Assembly" and Layer 1/2 boundaries. |
 | ✅ **DONE** | **Plan Alignment** | Phase 4 defined as "The Assembly Factory". |
 | ✅ **DONE** | **Constraint Audit** | Verified [DataWrangler](cci:2://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/libs/transformer/src/data_wrangler.py:6:0-96:34) is join-free (Atomic). |
-| ✅ **DONE** | **Task T-010** | Registered DataAssembler implementation in [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0). |
+| ✅ **DONE** | **Task T-010** | Registered DataAssembler implementation in [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0). |
 | 🟡 **PENDING** | **Phase 3 Focus** | Implement `unique_rows` decorator logic (Atomic). |
 | 🟡 **PENDING** | **Phase 4 Focus** | Implement `DataAssembler` Layer 2 orchestrator script. |
 
@@ -327,16 +327,16 @@ The "USER must check the data set" blocker is now prioritized.
 I have updated the project roadmaps to include the specific decorators identified during the data audit. The [BLOCKER] is now resolved.
 
 ### 1. Updated Execution Tracker
-The following audit tasks have been added to **Phase 2** in [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md:0:0-0:0):
+The following audit tasks have been added to **Phase 2** in [tasks.md](cci:7://file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md:0:0-0:0):
 - [ ] **Action Audit: 'regex_extract'** (Advanced)
 - [ ] **Action Audit: 'drop_columns'** (Core)
 - [ ] **Action Audit: 'round_numeric'** (Core)
 - [ ] **Action Audit: 'filter_range'** (Core)
-- **Reference:** [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md)
+- **Reference:** [tasks.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/tasks/tasks.md)
 
 ### 2. Updated Implementation Plan
 Phase 3 (Atomic Layer Optimization) has been refined to focus on these four essential transformations before we move to the Assembly Layer.
-- **Reference:** [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/plans/implementation_plan_master.md)
+- **Reference:** [implementation_plan_master.md](file:///home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/plans/implementation_plan_master.md)
 
 **Next Steps:**
 We will proceed with the implementation of these decorators one-by-one, following the **v1.6 Verification Protocol** (Contract -> Code -> CLI Test -> Evidence -> @verify).

@@ -2,7 +2,7 @@
 
 **Tester:** @evezeyl
 **Branch:** dev (Phase 25 baseline)
-**Protocol ref:** [tasks_test_ui_current.md](../../../.antigravity/tasks/tasks_test_ui_current.md)
+**Protocol ref:** [tasks_test_ui_current.md](../../../.claude/tasks/tasks_test_ui_current.md)
 
 ---
 

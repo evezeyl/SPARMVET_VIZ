@@ -18,7 +18,7 @@ The **Antigravity Navigator** has completed the `!sync` process. I have successf
 *   **IDE Version:** Antigravity **v1.19.6** (STABLE/PINNED).
 *   **OS:** Fedora 43 KDE (Velocifero Compute).
 *   **VENV:** Active at `/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.venv`.
-*   **Storage Strategy:** All Agent "Brain" data is mirrored to the local project root (`./.antigravity/`).
+*   **Storage Strategy:** All Agent "Brain" data is mirrored to the local project root (`./.claude/`).
 
 ### 2\. Active Guardrails (Mandatory Compliance)
 
@@ -43,11 +43,11 @@ Use this prompt if the IDE Agent (@dasharch) begins to drift or suggests non-com
 @Agent: @dasharch - SYSTEM RESET.
 
 Read: 
-- ./.agents/rules/workspace_standard.md (Master Authority)
-- ./.antigravity/knowledge/architecture_decisions.md (Technical Bible)
-- ./.antigravity/plans/implementation_plan_master.md (Roadmap)
+- ./.claude/rules/workspace_standard.md (Master Authority)
+- ./.claude/knowledge/architecture_decisions.md (Technical Bible)
+- ./.claude/plans/implementation_plan_master.md (Roadmap)
 
-Current Priority: [Task from ./.antigravity/tasks/tasks.md]. 
+Current Priority: [Task from ./.claude/tasks/tasks.md]. 
 
 Constraint Check: 
 - Polars LazyFrames ONLY.
@@ -301,8 +301,8 @@ Here is the high-precision prompt for the IDE Agent:
 @Agent: @dasharch - AUDIT AND RECONCILE TASK STATE.
 
 1.  **Read Sources of Truth**:
-    - ./.antigravity/tasks/tasks.md (Current List)
-    - ./.antigravity/plans/implementation_plan_master.md (Roadmap)
+    - ./.claude/tasks/tasks.md (Current List)
+    - ./.claude/plans/implementation_plan_master.md (Roadmap)
     - ./libs/viz_factory/src/registry.py (Component Registry)
     - ./libs/viz_factory/tests/test_data/ (Verification Evidence)
 
@@ -349,17 +349,17 @@ Since you are moving to a **Gemini 3 Pro** (or higher) model to combat "Agent Fa
     - Search for any "leakage" of Pandas logic outside of the final visualization rendering; replace with Polars LazyFrame equivalents where found.
 
 3. **Documentation Mirroring & Broken Links**:
-    - Audit `./.antigravity/knowledge/project_conventions.md` against the current file tree. Update any stale file paths or I/O descriptions.
-    - Check for "Ghost State": Technical decisions mentioned in chat but missing from `./.antigravity/knowledge/architecture_decisions.md`.
+    - Audit `./.claude/knowledge/project_conventions.md` against the current file tree. Update any stale file paths or I/O descriptions.
+    - Check for "Ghost State": Technical decisions mentioned in chat but missing from `./.claude/knowledge/architecture_decisions.md`.
     - Ensure every library in `libs/` has a `README.md` that correctly lists its Key Components (Violet Standard).
 
 4. **Refactoring & Remediation**:
     - If you find a component that is implemented but undocumented, fix the documentation immediately.
-    - If you find a component that violates the 'Clear Lines' Policy (cross-library imports), log it as a CRITICAL BLOCKER in `./.antigravity/knowledge/blockers.md`.
+    - If you find a component that violates the 'Clear Lines' Policy (cross-library imports), log it as a CRITICAL BLOCKER in `./.claude/knowledge/blockers.md`.
 
 5. **Final Output**:
     - Update `tasks.md` and `implementation_plan_master.md` to reflect the absolute current state of truth.
-    - Generate a `/.antigravity/logs/audit_{{YYYY-MM-DD}}.md` documenting all fixes made during this consistency sweep.
+    - Generate a `/.claude/logs/audit_{{YYYY-MM-DD}}.md` documenting all fixes made during this consistency sweep.
 
 HALT for @verify before committing major file rewrites.
 ```
@@ -386,7 +386,7 @@ The **Violet Law** is strictly a communication standard for Markdown, Quarto, an
 @Agent: @dasharch - CRITICAL RULE CORRECTION & AUDIT.
 
 1. **Update Authority**:
-    - Open `/.agents/rules/rules_aesthetic.md`.
+    - Open `/.claude/rules/rules_aesthetic.md`.
     - Explicitly clarify Section 1 (The Violet Law): "This is a DOCUMENTATION-ONLY standard. It applies to .qmd files, READMEs, and high-level Docstrings. It MUST NOT be used for functional variable names, filenames, or class definitions within the logic."
 
 2. **Re-Audit Functional Logic**:
@@ -395,7 +395,7 @@ The **Violet Law** is strictly a communication standard for Markdown, Quarto, an
     - Logic must remain clean; documentation must remain "Violet."
 
 3. **Verify Documentation Sync**:
-    - Ensure `/.antigravity/knowledge/project_conventions.md` accurately describes this boundary.
+    - Ensure `/.claude/knowledge/project_conventions.md` accurately describes this boundary.
     - Confirm that `libs/viz_factory/README.md` uses the Violet Law for its "Key Components" list, but the actual code it points to is standard Python.
 
 4. **Self-Correction Report**:
@@ -410,7 +410,7 @@ The **Violet Law** is strictly a communication standard for Markdown, Quarto, an
 **Would you like me to generate a specific "Baton Pass" summary that explicitly highlights this boundary for the new high-model agent?**
 
 ## Prompt:
-ok, So now I want it to go for all the layers of the viz\_factory, and alliteratively fix the tasks that are not marked as done (I ADDED at task blocker where I want it to stop activity). It will check what has been done for each layer, make data and yaml if not present, or refactor if necessary, run the test, produce the plot. plots need to be done in tmp/\<layer\> for each vizfactory layer. It will follow the workflow ./.antigravity/workflows/viz\_factory\_implementation.md (testing plotocol for viz\_factory implementation) for testing. I remove all the plots that were in tmp/ (previous production - so it cannot take this as source of information)
+ok, So now I want it to go for all the layers of the viz\_factory, and alliteratively fix the tasks that are not marked as done (I ADDED at task blocker where I want it to stop activity). It will check what has been done for each layer, make data and yaml if not present, or refactor if necessary, run the test, produce the plot. plots need to be done in tmp/\<layer\> for each vizfactory layer. It will follow the workflow ./.claude/workflows/viz\_factory\_implementation.md (testing plotocol for viz\_factory implementation) for testing. I remove all the plots that were in tmp/ (previous production - so it cannot take this as source of information)
 
 ## Response:
 This is a high-intensity "Sweeper" operation. Since you are switching to a fresh, high-reasoning model (**Gemini 3 Pro**), this prompt is engineered to enforce the **Evidence Loop** while preventing the "hallucination" of success.
@@ -424,9 +424,9 @@ By clearing `tmp/`, you have forced the agent to prove every component's existen
 Mission: Iterative Completion of Viz_Factory Layers.
 
 1. READ CORE PROTOCOLS:
-   - ./.antigravity/workflows/viz_factory_implementation.md (Mandatory Test Loop)
-   - ./.agents/rules/rules_behavior.md (The @verify Protocol)
-   - ./.antigravity/tasks/tasks.md (Target List: Geoms, Scales, Themes, Facets, Coords, Positions, Guides, Stats)
+   - ./.claude/workflows/viz_factory_implementation.md (Mandatory Test Loop)
+   - ./.claude/rules/rules_behavior.md (The @verify Protocol)
+   - ./.claude/tasks/tasks.md (Target List: Geoms, Scales, Themes, Facets, Coords, Positions, Guides, Stats)
 
 2. OPERATIONAL PIPELINE (ITERATE PER COMPONENT):
    For every [ ] task in the Viz_Factory section:
@@ -468,7 +468,7 @@ To ensure the new high-model agent correctly closes the loop on its "Sweeper" op
 @Agent: Execute @dasharch Session Log Consolidation.
 
 1.  **Generate/Update Daily Log**:
-    - Create or append to `./.antigravity/logs/audit_2026-03-29.md`.
+    - Create or append to `./.claude/logs/audit_2026-03-29.md`.
     - Include the "Sweeper" summary: List every Viz Layer component processed, its verification status (Pass/Fail), and the location of the resulting plot in `tmp/<layer>/`.
 
 2.  **Verify Documentation Boundary**:
@@ -528,7 +528,7 @@ Here is the high-precision prompt for the new agent to execute the "Viz Factory 
 Mission: Viz_Factory Integrity Audit & Default Logic Implementation.
 
 1. DEFERRED/FAILED CLASSIFICATION:
-   - Audit all [ ] and [FAILED] tasks in ./.antigravity/tasks/tasks.md.
+   - Audit all [ ] and [FAILED] tasks in ./.claude/tasks/tasks.md.
    - Investigate Plotnine/Mizani capabilities for each.
    - RECLASSIFY: If the feature (e.g., specific geom or scale) is missing in Plotnine, mark as: [DEFERRED - FEATURE NOT YET IMPLEMENTED IN PLOTNINE].
    - REMEDIATE: If it is a logic error in our implementation, FIX IT IMMEDIATELY and verify.
@@ -614,7 +614,7 @@ Mission: Full Pipeline Integration (Transformer -> VizFactory).
    - Output artifacts: 'tmp/integration/bar_plot.png' and 'tmp/integration/violin_plot.png'.
 
 5. DOCUMENTATION:
-   - Log this as a new 'Milestone' in './.antigravity/knowledge/milestones.md'.
+   - Log this as a new 'Milestone' in './.claude/knowledge/milestones.md'.
    - Update './docs/workflows/integration_pipeline.qmd' explaining the data flow.
 
 HALT for @verify once the integration_master.yaml is drafted and the data is staged.
@@ -734,7 +734,7 @@ Mission: Pipeline Integration using CC-BY Veterinary AMR Data.
    - Output: tmp/integration/amr_bar.png and tmp/integration/amr_violin.png.
 
 4. DOCUMENTATION:
-   - Log completion in ./.antigravity/logs/audit_2026-03-29.md.
+   - Log completion in ./.claude/logs/audit_2026-03-29.md.
    - Update milestones.md: "Integration Pillar Verified with CC-BY Data."
 
 HALT for @verify after the manifest and df.glimpse() are ready.
@@ -1271,7 +1271,7 @@ Since it’s late, I suggest you let the agent perform one last **Triple-Source 
    - Generate the 'Resume Prompt' for tomorrow, specifically highlighting that Stage 1 (Normalization) and Stage 2 (Assembly) are VERIFIED.
 
 3. LOGGING:
-   - Append this success to ./.antigravity/logs/audit_2026-03-29.md.
+   - Append this success to ./.claude/logs/audit_2026-03-29.md.
    - Explicitly mention the 'Waiting for Poll' resolution for future training context.
 
 Confirm all files are saved and provide the final State of Truth.
@@ -1313,8 +1313,8 @@ Mission: Evaluate 'tmp/' Scripts for Promotion to 'assets/scripts/'.
    - Every script MUST include a '--help' description that explains its role in the SPARMVET_VIZ pipeline.
 
 4. UPDATES:
-   - Update './.antigravity/knowledge/project_conventions.md' to reflect the new capabilities of the scripts in 'assets/scripts/'.
-   - Document the promotion in the daily audit log: './.antigravity/logs/audit_2026-03-29.md'.
+   - Update './.claude/knowledge/project_conventions.md' to reflect the new capabilities of the scripts in 'assets/scripts/'.
+   - Document the promotion in the daily audit log: './.claude/logs/audit_2026-03-29.md'.
 
 5. TASK BLOCKER:
    - Stop activity once the 'assets/scripts/' have been updated and the 'tmp/' directory is cleaned.
@@ -1374,7 +1374,7 @@ Before you restart or reload Antigravity, use this prompt to ensure the agent ca
    - Mention that the 'Triple-Source Integration' (Metadata/Phenotypes/Genotypes) is the premier example in this gallery.
 
 4. LOG & CLOSEOUT:
-   - Finalize './.antigravity/logs/audit_2026-03-29.md' with this roadmap.
+   - Finalize './.claude/logs/audit_2026-03-29.md' with this roadmap.
    - Generate the 'Resume Prompt' for the next session to focus on 'Gallery Implementation'.
 
 Provide the one-line 'State of Truth' and HALT.

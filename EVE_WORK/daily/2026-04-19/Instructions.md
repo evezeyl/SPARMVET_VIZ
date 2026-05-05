@@ -29,9 +29,9 @@ HALT: Once the file is modified, run app/tests/test_ui_persona_masking.py and pr
 
 1. PERMANENT CONTEXT (Read immediately):
 
-- ./.agents/rules/workspace_standard.md (Authority map & VENV enforcement)
-- ./.antigravity/tasks/tasks.md (Current execution status)
-- ./.antigravity/knowledge/project_conventions.md (Path registry & terminology)
+- ./.claude/rules/workspace_standard.md (Authority map & VENV enforcement)
+- ./.claude/tasks/tasks.md (Current execution status)
+- ./.claude/knowledge/project_conventions.md (Path registry & terminology)
 
 1. MANDATORY SEARCH & RETRIEVAL PROTOCOL:
 You are equipped with a modular rule system. Do not guess logic. You MUST identify and read the relevant files from the following directories BEFORE executing a task. Attached file describes this logic. (see PATH_INITIATION.md attached)
@@ -43,9 +43,9 @@ Halt and wait for other instructions.
 The session cache is clean. You must rebuild your project 'brain' from the source of truth.
 
 1. MANDATORY DISPATCH (Read Order):
-   - Read ./.agents/rules/workspace_standard.md to map governing authority.
-   - Read ./.antigravity/knowledge/project_conventions.md to identify the 'Who/Where/How'.
-   - Read ./.antigravity/plans/implementation_plan_master.md to identify the current Phase.
+   - Read ./.claude/rules/workspace_standard.md to map governing authority.
+   - Read ./.claude/knowledge/project_conventions.md to identify the 'Who/Where/How'.
+   - Read ./.claude/plans/implementation_plan_master.md to identify the current Phase.
 
 2. MANDATORY SEARCH & RETRIEVAL PROTOCOL:
 You are equipped with a modular rule system. Do not guess logic. You MUST identify and read the relevant files from the following directories BEFORE executing a task. Attached file describes this logic. (see PATH_INITIATION.md attached)

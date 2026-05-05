@@ -386,7 +386,7 @@ Bash Check docs structure
 
 IN
 
-ls /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/ && ls /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.agents/rules/ 2>/dev/null | head -20
+ls /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/ && ls /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/rules/ 2>/dev/null | head -20
 
 OUT
 
@@ -453,7 +453,7 @@ Bash Read today's audit
 
 IN
 
-cat /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/logs/audit_2026-04-20.md
+cat /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/logs/audit_2026-04-20.md
 
 OUT
 
@@ -608,8 +608,8 @@ App startup:           clean (exit 124 = timeout, not error)
 | :--- | :--- |
 | `app/src/server.py` | `_build_sibling_map` role fix (assembly), inline-key hashability fix, `_build_schema_registry`, `_build_lineage_chain`, full role dispatch in `_handle_manifest_import`, `active_lineage_chain.set`, `get_schema_registry`/`get_includes_map` wired |
 | `app/modules/wrangle_studio.py` | `active_lineage_chain` reactive, hidden `lineage_node_rel` input, 7 new render outputs, `lineage_rail_ui` clickable Rail, `handle_lineage_node_click` effect |
-| `.antigravity/tasks/tasks.md` | Phase 18-A and 18-C marked COMPLETED |
-| `.antigravity/logs/handoff_active.md` | Updated with Phase 18-B next steps |
+| `.claude/tasks/tasks.md` | Phase 18-A and 18-C marked COMPLETED |
+| `.claude/logs/handoff_active.md` | Updated with Phase 18-B next steps |
 
 ---
 
@@ -805,7 +805,7 @@ Markdown lint warnings on internal list formatting — all inside numbered/bulle
 
 Read [architecture_decisions.md](vscode-webview://03ggl9e3k05bkcrmeuu8hun5hugd7v9jcecjsucl7u7h3evehl56/index.html?id=39791466-a60f-4878-b4aa-a3a60afc2d4b&parentId=1&origin=57cd277f-5e26-4552-bcd4-389a39a346ca&swVersion=4&extensionId=Anthropic.claude-code&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app&session=a783bf3d-7b84-45f4-8493-202e23ee4428#) (lines 2-31)
 
-Grep "ADR-040" (in /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/architecture_decisions.md)
+Grep "ADR-040" (in /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/architecture_decisions.md)
 
 7 lines of output
 
@@ -829,7 +829,7 @@ Edit [project_conventions.md](vscode-webview://03ggl9e3k05bkcrmeuu8hun5hugd7v9j
 
 Edit failed
 
-Grep "Key constraint" (in /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/knowledge/project_conventions.md)
+Grep "Key constraint" (in /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/knowledge/project_conventions.md)
 
 9 lines of output
 
@@ -3194,14 +3194,14 @@ Bash Check sizes of key docs
 
 IN
 
-wc -l .antigravity/knowledge/architecture_decisions.md .antigravity/knowledge/project_conventions.md .antigravity/plans/implementation_plan_master.md .antigravity/tasks/tasks.md 2>&1
+wc -l .claude/knowledge/architecture_decisions.md .claude/knowledge/project_conventions.md .claude/plans/implementation_plan_master.md .claude/tasks/tasks.md 2>&1
 
 OUT
 
-  525 .antigravity/knowledge/architecture_decisions.md
-   77 .antigravity/knowledge/project_conventions.md
-  188 .antigravity/plans/implementation_plan_master.md
-  176 .antigravity/tasks/tasks.md
+  525 .claude/knowledge/architecture_decisions.md
+   77 .claude/knowledge/project_conventions.md
+  188 .claude/plans/implementation_plan_master.md
+  176 .claude/tasks/tasks.md
   966 total
 
 Read [architecture_decisions.md](vscode-webview://03ggl9e3k05bkcrmeuu8hun5hugd7v9jcecjsucl7u7h3evehl56/index.html?id=39791466-a60f-4878-b4aa-a3a60afc2d4b&parentId=1&origin=57cd277f-5e26-4552-bcd4-389a39a346ca&swVersion=4&extensionId=Anthropic.claude-code&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app&session=a783bf3d-7b84-45f4-8493-202e23ee4428#) (lines 481-530)
@@ -3214,7 +3214,7 @@ Bash List log files
 
 IN
 
-ls .antigravity/logs/ 2>&1
+ls .claude/logs/ 2>&1
 
 OUT
 
@@ -3277,7 +3277,7 @@ Bash Write daily audit log for 2026-04-20
 
 IN
 
-cat > .antigravity/logs/audit_2026-04-20.md << 'AUDIT_EOF'
+cat > .claude/logs/audit_2026-04-20.md << 'AUDIT_EOF'
 # Session Audit — 2026-04-20
 
 **Agent:** @dasharch (Claude Sonnet 4.6)
@@ -3429,8 +3429,8 @@ App startup:           clean (exit 124 = timeout, not error)
 | :--- | :--- |
 | `app/src/server.py` | `_build_sibling_map` role fix (assembly), inline-key hashability fix, `_build_schema_registry`, `_build_lineage_chain`, full role dispatch in `_handle_manifest_import`, `active_lineage_chain.set`, `get_schema_registry`/`get_includes_map` wired |
 | `app/modules/wrangle_studio.py` | `active_lineage_chain` reactive, hidden `lineage_node_rel` input, 7 new render outputs, `lineage_rail_ui` clickable Rail, `handle_lineage_node_click` effect |
-| `.antigravity/tasks/tasks.md` | Phase 18-A and 18-C marked COMPLETED |
-| `.antigravity/logs/handoff_active.md` | Updated with Phase 18-B next steps |
+| `.claude/tasks/tasks.md` | Phase 18-A and 18-C marked COMPLETED |
+| `.claude/logs/handoff_active.md` | Updated with Phase 18-B next steps |
 
 ---
 
@@ -3767,22 +3767,22 @@ All documentation updated. Here's the full summary of what was written and where
 
 ---
 
-**Daily audit** — `.antigravity/logs/audit_2026-04-20.md` Complete session log: bug fixes, new helpers, 3-column panel, Rail implementation, headless verification results, files changed, known gaps/deferred items.
+**Daily audit** — `.claude/logs/audit_2026-04-20.md` Complete session log: bug fixes, new helpers, 3-column panel, Rail implementation, headless verification results, files changed, known gaps/deferred items.
 
-**ADR-040** — `.antigravity/knowledge/architecture_decisions.md` Status updated from "DESIGN CONSENSUS" to "PARTIALLY IMPLEMENTED". Technical foundation section replaced with implementation tables covering all helpers, reactive values, role dispatch matrix, and Rail UI mechanics. Phase status list updated (18-A ✅, 18-B ⚡, 18-C ✅, 18-D/E/F pending).
+**ADR-040** — `.claude/knowledge/architecture_decisions.md` Status updated from "DESIGN CONSENSUS" to "PARTIALLY IMPLEMENTED". Technical foundation section replaced with implementation tables covering all helpers, reactive values, role dispatch matrix, and Rail UI mechanics. Phase status list updated (18-A ✅, 18-B ⚡, 18-C ✅, 18-D/E/F pending).
 
-**Project conventions** — `.antigravity/knowledge/project_conventions.md`
+**Project conventions** — `.claude/knowledge/project_conventions.md`
 
 - File registry row updated with the three new `server.py` helpers.
 - New §8 "Blueprint Architect — Lineage Index" added: helper table, key constraints (inline dict not hashable as key, assembly ingredient resolution pattern), tmpAI/tmp directory rule.
 
-**Implementation plan** — `.antigravity/plans/implementation_plan_master.md` Phase 18 section completely rewritten: flat 4-item list replaced with decomposed sub-phases 18-A through 18-F with checkbox status, matching tasks.md exactly.
+**Implementation plan** — `.claude/plans/implementation_plan_master.md` Phase 18 section completely rewritten: flat 4-item list replaced with decomposed sub-phases 18-A through 18-F with checkbox status, matching tasks.md exactly.
 
-**Tasks** — `.antigravity/tasks/tasks.md`
+**Tasks** — `.claude/tasks/tasks.md`
 
 - Phase 18-B section updated from all-pending to partial: 4 items checked (chain builder, reactive, Rail render, click handler), 3 remaining items with clear status (NEXT / DEFERRED).
 - Last Updated date bumped to 2026-04-20.
 
-**Handoff** — `.antigravity/logs/handoff_active.md` Fully rewritten: session summary, exact next entry point (Rail click → `ui.js_eval` or `session.send_custom_message`), Phase 18-D spec with manifest example and 4 implementation steps, reactive value inventory.
+**Handoff** — `.claude/logs/handoff_active.md` Fully rewritten: session summary, exact next entry point (Rail click → `ui.js_eval` or `session.send_custom_message`), Phase 18-D spec with manifest example and 4 implementation steps, reactive value inventory.
 
 /compact

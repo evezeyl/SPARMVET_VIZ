@@ -5,7 +5,7 @@ This plan details the restructuring of the rulebooks, workflows, and test naming
 ## Proposed Changes
 
 ### 1. Rulebook Restructuring
-The following files in `.agents/rules/` will be consolidated. **Deletion will strictly happen only at the very end**, after global integrity is checked and verified:
+The following files in `.claude/rules/` will be consolidated. **Deletion will strictly happen only at the very end**, after global integrity is checked and verified:
 - `rules_aesthetic.md`
 - `rules_behavior.md`
 - `rules_documentation_standards.md`
@@ -44,13 +44,13 @@ We will draft the following 5 authoritative rulebooks (each strictly `<12,000` c
 
 ### 2. Core Configuration and Workflows
 
-#### [MODIFY] .agents/rules/workspace_standard.md
+#### [MODIFY] .claude/rules/workspace_standard.md
 - Retain this file; update the Master Index to point to the new rulebooks.
 
-#### [MODIFY] .agents/rules/dasharch.md
+#### [MODIFY] .claude/rules/dasharch.md
 - Retain this file; add "Integrity Guardian" instructions.
 
-#### [MODIFY] .agents/workflows/implementation_workflow_transformer.md and viz_factory_implementation.md
+#### [MODIFY] .claude/workflows/implementation_workflow_transformer.md and viz_factory_implementation.md
 - Update to use the 3-Tier Tree logic and standardized test naming.
 
 ---
