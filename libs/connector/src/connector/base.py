@@ -1,6 +1,6 @@
 # @deps
 # provides: class:BaseConnector
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-048
+# doc: .claude/knowledge/architecture_decisions.md#ADR-048
 # @end_deps
 """
 BaseConnector — abstract interface for all deployment connector types (ADR-048 §5).

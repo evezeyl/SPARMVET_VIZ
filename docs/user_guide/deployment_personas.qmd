@@ -114,8 +114,8 @@ SPARMVET ships with the following named configurations. These are starting point
 ## Creating a custom configuration
 
 1. Copy any existing template from `config/ui/templates/`
-2. Set flags according to the user functionality matrix in `.antigravity/design/persona_capability_matrix.md`
-3. Validate cascade rules (see `.antigravity/design/functionality_dependency_map.md`)
+2. Set flags according to the user functionality matrix in `.claude/design/persona_capability_matrix.md`
+3. Validate cascade rules (see `.claude/design/functionality_dependency_map.md`)
 4. Set `SPARMVET_PERSONA=your-config-name` at launch
 
 The startup validator will raise a `PersonaConfigError` if cascade rules are violated, with a descriptive message identifying which co-flags are missing.

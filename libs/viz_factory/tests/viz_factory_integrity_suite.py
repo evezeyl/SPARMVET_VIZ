@@ -3,7 +3,7 @@
 # provides: script:viz_factory_integrity_suite
 # consumes: libs/viz_factory/tests/debug_runner.py, libs/viz_factory/tests/test_data/, libs/viz_factory/src/viz_factory/
 # consumed_by: CI / manual audit
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 import os
 import sys

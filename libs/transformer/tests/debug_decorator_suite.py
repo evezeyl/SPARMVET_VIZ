@@ -3,7 +3,7 @@
 # provides: script:debug_decorator_suite
 # consumes: libs/transformer/src/transformer/actions/, libs/transformer/tests/data/
 # consumed_by: manual action-decorator testing
-# doc: .agents/rules/rules_data_engine.md#3
+# doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
 import os
 import sys

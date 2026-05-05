@@ -3,7 +3,7 @@ from typing import Dict, Any
 # @deps
 # provides: component:facet_wrap, component:facet_grid, component:facet_rows, component:facet_cols, component:facet_null, component:facet_scales, component:facet_space, component:facet_labeller, component:facet_margins
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry)
-# doc: .agents/rules/rules_viz_factory.md
+# doc: .claude/rules/rules_viz_factory.md
 # @end_deps
 
 from plotnine import facet_wrap, facet_grid, ggplot

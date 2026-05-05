@@ -3,7 +3,7 @@
 # provides: script:debug_distiller
 # consumes: libs/viz_factory/src/viz_factory/distiller.py, libs/viz_factory/tests/test_data/
 # consumed_by: manual distiller testing
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 import sys
 import argparse

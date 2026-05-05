@@ -1,7 +1,7 @@
 # @deps
 # provides: class:IridaConnector
 # consumes: class:FilesystemConnector
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-048
+# doc: .claude/knowledge/architecture_decisions.md#ADR-048
 # @end_deps
 """
 IridaConnector — connector for IRIDA REST API deployments (ADR-048 §5, §8).

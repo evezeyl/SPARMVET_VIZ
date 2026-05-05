@@ -2,7 +2,7 @@
 # @deps
 # provides: script:debug_apply_manifest_standards
 # consumes: libs/viz_factory/tests/test_data/ (YAML test manifests)
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-041
+# doc: .claude/knowledge/architecture_decisions.md#ADR-041
 # @end_deps
 """
 debug_apply_manifest_standards.py

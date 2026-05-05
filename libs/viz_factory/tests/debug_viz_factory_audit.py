@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # @deps
 # provides: script:debug_viz_factory_audit
-# consumes: .antigravity/tasks/tasks.md, libs/viz_factory/src/, libs/viz_factory/tests/test_data/, tmp/
-# doc: .agents/rules/workspace_standard.md#5
+# consumes: .claude/tasks/tasks.md, libs/viz_factory/src/, libs/viz_factory/tests/test_data/, tmp/
+# doc: .claude/rules/workspace_standard.md#5
 # @end_deps
 """
 debug_viz_factory_audit.py
@@ -36,8 +36,8 @@ def parse_args():
     )
     parser.add_argument(
         "--tasks",
-        default=".antigravity/tasks/tasks.md",
-        help="Path to tasks.md (default: .antigravity/tasks/tasks.md)",
+        default=".claude/tasks/tasks.md",
+        help="Path to tasks.md (default: .claude/tasks/tasks.md)",
     )
     parser.add_argument(
         "--src-dir",

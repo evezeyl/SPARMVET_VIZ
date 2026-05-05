@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 # @deps
 # provides: decorator:register_plot_component, registry:PLOT_COMPONENTS, function:get_component
 # consumed_by: libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/scales/core.py, libs/viz_factory/src/viz_factory/positions/core.py, libs/viz_factory/src/viz_factory/guides/core.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/viz_factory/src/viz_factory/coords/core.py, libs/viz_factory/src/viz_factory/viz_factory.py
-# doc: .agents/rules/rules_viz_factory.md
+# doc: .claude/rules/rules_viz_factory.md
 # @end_deps
 
 # The Central Repository for all Registered Plotting Components (geoms, scales, themes, etc.)

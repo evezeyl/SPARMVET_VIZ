@@ -3,7 +3,7 @@
 # consumes: config/manifests/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)
 # consumes: config/manifests/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)
 # consumed_by: app/src/server.py (via bootloader), libs/transformer/tests/debug_assembler.py, libs/viz_factory/tests/debug_gallery.py
-# doc: .agents/rules/rules_manifest_structure.md
+# doc: .claude/rules/rules_manifest_structure.md
 # @end_deps
 
 # ADR-041: SPARMVET Consolidated Lineage Manifest

@@ -2,7 +2,7 @@
 # @deps
 # provides: script:SF_create_manifest
 # consumes: assets/test_data/ (TSV/CSV source files), assets/template_manifests/ (writes scaffolded YAML)
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-041
+# doc: .claude/knowledge/architecture_decisions.md#ADR-041
 # @end_deps
 import argparse
 import polars as pl

@@ -1,7 +1,7 @@
 # @deps
 # provides: class:FilesystemConnector
 # consumes: class:BaseConnector
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-048
+# doc: .claude/knowledge/architecture_decisions.md#ADR-048
 # @end_deps
 """
 FilesystemConnector — connector for filesystem-based deployments (ADR-048 §5).

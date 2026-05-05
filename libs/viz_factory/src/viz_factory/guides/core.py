@@ -3,7 +3,7 @@ from typing import Dict, Any
 # @deps
 # provides: component:guides, component:guide_legend, component:guide_colorbar, component:guide_colourbar, component:guide_none, component:guide_nrow, component:guide_ncol, component:guide_title, component:guide_label, component:guide_direction, component:guide_reverse
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry)
-# doc: .agents/rules/rules_viz_factory.md
+# doc: .claude/rules/rules_viz_factory.md
 # @end_deps
 
 from plotnine import (

@@ -18,7 +18,7 @@ from __future__ import annotations
 # provides: function:define_server (blueprint_handlers)
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumed_by: app/src/server.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-039, .antigravity/knowledge/architecture_decisions.md#ADR-045
+# doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045
 # @end_deps
 
 import io

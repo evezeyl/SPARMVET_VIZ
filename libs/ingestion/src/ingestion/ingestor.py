@@ -1,7 +1,7 @@
 # @deps
 # provides: class:DataIngestor, method:ingest, method:find_file
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-013
+# doc: .claude/knowledge/architecture_decisions.md#ADR-013
 # @end_deps
 import polars as pl
 from pathlib import Path

@@ -3,7 +3,7 @@
 # provides: script:debug_audit (viz_factory)
 # consumes: libs/viz_factory/src/viz_factory/, libs/viz_factory/tests/test_data/
 # consumed_by: manual component audit
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 import sys
 import os
@@ -25,7 +25,7 @@ def main():
     project_root = Path(__file__).resolve().parent.parent.parent.parent
 
     parser.add_argument("--tasks", default=str(project_root /
-                        ".antigravity/tasks/tasks.md"), help="Path to tasks.md")
+                        ".claude/tasks/tasks.md"), help="Path to tasks.md")
     parser.add_argument("--src-dir", default=str(project_root /
                         "libs/viz_factory/src"), help="Source directory for decorators")
     parser.add_argument("--test-dir", default=str(project_root /

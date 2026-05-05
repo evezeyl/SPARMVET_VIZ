@@ -10,7 +10,7 @@ import difflib
 # provides: class:VizFactory, method:render
 # consumes: libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENTS via get_component)
 # consumed_by: app/handlers/home_theater.py, libs/viz_factory/tests/debug_gallery.py
-# doc: .agents/rules/rules_viz_factory.md
+# doc: .claude/rules/rules_viz_factory.md
 # @end_deps
 
 

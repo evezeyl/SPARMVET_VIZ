@@ -2,7 +2,7 @@
 # provides: class:GalleryViewer, function:build_sidebar_ui, function:render_explorer_ui
 # consumes: app/src/bootloader.py (bootloader singleton)
 # consumed_by: app/handlers/gallery_handlers.py, app/src/server.py, app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-033, .antigravity/knowledge/architecture_decisions.md#ADR-057
+# doc: .claude/knowledge/architecture_decisions.md#ADR-033, .claude/knowledge/architecture_decisions.md#ADR-057
 # @end_deps
 from shiny import ui, reactive, render
 import yaml

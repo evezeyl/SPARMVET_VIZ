@@ -2,7 +2,7 @@
 # @deps
 # provides: script:normalize_manifest_fields
 # consumes: config/manifests/ (YAML files)
-# doc: .agents/rules/rules_data_engine.md#4
+# doc: .claude/rules/rules_data_engine.md#4
 # @end_deps
 """
 normalize_manifest_fields.py

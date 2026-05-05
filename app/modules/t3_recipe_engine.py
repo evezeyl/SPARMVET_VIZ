@@ -15,7 +15,7 @@ from __future__ import annotations
 # provides: function:_apply_filter_rows
 # consumes: polars
 # consumed_by: app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-051
+# doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
 import polars as pl

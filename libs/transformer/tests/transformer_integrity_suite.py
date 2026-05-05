@@ -3,7 +3,7 @@
 # provides: script:transformer_integrity_suite
 # consumes: libs/transformer/tests/debug_wrangler.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/data/, libs/transformer/src/transformer/actions/
 # consumed_by: CI / manual audit
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 import os
 import sys

@@ -3,7 +3,7 @@
 # provides: script:debug_bulk_sync
 # consumes: libs/viz_factory/src/viz_factory/, assets/gallery_data/
 # consumed_by: manual gallery bulk-sync testing
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 import sys
 import os
@@ -22,7 +22,7 @@ def main():
     )
     project_root = Path(__file__).resolve().parent.parent.parent.parent
     parser.add_argument("--tasks", default=str(project_root /
-                        ".antigravity/tasks/tasks.md"), help="Path to tasks.md")
+                        ".claude/tasks/tasks.md"), help="Path to tasks.md")
     parser.add_argument("--test-suite", default=str(project_root /
                         "libs/viz_factory/tests/viz_factory_integrity_suite.py"), help="Path to integrity suite")
 

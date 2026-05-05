@@ -2,7 +2,7 @@
 # @deps
 # provides: script:create_manifest
 # consumes: assets/test_data/ (TSV/CSV source files), assets/template_manifests/ (writes scaffolded YAML)
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-041, docs/reference/wrangling_guide.qmd
+# doc: .claude/knowledge/architecture_decisions.md#ADR-041, docs/reference/wrangling_guide.qmd
 # @end_deps
 import argparse
 import polars as pl

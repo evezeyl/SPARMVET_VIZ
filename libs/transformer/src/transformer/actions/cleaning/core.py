@@ -5,8 +5,8 @@ from ...utils.naming import clean_column_header
 
 # @deps
 # provides: action:fill_nulls, action:drop_nulls, action:replace_values, action:rename, action:drop_duplicates, action:unique_rows, action:recode_values, action:sanitize_column_names, action:keep_columns, action:drop_columns, action:strip_whitespace, action:round_numeric, action:filter_range, action:add_constant, action:filter_eq, action:rename_columns, action:unique
-# consumed_by: any YAML manifest using these action names, .agents/rules/rules_persona_bioscientist.md#8
-# doc: .agents/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
+# doc: .claude/rules/rules_persona_bioscientist.md#8
 # @end_deps
 
 # --- From null_handling.py ---

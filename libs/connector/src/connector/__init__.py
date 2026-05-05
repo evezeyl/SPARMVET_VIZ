@@ -2,7 +2,7 @@
 # provides: BaseConnector, FilesystemConnector, GalaxyConnector, IridaConnector, get_connector()
 # consumes: connector.base, connector.filesystem, connector.galaxy, connector.irida
 # consumed_by: app/src/bootloader.py, app/src/server.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-048
+# doc: .claude/knowledge/architecture_decisions.md#ADR-048
 # @end_deps
 """
 connector — SPARMVET deployment connector library (ADR-048).

@@ -3,7 +3,7 @@
 # provides: class:PipelineExecutor
 # consumes: libs/utils/src/utils/config_loader.py (ConfigManager), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py
 # consumed_by: libs/transformer/tests/debug_pipeline.py
-# doc: .agents/rules/rules_data_engine.md, .agents/rules/rules_runtime_environment.md#4
+# doc: .claude/rules/rules_data_engine.md, .claude/rules/rules_runtime_environment.md#4
 # @end_deps
 import polars as pl
 from pathlib import Path

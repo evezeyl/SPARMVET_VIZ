@@ -3,7 +3,7 @@
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
-# doc: .antigravity/knowledge/dependency_index.md
+# doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import polars as pl
 from pathlib import Path

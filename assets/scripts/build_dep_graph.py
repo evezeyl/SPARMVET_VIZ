@@ -2,8 +2,8 @@
 # @deps
 # provides: script:build_dep_graph
 # consumes: all files with @deps blocks across the project
-# consumed_by: assets/dep_graph.html, .antigravity/knowledge/dependency_index.md
-# doc: .agents/rules/workspace_standard.md#5
+# consumed_by: assets/dep_graph.html, .claude/knowledge/dependency_index.md
+# doc: .claude/rules/workspace_standard.md#5
 # @end_deps
 """
 build_dep_graph.py — Dependency Graph Builder (ADR workspace standard §5)
@@ -12,7 +12,7 @@ Scans all project files for @deps annotation blocks, parses them into a
 directed dependency graph, and emits:
 
   1. tmp/dep_graph.json          — Cytoscape.js elements array (nodes + edges)
-  2. .antigravity/knowledge/dependency_index.md  — auto-generated human index
+  2. .claude/knowledge/dependency_index.md  — auto-generated human index
 
 Usage:
   .venv/bin/python assets/scripts/build_dep_graph.py [--root <project_root>]
@@ -56,9 +56,9 @@ ROLE_MAP = {
     "libs/viz_factory":         "plot",
     "libs/utils":               "ref",
     "config/manifests":         "branch",
-    ".agents/rules":            "meta",
-    ".antigravity/knowledge":   "meta",
-    ".antigravity/plans":       "meta",
+    ".claude/rules":            "meta",
+    ".claude/knowledge":   "meta",
+    ".claude/plans":       "meta",
     "assets/scripts":           "info",
     "docs":                     "info",
 }

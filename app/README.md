@@ -70,4 +70,4 @@ app/
 .venv/bin/python -m unittest discover app/tests
 ```
 
-See `.agents/rules/rules_app_structure.md` for the complete structural rulebook and ownership matrix.
+See `.claude/rules/rules_app_structure.md` for the complete structural rulebook and ownership matrix.

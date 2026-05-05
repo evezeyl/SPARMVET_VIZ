@@ -4,8 +4,8 @@ from transformer.actions.base import register_action
 
 # @deps
 # provides: action:summarize, action:sort, action:count_by_group
-# consumed_by: any YAML manifest using these action names, .agents/rules/rules_persona_bioscientist.md#8
-# doc: .agents/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
+# doc: .claude/rules/rules_persona_bioscientist.md#8
 # @end_deps
 
 

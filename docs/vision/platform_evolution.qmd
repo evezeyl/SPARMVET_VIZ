@@ -123,4 +123,4 @@ For the full architectural rationale behind the design choices in this chapter, 
 
 - `VizFactory (viz_factory.py)` architecture: [Viz Factory Rationale](../appendix/viz_factory_rationale.qmd)
 - Data flow and assembly: [Wrangling & Assembly](../workflows/wrangling.qmd)
-- ADR-025 Gallery & Recipe Pattern: [Architecture Decisions](../../.antigravity/knowledge/architecture_decisions.md)
+- ADR-025 Gallery & Recipe Pattern: [Architecture Decisions](../../.claude/knowledge/architecture_decisions.md)

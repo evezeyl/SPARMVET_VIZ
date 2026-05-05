@@ -8,7 +8,7 @@ Run:
 # provides: test:session_manager
 # consumes: app/modules/session_manager.py
 # consumed_by: CI
-# doc: .agents/rules/ui_implementation_contract.md#12d
+# doc: .claude/rules/ui_implementation_contract.md#12d
 # @end_deps
 """
 

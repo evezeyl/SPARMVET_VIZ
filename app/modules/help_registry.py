@@ -3,7 +3,7 @@
 # provides: module:help_registry_ui, module:help_registry_server
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumed_by: app/src/server.py
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 from shiny import module, ui, render

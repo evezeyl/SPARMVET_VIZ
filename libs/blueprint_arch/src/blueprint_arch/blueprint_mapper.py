@@ -3,7 +3,7 @@
 # @deps
 # provides: class:BlueprintMapper, constant:_CY_COLOURS
 # consumed_by: app/handlers/blueprint_handlers.py
-# doc: .agents/rules/rules_ui_dashboard.md
+# doc: .claude/rules/rules_ui_dashboard.md
 # @end_deps
 
 import json

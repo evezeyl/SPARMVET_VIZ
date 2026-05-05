@@ -2,7 +2,7 @@
 # @deps
 # provides: class:GalleryManager
 # consumed_by: app/handlers/gallery_handlers.py, libs/viz_factory/tests/debug_gallery.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-033, .antigravity/knowledge/architecture_decisions.md#ADR-035
+# doc: .claude/knowledge/architecture_decisions.md#ADR-033, .claude/knowledge/architecture_decisions.md#ADR-035
 # @end_deps
 import yaml
 import shutil

@@ -22,7 +22,7 @@ Run:
 # provides: debug:home_theater_headless
 # consumes: app/src/bootloader.py, app/modules/session_manager.py, utils/config_loader.py
 # consumed_by: CI, manual @verify
-# doc: .antigravity/tasks/tasks.md#21-H
+# doc: .claude/tasks/tasks.md#21-H
 # @end_deps
 """
 

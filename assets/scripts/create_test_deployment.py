@@ -2,7 +2,7 @@
 # @deps
 # provides: script:create_test_deployment
 # consumes: config/deployment/local/ (writes deployment profile YAML)
-# doc: docs/workflows/connector.qmd, .antigravity/knowledge/architecture_decisions.md#ADR-048
+# doc: docs/workflows/connector.qmd, .claude/knowledge/architecture_decisions.md#ADR-048
 # @end_deps
 """
 create_test_deployment.py

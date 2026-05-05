@@ -14,7 +14,7 @@ from __future__ import annotations
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download
 # consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, polars, shiny
 # consumed_by: app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-051, .antigravity/design/export_specification.md
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/design/export_specification.md
 # @end_deps
 
 from pathlib import Path

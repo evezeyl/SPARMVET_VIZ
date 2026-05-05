@@ -23,7 +23,7 @@ from __future__ import annotations
 # provides: function:define_single_graph_export_server, output:single_graph_export_ui, output:export_single_graph
 # consumes: app/src/bootloader.py, libs/viz_factory/src/viz_factory/viz_factory.py, polars, shiny
 # consumed_by: app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-052
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-052
 # @end_deps
 
 import copy

@@ -3,7 +3,7 @@
 # @deps
 # provides: class:TestLabStudio
 # consumed_by: app/handlers/home_theater.py, app/src/server.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-003
+# doc: .claude/knowledge/architecture_decisions.md#ADR-003
 # @end_deps
 
 from shiny import ui, reactive, render

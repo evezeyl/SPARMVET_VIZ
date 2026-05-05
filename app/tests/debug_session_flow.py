@@ -14,7 +14,7 @@ Run:
 # provides: debug:session_flow
 # consumes: app/modules/session_manager.py
 # consumed_by: CI, manual @verify
-# doc: .agents/rules/ui_implementation_contract.md#12d, .antigravity/tasks/tasks.md#22-G
+# doc: .claude/rules/ui_implementation_contract.md#12d, .claude/tasks/tasks.md#22-G
 # @end_deps
 """
 

@@ -572,7 +572,7 @@ Quast --> miaou[["Miaou 🐱"]]:::plot
 - Each ADR has a *why*, not just a *what*
 - Example: ADR-010 "Polars everywhere" (Lazzy Eval) — no Pandas until the final render step 
 
-**Rules files** (`.agents/rules/`)
+**Rules files** (`.claude/rules/`)
 
 - Governing documents for every layer
 - Agents and developers read these before touching code

@@ -31,7 +31,7 @@ from __future__ import annotations
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot)
 # consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py, app/handlers/single_graph_export_handlers.py
 # consumed_by: app/src/server.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-043, .antigravity/knowledge/architecture_decisions.md#ADR-044, .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-047, .antigravity/knowledge/architecture_decisions.md#ADR-051
+# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
 import re
@@ -1004,7 +1004,7 @@ def define_server(input, output, session, *,
 
         # PERSONA-1 (2026-04-30): gates consult the persona feature-flag system
         # via bootloader.is_enabled(...) instead of hardcoded persona names. This
-        # matches the design intent of .agents/rules/rules_persona_feature_flags.md
+        # matches the design intent of .claude/rules/rules_persona_feature_flags.md
         # — flags like gallery_enabled are documented as INDEPENDENT and can be
         # flipped per-persona in config/ui/templates/ without touching code here.
         if bootloader.is_enabled("wrangle_studio_enabled"):

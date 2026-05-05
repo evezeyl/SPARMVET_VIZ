@@ -2,7 +2,7 @@
 # provides: class:GalaxyConnector (BioBlend-based; fetch_history_dataset, list_histories)
 # consumes: os, requests, typing (stdlib/third-party); bioblend.galaxy (optional, commented out)
 # consumed_by: libs/connector/src/connector/__init__.py, app/src/bootloader.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-031
+# doc: .claude/knowledge/architecture_decisions.md#ADR-031
 # @end_deps
 # GalaxyConnector (galaxy_connector.py)
 import os

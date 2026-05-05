@@ -1,7 +1,7 @@
 # @deps
 # provides: class:GalaxyConnector
 # consumes: class:FilesystemConnector
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-048
+# doc: .claude/knowledge/architecture_decisions.md#ADR-048
 # @end_deps
 """
 GalaxyConnector — thin filesystem wrapper for Galaxy GxIT deployments (ADR-048 §5).

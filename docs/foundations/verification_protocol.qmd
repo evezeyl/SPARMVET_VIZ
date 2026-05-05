@@ -27,4 +27,4 @@ Before writing core logic, the Developer MUST:
     - **Plot Case:** Provide message: "Plot is ready in `tmp/{{PLOT_NAME}}_debug_plot.png`. Please open image to verify. Waiting for @verify."
 
 ## 3. Completion
-No task is marked [DONE] in `./.antigravity/tasks/tasks.md` without the @verify confirmation.
+No task is marked [DONE] in `./.claude/tasks/tasks.md` without the @verify confirmation.

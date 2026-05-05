@@ -4,7 +4,7 @@
 # mirrors: app/modules/orchestrator.py (Tier 1 wrangling path)
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/utils/src/utils/config_loader.py
 # consumed_by: libs/transformer/tests/transformer_integrity_suite.py
-# doc: .agents/rules/rules_data_engine.md#3
+# doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
 import argparse
 import os

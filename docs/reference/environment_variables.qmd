@@ -162,5 +162,5 @@ See `docs/workflows/connector.qmd` for the full connector lifecycle and per-prof
 - `docs/workflows/ui_persona.qmd` — persona templates and feature flag reference
 - `docs/workflows/connector.qmd` — deployment profiles and connector types
 - `docs/deployment/deployment_guide.qmd` — Galaxy, IRIDA, Docker, server deployment
-- `.antigravity/knowledge/architecture_decisions.md` — ADR-048 (deployment profile resolution), ADR-053 (flag-only gating), ADR-054 (bootloader component)
-- `.agents/rules/rules_persona_feature_flags.md` — flag dependency cascade rules
+- `.claude/knowledge/architecture_decisions.md` — ADR-048 (deployment profile resolution), ADR-053 (flag-only gating), ADR-054 (bootloader component)
+- `.claude/rules/rules_persona_feature_flags.md` — flag dependency cascade rules

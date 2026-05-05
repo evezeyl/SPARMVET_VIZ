@@ -3,7 +3,7 @@
 # provides: script:debug_gallery
 # consumes: libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet), libs/viz_factory/src/viz_factory/viz_factory.py
 # consumed_by: config/manifests/pipelines/*/README.md, assets/scripts/materialize_manifest_plots.py
-# doc: .agents/rules/rules_persona_bioscientist.md#7
+# doc: .claude/rules/rules_persona_bioscientist.md#7
 # @end_deps
 """
 debug_gallery.py — Headless Art Audit for manifest-driven plots (ADR-032).

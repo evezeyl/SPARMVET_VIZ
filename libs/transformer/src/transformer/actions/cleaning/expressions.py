@@ -1,7 +1,7 @@
 # @deps
 # provides: action:regex_extract, action:cast, action:coalesce, action:label_if, action:mutate, action:regex_replace, action:null_if
-# consumed_by: any YAML manifest using these action names, .agents/rules/rules_persona_bioscientist.md#8
-# doc: .agents/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
+# doc: .claude/rules/rules_persona_bioscientist.md#8
 # @end_deps
 import polars as pl
 from typing import Dict, Any

@@ -2,7 +2,7 @@
 # @deps
 # provides: class:SubmissionExporter, function:generate_methods_text, function:render_audit_report
 # consumed_by: app/handlers/gallery_handlers.py, app/src/server.py, app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-033, .agents/rules/ui_implementation_contract.md#12f
+# doc: .claude/knowledge/architecture_decisions.md#ADR-033, .claude/rules/ui_implementation_contract.md#12f
 # @end_deps
 import zipfile
 import pandas as pd

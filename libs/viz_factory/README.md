@@ -129,7 +129,7 @@ Walks every `*_test.yaml` in `tests/test_data/` through `debug_runner.py` and wr
 ./.venv/bin/python libs/viz_factory/tests/debug_runner.py libs/viz_factory/tests/test_data/{component}_test.yaml --output_dir tmp/viz_factory/
 ```
 
-For each new `@register_plot_component`, follow the implementation workflow in `.agents/workflows/viz_factory_implementation.md`:
+For each new `@register_plot_component`, follow the implementation workflow in `.claude/workflows/viz_factory_implementation.md`:
 1. Create `tests/test_data/{name}_test.yaml`
 2. Add a pytest case in the appropriate `tests/test_*.py` module (or create a new one)
 3. Render via debug_runner; verify the PNG; update README; mark task done.

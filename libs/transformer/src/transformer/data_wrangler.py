@@ -2,7 +2,7 @@
 # provides: class:DataWrangler, method:_resolve_tier, method:run
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/debug_wrangler.py
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 import polars as pl
 from typing import Dict, Any, List

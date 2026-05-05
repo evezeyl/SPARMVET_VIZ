@@ -73,6 +73,6 @@ Because this repository must remain free of real biological data (to protect pri
 
 To maintain a performant and searchable workflow, SPARMVET_VIZ uses a skeletal `tasks.md` with deep-dive archives.
 
-- **Completed Units**: When a logical header (e.g., "Infrastructure") reaches 100% completion, its checklists are migrated to `./.antigravity/tasks/archives/`.
+- **Completed Units**: When a logical header (e.g., "Infrastructure") reaches 100% completion, its checklists are migrated to `./.claude/tasks/archives/`.
 - **Skeleton Persistence**: The main `tasks.md` retains the high-level header and a status link to the archive for historical traceability.
 - **Benefits**: Reduces LLM context window pressure and ensures the active focus remains on the current development tier.

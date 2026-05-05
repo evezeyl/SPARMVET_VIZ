@@ -19,7 +19,7 @@ from __future__ import annotations
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_controls_ui
 # consumes: app/modules/session_manager.py (make_recipe_node), app/modules/t3_recipe_engine.py (_op_label), shiny
 # consumed_by: app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-049, .antigravity/knowledge/architecture_decisions.md#ADR-051
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
 from shiny import reactive, render, ui

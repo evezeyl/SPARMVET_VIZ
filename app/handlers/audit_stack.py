@@ -21,7 +21,7 @@ from __future__ import annotations
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3
 # consumes: app/modules/wrangle_studio.py, app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 # consumed_by: app/src/server.py
-# doc: .agents/rules/ui_implementation_contract.md#12a-12c, .antigravity/knowledge/architecture_decisions.md#ADR-044
+# doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044
 # @end_deps
 
 from shiny import reactive, render, ui

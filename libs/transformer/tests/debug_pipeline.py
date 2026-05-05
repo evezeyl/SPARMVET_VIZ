@@ -3,7 +3,7 @@
 # provides: script:debug_pipeline
 # consumes: libs/transformer/src/transformer/pipeline.py, libs/ingestion/src/ingestion/ingestor.py
 # consumed_by: manual pipeline executor testing
-# doc: .agents/rules/rules_data_engine.md#3
+# doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
 from transformer.pipeline import PipelineExecutor
 from ingestion.ingestor import DataIngestor

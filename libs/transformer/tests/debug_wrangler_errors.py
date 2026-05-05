@@ -3,7 +3,7 @@
 # provides: script:debug_wrangler_errors
 # consumes: libs/transformer/src/transformer/data_wrangler.py, libs/utils/src/utils/errors.py
 # consumed_by: manual error-mode testing
-# doc: .agents/rules/rules_data_engine.md#3
+# doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
 import polars as pl
 from transformer.data_wrangler import DataWrangler

@@ -18,7 +18,7 @@ from __future__ import annotations
 # provides: function:define_server (gallery_handlers)
 # consumes: app/modules/wrangle_studio.py, app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 # consumed_by: app/src/server.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-037, .antigravity/knowledge/architecture_decisions.md#ADR-045, .agents/rules/ui_implementation_contract.md#12e
+# doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/ui_implementation_contract.md#12e
 # @end_deps
 
 import base64

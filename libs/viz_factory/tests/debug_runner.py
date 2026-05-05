@@ -3,7 +3,7 @@
 # provides: script:debug_runner (viz_factory)
 # consumes: libs/viz_factory/src/viz_factory/, libs/viz_factory/tests/test_data/
 # consumed_by: libs/viz_factory/tests/viz_factory_integrity_suite.py
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 from viz_factory import VizFactory
 import polars as pl

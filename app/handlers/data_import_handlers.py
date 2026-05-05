@@ -29,7 +29,7 @@ from __future__ import annotations
 # provides: function:define_data_import_server, output:data_import_ui, output:data_import_assignment_ui
 # consumes: app/modules/orchestrator.py, app/src/bootloader.py, transformer.metadata_validator, shiny
 # consumed_by: app/handlers/home_theater.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-052
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-052
 # @end_deps
 
 import shutil

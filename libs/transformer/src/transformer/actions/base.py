@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 # @deps
 # provides: decorator:register_action, registry:AVAILABLE_WRANGLING_ACTIONS
 # consumed_by: libs/transformer/src/transformer/actions/cleaning/core.py, libs/transformer/src/transformer/actions/cleaning/analytical.py, libs/transformer/src/transformer/actions/cleaning/advanced.py, libs/transformer/src/transformer/actions/cleaning/expressions.py, libs/transformer/src/transformer/actions/relational/joins.py, libs/transformer/src/transformer/actions/reshaping/core.py, libs/transformer/src/transformer/actions/performance/aggregation.py, libs/transformer/src/transformer/actions/persistence/anchor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py
-# doc: .agents/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md
 # @end_deps
 
 # The Central Repository for all Registered Actions

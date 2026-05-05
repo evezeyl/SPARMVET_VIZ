@@ -6,7 +6,7 @@ from utils.errors import ManifestError, TransformationError
 # @deps
 # provides: class:MetadataValidator, method:validate
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
-# doc: .antigravity/knowledge/architecture_decisions.md#ADR-013, .antigravity/knowledge/architecture_decisions.md#ADR-034
+# doc: .claude/knowledge/architecture_decisions.md#ADR-013, .claude/knowledge/architecture_decisions.md#ADR-034
 # @end_deps
 
 
