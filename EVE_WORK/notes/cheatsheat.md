@@ -67,24 +67,19 @@ PYTHONPATH=$ROOT $ROOT/.venv/bin/python app/tests/debug_pipeline_connector.py
 
 | Persona | T3 audit | Blueprint | Gallery | Test Lab | Session mgmt | Export bundle | Export graph | Metadata upload | Data ingestion |
 |---|---|---|---|---|---|---|---|---|---|
-| `developer` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ 25-H | ✅ | ✅ |
-| `project-independent` | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ⏳ 25-H | ✅ | ✅ |
-| `pipeline-exploration-advanced` | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ⏳ 25-H | ✅ | ❌ |
+| `developer` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `project-independent` | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `pipeline-exploration-advanced` | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | `pipeline-exploration-simple` | passive only | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
 | `pipeline-static` | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| `qa` (test harness) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ 25-H | ✅ | ✅ |
+| `qa` (test harness) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `demo-vetinst` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `web-demo` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 > **passive only**: T1/T2 filter scratchpad — plot updates temporarily, nothing saved, no audit trail. No T3 right sidebar.
 > **Test Lab** = canonical name (formerly "Developer Studio"). Nav pill + banner heading both updated (ADR-056, 2026-05-02). Python module stays `dev_studio.py`.
 > **Gallery** now enabled for `project-independent` (ADR-052, 25-A config change).
-> Export graph (⏳ 25-H) un-deferred — will be built in Phase 25.
-
-> **Export bundle** (`export_bundle_download`) IS live — full ZIP with all plots + T1/T2/T3 data + manifest + Quarto report + filters trace.
-> **Export graph** (single-plot quick export — `export_graph_enabled` flag) is **deferred (Phase 22)**: persona matrix and feature flag exist, no UI button wired yet. Tracked as **EXPORT-1** in `tasks.md`.
-
-- compare T2/t3 does not stay on - but is it voluntary if I do not have any T3.
+> **Export bundle** — full ZIP with all plots + T1/T2/T3 data + manifest + Quarto report + T3 audit trail + t3_steps.yaml + filters trace. 3-way scope toggle: Global project / Active group / Active plot. Single Graph Export accordion removed (2026-05-04 redesign) — use "Active plot" scope instead.
 ---
 
 # Tests

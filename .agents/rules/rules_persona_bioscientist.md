@@ -167,7 +167,7 @@ spec:
 
 **`position` and `labels` as flat keys are NOT supported.** They must appear as named layers. See registered components in `libs/viz_factory/src/viz_factory/`.
 
-`target_dataset` must match an `assembly_manifests` key in the master manifest exactly (case-sensitive).
+`target_dataset` must match a `join_manifests` key in the master manifest exactly (case-sensitive).
 
 ### 3-D. `analysis_groups` (top-level in master manifest)
 

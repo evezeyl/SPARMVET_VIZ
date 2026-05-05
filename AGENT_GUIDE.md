@@ -52,16 +52,14 @@ These track the "why" and the long-term state of project intelligence.
 
 |**File Path**|**Short Description**|
 |---|---|
-|`architecture_decisions.md`|**ADR Log.** The definitive record of all architectural decisions (ADR-001 through ADR-052+).|
+|`architecture_decisions.md`|**ADR Log.** The definitive record of all architectural decisions (ADR-001 through ADR-066+).|
 |`project_conventions.md`|**Combat Log.** A compressed registry of class names, key terms, path authority, and hard-won patterns.|
 |`persona_traceability_matrix.md`|**UI Logic.** Authoritative mapping of which UI elements are visible to which persona profile.|
-|`milestones.md`|Historical record of project phases (Legacy → Skeleton → Prototyping).|
-|`blockers.md`|Tracking of technical debt and unresolved data orchestration challenges.|
+|`changelog.md`|**Release log.** Breaking changes and notable renames (e.g. assembly→join rename). Check here if something breaks after a refactor.|
 |`blueprint_architect_ux_spec.md`|UX spec for the Blueprint Architect panel (TubeMap, lineage navigation). Added Phase 22+.|
 |`dependency_index.md`|Forward/backward dependency map between engine modules, rule files, manifests, debug scripts.|
 |`manifest_data_contract_rules.md`|Data contract rules for manifest `input_fields` / `output_fields` validation.|
 |`protocol_tiered_data.md`|Protocol spec for the 3-Tier (Anchor/Branch/Leaf) data lifecycle.|
-|`refactor_protocol_phase24.md`|Reusable refactor protocol (used for Phase 24 decomposition and Phase 25). Handler decomposition rules.|
 
 ---
 
@@ -87,7 +85,7 @@ You can also search *.md in .agents and .antigravity to find other relevant info
 
 To prevent AI Drift when switching between Gemini and Claude, follow this mailbox protocol:
 
-- **State File**: `/.antigravity/logs/handoff_active.md`.
+- **State File**: `/.antigravity/logs/handoffs/handoff_active.md`.
 - **Handoff Requirement**:
     1. Before stopping, the active agent MUST write the current status, specific file paths modified, and the "Next Step" prompt to the Handoff File.
     2. Upon starting, the new agent MUST read `handoff_active.md` to resume the "Stream of Consciousness."

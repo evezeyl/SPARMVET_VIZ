@@ -1,4 +1,4 @@
-**Status:** FINALIZED / ARCHITECTURAL LOCK — updated for Phase 25 (25-E accordion restructure, 25-H single-graph export, 25-K audit report relocation)
+**Status:** FINALIZED / ARCHITECTURAL LOCK — Phase 25 complete. Last update: 2026-05-04 (export redesign: scope toggle replaces separate Single Graph Export + Audit Report button; T3 audit trail auto-included in report.qmd; assembly→join rename).
 
 # UI Implementation contract
 
@@ -21,7 +21,7 @@ Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Bl
 
 The UI implements a high-density **3-column nested shell** to maximize screen real estate. The right column (Pipeline Audit) is **persona-gated** and suppressed entirely for lower personas (see ADR-044):
 
-- **Left Sidebar**: Accordion of named panels (Phase 25-E): Manifest Choice, Data Import, Filters, Global Project Export, Single Graph Export (gated), Session Management (gated). Panels are context-reactive — filter widgets are scoped to the active plot sub-tab's `plot_spec` aesthetics. Uses a Dark Grey (#c0c0c0) background.
+- **Left Sidebar**: Accordion of named panels: Manifest Choice, Data Import, Filters, Export (gated — scope toggle), Session Management (gated). Panels are context-reactive — filter widgets are scoped to the active plot sub-tab's `plot_spec` aesthetics. Uses a Dark Grey (#c0c0c0) background.
 - **Home Theater (Center)**: The primary workspace. Structure (post-ADR-043):
   - Top-level tabs are **exclusively** driven by manifest `analysis_groups` — no hardcoded tabs (Inspector removed).
   - Each group tab contains `navset_underline` sub-tabs (one per declared plot), wrapped in a **collapsible accordion panel**.
@@ -150,17 +150,20 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 
 ---
 
-### 7.2 Export Results Bundle (Global Project Export Panel — Left Sidebar, ADR-047, Phase 25-E)
+### 7.2 Export Results Bundle (Export Panel — Left Sidebar, ADR-047, updated 2026-05-04)
 
-**Panel:** `Global Project Export` accordion panel (renamed from "System Tools" in Phase 25-E). Always visible; gate: `export_bundle_enabled`.
+**Panel:** `Export` accordion panel (renamed from "Global Project Export" in export redesign 2026-05-04). Gate: `export_bundle_enabled + export_graph_enabled`.
 
-**Implementation:** `@render.download export_bundle_download` in `app/handlers/home_theater.py`.
+**Implementation:** `@render.download export_bundle_download` in `app/handlers/export_handlers.py`.
 
 **UI Controls:**
 - `export_bundle_label` (text, sanitized — label is "Bundle label / name", not "Your name"). Sanitized: `re.sub(r"[^A-Za-z0-9_-]", "_", raw)[:40]`.
-- `plot_format` selector: **PNG** / **SVG** / **PDF** (replaces the previous Web/Publication preset radio).
+- `plot_format` selector: **PNG** / **SVG** / **PDF**.
+- **3-way scope toggle** `export_scope`: `global` (all plots in project) / `group` (all plots in active group tab) / `plot` (active plot sub-tab only). "Active group" and "Active plot" options are shown with reduced opacity when no plot tab is active.
 - Filter warning shown when `applied_filters` non-empty.
 - Download button: `📦 Export Bundle`.
+
+**Scope detection at download time:** reads `safe_input(input, "export_scope", "global")` and `active_home_subtab.get()` to filter which plots are included. Scope label recorded in `t3_steps.yaml` and `README.txt`.
 
 **Filename:** `YYYYMMDD_HHMMSS_<label>_results.zip`.
 
@@ -168,42 +171,49 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 
 | Path | Contents |
 |------|---------|
-| `plots/` | SVG (web) or PNG ≥600 DPI (publication) per plot in manifest |
+| `plots/` | PNG/SVG/PDF per plot in scope |
 | `data/<ds>_T1.tsv` | T1 (Assembled) — always |
 | `data/<ds>_T2.tsv` | T2 (Analysis-ready) — always |
 | `data/<ds>_T3.tsv` | T3 (User-adjusted) — advanced+ persona only when `tier_toggle=="T3"` |
-| `recipes/<proj>/` | All YAML wrangling/assembly/plot files for the active project |
+| `recipes/<proj>/` | All YAML wrangling/join/plot files for the active project |
 | `FILTERS.txt` | Filter trace when `applied_filters` non-empty ("No Trace No Export" — ADR-021 extension) |
-| `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section |
-| `README.txt` | Bundle manifest: timestamp, project, persona, preset, tiers, metadata source filename, counts |
+| `recipes/t3_steps.yaml` | T3 committed nodes (active only) — auto-included when T3 has committed nodes and `t3_sandbox_enabled` |
+| `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section, **T3 Audit Trail** section (per-plot table of Step/Action/Details/Justification when T3 has active nodes) |
+| `README.txt` | Bundle manifest: timestamp, project, persona, scope, tiers, metadata source filename, counts |
 
-**Metadata provenance in bundle:** If a custom metadata file was uploaded (§9), its original filename is recorded in `README.txt` and in the `report.qmd` front-matter. This ensures the bundle is self-documenting about its data sources.
+**T3 Audit Trail in report.qmd:** Auto-generated `## T3 Audit Trail` section with one table per plot (Step / Action / Details / Justification). Deactivated nodes excluded. Only present when `t3_sandbox_enabled` and committed active nodes exist.
 
-**Export location:** Currently browser download (= local PC / client machine). This works identically in Galaxy (browser download from GxIT proxy), IRIDA, and local deployments. Server-side write to Location 4 is a deferred enhancement for pipeline archiving use cases.
+**`t3_steps.yaml` format:**
+```yaml
+generated: "2026-05-04T12:00:00"
+export_scope: "global"          # or group_id or plot_id
+t3_steps:
+  <plot_id>:
+    - action: <node_type>       # filter_row | exclusion_row | drop_column | aesthetic_override
+      # ...params...
+      reason: "..."
+      committed_at: "..."
+```
+
+**No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` persona flag is retained in the validator for backwards compat but is unused by the UI.
+
+**Single Graph Export accordion removed.** Superseded by the "Active plot" scope option in the 3-way toggle (see §7.3).
+
+**Metadata provenance in bundle:** If a custom metadata file was uploaded (§9), its original filename is recorded in `README.txt` and in the `report.qmd` front-matter.
+
+**Export location:** Browser download. Works identically in Galaxy, IRIDA, and local deployments.
 
 **Deferred:**
-- Per-plot checkbox selection (all plots always exported).
+- Per-plot checkbox selection (all in-scope plots always exported).
 - Server-side write to Location 4.
-- Re-export of raw + metadata source files alongside T1/T2 (to ensure full reproducibility when metadata was replaced — see §9).
 
 ---
 
-### 7.3 Export Active Graph (Single Graph Export Panel — Left Sidebar, Phase 25-H)
+### 7.3 Export Active Graph ⚠️ Superseded
 
-**Panel:** `Single Graph Export` accordion panel in the left sidebar. Gate: `export_graph_enabled`. Hidden for `pipeline-static` and `pipeline-exploration-simple`.
+**Status:** The `Single Graph Export` accordion panel was **removed** in the 2026-05-04 export redesign.
 
-Available to any persona with `export_graph_enabled: true` (≥ `pipeline-exploration-advanced`). Exports a single-plot bundle for the currently active plot sub-tab at the active tier.
-
-| Path | Contents |
-|------|---------|
-| `<plot_id>.<svg\|png\|pdf>` | The currently active plot at the active tier |
-| `<plot_id>_data.tsv` | The data slice backing the active plot |
-| `manifest_fragment.yaml` | Manifest section for the active plot spec |
-| `t3_recipe.json` | Active T3 recipe nodes for this plot |
-| `FILTERS.txt` | Active filter trace if filters applied (mandatory — No Trace No Export) |
-| `README.txt` | Plot ID, tier, persona, export timestamp |
-
-**Status:** Implemented in Phase 25-H.
+The "Active plot" scope option in the 3-way scope toggle (§7.2) replaces this panel. Selecting `[Active plot]` in the scope toggle and clicking `📦 Export Bundle` produces a single-plot bundle containing only the active plot's data, recipe, and audit trail. The `export_graph_enabled` flag now gates the full Export panel (both the bundle and the scope toggle) rather than a separate accordion.
 
 ## 8. Filter Recipe Builder (Phase 21-F — Left Sidebar, 2026-04-23)
 
@@ -282,7 +292,7 @@ The left sidebar content is **not static** — it changes based on which top-lev
 
 | Active Panel | Left Sidebar Content |
 |---|---|
-| **Home** | `#nav_accordion` — panels: Manifest Choice, Data Import, Filters, Global Project Export, Single Graph Export (gated), Session Management (gated) |
+| **Home** | `#nav_accordion` — panels: Manifest Choice, Data Import, Filters, Export (gated, scope toggle), Session Management (gated) |
 | **Blueprint Architect** | Manifest/component navigation (dataset pipeline selector, TubeMap node selector) |
 | **Gallery** | Focus Mode (ADR-038) — operation controls hidden; search/filter for gallery only |
 | **Test Lab** | TBD — deferred until Test Lab is finalized. Left sidebar content for this panel is an open design question. |
@@ -294,8 +304,7 @@ The left sidebar content is **not static** — it changes based on which top-lev
 | **Manifest Choice** | Manifest selector (`manifest_selector.visible` must be `true` in persona template) | `manifest_selector.visible` |
 | **Data Import** | Metadata upload (§9, always if `metadata_ingestion_enabled`) + multi-file ingestion + Excel converter (§10, when `import_helper_enabled`) | `metadata_ingestion_enabled` or `import_helper_enabled` |
 | **Filters** | Filter Recipe Builder row widgets (§8) | always (Home only) |
-| **Global Project Export** | Export Results Bundle (§7.2) + Export Audit Report sub-section (§12f, gated by `audit_report_enabled`) | `export_bundle_enabled` |
-| **Single Graph Export** | Export Active Graph (§7.3) | `export_graph_enabled` |
+| **Export** | Export Bundle with 3-way scope toggle (§7.2). T3 Audit Trail auto-included in report.qmd (§12f). | `export_bundle_enabled + export_graph_enabled` |
 | **Session Management** | Session list + Restore/Delete + Export Active Session header button (§7.1) | `session_management_enabled` |
 
 **Implementation rule:** The `sidebar_nav_ui` render function reads the active top-level nav item and renders the appropriate sidebar content. Switching panels clears and replaces the entire left sidebar DOM subtree (not CSS-hide — physical replacement, following the Shell Stability Law in §3a of `project_conventions.md`).
@@ -472,11 +481,9 @@ T3 ghost is never written on intermediate filter edits — only on apply or pane
 
 ### 12f. Export Report Spec
 
-**Location:** Embedded "Export Audit Report" sub-section inside the `Global Project Export` accordion panel (Phase 25-K, ADR-052-FOLLOWUP-2). Gate: `audit_report_enabled`. Available for ≥ `pipeline-exploration-advanced`.
+**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` persona flag is retained in the validator for backwards compat but is no longer used by the UI.
 
-**UI controls:** Format selector (HTML / PDF / DOCX) + single "Export Audit Report" button. Quarto-only render — no Pandoc dependency. Format is passed to Quarto via `--to` at render time.
-
-**Format:** HTML / PDF / DOCX rendered by Quarto from a template `.qmd` file embedded in the app.
+**Format:** `report.qmd` is a Quarto source file included in the bundle ZIP. Users render it locally with `quarto render report.qmd`. The T3 Audit Trail section is part of this file.
 
 **Front-matter block:**
 ```yaml
@@ -535,7 +542,7 @@ Propagated nodes appear in multiple plot stacks but **share the same `id`**. Lin
 The "primary keys" set is the union of every join key declared in any assembly recipe:
 
 ```yaml
-assembly_manifests:
+join_manifests:
   bigtable:
     recipe:
       - action: join

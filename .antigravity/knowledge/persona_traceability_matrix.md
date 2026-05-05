@@ -1,7 +1,7 @@
 # Persona Traceability Matrix (Component Masking)
 
 **Objective**: Systematic verification of UI stability, functional parity, and persona masking, superseding the UI Contract traceability.
-**Last updated:** 2026-05-01 (Phase 25-O — add t3_sandbox_enabled flag; replace persona name checks with flag checks; mark Single Graph Export implemented; right sidebar now flag-gated.)
+**Last updated:** 2026-05-04 (export redesign: Export panel replaces Global Project Export + Single Graph Export; scope toggle added; T3 audit trail auto-included in bundle)
 
 ## Persona Capability Matrix
 
@@ -16,7 +16,7 @@
 
 **passive_exploration:** can apply filters and drop columns to explore the view (T1/T2 — plot updates temporarily, nothing saved, no audit trail). Already implemented; previously undocumented.
 **t3_audit:** can promote filters/drops to the T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, recipe export). Controlled by `t3_sandbox_enabled` flag (Phase 25-O).
-Single Graph Export implemented in Phase 25-H.
+Single Graph Export accordion removed in 2026-05-04 export redesign — superseded by "Active plot" scope option in the 3-way scope toggle on the Export panel.
 
 > **CRITICAL**: Persona IDs use **hyphens** (`pipeline-exploration-advanced`), never underscores. Underscore variants silently fail all persona gates.
 
@@ -31,9 +31,8 @@ Single Graph Export implemented in Phase 25-H.
 | **Manifest Choice** | HIDE (fixed by config) | HIDE (fixed by config) | SHOW | SHOW | SHOW | `manifest_selector.visible` |
 | **Data Import** | SHOW (read-only path display) | SHOW (read-only path display) | SHOW (active selector) | SHOW (active selector) | SHOW (active selector) | always_on; selector gated by testing_mode |
 | **Filters** | HIDE (static message) | SHOW (exploration disclaimer) | SHOW | SHOW | SHOW | `interactivity_enabled` |
-| **Global Project Export** | SHOW | SHOW | SHOW | SHOW | SHOW | `export_bundle_enabled` |
+| **Export** (scope toggle) | SHOW | SHOW | SHOW | SHOW | SHOW | `export_bundle_enabled + export_graph_enabled` |
 | **Session Management** | HIDE | SHOW | SHOW | SHOW | SHOW | `session_management_enabled` |
-| **Single Graph Export** | HIDE | HIDE | SHOW | SHOW | SHOW | `export_graph_enabled` |
 
 ## Right Sidebar Visibility (ADR-044 + ADR-052)
 

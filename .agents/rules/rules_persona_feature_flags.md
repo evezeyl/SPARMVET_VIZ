@@ -22,8 +22,8 @@ These flags are always meaningful regardless of any other flag.
 
 | Flag | Default (static) | Effect when true |
 |---|---|---|
-| `export_bundle_enabled` | `true` | Export Results Bundle zip available in **Global Project Export** panel (renamed from System Tools in Phase 25-E) |
-| `audit_report_enabled` | `false` | Embedded "Export Audit Report" sub-section (Quarto HTML/PDF/DOCX) inside the Global Project Export panel. Added in Phase 25-K (ADR-052-FOLLOWUP-2) — replaces a hardcoded persona-name set. |
+| `export_bundle_enabled` | `true` | Export Bundle zip available in **Export** panel. Combined with `export_graph_enabled` to gate the full panel (scope toggle + download). |
+| `audit_report_enabled` | `false` | Retained in validator for backwards compat — **no longer used by UI** (2026-05-04 redesign). T3 audit trail is auto-included in `report.qmd` inside the bundle. |
 
 No dependencies. Safe to enable in any persona.
 

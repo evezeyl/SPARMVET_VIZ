@@ -24,7 +24,7 @@ When decomposition is triggered, components must be strictly categorized into su
 - `input_fields/`: Defines raw incoming schemas.
 - `wrangling/`: Defines all Transformation (`tier1`, `tier2`) operations for individual data sources.
 - `output_fields/`: Defines the terminal contract schemas.
-- `assembly/`: Defines the assembly recipe (`recipe:` key only) for joining multiple ingredients into a collection. One file per assembly (e.g., `AMR_Profile_Joint.yaml`).
+- `join/`: Defines the join recipe (`recipe:` key only) for joining multiple ingredients into a collection. One file per join block (e.g., `AMR_Profile_Joint.yaml`). Top-level manifest key: `join_manifests:`.
 - `plots/`: Contains visualization specifications for `analysis_groups`. Each file contains a single `spec:` block.
 
 ## 3. Structural Authority Reference
@@ -147,7 +147,7 @@ Reserve `description:` for longer prose; use `label:` for short emoji-rich tab t
 ```yaml
 spec:
   factory_id: bar_logic          # Registered factory: bar_logic, scatter_logic, heatmap_logic
-  target_dataset: <assembly_id>  # Must match an assembly_manifests key
+  target_dataset: <join_id>  # Must match a join_manifests key
   x: <column>                    # Aesthetic mapping — column must exist in target_dataset
   y: <column>                    # Optional
   fill: <column>                 # Optional
@@ -173,3 +173,14 @@ spec:
 | `bar_logic` | `geom_bar` (no `y`) or `geom_col` (with `y`) | For `dodge`, add `position_dodge` layer |
 | `scatter_logic` | `geom_point` | |
 | `heatmap_logic` | `geom_tile` | Uses `fill` aesthetic |
+
+---
+
+## 9. Authorized Data Types for `input_fields` / `output_fields`
+
+| Manifest type | Polars load type | Polars output contract | When to use |
+|---|---|---|---|
+| `categorical` | `pl.String` (internal) | `pl.Categorical` | **Default** for identifiers and repeating values (`sample_id`, `taxon`, `country`, `gene`). Ensures discrete-scale correctness in Plotnine. |
+| `string` (or `utf8`) | `pl.String` | `pl.String` | High-cardinality text, descriptions, free-form fields where categorization gives no benefit. |
+
+**Primary key rule:** `sample_id` MUST be `type: categorical`. Using `numeric` for join keys causes type-parity mismatches in `action: join` steps.

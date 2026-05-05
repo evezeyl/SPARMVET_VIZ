@@ -105,7 +105,7 @@
 
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:export_audit_report_ui`, `output:export_audit_report_download`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`
 - **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `polars`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.antigravity/knowledge/architecture_decisions.md#ADR-045`, `.antigravity/knowledge/architecture_decisions.md#ADR-051`

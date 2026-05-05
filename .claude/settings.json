@@ -247,7 +247,8 @@
       "Bash(sed -i -e 's/\\\\bassemblies\\\\b/join_defs/g' app/modules/wrangle_studio.py app/modules/session_manager.py)",
       "Bash(sed -i -e 's/\\\\bassemblies\\\\b/join_defs/g' -e 's/\\\\bassembly_id\\\\b/join_id/g' libs/utils/src/utils/blueprint_mapper.py libs/transformer/src/transformer/pipeline.py)",
       "Bash(git show *)",
-      "Bash(cat /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md)"
+      "Bash(cat /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md)",
+      "Bash(echo \"---EXIT $?\")"
     ],
     "additionalDirectories": [
       "/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/projects",

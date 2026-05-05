@@ -438,3 +438,74 @@ config/ui/theme.css                 — §14, §18, §18b (accordion harmonizati
 2. Continue CSS polish if user reports additional issues
 3. Consider commit when CSS is stable
 4. Run test suite before committing (`PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/ libs/ -q`)
+
+---
+
+## Session 16 — Export redesign + assembly→join rename + repository hygiene (2026-05-04/05)
+
+**Branch:** dev
+**Agent:** Claude Sonnet 4.6
+**Last commits:** `60fe369` (export redesign + join rename)
+
+### What landed
+
+#### Export redesign (EXPORT-REDESIGN-1, EXPORT-REDESIGN-2)
+
+- **Removed** "Export Audit Report" button and its handlers (`export_audit_report_ui`, `export_audit_report_download`, `_audit_report_filename`).
+- **Removed** "Single Graph Export" accordion panel from left sidebar.
+- **Added** 3-way scope toggle `export_scope` (`global` / `group` / `plot`) to the Export panel. Gated on `export_bundle_enabled + export_graph_enabled`. "Active group" and "Active plot" options styled with opacity 0.45 when no subtab is active.
+- **Added** `t3_steps.yaml` to bundle (T3 committed active nodes, all plots in scope).
+- **Added** T3 Audit Trail section to `report.qmd` (per-plot table; active nodes only; only when `t3_sandbox_enabled` and nodes exist).
+- Accordion label: "Global Project Export" → "Export".
+- `active_home_subtab` (reactive.Value[str]) passed as new kwarg to `define_export_server`.
+
+Key files: `app/handlers/export_handlers.py`, `app/handlers/home_theater.py`.
+
+#### assembly_manifests → join_manifests rename (ADR-066, ASSEMBLY-RENAME)
+
+- All 10 config manifests: `assembly_manifests:` → `join_manifests:` (via sed).
+- ~21 Python files: `"assembly_manifests"` → `"join_manifests"` (via sed).
+- TubeMap labels: `\nAssembly` → `\nJoin`, `\nAssembly Wrangling` → `\nJoin Wrangling`.
+- `wrangle_studio.py`: `◆ Assembly` → `◆ Join`, `Assembly Output (Input)` → `Join Output (Input)`.
+- `blueprint_handlers.py`: role string, `asm_block` → `join_block`.
+- `manifest_navigator.py`: `is_assembly` → `is_join_step`, `assembly_rels` → `join_rels`.
+- 6 test fixture YAMLs under `libs/transformer/tests/data/`.
+- **EXCEPTION (NOT renamed):** `session_manager.py` + `debug_session_flow.py` `{"assembly": ..., "contracted": ...}` — Parquet path labels, unrelated to manifest role.
+- **Variable name rule:** Never use bare `join` as a Python variable (shadows `str.join()`). Use `join_defs`, `join_block`, `join_step`.
+
+#### Documentation updated (2026-05-04/05)
+
+- `changelog.md` — NEW in `.antigravity/knowledge/`. Release entries for both changes.
+- `architecture_decisions.md` — ADR-047 §7 updated (scope toggle + T3 audit); ADR-051 updated (export_handlers new kwarg, deleted outputs); ADR-066 added (assembly rename).
+- `project_conventions.md` — role string and join ingredient resolution updated.
+- `AGENT_GUIDE.md` — removed archived knowledge files (`blockers.md`, `milestones.md`, `refactor_protocol_phase24.md`); added `changelog.md`; fixed handoff path.
+- `ui_implementation_contract.md` — §7.2/§7.3/§11/§12f updated for export redesign; `assembly_manifests` → `join_manifests` in §12g.2.
+- `rules_manifest_structure.md` — §2 `assembly/` → `join/`; §8 comment updated; §9 data types added (merged from `data_types.md`).
+
+#### Repository hygiene (2026-05-04/05)
+
+- New `.antigravity/` structure: `logs/sessions/`, `logs/audits/`, `logs/handoffs/archive/`, `knowledge/archive/`, `conversations/archive/`, `prompts/`.
+- Archived: `blockers.md`, `milestones.md`, `refactor_protocol_phase24.md`, `galaxy_integration_prep.md`, `data_types.md`, `test_ui_persona.md`, old conversation files.
+- Deleted: `PATHS_INITIATION.md`, `Hashses.md`, `offline_doc.md`, `presentation_prep_chat.md`.
+
+### Current state
+
+- **90/90 unit tests** should still pass (no logic changed in this session, only rename/restructure).
+- **Run `PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_filter_operators.py libs/connector/tests/ libs/viz_factory/tests/test_deco2_components.py -q`** before coding to confirm.
+- Export redesign code is in `app/handlers/export_handlers.py` — verify by launching with `developer` persona and testing the scope toggle in the Export accordion.
+
+### Deferred next coding tasks
+
+| Task | Notes |
+|---|---|
+| **EXPORT-HASH-2** | Read `decision_hash` from Parquet metadata at export time |
+| **SESSION-PERSONA-1** | Gate ghost_save on `t3_sandbox_enabled` |
+| **ST22 Lineage 2** | Plasmid Dynamics visualization |
+| 6 REVIEW tasks | Design discussions needed — see `tasks.md` 🔵 REVIEW section |
+
+### Conventions reaffirmed
+
+- `join_manifests:` (not `assembly_manifests:`) everywhere — YAML keys, Python dict keys, role strings, UI labels, TubeMap labels.
+- Never `join` as a bare Python variable — use `join_defs`, `join_block`, etc.
+- Persona IDs: HYPHENS only.
+- `export_graph_enabled` now gates the entire Export panel (scope toggle + bundle), not a separate accordion.
