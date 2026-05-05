@@ -4,6 +4,12 @@
 
 # --- Personal developer workspace (user scratch, not project code) ---
 EVE_WORK/
+presentation/
+
+# --- Generated / stale snapshots ---
+tree.txt
+manifest.json
+.claude/conversations/
 
 # --- Build artifacts ---
 **/*.egg-info/

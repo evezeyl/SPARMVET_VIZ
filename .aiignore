@@ -6,6 +6,8 @@
 
 # --- Personal developer workspace ---
 EVE_WORK/
+presentation/
+.claude/conversations/
 
 # --- Data files (rows of data add no value to AI context) ---
 *.csv
