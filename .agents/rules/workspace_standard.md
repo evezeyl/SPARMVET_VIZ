@@ -49,6 +49,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 - **Single Source of Truth:** Local workspace files (`./.antigravity/`) are the authoritative source over global IDE state.
 - **Relative Path Authority:** ALL file paths provided in manifests, rulebooks, and technical documentation MUST be relative to the project root. The use of absolute paths or symbolic links within the project structure is strictly FORBIDDEN.
 - Background Mandate: for any script execution (unless specified otherwise) you MUST use background execution flags to ensure the UI remains responsive.
+- **@sync Guardrail:** If the agent detects a discrepancy between what was discussed in chat and the actual state of files on disk (e.g., a rule says X but the code does Y, or a file referenced in chat no longer exists), the agent MUST stop and surface the discrepancy explicitly before continuing. Do not silently resolve ambiguity by choosing one side. The correct response is: "HALT: @sync required — [description of discrepancy]. Please confirm which is authoritative: the chat intent or the disk state."
 
 ## 5. Dependency Tracking System (`@deps`)
 

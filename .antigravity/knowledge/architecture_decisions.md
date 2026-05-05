@@ -1363,7 +1363,7 @@ for `tier1_anchor`, `active_cfg`, etc.
 ### Implementation reference
 
 - Source file: `app/handlers/home_theater.py`.
-- Refactor protocol followed: `.antigravity/knowledge/refactor_protocol_phase24.md`.
+- Refactor protocol followed: `.antigravity/knowledge/archive/refactor_protocol_phase24.md`.
 - Per-step change manifests: `.antigravity/tasks/tasks_phase24.md`.
 - Two-Category Law: `app/handlers/__init__.py`.
 
@@ -1478,7 +1478,7 @@ Two new capability columns formalise existing but undocumented behaviour:
 
 - Design document: `EVE_WORK/daily/2026-05-01/persona_functionality_side_bars_v3_clean.csv`
 - Companion persona template spec: `EVE_WORK/daily/2026-05-01/persona_template_new_fields.md`
-- Refactor protocol: `.antigravity/knowledge/refactor_protocol_phase24.md` (reused)
+- Refactor protocol: `.antigravity/knowledge/archive/refactor_protocol_phase24.md` (reused)
 - Per-step change manifests: `.antigravity/tasks/tasks_phase25.md` (to be created at phase start)
 
 ## ADR-053: Flag-Only Persona Gating — Prohibition on Persona Name String Comparisons
@@ -1982,3 +1982,50 @@ Additionally, CSS `border-radius: 0 0 7px 7px` was applied to inner navset-cards
 **Scope:** ~35 files, ~65 occurrences. Config manifests, test fixtures, app/, libs/, docs. EVE_WORK/ historical daily logs left unchanged.
 
 **Consequences:** Existing session ghost saves referencing `assembly_manifests` in serialised state will fail to find `join_manifests` on restore. Any manifests not in this repo still using the old key will fail to load. See `changelog.md` for full record.
+
+---
+
+## ADR-067: Extract `libs/blueprint_arch/` — Blueprint Architect Pure-Python Logic (2026-05-05)
+
+**Status:** IMPLEMENTED (2026-05-05)
+
+**Context:** `blueprint_mapper.py` lived in `libs/utils/` — a general-purpose headless lib — alongside config loading, hashing, and error utilities. `manifest_navigator.py` lived in `app/modules/`, violating the Two-Category Law (ADR-045) even though it has zero Shiny dependency and was already declared headless-safe. Both files exist solely to serve the Blueprint Architect feature.
+
+**Decision:** Create `libs/blueprint_arch/` as a dedicated editable lib for all Blueprint Architect pure-Python logic.
+
+**Moved:**
+- `libs/utils/src/utils/blueprint_mapper.py` → `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- `app/modules/manifest_navigator.py` → `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`
+- `libs/utils/tests/debug_blueprint_mapper.py` → `libs/blueprint_arch/tests/debug_blueprint_mapper.py`
+
+**Import changes:** `blueprint_handlers.py` updated from `utils.blueprint_mapper` and `app.modules.manifest_navigator` to `blueprint_arch.*`.
+
+**Rationale:** Gives the Blueprint Architect module a clean, growable home. Removes a headless-only module from `app/modules/` (ADR-045 compliance). Keeps `libs/utils/` focused on cross-cutting helpers (config, hashing, errors).
+
+**Consequence:** `libs/blueprint_arch` must be installed as an editable package (`.venv/bin/pip install -e libs/blueprint_arch/`). Confirmed working.
+
+---
+
+## ADR-068: Extract `libs/test_lab/` + Absorb `generator_utils` + Rename `dev_studio` (2026-05-05)
+
+**Status:** IMPLEMENTED (2026-05-05)
+
+**Context:** `libs/generator_utils/` contained four modules (`aqua_synthesizer`, `bootstrapper`, `extractor`, `reconciler`) for synthetic data generation, manifest bootstrapping, XLSX extraction, and key reconciliation. `app/modules/dev_studio.py` (class `DevStudio`) was the Shiny UI for this functionality — its banner already displayed "Test Lab". The old package name `generator_utils` was undersized (it covers extraction and reconciliation, not just generation) and the name `dev_studio` / `DevStudio` referred to a superseded design concept.
+
+**Decision (Option B — absorb):** Create `libs/test_lab/` and move all four `generator_utils` source modules into it. Do NOT keep `generator_utils` as a separate dependency.
+
+**Moved:**
+- `libs/generator_utils/src/generator_utils/{aqua_synthesizer,bootstrapper,extractor,reconciler}.py` → `libs/test_lab/src/test_lab/`
+- `libs/generator_utils/tests/*` → `libs/test_lab/tests/` (with imports updated `generator_utils.*` → `test_lab.*`)
+- `generator_utils` uninstalled from venv; directory removed.
+
+**Renamed:**
+- `app/modules/dev_studio.py` → `app/modules/test_lab_studio.py`
+- Class `DevStudio` → `TestLabStudio`
+- All consumers (`server.py`, `home_theater.py`) updated. The local variable name `dev_studio` is kept as a parameter-name convention.
+
+**Import changes:** `assets/scripts/generate_demo_data.py` updated from `generator_utils.aqua_synthesizer` to `test_lab.aqua_synthesizer`.
+
+**Rationale:** Unified lib allows Test Lab functionality to grow (future: inject T3 node types, run headless schema validation, drive the reconciler from the UI). Simpler dependency graph — one package instead of two.
+
+**Consequence:** `libs/test_lab` must be installed as an editable package (`.venv/bin/pip install -e libs/test_lab/`). Confirmed working.

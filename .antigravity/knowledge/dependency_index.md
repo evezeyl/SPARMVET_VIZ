@@ -52,7 +52,7 @@
 ## `.agents/rules/rules_ui_dashboard.md`
 - **Role:** `meta`
 - **provides:** `rule:ui_orchestration`, `rule:theatre_layout`, `rule:sidebar_law`
-- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/utils/src/utils/blueprint_mapper.py`
+- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
 - **consumed_by:** `.antigravity/knowledge/dependency_index.md`
 
 ## `.agents/rules/rules_verification_testing.md`
@@ -92,7 +92,7 @@
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (blueprint_handlers)`
-- **consumes:** `app/modules/manifest_navigator.py`, `app/modules/orchestrator.py`, `libs/utils/src/utils/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.antigravity/knowledge/architecture_decisions.md#ADR-039`, `.antigravity/knowledge/architecture_decisions.md#ADR-045`
 
@@ -127,7 +127,7 @@
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_reference`, `output:table_reference`, `output:plot_leaf`, `output:table_leaf`, `output:comparison_mode_toggle_ui`, `output:plot_cell_{p_id} (per-plot)`
-- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/dev_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_recipe_engine.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/handlers/single_graph_export_handlers.py`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_recipe_engine.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/handlers/single_graph_export_handlers.py`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.antigravity/knowledge/architecture_decisions.md#ADR-043`, `.antigravity/knowledge/architecture_decisions.md#ADR-044`, `.antigravity/knowledge/architecture_decisions.md#ADR-045`, `.antigravity/knowledge/architecture_decisions.md#ADR-047`, `.antigravity/knowledge/architecture_decisions.md#ADR-051`
 
@@ -157,9 +157,9 @@
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.antigravity/knowledge/architecture_decisions.md#ADR-045`, `.antigravity/knowledge/architecture_decisions.md#ADR-052`
 
-## `app/modules/dev_studio.py`
+## `app/modules/test_lab_studio.py`
 - **Role:** `ref`
-- **provides:** `class:DevStudio`
+- **provides:** `class:TestLabStudio`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`
 - **doc:** `.antigravity/knowledge/architecture_decisions.md#ADR-003`
 
@@ -183,7 +183,7 @@
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.agents/rules/rules_data_engine.md`
 
-## `app/modules/manifest_navigator.py`
+## `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`
 - **Role:** `ref`
 - **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`
@@ -234,7 +234,7 @@
 ## `app/src/server.py`
 - **Role:** `ref`
 - **provides:** `server (Shiny server function)`
-- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio`, `app.modules.dev_studio`, `app.modules.gallery_viewer`, `app.modules.persona_validator`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio`, `app.modules.test_lab_studio`, `app.modules.gallery_viewer`, `app.modules.persona_validator`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-045`, `ADR-003`
 
@@ -324,9 +324,9 @@
 ## `assets/scripts/generate_demo_data.py`
 - **Role:** `info`
 - **provides:** `script:generate_demo_data`
-- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/generator_utils (AquaSynthesizer)`
+- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer standalone functions)`
 - **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
-- **doc:** `libs/generator_utils/README.md`
+- **doc:** `libs/test_lab/README.md`
 
 ## `assets/scripts/materialize_manifest_plots.py`
 - **Role:** `info`
@@ -425,29 +425,29 @@
 - **consumes:** `class:FilesystemConnector`
 - **doc:** `.antigravity/knowledge/architecture_decisions.md#ADR-048`
 
-## `libs/generator_utils/src/generator_utils/aqua_synthesizer.py`
+## `libs/test_lab/src/test_lab/aqua_synthesizer.py`
 - **Role:** `info`
-- **provides:** `AquaSynthesizer class (synthesize)`, `standalone helpers: clean_header`, `generate_fake_column`, `introduce_missing_values`
+- **provides:** `standalone helpers: clean_header`, `generate_fake_column`, `introduce_missing_values`
 - **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse (stdlib)`
-- **consumed_by:** `assets/scripts/generate_demo_data.py`, `libs/generator_utils/tests/debug_sdk.py`
+- **consumed_by:** `assets/scripts/generate_demo_data.py`, `libs/test_lab/tests/debug_sdk.py`
 
-## `libs/generator_utils/src/generator_utils/bootstrapper.py`
+## `libs/test_lab/src/test_lab/bootstrapper.py`
 - **Role:** `info`
 - **provides:** `ManifestBootstrapper class (bootstrap) — infers TSV schemas and writes manifest YAML fragments`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
-- **consumed_by:** `libs/generator_utils/tests/debug_sdk.py`
+- **consumed_by:** `libs/test_lab/tests/debug_sdk.py`
 
-## `libs/generator_utils/src/generator_utils/extractor.py`
+## `libs/test_lab/src/test_lab/extractor.py`
 - **Role:** `info`
 - **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
-- **consumed_by:** `libs/generator_utils/tests/debug_sdk.py`
+- **consumed_by:** `libs/test_lab/tests/debug_sdk.py`
 
-## `libs/generator_utils/src/generator_utils/reconciler.py`
+## `libs/test_lab/src/test_lab/reconciler.py`
 - **Role:** `info`
 - **provides:** `KeyReconciler class (calculate_intersection_score`, `suggest_regex`, `reconcile) — boundary-aware PK matching with ambiguity detection`
 - **consumes:** `polars`, `re`, `pathlib`, `typing`, `collections`, `yaml (stdlib/third-party)`
-- **consumed_by:** `libs/generator_utils/tests/debug_reconciler.py`, `libs/generator_utils/tests/debug_ambiguity.py`, `libs/generator_utils/tests/demo_reconciler.py`
+- **consumed_by:** `libs/test_lab/tests/debug_reconciler.py`, `libs/test_lab/tests/debug_ambiguity.py`, `libs/test_lab/tests/demo_reconciler.py`
 
 ## `libs/ingestion/src/ingestion/ingestor.py`
 - **Role:** `wrangle`
@@ -614,7 +614,7 @@
 - **consumed_by:** `CI / manual audit`
 - **doc:** `.agents/rules/rules_data_engine.md`
 
-## `libs/utils/src/utils/blueprint_mapper.py`
+## `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
 - **Role:** `ref`
 - **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`

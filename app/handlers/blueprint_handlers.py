@@ -16,7 +16,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (blueprint_handlers)
-# consumes: app/modules/manifest_navigator.py, app/modules/orchestrator.py, libs/utils/src/utils/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
+# consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumed_by: app/src/server.py
 # doc: .antigravity/knowledge/architecture_decisions.md#ADR-039, .antigravity/knowledge/architecture_decisions.md#ADR-045
 # @end_deps
@@ -29,14 +29,14 @@ from pathlib import Path
 import yaml
 from shiny import reactive, render, ui
 
-from app.modules.manifest_navigator import (
+from blueprint_arch.manifest_navigator import (
     build_lineage_chain,
     build_schema_registry,
     build_sibling_map,
     load_fields_file,
     resolve_fields_for_schema,
 )
-from utils.blueprint_mapper import BlueprintMapper
+from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.config_loader import ConfigManager
 
 

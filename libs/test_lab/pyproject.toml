@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "generator_utils"
+name = "test_lab"
 version = "0.1.0"
-description = "SPARMVET_VIZ generator_utils library"
+description = "SPARMVET_VIZ Test Lab: synthetic data generation, bootstrapping, manifest extraction, and key reconciliation"
 dependencies = [
     "polars>=1.0.0",
     "numpy>=2.0.0",

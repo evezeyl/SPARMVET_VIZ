@@ -248,7 +248,11 @@
       "Bash(sed -i -e 's/\\\\bassemblies\\\\b/join_defs/g' -e 's/\\\\bassembly_id\\\\b/join_id/g' libs/utils/src/utils/blueprint_mapper.py libs/transformer/src/transformer/pipeline.py)",
       "Bash(git show *)",
       "Bash(cat /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md)",
-      "Bash(echo \"---EXIT $?\")"
+      "Bash(echo \"---EXIT $?\")",
+      "Bash(.venv/bin/python -c \"from blueprint_arch.blueprint_mapper import BlueprintMapper; from blueprint_arch.manifest_navigator import build_sibling_map; print\\('OK'\\)\")",
+      "Bash(.venv/bin/python -c \"from test_lab.aqua_synthesizer import AquaSynthesizer; from test_lab.reconciler import KeyReconciler; print\\('OK'\\)\")",
+      "Bash(.venv/bin/python -c \"from test_lab.aqua_synthesizer import clean_header, generate_fake_column, introduce_missing_values; from test_lab.reconciler import KeyReconciler; from test_lab.bootstrapper import ManifestBootstrapper; from test_lab.extractor import XlsxExtractor; print\\('OK'\\)\")",
+      "Bash(.venv/bin/pip uninstall *)"
     ],
     "additionalDirectories": [
       "/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/projects",

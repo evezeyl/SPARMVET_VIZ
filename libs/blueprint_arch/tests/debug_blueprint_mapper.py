@@ -1,6 +1,6 @@
-# libs/utils/tests/debug_blueprint_mapper.py
+# libs/blueprint_arch/tests/debug_blueprint_mapper.py
 from utils.config_loader import ConfigManager
-from utils.blueprint_mapper import BlueprintMapper
+from blueprint_arch.blueprint_mapper import BlueprintMapper
 from pathlib import Path
 
 

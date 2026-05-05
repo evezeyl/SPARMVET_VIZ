@@ -69,12 +69,26 @@ These represent the active roadmap and granular execution status.
 
 |**File Path**|**Short Description**|
 |---|---|
-|`implementation_plan_master.md`|**Authoritative Roadmap.** Tracks high-level phases (currently Phase 12-A) and technical goals.|
+|`implementation_plan_master.md`|**Authoritative Roadmap.** Tracks high-level phases (Phase 27+ current). See the file header for the current active phase.|
 |`tasks.md`|**Live Execution Status.** The sole source of truth for what needs to be done _right now_.|
 
 ---
 
-### 2.5 Other specific rules and memory
+### 2.5. Design Specs (`./.antigravity/design/`)
+
+Feature design documents and companion CSVs. Read before implementing anything in these areas.
+
+|**File Path**|**Short Description**|
+|---|---|
+|`export_specification.md`|Agreed spec for the 2026-05-04 export redesign (scope toggle, T3 audit trail, bundle).|
+|`design_t3_export_threading.md`|T3 node-type threading gap in export handlers + lineage recipe design. Also flags dead code in `single_graph_export_handlers.py`.|
+|`persona_capability_matrix.md` + `.csv`|Persona × capability matrix (markdown + CSV forms). Companion: `persona_flag_legend.csv`.|
+|`persona_scoping_guide.md`|Scoping groups, flag abbreviations, cell conventions, dependency rules.|
+|`ui_panel_map_current.md`|CSS selector reference + panel name mapping. Authoritative for Playwright test selectors.|
+
+---
+
+### 2.6 Other specific rules and memory
 
 A summary of available ressources, to use when required by the tasks is available
 in `project_conventions.md`.

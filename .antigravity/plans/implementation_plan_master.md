@@ -416,7 +416,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 **Objective:** Split `app/handlers/home_theater.py` (2,853 lines pre-flight) into a thin coordinator plus focused handler modules, following ADR-045 decomposition pattern. **Gate met (2026-04-30):** Phase 22-J live-UI test §1 PASSED. **Status (2026-05-01):** ALL STEPS LANDED ON `dev`. ADR-051 → IMPLEMENTED. `home_theater.py`: 2,853 → 1,278 lines (-55.2%).
 
-**Governing ADR:** ADR-051. **Triggered by:** Post-Phase-21 growth past the 2,362-line threshold that triggered ADR-045. **Refactor protocol:** `.antigravity/knowledge/refactor_protocol_phase24.md` (two-commit-per-step move + cleanup, verification gate after every commit, halt-and-ask on repeat failure).
+**Governing ADR:** ADR-051. **Triggered by:** Post-Phase-21 growth past the 2,362-line threshold that triggered ADR-045. **Refactor protocol:** `.antigravity/knowledge/archive/refactor_protocol_phase24.md` (two-commit-per-step move + cleanup, verification gate after every commit, halt-and-ask on repeat failure).
 
 ### Implemented file map
 
@@ -497,10 +497,10 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ---
 
-## Phase 27: Gallery Expansion + Accordion UI Harmonization — IN PROGRESS 2026-05-03
+## Phase 27: Gallery Expansion + Accordion UI Harmonization — COMPLETE 2026-05-03
 
 **ADRs:** ADR-061 (gallery panes, from Phase 26 continuation), ADR-062 (sidebar toggle), ADR-063 (6-axis taxonomy), ADR-064 (accordion-first harmonization)
-**Status:** IN PROGRESS (CSS rounding tuning ongoing)
+**Status:** COMPLETE. CSS rounding verified; all open items resolved or deferred to future polish.
 **Audit log:** `.antigravity/logs/audit_2026-05-03.md`
 
 ### Delivered
@@ -525,6 +525,76 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - `tasks_test_ui_current.md` §12 Gallery UI tests need re-verification after taxonomy changes.
 - UX-CSS-DEMO: review `assets/demo/demo_vetinst.css` after default theme finalised.
 - Gallery Clone to Sandbox re-verify.
+
+---
+
+## Phase 28: Export Redesign + assembly→join Rename — COMPLETE 2026-05-04
+
+**ADRs:** ADR-047 (§7 updated — scope toggle, T3 audit trail), ADR-051 (export_handlers new kwarg, deleted outputs), ADR-066 (assembly→join rename)
+**Status:** COMPLETE.
+**Audit log:** `.antigravity/logs/sessions/session_20260504.md`
+**Changelog:** `.antigravity/knowledge/changelog.md`
+
+### Delivered
+
+- **Export redesign (EXPORT-REDESIGN-1, EXPORT-REDESIGN-2):**
+  - Single "Export" accordion panel replaces "Global Project Export" + "Single Graph Export".
+  - 3-way scope toggle `[Global project | Active group | Active plot]` gated on `export_bundle_enabled + export_graph_enabled`.
+  - `t3_steps.yaml` auto-included in bundle when T3 has committed nodes.
+  - T3 Audit Trail auto-generated section in `report.qmd`.
+  - Separate "Export Audit Report" button removed — audit trail is now part of the bundle.
+  - `active_home_subtab` kwarg added to `define_export_server`.
+
+- **assembly_manifests → join_manifests rename (ADR-066):**
+  - YAML key, Python dict key, role string, TubeMap labels, UI labels all renamed.
+  - ~35 files, ~65 occurrences across `app/`, `libs/`, `config/`.
+  - Exception: `session_manager.py` + `debug_session_flow.py` Parquet path labels NOT renamed.
+  - Variable name rule: never use bare `join` as Python variable; use `join_defs`, `join_block`.
+
+- **Manifest modularisation:**
+  - `1_test_data_ST22_dummy.yaml`: 1334 → ~290 lines via `!include` fragments.
+  - `figshare_integration.yaml`: 224 → 69 lines.
+  - Fragment threshold documented in `manifest_data_contract_rules.md` §6.
+
+### Open / deferred
+
+- `single_graph_export_handlers.py` still exists and is imported by `home_theater.py` but has no UI mount point (dead code after accordion removal). Decision needed: remove or keep.
+- EXPORT-HASH-2: read `decision_hash` from Parquet metadata at export time.
+- SESSION-PERSONA-1: gate ghost_save on `t3_sandbox_enabled`.
+
+---
+
+## Phase 29: Library Extraction + Rename — COMPLETE 2026-05-05
+
+**ADRs:** ADR-067 (`libs/blueprint_arch/`), ADR-068 (`libs/test_lab/`)
+**Status:** COMPLETE.
+
+### Delivered
+
+- **`libs/blueprint_arch/`** — new dedicated lib for Blueprint Architect pure-Python logic:
+  - `blueprint_mapper.py` moved from `libs/utils/src/utils/` → `libs/blueprint_arch/src/blueprint_arch/`
+  - `manifest_navigator.py` moved from `app/modules/` → `libs/blueprint_arch/src/blueprint_arch/`
+  - `debug_blueprint_mapper.py` moved to `libs/blueprint_arch/tests/`
+  - `blueprint_handlers.py` imports updated; installed as editable lib
+
+- **`libs/test_lab/`** — new lib absorbing `generator_utils` (Option B):
+  - All 4 source modules (`aqua_synthesizer`, `bootstrapper`, `extractor`, `reconciler`) migrated with updated headers
+  - All 4 test scripts migrated with updated imports
+  - `assets/scripts/generate_demo_data.py` import updated
+  - `generator_utils` uninstalled and directory removed
+
+- **`dev_studio.py` → `test_lab_studio.py` rename:**
+  - Class `DevStudio` → `TestLabStudio`
+  - All consumers updated (`server.py`, `home_theater.py`)
+
+- **`workspace_standard.md` `@sync` guardrail** — added to §3 Operational Mandate
+
+- **Documentation sweep:** `dependency_index.md`, `tasks.md`, `architecture_decisions.md` (ADR-067/068) updated
+
+### Open / deferred
+
+- `single_graph_export_handlers.py` dead code — still deferred (see Phase 28 open items)
+- ADR-045 Two-Category Law refactor for remaining `app/modules/` files still pending (UTILS-RELOC-2, ADR045-REFACTOR)
 
 ---
 
@@ -564,7 +634,7 @@ Ten ordered substeps (A→J, risk-ascending):
 
 ### Protocol
 
-Reuses `.antigravity/knowledge/refactor_protocol_phase24.md` verbatim. Same verification gate. Same halt-and-ask conditions.
+Reuses `.antigravity/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same verification gate. Same halt-and-ask conditions.
 
 ---
 

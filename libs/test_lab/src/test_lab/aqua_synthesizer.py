@@ -1,10 +1,10 @@
 # @deps
 # provides: AquaSynthesizer class (synthesize), standalone helpers: clean_header, generate_fake_column, introduce_missing_values
 # consumes: polars, numpy, random, re, pathlib, datetime, argparse (stdlib)
-# consumed_by: assets/scripts/generate_demo_data.py, libs/generator_utils/tests/debug_sdk.py
+# consumed_by: assets/scripts/generate_demo_data.py, libs/test_lab/tests/debug_sdk.py
 # @end_deps
 #!/usr/bin/env python3
-# libs/generator_utils/src/generator_utils/aqua_synthesizer.py
+# libs/test_lab/src/test_lab/aqua_synthesizer.py
 import argparse
 import polars as pl
 import numpy as np
@@ -85,7 +85,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="AquaSynthesizer: Agnostic Synthetic Data Production Engine.")
 
-    # Agnostic DevStudio Mode
+    # Agnostic Test Lab Mode
     parser.add_argument("--generate_only", nargs='+',
                         help="Quick generate mode: provide headers as list")
     parser.add_argument("--n_rows", type=int, default=50,

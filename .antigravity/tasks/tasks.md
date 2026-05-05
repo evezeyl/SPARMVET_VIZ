@@ -40,7 +40,7 @@
   - `"◆ Assembly"` → `"◆ Join"` (wrangle_studio.py)
   - `"Assembly Output (Input)"` → `"Join Output (Input)"` (wrangle_studio.py)
   - `f"{sid} — assembly"` → `f"{sid} — join"` (blueprint_handlers.py)
-  - ⭐ TubeMap node labels (what the boss sees in Cytoscape) — `libs/utils/src/utils/blueprint_mapper.py`:
+  - ⭐ TubeMap node labels (what the boss sees in Cytoscape) — `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`:
     - line ~167: `"{asid}\\nAssembly"` → `"{asid}\\nJoin"`
     - line ~189: `"{asid}\\nAssembly Wrangling"` → `"{asid}\\nJoin Wrangling"`
 
@@ -96,7 +96,7 @@ These items require a design decision or scope confirmation before implementatio
 
 ### libs/utils/ Relocations (Pattern B)
 
-- [ ] **UTILS-RELOC-1**: Move `blueprint_mapper.py` from `libs/utils/` → `app/modules/` — it consumes Shiny-adjacent logic and should not live in a headless-safe lib. Decision needed: confirm move won't break connector or transformer imports.
+- [x] **UTILS-RELOC-1**: ~~Move `blueprint_mapper.py` from `libs/utils/` → `app/modules/`~~ — Resolved differently: moved to `libs/blueprint_arch/` (new dedicated lib, ADR-067). `manifest_navigator.py` also moved there from `app/modules/`. Imports updated in `blueprint_handlers.py`. (2026-05-05)
 - [ ] **UTILS-RELOC-2**: `gallery_manager.py` appears in both `libs/utils/src/utils/` and `libs/viz_gallery/src/viz_gallery/` — deduplicate. Decision needed: which copy is canonical? Delete the other and fix all imports.
 
 ### app/modules/ Two-Category Law Refactor (ADR-045)
@@ -230,6 +230,7 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 | Bugs/Export/Import/UX resolved 2026-05-02 | STATE-T2, STATE-1/2, BUG-PERF-1, AUDIT-2/3/4, PROP-4, EXPORT-TIERS/SGE-2/4/7, IMPORT-1, UX-1, UX-NOTIF-1 | 2026-05-02 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
 | Wave 1 Remediation | §1A §2B §3B §3D §5 §6A/B/C §7A/B §8 + test fixes | 2026-05-03 | [tasks_archive_2026-05-03.md](archives/tasks_archive_2026-05-03.md) |
 | CSS / Gallery Sprint 2026-05-03 | CSS-TOGGLE, GALLERY-ICONS/SELECTALL/PIVOT/PANES/META/RECIPES-13/TAXONOMY-6/CHEAT/PREVIEWS/META-6AXIS, CSS-ACCORDION-HARM, HOME-PLOT-COLLAPSE, BLUEPRINT-WORK-COLLAPSE, REVERT-ADR064-COLLAPSE, CSS-BLUE-HARM/FIXES, UI-STYLE-GUIDE | 2026-05-03 | ADR-056..065 |
+| Phase 28/29: Export redesign + assembly→join rename + repo hygiene + lib extraction | Export scope toggle, assembly→join rename, .antigravity restructure, `libs/blueprint_arch/` + `libs/test_lab/` extracted, `dev_studio` → `test_lab_studio`, `@sync` guardrail | 2026-05-04/05 | ADR-066, ADR-067, ADR-068 |
 
 **Phase 24 commits:** `89bb5ef` `890b609` `f540cbf` `d50197e` `4c38f26` `18dbd46` `f0f7d92` `2393e50` `0b50fbd`
 **Phase 25 commits:** `294814e` `9b66656` `72726df` `45591ac` `95b48ac` `dc4464c` `320f6bf`

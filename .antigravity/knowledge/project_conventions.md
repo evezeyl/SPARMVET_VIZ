@@ -12,7 +12,7 @@
 | `app/src/ui.py` | 3-Zone Dashboard Shell (static HTML/CSS only) | UI Spec → Layout | `Navigation`, `Theater`, `Audit Stack` |
 | `config/ui/theme.css` | Base stylesheet — injected at startup via `bootloader.get_theme_css_path()` | CSS → `ui.tags.style()` | ADR-055; personas declare `theme_css:` key to override for branding. Canonical colours: primary blue `#345beb`, export teal `#10a395`, reset amber `#ffc107`. View title banners use `.view-title-banner` / `.banner-title` / `.banner-subtitle`. |
 | `app/src/server.py` | **Thin Orchestrator only** (ADR-045, 228 lines) | Shared state/calcs → Handler delegation | `active_cfg`, `tier1_anchor`, `tier_reference`, `tier3_leaf`, 5× `define_server()` calls |
-| `app/modules/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema` — importable anywhere, zero Shiny dependency |
+| `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema` — importable anywhere, zero Shiny dependency |
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
 | `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_recipe_changes` |
 | `app/handlers/blueprint_handlers.py` | Blueprint Architect Shiny wiring (ADR-039/045) | Reactive hooks → Architect UI | `_handle_manifest_import`, `_do_load_component`, `sync_blueprint_mapper`, `_handle_upload_*` |
@@ -23,7 +23,7 @@
 | `libs/transformer/src/transformer/data_wrangler.py` | Layer 1 execution (Atomic) | Dataset → LazyFrame | `DataWrangler`, `@register_action` |
 | `libs/transformer/src/transformer/data_assembler.py` | Layer 2 orchestration (Relational) | Multiple LFs → LazyFrame | `DataAssembler`, `sink_parquet` |
 | `libs/utils/src/utils/config_loader.py` | Recursive YAML & Include Resolver | YAML → Python Dict | `ConfigManager`, `!include` |
-| `libs/generator_utils/src/generator_utils/aqua_synthesizer.py` | [ADR-032] Relational Data Synthesis (SDK Core) | Schema → TSV | `AquaSynthesizer`, `--generate_only` |
+| `libs/test_lab/src/test_lab/aqua_synthesizer.py` | [ADR-032/ADR-068] Relational Data Synthesis (SDK Core) | Schema → TSV | `clean_header`, `generate_fake_column`, `--generate_only` |
 | `libs/viz_factory/src/viz_factory.py` | Artist Pillar: Plot Composition | Data + Manifest → ggplot | `VizFactory`, `Plot Layers` |
 | `libs/viz_gallery/assets/refresh_gallery.py` | [ADR-037] Gallery Indexing & Integrity Refresher | CLI Tool → JSON | `refresh_gallery.py`, Pivot-Index |
 | `app/modules/gallery_viewer.py` | [ADR-033/057] Split-Pane Gallery (full-width) + sidebar filter builder | Main content + sidebar UI | `GalleryViewer.render_explorer_ui()` (main), `GalleryViewer.build_sidebar_ui()` (nav_sidebar accordion — called by home_theater.py sidebar_tools_ui) |
@@ -166,7 +166,7 @@ tier1:
 
 ## 8. Blueprint Architect — Lineage Index (ADR-040 / ADR-045)
 
-Five pure functions in `app/modules/manifest_navigator.py` provide the manifest structural index powering the Blueprint Architect (moved from `server.py` in Phase 22, ADR-045):
+Five pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` provide the manifest structural index powering the Blueprint Architect (moved to `libs/blueprint_arch/` in Phase 29, ADR-067):
 
 | Function | Keyed by | Value summary |
 | :--- | :--- | :--- |

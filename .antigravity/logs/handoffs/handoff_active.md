@@ -508,4 +508,60 @@ Key files: `app/handlers/export_handlers.py`, `app/handlers/home_theater.py`.
 - `join_manifests:` (not `assembly_manifests:`) everywhere — YAML keys, Python dict keys, role strings, UI labels, TubeMap labels.
 - Never `join` as a bare Python variable — use `join_defs`, `join_block`, etc.
 - Persona IDs: HYPHENS only.
+
+---
+
+## Session 17 — Library Extraction + Rename (2026-05-05)
+
+**Agent:** @dasharch (Claude Sonnet 4.6)
+**Branch:** dev
+
+### What was done
+
+#### `libs/blueprint_arch/` — new lib (scaffolded + migrated)
+
+- Created `libs/blueprint_arch/pyproject.toml` + `src/blueprint_arch/__init__.py` + `tests/`
+- Moved `libs/utils/src/utils/blueprint_mapper.py` → `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- Moved `app/modules/manifest_navigator.py` → `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`
+- Moved `libs/utils/tests/debug_blueprint_mapper.py` → `libs/blueprint_arch/tests/debug_blueprint_mapper.py`
+- Updated `app/handlers/blueprint_handlers.py` imports: `from utils.blueprint_mapper import BlueprintMapper` → `from blueprint_arch.blueprint_mapper import BlueprintMapper`; `from app.modules.manifest_navigator import ...` → `from blueprint_arch.manifest_navigator import ...`
+- Updated `@deps` comment in `blueprint_handlers.py`
+- Installed: `.venv/bin/pip install -e libs/blueprint_arch/`
+- Deleted old source files from `libs/utils/src/utils/` and `app/modules/`
+
+#### `libs/test_lab/` — new lib (scaffolded + absorbed generator_utils)
+
+- Created `libs/test_lab/pyproject.toml` + `src/test_lab/__init__.py` + `tests/`
+- Copied all 4 source modules from `libs/generator_utils/src/generator_utils/` → `libs/test_lab/src/test_lab/` (updated file headers)
+- Copied all 4 test scripts from `libs/generator_utils/tests/` → `libs/test_lab/tests/` (updated imports: `generator_utils` → `test_lab`)
+- Updated `assets/scripts/generate_demo_data.py`: `from generator_utils.aqua_synthesizer import AquaSynthesizer` → `from test_lab.aqua_synthesizer import AquaSynthesizer`
+- Installed: `.venv/bin/pip install -e libs/test_lab/`
+- Uninstalled `generator_utils` from venv
+- Deleted `libs/generator_utils/` directory entirely
+
+#### `dev_studio.py` → `test_lab_studio.py` rename
+
+- Created `app/modules/test_lab_studio.py` with class `TestLabStudio` (was `DevStudio`)
+- Updated `app/src/server.py`: import + instantiation (variable stays `dev_studio` as parameter name convention)
+- Updated `app/handlers/home_theater.py`: `@deps` comment, docstring parameter type
+- Deleted `app/modules/dev_studio.py`
+
+#### Remaining housekeeping
+
+- `workspace_standard.md` §3: added `@sync Guardrail` bullet (concept recovered from deleted `rules_behavior.md`)
+- `dependency_index.md`: updated all affected entries (blueprint_arch, test_lab, test_lab_studio, server.py, home_theater, blueprint_handlers)
+- `rules_ui_dashboard.md` documents list: `blueprint_mapper` path updated
+
+### State
+
+- All new lib imports verified: `blueprint_arch.blueprint_mapper`, `blueprint_arch.manifest_navigator`, `test_lab.aqua_synthesizer`, `test_lab.reconciler`, `test_lab.bootstrapper`, `test_lab.extractor` — all import OK.
+- No logic changes to any existing functions; pure structural relocation.
+- **No tests run** — no logic changed, but run `PYTHONPATH=. ./.venv/bin/pytest app/tests/test_filter_operators.py -q` before adding new code.
+
+### Deferred
+
+- `@deps` blocks in test_lab_studio.py have no changes needed (already updated during rename)
+- `tree.txt` not updated (not a mandate here; run `assets/scripts/build_dep_graph.py` after next coding session)
+- Dead code `single_graph_export_handlers.py` — still imported by `home_theater.py` line 50+1377, still no UI mount point. Decision pending (keep or remove).
+- ADR for lib extraction (blueprint_arch + test_lab) not yet recorded — add ADR-067 and ADR-068 in next session if desired.
 - `export_graph_enabled` now gates the entire Export panel (scope toggle + bundle), not a separate accordion.

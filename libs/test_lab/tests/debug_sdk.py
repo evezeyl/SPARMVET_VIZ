@@ -1,6 +1,6 @@
-from generator_utils.aqua_synthesizer import AquaSynthesizer
-from generator_utils.bootstrapper import ManifestBootstrapper
-from generator_utils.extractor import XlsxExtractor
+from test_lab.aqua_synthesizer import AquaSynthesizer
+from test_lab.bootstrapper import ManifestBootstrapper
+from test_lab.extractor import XlsxExtractor
 import polars as pl
 from pathlib import Path
 import os

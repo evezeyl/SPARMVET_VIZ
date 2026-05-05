@@ -16,7 +16,7 @@ Triggered for any **Polars** transformation (Wrangling) or **Plotnine** factory 
 
 ## 3. The Evidence Loop
 
-All implementation work MUST follow the **Evidence Loop** defined in [rules_behavior.md](../rules/rules_behavior.md#1-the-verify-protocol-mandatory-evidence-loop):
+All implementation work MUST follow the **Evidence Loop** defined in [rules_verification_testing.md](../rules/rules_verification_testing.md):
 
 1. **Contract Pre-definition** (Test data & manifest).
 2. **CLI Execution** via `argparse`.

@@ -1,7 +1,7 @@
 # @deps
 # provides: ManifestBootstrapper class (bootstrap) — infers TSV schemas and writes manifest YAML fragments
 # consumes: polars, pathlib, typing, yaml, re (stdlib/third-party)
-# consumed_by: libs/generator_utils/tests/debug_sdk.py
+# consumed_by: libs/test_lab/tests/debug_sdk.py
 # @end_deps
 import polars as pl
 from pathlib import Path

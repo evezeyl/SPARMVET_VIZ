@@ -1,6 +1,6 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.dev_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003
 # @end_deps
@@ -18,7 +18,7 @@ from app.modules.session_manager import SessionManager
 from utils.config_loader import ConfigManager
 from viz_factory.viz_factory import VizFactory
 from app.modules.wrangle_studio import WrangleStudio
-from app.modules.dev_studio import DevStudio
+from app.modules.test_lab_studio import TestLabStudio
 from app.modules.gallery_viewer import gallery_viewer
 from app.modules.persona_validator import PersonaValidator
 
@@ -65,7 +65,7 @@ def server(input, output, session):
 
     # --- 🏗️ Module Initialization (Phase 11-F / ADR-039) ---
     wrangle_studio = WrangleStudio(session.id)
-    dev_studio = DevStudio()
+    dev_studio = TestLabStudio()
 
     # --- 📦 State Management (Universal) ---
     anchor_path = reactive.Value(None)

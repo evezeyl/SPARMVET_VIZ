@@ -1,4 +1,4 @@
-# libs/utils/src/utils/blueprint_mapper.py
+# libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py
 
 # @deps
 # provides: class:BlueprintMapper, constant:_CY_COLOURS

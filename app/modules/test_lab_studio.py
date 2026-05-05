@@ -1,7 +1,7 @@
-# app/modules/dev_studio.py
+# app/modules/test_lab_studio.py
 
 # @deps
-# provides: class:DevStudio
+# provides: class:TestLabStudio
 # consumed_by: app/handlers/home_theater.py, app/src/server.py
 # doc: .antigravity/knowledge/architecture_decisions.md#ADR-003
 # @end_deps
@@ -13,9 +13,9 @@ from pathlib import Path
 from app.src.bootloader import bootloader
 
 
-class DevStudio:
-    """ComponentName (dev_studio.py)
-    Project-agnostic Developer Engine for synthetic data generation and audit.
+class TestLabStudio:
+    """TestLabStudio (test_lab_studio.py)
+    Project-agnostic Test Lab Engine for synthetic data generation and audit.
     ADR-003: Agnostic Discovery (Project/Schema).
     ADR-031: Path Authority for Python Interpreter.
     """

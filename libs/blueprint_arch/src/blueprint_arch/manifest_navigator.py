@@ -1,4 +1,4 @@
-"""app/modules/manifest_navigator.py
+"""libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py
 Pure manifest introspection engine (ADR-045).
 
 Public API

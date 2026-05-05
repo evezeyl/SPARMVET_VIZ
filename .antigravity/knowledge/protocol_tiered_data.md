@@ -1,7 +1,7 @@
 # Architecture Decision Record: Tiered Data Lifecycle (ADR-024)
 
 **Target Component:** libs/transformer & app/server
-**Status:** Planned / Pending Implementation (Phase 3 & Phase 4)
+**Status:** Implemented (Phases 3–4+; in production)
 
 ## Context & Problem
 

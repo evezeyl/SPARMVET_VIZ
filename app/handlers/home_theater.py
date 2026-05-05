@@ -29,7 +29,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot)
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/dev_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py, app/handlers/single_graph_export_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py, app/handlers/single_graph_export_handlers.py
 # consumed_by: app/src/server.py
 # doc: .antigravity/knowledge/architecture_decisions.md#ADR-043, .antigravity/knowledge/architecture_decisions.md#ADR-044, .antigravity/knowledge/architecture_decisions.md#ADR-045, .antigravity/knowledge/architecture_decisions.md#ADR-047, .antigravity/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
@@ -114,8 +114,8 @@ def define_server(input, output, session, *,
         Path Authority (ADR-031).
     wrangle_studio : WrangleStudio
         Shared WrangleStudio state (for render_ui routing).
-    dev_studio : DevStudio
-        Shared DevStudio state.
+    dev_studio : TestLabStudio
+        Shared TestLabStudio state.
     orchestrator : DataOrchestrator
         Used for Tier 1 materialization in dynamic_tabs.
     viz_factory : VizFactory
@@ -543,7 +543,7 @@ def define_server(input, output, session, *,
     @render.ui
     def dynamic_tabs():
         """
-        Routes to WrangleStudio, DevStudio, Gallery, or the Unified Home Theater.
+        Routes to WrangleStudio, TestLab, Gallery, or the Unified Home Theater.
         ADR-043 / Phase 21-A: 'Analysis Theater / Viz' nav mode eliminated.
         Home renders exclusively from manifest analysis_groups.
         """

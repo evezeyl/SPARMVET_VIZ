@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blueprint_arch"
+version = "0.1.0"
+description = "SPARMVET_VIZ Blueprint Architect pure-Python logic (manifest navigation, Cytoscape mapping)"
+dependencies = [
+    "pyyaml>=6.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
