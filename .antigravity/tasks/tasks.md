@@ -143,7 +143,7 @@ These items require a design decision or scope confirmation before implementatio
 
 - [x] **DEPLOY-CDN-1**: Vendor Cytoscape@3.29.2 + Dagre@0.8.5 + cytoscape-dagre@2.5.0 + Bootstrap Icons@1.11.1 into `app/src/www/vendor/`. Updated `main.py` to serve `www/` as static assets (`App(..., static_assets=_www)`). Updated `ui.py` to use `/vendor/*` local paths. App imports clean. 97/97 tests pass. ✅ 2026-05-05
 
-- [ ] **DEPLOY-MODULES-1**: Gate server-side module instantiation and handler registration in `server.py` on persona flags (positive inclusion — per `considerations.md`). Currently all 5 `define_server()` calls and all module instantiations (WrangleStudio, TestLabStudio, blueprint_handlers, gallery_handlers, ingestion_handlers) fire unconditionally regardless of persona. Fix: wrap each in `if bootloader.is_enabled(...)` guards. This is also the correct implementation mechanism for the persona scoping decisions (ADR-069/ADR-070). Affects `app/src/server.py`.
+- [x] **DEPLOY-MODULES-1**: Gate server-side module instantiation and handler registration in `server.py` on persona flags (positive inclusion). Gated: TestLabStudio (`test_lab_enabled`), audit_stack (`t3_sandbox_enabled`), blueprint_handlers (`blueprint_enabled`), gallery_handlers (`gallery_enabled`). Always-on: wrangle_studio, home_theater, ingestion_handlers. Also guarded `dev_studio.render_ui()` in home_theater.py against `None`. ✅ 2026-05-05
 
 - [x] **VENDOR-MANIFEST-1**: Created `app/src/www/vendor/VENDOR_MANIFEST.md` — records all vendored assets with version, source URL, licence, and date. Must be updated whenever a vendor asset is added/upgraded. ✅ 2026-05-05
 

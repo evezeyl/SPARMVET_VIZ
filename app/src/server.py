@@ -65,7 +65,7 @@ def server(input, output, session):
 
     # --- 🏗️ Module Initialization (Phase 11-F / ADR-039) ---
     wrangle_studio = WrangleStudio(session.id)
-    dev_studio = TestLabStudio()
+    dev_studio = TestLabStudio() if bootloader.is_enabled("test_lab_enabled") else None
 
     # --- 📦 State Management (Universal) ---
     anchor_path = reactive.Value(None)
@@ -194,7 +194,8 @@ def server(input, output, session):
         get_schema_registry=lambda: _schema_registry.get(),
         get_includes_map=lambda: _includes_map.get(),
     )
-    dev_studio.define_server(input, output, session)
+    if bootloader.is_enabled("test_lab_enabled"):
+        dev_studio.define_server(input, output, session)
 
     # --- Shared Utilities (passed as keyword args to handler define_server calls) ---
 
@@ -243,43 +244,46 @@ def server(input, output, session):
         notification_log=notification_log,
     )
 
-    # Pipeline Audit: T2/T3 nodes, btn_apply, recipe_pending_badge
-    from app.handlers.audit_stack import define_server as _define_audit_server
-    _define_audit_server(
-        input, output, session,
-        wrangle_studio=wrangle_studio,
-        recipe_pending=recipe_pending,
-        snapshot_recipe=snapshot_recipe,
-        active_cfg=active_cfg,
-        active_collection_id=active_collection_id,
-        home_state=home_state,
-        session_manager=session_manager,
-        notification_log=notification_log,
-    )
+    # Pipeline Audit: T2/T3 nodes, btn_apply, recipe_pending_badge (requires t3_sandbox_enabled)
+    if bootloader.is_enabled("t3_sandbox_enabled"):
+        from app.handlers.audit_stack import define_server as _define_audit_server
+        _define_audit_server(
+            input, output, session,
+            wrangle_studio=wrangle_studio,
+            recipe_pending=recipe_pending,
+            snapshot_recipe=snapshot_recipe,
+            active_cfg=active_cfg,
+            active_collection_id=active_collection_id,
+            home_state=home_state,
+            session_manager=session_manager,
+            notification_log=notification_log,
+        )
 
     # Blueprint Architect: manifest import, TubeMap, Lineage Rail, upload/save/download
-    from app.handlers.blueprint_handlers import define_server as _define_blueprint_server
-    _define_blueprint_server(
-        input, output, session,
-        bootloader=bootloader,
-        wrangle_studio=wrangle_studio,
-        orchestrator=orchestrator,
-        safe_input=_safe_input,
-        includes_map=_includes_map,
-        component_ctx_map=_component_ctx_map,
-        schema_registry=_schema_registry,
-    )
+    if bootloader.is_enabled("blueprint_enabled"):
+        from app.handlers.blueprint_handlers import define_server as _define_blueprint_server
+        _define_blueprint_server(
+            input, output, session,
+            bootloader=bootloader,
+            wrangle_studio=wrangle_studio,
+            orchestrator=orchestrator,
+            safe_input=_safe_input,
+            includes_map=_includes_map,
+            component_ctx_map=_component_ctx_map,
+            schema_registry=_schema_registry,
+        )
 
-    # Gallery: filtering, preview, clone, T3 transplant (22-F)
-    from app.handlers.gallery_handlers import define_server as _define_gallery_server
-    _define_gallery_server(
-        input, output, session,
-        bootloader=bootloader,
-        wrangle_studio=wrangle_studio,
-        safe_input=_safe_input,
-        current_persona=current_persona,
-        home_state=home_state,
-    )
+    # Gallery: filtering, preview, clone
+    if bootloader.is_enabled("gallery_enabled"):
+        from app.handlers.gallery_handlers import define_server as _define_gallery_server
+        _define_gallery_server(
+            input, output, session,
+            bootloader=bootloader,
+            wrangle_studio=wrangle_studio,
+            safe_input=_safe_input,
+            current_persona=current_persona,
+            home_state=home_state,
+        )
 
     # Ingestion & persona switching
     from app.handlers.ingestion_handlers import define_server as _define_ingestion_server

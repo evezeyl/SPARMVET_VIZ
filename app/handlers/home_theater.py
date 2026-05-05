@@ -554,6 +554,8 @@ def define_server(input, output, session, *,
         if active_sidebar == "Wrangle Studio":
             return ui.div(wrangle_studio.render_ui(), class_="theater-container-main")
         if active_sidebar == "Test Lab":
+            if dev_studio is None:
+                return ui.div()
             return ui.div(dev_studio.render_ui(), class_="theater-container-main")
         if active_sidebar == "Gallery":
             return ui.div(gallery_viewer.render_explorer_ui(), class_="theater-container-main")
