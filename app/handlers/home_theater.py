@@ -1137,8 +1137,8 @@ def define_server(input, output, session, *,
                 icon=ui.tags.i(class_="bi bi-filter-circle-fill")
             ))
 
-        # Export — gated by export_bundle_enabled
-        if bootloader.is_enabled("export_bundle_enabled"):
+        # Export — gated by export_enabled
+        if bootloader.is_enabled("export_enabled"):
             panels.append(ui.accordion_panel(
                 "Export",
                 ui.div(

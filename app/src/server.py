@@ -257,6 +257,7 @@ def server(input, output, session):
             home_state=home_state,
             session_manager=session_manager,
             notification_log=notification_log,
+            bootloader=bootloader,
         )
 
     # Blueprint Architect: manifest import, TubeMap, Lineage Rail, upload/save/download

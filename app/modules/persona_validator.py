@@ -14,11 +14,12 @@ _REQUIRED_FLAGS = [
     "t3_sandbox_enabled",
     "developer_mode_enabled",
     "gallery_enabled",
+    "blueprint_enabled",
+    "test_lab_enabled",
     "comparison_mode_enabled",
     "session_management_enabled",
     "import_helper_enabled",
-    "export_bundle_enabled",
-    "export_graph_enabled",
+    "export_enabled",
     "audit_report_enabled",
     "metadata_ingestion_enabled",
     "data_ingestion_enabled",
@@ -30,7 +31,6 @@ _CASCADE_GATES: dict[str, list[str]] = {
         "t3_sandbox_enabled",
         "comparison_mode_enabled",
         "session_management_enabled",
-        "export_graph_enabled",
         "audit_report_enabled",
     ],
     "import_helper_enabled": ["data_ingestion_enabled"],
@@ -89,6 +89,25 @@ class PersonaValidator:
                             f"'{child}=True' has no effect — '{master}=False' "
                             f"(bootloader cascade will suppress it at runtime). Fix the template."
                         )
+
+        # Rule 6: T3 cascade — if t3_sandbox_enabled then its co-flags must ALL be true.
+        # These are not parent→child gates (T3 doesn't imply them), but required companions.
+        # A misconfigured template where T3 is on but session/comparison/export are off would
+        # produce a broken UX (audit nodes but nowhere to save, no scope for export).
+        _T3_COMPANIONS = [
+            "comparison_mode_enabled",
+            "audit_report_enabled",
+            "session_management_enabled",
+            "export_enabled",
+        ]
+        if features.get("t3_sandbox_enabled", False):
+            missing = [f for f in _T3_COMPANIONS if not features.get(f, False)]
+            if missing:
+                errors.append(
+                    f"t3_sandbox_enabled=True requires these flags to also be True: "
+                    f"{', '.join(missing)}. "
+                    f"Fix the template or set t3_sandbox_enabled: false."
+                )
 
         # Print warnings (non-fatal)
         for w in warnings:

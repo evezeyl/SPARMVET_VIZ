@@ -56,7 +56,7 @@ def define_export_server(input, output, session, *,
     @output
     @render.ui
     def system_tools_ui():
-        if not bootloader.is_enabled("export_bundle_enabled"):
+        if not bootloader.is_enabled("export_enabled"):
             return ui.div()
 
         n_active = len(applied_filters.get())
@@ -70,7 +70,7 @@ def define_export_server(input, output, session, *,
 
         # 3-way scope toggle — only when persona has BOTH export_bundle + export_graph
         scope_toggle = ui.div()
-        if bootloader.is_enabled("export_graph_enabled") and active_home_subtab is not None:
+        if bootloader.is_enabled("export_enabled") and active_home_subtab is not None:
             cfg = active_cfg()
             groups = cfg.raw_config.get("analysis_groups", {})
             has_groups = bool(groups)

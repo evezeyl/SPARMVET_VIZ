@@ -13,6 +13,10 @@ features:
   wrangle_studio_enabled: false
   # Does the user have access to the Gallery Browser?
   gallery_enabled: true
+  # Can the user access the Blueprint Architect (manifest IDE)?
+  blueprint_enabled: true
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: false
   # Comparison Theater (Phase 12-A)
   comparison_mode_enabled: true
   # Session Management visibility
@@ -21,10 +25,8 @@ features:
   import_helper_enabled: true
   # Can the user access T3 sandbox (wrangling + right sidebar audit panel)?
   t3_sandbox_enabled: true
-  # Can the user export data bundles (Zip)?
-  export_bundle_enabled: true
-  # Can the user export the active single graph?
-  export_graph_enabled: true
+  # Can the user export results (bundle zip + scope toggle)?
+  export_enabled: true
   # Can the user export the consolidated audit report (HTML/PDF/DOCX)?
   audit_report_enabled: true
   # Can the user upload replacement metadata (triggers T1 rebuild)?

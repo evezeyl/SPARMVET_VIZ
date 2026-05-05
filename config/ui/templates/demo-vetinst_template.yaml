@@ -12,12 +12,15 @@ features:
   developer_mode_enabled: false
   wrangle_studio_enabled: false
   gallery_enabled: false
+  # Can the user access the Blueprint Architect (manifest IDE)?
+  blueprint_enabled: false
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: false
   comparison_mode_enabled: false
   session_management_enabled: false
   import_helper_enabled: false
   t3_sandbox_enabled: false
-  export_bundle_enabled: false
-  export_graph_enabled: false
+  export_enabled: false
   audit_report_enabled: false
   metadata_ingestion_enabled: false
   data_ingestion_enabled: false

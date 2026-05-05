@@ -81,7 +81,7 @@
 
 ### Session / Import
 
-- [ ] **SESSION-PERSONA-1** `[sonnet/low]`: Autosave (`ghost_save`) must be gated on `t3_sandbox_enabled`. The save/export/import UI is already hidden for non-T3 personas. The open question is whether the `ghost_save` timer fires regardless — if so, it would write empty or meaningless session files for static/pipeline personas. Fix: before triggering `ghost_save`, check that `t3_sandbox_enabled` is true in the active persona config. If not, skip the write entirely.
+- [x] **SESSION-PERSONA-1** `[sonnet/low]`: Ghost_save now gated by `ghost_save.enabled` in persona automation config. Added `bootloader` param to `audit_stack.define_server`; `_write_t3_ghost` only fires when `bootloader.get_automation_setting("ghost_save","enabled")` is truthy. Fixes `qa` persona (t3_sandbox=true but ghost_save=false). ✅ 2026-05-05
 
 - [ ] **INGEST-SANITIZE-1** `[sonnet/medium]`: Ghost sanitization logic (`libs/ingestion/`) is partially implemented — the sanitizer class exists but is not wired into the main ingestion pipeline. `IngestorOrchestrator` calls raw loaders directly; sanitization is only triggered in isolated debug runners. Wire `DataSanitizer` into `IngestorOrchestrator.run()` before T1 materialisation so ghost values (empty strings, whitespace-only, sentinel nulls) are stripped on every ingestion. See audit §1A (`audit_final_exhaustive_2026-05-03.md`).
 
@@ -129,10 +129,10 @@ These items require a design decision or scope confirmation before implementatio
 
 **Implementation tasks from this mapping:**
 
-- [ ] **PERSONA-CONFIG-VALIDATE-1** `[sonnet/medium]`: At persona config load time, validate T3 cascade rule: if `t3_sandbox_enabled: true` then `comparison_mode_enabled`, `audit_report_enabled`, `session_management_enabled`, `export_enabled`, `tier_toggle_t3_enabled` must all be true. Raise `PersonaConfigError` if violated. Resolves REVIEW-SCOPING-1.
-- [ ] **PERSONA-CONFIG-FLAG-1** `[haiku/low]`: Collapse `EXP_BNDL`/`EXP_GROUP`/`EXP_GRF` to single `export_enabled` flag in all persona templates and gating logic.
-- [ ] **PERSONA-CONFIG-FLAG-2** `[haiku/low]`: Collapse `MAN_SEL`/`MAN_FIX` to single `manifest_selector_visible: true/false` in all persona templates.
-- [ ] **PERSONA-CONFIG-FLAG-3** `[haiku/low]`: Add `gallery_enabled`, `blueprint_enabled`, `test_lab_enabled` as single on/off flags. Design for future sub-flag expansion (additive).
+- [x] **PERSONA-CONFIG-VALIDATE-1** `[sonnet/medium]`: PersonaValidator Rule 6 — T3 cascade: if `t3_sandbox_enabled=True` then `comparison_mode_enabled`, `audit_report_enabled`, `session_management_enabled`, `export_enabled` must all be True. Fatal error if violated. ✅ 2026-05-05
+- [x] **PERSONA-CONFIG-FLAG-1** `[haiku/low]`: Collapsed `export_bundle_enabled` + `export_graph_enabled` → `export_enabled` in all 8 templates + bootloader backward compat + handler call sites. ✅ 2026-05-05
+- [x] **PERSONA-CONFIG-FLAG-2** `[haiku/low]`: `manifest_selector_visible` mirrored into features dict by bootloader (`_load_persona_config`). `bootloader.is_enabled("manifest_selector_visible")` now works. ✅ 2026-05-05
+- [x] **PERSONA-CONFIG-FLAG-3** `[haiku/low]`: Added `blueprint_enabled` + `test_lab_enabled` to all 8 templates and to `persona_validator._REQUIRED_FLAGS`. `gallery_enabled` was already present. ✅ 2026-05-05
 - [ ] **UI-TITLE-1** `[sonnet/medium]`: Implement UI title/subtitle resolution: persona config override > manifest `info.display_name`/`info.subtitle` > nothing. Add `info.subtitle` field to manifest schema. `UI_TITLE` off hides both. Resolves REVIEW-UI-TITLE-SUBT.
 - [ ] **IMPORT-UI-1** `[sonnet/high]`: Unify the two import browse buttons into a single browse + mapping panel. Mapping panel auto-filters available data sources based on active persona flag: `META_ING` only → metadata schema; `IMP_HLP` → all manifest data sources (metadata included). `IMP_HLP` implies `META_ING`. Import behavior: **overwrite** (not merge). Affects `app/handlers/ingestion_handlers.py` and import panel UI. 
 

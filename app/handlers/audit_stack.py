@@ -104,10 +104,14 @@ def define_server(input, output, session, *,
                   wrangle_studio, recipe_pending, snapshot_recipe,
                   active_cfg, active_collection_id,
                   home_state=None, session_manager=None,
-                  notification_log=None):
+                  notification_log=None, bootloader=None):
     """Register all Pipeline Audit reactive handlers."""
     from app.handlers.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
+    _ghost_save_enabled = (
+        bootloader.get_automation_setting("ghost_save", "enabled")
+        if bootloader is not None else True
+    )
 
     # ------------------------------------------------------------------
     # btn_apply: commit T3 recipe, ghost save, release gatekeeper
@@ -195,7 +199,7 @@ def define_server(input, output, session, *,
         }
         home_state.set(new_state)
 
-        if session_manager is not None:
+        if session_manager is not None and _ghost_save_enabled:
             _write_t3_ghost(new_state, session_manager)
 
         snapshot_recipe.set(wrangle_studio.logic_stack.get())

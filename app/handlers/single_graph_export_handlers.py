@@ -54,7 +54,7 @@ def define_single_graph_export_server(input, output, session, *,
     @output
     @render.ui
     def single_graph_export_ui():
-        if not bootloader.is_enabled("export_graph_enabled"):
+        if not bootloader.is_enabled("export_enabled"):
             return ui.div()
 
         subtab = active_home_subtab.get()
@@ -92,7 +92,7 @@ def define_single_graph_export_server(input, output, session, *,
         import zipfile
         import yaml
 
-        if not bootloader.is_enabled("export_graph_enabled"):
+        if not bootloader.is_enabled("export_enabled"):
             yield b""
             return
 

@@ -276,11 +276,26 @@ class Bootloader:
 
         features = config.get("features", {})
 
+        # Backward compat: old templates may still have export_bundle_enabled /
+        # export_graph_enabled. Map them to export_enabled (either old flag true → true).
+        if "export_enabled" not in features:
+            features["export_enabled"] = (
+                features.pop("export_bundle_enabled", False)
+                or features.pop("export_graph_enabled", False)
+            )
+        else:
+            features.pop("export_bundle_enabled", None)
+            features.pop("export_graph_enabled", None)
+
+        # FLAG-2: mirror manifest_selector.visible into features for is_enabled() access.
+        ms = config.get("manifest_selector", {})
+        if "manifest_selector_visible" not in features:
+            features["manifest_selector_visible"] = bool(ms.get("visible", True))
+
         # Group B: interactivity_enabled=False suppresses all interactive child flags.
         if not features.get("interactivity_enabled", False):
             for child in ("t3_sandbox_enabled", "comparison_mode_enabled",
-                          "session_management_enabled", "export_graph_enabled",
-                          "audit_report_enabled"):
+                          "session_management_enabled", "audit_report_enabled"):
                 if features.get(child, False):
                     print(
                         f"[Bootloader] WARNING: {child}=True ignored — "

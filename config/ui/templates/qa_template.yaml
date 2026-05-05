@@ -26,12 +26,15 @@ features:
   developer_mode_enabled: true
   wrangle_studio_enabled: true
   gallery_enabled: true
+  # Can the user access the Blueprint Architect (manifest IDE)?
+  blueprint_enabled: true
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: true
   comparison_mode_enabled: true
   session_management_enabled: true
   import_helper_enabled: true
   t3_sandbox_enabled: true
-  export_bundle_enabled: true
-  export_graph_enabled: true
+  export_enabled: true
   metadata_ingestion_enabled: true
   data_ingestion_enabled: true
   # Show/hide sidebar accordion panels
