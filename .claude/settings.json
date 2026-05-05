@@ -245,10 +245,13 @@
       "Bash(sed -i 's/Assembly materialization failed/Join materialization failed/g' app/handlers/blueprint_handlers.py)",
       "Bash(sed -i -e 's/\\\\bis_assembly\\\\b/is_join_step/g' -e 's/\\\\bassembly_rels\\\\b/join_rels/g' -e 's/\\\\basm_sid\\\\b/join_sid/g' -e 's/\\\\basm_rel\\\\b/join_rel/g' app/modules/manifest_navigator.py)",
       "Bash(sed -i -e 's/\\\\bassemblies\\\\b/join_defs/g' app/modules/wrangle_studio.py app/modules/session_manager.py)",
-      "Bash(sed -i -e 's/\\\\bassemblies\\\\b/join_defs/g' -e 's/\\\\bassembly_id\\\\b/join_id/g' libs/utils/src/utils/blueprint_mapper.py libs/transformer/src/transformer/pipeline.py)"
+      "Bash(sed -i -e 's/\\\\bassemblies\\\\b/join_defs/g' -e 's/\\\\bassembly_id\\\\b/join_id/g' libs/utils/src/utils/blueprint_mapper.py libs/transformer/src/transformer/pipeline.py)",
+      "Bash(git show *)",
+      "Bash(cat /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.antigravity/tasks/tasks.md)"
     ],
     "additionalDirectories": [
-      "/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/projects"
+      "/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/projects",
+      "/tmp"
     ]
   }
 }
