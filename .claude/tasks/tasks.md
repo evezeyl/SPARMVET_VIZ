@@ -218,6 +218,23 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 
 ### Technical Debt
 
+- [ ] **REPO-CLEAN-1** `[haiku/low]` `[soon — after backup]` `[repo-hygiene]`: Full git history purge — remove EVE_WORK/, session logs, .vscode user files from ALL past commits (not just HEAD). Prerequisite: backup to external disc + gdrive sync run overnight.
+  ```bash
+  # 1. Verify backup exists on external disc
+  # 2. Install tool if needed:
+  pip install git-filter-repo
+  # 3. Rewrite history (removes the paths from every commit):
+  git filter-repo --path EVE_WORK/ --path .claude/logs/sessions/ \
+    --path .claude/logs/handoffs/archive/ \
+    --path .vscode/bookmarks.json --path .vscode/favorites/ \
+    --path .vscode/settings.json --path .directory \
+    --invert-paths
+  # 4. Force-push (only branch dev, no collaborators):
+  git push origin dev --force
+  # 5. Re-clone or hard-reset any other checkouts
+  ```
+  Note: rewrites all commit SHAs. Not blocking anything — defer until backup confirmed.
+
 - [ ] **Unified Materialization** `[haiku/low]`: `debug_wrangler.py` / `debug_assembler.py` — auto-create dated `tmpAI/{date}/{lineage}/` subfolders (use `get_debug_out_dir()` from `libs/utils`).
 - [ ] **T3 lf threading** `[sonnet/medium]`: When new T3 node types (rename, derive, pivot) are added, thread them through `_apply_t3_to_lf`. Design in `.claude/tasks/design_sge_lineage_t3.md`.
 - [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: The following imports violate the "no cross-lib" rule and should be resolved (move shared types to `utils` or inject via app layer):
