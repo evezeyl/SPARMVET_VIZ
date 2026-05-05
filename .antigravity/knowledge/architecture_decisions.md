@@ -2064,6 +2064,126 @@ The primary concept is the **user functionality** — a coherent capability the 
 
 ---
 
+## ADR-071: Deployment Hardening Standard — Air-Gap Safety and Positive Inclusion (2026-05-05)
+
+**Status:** DECIDED + PARTIALLY IMPLEMENTED (DEPLOY-CDN-1 done; DEPLOY-MODULES-1 + DEPLOY-LIBS-1 pending)
+
+**Context:** SPARMVET is intended for deployment in institutional environments (e.g. Posit Connect, Galaxy, IRIDA, internal servers) that may have restricted or no outbound internet access. Additionally, the first real deployment must ensure that disabled modules are genuinely inaccessible — not merely hidden in the UI while still initialised server-side.
+
+Two principles from `EVE_WORK/notes/deployment/considerations.md` are elevated here to binding ADR rules:
+
+1. **Air-gap safety**: the app must function identically with no outbound network access.
+2. **Positive inclusion**: only modules explicitly enabled by configuration are registered, initialised, and reachable. "Not intended to be used" is not the same as "impossible to access."
+
+---
+
+### Rule 1: No external network dependencies — ever
+
+All JavaScript and CSS assets loaded by the UI **must** be vendored locally. CDN links (`cdn.jsdelivr.net`, `unpkg.com`, or any external URL) are **forbidden** in `ui.py` or any other file in this repository.
+
+**Vendored assets live in `app/src/www/vendor/`**, served via Shiny's `static_assets` parameter in `main.py`. Referenced in `ui.py` as `/vendor/<filename>`.
+
+**When adding a new frontend dependency:**
+1. Download the asset at a specific pinned version (never `@latest`)
+2. Place it in `app/src/www/vendor/` (CSS font files in `vendor/fonts/`)
+3. Update `app/src/www/vendor/VENDOR_MANIFEST.md` with name, version, source URL, and licence
+4. Reference it via `/vendor/<filename>` in `ui.py`
+5. Never add a CDN fallback
+
+**Current vendor manifest** (as of 2026-05-05):
+
+| Asset | Version | Source | Licence |
+|---|---|---|---|
+| `cytoscape.min.js` | 3.29.2 | jsdelivr/cytoscape | MIT |
+| `dagre.min.js` | 0.8.5 | jsdelivr/dagre | MIT |
+| `cytoscape-dagre.js` | 2.5.0 | jsdelivr/cytoscape-dagre | MIT |
+| `bootstrap-icons.css` + `fonts/` | 1.11.1 | jsdelivr/bootstrap-icons | MIT |
+
+---
+
+### Rule 2: Positive inclusion for server-side modules
+
+`server.py` **must not** unconditionally instantiate or register modules. Every module instantiation and every `define_server()` call must be gated on the relevant persona flag from `bootloader`.
+
+**The principle:** if a persona does not have a capability enabled, that module's server logic is never initialised, never registered as a reactive endpoint, and never reachable via any UI path, query parameter, or reactive chain.
+
+**Forbidden pattern:**
+```python
+# BAD — loads Blueprint server logic for all personas, including pipeline-static
+define_blueprint_server(...)
+```
+
+**Required pattern:**
+```python
+# GOOD — Blueprint server only initialised when explicitly enabled
+if bootloader.is_enabled("blueprint_enabled"):
+    define_blueprint_server(...)
+```
+
+**Applies to:**
+- `WrangleStudio` / `TestLabStudio` instantiation
+- `define_blueprint_server()` / `define_gallery_server()` / `define_ingestion_server()`
+- Any handler, reactive output, or module that belongs to an optional capability
+
+**Rationale:** "Not intended to be used" ≠ "impossible to access." Inactive modules still consume startup time, may expose reactive endpoints, and create maintenance burden in production. Positive inclusion is the only safe default.
+
+---
+
+### Rule 3: Clean deployment path for internal libraries
+
+All `libs/` packages must be installable via a single command. A deployment without running this command must fail immediately with a clear import error — not silently at runtime.
+
+**Implementation:** `scripts/install_libs.sh` (or equivalent) installs all editable packages in dependency order. This script is the single source of truth for which libs exist and their install order.
+
+**In production environments (non-editable):** build wheel packages from each lib and declare them in the deployment bundle. Editable installs (`pip install -e`) are for development only.
+
+---
+
+### Rule 4: Vendor manifest must be kept current
+
+`app/src/www/vendor/VENDOR_MANIFEST.md` records every vendored asset: name, version, source URL, and licence. This file must be updated whenever a vendor asset is added, upgraded, or removed. It serves as the audit trail for frontend dependencies.
+
+---
+
+### Rule 5: No cross-panel output references
+
+A UI element that references an output (`ui.output_*`, `ui.output_plot`, `ui.output_text`, etc.) from module X **must** live inside module X's gated panel — or be explicitly gated by the same persona flag as module X.
+
+**Forbidden pattern:**
+```python
+# BAD — Home panel references a Blueprint output; breaks when blueprint_enabled: false
+ui.output_text("blueprint_lineage_summary")   # inside home panel
+```
+
+**Required pattern:**
+```python
+# GOOD — Blueprint outputs only referenced inside Blueprint's gated nav panel
+# OR gated explicitly:
+if bootloader.is_enabled("blueprint_enabled"):
+    ui.output_text("blueprint_lineage_summary")
+```
+
+**Rationale:** If module X is disabled (not registered server-side), any UI element referencing its outputs will produce a dangling Shiny reference — a permanently-loading spinner or silent error. The only safe contract is: output references and their server registrations are gated by the same flag.
+
+**Corollary — workarounds for cross-module UX:** If a feature genuinely needs to surface information from module X inside another panel (e.g. a "View in Blueprint" button in Home), the correct implementation is a shared reactive value or event bus owned by the core app, not a direct output reference. The button itself must also be gated on `blueprint_enabled`.
+
+---
+
+### Consequences
+
+- Any PR that adds a CDN URL to `ui.py` or any other file violates this ADR and must be rejected.
+- Any PR that adds an unconditional `define_<module>_server()` call in `server.py` violates Rule 2.
+- Deployment to a new environment requires running `scripts/install_libs.sh` — no manual lib-by-lib installation.
+- All future JS/CSS dependencies are vendored at a pinned version before any code referencing them is merged.
+
+**Implementation tasks:**
+- [x] **DEPLOY-CDN-1**: Vendor all 4 current CDN assets. `main.py` + `ui.py` updated. ✅ 2026-05-05
+- [ ] **DEPLOY-MODULES-1**: Gate all `server.py` module instantiation + handler registration on persona flags
+- [ ] **DEPLOY-LIBS-1**: Create `scripts/install_libs.sh`; document in README
+- [ ] **VENDOR-MANIFEST-1**: Create `app/src/www/vendor/VENDOR_MANIFEST.md`
+
+---
+
 ## ADR-069: Complete Export Audit Trail Standard (2026-05-05)
 
 **Status:** DECIDED — implementation pending

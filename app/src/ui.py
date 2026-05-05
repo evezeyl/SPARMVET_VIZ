@@ -49,16 +49,15 @@ app_ui = ui.page_fillable(
     ui.head_content(
         ui.tags.style(_base_css),
         *([ui.tags.style(_persona_extra_css)] if _persona_extra_css else []),
+        # Vendored locally — air-gap / restricted-network safe (DEPLOY-CDN-1).
+        # Source: app/src/www/vendor/ — pinned versions, no CDN dependency.
         ui.tags.link(
-            rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"),
+            rel="stylesheet", href="/vendor/bootstrap-icons.css"),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
-        ui.tags.script(
-            src="https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js"),
-        ui.tags.script(
-            src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"),
-        ui.tags.script(
-            src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"),
+        ui.tags.script(src="/vendor/cytoscape.min.js"),
+        ui.tags.script(src="/vendor/dagre.min.js"),
+        ui.tags.script(src="/vendor/cytoscape-dagre.js"),
         ui.tags.script("""
 // ── [ADR-039] Cytoscape TubeMap Bridge ──────────────────────────────────────
 //

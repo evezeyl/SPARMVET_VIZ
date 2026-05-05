@@ -139,7 +139,15 @@ These items require a design decision or scope confirmation before implementatio
 
 ### 🔵 REVIEW tasks — design discussions needed (2026-05-04)
 
-- [ ] **Deployment Preparation**: Review deployment notes from [connect](EVE_WORK/notes/deployment/connect.md) and [considerations](EVE_WORK/notes/deployment/considerations.md)
+- [x] **Deployment Preparation**: Reviewed deployment notes. Key issues identified and tasked below. ✅ 2026-05-05
+
+- [x] **DEPLOY-CDN-1**: Vendor Cytoscape@3.29.2 + Dagre@0.8.5 + cytoscape-dagre@2.5.0 + Bootstrap Icons@1.11.1 into `app/src/www/vendor/`. Updated `main.py` to serve `www/` as static assets (`App(..., static_assets=_www)`). Updated `ui.py` to use `/vendor/*` local paths. App imports clean. 97/97 tests pass. ✅ 2026-05-05
+
+- [ ] **DEPLOY-MODULES-1**: Gate server-side module instantiation and handler registration in `server.py` on persona flags (positive inclusion — per `considerations.md`). Currently all 5 `define_server()` calls and all module instantiations (WrangleStudio, TestLabStudio, blueprint_handlers, gallery_handlers, ingestion_handlers) fire unconditionally regardless of persona. Fix: wrap each in `if bootloader.is_enabled(...)` guards. This is also the correct implementation mechanism for the persona scoping decisions (ADR-069/ADR-070). Affects `app/src/server.py`.
+
+- [x] **VENDOR-MANIFEST-1**: Created `app/src/www/vendor/VENDOR_MANIFEST.md` — records all vendored assets with version, source URL, licence, and date. Must be updated whenever a vendor asset is added/upgraded. ✅ 2026-05-05
+
+- [ ] **DEPLOY-LIBS-1**: Provide a clean lib install path for fresh deployments. Currently each `libs/` package requires a separate `pip install -e ./libs/X`. Fix: add a `scripts/install_libs.sh` (or `Makefile` target) that installs all editable libs in dependency order. Optionally: declare all libs as `[tool.uv.sources]` workspace members in root `pyproject.toml`.
 - [ ] **TO DISCUSS**: Toggle "show all data" — data shown only abstract; discuss what is exposed and when
 - [ ] **TO DISCUSS — lab script**: Extract pilot manifest (reconstitution of lineage) — improve reusability (e.g. manifest for results from a specific tool)
 - [ ] **TO DISCUSS — lab script**: Create tool-specific manifest (e.g. single-sheet variant of above)

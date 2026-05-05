@@ -252,7 +252,14 @@
       "Bash(.venv/bin/python -c \"from blueprint_arch.blueprint_mapper import BlueprintMapper; from blueprint_arch.manifest_navigator import build_sibling_map; print\\('OK'\\)\")",
       "Bash(.venv/bin/python -c \"from test_lab.aqua_synthesizer import AquaSynthesizer; from test_lab.reconciler import KeyReconciler; print\\('OK'\\)\")",
       "Bash(.venv/bin/python -c \"from test_lab.aqua_synthesizer import clean_header, generate_fake_column, introduce_missing_values; from test_lab.reconciler import KeyReconciler; from test_lab.bootstrapper import ManifestBootstrapper; from test_lab.extractor import XlsxExtractor; print\\('OK'\\)\")",
-      "Bash(.venv/bin/pip uninstall *)"
+      "Bash(.venv/bin/pip uninstall *)",
+      "Bash(/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.venv/bin/python -c \"import shiny; print\\(shiny.__version__\\)\")",
+      "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js\" -o cytoscape.min.js)",
+      "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js\" -o dagre.min.js)",
+      "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js\" -o cytoscape-dagre.js)",
+      "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css\" -o bootstrap-icons.css)",
+      "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/fonts/bootstrap-icons.woff2\" -o fonts/bootstrap-icons.woff2)",
+      "Bash(python3)"
     ],
     "additionalDirectories": [
       "/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.claude/projects",
