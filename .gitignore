@@ -1,27 +1,71 @@
-Chats_review_notes.md
-docs/chats
-_book
-tmp
-site_libs/
-docs/.quarto
-**/bootstrap/
-**/quarto-html/
+# ============================================================
+# SPARMVET_VIZ .gitignore
+# ============================================================
+
+# --- Personal developer workspace (user scratch, not project code) ---
+EVE_WORK/
+
+# --- Build artifacts ---
+**/*.egg-info/
+**/__pycache__/
+**/*.pyc
+.venv/
+_book/
+dist/
+build/
+node_modules/
+
+# --- Quarto output ---
+docs/_book/
+docs/_site/
+docs/_freeze/
+docs/.quarto/
 docs/**/libs/*
 docs/**/*.html
+site_libs/
+**/bootstrap/
+**/quarto-html/
 
+# --- Temporary workspaces ---
+tmp/
+tmpAI/
+
+# --- Data files (large/binary — tracked selectively in assets/) ---
+*.parquet
+*.tar.gz
+*.zip
+
+# --- Spreadsheet formats ---
+*.ods
+
+# --- IDE user-specific settings ---
+.vscode/bookmarks.json
+.vscode/favorites/
+.vscode/settings.json
+
+# --- OS / file manager metadata ---
+.directory
+.DS_Store
+Thumbs.db
+
+# --- Lock files / temp files ---
+*.~lock*
+
+# --- Secrets ---
+.env
+.env.*
+*.key
+*.pem
+secrets/
+apikeys.txt
+
+# --- Agent conversation & session state (ephemeral) ---
+.claude/logs/sessions/
+.claude/logs/handoffs/archive/
+
+# --- Legacy (pre-rename) ---
 .antigravity/embeddings/
 .antigravity/brain/
 .antigravity/cache/
-
-## Ignore build artifacts
-**/*.egg-info/
-**/__pycache__/
-.venv/
-**/*.pyc
-**/*.tar.gz
-**/*.zip
-
-# ignore lock files / temp files
-*.~lock*
-
-tmpAI/
+docs/chats/
+Chats_review_notes.md

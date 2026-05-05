@@ -1,76 +1,81 @@
-# --- Project Specific "Delicate" Data ---
-# If you have specific data folders you don't want analyzed:
-/_book/
-/docs/_book/
-/docs/_freeze/
-/docs/.quarto/
-/docs/chats/
-/docs/appendix/DashBoard_Architect_v1.qmd
-EVE_WORK/
-LICENSE
-Makefile
-manifest.json
-*.code.-workspace
+# ============================================================
+# SPARMVET_VIZ .aiignore
+# Controls what the AI indexer / context loader excludes.
+# The AI can still explicitly read any file with the Read tool.
+# ============================================================
 
-# Prevent AI from wasting quota on data rows
+# --- Personal developer workspace ---
+EVE_WORK/
+
+# --- Data files (rows of data add no value to AI context) ---
 *.csv
 *.tsv
 *.xlsx
+*.ods
+*.parquet
 
-
-# Antigravity must see the organisation - but ignore junk
-#!.agents/
-!.gemini/
-.agents/.vscode/
-
-
-.antigravity/conversations/
-.antigraviy/embeddings/
-.antigravity/logs/
-
-
-#.antigravity/
-#!.antigravity/logs/
-#!.antigravity/tasks/
-#!.antigravity/plans/
-#!.antigravity/knowledge
-
-# Antigravity - Ignore to index
-.github/
-.venv/
-.vscode/
-.idea/
-.history/
-
-.aiignore
-.clinerules
-.directory
-.gitignore  
-
-## Ignore build artifacts
+# --- Build & generated artifacts ---
 **/*.egg-info/
 **/__pycache__/
-.venv/
 **/*.pyc
-
-## Build & Noise
-node_modules/
+.venv/
+_book/
 dist/
 build/
-bin/
-obj/
-out/
-vendor/
-__pycache__/
-*.log
-npm-debug.log*
+node_modules/
+docs/_site/
+docs/_book/
+docs/_freeze/
+docs/.quarto/
+docs/**/libs/*
+docs/**/*.html
+site_libs/
 
+# --- Temporary workspaces (agent scratch, not source) ---
+tmp/
+tmpAI/
 
+# --- IDE user-specific state ---
+.vscode/bookmarks.json
+.vscode/favorites/
+.vscode/settings.json
 
-# --- Security & Secrets ---
-# Block all sensitive environment and key files
+# --- OS / file manager metadata ---
+.directory
+.DS_Store
+
+# --- Secrets ---
 .env
+.env.*
 *.key
 *.pem
 secrets/
 apikeys.txt
+
+# --- Agent conversation & session state (ephemeral, no index value) ---
+.claude/logs/sessions/
+.claude/logs/handoffs/archive/
+
+# --- Large binary / archive files ---
+*.tar.gz
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+
+# --- GitHub / tooling metadata (no code value) ---
+.github/
+.gitignore
+.aiignore
+.clinerules
+.dockerignore
+
+# --- Lock / temp files ---
+*.~lock*
+
+# --- Misc IDE files ---
+*.code-workspace
+.idea/
+.history/
