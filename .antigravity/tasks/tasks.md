@@ -71,7 +71,13 @@
 
 - [x] **EXPORT-HASH-1**: Bundle README `Data SHA256` was computed from T1 Parquet content, inconsistent with the session key's `data_batch_hash` (raw source file hash). Fixed: both bundle export and SGE now read `data_batch_hash` from `home_state`. All export surfaces (bundle README, bundle QMD report, SGE README, audit report footer) now show all three hashes with human-readable explanations.
 
-- [ ] **EXPORT-HASH-2**: `decision_hash` (wrangling recipe SHA256, stored in `sparmvet_decision_hash` Parquet metadata key) is referenced in exports but not yet read out and printed as a value. Currently exports say "see Parquet metadata". Fix: at export time, read `get_parquet_metadata_hash(path)` for each materialized T1/T2 Parquet file and include the values in README and report. Requires knowing the Parquet file paths at export time — accessible via `bootloader.get_location("anchors")` + per-dataset naming convention.
+- [ ] **EXPORT-HASH-2**: Read `decision_hash` from Parquet metadata key `sparmvet_decision_hash` at export time; include in bundle README, report.qmd, and image file metadata. Use `get_parquet_metadata_hash(path)` per materialized T1/T2 Parquet file. Paths via `bootloader.get_location("anchors")` + naming convention. **Part of ADR-069 audit trail.**
+
+- [ ] **EXPORT-VERSION-1**: Add `git_commit` (`git rev-parse --short HEAD`) and `release_version` (`git describe --tags --always`) to all export surfaces: bundle README, report.qmd header, and image file metadata. **ADR-069.**
+
+- [ ] **EXPORT-IMG-META-1**: Embed provenance subset (8 fields: `data_batch_hash`, `manifest_sha256`, `decision_hash`, `git_commit`, `release_version`, `created_at`, `plot_id`, `persona_id`) in exported image file metadata. PNG → Pillow `PngInfo` iTXt chunks (`sparmvet:` prefix). SVG → `<metadata>` XML block. PDF → XMP metadata. **ADR-069 Rule 3. Provenance must survive file extraction from bundle.**
+
+- [ ] **EXPORT-AUDIT-COMPLETE-1**: Add all remaining missing provenance fields to bundle README and report.qmd: `created_at` (ISO 8601 UTC), `manifest_name`/path, `persona_id`, `active_tier` (T1/T2/T3), `software_versions` (Python + plotnine + polars + SPARMVET), `data_source_paths` (relative paths of raw files loaded). Introduce `build_export_provenance()` helper in `export_handlers.py` to assemble the full provenance dict once and pass to all surfaces. **ADR-069.**
 
 ### Session / Import
 
@@ -104,13 +110,31 @@ These items require a design decision or scope confirmation before implementatio
 - [ ] **ADR045-REFACTOR**: Several files in `app/modules/` import `shiny` directly, violating the Two-Category Law (modules must be headless-safe; Shiny wiring belongs in `app/handlers/`). Decision needed: scope and migration plan before touching live handlers. See audit §4A.
 
 
-### UI - Persona scoping [TODO Define exactly - USER/AI discussion]
+### UI - Persona scoping [DECIDED 2026-05-05]
 
-- [ ] "simple view" - Allow eg. hide left sidebar, allow hiding the tiers pannel
-- [ ] Allow T1 hiding (default T2) for static personas - hidign the banner
-- [ ] Allow side bar functionalities defined in different scripts ? would that allow to eg. have special configuration UI for specific deployments ?
-- [ ] Import metadata - VS import all data scoping - ensure can add one by one eg if different directory ? 
-- [ ] Ensure can fix project selector to project while being "autonomous" and add metadata update / choose data for the specific manifest. Choosen 
+**Functionality dependency mapping — all agreed:**
+
+- **PASSIVE_INTERACT**: `PASSIVE_INTERACT` + `HASHES_EXPORT` (always) + `TIER_TOG` T1/T2 (configurable). `AUTOSAVE` off.
+- **ACTIVE_INTERACT (T3)**: Full cascade — T3 requires `CMP_MODE` + `AUD_RPT` + `SESS_MGT` + `AUTOSAVE` + `export_enabled` + `HASHES_EXPORT` + both `TIER_TOG`. Validation error at startup if T3 on and any co-flag missing.
+- **EXPORT**: Single `export_enabled` flag. Scope by active context/toggle. `HASHES_EXPORT` always on (ADR-069). `EXP_BNDL`/`EXP_GROUP`/`EXP_GRF` are not separate flags — collapse to one.
+- **IMPORT**: Single browse + mapping panel. `IMP_HLP` on → all manifest sources. `META_ING` on alone → metadata schema only. `IMP_HLP` implies `META_ING`. Overwrite behavior.
+- **GALLERY / BLUEPRINT_ARCH / TEST_LAB**: Single on/off flag each. Sub-flags deferred until components mature (additive, non-breaking when introduced).
+- **TIER_TOG T1/T2**: Configurable on/off; required if T3 active (cascade).
+- **TIER_TOG T3/comparison**: Required if T3 active only.
+- **PRS_BADGE**: On/off display preference, no functional dependency.
+- **MAN_SEL / MAN_FIX**: Collapse to one flag `manifest_selector_visible: true/false`.
+- **UI_TITLE**: On/off; resolution: persona `ui_title` > manifest `info.display_name` > nothing.
+- **UI_SUBT**: On/off; depends on `UI_TITLE` (hidden if title off); resolution: persona `ui_subtitle` > manifest `info.subtitle` > nothing. `info.description` is free-form long description, not shown in header.
+- **AUTOSAVE / ghost_save**: Parquet cache always written (performance, independent of flag). `autosave` flag controls ghost_save (session JSON) only. Off for passive personas.
+
+**Implementation tasks from this mapping:**
+
+- [ ] **PERSONA-CONFIG-VALIDATE-1**: At persona config load time, validate T3 cascade rule: if `t3_sandbox_enabled: true` then `comparison_mode_enabled`, `audit_report_enabled`, `session_management_enabled`, `export_enabled`, `tier_toggle_t3_enabled` must all be true. Raise `PersonaConfigError` if violated. Resolves REVIEW-SCOPING-1.
+- [ ] **PERSONA-CONFIG-FLAG-1**: Collapse `EXP_BNDL`/`EXP_GROUP`/`EXP_GRF` to single `export_enabled` flag in all persona templates and gating logic.
+- [ ] **PERSONA-CONFIG-FLAG-2**: Collapse `MAN_SEL`/`MAN_FIX` to single `manifest_selector_visible: true/false` in all persona templates.
+- [ ] **PERSONA-CONFIG-FLAG-3**: Add `gallery_enabled`, `blueprint_enabled`, `test_lab_enabled` as single on/off flags. Design for future sub-flag expansion (additive).
+- [ ] **UI-TITLE-1**: Implement UI title/subtitle resolution: persona config override > manifest `info.display_name`/`info.subtitle` > nothing. Add `info.subtitle` field to manifest schema. `UI_TITLE` off hides both. Resolves REVIEW-UI-TITLE-SUBT.
+- [ ] **IMPORT-UI-1**: Unify the two import browse buttons into a single browse + mapping panel. Mapping panel auto-filters available data sources based on active persona flag: `META_ING` only → metadata schema; `IMP_HLP` → all manifest data sources (metadata included). `IMP_HLP` implies `META_ING`. Import behavior: **overwrite** (not merge). Affects `app/handlers/ingestion_handlers.py` and import panel UI. 
 
 
 ### 🔵 REVIEW tasks — design discussions needed (2026-05-04)
@@ -126,13 +150,13 @@ These items require a design decision or scope confirmation before implementatio
 
 - [ ] **REVIEW-EXPORT-FLAGS — EXP_GROUP as separate persona flag**: Currently `Active group` export scope is gated on `export_graph_enabled` (same as Active plot). The matrix lists `EXP_GROUP` as a distinct column from `EXP_GRF`. Decision: add a dedicated `export_group_enabled` persona flag, or keep current behaviour (lineage backtrace works for both → one flag is enough)? Eve's note: as long as lineage works for all scopes, activating all export types together is acceptable.
 
-- [ ] **REVIEW-IMPORT-PANEL — META_ING / IMP_HLP / single import UI**: One import panel with mapping that determines what's available. Rule proposed: `IMP_HLP` on → full import (all datasets + metadata); `META_ING` on alone → mapping shows metadata only, no extra import button. Decision needed on: (1) whether the mapping panel auto-filters available schemas based on flags, (2) whether metadata schema stays separate in mapping or merges with full import flow.
+- [x] **REVIEW-IMPORT-PANEL — META_ING / IMP_HLP / single import UI**: ✅ 2026-05-05 **Decided.** Single browse + mapping panel. `IMP_HLP` on → mapping shows all manifest data sources (metadata included). `META_ING` on alone → mapping shows metadata schema only. `IMP_HLP` implies `META_ING` (superset). Metadata import behavior: **overwrite** (not merge). Two persona flags remain in config for scoping control; UI has one entry point. See **IMPORT-UI-1** for implementation.
 
 - [ ] **REVIEW-AUTOSAVE-CACHE — caching vs autosave separation**: Is the Parquet cache (T1 materialisation) always written for performance, independent of the `autosave` flag? If yes: cache-write is always on; `autosave` flag only controls ghost-save (session JSON). If loaded once on same system, cached Parquet avoids recalculating wrangling + plots on tab switch — good for responsiveness. Need to decide separation before fixing `SESSION-PERSONA-1`.
 
 - [ ] **REVIEW-HASH-EXPORT — hash visibility and export gating**: Hashes (manifest SHA256, data batch SHA256, recipe hash) are always computed. Question: should the export of all 3 hashes (in README + report) be gated by a flag, or always included in bundle? T3 recipe hash needs T3 active. Further discussion needed to clarify what Eve expects to see and when.
 
-- [ ] **REVIEW-UI-TITLE-SUBT — manifest-driven UI title/subtitle**: `UI_TITLE` and `UI_SUBT` could be read from a field in the manifest (e.g. `info.display_name`, `info.description`) when `MAN_SEL` is active, rather than from persona config alone. Decision: define the field name convention and whether persona config can override manifest value.
+- [x] **REVIEW-UI-TITLE-SUBT — manifest-driven UI title/subtitle**: ✅ 2026-05-05 **Decided.** Resolution order: persona config override > manifest field > nothing shown. Manifest fields: `info.display_name` (title), `info.subtitle` (subtitle — new short dedicated field). `info.description` remains free-form long description, NOT shown in UI header. `UI_TITLE` off → both title and subtitle hidden (subtitle depends on title). See **UI-TITLE-1** for implementation.
 
 
 ### UI - Functionality debugging (TODO / User )
@@ -198,6 +222,7 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 - [ ] **Field Gap Analysis tool**: Field name → walk lineage to earliest insertion point.
 - [ ] **Forward propagation hint**: Show which output_fields / final_contract files need updating.
 - [ ] **UX-NOTIF-3**: Project-load notification for Blueprint Architect manifest reload. Hook into `blueprint_handlers.py` after a successful manifest import (`btn_import_manifest` path). Low priority; tackle during Blueprint debug pass.
+- [ ] **Define** development - ADR for blueprint architect : functionalities - help develop without code. Input output contracts, Actions insertions to manifest with parametres, update data view for selected lineage, improved data inspection, definition of joints, work in T1, branching, T2, definition of groups and plot recipe.  
 
 
 ---

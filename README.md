@@ -39,9 +39,43 @@ wrangling:
 - [**transformer**](./libs/transformer/): The central wrangling and assembly engine (DataWrangler, DataAssembler).
 - [**viz_factory**](./libs/viz_factory/): Graphical composition and Plotnine orchestration.
 - [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, recipe governance.
-- [**generator_utils**](./libs/generator_utils/): AquaSynthesizer for synthetic test data and manifest bootstrapping.
+- [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, manifest bootstrapping, and reconciliation.
 - [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities.
 - [**connector**](./libs/connector/): Deployment profile resolution and data-source adapters (ADR-048, Phase 23).
+- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, manifest navigator).
+
+## 🚀 Deployment Configuration
+
+SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. Deployment is controlled by a **configuration profile** (called a persona) that defines which user functionalities are available.
+
+### User functionalities
+
+| Functionality | What users can do |
+|---|---|
+| **View** | Browse visualisations (always available) |
+| **Passive filter** | Explore data ephemerally — no audit trail |
+| **T3 audit** | Justify and commit data decisions — creates permanent audit branch |
+| **Export** | Download reproducible bundle with full provenance |
+| **Import** | Upload metadata or full data mapped to the manifest |
+| **Gallery** | Browse chart recipe templates |
+| **Blueprint Architect** | Inspect and design manifest lineage |
+| **Test Lab** | Generate synthetic data and scaffold manifests |
+
+### Non-negotiable rule: full audit trail in every export
+
+Every export — regardless of configuration — includes a complete provenance record: data hashes, manifest hash, wrangling recipe hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.antigravity/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_personas.qmd).
+
+### Quick start
+
+```bash
+SPARMVET_PERSONA=pipeline-exploration-simple .venv/bin/python -m shiny run app/src/main.py
+```
+
+Available profiles: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`. Custom profiles can be created in `config/ui/templates/`.
+
+See [Deployment Configuration](./docs/user_guide/deployment_personas.qmd) for the full guide, dependency rules, and how to create a custom profile.
+
+---
 
 ## 📖 Documentation
 
@@ -49,7 +83,7 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 
 - [Developer Preface & Architecture](./docs/index.qmd): Vision, integrity status, and filter message flow.
 - [Wrangling Guide](./docs/reference/wrangling_guide.qmd): Tier 1/2/3 lifecycle and assembly logic.
-- [UI Personas](./docs/workflows/ui_persona.qmd): Feature flags, persona matrix, and dependency chains.
+- [Deployment Configuration](./docs/user_guide/deployment_personas.qmd): User functionalities, dependency rules, and available profiles.
 - [Deployment Guide](./docs/deployment/deployment_guide.qmd): Galaxy, IRIDA, server, and local deployment (ADR-048).
 - [Connector / Profile Schema](./docs/workflows/connector.qmd): Deployment profile YAML schema reference.
 

@@ -1,36 +1,25 @@
-# Persona Scoping Guide
-**Last updated:** 2026-05-04  
+# Deployment Configuration Guide
+**Last updated:** 2026-05-05 (Session 18 — full functionality mapping decided)
 **Companion files:**
-- `persona_capability_matrix.csv` — personas × flags matrix (fill `?` cells here)
-- `persona_flag_legend.csv` — flag abbreviation lookup (ABBREV → full flag + group + description)
-- `ui_panel_map_current.md` — CSS selectors and panel names for each UI element  
+- `functionality_dependency_map.md` — **start here** — user functionality → code flag dependencies
+- `persona_capability_matrix.md` — example deployment configurations (named personas) × flags
+- `ui_panel_map_current.md` — CSS selectors and panel names for each UI element
+- ADR-069 — Complete Export Audit Trail Standard
 
 **Persona templates:** `config/ui/templates/`
 
-This document defines the scoping groups, flag abbreviations, cell conventions, and dependency rules used in the matrix CSV. Update whenever a new flag is added or a group boundary changes.
-
 ---
 
-## How to use the matrix CSV
+## Core concept
 
-Open `persona_capability_matrix.csv` with `|` as delimiter in LibreOffice / Excel.
+SPARMVET is deployed with a **configuration profile** that defines which user functionalities are available. The term "persona" is used for named example profiles (e.g. `pipeline-static`, `developer`), but a persona is just a label for a specific combination of flags.
 
-- **Rows** = personas (existing + proposed)
-- **Columns** = flag abbreviations (see `persona_flag_legend.csv` for full names)
-- **Cell value** = group abbreviation when the flag is **active** for that persona; `-` when off
+**The right way to think about deployment:**
+> "What do I want my users to be able to do?" → pick the functionalities → validate dependencies → name it.
 
-### Cell value conventions
+The personas shipped with SPARMVET are reusable starting points. Deployers can create their own by composing functionalities within the cascade rules.
 
-| Cell value | Meaning |
-|---|---|
-| `VIEW` / `FILTER` / `T3` / `SESS` / `EXP` / `ING` / `DEV` / `UI` | Flag is **active** — group abbreviation shows which group it belongs to |
-| `G1/G2` | Flag active and spans two groups (e.g., `VIEW/UI`) |
-| `-` | Flag is **inactive** / disabled for this persona |
-| `?` | **To be decided** — fill this in |
-| `T1` / `T2` | For `DEF_TIER` column only — which tier loads by default |
-| `set` | For `MAN_FIX` / `UI_TITLE` / `UI_SUBT` — a value is configured (see template) |
-| `null` | For `MAN_FIX` — free manifest choice |
-| `[P]` prefix on row name | Proposed persona — not yet implemented |
+See `functionality_dependency_map.md` for the complete dependency rules before creating a custom configuration.
 
 ---
 
@@ -38,46 +27,42 @@ Open `persona_capability_matrix.csv` with `|` as delimiter in LibreOffice / Exce
 
 | Abbrev | Full name | What it covers |
 |---|---|---|
-| `VIEW` | View / tier display | Tier toggle, default tier, data visibility |
-| `FILTER` | Passive filter | passive column drop | Ephemeral curiosity exploration — no data change, no audit |
-| `T3` | T3-Audit / active filter / active column drop | Justified edits, T3 branch, audit trail, propagation, comparison |
-| `SESS` | Session | Save/restore work-in-progress; autosave |
-| `EXP` | Export | Bundle ZIP, single graph export |
-| `ING` | Ingest | Metadata upload, import helper, raw data ingest |
-| `DEV` | Developer tools | Gallery, Blueprint, Test Lab, Wrangle Studio |
-| `UI` | UI layout | Navigation, sidebar title, manifest selector, persona badge |
+| `VIEW` | View / tier display | Default tier, tier toggle visibility |
+| `FILTER` | Passive filter | Ephemeral row filter + column drop — no audit, no data change |
+| `T3` | T3-Audit / active filter | Justified edits, T3 branch, audit trail, comparison |
+| `SESS` | Session | Save/restore work-in-progress; ghost save |
+| `EXP` | Export | Bundle ZIP + scope toggle (project / group / plot) |
+| `ING` | Ingest | Metadata upload, full data import |
+| `DEV` | Developer tools | Gallery, Blueprint Architect, Test Lab |
+| `UI` | UI layout | Navigation (derived), sidebar branding, manifest selector |
 
 ---
 
-## Flag abbreviations (summary — full details in persona_flag_legend.csv)
+## Flag reference
 
 ### GROUP: VIEW
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `INTERACT` | `interactivity_enabled` | Master gate — too coarse; proposed for decomposition |
-| `TIER_T1/T2_TOG` | `[P] tier_toggle_enabled` | Explicit T1↔T2 toggle; proposed |
-| `DEF_TIER` | `[P] default_tier` | T1 or T2 on load; proposed |
+| `DEF_TIER` | `default_tier` | **Always `T2`.** T2 is the manifest result. No persona defaults to T1. |
+| `TIER_T12` | `tier_toggle_t1t2_enabled` | Show T1↔T2 toggle. Configurable on/off. Required if T3 active. |
+| `TIER_T3` | `tier_toggle_t3_enabled` | Show T2↔T3 comparison toggle. Required if T3 active. Off otherwise. |
 
-**Dependency:** `TIER_TOG` off → `DEF_TIER` is the only tier shown (no toggle).  
-**Open question:** retire `INTERACT` and replace with `TIER_TOG` + `PAS_FILT`, or keep as legacy alias?
+**Rule:** `T3_SAND: true` → both `TIER_T12` and `TIER_T3` must be true (cascade).
 
-TODO default tier should always be T2 Because it is the result from the manifest. No matter what
 ---
 
 ### GROUP: FILTER — Passive (view-only, no data change)
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `PAS_FILT` | `[P] passive_filter_enabled` | Column drop + row filter, ephemeral; proposed |
-
+| `PAS_FILT` | `passive_filter_enabled` | Row filter + column drop, ephemeral — resets on reload |
 
 **Key distinction:**
-- **Passive filter** (`PAS_FILT`) = user **explores** the data; view changes, nothing recorded, resets on reload
-- **Active filter** (`T3_SAND`) = user **justifies and commits** a decision; T3 branch created, written to audit
+- **Passive filter** (`PAS_FILT`) = user explores; view changes, nothing recorded, resets on reload
+- **Active filter** (`T3_SAND`) = user justifies and commits; T3 branch created, written to audit
 
-**Dependency:** `PAS_FILT` is independent of `T3_SAND` — they can coexist or be used alone.  
-**Open question:** should passive filter panel look visually distinct from T3 active filter panel so users can't confuse them?
+Passive filter state is **not** recorded in the audit trail — the three hashes (data_batch, manifest, decision) fully describe the reproducible data state.
 
 ---
 
@@ -86,10 +71,10 @@ TODO default tier should always be T2 Because it is the result from the manifest
 | Abbrev | Full flag | Notes |
 |---|---|---|
 | `T3_SAND` | `t3_sandbox_enabled` | Full T3 sandbox; T2 never modified — T3 creates a branch |
-| `CMP_MODE` | `comparison_mode_enabled` | Compare T2 vs T3; requires `T3_SAND` |
-| `AUD_RPT` | `audit_report_enabled` | Export consolidated audit report |
+| `CMP_MODE` | `comparison_mode_enabled` | Compare T2 vs T3; required when T3 active |
+| `AUD_RPT` | `audit_report_enabled` | Consolidated audit report; required when T3 active |
 
-**Dependency:** `CMP_MODE` requires `T3_SAND: true`.
+**Cascade:** `T3_SAND: true` requires `CMP_MODE: true` + `AUD_RPT: true` + `SESS_MGT: true` + `AUTOSAVE: true` + `export_enabled: true` + both tier toggles. `PersonaConfigError` raised at startup if violated.
 
 ---
 
@@ -98,9 +83,9 @@ TODO default tier should always be T2 Because it is the result from the manifest
 | Abbrev | Full flag | Notes |
 |---|---|---|
 | `SESS_MGT` | `session_management_enabled` | Session accordion UI visibility |
-| `AUTOSAVE` | `ghost_save.enabled` | Autosave timer — **SESSION-PERSONA-1 (open): must be gated on T3_SAND** |
+| `AUTOSAVE` | `ghost_save.enabled` | Ghost save timer. Only meaningful when `T3_SAND: true`. Off for passive personas. |
 
-**Rule:** Session save (manual + autosave) only meaningful when `T3_SAND` is active. Passive-filter-only personas have nothing to persist.
+**Rule:** Parquet cache (T1 materialisation) is always written for performance, independent of this flag. `AUTOSAVE` only controls the session JSON (ghost save).
 
 ---
 
@@ -108,8 +93,11 @@ TODO default tier should always be T2 Because it is the result from the manifest
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `EXP_BNDL` | `export_bundle_enabled` | Global ZIP: plots + data + recipes + audit + README (3 hashes) |
-| `EXP_GRF` | `export_graph_enabled` | Single graph export |
+| `EXP` | `export_enabled` | Single flag — enables export bundle + scope toggle (project / group / plot) |
+
+**Scope** (project / group / plot) is determined by the active context and scope toggle — not by separate flags. The old `EXP_BNDL` / `EXP_GROUP` / `EXP_GRF` flags are collapsed into `export_enabled`.
+
+**ADR-069 rule — hashes always on:** Every export always includes the full provenance set (data_batch_hash, manifest_sha256, decision_hash, git_commit, release_version, created_at, manifest_name, persona_id, active_tier, software_versions, data_source_paths). No flag, no opt-out. Image files embed an 8-field subset in file metadata (PNG iTXt / SVG `<metadata>` / PDF XMP).
 
 ---
 
@@ -117,10 +105,12 @@ TODO default tier should always be T2 Because it is the result from the manifest
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `META_ING` | `metadata_ingestion_enabled` | Upload replacement metadata (triggers T1 rebuild) |
-| `IMP_HLP` | `import_helper_enabled` | External import helper panel |
-| `DAT_ING` | `data_ingestion_enabled` | Raw data file / Excel upload |
-| `IMP_PNL` | `data_import_panel_visible` | Parent accordion panel — container for META_ING + IMP_HLP + DAT_ING |
+| `META_ING` | `metadata_ingestion_enabled` | Import UI shows metadata schema only |
+| `IMP_HLP` | `import_helper_enabled` | Import UI shows all manifest data sources (implies `META_ING`) |
+
+**UI:** Single browse + mapping panel. Panel auto-filters to allowed sources based on active flag. Import behavior: **overwrite** (not merge).
+
+**Superset rule:** `IMP_HLP: true` implies `META_ING: true`.
 
 ---
 
@@ -128,50 +118,69 @@ TODO default tier should always be T2 Because it is the result from the manifest
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `GALLERY` | `gallery_enabled` | Gallery browser (34 recipes, 6-axis taxonomy) |
-| `DEV_MODE` | `developer_mode_enabled` | Enables Blueprint Architect + Test Lab |
-| `WRNG_STU` | `wrangle_studio_enabled` | Advanced recipe editor (Wrangle Studio) |
-| `TEST_LAB` | `test_lab_enabled` | Currently derived from `DEV_MODE` — no separate flag yet |
+| `GALLERY` | `gallery_enabled` | Gallery browser (34 recipes, 6-axis taxonomy). Standalone — no cascade. |
+| `BLUEPRINT` | `blueprint_enabled` | Blueprint Architect (TubeMap, manifest navigator). Standalone. Sub-flags deferred. |
+| `TEST_LAB` | `test_lab_enabled` | Test Lab (synthetic data, manifest scaffolding). Standalone. Sub-flags deferred. |
+
+Each is a single on/off flag. Sub-flags (e.g. TUBE_MAP, WRNG_STU for Blueprint; DATA_PREP, CREATE_TEST_DATA for Test Lab) are deferred until components mature. When introduced, sub-flags will be additive and non-breaking.
 
 ---
 
 ### GROUP: UI — Layout and branding
 
-| Abbrev | Full flag | Notes |
-|---|---|---|
-| `PRS_BADGE` | `show_persona_badge` | "Active: persona-name" in nav header |
-| `MAN_SEL` | `manifest_selector.visible` | Manifest choice dropdown in sidebar |
-| `MAN_FIX` | `manifest_selector.fixed_manifest` | Locks manifest; `null` = free choice |
-| `UI_TITLE` | `ui_branding.title` | Project/pipeline title next to logo; already in web-demo template; proposed to standardize |
-| `UI_SUBT` | `ui_branding.subtitle` | Subtitle line |
-| `SHOW_NAV` | `[P] show_navigation` | Hides nav pills strip (Home / Blueprint / Test Lab / Gallery); proposed |
-| `SDB_PROF` | `[P] sidebar_profile` | Named sidebar layout module; deferred Phase 27+ |
-
-**Panel map cross-reference:** see `ui_panel_map_current.md` → Vocabulary section for CSS selectors of each UI element.
+| Abbrev | Full flag | Type | Notes |
+|---|---|---|---|
+| `PRS_BADGE` | `show_persona_badge` | configurable | "Active: persona-name" in nav header. Display preference, no functional dependency. |
+| `MAN_SEL` | `manifest_selector_visible: true` | configurable | User can switch manifests in sidebar. |
+| `MAN_FIX` | `manifest_selector_visible: false` | configurable | Manifest locked — selector hidden. Opposite of MAN_SEL; never both. |
+| `UI_TITLE` | `ui_title` (persona) / `info.display_name` (manifest) | configurable | Resolution: persona config override > manifest field > nothing. |
+| `UI_SUBT` | `ui_subtitle` (persona) / `info.subtitle` (manifest) | configurable | Same resolution as UI_TITLE. Hidden if UI_TITLE is off. `info.description` is long free-form text — NOT shown in header. |
+| `SHOW_NAV` | *(derived)* | **derived** | Auto-shown when any of `gallery_enabled` / `blueprint_enabled` / `test_lab_enabled` is true. No config field needed. |
+| `SDB_PROF` | `sidebar_profile` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
 
 ---
 
-## Persona template files
+## Cascade rules (summary)
 
-| Persona ID | Template file | TYPE column |
-|---|---|---|
-| `pipeline-static` | `pipeline-static_template.yaml` | existing |
-| `demo-vetinst` | `demo-vetinst_template.yaml` | existing |
-| `web-demo` | `web-demo_template.yaml` | existing |
-| `pipeline-exploration-simple` | `pipeline-exploration-simple_template.yaml` | existing |
-| `pipeline-exploration-advanced` | `pipeline-exploration-advanced_template.yaml` | existing |
-| `project-independent` | `project-independent_template.yaml` | existing |
-| `developer` | `developer_template.yaml` | existing |
-| `qa` | `qa_template.yaml` | existing |
-| `[P] web-project-showcase` | *(not yet created)* | proposed |
-| `[P] lightweight-exploration` | *(not yet created)* | proposed |
+```
+T3_SAND: true  →  comparison_mode_enabled: true
+               →  audit_report_enabled: true
+               →  session_management_enabled: true
+               →  ghost_save.enabled: true
+               →  export_enabled: true
+               →  tier_toggle_t1t2_enabled: true
+               →  tier_toggle_t3_enabled: true
+
+IMP_HLP: true  →  metadata_ingestion_enabled: true
+
+show_navigation  →  derived: any(gallery_enabled, blueprint_enabled, test_lab_enabled)
+
+ui_subtitle      →  only shown when ui_title is shown
+```
+
+Startup validation raises `PersonaConfigError` if any cascade rule is violated.
 
 ---
 
-## Open design questions
+## Example deployment configurations (personas)
 
-- **`INTERACT` decomposition:** retire `interactivity_enabled` and replace with `TIER_TOG` + `PAS_FILT`? Or keep as legacy alias pointing to both? Decide before implementing proposed flags.
-- **`PAS_FILT` scope:** column drop only, or also row filter? Both are non-destructive but row filter is more powerful. Should the passive filter panel be visually distinct from the T3 active filter panel?
-- **`DEF_TIER` with `TIER_TOG` off:** if toggle is hidden, should the UI still show a small badge indicating which tier is displayed, or is that noise for static personas?
-- **`SDB_PROF` modularization:** worth doing only if >3 distinct sidebar layouts emerge from real deployments. Hold until concrete requests come in.
-- **`TEST_LAB` separate flag:** currently derived from `DEV_MODE`. Add `test_lab_enabled` as an independent flag if a use case requires Test Lab without Blueprint (or vice versa).
+| Persona ID | Intended use case | Template file |
+|---|---|---|
+| `pipeline-static` | Read-only display of pre-processed results | `pipeline-static_template.yaml` |
+| `demo-vetinst` | Branded demo / presentation | `demo-vetinst_template.yaml` |
+| `web-demo` | Public web display | `web-demo_template.yaml` |
+| `pipeline-exploration-simple` | Pipeline users who filter but do not modify | `pipeline-exploration-simple_template.yaml` |
+| `pipeline-exploration-advanced` | Pipeline users with full T3 audit capability | `pipeline-exploration-advanced_template.yaml` |
+| `project-independent` | Research project — full data import + T3 | `project-independent_template.yaml` |
+| `developer` | Full access including Blueprint + Test Lab | `developer_template.yaml` |
+| `qa` | Automated testing — all flags on | `qa_template.yaml` |
+| `[P] web-project-showcase` | Public website with branded static display | *(not yet created)* |
+| `[P] lightweight-exploration` | Passive filter only, minimal UI | *(not yet created)* |
+
+---
+
+## Open design questions (remaining)
+
+- **`INTERACT` decomposition:** `interactivity_enabled` is a legacy coarse-grained flag. Decision pending: retire and replace with `PAS_FILT` + `TIER_T12`, or keep as alias?
+- **`TEST_LAB` separate flag:** currently derived from `developer_mode_enabled`. Separate flag needed if a use case requires Test Lab without Blueprint (or vice versa).
+- **`SDB_PROF` modularization:** implement only when >2 distinct sidebar layouts emerge from real deployments.
