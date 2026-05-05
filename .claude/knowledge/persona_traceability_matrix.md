@@ -31,7 +31,7 @@ Single Graph Export accordion removed in 2026-05-04 export redesign — supersed
 | **Manifest Choice** | HIDE (fixed by config) | HIDE (fixed by config) | SHOW | SHOW | SHOW | `manifest_selector.visible` |
 | **Data Import** | SHOW (read-only path display) | SHOW (read-only path display) | SHOW (active selector) | SHOW (active selector) | SHOW (active selector) | always_on; selector gated by testing_mode |
 | **Filters** | HIDE (static message) | SHOW (exploration disclaimer) | SHOW | SHOW | SHOW | `interactivity_enabled` |
-| **Export** (scope toggle) | SHOW | SHOW | SHOW | SHOW | SHOW | `export_bundle_enabled + export_graph_enabled` |
+| **Export** (scope toggle) | SHOW | SHOW | SHOW | SHOW | SHOW | `export_enabled` |
 | **Session Management** | HIDE | SHOW | SHOW | SHOW | SHOW | `session_management_enabled` |
 
 ## Right Sidebar Visibility (ADR-044 + ADR-052)

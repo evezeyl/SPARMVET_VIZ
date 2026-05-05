@@ -106,10 +106,10 @@ interactivity_enabled: true
   └─ T3 tier toggle options (T3-Wrangle, T3-Plot)
   └─ comparison_mode_enabled: true   → Comparison Mode toggle in theater
   └─ session_management_enabled: true → Session Save/Import + ghost save
-  └─ export_graph_enabled: true       → Export Active Graph (requires T3 context)
+  └─ export_enabled: true       → Export Active Graph (requires T3 context)
 ```
 
-**Effect if `interactivity_enabled: false`:** T3 tier toggle buttons are hidden. `comparison_mode_enabled`, `session_management_enabled`, and `export_graph_enabled` have no effect even if set to `true`.
+**Effect if `interactivity_enabled: false`:** T3 tier toggle buttons are hidden. `comparison_mode_enabled`, `session_management_enabled`, and `export_enabled` have no effect even if set to `true`.
 
 ## Group C — Right Sidebar (requires `interactivity_enabled: true`)
 
@@ -150,8 +150,8 @@ developer_mode_enabled: true
 | `interactivity_enabled` | Nothing | ✅ |
 | `comparison_mode_enabled` | `interactivity_enabled` | — |
 | `session_management_enabled` | `interactivity_enabled` | — |
-| `export_graph_enabled` | `interactivity_enabled` | — |
-| `export_bundle_enabled` | Nothing | ✅ |
+| `export_enabled` | `interactivity_enabled` | — |
+| `export_enabled` | Nothing | ✅ |
 | `metadata_ingestion_enabled` | Nothing (semi-standalone) | ✅ |
 | `import_helper_enabled` | Nothing | ✅ |
 | `data_ingestion_enabled` | `import_helper_enabled` | — |
@@ -187,14 +187,14 @@ theme_css: "config/ui/theme.css"     # Optional — CSS file for this persona's 
 features:
   # ── Group A: Viewing ──────────────────────────────────────────────────────
   # (no dependencies; always meaningful)
-  export_bundle_enabled: true        # Export Results Bundle (zip) in Global Project Export
+  export_enabled: true        # Export Results Bundle (zip) in Global Project Export
 
   # ── Group B: T3 Sandbox ───────────────────────────────────────────────────
   interactivity_enabled: false       # Master gate for all T3 features
   wrangle_studio_enabled: false      # Wrangle Studio tab in center theater
   comparison_mode_enabled: false     # Comparison Mode toggle (requires interactivity)
   session_management_enabled: false  # Session Save/Import + ghost save (requires interactivity)
-  export_graph_enabled: false        # Export Active Graph (requires interactivity)
+  export_enabled: false        # Export Active Graph (requires interactivity)
 
   # ── Group C: Right Sidebar ────────────────────────────────────────────────
   # Controlled by interactivity_enabled + persona level (advanced+)

@@ -152,7 +152,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 
 ### 7.2 Export Results Bundle (Export Panel — Left Sidebar, ADR-047, updated 2026-05-04)
 
-**Panel:** `Export` accordion panel (renamed from "Global Project Export" in export redesign 2026-05-04). Gate: `export_bundle_enabled + export_graph_enabled`.
+**Panel:** `Export` accordion panel (renamed from "Global Project Export" in export redesign 2026-05-04). Gate: `export_enabled`.
 
 **Implementation:** `@render.download export_bundle_download` in `app/handlers/export_handlers.py`.
 
@@ -213,7 +213,7 @@ t3_steps:
 
 **Status:** The `Single Graph Export` accordion panel was **removed** in the 2026-05-04 export redesign.
 
-The "Active plot" scope option in the 3-way scope toggle (§7.2) replaces this panel. Selecting `[Active plot]` in the scope toggle and clicking `📦 Export Bundle` produces a single-plot bundle containing only the active plot's data, recipe, and audit trail. The `export_graph_enabled` flag now gates the full Export panel (both the bundle and the scope toggle) rather than a separate accordion.
+The "Active plot" scope option in the 3-way scope toggle (§7.2) replaces this panel. Selecting `[Active plot]` in the scope toggle and clicking `📦 Export Bundle` produces a single-plot bundle containing only the active plot's data, recipe, and audit trail. The `export_enabled` flag now gates the full Export panel (both the bundle and the scope toggle) rather than a separate accordion.
 
 ## 8. Filter Recipe Builder (Phase 21-F — Left Sidebar, 2026-04-23)
 
@@ -304,7 +304,7 @@ The left sidebar content is **not static** — it changes based on which top-lev
 | **Manifest Choice** | Manifest selector (`manifest_selector.visible` must be `true` in persona template) | `manifest_selector.visible` |
 | **Data Import** | Metadata upload (§9, always if `metadata_ingestion_enabled`) + multi-file ingestion + Excel converter (§10, when `import_helper_enabled`) | `metadata_ingestion_enabled` or `import_helper_enabled` |
 | **Filters** | Filter Recipe Builder row widgets (§8) | always (Home only) |
-| **Export** | Export Bundle with 3-way scope toggle (§7.2). T3 Audit Trail auto-included in report.qmd (§12f). | `export_bundle_enabled + export_graph_enabled` |
+| **Export** | Export Bundle with 3-way scope toggle (§7.2). T3 Audit Trail auto-included in report.qmd (§12f). | `export_enabled` |
 | **Session Management** | Session list + Restore/Delete + Export Active Session header button (§7.1) | `session_management_enabled` |
 
 **Implementation rule:** The `sidebar_nav_ui` render function reads the active top-level nav item and renders the appropriate sidebar content. Switching panels clears and replaces the entire left sidebar DOM subtree (not CSS-hide — physical replacement, following the Shell Stability Law in §3a of `project_conventions.md`).
@@ -787,7 +787,7 @@ See `config/deployment/local/local_profile.yaml` for the dev template.
 
 Defined in persona templates: `config/ui/templates/<persona_id>_template.yaml`. Persona IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
 
-Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_bundle_enabled`, `export_graph_enabled`, `audit_report_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `developer_mode_enabled`, `gallery_enabled`.
+Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `audit_report_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `developer_mode_enabled`, `gallery_enabled`.
 
 See `rules_persona_feature_flags.md` for the authoritative flag matrix and dependency cascade rules.
 

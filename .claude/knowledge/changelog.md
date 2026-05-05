@@ -9,7 +9,7 @@ Breaking changes are marked ⚠️. Renames that affect the manifest data contra
 ### Export pipeline (EXPORT-REDESIGN-1, EXPORT-REDESIGN-2)
 - **Removed** separate "Export Audit Report" button and its handler (`export_audit_report_ui`, `export_audit_report_download`, `_audit_report_filename`). The `audit_report_enabled` persona flag is now unused by the UI (kept in validator for backwards compat).
 - **Removed** "Single Graph Export" accordion panel from the sidebar. Functionality superseded by the scope toggle.
-- **Added** 3-way scope toggle `[Global project | Active group | Active plot]` to the Export panel, gated on persona having both `export_bundle_enabled` + `export_graph_enabled`.
+- **Added** 3-way scope toggle `[Global project | Active group | Active plot]` to the Export panel, gated on persona having both `export_enabled`.
 - **Added** `recipes/t3_steps.yaml` to the export bundle when T3 has committed active nodes.
 - **Added** "T3 Audit Trail" section to `report.qmd` — per-plot table of committed T3 steps + user justifications; deactivated nodes excluded.
 - Accordion label renamed from "Global Project Export" → "Export".

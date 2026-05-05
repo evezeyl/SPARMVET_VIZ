@@ -9,11 +9,12 @@ _FULL_FEATURES = {
     "t3_sandbox_enabled": False,
     "developer_mode_enabled": False,
     "gallery_enabled": False,
+    "blueprint_enabled": False,
+    "test_lab_enabled": False,
     "comparison_mode_enabled": False,
     "session_management_enabled": False,
     "import_helper_enabled": False,
-    "export_bundle_enabled": True,
-    "export_graph_enabled": False,
+    "export_enabled": True,
     "audit_report_enabled": False,
     "metadata_ingestion_enabled": False,
     "data_ingestion_enabled": False,
@@ -143,13 +144,11 @@ def test_multiple_children_warn_when_master_false(capsys):
     t, path = _tmpl(overrides={
         "interactivity_enabled": False,
         "session_management_enabled": True,
-        "export_graph_enabled": True,
         "audit_report_enabled": True,
     })
     V.validate(t, path)
     captured = capsys.readouterr()
     assert "session_management_enabled" in captured.out
-    assert "export_graph_enabled" in captured.out
     assert "audit_report_enabled" in captured.out
 
 
@@ -187,7 +186,6 @@ def test_child_false_master_false_no_warning(capsys):
         "interactivity_enabled": False,
         "comparison_mode_enabled": False,
         "session_management_enabled": False,
-        "export_graph_enabled": False,
         "audit_report_enabled": False,
     })
     V.validate(t, path)

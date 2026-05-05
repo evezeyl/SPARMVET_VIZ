@@ -19,11 +19,25 @@ The gallery requires a pre-computed index for UI efficiency. Run the following c
 export PYTHONPATH=$PYTHONPATH:. && ./.venv/bin/python libs/viz_gallery/assets/refresh_gallery.py
 ```
 
-## Governance (Mandatory Triplet)
+## Governance (Mandatory Triplet — ADR-061, ADR-063)
 
-Every gallery bundle folder MUST contain:
+Every gallery bundle folder MUST contain all four files:
 
-1. `recipe_manifest.yaml` (including taxonomy: family, pattern, difficulty)
-2. `example_data.tsv`
-3. `recipe_meta.md`
-4. `preview_plot.png`
+1. `recipe_manifest.yaml` — 6-axis taxonomy: family, pattern, difficulty, geom, show, sample_size
+2. `example_data.tsv` — representative dataset
+3. `recipe_meta.md` — scientific guidance + author metadata
+4. `preview_plot.png` — pre-rendered evidence PNG
+
+Full standards: `.claude/rules/rules_gallery_standards.md`
+
+## Installation
+
+```bash
+pip install -e libs/viz_gallery
+```
+
+## Tests
+
+```bash
+PYTHONPATH=. .venv/bin/python -m pytest libs/viz_gallery/tests/ -v
+```

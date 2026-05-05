@@ -23,7 +23,7 @@ deps:
   - **Manifest Choice** — manifest selector dropdown (`project_id`). Hidden when persona has `manifest_selector.visible=false` (pipeline-static, pipeline-exploration-simple).
   - **Data Import** (Phase 25-F) — testing_mode-aware. `testing_mode=false`: read-only listing of source files resolved from the active manifest. `testing_mode=true`: same listing + metadata replacement upload (gate: `metadata_ingestion_enabled`) + multi-file/Excel uploader (gate: `data_ingestion_enabled`).
   - **Filters** — Filter Recipe Builder (Phase 21-F). Add N filter rows `{column, op, value}`. `_pending_filters` staging → `applied_filters` committed on Apply. Ops: `in`/`not_in` for discrete; `eq`/`ne`/`gt`/`ge`/`lt`/`le`/`between` for numeric. Static message + buttons hidden when `interactivity_enabled=false`; exploration disclaimer for passive personas (`metadata_ingestion_enabled=false` proxy).
-  - **Export** (2026-05-04 redesign; gate: `export_bundle_enabled + export_graph_enabled`) — bundle name field, plot format radio (PNG/SVG/PDF), filter trace warning, **3-way scope toggle** `[Global project | Active group | Active plot]`, Export Bundle download. T3 Audit Trail and `t3_steps.yaml` auto-included when T3 has committed nodes. Single Graph Export accordion removed — superseded by "Active plot" scope. See `ui_implementation_contract.md §7.2` for full spec.
+  - **Export** (2026-05-04 redesign; gate: `export_enabled`) — bundle name field, plot format radio (PNG/SVG/PDF), filter trace warning, **3-way scope toggle** `[Global project | Active group | Active plot]`, Export Bundle download. T3 Audit Trail and `t3_steps.yaml` auto-included when T3 has committed nodes. Single Graph Export accordion removed — superseded by "Active plot" scope. See `ui_implementation_contract.md §7.2` for full spec.
   - **Session Management** (gate: `session_management_enabled`) — header-level "Export Active Session (.zip)" download (Phase 25-G), import .zip control, per-session Restore + Delete (per-session Export removed in 25-G).
 
   **Blueprint Architect mode left sidebar:** Manifest/component navigation (dataset pipeline selector, TubeMap node selector). No filter widgets.
@@ -52,7 +52,7 @@ The UI dynamically alters component availability based on the templates in `conf
 **t3_audit**: promotes filters/drops to T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, recipe export).
 
 **Persona template flags** (in `config/ui/templates/<persona>_template.yaml`):
-`interactivity_enabled`, `developer_mode_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_bundle_enabled`, `export_graph_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
+`interactivity_enabled`, `developer_mode_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
 
 **`qa` persona:** Mirrors `developer` flags but sets `automation.ghost_save: false` for deterministic Playwright runs (no background ghost writes during smoke tests). It is the recommended `SPARMVET_PERSONA` for CI.
 

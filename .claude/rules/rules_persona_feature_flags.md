@@ -22,7 +22,7 @@ These flags are always meaningful regardless of any other flag.
 
 | Flag | Default (static) | Effect when true |
 |---|---|---|
-| `export_bundle_enabled` | `true` | Export Bundle zip available in **Export** panel. Combined with `export_graph_enabled` to gate the full panel (scope toggle + download). |
+| `export_enabled` | `true` | Export accordion panel: bundle zip + 3-way scope toggle. Gates the full panel. (`demo-vetinst`/`web-demo`: `false`) |
 | `audit_report_enabled` | `false` | Retained in validator for backwards compat — **no longer used by UI** (2026-05-04 redesign). T3 audit trail is auto-included in `report.qmd` inside the bundle. |
 
 No dependencies. Safe to enable in any persona.
@@ -38,11 +38,12 @@ interactivity_enabled: true/false   ← MASTER GATE for all below
   │
   ├─ t3_sandbox_enabled             ← T3 wrangling tier + right sidebar audit panel
   ├─ comparison_mode_enabled        ← Comparison Mode toggle in theater
-  ├─ session_management_enabled     ← Session Save/Import + ghost save
-  └─ export_graph_enabled           ← Export Active Graph (single plot)
+  └─ session_management_enabled     ← Session Save/Import + ghost save
 ```
 
-**Dependency rule:** `bootloader` ignores `comparison_mode_enabled`, `session_management_enabled`, and `export_graph_enabled` when `interactivity_enabled: false`. Setting them to `true` in a static persona produces no UI effect and logs a warning.
+**Dependency rule:** `bootloader` ignores `comparison_mode_enabled` and `session_management_enabled` when `interactivity_enabled: false`. Setting them to `true` in a static persona produces no UI effect and logs a warning.
+
+**`export_enabled` is NOT in this group.** Export is independent of interactivity — even a static (read-only) persona can produce an export bundle. It belongs in Group A.
 
 **Structural consequence:** When `interactivity_enabled: false`, the T3 Tier Toggle buttons (T3-Wrangle, T3-Plot) are absent. The T3 recipe still silently pre-fills from T2 to protect plot rendering — but this is internal and invisible to the user.
 
@@ -103,14 +104,15 @@ Six personas exist (`config/ui/templates/`). `qa` is a CI/headless-test persona 
 | `wrangle_studio_enabled` | false | true | true | true | true | true |
 | `comparison_mode_enabled` | false | true | true | true | true | true |
 | `session_management_enabled` | false | true | true | true | true | true |
-| `export_bundle_enabled` | true | true | true | true | true | true |
-| `export_graph_enabled` | false | false | true | true | true | true |
+| `export_enabled` | true | true | true | true | true | true |
 | `audit_report_enabled` | false | false | true | true | true | true |
 | `metadata_ingestion_enabled` | false | false | true | true | true | true |
 | `import_helper_enabled` | false | false | false | true | true | true |
 | `data_ingestion_enabled` | false | false | false | true | true | true |
 | `developer_mode_enabled` | false | false | false | false | true | true |
 | `gallery_enabled` | false | false | false | **true** | true | true |
+| `blueprint_enabled` | false | false | false | true | true | true |
+| `test_lab_enabled` | false | false | false | false | true | true |
 
 **Phase 25 additions** (per ADR-052; not feature flags but persona-template fields):
 
@@ -128,9 +130,9 @@ Six personas exist (`config/ui/templates/`). `qa` is a CI/headless-test persona 
 1. If `interactivity_enabled == False`:
    - Force `comparison_mode_enabled = False`
    - Force `session_management_enabled = False`
-   - Force `export_graph_enabled = False`
    - Force `audit_report_enabled = False`
    - Print `[Bootloader] WARNING: <flag>=True ignored — interactivity_enabled=False` for each overridden flag.
+   - `export_enabled` is **NOT** forced — export is independent of interactivity (Group A).
 
 2. If `import_helper_enabled == False`:
    - Force `data_ingestion_enabled = False`

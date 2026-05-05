@@ -87,9 +87,15 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 - [Deployment Guide](./docs/deployment/deployment_guide.qmd): Galaxy, IRIDA, server, and local deployment (ADR-048).
 - [Connector / Profile Schema](./docs/workflows/connector.qmd): Deployment profile YAML schema reference.
 
-## 🔧 Developer Scripts (`assets/scripts/`)
+## 🔧 Developer Scripts
 
-User-facing helper scripts for manifest and deployment authoring:
+### `scripts/` — setup helpers
+
+| Script | Purpose |
+|---|---|
+| `scripts/install_libs.sh` | Install all 8 editable libs in one command (`VENV=.my_venv ./scripts/install_libs.sh`) |
+
+### `assets/scripts/` — manifest and deployment authoring
 
 | Script | Purpose |
 |---|---|

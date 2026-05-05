@@ -42,8 +42,8 @@ or the manifest has no `analysis_groups` (only a top-level `plots:` key), the
 "Active group" option is hidden entirely, not just disabled.
 
 **Persona gate:**
-- Toggle only rendered when persona has **both** `export_bundle_enabled` AND `export_graph_enabled`.
-- When only `export_bundle_enabled`: no toggle; button always operates in Global mode.
+- Toggle only rendered when persona has **both** `export_enabled`.
+- When only `export_enabled`: no toggle; button always operates in Global mode.
 - Default: **Global project**.
 
 ### 1.2 Presentation controls (not content choices)
@@ -161,7 +161,7 @@ Recursive if an ingredient is itself an assembly. Already implemented in
 
 ## 6. Persona gate summary
 
-| `export_bundle_enabled` | `export_graph_enabled` | UI |
+| `export_enabled` | UI |
 |---|---|---|
 | ✓ | — | Export panel visible; no toggle; always Global mode |
 | ✓ | ✓ | Export panel visible; 3-way toggle shown (Global / Active group / Active plot) |
@@ -189,4 +189,4 @@ Recursive if an ingredient is itself an assembly. Already implemented in
 | Audit report UI | `app/handlers/export_handlers.py` → `export_audit_report_ui()` | **Delete** — replaced by auto-inclusion logic in bundle |
 | Bundle builder | `app/handlers/export_handlers.py` → `export_bundle_download()` | Add T3 audit section to report.qmd; add t3_steps.yaml; 3-way scope logic (global / group / plot) |
 | Single graph export | `app/handlers/single_graph_export_handlers.py` | Merge into bundle builder via scope flag — same download handler, scope parameter drives content |
-| Persona flags | No change needed | `export_bundle_enabled` + `export_graph_enabled` already exist |
+| Persona flags | No change needed | `export_enabled` already exist |

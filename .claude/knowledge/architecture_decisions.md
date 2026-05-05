@@ -917,7 +917,7 @@ If any row filters are applied at the time of export, their full trace (column /
 ### 7. Extensions (2026-05-04 — EXPORT-REDESIGN-1/2)
 
 **Scope toggle (3-way):** `[Global project | Active group | Active plot]`
-- Shown only when persona has both `export_bundle_enabled` + `export_graph_enabled`.
+- Shown only when persona has both `export_enabled`.
 - Active group = group the active plot tab belongs to; lineage backtraced per plot.
 - Active plot = current plot tab (`active_home_subtab`).
 - "Active group" hidden when manifest has no `analysis_groups` or active plot has no group.
@@ -1562,7 +1562,7 @@ config/ui/templates/<persona_id>_template.yaml
 
 `_load_persona_config()` applies two cascade rules after loading the raw YAML:
 
-- **Group B:** `interactivity_enabled: false` forces to `false`: `t3_sandbox_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_graph_enabled`, `audit_report_enabled`. A WARNING is printed for each suppressed flag.
+- **Group B:** `interactivity_enabled: false` forces to `false`: `t3_sandbox_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `audit_report_enabled`. A WARNING is printed for each suppressed flag.
 - **Group C:** `import_helper_enabled: false` forces `data_ingestion_enabled: false`. WARNING printed.
 - **Profile override:** `data_ingestion_enabled: false` in the deployment profile is an absolute override regardless of template value (automated-pipeline deployments push data; users cannot upload).
 

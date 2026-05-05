@@ -93,7 +93,7 @@ Profile schema and full documentation: `config/deployment/templates/connector_te
 
 **Persona resolution order (Phase 25-M fix):** `persona=` kwarg > `SPARMVET_PERSONA` env var > `default_persona` in deployment profile > `ValueError`. No hardcoded fallback in code — the local dev profile (`config/deployment/local/local_profile.yaml`) sets `default_persona: "developer"`.
 
-**Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all persona-gated decisions. Comparing `bootloader.persona` against name strings is prohibited — personas are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_graph_enabled`, `audit_report_enabled`. See `rules_persona_feature_flags.md` §Anti-Pattern.
+**Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all persona-gated decisions. Comparing `bootloader.persona` against name strings is prohibited — personas are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_enabled`, `audit_report_enabled`. See `rules_persona_feature_flags.md` §Anti-Pattern.
 
 - **Location 1 (Raw/Ingestion)**: Path to raw external data assets.
 - **Location 2 (Manifests)**: Path to pipeline definitions and wrangling recipes.
