@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download
-# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, polars, shiny
+# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, polars, shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/design/export_specification.md
 # @end_deps
@@ -566,6 +566,112 @@ def define_export_server(input, output, session, *,
 
             tiers_exported = ["T1"] + (["T3"] if export_t3 else [])
 
+            # ── Lineage graph (ADR-074) ───────────────────────────────────
+            # Shared-node DAG: one lineage_graph.json per export scope.
+            # Nodes are deduplicated by schema_id+type so datasets shared
+            # across multiple plots appear only once.
+            _lineage_nodes: dict[str, dict] = {}
+            _lineage_edges: set[tuple[str, str]] = set()
+            _lineage_per_plot: dict[str, list[str]] = {}
+            _lineage_ok = False
+            try:
+                from blueprint_arch.manifest_navigator import (
+                    build_plot_lineage as _bpl,
+                )
+                _mnf_path_obj = bootloader.available_projects.get(proj_id)
+                if _mnf_path_obj:
+                    _mnf_str = str(_mnf_path_obj)
+                    for _pid, _pspec in all_plots:
+                        _steps = _bpl(_pid, _mnf_str)
+                        if not _steps:
+                            continue
+                        _plot_nids: list[str] = []
+                        for _s in _steps:
+                            _nid = f"{_s['schema_id']}__{_s['type']}"
+                            if _nid not in _lineage_nodes:
+                                _lineage_nodes[_nid] = {
+                                    "id": _nid,
+                                    "type": _s["type"],
+                                    "schema_id": _s["schema_id"],
+                                    "label": _s["label"],
+                                    "rel": _s.get("rel", ""),
+                                }
+                            _plot_nids.append(_nid)
+                        _lineage_per_plot[_pid] = _plot_nids
+                        # Derive DAG edges from step sequence.
+                        # Gateway = first join node (if present) else plot_spec.
+                        # All data_source / wrangling nodes connect into the gateway.
+                        _join_s = next(
+                            (_s for _s in _steps if _s["type"] == "join"), None
+                        )
+                        _plot_s = next(
+                            (_s for _s in _steps if _s["type"] == "plot_spec"), None
+                        )
+                        _gw = _join_s or _plot_s
+                        _ei = 0
+                        while _ei < len(_steps):
+                            _es = _steps[_ei]
+                            _en = f"{_es['schema_id']}__{_es['type']}"
+                            if _es["type"] == "data_source":
+                                _nxt = _steps[_ei + 1] if _ei + 1 < len(_steps) else None
+                                if (
+                                    _nxt
+                                    and _nxt["type"] == "wrangling"
+                                    and _nxt["schema_id"] == _es["schema_id"]
+                                ):
+                                    _wn = f"{_nxt['schema_id']}__{_nxt['type']}"
+                                    _lineage_edges.add((_en, _wn))
+                                    if _gw:
+                                        _gwn = f"{_gw['schema_id']}__{_gw['type']}"
+                                        if _wn != _gwn:
+                                            _lineage_edges.add((_wn, _gwn))
+                                    _ei += 2
+                                else:
+                                    if _gw:
+                                        _gwn = f"{_gw['schema_id']}__{_gw['type']}"
+                                        if _en != _gwn:
+                                            _lineage_edges.add((_en, _gwn))
+                                    _ei += 1
+                            elif _es["type"] == "join" and _plot_s:
+                                _lineage_edges.add(
+                                    (_en, f"{_plot_s['schema_id']}__{_plot_s['type']}")
+                                )
+                                _ei += 1
+                            else:
+                                _ei += 1
+
+                    if _lineage_nodes:
+                        import json as _json
+                        _graph_payload = {
+                            "generated": now.isoformat(),
+                            "export_scope": scope_label,
+                            "nodes": list(_lineage_nodes.values()),
+                            "edges": [
+                                {"from": _f, "to": _t}
+                                for _f, _t in sorted(_lineage_edges)
+                            ],
+                            "plot_ids": [_p for _p, _ in all_plots],
+                            "lineage_per_plot": _lineage_per_plot,
+                            "description": (
+                                "Shared-node directed acyclic graph (DAG) of the data "
+                                "lineage for this export scope. "
+                                "Nodes are deduplicated by schema_id+type — a dataset "
+                                "shared by multiple plots appears only once. "
+                                "Edge direction: upstream → downstream "
+                                "(data_source → wrangling → join → plot_spec)."
+                            ),
+                        }
+                        zf.writestr(
+                            f"{bundle_dir}/lineage/lineage_graph.json",
+                            _json.dumps(_graph_payload, indent=2),
+                        )
+                        _lineage_ok = True
+            except Exception as _le:
+                zf.writestr(
+                    f"{bundle_dir}/lineage/lineage_graph_ERROR.txt",
+                    f"Lineage graph generation failed:\n{_le}",
+                )
+
             # ── Generate Quarto .qmd report ───────────────────────────────
             # QMD image refs use qmd_plot_fmt (PNG when PDF+SVG mismatch)
             plot_ext = qmd_plot_fmt
@@ -718,6 +824,67 @@ def define_export_server(input, output, session, *,
                         )
                     qmd_lines.append("")
 
+            # ── Data Lineage section ──────────────────────────────────────
+            if _lineage_ok and _lineage_nodes:
+                qmd_lines += ["## Data Lineage", ""]
+                # Mermaid flowchart — cylinder=source, rounded=wrangling,
+                # rhombus=join, rectangle=plot.
+                _mmd_shapes = {
+                    "data_source": ('[("', '")]'),
+                    "wrangling": ('("', '")'),
+                    "join": ('{"', '"}'),
+                    "plot_spec": ('["', '"]'),
+                }
+                _mmd_type_labels = {
+                    "data_source": "source",
+                    "wrangling": "wrangling",
+                    "join": "join",
+                    "plot_spec": "plot",
+                }
+
+                def _mmd_id(nid: str) -> str:
+                    return _re.sub(r"[^A-Za-z0-9_]", "_", nid)
+
+                qmd_lines += ["```{mermaid}", "flowchart LR"]
+                for _nid, _nd in _lineage_nodes.items():
+                    _t = _nd["type"]
+                    _lbl = _nd["label"].replace('"', "'")
+                    _tlbl = _mmd_type_labels.get(_t, _t)
+                    _open, _close = _mmd_shapes.get(_t, ('["', '"]'))
+                    qmd_lines.append(
+                        f"    {_mmd_id(_nid)}{_open}{_lbl} / {_tlbl}{_close}"
+                    )
+                for _ef, _et in sorted(_lineage_edges):
+                    qmd_lines.append(f"    {_mmd_id(_ef)} --> {_mmd_id(_et)}")
+                qmd_lines += ["```", ""]
+
+                # Step summary table
+                _ln_type_order = {
+                    "data_source": 0, "wrangling": 1, "join": 2, "plot_spec": 3
+                }
+                qmd_lines += [
+                    "### Lineage Step Summary",
+                    "",
+                    "| Type | Schema ID | Label | Path |",
+                    "|------|-----------|-------|------|",
+                ]
+                for _nd in sorted(
+                    _lineage_nodes.values(),
+                    key=lambda x: (_ln_type_order.get(x["type"], 9), x["schema_id"]),
+                ):
+                    _nd_rel = _nd.get("rel") or "—"
+                    qmd_lines.append(
+                        f"| `{_nd['type']}` | `{_nd['schema_id']}` "
+                        f"| {_nd['label']} | `{_nd_rel}` |"
+                    )
+                qmd_lines += [
+                    "",
+                    "> **`lineage/lineage_graph.json`** contains the full machine-readable DAG.",
+                    "> Nodes are deduplicated — a dataset shared by multiple plots appears only once.",
+                    "> Edge direction: upstream → downstream (source → wrangling → join → plot).",
+                    "",
+                ]
+
             qmd_lines += [
                 "---",
                 "",
@@ -818,6 +985,7 @@ def define_export_server(input, output, session, *,
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
                 "  <dataset>/T3_data.tsv — analyst-filtered data (T3, when active)",
                 "  recipes/          — YAML wrangling recipes",
+                "  lineage/          — lineage_graph.json (shared-node DAG, ADR-074)",
                 "  report.qmd        — Quarto source (re-render: quarto render report.qmd)",
                 rendered_note,
                 "  FILTERS.txt       — filter trace (if filters were active)",

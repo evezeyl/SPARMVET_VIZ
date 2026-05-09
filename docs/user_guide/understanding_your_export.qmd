@@ -82,6 +82,35 @@ When you publish a figure, these three values are your audit trail. Anyone with 
 
 ---
 
+## The lineage graph: what connected what
+
+Your export bundle contains a `lineage/` folder with a file called `lineage_graph.json`. This file describes, in machine-readable form, the full chain of steps that produced every plot in your export: which raw data files fed in, what wrangling transformations were applied, how datasets were joined, and which plots came out the other end.
+
+The same information appears visually as a **flowchart** and as a **step summary table** inside your `report.qmd` report. The JSON file is for tooling and programmatic use — most users can rely on the diagram in the report.
+
+### How to read the lineage flowchart
+
+The flowchart in your report uses shape-coding to distinguish steps:
+
+| Shape | Meaning |
+|---|---|
+| Cylinder `[(...)]` | **Data source** — a raw TSV file from the pipeline |
+| Rounded rectangle `(...)` | **Wrangling** — cleaning and transformation steps applied to one source |
+| Rhombus `{...}` | **Join / Assembly** — where multiple sources are combined |
+| Rectangle `[...]` | **Plot** — the final visualisation produced |
+
+Arrows show the flow direction: raw data → wrangling → join → plot.
+
+### Why shared nodes matter
+
+If two plots in your export share the same underlying dataset (e.g. the same Quality Control join), that dataset node appears **only once** in the graph with two arrows leaving it — one for each plot. This is intentional: it correctly represents that both plots depend on the same upstream data, so any change to that data affects both.
+
+### The `lineage_per_plot` index
+
+Inside `lineage_graph.json`, the `lineage_per_plot` key maps each plot ID to the ordered list of node IDs in its specific upstream chain. This makes it easy to, for example, write a script that re-runs only the pipeline steps needed for a single plot.
+
+---
+
 ## Practical tip: keep your export bundle intact
 
 ::: {.callout-important}

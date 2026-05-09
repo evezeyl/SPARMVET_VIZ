@@ -39,18 +39,19 @@ The `app/` package is split into three tiers with a hard boundary between them:
 | `ui.py` | Static Shiny HTML/CSS shell. No reactive logic. |
 | `bootloader.py` | Path Authority & Persona bootstrap (ADR-031). |
 
-**Tier 2 — Importable Modules** (`app/modules/`)
+**Tier 2 — Importable Modules** (`app/modules/` and `libs/blueprint_arch/`)
 
 Pure Python — importable from headless scripts, test suites, and CLI tools without Shiny side-effects.
 
-| Module | Role |
-|---|---|
-| `manifest_navigator.py` | Pure manifest introspection engine: `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`. |
-| `orchestrator.py` | `DataOrchestrator` — Tier 1 assembly bridge (Parquet materialization). |
-| `wrangle_studio.py` | `WrangleStudio` — Blueprint Architect visual builder class. |
-| `gallery_viewer.py` | `GalleryViewer` — static gallery browser. |
-| `dev_studio.py` | `DevStudio` — developer diagnostic tools. |
-| `exporter.py` | `SubmissionExporter` — gallery submission. |
+| Module | Location | Role |
+|---|---|---|
+| `manifest_navigator.py` | `libs/blueprint_arch/` (ADR-067) | Pure manifest introspection engine: `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group`. |
+| `schema_registry.py` | `libs/blueprint_arch/` (ADR-075) | Headless-safe catalog of `ui_schema` dicts registered by `@register_action` and `@register_plot_component`. Powers Blueprint IDE form generation. |
+| `orchestrator.py` | `app/modules/` | `DataOrchestrator` — Tier 1 assembly bridge (Parquet materialization). |
+| `wrangle_studio.py` | `app/modules/` | `WrangleStudio` — Blueprint Architect visual builder class. |
+| `gallery_viewer.py` | `app/modules/` | `GalleryViewer` — static gallery browser. |
+| `dev_studio.py` | `app/modules/` | `DevStudio` — developer diagnostic tools. |
+| `exporter.py` | `app/modules/` | `SubmissionExporter` — gallery submission. |
 
 **Tier 3 — Shiny Wiring** (`app/handlers/`)
 
@@ -63,6 +64,7 @@ Contains `@render.*` and `@reactive.*` decorators only. Each module exposes `def
 | `blueprint_handlers.py` | Blueprint Architect: manifest import, TubeMap, Lineage Rail. |
 | `gallery_handlers.py` | Gallery: filtering, preview, clone, submission. |
 | `ingestion_handlers.py` | Ingestion & persona switching. |
+| `export_handlers.py` | Export results bundle (ZIP): plots, data tiers, recipes, lineage graph, Quarto report. |
 
 **The Two-Category Law:** Code is either pure introspection (Tier 2) or Shiny wiring (Tier 3). Mixing them in the same file is a protocol violation (ADR-045).
 

@@ -308,7 +308,7 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 ### Blueprint Architect
 
 - [x] **LINEAGE-NAV-1** `[sonnet/medium]`: Implement `build_plot_lineage(plot_id, manifest_path)` and `get_plot_ids_in_group(group_id, manifest_path)` in `libs/blueprint_arch/.../manifest_navigator.py`. Backward trace: data sources → T1 → T2 → join/assembly → plot spec, as ordered list of step dicts. Forward trace: reads `analysis_groups[group_id].plots`. T3 overlay appended by caller. ADR-074. ✅ 2026-05-09
-- [ ] **LINEAGE-EXPORT-1** `[sonnet/high]`: Implement `lineage/lineage_graph.json` generation in `export_handlers.py` (shared-node DAG, one file per export scope, no per-plot duplication); add to `report.qmd` template: Mermaid flowchart + step summary table + JSON explanation note. ADR-074.
+- [x] **LINEAGE-EXPORT-1** `[sonnet/high]`: Implement `lineage/lineage_graph.json` generation in `export_handlers.py` (shared-node DAG, one file per export scope, no per-plot duplication); add to `report.qmd` template: Mermaid flowchart + step summary table + JSON explanation note. ADR-074. ✅ 2026-05-09
 - [x] **BP-SCHEMA-1** `[sonnet/high]`: Add `ui_schema` kwarg to `@register_action` and `@register_plot_component`; implement `schema_registry.py` in `blueprint_arch`; populate schemas for 19 transformer actions and 7 viz_factory components as first pass. `allow_extra_params: True` + `wraps` on all geom schemas. ADR-075. ✅ 2026-05-09
 
 - [x] **SCHEMA-VERIFY-ACTIONS-1** `[haiku/low]`: Verify all 19 annotated transformer action `ui_schema.params` against the actual function body. ✅ 2026-05-09
