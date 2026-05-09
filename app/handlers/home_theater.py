@@ -517,16 +517,15 @@ def define_server(input, output, session, *,
                     ui.div(
                         ui.tags.div(
                             "T1 — Raw (Baseline)",
-                            class_="badge bg-secondary mb-1",
-                            style="font-size:0.75em;"
+                            class_="badge bg-secondary mb-1 spv-text-xs",
                         ),
                         ui.output_plot(f"plot_group_{p_id}_cmp_base", height="440px"),
                     ),
                     ui.div(
                         ui.tags.div(
                             "T3 — My view (Filtered / Dropped)",
-                            class_="badge mb-1",
-                            style="font-size:0.75em; background:#ffc107; color:#212529;"
+                            class_="badge mb-1 spv-text-xs",
+                            style="background:#ffc107; color:#212529;",
                         ),
                         ui.output_plot(f"plot_group_{p_id}", height="440px"),
                     ),
@@ -622,7 +621,7 @@ def define_server(input, output, session, *,
             ui.tags.span(
                 "Data to show:",
                 class_="fw-semibold me-3",
-                style="white-space: nowrap; font-size: 0.85rem; color: #345beb;"
+                style="white-space: nowrap; color: #345beb;",
             ),
             ui.input_radio_buttons(
                 "tier_toggle",
@@ -659,8 +658,7 @@ def define_server(input, output, session, *,
                 id="acc_home_data",
                 open="data_panel",
             ),
-            class_="spv-panel",
-            style="overflow: visible;"
+            class_="spv-panel overflow-visible",
         )
 
         # --- No groups: fallback to top-level plots or show guidance ---
@@ -761,7 +759,7 @@ def define_server(input, output, session, *,
                 selected=_saved_group,
             ),
             class_="spv-panel",
-            style="padding: 8px 10px 0 10px;"
+            style="padding: 8px 10px 0 10px;",
         )
 
         return ui.div(
@@ -946,7 +944,7 @@ def define_server(input, output, session, *,
                     ui.tags.small(label_text,
                                   class_="text-muted fw-semibold"),
                     ui.output_ui("col_drop_audit_btn_ui"),
-                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;",
+                    class_="spv-row-between",
                 ),
                 ui.input_selectize(
                     "preview_col_selector",
@@ -959,8 +957,7 @@ def define_server(input, output, session, *,
                         "plugins": ["remove_button"],
                     },
                 ),
-                class_="mb-2 w-100 column-picker-container",
-                style="font-size: 0.75em;"
+                class_="mb-2 w-100 column-picker-container spv-text-xs",
             )
         except Exception:
             return ui.div()
@@ -989,8 +986,8 @@ def define_server(input, output, session, *,
         n_drop = len([c for c in cols if c not in vis_set])
         return ui.input_action_button(
             "col_drop_to_audit", f"➜ Audit drops ({n_drop})",
-            class_="btn-warning btn-sm",
-            style="font-size:0.72em; white-space:nowrap;",
+            class_="btn-warning btn-sm spv-text-xxs",
+            style="white-space:nowrap;",
             disabled=(n_drop == 0),
         )
 
@@ -1017,7 +1014,7 @@ def define_server(input, output, session, *,
 
         badge = (
             ui.h6(f"Active: {perm.replace('_', ' ').title()}",
-                  class_="text-muted px-2 py-1 mb-1 border-bottom", style="font-size: 0.7em;")
+                  class_="text-muted px-2 py-1 mb-1 border-bottom spv-text-meta")
             if bootloader.is_enabled("show_persona_badge")
             else None
         )
@@ -1289,16 +1286,13 @@ def define_server(input, output, session, *,
                     ui.div(
                         ui.output_ui("recipe_pending_badge_ui"),
                         ui.output_ui("audit_nodes_header_ui"),
-                        ui.h6("Inherited (Tier 2)", class_="text-muted",
-                              style="font-size:0.75em; text-transform:uppercase; margin-top:4px; margin-bottom:5px;"),
+                        ui.h6("Inherited (Tier 2)", class_="text-muted spv-label-caps"),
                         ui.output_ui("audit_nodes_tier2"),
-                        ui.hr(style="margin:6px 0;"),
+                        ui.hr(class_="spv-divider"),
                         ui.output_ui("audit_nodes_tier3"),
-                        class_="p-2",
-                        style="overflow-y:auto; flex:1 1 auto;",
+                        class_="p-2 spv-scroll-flex",
                     ),
-                    class_="mb-2 shadow-sm border-0 d-flex flex-column",
-                    style="flex:1 1 auto; overflow:hidden;",
+                    class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto",
                 ))
                 parts.append(ui.output_ui("audit_stack_tools_ui"))
 
@@ -1366,19 +1360,21 @@ def define_server(input, output, session, *,
                 ui.div(
                     ui.tags.span(
                         e.get("ts", ""),
-                        style="color:#6c757d; font-size:0.7em; white-space:nowrap; margin-right:6px;"
+                        class_="text-muted spv-text-meta",
+                        style="white-space:nowrap; margin-right:6px;",
                     ),
                     ui.tags.span(
                         e.get("msg", ""),
-                        style=f"color:{color}; font-size:0.75em;"
+                        class_="spv-text-xs",
+                        style=f"color:{color};",
                     ),
-                    style="margin-bottom:3px; display:flex; align-items:flex-start; flex-wrap:wrap;",
+                    class_="spv-tag-row",
                 )
             )
         body = (
-            ui.div(*rows, style="max-height:160px; overflow-y:auto; padding:4px 2px;")
+            ui.div(*rows, class_="spv-scroll-md")
             if rows
-            else ui.tags.small("No alerts yet.", style="color:#6c757d; padding:4px;")
+            else ui.tags.small("No alerts yet.", class_="text-muted", style="padding:4px;")
         )
         return ui.accordion(
             ui.accordion_panel(

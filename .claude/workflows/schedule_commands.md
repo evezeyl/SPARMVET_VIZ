@@ -452,6 +452,122 @@ Exit codes: 0 = no conflicts and no MAJOR updates, 1 = conflicts or MAJOR update
 
 ---
 
+## Routine 12 — Parity Mandate Coverage (ADR-035/036)
+
+**Schedule:** On-demand (manual), or after any Polars/Plotnine version update
+
+> Run whenever `audit_package_deps` reports a Polars or Plotnine update, and before any release.
+
+```
+Create an on-demand audit routine for the SPARMVET_VIZ project.
+
+Name: "SPARMVET: Parity Mandate Coverage"
+
+Purpose: Verify that the transformer and viz_factory libraries maintain parity with
+the installed Polars and Plotnine versions, as required by ADR-035 and ADR-036.
+
+Two checks:
+  1. Plotnine parity (ADR-036) — enumerates all geom_*, stat_*, scale_*, coord_*,
+     theme_*, position_*, guide_* symbols from the installed plotnine and compares
+     against @register_plot_component() registrations in libs/viz_factory/.
+     Reports: gap (in plotnine but unregistered), stale (registered but gone from plotnine).
+  2. Polars coverage (ADR-035) — groups pl.Expr methods by accessor namespace (str, dt,
+     list, arr, cat) and reports coverage percentage per namespace.  Low-coverage
+     namespaces flag where new @register_action() decorators would add value.
+
+Known false positives (custom themes, renamed symbols) are managed via
+.claude/workflows/audit_exclusions.yaml — the script reads this file automatically.
+Only unresolved stale registrations cause exit code 1.
+
+Command to run (from project root):
+  .venv/bin/python scripts/audit_parity_coverage.py --output .claude/logs/audits/audit_parity_coverage_$(date +%Y-%m-%d).md
+
+For plotnine only (faster):
+  .venv/bin/python scripts/audit_parity_coverage.py --skip-polars --output .claude/logs/audits/audit_parity_coverage_$(date +%Y-%m-%d).md
+
+After running:
+1. Read the generated report at .claude/logs/audits/audit_parity_coverage_YYYY-MM-DD.md
+2. For each UNRESOLVED stale registration (❌ section):
+   - Check the plotnine changelog: was the component renamed or removed?
+   - If renamed: update the @register_plot_component("name") call to the new name
+   - If removed: delete the registration — file a task if any manifests use it
+   - If a custom SPARMVET component: add it to audit_exclusions.yaml under custom_viz_components
+   - Task format: - [ ] [PARITY ADR-036] Resolve stale: `<name>` — rename or remove [haiku/low]
+3. For each COVERAGE GAP (plotnine symbols with no registration):
+   - Review the plotnine docs to understand the symbol's purpose
+   - If worth supporting: follow viz_factory_implementation.md to register it
+   - If intentionally out-of-scope: add a note to audit_exclusions.yaml
+   - Task format: - [ ] [PARITY ADR-036] Register plotnine `<name>` in viz_factory [sonnet/medium]
+4. For Polars low-coverage namespaces (🔴 < 30%):
+   - File a task for each namespace: - [ ] [PARITY ADR-035] Improve pl.Expr.<ns>.* coverage [sonnet/medium]
+5. Update the status matrix in .claude/workflows/audit_routine_registry.md
+6. Commit with message: "audit: parity mandate coverage YYYY-MM-DD [PASS|FAIL N stale]"
+
+Exit codes: 0 = no unresolved stale registrations, 1 = unresolved stale found.
+```
+
+---
+
+## Routine 13 — Manifest Coherence (Static Validation)
+
+**Schedule:** Weekly, Wednesdays 22:00 (same slot as manifest integrity)
+
+> Complements Routine 3 (manifest integrity) — Routine 3 checks "does it assemble?",
+> this checks "are the pieces internally consistent?" without running the assembler.
+
+```
+Create a weekly audit routine for the SPARMVET_VIZ project that runs every Wednesday at 22:00.
+
+Name: "SPARMVET: Manifest Coherence"
+
+Purpose: Static validation of all pipeline manifests in config/manifests/pipelines/ without
+running the assembler. Checks four structural contracts:
+  1. Input field coverage — every input_fields slug must match an actual column
+     in the source TSV (catches silent skip-on-mismatch bugs).
+  2. Action name validity — every `action:` value must be registered via
+     @register_action() in libs/transformer/ (catches typos and stale action names).
+  3. Component name validity — every `name:` in plot `layers:` must be registered
+     via @register_plot_component() in libs/viz_factory/.
+  4. Join key symmetry — join `on:` keys must appear as declared field slugs
+     (catches the YAML boolean trap where bare `on:` parses as True).
+
+Known false positives (assembly-level join keys produced by wrangling steps) are
+managed via .claude/workflows/audit_exclusions.yaml — the script reads it automatically.
+
+Command to run (from project root):
+  .venv/bin/python scripts/audit_manifest_coherence.py --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md
+
+For faster run without TSV column checks:
+  .venv/bin/python scripts/audit_manifest_coherence.py --skip-tsv --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md
+
+For a single manifest:
+  .venv/bin/python scripts/audit_manifest_coherence.py --manifest config/manifests/pipelines/NAME.yaml --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md
+
+After running:
+1. Read the generated report at .claude/logs/audits/audit_manifest_coherence_YYYY-MM-DD.md
+2. For each ❌ Invalid Action Name:
+   - Check rules_persona_bioscientist.md §8 for the correct action name
+   - Update the manifest YAML — fix the typo or rename
+   - Task: - [ ] [AUDIT] Fix invalid action `<name>` in `<manifest>` [haiku/low]
+3. For each ❌ Invalid Component Name:
+   - Check libs/viz_factory/src/viz_factory/ for the registered name
+   - Update the plot spec YAML
+   - Task: - [ ] [AUDIT] Fix invalid component `<name>` in `<manifest>` [haiku/low]
+4. For each ❌ Join Key Violation:
+   - If `on:` boolean trap: add quotes — `'on': column_name`
+   - If key genuinely missing from input_fields: either add the field or add to audit_exclusions.yaml
+     with a rationale (assembly-produced columns are acceptable exclusions)
+5. For each ⚠️ TSV mismatch (if --skip-tsv not used):
+   - Run `head -1 <source.tsv>` to see actual column names
+   - Update input_fields slugs to match exactly (case-sensitive)
+6. Update the status matrix in .claude/workflows/audit_routine_registry.md
+7. Commit with message: "audit: manifest coherence YYYY-MM-DD [PASS|FAIL N]"
+
+Exit codes: 0 = all manifests pass, 1 = one or more violations, 2 = configuration error.
+```
+
+---
+
 ## Quick test commands (VS Code terminal)
 
 Before scheduling a routine, verify the script works locally:
@@ -471,4 +587,10 @@ DATE=$(date +%Y-%m-%d)
 # On-demand only (slow — runs full test suites)
 .venv/bin/python scripts/audit_library_tests.py       --output .claude/logs/audits/audit_library_tests_${DATE}.md
 .venv/bin/python scripts/audit_package_deps.py        --output .claude/logs/audits/audit_package_deps_${DATE}.md
+
+# On-demand — run after Polars/Plotnine updates
+.venv/bin/python scripts/audit_parity_coverage.py     --output .claude/logs/audits/audit_parity_coverage_${DATE}.md
+
+# Weekly (same slot as manifest integrity) — fast static check
+.venv/bin/python scripts/audit_manifest_coherence.py  --output .claude/logs/audits/audit_manifest_coherence_${DATE}.md
 ```

@@ -72,8 +72,7 @@ def define_filter_audit_server(input, output, session, *,
             return ui.div(
                 ui.tags.small(
                     "Filters are set by the pipeline configuration.",
-                    class_="text-muted d-block px-1",
-                    style="font-size:0.8em;"
+                    class_="text-muted d-block px-1 spv-text-sm"
                 )
             )
         # pipeline-exploration-simple: interactivity on but no T3 audit — show disclaimer
@@ -83,8 +82,7 @@ def define_filter_audit_server(input, output, session, *,
             disclaimer = ui.div(
                 ui.tags.small(
                     "Exploration only — filters are not saved and do not modify data permanently.",
-                    class_="text-warning d-block px-1 mb-1 border-start border-warning ps-2",
-                    style="font-size:0.75em;"
+                    class_="text-warning d-block px-1 mb-1 border-start border-warning ps-2 spv-text-xs"
                 )
             )
         # Left "Apply" is the single entry point: in T1/T2 it commits transient
@@ -98,7 +96,7 @@ def define_filter_audit_server(input, output, session, *,
                 ui.output_ui("filter_controls_ui"),
                 class_="mt-2 px-1"
             ),
-            style="font-size: 0.8em;"
+            class_="spv-text-sm"
         )
 
     @output
@@ -108,8 +106,7 @@ def define_filter_audit_server(input, output, session, *,
         pending = _pending_filters.get()
         if not pending:
             return ui.tags.small(
-                "No filters yet. Add rows below.", class_="text-muted d-block px-1 mb-1",
-                style="font-size:0.75em;"
+                "No filters yet. Add rows below.", class_="text-muted d-block px-1 mb-1 spv-text-xs",
             )
         rows = []
         for i, f in enumerate(pending):
@@ -122,17 +119,15 @@ def define_filter_audit_server(input, output, session, *,
                 ui.div(
                     ui.tags.small(
                         f"{col} {_op_label(op)} {val_display}",
-                        class_="text-dark", style="font-size:0.75em;"
+                        class_="text-dark spv-text-xs",
                     ),
-                    ui.tags.small(f" [{dtype_str}]", class_="text-muted",
-                                  style="font-size:0.65em;"),
+                    ui.tags.small(f" [{dtype_str}]", class_="text-muted spv-text-micro"),
                     class_="flex-grow-1"
                 ),
                 *([] if not bootloader.is_enabled("interactivity_enabled") else [
                     ui.input_action_button(
                         f"filter_remove_{i}", "🗑",
-                        class_="btn btn-sm btn-link p-0",
-                        style="font-size:0.95em; color:#dc3545; line-height:1;"
+                        class_="btn btn-sm btn-link p-0 text-danger",
                     )
                 ]),
                 class_="d-flex align-items-center gap-2 mb-1 px-1 py-1 border rounded bg-light",
@@ -237,7 +232,7 @@ def define_filter_audit_server(input, output, session, *,
                                 "fb_value_lo", label=None,
                                 value=col_min, step=step,
                             ),
-                            style="flex:1;",
+                            class_="spv-flex-1",
                         ),
                         ui.div(
                             ui.tags.small("max", class_="text-muted"),
@@ -245,7 +240,7 @@ def define_filter_audit_server(input, output, session, *,
                                 "fb_value_hi", label=None,
                                 value=col_max, step=step,
                             ),
-                            style="flex:1;",
+                            class_="spv-flex-1",
                         ),
                         class_="d-flex gap-1",
                     ),
@@ -257,8 +252,7 @@ def define_filter_audit_server(input, output, session, *,
                         inline=True,
                     ),
                     ui.tags.small(inclusivity_label,
-                                  class_="text-muted fst-italic d-block",
-                                  style="font-size:0.7em;"),
+                                  class_="text-muted fst-italic d-block spv-text-meta"),
                 )
             else:
                 value_widget = ui.input_numeric(
@@ -275,11 +269,10 @@ def define_filter_audit_server(input, output, session, *,
             ui.div(
                 ui.input_select("fb_op", label=None, choices=op_choices,
                                 selected=sel_op, width="100px"),
-                ui.div(value_widget, style="flex:1;"),
+                ui.div(value_widget, class_="spv-flex-1"),
                 class_="d-flex gap-1 align-items-center"
             ),
-            class_="mt-2 pt-2 border-top",
-            style="font-size: 0.8em;"
+            class_="mt-2 pt-2 border-top spv-text-sm",
         )
 
     @output
@@ -299,8 +292,7 @@ def define_filter_audit_server(input, output, session, *,
         apply_class = ("btn-warning btn-sm flex-grow-1" if in_t3
                        else "btn-primary btn-sm flex-grow-1")
         status = (
-            ui.tags.small(f"{n_applied} active", class_="text-success d-block mb-1",
-                          style="font-size:0.72em;")
+            ui.tags.small(f"{n_applied} active", class_="text-success d-block mb-1 spv-text-xxs")
             if n_applied else ui.div()
         )
         return ui.div(
@@ -308,18 +300,15 @@ def define_filter_audit_server(input, output, session, *,
             ui.div(
                 ui.input_action_button(
                     "filter_apply", apply_label,
-                    class_=apply_class,
-                    style="font-size:0.75em;"
+                    class_=apply_class + " spv-text-xs",
                 ),
                 ui.input_action_button(
                     "filter_add_row", "+ Add",
-                    class_="btn-outline-primary btn-sm",
-                    style="font-size:0.75em;"
+                    class_="btn-outline-primary btn-sm spv-text-xs",
                 ),
                 ui.input_action_button(
                     "filter_reset", "Reset",
-                    class_="btn-outline-secondary btn-sm",
-                    style="font-size:0.75em;"
+                    class_="btn-outline-secondary btn-sm spv-text-xs",
                 ),
                 class_="d-flex gap-1 mt-1"
             ),
@@ -618,8 +607,7 @@ def define_filter_audit_server(input, output, session, *,
             warn = ui.div(
                 "⚠️ One or more nodes target a join key. "
                 "Removing rows here changes which samples appear in joined plots.",
-                class_="alert alert-warning py-1 px-2 mb-2",
-                style="font-size:0.8em;",
+                class_="alert alert-warning py-1 px-2 mb-2 spv-text-sm",
             )
 
         # PROP-1: per-target column presence — surface BEFORE the user confirms.
@@ -646,27 +634,23 @@ def define_filter_audit_server(input, output, session, *,
             ui.tags.details(
                 ui.tags.summary(
                     "Show details",
-                    class_="text-muted",
-                    style="font-size:0.75em; cursor:pointer;",
+                    class_="text-muted spv-text-xs",
+                    style="cursor:pointer;",
                 ),
                 ui.tags.ul(
                     *absent_items,
                     *unknown_items,
-                    class_="mb-0 ps-3",
-                    style="font-size:0.75em;",
+                    class_="mb-0 ps-3 spv-text-xs",
                 ) if (absent_items or unknown_items)
                 else ui.tags.div("All plots have this column.",
-                                 class_="text-muted ps-3",
-                                 style="font-size:0.75em;"),
+                                 class_="text-muted ps-3 spv-text-xs"),
             ),
             ui.tags.small(
                 "👉 Apply filters one at a time and verify each plot before stacking. "
                 "A skipped plot is NOT filtered — it shows the unfiltered data.",
-                class_="text-muted d-block mt-1 fst-italic",
-                style="font-size:0.7em;",
+                class_="text-muted d-block mt-1 fst-italic spv-text-meta",
             ),
-            class_="alert alert-info py-1 px-2 mb-2",
-            style="font-size:0.8em;",
+            class_="alert alert-info py-1 px-2 mb-2 spv-text-sm",
         )
 
         m = ui.modal(

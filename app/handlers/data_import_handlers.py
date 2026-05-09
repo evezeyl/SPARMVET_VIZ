@@ -77,12 +77,11 @@ def define_data_import_server(input, output, session, *,
             files_block = ui.div(
                 ui.tags.small(
                     "Data location (provided by deployment):",
-                    class_="text-muted fw-semibold d-block mb-1",
-                    style="font-size:0.7em;",
+                    class_="text-muted fw-semibold d-block mb-1 spv-text-meta",
                 ),
                 ui.tags.code(
                     str(raw_data_dir),
-                    style="font-size:0.7em; word-break:break-all;",
+                    class_="spv-text-meta spv-word-break",
                 ),
                 class_="px-2",
             )
@@ -97,12 +96,11 @@ def define_data_import_server(input, output, session, *,
                     ui.div(
                         ui.tags.small(
                             f"{ds_id}: ",
-                            class_="text-muted fw-semibold",
-                            style="font-size:0.7em;",
+                            class_="text-muted fw-semibold spv-text-meta",
                         ),
                         ui.tags.code(
                             str(path),
-                            style="font-size:0.7em; word-break:break-all;",
+                            class_="spv-text-meta spv-word-break",
                         ),
                         class_="mb-1",
                     )
@@ -110,26 +108,22 @@ def define_data_import_server(input, output, session, *,
                 ]
                 files_block = ui.div(
                     *file_rows,
-                    class_="px-2",
-                    style="max-height:80px; overflow-y:auto;",
+                    class_="px-2 spv-scroll-sm",
                 )
             else:
                 files_block = ui.tags.small(
                     "No source files resolved for this manifest.",
-                    class_="text-muted px-2 d-block",
-                    style="font-size:0.7em;",
+                    class_="text-muted px-2 d-block spv-text-meta",
                 )
 
         if not testing_mode:
             return ui.div(
                 ui.tags.small(
                     "🔒 Data paths are set by the deployment configuration (read-only).",
-                    class_="text-info d-block mb-1 px-2",
-                    style="font-size:0.7em;",
+                    class_="text-info d-block mb-1 px-2 spv-text-meta",
                 ),
                 files_block,
-                class_="mb-2",
-                style="font-size:0.8em;",
+                class_="mb-2 spv-text-sm",
             )
 
         # ── Testing mode: listing + upload slots + assignment table ──────────
@@ -140,8 +134,7 @@ def define_data_import_server(input, output, session, *,
                 ui.div(
                     ui.tags.small(
                         "Metadata replacement (TSV)",
-                        class_="text-muted fw-semibold d-block mb-1",
-                        style="font-size:0.72em;",
+                        class_="text-muted fw-semibold d-block mb-1 spv-text-xxs",
                     ),
                     ui.input_file(
                         "data_import_metadata_upload", None,
@@ -156,8 +149,7 @@ def define_data_import_server(input, output, session, *,
                 ui.div(
                     ui.tags.small(
                         "Multi-file / Excel ingestion",
-                        class_="text-muted fw-semibold d-block mb-1",
-                        style="font-size:0.72em;",
+                        class_="text-muted fw-semibold d-block mb-1 spv-text-xxs",
                     ),
                     ui.input_file(
                         "data_import_multi_upload", None,
@@ -165,8 +157,7 @@ def define_data_import_server(input, output, session, *,
                     ),
                     ui.tags.small(
                         "💡 Hold Ctrl (Windows/Linux) or ⌘ Cmd (Mac) while clicking to select multiple files at once.",
-                        class_="text-muted d-block",
-                        style="font-size:0.65em;",
+                        class_="text-muted d-block spv-text-micro",
                     ),
                     # Assignment table + Apply rendered separately (doesn't reset upload widget)
                     ui.output_ui("data_import_assignment_ui"),
@@ -177,14 +168,12 @@ def define_data_import_server(input, output, session, *,
         return ui.div(
             ui.tags.small(
                 "Current default data paths (override below for testing):",
-                class_="text-muted d-block mb-1 px-2",
-                style="font-size:0.7em;",
+                class_="text-muted d-block mb-1 px-2 spv-text-meta",
             ),
             files_block,
-            ui.hr(style="margin:6px 0;") if upload_blocks else ui.div(),
+            ui.hr(class_="spv-divider") if upload_blocks else ui.div(),
             *upload_blocks,
-            class_="mb-2",
-            style="font-size:0.8em;",
+            class_="mb-2 spv-text-sm",
         )
 
     # ── Assignment table (dynamic — reacts to uploads and validation state) ──
@@ -211,8 +200,7 @@ def define_data_import_server(input, output, session, *,
             rows.append(
                 ui.div(
                     ui.div(
-                        ui.tags.small(fname, class_="text-dark fw-semibold",
-                                      style="font-size:0.72em; word-break:break-all;"),
+                        ui.tags.small(fname, class_="text-dark fw-semibold spv-text-xxs spv-word-break"),
                         ui.input_select(
                             f"data_import_assign_{i}", label=None,
                             choices={"": "— select dataset —", **ds_choices},
@@ -220,27 +208,24 @@ def define_data_import_server(input, output, session, *,
                         ),
                         ui.div(
                             ui.tags.small(f"❌ {error}",
-                                          class_="text-danger d-block",
-                                          style="font-size:0.68em;"),
+                                          class_="text-danger d-block spv-text-micro"),
                         ) if error else ui.div(),
                         class_="flex-grow-1",
                     ),
-                    class_="d-flex flex-column mb-2 p-2 border rounded",
-                    style="background:#fafafa;",
+                    class_="d-flex flex-column mb-2 p-2 border rounded spv-info-bg",
                 )
             )
 
         return ui.div(
-            ui.hr(style="margin:4px 0 6px 0;"),
+            ui.hr(class_="spv-divider-sm"),
             ui.tags.small("Assign each file to a dataset:",
-                          class_="text-muted fw-semibold d-block mb-1",
-                          style="font-size:0.72em;"),
+                          class_="text-muted fw-semibold d-block mb-1 spv-text-xxs"),
             *rows,
             ui.input_action_button(
                 "data_import_apply", "✅ Validate & Apply",
                 class_="btn-success btn-sm w-100 mt-1",
             ),
-            style="font-size:0.8em;",
+            class_="spv-text-sm",
         )
 
     # ── Reactive: capture uploaded files ────────────────────────────────────

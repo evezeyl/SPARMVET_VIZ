@@ -24,6 +24,8 @@
 | Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Manual (CLI) |
 | Library test coverage | On-demand | Manual trigger (or pre-release) | `[ ] Planned` | — | — | — | Manual (CLI) |
 | Package dependency health | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Manual (CLI) |
+| Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[ ] Planned` | — | — | — | Manual (CLI) |
+| Manifest coherence | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | — | — | Cloud (scheduled) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)

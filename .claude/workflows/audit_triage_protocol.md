@@ -170,7 +170,29 @@ a `Status:` line at creation time so they don't surface as needing triage.
 
 ---
 
-## 8. Adding New Audit Scripts
+## 8. Self-Calibration — The Exclusions Config
+
+Audit scripts read `.claude/workflows/audit_exclusions.yaml` to filter known false positives
+before reporting.  This is the mechanism that keeps audits accurate as the codebase evolves.
+
+**When to update `audit_exclusions.yaml`:**
+- A script reports a violation you know is intentional (custom component, accepted tech debt)
+- A library update changes what's expected (Polars rename, Plotnine removal)
+- A fix lands that makes a known exclusion no longer necessary
+
+**What each entry must have:**
+- `reason`: why this is excluded — must be specific enough to be re-evaluated later
+- `review_trigger`: what event should prompt re-checking this exclusion
+
+**Stale exclusions are their own tech debt.** At every major library update (Polars, Plotnine),
+scan the exclusions file and confirm entries are still valid.  Remove any that are now fixed.
+
+The triage protocol at §4-A classifies "violation already accepted in audit_exclusions.yaml"
+as **Acceptable debt** — skip it in task creation.
+
+---
+
+## 9. Adding New Audit Scripts
 
 When a new `scripts/audit_*.py` is added:
 

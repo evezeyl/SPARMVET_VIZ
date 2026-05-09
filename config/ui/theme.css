@@ -754,4 +754,46 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     cursor: not-allowed;
 }
 
+/* ── 20. Filter & Audit Panel Utilities (ADR-055) ─────────────────────────
+   Replaces repeated inline style= attributes extracted from handler files.
+   Prefer these classes over style= on ui.* components in handler Python.  */
 
+/* Font size scale (em-based, relative to context) */
+.spv-text-sm    { font-size: 0.8em; }
+.spv-text-xs    { font-size: 0.75em; }
+.spv-text-xxs   { font-size: 0.72em; }
+.spv-text-meta  { font-size: 0.7em; }
+.spv-text-micro { font-size: 0.65em; }   /* .ultra-small is rem-based; this is em-based */
+
+/* Flex / overflow helpers */
+.spv-flex-1          { flex: 1; }
+.spv-flex-1-auto     { flex: 1 1 auto; overflow: hidden; }
+.spv-scroll-flex     { overflow-y: auto; flex: 1 1 auto; }
+.spv-scroll-sm       { max-height: 80px; overflow-y: auto; }
+.spv-scroll-md       { max-height: 160px; overflow-y: auto; padding: 4px 2px; }
+.overflow-visible    { overflow: visible; }
+
+/* Row layout helpers */
+.spv-audit-card-row   { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.spv-audit-header-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.spv-row-between      { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.spv-tag-row          { margin-bottom: 3px; display: flex; align-items: flex-start; flex-wrap: wrap; }
+
+/* HR dividers */
+.spv-divider    { margin: 6px 0; }
+.spv-divider-sm { margin: 4px 0; }
+
+/* Audit node inline badges */
+.spv-badge-pending     { font-size: 0.65em; background: #ffc107; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
+.spv-badge-propagation { font-size: 0.65em; background: #cfe2ff; color: #0a3678; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
+.spv-badge-pk-warn     { display: block; font-size: 0.72em; color: #856404; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; padding: 2px 6px; margin-top: 2px; }
+
+/* Label strip with uppercase */
+.spv-label-caps { font-size: 0.75em; text-transform: uppercase; margin-top: 4px; margin-bottom: 5px; }
+
+/* Backgrounds */
+.spv-info-bg { background: #fafafa; }
+.spv-t3-bg   { background: #fffde7; }
+
+/* Text utility */
+.spv-word-break { word-break: break-all; }

@@ -1,0 +1,165 @@
+# Audit Known Exclusions
+#
+# This file declares known false positives and accepted deviations for each
+# audit script.  Each entry carries a `reason` (why it's excluded) and a
+# `review_trigger` (what change would require re-evaluating the exclusion).
+#
+# Authority: @dasharch
+# Updated: 2026-05-09
+#
+# HOW TO USE
+# ----------
+# Each audit script reads this file and filters its findings before reporting.
+# To add a new exclusion:
+#   1. Add an entry under the relevant audit key below.
+#   2. Fill in `reason` and `review_trigger`.
+#   3. Commit with message: "audit: add exclusion for <name> — <one-line rationale>"
+#
+# To remove an exclusion (when the underlying issue is fixed):
+#   1. Delete the entry.
+#   2. Commit with message: "audit: remove exclusion for <name> — resolved"
+#
+# REVIEW DISCIPLINE
+# -----------------
+# Review this file at every major library update (Polars, Plotnine) and after
+# any significant refactor.  Stale exclusions hide real problems.
+
+# ── audit_parity_coverage.py ──────────────────────────────────────────────────
+
+parity_coverage:
+
+  # VizFactory components that are intentionally custom (not from plotnine).
+  # These are registered via @register_plot_component but are SPARMVET-specific
+  # and should NOT be treated as stale just because plotnine doesn't export them.
+  custom_viz_components:
+    - name: theme_dashboard
+      reason: "SPARMVET-specific theme. Not a plotnine export — intentionally custom."
+      review_trigger: "If theme_dashboard is ever upstreamed to plotnine."
+
+    - name: theme_custom
+      reason: "Generic user-overridable theme slot. Not a plotnine export."
+      review_trigger: "If removed from viz_factory or if plotnine adds a same-named symbol."
+
+    - name: name
+      reason: >
+        Meta-registration artefact in registry.py — @register_plot_component("name")
+        is used internally by the registry dispatcher, not as a plotnine component.
+      review_trigger: "If registry.py internals change the decorator pattern."
+
+  # Plotnine symbols that are registered but genuinely missing from the installed
+  # version (renamed or removed upstream).  These are tracked here rather than
+  # silently deleting the registrations so we can make an informed decision.
+  known_stale_components:
+    - name: annotate
+      reason: "Was removed/renamed in plotnine. Registration kept for backwards compat until confirmed safe to remove."
+      review_trigger: "Check plotnine changelog — confirm it is gone or find the new name."
+
+    - name: coord_lims
+      reason: "Not present in installed plotnine 0.15.3. Kept pending changelog review."
+      review_trigger: "Upgrade plotnine and confirm status."
+
+    - name: facet_cols
+      reason: "facet_cols/rows/labeller/margins/scales/space are plotnine internal helpers, not public API in 0.15.3."
+      review_trigger: "Upgrade plotnine and re-check what's exported."
+
+    - name: facet_rows
+      reason: "See facet_cols above."
+      review_trigger: "Same as facet_cols."
+
+    - name: facet_labeller
+      reason: "See facet_cols above."
+      review_trigger: "Same as facet_cols."
+
+    - name: facet_margins
+      reason: "See facet_cols above."
+      review_trigger: "Same as facet_cols."
+
+    - name: facet_scales
+      reason: "See facet_cols above."
+      review_trigger: "Same as facet_cols."
+
+    - name: facet_space
+      reason: "See facet_cols above."
+      review_trigger: "Same as facet_cols."
+
+    - name: guide_direction
+      reason: "guide_direction is a parameter value, not a top-level plotnine symbol in 0.15.3."
+      review_trigger: "Upgrade plotnine and check guide API."
+
+    - name: guide_label
+      reason: "guide_label is internal in plotnine 0.15.3, not a public constructor."
+      review_trigger: "Upgrade plotnine and check guide API."
+
+    - name: guide_ncol
+      reason: "guide_ncol is a parameter, not a top-level symbol in 0.15.3."
+      review_trigger: "Upgrade plotnine and check guide API."
+
+    - name: guide_none
+      reason: "guide_none is not exported as a top-level symbol in plotnine 0.15.3."
+      review_trigger: "Upgrade plotnine and re-check."
+
+    - name: guide_nrow
+      reason: "guide_nrow is a parameter, not a top-level symbol in 0.15.3."
+      review_trigger: "Upgrade plotnine and check guide API."
+
+    - name: guide_reverse
+      reason: "guide_reverse is a parameter value, not a public symbol."
+      review_trigger: "Upgrade plotnine and check guide API."
+
+    - name: guide_title
+      reason: "guide_title is internal in plotnine 0.15.3."
+      review_trigger: "Upgrade plotnine and check guide API."
+
+    - name: guides
+      reason: "guides() is a plotnine function BUT not exported in dir(plotnine) in 0.15.3 — it is accessible via plotnine.guides. May be a detection gap."
+      review_trigger: "Re-run with a newer plotnine; update PLOTNINE_SINGLES in the script if needed."
+
+    - name: scale_color_viridis_c
+      reason: "Renamed to scale_color_continuous_viridis in newer plotnine. Kept for backwards compat."
+      review_trigger: "Remove after confirming no manifests use the old name."
+
+    - name: scale_color_viridis_d
+      reason: "Renamed to scale_color_discrete_viridis in newer plotnine."
+      review_trigger: "Remove after confirming no manifests use the old name."
+
+    - name: scale_fill_viridis_c
+      reason: "Renamed to scale_fill_continuous_viridis in newer plotnine."
+      review_trigger: "Remove after confirming no manifests use the old name."
+
+    - name: scale_fill_viridis_d
+      reason: "Renamed to scale_fill_discrete_viridis in newer plotnine."
+      review_trigger: "Remove after confirming no manifests use the old name."
+
+# ── audit_manifest_coherence.py ───────────────────────────────────────────────
+
+manifest_coherence:
+
+  # Join keys that are legitimately used in assembly recipes but are produced
+  # by wrangling steps rather than declared as top-level input_fields slugs.
+  # The static checker cannot trace column provenance through assembly steps,
+  # so these are accepted as known-good.
+  known_assembly_keys:
+    - manifest: "2_test_data_ST22_dummy.yaml"
+      key: "sample_id"
+      reason: >
+        sample_id is renamed/cast from a source column in Tier 1 wrangling
+        and is available by the time the assembly join runs.  The static
+        checker cannot trace through rename chains.
+      review_trigger: "If input_fields for this manifest are changed or sample_id rename is removed."
+
+# ── audit_cross_lib.py ────────────────────────────────────────────────────────
+# (KNOWN_VIOLATIONS is maintained inside the script itself for this audit,
+# since it's a small set and changing it requires deliberate code review.
+# Document the rationale here for cross-reference.)
+
+cross_lib:
+  known_violations:
+    - from_lib: transformer
+      to_lib: ingestion
+      reason: "Legacy coupling pre-ADR-011. Tracked as tech debt. Do not expand."
+      review_trigger: "When transformer is refactored to remove ingestion imports."
+
+    - from_lib: blueprint_arch
+      to_lib: utils
+      reason: "utils is Tier 1 (allowed for domain libs) but blueprint_arch pyproject.toml does not yet declare it."
+      review_trigger: "When blueprint_arch/pyproject.toml adds utils as an explicit dependency."

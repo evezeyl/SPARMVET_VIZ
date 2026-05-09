@@ -270,7 +270,7 @@ def define_server(input, output, session, *,
         return ui.div(
             ui.div(f"Project: {cfg.raw_config.get('id')}", class_="audit-node-tier2"),
             ui.div(f"Collection: {collection_id}", class_="audit-node-tier2"),
-            style="margin-bottom:4px;",
+            class_="mb-1",
         )
 
     # ------------------------------------------------------------------
@@ -320,7 +320,7 @@ def define_server(input, output, session, *,
                 nodes.append(ui.tooltip(
                     ui.div(
                         ui.div(f"⚡ {action}", class_="fw-bold"),
-                        ui.div(f"💬 {comment}", style="font-size:0.8em;"),
+                        ui.div(f"💬 {comment}", class_="spv-text-sm"),
                         class_="audit-node-tier3",
                     ),
                     f"Action: {action}", placement="left", id=f"node_tt_{i}"
@@ -359,20 +359,20 @@ def define_server(input, output, session, *,
             return ui.div(
                 ui.div(
                     f"No T3 adjustments for {active_subtab.removeprefix('subtab_') or 'this plot'} yet.",
-                    class_="text-muted",
-                    style="font-size:0.8em; padding:4px;",
+                    class_="text-muted spv-text-sm",
+                    style="padding:4px;",
                 ),
             )
 
         blocked_ids = set(gatekeeper_blocked(pending_all + [n for nodes in by_plot.values() for n in nodes]))
         adj_header = ui.div(
             ui.h6(f"My Adjustments (Tier 3) — {active_subtab.removeprefix('subtab_') or 'plot'}",
-                  style="margin:0; flex:1;"),
+                  class_="m-0 spv-flex-1"),
             ui.span(
                 f"{len(blocked_ids)} need reason",
-                style="font-size:0.72em; color:#dc3545;"
+                class_="text-danger spv-text-xxs",
             ) if blocked_ids else ui.span(),
-            style="display:flex; align-items:center; gap:6px; margin-bottom:4px;",
+            class_="spv-audit-card-row",
         )
 
         node_els = []
@@ -399,20 +399,17 @@ def define_server(input, output, session, *,
 
             pending_badge = ui.span(
                 "PENDING",
-                style="font-size:0.65em; background:#ffc107; border-radius:3px; padding:1px 4px; margin-left:4px;"
+                class_="spv-badge-pending",
             ) if is_pending else ui.span()
 
             propagation_badge = ui.span(
                 f"Applied to {applied_count} plots",
-                style="font-size:0.65em; background:#cfe2ff; color:#0a3678; "
-                      "border-radius:3px; padding:1px 4px; margin-left:4px;",
+                class_="spv-badge-propagation",
             ) if applied_count > 1 else ui.span()
 
             pk_banner = ui.div(
                 "⚠️ Primary key — Primary ID/Key alignment",
-                style="font-size:0.72em; color:#856404; background:#fff3cd; "
-                      "border:1px solid #ffeeba; border-radius:3px; "
-                      "padding:2px 6px; margin-top:2px;",
+                class_="spv-badge-pk-warn",
             ) if pk_warn else ui.span()
 
             id_suffix = _safe_input_suffix(nid)
@@ -436,23 +433,22 @@ def define_server(input, output, session, *,
             node_els.append(
                 ui.div(
                     ui.div(
-                        ui.span(f"{icon} {label}", class_="fw-bold",
-                               style="font-size:0.82em;"),
+                        ui.span(f"{icon} {label}", class_="fw-bold spv-text-sm"),
                         pending_badge,
                         propagation_badge,
                         ui.input_action_button(
                             f"t3_delete_{id_suffix}", "🗑",
-                            class_="btn btn-sm btn-link p-0",
-                            style="margin-left:auto; font-size:0.95em; color:#dc3545; line-height:1;",
+                            class_="btn btn-sm btn-link p-0 ms-auto text-danger",
                             title="Delete this audit node (linked: removes from all plots)",
                         ),
-                        style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;",
+                        class_="spv-audit-header-row",
                     ),
                     pk_banner,
                     ui.div(
                         summary,
+                        class_="spv-text-sm mt-1",
                         style=(
-                            "font-size:0.82em; color:#212529; margin-top:2px; "
+                            "color:#212529; "
                             "font-family:ui-monospace,SFMono-Regular,Menlo,monospace; "
                             "background:#fff8d6; padding:2px 6px; border-radius:3px; "
                             "word-break:break-word;"
@@ -466,12 +462,12 @@ def define_server(input, output, session, *,
 
         # Render orphaned nodes from legacy ghost loads, if any.
         if orphaned:
-            node_els.append(ui.hr(style="margin:6px 0;"))
+            node_els.append(ui.hr(class_="spv-divider"))
             node_els.append(ui.div(
                 f"⚠️ {len(orphaned)} orphaned node(s) from a legacy ghost. "
                 "Delete or re-target manually.",
-                class_="text-muted small",
-                style="font-size:0.72em; padding:2px 4px;",
+                class_="text-muted small spv-text-xxs",
+                style="padding:2px 4px;",
             ))
 
         return ui.div(adj_header, *node_els)
@@ -623,7 +619,7 @@ def define_server(input, output, session, *,
         )
 
         return ui.div(
-            ui.hr(style="margin:4px 0;"),
+            ui.hr(class_="spv-divider-sm"),
             apply_btn,
             class_="p-2",
         )

@@ -33,6 +33,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 | **Viz Factory** | Artist Pillar, Plotnine Parity, Core Geoms | [rules_viz_factory.md](./.claude/rules/rules_viz_factory.md) |
 | **UI Contract** | Theater Layout, Tier Toggle, Persona Masking, Audit Stack | [ui_implementation_contract.md](./.claude/rules/ui_implementation_contract.md) |
 | **App Structure** | Server decomposition, Handler/Module boundary law | [rules_app_structure.md](./.claude/rules/rules_app_structure.md) |
+| **Code Quality** | Emoji ban (active), comment philosophy, pre-deployment doc tiers (deferred) | [rules_code_quality.md](./.claude/rules/rules_code_quality.md) |
 
 ## 2. Primary Technical Bible
 
@@ -45,6 +46,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 
 ## 3. Operational Mandate
 
+- **No Emojis in Python:** Emojis are FORBIDDEN in all `.py` files — comments, docstrings, string literals, log messages. Allowed only in YAML `label:` values, `.md` files, and `.qmd` docs. See `rules_code_quality.md §1`.
 - **@deps Session Law:** At session end, verify/add/update `@deps` blocks for every file touched, then run `build_dep_graph.py`. See §5-E for the full protocol. This is non-negotiable.
 - **Mandatory Halt:** Every significant transformation or rule change requires an explicit `@verify` from the user.
 - **Violet Law:** All component references in documentation must follow `ClassName (filename.py)` standard.
