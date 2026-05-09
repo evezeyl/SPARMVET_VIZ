@@ -2713,7 +2713,7 @@ The "Add node" picker in BLUEPRINT is a searchable, filtered catalog driven by `
 
 ## ADR-076: BLUEPRINT AI Agent Helper — Adapter Architecture and Conversational Design (2026-05-09)
 
-**Status:** DECIDED — implementation pending (Phase 31+)
+**Status:** DECIDED — implementation pending (Phase 31+). MVP-1 scope: see `.claude/design/adr076_mvp.md`.
 
 **Context:** ADR-075 establishes BLUEPRINT as a visual IDE for building manifests through forms, schema-aware widgets, and a YAML escape hatch. That model still presumes the user knows *what* they want to build — which actions to chain, which join keys are valid, which aesthetics to map. Bench scientists drafting their first manifest typically do not.
 
