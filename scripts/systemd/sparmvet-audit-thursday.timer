@@ -1,0 +1,10 @@
+[Unit]
+Description=SPARMVET VIZ Audit — Thursday (phase order + changelog + template flags)
+
+[Timer]
+OnCalendar=Thu *-*-* 21:00:00
+Persistent=true
+Unit=sparmvet-audit@thursday.service
+
+[Install]
+WantedBy=timers.target

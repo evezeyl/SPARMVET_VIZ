@@ -1,0 +1,10 @@
+[Unit]
+Description=SPARMVET VIZ Audit — Friday (task drift)
+
+[Timer]
+OnCalendar=Fri *-*-* 20:00:00
+Persistent=true
+Unit=sparmvet-audit@friday.service
+
+[Install]
+WantedBy=timers.target

@@ -15,10 +15,12 @@ active branch. Cloud `/schedule` routines (Part 2) cannot satisfy these requirem
 ### A. Session-End Quick Run (Most Important — Do This Regularly)
 
 Run these four scripts at the end of any significant coding session. They are fast (seconds each)
-and catch the most common drift issues before they accumulate.
+and catch the most common drift issues before they accumulate. Run from your active branch (dev).
 
 ```bash
 cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+# Confirm you are on dev before running:
+git branch --show-current
 DATE=$(date +%Y-%m-%d)
 
 .venv/bin/python scripts/audit_cross_lib.py       --output .claude/logs/audits/audit_cross_lib_${DATE}.md
@@ -98,7 +100,8 @@ crontab -e
 
 **Step 2 — Paste these lines:**
 ```cron
-# SPARMVET_VIZ audit routines
+# SPARMVET_VIZ audit routines (all times Oslo CEST)
+# The wrapper script automatically switches to the 'dev' branch before scanning.
 PROJECT=/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 
 # Sunday 23:00 — @deps verification + ADR-011 cross-lib scan
@@ -113,6 +116,11 @@ PROJECT=/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 # Friday 20:00 — task drift check
 0 20 * * 5  cd $PROJECT && ./scripts/run_audits.sh friday >> /tmp/sparmvet_audit.log 2>&1
 ```
+
+**Branch note:** `run_audits.sh` automatically checks out `dev` before running any script.
+If you are mid-edit with uncommitted changes when cron fires, git will refuse to switch
+branches and the run will be skipped (your work is safe). Commit or stash before the
+scheduled time if you want that night's run to succeed.
 
 **Step 3 — Verify cron is running:**
 ```bash

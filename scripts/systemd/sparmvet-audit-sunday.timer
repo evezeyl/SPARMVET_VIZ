@@ -1,0 +1,10 @@
+[Unit]
+Description=SPARMVET VIZ Audit — Sunday (@deps + cross-lib)
+
+[Timer]
+OnCalendar=Sun *-*-* 23:00:00
+Persistent=true
+Unit=sparmvet-audit@sunday.service
+
+[Install]
+WantedBy=timers.target

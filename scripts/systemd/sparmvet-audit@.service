@@ -1,0 +1,9 @@
+[Unit]
+Description=SPARMVET VIZ Audit — %i slot
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+ExecStart=/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/scripts/run_audits.sh %i
+StandardOutput=append:/tmp/sparmvet_audit.log
+StandardError=append:/tmp/sparmvet_audit.log

@@ -1,0 +1,10 @@
+[Unit]
+Description=SPARMVET VIZ Audit — Wednesday (manifest integrity + coherence)
+
+[Timer]
+OnCalendar=Wed *-*-* 22:00:00
+Persistent=true
+Unit=sparmvet-audit@wednesday.service
+
+[Install]
+WantedBy=timers.target
