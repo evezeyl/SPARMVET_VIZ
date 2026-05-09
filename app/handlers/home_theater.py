@@ -90,7 +90,9 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
                 if p_id not in seen:
                     seen.add(p_id)
                     results.append((p_id, plot_spec))
-        except Exception:
+        except (Exception, SystemExit):
+            # SystemExit from ConfigManager structural validation must not propagate
+            # into the Shiny connection handler — bad manifests are silently skipped here.
             pass
     return results
 

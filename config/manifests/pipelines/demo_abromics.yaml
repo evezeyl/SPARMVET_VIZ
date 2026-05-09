@@ -39,3 +39,15 @@ join_manifests:
       - Source: { type: categorical }
       - Year: { type: integer }
       - Country: { type: categorical }
+
+analysis_groups:
+  MLST_Overview:
+    label: "MLST Overview"
+    plots:
+      demo_st_by_source:
+        label: "Sequence Types by Source"
+        spec:
+          factory_id: bar_logic
+          target_dataset: demo_join
+          x: "Sequence Type"
+          fill: Source
