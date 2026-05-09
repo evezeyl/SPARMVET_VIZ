@@ -22,6 +22,9 @@ DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_phase_order.py        --output .claude/logs/audits/audit_phase_order_${DATE}.md
 .venv/bin/python scripts/audit_changelog_sync.py     --output .claude/logs/audits/audit_changelog_${DATE}.md
 .venv/bin/python scripts/audit_docs_sync.py          --output .claude/logs/audits/audit_docs_sync_${DATE}.md
+# On-demand only (slow — runs full test suite):
+.venv/bin/python scripts/audit_library_tests.py      --output .claude/logs/audits/audit_library_tests_${DATE}.md
+.venv/bin/python scripts/audit_package_deps.py       --output .claude/logs/audits/audit_package_deps_${DATE}.md
 ```
 
 Reports are written to `.claude/logs/audits/` (append-only audit log). To print to stdout without writing a file, omit `--output`.
@@ -276,6 +279,84 @@ git log --diff-filter=R --name-status HEAD~30..HEAD
 
 ---
 
+### `audit_library_tests.py` — Library Test Coverage and Testability
+
+Runs the complete test suite for every library in `libs/` and reports whether each one is fully testable. Designed to catch libraries that exist but lack proper test infrastructure — a gap that only becomes visible when something breaks.
+
+```bash
+# Full run — pytest + integrity suites for all libraries (~5-15 min)
+.venv/bin/python scripts/audit_library_tests.py
+
+# Infrastructure check only — no test execution (~5 sec)
+.venv/bin/python scripts/audit_library_tests.py --skip-pytest --skip-suites
+
+# Single library — runs pytest + suite for transformer only
+.venv/bin/python scripts/audit_library_tests.py --lib transformer
+
+# pytest only — skips integrity suites (faster)
+.venv/bin/python scripts/audit_library_tests.py --skip-suites
+
+# Write report
+.venv/bin/python scripts/audit_library_tests.py \
+    --output .claude/logs/audits/audit_library_tests_2026-05-12.md
+```
+
+**Infrastructure levels:**
+
+| Level | Meaning |
+|---|---|
+| ✅ FULL | Has pytest files AND (integrity suite OR debug scripts) — all present and passing |
+| ⚠️ PARTIAL | Has some layers but not all — functional but incomplete |
+| ❌ MISSING | No test files at all — production risk |
+
+Current state (2026-05-09): 3 libraries are FULL (`transformer`, `viz_factory`, `ingestion`), 5 are PARTIAL. PARTIAL libraries are tracked as tech debt and require a `@dasharch` handoff to add the missing layer.
+
+**What each test layer covers:**
+
+| Layer | File pattern | What it tests |
+|---|---|---|
+| pytest | `test_*.py` | Unit logic — individual functions, edge cases |
+| Integrity suite | `*_integrity_suite.py` | End-to-end pipeline using 1:1:1 test triplets |
+| Debug scripts | `debug_*.py` | Headless execution of specific components against real data |
+
+---
+
+### `audit_package_deps.py` — Package Dependency Health
+
+Checks the installed package ecosystem for outdated packages, conflicts, and parity mandate opportunities. Runs in under 30 seconds.
+
+```bash
+.venv/bin/python scripts/audit_package_deps.py
+.venv/bin/python scripts/audit_package_deps.py \
+    --output .claude/logs/audits/audit_package_deps_2026-05-12.md
+```
+
+**Update categories:**
+
+| Category | Exit code | Action |
+|---|---|---|
+| ❌ CONFLICT | 1 | Fix immediately — incompatible requirements in the environment |
+| 🔴 MAJOR | 1 | Review release notes before upgrading; may break APIs |
+| 🟡 MINOR | 0 | Consider upgrading — may contain new features relevant to parity mandates |
+| 🟢 PATCH | 0 | Recommended — bug fixes and security patches, low risk |
+
+**Parity mandate packages** — `polars` (ADR-035) and `plotnine` (ADR-036) receive special treatment. When either has an update, the report links to their changelogs and reminds you to audit the action/component registries for new API surface to expose.
+
+**Local editable packages** (`utils`, `test_lab`, etc.) are automatically excluded from the outdated list — they would otherwise show false positives because unrelated PyPI packages share the same names.
+
+**Upgrade protocol (from the report):**
+
+```bash
+# Batch patch upgrades (low risk)
+.venv/bin/pip install --upgrade fastexcel htmltools shiny
+
+# Verify after any upgrade
+python -c "from app.src.main import app; print('OK')"
+PYTHONPATH=. SPARMVET_PERSONA=qa .venv/bin/python -m pytest app/tests/test_filter_operators.py -q
+```
+
+---
+
 ## For Contributors
 
 If you are adding a new domain library, wrangling action, manifest, or persona template, run the relevant subset of audits before opening a PR:
@@ -289,7 +370,9 @@ If you are adding a new domain library, wrangling action, manifest, or persona t
 | New phase in the roadmap | `audit_phase_order.py` |
 | Closing a major phase | `audit_changelog_sync.py` |
 | Renaming / deleting a file | `audit_task_drift.py`, `audit_docs_sync.py` |
-| Significant refactor / pre-release | `audit_docs_sync.py` |
+| Significant refactor / pre-release | `audit_docs_sync.py`, `audit_library_tests.py` |
+| Adding a new library to `libs/` | `audit_library_tests.py --skip-pytest` |
+| Monthly maintenance window | `audit_package_deps.py` |
 
 **Adding a new audit script:**
 
@@ -316,6 +399,8 @@ These scripts back the cloud-hosted audit routines managed at [claude.ai/code/ro
 | `audit_phase_order.py` | Weekly | Thursdays 21:00 |
 | `audit_changelog_sync.py` | Weekly | Thursdays 21:00 |
 | `audit_docs_sync.py` | On-demand | Before releases / after refactors |
+| `audit_library_tests.py` | On-demand | Before releases / after adding a library |
+| `audit_package_deps.py` | On-demand | Monthly / before dependency freeze |
 
 Full routine definitions, Routine IDs, and last-run dates: `.claude/workflows/audit_routine_registry.md`.
 `/schedule` CLI prompts for creating or recreating each routine: `.claude/workflows/schedule_commands.md`.

@@ -315,7 +315,7 @@ def render_report(
         "```bash",
         "# Upgrade low-risk packages together",
         ".venv/bin/pip install --upgrade " + " ".join(
-            f'"{p["name"]}>={p[\"latest_version\"]}"' for p in patch[:5]
+            p["name"] for p in patch[:5]
         ) if patch else "# (no patch updates)",
         "# Verify no regressions",
         ".venv/bin/python -c 'from app.src.main import app; print(\"import OK\")'",

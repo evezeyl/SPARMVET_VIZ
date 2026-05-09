@@ -22,6 +22,8 @@
 | Changelog completeness audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
 | Template flag completeness | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
 | Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Manual (CLI) |
+| Library test coverage | On-demand | Manual trigger (or pre-release) | `[ ] Planned` | — | — | — | Manual (CLI) |
+| Package dependency health | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Manual (CLI) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
@@ -367,6 +369,42 @@ Once manual test passes:
 - **Owner:** Manual (CLI) — escalate to Cloud routine if docs diverge frequently
 - **Status:** `[ ] Planned`
 - **Flags:** `--skip-violet` omits the Violet Law check (faster for large doc trees)
+
+---
+
+### 10. Library Test Coverage
+
+- **Purpose:** For each library in `libs/`, verify the test infrastructure is complete (pytest files, integrity suite, debug scripts) and run the full suite. Reports per-library testability level: FULL (all layers present and passing), PARTIAL (missing one layer), or MISSING (no tests at all). MISSING libraries must receive a `@dasharch` handoff to add the missing test layer before they can be considered production-ready.
+- **Frequency:** On-demand — before releases, after adding a new library, or after significant refactors.
+- **Command:** `.venv/bin/python scripts/audit_library_tests.py --output .claude/logs/audits/audit_library_tests_$(date +%Y-%m-%d).md`
+- **Fast variants:**
+  - `--skip-suites` — run pytest only (faster; skips integrity suites)
+  - `--skip-pytest` — infrastructure check only, no test execution (fastest)
+  - `--lib transformer` — single library only
+- **Output:** `.claude/logs/audits/audit_library_tests_YYYY-MM-DD.md`
+- **Violations checked:**
+  - Library missing `tests/` directory or any test files (MISSING)
+  - Library has pytest but no integrity suite or debug scripts (PARTIAL)
+  - pytest exits non-zero (test failures)
+  - Integrity suite exits non-zero (pipeline failures)
+- **Owner:** Manual (CLI)
+- **Status:** `[ ] Planned`
+
+---
+
+### 11. Package Dependency Health
+
+- **Purpose:** Report the health of all installed packages: outdated packages (grouped MAJOR/MINOR/PATCH), dependency conflicts (`pip check`), and parity mandate alerts (Polars → ADR-035, Plotnine → ADR-036). Filters out local editable packages that would otherwise appear as false positives. Provides an upgrade protocol tailored to each update category.
+- **Frequency:** On-demand — monthly, or when considering a dependency freeze review.
+- **Command:** `.venv/bin/python scripts/audit_package_deps.py --output .claude/logs/audits/audit_package_deps_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_package_deps_YYYY-MM-DD.md`
+- **Violations checked:**
+  - `pip check` reports incompatible requirements → CONFLICT (exit 1)
+  - MAJOR version updates available → flagged for review (exit 1)
+  - Parity mandate packages (polars, plotnine) have updates → action required note
+  - MINOR / PATCH updates → informational (exit 0)
+- **Owner:** Manual (CLI)
+- **Status:** `[ ] Planned`
 
 ---
 
