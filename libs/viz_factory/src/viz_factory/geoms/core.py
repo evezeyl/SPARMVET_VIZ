@@ -2,8 +2,8 @@ from typing import Dict, Any
 
 # @deps
 # provides: component:geom_boxplot, component:geom_violin, component:geom_point, component:geom_line, component:geom_bar, component:geom_col, component:geom_histogram, component:geom_smooth, component:geom_density, component:geom_errorbar, component:geom_pointrange, component:geom_tile, component:geom_raster, component:geom_text, component:geom_label, component:geom_jitter, component:geom_step, component:geom_segment, component:geom_abline, component:geom_area, component:geom_bin_2d, component:geom_blank, component:geom_count, component:geom_crossbar, component:geom_density_2d, component:geom_dotplot, component:geom_errorbarh, component:geom_freqpoly, component:geom_hline, component:geom_linerange, component:geom_path, component:geom_vline, component:stat_count, component:stat_bin, component:stat_summary, component:stat_boxplot, component:stat_smooth, component:stat_density, component:labs (geom)
-# consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry)
-# doc: .claude/rules/rules_viz_factory.md
+# consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry), libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)
+# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
 from plotnine import (
@@ -24,7 +24,17 @@ from plotnine import (
 from viz_factory.registry import register_plot_component
 
 
-@register_plot_component("geom_boxplot")
+@register_plot_component("geom_boxplot", ui_schema={
+    "label": "Box plot",
+    "category": "geom",
+    "context": ["plot"],
+    "tags": ["distribution", "boxplot", "outliers", "quartiles"],
+    "params": {
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.8},
+        "fill": {"widget": "color", "label": "Fill colour", "required": False},
+        "colour": {"widget": "color", "label": "Border colour", "required": False},
+    },
+})
 def handle_boxplot(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard Boxplot component wrapper."""
     return p + geom_boxplot(**spec)
@@ -36,19 +46,53 @@ def handle_violin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + geom_violin(**spec)
 
 
-@register_plot_component("geom_point")
+@register_plot_component("geom_point", ui_schema={
+    "label": "Scatter points",
+    "category": "geom",
+    "context": ["plot"],
+    "tags": ["scatter", "points", "correlation", "relationship"],
+    "params": {
+        "size": {"widget": "number", "label": "Point size", "required": False, "default": 2},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.7},
+        "colour": {"widget": "color", "label": "Colour (if not mapped)", "required": False},
+        "shape": {"widget": "number", "label": "Shape code (0–25)", "required": False},
+    },
+})
 def handle_point(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard Point (Scatter) component wrapper."""
     return p + geom_point(**spec)
 
 
-@register_plot_component("geom_line")
+@register_plot_component("geom_line", ui_schema={
+    "label": "Line",
+    "category": "geom",
+    "context": ["plot"],
+    "tags": ["line", "trend", "time-series", "connected"],
+    "params": {
+        "size": {"widget": "number", "label": "Line width", "required": False, "default": 1},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
+        "colour": {"widget": "color", "label": "Colour (if not mapped)", "required": False},
+        "linetype": {"widget": "enum", "label": "Line type", "required": False,
+                     "options": ["solid", "dashed", "dotted", "dotdash", "longdash", "twodash"]},
+    },
+})
 def handle_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard Line (Connected points) component wrapper."""
     return p + geom_line(**spec)
 
 
-@register_plot_component("geom_bar")
+@register_plot_component("geom_bar", ui_schema={
+    "label": "Bar (count)",
+    "category": "geom",
+    "context": ["plot"],
+    "tags": ["bar", "count", "categorical", "frequency"],
+    "params": {
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.9},
+        "fill": {"widget": "color", "label": "Fill colour (if not mapped)", "required": False},
+        "colour": {"widget": "color", "label": "Border colour", "required": False},
+        "width": {"widget": "number", "label": "Bar width (0–1)", "required": False},
+    },
+})
 def handle_bar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard Bar (count) component wrapper."""
     return p + geom_bar(**spec)
@@ -60,7 +104,18 @@ def handle_col(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + geom_col(**spec)
 
 
-@register_plot_component("geom_histogram")
+@register_plot_component("geom_histogram", ui_schema={
+    "label": "Histogram",
+    "category": "geom",
+    "context": ["plot"],
+    "tags": ["histogram", "distribution", "frequency", "numeric"],
+    "params": {
+        "bins": {"widget": "number", "label": "Number of bins", "required": False, "default": 30},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.8},
+        "fill": {"widget": "color", "label": "Fill colour", "required": False},
+        "colour": {"widget": "color", "label": "Border colour", "required": False},
+    },
+})
 def handle_histogram(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard Histogram component wrapper."""
     return p + geom_histogram(**spec)
@@ -90,7 +145,16 @@ def handle_pointrange(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + geom_pointrange(**spec)
 
 
-@register_plot_component("geom_tile")
+@register_plot_component("geom_tile", ui_schema={
+    "label": "Heatmap tiles",
+    "category": "geom",
+    "context": ["plot"],
+    "tags": ["heatmap", "tile", "matrix", "fill"],
+    "params": {
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
+        "colour": {"widget": "color", "label": "Tile border colour", "required": False},
+    },
+})
 def handle_tile(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard Tile (Heatmap) component wrapper."""
     return p + geom_tile(**spec)
@@ -407,7 +471,20 @@ def handle_stat_summary_bin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + stat_summary_bin(**spec)
 
 
-@register_plot_component("labs")
+@register_plot_component("labs", ui_schema={
+    "label": "Labels (title, axes, legend)",
+    "category": "annotation",
+    "context": ["plot"],
+    "tags": ["labels", "title", "axis", "legend", "annotation"],
+    "params": {
+        "title": {"widget": "string", "label": "Plot title", "required": False},
+        "x": {"widget": "string", "label": "X-axis label", "required": False},
+        "y": {"widget": "string", "label": "Y-axis label", "required": False},
+        "fill": {"widget": "string", "label": "Fill legend title", "required": False},
+        "colour": {"widget": "string", "label": "Colour legend title", "required": False},
+        "caption": {"widget": "string", "label": "Caption (bottom)", "required": False},
+    },
+})
 def handle_labs(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Label component (title, x, y, custom scales)."""
     return p + labs(**spec)

@@ -4,12 +4,26 @@ from transformer.actions.base import register_action
 
 # @deps
 # provides: action:join, action:join_filter
-# consumed_by: any YAML manifest using join steps, .claude/rules/rules_persona_bioscientist.md#8
-# doc: .claude/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using join steps, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
 
-@register_action("join")
+@register_action("join", ui_schema={
+    "label": "Join datasets",
+    "category": "relational",
+    "context": ["assembly"],
+    "tags": ["join", "merge", "relational"],
+    "params": {
+        "right_ingredient": {"widget": "string", "label": "Right ingredient ID (data_schemas key)", "required": True},
+        "on": {"widget": "column_selector", "multi": False, "label": "Join column (symmetric)", "required": False,
+               "hint": "Use 'on' when both frames share the same column name"},
+        "left_on": {"widget": "column_selector", "multi": False, "label": "Left join column", "required": False},
+        "right_on": {"widget": "string", "label": "Right join column name", "required": False},
+        "how": {"widget": "enum", "label": "Join strategy", "required": False, "default": "left",
+                "options": ["left", "inner", "outer", "semi", "anti", "cross"]},
+    },
+})
 def join_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Standard Join Action for the Assembly Layer.

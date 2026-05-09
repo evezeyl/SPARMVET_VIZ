@@ -1,14 +1,25 @@
 # @deps
 # provides: action:regex_extract, action:cast, action:coalesce, action:label_if, action:mutate, action:regex_replace, action:null_if
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
-# doc: .claude/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 import polars as pl
 from typing import Dict, Any
 from transformer.actions.base import register_action
 
 
-@register_action("regex_extract")
+@register_action("regex_extract", ui_schema={
+    "label": "Regex extract",
+    "category": "string",
+    "context": ["t1", "t2"],
+    "tags": ["string", "regex", "extraction"],
+    "params": {
+        "source": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
+        "pattern": {"widget": "string", "label": "Regex pattern (with capture groups)", "required": True},
+        "target_column": {"widget": "string", "label": "Output column name", "required": True},
+        "group": {"widget": "number", "label": "Capture group index (1-based)", "required": False, "default": 1},
+    },
+})
 def action_regex_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Extracts a substring based on a Regex pattern with capture groups.
@@ -34,7 +45,17 @@ def action_regex_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     )
 
 
-@register_action("cast")
+@register_action("cast", ui_schema={
+    "label": "Cast dtype",
+    "category": "typing",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["dtype", "cast", "typing", "numeric", "string"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
+        "dtype": {"widget": "dtype_picker", "label": "Target dtype", "required": True,
+                  "options": ["Int64", "Float64", "String", "Boolean", "Date", "Categorical"]},
+    },
+})
 def action_cast(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Casts columns to a specific Polars data type.
@@ -61,7 +82,15 @@ def action_cast(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(pl.col(columns).cast(target_dtype))
 
 
-@register_action("coalesce")
+@register_action("coalesce", ui_schema={
+    "label": "Coalesce (first non-null)",
+    "category": "cleaning",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["null", "fallback", "coalesce"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns (first = target, rest = fallbacks)", "required": True, "min_items": 2},
+    },
+})
 def action_coalesce(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Fills nulls in the first column using values from subsequent columns in the list.
@@ -74,7 +103,21 @@ def action_coalesce(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(pl.coalesce(columns).alias(columns[0]))
 
 
-@register_action("label_if")
+@register_action("label_if", ui_schema={
+    "label": "Label if (conditional)",
+    "category": "derivation",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["conditional", "when-then", "labeling", "derivation"],
+    "params": {
+        "column": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
+        "new_column": {"widget": "string", "label": "Output column name", "required": True},
+        "predicate": {"widget": "enum", "label": "Predicate", "required": True,
+                      "options": [">", ">=", "<", "<=", "==", "!="]},
+        "value": {"widget": "column_or_literal", "label": "Comparison value", "required": True},
+        "then": {"widget": "column_or_literal", "label": "Value when true", "required": True},
+        "otherwise": {"widget": "column_or_literal", "label": "Value when false", "required": False},
+    },
+})
 def action_label_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Conditional labeling based on a predicate.
@@ -121,7 +164,16 @@ def action_label_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(expr.alias(new_col))
 
 
-@register_action("mutate")
+@register_action("mutate", ui_schema={
+    "label": "Mutate (expression)",
+    "category": "derivation",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["expression", "derivation", "polars", "computed-column"],
+    "params": {
+        "column": {"widget": "string", "label": "Output column name", "required": True},
+        "expression": {"widget": "expression", "label": "Polars expression (e.g. pl.col('x') * 2)", "required": True},
+    },
+})
 def action_mutate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Evaluates a Polars-compatible expression and assigns it to a new column.

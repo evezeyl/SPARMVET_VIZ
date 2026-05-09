@@ -4,12 +4,23 @@ from transformer.actions.base import register_action
 
 # @deps
 # provides: action:unpivot, action:explode, action:unnest, action:split_to_list, action:to_struct, action:pivot, action:split_column
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
-# doc: .claude/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
 
-@register_action("unpivot")
+@register_action("unpivot", ui_schema={
+    "label": "Unpivot (wide → long)",
+    "category": "reshaping",
+    "context": ["t2", "assembly"],
+    "tags": ["melt", "pivot", "wide-to-long", "reshaping"],
+    "params": {
+        "index": {"widget": "column_selector", "multi": True, "label": "Index columns (kept as-is)", "required": True},
+        "on": {"widget": "column_selector", "multi": True, "label": "Columns to unpivot (value columns)", "required": True},
+        "variable_name": {"widget": "string", "label": "Variable column name", "required": False, "default": "variable"},
+        "value_name": {"widget": "string", "label": "Value column name", "required": False, "default": "value"},
+    },
+})
 def action_unpivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Unpivots (melts) a LazyFrame from wide to long format.
@@ -25,7 +36,15 @@ def action_unpivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.unpivot(on=on_cols, index=index, variable_name=variable_name, value_name=value_name)
 
 
-@register_action("explode")
+@register_action("explode", ui_schema={
+    "label": "Explode list column",
+    "category": "reshaping",
+    "context": ["t2", "assembly"],
+    "tags": ["explode", "list", "reshaping", "rows"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "List columns to explode", "required": True},
+    },
+})
 def action_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Explodes list-like columns into multiple rows.

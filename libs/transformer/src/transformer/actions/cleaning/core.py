@@ -5,14 +5,23 @@ from ...utils.naming import clean_column_header
 
 # @deps
 # provides: action:fill_nulls, action:drop_nulls, action:replace_values, action:rename, action:drop_duplicates, action:unique_rows, action:recode_values, action:sanitize_column_names, action:keep_columns, action:drop_columns, action:strip_whitespace, action:round_numeric, action:filter_range, action:add_constant, action:filter_eq, action:rename_columns, action:unique
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
-# doc: .claude/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
 # --- From null_handling.py ---
 
 
-@register_action("fill_nulls")
+@register_action("fill_nulls", ui_schema={
+    "label": "Fill nulls",
+    "category": "cleaning",
+    "context": ["t1", "t2"],
+    "tags": ["null", "cleaning", "imputation"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
+        "value": {"widget": "column_or_literal", "label": "Fill value", "required": True},
+    },
+})
 def action_fill_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Replaces null values with a specified value across one or more columns.
@@ -26,7 +35,15 @@ def action_fill_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(pl.col(columns).fill_null(fill_value))
 
 
-@register_action("drop_nulls")
+@register_action("drop_nulls", ui_schema={
+    "label": "Drop null rows",
+    "category": "cleaning",
+    "context": ["t1", "t2"],
+    "tags": ["null", "cleaning", "row-filter"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns (any null → drop row)", "required": False, "hint": "Leave empty to drop rows with any null"},
+    },
+})
 def action_drop_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Drops rows where any of the specified columns are null.
@@ -195,7 +212,15 @@ def action_sanitize_column_names(lf: pl.LazyFrame, spec: Dict[str, Any] = {}) ->
 
 # --- From selection.py ---
 
-@register_action("keep_columns")
+@register_action("keep_columns", ui_schema={
+    "label": "Keep columns",
+    "category": "selection",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["columns", "selection", "projection"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns to keep", "required": True},
+    },
+})
 def action_keep_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Selects only the specified columns, ensuring that primary keys defined in the schema
@@ -221,7 +246,15 @@ def action_keep_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.select(final_selection)
 
 
-@register_action("drop_columns")
+@register_action("drop_columns", ui_schema={
+    "label": "Drop columns",
+    "category": "selection",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["columns", "selection", "removal"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns to drop", "required": True},
+    },
+})
 def action_drop_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Drops the specified columns, but prevents dropping primary keys.
@@ -252,7 +285,15 @@ def action_drop_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
 
 # --- From cleaning.py ---
 
-@register_action("strip_whitespace")
+@register_action("strip_whitespace", ui_schema={
+    "label": "Strip whitespace",
+    "category": "cleaning",
+    "context": ["t1", "t2"],
+    "tags": ["string", "cleaning", "whitespace"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "String columns", "required": False, "hint": "Leave empty to auto-target all String columns"},
+    },
+})
 def action_strip_whitespace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Strips leading and trailing whitespace from string columns.
@@ -290,7 +331,18 @@ def action_round_numeric(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     return lf.with_columns(pl.col(columns).round(decimals))
 
 
-@register_action("filter_range")
+@register_action("filter_range", ui_schema={
+    "label": "Filter by range",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["numeric", "filter", "range", "cleaning"],
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"]}],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": False, "label": "Column", "required": True, "dtype_filter": ["numeric"]},
+        "min": {"widget": "number", "label": "Min value (inclusive)", "required": False},
+        "max": {"widget": "number", "label": "Max value (inclusive)", "required": False},
+    },
+})
 def action_filter_range(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Filters rows based on a numeric range (inclusive).
@@ -313,7 +365,16 @@ def action_filter_range(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf
 
 
-@register_action("add_constant")
+@register_action("add_constant", ui_schema={
+    "label": "Add constant column",
+    "category": "derivation",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["column", "literal", "derivation"],
+    "params": {
+        "new_column": {"widget": "string", "label": "New column name", "required": True},
+        "value": {"widget": "column_or_literal", "label": "Constant value", "required": True},
+    },
+})
 def action_add_constant(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Adds a new column with a constant (literal) value.
@@ -327,7 +388,16 @@ def action_add_constant(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(pl.lit(value).alias(new_col))
 
 
-@register_action("filter_eq")
+@register_action("filter_eq", ui_schema={
+    "label": "Filter equal",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["filter", "equality"],
+    "params": {
+        "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
+        "value": {"widget": "column_or_literal", "label": "Value", "required": True},
+    },
+})
 def action_filter_eq(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Equality filter."""
     col = spec.get("column", spec.get("columns", [None])[0])
@@ -337,7 +407,17 @@ def action_filter_eq(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.filter(pl.col(col) == val)
 
 
-@register_action("rename_columns")
+@register_action("rename_columns", ui_schema={
+    "label": "Rename columns",
+    "category": "renaming",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["rename", "columns"],
+    "params": {
+        "mapping": {"widget": "string", "label": "Rename mapping (YAML dict old: new)", "required": False, "hint": "e.g. {old_name: new_name}"},
+        "columns": {"widget": "column_selector", "multi": True, "label": "Source columns (list form)", "required": False},
+        "new_names": {"widget": "string", "label": "New names (comma-separated, same order as columns)", "required": False},
+    },
+})
 def action_rename_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Alias for rename that supports columns + new_names lists."""
     mapping = spec.get("mapping")

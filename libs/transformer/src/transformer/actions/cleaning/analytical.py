@@ -4,8 +4,8 @@ from transformer.actions.base import register_action
 
 # @deps
 # provides: action:window_agg, action:shift, action:fill_nulls_direction, action:sort, action:sample, action:cum_sum, action:cum_count, action:date_extract, action:date_truncate, action:list_slice, action:list_join, action:is_in, action:z_score, action:percentile, action:value_counts, action:describe_stats, action:select_by_pattern, action:horizontal_stats, action:any_horizontal, action:all_horizontal, action:interpolate
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
-# doc: .claude/rules/rules_persona_bioscientist.md#8
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
 
@@ -84,7 +84,16 @@ def action_fill_nulls_direction(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.La
     return lf.with_columns([pl.col(c).fill_null(strategy=direction) for c in cols])
 
 
-@register_action("sort")
+@register_action("sort", ui_schema={
+    "label": "Sort rows",
+    "category": "ordering",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["sort", "ordering"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Sort by columns (in order)", "required": True},
+        "descending": {"widget": "bool", "label": "Descending", "required": False, "default": False},
+    },
+})
 def action_sort(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Sorts the dataframe by one or more columns.
@@ -217,7 +226,16 @@ def action_list_join(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(pl.col(col).list.join(separator).alias(target))
 
 
-@register_action("is_in")
+@register_action("is_in", ui_schema={
+    "label": "Filter: value is in list",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["filter", "set", "whitelist"],
+    "params": {
+        "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
+        "values": {"widget": "string", "label": "Allowed values (comma-separated)", "required": True},
+    },
+})
 def action_is_in(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Filters rows where column value is in a list."""
     col = spec.get("column")
