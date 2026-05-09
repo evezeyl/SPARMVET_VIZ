@@ -266,79 +266,6 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ---
 
-## Phase 22: Server Decomposition (ADR-045) — COMPLETED 2026-04-23
-
-**Objective:** Split the 2,362-line `app/src/server.py` monolith into a thin orchestrator (228 lines) plus five focused Shiny handler modules (`app/handlers/`) and a pure manifest introspection module (`app/modules/manifest_navigator.py`). **Zero behaviour change** — structural refactor only.
-
-**Governing ADR:** ADR-045. **Completed:** 2026-04-23.
-
-### Phase 22-A: Create `app/modules/manifest_navigator.py`
-
-- [x] Created `app/modules/manifest_navigator.py` (~280 lines).
-- [x] Moved 5 pure functions, renamed to public API (dropped `_` prefix): `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`.
-- [x] Module docstring references ADR-045 and lists full public API.
-- [x] `blueprint_handlers.py` imports from `manifest_navigator`; `server.py` no longer needs these imports.
-- [x] Import check passed.
-
-### Phase 22-B: Create `app/handlers/` directory and `__init__.py`
-
-- [x] Created `app/handlers/__init__.py` with package docstring listing all 5 handler modules and Two-Category Law constraints.
-
-### Phase 22-C: Extract `app/handlers/gallery_handlers.py`
-
-- [x] Created with `define_server(input, output, session, *, bootloader, wrangle_studio, safe_input)`.
-- [x] All gallery handlers moved: `_sync_family_all`, `_sync_pattern_all`, `_sync_difficulty_all`, `_init_gallery_selector`, `handle_gallery_clone`, `_gallery_active_metadata`, `gallery_preview_img`, `gallery_static_data`, `gallery_yaml_preview`, `gallery_md_content`, `_update_gallery_options`, `gallery_browser_anchor`.
-- [x] Delegation call added to `server.py`.
-
-### Phase 22-D: Extract `app/handlers/ingestion_handlers.py`
-
-- [x] Created with `define_server(input, output, session, *, bootloader, current_persona, safe_input)`.
-- [x] Handlers moved: `handle_ingest`, `update_persona_context`.
-
-### Phase 22-E: Extract `app/handlers/audit_stack.py`
-
-- [x] Created with `define_server(input, output, session, *, wrangle_studio, recipe_pending, snapshot_recipe, active_cfg, active_collection_id)`.
-- [x] Handlers moved: `handle_apply`, `track_recipe_changes`, `recipe_pending_badge_ui`, `audit_nodes_tier2`, `audit_nodes_tier3`.
-
-### Phase 22-F: Extract `app/handlers/blueprint_handlers.py`
-
-- [x] Created with full keyword-only dependency injection signature.
-- [x] All Phase 18 Shiny wiring moved; imports updated to use `manifest_navigator`.
-- [x] `_includes_map`, `_component_ctx_map`, `_schema_registry` injected as `reactive.Value` instances from `server.py`.
-
-### Phase 22-G: Extract `app/handlers/home_theater.py`
-
-- [x] Created with `define_server(input, output, session, *, bootloader, wrangle_studio, dev_studio, orchestrator, viz_factory, gallery_viewer, current_persona, anchor_path, tier1_anchor, tier_reference, tier3_leaf, active_cfg, active_collection_id, safe_input)`.
-- [x] All Home Theater handlers moved: `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `right_sidebar_content_ui`, `system_tools_ui`, `sidebar_filters`, `plot_reference`, `table_reference`, `plot_leaf`, `table_leaf`, `handle_plot_brush`, `comparison_mode_toggle_ui`.
-
-### Phase 22-H: Slim `server.py` to orchestrator only
-
-- [x] Final `server.py`: 228 lines — shared state, shared calcs, shared utils, 5 delegation calls only.
-- [x] `render` removed from shiny imports (no `@render.*` in server.py).
-
-### Phase 22-I: @verify Gate
-
-- [x] [HEADLESS] Import check passed.
-- [x] [LIVE] Smoke test — no major regressions detected (user confirmed).
-- [x] [@verify] Complete.
-
-### Phase 22-J: Per-Plot T3 Audit Scoping & Join-Key Propagation ✅ COMPLETED 2026-04-25
-
-- [x] `t3_recipe_by_plot: dict[plot_subtab_id, list[RecipeNode]]` replaces flat `t3_recipe` — per-plot stacks.
-- [x] Propagation modal: 3-option scope dialog ("This plot only / All plots / All plots except…") at T3 promotion.
-- [x] PK-touching nodes show ⚠️ warning banner in modal and on audit card.
-- [x] Linked-id deletion: 🗑 delete removes a node and all copies sharing the same `id` across every plot stack.
-- [x] Join-key propagation: orchestrator `per_ingredient_cast`/`base_cast` normalisation (Categorical ≠ String fix).
-- [x] Live-UI verification checklist written: `tasks_test_22J.md`. Awaiting user sign-off.
-
-### Phase 18-F: Full Interactive TubeMap (ADR-039) *(DEFERRED)*
-
-- [ ] Clickable Mermaid/SVG DAG nodes driving the Lineage Rail.
-- [ ] Action Registry parity (175+ actions).
-- [ ] Visual Forking: select node → initiate new branch → produce YAML additions.
-
----
-
 ## Phase 21: Unified Home Theater (ADR-043 / ADR-044) ✅ COMPLETED 2026-04-30
 
 **Objective:** Eliminate the redundant "Analysis Theater / Viz" nav mode, merge all results functionality into a single unified **Home** mode, implement persona-gated tier controls, context-reactive left sidebar filters, and right sidebar suppression for lower personas.
@@ -412,6 +339,79 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ---
 
+## Phase 22: Server Decomposition (ADR-045) — COMPLETED 2026-04-23
+
+**Objective:** Split the 2,362-line `app/src/server.py` monolith into a thin orchestrator (228 lines) plus five focused Shiny handler modules (`app/handlers/`) and a pure manifest introspection module (`app/modules/manifest_navigator.py`). **Zero behaviour change** — structural refactor only.
+
+**Governing ADR:** ADR-045. **Completed:** 2026-04-23.
+
+### Phase 22-A: Create `app/modules/manifest_navigator.py`
+
+- [x] Created `app/modules/manifest_navigator.py` (~280 lines).
+- [x] Moved 5 pure functions, renamed to public API (dropped `_` prefix): `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`.
+- [x] Module docstring references ADR-045 and lists full public API.
+- [x] `blueprint_handlers.py` imports from `manifest_navigator`; `server.py` no longer needs these imports.
+- [x] Import check passed.
+
+### Phase 22-B: Create `app/handlers/` directory and `__init__.py`
+
+- [x] Created `app/handlers/__init__.py` with package docstring listing all 5 handler modules and Two-Category Law constraints.
+
+### Phase 22-C: Extract `app/handlers/gallery_handlers.py`
+
+- [x] Created with `define_server(input, output, session, *, bootloader, wrangle_studio, safe_input)`.
+- [x] All gallery handlers moved: `_sync_family_all`, `_sync_pattern_all`, `_sync_difficulty_all`, `_init_gallery_selector`, `handle_gallery_clone`, `_gallery_active_metadata`, `gallery_preview_img`, `gallery_static_data`, `gallery_yaml_preview`, `gallery_md_content`, `_update_gallery_options`, `gallery_browser_anchor`.
+- [x] Delegation call added to `server.py`.
+
+### Phase 22-D: Extract `app/handlers/ingestion_handlers.py`
+
+- [x] Created with `define_server(input, output, session, *, bootloader, current_persona, safe_input)`.
+- [x] Handlers moved: `handle_ingest`, `update_persona_context`.
+
+### Phase 22-E: Extract `app/handlers/audit_stack.py`
+
+- [x] Created with `define_server(input, output, session, *, wrangle_studio, recipe_pending, snapshot_recipe, active_cfg, active_collection_id)`.
+- [x] Handlers moved: `handle_apply`, `track_recipe_changes`, `recipe_pending_badge_ui`, `audit_nodes_tier2`, `audit_nodes_tier3`.
+
+### Phase 22-F: Extract `app/handlers/blueprint_handlers.py`
+
+- [x] Created with full keyword-only dependency injection signature.
+- [x] All Phase 18 Shiny wiring moved; imports updated to use `manifest_navigator`.
+- [x] `_includes_map`, `_component_ctx_map`, `_schema_registry` injected as `reactive.Value` instances from `server.py`.
+
+### Phase 22-G: Extract `app/handlers/home_theater.py`
+
+- [x] Created with `define_server(input, output, session, *, bootloader, wrangle_studio, dev_studio, orchestrator, viz_factory, gallery_viewer, current_persona, anchor_path, tier1_anchor, tier_reference, tier3_leaf, active_cfg, active_collection_id, safe_input)`.
+- [x] All Home Theater handlers moved: `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `right_sidebar_content_ui`, `system_tools_ui`, `sidebar_filters`, `plot_reference`, `table_reference`, `plot_leaf`, `table_leaf`, `handle_plot_brush`, `comparison_mode_toggle_ui`.
+
+### Phase 22-H: Slim `server.py` to orchestrator only
+
+- [x] Final `server.py`: 228 lines — shared state, shared calcs, shared utils, 5 delegation calls only.
+- [x] `render` removed from shiny imports (no `@render.*` in server.py).
+
+### Phase 22-I: @verify Gate
+
+- [x] [HEADLESS] Import check passed.
+- [x] [LIVE] Smoke test — no major regressions detected (user confirmed).
+- [x] [@verify] Complete.
+
+### Phase 22-J: Per-Plot T3 Audit Scoping & Join-Key Propagation ✅ COMPLETED 2026-04-25
+
+- [x] `t3_recipe_by_plot: dict[plot_subtab_id, list[RecipeNode]]` replaces flat `t3_recipe` — per-plot stacks.
+- [x] Propagation modal: 3-option scope dialog ("This plot only / All plots / All plots except…") at T3 promotion.
+- [x] PK-touching nodes show ⚠️ warning banner in modal and on audit card.
+- [x] Linked-id deletion: 🗑 delete removes a node and all copies sharing the same `id` across every plot stack.
+- [x] Join-key propagation: orchestrator `per_ingredient_cast`/`base_cast` normalisation (Categorical ≠ String fix).
+- [x] Live-UI verification checklist written: `tasks_test_22J.md`. Awaiting user sign-off.
+
+### Phase 18-F: Full Interactive TubeMap (ADR-039) *(DEFERRED)*
+
+- [ ] Clickable Mermaid/SVG DAG nodes driving the Lineage Rail.
+- [ ] Action Registry parity (175+ actions).
+- [ ] Visual Forking: select node → initiate new branch → produce YAML additions.
+
+---
+
 ## Phase 24: `home_theater.py` Decomposition (ADR-051) — IMPLEMENTED 2026-05-01
 
 **Objective:** Split `app/handlers/home_theater.py` (2,853 lines pre-flight) into a thin coordinator plus focused handler modules, following ADR-045 decomposition pattern. **Gate met (2026-04-30):** Phase 22-J live-UI test §1 PASSED. **Status (2026-05-01):** ALL STEPS LANDED ON `dev`. ADR-051 → IMPLEMENTED. `home_theater.py`: 2,853 → 1,278 lines (-55.2%).
@@ -459,6 +459,46 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] `handoff_active.md` Session 13 entry appended.
 - [x] `audit_2026-05-01.md` written.
 - [x] `tasks_phase24.md` carries an executed-change manifest for each step.
+
+---
+
+## Phase 25: Left Sidebar Restructure — COMPLETE 2026-05-01
+
+**ADR:** ADR-052
+**Status:** COMPLETE. All 10 substeps (A–J) delivered. See `tasks_archive_phase25.md` and `audit_2026-05-01_phase25_complete.md`.
+**Design doc:** `EVE_WORK/daily/2026-05-01/persona_functionality_side_bars_v3_clean.csv`
+**Change manifests:** `.claude/tasks/tasks_phase25.md`
+
+### Scope
+
+Ten ordered substeps (A→J, risk-ascending):
+
+| Step | Label | Model | Risk |
+|---|---|---|---|
+| 25-A | Config + renames (Test Lab, Gallery for project-independent) | Sonnet | Low |
+| 25-B | Persona template new fields + PersonaValidator | Sonnet | Low-Med |
+| 25-C | Persona gating + bug fixes (PERSONA-1, Gallery, comparison flag) | Sonnet | Med |
+| 25-D | Right sidebar layout fix (exclude container for pipeline personas) | Sonnet | Med |
+| 25-E | Accordion restructure (rename + move panels) | Sonnet | Med |
+| 25-F | Data Import panel (new build, testing_mode-aware) | Opus | High |
+| 25-G | Export: audit report format selector + Quarto render + session export .zip | Opus | Med-High |
+| 25-H | Single Graph Export (un-deferred from Phase 22) | Opus | Med |
+| 25-I | Visual fixes (trash icon, right sidebar header) | Sonnet | Low |
+| 25-J | Smoke test coverage update | Sonnet | Low |
+
+### Key decisions (ADR-052)
+
+- **Right sidebar layout:** excluded at `ui.py` build time for pipeline personas (Option A — reads `SPARMVET_PERSONA` env var)
+- **New persona template fields:** `manifest_selector.visible/fixed_manifest` + `testing_mode`
+- **Pipeline personas always production:** `testing_mode=false` for static + simple — testing uses developer/advanced personas
+- **Gallery for project-independent:** `gallery_enabled=true` added to template
+- **Test Lab:** renamed from Dev Studio
+- **Quarto:** replaces Pandoc for server-side report rendering (HTML + PDF + DOCX)
+- **passive_exploration / t3_audit:** two new capability columns formalise existing but undocumented behaviour
+
+### Protocol
+
+Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same verification gate. Same halt-and-ask conditions.
 
 ---
 
@@ -564,6 +604,40 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ---
 
+## Phase 29: Library Extraction + Rename — COMPLETE 2026-05-05
+
+**ADRs:** ADR-067 (`libs/blueprint_arch/`), ADR-068 (`libs/test_lab/`)
+**Status:** COMPLETE.
+
+### Delivered
+
+- **`libs/blueprint_arch/`** — new dedicated lib for Blueprint Architect pure-Python logic:
+  - `blueprint_mapper.py` moved from `libs/utils/src/utils/` → `libs/blueprint_arch/src/blueprint_arch/`
+  - `manifest_navigator.py` moved from `app/modules/` → `libs/blueprint_arch/src/blueprint_arch/`
+  - `debug_blueprint_mapper.py` moved to `libs/blueprint_arch/tests/`
+  - `blueprint_handlers.py` imports updated; installed as editable lib
+
+- **`libs/test_lab/`** — new lib absorbing `generator_utils` (Option B):
+  - All 4 source modules (`aqua_synthesizer`, `bootstrapper`, `extractor`, `reconciler`) migrated with updated headers
+  - All 4 test scripts migrated with updated imports
+  - `assets/scripts/generate_demo_data.py` import updated
+  - `generator_utils` uninstalled and directory removed
+
+- **`dev_studio.py` → `test_lab_studio.py` rename:**
+  - Class `DevStudio` → `TestLabStudio`
+  - All consumers updated (`server.py`, `home_theater.py`)
+
+- **`workspace_standard.md` `@sync` guardrail** — added to §3 Operational Mandate
+
+- **Documentation sweep:** `dependency_index.md`, `tasks.md`, `architecture_decisions.md` (ADR-067/068) updated
+
+### Open / deferred
+
+- `single_graph_export_handlers.py` dead code — still deferred (see Phase 28 open items)
+- ADR-045 Two-Category Law refactor for remaining `app/modules/` files still pending (UTILS-RELOC-2, ADR045-REFACTOR)
+
+---
+
 ## Phase 31: Sidebar Slot Registry + Export Provenance (PLANNED — 2026-05-09)
 
 **ADRs:** ADR-073 (Configurable Sidebar Slot Registry), ADR-069 amendment (per-source-file hash table)
@@ -601,80 +675,6 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - `ADR045-REFACTOR` (app/modules/ Two-Category Law violations) — deferred, needs separate scope discussion
 - `IMPORT-UI-1` (unified import panel) — decided, implementation pending
 - `UI-TITLE-1` (manifest-driven title/subtitle) — decided, implementation pending
-
----
-
-## Phase 29: Library Extraction + Rename — COMPLETE 2026-05-05
-
-**ADRs:** ADR-067 (`libs/blueprint_arch/`), ADR-068 (`libs/test_lab/`)
-**Status:** COMPLETE.
-
-### Delivered
-
-- **`libs/blueprint_arch/`** — new dedicated lib for Blueprint Architect pure-Python logic:
-  - `blueprint_mapper.py` moved from `libs/utils/src/utils/` → `libs/blueprint_arch/src/blueprint_arch/`
-  - `manifest_navigator.py` moved from `app/modules/` → `libs/blueprint_arch/src/blueprint_arch/`
-  - `debug_blueprint_mapper.py` moved to `libs/blueprint_arch/tests/`
-  - `blueprint_handlers.py` imports updated; installed as editable lib
-
-- **`libs/test_lab/`** — new lib absorbing `generator_utils` (Option B):
-  - All 4 source modules (`aqua_synthesizer`, `bootstrapper`, `extractor`, `reconciler`) migrated with updated headers
-  - All 4 test scripts migrated with updated imports
-  - `assets/scripts/generate_demo_data.py` import updated
-  - `generator_utils` uninstalled and directory removed
-
-- **`dev_studio.py` → `test_lab_studio.py` rename:**
-  - Class `DevStudio` → `TestLabStudio`
-  - All consumers updated (`server.py`, `home_theater.py`)
-
-- **`workspace_standard.md` `@sync` guardrail** — added to §3 Operational Mandate
-
-- **Documentation sweep:** `dependency_index.md`, `tasks.md`, `architecture_decisions.md` (ADR-067/068) updated
-
-### Open / deferred
-
-- `single_graph_export_handlers.py` dead code — still deferred (see Phase 28 open items)
-- ADR-045 Two-Category Law refactor for remaining `app/modules/` files still pending (UTILS-RELOC-2, ADR045-REFACTOR)
-
----
-
-## Phase 25: Left Sidebar Restructure — COMPLETE 2026-05-01
-
-**ADR:** ADR-052
-**Status:** COMPLETE. All 10 substeps (A–J) delivered. See `tasks_archive_phase25.md` and `audit_2026-05-01_phase25_complete.md`.
-**Design doc:** `EVE_WORK/daily/2026-05-01/persona_functionality_side_bars_v3_clean.csv`
-**Change manifests:** `.claude/tasks/tasks_phase25.md`
-
-### Scope
-
-Ten ordered substeps (A→J, risk-ascending):
-
-| Step | Label | Model | Risk |
-|---|---|---|---|
-| 25-A | Config + renames (Test Lab, Gallery for project-independent) | Sonnet | Low |
-| 25-B | Persona template new fields + PersonaValidator | Sonnet | Low-Med |
-| 25-C | Persona gating + bug fixes (PERSONA-1, Gallery, comparison flag) | Sonnet | Med |
-| 25-D | Right sidebar layout fix (exclude container for pipeline personas) | Sonnet | Med |
-| 25-E | Accordion restructure (rename + move panels) | Sonnet | Med |
-| 25-F | Data Import panel (new build, testing_mode-aware) | Opus | High |
-| 25-G | Export: audit report format selector + Quarto render + session export .zip | Opus | Med-High |
-| 25-H | Single Graph Export (un-deferred from Phase 22) | Opus | Med |
-| 25-I | Visual fixes (trash icon, right sidebar header) | Sonnet | Low |
-| 25-J | Smoke test coverage update | Sonnet | Low |
-
-### Key decisions (ADR-052)
-
-- **Right sidebar layout:** excluded at `ui.py` build time for pipeline personas (Option A — reads `SPARMVET_PERSONA` env var)
-- **New persona template fields:** `manifest_selector.visible/fixed_manifest` + `testing_mode`
-- **Pipeline personas always production:** `testing_mode=false` for static + simple — testing uses developer/advanced personas
-- **Gallery for project-independent:** `gallery_enabled=true` added to template
-- **Test Lab:** renamed from Dev Studio
-- **Quarto:** replaces Pandoc for server-side report rendering (HTML + PDF + DOCX)
-- **passive_exploration / t3_audit:** two new capability columns formalise existing but undocumented behaviour
-
-### Protocol
-
-Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same verification gate. Same halt-and-ask conditions.
 
 ---
 
