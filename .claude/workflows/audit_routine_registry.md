@@ -1,0 +1,476 @@
+# Audit Routine Registry
+
+**Authority:** Operational workflow for automated hygiene checks across the SPARMVET_VIZ repository.
+
+**Purpose:** Define, schedule, and track recurring audit routines that verify code health, ADR compliance, manifest integrity, and documentation drift without manual intervention.
+
+**Last Updated:** 2026-05-09  
+**Maintained By:** Scheduled agents via CronCreate + manual CLI execution
+
+---
+
+## 1. Status Matrix — All Audit Routines
+
+| Routine | Frequency | Schedule | Status | Last Run | Next Run | Routine ID | Owner |
+|---------|-----------|----------|--------|----------|----------|---|---|
+| @deps block verification | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Cloud (scheduled) |
+| ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Cloud (scheduled) |
+| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | 2026-05-08 | — | Cloud (scheduled) |
+| Task-to-code drift check | Weekly | Fridays 20:00 | `[ ] Planned` | — | 2026-05-10 | — | Cloud (scheduled) |
+| Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 | — | — | Manual (CLI) |
+
+**Status codes:**
+- `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
+- `[x] Active` — Routine is created and running on schedule (or available for manual execution)
+- `[!] Paused` — Routine is paused in the web UI (will not run until resumed)
+- `[x] Complete (legacy)` — Routine ran once for a specific audit goal; not recurring
+
+**Update protocol:** After each run completes, review the routine's run session and update this matrix with:
+- Actual run timestamp (from session start time)
+- Next scheduled execution date
+- Result summary (PASS / FAIL / N violations) as a brief comment
+
+---
+
+## 2. How to Add a New Audit Routine
+
+### Step 1: Define the Audit Logic
+
+Write either a standalone script or a grep/find command. Examples:
+
+**Option A — Standalone script** (`assets/scripts/audit_*.py`):
+```python
+#!/usr/bin/env python3
+"""Audit routine: [short description]
+
+Run via:
+  .venv/bin/python assets/scripts/audit_ROUTINE_NAME.py --output tmp/audit_ROUTINE_NAME_2026-MM-DD.md
+"""
+import argparse
+import subprocess
+from pathlib import Path
+from datetime import datetime
+
+def main(output_path):
+    report = []
+    report.append(f"# Audit: [Name]\n")
+    report.append(f"Generated: {datetime.now().isoformat()}\n\n")
+    
+    # Your audit logic here
+    # ...
+    
+    with open(output_path, "w") as f:
+        f.write("\n".join(report))
+    print(f"✅ Audit complete. Report: {output_path}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", required=True, help="Output file path")
+    args = parser.parse_args()
+    main(args.output)
+```
+
+**Option B — Grep/find command** (for simple checks):
+```bash
+# Find all files missing @deps blocks
+find app/ libs/ -name "*.py" -type f ! -path "*/test*" | xargs grep -L "@deps" | head -20
+```
+
+### Step 2: Register in the Status Matrix
+
+Add a row to the table at the top:
+- **Routine:** short name (snake_case)
+- **Frequency:** "Weekly" / "Daily" / "On-demand"
+- **Schedule:** time (e.g., "Sundays 23:00") or "Manual trigger"
+- **Status:** `[ ] Planned`
+- **Last Run:** `—` (empty until first execution)
+- **Routine ID:** `—` (filled in after routine is created in Step 3)
+
+### Step 3: Create the Routine (Schedule It)
+
+Create the routine at [claude.ai/code/routines](https://claude.ai/code/routines):
+
+**Web UI steps:**
+1. Click **New routine**
+2. **Name:** `[Audit Name]` (e.g., "@deps block verification")
+3. **Prompt:** Use the routine prompt template from Section 5 above
+4. **Repositories:** `SPARMVET_VIZ` (main branch)
+5. **Environment:** **Default**
+6. **Trigger → Schedule:** Pick frequency (Weekly / Daily / etc.) and time
+   - For **Sundays 23:00**, select "Weekly" and set the time
+7. **Connectors:** Remove any not needed
+8. Click **Create**
+
+**Or use CLI:**
+```bash
+/schedule weekly on Sundays at 11pm, run [Audit Name] audit
+```
+
+After creation, the routine ID (looks like `routine_01ABCDEFGHJKLMNOP...`) appears on the routine detail page. Record it in the Status matrix.
+
+**For on-demand routines:**
+
+Don't create a scheduled routine in the web UI. Instead, document the manual command in the routine definition below, and users run it directly.
+
+### Step 4: Define the Routine (Add to Section 3 Below)
+
+Create a subsection for your routine:
+
+```markdown
+### [N]. [Routine Name]
+
+- **Purpose:** [What does this check for?]
+- **Frequency:** [Daily / Weekly / On-demand]
+- **Schedule:** [cron expression or "Manual"]
+- **Command:** [exact CLI command or script path]
+- **Output:** [where results are written; e.g., `.claude/logs/audits/audit_name_YYYY-MM-DD.md`]
+- **Violations checked:** [list of specific things that trigger a FAIL]
+- **Status:** `[ ] Planned` → `[x] Active` (after first successful run)
+- **Owner:** [Agent (scheduled) or Manual (CLI)]
+```
+
+### Step 5: Test It Manually First
+
+Before scheduling, run the routine once locally:
+
+```bash
+.venv/bin/python assets/scripts/audit_ROUTINE_NAME.py --output tmp/audit_test.md
+cat tmp/audit_test.md
+```
+
+Verify:
+- No errors or crashes
+- Output file is readable and useful
+- Report format is clear (markdown, JSON, or plain text — your choice)
+
+### Step 6: Activate
+
+Once manual test passes:
+1. Update Status matrix: `[ ] Planned` → `[x] Active`
+2. If scheduling (Step 3), note the CronCreate job_id
+3. Set "Next Run" date to the next scheduled execution
+4. Commit both the script and the registry update
+
+---
+
+## 3. Pilot Audit Routine Definitions
+
+### 1. @deps Block Verification
+
+- **Purpose:** Verify that `@deps` annotations are present on all load-bearing files and reflect current dependencies accurately.
+- **Frequency:** Weekly
+- **Schedule:** Sundays 23:00 local time (cron: `0 23 * * 0`)
+- **Command:** `.venv/bin/python assets/scripts/audit_deps_verify.py --output tmp/audit_deps_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_deps_YYYY-MM-DD.md`
+- **Violations checked:**
+  - Files in `app/`, `libs/*/src/*/` without `@deps` block (non-test files)
+  - `@deps` blocks with stale `consumes:` / `provides:` entries (detectable via grep against actual imports)
+  - `@deps` blocks missing `@end_deps` terminator (malformed)
+- **Owner:** Agent (scheduled)
+- **Status:** `[ ] Planned`
+- **Next Run:** 2026-05-12
+
+**Implementation notes:**
+- Read `build_dep_graph.py` output from last run (or regenerate)
+- Compare file mtimes against graph.json mtime to detect drift
+- Flag files modified since last graph run that should have updated @deps
+
+---
+
+### 2. ADR-011 Cross-Lib Violation Scan
+
+- **Purpose:** Detect peer-to-peer imports between domain libraries (transformer ↔ ingestion, blueprint_arch ↔ utils, etc.). These violate the Two-Tier Dependency Model (ADR-011, ADR-016).
+- **Frequency:** Weekly
+- **Schedule:** Sundays 23:00 local time (same as routine 1)
+- **Command:** `.venv/bin/python assets/scripts/audit_cross_lib.py --output tmp/audit_cross_lib_$(date +%Y-%m-%d).json`
+- **Output:** `.claude/logs/audits/audit_cross_lib_YYYY-MM-DD.json` (machine-readable) + `.claude/logs/audits/audit_cross_lib_YYYY-MM-DD.md` (human-readable summary)
+- **Violations checked:**
+  - Any `from libs/X/` import inside `libs/Y/` where X and Y are both domain libraries (not utils)
+  - Exception: `from libs/utils/` is always allowed (Tier 1 base layer)
+  - Imports inside `app/` are allowed (orchestration layer)
+  - Test files are scanned (test interdependencies matter for CI)
+- **Owner:** Agent (scheduled)
+- **Status:** `[ ] Planned`
+- **Next Run:** 2026-05-12
+
+**Expected output (JSON):**
+```json
+{
+  "generated": "2026-05-12T23:00:00Z",
+  "violations": [
+    {
+      "file": "libs/transformer/src/transformer/data_assembler.py",
+      "line": 42,
+      "import": "from libs.ingestion.src.ingestion.ingestor import Ingestor",
+      "from_lib": "transformer",
+      "to_lib": "ingestion",
+      "severity": "BLOCKER"
+    }
+  ],
+  "summary": "0 violations found. ✅ PASS"
+}
+```
+
+---
+
+### 3. Manifest Structure Integrity Check
+
+- **Purpose:** Run all manifests in `config/manifests/pipelines/` through the assembler + gallery validator to detect structural errors before they surface at runtime.
+- **Frequency:** Weekly
+- **Schedule:** Wednesdays 22:00 local time (cron: `0 22 * * 3`)
+- **Command:** `.venv/bin/python assets/scripts/audit_manifest_integrity.py --output tmp/audit_manifests_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_manifests_YYYY-MM-DD.md`
+- **Violations checked:**
+  - Manifest file format (valid YAML)
+  - Missing required keys (`input_fields`, `wrangling`, `output_fields`)
+  - Broken `!include` references (file not found)
+  - Undefined actions in wrangling steps (not in `@register_action` registry)
+  - Undefined plot components (not in `@register_plot_component` registry)
+  - Join key type mismatches (assembly `action: join` between mismatched column types)
+  - `final_contract` whitelist mismatch (column declared but not produced)
+- **Owner:** Agent (scheduled)
+- **Status:** `[ ] Planned`
+- **Next Run:** 2026-05-08
+
+**Implementation notes:**
+- Call `debug_assembler.py` on each manifest
+- Call `debug_gallery.py` on each manifest
+- Collect errors into a summary report
+
+---
+
+### 4. Task-to-Code Drift Check
+
+- **Purpose:** Verify that tasks referenced in `.claude/tasks/tasks.md` still have corresponding code/files. Flag orphaned task references (code removed but task not marked `[x] DONE`).
+- **Frequency:** Weekly
+- **Schedule:** Fridays 20:00 local time (cron: `0 20 * * 5`)
+- **Command:** `.venv/bin/python assets/scripts/audit_task_drift.py --output tmp/audit_tasks_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_tasks_YYYY-MM-DD.md`
+- **Violations checked:**
+  - Task references a specific file that no longer exists
+  - Task references a function `foo()` that has been renamed or removed
+  - Task description mentions "in file X line 42" but file/line has changed
+  - Completed tasks `[x]` that have newer subsequent task with same/overlapping scope (possible duplicate)
+- **Owner:** Agent (scheduled)
+- **Status:** `[ ] Planned`
+- **Next Run:** 2026-05-10
+
+---
+
+### 5. Persona Template Consistency
+
+- **Purpose:** Verify all 8 persona templates (`config/ui/templates/*_template.yaml`) have the same structure, matching the authoritative flag matrix in `rules_persona_feature_flags.md`.
+- **Frequency:** On-demand (or can be scheduled daily)
+- **Schedule:** Manual trigger via CLI
+- **Command:** `.venv/bin/python scripts/validate_persona_config.py --all`
+- **Output:** stdout + stderr (errors only); can redirect to file
+- **Violations checked:**
+  - Missing flags (template missing a flag that the matrix declares)
+  - Stale flags (template has a flag that no longer exists)
+  - Incorrect flag values (flag value doesn't match the matrix for that persona)
+  - Cascade violations (soft: warning; fatal: error blocking startup)
+  - Sidebar config mismatches (missing workspaces, invalid panel types)
+- **Owner:** Manual (CLI) — but can be wrapped by scheduled agent
+- **Status:** `[x] Active`
+- **Last Run:** 2026-05-09 (verified in session)
+- **Next Run:** On-demand or daily if scheduled
+
+---
+
+## 4. How Results Are Stored & Reviewed
+
+### Output directory structure
+
+```
+.claude/logs/audits/
+├── audit_deps_2026-05-12.md              ← @deps routine output
+├── audit_cross_lib_2026-05-12.json       ← ADR-011 routine (machine)
+├── audit_cross_lib_2026-05-12.md         ← ADR-011 routine (human)
+├── audit_manifests_2026-05-08.md         ← Manifest integrity routine
+├── audit_tasks_2026-05-10.md             ← Task drift routine
+└── audit_YYYY-MM-DD.md                   ← General session audit (existing pattern)
+```
+
+### Reading results
+
+After a routine completes:
+1. Agent automatically updates `.claude/workflows/audit_routine_registry.md` (this file):
+   - Sets "Last Run" to today's date
+   - Sets "Next Run" to the next scheduled execution
+   - If violations found, adds a 1-line summary in the Status matrix comment
+2. User can review the full report:
+   ```bash
+   cat .claude/logs/audits/audit_NAME_YYYY-MM-DD.md
+   ```
+3. If violations, a new task is automatically created in `tasks.md` (or user is notified)
+
+### Failure handling
+
+If a routine fails (script crash, timeout, network issue):
+1. Agent catches the error and writes to `.claude/logs/audits/audit_NAME_YYYY-MM-DD_ERROR.md`
+2. Status matrix entry is updated: Status `[ ] Planned` or `[x] Active` (unchanged), but "Last Run" is marked with `(ERROR)`
+3. On next scheduled run, the routine retries automatically
+4. If the same routine fails 3+ times in a row, a blocking task is created in `tasks.md` requiring human investigation
+
+---
+
+## 5. Integration with Claude Code Routines
+
+Routines are cloud-hosted automation managed at **[claude.ai/code/routines](https://claude.ai/code/routines)**. They run on Anthropic's infrastructure, so they keep working when your laptop is closed.
+
+**Documentation:** See [code.claude.com/docs/en/routines](https://code.claude.com/docs/en/routines) for full reference.
+
+### Create a routine (web or CLI)
+
+**From web:**
+1. Go to [claude.ai/code/routines](https://claude.ai/code/routines) → **New routine**
+2. **Name:** `[Audit Name]` (e.g., "@deps block verification")
+3. **Prompt:** Use the template below
+4. **Repositories:** Add `SPARMVET_VIZ` (main branch, default)
+5. **Environment:** **Default** (or custom if routine needs special network access)
+6. **Trigger → Schedule:** Pick frequency (weekly, daily, etc.) and time (e.g., "Sundays 23:00")
+7. **Connectors:** Remove any not needed (default includes all yours)
+8. Click **Create**
+
+**From CLI:**
+```bash
+/schedule weekly on Sundays at 11pm, run @deps verification audit
+# Claude walks you through the steps conversationally
+```
+
+### Routine prompt template
+
+```
+Run the [Audit Name] audit check.
+
+Execute from project root:
+  .venv/bin/python assets/scripts/audit_ROUTINE_NAME.py --output tmp/audit_ROUTINE_NAME_$(date +%Y-%m-%d).md
+
+After completion:
+1. Review the output: tmp/audit_ROUTINE_NAME_YYYY-MM-DD.md
+2. If violations found:
+   - Create a task in .claude/tasks/tasks.md (one task per violation category)
+   - Include a link to this routine's run session
+3. Move result to .claude/logs/audits/audit_ROUTINE_NAME_YYYY-MM-DD.md
+4. Update .claude/workflows/audit_routine_registry.md:
+   - Set Status to [x] Active (if Planned)
+   - Update "Last Run" to today's date
+   - Update "Next Run" to next scheduled execution
+   - If violations > 0, add brief summary in matrix comment
+5. Commit changes:
+   git add .claude/logs/audits/ .claude/workflows/audit_routine_registry.md .claude/tasks/tasks.md
+   git commit -m "chore: audit [name] YYYY-MM-DD — PASS|FAIL (N violations)"
+```
+
+### Manage routines
+
+From **[claude.ai/code/routines](https://claude.ai/code/routines)** detail page:
+- **Run now** — start a run immediately without waiting for schedule
+- **Pause/resume** — disable schedule temporarily
+- **Edit** — change prompt, schedule, repositories, connectors, or triggers
+- **Delete** — remove routine (existing run sessions remain)
+- **View runs** — click any past run to see full transcript, review changes, continue conversation
+
+Each run is a full Claude Code session — you can watch it live, review what changed, open pull requests, or continue the conversation.
+
+### Manual execution anytime
+
+Run commands directly in any Claude Code session (independent of routines):
+```bash
+# Run routine 5 (on-demand)
+.venv/bin/python scripts/validate_persona_config.py --all
+
+# Run routine 1 manually
+.venv/bin/python assets/scripts/audit_deps_verify.py --output tmp/audit_deps_manual_$(date +%Y-%m-%d).md
+```
+
+### One-off audits
+
+Create a **one-off routine** to run at a specific future time (not recurring):
+```bash
+/schedule in 2 weeks, run full ADR-011 cross-lib audit and create tasks for violations
+```
+
+One-off runs do NOT count against daily routine caps — they consume regular subscription usage only.
+
+---
+
+## 6. Naming Conventions
+
+Follow these patterns for consistency:
+
+| Item | Pattern | Example |
+|------|---------|---------|
+| Script name | `audit_ROUTINE_NAME.py` | `audit_deps_verify.py`, `audit_cross_lib.py` |
+| Output filename | `audit_ROUTINE_NAME_YYYY-MM-DD.{md\|json}` | `audit_deps_2026-05-12.md` |
+| Error filename | `audit_ROUTINE_NAME_YYYY-MM-DD_ERROR.md` | `audit_cross_lib_2026-05-12_ERROR.md` |
+| Routine ID | `routine_XXXXXXXXXXXXXXXXXXXXXXXX` | `routine_01ABCDEFGHJKLMNOP...` |
+| Task created on violations | `[AUDIT-NAME-VIOLATIONS-DATE]` | `[AUDIT-CROSS-LIB-2026-05-12]` |
+
+---
+
+## 7. Decision Table — Which Routine to Add Next
+
+| Need | Routine | Effort | Owner |
+|------|---------|--------|-------|
+| Ensure @deps are current | @deps verification | Low | Agent (scheduled) |
+| Catch cross-lib violations early | ADR-011 scan | Low | Agent (scheduled) |
+| Catch manifest errors before runtime | Manifest integrity | Medium | Agent (scheduled) |
+| Detect orphaned tasks | Task drift check | Medium | Agent (scheduled) |
+| Verify persona consistency | Persona template check | Low | Manual (CLI) or Agent |
+| —— | —— | —— | —— |
+| Check SQL injection / XSS vectors | Security linter (SAST) | High | Not yet planned |
+| Verify test coverage > threshold | Coverage report | Medium | Not yet planned |
+| Check for hardcoded secrets (env vars) | Secret scanner | Low | Not yet planned |
+| Audit file permissions / .gitignore | Permissions audit | Low | Not yet planned |
+
+---
+
+## 8. Session-End Protocol for Routine Changes
+
+If you add or modify a routine during development:
+
+1. **Write the script** (if not just a CLI command) — place in `assets/scripts/audit_*.py`
+2. **Test manually** — verify the script runs without error
+3. **Update this file** (`.claude/workflows/audit_routine_registry.md`) — add/modify routine definition and status matrix
+4. **Create the routine** (if periodic) — go to [claude.ai/code/routines](https://claude.ai/code/routines) and follow the web UI steps or use `/schedule` in CLI
+5. **Document it** — update the status matrix with:
+   - Routine ID (from the routine detail page)
+   - Schedule (e.g., "Sundays 23:00")
+   - Owner (Cloud or Manual)
+6. **Commit together** — one commit with script + registry update
+
+Example commit message:
+```
+chore: add audit routine for ADR-011 cross-lib violations
+
+- Add audit_cross_lib.py script with full registry of domain libs
+- Register routine in audit_routine_registry.md
+- Create routine at claude.ai/code/routines (routine_01ABCD...)
+- Schedule: weekly Sundays 23:00
+- Output routed to .claude/logs/audits/
+```
+
+---
+
+## 9. Glossary & Links
+
+| Term | Definition |
+|------|-----------|
+| **Routine** | A recurring audit check (or on-demand script). Examples: @deps verification, cross-lib scan. |
+| **CronCreate** | Claude Code tool for scheduling recurring prompts/jobs. Returns a job_id for tracking. |
+| **Violation** | A check failure. Examples: missing @deps, cross-lib import, broken manifest. |
+| **Durable** | If `true`, the CronCreate job survives session restarts (persisted to disk). Default `false`. |
+| **Recurring** | If `true`, the job fires on every cron match until CronDelete. Default `true`. |
+
+**Related files:**
+- [workspace_standard.md](./../rules/workspace_standard.md) — Master index & project authority
+- [project_conventions.md](./../knowledge/project_conventions.md) — Patterns & terminology
+- [rules_verification_testing.md](./../rules/rules_verification_testing.md) — Test naming & @verify protocol
+- [.claude/logs/audits/](./../logs/audits/) — Historical audit reports
+
+---
+
+**Status:** Ready for pilot routines (Routines 1–5 designed; scheduling pending user approval).  
+**Last Updated:** 2026-05-09  
+**Next Review:** After first routine completes (estimate 2026-05-12)
