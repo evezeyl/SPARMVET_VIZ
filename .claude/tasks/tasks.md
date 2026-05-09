@@ -138,11 +138,11 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
 - [x] **BP-AGENT-1** `[sonnet/high]`: `AgentAdapter` protocol + `ClaudeCliAdapter` (§11 subprocess isolation + auth probe) + `DisabledAdapter`. Dedicated `cwd={project_root}/agent_sessions/{uuid}/` per session; `flock` single-flight lock; auth probe at init; system prompt builder + per-turn context builder. Location: `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py` + `agent_context.py`. Headless-safe. All backends buffered.
 
-- [ ] **BP-AGENT-PARSER-1** `[sonnet/medium]`: `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py` — fenced-block extractor for `<!-- AGENT_TOOL_CALL --> ... <!-- /AGENT_TOOL_CALL -->` protocol (ADR-076 §10.1). JSON validation, per-tool schema dispatch, structured error turn on parse failure. Headless-safe.
+- [x] **BP-AGENT-PARSER-1** `[sonnet/medium]`: `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py` — fenced-block extractor for `<!-- AGENT_TOOL_CALL --> ... <!-- /AGENT_TOOL_CALL -->` protocol (ADR-076 §10.1). JSON validation, per-tool schema dispatch, structured error turn on parse failure. Headless-safe.
 
-- [ ] **BP-AGENT-TOOLS-1** `[sonnet/medium]`: 3 MVP-1 tools in `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`: `get_available_actions`, `get_available_components`, `get_field_contract`. Each wraps existing `manifest_navigator`/registry APIs. Headless-safe.
+- [x] **BP-AGENT-TOOLS-1** `[sonnet/medium]`: 3 MVP-1 tools in `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`: `get_available_actions`, `get_available_components`, `get_field_contract`. Each wraps existing `manifest_navigator`/registry APIs. Headless-safe.
 
-- [ ] **BP-AGENT-INSTRUCT-1** `[sonnet/medium]`: `config/ui/agents/blueprint_default.md` — system prompt: tool-call output format (ADR-076 §10.1), intake questions, data-science guidance (filter ordering, join key validation, two-step cast), AMR/biology domain section placeholder. Create `config/ui/agents/` directory.
+- [x] **BP-AGENT-INSTRUCT-1** `[sonnet/medium]`: `config/ui/agents/blueprint_default.md` — system prompt: tool-call output format (ADR-076 §10.1), intake questions, data-science guidance (filter ordering, join key validation, two-step cast), AMR/biology domain section placeholder. Create `config/ui/agents/` directory.
 
 - [ ] **BP-AGENT-PANEL-1** `[haiku/low]`: Register `blueprint_agent_chat` panel type in `app/modules/sidebar_registry.py` with `gate_flag: "blueprint_agent_enabled"`. Add to BLUEPRINT workspace `right_sidebar.panels` in `developer_template.yaml` + `qa_template.yaml`.
 

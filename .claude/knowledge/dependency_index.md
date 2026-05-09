@@ -381,6 +381,18 @@
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/src/bootloader.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
 
+## `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`
+- **Role:** `info`
+- **provides:** `function:extract_tool_calls`, `function:register_tool_schema`, `class:ParseResult`, `class:ParsedToolCall`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **Role:** `info`
+- **provides:** `function:call_tool`, `function:get_tool_definitions`, `dict:TOOL_REGISTRY`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
 ## `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
 - **Role:** `info`
 - **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`

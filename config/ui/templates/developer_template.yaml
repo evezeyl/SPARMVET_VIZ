@@ -15,6 +15,8 @@ features:
   gallery_enabled: true
   # Can the user access the Blueprint Architect (manifest IDE)?
   blueprint_enabled: true
+  # Can the user edit the YAML escape hatch in Blueprint IDE? (ADR-075; depends on blueprint_enabled)
+  manifest_edit_enabled: true
   # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
   blueprint_agent_enabled: true
   # Can the user access the Test Lab (data utilities)?
