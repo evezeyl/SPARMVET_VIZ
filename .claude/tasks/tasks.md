@@ -104,6 +104,15 @@ Items with no blockers — can be started immediately.
 - [ ] **VIZ-DISCRETE-SCALE-1** `[sonnet/low]`: Add `scale_x_discrete` / `scale_y_discrete` layers to existing manifests where Year or Sequence Type columns are used as categorical x/y axes (currently render as continuous). Audit all `analysis_groups` plot specs in `config/manifests/pipelines/`.
 - [ ] **VIZ-GALLERY-THUMB-1** `[sonnet/low]`: Pre-render gallery thumbnails at index build time (`refresh_gallery.py`) for faster visual scanning. Store as `preview_thumb.png` (100×75px) alongside `preview_plot.png`.
 
+### Audit Fixes — Library Tests & Dependencies (2026-05-09)
+
+*Findings from `audit_library_tests_2026-05-09.md` (Routine 10) and `audit_package_deps_2026-05-09.md` (Routine 11).*
+
+- [ ] **LIB-TESTS-BLUEPRINT-1** `[AUDIT]` `[sonnet/medium]`: Fix 188 pytest failures in `libs/blueprint_arch/tests/test_schema_registry.py`. Root cause: `ui_schema` dicts in `@register_plot_component` decorators (viz_factory) are missing `allow_extra_params` and `wraps` fields required by ADR-075. The schema registry tests validate these fields at load time. Fix: add the missing fields to all `@register_plot_component` registrations in `libs/viz_factory/src/viz_factory/` that don't already declare them.
+- [ ] **LIB-TESTS-VIZ-TIMEOUT-1** `[AUDIT]` `[haiku/low]`: `audit_library_tests.py` times out when running the viz_factory integrity suite (renders all 193+ components, exceeds 120s hard timeout). Fix: increase the subprocess timeout in `scripts/audit_library_tests.py` for viz_factory specifically (e.g. `--timeout 600`), or add a `--skip-integrity` flag for the integrity suite step and note that it must be run manually.
+- [ ] **PKG-PLOTNINE-PATCH-1** `[AUDIT]` `[haiku/low]`: Upgrade plotnine from 0.15.3 → 0.15.4 (parity mandate package — ADR-036 requires tracking PATCH updates). Steps: (1) check plotnine 0.15.4 changelog for new `geom_*`/`stat_*`/`scale_*` additions; (2) `pip install plotnine==0.15.4`; (3) re-run `audit_parity_coverage.py` to detect any new gaps; (4) update `pyproject.toml` pin.
+- [ ] **PKG-IMPORTLIB-MAJOR-1** `[AUDIT]` `[sonnet/low]`: `importlib_metadata` has a MAJOR update pending (8.7.1 → 9.0.0). It is a transitive dependency (not directly imported). Steps: (1) identify which direct dependency pulls it in (`pip show importlib_metadata`); (2) check that direct dep's changelog for Python 3.12 compat; (3) if safe, allow upgrade and re-run `pip check`; (4) if breaking, pin at 8.x in `pyproject.toml`.
+
 ### Infrastructure & Housekeeping
 
 - [ ] **AUDIT-FIRST-TRIAGE-1** `[haiku/low]`: After first scheduled audit runs fire, triage all unprocessed reports per `audit_triage_protocol.md`. Run `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md` to find them.
