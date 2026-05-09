@@ -89,10 +89,26 @@
 
 - [ ] **THEATER-1** `[sonnet/medium]`: Collapse/minimize plot panel — ▼/▲ caret in plot card header → 1-line collapsed state. Per-plot, persisted in `home_state`.
 
-- [ ] **STATIC-VIEW-1** `[sonnet/low]`: "Zero functionality" static persona polish — three sub-items, pending input from demo (2026-05-04):
+### Sidebar Slot Registry (ADR-073)
+
+- [ ] **SIDEBAR-CONFIGS-1** `[haiku/low]`: Create `config/ui/sidebars/` directory with shared sidebar YAML panel-list files for all workspace × persona-tier combinations (home_static_left, home_simple_left, home_advanced_left, home_advanced_right, blueprint_standard_left/right, gallery_focus_left, testlab_standard_left). Update all 6 persona templates to use `workspaces:` section with `!include` references.
+
+- [ ] **SIDEBAR-REGISTRY-1** `[sonnet/high]`: Implement ADR-073 core:
+  - `app/modules/sidebar_registry.py` — `PANEL_REGISTRY` dict (panel type → renderer ref + gate flag). Headless-safe, no Shiny imports.
+  - `bootloader`: add `get_sidebar_config(workspace, side)` reading `workspaces.<ws>.<side>_sidebar` from persona template.
+  - `home_theater.py`: replace hardcoded accordion sequence with slot-list iteration for Home workspace.
+  - `ui.py`: replace persona-name string comparison for right sidebar exclusion with `bootloader.get_sidebar_config("home", "right").visible` — fixes ADR-053 violation (task 25-O).
+  - New built-in panel types to implement: `project_info`, `deployment_info`.
+
+- [ ] **SIDEBAR-VALIDATE-1** `[sonnet/medium]`: Implement compatibility validation:
+  - `SidebarValidator` class alongside existing `PersonaValidator` — checks panel types against registry, `!include` targets exist, gate-flag / slot-list consistency warnings.
+  - `scripts/validate_persona_config.py` — CLI wrapper running both validators. Flags: `--persona <id>`, `--all`, `--strict` (warnings → errors for CI). Interactive prompt for ambiguous panel/flag combinations.
+  - Add to startup: `SidebarValidator` runs at app init alongside `PersonaValidator`; warnings logged, errors block startup.
+
+- [ ] **STATIC-VIEW-1** `[sonnet/low]`: "Zero functionality" static persona polish:
   - [ ] **STATIC-VIEW-1a** `[haiku/low]`: Hide the view-title banner (central plot-group header strip) in fully static personas — it adds no value when there are no controls and may clutter a clean presentation layout. Gate on a new persona flag or reuse `interactivity_enabled: false`.
   - [ ] **STATIC-VIEW-1b** `[sonnet/low]`: T2 as default displayed tier — in static personas, T2 (analysis-ready) should be shown on first render instead of T1 raw. T1 toggle should not be exposed. Decide: force `active_tier=T2` in bootloader for `interactivity_enabled: false` personas, or add an explicit `default_tier` field to the persona template.
-  - [ ] **STATIC-VIEW-1c** `[sonnet/low]`: Left sidebar treatment for static view — sidebar still renders (manifest choice, possibly empty accordion). Options: hide entirely, collapse to a narrow icon rail, or show only a fixed project-name label. **Needs user input after demo — may get stakeholder feedback on what makes sense for a Galaxy/IRIDA deployment.**
+  - [x] **STATIC-VIEW-1c** `[sonnet/low]`: Left sidebar treatment for static personas — **Decided 2026-05-09 (ADR-073).** Sidebar visibility is controlled by `workspaces.home.left_sidebar.visible` in persona template (not hardcoded). Static personas use `project_info` + `deployment_info` + `export` panel slots. Hiding is allowed when `export_enabled: false` AND no informational panels needed. ✅ 2026-05-09
 
 ---
 
@@ -154,15 +170,15 @@ These items require a design decision or scope confirmation before implementatio
 - [ ] **TO DISCUSS — lab script**: Combine manifests — format detection, common datasets, branching
 - [ ] **TO DISCUSS**: Prepare to connect — icons local, verify legacy, cytoscape
 
-- [ ] **REVIEW-SCOPING-1 — T3 bundle dependency rule** `[sonnet/low]`: Confirm the rule: if `t3_sandbox_enabled` is on, then `comparison_mode_enabled` + `audit_report_enabled` + `session_management_enabled` must also be on. These are the computer functionalities that must be activated together as a group when T3 is activated. Need to verify current persona templates enforce this and document it as a formal scoping rule. Related: `SESSION-PERSONA-1` (ghost_save gating).
+- [x] **REVIEW-SCOPING-1 — T3 bundle dependency rule**: Already implemented as PersonaValidator Rule 6 (PERSONA-CONFIG-VALIDATE-1). Closed. ✅ 2026-05-09
 
-- [ ] **REVIEW-EXPORT-FLAGS — EXP_GROUP as separate persona flag** `[sonnet/low]`: Currently `Active group` export scope is gated on `export_graph_enabled` (same as Active plot). The matrix lists `EXP_GROUP` as a distinct column from `EXP_GRF`. Decision: add a dedicated `export_group_enabled` persona flag, or keep current behaviour (lineage backtrace works for both → one flag is enough)? Eve's note: as long as lineage works for all scopes, activating all export types together is acceptable.
+- [x] **REVIEW-EXPORT-FLAGS — EXP_GROUP as separate persona flag**: **Decided 2026-05-09 — won't add separate flag.** One `export_enabled` gates all scope levels (global / group / plot). The 3-way scope toggle is already implemented. Per-scope lineage completeness (each plot's recipes + data + audit included) is governed by `EXPORT-AUDIT-COMPLETE-1`, not a flag. ✅ 2026-05-09
 
 - [x] **REVIEW-IMPORT-PANEL — META_ING / IMP_HLP / single import UI**: ✅ 2026-05-05 **Decided.** Single browse + mapping panel. `IMP_HLP` on → mapping shows all manifest data sources (metadata included). `META_ING` on alone → mapping shows metadata schema only. `IMP_HLP` implies `META_ING` (superset). Metadata import behavior: **overwrite** (not merge). Two persona flags remain in config for scoping control; UI has one entry point. See **IMPORT-UI-1** for implementation.
 
-- [ ] **REVIEW-AUTOSAVE-CACHE — caching vs autosave separation** `[sonnet/low]`: Is the Parquet cache (T1 materialisation) always written for performance, independent of the `autosave` flag? If yes: cache-write is always on; `autosave` flag only controls ghost-save (session JSON). If loaded once on same system, cached Parquet avoids recalculating wrangling + plots on tab switch — good for responsiveness. Need to decide separation before fixing `SESSION-PERSONA-1`.
+- [x] **REVIEW-AUTOSAVE-CACHE — caching vs autosave separation**: **Decided — already implemented.** Parquet cache (T1 materialisation) always written for performance, independent of `autosave` flag. `autosave` flag controls ghost-save (session JSON) only. Implemented in SESSION-PERSONA-1. ✅ 2026-05-09
 
-- [ ] **REVIEW-HASH-EXPORT — hash visibility and export gating** `[sonnet/low]`: Hashes (manifest SHA256, data batch SHA256, recipe hash) are always computed. Question: should the export of all 3 hashes (in README + report) be gated by a flag, or always included in bundle? T3 recipe hash needs T3 active. Further discussion needed to clarify what Eve expects to see and when.
+- [x] **REVIEW-HASH-EXPORT — hash visibility and export gating**: **Decided 2026-05-09 — always include, no flag.** Provenance has no reason to be optional (ADR-069 Rule 1). All hashes (manifest SHA256, per-source-file SHA256 table, data_batch_hash roll-up, decision_hash) always present in every export bundle. ADR-069 amended to clarify per-source-file table requirement. ✅ 2026-05-09
 
 - [x] **REVIEW-UI-TITLE-SUBT — manifest-driven UI title/subtitle**: ✅ 2026-05-05 **Decided.** Resolution order: persona config override > manifest field > nothing shown. Manifest fields: `info.display_name` (title), `info.subtitle` (subtitle — new short dedicated field). `info.description` remains free-form long description, NOT shown in UI header. `UI_TITLE` off → both title and subtitle hidden (subtitle depends on title). See **UI-TITLE-1** for implementation.
 
@@ -175,6 +191,12 @@ These items require a design decision or scope confirmation before implementatio
 Allow edit title, allow policy change, color changes, points display  ... all need to be able to be registered in the audit -> we need an edit palette menu possibility - problem that plots are not really interactive so need to make list of elements that can be changed and provide the possibilities - that will not be a small work this ! because it depends on the plot type and elements also ! Could be a good exploration for grant that also 
 
 ---
+
+## RESEARCH - HOW TO - DECIDE 
+- [ ] Improve audi workflow - how can we reuse audit process to ensure that all the hashes (manifest hash - data hashes) can be stored in a data base associated with results - eg. output a manifest hash directory for each manifest version ? how to allow something similar for data ? Important users might want to associate a database eg lims with the results report - and we need a way to export the information so everything can be imported in the report - how can those things be integrated ? specify new path for audit that can be decided at deploymment eg. via person configuration and output each different manifest with hash and for data ? 
+- [ ] easy lookup functionality ? 
+- [ ] Improve the lab functionalties -> need to collect all information that is disseminated all
+- [ ] audi apply : improvement eg. apply to ex everything except those... to facilate selection by exclusion ?
 
 ## 🟡 Deferred / Backlog
 

@@ -564,6 +564,45 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ---
 
+## Phase 31: Sidebar Slot Registry + Export Provenance (PLANNED — 2026-05-09)
+
+**ADRs:** ADR-073 (Configurable Sidebar Slot Registry), ADR-069 amendment (per-source-file hash table)
+**Status:** PLANNED. Design complete. Tasks in `tasks.md`.
+
+### Objective
+
+Replace the hardcoded left/right sidebar accordion sequence with a declarative slot registry configurable per-persona and per-workspace via persona template `workspaces:` section and `!include` shared sidebar config files. Also complete the ADR-069 export provenance cluster.
+
+### Substeps (ordered)
+
+| Step | Task ID | Label | Model | Risk |
+|---|---|---|---|---|
+| 31-A | SIDEBAR-CONFIGS-1 | `config/ui/sidebars/` shared YAML files + persona template `workspaces:` sections | haiku | Low |
+| 31-B | SIDEBAR-REGISTRY-1 | Panel registry, bootloader `get_sidebar_config()`, `home_theater.py` slot iteration, `ui.py` ADR-053 fix | sonnet | Med-High |
+| 31-C | SIDEBAR-VALIDATE-1 | `SidebarValidator` + `scripts/validate_persona_config.py --all --strict` | sonnet | Med |
+| 31-D | UTILS-RELOC-2 | `gallery_manager.py` deduplicate → canonical copy in `libs/viz_gallery/` | haiku | Low |
+| 31-E | EXPORT-AUDIT-COMPLETE-1 | `build_export_provenance()` helper + per-source-file hash table in README+report | sonnet | Med |
+| 31-F | EXPORT-VERSION-1 | `git_commit` + `release_version` in all export surfaces | haiku | Low |
+| 31-G | EXPORT-HASH-2 | `decision_hash` from Parquet metadata at export time | sonnet | Med |
+| 31-H | EXPORT-IMG-META-1 | Provenance embedded in PNG/SVG/PDF file metadata | sonnet | Med |
+
+### Key decisions (ADR-073)
+
+- **Slot list controls layout; flags control capability** — fully independent layers
+- **Per-workspace** — Home, Blueprint, Gallery, Test Lab each declare their own sidebar config
+- **`!include` shared configs** in `config/ui/sidebars/` — personas share files, reduce duplication
+- **`visible: false`** excludes the sidebar container from DOM (not CSS-hidden)
+- **Right sidebar structural exclusion** moves from persona-name check in `ui.py` → `workspaces.home.right_sidebar.visible` in persona template (fixes ADR-053 violation, task 25-O)
+- **`SidebarValidator`** runs alongside `PersonaValidator` at startup and in CI (`--strict` mode)
+
+### Open / deferred from this phase design
+
+- `ADR045-REFACTOR` (app/modules/ Two-Category Law violations) — deferred, needs separate scope discussion
+- `IMPORT-UI-1` (unified import panel) — decided, implementation pending
+- `UI-TITLE-1` (manifest-driven title/subtitle) — decided, implementation pending
+
+---
+
 ## Phase 29: Library Extraction + Rename — COMPLETE 2026-05-05
 
 **ADRs:** ADR-067 (`libs/blueprint_arch/`), ADR-068 (`libs/test_lab/`)

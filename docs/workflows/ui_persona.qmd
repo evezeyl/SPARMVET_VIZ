@@ -277,3 +277,128 @@ Everything above, plus you can upload your own data files (including Excel outpu
 
 ## developer
 All features. Access to the Gallery for browsing and cloning recipes, the Test Lab for generating synthetic test data, and the full action registry in the audit panel. Intended for pipeline developers and system administrators.
+
+---
+
+# Sidebar Configuration (ADR-073)
+
+Each persona template declares its sidebar layout per user workspace (Home, Blueprint, Gallery, Test Lab). This replaces the previous hardcoded accordion sequence and adds full configurability without touching Python.
+
+## Structure in the persona template
+
+```yaml
+workspaces:
+  home:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: project_info
+        - type: filters
+        - type: export
+        - type: session_management
+    right_sidebar:
+      visible: true
+      panels:
+        - type: audit_stack
+  blueprint:
+    left_sidebar: !include sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include sidebars/blueprint_standard_right.yaml
+  gallery:
+    left_sidebar: !include sidebars/gallery_focus_left.yaml
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: project_info
+    right_sidebar:
+      visible: false
+      panels: []
+```
+
+## Two-layer resolution
+
+Sidebar layout uses two independent controls:
+
+| Layer | Controls | Where defined |
+|---|---|---|
+| **Slot list** | Which panels appear and in what order | `workspaces.<ws>.<side>_sidebar.panels` in template |
+| **Feature flag** | Whether the panel's functionality is active | Existing feature flags (`bootloader.is_enabled(flag)`) |
+
+A panel in the slot list whose feature flag is disabled is silently skipped at render time. Feature flags and cascade rules are completely unchanged — the slot list is purely a layout declaration.
+
+## Shared sidebar configs via `!include`
+
+Panel lists that are shared across several personas live in `config/ui/sidebars/` as reusable YAML files:
+
+```
+config/ui/sidebars/
+  home_static_left.yaml
+  home_advanced_left.yaml      ← shared by advanced, independent, developer, qa
+  home_advanced_right.yaml     ← shared by all T3-capable personas
+  blueprint_standard_left.yaml
+  blueprint_standard_right.yaml
+  gallery_focus_left.yaml
+  testlab_standard_left.yaml
+```
+
+Reference them in the persona template with `!include`:
+
+```yaml
+workspaces:
+  home:
+    left_sidebar: !include sidebars/home_advanced_left.yaml
+    right_sidebar: !include sidebars/home_advanced_right.yaml
+```
+
+Changing a shared sidebar file propagates to all personas that `!include` it. Custom deployments override only the file they need — no Python changes required.
+
+## Built-in panel types
+
+| Type | Gate flag | Workspaces | Description |
+|---|---|---|---|
+| `project_info` | — | any | Manifest title, description, dataset summary. Always renders. |
+| `deployment_info` | — | any | Branding: logo, contact, institution. Params: `logo`, `contact`, `institution`. |
+| `manifest_choice` | `manifest_selector.visible` | home | Manifest selector dropdown |
+| `filters` | `interactivity_enabled` | home | Row filter recipe builder |
+| `export` | `export_enabled` | home | Export bundle with scope toggle |
+| `session_management` | `session_management_enabled` | home | Session save/restore/import |
+| `data_import` | `metadata_ingestion_enabled` | home | Metadata upload + optional multi-file ingestion |
+| `audit_stack` | `t3_sandbox_enabled` | home (right) | T3 audit trail panel |
+| `blueprint_nav` | `blueprint_enabled` | blueprint | Pipeline selector + TubeMap node selector |
+| `blueprint_logic` | `blueprint_enabled` | blueprint (right) | Active component logic stack |
+| `gallery_search` | `gallery_enabled` | gallery | Focus mode: search and filter |
+| `notification_log` | — | any (right) | Alert log (ADR-060) |
+
+## Sidebar visibility
+
+`left_sidebar.visible: false` — excludes the sidebar container from the DOM entirely (not CSS-hidden).
+
+`right_sidebar.visible: false` — excludes the right sidebar from layout at build time. For lower personas (`pipeline-static`, `pipeline-exploration-simple`) this is set in their templates, replacing the previous persona name string check.
+
+**Auto-hide:** If `visible` is not explicitly set and all panels are skipped (all gate flags off), the sidebar is treated as hidden.
+
+## Validation
+
+Before deploying any persona template change, run:
+
+```bash
+# Validate one persona
+.venv/bin/python scripts/validate_persona_config.py --persona pipeline-exploration-advanced
+
+# Validate all personas — CI gate
+.venv/bin/python scripts/validate_persona_config.py --all --strict
+```
+
+The script checks: panel types against the registry, `!include` targets exist, gate-flag / slot-list consistency. `--strict` upgrades warnings to errors. The script is also run at app startup (warnings logged, errors block startup).
+
+## Adding a new panel type (developer guide)
+
+1. Register it in `app/modules/sidebar_registry.py`: add an entry to `PANEL_REGISTRY` with the renderer function reference and optional gate flag.
+2. Implement the renderer as a function in the relevant handler (Shiny-aware code stays in handlers per ADR-045 Two-Category Law).
+3. Add the panel type to the `!include` sidebar YAML files for any persona/workspace that should show it.
+4. Run `scripts/validate_persona_config.py --all` to verify no existing templates are broken.
+
+No changes to `home_theater.py` or `ui.py` are needed for new panel types — the slot iteration is generic.

@@ -51,7 +51,7 @@ interactivity_enabled: true/false   ← MASTER GATE for all below
 
 **Column selector absent:** When `interactivity_enabled: false`, `home_col_selector_ui` returns an empty `ui.div()` immediately — the "Visible columns (preview only)" and "Columns (drop unselected via audit)" controls are not rendered.
 
-**Right sidebar:** Not flag-controlled. Suppressed structurally (layout element excluded, not CSS-hidden) for `pipeline-static` and `pipeline-exploration-simple`. The persona level itself determines this — no flag needed.
+**Right sidebar:** Controlled by `workspaces.home.right_sidebar.visible` in the persona template (ADR-073). Set to `false` for `pipeline-static` and `pipeline-exploration-simple`; `true` for all others. Resolved at layout build time via `bootloader.get_sidebar_config("home", "right").visible` — not by persona name comparison (that ADR-053 violation is fixed by SIDEBAR-REGISTRY-1). The `audit_stack` panel within the right sidebar is separately gated by `t3_sandbox_enabled`.
 
 ---
 

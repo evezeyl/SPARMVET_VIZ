@@ -11,6 +11,9 @@
 | `app/src/bootloader.py` | Path Authority & Persona Bootstrapper | Config → Paths/Toggles | `Bootloader`, `persona`, ADR-031 |
 | `app/src/ui.py` | 3-Zone Dashboard Shell (static HTML/CSS only) | UI Spec → Layout | `Navigation`, `Theater`, `Audit Stack` |
 | `config/ui/theme.css` | Base stylesheet — injected at startup via `bootloader.get_theme_css_path()` | CSS → `ui.tags.style()` | ADR-055; personas declare `theme_css:` key to override for branding. Canonical colours: primary blue `#345beb`, export teal `#10a395`, reset amber `#ffc107`. View title banners use `.view-title-banner` / `.banner-title` / `.banner-subtitle`. |
+| `config/ui/sidebars/` | Shared sidebar panel-list YAML files (ADR-073) | YAML → persona template `!include` | One file per workspace×tier combination. Referenced via `!include sidebars/<name>.yaml` in persona template `workspaces:` section. |
+| `app/modules/sidebar_registry.py` | Panel type registry (ADR-073) — headless-safe, Two-Category Law | `PANEL_REGISTRY` dict → type name → renderer ref + gate flag | Used by `home_theater.py` slot iteration and `SidebarValidator`. Never import Shiny here. |
+| `scripts/validate_persona_config.py` | Persona + sidebar compatibility validator CLI (ADR-073) | `--persona <id>` / `--all` / `--strict` | Runs `PersonaValidator` + `SidebarValidator`. Use `--strict` in CI. Also runs at app startup (warnings logged, errors block). |
 | `app/src/server.py` | **Thin Orchestrator only** (ADR-045, 228 lines) | Shared state/calcs → Handler delegation | `active_cfg`, `tier1_anchor`, `tier_reference`, `tier3_leaf`, 5× `define_server()` calls |
 | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema` — importable anywhere, zero Shiny dependency |
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
@@ -60,16 +63,18 @@ Critical pattern discovered during Phase 21-F implementation. Violating this cau
 
 **JS callbacks in selectize options:** The `render` option in selectize.js requires actual JS function objects. Passing Python strings causes `l.apply is not a function` client error. Use CSS for visual customization instead.
 
-## 3. UI Shell Architecture (Phase 21 — ADR-043/ADR-044, 2026-04-23)
+## 3. UI Shell Architecture (ADR-043/ADR-044/ADR-073)
 
-- **Navigation (Left, #c0c0c0)**: Project Selection, Blueprint Discovery, and Action Tools. Persistent global header for Home/Architect/Gallery switching. Filter widgets are **context-reactive to the active plot sub-tab** — regenerated on sub-tab change, scoped to that plot's `plot_spec` aesthetics.
+- **Sidebars are declarative (ADR-073):** Left and right sidebar layouts are declared per persona template under `workspaces.<ws>.left_sidebar` / `workspaces.<ws>.right_sidebar`. Panel types are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`). Persona template `!include` targets in `config/ui/sidebars/` enable shared configs across personas. `bootloader.get_sidebar_config(workspace, side)` is the runtime API. **Never hardcode sidebar panel sequences in Python** — add to the registry and declare in template.
+- **Two-layer resolution:** Slot list (persona template) controls presence/order; feature flags control capability. Fully independent. A panel in the slot list with a disabled flag is silently skipped.
+- **Navigation (Left, #c0c0c0)**: Workspace-dependent. Filter widgets are **context-reactive to the active plot sub-tab** — regenerated on sub-tab change, scoped to that plot's `plot_spec` aesthetics. Switching workspaces physically replaces the left sidebar DOM.
 - **Theater (Center, #d1d1d1)**:
   - **Home Mode (Unified)**: Tabs driven exclusively by manifest `analysis_groups`. Each group tab contains `navset_underline` plot sub-tabs wrapped in a **collapsible accordion**. Data preview in a **separate collapsible accordion below**. No hardcoded tabs. Controlled by the **Tier Toggle** (T1/T2 always; T3-Wrangle/T3-Plot persona-gated). **Comparison Mode** (persona-gated separate toggle) splits the theater into T2-reference (left) and T3-active (right).
   - **Architect Mode (Flight Deck)**: Tri-pane vertical stack (Collapsible TubeMap → Live Plot → Live Table). Unchanged.
 - **Audit/Logic Stack (Right, #c0c0c0)**:
-  - **Home Mode**: **Hidden** when `t3_sandbox_enabled=false` (theater expands full width — layout element excluded, not CSS-hidden). Visible when `t3_sandbox_enabled=true`: shows T2 Violet blueprint nodes + T3 Yellow sandbox nodes. (Phase 25-O: gate is now flag-based; previously name-compared against `pipeline-static` / `pipeline-exploration-simple`.)
-  - **Architect Mode**: Active Blueprint Component Logic Stack (The "Surgical" workbench). Unchanged.
-- **Focus Mode (ADR-038)**: Global Navigation (Left Sidebar) programmatically hides "Operation" controls (Import/Session) when Discovery tabs (Gallery) are active.
+  - **Home Mode**: Controlled by `workspaces.home.right_sidebar.visible` in persona template (ADR-073). `false` = layout element excluded (theater expands full width). `true` with `audit_stack` panel = shows T2 Violet blueprint nodes + T3 Yellow sandbox nodes (requires `t3_sandbox_enabled=true`).
+  - **Architect Mode**: Active Blueprint Component Logic Stack. Controlled by `workspaces.blueprint.right_sidebar`.
+- **Focus Mode (ADR-038)**: Gallery workspace left sidebar slot list contains only `gallery_search` — operation panels absent by design, not by flag suppression.
 - **Thin UI (ADR-003)**: UI modules MUST NOT implement wrangling or plotting logic. Authoritative GUI specifications rely on `ui_implementation_contract.md`.
 - **CSS convention (ADR-055):** All dashboard styling lives in `config/ui/theme.css` — not inline in Python code. New UI styling goes in that file (or a persona-specific override file declared via `theme_css:` in the persona template). Inline `style=` attributes are allowed only for truly one-off values that cannot be expressed as a CSS rule. `bootloader.get_theme_css_path()` resolves the active CSS path at startup.
 - **Removed**: The "Analysis Theater / Viz" nav item is eliminated (ADR-043). The `theater_grid` toggle, `btn_max_plot`, `btn_max_table`, `btn_reset_theater` controls are superseded by the Tier Toggle + Comparison Mode model. The hardcoded "Inspector" tab is removed.

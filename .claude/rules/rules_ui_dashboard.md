@@ -15,25 +15,25 @@ deps:
 - **Two Ghost Save Slots:** (1) T1/T2 Ghost (`_autosave_assembly.json`) — written on assembly, refreshed on manifest/data change. (2) T3 Ghost (`_autosave_t3.json`) — written on every `btn_apply` AND on every panel switch away from Home.
 - **State Feedback:** When a plot is "In-Calculation" (recalc ONLY applies to Tier 3 since Tiers 1/2 are immutable Parquet caches), the UI must use a dimming overlay with a "recalculating" message.
 
-## 2. Left vs Right Panel Behaviors
+## 2. Left vs Right Panel Behaviors (ADR-073)
 
-- **Left Panel (Navigation & Context)**: Content is **panel-context-dependent** — the left sidebar renders different content depending on which top-level panel is active. Switching panels physically replaces the left sidebar DOM (not CSS-hide). See `ui_implementation_contract.md §11` for the full panel → sidebar content map.
+**Sidebars are configured via the persona template, not hardcoded in Python.** Each persona template declares a `workspaces:` section with independent left/right sidebar configs per workspace (Home, Blueprint, Gallery, Test Lab). See `ui_implementation_contract.md §11` and `docs/workflows/ui_persona.qmd` for the full slot registry spec and panel type reference.
 
-  **Home mode left sidebar (Phase 25-E accordion structure, top-down):**
-  - **Manifest Choice** — manifest selector dropdown (`project_id`). Hidden when persona has `manifest_selector.visible=false` (pipeline-static, pipeline-exploration-simple).
-  - **Data Import** (Phase 25-F) — testing_mode-aware. `testing_mode=false`: read-only listing of source files resolved from the active manifest. `testing_mode=true`: same listing + metadata replacement upload (gate: `metadata_ingestion_enabled`) + multi-file/Excel uploader (gate: `data_ingestion_enabled`).
-  - **Filters** — Filter Recipe Builder (Phase 21-F). Add N filter rows `{column, op, value}`. `_pending_filters` staging → `applied_filters` committed on Apply. Ops: `in`/`not_in` for discrete; `eq`/`ne`/`gt`/`ge`/`lt`/`le`/`between` for numeric. Static message + buttons hidden when `interactivity_enabled=false`; exploration disclaimer for passive personas (`metadata_ingestion_enabled=false` proxy).
-  - **Export** (2026-05-04 redesign; gate: `export_enabled`) — bundle name field, plot format radio (PNG/SVG/PDF), filter trace warning, **3-way scope toggle** `[Global project | Active group | Active plot]`, Export Bundle download. T3 Audit Trail and `t3_steps.yaml` auto-included when T3 has committed nodes. Single Graph Export accordion removed — superseded by "Active plot" scope. See `ui_implementation_contract.md §7.2` for full spec.
-  - **Session Management** (gate: `session_management_enabled`) — header-level "Export Active Session (.zip)" download (Phase 25-G), import .zip control, per-session Restore + Delete (per-session Export removed in 25-G).
+**Two-layer resolution:** (1) The persona template **slot list** controls which panel types appear and in what order. (2) Each panel type has a **gate flag** — if the flag is disabled, the panel is silently skipped. Flags and cascade rules are completely independent of the slot list.
 
-  **Blueprint Architect mode left sidebar:** Manifest/component navigation (dataset pipeline selector, TubeMap node selector). No filter widgets.
+- **Left Sidebar**: Content is workspace-dependent. Switching workspaces physically replaces the left sidebar DOM (not CSS-hide). Panel content per workspace is declared in `workspaces.<ws>.left_sidebar.panels`. Panels are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`).
 
-  **Gallery mode left sidebar:** Focus Mode (ADR-038) — operation controls hidden; gallery search/filter only.
+  **Available Home panel types** (gate flags in parentheses): `project_info` (none), `deployment_info` (none), `manifest_choice` (`manifest_selector.visible`), `filters` (`interactivity_enabled`), `data_import` (`metadata_ingestion_enabled`), `export` (`export_enabled`), `session_management` (`session_management_enabled`). See `ui_implementation_contract.md §11d` for complete table.
 
-  **Test Lab mode left sidebar (renamed "Dev Studio" → "Test Lab" in Phase 25-A):** TBD — deferred until Test Lab is finalized.
-- **Right Panel (The Active Blueprint Stack)**: In **Blueprint Architect** mode, the right panel is the authoritative workspace for the **Active Component Logic Stack**. In **Home** mode (post-ADR-043/ADR-044), visibility is persona-gated: hidden entirely for `pipeline_static` and `pipeline_exploration_simple`; full audit stack for ≥ `pipeline_exploration_advanced`. When hidden, the theater center column expands to fill the full width.
-- **The Focus Mode (ADR-038)**: Global Navigation (Far-Left Sidebar) MUST programmatically hide "Operation" controls (Import/Session) when "Discovery" tabs (Gallery) are active to maximize screen utility and reduce cognitive load.
-- **The Gatekeeper**: Modifications on the UI triggers no calculations until the user presses `btn_apply`. The apply action is locked unless every user-made recipe node contains a valid `comment_field` entry. The gatekeeper is only rendered when the right sidebar is visible (≥ `pipeline_exploration_advanced`).
+  **Filter behavior unchanged:** `_pending_filters` / `applied_filters` state is preserved across workspace switches; filter widgets are only mounted when `workspaces.home.left_sidebar.panels` contains `filters` and the gate flag is on.
+
+- **Right Sidebar**: Same slot registry pattern. Current built-in types: `audit_stack` (gate: `t3_sandbox_enabled`), `notification_log` (none), `blueprint_logic` (gate: `blueprint_enabled`). Visibility is driven by `workspaces.<ws>.right_sidebar.visible` in the persona template — **not** by persona name comparison in `ui.py` (that was an ADR-053 violation, now fixed by ADR-073/task 25-O).
+
+- **Sidebar visibility**: `visible: false` excludes the container from the DOM. Auto-hide: if all panels skip (all gate flags off) and `visible` is unset, sidebar is excluded. `visible: true` with no active panels renders an empty container (allowed for branding/info-only configs).
+
+- **The Focus Mode (ADR-038)**: Gallery workspace left sidebar shows only `gallery_search` panel — operation controls (Import/Session) are not in its slot list, providing automatic focus mode without extra gating logic.
+
+- **The Gatekeeper**: `btn_apply` is locked unless all T3 audit nodes have non-empty `reason` fields. Rendered only when the right sidebar `audit_stack` panel is active.
 
 ## 3. Persona Reactivity Matrix (Component Masking)
 
@@ -62,7 +62,7 @@ The UI dynamically alters component availability based on the templates in `conf
 
 **Pipeline personas are always production-mode**: `pipeline-static` and `pipeline-exploration-simple` always have `testing_mode=false` and `manifest_selector.visible=false`. Testing of pipeline integrations uses a more capable persona.
 
-**Right sidebar layout (ADR-052-§1):** For pipeline-static and pipeline-exploration-simple, the right sidebar container is **excluded at layout build time** in `app/src/ui.py` (reads `SPARMVET_PERSONA` env var at startup). The center column fills full width. Returning `ui.div()` from `right_sidebar_content_ui` is insufficient — it leaves the 340px container in the DOM.
+**Right sidebar layout (ADR-073):** Structural exclusion is now driven by `bootloader.get_sidebar_config("home", "right").visible` — set to `false` in `pipeline-static` and `pipeline-exploration-simple` persona templates. This replaces the previous `SPARMVET_PERSONA` env-var comparison in `ui.py` (ADR-053 violation, task 25-O, fixed in SIDEBAR-REGISTRY-1). The center column fills full width when the right sidebar is excluded.
 
 ## 4. Coding Standards & Execution
 

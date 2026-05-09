@@ -73,6 +73,13 @@ SPARMVET_PERSONA=pipeline-exploration-simple .venv/bin/python -m shiny run app/s
 
 Available profiles: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`. Custom profiles can be created in `config/ui/templates/`.
 
+**Sidebar layout is configurable per persona and per workspace** (Home, Blueprint, Gallery, Test Lab). Each persona template declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_persona.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
+
+**Validate persona configs before deploying:**
+```bash
+.venv/bin/python scripts/validate_persona_config.py --all --strict
+```
+
 See [Deployment Configuration](./docs/user_guide/deployment_personas.qmd) for the full guide, dependency rules, and how to create a custom profile.
 
 ---

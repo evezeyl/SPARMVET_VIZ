@@ -1,4 +1,4 @@
-**Status:** FINALIZED / ARCHITECTURAL LOCK — Phase 25 complete. Last update: 2026-05-04 (export redesign: scope toggle replaces separate Single Graph Export + Audit Report button; T3 audit trail auto-included in report.qmd; assembly→join rename).
+**Status:** FINALIZED / ARCHITECTURAL LOCK — Phase 25 complete. Last update: 2026-05-09 (ADR-073: sidebar slot registry — §11 replaced; REVIEW decisions closed).
 
 # UI Implementation contract
 
@@ -286,32 +286,92 @@ Row filters live in the left sidebar (Home mode only). They affect both plots an
 
 ---
 
-## 11. Left Sidebar — Accordion Panel Structure (Phase 25-E)
+## 11. Sidebar Configuration — Slot Registry (ADR-073, 2026-05-09)
 
-The left sidebar content is **not static** — it changes based on which top-level panel (mode) is active. The same sidebar slot renders different content per panel.
+**This section supersedes the Phase 25-E hardcoded accordion spec.** Sidebar layout is now declarative and configurable per persona template and per workspace.
 
-| Active Panel | Left Sidebar Content |
-|---|---|
-| **Home** | `#nav_accordion` — panels: Manifest Choice, Data Import, Filters, Export (gated, scope toggle), Session Management (gated) |
-| **Blueprint Architect** | Manifest/component navigation (dataset pipeline selector, TubeMap node selector) |
-| **Gallery** | Focus Mode (ADR-038) — operation controls hidden; search/filter for gallery only |
-| **Test Lab** | TBD — deferred until Test Lab is finalized. Left sidebar content for this panel is an open design question. |
+### 11a. Core rule — two-layer resolution
 
-**Home accordion panels (Phase 25-E):**
-
-| Panel | Content | Gate |
+| Layer | Controls | Source |
 |---|---|---|
-| **Manifest Choice** | Manifest selector (`manifest_selector.visible` must be `true` in persona template) | `manifest_selector.visible` |
-| **Data Import** | Metadata upload (§9, always if `metadata_ingestion_enabled`) + multi-file ingestion + Excel converter (§10, when `import_helper_enabled`) | `metadata_ingestion_enabled` or `import_helper_enabled` |
-| **Filters** | Filter Recipe Builder row widgets (§8) | always (Home only) |
-| **Export** | Export Bundle with 3-way scope toggle (§7.2). T3 Audit Trail auto-included in report.qmd (§12f). | `export_enabled` |
-| **Session Management** | Session list + Restore/Delete + Export Active Session header button (§7.1) | `session_management_enabled` |
+| **Slot list** | Which panels appear and in what order | Persona template `workspaces.<ws>.<side>_sidebar.panels` |
+| **Feature flag** | Whether panel functionality is active | `bootloader.is_enabled(flag)` — unchanged |
 
-**Implementation rule:** The `sidebar_nav_ui` render function reads the active top-level nav item and renders the appropriate sidebar content. Switching panels clears and replaces the entire left sidebar DOM subtree (not CSS-hide — physical replacement, following the Shell Stability Law in §3a of `project_conventions.md`).
+A panel in the slot list with a disabled gate flag is silently skipped. Flags and cascade rules (ADR-052, PersonaValidator) operate independently of the slot list.
 
-**Filter Recipe Builder scope:** Filters are a Home-mode-only feature. They are never rendered in Blueprint Architect, Gallery, or Test Lab left sidebars. The filter `_pending_filters` and `applied_filters` reactive state is preserved across panel switches but the filter UI widgets are only mounted when Home is active.
+### 11b. Per-workspace independence
 
-**Blueprint Architect left sidebar:** May eventually include filter-like controls (e.g., field search, schema filtering within the TubeMap) — decision deferred until Architect mode is finalized. Not the same as the Home row-filter system.
+Left and right sidebar configs are declared per workspace in the persona template:
+
+```yaml
+workspaces:
+  home:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: project_info
+        - type: manifest_choice
+        - type: filters
+        - type: data_import
+        - type: export
+        - type: session_management
+    right_sidebar:
+      visible: true
+      panels:
+        - type: audit_stack
+  blueprint:
+    left_sidebar: !include sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include sidebars/blueprint_standard_right.yaml
+  gallery:
+    left_sidebar: !include sidebars/gallery_focus_left.yaml
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: project_info
+    right_sidebar:
+      visible: false
+      panels: []
+```
+
+Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. Multiple personas sharing the same layout reference the same file. See `docs/workflows/ui_persona.qmd` for the full panel type reference table.
+
+### 11c. Visibility and structural exclusion
+
+- `visible: false` — excludes the sidebar container from the DOM (not CSS-hidden).
+- `visible: true` with no active panels — renders an empty sidebar container (acceptable for `project_info`-only configs).
+- Auto-hide: if `visible` is unset and all panels are skipped after flag-gating, sidebar is treated as hidden.
+- **Right sidebar structural exclusion** (previously a persona name string comparison in `ui.py` — ADR-053 violation, task 25-O) is now driven by `bootloader.get_sidebar_config("home", "right").visible`. No persona name checks.
+
+### 11d. Built-in panel types (current)
+
+| Type | Gate flag | Workspace | Description |
+|---|---|---|---|
+| `project_info` | — | any | Manifest title, description, dataset summary |
+| `deployment_info` | — | any | Branding: logo, contact, institution (params in template) |
+| `manifest_choice` | `manifest_selector.visible` | home | Manifest selector dropdown |
+| `filters` | `interactivity_enabled` | home | Row filter recipe builder (§8) |
+| `data_import` | `metadata_ingestion_enabled` | home | Metadata upload + optional multi-file (§9/§10) |
+| `export` | `export_enabled` | home | Export bundle with 3-way scope toggle (§7.2) |
+| `session_management` | `session_management_enabled` | home | Session save/restore/import (§7.1) |
+| `audit_stack` | `t3_sandbox_enabled` | home right | T3 audit trail panel |
+| `blueprint_nav` | `blueprint_enabled` | blueprint | Pipeline selector + TubeMap node selector |
+| `blueprint_logic` | `blueprint_enabled` | blueprint right | Active component logic stack |
+| `gallery_search` | `gallery_enabled` | gallery | Focus mode: search and filter (ADR-038) |
+| `notification_log` | — | any right | Alert log accordion (ADR-060) |
+
+### 11e. Implementation notes
+
+- Panel registry: `app/modules/sidebar_registry.py` — `PANEL_REGISTRY` dict, headless-safe (Two-Category Law).
+- Bootloader: `get_sidebar_config(workspace, side)` reads `workspaces.<ws>.<side>_sidebar`.
+- `home_theater.py`: iterates Home workspace slot list instead of hardcoded accordion sequence.
+- `ui.py`: reads `bootloader.get_sidebar_config("home", "right").visible` for right sidebar structural exclusion.
+- Validation: `SidebarValidator` runs at startup alongside `PersonaValidator`; CLI gate: `scripts/validate_persona_config.py --all --strict`.
+
+**Implementation tasks:** SIDEBAR-CONFIGS-1, SIDEBAR-REGISTRY-1, SIDEBAR-VALIDATE-1 (see `tasks.md`).
 
 ---
 

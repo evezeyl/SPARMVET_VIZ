@@ -2246,3 +2246,183 @@ Minimum fields in image metadata: `data_batch_hash`, `manifest_sha256`, `decisio
 - **EXPORT-AUDIT-COMPLETE-1**: Add all remaining missing fields (`created_at`, `manifest_name`, `persona_id`, `active_tier`, `software_versions`, `data_source_paths`) to bundle README and report.qmd
 
 **Consequence:** Exports are slightly larger (metadata overhead is negligible). The `get_parquet_metadata_hash()` utility must be called at export time for each materialized Parquet file. A helper function `build_export_provenance()` should be introduced in `export_handlers.py` to assemble the full provenance dict once and pass it to all export surfaces, avoiding duplication.
+
+**Amendment (2026-05-09):** The bundle must include a per-source-file hash table (individual SHA256 for every raw data file loaded, not just the rolled-up `data_batch_hash`). Both must appear in README.txt and report.qmd so a reviewer can verify each input file independently, not just the aggregate. The `source_files` dict from the assembly ghost (keyed by dataset ID, value `{path, sha256}`) is the authoritative source.
+
+---
+
+## ADR-073: Configurable Sidebar Slot Registry (2026-05-09)
+
+**Status:** DECIDED — implementation pending
+
+**Context:**
+
+The current left and right sidebars are hardcoded accordion panels in `home_theater.py` and `ui.py`, each individually gated by a feature flag. This works for a fixed set of panels but has three limitations:
+
+1. **No per-workspace configuration** — Home, Blueprint, Gallery, and Test Lab each need different sidebar content, but there is no declarative way to express this in a persona template.
+2. **No panel reordering or custom panels** — adding a new panel type (e.g. `project_info`, `deployment_info`) requires editing Python.
+3. **Right sidebar structural exclusion is done by persona name comparison** — a known ADR-053 violation (tasks.md task 25-O).
+
+The right sidebar currently contains only the T3 audit stack and is excluded from layout for `pipeline-static` and `pipeline-exploration-simple` by reading the persona name string in `ui.py` — which is prohibited by ADR-053. The left sidebar has no visibility control at all; it always renders even when nearly empty (e.g. only Export for static personas).
+
+**Decision:**
+
+### Rule 1 — Two-layer resolution (slot list + flag gate)
+
+Sidebar configuration uses two independent axes:
+
+| Axis | Controls | Defined in |
+|---|---|---|
+| **Slot list** | Which panel types appear, in what order | Persona template `workspaces.<ws>.left_sidebar.panels` |
+| **Feature flag** | Whether the panel's functionality is active | Existing flag system (`bootloader.is_enabled(flag)`) — unchanged |
+
+A panel in the slot list with a disabled gate flag is silently skipped. A panel type not in the slot list but with an enabled flag is not shown. **Flag capability is independent of slot presence.** Cascade rules (ADR-052, PersonaValidator) operate on flags only and are completely unaffected.
+
+### Rule 2 — Per-workspace configuration
+
+The persona template declares sidebar config separately for each user workspace. Workspaces are independent; changing the Home sidebar does not affect the Blueprint sidebar.
+
+```yaml
+workspaces:
+  home:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: project_info
+        - type: filters
+        - type: export
+        - type: session_management
+    right_sidebar:
+      visible: true
+      panels:
+        - type: audit_stack
+  blueprint:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: project_info
+        - type: blueprint_nav
+    right_sidebar:
+      visible: true
+      panels:
+        - type: blueprint_logic
+  gallery:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: gallery_search
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: project_info
+    right_sidebar:
+      visible: false
+      panels: []
+```
+
+### Rule 3 — !include for shared sidebar configs
+
+Sidebar panel lists live in `config/ui/sidebars/` as reusable YAML fragments and are referenced via `!include`. Multiple personas sharing the same sidebar layout use the same file — a change propagates to all.
+
+```
+config/ui/sidebars/
+  home_static_left.yaml
+  home_simple_left.yaml
+  home_advanced_left.yaml          ← shared by advanced, independent, developer, qa
+  home_advanced_right.yaml         ← shared by all T3-capable personas
+  blueprint_standard_left.yaml
+  blueprint_standard_right.yaml
+  gallery_focus_left.yaml
+  testlab_standard_left.yaml
+```
+
+Example persona template fragment:
+
+```yaml
+workspaces:
+  home:
+    left_sidebar: !include sidebars/home_advanced_left.yaml
+    right_sidebar: !include sidebars/home_advanced_right.yaml
+  blueprint:
+    left_sidebar: !include sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include sidebars/blueprint_standard_right.yaml
+```
+
+### Rule 4 — Panel registry
+
+A `PANEL_REGISTRY` dict in `app/modules/sidebar_registry.py` maps panel type names to their renderer function and gate flag. This module is headless-safe (no Shiny imports — Two-Category Law compliant). Shiny rendering is done in the caller (handler), not in the registry.
+
+| Panel type | Gate flag | Workspace(s) | Notes |
+|---|---|---|---|
+| `project_info` | — | all | Always renders; shows manifest title, description, dataset summary |
+| `deployment_info` | — | all | Optional branding; params: `logo`, `contact`, `institution` |
+| `filters` | `interactivity_enabled` | home | Row filter recipe builder |
+| `export` | `export_enabled` | home | Export bundle panel |
+| `session_management` | `session_management_enabled` | home | Session save/restore/import |
+| `data_import` | `metadata_ingestion_enabled` | home | Metadata upload + optional multi-file ingestion |
+| `manifest_choice` | `manifest_selector.visible` | home | Manifest selector dropdown |
+| `audit_stack` | `t3_sandbox_enabled` | home | T3 audit trail — right sidebar |
+| `blueprint_nav` | `blueprint_enabled` | blueprint | Dataset pipeline selector, TubeMap node selector |
+| `blueprint_logic` | `blueprint_enabled` | blueprint | Active component logic stack — right sidebar |
+| `gallery_search` | `gallery_enabled` | gallery | Focus mode: search + filter controls |
+| `notification_log` | — | any | Alert accordion (ADR-060) — right sidebar slot |
+
+New panel types are registered by adding an entry to `PANEL_REGISTRY` — no sidebar wiring changes needed.
+
+### Rule 5 — Sidebar visibility and structural exclusion
+
+`left_sidebar.visible: false` hides the sidebar entirely (DOM excluded, not CSS hidden). This replaces the current implicit "nearly empty sidebar for static personas" with an explicit choice.
+
+`right_sidebar.visible: false` excludes the right sidebar from layout at build time. This replaces the persona name string comparison in `ui.py` (the known ADR-053 violation, task 25-O) with `bootloader.get_sidebar_config("home", "right").visible`.
+
+**Auto-hide rule:** If `visible` is not explicitly set and all panels in the list are skipped (all gate flags off), the sidebar is treated as `visible: false` and excluded from layout.
+
+**`visible: true` with no active panels** produces an empty sidebar container — allowed when deployment info or project info is the sole content.
+
+### Rule 6 — Compatibility validation (`SidebarValidator` + CLI script)
+
+A `SidebarValidator` class (alongside existing `PersonaValidator`) checks sidebar configs at startup and in CI. A CLI script `scripts/validate_persona_config.py` wraps both validators:
+
+```bash
+# Validate one persona
+.venv/bin/python scripts/validate_persona_config.py --persona pipeline-exploration-advanced
+
+# Validate all personas (CI gate)
+.venv/bin/python scripts/validate_persona_config.py --all --strict
+```
+
+Checks performed:
+
+| Check | Severity | Action |
+|---|---|---|
+| Panel type not in registry | ERROR | Blocks startup and script |
+| `!include` target file missing or unparseable | ERROR | Blocks startup and script |
+| Panel in slot list but gate flag disabled | WARNING | Logged; panel silently skipped at runtime |
+| Workspace listed but workspace flag disabled | WARNING | Logged; sidebar rendered but panels skipped |
+| Cascade violations (existing PersonaValidator rules) | ERROR | Unchanged behaviour |
+| `right_sidebar.visible: true` but `t3_sandbox_enabled: false` (audit_stack only panel) | WARNING | Right sidebar will be empty at runtime |
+
+`--strict` mode upgrades warnings to errors (recommended for CI).
+
+**Interactive conflict resolution:** When run interactively (not `--strict`), the script prompts for a choice when a panel/flag combination is ambiguous. Choices are recorded and can be applied as template patches.
+
+### Rule 7 — Default templates preserve current behaviour exactly
+
+All 6 existing persona templates receive `workspaces:` sections whose default slot lists reproduce current sidebar behaviour. No breaking change. The upgrade is additive.
+
+### Consequences
+
+- `ui.py` no longer reads persona name to decide right sidebar exclusion — reads `bootloader.get_sidebar_config(ws, "right").visible` (fixes task 25-O).
+- `home_theater.py` iterates the panel slot list for the active workspace rather than rendering a hardcoded accordion sequence.
+- Adding a new panel type in future: register in `PANEL_REGISTRY`, add to relevant sidebar YAML files, done — no Python sidebar wiring changes.
+- Custom deployments can override a single `!include` target (e.g. replace `home_advanced_left.yaml`) without touching the persona template or any Python.
+- `scripts/validate_persona_config.py` is the mandatory pre-deployment gate for any persona template change.
+
+**Implementation tasks:**
+- **SIDEBAR-CONFIGS-1** `[haiku/low]`: Create `config/ui/sidebars/` directory with shared sidebar YAML files for all workspace × tier combinations
+- **SIDEBAR-REGISTRY-1** `[sonnet/high]`: Implement `app/modules/sidebar_registry.py` (panel registry), update `bootloader` to read `workspaces:` config, update `home_theater.py` to iterate slot list, fix `ui.py` right sidebar exclusion (replaces persona name check — task 25-O)
+- **SIDEBAR-VALIDATE-1** `[sonnet/medium]`: Implement `SidebarValidator` + `scripts/validate_persona_config.py` CLI with `--all --strict` mode
