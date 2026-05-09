@@ -5,7 +5,7 @@
 **Purpose:** Define, schedule, and track recurring audit routines that verify code health, ADR compliance, manifest integrity, and documentation drift without manual intervention.
 
 **Last Updated:** 2026-05-09  
-**Maintained By:** Scheduled agents via CronCreate + manual CLI execution
+**Maintained By:** Claude Code Routines ([claude.ai/code/routines](https://claude.ai/code/routines)) + manual CLI execution
 
 ---
 
@@ -18,6 +18,9 @@
 | Manifest structure integrity | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | 2026-05-08 | — | Cloud (scheduled) |
 | Task-to-code drift check | Weekly | Fridays 20:00 | `[ ] Planned` | — | 2026-05-10 | — | Cloud (scheduled) |
 | Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 | — | — | Manual (CLI) |
+| Phase ordering audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
+| Changelog completeness audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
+| Template flag completeness | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
@@ -121,7 +124,7 @@ Create a subsection for your routine:
 
 - **Purpose:** [What does this check for?]
 - **Frequency:** [Daily / Weekly / On-demand]
-- **Schedule:** [cron expression or "Manual"]
+- **Schedule:** [time/frequency (e.g. "Sundays 23:00") or "Manual trigger"]
 - **Command:** [exact CLI command or script path]
 - **Output:** [where results are written; e.g., `.claude/logs/audits/audit_name_YYYY-MM-DD.md`]
 - **Violations checked:** [list of specific things that trigger a FAIL]
@@ -147,7 +150,7 @@ Verify:
 
 Once manual test passes:
 1. Update Status matrix: `[ ] Planned` → `[x] Active`
-2. If scheduling (Step 3), note the CronCreate job_id
+2. If scheduling (Step 3), note the Routine ID from the routine detail page
 3. Set "Next Run" date to the next scheduled execution
 4. Commit both the script and the registry update
 
@@ -274,6 +277,77 @@ Once manual test passes:
 - **Status:** `[x] Active`
 - **Last Run:** 2026-05-09 (verified in session)
 - **Next Run:** On-demand or daily if scheduled
+
+---
+
+### 6. Phase Ordering Audit
+
+- **Purpose:** Verify that `implementation_plan_master.md` phase blocks are in ascending chronological order (Phase 23 → Phase 24 → ... → Phase 32). Detects phases that have been inserted out of order during edits.
+- **Frequency:** Weekly
+- **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
+- **Command:** `.venv/bin/python assets/scripts/audit_phase_order.py --output tmp/audit_phases_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_phases_YYYY-MM-DD.md`
+- **Violations checked:**
+  - Phase numbers not in ascending order (e.g., Phase 24 appears before Phase 23)
+  - Phase headers malformed or missing
+  - Duplicate phase numbers
+  - Phase numbers outside expected range [23–32]
+- **Owner:** Cloud (scheduled)
+- **Status:** `[ ] Planned`
+- **Next Run:** 2026-05-09
+
+**Implementation notes:**
+- Parse `implementation_plan_master.md` to extract all `## Phase [N]` headers
+- Verify sequence is strictly ascending
+- Report any out-of-order or duplicate entries with line numbers
+
+---
+
+### 7. Changelog Completeness Audit
+
+- **Purpose:** Verify that `.claude/knowledge/changelog.md` contains entries for all phases declared in `implementation_plan_master.md`. Detects documentation drift when phases are added but changelog is not updated.
+- **Frequency:** Weekly
+- **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
+- **Command:** `.venv/bin/python assets/scripts/audit_changelog_sync.py --output tmp/audit_changelog_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_changelog_YYYY-MM-DD.md`
+- **Violations checked:**
+  - Phases in implementation_plan_master.md missing from changelog.md
+  - Changelog entries that reference non-existent phases
+  - Missing section headers (e.g., `## [Phase N]` or `## [YYYY-MM-DD]`)
+  - Stale entries (phases marked as "in progress" but no longer in active plan)
+- **Owner:** Cloud (scheduled)
+- **Status:** `[ ] Planned`
+- **Next Run:** 2026-05-09
+
+**Implementation notes:**
+- Extract phase numbers from both files
+- Compute symmetric difference (missing in one or the other)
+- Report by phase name, line number, and recommended fix
+
+---
+
+### 8. Template Flag Completeness Audit
+
+- **Purpose:** Strict version of Routine 5. Verify all 8 persona templates declare all flags in the authoritative flag matrix (`rules_persona_feature_flags.md`). Detects missing flags before they become deployment issues.
+- **Frequency:** Weekly
+- **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
+- **Command:** `.venv/bin/python assets/scripts/audit_template_flags.py --output tmp/audit_template_flags_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_template_flags_YYYY-MM-DD.md`
+- **Violations checked:**
+  - Template missing a flag that matrix declares (per-persona)
+  - Template has a flag not in the matrix (stale or incorrect)
+  - Flag value incorrect for that persona (e.g., `true` when matrix expects `false`)
+  - Cascade violations (soft: parent false, child true silently suppressed; fatal: parent false, child true not suppressed)
+  - Missing `blueprint_agent:` config block when `blueprint_agent_enabled: true`
+- **Owner:** Cloud (scheduled)
+- **Status:** `[ ] Planned`
+- **Next Run:** 2026-05-09
+
+**Implementation notes:**
+- Load the flag matrix from `rules_persona_feature_flags.md`
+- For each of 8 templates, verify every flag matches matrix expectations
+- Wrap with PersonaValidator to catch cascade violations
+- Report as a table: Persona × Flag × Expected × Actual × Status
 
 ---
 
@@ -418,6 +492,9 @@ Follow these patterns for consistency:
 | Catch manifest errors before runtime | Manifest integrity | Medium | Agent (scheduled) |
 | Detect orphaned tasks | Task drift check | Medium | Agent (scheduled) |
 | Verify persona consistency | Persona template check | Low | Manual (CLI) or Agent |
+| Verify phase order in roadmap | Phase ordering audit | Medium | Agent (scheduled) |
+| Verify changelog has all phases | Changelog completeness | Low | Agent (scheduled) |
+| Strict persona template validation | Template flag completeness | Medium | Agent (scheduled) |
 | —— | —— | —— | —— |
 | Check SQL injection / XSS vectors | Security linter (SAST) | High | Not yet planned |
 | Verify test coverage > threshold | Coverage report | Medium | Not yet planned |
@@ -457,11 +534,15 @@ chore: add audit routine for ADR-011 cross-lib violations
 
 | Term | Definition |
 |------|-----------|
-| **Routine** | A recurring audit check (or on-demand script). Examples: @deps verification, cross-lib scan. |
-| **CronCreate** | Claude Code tool for scheduling recurring prompts/jobs. Returns a job_id for tracking. |
+| **Routine** | A saved Claude Code configuration (prompt + repos + triggers) that runs autonomously on Anthropic-managed cloud infrastructure. Managed at [claude.ai/code/routines](https://claude.ai/code/routines). |
+| **Trigger** | How a routine starts: Schedule (recurring or one-off), API (HTTP POST), or GitHub event. |
+| **Routine ID** | Identifier of the routine, visible on its detail page at [claude.ai/code/routines](https://claude.ai/code/routines). |
 | **Violation** | A check failure. Examples: missing @deps, cross-lib import, broken manifest. |
-| **Durable** | If `true`, the CronCreate job survives session restarts (persisted to disk). Default `false`. |
-| **Recurring** | If `true`, the job fires on every cron match until CronDelete. Default `true`. |
+| **Run** | A single execution of a routine. Each run is a full Claude Code session with a transcript, visible at [claude.ai/code/routines](https://claude.ai/code/routines). |
+| **Run now** | Trigger a routine immediately from its detail page, without waiting for the schedule. |
+| **Pause** | Temporarily disable a routine's schedule. The routine keeps its configuration but does not run until resumed. |
+
+**Documentation:** [code.claude.com/docs/en/routines](https://code.claude.com/docs/en/routines) — Full Routines reference (triggers, environments, connectors, usage limits)
 
 **Related files:**
 - [workspace_standard.md](./../rules/workspace_standard.md) — Master index & project authority
@@ -471,6 +552,7 @@ chore: add audit routine for ADR-011 cross-lib violations
 
 ---
 
-**Status:** Ready for pilot routines (Routines 1–5 designed; scheduling pending user approval).  
+**Status:** 8 routines designed and documented. Routines 1–5 ready for scheduling; Routines 6–8 added from handoff insights.  
 **Last Updated:** 2026-05-09  
+**Note:** Routines 6–8 capture validation checks discovered in P0/P1 audit (2026-05-09 handoff @dasharch). These will prevent recurrence of: phase ordering issues, changelog drift, and template flag gaps.
 **Next Review:** After first routine completes (estimate 2026-05-12)

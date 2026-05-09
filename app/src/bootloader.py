@@ -1,8 +1,8 @@
 # @deps
 # provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass)
-# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector)
+# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
-# doc: ADR-031, ADR-026, ADR-048, ADR-073, project_conventions.md §"Deployment Profile Resolution"
+# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-078, project_conventions.md §"Deployment Profile Resolution"
 # @end_deps
 # app/src/bootloader.py
 #
@@ -22,6 +22,10 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any
+
+from app.modules.deployment_error import DeploymentError, exit_if_errors
+
+_BOOT_REF = "ADR-048 — .claude/rules/rules_runtime_environment.md §1"
 
 
 @dataclass
@@ -105,11 +109,27 @@ class Bootloader:
         # fetch_data() runs once at startup — no-op for filesystem/Galaxy, downloads for IRIDA.
         # resolve_paths() is then the single authoritative source for all location paths.
         if _cache_key not in self._resolved_locations_cache:
-            from connector import get_connector
-            _conn = get_connector(self.connector_config)
-            print(f"[Bootloader] Connector: {_conn.__class__.__name__} — fetch_data()")
-            _conn.fetch_data()
-            self._resolved_locations_cache[_cache_key] = _conn.resolve_paths()
+            try:
+                from connector import get_connector
+                _conn = get_connector(self.connector_config)
+                print(f"[Bootloader] Connector: {_conn.__class__.__name__} — fetch_data()")
+                _conn.fetch_data()
+                self._resolved_locations_cache[_cache_key] = _conn.resolve_paths()
+            except Exception as _exc:
+                exit_if_errors([DeploymentError(
+                    component="Bootloader",
+                    problem=f"Connector initialisation failed: {_exc}",
+                    location=str(self.connector_path),
+                    fix=(
+                        "Check that all credentials and endpoints declared in the deployment "
+                        "profile are reachable. For IridaConnector: verify SPARMVET_IRIDA_TOKEN "
+                        "is set and the IRIDA server is accessible. For BioBlendConnector: verify "
+                        "GALAXY_URL and GALAXY_API_KEY. For FilesystemConnector: verify path "
+                        "entries under 'locations:' exist on disk."
+                    ),
+                    who="operator",
+                    reference=_BOOT_REF,
+                )])
         self._resolved_locations: Dict[str, Path] = self._resolved_locations_cache[_cache_key]
 
         # Keep raw locations dict for backward compat (key validation only)
@@ -125,10 +145,20 @@ class Bootloader:
             or self.default_persona
         )
         if not self.persona:
-            raise ValueError(
-                "No persona configured. Set SPARMVET_PERSONA env var, "
-                "add default_persona to deployment profile, or pass persona= kwarg."
-            )
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem="No persona configured — cannot determine which feature flags to load.",
+                location=(
+                    "Resolution order checked: persona= kwarg, SPARMVET_PERSONA env var, "
+                    f"default_persona in {self.connector_path} — all absent."
+                ),
+                fix=(
+                    "Set the SPARMVET_PERSONA environment variable (e.g. SPARMVET_PERSONA=developer), "
+                    f"or add 'default_persona: developer' to {self.connector_path}."
+                ),
+                who="operator",
+                reference=_BOOT_REF,
+            )])
         self.set_persona(self.persona)
 
         # 3. Project Authority (Agnostic Discovery)
@@ -156,10 +186,21 @@ class Bootloader:
         if env_profile:
             p = Path(env_profile)
             if not p.exists():
-                raise FileNotFoundError(
-                    f"SPARMVET_PROFILE env var is set to '{env_profile}' but the file does not exist. "
-                    "Check the path or unset the variable to fall through to lower-priority levels."
-                )
+                exit_if_errors([DeploymentError(
+                    component="Bootloader",
+                    problem=(
+                        f"SPARMVET_PROFILE env var is set to '{env_profile}' "
+                        f"but the file does not exist."
+                    ),
+                    location=f"SPARMVET_PROFILE={env_profile}",
+                    fix=(
+                        f"Either create the profile file at '{env_profile}', "
+                        f"correct the path in SPARMVET_PROFILE, or unset the variable "
+                        f"to fall through to lower-priority profile locations."
+                    ),
+                    who="operator",
+                    reference=_BOOT_REF,
+                )])
             return p, 1
 
         # Level 2: user-level config
@@ -177,25 +218,45 @@ class Bootloader:
         if dev_fallback.exists():
             return dev_fallback, 4
 
-        raise FileNotFoundError(
-            "No deployment profile found. Checked:\n"
-            "  1. SPARMVET_PROFILE env var (not set)\n"
-            f"  2. {Path.home() / '.sparmvet' / 'profile.yaml'} (not found)\n"
-            "  3. /etc/sparmvet/profile.yaml (not found)\n"
-            f"  4. {dev_fallback} (not found)\n\n"
-            "To fix: create config/deployment/local/local_profile.yaml "
-            "or set SPARMVET_PROFILE to a valid profile path."
-        )
+        exit_if_errors([DeploymentError(
+            component="Bootloader",
+            problem="No deployment profile found at any resolution level.",
+            location=(
+                f"Checked: (1) SPARMVET_PROFILE env var (not set), "
+                f"(2) {Path.home() / '.sparmvet' / 'profile.yaml'} (not found), "
+                f"(3) /etc/sparmvet/profile.yaml (not found), "
+                f"(4) {dev_fallback} (not found)"
+            ),
+            fix=(
+                "Create a profile at config/deployment/local/local_profile.yaml "
+                "(copy from config/deployment/local/local_profile.yaml.example if available), "
+                "or set SPARMVET_PROFILE to an absolute path to your deployment profile YAML."
+            ),
+            who="operator",
+            reference=_BOOT_REF,
+        )])
+        raise FileNotFoundError("unreachable")  # satisfies type checker
 
     def _validate_profile(self) -> None:
-        """Raise ValueError if required location keys are missing from resolved paths."""
+        """Exit with DeploymentError if required location keys are missing from resolved paths."""
         required = {"raw_data", "manifests", "curated_data", "user_sessions", "gallery"}
         missing = required - set(self._resolved_locations.keys())
         if missing:
-            raise ValueError(
-                f"Deployment profile '{self.connector_path}' is missing required "
-                f"location keys: {sorted(missing)}"
-            )
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem=(
+                    f"Deployment profile is missing required location keys: "
+                    f"{sorted(missing)}"
+                ),
+                location=str(self.connector_path),
+                fix=(
+                    f"Add the missing keys to the 'locations:' block in {self.connector_path}. "
+                    f"Required keys: raw_data, manifests, curated_data, user_sessions, gallery. "
+                    f"See config/deployment/local/local_profile.yaml for reference values."
+                ),
+                who="operator",
+                reference=_BOOT_REF,
+            )])
 
     def set_persona(self, persona: str):
         """Load persona config from a file path or legacy shortname.
@@ -253,14 +314,37 @@ class Bootloader:
     def _load_connector_config(self) -> Dict[str, Any]:
         """Loads the deployment profile YAML."""
         if not self.connector_path.exists():
-            raise FileNotFoundError(
-                f"Connector config not found: {self.connector_path}")
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem=f"Deployment profile file not found: {self.connector_path}",
+                location=str(self.connector_path),
+                fix=(
+                    "Ensure the profile file exists at the resolved path. "
+                    "For local dev: copy config/deployment/local/local_profile.yaml.example "
+                    "to config/deployment/local/local_profile.yaml and fill in the location paths."
+                ),
+                who="operator",
+                reference=_BOOT_REF,
+            )])
+            return {}  # unreachable
 
         try:
             with open(self.connector_path, "r") as f:
                 return yaml.safe_load(f) or {}
-        except Exception:
-            return {}
+        except Exception as e:
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem=f"Failed to parse deployment profile '{self.connector_path}': {e}",
+                location=str(self.connector_path),
+                fix=(
+                    f"Check {self.connector_path} for YAML syntax errors. "
+                    f"Run: python -c \"import yaml; yaml.safe_load(open('{self.connector_path}'))\" "
+                    f"to surface the parse error line."
+                ),
+                who="operator",
+                reference=_BOOT_REF,
+            )])
+            return {}  # unreachable
 
     def _load_persona_config(self) -> Dict[str, Any]:
         """Loads UI feature toggles from the persona template and applies dependency cascade.
@@ -282,8 +366,21 @@ class Bootloader:
         """
         path = self.persona_path
         if not path.exists():
-            print(f"[Bootloader] WARNING: Persona config not found: {path}")
-            return {}
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem=f"Persona template not found: {path}",
+                location=str(path),
+                fix=(
+                    f"Ensure the template file exists at {path}. "
+                    f"Valid persona IDs (with templates in config/ui/templates/): "
+                    f"pipeline-static, pipeline-exploration-simple, pipeline-exploration-advanced, "
+                    f"project-independent, developer, qa. "
+                    f"Check SPARMVET_PERSONA env var or default_persona in the deployment profile."
+                ),
+                who="operator",
+                reference="ADR-026 + config/ui/templates/",
+            )])
+            return {}  # unreachable
 
         try:
             class _TemplateLoader(yaml.SafeLoader):
@@ -303,8 +400,22 @@ class Bootloader:
 
             with open(path, "r") as f:
                 config = yaml.load(f, Loader=_TemplateLoader) or {}
-        except Exception:
-            return {}
+        except Exception as e:
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem=f"Failed to parse persona template '{path}': {e}",
+                location=str(path),
+                fix=(
+                    f"Check {path} for YAML syntax errors. "
+                    f"Run: python -c \"import yaml; yaml.safe_load(open('{path}'))\" "
+                    f"to surface the parse error line. "
+                    f"Also verify that all !include paths under 'workspaces:' exist in "
+                    f"config/ui/sidebars/."
+                ),
+                who="operator",
+                reference="ADR-026 + config/ui/templates/",
+            )])
+            return {}  # unreachable
 
         features = config.get("features", {})
 

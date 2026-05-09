@@ -35,23 +35,7 @@ def server(input, output, session):
     _all_errors: list[DeploymentError] = []
     _all_errors.extend(PersonaValidator().validate_file(str(bootloader.persona_path)))
 
-    # SidebarValidator still returns list[str] (Phase 1 of ADR-078 — its retrofit
-    # is tracked as DIAG-VALIDATE-SIDEBAR-1). Wrap legacy strings into a generic
-    # DeploymentError so the operator still sees the unified format.
-    for _msg in SidebarValidator().validate_file(str(bootloader.persona_path)):
-        _all_errors.append(DeploymentError(
-            component="SidebarValidator",
-            problem=_msg,
-            location=str(bootloader.persona_path),
-            fix=(
-                "Check workspaces.<ws>.left_sidebar.panels and right_sidebar.panels "
-                "in the persona template. Each panel type must exist in "
-                "app/modules/sidebar_registry.py PANEL_REGISTRY. "
-                "See .claude/rules/ui_implementation_contract.md §11."
-            ),
-            who="operator",
-            reference="ADR-073 + .claude/rules/ui_implementation_contract.md §11",
-        ))
+    _all_errors.extend(SidebarValidator().validate_file(str(bootloader.persona_path)))
 
     exit_if_errors(_all_errors, header="SPARMVET startup blocked — persona configuration is invalid")
 

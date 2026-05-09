@@ -628,6 +628,7 @@
 │       │   ├── qa_template.yaml
 │       │   └── web-demo_template.yaml
 │       └── theme.css
+├── DEPLOYMENT_CHECKLIST.md
 ├── docs
 │   ├── appendix
 │   │   ├── AI_and_development_process.qmd
@@ -1271,4 +1272,4 @@
 ├── SPARMVET_VIZ.code-workspace
 └── tree.txt
 
-197 directories, 1075 files
+197 directories, 1076 files

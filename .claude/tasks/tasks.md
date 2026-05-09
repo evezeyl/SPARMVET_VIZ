@@ -72,11 +72,12 @@
 
 ### P0 — Immediate hygiene (5–15 min each, haiku/low)
 
-- [ ] **AUDIT-DEPGRAPH-NOW** `[haiku/low]`: Run `build_dep_graph.py` + regenerate `tree.txt`. Session-end mandate (workspace_standard.md §5-E) was missed after today's Wave 8/9 (new files: `sidebar_registry.py`, `sidebar_validator.py`, `scripts/validate_persona_config.py`, 8 sidebar YAMLs). Commands:
+- [x] **AUDIT-DEPGRAPH-NOW** `[haiku/low]`: Run `build_dep_graph.py` + regenerate `tree.txt`. Session-end mandate (workspace_standard.md §5-E) was missed after today's Wave 8/9 (new files: `sidebar_registry.py`, `sidebar_validator.py`, `scripts/validate_persona_config.py`, 8 sidebar YAMLs). Commands:
   ```bash
   .venv/bin/python assets/scripts/build_dep_graph.py
   tree -I '__pycache__|.venv|tmp*|node_modules|*.egg-info' > tree.txt
   ```
+  ✅ 2026-05-09 — run manually by user.
 
 - [ ] **AUDIT-HANDOFF-UPDATE** `[haiku/low]`: Rewrite `handoff_active.md` — currently 4 days stale (mtime 2026-05-05, refers to "Monday demo" already past). Replace body with current state: ADRs 073–076 authored 2026-05-09; LINEAGE-NAV-1, LINEAGE-EXPORT-1, BP-SCHEMA-1 done; BLUEPRINT IDE form/escape/undo/help/color/flag still open; first recommended next step is `BP-FLAG-1`.
 
@@ -171,8 +172,8 @@
 **Goal:** every startup-time failure surfaces as a structured `DeploymentError` block (component / problem / location / fix / who / reference) so operators on Galaxy / Posit Connect / IRIDA / NVI internal can resolve deployment problems without reading Python tracebacks. Cross-deployment usability depends on this — Phase C is committed work, not optional polish.
 
 - [x] **DIAG-CORE-1** `[sonnet/medium]`: `DeploymentError` dataclass + `format_errors_block` / `exit_if_errors` / `raise_if_errors` helpers in `app/modules/deployment_error.py`. PersonaValidator retrofitted to return `list[DeploymentError]`. `server.py` startup gate uses `exit_if_errors`. `validate_persona_config.py` CLI uses `format_errors_block`. SidebarValidator legacy strings wrapped at the call site (full retrofit pending, see below). Verified end-to-end: 8 templates pass; 3-error synthetic config produces a clean formatted block. ADR-078 Phase B. ✅ 2026-05-09
-- [ ] **DIAG-VALIDATE-SIDEBAR-1** `[sonnet/medium]`: Retrofit `app/modules/sidebar_validator.py` — replace `list[str]` returns with `list[DeploymentError]`. All 4 sidebar rule sites need `fix:` text pointing at the relevant `workspaces.<ws>.<side>_sidebar.panels` key in the persona template. ADR-078 Phase C.
-- [ ] **DIAG-BOOTLOADER-1** `[sonnet/medium]`: Retrofit `app/src/bootloader.py` startup paths — wrap profile-not-found, persona-path-resolution failure, connector-init crash, and missing-locations into `DeploymentError`. Currently these are bare `print` warnings or unhandled exceptions. ADR-078 Phase C.
+- [x] **DIAG-VALIDATE-SIDEBAR-1** `[sonnet/medium]`: Retrofit `app/modules/sidebar_validator.py` — replace `list[str]` returns with `list[DeploymentError]`. All 4 sidebar rule sites need `fix:` text pointing at the relevant `workspaces.<ws>.<side>_sidebar.panels` key in the persona template. ADR-078 Phase C. ✅ 2026-05-09
+- [x] **DIAG-BOOTLOADER-1** `[sonnet/medium]`: Retrofit `app/src/bootloader.py` startup paths — wrap profile-not-found, persona-path-resolution failure, connector-init crash, and missing-locations into `DeploymentError`. Currently these are bare `print` warnings or unhandled exceptions. ADR-078 Phase C. ✅ 2026-05-09
 - [ ] **DIAG-CONNECTOR-1** `[sonnet/medium]`: Retrofit `libs/connector/` — `FilesystemConnector` (path validation), `IridaConnector` (auth missing, endpoint unreachable), `BioBlendConnector` (Galaxy auth). Critical for IRIDA/Galaxy deployments. **Decision needed:** move `deployment_error.py` to `libs/utils/` so connectors can import it without the cross-lib violation, OR copy the dataclass shape into `libs/utils/errors.py`. ADR-078 Phase C + ADR-011 cross-lib rule.
 - [ ] **DIAG-MANIFEST-1** `[sonnet/medium]`: Retrofit manifest contract / structural validation at *load time* (NOT the assembler — that is ADR-079 territory). Covers: missing `analysis_groups`, malformed `data_schemas`, missing `!include` targets, malformed YAML in master manifest. Likely lives in `libs/utils/config_loader.py` or a new `libs/utils/manifest_preflight.py`. ADR-078 Phase C.
 - [ ] **DIAG-CATALOG-1** `[sonnet/high]`: Author `docs/troubleshooting/index.qmd` — one row per known `DeploymentError` with permalink slug. Each error's `reference:` field optionally points at the catalog entry by anchor (e.g. `docs/troubleshooting/#cascade-d-blueprint-agent`). The catalog becomes the operator's first stop on encountering an unfamiliar error. ADR-078 Phase C deliverable.

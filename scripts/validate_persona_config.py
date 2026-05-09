@@ -26,7 +26,7 @@ if str(_project_root) not in sys.path:
 
 from app.modules.persona_validator import PersonaValidator
 from app.modules.sidebar_validator import SidebarValidator
-from app.modules.deployment_error import DeploymentError, format_errors_block
+from app.modules.deployment_error import format_errors_block
 
 _TEMPLATES_DIR = _project_root / "config" / "ui" / "templates"
 
@@ -69,24 +69,8 @@ def _validate_template(path: Path, strict: bool) -> tuple[int, int]:
     sv = SidebarValidator()
 
     with _WarningCollector() as wc:
-        pv_errors = pv.validate_file(str(path))            # list[DeploymentError]
-        sv_errors_raw = sv.validate_file(str(path))        # list[str] — legacy, retrofit pending
-
-    # Normalise legacy SidebarValidator strings into DeploymentError shape so the
-    # operator sees the same format regardless of source. Full retrofit tracked
-    # as DIAG-VALIDATE-SIDEBAR-1 (ADR-078 Phase C).
-    sv_errors = [DeploymentError(
-        component="SidebarValidator",
-        problem=msg,
-        location=str(path),
-        fix=(
-            "Check workspaces.<ws>.left_sidebar.panels and right_sidebar.panels in "
-            "the persona template. Each panel type must exist in PANEL_REGISTRY "
-            "(app/modules/sidebar_registry.py). See ui_implementation_contract.md §11."
-        ),
-        who="operator",
-        reference="ADR-073 + .claude/rules/ui_implementation_contract.md §11",
-    ) for msg in sv_errors_raw]
+        pv_errors = pv.validate_file(str(path))   # list[DeploymentError]
+        sv_errors = sv.validate_file(str(path))    # list[DeploymentError]
 
     errors = pv_errors + sv_errors
     warnings = wc.count
