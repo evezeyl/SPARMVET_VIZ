@@ -91,14 +91,14 @@
 
 ### Sidebar Slot Registry (ADR-073)
 
-- [ ] **SIDEBAR-CONFIGS-1** `[haiku/low]`: Create `config/ui/sidebars/` directory with shared sidebar YAML panel-list files for all workspace × persona-tier combinations (home_static_left, home_simple_left, home_advanced_left, home_advanced_right, blueprint_standard_left/right, gallery_focus_left, testlab_standard_left). Update all 6 persona templates to use `workspaces:` section with `!include` references.
+- [x] **SIDEBAR-CONFIGS-1** `[haiku/low]`: Create `config/ui/sidebars/` directory with shared sidebar YAML panel-list files for all workspace × persona-tier combinations (home_static_left, home_simple_left, home_advanced_left, home_advanced_right, blueprint_standard_left/right, gallery_focus_left, testlab_standard_left). Update all 6 persona templates to use `workspaces:` section with `!include` references. ✅ 2026-05-09
 
-- [ ] **SIDEBAR-REGISTRY-1** `[sonnet/high]`: Implement ADR-073 core:
-  - `app/modules/sidebar_registry.py` — `PANEL_REGISTRY` dict (panel type → renderer ref + gate flag). Headless-safe, no Shiny imports.
-  - `bootloader`: add `get_sidebar_config(workspace, side)` reading `workspaces.<ws>.<side>_sidebar` from persona template.
-  - `home_theater.py`: replace hardcoded accordion sequence with slot-list iteration for Home workspace.
-  - `ui.py`: replace persona-name string comparison for right sidebar exclusion with `bootloader.get_sidebar_config("home", "right").visible` — fixes ADR-053 violation (task 25-O).
-  - New built-in panel types to implement: `project_info`, `deployment_info`.
+- [x] **SIDEBAR-REGISTRY-1** `[sonnet/high]`: Implement ADR-073 core:
+  - `app/modules/sidebar_registry.py` — `PANEL_REGISTRY` dict (panel type → gate flag). Headless-safe, no Shiny imports.
+  - `bootloader`: added `SidebarConfig` dataclass + `get_sidebar_config(workspace, side)` with `!include` support via subclass loader.
+  - `home_theater.py`: replaced hardcoded accordion with slot-list iteration; added `project_info`, `deployment_info` panel renderers; right sidebar now iterates slot types too.
+  - `ui.py`: replaced `bootloader.is_enabled("t3_sandbox_enabled")` with `bootloader.get_sidebar_config("home", "right").visible` — fixes ADR-053 violation (task 25-O).
+  - All 8 persona templates updated with `workspaces:` section. ✅ 2026-05-09
 
 - [ ] **SIDEBAR-VALIDATE-1** `[sonnet/medium]`: Implement compatibility validation:
   - `SidebarValidator` class alongside existing `PersonaValidator` — checks panel types against registry, `!include` targets exist, gate-flag / slot-list consistency warnings.

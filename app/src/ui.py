@@ -314,9 +314,10 @@ window.cyFit     = cyFit;
             width="340px",
             id="nav_sidebar"
         ),
-        # 3. Audit Stack (Right) — excluded entirely for pipeline personas (ADR-052-§1)
-        # Returning ui.div() from right_sidebar_content_ui is insufficient because the
-        # 340px container stays in the DOM. Read persona at layout build time instead.
+        # 3. Right sidebar — excluded from DOM when not visible (ADR-073).
+        # Structural exclusion (not CSS hide) so the center column fills full width.
+        # Visibility is driven by workspaces.home.right_sidebar.visible in persona template;
+        # replacing the prior t3_sandbox_enabled flag check (ADR-053 violation, task 25-O).
         (
             ui.div(
                 ui.output_ui("dynamic_tabs"),
@@ -324,7 +325,7 @@ window.cyFit     = cyFit;
                 id="main_layout_inner",
                 style="height:100%; flex:1;"
             )
-            if not bootloader.is_enabled("t3_sandbox_enabled")
+            if not bootloader.get_sidebar_config("home", "right").visible
             else ui.layout_sidebar(
                 ui.sidebar(
                     ui.output_ui("right_sidebar_content_ui"),

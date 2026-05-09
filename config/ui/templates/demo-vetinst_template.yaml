@@ -49,3 +49,31 @@ ui_banner:
   logo_url: "assets/demo/logo-no.svg"
   title: "AMR Surveillance — Overview"
   subtitle: "Norwegian Veterinary Institute"
+
+workspaces:
+  home:
+    left_sidebar: !include ../sidebars/home_standard_left.yaml
+    right_sidebar:
+      visible: false
+      panels: []
+  blueprint:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  gallery:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []

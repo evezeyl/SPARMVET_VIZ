@@ -1,8 +1,8 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance)
-# consumes: yaml, os, pathlib, typing, connector (get_connector)
-# consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
-# doc: ADR-031, ADR-026, ADR-048, project_conventions.md §"Deployment Profile Resolution"
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass)
+# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector)
+# consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
+# doc: ADR-031, ADR-026, ADR-048, ADR-073, project_conventions.md §"Deployment Profile Resolution"
 # @end_deps
 # app/src/bootloader.py
 #
@@ -19,8 +19,16 @@
 #   get_location() reads from those resolved paths directly.
 import yaml
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any
+
+
+@dataclass
+class SidebarConfig:
+    """Resolved sidebar configuration for one workspace × side combination (ADR-073)."""
+    visible: bool = True
+    panels: list = field(default_factory=list)
 
 _RESOLUTION_LEVEL_LABELS = {
     1: "SPARMVET_PROFILE env var",
@@ -262,6 +270,9 @@ class Bootloader:
           - import_helper_enabled=False suppresses data_ingestion_enabled
           - Deployment-profile data_ingestion_enabled:false is an absolute override
         A WARNING is printed for each flag that was True in the template and forced False.
+
+        Supports !include in persona templates (paths relative to the template file).
+        Uses a subclass of SafeLoader to avoid polluting the global constructor registry.
         """
         path = self.persona_path
         if not path.exists():
@@ -269,8 +280,23 @@ class Bootloader:
             return {}
 
         try:
+            class _TemplateLoader(yaml.SafeLoader):
+                pass
+
+            def _include_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> Any:
+                rel = loader.construct_scalar(node)
+                abs_inc = path.parent / rel
+                try:
+                    with open(abs_inc) as inc_f:
+                        return yaml.safe_load(inc_f) or {}
+                except FileNotFoundError:
+                    print(f"[Bootloader] WARNING: !include target not found: {abs_inc}")
+                    return {}
+
+            _TemplateLoader.add_constructor("!include", _include_constructor)
+
             with open(path, "r") as f:
-                config = yaml.safe_load(f) or {}
+                config = yaml.load(f, Loader=_TemplateLoader) or {}
         except Exception:
             return {}
 
@@ -351,6 +377,24 @@ class Bootloader:
     def get_manifest_selector(self) -> dict:
         """Returns the manifest_selector block: {visible: bool, fixed_manifest: str|None}."""
         return self.config.get("manifest_selector", {"visible": True, "fixed_manifest": None})
+
+    def get_sidebar_config(self, workspace: str, side: str) -> "SidebarConfig":
+        """Returns the resolved sidebar configuration for the given workspace and side.
+
+        Reads workspaces.<workspace>.<side>_sidebar from the active persona template.
+        !include references in the template are resolved at load time by _load_persona_config().
+
+        Default when not defined: left=visible with no panels, right=not visible.
+        """
+        workspaces = self.config.get("workspaces", {})
+        ws_cfg = workspaces.get(workspace, {})
+        sb_data = ws_cfg.get(f"{side}_sidebar")
+        if not sb_data:
+            return SidebarConfig(visible=(side == "left"), panels=[])
+        return SidebarConfig(
+            visible=bool(sb_data.get("visible", True)),
+            panels=sb_data.get("panels", []),
+        )
 
     def get_testing_mode(self) -> bool:
         """Returns testing_mode flag (true = pre-fill data selector from manifest defaults)."""

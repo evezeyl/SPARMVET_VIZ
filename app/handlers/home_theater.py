@@ -29,9 +29,9 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot)
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py, app/handlers/single_graph_export_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py, app/handlers/single_graph_export_handlers.py
 # consumed_by: app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051
+# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073
 # @end_deps
 
 import re
@@ -43,6 +43,7 @@ from shiny import reactive, render, ui
 from utils.config_loader import ConfigManager
 
 from app.modules.t3_recipe_engine import _apply_filter_rows
+from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
@@ -1088,7 +1089,8 @@ def define_server(input, output, session, *,
                 ui.output_ui("notification_log_panel_ui"),
             )
 
-        # 🏠 Standard Operation Sidebar (Home — ADR-043)
+        # 🏠 Standard Operation Sidebar (Home — ADR-043 / ADR-073)
+        # Build project state needed by some panel renderers.
         try:
             proj_choices = list(bootloader.available_projects.keys())
             def_proj = bootloader.get_default_project()
@@ -1096,15 +1098,40 @@ def define_server(input, output, session, *,
             proj_choices = []
             def_proj = None
 
-        # Restore previously selected project after a Gallery/Blueprint nav round-trip
         with reactive.isolate():
             _current_proj = _last_project_id.get() or def_proj
 
-        panels = []
+        # Panel renderer map: type → callable() → accordion_panel | None
+        # None means the panel type was handled (e.g. notification_log goes outside accordion).
+        def _render_project_info():
+            return ui.accordion_panel(
+                "Project",
+                ui.div(
+                    ui.tags.small(
+                        bootloader.deployment_name,
+                        class_="text-muted d-block"
+                    ),
+                    class_="p-1"
+                ),
+                icon=ui.tags.i(class_="bi bi-info-circle-fill")
+            )
 
-        # Manifest Choice — hidden for pipeline personas (manifest fixed by config)
-        if bootloader.get_manifest_selector().get("visible", True):
-            panels.append(ui.accordion_panel(
+        def _render_deployment_info():
+            banner = bootloader.get_ui_banner()
+            if not banner:
+                return None
+            return ui.accordion_panel(
+                "Deployment",
+                ui.div(
+                    ui.tags.small(banner.get("title", ""), class_="fw-bold d-block"),
+                    ui.tags.small(banner.get("subtitle", ""), class_="text-muted d-block"),
+                    class_="p-1"
+                ),
+                icon=ui.tags.i(class_="bi bi-building")
+            )
+
+        def _render_manifest_choice():
+            return ui.accordion_panel(
                 "Manifest Choice",
                 ui.div(
                     ui.input_select("project_id", "Project Selection",
@@ -1113,51 +1140,76 @@ def define_server(input, output, session, *,
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")
-            ))
+            )
 
-        # Data Import — gated by data_import_panel_visible (default true)
-        if bootloader.is_enabled("data_import_panel_visible"):
-            panels.append(ui.accordion_panel(
-                "Data Import",
-                ui.div(
-                    ui.output_ui("data_import_ui"),
-                    class_="d-flex flex-column gap-0"
-                ),
-                icon=ui.tags.i(class_="bi bi-database-fill-down")
-            ))
-
-        # Filters — hidden for non-interactive personas (pipeline-static)
-        if bootloader.is_enabled("interactivity_enabled"):
-            panels.append(ui.accordion_panel(
+        def _render_filters():
+            return ui.accordion_panel(
                 "Filters",
                 ui.div(
                     ui.output_ui("sidebar_filters"),
                     class_="d-flex flex-column gap-0"
                 ),
                 icon=ui.tags.i(class_="bi bi-filter-circle-fill")
-            ))
+            )
 
-        # Export — gated by export_enabled
-        if bootloader.is_enabled("export_enabled"):
-            panels.append(ui.accordion_panel(
+        def _render_data_import():
+            return ui.accordion_panel(
+                "Data Import",
+                ui.div(
+                    ui.output_ui("data_import_ui"),
+                    class_="d-flex flex-column gap-0"
+                ),
+                icon=ui.tags.i(class_="bi bi-database-fill-down")
+            )
+
+        def _render_export():
+            return ui.accordion_panel(
                 "Export",
                 ui.div(
                     ui.output_ui("system_tools_ui"),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-box-arrow-up")
-            ))
+            )
 
-        # Session Management — gated by flag
-        if bootloader.is_enabled("session_management_enabled"):
-            panels.append(ui.accordion_panel(
+        def _render_session_management():
+            return ui.accordion_panel(
                 "Session Management",
                 ui.div(
                     ui.output_ui("session_management_ui"),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-clock-history")
-            ))
+            )
+
+        _home_panel_renderers = {
+            "project_info":       _render_project_info,
+            "deployment_info":    _render_deployment_info,
+            "manifest_choice":    _render_manifest_choice,
+            "filters":            _render_filters,
+            "data_import":        _render_data_import,
+            "export":             _render_export,
+            "session_management": _render_session_management,
+        }
+
+        # Iterate slot list from persona template (ADR-073).
+        sidebar_cfg = bootloader.get_sidebar_config("home", "left")
+        panels = []
+        include_notification_log = False
+        for slot in sidebar_cfg.panels:
+            ptype = slot.get("type", "")
+            if ptype == "notification_log":
+                include_notification_log = True
+                continue
+            if not is_panel_active(ptype, bootloader):
+                continue
+            renderer = _home_panel_renderers.get(ptype)
+            if renderer is None:
+                print(f"[home_theater] No renderer for panel type '{ptype}' — skipping.")
+                continue
+            panel = renderer()
+            if panel is not None:
+                panels.append(panel)
 
         _has_manifest = bootloader.get_manifest_selector().get("visible", True)
         open_panels = ["Manifest Choice"] if _has_manifest else []
@@ -1168,7 +1220,7 @@ def define_server(input, output, session, *,
                 multiple=True,
                 open=open_panels,
             ),
-            ui.output_ui("notification_log_panel_ui"),
+            ui.output_ui("notification_log_panel_ui") if include_notification_log else ui.div(),
         )
 
     # --- 📐 Right Sidebar Context Matrix (ADR-039 / ADR-044) ---
@@ -1222,14 +1274,15 @@ def define_server(input, output, session, *,
                 class_="sidebar-content p-0 d-flex flex-column h-100"
             )
 
-        # --- 🏠 Home Theater (ADR-043 / ADR-044) ---
+        # --- 🏠 Home Theater (ADR-043 / ADR-044 / ADR-073) ---
         if active_sidebar in ("Home", None, ""):
-            persona = current_persona.get()
-            if not bootloader.is_enabled("t3_sandbox_enabled"):
-                return ui.div()
+            # Iterate right sidebar slot list for Home workspace.
+            right_cfg = bootloader.get_sidebar_config("home", "right")
+            right_types = {s.get("type", "") for s in right_cfg.panels}
 
-            return ui.div(
-                ui.card(
+            parts = []
+            if "audit_stack" in right_types and is_panel_active("audit_stack", bootloader):
+                parts.append(ui.card(
                     ui.card_header(
                         ui.div(ui.h5("Pipeline Audit", class_="mb-0 fw-bold"),
                                class_="d-flex justify-content-center w-100"),
@@ -1248,10 +1301,16 @@ def define_server(input, output, session, *,
                     ),
                     class_="mb-2 shadow-sm border-0 d-flex flex-column",
                     style="flex:1 1 auto; overflow:hidden;",
-                ),
-                ui.output_ui("audit_stack_tools_ui"),
-                class_="sidebar-content p-0 d-flex flex-column h-100"
-            )
+                ))
+                parts.append(ui.output_ui("audit_stack_tools_ui"))
+
+            if "notification_log" in right_types:
+                parts.append(ui.output_ui("notification_log_panel_ui"))
+
+            if not parts:
+                return ui.div(class_="sidebar-content p-0")
+
+            return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")
 
         # --- 🖼️ Gallery ---
         if active_sidebar == "Gallery":

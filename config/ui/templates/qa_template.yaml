@@ -56,3 +56,17 @@ automation:
     # behaviour invoke session_manager.write_t3_ghost() explicitly.
     enabled: false
     frequency_minutes: 0
+
+workspaces:
+  home:
+    left_sidebar: !include ../sidebars/home_standard_left.yaml
+    right_sidebar: !include ../sidebars/home_standard_right.yaml
+  blueprint:
+    left_sidebar: !include ../sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include ../sidebars/blueprint_standard_right.yaml
+  gallery:
+    left_sidebar: !include ../sidebars/gallery_focus_left.yaml
+    right_sidebar: !include ../sidebars/gallery_focus_right.yaml
+  test_lab:
+    left_sidebar: !include ../sidebars/testlab_standard_left.yaml
+    right_sidebar: !include ../sidebars/testlab_standard_right.yaml

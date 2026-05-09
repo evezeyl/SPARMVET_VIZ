@@ -1,6 +1,6 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003
 # @end_deps
@@ -21,6 +21,7 @@ from app.modules.wrangle_studio import WrangleStudio
 from app.modules.test_lab_studio import TestLabStudio
 from app.modules.gallery_viewer import gallery_viewer
 from app.modules.persona_validator import PersonaValidator
+from app.modules.sidebar_validator import SidebarValidator
 
 
 
@@ -30,6 +31,11 @@ def server(input, output, session):
     _pv_errors = PersonaValidator().validate_file(str(bootloader.persona_path))
     if _pv_errors:
         raise ValueError(f"Persona template validation failed: {'; '.join(_pv_errors)}")
+
+    # Validate sidebar slot config — warnings logged, errors block startup (ADR-073)
+    _sv_errors = SidebarValidator().validate_file(str(bootloader.persona_path))
+    if _sv_errors:
+        raise ValueError(f"Sidebar config validation failed: {'; '.join(_sv_errors)}")
 
     @reactive.Calc
     def active_collection_id():

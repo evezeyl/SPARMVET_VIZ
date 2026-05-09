@@ -48,3 +48,21 @@ automation:
   ghost_save:
     enabled: true
     frequency_minutes: 2
+
+workspaces:
+  home:
+    left_sidebar: !include ../sidebars/home_standard_left.yaml
+    right_sidebar: !include ../sidebars/home_standard_right.yaml
+  blueprint:
+    left_sidebar: !include ../sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include ../sidebars/blueprint_standard_right.yaml
+  gallery:
+    left_sidebar: !include ../sidebars/gallery_focus_left.yaml
+    right_sidebar: !include ../sidebars/gallery_focus_right.yaml
+  test_lab:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
