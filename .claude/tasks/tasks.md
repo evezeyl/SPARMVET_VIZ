@@ -25,7 +25,7 @@ Items with no blockers — can be started immediately.
 
 ### Deployment
 
-- [ ] **DEPLOY-CONNECT-1** `[sonnet/medium]`: Posit Connect deployment — editable library install handling.
+- [ ] **DEPLOY-CONNECT-1** `[sonnet/medium]` `[deferred — Connect adoption TBD]`: Posit Connect deployment — editable library install handling. Keep code Connect-ready to avoid heavy refactoring when the time comes.
   - [ ] Add each editable lib as relative path entry in `requirements.txt`: `-e ./libs/ingestion`, `-e ./libs/transformer`, etc.
   - [ ] Document `app/src/main.py` as entry point for `rsconnect-python` bundle.
   - [ ] Deployment profile via `SPARMVET_PROFILE` env var; add `config/deployment/connect/connect_profile.yaml` template.
@@ -115,7 +115,7 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 - [ ] **22-J-10** `[sonnet/medium]`: Aesthetic propagation (color/shape/fill) — deferred until GALLERY-CLONE-DECOUPLE-1 ships.
 - [ ] **PROP-2** `[sonnet/medium]`: Filter inventory panel — effective filter set per plot with per-filter tooltip.
 - [ ] **EXPORT-TUBEMAP** `[sonnet/high]`: Embed static tube map SVG in global export Quarto report. Requires headless render path for `BlueprintMapper.generate_cy_elements()`. Blocked by Blueprint Architect stability + headless Cytoscape.js SVG capability.
-- [ ] **TECH-T3-THREAD-1** `[sonnet/medium]`: When new T3 node types are added, thread them through `_apply_t3_to_lf`. Design spec in `.claude/tasks/design_sge_lineage_t3.md`.
+- [ ] **TECH-T3-THREAD-1** `[sonnet/low]`: When new T3 node types are added (e.g. `aesthetic_override`, `rename`, `derive`), add them to `_t3_filter_rows()` / `_t3_drop_columns()` helpers in `home_theater.py` (or new helper) and ensure export path in `export_handlers.py` applies them. Note: `filter_row`, `exclusion_row`, `drop_column` are already threaded. Lineage graph already in bundle (`lineage_graph.json`). Dead code already removed. Design doc at `.claude/design/design_t3_export_threading.md` — needs update to reflect actual state.
 
 ### Planned / Large-scale backlog
 
@@ -138,10 +138,11 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
     --invert-paths
   git push origin dev --force
   ```
-- [ ] **PYPROJECT-DEPS-1** `[haiku/low]` `[repo-hygiene]`: Verify all 8 `libs/*/pyproject.toml` files declare `libs/utils` as explicit dependency wherever they import from it.
-- [ ] **ACTION-RENAME-1** `[sonnet/medium]` `[repo-hygiene]`: Audit `@register_action` and `@register_plot_component` names for alignment with Polars/Plotnine naming. Provide compatibility shims + `scripts/migrate_manifests.py`.
+- [ ] **PYPROJECT-DEPS-1** `[haiku/low]` `[repo-hygiene]`: Verify each of the 8 editable libs under `libs/` declares `libs/utils` as an explicit dependency in its `pyproject.toml` wherever it imports from utils.
+- [ ] **ACTION-RENAME-1** `[sonnet/medium]` `[repo-hygiene]`: Audit `@register_action` and `@register_plot_component` names for alignment with Polars/Plotnine naming. Provide compatibility shims and write `scripts/migrate_manifests.py` (script does not exist yet — separate from `assets/scripts/normalize_manifest_fields.py` which normalizes field dict format, not action names).
 - [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: Remaining cross-lib import violations — `blueprint_arch/blueprint_mapper.py` → `utils.config_loader`, `transformer/pipeline.py` → `utils.config_loader` + `ingestion.ingestor`, `transformer/data_assembler.py` → `utils.hashing`, `transformer/data_wrangler.py` + `metadata_validator.py` → `utils.errors`, `viz_factory/viz_factory.py` → `utils.errors`.
-- [ ] **CODE-DOCS-RETROSPECTIVE** `[deferred — pre-deployment review sprint]`: Developer-level docstrings across all `libs/` + `app/`. Tier A (module header) + Tier B (public functions) + Tier C (`@register_action` / `@register_plot_component`). Implementation order: `libs/transformer/` → `libs/viz_factory/` → `app/handlers/` → remaining libs → `app/src/`. Write `scripts/audit_code_quality.py` first.
+- [ ] **CODE-COMMENT-STANDARD** `[sonnet/low]` `[active]`: Enforce commenting standard across `libs/` + `app/` — Emoji ban (§1) + WHY-not-WHAT comment philosophy (§2). No script needed. Run `grep -rE '(#.*[✅❌🔧🚀]|# TODO)' libs/ app/` to find violations. Note: do NOT add docstring tiers yet — that is CODE-DOCS-RETROSPECTIVE below.
+- [ ] **CODE-DOCS-RETROSPECTIVE** `[deferred — pre-deployment review sprint]`: Developer-level docstrings across all `libs/` + `app/`. Tier A (module header) + Tier B (public functions) + Tier C (`@register_action` / `@register_plot_component`). Implementation order: `libs/transformer/` → `libs/viz_factory/` → `app/handlers/` → remaining libs → `app/src/`. Write `scripts/audit_code_quality.py` first (see `rules_code_quality.md §4-§5`). Do not start until pre-deployment sprint begins.
 
 ---
 
