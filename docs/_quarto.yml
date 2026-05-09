@@ -49,7 +49,8 @@ book:
       - workflows/audit_scripts.qmd # Repository audit scripts (hygiene, ADR compliance)
       - reference/developer_how_to.qmd # Repo standard for Issue submission and PRs
       - reference/ui_style_guide.qmd # CSS panel map, element selectors, style constraints
-      
+      - troubleshooting/index.qmd # Startup error catalog — one entry per DeploymentError slug (ADR-078)
+
   - part: "Chapter 2: Non-Coder User Guide"
     # Absolute user focus: Visual mapping, No Code, Analogies, YAML 101
     chapters:
