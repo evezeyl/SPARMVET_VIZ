@@ -415,3 +415,56 @@ exit_if_errors(errors, header="My component failed validation")
 - bare `print` warnings for errors that should block startup
 - swallowing exceptions silently (e.g. bare `except:` returning empty results)
 
+---
+
+## 17. BLUEPRINT AI Agent Adapter Pattern (ADR-076)
+
+**Entry point:** `bootloader.get_agent_adapter()` — returns a cached adapter instance.
+
+```python
+adapter = bootloader.get_agent_adapter()          # ClaudeCliAdapter or DisabledAdapter
+if adapter.is_disabled:
+    # show banner; do not render chat panel
+    ...
+else:
+    from blueprint_arch.agent_context import build_system_prompt, build_turn_context
+    system_prompt = build_system_prompt(
+        manifest_path=active_manifest_path,
+        instructions_file=bootloader.get_agent_config().get("instructions_file"),
+        project_root=bootloader.project_root,
+    )
+    context = build_turn_context(active_workspace="blueprint")
+    session_id = adapter.start_session(system_prompt, context)
+    response = adapter.send_message(session_id, user_message)
+    # response.content contains the text (fenced tool calls embedded for claude_cli)
+    # use agent_tool_parser.py to extract tool calls from content
+```
+
+**Module locations** (all headless-safe, zero Shiny imports):
+- `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py` — `AgentAdapter` protocol, `ClaudeCliAdapter`, `DisabledAdapter`, `make_adapter()`
+- `libs/blueprint_arch/src/blueprint_arch/agent_context.py` — `build_system_prompt()`, `build_turn_context()`
+- `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py` — (BP-AGENT-PARSER-1, pending) fenced-block extractor
+- `libs/blueprint_arch/src/blueprint_arch/agent_tools.py` — (BP-AGENT-TOOLS-1, pending) 7 MVP tools
+
+**Session directory isolation (ADR-076 §11):** Each session runs in `{project_root}/agent_sessions/{uuid}/` with a `.cwd-marker` so Claude Code scopes its conversation history to that dir — isolated from the user's main terminal session. Lock file (`lock`) enforces single-flight within a session.
+
+**Fenced-block tool-call protocol (ADR-076 §10.1):** `ClaudeCliAdapter` instructs the model (via system prompt) to emit tool calls as:
+```
+<!-- AGENT_TOOL_CALL -->
+```json
+{"tool": "propose_manifest_diff", "arguments": {...}}
+```
+<!-- /AGENT_TOOL_CALL -->
+```
+Parser extracts these; any text outside the markers is conversation.
+
+**`--output-format text` note:** The implementation uses `--output-format text` (not `json`) for simplicity — `result.stdout.strip()` is the full response content. ADR-076 uses `json` format in the spec; implementation deviation is harmless and simplifies content extraction.
+
+**Bootloader config accessor:**
+```python
+cfg = bootloader.get_agent_config()
+# {'backend': 'claude_cli', 'instructions_file': '...', 'gallery_awareness': False, ...}
+```
+
+**Fallback discipline:** `make_adapter()` catches all `RuntimeError` from `ClaudeCliAdapter.__init__` (missing binary, not logged in) and returns `DisabledAdapter(reason)`. App startup is never blocked by an agent misconfiguration.
+

@@ -1,38 +1,60 @@
-# Handoff — Active State (2026-05-09 end of session)
+# Handoff — Active State (2026-05-09 Phase 33 in progress)
 
-**Branch:** dev  
-**Working tree:** uncommitted changes (tasks.md, changelog.md, handoff, Abromics manifest, implementation_plan_master.md)  
-**Status:** P0/P1 audit block COMPLETE
+**Branch:** dev
+**Working tree:** uncommitted changes
+**Status:** Phase 31 COMPLETE. Phase 33 BP-AGENT MVP in progress (33-B done, 33-C through 33-H open).
 
 ---
 
-## Session Summary
+## What Was Done This Session
 
-All 10 P0/P1 audit tasks completed (7 P0 + 3 P1 actionable; several were no-ops because prior sessions had already fixed the issues):
+### Phase 31 closed
 
-| Task | Outcome |
+Export provenance cluster (EXPORT-HASH-2, EXPORT-VERSION-1, EXPORT-IMG-META-1, EXPORT-AUDIT-COMPLETE-1) and unified import panel (IMPORT-UI-1) delivered and verified.
+
+### Phase 33 — BP-AGENT-1 done
+
+Two new headless-safe modules in `libs/blueprint_arch/`:
+
+| File | What it provides |
 |---|---|
-| AUDIT-HANDOFF-UPDATE | Rewrote handoff (previous session) |
-| AUDIT-RULES-FLAGS-UPDATE | Removed stale violation annotations from rules_persona_feature_flags.md |
-| AUDIT-ADR072-STUB | ADR-072 reserved stub confirmed; ADR-069 moved to correct position |
-| AUDIT-QUALITY-WRANGLING | Deleted empty unreferenced `Quality_metrics_assembly_wrangling.yaml` |
-| AUDIT-PHANTOM-TEST | No-op — phantom reference not present in file |
-| AUDIT-CHANGELOG-UPDATE | Added ADR 066–076 rollup table; corrected inaccurate prospective audit section |
-| AUDIT-WRANGLE-FLAG | No-op — already in _REQUIRED_FLAGS and all 8 templates declare it |
-| AUDIT-DEMO-PERSONAS | No-op — matrix already has all 8 columns |
-| AUDIT-ABROMICS-CHECK | 3 schemas, 119 lines — added inline-form confirmation comment |
-| AUDIT-PLAN-ORDER | Phases already in sequential order — added Phase 30 gap note |
+| `agent_adapter.py` | `AgentAdapter` Protocol, `ClaudeCliAdapter` (subprocess isolation, flock, auth probe), `DisabledAdapter`, `make_adapter()` |
+| `agent_context.py` | `build_system_prompt()` (Layer 1), `build_turn_context()` (Layer 3) |
+
+Bootloader gains `get_agent_config()` + `get_agent_adapter()` (cached, fallback-safe).
+
+Auth probe tested OK on dev machine (`claude` installed + logged in).
 
 ---
 
-## What's next
+## Files Modified
 
-Audit housekeeping complete. Resume substantive implementation work. Recommended next tasks from `tasks.md`:
+- `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py` (new)
+- `libs/blueprint_arch/src/blueprint_arch/agent_context.py` (new)
+- `app/src/bootloader.py` (two new methods + @deps update)
+- `.claude/knowledge/project_conventions.md` (§17 added)
+- `.claude/plans/implementation_plan_master.md` (Phase 31 COMPLETED, Phase 33 added)
+- `.claude/tasks/tasks.md` (BP-AGENT-1 marked done)
+- `.claude/logs/audits/audit_2026-05-09b.md` (new)
+- `.claude/logs/handoffs/handoff_active.md` (this file)
 
-1. **BP-FLAG-1** `[haiku/low]` — Add `blueprint_agent_enabled` cascade rule to PersonaValidator (already referenced in ADR-077/078 but not yet explicitly in code).
-2. **SIDEBAR-CONFIGS-1 / SIDEBAR-REGISTRY-1 / SIDEBAR-VALIDATE-1** — Sidebar slot registry implementation tasks (Phase 31).
-3. **P2 code cleanup** — AUDIT-SGE-CLEANUP, AUDIT-NOTIF-UTIL-MOVE, AUDIT-CSS-SWEEP still open.
+---
 
-Commit the audit session changes before starting new work.
+## Next Step
 
-@dasharch — audit block closed.
+**BP-AGENT-PARSER-1** `[sonnet/medium]` — `agent_tool_parser.py`:
+- Fenced-block extractor for `<!-- AGENT_TOOL_CALL --> ... <!-- /AGENT_TOOL_CALL -->` markers
+- JSON validation + per-tool schema dispatch
+- Returns structured error string on parse failure (for agent to retry)
+- Must be headless-safe (no Shiny imports)
+- Location: `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`
+
+Then in order: BP-AGENT-TOOLS-1 → BP-AGENT-INSTRUCT-1 → BP-AGENT-PANEL-1 → BP-AGENT-UI-1 → BP-AGENT-CSS-1.
+
+---
+
+## Smoke test baseline
+
+`SPARMVET_PERSONA=qa pytest app/tests/test_shiny_smoke.py` → 14 passed, 3 skipped.
+
+@dasharch — Phase 33 adapter layer closed.

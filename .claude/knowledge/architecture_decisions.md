@@ -3274,3 +3274,39 @@ Tracked as **ADR-079: Runtime Error Discipline** (placeholder authored alongside
 
 **Tracked as:** `DIAG-RUNTIME-ADR` `[opus/high]` — author ADR-079 properly when Phase C is largely complete OR when the first runtime-error pain point becomes blocking, whichever comes first.
 
+---
+
+## ADR-080: Local Systemd Audit Scheduling — Rationale and Infrastructure (2026-05-09)
+
+**Status:** IMPLEMENTED
+
+**Decision:** All 13 audit scripts execute locally via systemd user timers, not via Claude Code cloud `/schedule` Routines.
+
+**Context:** During setup of the automated audit routine system (`.claude/workflows/audit_routine_registry.md`), the question arose whether to use Claude Code cloud Routines (which run agents against GitHub) or local scheduling.
+
+**Rationale for local execution:**
+
+1. **Virtual environment dependency.** Every audit script runs `.venv/bin/python`. The cloud runner has no `.venv/` — it would fail immediately on import for scripts requiring Polars, Plotnine, PyYAML, or any project library.
+2. **Local data files.** Scripts like `audit_manifest_integrity.py` call `debug_assembler.py`, which reads source TSV files that are not in the repo.
+3. **Uncommitted work visibility.** The dev branch has work-in-progress that should be audited before commit. Cloud runners only see pushed commits.
+4. **Cost and latency.** Running agents for grep-level checks wastes cloud tokens. Python scripts executing in milliseconds locally are the right tool.
+
+**Cloud Routines are appropriate only for:** reasoning-level audits where Claude reads and interprets content (e.g. changelog consistency, phase ordering) without needing to execute Python. Noted in `schedule_commands.md §Part 2`.
+
+**Implementation:**
+
+| File | Role |
+|------|------|
+| `scripts/run_audits.sh` | Wrapper — groups scripts by day slot; auto-switches to `dev` branch; prints unprocessed report summary |
+| `scripts/systemd/sparmvet-audit@.service` | Systemd service template; `%i` = day slot argument |
+| `scripts/systemd/sparmvet-audit-{day}.timer` | Four timers (Sunday/Wednesday/Thursday/Friday) with `Persistent=true` |
+| `scripts/systemd/install.sh` | One-time setup: copies units to `~/.config/systemd/user/`, enables all timers |
+
+**`Persistent=true` behaviour:** Systemd records the last fire time. If the machine was off at the scheduled time, the timer fires immediately on the next boot/login. No missed audits due to PC suspension or shutdown.
+
+**Branch guard:** `run_audits.sh` detects the current branch and switches to `dev` before scanning. If uncommitted changes prevent the switch, the run is skipped safely (git refuses the checkout — work is not lost).
+
+**Session-end manual trigger (Section A in `schedule_commands.md`):** The four highest-value scripts (cross-lib, deps-verify, task-drift, template-flags) can be run in ~seconds at the end of any coding session without waiting for the scheduled time.
+
+**Activation:** Run `./scripts/systemd/install.sh` once to register all four timers.
+

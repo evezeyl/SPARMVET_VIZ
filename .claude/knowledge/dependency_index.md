@@ -118,7 +118,7 @@
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_reference`, `output:table_reference`, `output:plot_leaf`, `output:table_leaf`, `output:comparison_mode_toggle_ui`, `output:plot_cell_{p_id} (per-plot)`
-- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_recipe_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/handlers/single_graph_export_handlers.py`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_recipe_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`
 
@@ -128,25 +128,12 @@
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`
 
-## `app/handlers/notification_utils.py`
-- **Role:** `ref`
-- **provides:** `make_notifier() factory — returns a _notify(msg`, `type`, `duration) callable that calls ui.notification_show and appends to a reactive log`
-- **consumes:** `shiny.ui`, `datetime`
-- **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/single_graph_export_handlers.py`, `app/handlers/data_import_handlers.py`
-
 ## `app/handlers/session_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
 - **consumes:** `shiny`, `pathlib`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`
-
-## `app/handlers/single_graph_export_handlers.py`
-- **Role:** `ref`
-- **provides:** `function:define_single_graph_export_server`, `output:single_graph_export_ui`, `output:export_single_graph`
-- **consumes:** `app/src/bootloader.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `polars`, `shiny`
-- **consumed_by:** `app/handlers/home_theater.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-052`
 
 ## `app/modules/deployment_error.py`
 - **Role:** `ref`
@@ -175,6 +162,12 @@
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_data_engine.md`
 
+## `app/modules/notification_utils.py`
+- **Role:** `ref`
+- **provides:** `make_notifier() factory — returns a _notify(msg`, `type`, `duration) callable that calls ui.notification_show and appends to a reactive log`
+- **consumes:** `shiny.ui`, `datetime`
+- **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/data_import_handlers.py`
+
 ## `app/modules/orchestrator.py`
 - **Role:** `ref`
 - **provides:** `pipeline:materialize_tier1`
@@ -182,6 +175,13 @@
 - **mirrors:** `libs/transformer/tests/debug_assembler.py`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
 - **doc:** `.claude/knowledge/dependency_index.md`
+
+## `app/modules/orchestrator_helpers.py`
+- **Role:** `ref`
+- **provides:** `safe_input`, `apply_tier2_transforms`, `DEFAULT_HOME_STATE`
+- **consumes:** `—`
+- **consumed_by:** `app.src.server`
+- **doc:** `ADR-045 (Two-Category Law §5 — shared utility functions)`
 
 ## `app/modules/session_manager.py`
 - **Role:** `ref`
@@ -226,10 +226,10 @@
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
-- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`
-- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`
 - **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
-- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-078`, `project_conventions.md §"Deployment Profile Resolution`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `project_conventions.md §"Deployment Profile Resolution`
 
 ## `app/src/main.py`
 - **Role:** `ref`
@@ -240,7 +240,7 @@
 ## `app/src/server.py`
 - **Role:** `ref`
 - **provides:** `server (Shiny server function)`
-- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio`, `app.modules.test_lab_studio`, `app.modules.gallery_viewer`, `app.modules.persona_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio`, `app.modules.test_lab_studio`, `app.modules.gallery_viewer`, `app.modules.persona_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-045`, `ADR-003`
 
@@ -368,6 +368,18 @@
 - **include_parent:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`
 - **consumed_by:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/rules/rules_manifest_structure.md#7`
+
+## `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`
+- **Role:** `info`
+- **provides:** `class:AgentAdapter`, `class:ClaudeCliAdapter`, `class:DisabledAdapter`, `class:AgentResponse`, `class:Tool`, `function:make_adapter`
+- **consumed_by:** `app/src/bootloader.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `libs/blueprint_arch/src/blueprint_arch/agent_context.py`
+- **Role:** `info`
+- **provides:** `function:build_system_prompt`, `function:build_turn_context`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/src/bootloader.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
 
 ## `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
 - **Role:** `info`

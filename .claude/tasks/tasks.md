@@ -136,7 +136,7 @@ Two-tier: air-gapped contextual cards per workspace + optional full manual serve
 
 MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must close before next starts.
 
-- [ ] **BP-AGENT-1** `[sonnet/high]`: `AgentAdapter` protocol + `ClaudeCliAdapter` (§11 subprocess isolation + auth probe) + `DisabledAdapter`. Dedicated `cwd={project_root}/agent_sessions/{uuid}/` per session; `flock` single-flight lock; auth probe at init; system prompt builder + per-turn context builder. Location: `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py` + `agent_context.py`. Headless-safe. All backends buffered.
+- [x] **BP-AGENT-1** `[sonnet/high]`: `AgentAdapter` protocol + `ClaudeCliAdapter` (§11 subprocess isolation + auth probe) + `DisabledAdapter`. Dedicated `cwd={project_root}/agent_sessions/{uuid}/` per session; `flock` single-flight lock; auth probe at init; system prompt builder + per-turn context builder. Location: `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py` + `agent_context.py`. Headless-safe. All backends buffered.
 
 - [ ] **BP-AGENT-PARSER-1** `[sonnet/medium]`: `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py` — fenced-block extractor for `<!-- AGENT_TOOL_CALL --> ... <!-- /AGENT_TOOL_CALL -->` protocol (ADR-076 §10.1). JSON validation, per-tool schema dispatch, structured error turn on parse failure. Headless-safe.
 

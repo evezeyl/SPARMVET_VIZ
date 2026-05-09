@@ -652,10 +652,10 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 > **Numbering note:** Phase 30 was skipped — same as the gaps at Phases 13–15 (see Phase 11 note). Work for that period was tracked directly in git commits and ADRs. Phases 31+ are PLANNED/IN-PROGRESS.
 
-## Phase 31: Sidebar Slot Registry + Export Provenance (PLANNED — 2026-05-09)
+## Phase 31: Sidebar Slot Registry + Export Provenance (COMPLETED — 2026-05-09)
 
 **ADRs:** ADR-073 (Configurable Sidebar Slot Registry), ADR-069 amendment (per-source-file hash table)
-**Status:** PLANNED. Design complete. Tasks in `tasks.md`.
+**Status:** COMPLETED. All substeps delivered (31-A through 31-H, plus IMPORT-UI-1).
 
 ### Objective
 
@@ -684,10 +684,24 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - **Right sidebar structural exclusion** moves from persona-name check in `ui.py` → `workspaces.home.right_sidebar.visible` in persona template (fixes ADR-053 violation, task 25-O)
 - **`SidebarValidator`** runs alongside `PersonaValidator` at startup and in CI (`--strict` mode)
 
-### Open / deferred from this phase design
+### Delivered
+
+| Step | Task ID | Status |
+|---|---|---|
+| 31-A | SIDEBAR-CONFIGS-1 | ✅ |
+| 31-B | SIDEBAR-REGISTRY-1 | ✅ |
+| 31-C | SIDEBAR-VALIDATE-1 | ✅ |
+| 31-D | UTILS-RELOC-2 | deferred |
+| 31-E | EXPORT-AUDIT-COMPLETE-1 | ✅ |
+| 31-F | EXPORT-VERSION-1 | ✅ |
+| 31-G | EXPORT-HASH-2 | ✅ |
+| 31-H | EXPORT-IMG-META-1 | ✅ |
+| — | IMPORT-UI-1 | ✅ (unified import panel) |
+| — | DEPLOY-CONNECT-1 | deferred |
+
+### Open / deferred
 
 - `ADR045-REFACTOR` (app/modules/ Two-Category Law violations) — deferred, needs separate scope discussion
-- `IMPORT-UI-1` (unified import panel) — decided, implementation pending
 - `UI-TITLE-1` (manifest-driven title/subtitle) — decided, implementation pending
 
 ---
@@ -736,3 +750,47 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - Apply gate: upstream schema propagates on Apply only (not continuously)
 - Edit/remove: (1) edit in-place + re-Apply, (2) 20-step undo deque, (3) YAML escape hatch
 - `manifest_edit_enabled`: default false all personas; true for developer and qa only
+
+---
+
+## Phase 33: BLUEPRINT AI Agent MVP-1 (IN PROGRESS — 2026-05-09)
+
+**ADRs:** ADR-076 (BLUEPRINT AI Agent Helper), ADR-077 (Fail-Fast Cascade Enforcement)
+**Status:** IN PROGRESS. Adapter layer complete; UI wiring pending.
+**Audit log:** `.claude/logs/audits/audit_2026-05-09.md`
+
+### Objective
+
+Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent interviews the user about their analytical goal, inspects the loaded schema, and proposes manifest fragments via `propose_manifest_diff`. All changes require user Apply — the agent never modifies the manifest directly.
+
+### Substeps
+
+| Step | Task ID | Label | Model | Status |
+|---|---|---|---|---|
+| 33-A | BP-AGENT-FLAG-1 | `blueprint_agent_enabled` flag + `blueprint_agent:` config block in persona templates | haiku | ✅ (Phase 31) |
+| 33-B | BP-AGENT-1 | `AgentAdapter` protocol + `ClaudeCliAdapter` + `DisabledAdapter` + `agent_context.py` | sonnet | ✅ |
+| 33-C | BP-AGENT-PARSER-1 | Fenced-block extractor (`agent_tool_parser.py`) | sonnet | open |
+| 33-D | BP-AGENT-TOOLS-1 | 3 MVP tools (`get_available_actions`, `get_available_components`, `get_field_contract`) | sonnet | open |
+| 33-E | BP-AGENT-INSTRUCT-1 | System prompt file `config/ui/agents/blueprint_default.md` | sonnet | open |
+| 33-F | BP-AGENT-PANEL-1 | Register `blueprint_agent_chat` panel in sidebar registry + persona templates | haiku | open |
+| 33-G | BP-AGENT-UI-1 | Chat panel render outputs in `blueprint_handlers.py` | sonnet | open |
+| 33-H | BP-AGENT-CSS-1 | `.bp-agent-*` rule block in `config/ui/theme.css` | haiku | open |
+
+### Key decisions (ADR-076 implemented)
+
+- `ClaudeCliAdapter` runs `claude -p` in isolated `agent_sessions/{uuid}/` dirs — Claude Code scopes conversation history per `cwd`, achieving full session isolation
+- Auth probe (`--version` + trivial `-p "ok"`) at bootloader init; any failure → `DisabledAdapter` fallback, startup never blocked
+- `--output-format text` used (not `json`) — simpler content extraction; spec said `json` but implementation deviation is harmless
+- `--system` flag injects the Layer 1 system prompt on the first turn; `--continue` used for all subsequent turns
+- `build_system_prompt()` assembles: instructions file + compressed action registry + project context + fenced-block protocol spec
+- `build_turn_context()` emits Layer 3 context dict: workspace, active plot, manifest section, row counts, data visibility
+- `bootloader.get_agent_adapter()` is the sole entry point — cached per Bootloader instance
+- `bootloader.get_agent_config()` returns the `blueprint_agent:` block from the persona template
+- `flock` single-flight on `lock` file in session dir — prevents concurrent subprocess calls
+
+### Deferred (Phase 33 non-scope)
+
+- `ClaudeApiAdapter`, `LocalModelAdapter` — Phase 2/3
+- Token-by-token streaming — explicit non-decision; all backends buffered
+- Gallery awareness (`gallery_awareness: true`) — reserved flag, Phase 1 = false
+- MCP server exposing tools — Phase 2 upgrade path

@@ -1,8 +1,8 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass)
-# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter
+# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import)
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
-# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-078, project_conventions.md §"Deployment Profile Resolution"
+# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, project_conventions.md §"Deployment Profile Resolution"
 # @end_deps
 # app/src/bootloader.py
 #
@@ -544,6 +544,46 @@ class Bootloader:
             raise KeyError(
                 "Connector config missing 'runtime.python_interpreter' definition.")
         return str(path)
+
+    def get_agent_config(self) -> dict:
+        """Return the blueprint_agent: block from the active persona template.
+
+        Returns an empty dict if the block is absent (e.g. non-developer personas).
+        Callers should gate on is_enabled('blueprint_agent_enabled') before using.
+        """
+        return self.config.get("blueprint_agent", {})
+
+    def get_agent_adapter(self):
+        """Instantiate and cache the BLUEPRINT AI agent adapter (ADR-076).
+
+        Returns a ClaudeCliAdapter when blueprint_agent_enabled=True and the
+        configured backend initialises successfully. Falls back to DisabledAdapter
+        on any failure — startup is never blocked.
+
+        The adapter is cached per-bootloader instance after the first call.
+        """
+        if hasattr(self, "_agent_adapter_cache"):
+            return self._agent_adapter_cache
+
+        if not self.is_enabled("blueprint_agent_enabled"):
+            from blueprint_arch.agent_adapter import DisabledAdapter
+            self._agent_adapter_cache = DisabledAdapter(
+                "blueprint_agent_enabled is false for this persona."
+            )
+            return self._agent_adapter_cache
+
+        cfg = self.get_agent_config()
+        backend = cfg.get("backend", "disabled")
+        instructions_file = cfg.get("instructions_file")
+
+        from blueprint_arch.agent_adapter import make_adapter
+        adapter = make_adapter(
+            backend=backend,
+            project_root=self.project_root or Path("."),
+            instructions_file=instructions_file,
+        )
+        self._agent_adapter_cache = adapter
+        return adapter
 
 
 # Global Instance for UI/Server discovery
