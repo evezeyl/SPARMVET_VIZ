@@ -129,37 +129,30 @@ def define_data_import_server(input, output, session, *,
         # ── Testing mode: listing + upload slots + assignment table ──────────
         upload_blocks: list = []
 
-        if bootloader.is_enabled("metadata_ingestion_enabled"):
-            upload_blocks.append(
-                ui.div(
-                    ui.tags.small(
-                        "Metadata replacement (TSV)",
-                        class_="text-muted fw-semibold d-block mb-1 spv-text-xxs",
-                    ),
-                    ui.input_file(
-                        "data_import_metadata_upload", None,
-                        accept=[".tsv", ".csv"], multiple=False,
-                    ),
-                    class_="mb-2 px-2",
-                )
+        # IMPORT-UI-1: unified single file input — multi when import_helper on,
+        # single (metadata only) when only metadata_ingestion on.
+        meta_on = bootloader.is_enabled("metadata_ingestion_enabled")
+        ingest_on = bootloader.is_enabled("data_ingestion_enabled")
+        if meta_on or ingest_on:
+            multi = ingest_on  # allow multiple files only when full ingestion enabled
+            accept = [".tsv", ".csv", ".xlsx", ".xls"] if ingest_on else [".tsv", ".csv"]
+            hint = (
+                "💡 Hold Ctrl (Windows/Linux) or ⌘ Cmd (Mac) to select multiple files."
+                if multi else
+                "Select a TSV/CSV metadata file to replace the active manifest source."
             )
-
-        if bootloader.is_enabled("data_ingestion_enabled"):
             upload_blocks.append(
                 ui.div(
                     ui.tags.small(
-                        "Multi-file / Excel ingestion",
+                        "Data file(s) — assign each file to a dataset below",
                         class_="text-muted fw-semibold d-block mb-1 spv-text-xxs",
                     ),
                     ui.input_file(
                         "data_import_multi_upload", None,
-                        accept=[".tsv", ".csv", ".xlsx", ".xls"], multiple=True,
+                        accept=accept, multiple=multi,
                     ),
-                    ui.tags.small(
-                        "💡 Hold Ctrl (Windows/Linux) or ⌘ Cmd (Mac) while clicking to select multiple files at once.",
-                        class_="text-muted d-block spv-text-micro",
-                    ),
-                    # Assignment table + Apply rendered separately (doesn't reset upload widget)
+                    ui.tags.small(hint, class_="text-muted d-block spv-text-micro"),
+                    # Assignment table + Apply rendered separately (stable DOM node)
                     ui.output_ui("data_import_assignment_ui"),
                     class_="mb-2 px-2",
                 )
@@ -187,10 +180,15 @@ def define_data_import_server(input, output, session, *,
 
         cfg = active_cfg()
         raw = cfg.raw_config
-        ds_ids = list(raw.get("data_schemas", {}).keys())
-        if "metadata_schema" in raw:
-            ds_ids = ["metadata_schema"] + ds_ids
-        ds_ids = sorted(set(ds_ids))
+        # IMPORT-UI-1: limit choices to metadata schema only when full ingestion disabled
+        if bootloader.is_enabled("data_ingestion_enabled"):
+            ds_ids = list(raw.get("data_schemas", {}).keys())
+            if "metadata_schema" in raw:
+                ds_ids = ["metadata_schema"] + ds_ids
+            ds_ids = sorted(set(ds_ids))
+        else:
+            # Only metadata schema is replaceable via metadata_ingestion_enabled alone
+            ds_ids = ["metadata_schema"] if "metadata_schema" in raw else []
         ds_choices = {d: d for d in ds_ids}
 
         rows = []

@@ -25,6 +25,179 @@ from shiny import reactive, render, ui
 from app.modules.t3_recipe_engine import _op_label
 
 
+# ---------------------------------------------------------------------------
+# Module-level provenance helpers (headless-safe — no Shiny imports)
+# ---------------------------------------------------------------------------
+
+def build_export_provenance(
+    *,
+    now,
+    proj_id: str,
+    safe_name: str,
+    persona: str,
+    preset: str,
+    dpi: int,
+    active_tier: str,
+    scope_label: str,
+    all_plots: list,
+    tiers_exported: list,
+    active_filters: list,
+    manifest_sha: str,
+    data_sha: str,
+    bootloader,
+    orchestrator=None,
+    anchor_dir=None,
+) -> dict:
+    """Collect all export provenance fields for README, QMD, and image metadata.
+
+    ADR-069: all 8 required provenance fields + git info + software versions.
+    Headless-safe: takes plain Python objects, no Shiny imports.
+    """
+    import subprocess as _sp
+    import sys
+
+    # Git info (EXPORT-VERSION-1)
+    git_commit = "n/a"
+    release_version = "n/a"
+    try:
+        git_commit = _sp.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=_sp.DEVNULL, text=True,
+        ).strip()
+    except Exception:
+        pass
+    try:
+        release_version = _sp.check_output(
+            ["git", "describe", "--tags", "--always"],
+            stderr=_sp.DEVNULL, text=True,
+        ).strip()
+    except Exception:
+        pass
+
+    # Software versions (EXPORT-AUDIT-COMPLETE-1)
+    sw_versions: dict[str, str] = {"python": sys.version.split()[0]}
+    for _pkg in ("polars", "shiny", "plotnine"):
+        try:
+            _mod = __import__(_pkg)
+            sw_versions[_pkg] = getattr(_mod, "__version__", "unknown")
+        except Exception:
+            pass
+
+    # Manifest info (EXPORT-AUDIT-COMPLETE-1)
+    manifest_path_str = "n/a"
+    manifest_name = "n/a"
+    try:
+        _mp = bootloader.available_projects.get(proj_id)
+        if _mp:
+            manifest_path_str = str(_mp)
+            manifest_name = Path(str(_mp)).stem
+    except Exception:
+        pass
+
+    # Data source paths (EXPORT-AUDIT-COMPLETE-1)
+    data_source_paths: dict[str, str] = {}
+    if orchestrator is not None:
+        try:
+            _src = orchestrator.get_source_files(proj_id)
+            data_source_paths = {k: str(v) for k, v in (_src or {}).items()}
+        except Exception:
+            pass
+
+    # Decision hashes per dataset from Parquet metadata (EXPORT-HASH-2)
+    decision_hashes: dict[str, str] = {}
+    if anchor_dir is not None:
+        try:
+            from utils.hashing import get_parquet_metadata_hash
+            _seen: set[str] = set()
+            for _pid, _spec in all_plots:
+                _ds = _spec.get("target_dataset")
+                if _ds and _ds not in _seen:
+                    _seen.add(_ds)
+                    _pq = Path(str(anchor_dir)) / f"{_ds}.parquet"
+                    if _pq.exists():
+                        _h = get_parquet_metadata_hash(str(_pq))
+                        if _h:
+                            decision_hashes[_ds] = _h
+        except Exception:
+            pass
+
+    return {
+        "created_at": now.isoformat(),
+        "project_id": proj_id,
+        "manifest_name": manifest_name,
+        "manifest_path": manifest_path_str,
+        "persona_id": persona,
+        "active_tier": active_tier,
+        "export_scope": scope_label,
+        "bundle_label": safe_name,
+        "preset": preset,
+        "dpi": dpi,
+        "plot_count": len(all_plots),
+        "filter_count": len(active_filters),
+        "tiers_exported": tiers_exported,
+        "manifest_sha256": manifest_sha,
+        "data_batch_hash": data_sha,
+        "decision_hashes": decision_hashes,
+        "git_commit": git_commit,
+        "release_version": release_version,
+        "software_versions": sw_versions,
+        "data_source_paths": data_source_paths,
+    }
+
+
+def _embed_png_provenance(
+    png_bytes: bytes, prov: dict, plot_id: str, dataset_key: str = ""
+) -> bytes:
+    """Embed provenance as iTXt chunks in PNG bytes (EXPORT-IMG-META-1)."""
+    try:
+        from PIL import Image, PngImagePlugin
+        import io as _io
+        img = Image.open(_io.BytesIO(png_bytes))
+        info = PngImagePlugin.PngInfo()
+        fields = {
+            "sparmvet:plot_id": plot_id,
+            "sparmvet:project_id": prov.get("project_id", ""),
+            "sparmvet:persona_id": prov.get("persona_id", ""),
+            "sparmvet:manifest_sha256": prov.get("manifest_sha256", ""),
+            "sparmvet:data_batch_hash": prov.get("data_batch_hash", ""),
+            "sparmvet:decision_hash": prov.get("decision_hashes", {}).get(dataset_key, ""),
+            "sparmvet:git_commit": prov.get("git_commit", ""),
+            "sparmvet:created_at": prov.get("created_at", ""),
+        }
+        for k, v in fields.items():
+            if v:
+                info.add_itxt(k, v)
+        out = _io.BytesIO()
+        img.save(out, format="PNG", pnginfo=info)
+        return out.getvalue()
+    except Exception:
+        return png_bytes
+
+
+def _embed_svg_provenance(
+    svg_bytes: bytes, prov: dict, plot_id: str, dataset_key: str = ""
+) -> bytes:
+    """Embed provenance as SVG <metadata> XML block (EXPORT-IMG-META-1)."""
+    try:
+        import xml.etree.ElementTree as _ET
+        _ET.register_namespace("", "http://www.w3.org/2000/svg")
+        root = _ET.fromstring(svg_bytes)
+        meta_el = _ET.SubElement(root, "metadata")
+        meta_el.text = "\n".join([
+            f"sparmvet:plot_id={plot_id}",
+            f"sparmvet:project_id={prov.get('project_id', '')}",
+            f"sparmvet:persona_id={prov.get('persona_id', '')}",
+            f"sparmvet:manifest_sha256={prov.get('manifest_sha256', '')}",
+            f"sparmvet:data_batch_hash={prov.get('data_batch_hash', '')}",
+            f"sparmvet:decision_hash={prov.get('decision_hashes', {}).get(dataset_key, '')}",
+            f"sparmvet:git_commit={prov.get('git_commit', '')}",
+            f"sparmvet:created_at={prov.get('created_at', '')}",
+        ])
+        return _ET.tostring(root, encoding="unicode").encode("utf-8")
+    except Exception:
+        return svg_bytes
+
+
 def define_export_server(input, output, session, *,
                          bootloader, orchestrator, viz_factory,
                          current_persona, active_cfg,
@@ -289,6 +462,57 @@ def define_export_server(input, output, session, *,
                     lines.append(f"  {i}. {col} {op} {val_str}")
                 zf.writestr(f"{bundle_dir}/FILTERS.txt", "\n".join(lines))
 
+            # ── Hashes + Provenance (before tmpdir so image embedding can use it) ──
+            import hashlib as _hashlib
+            manifest_sha = ""
+            data_sha = ""
+            try:
+                _proj_mnf = bootloader.available_projects.get(proj_id)
+                if _proj_mnf:
+                    manifest_sha = _hashlib.sha256(
+                        Path(str(_proj_mnf)).read_bytes()
+                    ).hexdigest()
+            except Exception:
+                pass
+            if home_state is not None:
+                try:
+                    data_sha = home_state.get().get("data_batch_hash") or ""
+                except Exception:
+                    pass
+            if not data_sha:
+                try:
+                    _al = tier1_anchor()
+                    _da = _al.collect()
+                    _fp = f"{_da.columns}|{_da.shape}|{_da.head(500).write_csv()}"
+                    data_sha = _hashlib.sha256(_fp.encode()).hexdigest()
+                except Exception:
+                    pass
+
+            is_advanced = bootloader.is_enabled("t3_sandbox_enabled")
+            active_tier = tier_toggle.get()
+            export_t3 = is_advanced and active_tier == "T3"
+            tiers_exported = ["T1"] + (["T3"] if export_t3 else [])
+            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+
+            prov = build_export_provenance(
+                now=now,
+                proj_id=proj_id,
+                safe_name=safe_name,
+                persona=persona,
+                preset=preset,
+                dpi=dpi,
+                active_tier=active_tier,
+                scope_label=scope_label,
+                all_plots=all_plots,
+                tiers_exported=tiers_exported,
+                active_filters=active_filters,
+                manifest_sha=manifest_sha,
+                data_sha=data_sha,
+                bootloader=bootloader,
+                orchestrator=orchestrator,
+                anchor_dir=anchor_dir,
+            )
+
             # ── Render and save plots ─────────────────────────────────────
             # plot_bytes  → zip's plots/   in the user's chosen format (always).
             # qmd_plot_bytes → _render/    in a Quarto-compatible format.
@@ -366,6 +590,11 @@ def define_export_server(input, output, session, *,
 
                         with open(plot_path, "rb") as f:
                             raw = f.read()
+                        # EXPORT-IMG-META-1: embed provenance in image bytes
+                        if plot_fmt == "png":
+                            raw = _embed_png_provenance(raw, prov, p_id, _ds_key)
+                        elif plot_fmt == "svg":
+                            raw = _embed_svg_provenance(raw, prov, p_id, _ds_key)
                         plot_bytes[p_id] = raw
                         zf.writestr(f"{bundle_dir}/{_safe_ds}/plots/{p_id}.{plot_fmt}", raw)
 
@@ -393,10 +622,7 @@ def define_export_server(input, output, session, *,
                 #     at dataset level; per-plot column transforms happen inside VizFactory).
                 #     A note is added to README and report instead of a duplicate TSV.
                 # T3: only for advanced+ personas, and only when tier_toggle == "T3".
-                is_advanced = bootloader.is_enabled("t3_sandbox_enabled")
-                active_tier = tier_toggle.get()  # "T1", "T2", "T3"
-                export_t3 = is_advanced and active_tier == "T3"
-                t2_equals_t1 = True  # Update when dataset-level T2 transforms are implemented
+                # is_advanced / active_tier / export_t3 already computed before tmpdir block.
 
                 exported_datasets: set[str] = set()
                 exported_dfs: dict[str, "pl.DataFrame"] = {}  # ds_key → T1 DataFrame for report
@@ -536,35 +762,7 @@ def define_export_server(input, output, session, *,
                     except Exception as e:
                         zf.writestr(f"{bundle_dir}/recipes/t3_steps_ERROR.txt", str(e))
 
-            # ── Compute hashes for reproducibility ────────────────────────
-            import hashlib as _hashlib
-            manifest_sha = ""
-            data_sha = ""
-            try:
-                proj_manifest_path = bootloader.available_projects.get(proj_id)
-                if proj_manifest_path:
-                    manifest_bytes = Path(str(proj_manifest_path)).read_bytes()
-                    manifest_sha = _hashlib.sha256(manifest_bytes).hexdigest()
-            except Exception:
-                pass
-            # Prefer the session data_batch_hash (SHA256 of raw source file bytes,
-            # consistent with the session key). Fall back to a T1-content fingerprint
-            # only when home_state is unavailable (e.g. headless export path).
-            if home_state is not None:
-                try:
-                    data_sha = home_state.get().get("data_batch_hash") or ""
-                except Exception:
-                    pass
-            if not data_sha:
-                try:
-                    anchor_lf = tier1_anchor()
-                    df_anchor = anchor_lf.collect()
-                    fingerprint = f"{df_anchor.columns}|{df_anchor.shape}|{df_anchor.head(500).write_csv()}"
-                    data_sha = _hashlib.sha256(fingerprint.encode()).hexdigest()
-                except Exception:
-                    pass
-
-            tiers_exported = ["T1"] + (["T3"] if export_t3 else [])
+            # manifest_sha, data_sha, tiers_exported, prov — all computed before tmpdir block.
 
             # ── Lineage graph (ADR-074) ───────────────────────────────────
             # Shared-node DAG: one lineage_graph.json per export scope.
@@ -712,16 +910,39 @@ def define_export_server(input, output, session, *,
                 qmd_lines.append(f"| `{ds_key}` | {plots_str} |")
             qmd_lines.append("")
 
+            # Decision hash rows for QMD provenance table
+            _prov_dh = prov.get("decision_hashes", {})
+            _dh_qmd_rows = []
+            if _prov_dh:
+                for _ds_k, _ds_h in _prov_dh.items():
+                    _dh_qmd_rows.append(
+                        f"| Decision hash ({_ds_k}) | `{_ds_h}` | "
+                        f"SHA256 of wrangling recipe for `{_ds_k}` — read from Parquet metadata key `sparmvet_decision_hash` |"
+                    )
+            else:
+                _dh_qmd_rows.append(
+                    "| Decision hash | see Parquet metadata | "
+                    "SHA256 of wrangling recipe dict — one per T1/T2 Parquet file |"
+                )
+            # Software version row
+            _sw_qmd = prov.get("software_versions", {})
+            _sw_qmd_str = "; ".join(f"{k}={v}" for k, v in _sw_qmd.items()) if _sw_qmd else "n/a"
+
             qmd_lines += [
                 "## Provenance",
                 "",
+                f"**Git commit:** `{prov['git_commit']}`  ",
+                f"**Release:** `{prov['release_version']}`  ",
+                f"**Software:** {_sw_qmd_str}  ",
+                f"**Manifest:** `{prov['manifest_name']}` — `{prov['manifest_path']}`  ",
+                "",
                 "| Hash | Value | Meaning |",
                 "|------|-------|---------|",
-                f"| Manifest SHA256 | `{manifest_sha or 'n/a'}` | SHA256 of manifest YAML file bytes |",
-                f"| Data SHA256 | `{data_sha or 'n/a'}` | SHA256 of all raw source file bytes (sorted by dataset id) |",
-                f"| Recipe hash | see Parquet metadata key `sparmvet_decision_hash` | SHA256 of wrangling recipe dict — one per T1/T2 Parquet file |",
+                f"| Manifest SHA256 | `{prov['manifest_sha256'] or 'n/a'}` | SHA256 of manifest YAML file bytes |",
+                f"| Data batch hash | `{prov['data_batch_hash'] or 'n/a'}` | SHA256 of all raw source file bytes (sorted by dataset id) |",
+                *_dh_qmd_rows,
                 "",
-                "> These three hashes allow independent verification that this report was generated",
+                "> These hashes allow independent verification that this report was generated",
                 "> from the exact manifest, raw data, and wrangling recipe present at export time.",
                 "> To recompute: `SHA256(manifest_yaml_bytes)`, `SHA256(sorted per-file SHA256s)`,",
                 "> and read `sparmvet_decision_hash` from each Parquet metadata block.",
@@ -889,10 +1110,11 @@ def define_export_server(input, output, session, *,
                 "---",
                 "",
                 "> Report generated by SPARMVET-VIZ.",
+                f"> Git commit: `{prov['git_commit']}` | Release: `{prov['release_version']}`",
                 "> Recipes are in the `recipes/` folder.",
-                f"> Manifest SHA256 (YAML file): {manifest_sha or 'n/a'}",
-                f"> Data SHA256 (raw source files): {data_sha or 'n/a'}",
-                f"> Recipe hash (wrangling recipe): see `sparmvet_decision_hash` in each Parquet metadata block.",
+                f"> Manifest SHA256 (YAML file): {prov['manifest_sha256'] or 'n/a'}",
+                f"> Data batch hash (raw source files): {prov['data_batch_hash'] or 'n/a'}",
+                "> Decision hashes (wrangling recipe): see `sparmvet_decision_hash` in each Parquet metadata block.",
             ]
 
             qmd_source = "\n".join(qmd_lines)
@@ -956,26 +1178,54 @@ def define_export_server(input, output, session, *,
                 mapping_block.append(f"    data : {', '.join(tier_files)}")
                 mapping_block.append(f"    plots: {', '.join(plot_list)}")
 
+            # Decision hashes block for README
+            _dh = prov.get("decision_hashes", {})
+            _dsp = prov.get("data_source_paths", {})
+            _sw = prov.get("software_versions", {})
+            _sw_str = ", ".join(f"{k}={v}" for k, v in _sw.items()) if _sw else "n/a"
+            _dh_lines = []
+            if _dh:
+                for _ds_k, _ds_h in _dh.items():
+                    _dh_lines.append(f"  {_ds_k}: {_ds_h}")
+            else:
+                _dh_lines.append("  n/a (see Parquet metadata key 'sparmvet_decision_hash')")
+            _dsp_lines = []
+            for _ds_k, _ds_p in _dsp.items():
+                _dsp_lines.append(f"  {_ds_k}: {_ds_p}")
+
             readme_lines = [
                 "SPARMVET-VIZ Export Bundle",
                 "=" * 40,
-                f"Timestamp        : {now.isoformat()}",
-                f"Project          : {proj_id}",
-                f"User             : {safe_name}",
-                f"Persona          : {persona}",
-                f"Preset           : {preset} (DPI={dpi})",
-                f"Plots            : {len(all_plots)}",
-                f"Tiers            : {', '.join(tiers_exported)}",
-                f"Filters          : {len(active_filters)} active",
+                f"Timestamp        : {prov['created_at']}",
+                f"Project          : {prov['project_id']}",
+                f"Manifest name    : {prov['manifest_name']}",
+                f"Manifest path    : {prov['manifest_path']}",
+                f"User             : {prov['bundle_label']}",
+                f"Persona          : {prov['persona_id']}",
+                f"Preset           : {prov['preset']} (DPI={prov['dpi']})",
+                f"Active tier      : {prov['active_tier']}",
+                f"Export scope     : {prov['export_scope']}",
+                f"Plots            : {prov['plot_count']}",
+                f"Tiers            : {', '.join(prov['tiers_exported'])}",
+                f"Filters          : {prov['filter_count']} active",
+                "",
+                "Software",
+                "-" * 40,
+                f"Versions         : {_sw_str}",
+                f"Git commit       : {prov['git_commit']}",
+                f"Release version  : {prov['release_version']}",
                 "",
                 "Reproducibility",
                 "-" * 40,
-                f"Manifest SHA256  : {manifest_sha or 'n/a'}",
+                f"Manifest SHA256  : {prov['manifest_sha256'] or 'n/a'}",
                 f"  (SHA256 of manifest YAML file bytes)",
-                f"Data SHA256      : {data_sha or 'n/a'}",
+                f"Data batch hash  : {prov['data_batch_hash'] or 'n/a'}",
                 f"  (SHA256 of all raw source file bytes, sorted by dataset id)",
-                f"Recipe hash      : see Parquet metadata key 'sparmvet_decision_hash'",
-                f"  (SHA256 of wrangling recipe dict — one per T1/T2 Parquet file)",
+                "Decision hashes (per dataset):",
+                *_dh_lines,
+                "",
+                "Data source paths:",
+                *(_dsp_lines if _dsp_lines else ["  n/a"]),
                 "",
                 *mapping_block,
                 "",

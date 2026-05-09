@@ -21,13 +21,13 @@
 
 ### Export / Reproducibility
 
-- [ ] **EXPORT-HASH-2** `[sonnet/medium]`: Read `decision_hash` from Parquet metadata key `sparmvet_decision_hash` at export time; include in bundle README, report.qmd, and image file metadata. Use `get_parquet_metadata_hash(path)` per materialized T1/T2 Parquet. Paths via `bootloader.get_location("anchors")` + naming convention. ADR-069 audit trail.
+- [x] **EXPORT-HASH-2** `[sonnet/medium]`: Read `decision_hash` from Parquet metadata key `sparmvet_decision_hash` at export time; include in bundle README, report.qmd, and image file metadata. Use `get_parquet_metadata_hash(path)` per materialized T1/T2 Parquet. Paths via `bootloader.get_location("anchors")` + naming convention. ADR-069 audit trail.
 
-- [ ] **EXPORT-VERSION-1** `[haiku/low]`: Add `git_commit` (`git rev-parse --short HEAD`) and `release_version` (`git describe --tags --always`) to all export surfaces: bundle README, report.qmd header, and image file metadata. ADR-069.
+- [x] **EXPORT-VERSION-1** `[haiku/low]`: Add `git_commit` (`git rev-parse --short HEAD`) and `release_version` (`git describe --tags --always`) to all export surfaces: bundle README, report.qmd header, and image file metadata. ADR-069.
 
-- [ ] **EXPORT-IMG-META-1** `[sonnet/medium]`: Embed provenance subset (8 fields: `data_batch_hash`, `manifest_sha256`, `decision_hash`, `git_commit`, `release_version`, `created_at`, `plot_id`, `persona_id`) in exported image file metadata. PNG → Pillow `PngInfo` iTXt chunks (`sparmvet:` prefix). SVG → `<metadata>` XML block. PDF → XMP metadata. ADR-069 Rule 3.
+- [x] **EXPORT-IMG-META-1** `[sonnet/medium]`: Embed provenance subset (8 fields: `data_batch_hash`, `manifest_sha256`, `decision_hash`, `git_commit`, `release_version`, `created_at`, `plot_id`, `persona_id`) in exported image file metadata. PNG → Pillow `PngInfo` iTXt chunks (`sparmvet:` prefix). SVG → `<metadata>` XML block. ADR-069 Rule 3.
 
-- [ ] **EXPORT-AUDIT-COMPLETE-1** `[sonnet/medium]`: Add all remaining missing provenance fields to bundle README and report.qmd: `created_at`, `manifest_name`/path, `persona_id`, `active_tier`, `software_versions`, `data_source_paths`. Introduce `build_export_provenance()` helper in `export_handlers.py`. ADR-069.
+- [x] **EXPORT-AUDIT-COMPLETE-1** `[sonnet/medium]`: Add all remaining missing provenance fields to bundle README and report.qmd: `created_at`, `manifest_name`/path, `persona_id`, `active_tier`, `software_versions`, `data_source_paths`. Introduce `build_export_provenance()` helper in `export_handlers.py`. ADR-069.
 
 ### Session / Import
 
@@ -41,9 +41,9 @@
 
 > Completed: SIDEBAR-CONFIGS-1, SIDEBAR-REGISTRY-1, SIDEBAR-VALIDATE-1, STATIC-VIEW-1c. See [tasks_archive_2026-05-09.md](archives/tasks_archive_2026-05-09.md).
 
-- [ ] **STATIC-VIEW-1a** `[haiku/low]`: Hide the view-title banner in fully static personas. Gate on `interactivity_enabled: false`.
+- [x] **STATIC-VIEW-1a** `[haiku/low]`: Hide the view-title banner in fully static personas. Gate on `interactivity_enabled: false`.
 
-- [ ] **STATIC-VIEW-1b** `[sonnet/low]`: T2 as default displayed tier for static personas — `active_tier=T2` on first render; T1 toggle not exposed. Decide: force in bootloader or `default_tier` field in persona template.
+- [x] **STATIC-VIEW-1b** `[sonnet/low]`: T2 as default displayed tier for static personas — tier toggle strip hidden when `interactivity_enabled: false`; `_track_tier_toggle` fallback returns "T2" when input is absent.
 
 ### Diagnostic Error Discipline (ADR-078)
 
@@ -71,7 +71,7 @@
 
 ### app/modules/ Two-Category Law Refactor (ADR-045)
 
-- [ ] **ADR045-REFACTOR** `[opus/high]`: Several files in `app/modules/` import `shiny` directly, violating the Two-Category Law. Decision needed: scope and migration plan before touching live handlers. See audit §4A.
+- [ ] **ADR045-REFACTOR** `[opus/high]`: Several files in `app/modules/` import `shiny` directly, violating the Two-Category Law. Decision needed: scope and migration plan before touching live handlers. See audit §4A. [Not sure if wrong - because its part of the app itslef]
 
 ### UI — Implementation tasks from persona scoping decisions
 
@@ -79,7 +79,7 @@
 
 - [ ] **UI-TITLE-1** `[sonnet/medium]`: Implement UI title/subtitle resolution: persona config override > manifest `info.display_name`/`info.subtitle` > nothing. `UI_TITLE` off hides both. Add `info.subtitle` field to manifest schema.
 
-- [ ] **IMPORT-UI-1** `[sonnet/high]`: Unify the two import browse buttons into a single browse + mapping panel. `IMP_HLP` on → all manifest data sources. `META_ING` on alone → metadata schema only. Import behavior: overwrite. Affects `app/handlers/ingestion_handlers.py` and import panel UI.
+- [x] **IMPORT-UI-1** `[sonnet/high]`: Unify the two import browse buttons into a single browse + mapping panel. `IMP_HLP` on → all manifest data sources. `META_ING` on alone → metadata schema only. Import behavior: overwrite. Implemented in `app/handlers/data_import_handlers.py`.
 
 ### Deployment
 
@@ -95,7 +95,7 @@
 - [ ] Exports → retest / debug
 - [ ] Proper definition of the session ghost save and save function when Tier 3 activated
 - [ ] Import and mapping of the files to the manifest
-- [ ] **PREVIEW-ALLROWS-1** `[sonnet/low]`: Add "Show all rows" toggle to data preview. Off by default (100-row cap). On = uncapped. Respects active tier. Not persona-gated. Persisted in `home_state`. Impl: `home_data_preview` render in `app/handlers/home_theater.py`.
+- [x] **PREVIEW-ALLROWS-1** `[sonnet/low]`: Add "Show all rows" toggle to data preview. Off by default (100-row cap). On = uncapped. Implemented via `preview_all_rows` switch in accordion header + wired into `home_data_preview` and `table_reference` renders.
 - [ ] `[FEATURE]` Label x/y axis adjustment module — edit title, policy change, color changes, points display — registered in audit. Large feature, grant-exploration candidate.
 
 ---

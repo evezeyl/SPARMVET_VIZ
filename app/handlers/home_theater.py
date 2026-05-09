@@ -619,38 +619,50 @@ def define_server(input, output, session, *,
                 "applied on top of T2. Only affects your session.",
             )
 
-        theater_header = ui.div(
-            ui.tags.span(
-                "Data to show:",
-                class_="fw-semibold me-3",
-                style="white-space: nowrap; color: #345beb;",
-            ),
-            ui.input_radio_buttons(
-                "tier_toggle",
-                label=None,
-                choices=tier_choices,
-                # Default T2: in most projects T2 = T1 so there is no cost,
-                # and projects with processing steps show the intended result.
-                # Use static default — tier_toggle reactive value is NOT read here
-                # so that tier changes do NOT invalidate/re-render dynamic_tabs DOM.
-                # The _track_tier_toggle effect keeps tier_toggle reactive in sync.
-                selected="T2",
-                inline=True,
-            ),
-            # Phase 21-E: Comparison Mode toggle — shown by comparison_mode_toggle_ui
-            # render when persona is advanced+ and tier is T3.
-            ui.output_ui("comparison_mode_toggle_ui"),
-            class_="theater-header-strip",
-        )
+        # STATIC-VIEW-1a: static personas (interactivity_enabled=false) have no tier
+        # switching — hide the strip entirely. T2 is the implicit default via the
+        # _track_tier_toggle fallback (safe_input returns "T2" when input absent).
+        if bootloader.is_enabled("interactivity_enabled"):
+            theater_header = ui.div(
+                ui.tags.span(
+                    "Data to show:",
+                    class_="fw-semibold me-3",
+                    style="white-space: nowrap; color: #345beb;",
+                ),
+                ui.input_radio_buttons(
+                    "tier_toggle",
+                    label=None,
+                    choices=tier_choices,
+                    # Default T2: in most projects T2 = T1 so there is no cost,
+                    # and projects with processing steps show the intended result.
+                    # Use static default — tier_toggle reactive value is NOT read here
+                    # so that tier changes do NOT invalidate/re-render dynamic_tabs DOM.
+                    # The _track_tier_toggle effect keeps tier_toggle reactive in sync.
+                    selected="T2",
+                    inline=True,
+                ),
+                # Phase 21-E: Comparison Mode toggle — shown by comparison_mode_toggle_ui
+                # render when persona is advanced+ and tier is T3.
+                ui.output_ui("comparison_mode_toggle_ui"),
+                class_="theater-header-strip",
+            )
+        else:
+            theater_header = ui.div()
 
         # Data preview slot — always rendered regardless of groups presence
         # so the Shiny output ID is always mounted.
         data_preview_section = ui.div(
             ui.accordion(
                 ui.accordion_panel(
-                    ui.tags.span(
-                        "Data Preview",
-                        title="100 rows from the active plot dataset at the selected tier",
+                    ui.div(
+                        ui.tags.span(
+                            "Data Preview",
+                            title="Preview the active plot dataset at the selected tier",
+                            class_="me-3",
+                        ),
+                        # PREVIEW-ALLROWS-1: "Show all rows" toggle — off by default (100-row cap).
+                        ui.input_switch("preview_all_rows", "All rows", value=False),
+                        class_="d-flex align-items-center",
                     ),
                     # Phase 21-F-3: Column selector above the DataGrid
                     ui.output_ui("home_col_selector_ui"),
@@ -889,7 +901,8 @@ def define_server(input, output, session, *,
     @output
     @render.data_frame
     def home_data_preview():
-        """100-row preview for the active plot's dataset. Applies committed filters + col selector."""
+        """Preview for the active plot's dataset. Applies committed filters + col selector.
+        PREVIEW-ALLROWS-1: capped at 100 rows by default; toggle 'preview_all_rows' to uncap."""
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
@@ -901,7 +914,9 @@ def define_server(input, output, session, *,
             drops = [c for c in _t3_drop_columns() if c in lf.collect_schema().names()]
             if drops:
                 lf = lf.drop(drops)
-            df = lf.head(100).collect()
+            # PREVIEW-ALLROWS-1: respect the "Show all rows" toggle; default 100-row cap.
+            show_all = safe_input(input, "preview_all_rows", False)
+            df = lf.collect() if show_all else lf.head(100).collect()
 
             # Apply column visibility selection (Phase 21-F-4) — preview-only filter
             visible = safe_input(input, "preview_col_selector", None)
@@ -1473,7 +1488,9 @@ def define_server(input, output, session, *,
     @output
     @render.table
     def table_reference():
-        return tier_reference().head(100).collect()
+        show_all = safe_input(input, "preview_all_rows", False)
+        lf = tier_reference()
+        return lf.collect() if show_all else lf.head(100).collect()
 
     @output
     @render.plot
