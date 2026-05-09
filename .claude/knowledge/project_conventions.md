@@ -351,3 +351,67 @@ Every `assets/gallery_data/<recipe>/recipe_meta.md` must follow this structure:
 **Rationale:** the previous format used `##` for both taxonomy lines and section headings — visually indistinguishable. The blockquote tag strip is compact, left-bordered, and semantically distinct.
 
 **Reference:** `assets/gallery_data/recipe_template.md` is the canonical template.
+
+---
+
+## 17. Fail-Fast Configuration Discipline (ADR-077, 2026-05-09)
+
+**Principle:** *Silent suppression hides bugs. Silent rewriting hides intent. The default response to a contradictory configuration is to halt with a clear error, not to guess what the operator probably meant.*
+
+**Rule for new flag dependencies:** when adding a flag with a parent gate, default to **fatal** (validator-enforced) cascade. Soft (silent-suppression) cascades are an explicit backwards-compatibility exception, not a pattern to copy.
+
+| Cascade type | Where enforced | When to use |
+|---|---|---|
+| **Fatal** | `PersonaValidator._FATAL_CASCADE_GATES` + Rule 7 — startup error blocks app | Default for any new flag-dependency. Examples: ADR-075 `manifest_edit_enabled`, ADR-076 `blueprint_agent_enabled`. |
+| **Soft** | `bootloader._load_persona_config()` — silently sets child to false + warning | Legacy compatibility only (Group B `interactivity_enabled`, Group C `import_helper_enabled`). Do NOT use for new flags without explicit ADR justification. |
+
+**ADR authoring rule:** every ADR introducing a new flag MUST declare cascade type explicitly with rationale. The cascade type is documented in `rules_persona_feature_flags.md` Cascade Enforcement § when the rule is added.
+
+---
+
+## 18. Diagnostic Error Discipline — `DeploymentError` (ADR-078, 2026-05-09)
+
+**Use this whenever a startup-time failure is surfaced to the operator.**
+
+```python
+from app.modules.deployment_error import DeploymentError, exit_if_errors
+
+errors: list[DeploymentError] = []
+if some_check_fails():
+    errors.append(DeploymentError(
+        component="MyValidator",                # who emitted it
+        problem="One sentence — what is wrong",
+        location="path/to/file.yaml or features.foo in path/...",
+        fix="Concrete remediation. Name the file. Name the key. Name the value.",
+        who="operator",                         # operator | developer | both
+        reference=".claude/rules/<rule_file>.md §<section> + ADR-<N>",
+        related=("other_flag", "other_file"),  # optional
+    ))
+exit_if_errors(errors, header="My component failed validation")
+```
+
+**Five mandatory fields:** `component`, `problem`, `location`, `fix`, `who`. Optional: `reference`, `related`. Format is fixed across every component so operators and log-scrapers can rely on it.
+
+**Where to use:**
+
+| Context | Pattern |
+|---|---|
+| Validator returns errors to caller | `def validate(...) -> list[DeploymentError]` |
+| Startup integration point | `exit_if_errors(errors)` — prints formatted block to stderr + `sys.exit(1)` |
+| Embedded server / test harness | `raise_if_errors(errors)` — raises `DeploymentFailure` with structured payload |
+| CLI script | `print(format_errors_block(errors), file=sys.stderr)` + non-zero exit |
+
+**`who` field semantics:**
+- `operator` — config edit fixes it; no code change needed (most common). Galaxy admins, NVI lab techs, Posit Connect operators.
+- `developer` — code change required. Module bug, broken contract, missing implementation.
+- `both` — config issue that also reveals an underlying design problem worth raising.
+
+**`fix` field discipline:** "Invalid configuration" is a diagnostic failure. "Set `blueprint_agent_enabled: false` in `developer_template.yaml`" is a diagnostic success. Always name the file, the key, and the new value.
+
+**Roadmap:** Phase B (DIAG-CORE-1, ✅) covers PersonaValidator. Phase C (committed work, see `tasks.md` "Diagnostic Error Discipline" block) retrofits SidebarValidator, Bootloader, Connectors, manifest preflight, plus a `docs/troubleshooting/` reference catalog. Runtime errors (ingestion / assembler / wrangler / viz_factory / T3 apply / Blueprint) are deferred to ADR-079 because their audience and render path differ.
+
+**Forbidden patterns:**
+- `raise ValueError(f"validation failed: {'; '.join(strs)}")` at startup boundaries
+- bare `print` warnings for errors that should block startup
+- swallowing exceptions silently (e.g. bare `except:` returning empty results)
+

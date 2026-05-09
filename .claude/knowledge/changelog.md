@@ -96,3 +96,32 @@ All 8 `libs/` packages now follow the two-tier dependency model:
 - **ADR-076** — BLUEPRINT AI Agent Helper (10 tasks pending)
 
 ---
+## [2026-05-09 — afternoon] — Configuration discipline + diagnostic errors (Phase 32)
+
+### ADRs authored
+- **ADR-076 (revised)** — BLUEPRINT AI Agent Helper: §10 tool-call protocol (HTML-comment fenced JSON for `claude_cli`) + §11 subprocess isolation (per-session `cwd`, flock single-flight, auth probe). Streaming dropped from Phase 1.
+- **ADR-077** — No-Silent-Suppression principle. Group D cascades are fatal validator errors, not silent bootloader rewrites. General principle: *"Silent suppression hides bugs. Silent rewriting hides intent."*
+- **ADR-078** — Diagnostic Error Discipline. `DeploymentError` dataclass with five mandatory fields (component, problem, location, fix, who). Phase B delivered (PersonaValidator + server.py + CLI). Phase C committed: SidebarValidator, Bootloader, Connectors, manifest preflight, troubleshooting catalog, CLI scripts.
+- **ADR-079** — Runtime Error Discipline (placeholder). Distinct treatment from ADR-078 because audience (analyst, not operator), fix surface (data/manifest, not config), and render path (Shiny, not stderr) differ. Targets ingestion / assembler / wrangler / viz_factory / T3 apply / Blueprint manifest validation.
+
+### Tasks closed
+- **BP-AGENT-FLAG-1** ✅ — `blueprint_agent_enabled` flag + config block landed in 8 templates; cascade is fatal (Rule 7).
+- **DIAG-CORE-1** ✅ — `app/modules/deployment_error.py` + PersonaValidator retrofit + server.py + CLI script updated.
+
+### Files added
+- `app/modules/deployment_error.py` — `DeploymentError` dataclass + `format_errors_block` / `exit_if_errors` / `raise_if_errors` / `DeploymentFailure`.
+
+### Files modified
+- All 8 `config/ui/templates/*.yaml` — `blueprint_agent_enabled` flag + (developer/qa) `blueprint_agent:` config block.
+- `app/modules/persona_validator.py` — `_FATAL_CASCADE_GATES` + Rule 7; returns `list[DeploymentError]`.
+- `app/src/server.py` — `exit_if_errors()` startup gate replaces `raise ValueError(...)`.
+- `app/src/bootloader.py` — Group D cascade explicitly NOT applied (per ADR-077). Docstring points at PersonaValidator.
+- `scripts/validate_persona_config.py` — `format_errors_block()` for output.
+- `.claude/rules/rules_persona_feature_flags.md` — Group D, Full Flag Matrix, Cascade Enforcement §4–5 (now FATAL), Misconfiguration table, Files Governed.
+- `.claude/knowledge/project_conventions.md` — new sections 17 (Fail-Fast Configuration Discipline) and 18 (DeploymentError pattern).
+
+### Convention shifts
+- New cascades default to **fatal** (validator-enforced). Soft cascades require ADR justification.
+- Startup-time errors MUST emit `DeploymentError` records, not bare strings or `raise ValueError`.
+- Streaming SSE explicitly out of scope for the BLUEPRINT agent in Phase 1; all backends buffered.
+

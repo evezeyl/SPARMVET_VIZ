@@ -3030,3 +3030,249 @@ Because Claude Code scopes session history per project directory, running the su
 | `BP-AGENT-UI-1` | `[sonnet/high]` | Chat panel render outputs in `blueprint_handlers.py`: conversation log, decision accordion, Apply gate, single-flight gate, data visibility toggle, cold-start greeting |
 | `BP-AGENT-CSS-1` | `[haiku/low]` | `.bp-agent-*` rules in `config/ui/theme.css` |
 | `BP-AGENT-REPORT-1` | `[sonnet/low]` | Per-session `agent_sessions/{uuid}/` bundle (`conversation.jsonl`, `report.qmd`, `manifest_sha256.txt`) |
+
+---
+
+## ADR-077: Configuration Validation Discipline — Fail-Fast over Silent Suppression (2026-05-09)
+
+**Status:** DECIDED — applied to Group D cascades from this date forward.
+
+**Context:** While implementing BP-AGENT-FLAG-1 we initially copied the existing cascade pattern: when a child flag (`blueprint_agent_enabled`) was declared `True` while its master gate (`blueprint_enabled`) was `False`, the bootloader silently forced the child to `False` and logged a `[Bootloader] WARNING:` line. The same pattern already existed for several other cascades (`interactivity_enabled` → t3/comparison/session/audit, `import_helper_enabled` → data_ingestion, planned `blueprint_enabled` → manifest_edit).
+
+The user pushed back: *"silent failure / silent suppression usually not desired."* The argument:
+
+- The YAML state and the runtime state diverge from the operator's perspective. The file says one thing; the app does another.
+- The only signal is a warning line in stdout. Operators on Galaxy / Posit Connect / IRIDA / production deployments may never see it.
+- "If off it's off, if on it's on" — flag values should mean exactly what they say. If the configuration is contradictory, the app should refuse to run rather than guess what the operator meant.
+
+**Decision:** **Silent suppression is the wrong default for new cascades. Configuration contradictions are fatal startup errors.**
+
+The bootloader does not rewrite flag values. `PersonaValidator` (Rule 7) raises a clear error message when a contradiction is detected; the operator must fix the YAML before the app starts.
+
+### Rule application
+
+| Cascade | Treatment | Reason |
+|---|---|---|
+| Group B: `interactivity_enabled` → t3/comparison/session/audit | **Soft** (silent suppression + warning) — unchanged | Many existing templates carry inherited inconsistencies from earlier phases; converting to fatal would break legacy configurations across Galaxy/IRIDA deployments. Pragmatic acceptance of tech debt. |
+| Group C: `import_helper_enabled` → `data_ingestion_enabled` | **Soft** (silent suppression + warning) — unchanged | Same rationale as Group B. |
+| Group D: `blueprint_enabled` → `manifest_edit_enabled` (ADR-075) | **FATAL** | Advanced IDE feature added in Phase 31. No legacy configurations carry it. Silent divergence here would mislead developers about what they actually have access to. |
+| Group D: `blueprint_enabled` → `blueprint_agent_enabled` (ADR-076) | **FATAL** | Same as above. The agent is a high-trust feature where confusion about its activation state has real consequences (operators may believe the agent is participating in a session when it's silently disabled). |
+
+### Implementation
+
+- `app/modules/persona_validator.py` defines two distinct cascade dicts:
+  - `_CASCADE_GATES` — soft cascades, produce Rule 5 warnings only.
+  - `_FATAL_CASCADE_GATES` — fatal cascades, produce Rule 7 errors that block startup.
+- `app/src/bootloader.py` `_load_persona_config()`:
+  - Continues to apply soft cascades (Group B, Group C) for backward compatibility.
+  - Does **not** silently suppress Group D flags — they pass through unchanged so the validator sees the operator's actual intent.
+- `PersonaValidator.validate()` Rule 7 emits a fatal error per Group D contradiction:
+  ```
+  '<child>=True' requires '<master>=True'.
+  In '<template_path>': '<master>' is False.
+  Fix the template — set '<child>: false' or enable '<master>'.
+  ```
+- `scripts/validate_persona_config.py --all` exits non-zero on Rule 7 violations (CI-gateable).
+
+### Consequences
+
+- **Operator experience:** typos and stale flag combinations surface immediately as a clear error message, not as a feature mysteriously not working.
+- **Backward compatibility:** zero breakage — all 8 shipped templates pass under the new rule (verified). The change only affects future templates and operators who deliberately write contradictory configs.
+- **Future direction:** the soft-cascade pattern (§1–3 of `rules_persona_feature_flags.md` Cascade Enforcement) is preserved for Groups B and C **only as legacy compatibility**. New cascades introduced by future ADRs SHOULD default to fatal unless there is a specific argument for softness, and the ADR should make that argument explicit.
+- **Migration path:** if a future audit confirms no real-world templates carry Group B / Group C inconsistencies, those soft cascades can be promoted to fatal in a separate ADR. This is **not done now** because: (a) it's out of the scope this ADR was raised to address, (b) the soft cascades pre-date this principle and may be load-bearing for deployments outside the developer's visibility.
+
+### General principle (load-bearing for future config decisions)
+
+> **Silent suppression hides bugs. Silent rewriting hides intent. The default response to a contradictory configuration is to halt with a clear error, not to guess what the operator probably meant.**
+
+This principle applies beyond persona templates: deployment profiles, manifest validators, ingestion contracts, persona-deployment compatibility checks, and any future configuration surface. When in doubt, fail fast.
+
+**Exceptions** are documented per ADR with explicit rationale:
+- Existing soft cascades (Group B, Group C) — backward compatibility.
+- Runtime fallbacks (e.g. `claude` CLI not installed → `DisabledAdapter`) — these are environmental conditions, not configuration mistakes; warning + degraded mode is correct.
+- Optional features with safe defaults (e.g. unset `gallery_awareness` → `False`) — absence is not a contradiction.
+
+When adding a new flag with a dependency, the author MUST decide explicitly: fatal cascade (default) or soft cascade with rationale. The decision is recorded in the ADR introducing the flag and reflected in `rules_persona_feature_flags.md` Cascade Enforcement.
+
+---
+
+## ADR-078: Diagnostic Error Discipline — Operator-Readable Failures (2026-05-09)
+
+**Status:** DECIDED — Phase B applied to PersonaValidator; Phase C (full startup sweep) tracked as `DIAG-*` tasks; runtime-error treatment deferred to ADR-079.
+
+**Context:** ADR-077 establishes that contradictory configurations must halt rather than be silently rewritten. That decision is only useful if the resulting halt is *actionable*. The original startup error pattern was:
+
+```python
+raise ValueError(f"Persona template validation failed: {'; '.join(errors)}")
+```
+
+…which yields a Python traceback in stderr, with the operator having to read past 30 lines of frame stack to find a single `;`-joined sentence. For a developer who wrote the code that's fine; for an NVI lab tech, a Galaxy admin, or a Posit Connect operator who has never opened the codebase, it is approximately useless.
+
+The user framed the requirement: *"defensive programming to help when there is failure to point person developer or in charge to implement / deploy find what is the problem fast"* — and reinforced that this should be a general principle, not a one-off polish.
+
+The principle is the load-bearing decision; the dataclass and preflight wrapper are the first concrete application.
+
+---
+
+### General principle (load-bearing for future error surfaces)
+
+> **When a system fails, surface enough context that the person closest to the fix can act on it without further investigation. Five fields, every time: WHAT broke, WHERE, WHY, HOW to fix, WHO is responsible.**
+
+This applies to startup config errors (this ADR's scope), and is intended to be reused for runtime pipeline errors (ADR-079, deferred), deployment-profile validation, manifest contract validation, ingestion failures, and any future failure mode where the operator and the developer are not the same person.
+
+The discipline has three commitments:
+
+1. **No bare exceptions at user-facing boundaries.** Stack traces are for developers reading logs, not for operators reading a deployment failure.
+2. **Every error names its audience.** A `who` field on every error record — `operator`, `developer`, or `both` — so the right person opens the right file.
+3. **Every error proposes a fix.** "Invalid configuration" is a diagnostic failure. "Set `blueprint_agent_enabled: false` in `developer_template.yaml` line 18" is a diagnostic success.
+
+---
+
+### Decision — `DeploymentError` dataclass
+
+A single structured record, defined in `app/modules/deployment_error.py`. Headless-safe (no Shiny imports), importable everywhere.
+
+```python
+@dataclass(frozen=True)
+class DeploymentError:
+    component: str           # who emitted it: "PersonaValidator", "Bootloader", "IridaConnector"
+    problem: str             # one-sentence statement of what is wrong
+    location: str            # file path (+ line/key when available)
+    fix: str                 # concrete remediation (multi-line OK)
+    who: str = "operator"    # "operator" | "developer" | "both"
+    reference: str = ""      # rule file / ADR / URL — optional
+    related: tuple[str, ...] = ()  # related identifiers — optional
+```
+
+Plus three helpers:
+
+| Helper | Use |
+|---|---|
+| `error.format()` | Render a single error as a labelled block (used in tests, logs). |
+| `format_errors_block(errors, header=...)` | Render a list with separator + header + footer; returns "" if list is empty. |
+| `exit_if_errors(errors, header=...)` | Print the block to stderr and `sys.exit(1)`. No-op if list is empty — safe to call unconditionally at startup. |
+| `raise_if_errors(errors, header=...)` | Same but raises `DeploymentFailure` instead of exiting (for embedded servers, test harnesses). |
+
+---
+
+### Output format
+
+The format is fixed across every component so operators and tooling can rely on it:
+
+```
+========================================================================
+SPARMVET startup blocked — persona configuration is invalid
+========================================================================
+
+[FATAL] 'blueprint_agent_enabled=True' requires 'blueprint_enabled=True'
+  Component:  PersonaValidator
+  Location:   features.blueprint_agent_enabled in config/ui/templates/foo_template.yaml
+  Fix:        Edit the template — either set 'blueprint_agent_enabled: false'
+              (simplest), or set 'blueprint_enabled: true' if you intend to
+              give this persona access to the parent feature. Both flags
+              must agree.
+  Who:        operator
+  See:        .claude/rules/rules_persona_feature_flags.md §Cascade-D + ADR-076 §6 + ADR-077
+  Related:    blueprint_enabled
+
+========================================================================
+Fix the errors above and restart. The app cannot start in a contradictory state.
+(See ADR-077 for the no-silent-suppression rule and ADR-078 for the
+ diagnostic-error discipline that produced this output.)
+```
+
+The block goes to **stderr**, not stdout, so it survives output redirection and is visible in container logs.
+
+---
+
+### Phasing
+
+This ADR defines Phase B and the roadmap to Phase C. ADR-079 picks up runtime errors separately.
+
+#### Phase B (delivered now, 2026-05-09)
+
+| Component | Status |
+|---|---|
+| `DeploymentError` dataclass + helpers | ✅ `app/modules/deployment_error.py` |
+| `PersonaValidator` retrofit | ✅ Returns `list[DeploymentError]`. All 7 active rules emit structured errors. |
+| `server.py` startup wiring | ✅ Uses `exit_if_errors()` instead of `raise ValueError`. |
+| `scripts/validate_persona_config.py` | ✅ Uses `format_errors_block()`. |
+| `SidebarValidator` legacy strings | ⏸ Wrapped at the call site into `DeploymentError` shape. Full retrofit tracked as `DIAG-VALIDATE-SIDEBAR-1`. |
+
+#### Phase C (full startup sweep, scheduled)
+
+Every component that can fail at startup is retrofitted to emit `DeploymentError` records. The user's framing — "deployed maybe one day in many areas, the better it is the most people will want to use it" — is the rationale for committing to this rather than leaving Phase C as opportunistic opt-in.
+
+| Task | Component | Effort |
+|---|---|---|
+| `DIAG-VALIDATE-SIDEBAR-1` `[sonnet/medium]` | `SidebarValidator` — replace `list[str]` with `list[DeploymentError]`; update all 4 rule sites with `fix:` text. | ~1 h |
+| `DIAG-BOOTLOADER-1` `[sonnet/medium]` | `Bootloader` — wrap profile-not-found, persona-path-resolution, connector-init-crash, missing-locations into `DeploymentError`. Currently these are bare `print` warnings or unhandled exceptions. | ~1.5 h |
+| `DIAG-CONNECTOR-1` `[sonnet/medium]` | `FilesystemConnector` / `IridaConnector` / `BioBlendConnector` — auth failure, missing locations, unreachable endpoints. Critical for IRIDA/Galaxy deployments. | ~1.5 h |
+| `DIAG-MANIFEST-1` `[sonnet/medium]` | Manifest contract / structural validation at load time (not the assembler — that's ADR-079). Covers: missing `analysis_groups`, malformed `data_schemas`, missing `!include` targets. | ~1 h |
+| `DIAG-CATALOG-1` `[sonnet/high]` | Author `docs/troubleshooting/index.qmd` — one row per known `DeploymentError` with permalink slug. Each error's `reference:` field optionally points at the catalog entry by anchor. | ~2 h |
+| `DIAG-CLI-1` `[haiku/low]` | Update remaining CLI scripts (`assets/scripts/*.py`) to format their failures consistently when relevant. | ~30 min |
+
+**Phase C is committed work, not optional polish.** Cross-deployment usability depends on it.
+
+#### Out of scope — runtime errors → ADR-079
+
+Errors raised mid-pipeline (during ingestion, wrangling, assembly, or rendering) deserve a different treatment than startup config errors:
+
+- The operator may not be the right "who" — many runtime errors are data problems that the analyst caused.
+- The fix may not be a config edit — it might be cleaning the data, adjusting the manifest, or re-running an upstream pipeline.
+- The render path is different — runtime errors typically surface inside the running Shiny session via `notification_show()` or a plot card error overlay, not via stderr.
+
+Tracked as **ADR-079: Runtime Error Discipline** (placeholder authored alongside this ADR). Reuses the `DeploymentError` dataclass shape conceptually but defines a separate `RuntimeError` (or similar) type with audience-aware rendering inside the app. Targets: `ingestion/ingestor.py`, `transformer/data_assembler.py`, `transformer/data_wrangler.py`, `viz_factory/viz_factory.py`, T3 apply path, manifest-driven plot binding.
+
+---
+
+### Consequences
+
+- **One canonical error shape.** Every startup failure surfaces in the same format. Operators, automated log scrapers, and incident-response tooling can rely on it.
+- **Audience clarity.** `who` field tells operators "this is yours to fix" vs "raise a ticket with the developer team".
+- **Fix discoverability.** The `fix` field eliminates the "what should I do?" round-trip. Combined with the Phase C catalog (`DIAG-CATALOG-1`), an unfamiliar operator can resolve common failures without contacting the developer team.
+- **Backward compatibility.** Components not yet retrofitted (Phase C targets) emit legacy strings; the call sites wrap them into `DeploymentError` shape so the operator sees the unified format regardless. Phase C is non-breaking.
+- **No new exception class proliferation.** A single `DeploymentFailure` exception (used by `raise_if_errors`) carries the structured list. Components do not need bespoke exception subclasses for this discipline.
+- **Test surface.** Each new component retrofit gains a test that asserts the error fields are populated (component, problem, location, fix non-empty, who in valid set). Cheap, mechanical, and prevents regression to bare strings.
+
+---
+
+### Files Governed by This Rule
+
+| File | Governed aspect |
+|---|---|
+| `app/modules/deployment_error.py` | Authoritative dataclass + helpers. Do not duplicate in other modules. |
+| `app/modules/persona_validator.py` | Returns `list[DeploymentError]`. Reference implementation for Phase C retrofits. |
+| `app/modules/sidebar_validator.py` | Phase C target (`DIAG-VALIDATE-SIDEBAR-1`). |
+| `app/src/bootloader.py` | Phase C target (`DIAG-BOOTLOADER-1`). |
+| `libs/connector/**/*.py` | Phase C target (`DIAG-CONNECTOR-1`). Headless-safe — must not import from `app.modules` directly; copy the dataclass shape if cross-lib import is forbidden, OR move `deployment_error.py` to `libs/utils/` (decision deferred until DIAG-CONNECTOR-1 lands). |
+| `app/src/server.py` | Calls `exit_if_errors()` after every validation pass. New validators MUST be added to this gate. |
+| `scripts/validate_persona_config.py` | CLI runner uses `format_errors_block()`. |
+| `docs/troubleshooting/` | Phase C deliverable (`DIAG-CATALOG-1`). |
+
+---
+
+## ADR-079: Runtime Error Discipline (2026-05-09) — PLACEHOLDER
+
+**Status:** PLACEHOLDER — not designed yet. Created to ensure the runtime-error problem is not lost when ADR-078 ships.
+
+**Scope:** Errors raised during a running Shiny session — ingestion of user-uploaded data, wrangling actions, assembly joins, plot rendering. Distinct from ADR-078's startup-time errors because: (a) the operator may not be the relevant audience, (b) the fix is often a data or manifest change rather than a config change, (c) the render path is the running UI not stderr.
+
+**Pre-decision questions to address when ADR-079 is authored:**
+
+- Does the runtime error class extend `DeploymentError` or sit alongside it? (Likely alongside — different audience semantics.)
+- Where does each runtime error render? Notification toast, plot card overlay, audit panel, modal? (Probably category-dependent.)
+- How does the user discover *what* in their data caused the failure? (Sample row counts, offending value preview, schema diff vs expected.)
+- Should the error be capturable in the export bundle's audit trail so a peer reviewer sees that a plot failed during the session?
+
+**Concrete components needing retrofit (when authored):**
+
+- `libs/ingestion/src/ingestion/ingestor.py` — file-not-found, encoding errors, schema mismatches, sanitization rejections
+- `libs/transformer/src/transformer/data_assembler.py` — `ColumnNotFoundError`, `SchemaError` on join, dtype mismatches, empty result frames
+- `libs/transformer/src/transformer/data_wrangler.py` — action-name not registered, action arg validation
+- `libs/viz_factory/src/viz_factory/viz_factory.py` — component not registered, missing required aesthetic, plotnine render exceptions
+- `app/handlers/audit_stack.py` — T3 Apply failures (downstream invalidation, comment-gate violations)
+- `app/handlers/blueprint_handlers.py` — manifest fragment validation failures during BLUEPRINT IDE editing
+
+**Tracked as:** `DIAG-RUNTIME-ADR` `[opus/high]` — author ADR-079 properly when Phase C is largely complete OR when the first runtime-error pain point becomes blocking, whichever comes first.
+

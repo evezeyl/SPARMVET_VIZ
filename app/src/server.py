@@ -1,6 +1,6 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003
 # @end_deps
@@ -22,20 +22,38 @@ from app.modules.test_lab_studio import TestLabStudio
 from app.modules.gallery_viewer import gallery_viewer
 from app.modules.persona_validator import PersonaValidator
 from app.modules.sidebar_validator import SidebarValidator
+from app.modules.deployment_error import DeploymentError, exit_if_errors
 
 
 
 def server(input, output, session):
 
-    # Validate persona template at startup — fatal on errors, warns on missing flags
-    _pv_errors = PersonaValidator().validate_file(str(bootloader.persona_path))
-    if _pv_errors:
-        raise ValueError(f"Persona template validation failed: {'; '.join(_pv_errors)}")
+    # Startup validation gate (ADR-077, ADR-078). Both validators run; if either
+    # produces errors, the formatted block goes to stderr and the process exits
+    # with a non-zero code. The operator sees a single readable summary instead
+    # of a stack trace.
+    _all_errors: list[DeploymentError] = []
+    _all_errors.extend(PersonaValidator().validate_file(str(bootloader.persona_path)))
 
-    # Validate sidebar slot config — warnings logged, errors block startup (ADR-073)
-    _sv_errors = SidebarValidator().validate_file(str(bootloader.persona_path))
-    if _sv_errors:
-        raise ValueError(f"Sidebar config validation failed: {'; '.join(_sv_errors)}")
+    # SidebarValidator still returns list[str] (Phase 1 of ADR-078 — its retrofit
+    # is tracked as DIAG-VALIDATE-SIDEBAR-1). Wrap legacy strings into a generic
+    # DeploymentError so the operator still sees the unified format.
+    for _msg in SidebarValidator().validate_file(str(bootloader.persona_path)):
+        _all_errors.append(DeploymentError(
+            component="SidebarValidator",
+            problem=_msg,
+            location=str(bootloader.persona_path),
+            fix=(
+                "Check workspaces.<ws>.left_sidebar.panels and right_sidebar.panels "
+                "in the persona template. Each panel type must exist in "
+                "app/modules/sidebar_registry.py PANEL_REGISTRY. "
+                "See .claude/rules/ui_implementation_contract.md §11."
+            ),
+            who="operator",
+            reference="ADR-073 + .claude/rules/ui_implementation_contract.md §11",
+        ))
+
+    exit_if_errors(_all_errors, header="SPARMVET startup blocked — persona configuration is invalid")
 
     @reactive.Calc
     def active_collection_id():

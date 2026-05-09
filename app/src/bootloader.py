@@ -268,8 +268,13 @@ class Bootloader:
         Cascade rules (rules_persona_feature_flags.md §107–127):
           - interactivity_enabled=False suppresses t3_sandbox/comparison/session/export_graph/audit_report
           - import_helper_enabled=False suppresses data_ingestion_enabled
-          - blueprint_enabled=False suppresses blueprint_agent_enabled (ADR-076 §6)
           - Deployment-profile data_ingestion_enabled:false is an absolute override
+
+        Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are NOT
+        silently suppressed here — they are fatal validator errors raised by
+        PersonaValidator at startup (Rule 7). If you wrote them on while
+        blueprint_enabled=False, the app refuses to start. See
+        rules_persona_feature_flags.md Cascade Enforcement §4–5.
         A WARNING is printed for each flag that was True in the template and forced False.
 
         Supports !include in persona templates (paths relative to the template file).
@@ -339,14 +344,11 @@ class Bootloader:
                 )
                 features["data_ingestion_enabled"] = False
 
-        # Group D: blueprint_enabled=False suppresses blueprint_agent_enabled (ADR-076 §6).
-        if not features.get("blueprint_enabled", False):
-            if features.get("blueprint_agent_enabled", False):
-                print(
-                    f"[Bootloader] WARNING: blueprint_agent_enabled=True ignored — "
-                    f"blueprint_enabled=False in {path.name}"
-                )
-                features["blueprint_agent_enabled"] = False
+        # NOTE: Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are
+        # intentionally NOT silently suppressed here. PersonaValidator Rule 7 raises a
+        # fatal error at startup if a template declares them on while blueprint_enabled=False.
+        # The flag value passes through this loader unchanged so the validator sees the
+        # user's actual intent (rather than a silently-rewritten "safe" version).
 
         # Deployment-profile override: data_ingestion_enabled:false in profile is absolute
         # (automated-pipeline deployments push data; user cannot upload).

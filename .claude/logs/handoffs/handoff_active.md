@@ -1,92 +1,142 @@
-# Handoff — Active State (2026-05-09)
+# Handoff — Active State (2026-05-09 afternoon)
 
-**Branch:** dev  
-**Last commit:** `4acfc59` feat: implement build_plot_lineage and get_plot_ids_in_group functions with tests  
-**Active agent:** @dasharch  
-
----
-
-## Current State
-
-**Major work completed 2026-05-09:**
-- ADRs 073–076 authored (Sidebar Slot Registry, Lineage Infrastructure, BLUEPRINT IDE Build Mode, AI Agent Helper)
-- Phase 31 (Sidebar + Export Provenance): SIDEBAR-CONFIGS-1, SIDEBAR-REGISTRY-1, SIDEBAR-VALIDATE-1 **complete** ✅
-  - 8 new sidebar YAML configs + slot registry + validator + CLI gate
-  - All 8 persona templates updated with `workspaces:` section
-  - Tests: `validate_persona_config.py --all` → 8/8 PASS
-- Phase 31 export work partially done: LINEAGE-NAV-1, LINEAGE-EXPORT-1, BP-SCHEMA-1 **complete** ✅
-  - `build_plot_lineage()` and `get_plot_ids_in_group()` implemented in `libs/blueprint_arch/manifest_navigator.py`
-  - 19 transformer actions + 7 viz_factory components annotated with `ui_schema` kwarg
-  - 2 verification tasks (SCHEMA-VERIFY-ACTIONS-1, SCHEMA-VERIFY-GEOMS-1) **complete** ✅
-- 4 export export tasks still open: EXPORT-HASH-2, EXPORT-VERSION-1, EXPORT-IMG-META-1, EXPORT-AUDIT-COMPLETE-1
-
-**In-depth audit completed (read-only, no code changes):**
-- `audit_in_depth_state_2026-05-09.md`: 4 CRITICAL, 6 HIGH, 12 MEDIUM, 10 LOW findings
-- All findings verified by manual grep before task creation
-- 17 new audit-derived tasks written to `tasks.md` (P0/P1/P2 buckets)
-
-**App health:** 97 unit tests pass; app imports cleanly; no data corruption risk.
+**Branch:** dev
+**Last commit on disk:** check `git log -1 --format=%h%x09%s` — work below is uncommitted.
+**Active agent:** @dasharch
+**Previous handoff:** archived at `.claude/logs/handoffs/archive/handoff_2026-05-09_morning.md` (move it there before starting fresh work)
 
 ---
 
-## Known Blockers
+## What just landed (uncommitted)
 
-1. **ADR-045 Two-Category Law violations** (CRITICAL)
-   - 4 files in `app/modules/` have `from shiny import` — breaks headless-reuse promise
-   - Affects: `wrangle_studio.py`, `gallery_viewer.py`, `test_lab_studio.py`, `help_registry.py`
-   - Task: ADR045-REFACTOR [opus/high]
+Four ADRs authored + two tasks closed in a single afternoon session. The thread was:
+**BP-AGENT-FLAG-1 → user pushback on silent cascades → ADR-077 → user request for fail-fast diagnostics → ADR-078 + ADR-079 placeholder → DIAG-CORE-1 implementation.**
 
-2. **ADR-075 manifest_edit_enabled flag absent** (CRITICAL)
-   - Flag is in rules but not in any of the 8 templates or bootloader
-   - Task: BP-FLAG-1 [haiku/low] — implement first; unblocks downstream form work
+### ADRs
 
-3. **ADR-076 AI Agent Helper — no MVP scope** (CRITICAL scope risk)
-   - 10 implementation tasks are open with no MVP carve-out
-   - Risk: feature could absorb 4–6 weeks without boundaries
-   - Task: AUDIT-ADR076-MVP [opus/medium] — define 1-page MVP-1 spec
+| ADR | Title | Status | Location |
+|---|---|---|---|
+| **ADR-076** (revised) | BLUEPRINT AI Agent Helper | DECIDED | `architecture_decisions.md` ~L2706 |
+| **ADR-077** | No-Silent-Suppression Principle (Group D fatal cascades) | DECIDED + APPLIED | `architecture_decisions.md` ~L3035 |
+| **ADR-078** | Diagnostic Error Discipline (`DeploymentError`) | DECIDED, Phase B applied | `architecture_decisions.md` ~L3100 |
+| **ADR-079** | Runtime Error Discipline | PLACEHOLDER | `architecture_decisions.md` ~L3260 |
 
----
+### Tasks closed
 
-## Next Immediate Steps (Priority order)
+- ✅ **BP-AGENT-FLAG-1** `[haiku/low]` — `blueprint_agent_enabled` flag + `blueprint_agent:` config block in 8 templates; cascade is fatal via `PersonaValidator` Rule 7.
+- ✅ **DIAG-CORE-1** `[sonnet/medium]` — `DeploymentError` dataclass + helpers + PersonaValidator retrofit + `server.py` startup gate + CLI script.
 
-**P0 (5–15 min each, do all today):**
-- ✅ AUDIT-DEPGRAPH-NOW — done
-- AUDIT-HANDOFF-UPDATE — doing now
-- AUDIT-RULES-FLAGS-UPDATE — update rules table + mark 25-O done
-- AUDIT-ADR072-STUB — insert ADR-072 + sort ADR-069
-- AUDIT-QUALITY-WRANGLING — convert/delete empty wrangling file
-- AUDIT-PHANTOM-TEST — fix phantom test reference
+### Files touched (all uncommitted)
 
-**P1 (30 min each, do next):**
-- AUDIT-CHANGELOG-UPDATE — backfill Phases 28/29/31/32 + ADRs 066–076
-- AUDIT-WRANGLE-FLAG — add wrangle_studio_enabled to validator + all templates
-- AUDIT-DEMO-PERSONAS — document demo personas in flag matrix
-- AUDIT-ABROMICS-CHECK — verify data source count
-- AUDIT-PLAN-ORDER — sort implementation_plan_master.md chronologically
+**New:**
+- `app/modules/deployment_error.py` — load-bearing for ADR-078
 
-**Then — P2 (1 session each):**
-- AUDIT-SGE-CLEANUP [sonnet/low] — remove orphaned SGE code
-- AUDIT-NOTIF-UTIL-MOVE [haiku/low] — move notification_utils.py to modules/
-- AUDIT-CSS-SWEEP [sonnet/medium] — move 101 inline styles to theme.css
-- AUDIT-PLASMID-VERIFY [sonnet/low] — verify Plasmid Dynamics lineage
-- AUDIT-SERVER-SLIM [sonnet/medium] — extract helpers from server.py
-- AUDIT-ADR076-MVP [opus/medium] — **critical** — define MVP-1 before impl
+**Modified:**
+- `config/ui/templates/*.yaml` (×8 — flag + 2× config blocks)
+- `app/modules/persona_validator.py` — Rule 7 + return type changed to `list[DeploymentError]`
+- `app/src/server.py` — `exit_if_errors()` replaces `raise ValueError`
+- `app/src/bootloader.py` — Group D silent cascade explicitly NOT applied (docstring updated)
+- `scripts/validate_persona_config.py` — uses `format_errors_block()`
+- `.claude/knowledge/architecture_decisions.md` — 4 ADRs (~700 lines added)
+- `.claude/knowledge/project_conventions.md` — new §17 (fail-fast cascade) + §18 (DeploymentError)
+- `.claude/knowledge/changelog.md` — afternoon entry
+- `.claude/rules/rules_persona_feature_flags.md` — Group D, matrix row, Cascade Enforcement §4–5, misconfig table, files governed
+- `.claude/tasks/tasks.md` — 2 tasks closed; new "Diagnostic Error Discipline" + "Runtime Error Discipline" task blocks (13 new tasks)
+- `.claude/logs/audits/audit_2026-05-09.md` — afternoon entry appended
 
-**Phase 32 proper work (after P0/P1/P2):**
-- BP-FLAG-1 [haiku/low] — highest priority; unblocks all form work
-- BP-FORMS-1 [sonnet/high]
-- BP-ESCAPE-1 [sonnet/medium]
-- (other BP-* tasks — lower priority)
+### Verification done in-session
+
+- `scripts/validate_persona_config.py --all` → 8/8 PASS, 0 errors
+- Synthetic 3-violation config → clean formatted block to stderr (3 fatal errors with all 5 fields populated)
+- `python -c "from app.src.main import app"` → imports cleanly under default persona
+- Bootloader cascade verified: developer → agent on; static → agent off; synthetic contradiction → fatal validator error
 
 ---
 
-## Reference
+## Next up — recommended order
 
-- Full audit: `.claude/logs/audits/audit_in_depth_state_2026-05-09.md` (§1–7 findings + recommendations)
-- Design decisions: `.claude/knowledge/architecture_decisions.md` (ADRs 073–076 source of truth)
-- Task list: `.claude/tasks/tasks.md` (17 new audit-derived tasks added)
+User asked for "lowest-conflict-risk block, one task at a time". BP-AGENT-FLAG-1 is done. Remaining in that block:
+
+| Task | Effort | Notes |
+|---|---|---|
+| **BP-AGENT-PANEL-1** | `[haiku/low]` | Register `blueprint_agent_chat` in `app/modules/sidebar_registry.py` + add to BLUEPRINT right_sidebar slot list in developer/qa templates (after `blueprint_logic`). Pure config; safe. |
+| **BP-AGENT-CSS-1** | `[haiku/low]` | `.bp-agent-*` rules in `config/ui/theme.css`. Pure CSS; safe. |
+| `HELP-DOCS-1` | `[haiku/low]` | Bundle `docs/_site/` as Shiny static assets. Conditional on presence. |
+| `21-F-7` | `[haiku/low]` | Add `scale_x_discrete` / `scale_y_discrete` to test manifests for Year/ST columns. |
+| `TubeMap aesthetics` | `[haiku/low]` | Cytoscape style + rename "ref" → "Add". Touches `libs/blueprint_arch/blueprint_mapper.py`. |
+
+**Caveat:** a parallel audit-fix agent is running. Avoid touching `libs/ingestion/`, `libs/transformer/`, `app/modules/` Two-Category violations, repo-hygiene tasks (`UTILS-RELOC-2`, `PYPROJECT-DEPS-1`, `ACTION-RENAME-1`, `ADR-011 cross-lib violations`, `INGEST-SANITIZE-1`, `ADR045-REFACTOR`).
 
 ---
 
-**Handoff author:** Audit session 2026-05-09  
-**Next agent:** Start P0 tasks; refer to audit for full context
+## Open questions / decisions parked
+
+1. **`DeploymentError` placement for `libs/connector/` retrofit (DIAG-CONNECTOR-1).** Current location is `app/modules/deployment_error.py` — connectors can't import from `app.*` (cross-lib violation, ADR-011). Decision when DIAG-CONNECTOR-1 lands: move to `libs/utils/` (canonical fix) OR copy the dataclass shape into `libs/utils/errors.py`. Flagged in the task description.
+
+2. **`audit_report_enabled` flag.** Listed in templates and validator but no longer used by any UI code as of 2026-05-04 export redesign. Could be removed in a future cleanup task — not urgent.
+
+3. **Streaming for the agent.** User explicitly dropped Phase 1 streaming. ADR-076 §9 records this as a deferral, not a rejection — re-evaluate if buffered tempo feels sluggish in practice.
+
+4. **`testing_mode` field semantics on pipeline personas.** Pipeline personas (static, simple) are forced `testing_mode=false`. If someone later argues for a "test the pipeline persona" use case, the answer is "use a more capable persona" (memory note). Don't add a `testing_mode` flag to pipeline personas.
+
+---
+
+## Mandatory session-end protocol (NOT YET DONE)
+
+Per `workspace_standard.md` §5-E:
+
+1. ⏳ **Run `build_dep_graph.py`** to refresh `dependency_index.md` after touching `deployment_error.py`, `persona_validator.py`, `server.py`. (User asked for handoff before this — should be the new agent's first action OR run now before commit.)
+2. ⏳ **Verify @deps blocks** on every modified file. `app/src/server.py` likely needs its consumes list updated (now imports `deployment_error.py`).
+
+Suggested first-action checklist for the new agent:
+
+```bash
+# 1. Verify in-flight state
+git status
+git log -1 --format=%h%x09%s
+
+# 2. Run dep-graph refresh (idempotent)
+.venv/bin/python assets/scripts/build_dep_graph.py
+
+# 3. Sanity check
+./.venv/bin/python -m pytest app/tests/test_filter_operators.py libs/connector/tests/ -q
+./.venv/bin/python scripts/validate_persona_config.py --all
+./.venv/bin/python -c "from app.src.main import app; print('OK')"
+
+# 4. Commit if green (do NOT push without confirmation):
+git add -A && git commit  # see suggested commit message below
+```
+
+### Suggested commit message
+
+```
+feat(adr-076 / adr-077 / adr-078): BLUEPRINT agent flags + fail-fast cascades + DeploymentError
+
+* ADR-076 BP-AGENT-FLAG-1: blueprint_agent_enabled flag + blueprint_agent: config
+  block added to all 8 persona templates. Developer + qa default true; others false.
+* ADR-077: Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are
+  now fatal validator errors, not silent bootloader suppression. Establishes the
+  general no-silent-suppression principle for future config decisions.
+* ADR-078 DIAG-CORE-1: DeploymentError dataclass + format_errors_block /
+  exit_if_errors / raise_if_errors helpers in app/modules/deployment_error.py.
+  PersonaValidator retrofitted to return list[DeploymentError]. server.py and
+  validate_persona_config.py CLI use the new format.
+* ADR-079 placeholder authored to lock in the runtime-error problem (ingestion /
+  assembler / wrangler / viz_factory / T3 apply / Blueprint manifest validation).
+
+Phase C of ADR-078 (committed work, 6 tasks) and ADR-079's full design + 6
+deferred runtime-error retrofit tasks added to .claude/tasks/tasks.md.
+
+Verified: 8/8 templates pass validate_persona_config.py; synthetic contradictory
+config produces clean formatted error block; app imports cleanly.
+```
+
+---
+
+## Pointers for continuity
+
+- **For BLUEPRINT agent next steps:** read ADR-076 in full before starting BP-AGENT-PANEL-1 onwards. Particularly §10 (tool-call) and §11 (subprocess isolation) — those are the load-bearing constraints for BP-AGENT-1.
+- **For Phase C of ADR-078:** start with `DIAG-VALIDATE-SIDEBAR-1` — same pattern as PersonaValidator retrofit, smallest delta. Then `DIAG-BOOTLOADER-1`. Defer `DIAG-CONNECTOR-1` until after the `libs/utils/` placement decision is made.
+- **For ADR-079:** trigger to author the full ADR is "Phase C largely complete OR first runtime-error pain point becomes blocking". Don't pre-author.
+
+@dasharch out.

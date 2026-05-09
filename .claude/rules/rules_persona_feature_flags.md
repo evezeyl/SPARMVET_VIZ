@@ -171,15 +171,18 @@ The full `blueprint_agent:` block (`backend`, `model`, `api_key_env`, `endpoint`
    - Override persona `data_ingestion_enabled` to `False` unconditionally.
    - Do NOT override `metadata_ingestion_enabled`.
 
-4. If `blueprint_enabled == False`:
-   - Force `manifest_edit_enabled = False`
-   - Print `[Bootloader] WARNING: manifest_edit_enabled=True ignored — blueprint_enabled=False`.
+4. **FATAL — Group D cascade (ADR-077).** If `blueprint_enabled == False` and `manifest_edit_enabled == True`:
+   - `PersonaValidator` Rule 7 raises a fatal error: `'manifest_edit_enabled=True' requires 'blueprint_enabled=True'`.
+   - **No silent suppression in the bootloader.** The flag passes through unchanged so the validator sees the user's actual intent.
+   - App refuses to start until the template is corrected. Source: ADR-075 + ADR-077.
 
-5. If `blueprint_enabled == False` (ADR-076 §6):
-   - Force `blueprint_agent_enabled = False`
-   - Print `[Bootloader] WARNING: blueprint_agent_enabled=True ignored — blueprint_enabled=False`.
+5. **FATAL — Group D cascade (ADR-077).** If `blueprint_enabled == False` and `blueprint_agent_enabled == True`:
+   - `PersonaValidator` Rule 7 raises a fatal error: `'blueprint_agent_enabled=True' requires 'blueprint_enabled=True'`.
+   - **No silent suppression in the bootloader.** Source: ADR-076 §6 + ADR-077.
 
 6. Right sidebar suppression: enforced structurally in `server.py` / `ui.py` based on persona level string comparison — not via a flag.
+
+**Soft cascades vs fatal cascades.** §1–3 above are **soft cascades**: the bootloader silently forces the child flag to false and prints a warning. They cover Group B (interactivity) and Group C (import_helper) where many existing templates have inherited inconsistencies; converting them to fatal would break legacy configurations. §4–5 are **fatal cascades** for Group D (advanced/IDE features added in Phase 31): the principle "if off it's off, if on it's on" is enforced at validation time so the YAML state and runtime state never diverge silently. See ADR-077 for the full rationale and the migration path for converting more cascades to fatal in future.
 
 **Note on `audit_report_enabled`:** It is listed in Group A (no inter-flag dependency) because `pipeline-exploration-simple` has `interactivity_enabled=True` but `audit_report_enabled=False`. The cascade above is a safety net — it prevents a misconfigured template from showing the audit export panel in a static-mode persona. No existing template triggers this warning.
 
@@ -220,7 +223,8 @@ Should return zero hits (only docstrings/comments allowed).
 |---|---|---|
 | `comparison_mode_enabled: true` with `interactivity_enabled: false` | Comparison Mode toggle absent (silently suppressed). No error shown to user. | Bootloader resolves and logs warning. Fix the template. |
 | `data_ingestion_enabled: true` with `import_helper_enabled: false` | Data ingestion UI absent. No Excel converter. | Bootloader resolves and logs warning. Fix the template. |
-| `blueprint_agent_enabled: true` with `blueprint_enabled: false` | Agent chat panel absent (silently suppressed). No error shown to user. | Bootloader resolves and logs warning. Fix the template. |
+| `blueprint_agent_enabled: true` with `blueprint_enabled: false` | **FATAL** — startup blocked. `PersonaValidator` Rule 7 raises a clear error. The flag is NOT silently rewritten. | Fix the template — set `blueprint_agent_enabled: false` or enable `blueprint_enabled`. (ADR-077.) |
+| `manifest_edit_enabled: true` with `blueprint_enabled: false` | **FATAL** — startup blocked. Same as above. | Fix the template. (ADR-077.) |
 | `blueprint_agent_enabled: true` but `blueprint_agent.backend` absent or `disabled` | Chat panel renders an "agent unavailable" banner (or hides entirely). | Add a `blueprint_agent:` block to the template, or accept that the persona is intentionally agent-free. |
 | `blueprint_agent.backend: claude_cli` with `claude` not installed / not logged in | Adapter init fails; bootloader falls back to `DisabledAdapter` and logs the cause. | Install Claude Code CLI and run `claude --status` to verify auth. |
 | `blueprint_agent.backend: claude_api` with `ANTHROPIC_API_KEY` env var unset | Adapter init fails; fall back to `DisabledAdapter`. | Set the env var, or switch backend to `claude_cli`. |
