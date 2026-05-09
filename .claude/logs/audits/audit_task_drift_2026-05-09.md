@@ -1,3 +1,5 @@
+Status: PROCESSED
+Triage: All 5 missing-file references resolved. DEPLOY-CONNECT-1 → deferred; TECH-T3-THREAD-1 → correct file ref and status updated; PYPROJECT-DEPS-1 → glob pattern fixed; ACTION-RENAME-1 → clarified (migrate_manifests.py never existed in git); CODE-DOCS-RETROSPECTIVE → split into CODE-COMMENT-STANDARD (active) + CODE-DOCS-RETROSPECTIVE (deferred). No code changes needed.
 # Audit Report: Task-to-Code Drift Check
 Generated: 2026-05-09T21:26:57
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
