@@ -106,7 +106,7 @@ def define_server(input, output, session, *,
                   home_state=None, session_manager=None,
                   notification_log=None, bootloader=None):
     """Register all Pipeline Audit reactive handlers."""
-    from app.handlers.notification_utils import make_notifier
+    from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
     _ghost_save_enabled = (
         bootloader.get_automation_setting("ghost_save", "enabled")

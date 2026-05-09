@@ -41,6 +41,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 - **Architecture:** `architecture_decisions.md (./.claude/knowledge/)`
 - **Dependency Map:** `.claude/knowledge/dependency_index.md` — **Read before modifying any engine/library/rule file.** Lists which files consume each component (forward links) and which components each file depends on (backward links). Includes a Sync Risk Register for historically-diverging pairs.
 - **Audit Automation:** `audit_routine_registry.md (./.claude/workflows/)` — Scheduled audit routines for hygiene verification. Status matrix, routine definitions, how to add new audits. Read before implementing automated checks.
+- **Audit Triage:** `audit_triage_protocol.md (./.claude/workflows/)` — **Mandatory at session start.** Run `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md 2>/dev/null` and triage any returned files before other work. Protocol defines how to convert audit findings to tasks and mark reports done.
 
 ## 3. Operational Mandate
 

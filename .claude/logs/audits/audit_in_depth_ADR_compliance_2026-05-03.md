@@ -1,3 +1,4 @@
+Status: PROCESSED 2026-05-09 — pre-protocol session log; findings absorbed into current codebase and tasks.md
 # Codebase ADR Compliance Audit
 **Date:** 2026-05-03
 **Scope:** Exhaustive evaluation of the SPARMVET_VIZ codebase against established Architecture Decision Records (ADRs) and Project Rules.

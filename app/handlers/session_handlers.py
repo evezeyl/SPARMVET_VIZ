@@ -40,7 +40,7 @@ def define_session_server(input, output, session, *,
         safe_input(input, key, default) — used by the active-session export
         download to read project_id for the filename. Optional for back-compat.
     """
-    from app.handlers.notification_utils import make_notifier
+    from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

@@ -56,7 +56,7 @@ def define_filter_audit_server(input, output, session, *,
       _all_plot_subtab_ids()     → list[str]   — every "subtab_<plot_id>" id
       _plot_label(subtab_id)     → str         — human-readable plot label
     """
-    from app.handlers.notification_utils import make_notifier
+    from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
     @output

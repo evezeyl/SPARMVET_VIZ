@@ -148,6 +148,13 @@
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-052`
 
+## `app/modules/deployment_error.py`
+- **Role:** `ref`
+- **provides:** `(re-exports from utils.deployment_error — see that file for the canonical source)`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/persona_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_persona_config.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
 ## `app/modules/exporter.py`
 - **Role:** `ref`
 - **provides:** `class:SubmissionExporter`, `function:generate_methods_text`, `function:render_audit_report`
@@ -193,7 +200,7 @@
 ## `app/modules/sidebar_validator.py`
 - **Role:** `ref`
 - **provides:** `class:SidebarValidator`
-- **consumes:** `app/modules/sidebar_registry.py`, `config/ui/templates/*.yaml`, `config/ui/sidebars/*.yaml`
+- **consumes:** `app/modules/sidebar_registry.py`, `app/modules/deployment_error.py`, `config/ui/templates/*.yaml`, `config/ui/sidebars/*.yaml`
 - **consumed_by:** `app/src/server.py`, `scripts/validate_persona_config.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
 
@@ -220,9 +227,9 @@
 ## `app/src/bootloader.py`
 - **Role:** `ref`
 - **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`
-- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`
 - **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
-- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `project_conventions.md §"Deployment Profile Resolution`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-078`, `project_conventions.md §"Deployment Profile Resolution`
 
 ## `app/src/main.py`
 - **Role:** `ref`
@@ -421,8 +428,8 @@
 ## `libs/connector/src/connector/filesystem.py`
 - **Role:** `info`
 - **provides:** `class:FilesystemConnector`
-- **consumes:** `class:BaseConnector`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+- **consumes:** `class:BaseConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
 
 ## `libs/connector/src/connector/galaxy.py`
 - **Role:** `info`
@@ -440,8 +447,8 @@
 ## `libs/connector/src/connector/irida.py`
 - **Role:** `info`
 - **provides:** `class:IridaConnector`
-- **consumes:** `class:FilesystemConnector`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+- **consumes:** `class:FilesystemConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
 
 ## `libs/ingestion/src/ingestion/ingestor.py`
 - **Role:** `wrangle`
@@ -635,7 +642,16 @@
 ## `libs/utils/src/utils/config_loader.py`
 - **Role:** `ref`
 - **provides:** `class:ConfigManager`
+- **consumes:** `utils.deployment_error`
 - **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`
+
+## `libs/utils/src/utils/deployment_error.py`
+- **Role:** `ref`
+- **provides:** `class:DeploymentError`, `function:format_errors_block`, `function:exit_if_errors`, `function:raise_if_errors`, `class:DeploymentFailure`
+- **consumes:** `-`
+- **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/persona_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_persona_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
 
 ## `libs/utils/src/utils/errors.py`
 - **Role:** `ref`

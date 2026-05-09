@@ -48,6 +48,12 @@ Read files on-demand as relevant to the task. The **always-read** set is small �
 | `.claude/knowledge/architecture_decisions.md` | ADR log — never violate an ADR without authoring a superseding one |
 | `.claude/rules/workspace_standard.md` | Technical bible: path authority, VENV, modular library rules |
 
+**Audit triage (mandatory at session start):** After reading the above three files, run:
+```bash
+grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md 2>/dev/null
+```
+If any files are returned, triage them before any other work — see `.claude/workflows/audit_triage_protocol.md` for the full protocol.
+
 ### 3.2 Rules & Governance (`.claude/rules/`) — read when relevant
 
 | File | When to read |
@@ -71,6 +77,7 @@ Read files on-demand as relevant to the task. The **always-read** set is small �
 
 | File | When to read |
 |---|---|
+| `audit_triage_protocol.md` | How to read audit reports and convert findings to tasks |
 | `implementation_workflow_transformer.md` | Implementing new wrangling decorators / T1 logic |
 | `viz_factory_implementation.md` | Registering geoms, scales, themes |
 | `ui_manifest_integration_testing.md` | UI testing gate — read before any UI test run |

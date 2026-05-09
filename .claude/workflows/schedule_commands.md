@@ -335,6 +335,123 @@ Exit codes: 0 = all checks pass, 1 = violations found, 2 = configuration error.
 
 ---
 
+## Routine 10 — Library Test Coverage and Testability
+
+**Schedule:** On-demand (manual), or before any release
+
+> Run before a release, after significant library changes, or when onboarding new contributors.
+> Can be scheduled weekly if test coverage regressions become frequent.
+
+```
+Create an on-demand audit routine for the SPARMVET_VIZ project.
+
+Name: "SPARMVET: Library Test Coverage"
+
+Purpose: For each library in libs/, verify that the test infrastructure is complete
+and that all tests pass. Reports three things:
+  1. Infrastructure completeness — does the library have unit tests (pytest),
+     an integrity suite (*_integrity_suite.py), and debug scripts (debug_*.py)?
+  2. pytest results — runs pytest on each library's tests/ directory.
+  3. Integrity suite results — runs the *_integrity_suite.py wrapper if present.
+
+A library is FULLY TESTABLE when it has at least one pytest file AND at least
+one integrity suite or debug script, and all of them pass.
+
+Libraries missing test infrastructure are flagged as PARTIAL or MISSING — these
+require a @dasharch handoff to add the missing layer.
+
+WARNING: This routine runs the full test suite and is intentionally slow (up to
+several minutes per library). Do NOT schedule it for frequent runs.
+
+Command to run (from project root):
+  .venv/bin/python scripts/audit_library_tests.py --output .claude/logs/audits/audit_library_tests_$(date +%Y-%m-%d).md
+
+For a faster check without running test suites:
+  .venv/bin/python scripts/audit_library_tests.py --skip-suites --output .claude/logs/audits/audit_library_tests_$(date +%Y-%m-%d).md
+
+For a single library only:
+  .venv/bin/python scripts/audit_library_tests.py --lib transformer --output .claude/logs/audits/audit_library_tests_$(date +%Y-%m-%d).md
+
+After running:
+1. Read the generated report at .claude/logs/audits/audit_library_tests_YYYY-MM-DD.md
+2. For each library with MISSING test infrastructure:
+   - File a task in .claude/tasks/tasks.md under "### 🔴 @dasharch Handoffs":
+     - [ ] [HANDOFF → @dasharch]: Add test infrastructure for `libs/<name>/` — currently MISSING
+       Layers needed: [list from report]
+       See rules_verification_testing.md §1 for naming standards.
+3. For each library with PARTIAL infrastructure:
+   - File a lower-priority task under "### 🟡 Pending Enhancements":
+     - [ ] [AUDIT] Complete test infrastructure for `libs/<name>/`: add [missing layers] [sonnet/medium]
+4. For each pytest FAIL or suite FAIL:
+   - Investigate the failure output in the report
+   - Create a fix task: - [ ] [AUDIT] Fix test failure in `libs/<name>/`: [summary] [sonnet/medium]
+5. Update the status matrix in .claude/workflows/audit_routine_registry.md —
+   set "Last Run" date and "Last Result" (PASS/FAIL + counts)
+6. Commit with message: "audit: library test coverage YYYY-MM-DD [PASS|FAIL N]"
+
+Exit codes: 0 = all libraries pass with full infrastructure, 1 = failures or missing infra found, 2 = script error.
+```
+
+---
+
+## Routine 11 — Package Dependency Health
+
+**Schedule:** On-demand (manual), or before a release / after a long period without updates
+
+> Run before a release, after a dependency freeze review, or when planning a batch update.
+> Checking weekly adds little value since PyPI updates are slow relative to our release cadence.
+
+```
+Create an on-demand audit routine for the SPARMVET_VIZ project.
+
+Name: "SPARMVET: Package Dependency Health"
+
+Purpose: Report the health of all installed dependencies from three angles:
+  1. Outdated packages — packages in .venv that have newer versions on PyPI,
+     grouped by update type (PATCH / MINOR / MAJOR) and cross-referenced with
+     which project library declares them.
+  2. Conflict detection — runs `pip check` to find installed packages with
+     incompatible dependency requirements (dependency hell detection).
+  3. Parity mandate alert — for packages governed by parity mandates (Polars → ADR-035,
+     Plotnine → ADR-036), flags when an update contains new API surface that should
+     be reflected in the transformer/viz_factory action registries.
+
+Local editable packages (utils, test_lab) are detected and excluded from the
+outdated list to avoid false positives.
+
+This audit is informational — it does not modify anything.
+
+Command to run (from project root):
+  .venv/bin/python scripts/audit_package_deps.py --output .claude/logs/audits/audit_package_deps_$(date +%Y-%m-%d).md
+
+After running:
+1. Read the generated report at .claude/logs/audits/audit_package_deps_YYYY-MM-DD.md
+2. CRITICAL — Dependency Conflicts (❌):
+   - Run `pip check` interactively to identify the conflicting packages
+   - File a P0 blocker task: - [ ] [P0] Resolve pip dependency conflict: [description] [sonnet/high]
+   - Do NOT deploy until conflicts are resolved
+3. MAJOR updates (🔴):
+   - Review the release notes for breaking API changes
+   - Test locally: `.venv/bin/pip install '<package>==<latest>'` then run the full test suite
+   - File a task if the upgrade is safe: - [ ] [AUDIT] Upgrade <package> MAJOR: <version> → <latest> [sonnet/medium]
+4. Parity mandate packages (⚠️ — Polars / Plotnine):
+   - Check the changelog for new expressions/geoms/scales added since the current version
+   - File a task under "### 🟡 Pending Enhancements":
+     - [ ] [PARITY ADR-035] Polars <ver>: audit new expressions against transformer action registry [sonnet/medium]
+     - [ ] [PARITY ADR-036] Plotnine <ver>: audit new geoms/scales/themes against viz_factory registry [sonnet/medium]
+5. MINOR / PATCH updates (🟡/🟢):
+   - PATCH: low risk, batch upgrade recommended. Run `.venv/bin/pip install --upgrade <p1> <p2> ...`
+     then verify: `python -c 'from app.src.main import app; print("import OK")'`
+   - MINOR: review for new features, test individually before upgrading
+6. Update the status matrix in .claude/workflows/audit_routine_registry.md —
+   set "Last Run" date and "Last Result" (PASS/WARN + counts)
+7. Commit with message: "audit: package dependency health YYYY-MM-DD [PASS|WARN N outdated|CONFLICT]"
+
+Exit codes: 0 = no conflicts and no MAJOR updates, 1 = conflicts or MAJOR updates found, 2 = script error.
+```
+
+---
+
 ## Quick test commands (VS Code terminal)
 
 Before scheduling a routine, verify the script works locally:
@@ -342,12 +459,16 @@ Before scheduling a routine, verify the script works locally:
 ```bash
 # Run all audits and write reports to the log directory
 DATE=$(date +%Y-%m-%d)
-.venv/bin/python scripts/audit_cross_lib.py       --output .claude/logs/audits/audit_cross_lib_${DATE}.md
-.venv/bin/python scripts/audit_deps_verify.py     --output .claude/logs/audits/audit_deps_${DATE}.md
-.venv/bin/python scripts/audit_manifest_integrity.py --output .claude/logs/audits/audit_manifest_${DATE}.md
-.venv/bin/python scripts/audit_task_drift.py      --output .claude/logs/audits/audit_task_drift_${DATE}.md
-.venv/bin/python scripts/audit_template_flags.py  --output .claude/logs/audits/audit_templates_${DATE}.md
-.venv/bin/python scripts/audit_phase_order.py     --output .claude/logs/audits/audit_phase_order_${DATE}.md
-.venv/bin/python scripts/audit_changelog_sync.py  --output .claude/logs/audits/audit_changelog_${DATE}.md
-.venv/bin/python scripts/audit_docs_sync.py       --output .claude/logs/audits/audit_docs_sync_${DATE}.md
+.venv/bin/python scripts/audit_cross_lib.py           --output .claude/logs/audits/audit_cross_lib_${DATE}.md
+.venv/bin/python scripts/audit_deps_verify.py         --output .claude/logs/audits/audit_deps_${DATE}.md
+.venv/bin/python scripts/audit_manifest_integrity.py  --output .claude/logs/audits/audit_manifest_${DATE}.md
+.venv/bin/python scripts/audit_task_drift.py          --output .claude/logs/audits/audit_task_drift_${DATE}.md
+.venv/bin/python scripts/audit_template_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_phase_order.py         --output .claude/logs/audits/audit_phase_order_${DATE}.md
+.venv/bin/python scripts/audit_changelog_sync.py      --output .claude/logs/audits/audit_changelog_${DATE}.md
+.venv/bin/python scripts/audit_docs_sync.py           --output .claude/logs/audits/audit_docs_sync_${DATE}.md
+
+# On-demand only (slow — runs full test suites)
+.venv/bin/python scripts/audit_library_tests.py       --output .claude/logs/audits/audit_library_tests_${DATE}.md
+.venv/bin/python scripts/audit_package_deps.py        --output .claude/logs/audits/audit_package_deps_${DATE}.md
 ```

@@ -50,7 +50,7 @@ def define_export_server(input, output, session, *,
       safe_input         : helper (input, key, default) → value
       active_home_subtab : reactive.Value[str] | None  — current plot subtab id
     """
-    from app.handlers.notification_utils import make_notifier
+    from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
     @output

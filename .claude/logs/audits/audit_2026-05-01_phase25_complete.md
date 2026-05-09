@@ -1,3 +1,4 @@
+Status: PROCESSED 2026-05-09 — pre-protocol session log; findings absorbed into current codebase and tasks.md
 # Audit — Phase 25 (Left Sidebar Restructure) steps A–H complete
 
 **Date:** 2026-05-01

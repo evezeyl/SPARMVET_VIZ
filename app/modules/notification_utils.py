@@ -1,9 +1,9 @@
 # @deps
 # provides: make_notifier() factory — returns a _notify(msg, type, duration) callable that calls ui.notification_show and appends to a reactive log
 # consumes: shiny.ui, datetime
-# consumed_by: app/handlers/session_handlers.py, app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/handlers/single_graph_export_handlers.py, app/handlers/data_import_handlers.py
+# consumed_by: app/handlers/session_handlers.py, app/handlers/audit_stack.py, app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/handlers/data_import_handlers.py
 # @end_deps
-"""app/handlers/notification_utils.py
+"""app/modules/notification_utils.py
 Shared notification factory for user-facing alerts (UX-NOTIF-1).
 
 make_notifier(notification_log) → _notify(msg, type, duration)

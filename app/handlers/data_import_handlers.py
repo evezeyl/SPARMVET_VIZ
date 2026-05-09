@@ -55,7 +55,7 @@ def define_data_import_server(input, output, session, *,
     data_refresh_trigger : reactive.Value[int] | None
         Increment after a successful import to invalidate plot renders.
     """
-    from app.handlers.notification_utils import make_notifier
+    from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
     # Pending upload state: list of {name, tmp_path, ds_id, error}
