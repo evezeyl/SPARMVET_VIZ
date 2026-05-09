@@ -52,6 +52,13 @@ class SidebarValidator:
         features = template.get("features", {})
         persona_id = template.get("persona_id", template_path)
 
+        # manifest_selector_visible is derived from manifest_selector.visible by the bootloader
+        # (FLAG-2 in _load_persona_config). Apply the same resolution here for gate checks.
+        if "manifest_selector_visible" not in features:
+            ms = template.get("manifest_selector", {})
+            features = dict(features)
+            features["manifest_selector_visible"] = bool(ms.get("visible", True))
+
         for ws in _WORKSPACES:
             ws_cfg = workspaces.get(ws)
             if ws_cfg is None:

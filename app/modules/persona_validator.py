@@ -116,13 +116,30 @@ class PersonaValidator:
         return errors
 
     def validate_file(self, template_path: str) -> list[str]:
-        """Load YAML file and validate. Returns error list."""
+        """Load YAML file and validate. Returns error list.
+
+        Supports !include in persona templates (paths relative to the template file).
+        Uses a SafeLoader subclass to avoid polluting the global constructor registry.
+        """
         path = Path(template_path)
         if not path.exists():
             return [f"Template file not found: {template_path}"]
         try:
+            class _Loader(yaml.SafeLoader):
+                pass
+
+            def _include(loader: yaml.SafeLoader, node: yaml.Node):
+                rel = loader.construct_scalar(node)
+                abs_path = path.parent / rel
+                try:
+                    with open(abs_path) as inc_f:
+                        return yaml.safe_load(inc_f) or {}
+                except FileNotFoundError:
+                    return {}
+
+            _Loader.add_constructor("!include", _include)
             with open(path) as f:
-                template = yaml.safe_load(f) or {}
+                template = yaml.load(f, Loader=_Loader) or {}
         except Exception as e:
             return [f"Failed to parse template '{template_path}': {e}"]
         return self.validate(template, template_path)

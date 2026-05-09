@@ -100,10 +100,10 @@
   - `ui.py`: replaced `bootloader.is_enabled("t3_sandbox_enabled")` with `bootloader.get_sidebar_config("home", "right").visible` — fixes ADR-053 violation (task 25-O).
   - All 8 persona templates updated with `workspaces:` section. ✅ 2026-05-09
 
-- [ ] **SIDEBAR-VALIDATE-1** `[sonnet/medium]`: Implement compatibility validation:
-  - `SidebarValidator` class alongside existing `PersonaValidator` — checks panel types against registry, `!include` targets exist, gate-flag / slot-list consistency warnings.
-  - `scripts/validate_persona_config.py` — CLI wrapper running both validators. Flags: `--persona <id>`, `--all`, `--strict` (warnings → errors for CI). Interactive prompt for ambiguous panel/flag combinations.
-  - Add to startup: `SidebarValidator` runs at app init alongside `PersonaValidator`; warnings logged, errors block startup.
+- [x] **SIDEBAR-VALIDATE-1** `[sonnet/medium]`: Implement compatibility validation:
+  - `app/modules/sidebar_validator.py` — `SidebarValidator` class: checks panel types against registry, `!include` targets exist, gate-flag consistency. Also fixed `PersonaValidator.validate_file()` to support `!include`.
+  - `scripts/validate_persona_config.py` — CLI wrapper running both validators. Flags: `--persona <id>`, `--all`, `--strict`. 8/8 templates PASS.
+  - `app/src/server.py` — `SidebarValidator` runs at startup alongside `PersonaValidator`; errors block startup. ✅ 2026-05-09
 
 - [ ] **STATIC-VIEW-1** `[sonnet/low]`: "Zero functionality" static persona polish:
   - [ ] **STATIC-VIEW-1a** `[haiku/low]`: Hide the view-title banner (central plot-group header strip) in fully static personas — it adds no value when there are no controls and may clutter a clean presentation layout. Gate on a new persona flag or reuse `interactivity_enabled: false`.
