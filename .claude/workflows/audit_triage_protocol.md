@@ -155,6 +155,21 @@ done
 
 ---
 
+## 7b. Two File Types in `.claude/logs/audits/`
+
+Two naming conventions coexist in this directory:
+
+| Pattern | Source | Triaged by |
+|---|---|---|
+| `audit_YYYY-MM-DD.md` | Narrative session logs written by agents | Bulk-marked PROCESSED at protocol adoption (2026-05-09). These are not structured reports. |
+| `audit_NAME_YYYY-MM-DD.md` | Output of `scripts/audit_*.py` — structured reports with violation lists | This protocol (§4) |
+
+The scan command (`grep -rL "^Status: PROCESSED"`) applies to both. Session logs prior to
+2026-05-09 were bulk-marked as processed. New session logs written by agents should include
+a `Status:` line at creation time so they don't surface as needing triage.
+
+---
+
 ## 8. Adding New Audit Scripts
 
 When a new `scripts/audit_*.py` is added:
