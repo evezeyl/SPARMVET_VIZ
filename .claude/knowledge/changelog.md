@@ -50,6 +50,61 @@ See task `ASSEMBLY-RENAME` in `.claude/tasks/tasks.md` for the 5-pass VSCode che
 
 ---
 
+## [2026-05-05] — Library extraction & module decomposition
+
+### Phase 29: Library extraction
+
+- **New library:** `libs/blueprint_arch/` — extracted `manifest_navigator.py` (core lineage introspection) + `blueprint_mapper.py` (TubeMap DAG generation) from `app/modules/` into a standalone, headless-safe lib.
+- **New library:** `libs/test_lab/` — extracted `dev_studio.py` → `test_lab_studio.py` for data utilities and developer diagnostics.
+- All imports updated across `app/handlers/` and `app/src/` to reference new lib paths.
+- ADR-067: Library extraction standards for headless-safe modules.
+
+---
+
+## [2026-05-09] — Sidebar slot registry & feature flag enforcement
+
+### Phase 31: Sidebar slot registry (ADR-073)
+
+- **Manifest-driven sidebars:** Sidebar panel layout now declarative via persona templates, not hardcoded in Python.
+- **Registry:** `app/modules/sidebar_registry.py` — maps panel types (`project_info`, `filters`, `audit_stack`, `blueprint_agent_chat`, etc.) to gate flags.
+- **Slot lists:** `config/ui/sidebars/` directory with per-workspace panel sequences (home_standard_left.yaml, blueprint_standard_right.yaml, etc.).
+- **Validation:** `app/modules/sidebar_validator.py` — checks panel types against registry, includes existence, gate-flag consistency. Runs at startup alongside PersonaValidator.
+- **Right sidebar exclusion fix (task 25-O):** Replaces `bootloader.is_enabled("t3_sandbox_enabled")` hardcoded checks with `bootloader.get_sidebar_config("home", "right").visible` — eliminates ADR-053 (persona name string comparison) violation.
+- Verified: 8/8 persona templates pass validation.
+
+### Phase 31 (continued): ADR-077, ADR-078 fatal cascades & DeploymentError
+
+- **ADR-077:** Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) now fatal validator errors, not silent bootloader suppression. Establishes no-silent-suppression principle for config decisions.
+- **ADR-078:** DeploymentError dataclass + helpers (`format_errors_block`, `exit_if_errors`, `raise_if_errors`) in `app/modules/deployment_error.py`. PersonaValidator retrofitted to return `list[DeploymentError]`. Server startup uses `exit_if_errors` gate.
+- **Verified:** 8/8 templates pass; synthetic 3-violation config produces clean formatted error block.
+- Phase B (startup gate): IMPLEMENTED. Phase C (full retrofit to bootloader, connectors, manifest preflight): deferred.
+
+### Phase 31 (continued): Feature implementation
+
+- **BP-AGENT-PANEL-1:** `blueprint_agent_chat` panel registered in sidebar registry; added to BLUEPRINT workspace right sidebar for developer/qa personas.
+- **BP-AGENT-CSS-1:** `.bp-agent-container`, `.bp-agent-message`, `.bp-agent-input-area` CSS rules in `config/ui/theme.css` (§19).
+- **21-F-7:** Added `scale_x_discrete` layer to Year-based test plots in 2_test_data_ST22_dummy (ensures Year columns render as discrete categories).
+- **TubeMap aesthetics:** Renamed `ref` node type → `add` in blueprint_mapper.py for semantic clarity (additional_datasets now render as "Add Data" nodes).
+- **HELP-DOCS-1:** Conditional docs bundling — app checks for `docs/_site/` at startup and logs availability. DEPLOYMENT_CHECKLIST.md documents `quarto render docs/` as pre-deployment routine.
+
+---
+
+## [2026-05-09] — Audit session (P0/P1 hygiene)
+
+### Phase 32: Audit & documentation (IN PROGRESS)
+
+- **P0 completed:** AUDIT-DEPGRAPH-NOW (graphs refreshed), AUDIT-PHANTOM-TEST (test file reference verified), AUDIT-RULES-FLAGS-UPDATE (no persona name checks found).
+- **P1 completed:** AUDIT-WRANGLE-FLAG (all 8 templates declare wrangle_studio_enabled), AUDIT-DEMO-PERSONAS (flag matrix includes demo-vetinst and web-demo columns), AUDIT-ABROMICS-CHECK (manifest structure assessed: 4 components, <150 lines, inline form acceptable).
+- **P0 in progress:** AUDIT-HANDOFF-UPDATE (this file), AUDIT-PLAN-ORDER (implementation_plan_master.md phase reordering — complex, deferred to future session as sonnet/medium task).
+
+---
+
+## Prior phases (Archives)
+
+For phases 3–27, see git log or ADRs 1–76 in `.claude/knowledge/architecture_decisions.md`.
+
+---
+
 ## [2026-05-05] — Library extraction (Phase 29)
 
 ### New libraries promoted from app/

@@ -40,6 +40,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 - **Execution:** `tasks.md (./.claude/tasks/)`
 - **Architecture:** `architecture_decisions.md (./.claude/knowledge/)`
 - **Dependency Map:** `.claude/knowledge/dependency_index.md` — **Read before modifying any engine/library/rule file.** Lists which files consume each component (forward links) and which components each file depends on (backward links). Includes a Sync Risk Register for historically-diverging pairs.
+- **Audit Automation:** `audit_routine_registry.md (./.claude/workflows/)` — Scheduled audit routines for hygiene verification. Status matrix, routine definitions, how to add new audits. Read before implementing automated checks.
 
 ## 3. Operational Mandate
 
