@@ -840,7 +840,7 @@ def define_server(input, output, session, *,
                     new_params[param_key] = val
 
             elif widget_type == "color":
-                # BP-COLOR-1: read composite color widget
+                # BP-COLOR-1/2: read composite color widget (includes project palette source)
                 mode_id = f"bp_form_{param_key}_mode"
                 top_mode = safe_input(input, mode_id, "literal")
                 if top_mode == "column":
@@ -849,7 +849,16 @@ def define_server(input, output, session, *,
                         new_params[param_key] = {"mode": "column", "column": col_val}
                 else:
                     lit_mode = safe_input(input, f"bp_form_{param_key}_lmode", "palette")
-                    if lit_mode == "palette":
+                    if lit_mode == "project":
+                        proj_val = safe_input(
+                            input, f"bp_form_{param_key}_project_palette", ""
+                        )
+                        new_params[param_key] = {
+                            "mode": "literal",
+                            "literal_mode": "project",
+                            "project_palette": proj_val or "",
+                        }
+                    elif lit_mode == "palette":
                         palette_val = safe_input(input, f"bp_form_{param_key}_palette", "")
                         new_params[param_key] = {
                             "mode": "literal",

@@ -4,6 +4,7 @@
 # provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)
+# consumes: app/src/bootloader.py (method:get_palettes — via self._bootloader, optional)
 # consumed_by: app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/handlers/audit_stack.py, app/handlers/gallery_handlers.py, app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-004, .claude/knowledge/architecture_decisions.md#ADR-075
 # @end_deps
@@ -261,6 +262,9 @@ class WrangleStudio:
     def define_server(self, input, output, session, available_cols, get_base_data,
                       viz_factory, get_schema_registry=None, get_includes_map=None,
                       bootloader=None):
+        # Store bootloader so instance methods (e.g. _render_action_form) can access it
+        self._bootloader = bootloader
+
         # [ADR-039] Surgical Context State
         self.active_viz_id = reactive.Value(None)
         _plot_error = reactive.Value("")  # stores last render error message
@@ -1696,21 +1700,29 @@ class WrangleStudio:
                 )
 
             elif widget_type == "color":
-                # BP-COLOR-1: composite color widget
+                # BP-COLOR-1/2: composite color widget with project palette support
                 # Sub-IDs follow the pattern bp_form_{param_key}_*
                 mode_id = f"bp_form_{param_key}_mode"      # column | literal
                 col_id = f"bp_form_{param_key}_col"        # column selector
-                lit_mode_id = f"bp_form_{param_key}_lmode" # palette | custom
+                lit_mode_id = f"bp_form_{param_key}_lmode" # palette | project | custom
                 palette_id = f"bp_form_{param_key}_palette"
+                project_palette_id = f"bp_form_{param_key}_project_palette"
                 hex_id = f"bp_form_{param_key}_hex"
 
-                _PALETTES = [
+                # Runtime matplotlib palette names (authoritative)
+                _LIB_PALETTES = [
                     "Blues", "Greens", "Oranges", "Purples", "Reds",
                     "BuGn", "BuPu", "GnBu", "OrRd", "PuBu", "YlGn",
                     "RdYlGn", "RdYlBu", "Spectral",
                     "viridis", "plasma", "magma", "inferno", "cividis",
                     "Set1", "Set2", "Set3", "Paired", "Dark2", "Accent",
                 ]
+
+                # Project palettes from deployment registry (BP-COLOR-2)
+                _project_palettes = {}
+                if self._bootloader is not None:
+                    _project_palettes = self._bootloader.get_palettes()
+                _has_project_palettes = bool(_project_palettes)
 
                 cat_cols = [k for k, v in upstream_cols.items()
                             if v == "categorical"]
@@ -1721,20 +1733,49 @@ class WrangleStudio:
                     top_mode = current_val.get("mode", "literal")
                     cur_col = current_val.get("column", cat_cols[0])
                     cur_lmode = current_val.get("literal_mode", "palette")
-                    cur_palette = current_val.get("palette", _PALETTES[0])
+                    cur_palette = current_val.get("palette", _LIB_PALETTES[0])
+                    cur_project_palette = current_val.get(
+                        "project_palette",
+                        next(iter(_project_palettes), "")
+                    )
                     cur_hex = current_val.get("hex", "#345beb")
                 elif isinstance(current_val, str) and current_val in upstream_cols:
                     top_mode = "column"
                     cur_col = current_val
                     cur_lmode = "palette"
-                    cur_palette = _PALETTES[0]
+                    cur_palette = _LIB_PALETTES[0]
+                    cur_project_palette = next(iter(_project_palettes), "")
                     cur_hex = "#345beb"
                 else:
                     top_mode = "literal"
                     cur_col = cat_cols[0]
                     cur_lmode = "palette"
-                    cur_palette = _PALETTES[0]
+                    cur_palette = _LIB_PALETTES[0]
+                    cur_project_palette = next(iter(_project_palettes), "")
                     cur_hex = str(current_val or "#345beb")
+
+                # Build source radio choices: "project" only when palettes are defined
+                _lmode_choices = {"palette": "Palette library"}
+                if _has_project_palettes:
+                    _lmode_choices["project"] = "Project palette"
+                _lmode_choices["custom"] = "Custom hex"
+
+                # Project palette selector (inside literal mode conditional)
+                if _has_project_palettes:
+                    _project_palette_names = list(_project_palettes.keys())
+                    _project_palette_widget = ui.panel_conditional(
+                        f"input['{lit_mode_id}'] === 'project'",
+                        ui.input_select(
+                            project_palette_id, "Project palette",
+                            choices={p: p for p in _project_palette_names},
+                            selected=(cur_project_palette
+                                      if cur_project_palette in _project_palettes
+                                      else _project_palette_names[0])
+                        )
+                    )
+                else:
+                    # No project palettes — placeholder slot kept for layout stability
+                    _project_palette_widget = ui.span("")
 
                 elem = ui.div(
                     ui.p(label, class_="fw-bold small mb-1"),
@@ -1759,27 +1800,15 @@ class WrangleStudio:
                         ui.div(
                             ui.input_radio_buttons(
                                 lit_mode_id, "Source",
-                                choices={
-                                    "palette": "Palette library",
-                                    "custom": "Custom hex",
-                                },
+                                choices=_lmode_choices,
                                 selected=cur_lmode, inline=True
                             ),
-                            # Grayed-out v2 slot
-                            ui.div(
-                                ui.tags.button(
-                                    "From project colors",
-                                    disabled=True,
-                                    class_="btn btn-sm w-100 bp-color-v2-btn",
-                                ),
-                                ui.p("Coming in v2", class_="ultra-small text-muted mt-0 mb-1"),
-                                class_="mb-1"
-                            ),
+                            _project_palette_widget,
                             ui.panel_conditional(
                                 f"input['{lit_mode_id}'] === 'palette'",
                                 ui.input_select(
                                     palette_id, "Palette",
-                                    choices={p: p for p in _PALETTES},
+                                    choices={p: p for p in _LIB_PALETTES},
                                     selected=cur_palette
                                 )
                             ),

@@ -47,3 +47,41 @@ No visual component is considered verified without:
 
 - **Custom Themes**: The `theme_dashboard` is the authoritative style for the SPARMVET UI.
 - **3rd-Party Parity**: Support for Seaborn, 538, and Tufte themes must be maintained to ensure legacy compatibility.
+
+## 6. Palette Injection (ADR-081, BP-COLOR-3)
+
+VizFactory supports named palette injection via the `palette:` key in manifests (BP-COLOR-3).
+
+### 6a. Construction
+
+`VizFactory(palette_registry: dict | None = None)`:
+- `_BUILTIN_PALETTES` (class-level) always present — currently `sparmvet_brand`.
+- `palette_registry` injected by `app/src/server.py` via `bootloader.get_palettes()`.
+- Never reads `config/palettes.yaml` directly — library must remain file-system-independent (ADR-011).
+
+### 6b. Manifest keys
+
+```yaml
+plot_defaults:
+  palette: nvi_official      # applies to ALL plots in the manifest
+
+# Per-plot override (inside analysis_groups plot spec):
+palette: sparmvet_brand      # overrides plot_defaults.palette for this plot
+```
+
+Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none (matplotlib default)**.
+
+### 6c. Scale injection rules
+
+`_apply_palette(p, palette_name, mapping_spec, has_fill_scale, has_color_scale)`:
+
+| Condition | Scale injected |
+|---|---|
+| `palette_name` in `self._palette_registry` | `scale_fill_manual` / `scale_color_manual` with hex list |
+| `palette_name` in viridis family (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) | `scale_fill_viridis_d` / `scale_color_viridis_d` |
+| Other string | `scale_fill_brewer` / `scale_color_brewer` (plotnine wraps RColorBrewer) |
+| `palette_name` unknown to all three | WARNING with list of valid project palette names |
+
+**Guard rules (no injection when):**
+- Aesthetic (`fill`, `color`) not present in the plot mapping.
+- A `scale_fill_*` or `scale_color_*` layer already declared in the manifest layers list.

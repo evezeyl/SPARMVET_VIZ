@@ -7,10 +7,11 @@ from utils.errors import VisualizationError
 import difflib
 
 # @deps
-# provides: class:VizFactory, method:render
+# provides: class:VizFactory, method:render, method:_apply_palette
 # consumes: libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENTS via get_component)
-# consumed_by: app/handlers/home_theater.py, libs/viz_factory/tests/debug_gallery.py
+# consumed_by: app/handlers/home_theater.py, libs/viz_factory/tests/debug_gallery.py, app/src/server.py
 # doc: .claude/rules/rules_viz_factory.md
+# note: palette_registry is injected by app/src/server.py (bootloader.get_palettes()) — BP-COLOR-3
 # @end_deps
 
 
@@ -32,7 +33,34 @@ class VizFactory:
     - Coord: coord_cartesian (if no coord_ layer defined)
     - Facet: facet_null (if no facet_ layer defined)
     - Position/Stat: These are ggplot2 geom-level defaults (identity); no injection needed.
+
+    Palette registry (BP-COLOR-3):
+    - Built-in SPARMVET palettes are always present (no external file required).
+    - Project palettes are injected at construction via palette_registry kwarg — the app layer
+      resolves config/palettes.yaml via bootloader.get_palettes() and passes the dict here.
+    - Library is fully independent: works with only built-ins when no registry is passed.
+    - Manifests may declare plot_defaults: palette: <name> to set a default scale for all plots.
+    - Individual plot specs may declare palette: <name> to override the manifest default.
+    - Resolution order: plot-level palette > manifest plot_defaults.palette > none (matplotlib default).
     """
+
+    # Built-in brand palette — always present; no external config required.
+    # Uses the authoritative brand colors from rules_css_style_spec.md §1c.
+    _BUILTIN_PALETTES: dict = {
+        "sparmvet_brand": [
+            "#345beb",  # Blue — primary action
+            "#10a395",  # Teal — export/upload
+            "#ffc107",  # Amber — warning/pending
+            "#d62828",  # Red — error/destructive
+            "#6c757d",  # Grey — muted
+            "#6a4c93",  # Violet — audit nodes
+        ]
+    }
+
+    def __init__(self, palette_registry: dict | None = None):
+        # Merge built-ins with project palettes injected by the app layer.
+        # Project palettes override built-ins when names collide (intentional branding).
+        self._palette_registry: dict = {**self._BUILTIN_PALETTES, **(palette_registry or {})}
 
     def render(self, df: Any, manifest: Dict[str, Any], plot_id: str):
         """
@@ -258,6 +286,21 @@ class VizFactory:
             y_col=None if manifest_axis_y_set else mapping_spec.get("y"),
         )
 
+        # 6. Palette injection (BP-COLOR-3)
+        # Resolution: plot-level 'palette' > manifest 'plot_defaults.palette' > none.
+        # _standardize_config already merged plot_defaults into plot_config, so a
+        # manifest-level default is visible here as plot_config['palette'].
+        palette_name = plot_config.get("palette")
+        if palette_name:
+            has_fill_scale = any(l.startswith("scale_fill_") for l in applied_layers)
+            has_color_scale = any(
+                l.startswith("scale_color_") or l.startswith("scale_colour_")
+                for l in applied_layers
+            )
+            p = self._apply_palette(
+                p, palette_name, mapping_spec, has_fill_scale, has_color_scale
+            )
+
         return p
 
     @staticmethod
@@ -397,3 +440,79 @@ class VizFactory:
                     config['layers'] = [base_geom] + existing
 
         return config
+
+    def _apply_palette(
+        self,
+        p,
+        palette_name: str,
+        mapping_spec: dict,
+        has_fill_scale: bool,
+        has_color_scale: bool,
+    ):
+        """Inject a named palette as a plotnine fill/colour scale (BP-COLOR-3).
+
+        Resolution:
+        - Name found in self._palette_registry → scale_*_manual with the hex list.
+        - Name not in registry → treat as a matplotlib palette name:
+            Sequential/diverging names → scale_*_distiller (continuous-safe fallback).
+            Otherwise → scale_*_brewer (categorical).
+        - Only injects for aesthetics present in the mapping.
+        - Never overwrites a scale already declared in the manifest layers.
+        """
+        uses_fill = "fill" in mapping_spec and not has_fill_scale
+        uses_color = ("color" in mapping_spec or "colour" in mapping_spec) and not has_color_scale
+
+        if not uses_fill and not uses_color:
+            return p
+
+        project_colors = self._palette_registry.get(palette_name)
+        if project_colors:
+            # Project palette — inject scale_*_manual
+            if uses_fill:
+                from plotnine import scale_fill_manual
+                p = p + scale_fill_manual(values=project_colors)
+                print(f"[VizFactory] Applied project palette '{palette_name}' → scale_fill_manual")
+            if uses_color:
+                from plotnine import scale_color_manual
+                p = p + scale_color_manual(values=project_colors)
+                print(f"[VizFactory] Applied project palette '{palette_name}' → scale_color_manual")
+        else:
+            # Matplotlib palette name — use brewer or distiller
+            # Viridis family and continuous palettes go through distiller
+            _continuous_palettes = {
+                "viridis", "plasma", "magma", "inferno", "cividis",
+                "Blues", "Greens", "Oranges", "Purples", "Reds",
+                "BuGn", "BuPu", "GnBu", "OrRd", "PuBu", "YlGn",
+                "RdYlGn", "RdYlBu", "Spectral",
+            }
+            _viridis_palettes = {"viridis", "plasma", "magma", "inferno", "cividis"}
+            if palette_name in _viridis_palettes:
+                try:
+                    from plotnine import scale_fill_viridis_d, scale_color_viridis_d
+                    if uses_fill:
+                        p = p + scale_fill_viridis_d(option=palette_name)
+                    if uses_color:
+                        p = p + scale_color_viridis_d(option=palette_name)
+                    print(f"[VizFactory] Applied viridis palette '{palette_name}'")
+                except Exception as exc:
+                    print(
+                        f"[VizFactory] WARNING: palette '{palette_name}' failed "
+                        f"(scale_*_viridis_d): {exc}"
+                    )
+            else:
+                try:
+                    from plotnine import scale_fill_brewer, scale_color_brewer
+                    if uses_fill:
+                        p = p + scale_fill_brewer(palette=palette_name)
+                    if uses_color:
+                        p = p + scale_color_brewer(palette=palette_name)
+                    print(f"[VizFactory] Applied brewer palette '{palette_name}'")
+                except Exception as exc:
+                    print(
+                        f"[VizFactory] WARNING: palette '{palette_name}' not found in "
+                        f"project registry or matplotlib. Check the palette name in the "
+                        f"manifest. Valid project palettes: "
+                        f"{list(self._palette_registry.keys()) or ['(none registered)']}"
+                    )
+
+        return p

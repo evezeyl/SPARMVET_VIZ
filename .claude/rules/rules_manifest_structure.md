@@ -184,3 +184,30 @@ spec:
 | `string` (or `utf8`) | `pl.String` | `pl.String` | High-cardinality text, descriptions, free-form fields where categorization gives no benefit. |
 
 **Primary key rule:** `sample_id` MUST be `type: categorical`. Using `numeric` for join keys causes type-parity mismatches in `action: join` steps.
+
+---
+
+## 10. `plot_defaults` Block (ADR-081, BP-COLOR-3)
+
+The optional `plot_defaults:` top-level key in a manifest sets defaults applied to every plot in that manifest. Individual plot specs may override any key.
+
+```yaml
+plot_defaults:
+  palette: nvi_official      # Named palette (see config/palettes.yaml or built-ins)
+  theme: theme_light         # Optional — default theme for all plots in this manifest
+```
+
+### `palette` key
+
+- Value must be either a project palette name (defined in `config/palettes.yaml`) or a matplotlib palette name (`Blues`, `viridis`, `Set1`, etc.).
+- VizFactory resolves the palette at render time via `_apply_palette()`.
+- Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none**.
+- Scale injection is skipped when the plot mapping has no `fill` / `color` aesthetic, or when the manifest already declares a `scale_fill_*` / `scale_color_*` layer.
+
+### Built-in palettes (always available, no `config/palettes.yaml` required)
+
+| Name | Colors |
+|---|---|
+| `sparmvet_brand` | `#345beb`, `#10a395`, `#ffc107`, `#d62828`, `#6c757d`, `#6a4c93` |
+
+Project palettes are defined in `config/palettes.yaml` and loaded by `bootloader.get_palettes()` at startup. See that file's header for the format. Agents MUST NOT assume a project palette name exists unless `config/palettes.yaml` has been inspected.

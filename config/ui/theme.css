@@ -979,21 +979,6 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     font-weight: 600;
 }
 
-/* ── 22b. Blueprint IDE — Color Widget (BP-COLOR-1) ─────────────────────── */
-
-/* Grayed-out v2 placeholder button */
-.bp-color-v2-btn {
-    font-size: 0.75rem;
-    background: #f8f9fa;
-    color: #6c757d;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    cursor: not-allowed;
-    opacity: 0.6;
-    width: 100%;
-    text-align: left;
-    padding: 3px 8px;
-}
 
 /* Editable textarea */
 .bp-escape-container textarea.form-control {

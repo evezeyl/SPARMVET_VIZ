@@ -472,3 +472,57 @@ cfg = bootloader.get_agent_config()
 
 **Fallback discipline:** `make_adapter()` catches all `RuntimeError` from `ClaudeCliAdapter.__init__` (missing binary, not logged in) and returns `DisabledAdapter(reason)`. App startup is never blocked by an agent misconfiguration.
 
+
+## 15. Palette Registry & VizFactory Palette Injection (ADR-081)
+
+### File: `config/palettes.yaml`
+
+Deployment-level palette registry. Optional — system always falls back to the built-in `sparmvet_brand` palette.
+
+```yaml
+palettes:
+  my_palette:
+    - "#1D5B8B"
+    - "#E8A020"
+```
+
+Loaded by `bootloader.get_palettes()` at startup. Returns `{name: [hex, ...]}` dict — never empty (`sparmvet_brand` always present). Emits INFO when file absent; WARNING with file path + parse error when file malformed.
+
+### Bootloader API
+
+```python
+bootloader.get_palettes()          # → {name: [hex, ...]} — never empty
+```
+
+### VizFactory construction
+
+```python
+# app/src/server.py — the only call site
+VizFactory(palette_registry=bootloader.get_palettes())
+```
+
+VizFactory is **library-autonomous**: works with only `_BUILTIN_PALETTES` when `palette_registry=None`. Never reads `config/palettes.yaml` directly — ADR-011 boundary.
+
+### Manifest usage
+
+```yaml
+# Manifest-level default (applies to all plots):
+plot_defaults:
+  palette: nvi_official
+
+# Per-plot override:
+plots:
+  my_plot:
+    palette: sparmvet_brand
+```
+
+### Scale injection (VizFactory._apply_palette)
+
+| Palette source | Scale injected |
+|---|---|
+| Project registry hit | `scale_fill_manual` / `scale_color_manual` (hex list) |
+| Viridis family name | `scale_fill_viridis_d` / `scale_color_viridis_d` |
+| Other matplotlib name | `scale_fill_brewer` / `scale_color_brewer` |
+| Unknown name | WARNING listing valid project palette names |
+
+Guards: only injects for aesthetics in mapping; never overwrites existing `scale_fill_*`/`scale_color_*` layers.

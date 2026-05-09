@@ -3330,3 +3330,81 @@ Tracked as **ADR-079: Runtime Error Discipline** (placeholder authored alongside
 
 **Activation:** Run `./scripts/systemd/install.sh` once to register all four timers.
 
+
+---
+
+## ADR-081: Deployment Palette Registry & VizFactory Palette Injection (2026-05-09)
+
+**Status:** DECIDED — implemented in BP-COLOR-2 and BP-COLOR-3.
+
+**Context:**
+The BLUEPRINT IDE Build Mode (ADR-075) added a `color` widget to the form builder. The initial design reserved a "From project colors" slot as a v2 placeholder. This ADR formalises the design for that slot, the backing registry, and how palettes flow from deployment config through to VizFactory scale injection.
+
+**Problem:** Three separate concerns were conflated:
+1. Where do institutional/project palette definitions live?
+2. How do they reach the UI widget (BLUEPRINT color picker)?
+3. How do they reach the plot rendering engine (VizFactory)?
+
+**Decision:**
+
+### 1. Palette Registry file: `config/palettes.yaml`
+
+A deployment-level YAML file owned by the project/institution operator. Sits outside `libs/` — it is configuration, not library code. Format:
+
+```yaml
+palettes:
+  nvi_official:
+    - "#1D5B8B"
+    - "#E8A020"
+    # ...
+```
+
+Optional file. VizFactory and the bootloader always have `sparmvet_brand` built in.
+
+### 2. Boundary: which layer reads the file
+
+**`bootloader.get_palettes()`** is the sole reader of `config/palettes.yaml` in the application layer. It:
+- Always returns a non-empty dict (built-in `sparmvet_brand` is always present)
+- Merges built-ins with project palettes (project wins on name collision — intentional branding)
+- Emits INFO when the file is absent (optional, not an error)
+- Emits WARNING with file path + exact parse error when the file exists but is malformed
+
+**`libs/viz_factory/`** does NOT read `config/palettes.yaml`. The library is fully autonomous — it ships with `_BUILTIN_PALETTES` on the class and accepts an optional `palette_registry` kwarg at construction. The `app/` layer injects the resolved registry.
+
+This respects ADR-011 (no cross-boundary file reads from libs/).
+
+### 3. VizFactory construction
+
+`app/src/server.py` constructs VizFactory as:
+```python
+viz_factory = VizFactory(palette_registry=bootloader.get_palettes())
+```
+
+VizFactory merges built-ins + injected project palettes into `self._palette_registry`. In headless tests, inject a custom dict or omit to use only built-ins.
+
+### 4. Manifest `plot_defaults.palette` key (BP-COLOR-3)
+
+Manifests may declare a named palette at the manifest level (applies to all plots) or per-plot:
+
+```yaml
+plot_defaults:
+  palette: nvi_official    # default for all plots in this manifest
+
+# Per-plot override:
+plots:
+  my_plot:
+    palette: sparmvet_brand
+```
+
+Resolution order: **plot-level palette > `plot_defaults.palette` > no palette (matplotlib default)**.
+
+### 5. Scale injection rules in VizFactory._apply_palette()
+
+- Project palette name (found in `self._palette_registry`) → `scale_fill_manual` / `scale_color_manual` with the hex list
+- Viridis family name (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) → `scale_fill_viridis_d` / `scale_color_viridis_d`
+- Other matplotlib name → `scale_fill_brewer` / `scale_color_brewer`
+- Scale is only injected for aesthetics present in the plot mapping (`fill`, `color`)
+- Scale is never injected when the manifest already declares a `scale_fill_*` or `scale_color_*` layer
+- On unknown palette name: WARNING with the valid project palette names listed
+
+**Affected files:** `config/palettes.yaml`, `app/src/bootloader.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/src/server.py`, `app/modules/wrangle_studio.py`, `app/handlers/blueprint_handlers.py`, `docs/appendix/manifest_structure.yaml`

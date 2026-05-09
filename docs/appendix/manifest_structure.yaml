@@ -50,6 +50,22 @@ analysis_groups_structure:
           <plot_id>:                      # snake_case; GLOBALLY UNIQUE across all manifests
             label: "Human-readable plot name"
             spec: !include <basename>/plots/<plot_id>.yaml
+  plot_defaults_block: |
+    # Optional manifest-level defaults applied to every plot in the manifest.
+    # Individual plot specs may override any key.
+    #
+    # palette: (BP-COLOR-3) — named palette applied as fill/colour scale to every plot.
+    #   Resolution order: plot-level palette > plot_defaults.palette > matplotlib default.
+    #   Value must be either:
+    #     a) A project palette name defined in config/palettes.yaml  → scale_*_manual (hex list)
+    #     b) A matplotlib palette name (e.g. "Blues", "viridis", "Set1") → scale_*_brewer / scale_*_viridis_d
+    #   The scale is injected only for aesthetics present in the plot mapping (fill / color).
+    #   It is never injected when the manifest already declares a scale_fill_* or scale_color_* layer.
+    #
+    plot_defaults:
+      palette: nvi_official              # Named palette from config/palettes.yaml (or matplotlib)
+      theme: theme_light                 # Optional — applies to all plots as the default theme
+
   plot_spec_file_format: |
     spec:
       factory_id: bar_logic              # Registered: bar_logic, scatter_logic, heatmap_logic
@@ -57,6 +73,7 @@ analysis_groups_structure:
       x: <column>
       fill: <column>
       facet_by: <column>                 # Optional
+      palette: nvi_official              # Optional — overrides plot_defaults.palette for this plot
       theme: theme_light                 # Optional (registered theme component name)
       layers:                            # Required for position, labels, guides
         - name: position_dodge           # For side-by-side bars
@@ -68,6 +85,33 @@ analysis_groups_structure:
   forbidden_flat_keys:
     - "position: dodge  # FORBIDDEN — must be in layers:"
     - "labels:          # FORBIDDEN — must be in layers: as 'name: labs'"
+
+palette_registry:
+  file: "config/palettes.yaml"
+  format: |
+    palettes:
+      my_palette_name:           # Unique name; referenced in manifest palette: key
+        - "#1D5B8B"
+        - "#E8A020"
+        - "#5FAD56"
+  resolution:
+    - "plot-level 'palette:' key (overrides everything)"
+    - "manifest 'plot_defaults.palette:' key (applies to all plots in the manifest)"
+    - "matplotlib default (no palette injection)"
+  scale_injection_rules:
+    - "Injects scale_fill_manual / scale_color_manual for project palettes (hex list from registry)"
+    - "Injects scale_fill_brewer / scale_color_brewer for matplotlib categorical palettes"
+    - "Injects scale_fill_viridis_d / scale_color_viridis_d for viridis family names"
+    - "Never injected when the manifest already declares a scale_fill_* or scale_color_* layer"
+    - "Only injected for aesthetics present in the plot mapping (fill, color)"
+  built_in_palettes:
+    sparmvet_brand:
+      - "#345beb"
+      - "#10a395"
+      - "#ffc107"
+      - "#d62828"
+      - "#6c757d"
+      - "#6a4c93"
 
 example_structure: |
   config/manifests/pipelines/

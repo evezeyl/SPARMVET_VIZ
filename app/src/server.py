@@ -74,7 +74,9 @@ def server(input, output, session):
         raw_data_dir=bootloader.get_location("raw_data"),
         prefer_discovery=bootloader.connector_config.get("prefer_discovery", False),
     )
-    viz_factory = VizFactory()
+    # BP-COLOR-3: inject project palettes from deployment registry.
+    # VizFactory works with built-ins alone when no registry is passed (library independence).
+    viz_factory = VizFactory(palette_registry=bootloader.get_palettes())
 
     # Module Initialization (Phase 11-F / ADR-039)
     wrangle_studio = WrangleStudio(session.id)

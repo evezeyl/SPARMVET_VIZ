@@ -1,0 +1,39 @@
+# SPARMVET Deployment Palette Registry
+#
+# Define named color palettes available to all manifests in this deployment.
+# Each palette is a list of hex color strings.
+#
+# Usage in a manifest:
+#   plot_defaults:
+#     palette: nvi_official
+#
+# Usage in the BLUEPRINT color widget: select "Project palette" → choose name.
+#
+# To add a palette: append a new key below. Names must be unique.
+# Palettes are loaded at startup by Bootloader.get_palettes().
+
+palettes:
+
+  # NVI institutional palette
+  nvi_official:
+    - "#1D5B8B"
+    - "#E8A020"
+    - "#5FAD56"
+    - "#D62828"
+    - "#6A4C93"
+
+  # NVI sequential (light → dark blue — suitable for heatmaps)
+  nvi_sequential:
+    - "#f7fbff"
+    - "#c6dbef"
+    - "#6baed6"
+    - "#2171b5"
+    - "#08306b"
+
+  # SPARMVET accent palette (matches app brand colors)
+  sparmvet_accent:
+    - "#345beb"
+    - "#10a395"
+    - "#ffc107"
+    - "#d62828"
+    - "#6c757d"

@@ -236,10 +236,10 @@
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
-- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`
-- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`
-- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
-- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `project_conventions.md §"Deployment Profile Resolution`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `config/palettes.yaml (optional, read by get_palettes)`
+- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`, `app.modules.wrangle_studio (via self._bootloader)`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-081`, `project_conventions.md §"Deployment Profile Resolution`
 
 ## `app/src/main.py`
 - **Role:** `ref`
@@ -355,6 +355,14 @@
 - **provides:** `script:normalize_manifest_fields`
 - **consumes:** `config/manifests/ (YAML files)`
 - **doc:** `.claude/rules/rules_data_engine.md#4`
+
+## `config/palettes.yaml`
+- **Role:** `ref`
+- **provides:** `palette_registry — named hex-list palettes for deployment (ADR-081)`
+- **consumes:** `(none — static config file)`
+- **consumed_by:** `app/src/bootloader.py (method:get_palettes)`
+- **doc:** `ADR-081`, `.claude/rules/rules_viz_factory.md §6`, `.claude/knowledge/project_conventions.md §15`
+- **note:** Optional file — system falls back to `_BUILTIN_PALETTES` when absent. `libs/viz_factory/` never reads this file directly (ADR-011).
 
 ## `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`
 - **Role:** `branch`
@@ -754,10 +762,11 @@
 
 ## `libs/viz_factory/src/viz_factory/viz_factory.py`
 - **Role:** `plot`
-- **provides:** `class:VizFactory`, `method:render`
+- **provides:** `class:VizFactory`, `method:render`, `method:_apply_palette`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENTS via get_component)`
-- **consumed_by:** `app/handlers/home_theater.py`, `libs/viz_factory/tests/debug_gallery.py`
-- **doc:** `.claude/rules/rules_viz_factory.md`
+- **consumed_by:** `app/handlers/home_theater.py`, `libs/viz_factory/tests/debug_gallery.py`, `app/src/server.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `ADR-081`
+- **note:** `palette_registry` injected at construction by `app/src/server.py` — lib never reads `config/palettes.yaml` directly (ADR-011 boundary)
 
 ## `libs/viz_factory/tests/debug_audit.py`
 - **Role:** `plot`

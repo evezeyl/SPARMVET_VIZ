@@ -79,6 +79,12 @@ Available profiles: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-
 
 **Sidebar layout is configurable per persona and per workspace** (Home, Blueprint, Gallery, Test Lab). Each persona template declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_persona.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
 
+**Institutional / project color palettes** can be defined in `config/palettes.yaml` (optional). Named palettes defined there are available in:
+- The BLUEPRINT IDE color widget ("Project palette" source), and
+- Manifest `plot_defaults: palette: <name>` for automatic fill/colour scale injection at render time.
+
+The built-in `sparmvet_brand` palette is always available even without this file. See [Manifest Structure Appendix](./docs/appendix/manifest_structure.yaml) for the format and resolution rules (ADR-081).
+
 **Validate persona configs before deploying:**
 ```bash
 .venv/bin/python scripts/validate_persona_config.py --all --strict

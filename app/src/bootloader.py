@@ -1,5 +1,5 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import)
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, project_conventions.md §"Deployment Profile Resolution"
@@ -544,6 +544,94 @@ class Bootloader:
             raise KeyError(
                 "Connector config missing 'runtime.python_interpreter' definition.")
         return str(path)
+
+    # Built-in SPARMVET brand palette — always present so the system has a safe default.
+    # Uses the authoritative brand colors from rules_css_style_spec.md §1c.
+    _BUILTIN_PALETTES: dict = {
+        "sparmvet_brand": [
+            "#345beb",  # Blue — primary action
+            "#10a395",  # Teal — export/upload
+            "#ffc107",  # Amber — warning/pending
+            "#d62828",  # Red — error/destructive
+            "#6c757d",  # Grey — muted
+            "#6a4c93",  # Violet — audit nodes
+        ]
+    }
+
+    def get_palettes(self) -> dict:
+        """Load deployment palette registry from config/palettes.yaml (BP-COLOR-2).
+
+        Returns {name: [hex, ...]} merged dict: built-in SPARMVET palettes plus any
+        project-defined palettes from config/palettes.yaml. Project palettes override
+        built-ins when names collide (intentional — institutions can rebrand defaults).
+
+        Never returns an empty dict — the built-in 'sparmvet_brand' palette is always
+        present so callers always have at least one option.
+
+        Diagnostics: if config/palettes.yaml exists but cannot be loaded, a WARNING is
+        printed with the file path and the exact exception so the operator can fix it.
+        """
+        if hasattr(self, "_palettes_cache"):
+            return self._palettes_cache
+
+        # Always start from built-ins — project palettes are merged on top
+        result = dict(self._BUILTIN_PALETTES)
+
+        palette_path = Path("config/palettes.yaml")
+        if not palette_path.exists():
+            # File is optional — INFO only, not a warning
+            print(
+                f"[Bootloader] INFO: no deployment palette file at "
+                f"'{palette_path}'. Using built-in palettes only "
+                f"({list(result.keys())}). To add project palettes, create "
+                f"config/palettes.yaml — see the file header for the required format."
+            )
+        else:
+            try:
+                with open(palette_path) as f:
+                    raw = yaml.safe_load(f)
+                if not isinstance(raw, dict):
+                    raise ValueError(
+                        f"Expected a YAML mapping at the top level, got {type(raw).__name__}. "
+                        f"The file must start with 'palettes:' and contain named palette entries."
+                    )
+                project_palettes = raw.get("palettes")
+                if not isinstance(project_palettes, dict):
+                    raise ValueError(
+                        f"'palettes:' key is missing or not a mapping. "
+                        f"Each palette must be a named list of hex strings, e.g.:\n"
+                        f"  palettes:\n"
+                        f"    my_palette:\n"
+                        f"      - \"#1D5B8B\"\n"
+                        f"      - \"#E8A020\""
+                    )
+                # Validate individual entries and warn on bad ones (don't discard the whole file)
+                loaded_count = 0
+                for name, colors in project_palettes.items():
+                    if not isinstance(colors, list) or not colors:
+                        print(
+                            f"[Bootloader] WARNING: palette '{name}' in "
+                            f"'{palette_path}' is not a non-empty list — skipped. "
+                            f"Each palette must be a list of hex strings."
+                        )
+                        continue
+                    result[name] = [str(c) for c in colors]
+                    loaded_count += 1
+                print(
+                    f"[Bootloader] Loaded {loaded_count} project palette(s) from "
+                    f"'{palette_path}': {[k for k in project_palettes if k in result]}"
+                )
+            except Exception as exc:
+                print(
+                    f"[Bootloader] WARNING: could not load palette registry from "
+                    f"'{palette_path.resolve()}': {exc}. "
+                    f"Falling back to built-in palettes. Fix the file and restart to "
+                    f"activate project palettes."
+                )
+                # result already contains built-ins — no data loss
+
+        self._palettes_cache = result
+        return self._palettes_cache
 
     def get_agent_config(self) -> dict:
         """Return the blueprint_agent: block from the active persona template.

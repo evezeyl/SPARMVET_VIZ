@@ -734,7 +734,9 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 | 32-E | BP-ESCAPE-1 | YAML escape hatch: read-only (`blueprint_enabled`); editable (`manifest_edit_enabled`) | sonnet | Med |
 | 32-F | BP-UNDO-1 | 20-step session undo deque for BLUEPRINT node edits | sonnet | Med |
 | 32-G | BP-HELP-1 | Python `__doc__` resolved at runtime via `importlib`; optional `doc_url` ("Open in browser", disabled in air-gapped deployments) | sonnet | Med |
-| 32-H | BP-COLOR-1 | Color widget: column mapping \| set literal (palette library \| `from_project_colors` [RESERVED v2] \| custom hex picker) | sonnet | Med |
+| 32-H | BP-COLOR-1 | Color widget: column mapping \| set literal (palette library \| project palette \| custom hex) | sonnet | ✅ |
+| 32-H2 | BP-COLOR-2 | Deployment palette registry `config/palettes.yaml`; `bootloader.get_palettes()`; color widget "Project palette" source | haiku | ✅ |
+| 32-H3 | BP-COLOR-3 | `plot_defaults.palette` in manifest → VizFactory scale injection at render time | sonnet | ✅ |
 | 32-I | BP-FLAG-1 | `manifest_edit_enabled` flag: add to all 6 persona templates (false/false/false/false/true/true); cascade in bootloader | haiku | Low |
 | 32-J | ACTION-RENAME-1 | `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag | haiku | Low |
 
@@ -742,14 +744,20 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - `ui_schema` dict embedded directly in `@register_action` / `@register_plot_component` kwargs — no separate schema files
 - `schema_registry.py` in `blueprint_arch`: reads `ui_schema` dicts at startup; headless-safe; zero Shiny imports
 - 8 widget types: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`
-- Color widget nested model: column mapping | set literal (palette library | `from_project_colors` [RESERVED v2] | custom hex)
-- Project color registry deferred to v2; `from_project_colors` slot reserved (grayed out)
+- Color widget nested model: column mapping | set literal (palette library | project palette | custom hex)
 - Help: Python `__doc__` at runtime via `importlib` — air-gap safe, version-matched. External `doc_url` optional
 - Action naming: align `@register_action` names with Polars for 1:1 wrappers; composite actions keep descriptive names
 - Position rules enforced via `context` tag in `ui_schema`: `t1` / `t2` / `assembly` / `plot`
 - Apply gate: upstream schema propagates on Apply only (not continuously)
 - Edit/remove: (1) edit in-place + re-Apply, (2) 20-step undo deque, (3) YAML escape hatch
 - `manifest_edit_enabled`: default false all personas; true for developer and qa only
+
+**Key decisions (ADR-081 — Palette Registry):**
+- Project palettes live in `config/palettes.yaml` — operator config, not library code
+- `bootloader.get_palettes()` is the sole reader; never empty (`sparmvet_brand` built-in always present)
+- `libs/viz_factory/` does NOT read config files — palette registry injected at construction (ADR-011)
+- `app/src/server.py`: `VizFactory(palette_registry=bootloader.get_palettes())`
+- VizFactory `_apply_palette()`: project → manual scale; viridis family → viridis_d; other → brewer; guards: no double-inject, only for mapped aesthetics
 
 ---
 
