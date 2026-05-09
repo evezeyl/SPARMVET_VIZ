@@ -2713,7 +2713,7 @@ The "Add node" picker in BLUEPRINT is a searchable, filtered catalog driven by `
 
 ## ADR-076: BLUEPRINT AI Agent Helper — Adapter Architecture and Conversational Design (2026-05-09)
 
-**Status:** DECIDED — implementation pending (Phase 31+). MVP-1 scope: see `.claude/design/adr076_mvp.md`.
+**Status:** MVP-1 IMPLEMENTED (2026-05-09). All six BP-AGENT-* tasks complete. Chat panel live in `app/handlers/blueprint_handlers.py`; wired into Blueprint right sidebar via `home_theater.py`. Tool-call loop (3 rounds max, `asyncio.to_thread` for non-blocking subprocess). `instructions_file` read exclusively from `bootloader.get_agent_config()` — no hardcoded path fallback (raises `ValueError` if key absent). Smoke tests: 14 passed, 3 skipped.
 
 **Context:** ADR-075 establishes BLUEPRINT as a visual IDE for building manifests through forms, schema-aware widgets, and a YAML escape hatch. That model still presumes the user knows *what* they want to build — which actions to chain, which join keys are valid, which aesthetics to map. Bench scientists drafting their first manifest typically do not.
 

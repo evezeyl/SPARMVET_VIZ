@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-09 (tasks.md cleanup — all completed P0/P1/P2 audit tasks + completed foundation tasks archived to `tasks_archive_2026-05-09.md`) by @dasharch
+**Last Updated:** 2026-05-09 (BP-AGENT-UI-1 complete — Blueprint AI Agent chat panel MVP-1) by @dasharch
 
 ---
 
@@ -60,6 +60,14 @@
 - [ ] **DIAG-RUNTIME-VIZFACTORY-1** `[deferred until DIAG-RUNTIME-ADR]`: Retrofit `libs/viz_factory/src/viz_factory/viz_factory.py` — component not registered, missing required aesthetic, plotnine render exceptions.
 - [ ] **DIAG-RUNTIME-T3APPLY-1** `[deferred until DIAG-RUNTIME-ADR]`: T3 Apply path failures in `app/handlers/audit_stack.py`.
 - [ ] **DIAG-RUNTIME-BLUEPRINT-1** `[deferred until DIAG-RUNTIME-ADR]`: Manifest fragment validation failures during BLUEPRINT IDE editing.
+
+---
+
+## 🎨 CSS Style Hygiene
+
+- [ ] **CSS-BADGE-PROPAG-1** `[haiku/low]`: Migrate `.spv-badge-propagation` off Bootstrap info colors (`#cfe2ff`/`#0a3678`) to SPARMVET palette: `background: #eef0fb`, `color: #345beb`. In `config/ui/theme.css` §20, line ~824. Documented in `rules_css_style_spec.md §1f`.
+
+- [ ] **CSS-ERROR-RED-DECIDE** `[opus/high]`: Decide whether to add an explicit error red to the SPARMVET color palette. Currently error states reuse amber tint (`#fff3cd`). If red is added, update `rules_css_style_spec.md §1d` first, then apply to `bp-agent-status-banner.error`. **Requires Eve decision before any code change.**
 
 ---
 
@@ -146,7 +154,7 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
 - [x] **BP-AGENT-PANEL-1** `[haiku/low]`: Register `blueprint_agent_chat` panel type in `app/modules/sidebar_registry.py` with `gate_flag: "blueprint_agent_enabled"`. Add to BLUEPRINT workspace `right_sidebar.panels` in `developer_template.yaml` + `qa_template.yaml`.
 
-- [ ] **BP-AGENT-UI-1** `[sonnet/medium]`: Chat panel render outputs in `app/handlers/blueprint_handlers.py`: cold-start greeting, conversation log (buffered, "thinking…" indicator), adapter-status banner, single-flight UI gate. No decision accordion, no Apply gate, no data toggle (MVP-1 scope). No streaming.
+- [x] **BP-AGENT-UI-1** `[sonnet/medium]`: Chat panel render outputs in `app/handlers/blueprint_handlers.py`: cold-start greeting, conversation log (buffered, "thinking…" indicator), adapter-status banner, single-flight UI gate. No decision accordion, no Apply gate, no data toggle (MVP-1 scope). No streaming. Wired into Blueprint right sidebar via `home_theater.py` `right_sidebar_content_ui`. `instructions_file` read from persona config (no hardcoded path fallback). Tool-call loop (max 3 rounds) with `asyncio.to_thread` for non-blocking subprocess. Smoke tests: 14 passed, 3 skipped.
 
 - [x] **BP-AGENT-CSS-1** `[haiku/low]`: `.bp-agent-*` block in `config/ui/theme.css` — conversation bubbles, input row, status banner. Dark Grey #c0c0c0 background, SPARMVET Blue #345beb. No inline styles (ADR-055).
 

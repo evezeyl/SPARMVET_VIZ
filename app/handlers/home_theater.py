@@ -1267,7 +1267,7 @@ def define_server(input, output, session, *,
                     class_="p-2 bg-white border rounded shadow-sm mb-2"
                 )
 
-            return ui.div(
+            parts = [
                 ui.card(
                     ui.card_header(
                         ui.div(ui.h5("Blueprint Surgeon", class_="mb-0"),
@@ -1282,9 +1282,20 @@ def define_server(input, output, session, *,
                         class_="p-2"
                     ),
                     class_="mb-2 shadow-sm border-0"
-                ),
-                class_="sidebar-content p-0 d-flex flex-column h-100"
-            )
+                )
+            ]
+            if bootloader.is_enabled("blueprint_agent_enabled"):
+                parts.append(
+                    ui.card(
+                        ui.card_header(
+                            ui.div(ui.h5("Blueprint Agent", class_="mb-0"),
+                                   class_="d-flex justify-content-center w-100")
+                        ),
+                        ui.output_ui("blueprint_agent_panel_ui"),
+                        class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto"
+                    )
+                )
+            return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")
 
         # --- 🏠 Home Theater (ADR-043 / ADR-044 / ADR-073) ---
         if active_sidebar in ("Home", None, ""):

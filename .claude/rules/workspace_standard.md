@@ -24,6 +24,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 | Rulebook | Scope | File Reference |
 | :--- | :--- | :--- |
 | **Doc & Aesthetics** | Violet Law, Quarto/Mermaid, CSS Themes, Doc Sync | [rules_documentation_aesthetics.md](./.claude/rules/rules_documentation_aesthetics.md) |
+| **CSS Style Spec** | Color palette, typography scale, button catalog, panel/tab patterns — agent reference before writing any CSS | [rules_css_style_spec.md](./.claude/rules/rules_css_style_spec.md) |
 | **Manifest Standards** | Basename Mirroring, YAML Includes | [rules_manifest_structure.md](./.claude/rules/rules_manifest_structure.md) |
 | **Data Engine** | 3-Tier Tree Lifecycle (ADR-024), Decorators, Manifests | [rules_data_engine.md](./.claude/rules/rules_data_engine.md) |
 | **Validation & Test** | @verify Protocol, Global Wrappers, CLI Mandate | [rules_verification_testing.md](./.claude/rules/rules_verification_testing.md) |

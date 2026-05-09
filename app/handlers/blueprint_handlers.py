@@ -15,14 +15,17 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (blueprint_handlers)
-# consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
-# consumed_by: app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045
+# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui
+# consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
+# consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))
+# doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-076
 # @end_deps
 
+import asyncio
 import io
+import json
 import re
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -37,6 +40,9 @@ from blueprint_arch.manifest_navigator import (
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
+from blueprint_arch.agent_context import build_system_prompt
+from blueprint_arch.agent_tools import call_tool, get_tool_definitions
+from blueprint_arch.agent_tool_parser import extract_tool_calls
 from utils.config_loader import ConfigManager
 
 
@@ -745,3 +751,164 @@ def define_server(input, output, session, *,
         buf = io.StringIO()
         yaml.dump(manifest_data, buf, default_flow_style=False, sort_keys=False)
         yield buf.getvalue()
+
+    # ── Blueprint AI Agent (ADR-076) ─────────────────────────────────────────
+
+    if not bootloader.is_enabled("blueprint_agent_enabled"):
+        return  # remainder of this block only registers when the flag is on
+
+    _agent_session_id: reactive.Value[str] = reactive.Value("")
+    _agent_conversation: reactive.Value[list] = reactive.Value([])
+    _agent_in_flight: reactive.Value[bool] = reactive.Value(False)
+
+    def _get_or_create_session() -> str:
+        sid = _agent_session_id.get()
+        if not sid:
+            sid = str(uuid.uuid4())
+            _agent_session_id.set(sid)
+        return sid
+
+    def _render_message(role: str, text: str):
+        css_class = "bp-agent-message user" if role == "user" else "bp-agent-message agent"
+        return ui.div(text, class_=css_class)
+
+    @output
+    @render.ui
+    def blueprint_agent_panel_ui():
+        """Renders the full agent chat panel. Reads reactive state; never calls .set()."""
+        adapter = bootloader.get_agent_adapter()
+        in_flight = _agent_in_flight.get()
+        conversation = _agent_conversation.get()
+
+        # Status banner
+        if adapter is None or adapter.is_disabled:
+            banner_class = "bp-agent-status-banner error"
+            banner_text = "Agent unavailable — backend not configured."
+        elif in_flight:
+            banner_class = "bp-agent-status-banner busy"
+            banner_text = ui.div(
+                ui.span(class_="spinner"),
+                ui.span(" Thinking..."),
+                class_="d-flex align-items-center gap-2"
+            )
+        else:
+            banner_class = "bp-agent-status-banner ok"
+            banner_text = "Blueprint Agent ready."
+
+        # Conversation log
+        if not conversation:
+            log_content = ui.div(
+                ui.p("Ask me about actions, components, or field contracts "
+                     "for the active manifest.",
+                     class_="text-muted small fst-italic p-2 mb-0"),
+                class_="bp-agent-log-empty"
+            )
+        else:
+            msgs = [_render_message(m["role"], m["content"]) for m in conversation
+                    if m.get("role") in ("user", "assistant")]
+            log_content = ui.div(*msgs, class_="bp-agent-log")
+
+        # Input row — disable send while in-flight or no adapter
+        send_disabled = in_flight or adapter is None or adapter.is_disabled
+
+        return ui.div(
+            ui.div(banner_text, class_=banner_class),
+            log_content,
+            ui.div(
+                ui.input_text("bp_agent_input", label=None,
+                              placeholder="Type a question...",
+                              width="100%"),
+                ui.input_action_button("bp_agent_send", "Send",
+                                       disabled=send_disabled,
+                                       class_="btn btn-primary btn-sm mt-1 w-100"),
+                class_="bp-agent-input-area"
+            ),
+            id="blueprint_agent_panel",
+            class_="bp-agent-panel d-flex flex-column h-100"
+        )
+
+    @reactive.Effect
+    @reactive.event(input.bp_agent_send)
+    async def _bp_agent_send():
+        """Handles send button: calls adapter in a thread, runs tool loop, updates conversation."""
+        user_text = (input.bp_agent_input() or "").strip()
+        if not user_text:
+            return
+
+        adapter = bootloader.get_agent_adapter()
+        if adapter is None or adapter.is_disabled:
+            return
+
+        # Guard: single-flight
+        if _agent_in_flight.get():
+            return
+
+        session_id = _get_or_create_session()
+
+        # Append user message and set in-flight
+        cur = _agent_conversation.get()
+        _agent_conversation.set(cur + [{"role": "user", "content": user_text}])
+        _agent_in_flight.set(True)
+
+        try:
+            # Load system prompt once per panel lifecycle
+            agent_cfg = bootloader.get_agent_config()
+            instructions_file = agent_cfg.get("instructions_file")
+            if not instructions_file:
+                raise ValueError(
+                    "blueprint_agent.instructions_file is required in the persona template "
+                    "when blueprint_agent_enabled=True."
+                )
+            system_prompt = build_system_prompt(instructions_file)
+
+            # Tool-call loop (max 3 rounds to prevent runaway)
+            current_user_msg = user_text
+            final_reply = ""
+            for _round in range(3):
+                reply_text = await asyncio.to_thread(
+                    adapter.send_message,
+                    session_id,
+                    current_user_msg,
+                    system_prompt=system_prompt,
+                )
+                parse_result = extract_tool_calls(reply_text)
+
+                if not parse_result.tool_calls:
+                    # No tool calls — this is the final response
+                    final_reply = reply_text
+                    break
+
+                # Execute each tool call and collect results
+                tool_results = []
+                for tc in parse_result.tool_calls:
+                    result = call_tool(tc.tool_name, tc.args)
+                    tool_results.append({"tool": tc.tool_name, "result": result})
+
+                if parse_result.errors:
+                    # Malformed blocks — ask agent to retry with error context
+                    current_user_msg = parse_result.format_error_turn()
+                else:
+                    # Feed results back as a user turn for the next round
+                    lines = []
+                    for tr in tool_results:
+                        lines.append(
+                            f"Tool `{tr['tool']}` result:\n```json\n"
+                            f"{json.dumps(tr['result'], indent=2)}\n```"
+                        )
+                    current_user_msg = "\n\n".join(lines)
+            else:
+                # Exhausted rounds without a clean reply
+                final_reply = reply_text  # use last reply
+
+            # Append assistant reply
+            conv = _agent_conversation.get()
+            _agent_conversation.set(conv + [{"role": "assistant", "content": final_reply}])
+
+        except Exception as exc:
+            conv = _agent_conversation.get()
+            _agent_conversation.set(
+                conv + [{"role": "assistant",
+                         "content": f"[Agent error: {exc}]"}]
+            )
+        finally:
+            _agent_in_flight.set(False)
