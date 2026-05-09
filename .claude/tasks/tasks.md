@@ -287,6 +287,8 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 
 - [ ] **Unified Materialization** `[haiku/low]`: `debug_wrangler.py` / `debug_assembler.py` — auto-create dated `tmpAI/{date}/{lineage}/` subfolders (use `get_debug_out_dir()` from `libs/utils`).
 - [ ] **T3 lf threading** `[sonnet/medium]`: When new T3 node types (rename, derive, pivot) are added, thread them through `_apply_t3_to_lf`. Design in `.claude/tasks/design_sge_lineage_t3.md`.
+- [ ] **PYPROJECT-DEPS-1** `[haiku/low]` `[repo-hygiene]`: Verify all 8 `libs/*/pyproject.toml` files declare `libs/utils` as an explicit dependency wherever they import from it. Two-tier model (ADR-011 amendment 2026-05-09): any domain lib importing `utils` must list it in `[project.dependencies]`. Also add `pattern_helper` to `libs/utils/` public API once BP-PATTERN-1 is implemented.
+
 - [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: The following imports violate the "no cross-lib" rule and should be resolved (move shared types to `utils` or inject via app layer):
   - `libs/blueprint_arch/blueprint_mapper.py` → `utils.config_loader.ConfigManager`
   - `libs/transformer/pipeline.py` → `utils.config_loader.ConfigManager`, `ingestion.ingestor.DataIngestor`

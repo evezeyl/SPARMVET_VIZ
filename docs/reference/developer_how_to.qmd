@@ -21,7 +21,9 @@ AI Agents and human contributors MUST respect the `@verify` evidence loop before
 
 ## 2. The Library Testing Standard
 
-In accordance with our "Clear Lines Method", every modular library in the `libs/` directory operates autonomously and contains its own dedicated `tests/` subdirectory. 
+In accordance with our "Clear Lines Method" (two-tier dependency model — see [Library Dependency Model](../foundations/core_architecture_code.qmd#library-dependency-model)), every modular library in the `libs/` directory operates autonomously and contains its own dedicated `tests/` subdirectory.
+
+The key consequence for testing: each library can be tested **in isolation** — without starting Shiny, without importing other domain libs, without a running database. Install the lib plus `libs/utils/` and run the test suite. If a test requires importing from a second domain lib, that is a dependency violation and must be fixed at the source. 
 
 Testing is split into two distinct categories:
 1. **Automated Suites (`test_*.py`)**: Run via Pytest to ensure core logic integrity and prevent regressions.

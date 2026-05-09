@@ -42,10 +42,27 @@ To maintain architectural integrity and prevent circular dependencies, we enforc
 - **Don't:** Import `shiny` or use `input.variable_name` inside `libs/`.
 - **Don't:** Cross-import between libraries (e.g., `transformer` must NOT import `ingestion`).
 
+### Two-Tier Library Dependency Model
+
+Domain libraries in `libs/` are designed to be independently reusable — you can build a CLI tool, a Galaxy wrapper, or a different UI by importing only the layers you need. This requires a strict two-tier import rule:
+
+| Tier | Libraries | Allowed imports |
+| --- | --- | --- |
+| **Base layer** | `libs/utils/` | stdlib + polars only |
+| **Domain layer** | all other `libs/` | stdlib, polars, + `libs/utils/` (must be declared in `pyproject.toml`) |
+| **Orchestration** | `app/`, `assets/scripts/` | any `libs/` |
+
+**Rule:** Domain libs MUST NOT import from each other. `app/` is the only place that wires multiple libs together. If a shared utility is needed, add it to `libs/utils/` and declare the dependency in `pyproject.toml`.
+
+This is also where **manifest-driven** and **domain-agnostic at the import level** mean two different things:
+
+- _Manifest-driven_: the lib has no hardcoded knowledge of specific biological domains (species, gene families, resistance phenotypes). All domain-specific behaviour is injected at runtime via the manifest/config. The lib code works identically for AMR data, physics data, or any structured dataset.
+- _Domain-agnostic at the import level_: the lib does not import from peer domain libs. You can install and use `libs/transformer/` standalone without pulling in `libs/ingestion/` or `libs/viz_factory/`.
+
 ### Import Strategy: Package-First Authority
 We use **Editable Mode** installations to treat our local libraries as first-class Python packages.
 - **Rule:** Always use `import ingestion` or `from transformer.data_wrangler import DataWrangler`.
-- **Rule:** All internal lib logic must be **data-agnostic**; it receives data from the caller, it never fetches it directly.
+- **Rule:** Domain lib logic is **manifest-driven** — behaviour is determined by the manifest/config passed by the caller, not by hardcoded domain knowledge. Libs receive data as parameters; they never fetch data directly.
 - **No Path Hacking:** The use of `sys.path.append` or `sys.path.insert` to locate internal modules is strictly forbidden.
 
 ### Do not start coding at once

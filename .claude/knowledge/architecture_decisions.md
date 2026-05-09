@@ -109,6 +109,7 @@
 - **Installation Rule:** The global `.venv` at the root will install these libraries in 'editable mode' (`pip install -e ./libs/transformer`).
 - **Integrity Rule:** No symlinks. Each module must define its own dependencies, ensuring that if extracted, it could function as a standalone library.
 - **Dependency Rule:** Legacy requirements (`requirements.txt`, `requires.txt`) are strictly **FORBIDDEN**; the `pyproject.toml` file is the sole source of truth for module dependencies.
+- **Two-Tier Model (clarified 2026-05-09):** `libs/utils/` is the **base layer** — may be imported by any domain lib, but must be declared explicitly in that lib's `pyproject.toml`. All other `libs/` are **domain layers** — zero peer-to-peer cross-lib imports permitted. `app/` and `assets/scripts/` are the **orchestration layer** — the only place that imports from multiple libs. Goal: each domain lib is usable standalone; if you want a different UI (CLI, API, Galaxy), import only the layers you need. See `rules_runtime_environment.md §4`.
 
 ## ADR 012: Staged Data Assembly
 

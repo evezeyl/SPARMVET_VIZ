@@ -21,7 +21,7 @@ All code in `app/` falls into exactly one of two categories. **Mixing them is a 
 
 | Category | Where it lives | Rule |
 |---|---|---|
-| **Pure manifest introspection** | `app/modules/manifest_navigator.py` | Zero Shiny imports. Zero `input`/`output`/`session`. Pure Python functions — importable from headless scripts, test suites, DevStudio, and CLI tools without side effects. |
+| **Pure manifest introspection** | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` (Phase 29 move — ADR-067) | Zero Shiny imports. Zero `input`/`output`/`session`. Pure Python functions — importable from headless scripts, test suites, CLI tools, and export handlers without side effects. Formally shared infrastructure (ADR-074). |
 | **Shiny reactive wiring** | `app/handlers/<concern>.py` | Contains `@render.*`, `@reactive.Effect`, `@reactive.Calc`. Receives shared state via explicit `define_server(...)` keyword arguments. **Never imported by non-Shiny contexts.** |
 
 **Violation examples:**

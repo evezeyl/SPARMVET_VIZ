@@ -1,15 +1,18 @@
 # Code structure mostly reflects core architecture 
 
-| path/name | Role component | Responsibility | Technology | 
+| path/name | Role component | Responsibility | Technology |
 | --- | --- | --- | --- |
-| libs/connector | [**Data Connector**](../workflows/connector.qmd) | The "Bridge." It handles authentication and fetches raw data. | BioBlend/API |
-| config | [**Configuration Layer**](./data_contracts_adr.qmd) | **Contains the data contract** for the data AND metadata, plotting defaults. yaml (dictionary) | YAML |
-| libs/utils | [**Utilities**](#TODO) | Utility functions used across the application (bridges), such as file config loading and gatekeeping. Contains eg. config loader | Python |
-| libs/ingestion | [**Data Ingestion**](../workflows/ingestion.qmd) | The "Gatekeeper." It reads TSV/YAML/VCF and ensures the file isn't corrupted. It also apply basic **defensive programming** checks : metadata data and metadata following data contract (#TODO - ? config loader?)- placement of configuration files in correct directory | 
-| libs/transformer | [**Data Wrangling**](../workflows/wrangling.qmd) | The "Cleaner". Tidy and wrangle data, applies the data contract. Contains the **Action Registry** for validating and executing declarative YAML rules, and merges metadata into a single tidy **Polars DataFrame**. | Polars |
-| libs/viz_factory | [**Visualization Factory**](../workflows/visualisation_factory.qmd) | functions to create Plotnine plot objects independently of the data. Plotting defaults are passed to the plotting function via configuration files (configuration layer). | Plotnine |
-| app/src/server.py | [**Controler/Orchestrator Logic**](../workflows/dashboard_app.qmd) | This is the shiny server logic that **reacts** to user input and calls the right functions. | Shiny Express |
-| app/src/ui.py | [**Display & Interaction**](../workflows/dashboard_app.qmd) | The "Face." The HTML/CSS layout and the sliders/dropdowns the user clicks. (Think shiny UI) | Shiny Express |
+| config | [**Configuration Layer**](./data_contracts_adr.qmd) | **Contains the data contract** for data AND metadata, persona templates, deployment profiles, plotting defaults. | YAML |
+| libs/utils | [**Utilities — Base Layer**](#library-dependency-model) | Shared utilities (config loading, hashing, error types). The only library that other domain libraries may import from. Must be declared as an explicit dependency. | Python |
+| libs/connector | [**Data Connector**](../workflows/connector.qmd) | Deployment profile resolution and data-source adapters. Handles authentication and fetches raw data for different deployment contexts (local, Galaxy, IRIDA). | BioBlend/API |
+| libs/ingestion | [**Data Ingestion**](../workflows/ingestion.qmd) | The "Gatekeeper." Reads TSV/Excel/YAML, validates against the data contract, runs defensive checks. | Polars |
+| libs/transformer | [**Data Wrangling**](../workflows/wrangling.qmd) | The "Cleaner". Applies the 3-Tier lifecycle, contains the **Action Registry** for declarative YAML rules, merges data into tidy Polars DataFrames. | Polars |
+| libs/viz_factory | [**Visualization Factory**](../workflows/visualisation_factory.qmd) | Plotnine plot composition from manifest specs. Data-agnostic: receives a DataFrame and a plot spec, returns a figure. | Plotnine |
+| libs/viz_gallery | [**Gallery**](../workflows/ui_persona.qmd) | Gallery bundle persistence — index, recipe governance, preview generation. | Python |
+| libs/blueprint_arch | [**Blueprint Architecture**](../workflows/ui_persona.qmd) | Pure manifest introspection and DAG mapping. Headless-safe: usable in CLI tools and export handlers without Shiny. | Python |
+| libs/test_lab | [**Test Lab**](../workflows/ui_persona.qmd) | Synthetic data generation (AquaSynthesizer), manifest bootstrapping, data reconciliation utilities. | Python |
+| app/src/server.py | [**Orchestration Layer**](../workflows/dashboard_app.qmd) | Thin Shiny server that wires libraries together and reacts to user input. The only layer that imports from multiple `libs/`. | Shiny for Python |
+| app/src/ui.py | [**Display & Interaction**](../workflows/dashboard_app.qmd) | Static HTML/CSS shell and widget layout. No data logic. | Shiny for Python |
 
 The major layers of the architecture : Configuration, Data Ingestion, Data Wrangling, Visualization Factory, [#REVIEW Orchestrator Logic, Display & Interaction] are isolated. Bridges are done by utilities. No reference to specific species or data type is hardcoded in the code, but rather defined in the configuration files. This allows for a flexible and extensible architecture, where new species or data types can be added by simply creating new configuration files and ensuring the data follows the defined data contract.
 
@@ -31,6 +34,31 @@ The repository is structured around **Separation of Concerns** to ensure long-te
 2. **Thin Frontend (`app/src/`):** The dashboard app itself is explicitly meant to be "dumb". It should only handle UI layout and passing user interaction states to the backend layers. It must *not* contain heavy data manipulation or hardcoded plotting logic. This makes the frontend fast to load, highly reactive, and much easier to debug.
 3. **Data-Agnostic Core:** The code inside `libs/` and `app/` does not know what *E. coli* or *Listeria* is. It deeply relies on the configuration layer. This abstraction allows us to scale to dozens of new species or datasets by simply creating new YAML configuration files and leveraging the **Action Registry** to safely map those YAML commands to backend Python functions, without ever touching the source code.
 4. **Independent Testability:** Because each layer acts as its own functional block, developers can write unit tests for the data wrangling or ingestion layers without needing to spin up a mock Shiny server or instantiate plotting objects.
+5. **UI-Replaceable Design:** Each domain library exposes a clean public API and has no knowledge of the UI framework. You can use `libs/transformer/` in a Jupyter notebook, a Galaxy tool, or a command-line script without installing Shiny or any UI dependency. `app/` is the only layer that ties the libraries together — replace `app/` with a different frontend and all the domain logic continues to work unchanged.
+
+## Library Dependency Model {#library-dependency-model}
+
+To preserve independent reusability, a strict two-tier import rule applies to all `libs/`:
+
+**Tier 1 — Base layer (`libs/utils/`):** Shared utilities (config loading, hashing, error types). Contains only stdlib and Polars dependencies. Any domain library that needs these utilities may import from `libs/utils/`, but must declare it as an **explicit dependency in its own `pyproject.toml`**.
+
+**Tier 2 — Domain layers (all other `libs/`):** No cross-library imports between domain libraries. `libs/transformer/` does not import from `libs/ingestion/`; `libs/viz_factory/` does not import from `libs/transformer/`. Each domain library knows only its own concern. The only permitted cross-lib import is from `libs/utils/` (Tier 1), and only when declared explicitly.
+
+**Tier 3 — Orchestration (`app/` and `assets/scripts/`):** The only code that imports from multiple libraries. Coordination and sequencing of the full pipeline lives here.
+
+```
+libs/utils/          ← base tier   (stdlib + polars only)
+     ↑
+libs/ingestion/      ← domain tier (no peer imports)
+libs/transformer/    ← domain tier (no peer imports)
+libs/viz_factory/    ← domain tier (no peer imports)
+libs/blueprint_arch/ ← domain tier (no peer imports)
+...
+     ↑
+app/                 ← orchestration (imports from any lib)
+```
+
+This means: if you want to reuse only the wrangling layer in a new tool, install `libs/transformer/` and `libs/utils/` — nothing else is required.
 
 
 Each directory contains a README file that explains the purpose of the module, its main functions, and how it interacts with other parts of the codebase. This documentation is crucial for maintaining clarity and ease of use for future developers who may work on the project.

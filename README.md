@@ -35,14 +35,18 @@ wrangling:
 
 ## 🛠️ Library Ecosystem
 
+Each library is independently installable and usable without the UI layer. If you want to use only the wrangling engine in a script, install `libs/transformer/` + `libs/utils/` — nothing else required. `app/` is the only layer that wires libraries together.
+
+**Dependency model:** `libs/utils/` is the base layer (shared utilities; no cross-lib deps of its own). All other domain libraries must not import from each other — only from `libs/utils/` (declared explicitly in their `pyproject.toml`). See [Library Dependency Model](./docs/foundations/core_architecture_code.qmd#library-dependency-model) for details.
+
 - [**ingestion**](./libs/ingestion/): TSV/Excel discovery, schema normalization, MetadataValidator gatekeeper.
 - [**transformer**](./libs/transformer/): The central wrangling and assembly engine (DataWrangler, DataAssembler).
 - [**viz_factory**](./libs/viz_factory/): Graphical composition and Plotnine orchestration.
 - [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, recipe governance.
 - [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, manifest bootstrapping, and reconciliation.
-- [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities.
+- [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities. **Base layer** — may be imported by any domain lib.
 - [**connector**](./libs/connector/): Deployment profile resolution and data-source adapters (ADR-048, Phase 23).
-- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, manifest navigator).
+- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, manifest navigator). Headless-safe — usable in CLI tools and export handlers without Shiny.
 
 ## 🚀 Deployment Configuration
 

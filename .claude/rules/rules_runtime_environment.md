@@ -42,13 +42,32 @@ The `/libs/` directory contains highly autonomous logic modules. Each directory 
 - **Dependencies (`pyproject.toml`)**: Libraries must declare their dependencies strictly inside their respective `pyproject.toml` files, bypassing archaic `requirements.txt`.
 - **No Path Hacking (Testing Violation Ban)**: The use of `sys.path.append` or `sys.path.insert` is completely PROHIBITED across the entire project structure. This explicit ban **EXTENDS STRICTLY** to all testing scripts (`tests/` directories). All components, including test suites, MUST rely on standard cross-references and standard module resolution after `pip install -e`. If a test suite imports fail, fix the environment hook; do NOT hack the path.
 
-## 4. The "Clear Lines" Library Policy
+## 4. The "Clear Lines" Library Policy — Two-Tier Dependency Model
 
-To retain decoupling between data transformation paradigms and visualization architectures:
+Each library in `./libs/` is designed to be **independently installable and reusable without the UI layer**. If you want to build a different frontend (CLI tool, FastAPI service, Galaxy wrapper, Jupyter workflow), you import only the layer(s) you need. `app/` is the ONLY place that wires multiple libraries together.
 
-- **Standalone Constraint:** Libraries within `./libs/` must be entirely data-agnostic.
-- **No Cross-Library Internal Imports:** One library in `./libs/` MUST NEVER import code from another library (`transformer` is strictly forbidden from importing from `ingestion`).
-- **The Orchestrator Privilege:** Multi-library dependencies and coordination scripts belong strictly within the **App Layer** (`app/`) or root **Execution Scripts** (`assets/scripts/`).
+### Tier 1 — Base layer: `libs/utils/`
+
+- Zero cross-lib imports of its own — only stdlib and polars allowed.
+- May be imported by any domain library.
+- **Explicit dependency rule:** Any domain library that imports from `libs/utils/` MUST declare it in its own `pyproject.toml` `[project.dependencies]`. Silent/implicit use is forbidden.
+
+### Tier 2 — Domain layers: all other `libs/`
+
+- **No peer-to-peer cross-lib imports.** A domain library MUST NEVER import from another domain library. `transformer` importing from `ingestion` is the canonical FORBIDDEN example.
+- May import from `libs/utils/` (Tier 1) only, with explicit `pyproject.toml` declaration.
+- Each library must be independently installable via `pip install -e ./libs/<name>/` with no hidden dependencies.
+
+### Tier 3 — Orchestration layer: `app/` and `assets/scripts/`
+
+- May import from any library in `./libs/`.
+- This is the ONLY layer that orchestrates multiple libraries together.
+
+**Existing violations** (tech debt — do not expand; tracked in tasks.md `ADR-011 cross-lib violations`):
+- `libs/transformer/` → `libs/ingestion/`, `libs/utils/`
+- `libs/blueprint_arch/` → `libs/utils/`
+
+`libs/utils/` imports are the only acceptable cross-lib exception going forward, and must always be declared in `pyproject.toml`.
 
 ## 5. Python Interpreter Authority
 
