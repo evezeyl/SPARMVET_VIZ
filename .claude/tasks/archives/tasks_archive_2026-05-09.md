@@ -153,3 +153,95 @@ Source: `audit_in_depth_state_2026-05-09.md`. All findings verified by manual gr
 ### ADR-076 — prerequisites
 
 - [x] **BP-AGENT-FLAG-1** `[haiku/low]`: `blueprint_agent_enabled` flag added to all 8 persona templates. Fatal cascade in PersonaValidator Rule 7 (ADR-077). Bootloader does NOT silently suppress. All 8 templates pass. ✅ 2026-05-09
+
+---
+
+## 🔴 Open Issues — Completed Batch (archived 2026-05-09, second cleanup)
+
+### Export / Reproducibility (all done)
+
+- [x] **EXPORT-HASH-2** `[sonnet/medium]`: Read `decision_hash` from Parquet metadata key `sparmvet_decision_hash` at export time; include in bundle README, report.qmd, and image file metadata. ADR-069.
+- [x] **EXPORT-VERSION-1** `[haiku/low]`: Add `git_commit` + `release_version` to all export surfaces. ADR-069.
+- [x] **EXPORT-IMG-META-1** `[sonnet/medium]`: Embed provenance subset (8 fields) in exported image file metadata. PNG → Pillow iTXt; SVG → `<metadata>` XML block. ADR-069 Rule 3.
+- [x] **EXPORT-AUDIT-COMPLETE-1** `[sonnet/medium]`: Add all remaining provenance fields to README + report.qmd. `build_export_provenance()` helper introduced in `export_handlers.py`. ADR-069.
+
+### Session / Import (done)
+
+- [x] **INGEST-SANITIZE-1** `[sonnet/medium]`: Wire `DataSanitizer` into `IngestorOrchestrator.run()` before T1 materialisation.
+
+### UX (done)
+
+- [x] **THEATER-1** `[sonnet/medium]`: Collapse/minimize plot panel — caret in plot card header → 1-line collapsed state. Persisted in `home_state`.
+
+### Sidebar Slot Registry — Static View (done)
+
+- [x] **STATIC-VIEW-1a** `[haiku/low]`: Hide view-title banner for fully static personas. Gate on `interactivity_enabled: false`.
+- [x] **STATIC-VIEW-1b** `[sonnet/low]`: T2 as default tier for static personas; tier toggle strip hidden; `_track_tier_toggle` returns "T2" as fallback.
+
+---
+
+## 🎨 CSS Style Hygiene — All done (archived 2026-05-09)
+
+- [x] **CSS-BADGE-PROPAG-1** `[haiku/low]`: Migrated `.spv-badge-propagation` to SPARMVET palette. `#eef0fb` bg / `#345beb` text.
+- [x] **CSS-ERROR-RED-DECIDE** `[opus/high]`: Error red `#d62828` added to palette. Updated `rules_css_style_spec.md` §1c/1e + `theme.css` line ~772.
+
+---
+
+## 🟡 Wave 2 — Completed items (archived 2026-05-09)
+
+- [x] **UTILS-RELOC-2** `[haiku/low]`: Deduplicated `gallery_manager.py` — canonical copy in `libs/viz_gallery/`, removed from `libs/utils/`.
+- [x] **UI-TITLE-1** `[sonnet/medium]`: UI title/subtitle resolution: persona config override > manifest `info.display_name`/`info.subtitle` > nothing.
+- [x] **IMPORT-UI-1** `[sonnet/high]`: Unified import browse buttons into single browse + mapping panel (`app/handlers/data_import_handlers.py`).
+- [x] **PREVIEW-ALLROWS-1** `[sonnet/low]`: "Show all rows" toggle in data preview accordion header.
+
+---
+
+## RESEARCH / DECIDE — Completed (archived 2026-05-09)
+
+- [x] **HELP-DOCS-1** `[haiku/low]`: Bundle `docs/_site/` as Shiny static assets at `/docs/`; "Full documentation →" link added to contextual cards.
+
+---
+
+## 🟣 Blueprint Architect — Completed batch (archived 2026-05-09)
+
+### Blueprint IDE Forms (ADR-075) — all done
+
+- [x] **BP-FORMS-1** `[sonnet/high]`: Form renderer — all widget types, column selector + upstream schema propagation on Apply, edit-in-place, schema invalidation markers.
+- [x] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only (all `blueprint_enabled`) + editable (`manifest_edit_enabled`) with re-parse on save.
+- [x] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for Blueprint DAG state.
+- [x] **BP-HELP-1** `[sonnet/medium]`: Help panel — `__doc__` resolution, collapsible sections for composite actions, optional external URL button.
+- [x] **BP-FLAG-1** `[haiku/low]`: `manifest_edit_enabled` flag added to all eight persona templates + feature flags rule + bootloader cascade.
+
+### Blueprint Other — done items
+
+- [x] **TubeMap aesthetics** `[haiku/low]`: Tighter rail/tube look; renamed 'ref' → 'Add' in nodes and legend.
+- [x] **UX-NOTIF-3** `[haiku/low]`: Project-load notification for Blueprint Architect manifest reload.
+
+### ADR-076 — BLUEPRINT AI Agent Helper MVP-1 (all done)
+
+- [x] **BP-AGENT-1**: `AgentAdapter` protocol + `ClaudeCliAdapter` + `DisabledAdapter`. `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py` + `agent_context.py`.
+- [x] **BP-AGENT-PARSER-1**: `agent_tool_parser.py` — fenced-block extractor, JSON validation, per-tool schema dispatch, error turn on parse failure.
+- [x] **BP-AGENT-TOOLS-1**: `agent_tools.py` — 3 MVP-1 tools: `get_available_actions`, `get_available_components`, `get_field_contract`.
+- [x] **BP-AGENT-INSTRUCT-1**: `config/ui/agents/blueprint_default.md` — system prompt (tool-call protocol, intake questions, AMR domain, safety rules).
+- [x] **BP-AGENT-PANEL-1**: `blueprint_agent_chat` panel type registered in `sidebar_registry.py`; added to Blueprint right sidebar config.
+- [x] **BP-AGENT-UI-1**: Chat panel render + async send effect in `blueprint_handlers.py`; wired into right sidebar. Tool-call loop (max 3 rounds), `asyncio.to_thread` for non-blocking subprocess. Smoke tests: 14 passed, 3 skipped.
+- [x] **BP-AGENT-CSS-1**: `.bp-agent-*` CSS block in `config/ui/theme.css`. ADR-055.
+
+---
+
+## 🟡 Deferred / Backlog — Completed items (archived 2026-05-09)
+
+### Export enhancements (done)
+
+- [x] **EXPORT-2** `[sonnet/medium]`: T3 data inclusion checkbox (`export_include_t3`), gated on `t3_sandbox_enabled`. Defaults to checked when `tier_toggle=="T3"`. Falls back to auto-detect when absent.
+- [x] **EXPORT-3** `[sonnet/medium]`: QMD report improvements — TOC (depth 3), `number-sections`, cosmo theme, 11pt; `#fig-` cross-ref IDs; `_build_methods_section()` auto-prose from T3 nodes + active filters.
+- [x] **EXPORT-4** `[sonnet/low]`: Per-plot width/height inputs (inches, 0.5-step) wired into `fig.save()` and provenance.
+
+### Gallery & UI (done)
+
+- [x] ~~**Gallery: Re-verify "Clone to Sandbox"**~~ — SUPERSEDED by GALLERY-CLONE-DECOUPLE-1.
+- [x] **UX-NOTIF-2** `[sonnet/medium]`: `notification_log` persisted to T3 ghost on `btn_apply`; restored on session load. Old ghosts without key fall back to `[]` silently.
+
+### Audit Infrastructure (done)
+
+- [x] **AUDIT-TIMERS-1** `[haiku/low]`: Systemd audit timers installed and verified via `./scripts/systemd/install.sh`.
