@@ -2700,3 +2700,323 @@ The "Add node" picker in BLUEPRINT is a searchable, filtered catalog driven by `
 - **BP-HELP-1** `[sonnet/medium]`: Implement help panel — `__doc__` resolution via `_resolve_doc()`, collapsible sections for composite actions, optional external URL button (disabled in isolated deployments)
 - **BP-COLOR-1** `[sonnet/medium]`: Implement color widget — column mapping toggle, palette library picker, hex color picker, `from_project_colors` slot reserved (grayed out, v2 placeholder)
 - **manifest_edit_enabled flag** `[haiku/low]`: Add to all six persona templates + `rules_persona_feature_flags.md` + bootloader cascade
+
+---
+
+## ADR-076: BLUEPRINT AI Agent Helper — Adapter Architecture and Conversational Design (2026-05-09)
+
+**Status:** DECIDED — implementation pending (Phase 31+)
+
+**Context:** ADR-075 establishes BLUEPRINT as a visual IDE for building manifests through forms, schema-aware widgets, and a YAML escape hatch. That model still presumes the user knows *what* they want to build — which actions to chain, which join keys are valid, which aesthetics to map. Bench scientists drafting their first manifest typically do not.
+
+A conversational AI helper, embedded in the BLUEPRINT right sidebar, reduces the floor of expertise required to design a working manifest. The helper interviews the user about the analytical goal, inspects the loaded data schema, proposes a manifest fragment, and drives the user toward a valid YAML output that loads in HOME.
+
+The architectural decision is **how to embed the agent without coupling the app to a single LLM provider**. Three adapter backends are defined, all implementing one protocol. The app stays agnostic. The Two-Category Law (ADR-045) is honoured — the agent layer lives in `libs/blueprint_arch/`, headless-safe, with Shiny wiring confined to a thin handler.
+
+**Key principle:** *The agent never modifies the manifest directly.* Every change is routed through a structured `propose_manifest_diff` tool call which renders as a diff preview in the UI. The user clicks Apply. This invariant is non-negotiable — it preserves user agency, makes the agent's effects auditable, and aligns with the propose-before-apply discipline used throughout SPARMVET (T3 audit gate, BLUEPRINT IDE Apply gate).
+
+---
+
+### 1. Three Adapter Backends — One Protocol
+
+All adapters implement an `AgentAdapter` protocol so the app calls into them through a single interface. Switching backend is a persona-config change, not a code change.
+
+```python
+class AgentAdapter(Protocol):
+    def start_session(self, system_prompt: str, context: dict) -> str: ...
+    def send_message(self, session_id: str, message: str,
+                     tools: list[Tool] | None = None) -> AgentResponse: ...
+    def end_session(self, session_id: str) -> None: ...
+```
+
+| Backend | Identifier | Phase | Auth | Multi-user | Notes |
+|---|---|---|---|---|---|
+| `ClaudeCliAdapter` | `"claude_cli"` | 1 (now) | Inherits local Claude Code | No | Calls `claude -p "<msg>"` as subprocess in an isolated working directory (see §11). ~1–2 s spawn overhead per turn. Single-user, desktop-style deployment only. |
+| `ClaudeApiAdapter` | `"claude_api"` | 2 (planned) | `ANTHROPIC_API_KEY` env var | Yes | Uses `anthropic` Python SDK directly. Per-request isolation. Recommended model `claude-opus-4-7` (configurable). Required for Posit Connect / Galaxy multi-user deployments. |
+| `LocalModelAdapter` | `"local"` | 3 (air-gapped) | None | Yes | Calls Ollama / LM Studio compatible endpoint configured via `endpoint:` in persona template. Required for fully offline deployments (NVI internal, classified networks). |
+| `DisabledAdapter` | `"disabled"` | always | n/a | n/a | Graceful degradation when `blueprint_agent_enabled: false`, when `claude` CLI is missing/logged-out, when API key is unset, or when adapter initialisation otherwise fails. Returns sentinel responses; UI hides the chat panel and renders an info banner explaining why. |
+
+**Streaming:** All backends are buffered (full response delivered as one block). Token-by-token streaming is **explicitly deferred** — see §9. The UI shows a "thinking…" indicator during in-flight turns. Dropping streaming simplifies adapter implementation, makes the three backends interchangeable from the UI's perspective, and matches the conversational tempo of manifest design (turns are minutes apart, not seconds).
+
+**Selection cascade:** persona template declares `blueprint_agent.backend`. Bootloader instantiates the adapter at startup. If the configured adapter cannot initialise (missing API key, missing endpoint, missing CLI binary, `claude` CLI not logged in), the bootloader falls back to `DisabledAdapter` and logs a warning — startup is never blocked by an agent misconfiguration. `ClaudeCliAdapter.__init__` runs `claude --version` and `claude --status` (or equivalent auth probe) before reporting itself ready.
+
+---
+
+### 2. Persona Configuration Shape
+
+Added to persona templates as a new top-level block, gated by a new flag (Group D — see §6).
+
+```yaml
+features:
+  blueprint_enabled: true
+  blueprint_agent_enabled: true   # new flag — depends on blueprint_enabled
+
+blueprint_agent:
+  enabled: true
+  backend: "claude_cli"            # claude_cli | claude_api | local | disabled
+  model: "claude-opus-4-7"         # claude_api only; ignored by other backends
+  api_key_env: "ANTHROPIC_API_KEY" # claude_api only
+  endpoint: null                   # local only — full URL incl. port
+  instructions_file: "config/ui/agents/blueprint_default.md"  # system prompt path
+  gallery_awareness: false         # reserved flag, Phase 1 = false
+```
+
+`instructions_file` is a Markdown file containing the system prompt template. Different personas (or different deployments) can point at different instruction files — e.g. an AMR-focused deployment can ship a system prompt with AMR domain knowledge baked in.
+
+`gallery_awareness` is a reserved flag for a future capability where the agent can browse the gallery (`assets/gallery_data/`) and recommend recipes. Phase 1 leaves it unimplemented.
+
+---
+
+### 3. Knowledge Architecture — Three Layers
+
+The agent never sees the entire codebase. It sees three layers, in decreasing order of stability:
+
+#### Layer 1 — Compressed system prompt (session-start, static per turn)
+
+Injected once on `start_session()`. Contains:
+
+- A condensed summary of the action registry (action names + one-line descriptions, grouped by `category`). Generated from `ui_schema` metadata at runtime — no manual maintenance.
+- Manifest structure rules: canonical `action:` syntax, `tier1`/`tier2` requirement, `analysis_groups` shape, `final_contract` whitelist semantics.
+- Current project context: active manifest path, list of declared `data_schemas`, list of `analysis_groups`.
+
+This layer is rebuilt each session from registry + manifest state — never hand-written.
+
+#### Layer 2 — Dynamic tools (called by the model, not text-parsed)
+
+The agent uses tool calling. The app exposes seven tools; the agent decides which to invoke and when.
+
+| Tool | Purpose |
+|---|---|
+| `get_available_actions` | List registered transformer actions with full `ui_schema` metadata (params, widgets, doc URLs). Filter by `context` (`t1`/`t2`/`assembly`/`plot`). |
+| `get_available_components` | List registered viz_factory components with `ui_schema`. |
+| `get_field_contract` | Return `input_fields` / `output_fields` for a named schema, resolved through the recursive lookup in `manifest_navigator.resolve_fields_for_schema()`. |
+| `get_data_schema_summary` | Privacy-preserving schema summary: column names, dtypes, cardinality, min/max/mean/null-count for numerics, top-N values for categoricals. Reuses extraction logic from `AquaSynthesizer` (Test Lab's synthetic data generator) so we have one canonical schema-summary code path. **No raw rows.** |
+| `get_current_manifest_section` | Read a section of the active manifest (e.g. `data_schemas.amr_results`, `analysis_groups.amr_insight`, `assembly.AMR_Profile_Joint`). Used so the agent can inspect what's already there before proposing changes. |
+| `validate_manifest_fragment` | Run the existing manifest validator on a candidate YAML fragment without applying it. Returns structured errors (line, key, message). |
+| `propose_manifest_diff` | **The only path through which manifest changes reach the user.** Submit a structured diff (target file path, JSON-patch-style operations). The UI renders it as a diff preview and unlocks the Apply button. |
+
+Tool calls are structured (JSON) — the agent never emits free-text "here is your manifest, paste this in" output. If it tries, the UI does not render an Apply button.
+
+#### Layer 3 — Per-turn session context (small, dynamic, attached to each turn)
+
+A small dict appended to each user turn so the agent can reason about what the user is currently doing:
+
+```python
+{
+  "active_workspace": "blueprint",
+  "active_plot_subtab": "multi_resistance_by_country",  # if focused
+  "current_manifest_section": "assembly.AMR_Profile_Joint",
+  "last_validation_error": {...} | None,
+  "row_counts": {"t1_anchor": 1240, "t2_branch": 870},  # only when data loaded
+}
+```
+
+`row_counts` is the **wrangling performance profiler** — it lets the agent recommend ordering operations for UI responsiveness (e.g. "Filter on `Year` first — cuts the frame from 1240 to ~140 rows before the join — keeps the join cheap"). It surfaces through this context layer, not as a separate tool.
+
+---
+
+### 4. Data Visibility Toggle
+
+The agent never sees raw data unless the user explicitly opts in. A three-state toggle in the agent panel governs what `get_data_schema_summary` returns.
+
+| Mode | What the agent sees | Persona availability |
+|---|---|---|
+| `off` | Tool returns `{"data_visibility": "off"}` — agent has no schema info, must ask the user to describe the data. | All personas |
+| `schema_summary` | Column names, dtypes, cardinality, min/max/mean/null-count for numerics, top-N (≤ 20) unique values for categoricals. **No raw rows ever.** Reuses `AquaSynthesizer` extraction. | All personas — **default** |
+| `full_sample` | First 5 rows as TSV plus the schema summary. | `developer` persona only — never available to scientist personas |
+
+Default is `schema_summary` — enough for the agent to suggest plausible filter values, join keys, and aesthetic mappings, without exposing patient-level or sample-level rows. Toggling to `off` is a one-click privacy escape; `full_sample` requires an explicit opt-in and is hidden outside the developer persona.
+
+---
+
+### 5. Propose-Before-Apply UI Discipline
+
+The right sidebar in BLUEPRINT, when the agent is enabled, contains:
+
+1. **Conversation log** — turn-by-turn, scrollable. Buffered (no streaming — see §1). A "thinking…" indicator appears between user submit and the next agent message.
+2. **Decision summary accordion** — a running list of decisions the user and agent have agreed during the session ("Filter on Year ≥ 2020", "Use sample_id as join key", etc.). Built from `propose_manifest_diff` calls that were applied. Editable as a memory aid — survives panel switches via `home_state`-style reactive value. Persisted to the manifest creation report (§7).
+3. **Pending diff preview** — only visible when the agent has just emitted `propose_manifest_diff` and the user has not yet acted. Shows the YAML diff with the BLUEPRINT diff renderer.
+4. **Apply button** — gated. Only active when there is a pending `propose_manifest_diff`. Disabled otherwise. Clicking Apply: writes the diff to the in-memory manifest (not yet to disk — manifest persistence is the user's separate Save action), invalidates downstream BLUEPRINT DAG nodes, appends the decision to the summary accordion.
+5. **Reject / Revise button** — discards the pending diff; the agent receives a turn message explaining the rejection so it can revise.
+6. **Data visibility toggle** — three radio options (off / schema_summary / full_sample), gated by persona.
+
+**Cold start (first open of BLUEPRINT in a session):** the chat panel renders a static greeting — adapter status (claude_cli / claude_api / local / disabled), data visibility default (`schema_summary`), and a one-line prompt ("Describe the analysis you want to build, or paste a goal statement"). No agent turn is consumed until the user submits.
+
+**Single-flight discipline:** while a turn is in flight, the input is disabled and the submit button shows a spinner. Concurrent submissions are not allowed at the UI level (orthogonal to the subprocess lock in §11 — that is the backend safety net).
+
+**Hard invariant:** the agent calling any tool other than `propose_manifest_diff` does NOT enable the Apply button. Reading state (`get_field_contract`, `get_data_schema_summary`, etc.) is read-only — the user sees the agent's responses but the manifest is not touched until a diff is proposed and applied.
+
+---
+
+### 6. New Persona Flag — `blueprint_agent_enabled` (Group D)
+
+Added to `rules_persona_feature_flags.md` Group D (developer features), depends on `blueprint_enabled`.
+
+| Flag | static | simple | advanced | independent | developer | qa |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `blueprint_agent_enabled` | false | false | false | false | true | true |
+
+**Cascade rule:** `bootloader._load_persona_config()` forces `blueprint_agent_enabled = False` whenever `blueprint_enabled == False` (analogous to ADR-075's `manifest_edit_enabled` cascade). Logs `[Bootloader] WARNING: blueprint_agent_enabled=True ignored — blueprint_enabled=False` when the violation is detected.
+
+**Default disabled for scientist personas (advanced, independent).** The agent is rolled out to developer + qa first to validate the prompt/tool surface before exposing it to scientists. Once validated, the flag can be flipped per deployment without code changes — including custom deployments that ship a domain-specific `instructions_file`.
+
+---
+
+### 7. Manifest Creation Report
+
+Each agent session that produces an applied manifest fragment yields a report bundle stored under `agent_sessions/{uuid}/`:
+
+| File | Contents |
+|---|---|
+| `conversation.jsonl` | Full turn-by-turn log: user message, agent response, tool calls, tool responses. One JSON object per line. |
+| `report.qmd` | Quarto-rendered summary: goal statement (extracted from the opening user turns), data summary used, decisions made (from the decision summary accordion), final manifest fragment as YAML code block, agent backend used, model name (if applicable). |
+| `manifest_sha256.txt` | SHA256 of the final manifest fragment. Lets a later session verify whether the manifest still matches the agent-produced version. |
+
+`agent_sessions/` is a new directory under the project root, git-ignored. Bundle location is configurable via deployment profile (default: `{project_root}/agent_sessions/`).
+
+---
+
+### 8. Two-Category Law Compliance
+
+| Component | Location | Category |
+|---|---|---|
+| `AgentAdapter` protocol + concrete adapters | `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py` | Pure module — no Shiny imports. Importable from headless scripts and tests. |
+| 7 agent tools | `libs/blueprint_arch/src/blueprint_arch/agent_tools.py` | Pure functions wrapping existing `manifest_navigator` and registry APIs. Headless-safe. |
+| System prompt builder + context builder | `libs/blueprint_arch/src/blueprint_arch/agent_context.py` | Pure functions that read manifest + registry state and produce the Layer 1 prompt and Layer 3 context dict. |
+| Tool-call parser (claude_cli) | `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py` | Pure module. Parses fenced `<!-- AGENT_TOOL_CALL -->` JSON blocks out of `claude -p` stdout (see §10). |
+| Default instructions Markdown | `config/ui/agents/blueprint_default.md` | Static asset. |
+| Chat panel — sidebar registration | `app/modules/sidebar_registry.py` — new `blueprint_agent_chat` entry. | Headless-safe registry under ADR-073. |
+| Chat panel — CSS | `config/ui/theme.css` — new `.bp-agent-*` rule block (per ADR-055, no inline styles). | Static asset. |
+| Chat panel UI + reactive wiring | `app/handlers/blueprint_handlers.py` — extended with chat panel render outputs, submit-effect, single-flight gate. | Shiny-only. Imports from `blueprint_arch` adapters. |
+
+This placement keeps the adapter and tool surface testable from the CLI (e.g. drive a `ClaudeCliAdapter` from a debug script with a fake manifest path) and keeps Shiny side-effects out of the library layer.
+
+---
+
+### 9. Confirmed Non-Decisions (Deferred)
+
+- **Token-by-token streaming (SSE)** — explicitly out of scope for Phase 1, all backends. Re-evaluate if user feedback indicates the buffered tempo feels sluggish. Adopting streaming later is a per-adapter concern; the `AgentAdapter` protocol does not need to change (a streaming variant returns an async iterator instead of an `AgentResponse`).
+- **MCP server exposing the 7 tools** — Phase 2 path for `claude_cli`. Replaces the JSON-in-fenced-block protocol from §10 with first-class MCP tool calls. Cleaner, more reliable, but requires MCP server boilerplate + user-side `--mcp-config` registration. Defer until the JSON protocol shows reliability problems in practice.
+- **Gallery awareness** (`gallery_awareness: true`) — would let the agent browse `assets/gallery_data/` and recommend recipes. Reserved flag; not implemented in Phase 1. The gallery already has a structured `gallery_index.json` (ADR-037) which makes this cheap to add later.
+- **Multi-user isolation for `claude_cli`** — even with the per-session `--cwd` discipline in §11, `claude_cli` is single-user by design (subprocess concurrency, local auth). For Posit Connect / Galaxy / IRIDA multi-user contexts, use `claude_api` instead.
+- **Token / cost reporting per session** — useful for budgeting but adds adapter-specific code paths. Defer until a deployment requests it.
+- **Agent-driven HOME workflows** — the agent in this ADR is BLUEPRINT-scoped (manifest design). A future ADR may extend it to HOME (T3 audit suggestions, filter recommendations). Keep the adapter library generic enough to support this; do not couple the tool surface to BLUEPRINT specifics.
+
+---
+
+### 10. Tool-Call Mechanism — Adapter-Specific
+
+Tool calling (Layer 2 of §3) is the load-bearing mechanism that makes `propose_manifest_diff` reliable. Different adapters expose tool calling differently — this section documents the Phase 1 approach for each.
+
+| Adapter | Mechanism | Reliability | Notes |
+|---|---|---|---|
+| `ClaudeCliAdapter` | **JSON-in-fenced-block protocol** (Phase 1) | High with strict prompt + parser | `claude -p` does not expose user-defined tools — only Claude Code's own (Read/Edit/Bash/...). The system prompt instructs the agent to emit tool calls as fenced blocks tagged with an HTML comment marker. Server-side parser extracts them. |
+| `ClaudeApiAdapter` | Native `tool_use` / `tool_result` blocks via Anthropic SDK | Highest — first-class | Standard tool calling; no parsing fragility. |
+| `LocalModelAdapter` | Endpoint-defined (Ollama function-calling, OpenAI-compatible tools, or fenced-block fallback) | Variable | Fenced-block fallback is the lowest common denominator; check endpoint capabilities at init. |
+
+#### 10.1 JSON-in-fenced-block protocol (claude_cli, Phase 1)
+
+The agent is instructed (via the system prompt in `blueprint_default.md`) to emit any tool call as a fenced YAML or JSON block prefixed by an HTML-comment marker:
+
+````
+<!-- AGENT_TOOL_CALL -->
+```json
+{
+  "tool": "propose_manifest_diff",
+  "arguments": {
+    "target": "config/manifests/pipelines/my_pipeline.yaml",
+    "operations": [
+      {"op": "add", "path": "/data_schemas/amr_results/wrangling/tier1/-",
+       "value": {"action": "filter_range", "columns": ["identity"], "min": 90}}
+    ]
+  }
+}
+```
+<!-- /AGENT_TOOL_CALL -->
+````
+
+The server-side parser (`agent_tool_parser.py`) scans each agent reply for these marker pairs, extracts the JSON, validates against a Pydantic / dataclass schema for the named tool, and dispatches to the corresponding function in `agent_tools.py`. If parsing fails, the parser injects a system-turn error message ("Tool call malformed: …") and the agent re-tries on the next turn.
+
+**The parser is not free-text reasoning** — it requires the exact marker pair and valid JSON. Any agent text outside the marker pair is treated as conversation, not a tool call.
+
+#### 10.2 Why not a hybrid
+
+A "hybrid that auto-upgrades to MCP if available" sounds appealing but doubles the surface area to test. Phase 1 ships the fenced-block protocol exclusively; the MCP path becomes a clean migration when authored.
+
+---
+
+### 11. Subprocess Isolation Discipline (claude_cli)
+
+The naïve `claude --continue -p "<msg>"` call inherits the **most recent** conversation in the current project directory. If the user is also running Claude Code in their terminal (the very scenario that motivated this adapter — reusing existing auth), the BLUEPRINT agent's turns would interleave with the user's terminal turns. This is unacceptable: the agent must have its own conversation thread.
+
+**Solution:** every BLUEPRINT agent session runs in a dedicated working directory, isolated from the user's main project conversation.
+
+```
+{project_root}/agent_sessions/{uuid}/
+    .cwd-marker       # empty file — anchors a separate Claude Code project context
+    conversation.jsonl
+    lock              # POSIX lock file — single-flight enforcement
+    report.qmd        # written on session end (§7)
+    manifest_sha256.txt
+```
+
+**Subprocess invocation pattern:**
+
+```python
+SESSION_DIR = project_root / "agent_sessions" / session_uuid
+SESSION_DIR.mkdir(parents=True, exist_ok=True)
+(SESSION_DIR / ".cwd-marker").touch()
+
+# First turn of the session:
+proc = await asyncio.create_subprocess_exec(
+    "claude", "-p", message,
+    cwd=str(SESSION_DIR),
+    stdout=asyncio.subprocess.PIPE,
+    stderr=asyncio.subprocess.PIPE,
+)
+
+# Every subsequent turn in the same session:
+proc = await asyncio.create_subprocess_exec(
+    "claude", "--continue", "-p", message,
+    cwd=str(SESSION_DIR),
+    ...
+)
+```
+
+Because Claude Code scopes session history per project directory, running the subprocess inside `{project_root}/agent_sessions/{uuid}/` puts each agent session in its own conversation thread, fully isolated from the user's main terminal session and from other agent sessions.
+
+**Single-flight lock.** The adapter takes an exclusive `flock` on `lock` for the duration of a turn. A second concurrent turn blocks (or fails fast — implementation choice; default is fail-fast with a UI message "Agent is busy, please wait"). This prevents subprocess overlap if the UI single-flight gate (§5) is bypassed.
+
+**Cleanup.** `end_session()` removes the lock file but preserves the directory (it contains the report bundle from §7). A periodic cleanup job (out of scope for Phase 1) can purge sessions older than N days.
+
+**Auth precondition.** `ClaudeCliAdapter.__init__` runs `claude --version` and an auth probe (e.g. `claude --status`, or a trivial `claude -p "ok"` in a temp dir) at bootloader time. If either fails, the adapter raises and the bootloader falls back to `DisabledAdapter` with a UI banner explaining the cause ("Claude CLI not installed", "Claude CLI not logged in").
+
+---
+
+### Consequences
+
+- New library module under `libs/blueprint_arch/` for adapters, tools, context, tool-call parser. No new top-level library — agent surface is BLUEPRINT-scoped for now.
+- New Group D persona flag (`blueprint_agent_enabled`) with cascade to `blueprint_enabled`.
+- New `blueprint_agent:` config block in persona template — only `developer` and `qa` ship with a populated block in Phase 1.
+- New static asset directory `config/ui/agents/` containing default system prompts. Deployments can override per persona via `instructions_file`.
+- New `agent_sessions/{uuid}/` per-session directory under project root (git-ignored) — used both as the subprocess `cwd` for `claude_cli` isolation (§11) and as the location of the manifest creation report bundle (§7).
+- New `blueprint_agent_chat` panel type in `app/modules/sidebar_registry.py` (under ADR-073), wired into the BLUEPRINT workspace `right_sidebar.panels` slot list of the `developer` and `qa` persona templates. Co-exists with the existing `blueprint_logic` panel.
+- New `.bp-agent-*` rule block in `config/ui/theme.css` (under ADR-055 — no inline styles).
+- BLUEPRINT right sidebar gains the chat panel only when `blueprint_agent_enabled: true` AND a non-`DisabledAdapter` is active. Otherwise the panel slot renders nothing (or a small "agent unavailable" banner if init failed).
+- Streaming is explicitly out of scope (Phase 1) — all backends buffer the response and the UI shows a "thinking…" indicator.
+- No app-wide refactor required — the agent is purely additive. Existing BLUEPRINT IDE behaviour is unchanged when the flag is off.
+- The `propose_manifest_diff` invariant is the discipline that makes the agent safe to ship — auditability and user agency are preserved.
+
+**Implementation tasks** (full text in `.claude/tasks/tasks.md`):
+
+| ID | Effort | Scope |
+|---|---|---|
+| `BP-AGENT-FLAG-1` | `[haiku/low]` | Persona flag + config block + cascade |
+| `BP-AGENT-1` | `[sonnet/high]` | Adapter protocol + ClaudeCliAdapter (with §11 isolation) + DisabledAdapter + auth probe + context builder |
+| `BP-AGENT-PARSER-1` | `[sonnet/medium]` | `agent_tool_parser.py` — fenced-block extractor, JSON validator, dispatch (per §10) |
+| `BP-AGENT-TOOLS-1` | `[sonnet/medium]` | The 7 agent tools wrapping `manifest_navigator` + registry + `AquaSynthesizer` extraction |
+| `BP-AGENT-INSTRUCT-1` | `[sonnet/medium]` | `config/ui/agents/blueprint_default.md` system prompt + tool-call format instructions |
+| `BP-AGENT-PANEL-1` | `[haiku/low]` | Register `blueprint_agent_chat` in `sidebar_registry.py` + add to BLUEPRINT right sidebar in developer/qa templates |
+| `BP-AGENT-UI-1` | `[sonnet/high]` | Chat panel render outputs in `blueprint_handlers.py`: conversation log, decision accordion, Apply gate, single-flight gate, data visibility toggle, cold-start greeting |
+| `BP-AGENT-CSS-1` | `[haiku/low]` | `.bp-agent-*` rules in `config/ui/theme.css` |
+| `BP-AGENT-REPORT-1` | `[sonnet/low]` | Per-session `agent_sessions/{uuid}/` bundle (`conversation.jsonl`, `report.qmd`, `manifest_sha256.txt`) |
