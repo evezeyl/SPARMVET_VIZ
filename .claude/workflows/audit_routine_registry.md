@@ -5,7 +5,9 @@
 **Purpose:** Define, schedule, and track recurring audit routines that verify code health, ADR compliance, manifest integrity, and documentation drift without manual intervention.
 
 **Last Updated:** 2026-05-09  
-**Maintained By:** Claude Code Routines ([claude.ai/code/routines](https://claude.ai/code/routines)) + manual CLI execution
+**Execution Guide:** `.claude/workflows/schedule_commands.md` — how to run audits locally (session-end, cron, single-script, on-demand). Read that file before setting up any new routine.
+
+**Execution model:** All audit scripts run locally via `.venv/bin/python`. They need the local virtual environment, local data files, and see uncommitted work. Cloud `/schedule` routines are not suitable for most of these scripts. See `schedule_commands.md §Part 1` for the full local execution guide.
 
 ---
 
@@ -13,19 +15,19 @@
 
 | Routine | Frequency | Schedule | Status | Last Run | Next Run | Routine ID | Owner |
 |---------|-----------|----------|--------|----------|----------|---|---|
-| @deps block verification | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Cloud (scheduled) |
-| ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Cloud (scheduled) |
-| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | 2026-05-08 | — | Cloud (scheduled) |
-| Task-to-code drift check | Weekly | Fridays 20:00 | `[ ] Planned` | — | 2026-05-10 | — | Cloud (scheduled) |
-| Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 | — | — | Manual (CLI) |
-| Phase ordering audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
-| Changelog completeness audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
-| Template flag completeness | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
-| Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Manual (CLI) |
-| Library test coverage | On-demand | Manual trigger (or pre-release) | `[ ] Planned` | — | — | — | Manual (CLI) |
-| Package dependency health | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Manual (CLI) |
-| Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[ ] Planned` | — | — | — | Manual (CLI) |
-| Manifest coherence | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | — | — | Cloud (scheduled) |
+| @deps block verification | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Local (cron/manual) |
+| ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Local (cron/manual) |
+| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | 2026-05-14 | — | Local (cron/manual) |
+| Task-to-code drift check | Weekly | Fridays 20:00 | `[ ] Planned` | — | 2026-05-10 | — | Local (cron/manual) |
+| Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 | — | — | Local (manual) |
+| Phase ordering audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
+| Changelog completeness audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
+| Template flag completeness | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
+| Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
+| Library test coverage | On-demand | Manual trigger (or pre-release) | `[ ] Planned` | — | — | — | Local (manual) |
+| Package dependency health | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
+| Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[ ] Planned` | — | — | — | Local (manual) |
+| Manifest coherence | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | 2026-05-14 | — | Local (cron/manual) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)

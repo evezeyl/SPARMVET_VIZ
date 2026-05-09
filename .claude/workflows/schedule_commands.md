@@ -1,9 +1,146 @@
-# Audit Routine `/schedule` Commands
-
-Ready-to-paste prompts for creating each audit routine via the Claude Code CLI.
-In any VS Code / Claude Code session, type `/schedule` and paste the prompt for the routine you want to create.
+# Audit Routine Execution Guide
 
 **Reference:** Full routine definitions and status matrix → `.claude/workflows/audit_routine_registry.md`
+
+---
+
+## Part 1 — Running Audits Locally (Recommended)
+
+All audit scripts live in `scripts/` and run via `.venv/bin/python`. This is the primary execution
+method — the scripts need the local `.venv/`, local data files, and see uncommitted changes on your
+active branch. Cloud `/schedule` routines (Part 2) cannot satisfy these requirements.
+
+---
+
+### A. Session-End Quick Run (Most Important — Do This Regularly)
+
+Run these four scripts at the end of any significant coding session. They are fast (seconds each)
+and catch the most common drift issues before they accumulate.
+
+```bash
+cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+DATE=$(date +%Y-%m-%d)
+
+.venv/bin/python scripts/audit_cross_lib.py       --output .claude/logs/audits/audit_cross_lib_${DATE}.md
+.venv/bin/python scripts/audit_deps_verify.py     --output .claude/logs/audits/audit_deps_${DATE}.md
+.venv/bin/python scripts/audit_task_drift.py      --output .claude/logs/audits/audit_task_drift_${DATE}.md
+.venv/bin/python scripts/audit_template_flags.py  --output .claude/logs/audits/audit_templates_${DATE}.md
+```
+
+Then check for unprocessed reports (the session-start triage hook):
+```bash
+grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md 2>/dev/null
+```
+
+**Why these four?**
+- `audit_cross_lib` — catches new ADR-011 blockers (peer lib imports)
+- `audit_deps_verify` — catches missing `@deps` blocks from the session
+- `audit_task_drift` — catches tasks referencing files you renamed or deleted
+- `audit_template_flags` — catches fatal cascade misconfigs in persona templates
+
+---
+
+### B. Wrapper Script (Run Any Day's Batch in One Command)
+
+The wrapper `scripts/run_audits.sh` groups scripts by their scheduled day slot:
+
+```bash
+cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+
+./scripts/run_audits.sh sunday      # @deps + cross-lib
+./scripts/run_audits.sh wednesday   # manifest integrity + manifest coherence
+./scripts/run_audits.sh thursday    # phase order + changelog sync + template flags
+./scripts/run_audits.sh friday      # task drift
+./scripts/run_audits.sh all         # every scheduled audit in one go
+./scripts/run_audits.sh ondemand    # slower on-demand audits (package deps, parity, docs, tests)
+```
+
+The script prints a summary of unprocessed reports at the end so you immediately know what needs triage.
+
+---
+
+### C. Single Script — Targeted Investigation
+
+Run one script directly when you want to check a specific concern:
+
+```bash
+cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+DATE=$(date +%Y-%m-%d)
+
+# Pick the script you need:
+.venv/bin/python scripts/audit_cross_lib.py           --output .claude/logs/audits/audit_cross_lib_${DATE}.md
+.venv/bin/python scripts/audit_deps_verify.py         --output .claude/logs/audits/audit_deps_${DATE}.md
+.venv/bin/python scripts/audit_manifest_integrity.py  --output .claude/logs/audits/audit_manifest_${DATE}.md
+.venv/bin/python scripts/audit_task_drift.py          --output .claude/logs/audits/audit_task_drift_${DATE}.md
+.venv/bin/python scripts/audit_template_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_phase_order.py         --output .claude/logs/audits/audit_phase_order_${DATE}.md
+.venv/bin/python scripts/audit_changelog_sync.py      --output .claude/logs/audits/audit_changelog_${DATE}.md
+.venv/bin/python scripts/audit_manifest_coherence.py  --output .claude/logs/audits/audit_manifest_coherence_${DATE}.md
+
+# On-demand (slower — run after library updates or before a release):
+.venv/bin/python scripts/audit_package_deps.py        --output .claude/logs/audits/audit_package_deps_${DATE}.md
+.venv/bin/python scripts/audit_parity_coverage.py     --output .claude/logs/audits/audit_parity_coverage_${DATE}.md
+.venv/bin/python scripts/audit_docs_sync.py           --output .claude/logs/audits/audit_docs_sync_${DATE}.md
+.venv/bin/python scripts/audit_library_tests.py       --output .claude/logs/audits/audit_library_tests_${DATE}.md
+```
+
+---
+
+### D. Automated Local Cron Setup (Run Once, Then Forget)
+
+Schedules the weekly audits to run automatically in the background. Requires your machine to be on
+at the scheduled time.
+
+**Step 1 — Open your crontab:**
+```bash
+crontab -e
+```
+
+**Step 2 — Paste these lines:**
+```cron
+# SPARMVET_VIZ audit routines
+PROJECT=/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+
+# Sunday 23:00 — @deps verification + ADR-011 cross-lib scan
+0 23 * * 0  cd $PROJECT && ./scripts/run_audits.sh sunday >> /tmp/sparmvet_audit.log 2>&1
+
+# Wednesday 22:00 — manifest integrity + manifest coherence
+0 22 * * 3  cd $PROJECT && ./scripts/run_audits.sh wednesday >> /tmp/sparmvet_audit.log 2>&1
+
+# Thursday 21:00 — phase order + changelog sync + template flags
+0 21 * * 4  cd $PROJECT && ./scripts/run_audits.sh thursday >> /tmp/sparmvet_audit.log 2>&1
+
+# Friday 20:00 — task drift check
+0 20 * * 5  cd $PROJECT && ./scripts/run_audits.sh friday >> /tmp/sparmvet_audit.log 2>&1
+```
+
+**Step 3 — Verify cron is running:**
+```bash
+systemctl is-active crond   # should print: active
+```
+
+**Step 4 — Check output after the first scheduled run:**
+```bash
+cat /tmp/sparmvet_audit.log
+grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md 2>/dev/null
+```
+
+**On-demand routines (5, 9–12) are intentionally not in cron** — run them manually via
+`./scripts/run_audits.sh ondemand` when needed (after a library update, before a release).
+
+---
+
+## Part 2 — Cloud `/schedule` Routines (Reasoning-Level Only)
+
+The Claude Code `/schedule` command runs agents against your GitHub repository. Use it only for
+audits that involve Claude *reading and reasoning* about the code — not executing Python scripts
+that need `.venv/`. The cloud runner has no virtual environment and only sees pushed commits.
+
+**Suitable for cloud:** Routines 3 (task drift — reasoning), 6 (phase order — reasoning),
+7 (changelog sync — reasoning). Not suitable for routines that need Polars, Plotnine, or pip.
+
+Ready-to-paste prompts for creating cloud routines via the Claude Code CLI.
+In any VS Code / Claude Code session, type `/schedule` and paste the prompt for the routine you want to create.
 
 ---
 

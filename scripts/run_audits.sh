@@ -16,12 +16,21 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="${PROJECT_ROOT}/.venv/bin/python"
 LOGS="${PROJECT_ROOT}/.claude/logs/audits"
 DATE="$(date +%Y-%m-%d)"
+AUDIT_BRANCH="dev"
 
 cd "${PROJECT_ROOT}"
 
 if [[ ! -x "${PYTHON}" ]]; then
   echo "ERROR: .venv/bin/python not found at ${PYTHON}" >&2
   exit 2
+fi
+
+# Ensure we are on the correct branch before scanning.
+# Audits must reflect active development state, not an older or unrelated branch.
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
+if [[ "${CURRENT_BRANCH}" != "${AUDIT_BRANCH}" ]]; then
+  echo "INFO: switching from '${CURRENT_BRANCH}' to '${AUDIT_BRANCH}' for audit run"
+  git checkout "${AUDIT_BRANCH}"
 fi
 
 DAY="${1:-}"

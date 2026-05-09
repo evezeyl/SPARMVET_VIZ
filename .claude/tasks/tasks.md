@@ -88,15 +88,15 @@
 
 ### P1 — Documentation reconciliation (30 min each, haiku/low)
 
-- [ ] **AUDIT-CHANGELOG-UPDATE** `[haiku/low]`: Append entries to `changelog.md` for: Phase 28 (Export Redesign + `assembly_manifests` → `join_manifests` rename, 2026-05-04), Phase 29 (Library Extraction: `blueprint_arch` + `test_lab` as new libs, `dev_studio` → `test_lab_studio`, 2026-05-05), Phase 31 (Sidebar Slot Registry ADR-073, 2026-05-09), Phase 32 STARTED (LINEAGE-NAV-1 + LINEAGE-EXPORT-1 + BP-SCHEMA-1 done 2026-05-09). Roll up ADRs 066–076 with one-line summaries each.
+- [x] **AUDIT-CHANGELOG-UPDATE** `[haiku/low]`: Append entries to `changelog.md` for: Phase 28 (Export Redesign + `assembly_manifests` → `join_manifests` rename, 2026-05-04), Phase 29 (Library Extraction: `blueprint_arch` + `test_lab` as new libs, `dev_studio` → `test_lab_studio`, 2026-05-05), Phase 31 (Sidebar Slot Registry ADR-073, 2026-05-09), Phase 32 STARTED (LINEAGE-NAV-1 + LINEAGE-EXPORT-1 + BP-SCHEMA-1 done 2026-05-09). Roll up ADRs 066–076 with one-line summaries each. ✅ 2026-05-09 — phases already present; added ADR 066–076 rollup table; corrected inaccurate prospective audit section
 
-- [ ] **AUDIT-WRANGLE-FLAG** `[haiku/low]`: Add `wrangle_studio_enabled` to `app/modules/persona_validator.py` `_REQUIRED_FLAGS` list. Verify all 8 persona templates declare it explicitly (currently absent from `pipeline-static_template.yaml` — add `wrangle_studio_enabled: false`).
+- [x] **AUDIT-WRANGLE-FLAG** `[haiku/low]`: Add `wrangle_studio_enabled` to `app/modules/persona_validator.py` `_REQUIRED_FLAGS` list. Verify all 8 persona templates declare it explicitly (currently absent from `pipeline-static_template.yaml` — add `wrangle_studio_enabled: false`). ✅ 2026-05-09 — no-op; already in _REQUIRED_FLAGS and all 8 templates declare it
 
-- [ ] **AUDIT-DEMO-PERSONAS** `[haiku/low]`: Add `demo-vetinst` and `web-demo` to the Full Flag Matrix in `rules_persona_feature_flags.md`. Rules currently say "Six personas exist" but 8 templates are present and validated. Add columns 7–8 to the table, or add a dedicated "§Demo personas" subsection with their flag values.
+- [x] **AUDIT-DEMO-PERSONAS** `[haiku/low]`: Add `demo-vetinst` and `web-demo` to the Full Flag Matrix in `rules_persona_feature_flags.md`. Rules currently say "Six personas exist" but 8 templates are present and validated. Add columns 7–8 to the table, or add a dedicated "§Demo personas" subsection with their flag values. ✅ 2026-05-09 — no-op; matrix already has all 8 columns and says "Eight personas exist"
 
-- [ ] **AUDIT-ABROMICS-CHECK** `[haiku/low]`: Read `config/manifests/pipelines/1_Abromics_general_pipeline.yaml`. Count data sources (number of `data_schemas:` entries). If >3, flag for basename mirroring refactor (rules_manifest_structure.md §1). If ≤3 and <150 lines, add a comment at top confirming intentional inline form. Report finding.
+- [x] **AUDIT-ABROMICS-CHECK** `[haiku/low]`: Read `config/manifests/pipelines/1_Abromics_general_pipeline.yaml`. Count data sources (number of `data_schemas:` entries). If >3, flag for basename mirroring refactor (rules_manifest_structure.md §1). If ≤3 and <150 lines, add a comment at top confirming intentional inline form. Report finding. ✅ 2026-05-09 — 3 schemas, 119 lines; added inline-form confirmation comment
 
-- [ ] **AUDIT-PLAN-ORDER** `[haiku/low]`: Sort `implementation_plan_master.md` phases chronologically. Current order is: 24, 26, 27, 28, 31, 29, 25, 32, 23 — should be sequential by phase number with a "Completed" block at top and "Planned" block at bottom.
+- [x] **AUDIT-PLAN-ORDER** `[haiku/low]`: Sort `implementation_plan_master.md` phases chronologically. Current order is: 24, 26, 27, 28, 31, 29, 25, 32, 23 — should be sequential by phase number with a "Completed" block at top and "Planned" block at bottom. ✅ 2026-05-09 — phases already in sequential order (23-32); added Phase 30 gap note before Phase 31
 
 ### P2 — Code cleanup (1 session each)
 
