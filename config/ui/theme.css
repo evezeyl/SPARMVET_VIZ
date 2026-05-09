@@ -299,7 +299,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 
 /* ── 8. Header Controls ─────────────────────────────────────────────────── */
 .active-view-btn { background-color: #345beb !important; color: white !important; border-color: #1e35c9 !important; box-shadow: inset 0 3px 5px rgba(0,0,0,0.125) !important; }
-.control-btn     { padding: 2px 8px !important; height: 28px !important; min-width: 32px; font-size: 0.9rem; }
+.control-btn     { padding: 2px 8px !important; height: 28px !important; min-width: 32px; font-size: 0.85rem; }
 .header-controls { border-radius: 4px; padding: 1px 6px; height: 36px; display: flex; align-items: center !important; }
 .header-controls .form-check-input { margin-top: 0 !important; }
 .header-controls label              { margin-bottom: 0 !important; }
@@ -770,8 +770,8 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     color: #0b6358;              /* status-ok-text: teal dark */
 }
 .bp-agent-status-banner.error {
-    background-color: #fff3cd;  /* status-error-bg: amber tint (no red in palette) */
-    color: #7a4100;              /* status-error-text: amber darkened */
+    background-color: #ffe0e0;  /* status-error-bg: error red 20% tint */
+    color: #d62828;              /* status-error-text: error red (SPARMVET palette) */
 }
 .bp-agent-status-banner.busy {
     background-color: #fff3cd;
@@ -788,6 +788,27 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 }
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* ── 19b. Generic Status Banner Pattern (ADR-055)
+   Reusable status banner classes for any UI context (not just agent panel).  */
+
+.status-banner {
+    font-size: 0.8rem;
+    border-radius: 4px;
+    padding: 8px 10px;
+}
+.status-banner.ok {
+    background-color: #d5efec;  /* teal 10% tint */
+    color: #0b6358;              /* teal dark text */
+}
+.status-banner.error {
+    background-color: #ffe0e0;  /* error red 20% tint */
+    color: #d62828;              /* error red text */
+}
+.status-banner.busy {
+    background-color: #fff3cd;  /* amber tint */
+    color: #856404;              /* amber dark text */
 }
 
 /* ── 20. Filter & Audit Panel Utilities (ADR-055) ─────────────────────────
@@ -821,7 +842,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 
 /* Audit node inline badges */
 .spv-badge-pending     { font-size: 0.65em; background: #ffc107; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
-.spv-badge-propagation { font-size: 0.65em; background: #cfe2ff; color: #0a3678; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
+.spv-badge-propagation { font-size: 0.65em; background: #eef0fb; color: #345beb; border-radius: 3px; padding: 1px 4px; margin-left: 4px; }
 .spv-badge-pk-warn     { display: block; font-size: 0.72em; color: #856404; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; padding: 2px 6px; margin-top: 2px; }
 
 /* Label strip with uppercase */

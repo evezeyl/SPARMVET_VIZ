@@ -12,6 +12,7 @@ import sys
 import polars as pl
 from pathlib import Path
 from typing import Dict
+from datetime import datetime
 
 # ADR-016: Use Package-First Authority (Editable Installs)
 # Ensure project root is in sys.path for fallback
@@ -176,7 +177,12 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
         # Inject sink_parquet into the recipe — assembler handles content-hash
         # short-circuit internally. This parquet captures the full pre-contract
         # intermediate result (all columns), consistent with orchestrator behaviour.
-        tmp_root = Path(tmp_dir) if tmp_dir else project_root / "tmp"
+        if tmp_dir:
+            tmp_root = Path(tmp_dir)
+        else:
+            lineage_id = Path(manifest_path).stem
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            tmp_root = project_root / f"tmpAI/{date_str}/{lineage_id}"
         tmp_root.mkdir(parents=True, exist_ok=True)
         intermediate_parquet = str(tmp_root / f"EVE_assembly_{assembly_id}.parquet")
 

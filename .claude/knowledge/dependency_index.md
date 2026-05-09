@@ -12,6 +12,12 @@
 - **documents:** `app/handlers/`, `app/modules/`, `app/src/server.py`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
 
+## `.claude/rules/rules_css_style_spec.md`
+- **Role:** `meta`
+- **provides:** `rule:css_design_tokens`, `rule:typography_scale`, `rule:color_palette`, `rule:button_catalog`
+- **documents:** `config/ui/theme.css`
+- **consumed_by:** `.claude/rules/rules_ui_dashboard.md`, `.claude/rules/ui_implementation_contract.md`
+
 ## `.claude/rules/rules_data_engine.md`
 - **Role:** `meta`
 - **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
@@ -82,10 +88,10 @@
 
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (blueprint_handlers)`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`
-- **consumed_by:** `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-076`
 
 ## `app/handlers/data_import_handlers.py`
 - **Role:** `ref`

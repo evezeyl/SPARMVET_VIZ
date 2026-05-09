@@ -23,6 +23,8 @@
 | Phase ordering audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
 | Changelog completeness audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
 | Template flag completeness | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
+| CSS design token compliance | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 | 2026-05-16 | — | Local (cron/manual) |
+| Hardcoded config/path violations | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 | 2026-05-16 | — | Local (cron/manual) |
 | Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
 | Library test coverage | On-demand | Manual trigger (or pre-release) | `[ ] Planned` | — | — | — | Local (manual) |
 | Package dependency health | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
@@ -454,6 +456,46 @@ Once manual test passes:
 - **Exclusions:** `.claude/workflows/audit_exclusions.yaml` (key: `manifest_coherence`)
 - **Owner:** Cloud (scheduled)
 - **Status:** `[ ] Planned`
+
+---
+
+### Routine 14: CSS Design Token Compliance
+
+- **Script:** `scripts/audit_css_style.py`
+- **Schedule:** Thursdays 21:00 (with existing Thursday group)
+- **Command:** `.venv/bin/python scripts/audit_css_style.py --output .claude/logs/audits/audit_css_style_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_css_style_YYYY-MM-DD.md`
+- **Purpose:** Verify that `config/ui/theme.css` uses only colors, font-sizes, and border-radius values defined in the SPARMVET design system. Catches off-palette hex values, out-of-scale font sizes, and forbidden Bootstrap defaults introduced by agents who did not read the style spec before writing CSS.
+- **Rule source:** `.claude/rules/rules_css_style_spec.md` | ADR-055
+- **Checks:**
+  - Any hex color not in `ALLOWED_HEX` or `KNOWN_DEBT_HEX` → BLOCKER
+  - Explicitly forbidden Bootstrap defaults (`#0d6efd`, `#198754`, etc.) → BLOCKER (highest priority)
+  - `font-size` values outside the approved typography scale → BLOCKER
+  - `0.9rem` → BLOCKER (specifically excluded from scale, common agent error)
+- **Known debt:** `.spv-badge-propagation` `#cfe2ff`/`#0a3678` — tracked as CSS-BADGE-PROPAG-1 in tasks.md
+- **Owner:** Local (cron/manual)
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS)
+
+---
+
+### Routine 15: Hardcoded Configuration & Path Violations
+
+- **Script:** `scripts/audit_hardcoded_config.py`
+- **Schedule:** Thursdays 21:00 (with existing Thursday group)
+- **Command:** `.venv/bin/python scripts/audit_hardcoded_config.py --output .claude/logs/audits/audit_hardcoded_config_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_hardcoded_config_YYYY-MM-DD.md`
+- **Purpose:** Detect hardcoded deployment-specific values in `app/` and `libs/` Python source that would break the app in Galaxy, IRIDA, or other deployment environments. Five violation categories.
+- **Rule source:** ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no persona name checks)
+- **Checks:**
+  1. **Absolute path strings** — `/home/`, `/etc/`, `/usr/`, `/var/`, `/mnt/`, `/opt/`, `/data/`, `/srv/`, `/galaxy/` literals in non-connector Python
+  2. **Direct location dict reads** — `profile["locations"]`, `locations["raw_data"]`, `profile.get("locations")` bypassing bootloader
+  3. **Persona name comparisons** — `persona == "..."`, `persona in (...)`, `persona in [...]` (use `bootloader.is_enabled()` instead)
+  4. **Direct env-var reads** — `os.environ.get("SPARMVET_PERSONA/PROFILE")` outside bootloader
+  5. **Hardcoded Python interpreter** — `subprocess` calls with `"python3"`, `/usr/bin/python`, `/usr/bin/env python`
+- **Scan scope:** `app/`, `libs/` — excludes `tests/`, `tmpAI/`, `tmp/`, `scripts/`, `assets/scripts/`, `config/`
+- **Skip files:** `bootloader.py`, `connector.py`, `local_connector.py`, `filesystem.py`, `galaxy.py`, `galaxy_connector.py`, `irida.py`, `base.py` (connector implementations legitimately access raw profile)
+- **Owner:** Local (cron/manual)
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS)
 
 ---
 

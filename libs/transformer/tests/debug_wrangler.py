@@ -11,6 +11,7 @@ import os
 import sys
 import polars as pl
 from pathlib import Path
+from datetime import datetime
 
 # Fix paths to project root for universal execution if not installed globally
 # However, ADR-016 relies on editable installs in .venv
@@ -191,7 +192,7 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
                 continue
 
         # e) Materialization (ADR-010)
-        # Priority: cli override > default tmp location
+        # Priority: cli override > default tmpAI dated location
         # If output_path is a directory, save per-dataset file inside it.
         if output_path and (os.path.isdir(output_path) or output_path.endswith(os.sep) or output_path.endswith("/")):
             mat_path = os.path.join(output_path.rstrip(
@@ -199,7 +200,11 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
         elif output_path:
             mat_path = output_path
         else:
-            mat_path = str(project_root / f"tmp/{dataset_id}_debug.tsv")
+            lineage_id = Path(manifest_path).stem
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            dated_dir = project_root / f"tmpAI/{date_str}/{lineage_id}"
+            dated_dir.mkdir(parents=True, exist_ok=True)
+            mat_path = str(dated_dir / f"{dataset_id}_debug.tsv")
 
         out_dir = os.path.dirname(mat_path)
         if out_dir:

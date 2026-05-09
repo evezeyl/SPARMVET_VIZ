@@ -26,6 +26,7 @@ import io
 import json
 import re
 import uuid
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 
@@ -69,6 +70,24 @@ def define_server(input, output, session, *,
     schema_registry : reactive.Value[dict]
         Per-session schema registry: schema_id → structural entry.
     """
+
+    # BP-UNDO-1: 20-step session undo deque (ADR-082 placeholder)
+    undo_stack: deque = deque(maxlen=20)
+
+    def _snapshot_state():
+        """Capture current logic_stack state for undo history."""
+        current = wrangle_studio.logic_stack.get()
+        if current:
+            undo_stack.append(json.dumps(current, default=str))
+
+    def _undo():
+        """Restore to previous state from undo stack."""
+        if undo_stack:
+            prev_state = undo_stack.pop()
+            restored = json.loads(prev_state)
+            wrangle_studio.logic_stack.set(restored)
+            return True
+        return False
 
     # ── Local helpers (pure logic, no Shiny decorators) ──────────────────────
 

@@ -67,7 +67,7 @@
 
 - [ ] **CSS-BADGE-PROPAG-1** `[haiku/low]`: Migrate `.spv-badge-propagation` off Bootstrap info colors (`#cfe2ff`/`#0a3678`) to SPARMVET palette: `background: #eef0fb`, `color: #345beb`. In `config/ui/theme.css` §20, line ~824. Documented in `rules_css_style_spec.md §1f`.
 
-- [ ] **CSS-ERROR-RED-DECIDE** `[opus/high]`: Decide whether to add an explicit error red to the SPARMVET color palette. Currently error states reuse amber tint (`#fff3cd`). If red is added, update `rules_css_style_spec.md §1d` first, then apply to `bp-agent-status-banner.error`. **Requires Eve decision before any code change.**
+- [x] **CSS-ERROR-RED-DECIDE** `[opus/high]`: ✅ DONE. Error red `#d62828` (hover: `#b91c1c`) added to SPARMVET palette. Updated `rules_css_style_spec.md §1c` (brand colors) + §1e (status colors), `config/ui/theme.css` line ~772 (`.bp-agent-status-banner.error`), added generic `.status-banner` classes, updated audit allowlist. Error state now distinct from amber warning/pending. CSS audit: ✅ PASS.
 
 ---
 

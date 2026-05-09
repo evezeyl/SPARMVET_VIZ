@@ -44,6 +44,7 @@ deps:
 | **SPARMVET Blue** | `#345beb` | `#2a4bc4` | Primary action | Buttons, active tabs, headings in cards, focus rings |
 | **SPARMVET Teal** | `#10a395` | `#0d8a7e` | Export / upload | Export bundle, upload, filter "+ Add row" |
 | **SPARMVET Amber** | `#ffc107` | `#e0a800` | Discard / pending | Reset, session delete, pending badge, "send to audit" |
+| **SPARMVET Error Red** | `#d62828` | `#b91c1c` | Error / destructive | Error banners, danger-delete modal, critical alerts |
 
 **FORBIDDEN Bootstrap defaults:** `#0d6efd` (Bootstrap primary), `#198754` (success), `#dc3545` (danger). If Bootstrap injects any of these, override with the palette above using `!important`.
 
@@ -67,9 +68,9 @@ These are the ONLY allowed values for informational banners (connected/error/bus
 |---|---|---|---|
 | OK / connected | `#d5efec` | `#0b6358` | Teal 10% tint — stays in brand palette |
 | Busy / loading | `#fff3cd` | `#856404` | Amber tint — same family as pending/warning |
-| Error / disconnected | `#fff3cd` | `#7a4100` | Amber tint, darker text — SPARMVET has no separate error red |
+| Error / disconnected | `#ffe0e0` | `#d62828` | Error red 20% tint with error red text — distinct from warning/pending |
 
-**Note on error red:** SPARMVET currently has no dedicated red in the palette. Error states reuse amber tint with a darker text to signal urgency without introducing an off-palette color. If a specific use case truly needs red (e.g. a danger-delete modal), discuss with Eve before adding it — it requires an explicit palette extension here.
+**Error red:** `#d62828` is now the dedicated error color in the SPARMVET palette. Use it for error banners, danger-delete modals, and critical alerts that require clear distinction from the amber warning/pending state.
 
 ### 1f. Component-Specific Colors (do not reuse in other contexts)
 

@@ -2,7 +2,7 @@
 import argparse
 import polars as pl
 from pathlib import Path
-from utils.gallery_manager import GalleryManager
+from viz_gallery.gallery_manager import GalleryManager
 
 
 def run_debug(output_root: str):

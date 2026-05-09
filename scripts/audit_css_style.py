@@ -32,8 +32,11 @@ ALLOWED_HEX = {
     "#345beb", "#2a4bc4", "#2344bb", "#1e35c9",
     "#10a395", "#0d8a7e", "#0b7569",
     "#ffc107", "#e0a800", "#c79500",
+    "#d62828", "#b91c1c",                    # error red + hover
     # Status / semantic
-    "#d5efec", "#0b6358", "#fff3cd", "#856404", "#7a4100",
+    "#d5efec", "#0b6358",                   # OK/connected (teal tint)
+    "#fff3cd", "#856404",                   # Busy/loading (amber)
+    "#ffe0e0", "#d62828",                   # Error (error red tint)
     # Text
     "#1a1a1a", "#333333", "#6c757d",
     # Component-specific (documented in spec §1f)
@@ -58,6 +61,7 @@ ALLOWED_HEX = {
     "#b0b0b0",          # disabled button bg
     "#5c636a",          # btn-file border in sidebar
     "#a0a0a0",          # sidebar accordion collapsed header bg
+    "#000000",          # pure black — text on amber/yellow buttons (#000 shorthand)
     # RGBA / opacity variants derived from palette — handled separately (see below)
 }
 
