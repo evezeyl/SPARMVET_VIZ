@@ -88,6 +88,12 @@ def scan(project_root: Path) -> list[dict]:
         from_lib = lib_from_path(py_file, libs_dir)
         if from_lib not in DOMAIN_LIBS:
             continue
+        # Skip tests/ and assets/ — these are not library production code.
+        # Tests are bundled with the lib but may import peers for integration
+        # testing; assets/ are helper scripts, not importable lib modules.
+        rel_parts = py_file.relative_to(libs_dir / from_lib).parts
+        if rel_parts and rel_parts[0] in ("tests", "assets"):
+            continue
 
         for lineno, module in extract_imports(py_file):
             to_lib = module_targets_lib(module)

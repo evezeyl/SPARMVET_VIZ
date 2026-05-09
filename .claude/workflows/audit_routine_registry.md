@@ -15,21 +15,22 @@
 
 | Routine | Frequency | Schedule | Status | Last Run | Next Run | Routine ID | Owner |
 |---------|-----------|----------|--------|----------|----------|---|---|
-| @deps block verification | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Local (cron/manual) |
-| ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[ ] Planned` | — | 2026-05-12 | — | Local (cron/manual) |
-| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | 2026-05-14 | — | Local (cron/manual) |
-| Task-to-code drift check | Weekly | Fridays 20:00 | `[ ] Planned` | — | 2026-05-10 | — | Local (cron/manual) |
-| Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 | — | — | Local (manual) |
-| Phase ordering audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
-| Changelog completeness audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
-| Template flag completeness | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Local (cron/manual) |
-| CSS design token compliance | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 | 2026-05-16 | — | Local (cron/manual) |
-| Hardcoded config/path violations | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 | 2026-05-16 | — | Local (cron/manual) |
+| @deps block verification | Weekly | Sundays 23:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-11 | — | Local (systemd) |
+| ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-11 | — | Local (systemd) |
+| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-14 | — | Local (systemd) |
+| Task-to-code drift check | Weekly | Fridays 20:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-16 | — | Local (systemd) |
+| Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ | — | — | Local (manual) |
+| Phase ordering audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
+| Changelog completeness audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
+| Template flag completeness | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
+| CSS design token compliance | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
+| Hardcoded config/path violations | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
 | Library test coverage | On-demand | Manual trigger (or pre-release) | `[ ] Planned` | — | — | — | Local (manual) |
 | Package dependency health | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
 | Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[ ] Planned` | — | — | — | Local (manual) |
-| Manifest coherence | Weekly | Wednesdays 22:00 | `[ ] Planned` | — | 2026-05-14 | — | Local (cron/manual) |
+| Manifest coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-14 | — | Local (systemd) |
+| Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
@@ -179,8 +180,8 @@ Once manual test passes:
   - `@deps` blocks with stale `consumes:` / `provides:` entries (detectable via grep against actual imports)
   - `@deps` blocks missing `@end_deps` terminator (malformed)
 - **Owner:** Agent (scheduled)
-- **Status:** `[ ] Planned`
-- **Next Run:** 2026-05-12
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 27 files verified)
+- **Next Run:** 2026-05-11
 
 **Implementation notes:**
 - Read `build_dep_graph.py` output from last run (or regenerate)
@@ -202,8 +203,8 @@ Once manual test passes:
   - Imports inside `app/` are allowed (orchestration layer)
   - Test files are scanned (test interdependencies matter for CI)
 - **Owner:** Agent (scheduled)
-- **Status:** `[ ] Planned`
-- **Next Run:** 2026-05-12
+- **Status:** `[x] Active` (first run: 2026-05-09 — ⚠️ KNOWN DEBT ONLY, tests/assets exclusion + schema_registry injection pattern fixed)
+- **Next Run:** 2026-05-11
 
 **Expected output (JSON):**
 ```json
@@ -241,8 +242,8 @@ Once manual test passes:
   - Join key type mismatches (assembly `action: join` between mismatched column types)
   - `final_contract` whitelist mismatch (column declared but not produced)
 - **Owner:** Agent (scheduled)
-- **Status:** `[ ] Planned`
-- **Next Run:** 2026-05-08
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 6/6 manifests)
+- **Next Run:** 2026-05-14
 
 **Implementation notes:**
 - Call `debug_assembler.py` on each manifest
@@ -264,8 +265,8 @@ Once manual test passes:
   - Task description mentions "in file X line 42" but file/line has changed
   - Completed tasks `[x]` that have newer subsequent task with same/overlapping scope (possible duplicate)
 - **Owner:** Agent (scheduled)
-- **Status:** `[ ] Planned`
-- **Next Run:** 2026-05-10
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 5 stale refs resolved)
+- **Next Run:** 2026-05-16
 
 ---
 
@@ -302,8 +303,8 @@ Once manual test passes:
   - Duplicate phase numbers
   - Phase numbers outside expected range [23–32]
 - **Owner:** Cloud (scheduled)
-- **Status:** `[ ] Planned`
-- **Next Run:** 2026-05-09
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 19 phases in order)
+- **Next Run:** 2026-05-15
 
 **Implementation notes:**
 - Parse `implementation_plan_master.md` to extract all `## Phase [N]` headers
@@ -325,8 +326,8 @@ Once manual test passes:
   - Missing section headers (e.g., `## [Phase N]` or `## [YYYY-MM-DD]`)
   - Stale entries (phases marked as "in progress" but no longer in active plan)
 - **Owner:** Cloud (scheduled)
-- **Status:** `[ ] Planned`
-- **Next Run:** 2026-05-09
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS after range-delegation fix in script)
+- **Next Run:** 2026-05-15
 
 **Implementation notes:**
 - Extract phase numbers from both files
@@ -349,8 +350,8 @@ Once manual test passes:
   - Cascade violations (soft: parent false, child true silently suppressed; fatal: parent false, child true not suppressed)
   - Missing `blueprint_agent:` config block when `blueprint_agent_enabled: true`
 - **Owner:** Cloud (scheduled)
-- **Status:** `[ ] Planned`
-- **Next Run:** 2026-05-09
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS 8/8 after SidebarValidator gate-disabled NOTE removed)
+- **Next Run:** 2026-05-15
 
 **Implementation notes:**
 - Load the flag matrix from `rules_persona_feature_flags.md`
@@ -455,7 +456,7 @@ Once manual test passes:
   - `JOIN_KEY_UNDECLARED` — join key not declared in any schema's `input_fields` (unless in exclusions)
 - **Exclusions:** `.claude/workflows/audit_exclusions.yaml` (key: `manifest_coherence`)
 - **Owner:** Cloud (scheduled)
-- **Status:** `[ ] Planned`
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, false positive in old report; script already correct)
 
 ---
 
@@ -496,6 +497,27 @@ Once manual test passes:
 - **Skip files:** `bootloader.py`, `connector.py`, `local_connector.py`, `filesystem.py`, `galaxy.py`, `galaxy_connector.py`, `irida.py`, `base.py` (connector implementations legitimately access raw profile)
 - **Owner:** Local (cron/manual)
 - **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS)
+
+---
+
+### Routine 16: Palette Registry Validity
+
+- **Script:** `scripts/audit_palette_registry.py`
+- **Schedule:** Thursdays 21:00 (with existing Thursday group)
+- **Command:** `.venv/bin/python scripts/audit_palette_registry.py --output .claude/logs/audits/audit_palette_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_palette_YYYY-MM-DD.md`
+- **Purpose:** Verify that `config/palettes.yaml` (if present) is valid YAML and follows the expected format: a top-level `palettes:` key containing named palettes as lists of hex color strings. Catches malformed files that `bootloader.get_palettes()` would silently fall back to built-ins for, giving a confusing "no project palettes" symptom at runtime.
+- **Rule source:** `.claude/rules/rules_viz_factory.md §6` | ADR-081
+- **Checks:**
+  - File absent → INFO (normal; built-ins only)
+  - File present but not valid YAML → FAIL with `resolve()` path + exact parse error
+  - Top-level `palettes:` key missing or wrong type → FAIL
+  - Any palette value not a list → FAIL (TYPE_ERROR)
+  - Any palette with zero colors → FAIL (EMPTY_PALETTE)
+  - Any color not matching `#rrggbb` or `#rgb` → FAIL (INVALID_HEX)
+  - Palette name shadows a built-in (`sparmvet_brand`) → WARNING
+- **Owner:** Local (systemd Thursday slot)
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 3 palettes)
 
 ---
 
@@ -700,7 +722,7 @@ chore: add audit routine for ADR-011 cross-lib violations
 
 ---
 
-**Status:** 13 routines designed and documented. Routines 1–5 ready for scheduling; Routines 6–8 added from P0/P1 audit handoff; Routines 9–13 added 2026-05-09.  
+**Status:** 16 routines designed and documented. All 10 weekly routines now `[x] Active` via systemd user timers (installed 2026-05-09). Routines 11–14 (on-demand) remain `[ ] Planned` — run manually via `./scripts/run_audits.sh ondemand`.  
 **Last Updated:** 2026-05-09  
-**Note:** Routines 6–8 prevent recurrence of phase ordering issues, changelog drift, and template flag gaps. Routines 10–11 cover library test coverage and package health. Routines 12–13 cover parity mandates (ADR-035/036) and manifest coherence (static validation). All 13 are `[ ] Planned` — activate via [claude.ai/code/routines](https://claude.ai/code/routines) or `/schedule`.
-**Next Review:** After first routine completes (estimate 2026-05-12)
+**Note:** Systemd timer installation activated Sunday/Wednesday/Thursday/Friday slots on 2026-05-09. Routine 16 (palette registry validity) added to Thursday slot alongside CSS/hardcoded-config/template-flags audits. All session-end quick-run scripts (cross-lib, deps, task-drift, template-flags) passed ✅ on 2026-05-09.
+**Next Review:** After first automated run (Sunday 2026-05-11 for cross-lib + deps; Thursday 2026-05-15 for full Thursday group)
