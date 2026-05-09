@@ -110,7 +110,7 @@
 
 - [x] **AUDIT-PLASMID-VERIFY** `[sonnet/low]`: Assembly verified 2026-05-09. Both AMR_Profile_Joint (8 cols/70 rows) and Plasmid_Profile_Joint (6 cols/163 rows) pass cleanly. Year as String, no "2022.0" artifacts.
 
-- [ ] **AUDIT-SERVER-SLIM** `[sonnet/medium]`: `app/src/server.py` is 302 lines — over the 250-line ADR-051 cap (not counting comments lines). Extract `_safe_input()` and `_apply_tier2_transforms()` (pure helpers shared across handlers) into `app/modules/orchestrator_helpers.py`. Target: ≤250 lines in `server.py`. Verify `from app.src.main import app` import still clean after extraction; run baseline tests.
+- [x] **AUDIT-SERVER-SLIM** `[sonnet/medium]`: `app/src/server.py` is 302 lines — over the 250-line ADR-051 cap (not counting comments lines). Extract `_safe_input()` and `_apply_tier2_transforms()` (pure helpers shared across handlers) into `app/modules/orchestrator_helpers.py`. Target: ≤250 lines in `server.py`. Verify `from app.src.main import app` import still clean after extraction; run baseline tests. ✅ 2026-05-09 — 304 → 262 lines; `DEFAULT_HOME_STATE` also extracted; emoji removed from banner comments; 97/97 tests pass
 
 - [ ] **AUDIT-ADR076-MVP** `[opus/medium]`: Define a 1-page MVP-1 scope for ADR-076 (BLUEPRINT AI Agent Helper) before implementation starts. MVP-1 criteria: (1) `DisabledAdapter` + `ClaudeCliAdapter` only; (2) `get_available_actions` + `get_available_components` + `get_field_contract` tools only (no `propose_manifest_diff` yet); (3) chat panel renders responses; (4) no `BP-AGENT-REPORT-1` session bundle. Write the scope definition as a `## ADR-076 MVP-1` subsection in `architecture_decisions.md` or as a `.claude/design/adr076_mvp.md`. This prevents the feature from becoming a 4–6 week sink.
 

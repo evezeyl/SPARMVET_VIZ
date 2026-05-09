@@ -1,6 +1,6 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003
 # @end_deps
@@ -23,6 +23,11 @@ from app.modules.gallery_viewer import gallery_viewer
 from app.modules.persona_validator import PersonaValidator
 from app.modules.sidebar_validator import SidebarValidator
 from app.modules.deployment_error import DeploymentError, exit_if_errors
+from app.modules.orchestrator_helpers import (
+    safe_input as _safe_input,
+    apply_tier2_transforms as _apply_tier2_transforms,
+    DEFAULT_HOME_STATE,
+)
 
 
 
@@ -71,11 +76,11 @@ def server(input, output, session):
     )
     viz_factory = VizFactory()
 
-    # --- 🏗️ Module Initialization (Phase 11-F / ADR-039) ---
+    # Module Initialization (Phase 11-F / ADR-039)
     wrangle_studio = WrangleStudio(session.id)
     dev_studio = TestLabStudio() if bootloader.is_enabled("test_lab_enabled") else None
 
-    # --- 📦 State Management (Universal) ---
+    # State Management
     anchor_path = reactive.Value(None)
     recipe_pending = reactive.Value(False)
     snapshot_recipe = reactive.Value([])
@@ -83,36 +88,8 @@ def server(input, output, session):
     data_refresh_trigger = reactive.Value(0)   # incremented after data import to bust plot cache
     notification_log = reactive.Value([])      # UX-NOTIF-1: persistent alert log (last 20)
 
-    # §13 Home Module State Object — survives all panel switches
-    home_state = reactive.Value({
-        # Navigation
-        "active_group_tab": None,
-        "active_plot_subtab": None,
-        "tier_toggle": "T1",
-        # Accordion collapse states
-        "accordion_plots_expanded": True,
-        "accordion_data_expanded": True,
-        # Row filters (left sidebar)
-        "_pending_filters": [],
-        "applied_filters": [],
-        # T3 recipe — Phase 22-J / ADR-049: per-plot stacks.
-        # Each plot subtab id maps to a list of committed RecipeNodes.
-        # Propagated nodes appear in multiple stacks but share the same `id`
-        # for linked deletion.
-        "t3_recipe_by_plot": {},               # {plot_subtab_id: [RecipeNode]}
-        "_pending_t3_nodes": [],               # pending nodes (carry plot_scopes_intent)
-        "t3_apply_count": 0,                   # bumps on commit — triggers filter clear
-        "primary_keys": [],                    # union of all join keys (§12g.2)
-        "orphaned_t3_nodes": [],               # legacy/orphan nodes from ghost restore
-        # T3 plot aesthetic overrides {plot_subtab_id: {fill, colour, alpha, shape}}
-        "t3_plot_overrides": {},
-        # Assembly provenance
-        "manifest_sha256": None,
-        "assembly_timestamp": None,
-        # Session ghost provenance
-        "t3_ghost_file": None,
-        "t3_ghost_saved_at": None,
-    })
+    # §13 Home Module State Object — see orchestrator_helpers.DEFAULT_HOME_STATE for schema
+    home_state = reactive.Value(dict(DEFAULT_HOME_STATE))
 
     # Convenience shims — kept so existing home_theater.py code continues to work
     # while Phase 22-B wires everything through home_state.
@@ -131,7 +108,7 @@ def server(input, output, session):
     print(f"DEBUG: Initializing Server with Persona: {bootloader.persona_display_name}")
     current_persona = reactive.Value(bootloader.persona_display_name)
 
-    # --- 🔄 Dependency Resolution: Data Tiers (Phase 18 Final) ---
+    # Dependency Resolution: Data Tiers
     @reactive.Calc
     def tier1_anchor():
         """Scans the physical Parquet anchor (Predicate Pushdown ready)."""
@@ -196,7 +173,7 @@ def server(input, output, session):
         return result
 
 
-    # --- 🔌 Module Server Definitions ---
+    # Module Server Definitions
     wrangle_studio.define_server(
         input, output, session, lambda: tier1_anchor().collect_schema().names(), tier1_anchor, viz_factory,
         get_schema_registry=lambda: _schema_registry.get(),
@@ -204,25 +181,6 @@ def server(input, output, session):
     )
     if bootloader.is_enabled("test_lab_enabled"):
         dev_studio.define_server(input, output, session)
-
-    # --- Shared Utilities (passed as keyword args to handler define_server calls) ---
-
-    def _safe_input(input_obj, key, default):
-        try:
-            val = getattr(input_obj, key)()
-            return val if val is not None else default
-        except Exception:
-            return default
-
-    def _apply_tier2_transforms(lf, cfg):
-        """Reusable wrapper for Tier 2 baseline transforms.
-
-        T2 plot-level transforms (column typing, aesthetics) are applied by
-        VizFactory.render() at render time. At the data-frame level T2 is
-        currently identical to T1; this function is a placeholder for any
-        future dataset-wide T2 wrangling (e.g. computed columns from manifest).
-        """
-        return lf
 
     # ── Handler Delegations (ADR-045 — Two-Category Law) ──────────────────────
 
