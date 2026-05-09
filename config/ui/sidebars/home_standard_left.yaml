@@ -1,0 +1,9 @@
+visible: true
+panels:
+  - type: project_info
+  - type: deployment_info
+  - type: manifest_choice
+  - type: filters
+  - type: data_import
+  - type: export
+  - type: session_management

@@ -1,0 +1,4 @@
+visible: true
+panels:
+  - type: project_info
+  - type: blueprint_nav

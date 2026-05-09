@@ -1,0 +1,4 @@
+visible: true
+panels:
+  - type: blueprint_logic
+  - type: notification_log

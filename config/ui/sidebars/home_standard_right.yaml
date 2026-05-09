@@ -1,0 +1,4 @@
+visible: true
+panels:
+  - type: audit_stack
+  - type: notification_log

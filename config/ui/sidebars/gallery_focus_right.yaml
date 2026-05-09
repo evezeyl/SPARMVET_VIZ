@@ -1,0 +1,3 @@
+visible: true
+panels:
+  - type: notification_log
