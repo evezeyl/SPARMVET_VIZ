@@ -14,13 +14,14 @@ All scripts follow the same interface: `--project-root` (auto-detected) and `--o
 
 ```bash
 DATE=$(date +%Y-%m-%d)
-.venv/bin/python scripts/audit_cross_lib.py       --output .claude/logs/audits/audit_cross_lib_${DATE}.md
-.venv/bin/python scripts/audit_deps_verify.py     --output .claude/logs/audits/audit_deps_${DATE}.md
+.venv/bin/python scripts/audit_cross_lib.py          --output .claude/logs/audits/audit_cross_lib_${DATE}.md
+.venv/bin/python scripts/audit_deps_verify.py        --output .claude/logs/audits/audit_deps_${DATE}.md
 .venv/bin/python scripts/audit_manifest_integrity.py --output .claude/logs/audits/audit_manifest_${DATE}.md
-.venv/bin/python scripts/audit_task_drift.py      --output .claude/logs/audits/audit_task_drift_${DATE}.md
-.venv/bin/python scripts/audit_template_flags.py  --output .claude/logs/audits/audit_templates_${DATE}.md
-.venv/bin/python scripts/audit_phase_order.py     --output .claude/logs/audits/audit_phase_order_${DATE}.md
-.venv/bin/python scripts/audit_changelog_sync.py  --output .claude/logs/audits/audit_changelog_${DATE}.md
+.venv/bin/python scripts/audit_task_drift.py         --output .claude/logs/audits/audit_task_drift_${DATE}.md
+.venv/bin/python scripts/audit_template_flags.py     --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_phase_order.py        --output .claude/logs/audits/audit_phase_order_${DATE}.md
+.venv/bin/python scripts/audit_changelog_sync.py     --output .claude/logs/audits/audit_changelog_${DATE}.md
+.venv/bin/python scripts/audit_docs_sync.py          --output .claude/logs/audits/audit_docs_sync_${DATE}.md
 ```
 
 Reports are written to `.claude/logs/audits/` (append-only audit log). To print to stdout without writing a file, omit `--output`.
@@ -235,6 +236,46 @@ If the phase had no breaking changes: `## Phase 28 — No breaking changes or re
 
 ---
 
+### `audit_docs_sync.py` — Documentation & README Sync
+
+Verifies that human-facing documentation stays in sync with the codebase across four dimensions:
+
+1. **README coverage** — every `libs/<name>/` has a `README.md`
+2. **`@deps documents:` links** — rule and knowledge files that declare `documents: [path]` in their `@deps` block point to files that still exist
+3. **Doc backtick paths** — file paths in backticks inside `docs/**/*.qmd` and library READMEs exist on disk
+4. **Violet Law references** — `ClassName (filename.py)` patterns in `.qmd` files name `.py` files that still exist under `libs/` or `app/`
+
+```bash
+# Full check
+.venv/bin/python scripts/audit_docs_sync.py
+
+# Skip the Violet Law check (faster for large doc trees)
+.venv/bin/python scripts/audit_docs_sync.py --skip-violet
+
+# Write report
+.venv/bin/python scripts/audit_docs_sync.py \
+    --output .claude/logs/audits/audit_docs_sync_2026-05-12.md
+```
+
+**When to run:** After significant refactors, before a release, or after a period of inactivity. Not suited to weekly automation because it takes longer and requires human judgment to fix — the violations need context that an automated agent may not have.
+
+**Violation types:**
+
+| Code | Meaning | Fix |
+|---|---|---|
+| `README_MISSING` | `libs/<name>/` has no `README.md` | Add one — describe the library's purpose and key components using the Violet Law format |
+| `DEPS_DOC_BROKEN` | `documents:` in a `@deps` block points to a missing file | Update the path, or remove the entry if the file was deleted |
+| `DOC_PATH_BROKEN` | A backtick file path in a doc doesn't exist | Update to the current name, or rewrite the paragraph |
+| `VIOLET_STALE` | `ClassName (filename.py)` names a `.py` file that no longer exists | Update `filename.py` to the current module name |
+
+**Tracing renames** (for `DOC_PATH_BROKEN` and `VIOLET_STALE` fixes):
+
+```bash
+git log --diff-filter=R --name-status HEAD~30..HEAD
+```
+
+---
+
 ## For Contributors
 
 If you are adding a new domain library, wrangling action, manifest, or persona template, run the relevant subset of audits before opening a PR:
@@ -247,7 +288,8 @@ If you are adding a new domain library, wrangling action, manifest, or persona t
 | New / modified persona template | `audit_template_flags.py` |
 | New phase in the roadmap | `audit_phase_order.py` |
 | Closing a major phase | `audit_changelog_sync.py` |
-| Renaming / deleting a file | `audit_task_drift.py` |
+| Renaming / deleting a file | `audit_task_drift.py`, `audit_docs_sync.py` |
+| Significant refactor / pre-release | `audit_docs_sync.py` |
 
 **Adding a new audit script:**
 
@@ -273,6 +315,7 @@ These scripts back the cloud-hosted audit routines managed at [claude.ai/code/ro
 | `audit_template_flags.py` | Weekly | Thursdays 21:00 |
 | `audit_phase_order.py` | Weekly | Thursdays 21:00 |
 | `audit_changelog_sync.py` | Weekly | Thursdays 21:00 |
+| `audit_docs_sync.py` | On-demand | Before releases / after refactors |
 
 Full routine definitions, Routine IDs, and last-run dates: `.claude/workflows/audit_routine_registry.md`.
 `/schedule` CLI prompts for creating or recreating each routine: `.claude/workflows/schedule_commands.md`.

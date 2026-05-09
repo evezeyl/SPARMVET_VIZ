@@ -21,6 +21,7 @@
 | Phase ordering audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
 | Changelog completeness audit | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
 | Template flag completeness | Weekly | Thursdays 21:00 | `[ ] Planned` | — | 2026-05-09 | — | Cloud (scheduled) |
+| Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Manual (CLI) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
@@ -348,6 +349,24 @@ Once manual test passes:
 - For each of 8 templates, verify every flag matches matrix expectations
 - Wrap with PersonaValidator to catch cascade violations
 - Report as a table: Persona × Flag × Expected × Actual × Status
+
+---
+
+### 9. Documentation & README Sync
+
+- **Purpose:** Verify that human-facing documentation stays in sync with the codebase. Checks four things: (1) every library in `libs/` has a `README.md`; (2) `@deps documents:` links in rule/knowledge files point to files that exist; (3) backtick-quoted file paths in `docs/**/*.qmd` and library READMEs exist on disk; (4) Violet Law `ClassName (filename.py)` references in `.qmd` files point to `.py` files that exist under `libs/` or `app/`.
+- **Frequency:** On-demand — run after significant refactors, before releases, or after long periods of inactivity.
+- **Schedule:** Manual trigger. Can optionally be scheduled monthly.
+- **Command:** `.venv/bin/python scripts/audit_docs_sync.py --output .claude/logs/audits/audit_docs_sync_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_docs_sync_YYYY-MM-DD.md`
+- **Violations checked:**
+  - `README_MISSING` — `libs/<name>/` has no `README.md`
+  - `DEPS_DOC_BROKEN` — `documents:` entry in a `@deps` block references a non-existent file
+  - `DOC_PATH_BROKEN` — backtick file path in a `.qmd` or `README.md` not found on disk
+  - `VIOLET_STALE` — Violet Law reference `ClassName (filename.py)` where `filename.py` does not exist under `libs/` or `app/`
+- **Owner:** Manual (CLI) — escalate to Cloud routine if docs diverge frequently
+- **Status:** `[ ] Planned`
+- **Flags:** `--skip-violet` omits the Violet Law check (faster for large doc trees)
 
 ---
 

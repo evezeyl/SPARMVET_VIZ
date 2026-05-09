@@ -275,6 +275,66 @@ Exit codes: 0 = all templates pass strict validation, 1 = one or more failures.
 
 ---
 
+## Routine 9 — Documentation & README Sync
+
+**Schedule:** On-demand (manual), or monthly if scheduled
+
+> Run after significant refactors, before a release, or after a period of inactivity.
+> Can be scheduled monthly via `/schedule` if documentation drift becomes frequent.
+
+```
+Create an on-demand audit routine for the SPARMVET_VIZ project.
+
+Name: "SPARMVET: Documentation & README Sync"
+
+Purpose: Verify that human-facing documentation stays in sync with the codebase.
+Checks four things:
+  1. README coverage: every library in libs/ has a README.md
+  2. @deps documents: links in rule/knowledge files point to files that still exist
+  3. Backtick file path references in docs/**/*.qmd and lib READMEs exist on disk
+  4. Violet Law references — ClassName (filename.py) patterns in .qmd files point to
+     .py files that still exist under libs/ or app/
+
+Command to run (from project root):
+  .venv/bin/python scripts/audit_docs_sync.py --output .claude/logs/audits/audit_docs_sync_$(date +%Y-%m-%d).md
+
+For a faster run that skips the Violet Law check:
+  .venv/bin/python scripts/audit_docs_sync.py --skip-violet --output .claude/logs/audits/audit_docs_sync_$(date +%Y-%m-%d).md
+
+After running:
+1. Read the generated report at .claude/logs/audits/audit_docs_sync_YYYY-MM-DD.md
+2. Triage by violation type:
+
+   README_MISSING:
+   - Add README.md to the missing library directory
+   - Use Violet Law format for key components: "DataWrangler (data_wrangler.py)"
+   - Reference the library's pyproject.toml for the description
+
+   DEPS_DOC_BROKEN:
+   - Grep for the old path in rules/ and knowledge/ files
+   - Update the `documents:` entry in the @deps block to the new path
+   - If the file was deleted, remove the `documents:` reference
+
+   DOC_PATH_BROKEN:
+   - Open the .qmd file and find the backtick reference
+   - If the file was renamed: update to the new path
+   - If the file was deleted: rewrite the paragraph or remove the reference
+   - Use git log to trace renames: git log --diff-filter=R --name-status HEAD~30..HEAD
+
+   VIOLET_STALE:
+   - Find the ClassName (filename.py) reference in the .qmd file
+   - Update filename.py to reflect the current module name
+   - If the class was removed: remove the reference from the doc
+
+3. After fixing, re-run to confirm 0 violations
+4. Update the status matrix in .claude/workflows/audit_routine_registry.md
+5. Commit with message: "docs: sync documentation with current codebase YYYY-MM-DD"
+
+Exit codes: 0 = all checks pass, 1 = violations found, 2 = configuration error.
+```
+
+---
+
 ## Quick test commands (VS Code terminal)
 
 Before scheduling a routine, verify the script works locally:
@@ -289,4 +349,5 @@ DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_template_flags.py  --output .claude/logs/audits/audit_templates_${DATE}.md
 .venv/bin/python scripts/audit_phase_order.py     --output .claude/logs/audits/audit_phase_order_${DATE}.md
 .venv/bin/python scripts/audit_changelog_sync.py  --output .claude/logs/audits/audit_changelog_${DATE}.md
+.venv/bin/python scripts/audit_docs_sync.py       --output .claude/logs/audits/audit_docs_sync_${DATE}.md
 ```

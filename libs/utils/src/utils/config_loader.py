@@ -1,23 +1,45 @@
+# @deps
+# provides: class:ConfigManager
+# consumes: utils.deployment_error
+# consumed_by: app/modules/orchestrator.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
+# doc: .claude/knowledge/architecture_decisions.md#ADR-041, ADR-078
+# @end_deps
+
 import yaml
 import os
 from pathlib import Path
 
-# @deps
-# provides: class:ConfigManager
-# consumed_by: app/modules/orchestrator.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
-# @end_deps
+from utils.deployment_error import DeploymentError, exit_if_errors
+
+_REF = "ADR-041 + .claude/rules/rules_manifest_structure.md"
 
 
 class ConfigManager:
     def __init__(self, yaml_path):
-        # Define a custom constructor for !include tags
+        yaml_path = str(yaml_path)
+        _include_errors: list[DeploymentError] = []
+
         def include_constructor(loader, node):
-            # Resolve the path relative to the current file
             included_file = loader.construct_scalar(node)
             filename = os.path.join(os.path.dirname(yaml_path), included_file)
 
-            with open(filename, 'r') as f:
-                content = yaml.load(f, Loader=yaml.SafeLoader)
+            try:
+                with open(filename, 'r') as f:
+                    content = yaml.load(f, Loader=yaml.SafeLoader)
+            except FileNotFoundError:
+                _include_errors.append(DeploymentError(
+                    component="ConfigManager",
+                    problem=f"!include target not found: '{included_file}'",
+                    location=f"{yaml_path} — !include {included_file}",
+                    fix=(
+                        f"Create the missing file at '{filename}' or correct the "
+                        f"!include path. Verify the basename mirroring directory "
+                        f"exists (rules_manifest_structure.md §1)."
+                    ),
+                    who="developer",
+                    reference=_REF,
+                ))
+                return {}
 
             # Defensive Unnesting (ADR-014 Resilience):
             # Fragment files may be authored with a top-level wrapper key so they
@@ -43,8 +65,96 @@ class ConfigManager:
 
         yaml.SafeLoader.add_constructor('!include', include_constructor)
 
-        with open(yaml_path, 'r') as f:
-            self.raw_config = yaml.load(f, Loader=yaml.SafeLoader)
+        # Stage 1: file existence + YAML parse
+        try:
+            with open(yaml_path, 'r') as f:
+                self.raw_config = yaml.load(f, Loader=yaml.SafeLoader)
+        except FileNotFoundError:
+            exit_if_errors([DeploymentError(
+                component="ConfigManager",
+                problem=f"Manifest file not found: '{yaml_path}'",
+                location=yaml_path,
+                fix=(
+                    "Verify the manifest path set in the deployment profile "
+                    "('default_manifest' key) or the manifest selector dropdown."
+                ),
+                who="operator",
+                reference=_REF,
+            )])
+            self.raw_config = {}  # unreachable
+        except yaml.YAMLError as exc:
+            exit_if_errors([DeploymentError(
+                component="ConfigManager",
+                problem=f"Malformed YAML in manifest: {exc}",
+                location=yaml_path,
+                fix=(
+                    "Open the manifest in a YAML linter and fix the syntax error. "
+                    "Common causes: unquoted 'on:' key (YAML boolean trap — use 'on':), "
+                    "bad indentation, or a missing !include closing."
+                ),
+                who="developer",
+                reference=_REF,
+            )])
+            self.raw_config = {}  # unreachable
+
+        # Stage 2: !include failures collected during parsing
+        exit_if_errors(_include_errors)
+
+        # Stage 3: structural validation
+        struct_errors: list[DeploymentError] = []
+
+        if not self.raw_config.get("analysis_groups"):
+            struct_errors.append(DeploymentError(
+                component="ConfigManager",
+                problem="Manifest is missing the required 'analysis_groups:' block.",
+                location=f"analysis_groups: key in {yaml_path}",
+                fix=(
+                    "Add an 'analysis_groups:' block with at least one group containing "
+                    "at least one plot. See rules_manifest_structure.md §8 for the "
+                    "required structure."
+                ),
+                who="developer",
+                reference=_REF,
+            ))
+
+        data_schemas = self.raw_config.get("data_schemas", {})
+        if not isinstance(data_schemas, dict):
+            struct_errors.append(DeploymentError(
+                component="ConfigManager",
+                problem=f"'data_schemas:' must be a YAML mapping, got {type(data_schemas).__name__}.",
+                location=f"data_schemas: key in {yaml_path}",
+                fix="Restructure 'data_schemas:' as a YAML mapping of schema_id → schema config.",
+                who="developer",
+                reference=_REF,
+            ))
+        else:
+            for schema_id, schema_cfg in data_schemas.items():
+                if not isinstance(schema_cfg, dict):
+                    struct_errors.append(DeploymentError(
+                        component="ConfigManager",
+                        problem=f"data_schemas.{schema_id} must be a mapping, got {type(schema_cfg).__name__}.",
+                        location=f"data_schemas.{schema_id} in {yaml_path}",
+                        fix=(
+                            f"Ensure 'data_schemas.{schema_id}' is a YAML mapping with at least "
+                            f"a 'source:' block containing a 'path:' key."
+                        ),
+                        who="developer",
+                        reference=_REF,
+                    ))
+                elif not schema_cfg.get("source"):
+                    struct_errors.append(DeploymentError(
+                        component="ConfigManager",
+                        problem=f"data_schemas.{schema_id} is missing the required 'source:' block.",
+                        location=f"data_schemas.{schema_id}.source in {yaml_path}",
+                        fix=(
+                            f"Add a 'source:' block to 'data_schemas.{schema_id}' with at least "
+                            f"a 'path:' key pointing to the input TSV/CSV file."
+                        ),
+                        who="developer",
+                        reference=_REF,
+                    ))
+
+        exit_if_errors(struct_errors)
 
         # ADR-003/029b: Flatten analysis_groups into top-level 'plots' for VizFactory
         self.raw_config['plots'] = self.raw_config.get('plots', {})
