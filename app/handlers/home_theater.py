@@ -510,12 +510,23 @@ def define_server(input, output, session, *,
     # dynamic_tabs never reads input.comparison_mode. Only the active plot_cell
     # re-renders when the compare switch toggles; the tab structure stays stable.
     def _make_plot_cell_handler(p_id: str):
+        _acc_id = f"plot_acc_{p_id}"
+        _panel_val = f"plot_panel_{p_id}"
+
         @output(id=f"plot_cell_{p_id}")
         @render.ui
         def _plot_cell_ui():
             in_comparison = bool(safe_input(input, "comparison_mode", False))
+
+            # Read initial collapse state without creating a reactive dependency (Rule R4).
+            # Client-side accordion preserves state across sub-tab switches; server state
+            # is only used when the component is fully re-mounted (e.g. Home → Gallery → Home).
+            with reactive.isolate():
+                _hs = home_state.get() if home_state else {}
+            _is_open = _hs.get("plot_collapse_state", {}).get(p_id, True)
+
             if in_comparison:
-                return ui.layout_columns(
+                content = ui.layout_columns(
                     ui.div(
                         ui.tags.div(
                             "T1 — Raw (Baseline)",
@@ -533,7 +544,30 @@ def define_server(input, output, session, *,
                     ),
                     col_widths=[6, 6],
                 )
-            return ui.output_plot(f"plot_group_{p_id}", height="480px")
+            else:
+                content = ui.output_plot(f"plot_group_{p_id}", height="480px")
+
+            return ui.accordion(
+                ui.accordion_panel("Plot", content, value=_panel_val),
+                id=_acc_id,
+                open=_panel_val if _is_open else None,
+                multiple=False,
+                class_="spv-plot-accordion",
+            )
+
+        # Track per-plot accordion collapse → home_state (Rule R2: state writes in Effect)
+        @reactive.Effect
+        def _track_plot_collapse():
+            val = safe_input(input, _acc_id, None)
+            if home_state is None:
+                return
+            _hs = home_state.get()
+            _state = dict(_hs.get("plot_collapse_state", {}))
+            _now_open = val is not None
+            if _state.get(p_id) != _now_open:  # idempotent guard (Rule R3)
+                _state[p_id] = _now_open
+                home_state.set({**_hs, "plot_collapse_state": _state})
+
         return _plot_cell_ui
 
     for _p_id, _spec in _all_group_plot_ids:
@@ -586,6 +620,29 @@ def define_server(input, output, session, *,
 
         cfg = active_cfg()
         groups = cfg.raw_config.get("analysis_groups", {})
+
+        # --- UI-TITLE-1: manifest title banner ---
+        # Resolution: persona ui_title.text override > manifest info.display_name > nothing.
+        # If resolved title is empty or persona sets ui_title.visible=false: no banner.
+        _ui_title_cfg = bootloader.config.get("ui_title", {})
+        _title_visible = _ui_title_cfg.get("visible", True)
+        _title_text = (
+            _ui_title_cfg.get("text")
+            or cfg.raw_config.get("info", {}).get("display_name", "")
+        )
+        _subtitle_text = (
+            _ui_title_cfg.get("subtitle")
+            or cfg.raw_config.get("info", {}).get("subtitle", "")
+        )
+        if _title_visible and _title_text:
+            home_title_banner = ui.div(
+                ui.tags.span(_title_text, class_="banner-title"),
+                *([ui.tags.span(_subtitle_text, class_="banner-subtitle")] if _subtitle_text else []),
+                class_="view-title-banner",
+                style="margin-bottom: 8px;",
+            )
+        else:
+            home_title_banner = ui.div()
 
         # --- Thin header: dataset label left, tier toggle right (Phase 21-C/D) ---
         def _tier_label(label: str, sub: str, tooltip: str) -> object:
@@ -701,6 +758,7 @@ def define_server(input, output, session, *,
                     class_="text-muted p-4"
                 )
             return ui.div(
+                home_title_banner,
                 theater_header,
                 groups_nav,
                 data_preview_section,
@@ -777,6 +835,7 @@ def define_server(input, output, session, *,
         )
 
         return ui.div(
+            home_title_banner,
             theater_header,
             groups_nav,
             data_preview_section,

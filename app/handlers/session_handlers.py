@@ -295,6 +295,9 @@ def define_session_server(input, output, session, *,
                 "_pending_t3_nodes": [],
             }
             home_state.set(new_state)
+            saved_log = latest.get("notification_log", [])
+            if saved_log and notification_log is not None:
+                notification_log.set(saved_log)
             legacy_n = len(by_plot.get("__legacy__", []))
             extra = (f" ({legacy_n} orphaned legacy node(s) — see audit panel)"
                      if legacy_n else "")

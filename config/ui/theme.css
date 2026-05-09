@@ -516,6 +516,27 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     font-size: 0.85rem !important; font-weight: 700 !important; color: #345beb !important;
 }
 
+/* ── Plot accordion (THEATER-1) — collapsible plot panel inside navset_card_tab ── */
+/* The card handles the outer container; suppress double border/shadow inside. */
+.spv-plot-accordion.accordion { margin: 0 !important; }
+.spv-plot-accordion .accordion-item {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+.spv-plot-accordion .accordion-button {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #345beb !important;
+    background-color: #f8f9fa !important;
+    border-radius: 0 !important;
+}
+.spv-plot-accordion .accordion-button:not(.collapsed) {
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+}
+.spv-plot-accordion .accordion-body { padding: 6px 6px 0 6px !important; }
+
 /* SECONDARY — column selector font (overrides Python 0.75em wrapper) */
 .column-picker-container { font-size: 0.8rem !important; }
 

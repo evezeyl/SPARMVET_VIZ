@@ -200,7 +200,8 @@ def define_server(input, output, session, *,
         home_state.set(new_state)
 
         if session_manager is not None and _ghost_save_enabled:
-            _write_t3_ghost(new_state, session_manager)
+            _write_t3_ghost(new_state, session_manager,
+                            notif_log=notification_log.get() if notification_log is not None else [])
 
         snapshot_recipe.set(wrangle_studio.logic_stack.get())
         recipe_pending.set(False)
@@ -654,7 +655,7 @@ def define_server(input, output, session, *,
 # Private helpers
 # ---------------------------------------------------------------------------
 
-def _write_t3_ghost(state: dict, session_manager) -> None:
+def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None) -> None:
     msig = state.get("manifest_sha256") or ""
     dbh = state.get("data_batch_hash") or ""
     if not msig or not dbh:
@@ -671,6 +672,7 @@ def _write_t3_ghost(state: dict, session_manager) -> None:
             t3_recipe_by_plot=state.get("t3_recipe_by_plot", {}),
             t3_plot_overrides=state.get("t3_plot_overrides", {}),
             label=state.get("t3_ghost_label", ""),
+            notification_log=notif_log or [],
         )
     except Exception:
         pass

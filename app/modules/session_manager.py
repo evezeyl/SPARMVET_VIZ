@@ -314,6 +314,7 @@ class SessionManager:
         t3_plot_overrides: dict | None = None,
         label: str = "",
         t3_recipe_by_plot: dict[str, list[dict]] | None = None,
+        notification_log: list | None = None,
     ) -> Path:
         """Write a timestamped t3_{timestamp}.json to the session directory.
 
@@ -340,6 +341,7 @@ class SessionManager:
             "t3_recipe": t3_recipe,        # legacy flat view, kept for bw compat
             "t3_recipe_by_plot": t3_recipe_by_plot,
             "t3_plot_overrides": t3_plot_overrides or {},
+            "notification_log": notification_log or [],
         }
         path = self.session_dir(session_key) / f"t3_{ts}.json"
         path.write_text(json.dumps(ghost, indent=2))

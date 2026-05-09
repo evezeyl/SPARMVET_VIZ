@@ -35,7 +35,7 @@
 
 ### UX
 
-- [ ] **THEATER-1** `[sonnet/medium]`: Collapse/minimize plot panel — caret in plot card header → 1-line collapsed state. Per-plot, persisted in `home_state`.
+- [x] **THEATER-1** `[sonnet/medium]`: Collapse/minimize plot panel — caret in plot card header → 1-line collapsed state. Per-plot, persisted in `home_state`.
 
 ### Sidebar Slot Registry (ADR-073) — partial open
 
@@ -85,7 +85,7 @@
 
 > Completed decisions: see [tasks_archive_2026-05-09.md](archives/tasks_archive_2026-05-09.md).
 
-- [ ] **UI-TITLE-1** `[sonnet/medium]`: Implement UI title/subtitle resolution: persona config override > manifest `info.display_name`/`info.subtitle` > nothing. `UI_TITLE` off hides both. Add `info.subtitle` field to manifest schema.
+- [x] **UI-TITLE-1** `[sonnet/medium]`: Implement UI title/subtitle resolution: persona config override > manifest `info.display_name`/`info.subtitle` > nothing. `UI_TITLE` off hides both. Add `info.subtitle` field to manifest schema.
 
 - [x] **IMPORT-UI-1** `[sonnet/high]`: Unify the two import browse buttons into a single browse + mapping panel. `IMP_HLP` on → all manifest data sources. `META_ING` on alone → metadata schema only. Import behavior: overwrite. Implemented in `app/handlers/data_import_handlers.py`.
 
@@ -198,7 +198,12 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
 ### Gallery & UI
 
-- [ ] Gallery: Re-verify "Clone to Sandbox" after ADR-057 sidebar refactor.
+- [x] ~~Gallery: Re-verify "Clone to Sandbox" after ADR-057 sidebar refactor.~~ **SUPERSEDED** by GALLERY-CLONE-DECOUPLE-1 below.
+- [ ] **GALLERY-CLONE-DECOUPLE-1** `[sonnet/high]`: Decouple gallery clone from WrangleStudio. Two bugs to fix together:
+  1. **ADR-071 violation:** `WrangleStudio` is instantiated unconditionally in `server.py` for every persona — must be gated on `developer_mode_enabled` (or `test_lab_enabled`).
+  2. **Broken clone for `project-independent` persona:** `gallery_handlers.py` hard-depends on `wrangle_studio`; for personas with `gallery_enabled: true` but `test_lab_enabled: false`, the clone silently writes to a WrangleStudio with no UI, and the user sees a success notification but no sandbox.
+  **Fix:** Replace `wrangle_studio.logic_stack.set(valid_nodes)` in `gallery_handlers.py` with a Home T3 transplant — insert a `developer_raw_yaml` RecipeNode (carrying `gallery_source: {gallery_id, gallery_yaml_hash}`) into `_pending_t3_nodes` in `home_state`. Gate the "Send to T3" button on `bootloader.is_enabled("t3_sandbox_enabled")` (§12e). Remove `wrangle_studio` kwarg from `gallery_handlers.define_server()`. Also gate `WrangleStudio` instantiation in `server.py` on the appropriate flag.
+  **Unblocks:** 22-J-10 (aesthetic propagation) — which was deferred waiting for gallery-clone to work correctly.
 - [ ] **GALLERY-MAP** `[opus/high]` `[investigation]`: Map chart types. Blocked — `geom_map` requires GeoDataFrame; needs spatial manifest format + geopandas integration design.
 - [ ] **GALLERY-FLOW** `[sonnet/medium]` `[investigation]`: Flow / network chart types. Blocked — plotnine has no native support; needs feasibility study.
 - [ ] **Taxonomy Data Audit** `[@user]`: Verify/correct tags in `assets/gallery_data/*/recipe_manifest.yaml`.
@@ -206,7 +211,7 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 - [ ] **UX-GALLEXP-1** `[sonnet/medium]`: Gallery Explorer right sidebar — functionality TBD.
 - [ ] **UX-DEVINSP-1** `[sonnet/medium]`: Test Lab right sidebar + left sidebar redesign — functionality TBD.
 - [ ] **UX-CSS-DEMO** `[@user]`: Review `assets/demo/demo_vetinst.css` after default theme finalised.
-- [ ] **UX-NOTIF-2** `[sonnet/medium]`: Persist `notification_log` to T3 ghost so alerts survive page refresh. Linked to UX-NOTIF-1 (ADR-060).
+- [x] **UX-NOTIF-2** `[sonnet/medium]`: Persist `notification_log` to T3 ghost so alerts survive page refresh. Linked to UX-NOTIF-1 (ADR-060). `notification_log` serialised into ghost JSON on every `btn_apply` save; restored into `notification_log` reactive on session restore.
 
 ### VizFactory
 

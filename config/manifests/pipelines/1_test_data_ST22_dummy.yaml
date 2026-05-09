@@ -2,6 +2,7 @@ id: ST22_dummy_manifest
 type: species
 info:
   display_name: ST22 Dummy Dataset
+  subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
   category: AMR Research
   description: Hyper-modular manifest structure with dedicated subdirectories and
     annotated assembly recipes.
