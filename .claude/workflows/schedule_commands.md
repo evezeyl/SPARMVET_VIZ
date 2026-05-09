@@ -109,7 +109,7 @@ enables them, and prints a status table. Done.
 |-------|------|---------|
 | `sparmvet-audit-sunday.timer` | Sunday 23:00 | @deps + cross-lib |
 | `sparmvet-audit-wednesday.timer` | Wednesday 22:00 | manifest integrity + coherence |
-| `sparmvet-audit-thursday.timer` | Thursday 21:00 | phase order + changelog + template flags |
+| `sparmvet-audit-thursday.timer` | Thursday 21:00 | phase order + changelog + template flags + CSS + hardcoded + palette |
 | `sparmvet-audit-friday.timer` | Friday 20:00 | task drift |
 
 All timers call `run_audits.sh <day>` which automatically switches to the `dev` branch.
@@ -761,4 +761,7 @@ DATE=$(date +%Y-%m-%d)
 
 # Weekly (same slot as manifest integrity) — fast static check
 .venv/bin/python scripts/audit_manifest_coherence.py  --output .claude/logs/audits/audit_manifest_coherence_${DATE}.md
+
+# Weekly (Thursday slot) — palette registry validity (ADR-081)
+.venv/bin/python scripts/audit_palette_registry.py    --output .claude/logs/audits/audit_palette_${DATE}.md
 ```

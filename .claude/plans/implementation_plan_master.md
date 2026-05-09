@@ -264,6 +264,12 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [ ] Enter desired field name → walk lineage backwards → show earliest insertion point.
 - [ ] Highlight which `output_fields` and `final_contract` files need updating to carry the field forward.
 
+### Phase 18-F: Full Interactive TubeMap (ADR-039) *(PARTIALLY COMPLETE)*
+
+- [x] Clickable Cytoscape DAG nodes driving the Lineage Rail — **DONE** (implemented with Cytoscape + dagre, not Mermaid/SVG; `cy_tubemap` canvas, `initCyTubeMap` JS, node tap → lineage rail update).
+- [ ] Action Registry parity in IDE forms — form UI infrastructure is done (`schema_registry.py`, `_render_action_form`, `bp_action_form_ui`); only ~20 of 65 registered actions have `ui_schema` metadata. Remaining ~45 actions need `ui_schema` added to their `@register_action` decorator before they appear in the Blueprint form picker.
+- [ ] Visual Forking: select node → initiate new branch → produce YAML additions. Not started.
+
 ---
 
 ## Phase 21: Unified Home Theater (ADR-043 / ADR-044) ✅ COMPLETED 2026-04-30
@@ -403,12 +409,6 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] Linked-id deletion: 🗑 delete removes a node and all copies sharing the same `id` across every plot stack.
 - [x] Join-key propagation: orchestrator `per_ingredient_cast`/`base_cast` normalisation (Categorical ≠ String fix).
 - [x] Live-UI verification checklist written: `tasks_test_22J.md`. Awaiting user sign-off.
-
-### Phase 18-F: Full Interactive TubeMap (ADR-039) *(DEFERRED)*
-
-- [ ] Clickable Mermaid/SVG DAG nodes driving the Lineage Rail.
-- [ ] Action Registry parity (175+ actions).
-- [ ] Visual Forking: select node → initiate new branch → produce YAML additions.
 
 ---
 
