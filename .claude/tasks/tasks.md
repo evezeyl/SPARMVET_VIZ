@@ -201,6 +201,27 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 - [ ] `geom_map` — deferred; requires spatial data (GeoDataFrame).
 - [ ] **21-F-7**: Add `scale_x_discrete` / `scale_y_discrete` to manifests where Year/ST columns are categorical.
 
+- [ ] **VIZFAC-PLOT-CASCADE-1** `[opus/high]` `[design-thinking]`: Design the plot configuration priority cascade. Open questions to resolve before any implementation:
+  **Proposed priority order (highest wins):**
+  1. `spec:` — explicit per-plot settings in `analysis_groups.<group>.plots.<id>.spec`
+  2. Optimization layer — computed at render time from data (auto-label sizing, axis rotation, density-aware positioning). Currently partially implemented as `_auto_adjust_axis_labels()` in VizFactory as an unconditional post-pass.
+  3. `plot_defaults:` — manifest-level fallback block (currently parsed into `raw_config` but not consumed by VizFactory).
+  4. VizFactory built-in defaults — hardcoded fallbacks inside `viz_factory.py`.
+
+  **Design questions:**
+  - What exact keys belong in `plot_defaults:` (theme, font_family, height, width, label_size, legend_position, …)? Define the schema before wiring.
+  - Where does the merge happen? `VizFactory.render()` is the natural merge point — receives `plot_config` dict; merges manifest defaults in before processing layers.
+  - **Optimization layer scope (DECIDED):** purely visual/aesthetic adaptation — auto-adjusting how the rendered graph looks (label sizes, rotation, tick spacing, legend position). No data transformation, no layer addition/removal, no filtering. It only modifies rendering parameters of an already-assembled plot. This is distinct from T3 (data decisions with audit trail) and from the wrangling pipeline (data shape).
+  - **Optimization approach (DECIDED):** Two candidate paths evaluated:
+    - **Path A — data-aware pre-pass:** count distinct values on the mapped column (e.g. x-axis) from the LazyFrame before collect(); feed counts into parameter adjustments before rendering. Clean but adds a collect() round-trip.
+    - **Path B — two-pass render:** render the plot once → inspect the plotnine object's tick/label positions → recompute parameters (rotation, size, spacing) → re-render with updated params. More accurate (reads actual rendered geometry) but doubles render cost and requires plotnine internals access.
+    - **Decision:** Path B is the correct long-term approach (accurate to rendered output, no separate collect()); Path A is an acceptable MVP approximation. Both are **planned but deferred** — this is an advanced feature. Current `_auto_adjust_axis_labels()` is a schema-only heuristic and stays as-is until this cascade design is resolved.
+  - How does this interact with the T3 `aesthetic_override` node? T3 overrides should win over everything (user's explicit session decision). Suggested position: T3 aesthetic_override > spec > optimization > plot_defaults > built-ins.
+  - `_auto_adjust_axis_labels()` currently runs after all layers — must be repositioned as the "optimization" phase between steps 2 and 3 in the merge, or confirmed as a separate unconditional post-pass that only fills gaps.
+  - Blueprint IDE implication: the form catalog (ADR-075) should surface `plot_defaults` as a manifest-level settings panel, not per-plot, so the user understands the cascade when editing.
+
+  **Suggested output of the design session:** a short spec doc (`.claude/design/plot_config_cascade.md`) covering the merge function signature, key schema for `plot_defaults`, and the T3 override interaction. Then file concrete implementation tasks under VizFactory and manifests.
+
 ### Technical Debt
 
 - [ ] **REPO-CLEAN-1** `[haiku/low]` `[repo-hygiene]`: Full git history purge — remove EVE_WORK/, session logs, .vscode user files from ALL past commits. Prerequisite: backup to external disc + gdrive sync.

@@ -23,3 +23,22 @@ plot_defaults:
 
 plots:
   final_plot: !include 'stress_test_master/plots/final_plot.yaml'
+
+analysis_groups:
+  Stress_Distribution:
+    label: "Distribution Analysis"
+    plots:
+      stress_species_amr:
+        label: "Species x AMR Distribution"
+        spec:
+          factory_id: bar_logic
+          target_dataset: Master_Collection
+          x: species
+          fill: amr_class
+          layers:
+            - name: labs
+              params:
+                title: "STRESS TEST: Species x AMR Distribution"
+                x: "Species"
+                y: "Observed Count"
+                fill: "AMR Class"

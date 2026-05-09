@@ -269,11 +269,11 @@ class TestPhase25Panels:
         expect(accordion.get_by_text("Data Import")).to_be_visible()
 
     def test_global_export_panel_visible(self, page: Page, shiny_app: ShinyAppProc):
-        """Global Project Export accordion panel is always present (Phase 25-E)."""
+        """Export accordion panel is always present (renamed from 'Global Project Export' in export redesign 2026-05-04)."""
         page.goto(shiny_app.url)
         page.wait_for_selector("#nav_accordion", timeout=15_000)
         accordion = page.locator("#nav_accordion")
-        expect(accordion.get_by_text("Global Project Export")).to_be_visible()
+        expect(accordion.get_by_text("Export")).to_be_visible()
 
     @pytest.mark.skipif(
         _LAUNCH_PERSONA not in ("pipeline-static", "pipeline-exploration-simple"),

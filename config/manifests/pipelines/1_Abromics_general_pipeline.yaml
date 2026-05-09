@@ -105,17 +105,34 @@ join_manifests:
 # !SECTION END Assembly Manifests
 
 # SECTION PLOTTING MANIFESTS
-# plot_defaults:
-#   height: 450
-#   theme: theme_minimal
-#   show_legend: true
-# analysis_groups:
-#   Example_Group:
-#     description: Auto-scaffolded plotting group
-#     plots:
-#       demo_bar:
-#         factory_id: bar_logic
-#         target_dataset: Summary
-#         target_col: Replace_Me
-#         title: Replace Me Title
+analysis_groups:
+  MLST_Overview:
+    label: "MLST Overview"
+    plots:
+      abromics_st_by_country:
+        label: "Sequence Types by Country"
+        spec:
+          factory_id: bar_logic
+          target_dataset: AR1_MLST_Serotype_Virulence
+          x: sequence_type
+          fill: country
+          layers:
+            - name: labs
+              params:
+                title: "Sequence Types by Country"
+                x: "Sequence Type"
+                fill: "Country"
+      abromics_st_by_source:
+        label: "Sequence Types by Source"
+        spec:
+          factory_id: bar_logic
+          target_dataset: AR1_MLST_Serotype_Virulence
+          x: sequence_type
+          fill: source
+          layers:
+            - name: labs
+              params:
+                title: "Sequence Types by Source"
+                x: "Sequence Type"
+                fill: "Source"
 # !SECTION END Plotting Manifests
