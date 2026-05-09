@@ -41,13 +41,13 @@
 
 Write either a standalone script or a grep/find command. Examples:
 
-**Option A — Standalone script** (`assets/scripts/audit_*.py`):
+**Option A — Standalone script** (`scripts/audit_*.py`):
 ```python
 #!/usr/bin/env python3
 """Audit routine: [short description]
 
 Run via:
-  .venv/bin/python assets/scripts/audit_ROUTINE_NAME.py --output tmp/audit_ROUTINE_NAME_2026-MM-DD.md
+  .venv/bin/python scripts/audit_ROUTINE_NAME.py --output tmp/audit_ROUTINE_NAME_2026-MM-DD.md
 """
 import argparse
 import subprocess
@@ -137,7 +137,7 @@ Create a subsection for your routine:
 Before scheduling, run the routine once locally:
 
 ```bash
-.venv/bin/python assets/scripts/audit_ROUTINE_NAME.py --output tmp/audit_test.md
+.venv/bin/python scripts/audit_ROUTINE_NAME.py --output tmp/audit_test.md
 cat tmp/audit_test.md
 ```
 
@@ -163,7 +163,7 @@ Once manual test passes:
 - **Purpose:** Verify that `@deps` annotations are present on all load-bearing files and reflect current dependencies accurately.
 - **Frequency:** Weekly
 - **Schedule:** Sundays 23:00 local time (cron: `0 23 * * 0`)
-- **Command:** `.venv/bin/python assets/scripts/audit_deps_verify.py --output tmp/audit_deps_$(date +%Y-%m-%d).md`
+- **Command:** `.venv/bin/python scripts/audit_deps_verify.py --output tmp/audit_deps_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_deps_YYYY-MM-DD.md`
 - **Violations checked:**
   - Files in `app/`, `libs/*/src/*/` without `@deps` block (non-test files)
@@ -185,7 +185,7 @@ Once manual test passes:
 - **Purpose:** Detect peer-to-peer imports between domain libraries (transformer ↔ ingestion, blueprint_arch ↔ utils, etc.). These violate the Two-Tier Dependency Model (ADR-011, ADR-016).
 - **Frequency:** Weekly
 - **Schedule:** Sundays 23:00 local time (same as routine 1)
-- **Command:** `.venv/bin/python assets/scripts/audit_cross_lib.py --output tmp/audit_cross_lib_$(date +%Y-%m-%d).json`
+- **Command:** `.venv/bin/python scripts/audit_cross_lib.py --output tmp/audit_cross_lib_$(date +%Y-%m-%d).json`
 - **Output:** `.claude/logs/audits/audit_cross_lib_YYYY-MM-DD.json` (machine-readable) + `.claude/logs/audits/audit_cross_lib_YYYY-MM-DD.md` (human-readable summary)
 - **Violations checked:**
   - Any `from libs/X/` import inside `libs/Y/` where X and Y are both domain libraries (not utils)
@@ -221,7 +221,7 @@ Once manual test passes:
 - **Purpose:** Run all manifests in `config/manifests/pipelines/` through the assembler + gallery validator to detect structural errors before they surface at runtime.
 - **Frequency:** Weekly
 - **Schedule:** Wednesdays 22:00 local time (cron: `0 22 * * 3`)
-- **Command:** `.venv/bin/python assets/scripts/audit_manifest_integrity.py --output tmp/audit_manifests_$(date +%Y-%m-%d).md`
+- **Command:** `.venv/bin/python scripts/audit_manifest_integrity.py --output tmp/audit_manifests_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_manifests_YYYY-MM-DD.md`
 - **Violations checked:**
   - Manifest file format (valid YAML)
@@ -247,7 +247,7 @@ Once manual test passes:
 - **Purpose:** Verify that tasks referenced in `.claude/tasks/tasks.md` still have corresponding code/files. Flag orphaned task references (code removed but task not marked `[x] DONE`).
 - **Frequency:** Weekly
 - **Schedule:** Fridays 20:00 local time (cron: `0 20 * * 5`)
-- **Command:** `.venv/bin/python assets/scripts/audit_task_drift.py --output tmp/audit_tasks_$(date +%Y-%m-%d).md`
+- **Command:** `.venv/bin/python scripts/audit_task_drift.py --output tmp/audit_tasks_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_tasks_YYYY-MM-DD.md`
 - **Violations checked:**
   - Task references a specific file that no longer exists
@@ -285,7 +285,7 @@ Once manual test passes:
 - **Purpose:** Verify that `implementation_plan_master.md` phase blocks are in ascending chronological order (Phase 23 → Phase 24 → ... → Phase 32). Detects phases that have been inserted out of order during edits.
 - **Frequency:** Weekly
 - **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
-- **Command:** `.venv/bin/python assets/scripts/audit_phase_order.py --output tmp/audit_phases_$(date +%Y-%m-%d).md`
+- **Command:** `.venv/bin/python scripts/audit_phase_order.py --output tmp/audit_phases_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_phases_YYYY-MM-DD.md`
 - **Violations checked:**
   - Phase numbers not in ascending order (e.g., Phase 24 appears before Phase 23)
@@ -308,7 +308,7 @@ Once manual test passes:
 - **Purpose:** Verify that `.claude/knowledge/changelog.md` contains entries for all phases declared in `implementation_plan_master.md`. Detects documentation drift when phases are added but changelog is not updated.
 - **Frequency:** Weekly
 - **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
-- **Command:** `.venv/bin/python assets/scripts/audit_changelog_sync.py --output tmp/audit_changelog_$(date +%Y-%m-%d).md`
+- **Command:** `.venv/bin/python scripts/audit_changelog_sync.py --output tmp/audit_changelog_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_changelog_YYYY-MM-DD.md`
 - **Violations checked:**
   - Phases in implementation_plan_master.md missing from changelog.md
@@ -331,7 +331,7 @@ Once manual test passes:
 - **Purpose:** Strict version of Routine 5. Verify all 8 persona templates declare all flags in the authoritative flag matrix (`rules_persona_feature_flags.md`). Detects missing flags before they become deployment issues.
 - **Frequency:** Weekly
 - **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
-- **Command:** `.venv/bin/python assets/scripts/audit_template_flags.py --output tmp/audit_template_flags_$(date +%Y-%m-%d).md`
+- **Command:** `.venv/bin/python scripts/audit_template_flags.py --output tmp/audit_template_flags_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_template_flags_YYYY-MM-DD.md`
 - **Violations checked:**
   - Template missing a flag that matrix declares (per-persona)
@@ -418,7 +418,7 @@ Routines are cloud-hosted automation managed at **[claude.ai/code/routines](http
 Run the [Audit Name] audit check.
 
 Execute from project root:
-  .venv/bin/python assets/scripts/audit_ROUTINE_NAME.py --output tmp/audit_ROUTINE_NAME_$(date +%Y-%m-%d).md
+  .venv/bin/python scripts/audit_ROUTINE_NAME.py --output tmp/audit_ROUTINE_NAME_$(date +%Y-%m-%d).md
 
 After completion:
 1. Review the output: tmp/audit_ROUTINE_NAME_YYYY-MM-DD.md
@@ -455,7 +455,7 @@ Run commands directly in any Claude Code session (independent of routines):
 .venv/bin/python scripts/validate_persona_config.py --all
 
 # Run routine 1 manually
-.venv/bin/python assets/scripts/audit_deps_verify.py --output tmp/audit_deps_manual_$(date +%Y-%m-%d).md
+.venv/bin/python scripts/audit_deps_verify.py --output tmp/audit_deps_manual_$(date +%Y-%m-%d).md
 ```
 
 ### One-off audits
@@ -507,7 +507,7 @@ Follow these patterns for consistency:
 
 If you add or modify a routine during development:
 
-1. **Write the script** (if not just a CLI command) — place in `assets/scripts/audit_*.py`
+1. **Write the script** (if not just a CLI command) — place in `scripts/audit_*.py`
 2. **Test manually** — verify the script runs without error
 3. **Update this file** (`.claude/workflows/audit_routine_registry.md`) — add/modify routine definition and status matrix
 4. **Create the routine** (if periodic) — go to [claude.ai/code/routines](https://claude.ai/code/routines) and follow the web UI steps or use `/schedule` in CLI

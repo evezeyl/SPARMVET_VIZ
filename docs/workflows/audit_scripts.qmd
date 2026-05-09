@@ -1,0 +1,278 @@
+# Repository Audit Scripts
+
+SPARMVET_VIZ ships a set of standalone audit scripts in `scripts/` that verify repository hygiene, ADR compliance, manifest integrity, and documentation consistency. They are designed for three uses:
+
+1. **Automated cloud routines** — run weekly by [Claude Code Routines](https://claude.ai/code/routines) without manual intervention.
+2. **Pre-merge gates** — run locally or in CI before opening a PR to catch violations early.
+3. **Contributor validation** — anyone working on the codebase can run the full suite in under 60 seconds to verify nothing is broken.
+
+All scripts follow the same interface: `--project-root` (auto-detected) and `--output` (write a `.md` report to a file). Exit code `0` = PASS, `1` = violations found.
+
+---
+
+## Quick Start — Run All Audits
+
+```bash
+DATE=$(date +%Y-%m-%d)
+.venv/bin/python scripts/audit_cross_lib.py       --output .claude/logs/audits/audit_cross_lib_${DATE}.md
+.venv/bin/python scripts/audit_deps_verify.py     --output .claude/logs/audits/audit_deps_${DATE}.md
+.venv/bin/python scripts/audit_manifest_integrity.py --output .claude/logs/audits/audit_manifest_${DATE}.md
+.venv/bin/python scripts/audit_task_drift.py      --output .claude/logs/audits/audit_task_drift_${DATE}.md
+.venv/bin/python scripts/audit_template_flags.py  --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_phase_order.py     --output .claude/logs/audits/audit_phase_order_${DATE}.md
+.venv/bin/python scripts/audit_changelog_sync.py  --output .claude/logs/audits/audit_changelog_${DATE}.md
+```
+
+Reports are written to `.claude/logs/audits/` (append-only audit log). To print to stdout without writing a file, omit `--output`.
+
+---
+
+## Script Reference
+
+### `audit_cross_lib.py` — ADR-011 Cross-Lib Violation Scan
+
+Detects peer-to-peer imports between domain libraries in `libs/` using Python AST parsing. Each domain library must only import from `libs/utils/` (Tier 1 base) or the standard library. Peer imports (e.g. `transformer` → `ingestion`) violate the Two-Tier Dependency Model (ADR-011, ADR-016).
+
+```bash
+.venv/bin/python scripts/audit_cross_lib.py
+.venv/bin/python scripts/audit_cross_lib.py --output .claude/logs/audits/audit_cross_lib_2026-05-12.md
+```
+
+**What it checks:**
+
+- All `.py` files under `libs/<domain_lib>/` for imports targeting another domain library
+- Self-imports (a library importing itself) are ignored
+- Imports from `libs/utils/` are allowed (Tier 1 base)
+- Imports from `app/` are not scanned (orchestration layer — peer imports are permitted there)
+
+**Violation severities:**
+
+| Severity | Meaning |
+|---|---|
+| `BLOCKER` | New violation not in the known-debt list — must fix before merge |
+| `KNOWN_DEBT` | Tracked existing violation — do not expand; fix as tech debt |
+
+**Known violations** are declared in the `KNOWN_VIOLATIONS` set at the top of the script. Update this set only with explicit user confirmation when a tracked debt is formally accepted.
+
+**Output excerpt:**
+
+```
+## Result: ❌ FAIL
+- New violations (blockers): 1
+- Known tech-debt violations: 5
+
+### libs/blueprint_arch/src/blueprint_arch/schema_registry.py:40
+- **From:** `blueprint_arch`
+- **Imports:** `transformer` via `transformer.actions.base`
+- **Fix:** Remove or reroute this import...
+```
+
+---
+
+### `audit_deps_verify.py` — @deps Block Verification
+
+Scans load-bearing Python files in `libs/` and `app/` to verify each carries a `@deps` / `@end_deps` annotation block, as required by `workspace_standard.md §5` (Session Law).
+
+A file is "load-bearing" if it:
+
+- Is a core module by name (`data_assembler.py`, `orchestrator.py`, `bootloader.py`, etc.)
+- Contains `@register_action(` or `@register_plot_component(`
+
+```bash
+.venv/bin/python scripts/audit_deps_verify.py
+.venv/bin/python scripts/audit_deps_verify.py --output .claude/logs/audits/audit_deps_2026-05-12.md
+```
+
+Files in `tests/`, `tmp/`, `tmpAI/`, and `__pycache__` are excluded.
+
+**Expected annotation format** (Python files, after imports):
+
+```python
+# @deps
+# provides: action:cast, action:coalesce
+# consumes: libs/transformer/src/transformer/actions/base.py
+# consumed_by: app/modules/orchestrator.py
+# @end_deps
+```
+
+See `workspace_standard.md §5-B` for the format for YAML and Markdown files.
+
+---
+
+### `audit_manifest_integrity.py` — Manifest Structure Integrity
+
+Runs every pipeline manifest in `config/manifests/pipelines/` through `debug_assembler.py`. A manifest passes if the assembler exits `0`. Assembler scratch artifacts are written to `tmpAI/audit_manifest_integrity/` (agent scratch, not for user review).
+
+```bash
+# Check all manifests
+.venv/bin/python scripts/audit_manifest_integrity.py
+
+# Check a single manifest
+.venv/bin/python scripts/audit_manifest_integrity.py \
+    --manifest config/manifests/pipelines/my_manifest.yaml
+
+# Write report
+.venv/bin/python scripts/audit_manifest_integrity.py \
+    --output .claude/logs/audits/audit_manifest_2026-05-12.md
+```
+
+**What it catches:**
+
+- YAML syntax errors
+- Missing required keys (`input_fields`, `wrangling`, `output_fields`)
+- Broken `!include` paths
+- Undefined `@register_action` names in wrangling steps
+- `final_contract` columns not produced by the assembly recipe
+- Join key dtype mismatches
+
+**Fix guidance** for common assembler errors:
+
+| Error | Cause | Fix |
+|---|---|---|
+| `ColumnNotFoundError` | Step references a column before it is created | Check step ordering relative to the join that creates the column |
+| `SchemaError` on join | Join key dtype mismatch | Add `cast` step before join on the mismatched side |
+| `FileNotFoundError` | Source file path wrong | Check `source: path:` in `data_schemas` |
+| Column missing from TSV output | Column not in `final_contract` | Add it to `final_contract` |
+
+---
+
+### `audit_task_drift.py` — Task-to-Code Drift Check
+
+Scans open tasks in `.claude/tasks/tasks.md` for backtick-quoted file path references (e.g. `` `app/handlers/foo.py` ``). Verifies each path exists on disk. Flags tasks that reference deleted or renamed files.
+
+```bash
+.venv/bin/python scripts/audit_task_drift.py
+.venv/bin/python scripts/audit_task_drift.py --output .claude/logs/audits/audit_task_drift_2026-05-12.md
+```
+
+Only open tasks (`- [ ]` lines) are scanned. Paths starting with `libs/`, `app/`, `config/`, `scripts/`, `docs/`, `.claude/` are checked; data files (`.tsv`, `.csv`, `.parquet`) and placeholder patterns (`YYYY-MM-DD`, `<name>`) are ignored.
+
+**When a drift violation appears:**
+
+1. Run `git log --diff-filter=R --name-status HEAD~20..HEAD` to check if the file was renamed.
+2. If renamed: update the task's file reference.
+3. If deleted and the task is obsolete: close it with `[x]` and a brief note.
+4. If the file has not been created yet (future task): add `[DEFERRED]` to the task.
+
+---
+
+### `audit_template_flags.py` — Persona Template Flag Completeness
+
+Runs `PersonaValidator` and `SidebarValidator` in `--strict` mode (warnings treated as errors) against all 8 persona templates in `config/ui/templates/`. Wraps `scripts/validate_persona_config.py` and consolidates results into a single report.
+
+```bash
+.venv/bin/python scripts/audit_template_flags.py
+.venv/bin/python scripts/audit_template_flags.py --output .claude/logs/audits/audit_templates_2026-05-12.md
+```
+
+**What it catches:**
+
+- Missing flags (template missing a flag the matrix declares)
+- Wrong cascade: parent flag `false` but child flag `true` (soft: warning; fatal for `blueprint_enabled` / `manifest_edit_enabled` / `blueprint_agent_enabled` — see ADR-077)
+- Sidebar slot misconfigurations (invalid panel types, missing workspace declarations)
+
+**Fatal vs soft violations:**
+
+Fatal cascade errors (ADR-077) block the app from starting entirely. Fix them before the next deployment. See `rules_persona_feature_flags.md §Cascade Enforcement` for the full table.
+
+For individual template debugging:
+
+```bash
+.venv/bin/python scripts/validate_persona_config.py --persona developer --strict
+.venv/bin/python scripts/validate_persona_config.py --all
+```
+
+---
+
+### `audit_phase_order.py` — Phase Ordering in implementation_plan_master.md
+
+Verifies that active (non-completed) Phase N headers in `.claude/plans/implementation_plan_master.md` appear in ascending numeric order within each `## ` section. Completed/archived phases are skipped. Catches cases where a new phase block is inserted at the wrong position.
+
+```bash
+.venv/bin/python scripts/audit_phase_order.py
+.venv/bin/python scripts/audit_phase_order.py --output .claude/logs/audits/audit_phase_order_2026-05-12.md
+```
+
+**Why this exists:** The P0 audit (2026-05-09) found Phase 23 appearing after Phase 27 in the roadmap file. This routine prevents recurrence.
+
+**Design note:** Phase ordering is checked per `## ` section, not globally. The plan contains a historical archive section (Phase A/B/3–18, all DONE) under a separate heading — those phases are excluded from the order check so they do not create false positives.
+
+**Fixing violations:**
+
+1. Note the line number and phase label from the report.
+2. Open `implementation_plan_master.md`.
+3. Cut the entire phase block (from the heading down to the next same-level heading).
+4. Paste it at the correct chronological position.
+
+---
+
+### `audit_changelog_sync.py` — Changelog Completeness
+
+Cross-checks `.claude/plans/implementation_plan_master.md` against `.claude/knowledge/changelog.md`. Every phase header marked COMPLETED/DONE/✅ in the plan must have a corresponding mention in the changelog.
+
+```bash
+.venv/bin/python scripts/audit_changelog_sync.py
+.venv/bin/python scripts/audit_changelog_sync.py --output .claude/logs/audits/audit_changelog_2026-05-12.md
+```
+
+**Why this exists:** The P1 audit (2026-05-09) found Phases 28–32 missing from the changelog. This routine surfaces documentation drift before it compounds.
+
+**Fixing missing entries:**
+
+```bash
+# Find commits that belong to a phase
+git log --oneline --grep="Phase 28"
+```
+
+Then append to `.claude/knowledge/changelog.md` (append-only — never edit existing entries):
+
+```markdown
+## Phase 28 — [Brief description]
+- [Breaking changes, renamed exports, removed APIs, new required fields]
+```
+
+If the phase had no breaking changes: `## Phase 28 — No breaking changes or renames.`
+
+---
+
+## For Contributors
+
+If you are adding a new domain library, wrangling action, manifest, or persona template, run the relevant subset of audits before opening a PR:
+
+| Change | Recommended audits |
+|---|---|
+| New `libs/<name>/` | `audit_cross_lib.py`, `audit_deps_verify.py` |
+| New `@register_action` | `audit_deps_verify.py`, `audit_manifest_integrity.py` |
+| New pipeline manifest | `audit_manifest_integrity.py` |
+| New / modified persona template | `audit_template_flags.py` |
+| New phase in the roadmap | `audit_phase_order.py` |
+| Closing a major phase | `audit_changelog_sync.py` |
+| Renaming / deleting a file | `audit_task_drift.py` |
+
+**Adding a new audit script:**
+
+1. Place the script in `scripts/audit_<name>.py`.
+2. Follow the pattern: `argparse` CLI with `--project-root` (auto-detect) and `--output` (optional), exit `0` / `1`.
+3. Write the report to `.claude/logs/audits/audit_<name>_YYYY-MM-DD.md`.
+4. Register it in `.claude/workflows/audit_routine_registry.md` (status matrix + definition section).
+5. Add the `/schedule` prompt to `.claude/workflows/schedule_commands.md`.
+6. Update the "Quick Start" block at the top of this page.
+
+---
+
+## Automated Scheduling
+
+These scripts back the cloud-hosted audit routines managed at [claude.ai/code/routines](https://claude.ai/code/routines). The schedule is:
+
+| Script | Frequency | Day/Time |
+|---|---|---|
+| `audit_deps_verify.py` | Weekly | Sundays 23:00 |
+| `audit_cross_lib.py` | Weekly | Sundays 23:00 |
+| `audit_manifest_integrity.py` | Weekly | Wednesdays 22:00 |
+| `audit_task_drift.py` | Weekly | Fridays 20:00 |
+| `audit_template_flags.py` | Weekly | Thursdays 21:00 |
+| `audit_phase_order.py` | Weekly | Thursdays 21:00 |
+| `audit_changelog_sync.py` | Weekly | Thursdays 21:00 |
+
+Full routine definitions, Routine IDs, and last-run dates: `.claude/workflows/audit_routine_registry.md`.
+`/schedule` CLI prompts for creating or recreating each routine: `.claude/workflows/schedule_commands.md`.

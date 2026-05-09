@@ -1,7 +1,7 @@
 # @deps
 # provides: class:IridaConnector
-# consumes: class:FilesystemConnector
-# doc: .claude/knowledge/architecture_decisions.md#ADR-048
+# consumes: class:FilesystemConnector, utils.deployment_error
+# doc: .claude/knowledge/architecture_decisions.md#ADR-048, ADR-078
 # @end_deps
 """
 IridaConnector — connector for IRIDA REST API deployments (ADR-048 §5, §8).
@@ -21,7 +21,11 @@ import os
 from pathlib import Path
 from typing import Dict
 
+from utils.deployment_error import DeploymentError, exit_if_errors
+
 from .filesystem import FilesystemConnector
+
+_REF = "ADR-048 §8 — .claude/knowledge/architecture_decisions.md#adr-048"
 
 
 class IridaConnector(FilesystemConnector):
@@ -75,15 +79,48 @@ class IridaConnector(FilesystemConnector):
         return Path(cache_str) if cache_str else None
 
     def _validate_irida_config(self) -> None:
-        """Raise early if token or irida block is missing."""
+        """Exit with DeploymentError if token or irida block is missing."""
+        errors: list[DeploymentError] = []
+
         token = os.environ.get("SPARMVET_IRIDA_TOKEN")
         if not token:
-            raise EnvironmentError(
-                "SPARMVET_IRIDA_TOKEN environment variable is required for IRIDA "
-                "deployment but is not set. Inject it at container launch."
-            )
+            errors.append(DeploymentError(
+                component="IridaConnector",
+                problem=(
+                    "SPARMVET_IRIDA_TOKEN environment variable is required for IRIDA "
+                    "deployment but is not set."
+                ),
+                location="SPARMVET_IRIDA_TOKEN env var",
+                fix=(
+                    "Inject the IRIDA OAuth2 bearer token at container launch via the "
+                    "environment: SPARMVET_IRIDA_TOKEN=<token>. "
+                    "For local testing, set it in your shell before starting the app. "
+                    "Never store the token in the deployment profile YAML (ADR-048 §8)."
+                ),
+                who="operator",
+                reference=_REF,
+            ))
+
         if not self._profile.get("irida"):
-            raise ValueError(
-                "Deployment profile is missing the required 'irida' block "
-                "(base_url, project_id, local_cache) for IRIDA deployment."
-            )
+            errors.append(DeploymentError(
+                component="IridaConnector",
+                problem=(
+                    "Deployment profile is missing the required 'irida:' block "
+                    "(base_url, project_id, local_cache)."
+                ),
+                location="irida: block in deployment profile",
+                fix=(
+                    "Add an 'irida:' block to the deployment profile with keys: "
+                    "base_url (IRIDA server URL), project_id (integer), "
+                    "local_cache (path where downloaded data will be stored). "
+                    "Example:\n"
+                    "  irida:\n"
+                    "    base_url: https://irida.example.org/api\n"
+                    "    project_id: 42\n"
+                    "    local_cache: /tmp/irida_cache"
+                ),
+                who="operator",
+                reference=_REF,
+            ))
+
+        exit_if_errors(errors)
