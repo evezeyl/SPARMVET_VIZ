@@ -1,6 +1,13 @@
 # Design: T3 Export Threading + Lineage Recipe
 # Covers: T3 node type gap + export bundle lineage (formerly EXPORT-SGE-2)
-# Status: design only — NOT implemented. Read and discuss before building.
+# Status: PARTIALLY COMPLETE — see per-section status below.
+#
+# As of 2026-05-09:
+# - Dead code (single_graph_export_handlers.py): REMOVED ✓
+# - Lineage in export bundle: IMPLEMENTED as lineage_graph.json (shared-node DAG) ✓
+# - T3 threading (filter_row, exclusion_row, drop_column): IMPLEMENTED ✓
+#   via _t3_filter_rows() + _t3_drop_columns() in home_theater.py
+# - T3 threading for future node types (aesthetic_override, rename, derive): pending
 
 ---
 
