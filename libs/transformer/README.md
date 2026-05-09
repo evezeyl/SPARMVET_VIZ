@@ -109,6 +109,89 @@ For Phase 1 & Phase 4 verification, use the local debugging runners to execute d
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py --manifest [YAML] --data [DATA_DIR] --output [OUT_TSV]
 ```
 
+## Action UI Schema (ADR-075)
+
+Every action that should be visible in the **Blueprint Architect IDE** must declare a `ui_schema` dict in its `@register_action(...)` decorator. The schema drives automatic form generation — no hand-coded forms required.
+
+### Adding a schema to a new action
+
+```python
+from transformer.actions.base import register_action
+
+@register_action("my_action", ui_schema={
+    "label": "Human-readable label",          # shown in action picker
+    "category": "cleaning",                    # groups actions in the picker
+    "context": ["t1", "t2"],                   # which tiers allow this action
+    "tags": ["null", "cleaning"],              # free-text search terms
+    "params": {
+        "columns": {
+            "widget": "column_selector",       # widget type (see vocabulary below)
+            "multi": True,
+            "label": "Columns",
+            "required": True,
+        },
+        "value": {
+            "widget": "column_or_literal",
+            "label": "Fill value",
+            "required": True,
+        },
+    },
+})
+def action_my_action(lf, spec):
+    ...
+```
+
+### Widget type vocabulary
+
+| Widget | UI element | Use for |
+|---|---|---|
+| `column_selector` | Multi/single select from frame schema | Column names |
+| `expression` | Code editor with Polars syntax highlighting | Polars expressions |
+| `enum` | Dropdown from fixed list (`options: [...]`) | Categorical choices |
+| `dtype_picker` | Dropdown of Polars dtype strings | `cast` dtype |
+| `number` | Numeric input (int or float) | Counts, thresholds |
+| `string` | Plain text input | New column names, patterns |
+| `color` | Colour picker (hex or named) | Fill / colour overrides |
+| `column_or_literal` | Column select OR literal value | Fill values, join keys |
+| `bool` | Checkbox | Flags, on/off options |
+
+### Context tags
+
+| Tag | Tier | Usage |
+|---|---|---|
+| `t1` | Tier 1 wrangling | Cleaning, renaming, filtering |
+| `t2` | Tier 2 wrangling | Reshaping, aggregation |
+| `assembly` | Assembly recipe | Joins, cross-source derivation |
+
+### Accessing the catalog programmatically
+
+```python
+from blueprint_arch.schema_registry import (
+    get_action_catalog,
+    get_actions_for_context,
+    get_actions_by_category,
+    search_actions,
+)
+
+# All annotated actions
+catalog = get_action_catalog()
+
+# Filter to t1-valid actions
+t1_actions = get_actions_for_context("t1")
+
+# Search by keyword
+matches = search_actions("regex")
+```
+
+### Tests
+
+Schema registration is covered by:
+- `libs/transformer/tests/test_ui_schemas.py` — structure, param alignment, semantic rules (440 tests total across all three schema test files)
+
+```bash
+PYTHONPATH=. .venv/bin/python -m pytest libs/transformer/tests/test_ui_schemas.py -v
+```
+
 ## Installation (Editable Mode)
 
 According to the workspace standard, this library must be installed locally via:

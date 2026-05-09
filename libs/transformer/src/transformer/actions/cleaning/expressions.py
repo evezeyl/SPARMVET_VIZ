@@ -170,7 +170,8 @@ def action_label_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "context": ["t1", "t2", "assembly"],
     "tags": ["expression", "derivation", "polars", "computed-column"],
     "params": {
-        "column": {"widget": "string", "label": "Output column name", "required": True},
+        "column": {"widget": "string", "label": "Output column name", "required": False},
+        "target_column": {"widget": "string", "label": "Output column name (fallback)", "required": False},
         "expression": {"widget": "expression", "label": "Polars expression (e.g. pl.col('x') * 2)", "required": True},
     },
 })

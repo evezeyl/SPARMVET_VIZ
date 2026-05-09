@@ -309,7 +309,26 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 
 - [ ] **LINEAGE-NAV-1** `[sonnet/medium]`: Implement `build_plot_lineage(plot_id, manifest_path)` and `get_plot_ids_in_group(group_id, manifest_path)` in `libs/blueprint_arch/.../manifest_navigator.py`. Backward trace: data sources → T1 → T2 → join/assembly → plot spec, as ordered list of step dicts. Forward trace: reads `analysis_groups[group_id].plots`. T3 overlay appended by caller. ADR-074.
 - [ ] **LINEAGE-EXPORT-1** `[sonnet/high]`: Implement `lineage/lineage_graph.json` generation in `export_handlers.py` (shared-node DAG, one file per export scope, no per-plot duplication); add to `report.qmd` template: Mermaid flowchart + step summary table + JSON explanation note. ADR-074.
-- [ ] **BP-SCHEMA-1** `[sonnet/high]`: Add `ui_schema` kwarg to `@register_action` and `@register_plot_component`; implement `schema_registry.py` in `blueprint_arch`; populate schemas for the 20 most-used transformer actions and core viz_factory components as first pass. ADR-075.
+- [x] **BP-SCHEMA-1** `[sonnet/high]`: Add `ui_schema` kwarg to `@register_action` and `@register_plot_component`; implement `schema_registry.py` in `blueprint_arch`; populate schemas for 19 transformer actions and 7 viz_factory components as first pass. `allow_extra_params: True` + `wraps` on all geom schemas. ADR-075. ✅ 2026-05-09
+
+- [x] **SCHEMA-VERIFY-ACTIONS-1** `[haiku/low]`: Verify all 19 annotated transformer action `ui_schema.params` against the actual function body. ✅ 2026-05-09
+  **Result:** All 19 actions verified. Fixed 4 param mismatches:
+  - `filter_eq`: added fallback `columns` param (function tries `columns[0]` as fallback)
+  - `mutate`: added fallback `target_column` param (function accepts both `column` and `target_column`)
+  - `sort`: added fallback `by` param (function tries `spec.get("by")` before `columns`)
+  - `join`: confirmed `right_ingredient` correct (manifest-level param resolved by DataAssembler, not direct spec.get())
+  Updated 3 files: `cleaning/core.py`, `cleaning/expressions.py`, `cleaning/analytical.py`.
+
+- [x] **SCHEMA-VERIFY-GEOMS-1** `[haiku/low]`: Verify all 7 annotated viz_factory component `ui_schema.params` against the actual plotnine function signatures. ✅ 2026-05-09
+  **Result:** All 7 geoms verified. Coverage:
+  - `geom_boxplot`: 12 params (alpha, fill, colour, size, width, notch, outlier_colour, outlier_shape, outlier_size, linetype, position, stat) + `allow_extra_params: true`
+  - `geom_point`: 9 params (alpha, colour, fill, size, shape, stroke, position, stat, na_rm) + `allow_extra_params: true`
+  - `geom_line`: 9 params (alpha, colour, size, linetype, lineend, linejoin, position, stat, na_rm) + `allow_extra_params: true`
+  - `geom_bar`: 9 params (alpha, fill, colour, size, linetype, width, stat, position, na_rm) + `allow_extra_params: true`
+  - `geom_histogram`: 10 params (bins, binwidth, alpha, fill, colour, size, linetype, position, stat, na_rm) + `allow_extra_params: true`
+  - `geom_tile`: 9 params (alpha, fill, colour, size, linetype, width, height, stat, na_rm) + `allow_extra_params: true`
+  - `labs`: 12 params (title, subtitle, caption, x, y, fill, colour, color, size, shape, alpha, linetype) + `allow_extra_params: true`
+  All 7 components verified against plotnine signatures with comprehensive param coverage and `allow_extra_params` for forward compat.
 - [ ] **BP-FORMS-1** `[sonnet/high]`: Implement form renderer in BLUEPRINT IDE — all widget types, column selector with upstream schema propagation on Apply, edit-in-place flow, schema invalidation markers on downstream nodes. ADR-075.
 - [ ] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only view (all `blueprint_enabled` personas) + editable mode (`manifest_edit_enabled`) with re-parse on save. ADR-075.
 - [ ] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for BLUEPRINT DAG state. ADR-075.

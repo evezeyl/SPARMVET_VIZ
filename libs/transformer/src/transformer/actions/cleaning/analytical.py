@@ -90,7 +90,8 @@ def action_fill_nulls_direction(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.La
     "context": ["t1", "t2", "assembly"],
     "tags": ["sort", "ordering"],
     "params": {
-        "columns": {"widget": "column_selector", "multi": True, "label": "Sort by columns (in order)", "required": True},
+        "by": {"widget": "column_selector", "multi": True, "label": "Sort by columns (in order)", "required": False},
+        "columns": {"widget": "column_selector", "multi": True, "label": "Sort by columns (fallback)", "required": False},
         "descending": {"widget": "bool", "label": "Descending", "required": False, "default": False},
     },
 })

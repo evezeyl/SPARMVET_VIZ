@@ -394,7 +394,8 @@ def action_add_constant(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "context": ["t1", "t2"],
     "tags": ["filter", "equality"],
     "params": {
-        "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
+        "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": False},
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns (fallback, uses first)", "required": False, "hint": "Alternative to 'column'; uses first element"},
         "value": {"widget": "column_or_literal", "label": "Value", "required": True},
     },
 })

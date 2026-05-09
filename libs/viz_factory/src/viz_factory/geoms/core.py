@@ -26,13 +26,26 @@ from viz_factory.registry import register_plot_component
 
 @register_plot_component("geom_boxplot", ui_schema={
     "label": "Box plot",
-    "category": "geom",
+    "category": "distribution",
     "context": ["plot"],
-    "tags": ["distribution", "boxplot", "outliers", "quartiles"],
+    "tags": ["distribution", "boxplot", "outliers", "quartiles", "summary"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_boxplot"]}],
+    "allow_extra_params": True,
     "params": {
-        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.8},
-        "fill": {"widget": "color", "label": "Fill colour", "required": False},
-        "colour": {"widget": "color", "label": "Border colour", "required": False},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
+        "fill": {"widget": "color", "label": "Fill colour (fixed, not mapped)", "required": False},
+        "colour": {"widget": "color", "label": "Border/outlier colour", "required": False},
+        "size": {"widget": "number", "label": "Line width", "required": False},
+        "width": {"widget": "number", "label": "Box width (0–1)", "required": False},
+        "notch": {"widget": "bool", "label": "Show notch (confidence interval)", "required": False, "default": False},
+        "outlier_colour": {"widget": "color", "label": "Outlier point colour", "required": False},
+        "outlier_shape": {"widget": "number", "label": "Outlier point shape code", "required": False},
+        "outlier_size": {"widget": "number", "label": "Outlier point size", "required": False},
+        "linetype": {"widget": "enum", "label": "Line type", "required": False,
+                     "options": ["solid", "dashed", "dotted", "dotdash", "longdash", "twodash"]},
+        "position": {"widget": "enum", "label": "Position adjustment", "required": False, "default": "dodge2",
+                     "options": ["identity", "dodge", "dodge2", "jitter", "jitterdodge"]},
+        "stat": {"widget": "string", "label": "Statistical transformation", "required": False, "default": "boxplot"},
     },
 })
 def handle_boxplot(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -48,14 +61,22 @@ def handle_violin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 
 @register_plot_component("geom_point", ui_schema={
     "label": "Scatter points",
-    "category": "geom",
+    "category": "correlation",
     "context": ["plot"],
-    "tags": ["scatter", "points", "correlation", "relationship"],
+    "tags": ["scatter", "points", "correlation", "relationship", "bivariate"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_point"]}],
+    "allow_extra_params": True,
     "params": {
-        "size": {"widget": "number", "label": "Point size", "required": False, "default": 2},
-        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.7},
-        "colour": {"widget": "color", "label": "Colour (if not mapped)", "required": False},
-        "shape": {"widget": "number", "label": "Shape code (0–25)", "required": False},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
+        "colour": {"widget": "color", "label": "Colour (fixed, not mapped)", "required": False},
+        "fill": {"widget": "color", "label": "Fill colour (for filled shapes)", "required": False},
+        "size": {"widget": "number", "label": "Point size", "required": False, "default": 1.5},
+        "shape": {"widget": "number", "label": "Shape code (0–25)", "required": False, "default": 16},
+        "stroke": {"widget": "number", "label": "Border stroke width", "required": False},
+        "position": {"widget": "enum", "label": "Position adjustment", "required": False, "default": "identity",
+                     "options": ["identity", "jitter", "jitterdodge", "dodge"]},
+        "stat": {"widget": "string", "label": "Statistical transformation", "required": False, "default": "identity"},
+        "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
 })
 def handle_point(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -65,15 +86,25 @@ def handle_point(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 
 @register_plot_component("geom_line", ui_schema={
     "label": "Line",
-    "category": "geom",
+    "category": "evolution",
     "context": ["plot"],
-    "tags": ["line", "trend", "time-series", "connected"],
+    "tags": ["line", "trend", "time-series", "connected", "evolution"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_line"]}],
+    "allow_extra_params": True,
     "params": {
-        "size": {"widget": "number", "label": "Line width", "required": False, "default": 1},
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
-        "colour": {"widget": "color", "label": "Colour (if not mapped)", "required": False},
-        "linetype": {"widget": "enum", "label": "Line type", "required": False,
+        "colour": {"widget": "color", "label": "Colour (fixed, not mapped)", "required": False},
+        "size": {"widget": "number", "label": "Line width", "required": False, "default": 0.5},
+        "linetype": {"widget": "enum", "label": "Line type", "required": False, "default": "solid",
                      "options": ["solid", "dashed", "dotted", "dotdash", "longdash", "twodash"]},
+        "lineend": {"widget": "enum", "label": "Line end style", "required": False,
+                    "options": ["butt", "round", "square"]},
+        "linejoin": {"widget": "enum", "label": "Line join style", "required": False,
+                     "options": ["round", "mitre", "bevel"]},
+        "position": {"widget": "enum", "label": "Position adjustment", "required": False, "default": "identity",
+                     "options": ["identity", "dodge", "jitter"]},
+        "stat": {"widget": "string", "label": "Statistical transformation", "required": False, "default": "identity"},
+        "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
 })
 def handle_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -82,15 +113,25 @@ def handle_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 
 
 @register_plot_component("geom_bar", ui_schema={
-    "label": "Bar (count)",
-    "category": "geom",
+    "label": "Bar",
+    "category": "comparison",
     "context": ["plot"],
-    "tags": ["bar", "count", "categorical", "frequency"],
+    "tags": ["bar", "count", "frequency", "categorical", "comparison", "distribution"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_bar"]}],
+    "allow_extra_params": True,
     "params": {
-        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.9},
-        "fill": {"widget": "color", "label": "Fill colour (if not mapped)", "required": False},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
+        "fill": {"widget": "color", "label": "Fill colour (fixed, not mapped)", "required": False},
         "colour": {"widget": "color", "label": "Border colour", "required": False},
+        "size": {"widget": "number", "label": "Border line width", "required": False},
+        "linetype": {"widget": "enum", "label": "Border line type", "required": False,
+                     "options": ["solid", "dashed", "dotted", "blank"]},
         "width": {"widget": "number", "label": "Bar width (0–1)", "required": False},
+        "stat": {"widget": "enum", "label": "Statistical transformation", "required": False, "default": "count",
+                 "options": ["count", "identity", "bin", "density"]},
+        "position": {"widget": "enum", "label": "Position adjustment", "required": False, "default": "stack",
+                     "options": ["stack", "dodge", "fill", "identity", "dodge2"]},
+        "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
 })
 def handle_bar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -106,14 +147,27 @@ def handle_col(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 
 @register_plot_component("geom_histogram", ui_schema={
     "label": "Histogram",
-    "category": "geom",
+    "category": "distribution",
     "context": ["plot"],
-    "tags": ["histogram", "distribution", "frequency", "numeric"],
+    "tags": ["histogram", "distribution", "frequency", "numeric", "univariate"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_histogram"]}],
+    "allow_extra_params": True,
     "params": {
-        "bins": {"widget": "number", "label": "Number of bins", "required": False, "default": 30},
-        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 0.8},
-        "fill": {"widget": "color", "label": "Fill colour", "required": False},
+        "bins": {"widget": "number", "label": "Number of bins", "required": False, "default": 30,
+                 "hint": "Overrides binwidth if both given"},
+        "binwidth": {"widget": "number", "label": "Bin width", "required": False,
+                     "hint": "Width of each bin in data units; overrides bins"},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
+        "fill": {"widget": "color", "label": "Fill colour (fixed, not mapped)", "required": False},
         "colour": {"widget": "color", "label": "Border colour", "required": False},
+        "size": {"widget": "number", "label": "Border line width", "required": False},
+        "linetype": {"widget": "enum", "label": "Border line type", "required": False,
+                     "options": ["solid", "dashed", "dotted", "blank"]},
+        "position": {"widget": "enum", "label": "Position adjustment", "required": False, "default": "stack",
+                     "options": ["stack", "dodge", "fill", "identity"]},
+        "stat": {"widget": "enum", "label": "Statistical transformation", "required": False, "default": "bin",
+                 "options": ["bin", "count", "density", "identity"]},
+        "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
 })
 def handle_histogram(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -147,12 +201,22 @@ def handle_pointrange(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 
 @register_plot_component("geom_tile", ui_schema={
     "label": "Heatmap tiles",
-    "category": "geom",
+    "category": "correlation",
     "context": ["plot"],
-    "tags": ["heatmap", "tile", "matrix", "fill"],
+    "tags": ["heatmap", "tile", "matrix", "fill", "correlation", "bivariate"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_tile"]}],
+    "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
+        "fill": {"widget": "color", "label": "Fill colour (fixed override, not mapped)", "required": False},
         "colour": {"widget": "color", "label": "Tile border colour", "required": False},
+        "size": {"widget": "number", "label": "Border line width", "required": False},
+        "linetype": {"widget": "enum", "label": "Border line type", "required": False,
+                     "options": ["solid", "dashed", "dotted", "blank"]},
+        "width": {"widget": "number", "label": "Tile width (data units; default = resolution)", "required": False},
+        "height": {"widget": "number", "label": "Tile height (data units; default = resolution)", "required": False},
+        "stat": {"widget": "string", "label": "Statistical transformation", "required": False, "default": "identity"},
+        "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
 })
 def handle_tile(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -475,14 +539,22 @@ def handle_stat_summary_bin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "label": "Labels (title, axes, legend)",
     "category": "annotation",
     "context": ["plot"],
-    "tags": ["labels", "title", "axis", "legend", "annotation"],
+    "tags": ["labels", "title", "axis", "legend", "annotation", "subtitle", "caption"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["labs"]}],
+    "allow_extra_params": True,
     "params": {
         "title": {"widget": "string", "label": "Plot title", "required": False},
+        "subtitle": {"widget": "string", "label": "Subtitle (below title)", "required": False},
+        "caption": {"widget": "string", "label": "Caption (bottom right)", "required": False},
         "x": {"widget": "string", "label": "X-axis label", "required": False},
         "y": {"widget": "string", "label": "Y-axis label", "required": False},
         "fill": {"widget": "string", "label": "Fill legend title", "required": False},
         "colour": {"widget": "string", "label": "Colour legend title", "required": False},
-        "caption": {"widget": "string", "label": "Caption (bottom)", "required": False},
+        "color": {"widget": "string", "label": "Color legend title (alias)", "required": False},
+        "size": {"widget": "string", "label": "Size legend title", "required": False},
+        "shape": {"widget": "string", "label": "Shape legend title", "required": False},
+        "alpha": {"widget": "string", "label": "Alpha legend title", "required": False},
+        "linetype": {"widget": "string", "label": "Linetype legend title", "required": False},
     },
 })
 def handle_labs(p: ggplot, spec: Dict[str, Any]) -> ggplot:

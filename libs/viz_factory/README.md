@@ -135,3 +135,85 @@ For each new `@register_plot_component`, follow the implementation workflow in `
 3. Render via debug_runner; verify the PNG; update README; mark task done.
 
 Refer to the [Visualisation Factory Workflow](../../docs/workflows/visualisation_factory.qmd) for detailed implementation and usage examples.
+
+## Component UI Schema (ADR-075)
+
+Components that should appear in the **Blueprint Architect IDE** picker must declare a `ui_schema` dict in their `@register_plot_component(...)` decorator. The schema drives automatic form generation in the Blueprint IDE.
+
+### Adding a schema to a component
+
+```python
+from viz_factory.registry import register_plot_component
+
+@register_plot_component("geom_mygeom", ui_schema={
+    "label": "My Geom",
+    "category": "distribution",          # semantic category (see vocabulary)
+    "context": ["plot"],                  # always ["plot"] for geoms
+    "tags": ["distribution", "my-geom"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_mygeom"]}],
+    "allow_extra_params": True,           # pass-through for plotnine kwargs not listed here
+    "params": {
+        "alpha": {
+            "widget": "number",
+            "label": "Opacity (0–1)",
+            "required": False,
+            "default": 1.0,
+        },
+        "fill": {
+            "widget": "color",
+            "label": "Fill colour (fixed, not mapped)",
+            "required": False,
+        },
+    },
+})
+def handle_mygeom(p, spec):
+    from plotnine import geom_mygeom
+    return p + geom_mygeom(**spec)
+```
+
+### Schema fields
+
+| Field | Required | Description |
+|---|---|---|
+| `label` | Yes | Human-readable name in the IDE picker |
+| `category` | Yes | Visualization family (see below) |
+| `context` | Yes | Always `["plot"]` for geom/stat/theme components |
+| `tags` | Yes | Search keywords for the picker |
+| `wraps` | Yes | Link to plotnine source (`lib`, `attr_path`) |
+| `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via manifest |
+| `params` | Yes | Dict of param definitions (widget, label, required, …) |
+
+### Category vocabulary
+
+`distribution` · `correlation` · `comparison` · `evolution` · `part-to-whole` · `ranking` · `annotation` · `uncertainty`
+
+These match the Gallery taxonomy (see `assets/gallery_data/TAXONOMY_CHEATSHEET.md`).
+
+### Why `allow_extra_params: True`?
+
+Components do `p + geom_bar(**spec)` — the spec dict passes through directly to plotnine. The `params` dict in the schema lists the most common kwargs for the form renderer, but the user can always add additional plotnine kwargs directly in the manifest YAML. Setting `allow_extra_params: True` tells the form renderer to allow this.
+
+### Accessing the component catalog
+
+```python
+from blueprint_arch.schema_registry import (
+    get_component_catalog,
+    get_components_for_context,
+)
+
+# All annotated components
+catalog = get_component_catalog()
+
+# All plot-context components
+plot_comps = get_components_for_context("plot")
+```
+
+### Tests
+
+Component schema tests:
+- `libs/viz_factory/tests/test_component_schemas.py` — structure, param coverage, semantic rules
+- `libs/viz_factory/tests/test_deco2_components.py` — runtime handler tests (38 cases)
+
+```bash
+PYTHONPATH=. .venv/bin/python -m pytest libs/viz_factory/tests/ -v
+```
