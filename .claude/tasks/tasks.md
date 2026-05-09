@@ -222,6 +222,11 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
   **Suggested output of the design session:** a short spec doc (`.claude/design/plot_config_cascade.md`) covering the merge function signature, key schema for `plot_defaults`, and the T3 override interaction. Then file concrete implementation tasks under VizFactory and manifests.
 
+### 🟡 Audit Infrastructure
+
+- [ ] **AUDIT-TIMERS-1** `[haiku/low]`: Activate systemd audit timers — run `./scripts/systemd/install.sh` once to register all four timers. Verify with `systemctl --user list-timers "sparmvet-audit-*"`. See ADR-080 and `schedule_commands.md §D`.
+- [ ] **AUDIT-FIRST-TRIAGE-1** `[haiku/low]`: After first scheduled audit runs fire, triage all unprocessed reports per `audit_triage_protocol.md`. Run `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md` to find them.
+
 ### Technical Debt
 
 - [ ] **REPO-CLEAN-1** `[haiku/low]` `[repo-hygiene]`: Full git history purge — remove EVE_WORK/, session logs, .vscode user files from ALL past commits. Prerequisite: backup to external disc + gdrive sync.
