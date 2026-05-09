@@ -95,6 +95,17 @@ These are the ONLY allowed values for informational banners (connected/error/bus
 | PK-warn badge border | `#ffeeba` | `.spv-badge-pk-warn` border |
 | Propagation badge (pending fix) | `#cfe2ff` bg / `#0a3678` text | `.spv-badge-propagation` — **Bootstrap info colors, added today (§20). Should be migrated to `#eef0fb` bg / `#345beb` text in next session.** |
 
+### 1g. Code Editor Surface (YAML / docstring blocks only)
+
+These two values are used **exclusively** for dark-mode code-display blocks in the Blueprint IDE: the YAML escape hatch read-only `<pre>`, the YAML editable `<textarea>`, and the action help docstring block. They are intentional (code-editor aesthetic — Catppuccin Mocha base) and must **not** be reused in any other context.
+
+| Token | Hex | Only used for |
+|---|---|---|
+| Code editor bg | `#1e1e2e` | `.bp-escape-pre`, `.bp-escape-container textarea`, `.bp-help-docstring` |
+| Code editor text | `#cdd6f4` | Same elements — text on dark editor background |
+
+**Do not replace these** with palette-neutral greys — a code block that looks like a panel loses its "this is code" signal.
+
 ---
 
 ## 2. Typography Scale

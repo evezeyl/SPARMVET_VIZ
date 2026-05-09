@@ -61,8 +61,9 @@ if [[ "${DAY}" == "thursday" || "${DAY}" == "all" ]]; then
   run_audit audit_phase_order.py     audit_phase_order
   run_audit audit_changelog_sync.py  audit_changelog
   run_audit audit_template_flags.py  audit_templates_weekly
-  run_audit audit_css_style.py       audit_css_style
+  run_audit audit_css_style.py        audit_css_style
   run_audit audit_hardcoded_config.py audit_hardcoded_config
+  run_audit audit_palette_registry.py audit_palette
 fi
 
 if [[ "${DAY}" == "friday" || "${DAY}" == "all" ]]; then

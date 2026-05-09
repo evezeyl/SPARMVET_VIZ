@@ -62,6 +62,9 @@ ALLOWED_HEX = {
     "#5c636a",          # btn-file border in sidebar
     "#a0a0a0",          # sidebar accordion collapsed header bg
     "#000000",          # pure black — text on amber/yellow buttons (#000 shorthand)
+    # Code editor surface (§1g — Blueprint IDE YAML/docstring blocks only)
+    "#1e1e2e",          # code editor bg (Catppuccin Mocha base)
+    "#cdd6f4",          # code editor text (Catppuccin Mocha text)
     # RGBA / opacity variants derived from palette — handled separately (see below)
 }
 

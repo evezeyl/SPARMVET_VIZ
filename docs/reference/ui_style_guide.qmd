@@ -1,7 +1,7 @@
 ---
 title: "UI Style Guide — Panel Map & CSS Customisation Reference"
 subtitle: "How to adapt the visual style of every UI region without breaking the app"
-date: "2026-05-03"
+date: "2026-05-09"
 format:
   html:
     toc: true
@@ -9,9 +9,16 @@ format:
     code-fold: false
 ---
 
+::: {.callout-note}
+**Color palette authority:** The authoritative list of allowed hex values, typography scale,
+button types, and shape tokens is in `.claude/rules/rules_css_style_spec.md`.
+This document covers *how* to target UI regions; the spec covers *what values* are allowed.
+If you need to add a color, check the spec first — do not invent palette entries.
+:::
+
 ## Overview
 
-All visual styling lives in **`config/ui/theme.css`**, organised into 18 numbered sections
+All visual styling lives in **`config/ui/theme.css`**, organised into 21 numbered sections
 (see §-reference at the end of this document).
 The Python UI code in `app/handlers/` and `app/modules/` is intentionally style-free
 except for **three classes of inline style that must never be moved to CSS**:
@@ -279,8 +286,11 @@ RIGHT SIDEBAR (#audit_sidebar)
 | Expanded accordion header (theater) | `#ffffff` | §18 |
 | Blueprint Glimpse header (inline only) | `#e9ecef` | Python inline — cannot be CSS-overridden safely |
 | Gallery guidance bg | `#fff9c4` | §17 |
-| Audit node T2 bg | `#eef0fb` | §2 |
+| Error / disconnected | `#ffe0e0` bg / `#d62828` text | §19–§20 — error state banners |
+| Audit node T2 bg | `#eef0fb` | §2; also agent user-message bg |
 | Audit node T3 bg | `#e6f7f5` | §2 |
+| Code editor bg | `#1e1e2e` | §19 — Blueprint IDE YAML block only (dark code aesthetic) |
+| Code editor text | `#cdd6f4` | §19 — same context only |
 
 ---
 
@@ -318,6 +328,10 @@ RIGHT SIDEBAR (#audit_sidebar)
 | 16 | 483 | Theater & Audit Typography | `#audit_sidebar` h5/h6, `.audit-node-*`, `#acc_home_data .accordion-button` |
 | 17 | 533 | Educational Guidance Pane | `.gallery-md-pane` — headings, blockquote, tables, images; guidance accordion colours |
 | 18 | 626 | Accordion normalisation | `.theater-container-main` + `.wrangle-studio-container` accordion globals; Bootstrap collapse cards |
+| THEATER-1 | ~660 | Plot accordion | `.spv-plot-accordion` — collapsible plot panel inside navset |
+| 19 | ~690 | Blueprint Agent Chat Panel | `.bp-agent-container`, `.bp-agent-messages`, `.bp-agent-message`, `.bp-agent-status-banner` |
+| 20 | ~790 | Filter & Audit Panel Utilities | `.spv-badge-pending`, `.spv-badge-propagation`, `.spv-badge-pk-warn`, `.spv-info-bg`, `.spv-t3-bg` |
+| 21 | ~820 | Notification log | `.spv-notification-log`, `.spv-notif-*` |
 
 ---
 
