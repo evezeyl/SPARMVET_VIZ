@@ -1,8 +1,8 @@
-# Handoff — Active State (2026-05-09 Phase 33 MVP-1 COMPLETE)
+# Handoff — Active State (2026-05-09 haiku/sonnet cleanup wave COMPLETE)
 
 **Branch:** dev
 **Working tree:** uncommitted changes
-**Status:** Phase 33 BP-AGENT MVP-1 COMPLETE. All 6 BP-AGENT-* tasks done. Smoke tests 14 passed / 3 skipped.
+**Status:** haiku/sonnet cleanup wave done. All small open tasks from Phase 33 closed. Next: remaining sonnet/medium tasks (INGEST-SANITIZE-1, THEATER-1, UI-TITLE-1, BP-ESCAPE-1, BP-FORMS-1).
 
 ---
 
@@ -48,17 +48,29 @@
 
 ---
 
+## Files Modified (cleanup wave, this append)
+
+- `app/handlers/blueprint_handlers.py` — undo deque + UX-NOTIF-3 notification
+- `app/modules/wrangle_studio.py` — legend "● Ref" → "● Add"
+- `app/src/ui.py` — TubeMap: palette ref→add, shapes ref→add, layout tightened
+- `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py` — classDef ref→add
+- `app/src/main.py` — docs_available flag
+- `libs/utils/src/utils/gallery_manager.py` — DELETED (duplicate)
+- `libs/utils/tests/debug_gallery_submission.py` — import fixed to viz_gallery
+- `libs/transformer/tests/debug_wrangler.py` — dated tmpAI subdir auto-creation
+- `libs/transformer/tests/debug_assembler.py` — dated tmpAI subdir auto-creation
+- `.claude/tasks/tasks.md` — UTILS-RELOC-2, HELP-DOCS-1, BP-UNDO-1, AUDIT-TIMERS-1, TubeMap, UX-NOTIF-3 marked [x]
+
+---
+
 ## Next Step (first task in new session)
 
-Read `.claude/tasks/tasks.md` section `🟣 Blueprint Architect — Open Tasks` for the next open item. After MVP-1, the remaining Blueprint IDE tasks are:
-
-- **BP-FORMS-1** `[sonnet/high]` — form renderer from `ui_schema`
+Remaining sonnet/medium open tasks:
+- **INGEST-SANITIZE-1** `[sonnet/medium]` — wire DataSanitizer into IngestorOrchestrator.run()
+- **THEATER-1** `[sonnet/medium]` — plot panel collapse/minimize
+- **UI-TITLE-1** `[sonnet/medium]` — persona/manifest title resolution
 - **BP-ESCAPE-1** `[sonnet/medium]` — YAML escape hatch (read-only + editable)
-- **BP-UNDO-1** `[haiku/low]` — 20-step undo deque
-- **BP-HELP-1** `[sonnet/medium]` — help panel from `__doc__`
-- **BP-COLOR-1** `[sonnet/medium]` — color widget
-
-Or pivot to open non-Blueprint items (see `tasks.md` `🟡 Wave 2`).
+- **BP-FORMS-1** `[sonnet/high]` — form renderer from ui_schema
 
 ---
 
@@ -66,4 +78,4 @@ Or pivot to open non-Blueprint items (see `tasks.md` `🟡 Wave 2`).
 
 `SPARMVET_PERSONA=qa pytest app/tests/test_shiny_smoke.py` → 14 passed, 3 skipped.
 
-@dasharch — Phase 33 MVP-1 complete. BLUEPRINT AI Agent chat panel live.
+@dasharch — cleanup wave done. haiku tasks cleared. Next wave is sonnet/medium.

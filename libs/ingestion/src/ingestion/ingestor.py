@@ -1,11 +1,13 @@
 # @deps
 # provides: class:DataIngestor, method:ingest, method:find_file
+# consumes: libs/ingestion/src/ingestion/sanitizer.py
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-013
 # @end_deps
 import polars as pl
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
+from ingestion.sanitizer import DataSanitizer
 
 
 class DataIngestor:
@@ -101,6 +103,11 @@ class DataIngestor:
                             f"input_fields for '{dataset_name}' but not found in source file. "
                             f"Downstream steps using this column will fail."
                         )
+
+            # --- Sanitize: strip whitespace + normalize null sentinels (INGEST-SANITIZE-1) ---
+            # Runs after rename so column names are stable; runs before cast so empty strings
+            # become actual nulls before any numeric/date cast attempts.
+            lf = DataSanitizer().apply(lf)
 
             # --- Type Casting Logic (ADR-013 Refinement) ---
             # Automatically cast columns to standard types based on schema 'type' field.

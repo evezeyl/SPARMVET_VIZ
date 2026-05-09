@@ -82,7 +82,7 @@ function initCyTubeMap(elementsJson, containerId) {
     // ── Colour palette (mirrors _CY_COLOURS in blueprint_mapper.py) ──────────
     var palette = {
         trunk:   { bg: '#0d6efd', border: '#0a58ca', text: '#ffffff' },
-        ref:     { bg: '#6c757d', border: '#495057', text: '#ffffff' },
+        add:     { bg: '#6c757d', border: '#495057', text: '#ffffff' },
         meta:    { bg: '#fd7e14', border: '#dc6a0d', text: '#ffffff' },
         wrangle: { bg: '#ffc107', border: '#e0a800', text: '#212529' },
         branch:  { bg: '#9c27b0', border: '#7b1fa2', text: '#ffffff' },
@@ -97,7 +97,7 @@ function initCyTubeMap(elementsJson, containerId) {
     // ── Node shape per role ────────────────────────────────────────────────────
     var shapes = {
         trunk:   'ellipse',
-        ref:     'ellipse',
+        add:     'ellipse',
         meta:    'ellipse',
         wrangle: 'round-rectangle',
         branch:  'diamond',
@@ -127,9 +127,9 @@ function initCyTubeMap(elementsJson, containerId) {
         layout: {
             name:       'dagre',
             rankDir:    'LR',          // left → right pipeline flow
-            nodeSep:    18,            // vertical gap between nodes in same tier
-            rankSep:    90,            // horizontal gap between tiers
-            edgeSep:    8,
+            nodeSep:    12,            // vertical gap between nodes in same tier (tighter rail)
+            rankSep:    65,            // horizontal gap between tiers (tighter tube)
+            edgeSep:    6,
             ranker:     'tight-tree',  // compact assignment — prevents gaps
             animate:    false,
         },
@@ -148,7 +148,7 @@ function initCyTubeMap(elementsJson, containerId) {
                     'text-halign':        'center',
                     'width':              'label',
                     'height':             'label',
-                    'padding':            '6px',
+                    'padding':            '4px',
                     'border-width':       '1.5px',
                     'border-style':       'solid',
                     'cursor':             'pointer',
@@ -189,10 +189,8 @@ function initCyTubeMap(elementsJson, containerId) {
                     'line-color':         '#9e9e9e',
                     'target-arrow-color': '#9e9e9e',
                     'target-arrow-shape':'triangle',
-                    'arrow-scale':        0.8,
-                    'curve-style':        'unbundled-bezier',
-                    'control-point-distances': [20],
-                    'control-point-weights':   [0.5],
+                    'arrow-scale':        0.7,
+                    'curve-style':        'bezier',
                 }
             },
             // ── Highlighted edge (connected to active node) ──────────────────

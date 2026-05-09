@@ -597,6 +597,16 @@ def define_server(input, output, session, *,
                 else:
                     ui.update_select("dataset_pipeline_selector",
                                      choices=["No components found"])
+
+            # UX-NOTIF-3: Project-load notification — surface component count on manifest reload
+            manifest_name = Path(path).name
+            n_components = len(ctx_map) if ctx_map else sum(len(v) for v in groups.values())
+            ui.notification_show(
+                f"Blueprint: {manifest_name} ({n_components} component(s))",
+                type="message",
+                duration=4,
+            )
+
         except Exception as e:
             print(f"[_update_dataset_pipelines] Error: {e}")
             ui.update_select("dataset_pipeline_selector",

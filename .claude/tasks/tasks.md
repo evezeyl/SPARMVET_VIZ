@@ -31,7 +31,7 @@
 
 ### Session / Import
 
-- [ ] **INGEST-SANITIZE-1** `[sonnet/medium]`: Wire `DataSanitizer` into `IngestorOrchestrator.run()` before T1 materialisation. Sanitizer class exists in `libs/ingestion/` but not called from main pipeline. See audit §1A (`audit_final_exhaustive_2026-05-03.md`).
+- [x] **INGEST-SANITIZE-1** `[sonnet/medium]`: Wire `DataSanitizer` into `IngestorOrchestrator.run()` before T1 materialisation. Sanitizer class exists in `libs/ingestion/` but not called from main pipeline. See audit §1A (`audit_final_exhaustive_2026-05-03.md`).
 
 ### UX
 
@@ -65,7 +65,7 @@
 
 ## 🎨 CSS Style Hygiene
 
-- [ ] **CSS-BADGE-PROPAG-1** `[haiku/low]`: Migrate `.spv-badge-propagation` off Bootstrap info colors (`#cfe2ff`/`#0a3678`) to SPARMVET palette: `background: #eef0fb`, `color: #345beb`. In `config/ui/theme.css` §20, line ~824. Documented in `rules_css_style_spec.md §1f`.
+- [x] **CSS-BADGE-PROPAG-1** `[haiku/low]`: ✅ DONE. Migrated `.spv-badge-propagation` from Bootstrap info colors to SPARMVET palette. Background: `#eef0fb` (audit tier-2 tint), Color: `#345beb` (SPARMVET blue). Line 845 in `config/ui/theme.css`.
 
 - [x] **CSS-ERROR-RED-DECIDE** `[opus/high]`: ✅ DONE. Error red `#d62828` (hover: `#b91c1c`) added to SPARMVET palette. Updated `rules_css_style_spec.md §1c` (brand colors) + §1e (status colors), `config/ui/theme.css` line ~772 (`.bp-agent-status-banner.error`), added generic `.status-banner` classes, updated audit allowlist. Error state now distinct from amber warning/pending. CSS audit: ✅ PASS.
 
@@ -75,7 +75,7 @@
 
 ### libs/utils/ Relocations
 
-- [ ] **UTILS-RELOC-2** `[haiku/low]`: `gallery_manager.py` exists in both `libs/utils/src/utils/` and `libs/viz_gallery/src/viz_gallery/` — deduplicate. Decide canonical copy; delete the other and fix all imports.
+- [x] **UTILS-RELOC-2** `[haiku/low]`: `gallery_manager.py` exists in both `libs/utils/src/utils/` and `libs/viz_gallery/src/viz_gallery/` — deduplicate. Decide canonical copy; delete the other and fix all imports.
 
 ### app/modules/ Two-Category Law Refactor (ADR-045)
 
@@ -123,7 +123,7 @@
 Two-tier: air-gapped contextual cards per workspace + optional full manual served from `docs/_site/`.
 
 - [ ] **HELP-INLINE-1** `[sonnet/medium]`: Per-workspace contextual help modals. `?` button → `ui.modal_show()` with content from `app/src/help/<workspace>.md`. Write initial help content for Home and Blueprint.
-- [ ] **HELP-DOCS-1** `[haiku/low]`: Bundle `docs/_site/` as Shiny static assets at `/docs/`. Conditional on `_site/` existing. Add "Full documentation →" link to contextual cards.
+- [x] **HELP-DOCS-1** `[haiku/low]`: Bundle `docs/_site/` as Shiny static assets at `/docs/`. Conditional on `_site/` existing. Add "Full documentation →" link to contextual cards.
 
 ---
 
@@ -135,7 +135,7 @@ Two-tier: air-gapped contextual cards per workspace + optional full manual serve
 
 - [ ] **BP-FORMS-1** `[sonnet/high]`: Form renderer in BLUEPRINT IDE — all widget types, column selector with upstream schema propagation on Apply, edit-in-place flow, schema invalidation markers on downstream nodes.
 - [ ] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only view (all `blueprint_enabled` personas) + editable mode (`manifest_edit_enabled`) with re-parse on save.
-- [ ] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for BLUEPRINT DAG state.
+- [x] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for BLUEPRINT DAG state.
 - [ ] **BP-HELP-1** `[sonnet/medium]`: Help panel — `__doc__` resolution, collapsible sections for composite actions, optional external URL button disabled in isolated deployments.
 - [ ] **BP-COLOR-1** `[sonnet/medium]`: Color widget — column mapping toggle, palette library picker, hex picker, `from_project_colors` slot reserved as v2 placeholder.
 - [x] **BP-FLAG-1** `[haiku/low]`: Add `manifest_edit_enabled` flag to all six persona templates + `rules_persona_feature_flags.md` + bootloader cascade rule. ADR-075.
@@ -160,14 +160,18 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
 ### Blueprint Architect — Other
 
-- [ ] **TubeMap aesthetics** `[haiku/low]`: Tighter rail/tube look; rename 'ref' → 'Add' in nodes and legend.
+- [x] **TubeMap aesthetics** `[haiku/low]`: Tighter rail/tube look; rename 'ref' → 'Add' in nodes and legend.
 - [ ] Full Blueprint Architect debug pass (field contracts, lineage rail, Zone C layout).
 - [ ] **Action Registry Parity** `[sonnet/high]` (18-F): Expose 175+ `@register_action` entries in UI.
 - [ ] **Visual Forking** `[sonnet/high]` (18-F): Select node → initiate new branch → YAML additions.
 - [ ] **Field Gap Analysis tool** `[sonnet/medium]`: Field name → walk lineage to earliest insertion point.
 - [ ] **Forward propagation hint** `[sonnet/medium]`: Show which output_fields / final_contract files need updating.
-- [ ] **UX-NOTIF-3** `[haiku/low]`: Project-load notification for Blueprint Architect manifest reload.
-- [ ] **Define** `[opus/high]`: ADR for Blueprint Architect full feature set — functionalities, help develop without code, input/output contracts, action insertions, update data view for selected lineage, improved data inspection, joint definitions, work in T1/T2/T3, definition of groups and plot recipe.
+- [x] **UX-NOTIF-3** `[haiku/low]`: Project-load notification for Blueprint Architect manifest reload.
+- [ ] **Define** `[opus/high]` **[NEEDS DISCUSSION WITH USER — research ready]**: ADR for Blueprint Architect full feature set — functionalities, help develop without code, input/output contracts, action insertions, update data view for selected lineage, improved data inspection, joint definitions, work in T1/T2/T3, definition of groups and plot recipe.
+  - **Research & discussion prep:** [.claude/design/blueprint_full_feature_set_research.md](../../.claude/design/blueprint_full_feature_set_research.md) — read TL;DR (§0), then §6 (7 open decision points)
+  - **Proposed ADR ID:** ADR-082 — "BLUEPRINT Full Feature Set & Build-Mode Contract"
+  - **Eve's input needed on:** Q1 (preview trigger), Q2 (T3 boundary), Q5 (joint UI), Q7 (data inspection scope) — others have clear leans
+  - **Pre-discussion reading:** `.claude/design/spaces/BLUEPRINT.md` (18 functionalities, ~5 min) + `.claude/knowledge/blueprint_architect_ux_spec.md` (~10 min) + research doc §6 (~10 min)
 
 ---
 
@@ -232,7 +236,7 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
 ### 🟡 Audit Infrastructure
 
-- [ ] **AUDIT-TIMERS-1** `[haiku/low]`: Activate systemd audit timers — run `./scripts/systemd/install.sh` once to register all four timers. Verify with `systemctl --user list-timers "sparmvet-audit-*"`. See ADR-080 and `schedule_commands.md §D`.
+- [x] **AUDIT-TIMERS-1** `[haiku/low]`: Activate systemd audit timers — run `./scripts/systemd/install.sh` once to register all four timers. Verify with `systemctl --user list-timers "sparmvet-audit-*"`. See ADR-080 and `schedule_commands.md §D`.
 - [ ] **AUDIT-FIRST-TRIAGE-1** `[haiku/low]`: After first scheduled audit runs fire, triage all unprocessed reports per `audit_triage_protocol.md`. Run `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md` to find them.
 
 ### Technical Debt

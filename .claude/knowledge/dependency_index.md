@@ -239,9 +239,9 @@
 
 ## `app/src/main.py`
 - **Role:** `ref`
-- **provides:** `app (Shiny App instance`, `entry point)`
+- **provides:** `app (Shiny App instance`, `entry point)`, `docs_available (bool flag for conditional docs link)`
 - **consumes:** `shiny`, `app.src.ui`, `app.src.server`
-- **consumed_by:** `Shiny runner (uvicorn/shiny run)`, `__main__`
+- **consumed_by:** `Shiny runner (uvicorn/shiny run)`, `__main__`, `help modal handlers`
 
 ## `app/src/server.py`
 - **Role:** `ref`
@@ -687,12 +687,6 @@
 - **Role:** `ref`
 - **provides:** `class:SPARMVET_Error`, `class:IngestionError`, `class:TransformationError`, `class:VisualizationError`
 - **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
-
-## `libs/utils/src/utils/gallery_manager.py`
-- **Role:** `ref`
-- **provides:** `class:GalleryManager`
-- **consumed_by:** `app/handlers/gallery_handlers.py`, `libs/viz_factory/tests/debug_gallery.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-033`, `.claude/knowledge/architecture_decisions.md#ADR-035`
 
 ## `libs/utils/src/utils/hashing.py`
 - **Role:** `ref`

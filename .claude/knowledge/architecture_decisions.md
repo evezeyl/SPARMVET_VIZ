@@ -1630,6 +1630,10 @@ default_persona: /profiles/amr_pipeline_persona.yaml
 - The base theme (`config/ui/theme.css`) remains available to any persona that does not override.
 - CSS is now editable with standard CSS tooling and diffable in version control.
 
+**Governance (2026-05-09):**
+
+The authoritative CSS design token specification is `.claude/rules/rules_css_style_spec.md`. Before writing any CSS rule, agents MUST read that file to verify color palette, typography scale, border-radius values, and button/panel patterns. An automated compliance audit (`scripts/audit_css_style.py`) runs weekly (thursdays) to detect off-palette colors, forbidden Bootstrap defaults, and out-of-scale font sizes (ADR-073, Routine 14).
+
 ---
 
 ## ADR-056: View Title Banner Pattern & "Test Lab" Rename (2026-05-02)

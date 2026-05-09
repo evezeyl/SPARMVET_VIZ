@@ -67,8 +67,7 @@ ALLOWED_HEX = {
 
 # Known-debt hex values: in palette spec §1f, marked as "pending fix"
 KNOWN_DEBT_HEX = {
-    "#cfe2ff",  # .spv-badge-propagation bg — Bootstrap info, tracked CSS-BADGE-PROPAG-1
-    "#0a3678",  # .spv-badge-propagation text — Bootstrap info dark, tracked CSS-BADGE-PROPAG-1
+    # (empty — CSS-BADGE-PROPAG-1 fixed 2026-05-09)
 }
 
 # Explicitly forbidden Bootstrap defaults (highest priority — always BLOCKER)

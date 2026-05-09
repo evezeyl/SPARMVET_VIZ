@@ -245,7 +245,7 @@ class BlueprintMapper:
             "graph LR",
             "%% Styling",
             "classDef trunk   fill:#0d6efd,stroke:#fff,stroke-width:2px,color:#fff",
-            "classDef ref     fill:#6c757d,stroke:#fff,stroke-width:2px,color:#fff",
+            "classDef add     fill:#6c757d,stroke:#fff,stroke-width:2px,color:#fff",
             "classDef meta    fill:#fd7e14,stroke:#fff,stroke-width:2px,color:#fff",
             "classDef wrangle fill:#ffc107,stroke:#555,stroke-width:1px,color:#212529",
             "classDef branch  fill:#9c27b0,stroke:#fff,stroke-width:2px,color:#fff",
@@ -297,8 +297,8 @@ class BlueprintMapper:
           ]
 
         Tier assignments (used by dagre 'rank' constraint for lane positioning):
-          0 — sources (trunk / ref / meta)
-          1 — tier-1 wrangling nodes (__wrn of data/ref/meta schemas)
+          0 — sources (trunk / add / meta)
+          1 — tier-1 wrangling nodes (__wrn of data/add/meta schemas)
           2 — assembly join nodes + assembly wrangling nodes
           3 — plot nodes
 

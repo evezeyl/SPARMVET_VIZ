@@ -92,7 +92,7 @@ class WrangleStudio:
                                     style="font-size:0.65rem;color:#fff;background:#9c27b0;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("■ Plot",
                                     style="font-size:0.65rem;color:#fff;background:#198754;border-radius:8px;padding:1px 6px;"),
-                                ui.tags.span("● Ref",
+                                ui.tags.span("● Add",
                                     style="font-size:0.65rem;color:#fff;background:#6c757d;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("● Meta",
                                     style="font-size:0.65rem;color:#fff;background:#fd7e14;border-radius:8px;padding:1px 6px;"),
