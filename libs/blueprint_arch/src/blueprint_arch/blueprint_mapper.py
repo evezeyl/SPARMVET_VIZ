@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 # ── Cytoscape node/edge colours ───────────────────────────────────────────────
 _CY_COLOURS = {
     "trunk":   {"bg": "#0d6efd", "border": "#0a58ca", "text": "#ffffff"},
-    "ref":     {"bg": "#6c757d", "border": "#495057", "text": "#ffffff"},
+    "add":     {"bg": "#6c757d", "border": "#495057", "text": "#ffffff"},
     "meta":    {"bg": "#fd7e14", "border": "#dc6a0d", "text": "#ffffff"},
     "wrangle": {"bg": "#ffc107", "border": "#e0a800", "text": "#212529"},
     "branch":  {"bg": "#9c27b0", "border": "#7b1fa2", "text": "#ffffff"},
@@ -27,7 +27,7 @@ _CY_COLOURS = {
 # Lower rank = further left (earlier in pipeline)
 _TIER_RANK = {
     "trunk":   0,
-    "ref":     0,
+    "add":     0,
     "meta":    0,
     "wrangle": 1,   # tier-1 wrangling
     "branch":  2,   # assembly join
@@ -54,7 +54,7 @@ class BlueprintMapper:
       wrangle  (yellow) — wrangling step
       branch   (purple) — join_manifests join node
       plot     (green)  — terminal plot node
-      ref      (grey)   — additional_datasets_schemas
+      add      (grey)   — additional_datasets_schemas
       meta     (orange) — metadata_schema
     """
 
@@ -132,7 +132,7 @@ class BlueprintMapper:
         for aid, details in add_schemas.items():
             safe = self._safe_node_id(aid)
             label = self._get_label(aid, details)
-            _add_node(safe, f'{safe}(["{label}\\nRef Data"])', "ref", aid)
+            _add_node(safe, f'{safe}(["{label}\\nAdd Data"])', "add", aid)
             has_wrn = isinstance(details, dict) and bool(
                 details.get("wrangling") or details.get("recipe"))
             wrn_id = self._n(aid, "wrn")
@@ -355,7 +355,7 @@ class BlueprintMapper:
         for aid, details in add_schemas.items():
             safe = _safe(aid)
             label = self._get_label(aid, details)
-            elements.append(_node(safe, label, "ref", aid, 0))
+            elements.append(_node(safe, label, "add", aid, 0))
             all_known.add(safe)
 
             has_wrn = isinstance(details, dict) and bool(
