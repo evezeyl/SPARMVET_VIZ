@@ -1,7 +1,7 @@
 # app/modules/wrangle_studio.py
 
 # @deps
-# provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols
+# provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)
 # consumed_by: app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/handlers/audit_stack.py, app/handlers/gallery_handlers.py, app/src/server.py
@@ -13,6 +13,21 @@ from shiny import ui, reactive, render
 import polars as pl
 import yaml
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+
+
+def _resolve_action_doc(wraps_entry: dict) -> str:
+    """Resolve __doc__ from a ui_schema 'wraps' entry via importlib (BP-HELP-1).
+
+    Air-gap safe — reads from the installed library at runtime with no network calls.
+    """
+    import importlib
+    try:
+        obj = importlib.import_module(wraps_entry["lib"])
+        for attr in wraps_entry.get("attr_path", []):
+            obj = getattr(obj, attr)
+        return (getattr(obj, "__doc__", "") or "").strip()
+    except Exception:
+        return ""
 
 
 class WrangleStudio:
@@ -605,6 +620,148 @@ class WrangleStudio:
                     class_="mt-3"
                 ),
                 class_="bp-form-container p-2"
+            )
+
+        @output
+        @render.ui
+        def bp_help_panel_ui():
+            """Help panel for the selected action (BP-HELP-1).
+
+            Resolves documentation from:
+            1. ui_schema 'wraps' entries — importlib __doc__ resolution
+            2. Composite actions — one collapsible section per wrapped component
+            3. Action function's own __doc__ as fallback
+            Optional doc_url button, disabled when allow_external_links is false.
+            """
+            idx = self.selected_node_idx.get()
+            nodes = self.logic_stack.get()
+
+            if idx is None or not nodes or idx >= len(nodes):
+                return ui.div()
+
+            node = nodes[idx]
+            action_name = node.get("action", "")
+
+            try:
+                from blueprint_arch.schema_registry import get_action_catalog
+                catalog = get_action_catalog()
+                ui_schema = catalog.get(action_name, {})
+            except Exception:
+                ui_schema = {}
+
+            # Resolve allow_external_links from deployment profile
+            allow_external = True
+            if bootloader is not None:
+                try:
+                    allow_external = bootloader.profile.get("allow_external_links", True)
+                except Exception:
+                    pass
+
+            doc_url = ui_schema.get("doc_url", "")
+            wraps = ui_schema.get("wraps", [])
+            label = ui_schema.get("label", action_name)
+            description = ui_schema.get("description", "")
+
+            parts = []
+
+            # Description line from ui_schema
+            if description:
+                parts.append(ui.p(description, class_="bp-help-description"))
+
+            if wraps:
+                # Resolve __doc__ for each wrapped symbol
+                is_composite = len(wraps) > 1
+                if is_composite:
+                    parts.append(
+                        ui.p(
+                            "This action combines: "
+                            + ", ".join(
+                                f"{w.get('attr_path', ['?'])[-1]}"
+                                for w in wraps
+                            ) + ". See component documentation:",
+                            class_="bp-help-composite-intro"
+                        )
+                    )
+
+                doc_panels = []
+                panel_ids = []
+                for i, wraps_entry in enumerate(wraps):
+                    resolved_doc = _resolve_action_doc(wraps_entry)
+                    panel_label = ".".join(wraps_entry.get("attr_path", ["?"]))
+                    panel_id = f"bp_help_wrap_{abs(hash(action_name + str(i))) % 99999999}"
+                    panel_ids.append(panel_id)
+                    doc_panels.append(
+                        ui.accordion_panel(
+                            panel_label,
+                            ui.tags.pre(
+                                resolved_doc or "(No docstring available.)",
+                                class_="bp-help-docstring"
+                            ),
+                            value=panel_id
+                        )
+                    )
+
+                if doc_panels:
+                    # Single wrap: open it. Composite: open none (user expands as needed).
+                    open_val = panel_ids[0] if not is_composite else None
+                    parts.append(
+                        ui.accordion(
+                            *doc_panels,
+                            id=f"bp_help_acc_{abs(hash(action_name)) % 99999999}",
+                            multiple=True,
+                            open=open_val,
+                        )
+                    )
+
+            else:
+                # Fallback: resolve doc from the registered action function itself
+                action_fn = AVAILABLE_WRANGLING_ACTIONS.get(action_name)
+                fallback_doc = ""
+                if action_fn is not None:
+                    fallback_doc = (getattr(action_fn, "__doc__", "") or "").strip()
+                if fallback_doc:
+                    parts.append(
+                        ui.tags.pre(
+                            fallback_doc,
+                            class_="bp-help-docstring"
+                        )
+                    )
+                else:
+                    parts.append(
+                        ui.p("No documentation available for this action.",
+                             class_="text-muted small fst-italic")
+                    )
+
+            # External URL button (disabled in isolated deployments)
+            if doc_url:
+                btn_disabled = not allow_external
+                parts.append(
+                    ui.div(
+                        ui.tags.a(
+                            "Open docs",
+                            href=doc_url if allow_external else "#",
+                            target="_blank",
+                            rel="noopener noreferrer",
+                            class_=(
+                                "btn btn-sm w-100 bp-help-ext-btn"
+                                + (" disabled" if btn_disabled else "")
+                            ),
+                            **({"aria_disabled": "true"} if btn_disabled else {}),
+                        ),
+                        class_="mt-2"
+                    )
+                )
+
+            if not parts:
+                return ui.div()
+
+            return ui.div(
+                ui.div(
+                    ui.span(f"Help: {label}", class_="bp-help-header"),
+                    class_="mb-2"
+                ),
+                *parts,
+                class_="bp-help-container p-2"
             )
 
         @output
@@ -1535,6 +1692,106 @@ class WrangleStudio:
                     ui.panel_conditional(
                         f"input['{mode_id}'] === 'literal'",
                         ui.input_text(lit_id, "Value", value=current_lit_val)
+                    ),
+                )
+
+            elif widget_type == "color":
+                # BP-COLOR-1: composite color widget
+                # Sub-IDs follow the pattern bp_form_{param_key}_*
+                mode_id = f"bp_form_{param_key}_mode"      # column | literal
+                col_id = f"bp_form_{param_key}_col"        # column selector
+                lit_mode_id = f"bp_form_{param_key}_lmode" # palette | custom
+                palette_id = f"bp_form_{param_key}_palette"
+                hex_id = f"bp_form_{param_key}_hex"
+
+                _PALETTES = [
+                    "Blues", "Greens", "Oranges", "Purples", "Reds",
+                    "BuGn", "BuPu", "GnBu", "OrRd", "PuBu", "YlGn",
+                    "RdYlGn", "RdYlBu", "Spectral",
+                    "viridis", "plasma", "magma", "inferno", "cividis",
+                    "Set1", "Set2", "Set3", "Paired", "Dark2", "Accent",
+                ]
+
+                cat_cols = [k for k, v in upstream_cols.items()
+                            if v == "categorical"]
+                cat_cols = cat_cols or list(upstream_cols.keys()) or ["(none)"]
+
+                # Determine current mode from saved value
+                if isinstance(current_val, dict):
+                    top_mode = current_val.get("mode", "literal")
+                    cur_col = current_val.get("column", cat_cols[0])
+                    cur_lmode = current_val.get("literal_mode", "palette")
+                    cur_palette = current_val.get("palette", _PALETTES[0])
+                    cur_hex = current_val.get("hex", "#345beb")
+                elif isinstance(current_val, str) and current_val in upstream_cols:
+                    top_mode = "column"
+                    cur_col = current_val
+                    cur_lmode = "palette"
+                    cur_palette = _PALETTES[0]
+                    cur_hex = "#345beb"
+                else:
+                    top_mode = "literal"
+                    cur_col = cat_cols[0]
+                    cur_lmode = "palette"
+                    cur_palette = _PALETTES[0]
+                    cur_hex = str(current_val or "#345beb")
+
+                elem = ui.div(
+                    ui.p(label, class_="fw-bold small mb-1"),
+                    # Top-level: column mapping vs literal
+                    ui.input_radio_buttons(
+                        mode_id, None,
+                        choices={"column": "Map to column",
+                                 "literal": "Set literal"},
+                        selected=top_mode, inline=True
+                    ),
+                    # Column mode
+                    ui.panel_conditional(
+                        f"input['{mode_id}'] === 'column'",
+                        ui.input_selectize(
+                            col_id, "Column (categorical)",
+                            choices=cat_cols, selected=cur_col
+                        )
+                    ),
+                    # Literal mode
+                    ui.panel_conditional(
+                        f"input['{mode_id}'] === 'literal'",
+                        ui.div(
+                            ui.input_radio_buttons(
+                                lit_mode_id, "Source",
+                                choices={
+                                    "palette": "Palette library",
+                                    "custom": "Custom hex",
+                                },
+                                selected=cur_lmode, inline=True
+                            ),
+                            # Grayed-out v2 slot
+                            ui.div(
+                                ui.tags.button(
+                                    "From project colors",
+                                    disabled=True,
+                                    class_="btn btn-sm w-100 bp-color-v2-btn",
+                                ),
+                                ui.p("Coming in v2", class_="ultra-small text-muted mt-0 mb-1"),
+                                class_="mb-1"
+                            ),
+                            ui.panel_conditional(
+                                f"input['{lit_mode_id}'] === 'palette'",
+                                ui.input_select(
+                                    palette_id, "Palette",
+                                    choices={p: p for p in _PALETTES},
+                                    selected=cur_palette
+                                )
+                            ),
+                            ui.panel_conditional(
+                                f"input['{lit_mode_id}'] === 'custom'",
+                                ui.input_text(
+                                    hex_id, "Hex color",
+                                    value=cur_hex,
+                                    placeholder="#345beb"
+                                )
+                            ),
+                        )
                     ),
                 )
 

@@ -317,6 +317,7 @@ def define_my_server(input, output, session, *, ..., notification_log=None):
 - `_notify` is constructed ONCE at define-time, not inside reactive closures.
 - `notification_log=None` → graceful fallback to plain toasts (safe for tests or contexts that don't need logging).
 - Keep last 20 entries — `make_notifier` enforces this automatically.
+- **Ghost persistence (UX-NOTIF-2, 2026-05-09):** `notification_log` is serialized to the T3 ghost. `session_manager.write_t3_ghost()` accepts `notification_log: list | None`; `session_handlers.py` restores it after loading a ghost. Old ghosts without the key fall back to `[]` silently.
 
 ---
 

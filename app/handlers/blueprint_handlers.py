@@ -15,7 +15,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, effect:_bp_apply_node_handler
+# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))
@@ -838,6 +838,31 @@ def define_server(input, output, session, *,
                 val = safe_input(input, sub_id, "")
                 if val:
                     new_params[param_key] = val
+
+            elif widget_type == "color":
+                # BP-COLOR-1: read composite color widget
+                mode_id = f"bp_form_{param_key}_mode"
+                top_mode = safe_input(input, mode_id, "literal")
+                if top_mode == "column":
+                    col_val = safe_input(input, f"bp_form_{param_key}_col", "")
+                    if col_val:
+                        new_params[param_key] = {"mode": "column", "column": col_val}
+                else:
+                    lit_mode = safe_input(input, f"bp_form_{param_key}_lmode", "palette")
+                    if lit_mode == "palette":
+                        palette_val = safe_input(input, f"bp_form_{param_key}_palette", "")
+                        new_params[param_key] = {
+                            "mode": "literal",
+                            "literal_mode": "palette",
+                            "palette": palette_val or "Blues",
+                        }
+                    else:
+                        hex_val = safe_input(input, f"bp_form_{param_key}_hex", "#345beb")
+                        new_params[param_key] = {
+                            "mode": "literal",
+                            "literal_mode": "custom",
+                            "hex": hex_val or "#345beb",
+                        }
             else:
                 val = safe_input(input, input_id, "")
                 if val:

@@ -937,6 +937,22 @@ If any row filters are applied at the time of export, their full trace (column /
 **Single Graph Export accordion removed** from sidebar — superseded by scope toggle.
 **`export_audit_report_ui/download` deleted** — audit trail now lives inside `report.qmd`.
 
+### 8. Extensions (2026-05-09 — EXPORT-2, EXPORT-3, EXPORT-4)
+
+**EXPORT-4 — Per-plot size control:**
+- Two numeric inputs (`export_plot_width`, `export_plot_height`, in inches, default 8×5) added to Export panel.
+- Both `fig.save()` calls in the download handler pass `width=plot_width, height=plot_height`.
+- Provenance dict records `"plot_width"` and `"plot_height"`; README.txt shows `(DPI=N, W×H in)`.
+
+**EXPORT-2 — T3 data inclusion checkbox:**
+- T3 data inclusion was previously auto-detected from `tier_toggle == "T3"` state. Now exposed as an explicit `export_include_t3` checkbox in the Export panel, gated on `bootloader.is_enabled("t3_sandbox_enabled")`.
+- Checkbox pre-checked when `tier_toggle == "T3"` at render time. Non-advanced personas never see the checkbox; they fall back to the auto-detect path via `safe_input(..., None)`.
+
+**EXPORT-3 — report.qmd improvements:**
+- Front-matter expanded: `toc: true`, `toc-depth: 3`, `number-sections: true`, `theme: cosmo`, `fontsize: 11pt` for HTML and PDF output; `toc: true` / `number-sections: true` for DOCX.
+- Plot images now use Quarto cross-reference syntax: `![caption](path){#fig-<plot_id> width=95%}`.
+- `_build_methods_section()` module-level helper added to `export_handlers.py`: generates a `## Methods` section with bulleted prose from `applied_filters` and all active T3 nodes across in-scope plots. Returns `[]` when nothing to report (no empty section generated). Node reason text appended inline ("reason: …").
+
 ---
 
 ## ADR-048: Multi-System Deployment Architecture — Deployment Profile & Connector Abstraction
@@ -1777,7 +1793,7 @@ Note: `breaks_integer` must be nested under `params:` — VizFactory reads `laye
 **Consequences:**
 
 - Any new handler that should log notifications: import `make_notifier`, call at top of `define_*`, use `_notify(...)` throughout. No other changes needed.
-- `notification_log` is in-memory (cleared on page refresh). T3 ghost persistence is the logical v2 and is deferred.
+- `notification_log` is persisted to the T3 ghost on every `btn_apply` (UX-NOTIF-2, 2026-05-09): `session_manager.write_t3_ghost()` accepts `notification_log: list | None` and stores it under `"notification_log"` in the ghost JSON. On session restore, `session_handlers.py` reads the saved log and calls `notification_log.set(saved_log)` so the right-sidebar alert accordion is repopulated. Old ghosts without the key return `[]` via `.get("notification_log", [])` — no migration needed.
 - If a handler has `notification_log=None` (e.g. called from a test or future context that doesn't pass the log), `_notify` gracefully falls back to plain toasts — no crash.
 - The pattern does NOT replace `ui.notification_show` globally — it is opt-in per handler, scoped to user-pipeline operations.
 

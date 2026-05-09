@@ -973,10 +973,26 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     font-size: 0.65rem;
     background: #eef0fb;
     color: #345beb;
-    border: 1px solid #c5cff9;
+    border: 1px solid #dee2e6;
     border-radius: 3px;
     padding: 1px 5px;
     font-weight: 600;
+}
+
+/* ── 22b. Blueprint IDE — Color Widget (BP-COLOR-1) ─────────────────────── */
+
+/* Grayed-out v2 placeholder button */
+.bp-color-v2-btn {
+    font-size: 0.75rem;
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: not-allowed;
+    opacity: 0.6;
+    width: 100%;
+    text-align: left;
+    padding: 3px 8px;
 }
 
 /* Editable textarea */
@@ -989,4 +1005,65 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     border-radius: 6px;
     resize: vertical;
     min-height: 200px;
+}
+
+/* ── 23. Blueprint IDE — Action Help Panel (BP-HELP-1) ──────────────────── */
+
+.bp-help-container {
+    font-size: 0.8rem;
+}
+
+.bp-help-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #345beb;
+}
+
+.bp-help-description {
+    font-size: 0.78rem;
+    color: #6c757d;
+    margin-bottom: 6px;
+}
+
+.bp-help-composite-intro {
+    font-size: 0.78rem;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+/* Docstring preformatted block */
+.bp-help-docstring {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 280px;
+    overflow-y: auto;
+    margin: 0;
+}
+
+/* External docs link button */
+.bp-help-ext-btn {
+    font-size: 0.78rem;
+    background: #f8f9fa;
+    color: #345beb;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-decoration: none;
+    text-align: center;
+    padding: 4px 8px;
+    display: block;
+}
+.bp-help-ext-btn:hover:not(.disabled) {
+    background: #eef0fb;
+    color: #2a4bc4;
+}
+.bp-help-ext-btn.disabled {
+    color: #6c757d;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+    pointer-events: none;
 }

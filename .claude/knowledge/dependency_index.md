@@ -92,7 +92,7 @@
 
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `effect:_bp_apply_node_handler`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`
 - **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`
@@ -106,7 +106,7 @@
 
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `function:_build_methods_section`
 - **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `polars`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/design/export_specification.md`
@@ -197,7 +197,7 @@
 - **Role:** `ref`
 - **provides:** `class:SessionManager`, `typedef:RecipeNode`
 - **consumes:** `stdlib only (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`
-- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`
 
 ## `app/modules/sidebar_registry.py`
@@ -229,7 +229,7 @@
 
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
-- **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`
+- **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`
 - **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/gallery_handlers.py`, `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`

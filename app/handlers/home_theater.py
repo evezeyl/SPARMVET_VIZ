@@ -1342,7 +1342,15 @@ def define_server(input, output, session, *,
                         class_="p-2"
                     ),
                     class_="mb-2 shadow-sm border-0"
-                )
+                ),
+                ui.card(
+                    ui.card_header(
+                        ui.div(ui.h5("Action Help", class_="mb-0"),
+                               class_="d-flex justify-content-center w-100")
+                    ),
+                    ui.output_ui("bp_help_panel_ui"),
+                    class_="mb-2 shadow-sm border-0"
+                ),
             ]
             if bootloader.is_enabled("blueprint_agent_enabled"):
                 parts.append(

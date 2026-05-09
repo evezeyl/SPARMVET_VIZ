@@ -4,6 +4,22 @@ Breaking changes are marked ⚠️. Renames that affect the manifest data contra
 
 ---
 
+## [2026-05-09] — Export enhancements + notification ghost persistence
+
+### Export panel (EXPORT-2, EXPORT-3, EXPORT-4)
+- **EXPORT-4:** Added `export_plot_width` / `export_plot_height` numeric inputs (inches, default 8×5) to Export panel; both values passed to `fig.save()` and recorded in provenance + README.txt.
+- **EXPORT-2:** T3 data inclusion is now controlled by an explicit `export_include_t3` checkbox (gated on `t3_sandbox_enabled`), pre-checked when `tier_toggle == "T3"`. Previously auto-detected; non-advanced personas still fall back silently.
+- **EXPORT-3:** `report.qmd` gains TOC (depth 3), `number-sections`, cosmo theme, 11pt font. Plots now use Quarto cross-reference `#fig-<id>` syntax. `_build_methods_section()` helper auto-generates a `## Methods` section from `applied_filters` + active T3 nodes; section omitted when nothing to report.
+
+### Session persistence (UX-NOTIF-2)
+- `notification_log` reactive is now serialized to the T3 ghost on every `btn_apply` and restored on session load. Old ghosts without the key return `[]` silently (no migration needed).
+
+### Design decisions
+- Gallery clone decoupled from WrangleStudio (design only, GALLERY-CLONE-DECOUPLE-1 — not yet implemented): clone will write a `developer_raw_yaml` node into Home T3 `_pending_t3_nodes`; WrangleStudio instantiation gated on `developer_mode_enabled`.
+- EXPORT-TUBEMAP assessed as blocked (headless SVG render for Cytoscape.js required; depends on Blueprint stability).
+
+---
+
 ## [2026-05-04] — Export redesign + manifest modularisation
 
 ### Export pipeline (EXPORT-REDESIGN-1, EXPORT-REDESIGN-2)

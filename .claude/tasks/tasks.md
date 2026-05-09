@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-09 (BP-AGENT-UI-1 complete — Blueprint AI Agent chat panel MVP-1) by @dasharch
+**Last Updated:** 2026-05-09 (UX-NOTIF-2, EXPORT-2/3/4 complete; GALLERY-CLONE-DECOUPLE-1 task created) by @dasharch
 
 ---
 
@@ -134,9 +134,9 @@ Two-tier: air-gapped contextual cards per workspace + optional full manual serve
 ### Blueprint IDE Forms (ADR-075)
 
 - [x] **BP-FORMS-1** `[sonnet/high]`: Form renderer in BLUEPRINT IDE — all widget types, column selector with upstream schema propagation on Apply, edit-in-place flow, schema invalidation markers on downstream nodes.
-- [ ] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only view (all `blueprint_enabled` personas) + editable mode (`manifest_edit_enabled`) with re-parse on save.
+- [x] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only view (all `blueprint_enabled` personas) + editable mode (`manifest_edit_enabled`) with re-parse on save.
 - [x] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for BLUEPRINT DAG state.
-- [ ] **BP-HELP-1** `[sonnet/medium]`: Help panel — `__doc__` resolution, collapsible sections for composite actions, optional external URL button disabled in isolated deployments.
+- [x] **BP-HELP-1** `[sonnet/medium]`: Help panel — `__doc__` resolution, collapsible sections for composite actions, optional external URL button disabled in isolated deployments.
 - [ ] **BP-COLOR-1** `[sonnet/medium]`: Color widget — column mapping toggle, palette library picker, hex picker, `from_project_colors` slot reserved as v2 placeholder.
 - [x] **BP-FLAG-1** `[haiku/low]`: Add `manifest_edit_enabled` flag to all six persona templates + `rules_persona_feature_flags.md` + bootloader cascade rule. ADR-075.
 

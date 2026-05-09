@@ -24,7 +24,7 @@ from __future__ import annotations
 # @deps
 # provides: class:SessionManager, typedef:RecipeNode
 # consumes: stdlib only (hashlib, json, shutil, zipfile, pathlib, datetime, uuid)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py
+# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md#12d
 # @end_deps
 
