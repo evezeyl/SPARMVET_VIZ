@@ -15,6 +15,8 @@ features:
   gallery_enabled: true
   # Can the user access the Blueprint Architect (manifest IDE)?
   blueprint_enabled: true
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: true
   # Can the user access the Test Lab (data utilities)?
   test_lab_enabled: true
   # Comparison Theater (Phase 12-A)
@@ -48,6 +50,18 @@ automation:
   ghost_save:
     enabled: true
     frequency_minutes: 2
+
+# BLUEPRINT AI Agent Helper (ADR-076). Active only when features.blueprint_agent_enabled
+# is true AND the configured backend initialises successfully (auth probe, binary present).
+# On any init failure the bootloader falls back to DisabledAdapter and hides the chat panel.
+blueprint_agent:
+  enabled: true
+  backend: "claude_cli"             # claude_cli | claude_api | local | disabled
+  model: "claude-opus-4-7"          # claude_api only — ignored by other backends
+  api_key_env: "ANTHROPIC_API_KEY"  # claude_api only
+  endpoint: null                    # local only — full URL incl. port (e.g. http://localhost:11434)
+  instructions_file: "config/ui/agents/blueprint_default.md"
+  gallery_awareness: false          # reserved (Phase 1 = false; see ADR-076 §9)
 
 workspaces:
   home:

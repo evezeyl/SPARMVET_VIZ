@@ -90,12 +90,15 @@ gallery_enabled: true/false          ← INDEPENDENT (can enable without develop
 
 blueprint_enabled: true/false        ← GATE for Blueprint Architect
   │
-  └─ manifest_edit_enabled           ← YAML escape hatch in Blueprint IDE (editable mode)
+  ├─ manifest_edit_enabled           ← YAML escape hatch in Blueprint IDE (editable mode)
+  └─ blueprint_agent_enabled         ← BLUEPRINT AI Agent helper (ADR-076)
 ```
 
 `gallery_enabled` can be set independently — a `project-independent` persona has Gallery access without full developer mode (Phase 25-A flipped this to `true` for project-independent). It remains a policy choice rather than a technical constraint, so other personas can enable Gallery without enabling `developer_mode_enabled`.
 
-`manifest_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer personas), the escape hatch is **read-only** (visible but not editable, so the user can inspect the manifest fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §3 below.
+`manifest_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer personas), the escape hatch is **read-only** (visible but not editable, so the user can inspect the manifest fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §4 below.
+
+`blueprint_agent_enabled` (ADR-076): enables the conversational AI agent panel in the BLUEPRINT right sidebar. The persona template also declares a `blueprint_agent:` config block (`backend`, `model`, `instructions_file`, etc.) which is read by the bootloader to instantiate the appropriate `AgentAdapter`. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §5 below. Default is `false` for all scientist personas (static, simple, advanced, independent, demo-vetinst, web-demo) and `true` for `developer` and `qa` — Phase 1 rollout per ADR-076 §6.
 
 ---
 
@@ -123,6 +126,7 @@ Eight personas exist (`config/ui/templates/`):
 | `blueprint_enabled` | false | false | false | false | false | true | true | true |
 | `test_lab_enabled` | false | false | false | false | false | false | true | true |
 | `manifest_edit_enabled` | false | false | false | false | false | false | true | true |
+| `blueprint_agent_enabled` | false | false | false | false | false | false | true | true |
 
 **Phase 25 additions** (per ADR-052; not feature flags but persona-template fields):
 
@@ -136,6 +140,15 @@ Eight personas exist (`config/ui/templates/`):
 | Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `manifest_edit_enabled` | false | false | false | false | false | false | true | true |
+
+**Phase 31 additions** (per ADR-076 — BLUEPRINT AI Agent Helper):
+
+| Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `blueprint_agent_enabled` | false | false | false | false | false | false | true | true |
+| `blueprint_agent.backend` | — | — | — | — | — | — | `claude_cli` | `disabled` |
+
+The full `blueprint_agent:` block (`backend`, `model`, `api_key_env`, `endpoint`, `instructions_file`, `gallery_awareness`) is present in `developer_template.yaml` and `qa_template.yaml` only. Other templates omit the block entirely; the bootloader treats this as `backend: disabled`.
 
 ---
 
@@ -162,7 +175,11 @@ Eight personas exist (`config/ui/templates/`):
    - Force `manifest_edit_enabled = False`
    - Print `[Bootloader] WARNING: manifest_edit_enabled=True ignored — blueprint_enabled=False`.
 
-5. Right sidebar suppression: enforced structurally in `server.py` / `ui.py` based on persona level string comparison — not via a flag.
+5. If `blueprint_enabled == False` (ADR-076 §6):
+   - Force `blueprint_agent_enabled = False`
+   - Print `[Bootloader] WARNING: blueprint_agent_enabled=True ignored — blueprint_enabled=False`.
+
+6. Right sidebar suppression: enforced structurally in `server.py` / `ui.py` based on persona level string comparison — not via a flag.
 
 **Note on `audit_report_enabled`:** It is listed in Group A (no inter-flag dependency) because `pipeline-exploration-simple` has `interactivity_enabled=True` but `audit_report_enabled=False`. The cascade above is a safety net — it prevents a misconfigured template from showing the audit export panel in a static-mode persona. No existing template triggers this warning.
 
@@ -203,6 +220,10 @@ Should return zero hits (only docstrings/comments allowed).
 |---|---|---|
 | `comparison_mode_enabled: true` with `interactivity_enabled: false` | Comparison Mode toggle absent (silently suppressed). No error shown to user. | Bootloader resolves and logs warning. Fix the template. |
 | `data_ingestion_enabled: true` with `import_helper_enabled: false` | Data ingestion UI absent. No Excel converter. | Bootloader resolves and logs warning. Fix the template. |
+| `blueprint_agent_enabled: true` with `blueprint_enabled: false` | Agent chat panel absent (silently suppressed). No error shown to user. | Bootloader resolves and logs warning. Fix the template. |
+| `blueprint_agent_enabled: true` but `blueprint_agent.backend` absent or `disabled` | Chat panel renders an "agent unavailable" banner (or hides entirely). | Add a `blueprint_agent:` block to the template, or accept that the persona is intentionally agent-free. |
+| `blueprint_agent.backend: claude_cli` with `claude` not installed / not logged in | Adapter init fails; bootloader falls back to `DisabledAdapter` and logs the cause. | Install Claude Code CLI and run `claude --status` to verify auth. |
+| `blueprint_agent.backend: claude_api` with `ANTHROPIC_API_KEY` env var unset | Adapter init fails; fall back to `DisabledAdapter`. | Set the env var, or switch backend to `claude_cli`. |
 | `default_manifest` absent in profile AND persona hides selector | App fails to start with ConfigurationError: "No manifest source available." | Add `default_manifest` to profile, or use a persona that shows the selector. |
 | `data_ingestion_enabled: false` in profile with `project-independent` persona | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
 | `SPARMVET_IRIDA_TOKEN` not set with `deployment_type: irida` | IridaConnector raises AuthenticationError at startup. | Ensure IRIDA injects the token at container launch. |
@@ -221,3 +242,5 @@ Should return zero hits (only docstrings/comments allowed).
 | `app/handlers/export_handlers.py` | Must use `bootloader.is_enabled()` — `is_advanced` persona check is a known violation |
 | `app/src/ui.py` | Must use `bootloader.is_enabled()` — right sidebar persona check is a known violation |
 | `app/handlers/blueprint_handlers.py` | Must gate YAML escape hatch writability on `bootloader.is_enabled("manifest_edit_enabled")` |
+| `app/handlers/blueprint_handlers.py` | Must gate the AI Agent chat panel on `bootloader.is_enabled("blueprint_agent_enabled")` AND a non-`DisabledAdapter` backend (ADR-076) |
+| `config/ui/agents/*.md` | System prompt templates (referenced by `blueprint_agent.instructions_file`). Created by BP-AGENT-INSTRUCT-1. |

@@ -28,6 +28,8 @@ features:
   gallery_enabled: true
   # Can the user access the Blueprint Architect (manifest IDE)?
   blueprint_enabled: true
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: true
   # Can the user access the Test Lab (data utilities)?
   test_lab_enabled: true
   comparison_mode_enabled: true
@@ -56,6 +58,19 @@ automation:
     # behaviour invoke session_manager.write_t3_ghost() explicitly.
     enabled: false
     frequency_minutes: 0
+
+# BLUEPRINT AI Agent Helper (ADR-076). Active in QA so the chat panel and
+# adapter init paths are exercised in headless smoke tests. Tests that need
+# deterministic responses should mock the adapter rather than rely on a live
+# backend — the default backend below is `disabled` for that reason.
+blueprint_agent:
+  enabled: true
+  backend: "disabled"               # QA mocks the adapter; flip to claude_cli for manual runs
+  model: "claude-opus-4-7"
+  api_key_env: "ANTHROPIC_API_KEY"
+  endpoint: null
+  instructions_file: "config/ui/agents/blueprint_default.md"
+  gallery_awareness: false
 
 workspaces:
   home:

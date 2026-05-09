@@ -15,6 +15,8 @@ features:
   gallery_enabled: true
   # Can the user access the Blueprint Architect (manifest IDE)?
   blueprint_enabled: true
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: false
   # Can the user access the Test Lab (data utilities)?
   test_lab_enabled: false
   # Comparison Theater (Phase 12-A)

@@ -268,6 +268,7 @@ class Bootloader:
         Cascade rules (rules_persona_feature_flags.md §107–127):
           - interactivity_enabled=False suppresses t3_sandbox/comparison/session/export_graph/audit_report
           - import_helper_enabled=False suppresses data_ingestion_enabled
+          - blueprint_enabled=False suppresses blueprint_agent_enabled (ADR-076 §6)
           - Deployment-profile data_ingestion_enabled:false is an absolute override
         A WARNING is printed for each flag that was True in the template and forced False.
 
@@ -337,6 +338,15 @@ class Bootloader:
                     f"import_helper_enabled=False in {path.name}"
                 )
                 features["data_ingestion_enabled"] = False
+
+        # Group D: blueprint_enabled=False suppresses blueprint_agent_enabled (ADR-076 §6).
+        if not features.get("blueprint_enabled", False):
+            if features.get("blueprint_agent_enabled", False):
+                print(
+                    f"[Bootloader] WARNING: blueprint_agent_enabled=True ignored — "
+                    f"blueprint_enabled=False in {path.name}"
+                )
+                features["blueprint_agent_enabled"] = False
 
         # Deployment-profile override: data_ingestion_enabled:false in profile is absolute
         # (automated-pipeline deployments push data; user cannot upload).
