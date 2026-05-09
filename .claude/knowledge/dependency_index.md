@@ -6,6 +6,10 @@
 
 ---
 
+## `.claude/design/blueprint_full_feature_set_research.md`
+- **Role:** `info`
+- **documents:** `.claude/design/spaces/BLUEPRINT.md`, `.claude/knowledge/blueprint_architect_ux_spec.md`
+
 ## `.claude/rules/rules_app_structure.md`
 - **Role:** `meta`
 - **provides:** `rule:app_structure_law`, `rule:two_category_law`, `rule:handler_module_boundary`
@@ -88,10 +92,10 @@
 
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `effect:_bp_apply_node_handler`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-076`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`
 
 ## `app/handlers/data_import_handlers.py`
 - **Role:** `ref`
@@ -225,10 +229,10 @@
 
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
-- **provides:** `class:WrangleStudio`
-- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`
-- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/gallery_handlers.py`, `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-011`
+- **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/gallery_handlers.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
@@ -483,8 +487,15 @@
 ## `libs/ingestion/src/ingestion/ingestor.py`
 - **Role:** `wrangle`
 - **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
+- **consumes:** `libs/ingestion/src/ingestion/sanitizer.py`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`
+
+## `libs/ingestion/src/ingestion/sanitizer.py`
+- **Role:** `wrangle`
+- **provides:** `class:DataSanitizer`, `method:apply`
+- **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
+- **doc:** `.claude/tasks/tasks.md#INGEST-SANITIZE-1`
 
 ## `libs/test_lab/src/test_lab/aqua_synthesizer.py`
 - **Role:** `info`

@@ -133,7 +133,7 @@ Two-tier: air-gapped contextual cards per workspace + optional full manual serve
 
 ### Blueprint IDE Forms (ADR-075)
 
-- [ ] **BP-FORMS-1** `[sonnet/high]`: Form renderer in BLUEPRINT IDE — all widget types, column selector with upstream schema propagation on Apply, edit-in-place flow, schema invalidation markers on downstream nodes.
+- [x] **BP-FORMS-1** `[sonnet/high]`: Form renderer in BLUEPRINT IDE — all widget types, column selector with upstream schema propagation on Apply, edit-in-place flow, schema invalidation markers on downstream nodes.
 - [ ] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only view (all `blueprint_enabled` personas) + editable mode (`manifest_edit_enabled`) with re-parse on save.
 - [x] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for BLUEPRINT DAG state.
 - [ ] **BP-HELP-1** `[sonnet/medium]`: Help panel — `__doc__` resolution, collapsible sections for composite actions, optional external URL button disabled in isolated deployments.
@@ -191,9 +191,9 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
 ### Export (enhancements)
 
-- [ ] **EXPORT-2** `[sonnet/medium]`: Selective export — per-tier checkboxes.
-- [ ] **EXPORT-3** `[sonnet/medium]`: Quarto HTML report — typography, plot placement, methods section, TOC polish.
-- [ ] **EXPORT-4** `[sonnet/low]`: Global export — per-plot height/width control before bundling.
+- [x] **EXPORT-2** `[sonnet/medium]`: Selective export — per-tier checkboxes. "Include T3 filtered data" checkbox added to export panel (gated on `t3_sandbox_enabled`, defaults to checked when `tier_toggle=="T3"`). Download handler respects checkbox; falls back to auto-detect when checkbox absent (non-advanced personas).
+- [x] **EXPORT-3** `[sonnet/medium]`: Quarto HTML report — typography, plot placement, methods section, TOC polish. Added TOC + `number-sections` + `theme: cosmo` + `fontsize` to all three format targets; plots now use `#fig-` cross-reference IDs with dataset captions; auto-generated Methods section (prose from T3 nodes + active filters, omitted when empty); `_build_methods_section` extracted as module-level helper.
+- [x] **EXPORT-4** `[sonnet/low]`: Global export — per-plot height/width control before bundling. W/H numeric inputs (inches, 0.5-step) added to export UI; passed to both `fig.save()` calls; recorded in `build_export_provenance` and README.txt.
 - [ ] **EXPORT-TUBEMAP** `[sonnet/high]`: Embed static tube map SVG in global export Quarto report. Requires headless render path for `BlueprintMapper.generate_cy_elements()`. Depends on Blueprint Architect stability.
 
 ### Gallery & UI

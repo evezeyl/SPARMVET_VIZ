@@ -37,6 +37,8 @@ def build_export_provenance(
     persona: str,
     preset: str,
     dpi: int,
+    plot_width: float = 8.0,
+    plot_height: float = 5.0,
     active_tier: str,
     scope_label: str,
     all_plots: list,
@@ -132,6 +134,8 @@ def build_export_provenance(
         "bundle_label": safe_name,
         "preset": preset,
         "dpi": dpi,
+        "plot_width": plot_width,
+        "plot_height": plot_height,
         "plot_count": len(all_plots),
         "filter_count": len(active_filters),
         "tiers_exported": tiers_exported,
@@ -196,6 +200,102 @@ def _embed_svg_provenance(
         return _ET.tostring(root, encoding="unicode").encode("utf-8")
     except Exception:
         return svg_bytes
+
+
+def _build_methods_section(
+    all_plots: list,
+    t3_by_plot: dict,
+    active_filters: list,
+    ds_to_plots: dict,
+    tiers_exported: list,
+) -> list[str]:
+    """Return QMD lines for the auto-generated Methods section.
+
+    Produces human-readable prose from T3 audit nodes and applied filters.
+    Returns an empty list when nothing actionable exists so the section is
+    omitted rather than appearing empty.
+    """
+    _op_prose = {
+        "eq": "equal to", "ne": "not equal to",
+        "gt": "greater than", "ge": "at least",
+        "lt": "less than", "le": "at most",
+        "in": "one of", "not_in": "not one of",
+    }
+    _node_verb = {
+        "filter_row": "Rows were filtered",
+        "exclusion_row": "Rows were explicitly excluded",
+        "drop_column": "Column was permanently removed",
+        "aesthetic_override": "Plot aesthetics were adjusted",
+        "developer_raw_yaml": "A custom manifest fragment was applied",
+    }
+
+    prose_items: list[str] = []
+
+    # Filter prose
+    for f in active_filters:
+        col = f.get("column", "?")
+        op = _op_prose.get(f.get("op", "eq"), f.get("op", "eq"))
+        val = f.get("value", "")
+        val_str = (
+            ", ".join(f'"{v}"' for v in val) if isinstance(val, list)
+            else f'"{val}"'
+        )
+        prose_items.append(
+            f'Rows were retained where **{col}** is {op} {val_str}.'
+        )
+
+    # T3 node prose
+    for p_id, nodes in (t3_by_plot or {}).items():
+        plot_label = next(
+            (s.get("title") or p_id.replace("_", " ").title()
+             for pid, s in all_plots if pid == p_id),
+            p_id.replace("_", " ").title(),
+        )
+        for n in nodes:
+            nt = n.get("node_type", "")
+            params = n.get("params", {})
+            reason = n.get("reason", "").strip()
+            verb = _node_verb.get(nt, "An adjustment was applied")
+
+            if nt in ("filter_row", "exclusion_row"):
+                col = params.get("column", "?")
+                op = _op_prose.get(params.get("op", "eq"), params.get("op", ""))
+                val = params.get("value", "")
+                val_str = (
+                    ", ".join(f'"{v}"' for v in val) if isinstance(val, list)
+                    else f'"{val}"'
+                )
+                detail = f"where **{col}** is {op} {val_str}"
+                scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
+                sentence = f"{verb} {detail}{scope}."
+            elif nt == "drop_column":
+                col = params.get("column", "?")
+                scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
+                sentence = f"Column **{col}** was permanently removed from the exported data{scope}."
+            elif nt == "aesthetic_override":
+                scope = f" for plot *{plot_label}*"
+                sentence = f"Plot aesthetics were adjusted{scope}."
+            else:
+                scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
+                sentence = f"{verb}{scope}."
+
+            if reason:
+                sentence += f" *Reason: {reason}*"
+            prose_items.append(sentence)
+
+    if not prose_items:
+        return []
+
+    lines = ["## Methods", ""]
+    lines.append(
+        "The following data preparation and analyst adjustments were applied "
+        "prior to export:"
+    )
+    lines.append("")
+    for item in prose_items:
+        lines.append(f"- {item}")
+    lines.append("")
+    return lines
 
 
 def define_export_server(input, output, session, *,
@@ -302,6 +402,23 @@ def define_export_server(input, output, session, *,
                 class_="mb-1",
             )
 
+            t3_checkbox = ui.div()
+            if bootloader.is_enabled("t3_sandbox_enabled"):
+                t3_active = tier_toggle.get() == "T3"
+                t3_checkbox = ui.div(
+                    ui.input_checkbox(
+                        "export_include_t3",
+                        "Include T3 filtered data",
+                        value=t3_active,
+                    ),
+                    ui.tags.small(
+                        "Only available when T3 has committed nodes.",
+                        class_="text-muted d-block",
+                        style="font-size:0.7em; margin-top:-4px;",
+                    ),
+                    class_="mb-1",
+                )
+
         return ui.div(
             ui.div(
                 ui.input_text(
@@ -310,6 +427,7 @@ def define_export_server(input, output, session, *,
                     value="",
                 ),
                 scope_toggle,
+                t3_checkbox,
                 ui.input_radio_buttons(
                     "export_preset",
                     label="Quality",
@@ -335,6 +453,15 @@ def define_export_server(input, output, session, *,
                     choices={"html": "HTML", "pdf": "PDF", "docx": "DOCX"},
                     selected="html",
                     inline=True,
+                ),
+                ui.div(
+                    ui.tags.label("Plot size (inches)", class_="d-block mb-1"),
+                    ui.div(
+                        ui.input_numeric("export_plot_width",  "W", value=8,  min=2, max=30, step=0.5),
+                        ui.input_numeric("export_plot_height", "H", value=5,  min=2, max=30, step=0.5),
+                        class_="d-flex gap-2",
+                    ),
+                    class_="mb-1",
                 ),
                 filter_warning,
                 ui.download_button(
@@ -377,6 +504,8 @@ def define_export_server(input, output, session, *,
         preset = safe_input(input, "export_preset", "web")
         plot_fmt = safe_input(input, "export_plot_format", "png")
         report_fmt = safe_input(input, "export_report_format", "html")
+        plot_width  = float(safe_input(input, "export_plot_width",  8))
+        plot_height = float(safe_input(input, "export_plot_height", 5))
         persona = current_persona.get()
         dpi = 300 if preset == "web" else 600
 
@@ -490,7 +619,13 @@ def define_export_server(input, output, session, *,
 
             is_advanced = bootloader.is_enabled("t3_sandbox_enabled")
             active_tier = tier_toggle.get()
-            export_t3 = is_advanced and active_tier == "T3"
+            # Respect explicit user checkbox; fall back to auto-detect when input absent
+            # (e.g. personas without t3_sandbox_enabled never render the checkbox).
+            include_t3_checked = safe_input(input, "export_include_t3", None)
+            if include_t3_checked is None:
+                export_t3 = is_advanced and active_tier == "T3"
+            else:
+                export_t3 = is_advanced and bool(include_t3_checked)
             tiers_exported = ["T1"] + (["T3"] if export_t3 else [])
             anchor_dir = bootloader.get_location("user_sessions") / "anchors"
 
@@ -501,6 +636,8 @@ def define_export_server(input, output, session, *,
                 persona=persona,
                 preset=preset,
                 dpi=dpi,
+                plot_width=plot_width,
+                plot_height=plot_height,
                 active_tier=active_tier,
                 scope_label=scope_label,
                 all_plots=all_plots,
@@ -586,7 +723,8 @@ def define_export_server(input, output, session, *,
                         # Save user-chosen format → zip under {dataset}/plots/
                         plot_path = tmpdir_path / f"{p_id}.{plot_fmt}"
                         fig.save(str(plot_path), verbose=False,
-                                 format=plot_fmt, dpi=dpi)
+                                 format=plot_fmt, dpi=dpi,
+                                 width=plot_width, height=plot_height)
 
                         with open(plot_path, "rb") as f:
                             raw = f.read()
@@ -603,7 +741,8 @@ def define_export_server(input, output, session, *,
                         if qmd_plot_fmt != plot_fmt:
                             qmd_path = tmpdir_path / f"{p_id}.{qmd_plot_fmt}"
                             fig.save(str(qmd_path), verbose=False,
-                                     format=qmd_plot_fmt, dpi=dpi)
+                                     format=qmd_plot_fmt, dpi=dpi,
+                                     width=plot_width, height=plot_height)
                             with open(qmd_path, "rb") as f:
                                 qmd_plot_bytes[p_id] = f.read()
                         else:
@@ -888,9 +1027,20 @@ def define_export_server(input, output, session, *,
                 'format:',
                 '  html:',
                 '    self-contained: true',
+                '    toc: true',
+                '    toc-depth: 3',
+                '    toc-title: "Contents"',
+                '    number-sections: true',
+                '    theme: cosmo',
+                '    fontsize: 11pt',
                 '  pdf:',
                 '    documentclass: article',
-                '  docx: default',
+                '    toc: true',
+                '    number-sections: true',
+                '    fontsize: 11pt',
+                '  docx:',
+                '    toc: true',
+                '    number-sections: true',
                 "---",
                 "",
                 "## Overview",
@@ -973,6 +1123,16 @@ def define_export_server(input, output, session, *,
                     qmd_lines.append(f"| {col} | {op} | {val_str} |")
                 qmd_lines.append("")
 
+            # ── Methods section (auto-generated from T3 nodes + filters) ───
+            _methods_lines = _build_methods_section(
+                all_plots=all_plots,
+                t3_by_plot=_t3_by_plot,
+                active_filters=active_filters,
+                ds_to_plots=ds_to_plots,
+                tiers_exported=tiers_exported,
+            )
+            qmd_lines += _methods_lines
+
             # QMD image paths point to _render/ (Quarto-compatible copies).
             # _render/ is written into the Quarto temp dir alongside report.qmd.
             # The user-facing plots/ folder in the zip keeps the chosen format.
@@ -980,12 +1140,12 @@ def define_export_server(input, output, session, *,
             for p_id, spec in all_plots:
                 label = spec.get("title") or p_id.replace("_", " ").title()
                 ds_note = spec.get("target_dataset") or "—"
+                fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
+                caption = f"{label} — dataset: `{ds_note}`"
                 qmd_lines += [
                     f"### {label}",
                     "",
-                    f"*Dataset: `{ds_note}`*  ",
-                    "",
-                    f"![{label}](_render/{p_id}.{plot_ext}){{width=100%}}",
+                    f"![{caption}](_render/{p_id}.{plot_ext}){{#{fig_id} width=95%}}",
                     "",
                 ]
 
@@ -1202,7 +1362,7 @@ def define_export_server(input, output, session, *,
                 f"Manifest path    : {prov['manifest_path']}",
                 f"User             : {prov['bundle_label']}",
                 f"Persona          : {prov['persona_id']}",
-                f"Preset           : {prov['preset']} (DPI={prov['dpi']})",
+                f"Preset           : {prov['preset']} (DPI={prov['dpi']}, {prov['plot_width']}×{prov['plot_height']} in)",
                 f"Active tier      : {prov['active_tier']}",
                 f"Export scope     : {prov['export_scope']}",
                 f"Plots            : {prov['plot_count']}",

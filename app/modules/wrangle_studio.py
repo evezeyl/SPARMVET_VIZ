@@ -1,10 +1,11 @@
 # app/modules/wrangle_studio.py
 
 # @deps
-# provides: class:WrangleStudio
+# provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
-# consumed_by: app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/gallery_handlers.py, app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-004, .claude/knowledge/architecture_decisions.md#ADR-011
+# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)
+# consumed_by: app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/handlers/audit_stack.py, app/handlers/gallery_handlers.py, app/src/server.py
+# doc: .claude/knowledge/architecture_decisions.md#ADR-004, .claude/knowledge/architecture_decisions.md#ADR-075
 # @end_deps
 
 from pathlib import Path
@@ -53,6 +54,10 @@ class WrangleStudio:
         self.active_manifest_path = reactive.Value("")
         # Anchor parquet path set after materialization so surgical calc reacts to it
         self.active_anchor_path = reactive.Value("")
+
+        # BP-FORMS-1: Node editing state
+        self.selected_node_idx = reactive.Value(None)  # int index of node being edited
+        self.invalidated_from = reactive.Value(None)   # nodes >= this idx are schema-stale
 
     def render_ui(self):
         actions = list(AVAILABLE_WRANGLING_ACTIONS.keys())
@@ -239,7 +244,8 @@ class WrangleStudio:
         )
 
     def define_server(self, input, output, session, available_cols, get_base_data,
-                      viz_factory, get_schema_registry=None, get_includes_map=None):
+                      viz_factory, get_schema_registry=None, get_includes_map=None,
+                      bootloader=None):
         # [ADR-039] Surgical Context State
         self.active_viz_id = reactive.Value(None)
         _plot_error = reactive.Value("")  # stores last render error message
@@ -513,7 +519,93 @@ class WrangleStudio:
         @reactive.event(input.btn_clear_stack)
         def clear_stack():
             self.logic_stack.set([])
+            self.selected_node_idx.set(None)
+            self.invalidated_from.set(None)
             ui.notification_show("Logic stack cleared.", type="warning")
+
+        # BP-FORMS-1: Track node click → set selected_node_idx
+        @reactive.Effect
+        @reactive.event(input.bp_node_click)
+        def _track_bp_node_click():
+            val = input.bp_node_click()
+            if val is not None:
+                self.selected_node_idx.set(int(val))
+
+        @output
+        @render.ui
+        def bp_action_form_ui():
+            """Edit form for the selected logic-stack node (BP-FORMS-1)."""
+            idx = self.selected_node_idx.get()
+            nodes = self.logic_stack.get()
+
+            if idx is None or not nodes or idx >= len(nodes):
+                return ui.div(
+                    ui.p(
+                        "Click a step in the logic stack to edit its parameters.",
+                        class_="text-muted small fst-italic p-2"
+                    ),
+                )
+
+            node = nodes[idx]
+            action_name = node.get("action", "")
+            current_params = node.get("params", {})
+            current_comment = node.get("comment", "")
+
+            try:
+                from blueprint_arch.schema_registry import get_action_catalog
+                catalog = get_action_catalog()
+                ui_schema = catalog.get(action_name, {})
+            except Exception:
+                ui_schema = {}
+
+            upstream_cols = self._extract_upstream_cols()
+
+            inv_from = self.invalidated_from.get()
+            is_stale = (inv_from is not None and idx >= inv_from)
+            stale_banner = (
+                ui.div(
+                    "Schema may be stale — re-Apply to propagate changes.",
+                    class_="bp-form-stale-banner"
+                ) if is_stale else ui.span("")
+            )
+
+            if ui_schema:
+                form_widgets = self._render_action_form(
+                    action_name, ui_schema, current_params, upstream_cols
+                )
+                header_label = ui_schema.get("label", action_name)
+            else:
+                form_widgets = [
+                    ui.p(
+                        f"No form schema registered for '{action_name}'. "
+                        "Edit params via the YAML escape hatch.",
+                        class_="text-muted small"
+                    )
+                ]
+                header_label = action_name
+
+            return ui.div(
+                stale_banner,
+                ui.div(
+                    ui.span(f"Step {idx + 1}: ", class_="text-muted small"),
+                    ui.span(header_label, class_="fw-bold small"),
+                    class_="mb-2"
+                ),
+                ui.input_text(
+                    "bp_form_comment", "Comment",
+                    value=current_comment,
+                    placeholder="Why this transformation?"
+                ),
+                *form_widgets,
+                ui.div(
+                    ui.input_action_button(
+                        "btn_bp_apply_node", "Apply",
+                        class_="btn btn-primary btn-sm w-100"
+                    ),
+                    class_="mt-3"
+                ),
+                class_="bp-form-container p-2"
+            )
 
         @output
         @render.ui
@@ -999,33 +1091,116 @@ class WrangleStudio:
 
         @output
         @render.ui
+        def bp_yaml_escape_ui():
+            """YAML escape hatch (BP-ESCAPE-1).
+
+            Read-only pre block for all blueprint_enabled personas.
+            Editable textarea + Save when manifest_edit_enabled is true.
+            """
+            raw = self.active_raw_yaml.get()
+            editable = bootloader is not None and bootloader.is_enabled("manifest_edit_enabled")
+
+            if not raw:
+                return ui.div(
+                    ui.p("No manifest loaded. Select a manifest in the left panel first.",
+                         class_="text-muted small fst-italic"),
+                    class_="bp-escape-container p-2"
+                )
+
+            if editable:
+                return ui.div(
+                    ui.div(
+                        ui.span("Edit mode — changes take effect on Save",
+                                class_="bp-escape-edit-badge"),
+                        class_="mb-2"
+                    ),
+                    ui.input_text_area(
+                        "bp_yaml_raw_edit",
+                        None,
+                        value=raw,
+                        rows=20,
+                        width="100%",
+                    ),
+                    ui.input_action_button(
+                        "btn_bp_save_yaml",
+                        "Save & Re-parse",
+                        class_="btn btn-primary btn-sm w-100 mt-2"
+                    ),
+                    class_="bp-escape-container p-2"
+                )
+
+            # Read-only view
+            return ui.div(
+                ui.div(
+                    ui.span("Read-only", class_="bp-escape-readonly-badge"),
+                    class_="mb-2"
+                ),
+                ui.tags.pre(
+                    raw,
+                    class_="bp-escape-pre"
+                ),
+                class_="bp-escape-container p-2"
+            )
+
+        @output
+        @render.ui
         def logic_stack_ui():
+            # BP-FORMS-1: nodes are clickable; selected node gets highlight;
+            # nodes downstream of last Apply are marked stale.
             nodes = self.logic_stack.get()
             if not nodes:
-                return ui.p("No active transformation nodes. Add one to begin.")
+                return ui.p(
+                    "No active transformation nodes. "
+                    "Click a TubeMap node to load its wrangling steps.",
+                    class_="text-muted small fst-italic"
+                )
 
+            selected_idx = self.selected_node_idx.get()
+            inv_from = self.invalidated_from.get()
             ui_nodes = []
+
             for i, node in enumerate(nodes):
-                # Robust extraction (ADR-031)
                 action = node.get("action", "unknown")
-                comment = node.get("comment", "No comment")
+                comment = node.get("comment", "")
                 params = node.get("params", {})
+
+                is_selected = (selected_idx == i)
+                is_stale = (inv_from is not None and i >= inv_from)
+
+                extra_class = (
+                    " bp-node-selected" if is_selected
+                    else (" bp-node-invalidated" if is_stale else "")
+                )
+
+                stale_el = (
+                    ui.span("stale", class_="badge ms-1",
+                            style="background:#ffc107;color:#000;font-size:0.65rem;")
+                    if is_stale else ui.span("")
+                )
+
+                params_preview = str(params)
+                if len(params_preview) > 80:
+                    params_preview = params_preview[:77] + "..."
 
                 ui_nodes.append(
                     ui.div(
                         ui.div(
-                            ui.div(
-                                ui.span(f"Step {i+1}: {action}",
-                                        class_="fw-bold"),
-                                ui.span(
-                                    f" — {comment}", style="color: #666; font-style: italic;"),
-                            ),
-                            ui.div(
-                                ui.span(f"Config: {params}",
-                                        class_="text-muted small"),
-                            )
+                            ui.span(f"{i + 1}. {action}", class_="fw-bold small"),
+                            stale_el,
                         ),
-                        class_="p-2 mb-2 border rounded shadow-sm bg-light d-flex justify-content-between align-items-center"
+                        ui.div(
+                            ui.span(comment,
+                                    style="color:#666;font-style:italic;font-size:0.78rem;")
+                            if comment else ui.span("")
+                        ),
+                        ui.div(
+                            ui.span(params_preview, class_="text-muted",
+                                    style="font-size:0.72rem;")
+                        ),
+                        onclick=(f"Shiny.setInputValue('bp_node_click', {i},"
+                                 " {priority: 'event'});"),
+                        class_=f"p-2 mb-1 border rounded bp-node-card{extra_class}",
+                        style="cursor:pointer;"
                     )
                 )
             return ui.div(*ui_nodes)
@@ -1215,6 +1390,164 @@ class WrangleStudio:
             easy_close=True
         )
         ui.modal_show(m)
+
+    def _extract_upstream_cols(self) -> dict:
+        """Return {col_name: 'numeric'|'categorical'} from active_upstream.
+
+        Used by column_selector widgets to offer dtype-appropriate column choices.
+        """
+        upstream = self.active_upstream.get()
+        cols: dict = {}
+        _NUMERIC = {"numeric", "float", "int", "float64", "int64", "int32",
+                    "float32", "integer", "number"}
+
+        if isinstance(upstream, dict):
+            for name, props in upstream.items():
+                if isinstance(props, dict):
+                    dtype = str(props.get("type") or props.get("dtype", "string")).lower()
+                else:
+                    dtype = "string"
+                cols[name] = "numeric" if dtype in _NUMERIC else "categorical"
+        elif isinstance(upstream, list):
+            for item in upstream:
+                if isinstance(item, dict):
+                    name = item.get("name") or item.get("field", "?")
+                    dtype = str(item.get("type") or item.get("dtype", "string")).lower()
+                    cols[name] = "numeric" if dtype in _NUMERIC else "categorical"
+                elif isinstance(item, str):
+                    cols[item] = "categorical"
+        return cols
+
+    def _render_action_form(self, action_name, ui_schema, current_params,
+                            upstream_cols) -> list:
+        """Build Shiny UI form widgets for an action's ui_schema params.
+
+        Returns a list of Shiny UI elements, one per declared parameter.
+        """
+        params_schema = ui_schema.get("params", {})
+        if not params_schema:
+            return [ui.p("No configurable parameters for this action.",
+                         class_="text-muted small")]
+
+        _POLARS_TYPES = ["String", "Categorical", "Int64", "Int32", "Float64",
+                         "Float32", "Boolean", "Date", "Datetime", "UInt32", "UInt64"]
+        widgets = []
+
+        for param_key, param_def in params_schema.items():
+            widget_type = param_def.get("widget", "string")
+            label = param_def.get("label", param_key)
+            required = param_def.get("required", False)
+            hint = param_def.get("hint", "")
+            current_val = current_params.get(param_key)
+            input_id = f"bp_form_{param_key}"
+
+            if required:
+                label = f"{label} *"
+
+            hint_el = (ui.p(hint, class_="ultra-small text-muted mb-0")
+                       if hint else None)
+
+            if widget_type == "column_selector":
+                multi = param_def.get("multi", False)
+                dtype_filter = param_def.get("dtype_filter", [])
+                choices = [k for k, v in upstream_cols.items()
+                           if not dtype_filter or v in dtype_filter]
+                if not choices:
+                    choices = list(upstream_cols.keys()) or ["(no upstream columns)"]
+
+                if isinstance(current_val, list):
+                    selected = current_val
+                elif isinstance(current_val, str):
+                    selected = [current_val] if multi else current_val
+                else:
+                    selected = [] if multi else None
+
+                elem = ui.input_selectize(
+                    input_id, label, choices=choices,
+                    selected=selected, multiple=multi
+                )
+
+            elif widget_type == "expression":
+                elem = ui.input_text_area(
+                    input_id, label,
+                    value=str(current_val or ""),
+                    placeholder='pl.col("column").str.strip_chars()',
+                    rows=3
+                )
+
+            elif widget_type == "enum":
+                options = param_def.get("options", [])
+                elem = ui.input_select(
+                    input_id, label,
+                    choices={v: v for v in options},
+                    selected=str(current_val or (options[0] if options else ""))
+                )
+
+            elif widget_type == "dtype_picker":
+                elem = ui.input_select(
+                    input_id, label,
+                    choices={t: t for t in _POLARS_TYPES},
+                    selected=str(current_val or "String")
+                )
+
+            elif widget_type == "number":
+                elem = ui.input_numeric(
+                    input_id, label,
+                    value=(float(current_val) if current_val is not None
+                           else float(param_def.get("default", 0)))
+                )
+
+            elif widget_type == "bool":
+                elem = ui.input_checkbox(
+                    input_id, label,
+                    value=bool(current_val) if current_val is not None else False
+                )
+
+            elif widget_type == "column_or_literal":
+                mode_id = f"bp_form_{param_key}_mode"
+                col_id = f"bp_form_{param_key}_col"
+                lit_id = f"bp_form_{param_key}_lit"
+                col_choices = list(upstream_cols.keys()) or ["(none)"]
+
+                if isinstance(current_val, str) and current_val in upstream_cols:
+                    current_mode = "column"
+                    current_col_val = current_val
+                    current_lit_val = ""
+                else:
+                    current_mode = "literal"
+                    current_col_val = col_choices[0]
+                    current_lit_val = str(current_val or "")
+
+                elem = ui.div(
+                    ui.p(label, class_="fw-bold small mb-1"),
+                    ui.input_radio_buttons(
+                        mode_id, None,
+                        choices={"column": "Map to column",
+                                 "literal": "Set literal"},
+                        selected=current_mode, inline=True
+                    ),
+                    ui.panel_conditional(
+                        f"input['{mode_id}'] === 'column'",
+                        ui.input_selectize(col_id, "Column",
+                                           choices=col_choices,
+                                           selected=current_col_val)
+                    ),
+                    ui.panel_conditional(
+                        f"input['{mode_id}'] === 'literal'",
+                        ui.input_text(lit_id, "Value", value=current_lit_val)
+                    ),
+                )
+
+            else:  # "string" default
+                elem = ui.input_text(
+                    input_id, label,
+                    value=str(current_val or ""),
+                    placeholder=param_def.get("placeholder", "")
+                )
+
+            widgets.append(ui.div(elem, hint_el, class_="mb-2"))
+
+        return widgets
 
     def apply_logic(self, lf: pl.LazyFrame) -> pl.LazyFrame:
         """Applies the current logic stack to a LazyFrame."""

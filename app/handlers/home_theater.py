@@ -1143,6 +1143,11 @@ def define_server(input, output, session, *,
                                            class_="btn-outline-primary w-100"),
                         icon=ui.tags.i(class_="bi bi-cloud-arrow-up")
                     ),
+                    ui.accordion_panel(
+                        "🔤 YAML Escape Hatch",
+                        ui.output_ui("bp_yaml_escape_ui"),
+                        icon=ui.tags.i(class_="bi bi-code-slash")
+                    ),
                     id="wrangle_sidebar_accordion"
                 ),
                 # Hidden controls — kept in DOM so Shiny bridge can programmatically
@@ -1333,11 +1338,7 @@ def define_server(input, output, session, *,
                                class_="d-flex justify-content-center w-100")
                     ),
                     ui.div(
-                        node_info,
-                        ui.hr(),
-                        ui.h6("Active Logic Stack", class_="text-muted px-2"),
-                        ui.output_ui("audit_nodes_header_ui"),
-                        ui.output_ui("audit_nodes_tier3"),
+                        ui.output_ui("bp_action_form_ui"),
                         class_="p-2"
                     ),
                     class_="mb-2 shadow-sm border-0"

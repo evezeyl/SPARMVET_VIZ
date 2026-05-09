@@ -178,6 +178,7 @@ def server(input, output, session):
         input, output, session, lambda: tier1_anchor().collect_schema().names(), tier1_anchor, viz_factory,
         get_schema_registry=lambda: _schema_registry.get(),
         get_includes_map=lambda: _includes_map.get(),
+        bootloader=bootloader,
     )
     if bootloader.is_enabled("test_lab_enabled"):
         dev_studio.define_server(input, output, session)

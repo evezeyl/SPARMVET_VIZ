@@ -875,3 +875,118 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 
 /* Text utility */
 .spv-word-break { word-break: break-all; }
+
+/* ── 21. Blueprint IDE — Node Cards & Form (BP-FORMS-1) ─────────────────── */
+
+/* Clickable node card in the logic stack */
+.bp-node-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 6px;
+    transition: border-color 0.1s, background 0.1s;
+}
+.bp-node-card:hover {
+    border-color: #345beb !important;
+}
+
+/* Selected node (clicked to edit) */
+.bp-node-selected {
+    border-color: #345beb !important;
+    background: #eef0fb !important;
+    box-shadow: 0 0 0 2px rgba(52,91,235,0.18);
+}
+
+/* Stale / schema-invalidated node */
+.bp-node-invalidated {
+    border-color: #ffc107 !important;
+    background: #fffde7 !important;
+}
+
+/* Edit form container (right sidebar) */
+.bp-form-container {
+    background: #ffffff;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+.bp-form-container .form-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+.bp-form-container .form-control,
+.bp-form-container .form-select {
+    font-size: 0.78rem;
+    height: 26px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+}
+.bp-form-container textarea.form-control {
+    height: auto;
+}
+
+/* Stale schema warning banner inside the edit form */
+.bp-form-stale-banner {
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+}
+
+/* ── 22. Blueprint IDE — YAML Escape Hatch (BP-ESCAPE-1) ────────────────── */
+
+.bp-escape-container {
+    font-size: 0.8rem;
+}
+
+/* Read-only <pre> block */
+.bp-escape-pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 420px;
+    overflow-y: auto;
+    margin: 0;
+}
+
+/* Badge labels */
+.bp-escape-readonly-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    padding: 1px 5px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.bp-escape-edit-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    background: #eef0fb;
+    color: #345beb;
+    border: 1px solid #c5cff9;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-weight: 600;
+}
+
+/* Editable textarea */
+.bp-escape-container textarea.form-control {
+    font-family: monospace;
+    font-size: 0.78rem;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    resize: vertical;
+    min-height: 200px;
+}

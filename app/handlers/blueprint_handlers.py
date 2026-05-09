@@ -15,10 +15,11 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui
+# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, effect:_bp_apply_node_handler
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
+# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))
-# doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-076
+# doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076
 # @end_deps
 
 import asyncio
@@ -773,6 +774,98 @@ def define_server(input, output, session, *,
         except Exception as e:
             ui.notification_show(f"❌ Save failed: {e}", type="error")
 
+    @reactive.Effect
+    @reactive.event(input.btn_bp_apply_node)
+    def _bp_apply_node_handler():
+        """Apply form edits to the selected node in the logic stack (BP-FORMS-1)."""
+        idx = wrangle_studio.selected_node_idx.get()
+        nodes = wrangle_studio.logic_stack.get()
+
+        if idx is None or not nodes or idx >= len(nodes):
+            ui.notification_show("No node selected for editing.", type="warning")
+            return
+
+        node = nodes[idx]
+        action_name = node.get("action", "")
+
+        try:
+            from blueprint_arch.schema_registry import get_action_catalog
+            catalog = get_action_catalog()
+            ui_schema = catalog.get(action_name, {})
+        except Exception:
+            ui_schema = {}
+
+        params_schema = ui_schema.get("params", {})
+        new_comment = safe_input(input, "bp_form_comment", node.get("comment", ""))
+        new_params: dict = {}
+
+        for param_key, param_def in params_schema.items():
+            widget_type = param_def.get("widget", "string")
+            input_id = f"bp_form_{param_key}"
+
+            if widget_type == "column_selector":
+                val = safe_input(input, input_id, None)
+                if val is not None:
+                    multi = param_def.get("multi", False)
+                    if multi:
+                        new_params[param_key] = (
+                            val if isinstance(val, list) else [val]
+                        )
+                    else:
+                        new_params[param_key] = (
+                            val[0] if isinstance(val, list) and val else val
+                        )
+            elif widget_type in ("expression", "string"):
+                val = safe_input(input, input_id, "")
+                if val:
+                    new_params[param_key] = val
+            elif widget_type == "number":
+                val = safe_input(input, input_id, None)
+                if val is not None:
+                    new_params[param_key] = val
+            elif widget_type == "bool":
+                new_params[param_key] = bool(safe_input(input, input_id, False))
+            elif widget_type in ("enum", "dtype_picker"):
+                val = safe_input(input, input_id, "")
+                if val:
+                    new_params[param_key] = val
+            elif widget_type == "column_or_literal":
+                mode_id = f"bp_form_{param_key}_mode"
+                mode = safe_input(input, mode_id, "literal")
+                sub_id = (f"bp_form_{param_key}_col"
+                          if mode == "column"
+                          else f"bp_form_{param_key}_lit")
+                val = safe_input(input, sub_id, "")
+                if val:
+                    new_params[param_key] = val
+            else:
+                val = safe_input(input, input_id, "")
+                if val:
+                    new_params[param_key] = val
+
+        # No schema registered — preserve existing params
+        if not params_schema:
+            new_params = node.get("params", {})
+
+        _snapshot_state()
+
+        updated = list(nodes)
+        updated[idx] = {
+            "action": action_name,
+            "params": new_params,
+            "comment": new_comment,
+        }
+        wrangle_studio.logic_stack.set(updated)
+
+        # Mark downstream nodes as schema-stale after edit
+        wrangle_studio.invalidated_from.set(
+            idx + 1 if idx + 1 < len(updated) else None
+        )
+
+        ui.notification_show(
+            f"Step {idx + 1} ({action_name}) updated.", type="message"
+        )
+
     @render.download(filename=lambda: f"exported_manifest_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml")
     def btn_download_manifest():
         nodes = wrangle_studio.logic_stack.get()
@@ -780,6 +873,28 @@ def define_server(input, output, session, *,
         buf = io.StringIO()
         yaml.dump(manifest_data, buf, default_flow_style=False, sort_keys=False)
         yield buf.getvalue()
+
+    # ── BP-ESCAPE-1: YAML escape hatch Save (manifest_edit_enabled only) ──────
+
+    if bootloader.is_enabled("manifest_edit_enabled"):
+        @reactive.Effect
+        @reactive.event(input.btn_bp_save_yaml)
+        def _bp_save_yaml_hatch():
+            """Re-parse edited YAML from the escape hatch and update active_raw_yaml."""
+            raw = input.bp_yaml_raw_edit()
+            if not raw or not raw.strip():
+                ui.notification_show("YAML escape hatch is empty.", type="warning")
+                return
+            try:
+                yaml.safe_load(raw)
+            except Exception as exc:
+                ui.notification_show(
+                    f"YAML parse error: {exc}", type="error", duration=8
+                )
+                return
+            wrangle_studio.active_raw_yaml.set(raw)
+            wrangle_studio.data_ready_signal.set(wrangle_studio.data_ready_signal.get() + 1)
+            ui.notification_show("Manifest YAML updated and re-parsed.", type="message")
 
     # ── Blueprint AI Agent (ADR-076) ─────────────────────────────────────────
 
