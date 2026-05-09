@@ -289,6 +289,8 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 - [ ] **T3 lf threading** `[sonnet/medium]`: When new T3 node types (rename, derive, pivot) are added, thread them through `_apply_t3_to_lf`. Design in `.claude/tasks/design_sge_lineage_t3.md`.
 - [ ] **PYPROJECT-DEPS-1** `[haiku/low]` `[repo-hygiene]`: Verify all 8 `libs/*/pyproject.toml` files declare `libs/utils` as an explicit dependency wherever they import from it. Two-tier model (ADR-011 amendment 2026-05-09): any domain lib importing `utils` must list it in `[project.dependencies]`. Also add `pattern_helper` to `libs/utils/` public API once BP-PATTERN-1 is implemented.
 
+- [ ] **ACTION-RENAME-1** `[sonnet/medium]` `[repo-hygiene]`: Audit all `@register_action` names in `libs/transformer/` and `@register_plot_component` names in `libs/viz_factory/` for alignment with Polars/Plotnine naming. For each rename: (1) record `{old_name → new_name}` in a migration table; (2) implement compatibility shim in the registry (old name logs a deprecation warning and delegates to new name); (3) provide `scripts/migrate_manifests.py` — scans all YAML manifests under `config/manifests/`, all persona templates, and gallery recipe files, replaces old action names with new, reports changes. Run scan as part of the task completion gate before removing shims.
+
 - [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: The following imports violate the "no cross-lib" rule and should be resolved (move shared types to `utils` or inject via app layer):
   - `libs/blueprint_arch/blueprint_mapper.py` → `utils.config_loader.ConfigManager`
   - `libs/transformer/pipeline.py` → `utils.config_loader.ConfigManager`, `ingestion.ingestor.DataIngestor`
@@ -307,6 +309,13 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 
 - [ ] **LINEAGE-NAV-1** `[sonnet/medium]`: Implement `build_plot_lineage(plot_id, manifest_path)` and `get_plot_ids_in_group(group_id, manifest_path)` in `libs/blueprint_arch/.../manifest_navigator.py`. Backward trace: data sources → T1 → T2 → join/assembly → plot spec, as ordered list of step dicts. Forward trace: reads `analysis_groups[group_id].plots`. T3 overlay appended by caller. ADR-074.
 - [ ] **LINEAGE-EXPORT-1** `[sonnet/high]`: Implement `lineage/lineage_graph.json` generation in `export_handlers.py` (shared-node DAG, one file per export scope, no per-plot duplication); add to `report.qmd` template: Mermaid flowchart + step summary table + JSON explanation note. ADR-074.
+- [ ] **BP-SCHEMA-1** `[sonnet/high]`: Add `ui_schema` kwarg to `@register_action` and `@register_plot_component`; implement `schema_registry.py` in `blueprint_arch`; populate schemas for the 20 most-used transformer actions and core viz_factory components as first pass. ADR-075.
+- [ ] **BP-FORMS-1** `[sonnet/high]`: Implement form renderer in BLUEPRINT IDE — all widget types, column selector with upstream schema propagation on Apply, edit-in-place flow, schema invalidation markers on downstream nodes. ADR-075.
+- [ ] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only view (all `blueprint_enabled` personas) + editable mode (`manifest_edit_enabled`) with re-parse on save. ADR-075.
+- [ ] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for BLUEPRINT DAG state. ADR-075.
+- [ ] **BP-HELP-1** `[sonnet/medium]`: Help panel — `__doc__` resolution, collapsible sections for composite actions, optional external URL button disabled in isolated deployments. ADR-075.
+- [ ] **BP-COLOR-1** `[sonnet/medium]`: Color widget — column mapping toggle, palette library picker, hex picker, `from_project_colors` slot reserved as v2 placeholder. ADR-075.
+- [ ] **BP-FLAG-1** `[haiku/low]`: Add `manifest_edit_enabled` flag to all six persona templates + `rules_persona_feature_flags.md` + bootloader cascade rule. ADR-075.
 - [ ] **TubeMap aesthetics** `[haiku/low]` — tighter rail/tube look; rename 'ref' → 'Add' in nodes and legend.
 - [ ] Full Blueprint Architect debug pass (field contracts, lineage rail, Zone C layout).
 - [ ] **Action Registry Parity** `[sonnet/high]` (18-F): Expose 175+ `@register_action` entries in UI.

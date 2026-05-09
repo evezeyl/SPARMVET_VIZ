@@ -2537,3 +2537,166 @@ SVG/PNG export of the manifest DAG for use in pipeline publications is a **BLUEP
 **Implementation tasks:**
 - **LINEAGE-NAV-1** `[sonnet/medium]`: Implement `build_plot_lineage()` and `get_plot_ids_in_group()` in `libs/blueprint_arch/.../manifest_navigator.py`
 - **LINEAGE-EXPORT-1** `[sonnet/high]`: Implement `lineage/lineage_graph.json` generation in `export_handlers.py`; add Mermaid flowchart + step summary table + JSON note to `report.qmd` template
+
+---
+
+## ADR-075: BLUEPRINT IDE Build Mode — Design Specification (2026-05-09)
+
+**Status:** DECIDED — implementation pending (Phase 31+)
+
+**Context:** BLUEPRINT is a visual IDE for building and editing SPARMVET manifests without writing code. The core design must be settled before implementation to avoid structural decisions that would require app-wide refactoring later. This ADR establishes the build mode interaction model, action schema format, documentation strategy, color system, and IDE state management.
+
+**Key principle:** *BLUEPRINT users produce and document pipelines.* The IDE output is a valid SPARMVET manifest YAML loadable directly into HOME.
+
+---
+
+### 1. Action Schema — Embedded in Decorator
+
+Action UI schemas are declared as a `ui_schema` keyword argument on the existing `@register_action` and `@register_plot_component` decorators. No separate schema files are created — the schema lives where the action lives, so updating a decorator immediately surfaces that its UI schema also needs updating.
+
+```python
+@register_action("filter_range", ui_schema={
+    "label": "Filter by range",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["numeric", "cleaning"],
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"],
+               "doc_url": "https://docs.pola.rs/..."}],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "dtype_filter": ["numeric"]},
+        "min":     {"widget": "number", "label": "Min value", "required": False},
+        "max":     {"widget": "number", "label": "Max value", "required": False},
+    }
+})
+def action_filter_range(lf: pl.LazyFrame, spec: dict) -> pl.LazyFrame:
+    ...
+```
+
+`blueprint_arch` reads the registry at startup and extracts all `ui_schema` dicts to build the form catalog. No Shiny imports in the action files — Two-Category Law compliant.
+
+---
+
+### 2. Widget Type Vocabulary
+
+| Widget type | Used for | Notes |
+|---|---|---|
+| `column_selector` | Pick column(s) from upstream schema | `multi: true/false`; `dtype_filter` narrows to compatible types |
+| `expression` | Polars expression string | Code editor (Monaco/CodeMirror); schema-aware column autocomplete |
+| `enum` | Fixed option list | `options: [...]`; `preview: true` renders a visual sample (e.g. linetype) |
+| `dtype_picker` | Polars dtype selection | Dropdown of Polars types |
+| `number` | Numeric scalar | `min/max/step/default`; optional `widget: slider` |
+| `string` | Free text | Default text input |
+| `color` | Color aesthetic binding | See §3 for nested color model |
+| `column_or_literal` | Map to column OR set a literal value | Toggle: "Map to column ↔ Set literal value" — fundamental ggplot/plotnine distinction |
+
+**Column selector — dynamic upstream schema propagation:** column selector widgets receive the output schema of the upstream DAG position at form render time. Schema propagates on Apply (not continuously). The `dtype_filter` key restricts the offered columns to compatible types.
+
+---
+
+### 3. Color Widget — Nested Model (v1 scope)
+
+Color is a composite widget with a mode toggle:
+
+```
+color field
+├── Map to column     → column_selector (categorical columns only)
+└── Set literal
+    ├── From palette library   → predefined palette picker (ColorBrewer, viridis, etc.)
+    ├── From project colors    → [RESERVED — v2, not implemented]
+    └── Custom                 → hex color picker
+```
+
+**Project color registry (deferred to v2):** the `from_project_colors` slot is reserved in the widget definition and renders as a grayed-out "Coming soon" option. The slot exists so no widget refactoring is required when the registry is implemented. The registry will track `{variable_value → color}` assignments across all plots in the project to enforce visual homogeneity.
+
+---
+
+### 4. Documentation Strategy — Python `__doc__`
+
+For each action's help panel, BLUEPRINT resolves documentation from the installed library at runtime:
+
+```python
+def _resolve_doc(wraps_entry: dict) -> str:
+    import importlib
+    obj = importlib.import_module(wraps_entry["lib"])
+    for attr in wraps_entry["attr_path"]:
+        obj = getattr(obj, attr)
+    return getattr(obj, "__doc__", "") or ""
+```
+
+**Benefits:** air-gap safe; always matches the installed version; zero maintenance.
+
+**External URL** (`doc_url`) is optional — rendered as an "Open in browser →" button, disabled in isolated deployments.
+
+**Action naming alignment:** `@register_action` names should match Polars/Plotnine names for 1:1 wrappers (e.g. `sort`, `cast`, `rename`, `filter`). For composite/custom actions (`split_and_explode`, `label_if`), a custom one-line description is written in the decorator, and BLUEPRINT auto-generates: *"This action combines `[fn1]` and `[fn2]`. See component documentation:"* with each `__doc__` in a collapsible section.
+
+Action renames are tracked and migrated via **ACTION-RENAME-1** (compatibility shims + manifest scanner).
+
+---
+
+### 5. Position Rules — BLUEPRINT Enforces DAG Validity
+
+BLUEPRINT enforces valid node placement using the `context` tag in each action's `ui_schema`. Invalid positions are blocked at authoring time (not at manifest run time). The "Add node" menu only offers actions valid at the selected insertion point.
+
+| `context` value | Valid positions |
+|---|---|
+| `t1` | Before any join/assembly node |
+| `t2` | After a join/assembly node, before a plot spec |
+| `assembly` | Join/assembly nodes connecting data sources |
+| `plot` | Leaf positions in the DAG (plot spec nodes) |
+
+---
+
+### 6. Apply Gate and Edit/Remove After Apply
+
+BLUEPRINT Apply propagates schema through the DAG but the manifest YAML is always the ground truth. No change is destructive until the manifest is saved to disk.
+
+**Three-layer correction model:**
+
+1. **Edit in place** (primary): click any node at any time → re-open form → change values → re-Apply. Node returns to "pending"; downstream nodes are marked schema-invalidated; re-propagation runs on the new Apply.
+
+2. **Session undo deque** (immediate mistakes): 20-step Ctrl+Z restores any prior DAG state including pre-Apply snapshots. Session-only — not persisted between sessions.
+
+3. **YAML escape hatch** (complex corrections): raw YAML view of the manifest. Read-only for all personas with `blueprint_enabled: true`. Editable when `manifest_edit_enabled: true` (see §7). Changes in the editable view re-parse and re-render the DAG on save.
+
+---
+
+### 7. New Persona Flag — `manifest_edit_enabled`
+
+Controls whether the YAML escape hatch is editable (not whether it is visible — the read-only view is always available with `blueprint_enabled`).
+
+| Flag | static | simple | advanced | independent | developer | qa |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `manifest_edit_enabled` | false | false | false | false | true | true |
+
+Default `false` for all personas. Custom deployments can enable for any persona without code changes. Cascade: if `blueprint_enabled: false`, `manifest_edit_enabled` is suppressed (BLUEPRINT is not active).
+
+---
+
+### 8. Action Picker — Searchable Catalog
+
+The "Add node" picker in BLUEPRINT is a searchable, filtered catalog driven by `ui_schema` metadata:
+
+- Organized by `category` (cleaning, filtering, reshaping, aggregation, etc.)
+- Filtered by `context` (only valid actions for the current insertion point)
+- Searchable by `tags` and `label`
+- `difficulty` tag is NOT used — BLUEPRINT is already persona-gated; further difficulty-based filtering is deferred
+
+---
+
+### Consequences
+
+- `@register_action` and `@register_plot_component` gain an optional `ui_schema` kwarg. Existing decorators without it remain valid — BLUEPRINT degrades to a "no form available" state for unschemed actions.
+- `blueprint_arch` gains a `schema_registry.py` module that reads `ui_schema` from the action/component registries at startup.
+- `rules_persona_feature_flags.md` gains `manifest_edit_enabled` in the flag table and cascade rules.
+- All six persona templates gain `manifest_edit_enabled` entry.
+- Action naming audit and migration: **ACTION-RENAME-1**.
+- Project color registry: reserved slot in the color widget, deferred to v2.
+
+**Implementation tasks:**
+- **BP-SCHEMA-1** `[sonnet/high]`: Add `ui_schema` kwarg to `@register_action` and `@register_plot_component`; implement `schema_registry.py` in `blueprint_arch`; populate schemas for the 20 most-used transformer actions and core viz_factory components as a first pass
+- **BP-FORMS-1** `[sonnet/high]`: Implement form renderer in BLUEPRINT IDE — widget types, column selector with upstream schema propagation, Apply gate, edit-in-place flow
+- **BP-ESCAPE-1** `[sonnet/medium]`: Implement YAML escape hatch — read-only view (all `blueprint_enabled` personas) + editable mode (`manifest_edit_enabled`) with re-parse on save
+- **BP-UNDO-1** `[haiku/low]`: Implement 20-step session undo deque for BLUEPRINT DAG state
+- **BP-HELP-1** `[sonnet/medium]`: Implement help panel — `__doc__` resolution via `_resolve_doc()`, collapsible sections for composite actions, optional external URL button (disabled in isolated deployments)
+- **BP-COLOR-1** `[sonnet/medium]`: Implement color widget — column mapping toggle, palette library picker, hex color picker, `from_project_colors` slot reserved (grayed out, v2 placeholder)
+- **manifest_edit_enabled flag** `[haiku/low]`: Add to all six persona templates + `rules_persona_feature_flags.md` + bootloader cascade
