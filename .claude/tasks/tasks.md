@@ -65,6 +65,62 @@
 
 ---
 
+## 🔧 Audit-Derived Tasks (2026-05-09)
+
+> Source: `audit_in_depth_state_2026-05-09.md`. All findings verified by manual grep before task creation.
+> Work through in priority order: P0 first (minutes each), then P1, then P2.
+
+### P0 — Immediate hygiene (5–15 min each, haiku/low)
+
+- [ ] **AUDIT-DEPGRAPH-NOW** `[haiku/low]`: Run `build_dep_graph.py` + regenerate `tree.txt`. Session-end mandate (workspace_standard.md §5-E) was missed after today's Wave 8/9 (new files: `sidebar_registry.py`, `sidebar_validator.py`, `scripts/validate_persona_config.py`, 8 sidebar YAMLs). Commands:
+  ```bash
+  .venv/bin/python assets/scripts/build_dep_graph.py
+  tree -I '__pycache__|.venv|tmp*|node_modules|*.egg-info' > tree.txt
+  ```
+
+- [ ] **AUDIT-HANDOFF-UPDATE** `[haiku/low]`: Rewrite `handoff_active.md` — currently 4 days stale (mtime 2026-05-05, refers to "Monday demo" already past). Replace body with current state: ADRs 073–076 authored 2026-05-09; LINEAGE-NAV-1, LINEAGE-EXPORT-1, BP-SCHEMA-1 done; BLUEPRINT IDE form/escape/undo/help/color/flag still open; first recommended next step is `BP-FLAG-1`.
+
+- [ ] **AUDIT-RULES-FLAGS-UPDATE** `[haiku/low]`: Update `rules_persona_feature_flags.md` "Known violations" table — all 5 listed violations have been fixed (verified clean 2026-05-09 by grep; no `persona ==`/`persona in (` in runtime control flow). Replace the table with: _"Verified clean as of 2026-05-09. Re-run `grep -E 'persona\s*==|persona\s+in\s*\(' app/handlers/ app/src/` before each release."_ Also: mark task `25-O` as complete in the task list (it's implicitly done by SIDEBAR-REGISTRY-1, but not closed).
+
+- [ ] **AUDIT-ADR072-STUB** `[haiku/low]`: Insert an `## ADR-072: [RESERVED — numbering gap]` stub in `architecture_decisions.md` between ADR-071 and ADR-073. One-line body: "Number accidentally skipped; not used. Do not assign." Also move ADR-069 entry to appear before ADR-070/071 in the file (currently out of order — ADR-069 was inserted at line 2188, after ADR-070 at line 2036 and ADR-071 at line 2068).
+
+- [ ] **AUDIT-QUALITY-WRANGLING** `[haiku/low]`: `config/manifests/pipelines/1_test_data_ST22_dummy/wrangling/Quality_metrics_wrangling.yaml` is 14 bytes — content `wrangling: []` (flat legacy list). Either convert to `wrangling:\n  tier1: []\n` or delete if the schema is unused. Cross-check if any `!include` references it in `1_test_data_ST22_dummy.yaml` first; if unreferenced, delete.
+
+- [ ] **AUDIT-PHANTOM-TEST** `[haiku/low]`: Fix `rules_verification_testing.md §8` "Pre-existing broken libs" — lists `libs/utils/tests/test_config_loader.py` (does not exist). Actual file is `debug_config_loader.py`. Update the rule to reference the correct filename, or remove the line entirely if the ImportError is no longer relevant.
+
+### P1 — Documentation reconciliation (30 min each, haiku/low)
+
+- [ ] **AUDIT-CHANGELOG-UPDATE** `[haiku/low]`: Append entries to `changelog.md` for: Phase 28 (Export Redesign + `assembly_manifests` → `join_manifests` rename, 2026-05-04), Phase 29 (Library Extraction: `blueprint_arch` + `test_lab` as new libs, `dev_studio` → `test_lab_studio`, 2026-05-05), Phase 31 (Sidebar Slot Registry ADR-073, 2026-05-09), Phase 32 STARTED (LINEAGE-NAV-1 + LINEAGE-EXPORT-1 + BP-SCHEMA-1 done 2026-05-09). Roll up ADRs 066–076 with one-line summaries each.
+
+- [ ] **AUDIT-WRANGLE-FLAG** `[haiku/low]`: Add `wrangle_studio_enabled` to `app/modules/persona_validator.py` `_REQUIRED_FLAGS` list. Verify all 8 persona templates declare it explicitly (currently absent from `pipeline-static_template.yaml` — add `wrangle_studio_enabled: false`).
+
+- [ ] **AUDIT-DEMO-PERSONAS** `[haiku/low]`: Add `demo-vetinst` and `web-demo` to the Full Flag Matrix in `rules_persona_feature_flags.md`. Rules currently say "Six personas exist" but 8 templates are present and validated. Add columns 7–8 to the table, or add a dedicated "§Demo personas" subsection with their flag values.
+
+- [ ] **AUDIT-ABROMICS-CHECK** `[haiku/low]`: Read `config/manifests/pipelines/1_Abromics_general_pipeline.yaml`. Count data sources (number of `data_schemas:` entries). If >3, flag for basename mirroring refactor (rules_manifest_structure.md §1). If ≤3 and <150 lines, add a comment at top confirming intentional inline form. Report finding.
+
+- [ ] **AUDIT-PLAN-ORDER** `[haiku/low]`: Sort `implementation_plan_master.md` phases chronologically. Current order is: 24, 26, 27, 28, 31, 29, 25, 32, 23 — should be sequential by phase number with a "Completed" block at top and "Planned" block at bottom.
+
+### P2 — Code cleanup (1 session each)
+
+- [ ] **AUDIT-SGE-CLEANUP** `[sonnet/low]`: `app/handlers/single_graph_export_handlers.py` is still imported and wired in `home_theater.py` (`from app.handlers.single_graph_export_handlers import define_single_graph_export_server`; called in `define_server()`), but the SGE accordion panel was removed from the sidebar in the 2026-05-04 export redesign. The render registrations are therefore orphaned. **Action:** (1) Confirm no SGE UI elements remain in `ui.py` or any template. (2) Remove the `from ...single_graph_export_handlers import ...` line from `home_theater.py` and the `define_single_graph_export_server(...)` call. (3) Delete `single_graph_export_handlers.py`. (4) Update `@deps` in `home_theater.py`. Run baseline tests after.
+
+- [ ] **AUDIT-NOTIF-UTIL-MOVE** `[haiku/low]`: `app/handlers/notification_utils.py` has zero `@render.*`/`@reactive.*` decorators (verified 2026-05-09). It is a pure utility — violates the Two-Category Law spirit by living in `handlers/`. Move to `app/modules/notification_utils.py`, update all import paths, update `@deps` blocks in callers.
+
+- [ ] **AUDIT-CSS-SWEEP** `[sonnet/medium]`: Move inline `style=` attributes from handlers to `config/ui/theme.css` classes. Current density: `filter_and_audit_handlers.py` 22, `home_theater.py` 22, `data_import_handlers.py` 20, `audit_stack.py` 18. Start with `filter_and_audit_handlers.py` (most regressions likely there — filter row layout, audit card colours). Pattern: (1) scan for repeated values (e.g., `style="font-size:0.8em;"`) → extract to `.filter-row-meta` or similar; (2) truly unique one-off styles can stay. ADR-055 compliance. This also unblocks clean `BP-AGENT-CSS-1` implementation.
+
+- [ ] **AUDIT-PLASMID-VERIFY** `[sonnet/low]`: Run `debug_assembler.py` against the Plasmid Dynamics lineage and inspect TSV output. If assembly succeeds and output is correct, mark `Lineage 2 (Plasmid Dynamics)` task `[x]` with today's date. If it fails, replace the open sub-bullets with concrete error-specific tasks.
+  ```bash
+  .venv/bin/python libs/transformer/tests/debug_assembler.py \
+    --manifest config/manifests/pipelines/2_test_data_ST22_dummy.yaml \
+    --tmp tmpAI/2026-05-09/2_test_data_ST22_dummy/
+  ```
+
+- [ ] **AUDIT-SERVER-SLIM** `[sonnet/medium]`: `app/src/server.py` is 302 lines — over the 250-line ADR-051 cap. Extract `_safe_input()` and `_apply_tier2_transforms()` (pure helpers shared across handlers) into `app/modules/orchestrator_helpers.py`. Target: ≤250 lines in `server.py`. Verify `from app.src.main import app` import still clean after extraction; run baseline tests.
+
+- [ ] **AUDIT-ADR076-MVP** `[opus/medium]`: Define a 1-page MVP-1 scope for ADR-076 (BLUEPRINT AI Agent Helper) before implementation starts. MVP-1 criteria: (1) `DisabledAdapter` + `ClaudeCliAdapter` only; (2) `get_available_actions` + `get_available_components` + `get_field_contract` tools only (no `propose_manifest_diff` yet); (3) chat panel renders responses; (4) no `BP-AGENT-REPORT-1` session bundle. Write the scope definition as a `## ADR-076 MVP-1` subsection in `architecture_decisions.md` or as a `.claude/design/adr076_mvp.md`. This prevents the feature from becoming a 4–6 week sink.
+
+---
+
 ## 🔴 Open Issues
 
 ### Export / Reproducibility

@@ -101,38 +101,41 @@ blueprint_enabled: true/false        ← GATE for Blueprint Architect
 
 ## Full Flag Matrix (Authoritative Values)
 
-Six personas exist (`config/ui/templates/`). `qa` is a CI/headless-test persona with the same gates as `developer` plus `automation.ghost_save: false` for deterministic Playwright runs.
+Eight personas exist (`config/ui/templates/`):
+- **Six standard personas:** static, simple, advanced, independent, developer, qa.
+- **Two demo personas:** demo-vetinst (disabled reference), web-demo (minimal interaction).
+- **Note:** `qa` is a CI/headless-test persona with the same gates as `developer` plus `automation.ghost_save: false` for deterministic Playwright runs.
 
-| Flag | static | simple | advanced | independent | developer | qa |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| `interactivity_enabled` | false | true | true | true | true | true |
-| `t3_sandbox_enabled` | false | false | true | true | true | true |
-| `wrangle_studio_enabled` | false | true | true | true | true | true |
-| `comparison_mode_enabled` | false | true | true | true | true | true |
-| `session_management_enabled` | false | true | true | true | true | true |
-| `export_enabled` | true | true | true | true | true | true |
-| `audit_report_enabled` | false | false | true | true | true | true |
-| `metadata_ingestion_enabled` | false | false | true | true | true | true |
-| `import_helper_enabled` | false | false | false | true | true | true |
-| `data_ingestion_enabled` | false | false | false | true | true | true |
-| `developer_mode_enabled` | false | false | false | false | true | true |
-| `gallery_enabled` | false | false | false | **true** | true | true |
-| `blueprint_enabled` | false | false | false | true | true | true |
-| `test_lab_enabled` | false | false | false | false | true | true |
-| `manifest_edit_enabled` | false | false | false | false | true | true |
+| Flag | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `interactivity_enabled` | false | false | true | true | true | true | true | true |
+| `t3_sandbox_enabled` | false | false | false | false | true | true | true | true |
+| `wrangle_studio_enabled` | false | false | true | false | true | true | true | true |
+| `comparison_mode_enabled` | false | false | true | false | true | true | true | true |
+| `session_management_enabled` | false | false | true | false | true | true | true | true |
+| `export_enabled` | true | false | true | false | true | true | true | true |
+| `audit_report_enabled` | false | false | false | false | true | true | true | true |
+| `metadata_ingestion_enabled` | false | false | false | false | true | true | true | true |
+| `import_helper_enabled` | false | false | false | false | false | true | true | true |
+| `data_ingestion_enabled` | false | false | false | false | false | true | true | true |
+| `developer_mode_enabled` | false | false | false | false | false | false | true | true |
+| `gallery_enabled` | false | false | false | false | false | **true** | true | true |
+| `blueprint_enabled` | false | false | false | false | false | true | true | true |
+| `test_lab_enabled` | false | false | false | false | false | false | true | true |
+| `manifest_edit_enabled` | false | false | false | false | false | false | true | true |
 
 **Phase 25 additions** (per ADR-052; not feature flags but persona-template fields):
 
-| Field | static | simple | advanced | independent | developer | qa |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| `manifest_selector.visible` | false | false | true | true | true | true |
-| `testing_mode` | false | false | true | true | true | true |
+| Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `manifest_selector.visible` | false | false | false | false | true | true | true | true |
+| `testing_mode` | false | false | false | false | true | true | true | true |
 
 **Phase 31 additions** (per ADR-075):
 
-| Field | static | simple | advanced | independent | developer | qa |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| `manifest_edit_enabled` | false | false | false | false | true | true |
+| Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `manifest_edit_enabled` | false | false | false | false | false | false | true | true |
 
 ---
 
@@ -186,28 +189,11 @@ if persona in ("pipeline-exploration-advanced", "project-independent", "develope
 
 **Corollary:** If a behavior needs gating but no flag exists, add a flag to all six templates and use that flag. Do not add a persona name check.
 
-**Known violations (tech debt — tracked in task 25-O):**
-
-| File | Location | Current check | Required flag |
-|---|---|---|---|
-| `app/src/ui.py` | line ~410 | `persona in ("pipeline-static", "pipeline-exploration-simple")` | `t3_sandbox_enabled` (new) |
-| `app/handlers/gallery_handlers.py` | line ~35 | `_T3_PERSONAS = {...}` set + two use sites | `t3_sandbox_enabled` (new) |
-| `app/handlers/export_handlers.py` | line ~240 | `persona in (advanced, independent, developer, qa)` | `t3_sandbox_enabled` (new) |
-| `app/handlers/home_theater.py` | line ~538 | `persona in (advanced, independent, developer)` | `t3_sandbox_enabled` (new) |
-| `app/handlers/home_theater.py` | line ~1134 | `persona in hidden_personas` | `t3_sandbox_enabled` (new) |
-
-**`t3_sandbox_enabled` proposed values:**
-
-| Persona | Value |
-|---|:---:|
-| pipeline-static | false |
-| pipeline-exploration-simple | false |
-| pipeline-exploration-advanced | true |
-| project-independent | true |
-| developer | true |
-| qa | true |
-
-4. ~~Right sidebar suppression: enforced structurally in `server.py` / `ui.py` based on persona level string comparison — not via a flag.~~ **PROHIBITED — see above. Will be replaced by `t3_sandbox_enabled` in task 25-O.**
+**Verification Status:** Verified clean 2026-05-09 by manual grep of `app/handlers/ app/src/`. No runtime `persona ==` or `persona in (...)` comparisons found in control flow. All persona-gating now uses `bootloader.is_enabled(flag)`. Task 25-O is **complete**. To catch future regressions, re-run at next release:
+```bash
+grep -E 'persona\s*==|persona\s+in\s*\(' app/handlers/ app/src/ app/modules/
+```
+Should return zero hits (only docstrings/comments allowed).
 
 ---
 

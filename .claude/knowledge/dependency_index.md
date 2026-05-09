@@ -52,7 +52,7 @@
 ## `.claude/rules/rules_ui_dashboard.md`
 - **Role:** `meta`
 - **provides:** `rule:ui_orchestration`, `rule:theatre_layout`, `rule:sidebar_law`
-- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/utils/src/utils/blueprint_mapper.py`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_verification_testing.md`
@@ -66,15 +66,6 @@
 - **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
 - **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
 - **consumed_by:** `.claude/rules/rules_persona_bioscientist.md`, `.claude/knowledge/dependency_index.md`
-
-## `EVE_WORK/daily/2026-04-24/GEM_CONTEXT_2026-04-24_072114.md`
-- **Role:** `info`
-- **provides:** `action:cast`, `action:coalesce        ← registration names others consume by string`
-- **consumes:** `libs/transformer/src/transformer/actions/base.py`
-- **mirrors:** `app/modules/orchestrator.py           ← must stay behaviourally in sync`
-- **documents:** `—`
-- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`
 
 ## `app/handlers/__init__.py`
 - **Role:** `ref`
@@ -106,9 +97,9 @@
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`
-- **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `polars`, `shiny`
+- **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `polars`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/design/export_specification.md`
 
 ## `app/handlers/filter_and_audit_handlers.py`
 - **Role:** `ref`
@@ -127,9 +118,9 @@
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_reference`, `output:table_reference`, `output:plot_leaf`, `output:table_leaf`, `output:comparison_mode_toggle_ui`, `output:plot_cell_{p_id} (per-plot)`
-- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_recipe_engine.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/handlers/single_graph_export_handlers.py`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_recipe_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/handlers/single_graph_export_handlers.py`
 - **consumed_by:** `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`
 
 ## `app/handlers/ingestion_handlers.py`
 - **Role:** `ref`
@@ -157,12 +148,6 @@
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-052`
 
-## `app/modules/test_lab_studio.py`
-- **Role:** `ref`
-- **provides:** `class:TestLabStudio`
-- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-003`
-
 ## `app/modules/exporter.py`
 - **Role:** `ref`
 - **provides:** `class:SubmissionExporter`, `function:generate_methods_text`, `function:render_audit_report`
@@ -183,12 +168,6 @@
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_data_engine.md`
 
-## `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`
-- **Role:** `ref`
-- **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`
-- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`
-
 ## `app/modules/orchestrator.py`
 - **Role:** `ref`
 - **provides:** `pipeline:materialize_tier1`
@@ -204,12 +183,32 @@
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`
 
+## `app/modules/sidebar_registry.py`
+- **Role:** `ref`
+- **provides:** `PANEL_REGISTRY (dict)`, `is_panel_active (function)`
+- **consumes:** `app/src/bootloader.py (via callers)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `app/modules/sidebar_validator.py`
+- **Role:** `ref`
+- **provides:** `class:SidebarValidator`
+- **consumes:** `app/modules/sidebar_registry.py`, `config/ui/templates/*.yaml`, `config/ui/sidebars/*.yaml`
+- **consumed_by:** `app/src/server.py`, `scripts/validate_persona_config.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
 ## `app/modules/t3_recipe_engine.py`
 - **Role:** `ref`
 - **provides:** `function:_apply_filter_rows`
 - **consumes:** `polars`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-051`
+
+## `app/modules/test_lab_studio.py`
+- **Role:** `ref`
+- **provides:** `class:TestLabStudio`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-003`
 
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
@@ -220,10 +219,10 @@
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
-- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`
-- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `connector (get_connector)`
-- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
-- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `project_conventions.md §"Deployment Profile Resolution`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`
+- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `project_conventions.md §"Deployment Profile Resolution`
 
 ## `app/src/main.py`
 - **Role:** `ref`
@@ -234,7 +233,7 @@
 ## `app/src/server.py`
 - **Role:** `ref`
 - **provides:** `server (Shiny server function)`
-- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio`, `app.modules.test_lab_studio`, `app.modules.gallery_viewer`, `app.modules.persona_validator`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio`, `app.modules.test_lab_studio`, `app.modules.gallery_viewer`, `app.modules.persona_validator`, `app.modules.sidebar_validator`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-045`, `ADR-003`
 
@@ -324,7 +323,7 @@
 ## `assets/scripts/generate_demo_data.py`
 - **Role:** `info`
 - **provides:** `script:generate_demo_data`
-- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer standalone functions)`
+- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer)`
 - **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
 - **doc:** `libs/test_lab/README.md`
 
@@ -362,6 +361,25 @@
 - **include_parent:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`
 - **consumed_by:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/rules/rules_manifest_structure.md#7`
+
+## `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **Role:** `info`
+- **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/rules/rules_ui_dashboard.md`
+
+## `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`
+- **Role:** `info`
+- **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-074`
+
+## `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`
+- **consumes:** `registry:ACTION_SCHEMAS (libs/transformer/src/transformer/actions/base.py)`, `registry:COMPONENT_SCHEMAS (libs/viz_factory/src/viz_factory/registry.py)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md (ADR-075)`, `.claude/rules/rules_app_structure.md §2`
 
 ## `libs/connector/src/connector/__init__.py`
 - **Role:** `info`
@@ -425,9 +443,15 @@
 - **consumes:** `class:FilesystemConnector`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
 
+## `libs/ingestion/src/ingestion/ingestor.py`
+- **Role:** `wrangle`
+- **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`
+
 ## `libs/test_lab/src/test_lab/aqua_synthesizer.py`
 - **Role:** `info`
-- **provides:** `standalone helpers: clean_header`, `generate_fake_column`, `introduce_missing_values`
+- **provides:** `AquaSynthesizer class (synthesize)`, `standalone helpers: clean_header`, `generate_fake_column`, `introduce_missing_values`
 - **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse (stdlib)`
 - **consumed_by:** `assets/scripts/generate_demo_data.py`, `libs/test_lab/tests/debug_sdk.py`
 
@@ -449,17 +473,11 @@
 - **consumes:** `polars`, `re`, `pathlib`, `typing`, `collections`, `yaml (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/debug_reconciler.py`, `libs/test_lab/tests/debug_ambiguity.py`, `libs/test_lab/tests/demo_reconciler.py`
 
-## `libs/ingestion/src/ingestion/ingestor.py`
-- **Role:** `wrangle`
-- **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
-- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`
-
 ## `libs/transformer/src/transformer/actions/base.py`
 - **Role:** `wrangle`
-- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`
-- **consumed_by:** `libs/transformer/src/transformer/actions/cleaning/core.py`, `libs/transformer/src/transformer/actions/cleaning/analytical.py`, `libs/transformer/src/transformer/actions/cleaning/advanced.py`, `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/src/transformer/actions/relational/joins.py`, `libs/transformer/src/transformer/actions/reshaping/core.py`, `libs/transformer/src/transformer/actions/performance/aggregation.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`
-- **doc:** `.claude/rules/rules_data_engine.md`
+- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`, `registry:ACTION_SCHEMAS`
+- **consumed_by:** `libs/transformer/src/transformer/actions/cleaning/core.py`, `libs/transformer/src/transformer/actions/cleaning/analytical.py`, `libs/transformer/src/transformer/actions/cleaning/advanced.py`, `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/src/transformer/actions/relational/joins.py`, `libs/transformer/src/transformer/actions/reshaping/core.py`, `libs/transformer/src/transformer/actions/performance/aggregation.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/advanced.py`
 - **Role:** `wrangle`
@@ -470,20 +488,20 @@
 ## `libs/transformer/src/transformer/actions/cleaning/analytical.py`
 - **Role:** `wrangle`
 - **provides:** `action:window_agg`, `action:shift`, `action:fill_nulls_direction`, `action:sort`, `action:sample`, `action:cum_sum`, `action:cum_count`, `action:date_extract`, `action:date_truncate`, `action:list_slice`, `action:list_join`, `action:is_in`, `action:z_score`, `action:percentile`, `action:value_counts`, `action:describe_stats`, `action:select_by_pattern`, `action:horizontal_stats`, `action:any_horizontal`, `action:all_horizontal`, `action:interpolate`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/core.py`
 - **Role:** `wrangle`
 - **provides:** `action:fill_nulls`, `action:drop_nulls`, `action:replace_values`, `action:rename`, `action:drop_duplicates`, `action:unique_rows`, `action:recode_values`, `action:sanitize_column_names`, `action:keep_columns`, `action:drop_columns`, `action:strip_whitespace`, `action:round_numeric`, `action:filter_range`, `action:add_constant`, `action:filter_eq`, `action:rename_columns`, `action:unique`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/expressions.py`
 - **Role:** `wrangle`
 - **provides:** `action:regex_extract`, `action:cast`, `action:coalesce`, `action:label_if`, `action:mutate`, `action:regex_replace`, `action:null_if`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/performance/aggregation.py`
 - **Role:** `wrangle`
@@ -500,14 +518,14 @@
 ## `libs/transformer/src/transformer/actions/relational/joins.py`
 - **Role:** `wrangle`
 - **provides:** `action:join`, `action:join_filter`
-- **consumed_by:** `any YAML manifest using join steps`, `.claude/rules/rules_persona_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`
+- **consumed_by:** `any YAML manifest using join steps`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/reshaping/core.py`
 - **Role:** `wrangle`
 - **provides:** `action:unpivot`, `action:explode`, `action:unnest`, `action:split_to_list`, `action:to_struct`, `action:pivot`, `action:split_column`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/data_assembler.py`
 - **Role:** `wrangle`
@@ -614,12 +632,6 @@
 - **consumed_by:** `CI / manual audit`
 - **doc:** `.claude/rules/rules_data_engine.md`
 
-## `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
-- **Role:** `ref`
-- **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
-- **consumed_by:** `app/handlers/blueprint_handlers.py`
-- **doc:** `.claude/rules/rules_ui_dashboard.md`
-
 ## `libs/utils/src/utils/config_loader.py`
 - **Role:** `ref`
 - **provides:** `class:ConfigManager`
@@ -656,8 +668,8 @@
 ## `libs/viz_factory/src/viz_factory/geoms/core.py`
 - **Role:** `plot`
 - **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
-- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
-- **doc:** `.claude/rules/rules_viz_factory.md`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/viz_factory/src/viz_factory/guides/core.py`
 - **Role:** `plot`
@@ -673,9 +685,9 @@
 
 ## `libs/viz_factory/src/viz_factory/registry.py`
 - **Role:** `plot`
-- **provides:** `decorator:register_plot_component`, `registry:PLOT_COMPONENTS`, `function:get_component`
-- **consumed_by:** `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
-- **doc:** `.claude/rules/rules_viz_factory.md`
+- **provides:** `decorator:register_plot_component`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `function:get_component`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/viz_factory/src/viz_factory/scales/core.py`
 - **Role:** `plot`
@@ -763,7 +775,6 @@
 
 Pairs with `mirrors:` coupling — must always be edited together:
 
-- `EVE_WORK/daily/2026-04-24/GEM_CONTEXT_2026-04-24_072114.md` ↔ `app/modules/orchestrator.py           ← must stay behaviourally in sync`
 - `app/modules/orchestrator.py` ↔ `libs/transformer/tests/debug_assembler.py`
 - `libs/transformer/tests/debug_assembler.py` ↔ `app/modules/orchestrator.py`
 - `libs/transformer/tests/debug_wrangler.py` ↔ `app/modules/orchestrator.py (Tier 1 wrangling path)`

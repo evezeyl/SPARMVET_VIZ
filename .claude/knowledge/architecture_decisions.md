@@ -2185,7 +2185,17 @@ if bootloader.is_enabled("blueprint_enabled"):
 
 ---
 
+## ADR-072: [RESERVED — Numbering Gap]
+
+**Status:** RESERVED
+
+Number accidentally skipped during ADR authoring (2026-05-05 to 2026-05-09). Verified via git history: never created or deleted — a true gap. Available for future ADR assignment if needed.
+
+---
+
 ## ADR-069: Complete Export Audit Trail Standard (2026-05-05)
+
+⚠️ **Note:** This ADR was inserted out of sequence (2026-05-05). It appears after ADR-070/071 in the file but should chronologically precede them. Will be sorted numerically in a future documentation pass.
 
 **Status:** DECIDED — implementation pending
 

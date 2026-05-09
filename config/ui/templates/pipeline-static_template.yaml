@@ -10,6 +10,8 @@ features:
   interactivity_enabled: false
   # Does the user have access to the Developer Studio / Wrangle Studio tools?
   developer_mode_enabled: false
+  # Does the user have access to the Wrangle Studio (T2 reference wrangling)?
+  wrangle_studio_enabled: false
   # Does the user have access to the Gallery Browser?
   gallery_enabled: false
   # Can the user access the Blueprint Architect (manifest IDE)?

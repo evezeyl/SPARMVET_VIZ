@@ -129,7 +129,7 @@ PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shi
 These fail due to ImportError unrelated to Playwright infrastructure:
 
 - `libs/test_lab/tests/debug_sdk.py` (no pytest entrypoint — run manually)
-- `libs/utils/tests/test_config_loader.py`
+- `libs/utils/tests/debug_config_loader.py` (ImportError — out of scope)
 - `app/tests/test_reactive_shell.py` — 2 failures (`#persona_selector` does not exist as rendered UI)
 - `app/tests/test_ui_scenarios.py` — 1 failure (same cause)
 

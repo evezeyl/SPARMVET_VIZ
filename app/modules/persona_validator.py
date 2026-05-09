@@ -12,6 +12,7 @@ import yaml
 _REQUIRED_FLAGS = [
     "interactivity_enabled",
     "t3_sandbox_enabled",
+    "wrangle_studio_enabled",
     "developer_mode_enabled",
     "gallery_enabled",
     "blueprint_enabled",

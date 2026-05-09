@@ -368,7 +368,7 @@ def main():
     print(f"  ✅ dep_graph.json → {graph_path}")
 
     # Emit dependency_index.md (auto-generated)
-    index_path = root / ".antigravity" / "knowledge" / "dependency_index.md"
+    index_path = root / ".claude" / "knowledge" / "dependency_index.md"
     emit_dependency_index(nodes, index_path)
 
     print(f"\n  Open assets/dep_graph.html in a browser to explore the graph.")
