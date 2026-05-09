@@ -650,6 +650,8 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 ---
 
+> **Numbering note:** Phase 30 was skipped — same as the gaps at Phases 13–15 (see Phase 11 note). Work for that period was tracked directly in git commits and ADRs. Phases 31+ are PLANNED/IN-PROGRESS.
+
 ## Phase 31: Sidebar Slot Registry + Export Provenance (PLANNED — 2026-05-09)
 
 **ADRs:** ADR-073 (Configurable Sidebar Slot Registry), ADR-069 amendment (per-source-file hash table)

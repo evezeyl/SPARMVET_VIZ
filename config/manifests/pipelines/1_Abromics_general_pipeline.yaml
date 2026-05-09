@@ -1,4 +1,6 @@
 # SECTION PIPELINE MANIFESTS
+# Inline form intentional: 3 data_schemas, 119 lines — below basename-mirroring thresholds
+# (rules_manifest_structure.md §1: trigger at >3 sources OR >150 lines). Verified 2026-05-09.
 id: 1_Abromics_general_pipeline
 type: pipeline
 info:

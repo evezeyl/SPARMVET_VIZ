@@ -6,29 +6,43 @@ deferred to the pre-deployment review sprint. See §4 for the implementation tri
 
 ---
 
-## 1. Emoji Prohibition in Python Files (ACTIVE — enforced immediately)
+## 1. Emoji Scope Rule (ACTIVE — enforced immediately)
 
-**No emojis in any `.py` file.** This applies to:
-- Inline comments (`# ✅ done` → `# done`)
-- Docstrings (`"""Returns ✅ if valid"""` → `"""Returns True if valid."""`)
-- String literals used as labels or log messages
-- `@register_action("name")` arguments (already snake_case — no emoji)
-- Exception messages and error strings
-- `print()` / `logger` calls
+**The guiding principle:** emojis belong in user-facing output and human-readable documents,
+not in source logic or developer-level annotations.
 
-**Allowed elsewhere:**
-- `label:` values in YAML manifests (`analysis_groups` tabs, `recipe_meta.md`)
-- `.md` files: tasks, changelogs, rules docs, README files
-- `tasks.md` section headers (they use emoji as priority signals)
-- Quarto `.qmd` documentation
+### Forbidden in Python
 
-**Why:** Emojis in Python source create encoding ambiguity in some terminals, break
-grep patterns, and are not professional developer-level code style. The Violet Law
-and manifest labels use them for user-facing UI strings — that is the correct scope.
+| Location | Example violation | Replacement |
+|---|---|---|
+| Inline comments | `# ✅ done` | `# done` |
+| Docstrings | `"""Returns ✅ if valid"""` | `"""Returns True if valid."""` |
+| Exception / error messages (raised) | `raise ValueError("❌ missing key")` | `raise ValueError("Missing key: ...")` |
+| Decorator arguments | `@register_action("cast 🔧")` | `@register_action("cast")` |
+| Variable names, class names | `status_✅ = True` | (obviously forbidden) |
 
-**Enforcement:** The `audit_code_quality.py` script (see §3) flags emoji occurrences
-in `.py` files when run. Until that script exists, agents must self-enforce on every
-file they touch.
+### Allowed in Python
+
+| Location | Rationale |
+|---|---|
+| `print()` statements in debug/test scripts that report PASS/FAIL to the terminal | User-facing output — the emojis are the signal (`✅ PASS`, `❌ FAIL`) |
+| `print()` progress banners in debug scripts (`🚀 LAYER 1 WRANGLER DEBUGGER`) | Developer-facing terminal UX — acceptable in test/debug scripts only |
+| Production `print()` only if it is explicitly a status line shown to the user | Rare — most production output should use logging without emojis |
+
+### Always allowed (not Python)
+
+- YAML `label:` values in `analysis_groups`, `recipe_meta.md`, gallery bundles
+- All `.md` files: tasks, changelogs, rules, README, handoffs
+- Quarto `.qmd` documentation files
+- `tasks.md` section headers and priority markers
+
+**The test/debug script exception is intentional.** Scripts like `debug_wrangler.py` and
+`transformer_integrity_suite.py` produce terminal tables for developer review — the emoji
+status icons (`✅`, `❌`, `🔴`, `🟢`) serve a functional role there and should be kept.
+
+**Why the ban exists for source logic:** Emojis in docstrings and comments break grep,
+reduce professionalism in shared code, and are invisible in some IDEs and CI logs.
+They carry no information that words cannot express more precisely.
 
 ---
 

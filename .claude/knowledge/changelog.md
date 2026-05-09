@@ -89,13 +89,31 @@ See task `ASSEMBLY-RENAME` in `.claude/tasks/tasks.md` for the 5-pass VSCode che
 
 ---
 
+## [2026-05-09] — ADR 066–076 rollup
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| ADR-066 | Rename `assembly_manifests` → `join_manifests` — avoids bioinformatics term collision; affects all manifest YAMLs and ~21 Python files | DECIDED |
+| ADR-067 | Extract `libs/blueprint_arch/` — pure-Python manifest navigation + TubeMap; headless-safe, zero Shiny imports | DECIDED |
+| ADR-068 | Extract `libs/test_lab/` — absorbs `generator_utils`, renames `dev_studio.py` → `test_lab_studio.py` | DECIDED |
+| ADR-069 | Complete Export Audit Trail Standard — T3 recipe IS the audit trace; auto-included in `report.qmd`; no separate FILTERS.txt for T3 | DECIDED |
+| ADR-070 | Functionality-First Deployment Model — personas are named flag bundles, not the primary concept; behavior is always flag-driven | DECIDED |
+| ADR-071 | Deployment Hardening Standard — no CDN links; all assets vendored locally; no secrets in source; cross-panel output prohibition | DECIDED |
+| ADR-072 | [RESERVED] — numbering gap; no decision recorded | N/A |
+| ADR-073 | Configurable Sidebar Slot Registry — sidebar layout declared per-workspace in persona templates; two-layer flag resolution | DECIDED / IMPLEMENTED |
+| ADR-074 | Lineage Infrastructure as Shared Provision — `build_plot_lineage` + `get_plot_ids_in_group` in `libs/blueprint_arch/`; export bundle includes lineage DAG | DECIDED / PARTIAL |
+| ADR-075 | BLUEPRINT IDE Build Mode — `ui_schema` form builder; action picker; YAML escape hatch; 20-step undo; contextual help | DECIDED / PENDING |
+| ADR-076 | BLUEPRINT AI Agent Helper — multi-backend adapter (CLI/API/local); 7 agent tools; HTML-comment tool-call protocol | DECIDED / PENDING |
+
+---
+
 ## [2026-05-09] — Audit session (P0/P1 hygiene)
 
 ### Phase 32: Audit & documentation (IN PROGRESS)
 
-- **P0 completed:** AUDIT-DEPGRAPH-NOW (graphs refreshed), AUDIT-PHANTOM-TEST (test file reference verified), AUDIT-RULES-FLAGS-UPDATE (no persona name checks found).
-- **P1 completed:** AUDIT-WRANGLE-FLAG (all 8 templates declare wrangle_studio_enabled), AUDIT-DEMO-PERSONAS (flag matrix includes demo-vetinst and web-demo columns), AUDIT-ABROMICS-CHECK (manifest structure assessed: 4 components, <150 lines, inline form acceptable).
-- **P0 in progress:** AUDIT-HANDOFF-UPDATE (this file), AUDIT-PLAN-ORDER (implementation_plan_master.md phase reordering — complex, deferred to future session as sonnet/medium task).
+- **P0 completed:** AUDIT-DEPGRAPH-NOW (deps graph regenerated), AUDIT-HANDOFF-UPDATE (handoff rewritten), AUDIT-RULES-FLAGS-UPDATE (removed stale known-violation annotations; no runtime persona name checks found), AUDIT-ADR072-STUB (ADR-072 reserved stub confirmed; ADR-069 moved to correct chronological position), AUDIT-QUALITY-WRANGLING (empty unreferenced `Quality_metrics_assembly_wrangling.yaml` deleted), AUDIT-PHANTOM-TEST (phantom `test_config_loader.py` reference not present in file — no-op), AUDIT-CHANGELOG-UPDATE (this entry).
+- **P0 remaining:** AUDIT-WRANGLE-FLAG (`wrangle_studio_enabled` flag addition to PersonaValidator).
+- **P1 queued:** AUDIT-DEMO-PERSONAS (flag matrix demo columns), AUDIT-ABROMICS-CHECK (pipeline manifest structure assessment), AUDIT-PLAN-ORDER (implementation_plan_master.md phase reordering — escalated to sonnet/medium).
 
 ---
 

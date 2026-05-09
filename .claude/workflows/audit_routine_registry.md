@@ -410,6 +410,51 @@ Once manual test passes:
 
 ---
 
+### 12. Parity Mandate Coverage
+
+- **Purpose:** Verify that the `viz_factory` and `transformer` libraries maintain 1:1 functional parity with their upstream dependencies (ADR-035: Polars API parity; ADR-036: Plotnine/ggplot2 parity). Reports new upstream symbols that have no registered wrapper, and stale registrations for symbols that no longer exist upstream. Uses `audit_exclusions.yaml` to filter known false positives (custom components, accepted tech debt).
+- **Frequency:** On-demand — run after any Polars or Plotnine library update, or before releases.
+- **Schedule:** Manual trigger (or triggered by `audit_package_deps` MAJOR/parity alert)
+- **Command:** `.venv/bin/python scripts/audit_parity_coverage.py --output .claude/logs/audits/audit_parity_coverage_$(date +%Y-%m-%d).md`
+- **Fast variants:**
+  - `--skip-polars` — check plotnine only
+  - `--skip-plotnine` — check polars only
+- **Output:** `.claude/logs/audits/audit_parity_coverage_YYYY-MM-DD.md`
+- **Violations checked:**
+  - `NEW` — upstream symbol with no registered wrapper and not in exclusions → PARITY gap
+  - `STALE (unresolved)` — registered wrapper for symbol that no longer exists upstream and not in exclusions → exit 1
+  - `STALE (accepted)` — stale wrapper acknowledged in `audit_exclusions.yaml` → informational only
+  - `CUSTOM` — registration flagged as intentional SPARMVET extension (in exclusions) → informational
+- **Exclusions:** `.claude/workflows/audit_exclusions.yaml` (key: `parity_coverage`)
+- **Owner:** Manual (CLI)
+- **Status:** `[ ] Planned`
+
+---
+
+### 13. Manifest Coherence
+
+- **Purpose:** Static validation of all manifests in `config/manifests/pipelines/` without running the assembler. Checks four things: (1) TSV source column headers match `input_fields` slugs; (2) all wrangling `action:` names are registered; (3) all `layers: name:` values in plot specs are registered; (4) join `'on':` keys are valid (catches the YAML boolean trap: bare `on:` key). Uses `audit_exclusions.yaml` for known false positives (e.g. assembly-derived join keys not in `input_fields`).
+- **Frequency:** Weekly (Wednesdays 22:00) — same slot as Routine 3 (Manifest Structure Integrity).
+- **Schedule:** Wednesdays 22:00 local time (cron: `0 22 * * 3`)
+- **Command:** `.venv/bin/python scripts/audit_manifest_coherence.py --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md`
+- **Fast variants:**
+  - `--skip-tsv` — skip TSV column vs input_fields check (faster if no source data changes)
+  - `--skip-join` — skip join key validation
+  - `--manifest config/manifests/pipelines/foo.yaml` — single manifest only
+- **Output:** `.claude/logs/audits/audit_manifest_coherence_YYYY-MM-DD.md`
+- **Violations checked:**
+  - `FIELD_MISSING` — `input_fields` slug not found in source TSV header
+  - `FIELD_EXTRA` — TSV column has no corresponding `input_fields` declaration
+  - `ACTION_UNKNOWN` — `action:` name not in `@register_action` registry
+  - `COMPONENT_UNKNOWN` — `layers: name:` not in `@register_plot_component` registry
+  - `JOIN_BARE_ON` — join step uses bare `on:` (YAML boolean trap) instead of quoted `'on':`
+  - `JOIN_KEY_UNDECLARED` — join key not declared in any schema's `input_fields` (unless in exclusions)
+- **Exclusions:** `.claude/workflows/audit_exclusions.yaml` (key: `manifest_coherence`)
+- **Owner:** Cloud (scheduled)
+- **Status:** `[ ] Planned`
+
+---
+
 ## 4. How Results Are Stored & Reviewed
 
 ### Output directory structure
@@ -611,7 +656,7 @@ chore: add audit routine for ADR-011 cross-lib violations
 
 ---
 
-**Status:** 8 routines designed and documented. Routines 1–5 ready for scheduling; Routines 6–8 added from handoff insights.  
+**Status:** 13 routines designed and documented. Routines 1–5 ready for scheduling; Routines 6–8 added from P0/P1 audit handoff; Routines 9–13 added 2026-05-09.  
 **Last Updated:** 2026-05-09  
-**Note:** Routines 6–8 capture validation checks discovered in P0/P1 audit (2026-05-09 handoff @dasharch). These will prevent recurrence of: phase ordering issues, changelog drift, and template flag gaps.
+**Note:** Routines 6–8 prevent recurrence of phase ordering issues, changelog drift, and template flag gaps. Routines 10–11 cover library test coverage and package health. Routines 12–13 cover parity mandates (ADR-035/036) and manifest coherence (static validation). All 13 are `[ ] Planned` — activate via [claude.ai/code/routines](https://claude.ai/code/routines) or `/schedule`.
 **Next Review:** After first routine completes (estimate 2026-05-12)

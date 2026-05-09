@@ -2033,6 +2033,73 @@ Additionally, CSS `border-radius: 0 0 7px 7px` was applied to inner navset-cards
 
 ---
 
+## ADR-069: Complete Export Audit Trail Standard (2026-05-05)
+
+**Status:** DECIDED — implementation pending
+
+**Context:** Export surfaces (bundle README, report.qmd, image files) currently include only a subset of provenance information. For scientific traceability, reproducibility, and regulatory/institutional compliance, every export must carry a complete, machine-readable and human-readable audit trail. This is a non-negotiable design requirement of the project.
+
+**Decision — three binding rules:**
+
+### Rule 1: All provenance fields are always present — no flag, no opt-out
+
+Every export surface must include the full provenance set below. There is no persona flag, configuration option, or UI toggle that disables this. If an export is generated, the audit trail is generated with it.
+
+### Rule 2: Complete provenance set (mandatory in every export)
+
+| Field | Description | Source |
+|---|---|---|
+| `data_batch_hash` | SHA256 of raw source files | `home_state["data_batch_hash"]` |
+| `manifest_sha256` | SHA256 of the loaded manifest YAML | `home_state["manifest_sha256"]` |
+| `decision_hash` | SHA256 of the wrangling recipe (all T1/T2 transforms) | Read from Parquet metadata key `sparmvet_decision_hash` at export time |
+| `git_commit` | Short git commit hash at runtime | `git rev-parse --short HEAD` |
+| `release_version` | Release tag + offset if ahead of tag | `git describe --tags --always` |
+| `created_at` | ISO 8601 UTC timestamp of export creation | `datetime.utcnow().isoformat() + "Z"` |
+| `manifest_name` | Human-readable manifest name/path | From loaded manifest `info.name` or path |
+| `persona_id` | Active persona ID at export time | `current_persona.id` |
+| `active_tier` | Data tier displayed at export (T1 / T2 / T3) | From `home_state` |
+| `software_versions` | Python, plotnine, polars, SPARMVET versions | `sys.version`, package metadata |
+| `data_source_paths` | Relative paths of all raw source files loaded | From `bootloader` manifest resolution |
+| `t3_recipe` | T3 audit steps (only when T3 active and has committed nodes) | From `t3_steps.yaml` content; omitted if T3 not active |
+| `plot_id` + `group_id` | Plot and group identifiers | For single-graph exports; omitted in global bundle |
+
+**Note on passive filter state:** Passive filters (applied by passive/non-T3 personas) are ephemeral and are NOT included in the audit trail. Only the T3 recipe captures modification state, because only T3 modifications are permanent and reproducible.
+
+### Rule 3: Image and binary file metadata embedding
+
+Any exported file that does not already contain the provenance information as visible text MUST have it embedded as file-level metadata. This ensures provenance survives file extraction from a bundle.
+
+| Format | Mechanism | Namespace prefix |
+|---|---|---|
+| PNG | `PngImagePlugin.PngInfo` iTXt chunks (Pillow) | `sparmvet:` |
+| SVG | `<metadata>` XML block inside `<svg>` | `sparmvet:` |
+| PDF | XMP metadata block | `sparmvet:` |
+
+Minimum fields in image metadata: `data_batch_hash`, `manifest_sha256`, `decision_hash`, `git_commit`, `release_version`, `created_at`, `plot_id`, `persona_id`.
+
+### Export surfaces and their required content
+
+| Surface | Full provenance set | Image metadata |
+|---|---|---|
+| Bundle README | ✅ All fields | N/A |
+| `report.qmd` / rendered HTML | ✅ All fields | N/A |
+| PNG plot images | Subset (8 fields above) | ✅ Embedded |
+| SVG plot images | Subset (8 fields above) | ✅ Embedded |
+| PDF exports | Subset (8 fields above) | ✅ Embedded |
+| `t3_steps.yaml` | T3 recipe fields only | N/A |
+
+**Implementation tasks:**
+- **EXPORT-HASH-2**: Read `decision_hash` from Parquet metadata at export time (existing task)
+- **EXPORT-VERSION-1**: Add `git_commit` + `release_version` to all export surfaces
+- **EXPORT-IMG-META-1**: Embed 8-field provenance subset in PNG/SVG/PDF file metadata (Pillow iTXt + SVG `<metadata>` + XMP)
+- **EXPORT-AUDIT-COMPLETE-1**: Add all remaining missing fields (`created_at`, `manifest_name`, `persona_id`, `active_tier`, `software_versions`, `data_source_paths`) to bundle README and report.qmd
+
+**Consequence:** Exports are slightly larger (metadata overhead is negligible). The `get_parquet_metadata_hash()` utility must be called at export time for each materialized Parquet file. A helper function `build_export_provenance()` should be introduced in `export_handlers.py` to assemble the full provenance dict once and pass it to all export surfaces, avoiding duplication.
+
+**Amendment (2026-05-09):** The bundle must include a per-source-file hash table (individual SHA256 for every raw data file loaded, not just the rolled-up `data_batch_hash`). Both must appear in README.txt and report.qmd so a reviewer can verify each input file independently, not just the aggregate. The `source_files` dict from the assembly ghost (keyed by dataset ID, value `{path, sha256}`) is the authoritative source.
+
+---
+
 ## ADR-070: Functionality-First Deployment Model — Personas are Named Bundles, Not the Primary Concept (2026-05-05)
 
 **Status:** DECIDED (2026-05-05)
@@ -2190,75 +2257,6 @@ if bootloader.is_enabled("blueprint_enabled"):
 **Status:** RESERVED
 
 Number accidentally skipped during ADR authoring (2026-05-05 to 2026-05-09). Verified via git history: never created or deleted — a true gap. Available for future ADR assignment if needed.
-
----
-
-## ADR-069: Complete Export Audit Trail Standard (2026-05-05)
-
-⚠️ **Note:** This ADR was inserted out of sequence (2026-05-05). It appears after ADR-070/071 in the file but should chronologically precede them. Will be sorted numerically in a future documentation pass.
-
-**Status:** DECIDED — implementation pending
-
-**Context:** Export surfaces (bundle README, report.qmd, image files) currently include only a subset of provenance information. For scientific traceability, reproducibility, and regulatory/institutional compliance, every export must carry a complete, machine-readable and human-readable audit trail. This is a non-negotiable design requirement of the project.
-
-**Decision — three binding rules:**
-
-### Rule 1: All provenance fields are always present — no flag, no opt-out
-
-Every export surface must include the full provenance set below. There is no persona flag, configuration option, or UI toggle that disables this. If an export is generated, the audit trail is generated with it.
-
-### Rule 2: Complete provenance set (mandatory in every export)
-
-| Field | Description | Source |
-|---|---|---|
-| `data_batch_hash` | SHA256 of raw source files | `home_state["data_batch_hash"]` |
-| `manifest_sha256` | SHA256 of the loaded manifest YAML | `home_state["manifest_sha256"]` |
-| `decision_hash` | SHA256 of the wrangling recipe (all T1/T2 transforms) | Read from Parquet metadata key `sparmvet_decision_hash` at export time |
-| `git_commit` | Short git commit hash at runtime | `git rev-parse --short HEAD` |
-| `release_version` | Release tag + offset if ahead of tag | `git describe --tags --always` |
-| `created_at` | ISO 8601 UTC timestamp of export creation | `datetime.utcnow().isoformat() + "Z"` |
-| `manifest_name` | Human-readable manifest name/path | From loaded manifest `info.name` or path |
-| `persona_id` | Active persona ID at export time | `current_persona.id` |
-| `active_tier` | Data tier displayed at export (T1 / T2 / T3) | From `home_state` |
-| `software_versions` | Python, plotnine, polars, SPARMVET versions | `sys.version`, package metadata |
-| `data_source_paths` | Relative paths of all raw source files loaded | From `bootloader` manifest resolution |
-| `t3_recipe` | T3 audit steps (only when T3 active and has committed nodes) | From `t3_steps.yaml` content; omitted if T3 not active |
-| `plot_id` + `group_id` | Plot and group identifiers | For single-graph exports; omitted in global bundle |
-
-**Note on passive filter state:** Passive filters (applied by passive/non-T3 personas) are ephemeral and are NOT included in the audit trail. Only the T3 recipe captures modification state, because only T3 modifications are permanent and reproducible.
-
-### Rule 3: Image and binary file metadata embedding
-
-Any exported file that does not already contain the provenance information as visible text MUST have it embedded as file-level metadata. This ensures provenance survives file extraction from a bundle.
-
-| Format | Mechanism | Namespace prefix |
-|---|---|---|
-| PNG | `PngImagePlugin.PngInfo` iTXt chunks (Pillow) | `sparmvet:` |
-| SVG | `<metadata>` XML block inside `<svg>` | `sparmvet:` |
-| PDF | XMP metadata block | `sparmvet:` |
-
-Minimum fields in image metadata: `data_batch_hash`, `manifest_sha256`, `decision_hash`, `git_commit`, `release_version`, `created_at`, `plot_id`, `persona_id`.
-
-### Export surfaces and their required content
-
-| Surface | Full provenance set | Image metadata |
-|---|---|---|
-| Bundle README | ✅ All fields | N/A |
-| `report.qmd` / rendered HTML | ✅ All fields | N/A |
-| PNG plot images | Subset (8 fields above) | ✅ Embedded |
-| SVG plot images | Subset (8 fields above) | ✅ Embedded |
-| PDF exports | Subset (8 fields above) | ✅ Embedded |
-| `t3_steps.yaml` | T3 recipe fields only | N/A |
-
-**Implementation tasks:**
-- **EXPORT-HASH-2**: Read `decision_hash` from Parquet metadata at export time (existing task)
-- **EXPORT-VERSION-1**: Add `git_commit` + `release_version` to all export surfaces
-- **EXPORT-IMG-META-1**: Embed 8-field provenance subset in PNG/SVG/PDF file metadata (Pillow iTXt + SVG `<metadata>` + XMP)
-- **EXPORT-AUDIT-COMPLETE-1**: Add all remaining missing fields (`created_at`, `manifest_name`, `persona_id`, `active_tier`, `software_versions`, `data_source_paths`) to bundle README and report.qmd
-
-**Consequence:** Exports are slightly larger (metadata overhead is negligible). The `get_parquet_metadata_hash()` utility must be called at export time for each materialized Parquet file. A helper function `build_export_provenance()` should be introduced in `export_handlers.py` to assemble the full provenance dict once and pass it to all export surfaces, avoiding duplication.
-
-**Amendment (2026-05-09):** The bundle must include a per-source-file hash table (individual SHA256 for every raw data file loaded, not just the rolled-up `data_batch_hash`). Both must appear in README.txt and report.qmd so a reviewer can verify each input file independently, not just the aggregate. The `source_files` dict from the assembly ghost (keyed by dataset ID, value `{path, sha256}`) is the authoritative source.
 
 ---
 

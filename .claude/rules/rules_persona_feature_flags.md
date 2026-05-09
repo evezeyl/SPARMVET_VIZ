@@ -242,9 +242,9 @@ Should return zero hits (only docstrings/comments allowed).
 | `app/src/bootloader.py` | Flag resolution logic (dependency enforcement, cascade, `is_enabled()`) |
 | `app/src/bootloader.py` | Persona loading, deployment profile resolution |
 | `app/handlers/home_theater.py` | Must use `bootloader.is_enabled()` — persona name checks are prohibited |
-| `app/handlers/gallery_handlers.py` | Must use `bootloader.is_enabled()` — `_T3_PERSONAS` set is a known violation |
-| `app/handlers/export_handlers.py` | Must use `bootloader.is_enabled()` — `is_advanced` persona check is a known violation |
-| `app/src/ui.py` | Must use `bootloader.is_enabled()` — right sidebar persona check is a known violation |
+| `app/handlers/gallery_handlers.py` | Must use `bootloader.is_enabled()` for feature gating |
+| `app/handlers/export_handlers.py` | Must use `bootloader.is_enabled()` for feature gating |
+| `app/src/ui.py` | Must use `bootloader.is_enabled()` for feature gating |
 | `app/handlers/blueprint_handlers.py` | Must gate YAML escape hatch writability on `bootloader.is_enabled("manifest_edit_enabled")` |
 | `app/handlers/blueprint_handlers.py` | Must gate the AI Agent chat panel on `bootloader.is_enabled("blueprint_agent_enabled")` AND a non-`DisabledAdapter` backend (ADR-076) |
 | `config/ui/agents/*.md` | System prompt templates (referenced by `blueprint_agent.instructions_file`). Created by BP-AGENT-INSTRUCT-1. |

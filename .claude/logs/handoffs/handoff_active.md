@@ -1,75 +1,57 @@
-# Handoff — Active State (2026-05-09 final)
+# Handoff — Active State (2026-05-09 continued)
 
 **Branch:** dev  
-**Latest commits:** BP-AGENT-PANEL-1, BP-AGENT-CSS-1, 21-F-7, TubeMap aesthetics, HELP-DOCS-1 (Phase 31), AUDIT-PLAN-ORDER  
 **Working tree:** clean, all changes committed  
-**Status:** P0 and P1 audit blocks ✅ COMPLETE
+**Status:** P0/P1 audit block IN PROGRESS — starting systematic execution
 
 ---
 
-## What landed today (6 commits + audit completions)
+## Session Status (as of 2026-05-09 ~13:00 local)
 
-Session spanned ADR-076/077/078 → feature implementation (5 commits) → P0/P1 audit verification + reorganization (1 commit).
+**Completed this session:**
+- AUDIT-DEPGRAPH-NOW [x] — deps regenerated, tree.txt updated
+- AUDIT-PLASMID-VERIFY [x] — both AMR and Plasmid assemblies verified; 8 cols/70 rows (AMR), 6 cols/163 rows (Plasmid), Year as String, all types correct
 
-| Commit | What |
-|---|---|
-| **e4bd1ad** | BP-AGENT-PANEL-1, BP-AGENT-CSS-1, 21-F-7 — sidebar panel registration, agent CSS, discrete scales |
-| **05d2133** | TubeMap aesthetics — renamed 'ref' node type to 'add' for semantic clarity |
-| **d011c30** | HELP-DOCS-1 — conditional docs bundling + DEPLOYMENT_CHECKLIST.md |
-| **5be7a95** | AUDIT-PLAN-ORDER — reordered implementation_plan_master.md chronologically (Phase 23 moved to correct position) |
-
-**Tasks closed:** 6 feature tasks + 8 P0/P1 audit tasks  
-**Feature commits:** 5  
-**Audit commits:** 1
+**In flight:**
+- P0/P1 audit block execution sequence started — targeting all 11 remaining tasks (7 P0 + 4 P1 + AUDIT-PLAN-ORDER)
 
 ---
 
-## P0 Audit Block — COMPLETE ✅
+## P0 Audit Block — IN PROGRESS
 
-All three P0 tasks verified complete or assessed:
+Seven P0 tasks queued in execution order:
 
-| Task | Status | Notes |
-|---|---|---|
-| AUDIT-PHANTOM-TEST | ✅ Complete | test file reference verified; cleaned up "Pre-existing broken libs" doc section |
-| AUDIT-HANDOFF-UPDATE | ✅ Complete | this document updated with final session state |
-| AUDIT-PLAN-ORDER | ✅ Complete | Phase 23 moved to correct chronological position; file now flows 22→23→24→...→32 |
-
----
-
-## P1 Audit Block — COMPLETE ✅
-
-All four P1 tasks verified complete:
-
-| Task | Status | Notes |
-|---|---|---|
-| AUDIT-CHANGELOG-UPDATE | ✅ Complete | comprehensive entries appended for Phases 28-32 |
-| AUDIT-WRANGLE-FLAG | ✅ Complete | all 8 templates declare wrangle_studio_enabled |
-| AUDIT-DEMO-PERSONAS | ✅ Complete | flag matrix includes demo-vetinst and web-demo columns |
-| AUDIT-ABROMICS-CHECK | ✅ Complete | 4 data sources, ~120 lines inline form; acceptable |
+| # | Task | Model | Status | Notes |
+|---|---|---|---|---|
+| 1 | AUDIT-HANDOFF-UPDATE | haiku | **NOW** | Rewrite this document with current state |
+| 2 | AUDIT-RULES-FLAGS-UPDATE | haiku | pending | Update known-violations table; verify no runtime persona name checks |
+| 3 | AUDIT-ADR072-STUB | haiku | pending | Insert ADR-072 stub; reorder ADR-069 |
+| 4 | AUDIT-QUALITY-WRANGLING | haiku | pending | Convert or delete `Quality_metrics_wrangling.yaml` |
+| 5 | AUDIT-PHANTOM-TEST | haiku | pending | Fix `debug_config_loader.py` reference in rules_verification_testing.md §8 |
+| 6 | AUDIT-CHANGELOG-UPDATE | haiku | pending | Append Phase 28-32 entries; roll up ADRs 066–076 |
+| 7 | AUDIT-WRANGLE-FLAG | haiku | pending | Add `wrangle_studio_enabled` to PersonaValidator; verify all 8 templates |
 
 ---
 
-## Key decision points logged
+## P1 Audit Block — QUEUED
 
-1. **HELP-DOCS-1 as routine** — User noted docs rendering (quarto render docs/) should happen pre-deployment, not ad-hoc. Now a documented step in DEPLOYMENT_CHECKLIST.md. ✅
+Four P1 tasks; will start after P0 complete:
 
-2. **P0/P1 effort re-calibration** — AUDIT-PLAN-ORDER marked haiku/low but is actually sonnet/medium (736-line file reorg). Will adjust annotation during task.
+| # | Task | Model | Status |
+|---|---|---|---|
+| 8 | AUDIT-DEMO-PERSONAS | haiku | queued |
+| 9 | AUDIT-ABROMICS-CHECK | haiku | queued |
+| 10 | AUDIT-PLAN-ORDER | sonnet | queued (marked haiku but is actually medium effort) |
+| 11 | (none) | — | — |
 
-3. **Dependency management after BP-AGENT work** — No cross-lib violations introduced. All changes in app/modules (handlers) and libs/blueprint_arch stay within governance.
-
----
-
-## Continuity pointers
-
-- **P0/P1 sequence:** Complete all P0 before P1 (audits depend on P0 completeness)
-- **AUDIT-PLAN-ORDER complexity:** Requires identifying all phase blocks in the file and re-sorting. May need helper script to extract + reorder.
-- **Model/effort tags:** All P0/P1 tasks now explicitly tagged [haiku/low] or [sonnet/medium] in tasks.md
-- **File references to verify:** rules_verification_testing.md (line 132), implementation_plan_master.md (736 lines), changelog.md (append-only), persona_validator.py, rules_persona_feature_flags.md, manifests/
+Note: AUDIT-PLAN-ORDER (736 lines, reorder phases) should be escalated to sonnet/medium in the task.
 
 ---
 
-## Open questions
+## Continuity: Next agent
 
-None at this stage — all recommendations from previous handoff (BP-AGENT-PANEL-1 → HELP-DOCS-1) have landed.
+When picked up again, continue with task #2 (AUDIT-RULES-FLAGS-UPDATE) after AUDIT-HANDOFF-UPDATE completes. All other P0/P1 tasks remain unchanged in their queued state.
 
-@dasharch executing P0/P1 audit block.
+Model status: currently Haiku. Escalate to Sonnet when encountering AUDIT-PLAN-ORDER.
+
+@dasharch + Haiku executing audit block sequentially.

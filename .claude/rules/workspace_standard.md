@@ -46,7 +46,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 
 ## 3. Operational Mandate
 
-- **No Emojis in Python:** Emojis are FORBIDDEN in all `.py` files — comments, docstrings, string literals, log messages. Allowed only in YAML `label:` values, `.md` files, and `.qmd` docs. See `rules_code_quality.md §1`.
+- **Emoji Scope Rule:** Emojis are FORBIDDEN in Python docstrings, inline comments, exception messages, and decorator arguments. ALLOWED in `print()` terminal output of debug/test scripts (status icons serve a functional role), YAML `label:` values, `.md` files, and `.qmd` docs. See `rules_code_quality.md §1` for the full table.
 - **@deps Session Law:** At session end, verify/add/update `@deps` blocks for every file touched, then run `build_dep_graph.py`. See §5-E for the full protocol. This is non-negotiable.
 - **Mandatory Halt:** Every significant transformation or rule change requires an explicit `@verify` from the user.
 - **Violet Law:** All component references in documentation must follow `ClassName (filename.py)` standard.

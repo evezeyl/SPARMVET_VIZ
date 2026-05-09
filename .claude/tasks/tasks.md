@@ -58,10 +58,7 @@
 
 ## 🟡 Active Lineage Build: ST22
 
-- [ ] **Lineage 2 (Plasmid Dynamics)** `[@user]`:
-    - [ ] Create `2_test_data_ST22_dummy/input_fields/plasmid_data.yaml`
-    - [ ] Implement Tier 1 filtering (min identity/overlap for PlasmidFinder)
-    - [ ] Assemble with metadata and AMR results; verify via Tier 1 audit artifacts.
+- [x] **Lineage 2 (Plasmid Dynamics)** `[@user]` — VERIFIED 2026-05-09: assembly passes, 6 columns / 163 rows, Year as String, all types correct.
 
 ---
 
@@ -79,15 +76,15 @@
   ```
   ✅ 2026-05-09 — run manually by user.
 
-- [ ] **AUDIT-HANDOFF-UPDATE** `[haiku/low]`: Rewrite `handoff_active.md` — currently 4 days stale (mtime 2026-05-05, refers to "Monday demo" already past). Replace body with current state: ADRs 073–076 authored 2026-05-09; LINEAGE-NAV-1, LINEAGE-EXPORT-1, BP-SCHEMA-1 done; BLUEPRINT IDE form/escape/undo/help/color/flag still open; first recommended next step is `BP-FLAG-1`.
+- [x] **AUDIT-HANDOFF-UPDATE** `[haiku/low]`: Rewrite `handoff_active.md` — currently 4 days stale (mtime 2026-05-05, refers to "Monday demo" already past). Replace body with current state: ADRs 073–076 authored 2026-05-09; LINEAGE-NAV-1, LINEAGE-EXPORT-1, BP-SCHEMA-1 done; BLUEPRINT IDE form/escape/undo/help/color/flag still open; first recommended next step is `BP-FLAG-1`. ✅ 2026-05-09
 
-- [ ] **AUDIT-RULES-FLAGS-UPDATE** `[haiku/low]`: Update `rules_persona_feature_flags.md` "Known violations" table — all 5 listed violations have been fixed (verified clean 2026-05-09 by grep; no `persona ==`/`persona in (` in runtime control flow). Replace the table with: _"Verified clean as of 2026-05-09. Re-run `grep -E 'persona\s*==|persona\s+in\s*\(' app/handlers/ app/src/` before each release."_ Also: mark task `25-O` as complete in the task list (it's implicitly done by SIDEBAR-REGISTRY-1, but not closed).
+- [x] **AUDIT-RULES-FLAGS-UPDATE** `[haiku/low]`: Update `rules_persona_feature_flags.md` "Known violations" table — all 5 listed violations have been fixed (verified clean 2026-05-09 by grep; no `persona ==`/`persona in (` in runtime control flow). Replace the table with: _"Verified clean as of 2026-05-09. Re-run `grep -E 'persona\s*==|persona\s+in\s*\(' app/handlers/ app/src/` before each release."_ Also: mark task `25-O` as complete in the task list (it's implicitly done by SIDEBAR-REGISTRY-1, but not closed). ✅ 2026-05-09
 
-- [ ] **AUDIT-ADR072-STUB** `[haiku/low]`: Insert an `## ADR-072: [RESERVED — numbering gap]` stub in `architecture_decisions.md` between ADR-071 and ADR-073. One-line body: "Number accidentally skipped; not used. Do not assign." Also move ADR-069 entry to appear before ADR-070/071 in the file (currently out of order — ADR-069 was inserted at line 2188, after ADR-070 at line 2036 and ADR-071 at line 2068).
+- [x] **AUDIT-ADR072-STUB** `[haiku/low]`: Insert an `## ADR-072: [RESERVED — numbering gap]` stub in `architecture_decisions.md` between ADR-071 and ADR-073. One-line body: "Number accidentally skipped; not used. Do not assign." Also move ADR-069 entry to appear before ADR-070/071 in the file (currently out of order — ADR-069 was inserted at line 2188, after ADR-070 at line 2036 and ADR-071 at line 2068). ✅ 2026-05-09
 
-- [ ] **AUDIT-QUALITY-WRANGLING** `[haiku/low]`: `config/manifests/pipelines/1_test_data_ST22_dummy/wrangling/Quality_metrics_wrangling.yaml` is 14 bytes — content `wrangling: []` (flat legacy list). Either convert to `wrangling:\n  tier1: []\n` or delete if the schema is unused. Cross-check if any `!include` references it in `1_test_data_ST22_dummy.yaml` first; if unreferenced, delete.
+- [x] **AUDIT-QUALITY-WRANGLING** `[haiku/low]`: `config/manifests/pipelines/1_test_data_ST22_dummy/wrangling/Quality_metrics_wrangling.yaml` is 14 bytes — content `wrangling: []` (flat legacy list). Either convert to `wrangling:\n  tier1: []\n` or delete if the schema is unused. Cross-check if any `!include` references it in `1_test_data_ST22_dummy.yaml` first; if unreferenced, delete. ✅ 2026-05-09 — deleted (empty, unreferenced)
 
-- [ ] **AUDIT-PHANTOM-TEST** `[haiku/low]`: Fix `rules_verification_testing.md §8` "Pre-existing broken libs" — lists `libs/utils/tests/test_config_loader.py` (does not exist). Actual file is `debug_config_loader.py`. Update the rule to reference the correct filename, or remove the line entirely if the ImportError is no longer relevant.
+- [x] **AUDIT-PHANTOM-TEST** `[haiku/low]`: Fix `rules_verification_testing.md §8` "Pre-existing broken libs" — lists `libs/utils/tests/test_config_loader.py` (does not exist). Actual file is `debug_config_loader.py`. Update the rule to reference the correct filename, or remove the line entirely if the ImportError is no longer relevant. ✅ 2026-05-09 — no-op; phantom reference not present in current file
 
 ### P1 — Documentation reconciliation (30 min each, haiku/low)
 
@@ -103,7 +100,7 @@
 
 ### P2 — Code cleanup (1 session each)
 
-- [ ] **AUDIT-CONNECTOR-TEST-FIX** `[sonnet/low]`: 10 connector tests in `libs/connector/tests/test_connectors.py` fail with DeploymentError because they use fake paths (`/data/pipeline/`) that fail the existence check added in DIAG-CONNECTOR-1. Fix: use `tmp_path` pytest fixture (or `monkeypatch`) to mock `Path.exists()` / `os.path.isdir()` in the three test classes (Filesystem, Galaxy, Irida) so tests don't require real directories on disk.
+- [x] **AUDIT-CONNECTOR-TEST-FIX** `[sonnet/low]`: 10 connector tests in `libs/connector/tests/test_connectors.py` fail with DeploymentError because they use fake paths (`/data/pipeline/`) that fail the existence check added in DIAG-CONNECTOR-1. Fix: use `tmp_path` pytest fixture (or `monkeypatch`) to mock `Path.exists()` / `os.path.isdir()` in the three test classes (Filesystem, Galaxy, Irida) so tests don't require real directories on disk.
 
 - [x] **AUDIT-SGE-CLEANUP** `[sonnet/low]`: `app/handlers/single_graph_export_handlers.py` is still imported and wired in `home_theater.py` (`from app.handlers.single_graph_export_handlers import define_single_graph_export_server`; called in `define_server()`), but the SGE accordion panel was removed from the sidebar in the 2026-05-04 export redesign. The render registrations are therefore orphaned. **Action:** (1) Confirm no SGE UI elements remain in `ui.py` or any template. (2) Remove the `from ...single_graph_export_handlers import ...` line from `home_theater.py` and the `define_single_graph_export_server(...)` call. (3) Delete `single_graph_export_handlers.py`. (4) Update `@deps` in `home_theater.py`. Run baseline tests after.
 
@@ -111,12 +108,7 @@
 
 - [x] **AUDIT-CSS-SWEEP** `[sonnet/medium]`: Move inline `style=` attributes from handlers to `config/ui/theme.css` classes. Current density: `filter_and_audit_handlers.py` 22, `home_theater.py` 22, `data_import_handlers.py` 20, `audit_stack.py` 18. Start with `filter_and_audit_handlers.py` (most regressions likely there — filter row layout, audit card colours). Pattern: (1) scan for repeated values (e.g., `style="font-size:0.8em;"`) → extract to `.filter-row-meta` or similar; (2) truly unique one-off styles can stay. ADR-055 compliance. This also unblocks clean `BP-AGENT-CSS-1` implementation.
 
-- [ ] **AUDIT-PLASMID-VERIFY** `[sonnet/low]`: Run `debug_assembler.py` against the Plasmid Dynamics lineage and inspect TSV output. If assembly succeeds and output is correct, mark `Lineage 2 (Plasmid Dynamics)` task `[x]` with today's date. If it fails, replace the open sub-bullets with concrete error-specific tasks.
-  ```bash
-  .venv/bin/python libs/transformer/tests/debug_assembler.py \
-    --manifest config/manifests/pipelines/2_test_data_ST22_dummy.yaml \
-    --tmp tmpAI/2026-05-09/2_test_data_ST22_dummy/
-  ```
+- [x] **AUDIT-PLASMID-VERIFY** `[sonnet/low]`: Assembly verified 2026-05-09. Both AMR_Profile_Joint (8 cols/70 rows) and Plasmid_Profile_Joint (6 cols/163 rows) pass cleanly. Year as String, no "2022.0" artifacts.
 
 - [ ] **AUDIT-SERVER-SLIM** `[sonnet/medium]`: `app/src/server.py` is 302 lines — over the 250-line ADR-051 cap. Extract `_safe_input()` and `_apply_tier2_transforms()` (pure helpers shared across handlers) into `app/modules/orchestrator_helpers.py`. Target: ≤250 lines in `server.py`. Verify `from app.src.main import app` import still clean after extraction; run baseline tests.
 
@@ -262,6 +254,14 @@ These items require a design decision or scope confirmation before implementatio
   - [ ] Smoke test: clean venv from scratch (no local `.venv`), run `scripts/install_libs.sh`, then `python app/src/main.py` — verify no import errors before pushing to Connect.
   - [ ] Update `scripts/install_libs.sh` if needed to support both editable (local dev) and Connect (bundled) install paths.
   **Pre-existing done:** CDN vendoring (DEPLOY-CDN-1 ✅), nav gating (DEPLOY-MODULES-1 ✅), vendor manifest (VENDOR-MANIFEST-1 ✅), install script (DEPLOY-LIBS-1 ✅), no secrets in source (ADR-071 rule 3 ✅).
+
+- [ ] **CODE-DOCS-RETROSPECTIVE** `[deferred — pre-deployment review sprint]` `[haiku/low per lib]`:
+  Add developer-level docstrings to all `libs/` and `app/` files so Eve can review the codebase before deployment.
+  **Tier A** (module header: purpose, inputs, outputs, what breaks if deleted) + **Tier B** (public function one-liners: why it exists, not what it does) + **Tier C** (`@register_action` / `@register_plot_component` domain docstrings for scientist use).
+  **Implementation order:** `libs/transformer/` → `libs/viz_factory/` → `app/handlers/` → `libs/ingestion/`, `libs/connector/`, `libs/blueprint_arch/` → `app/src/`.
+  **Pre-step:** Write `scripts/audit_code_quality.py` (spec in `rules_code_quality.md §5`) to measure coverage before and after each library sprint.
+  See `rules_code_quality.md §3–5` for tier definitions, code examples, and audit script spec.
+  **Do not start until Eve begins pre-deployment code review.**
 
 - [x] **REVIEW-SCOPING-1 — T3 bundle dependency rule**: Already implemented as PersonaValidator Rule 6 (PERSONA-CONFIG-VALIDATE-1). Closed. ✅ 2026-05-09
 
