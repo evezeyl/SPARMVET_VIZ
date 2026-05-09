@@ -88,53 +88,76 @@ DATE=$(date +%Y-%m-%d)
 
 ---
 
-### D. Automated Local Cron Setup (Run Once, Then Forget)
+### D. Automated Local Scheduling — Systemd Timers (Run Once, Then Forget)
 
-Schedules the weekly audits to run automatically in the background. Requires your machine to be on
-at the scheduled time.
+Uses **systemd user timers** — the right tool for Fedora 43. Key advantage over cron:
+`Persistent=true` means if the scheduled time fired while your PC was off or suspended,
+systemd runs the job immediately on the next boot. No missed audits.
 
-**Step 1 — Open your crontab:**
+**One-time setup:**
 ```bash
-crontab -e
+cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+./scripts/systemd/install.sh
 ```
 
-**Step 2 — Paste these lines:**
-```cron
-# SPARMVET_VIZ audit routines (all times Oslo CEST)
-# The wrapper script automatically switches to the 'dev' branch before scanning.
-PROJECT=/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+That script copies four timer units and one service template to `~/.config/systemd/user/`,
+enables them, and prints a status table. Done.
 
-# Sunday 23:00 — @deps verification + ADR-011 cross-lib scan
-0 23 * * 0  cd $PROJECT && ./scripts/run_audits.sh sunday >> /tmp/sparmvet_audit.log 2>&1
+**What gets scheduled:**
 
-# Wednesday 22:00 — manifest integrity + manifest coherence
-0 22 * * 3  cd $PROJECT && ./scripts/run_audits.sh wednesday >> /tmp/sparmvet_audit.log 2>&1
+| Timer | When | Scripts |
+|-------|------|---------|
+| `sparmvet-audit-sunday.timer` | Sunday 23:00 | @deps + cross-lib |
+| `sparmvet-audit-wednesday.timer` | Wednesday 22:00 | manifest integrity + coherence |
+| `sparmvet-audit-thursday.timer` | Thursday 21:00 | phase order + changelog + template flags |
+| `sparmvet-audit-friday.timer` | Friday 20:00 | task drift |
 
-# Thursday 21:00 — phase order + changelog sync + template flags
-0 21 * * 4  cd $PROJECT && ./scripts/run_audits.sh thursday >> /tmp/sparmvet_audit.log 2>&1
+All timers call `run_audits.sh <day>` which automatically switches to the `dev` branch.
 
-# Friday 20:00 — task drift check
-0 20 * * 5  cd $PROJECT && ./scripts/run_audits.sh friday >> /tmp/sparmvet_audit.log 2>&1
-```
-
-**Branch note:** `run_audits.sh` automatically checks out `dev` before running any script.
-If you are mid-edit with uncommitted changes when cron fires, git will refuse to switch
-branches and the run will be skipped (your work is safe). Commit or stash before the
-scheduled time if you want that night's run to succeed.
-
-**Step 3 — Verify cron is running:**
+**Check timer status at any time:**
 ```bash
-systemctl is-active crond   # should print: active
+systemctl --user list-timers "sparmvet-audit-*"
 ```
 
-**Step 4 — Check output after the first scheduled run:**
+**Check output after a run:**
 ```bash
 cat /tmp/sparmvet_audit.log
 grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md 2>/dev/null
 ```
 
-**On-demand routines (5, 9–12) are intentionally not in cron** — run them manually via
-`./scripts/run_audits.sh ondemand` when needed (after a library update, before a release).
+**If you edit a timer or service file, reload:**
+```bash
+# Re-run the install script — it is idempotent
+./scripts/systemd/install.sh
+
+# Or reload manually after editing unit files in ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user restart sparmvet-audit-sunday.timer   # or whichever you changed
+```
+
+**Disable a timer temporarily (e.g., during a release freeze):**
+```bash
+systemctl --user stop sparmvet-audit-sunday.timer
+systemctl --user start sparmvet-audit-sunday.timer   # re-enable
+```
+
+**Branch behaviour:** `run_audits.sh` switches to `dev` before scanning. If you have
+uncommitted changes when the timer fires, git refuses the branch switch and the run is
+skipped (your work is safe). Commit or stash first if you want that night's run to succeed.
+
+**On-demand routines (9–12) are not timed** — run them manually via
+`./scripts/run_audits.sh ondemand` after a library update or before a release.
+
+**Unit source files** (version-controlled, edit here then re-run install.sh):
+```
+scripts/systemd/
+  sparmvet-audit@.service        ← service template (one instance per day slot)
+  sparmvet-audit-sunday.timer
+  sparmvet-audit-wednesday.timer
+  sparmvet-audit-thursday.timer
+  sparmvet-audit-friday.timer
+  install.sh                     ← copies units + enables timers
+```
 
 ---
 
