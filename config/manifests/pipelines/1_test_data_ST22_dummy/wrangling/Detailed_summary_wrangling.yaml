@@ -25,7 +25,7 @@ tier1:
 
 # tier2: (future) group_by sample_id + count data_type per predicted_phenotype for barplot
 # tier2:
-#   - action: "group_count"
+#   - action: "count_by_group"
 #     group_by: ["sample_id", "predicted_phenotype"]
 #     count_col: "data_type"
 #     new_column: "n_methods"
