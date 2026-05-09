@@ -236,7 +236,7 @@ class BlueprintMapper:
             else:
                 info_id = f"INFO_{safe_pid}"
                 self.nodes.append(
-                    f'{info_id}["ℹ️ {pid}\\nSet target_dataset"]')
+                    f'{info_id}["INFO: {pid}\\nSet target_dataset"]')
                 self.style_classes.append(f"class {info_id} info")
                 self.edges.append(f"{info_id} -.-> {safe_pid}")
 
@@ -453,7 +453,7 @@ class BlueprintMapper:
             else:
                 # Orphan node — no target_dataset set
                 info_id = f"INFO_{safe_pid}"
-                elements.append(_node(info_id, f"⚠ {pid}\nSet target_dataset",
+                elements.append(_node(info_id, f"WARNING: {pid}\nSet target_dataset",
                                       "info", pid, 3, group))
                 elements.append(_edge(info_id, safe_pid))
 

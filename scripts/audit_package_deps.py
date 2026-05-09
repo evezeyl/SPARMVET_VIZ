@@ -31,6 +31,7 @@ Usage:
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -93,7 +94,6 @@ def collect_declared_deps(project_root: Path) -> dict[str, list[str]]:
                     in_deps = False
                     continue
                 # Extract package name from specifier like "polars>=1.0.0"
-                import re
                 m = re.match(r'"?([A-Za-z0-9_.-]+)', stripped)
                 if m:
                     pkg = m.group(1).lower().replace("-", "_").replace(".", "_")
@@ -138,15 +138,15 @@ def get_outdated(python_bin: Path) -> list[dict]:
 def classify_update(current: str, latest: str) -> str:
     """Return MAJOR / MINOR / PATCH based on semantic version bump."""
     try:
-        c = [int(x) for x in current.split(".")[:3]]
-        l = [int(x) for x in latest.split(".")[:3]]
-        while len(c) < 3:
-            c.append(0)
-        while len(l) < 3:
-            l.append(0)
-        if l[0] > c[0]:
+        cur = [int(x) for x in current.split(".")[:3]]
+        new = [int(x) for x in latest.split(".")[:3]]
+        while len(cur) < 3:
+            cur.append(0)
+        while len(new) < 3:
+            new.append(0)
+        if new[0] > cur[0]:
             return "MAJOR"
-        if l[1] > c[1]:
+        if new[1] > cur[1]:
             return "MINOR"
         return "PATCH"
     except (ValueError, AttributeError):
@@ -190,10 +190,6 @@ def render_report(
     parity_hits = [
         p for p in real_outdated
         if p["name"].lower() in PARITY_MANDATE_PACKAGES
-    ]
-    high_attention = [
-        p for p in real_outdated
-        if p["name"].lower() in HIGH_ATTENTION_PACKAGES
     ]
 
     lines = [

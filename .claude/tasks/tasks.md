@@ -23,6 +23,51 @@
 
 Items with no blockers — can be started immediately.
 
+### Audit Fixes — Documentation (2026-05-09)
+
+*Findings from `audit_documentation_2026-05-09_*.md` — triage per protocol. Mechanical items being fixed in-session; gaps requiring new content tracked here.*
+
+- [x] **DOC-DRIFT-1** `[AUDIT]` `[haiku/low]`: Fix mechanical doc drift — 6 files. *(Fixed in-session 2026-05-09)*
+  - `docs/workflows/dashboard_app.qmd:69` — stale path `app/modules/manifest_navigator.py` → `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` (ADR-067)
+  - `docs/workflows/dashboard_app.qmd:55` — underscore persona IDs → hyphens
+  - `README.md:78` — persona list incomplete; add `demo-vetinst`, `web-demo`
+  - `libs/utils/README.md` — remove phantom GalleryManager entry (belongs in viz_gallery)
+  - `libs/transformer/README.md:19-25` — phantom debugger class names → plain CLI script descriptions
+  - `docs/appendix/manifest_structure.yaml:14` — `assembly:` → `join:` (matches `rules_manifest_structure.md §2`)
+- [x] **DOC-DRIFT-EMOJI** `[AUDIT]` `[haiku/low]`: Fix 9 emoji violations in production Python source (active enforcement per `rules_code_quality.md §1`). *(Fixed in-session 2026-05-09)*
+  - `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py:239` — `ℹ️` in Mermaid label f-string
+  - `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py:456` — `⚠` in Cytoscape label f-string
+  - `libs/ingestion/src/ingestion/ingestor.py:102` — `⚠️` in print f-string
+  - `libs/transformer/src/transformer/actions/persistence/anchor.py:33` — `💾` in print f-string
+  - `libs/transformer/src/transformer/data_assembler.py:126` — `🗲` in print f-string
+  - `libs/transformer/src/transformer/data_assembler.py:132` — `⚠️` in print f-string
+  - `libs/transformer/src/transformer/data_assembler.py:165` — `⚠️` in print f-string
+  - `libs/viz_factory/src/viz_factory/viz_factory.py:108` — `🍃` in print f-string
+  - `libs/viz_factory/src/viz_factory/viz_factory.py:171` — `⚠️` in print f-string
+- [ ] **DOC-GAP-1** `[AUDIT]` `[sonnet/medium]`: Expand `docs/workflows/ui_persona.qmd` with 4 missing items:
+  1. Rename "Five Personas" → "Eight Personas" — add `qa`, `demo-vetinst`, `web-demo` sections
+  2. Add ADR-076 `blueprint_agent_enabled` flag + `blueprint_agent:` config block schema and backend options
+  3. Complete ADR-077 cascade table — add `blueprint_agent_enabled` as fatal cascade (currently only `manifest_edit_enabled` listed)
+  4. Add `blueprint_agent_chat` panel type to built-in panel-type table (§11d of ui_implementation_contract.md)
+- [ ] **DOC-GAP-2** `[AUDIT]` `[haiku/low]`: Add `demo-vetinst` and `web-demo` rows to `.claude/knowledge/persona_traceability_matrix.md`.
+- [ ] **DOC-GAP-3** `[AUDIT]` `[haiku/low]`: Add ADR-074 lineage API operator note to `docs/deployment/deployment_guide.qmd` — import path + minimal script example for `build_plot_lineage` / `get_plot_ids_in_group`.
+- [ ] **DOC-GAP-4** `[AUDIT]` `[haiku/low]`: Triage 8 orphaned `.qmd` files not in `_quarto.yml`. For each: add to nav, annotate as archived, or delete. Files: `appendix/data_flow_analogy.qmd`, `appendix/data_lifecycle_theater.qmd`, `appendix/user_guide_gallery.qmd`, `deployment/deployment_guide.qmd`, `reference/troubleshooting.qmd` (duplicate), `reference/wrangling_guide.qmd`, `user_guide/deployment_personas.qmd`, `workflows/ui_persona.qmd`.
+- [ ] **DOC-GAP-5** `[AUDIT]` `[haiku/low]`: Fix 2 semantic drift items found by Routine 17 (`audit_doc_sync_2026-05-09.md`) — bundled because both are ingestion/transformer README corrections:
+  1. `libs/ingestion/README.md` — `ExcelHandler (excel_handler.py)` documented as an importable class with a full method interface. **Reality:** `excel_handler.py` contains only a `main()` CLI function; no `ExcelHandler` class exists. Remove the class description; replace with accurate CLI script description matching the actual implementation.
+  2. `libs/transformer/README.md` — "Reactive State (Tier 3): supports side-by-side inspection in the Comparison Theater". **Reality:** "Comparison Theater" terminology does not exist in source code (`app/handlers/`, `app/modules/`). The T3 predicate pushdown mechanism exists but the named feature does not. Remove or rephrase to match actual Tier Toggle / Comparison Mode implementation.
+
+### Audit Fixes — ADR Compliance (2026-05-09)
+
+*Findings from `audit_adr_compliance_2026-05-09.md` (Routine 18).*
+
+- [ ] **ADR-078-ACTIONS-1** `[AUDIT]` `[sonnet/medium]`: Retrofit `SPARMVET_DiagnosticError` into transformer actions that silently pass through on invalid input. ADR-078 requires this error type — not `ValueError` or silent `return lf`. Files:
+  - `libs/transformer/src/transformer/actions/cleaning/expressions.py:40` — `action_regex_extract`: `if not source/pattern/target: return lf`
+  - `libs/transformer/src/transformer/actions/cleaning/expressions.py:187` — `action_mutate`: `if not target or not expr_str: return lf`
+  - `libs/transformer/src/transformer/actions/cleaning/analytical.py:29` — `action_window_agg`: `if not col: return lf`
+  - `libs/transformer/src/transformer/actions/cleaning/analytical.py:64` — `action_shift`: `if not col: return lf`
+  - `libs/transformer/src/transformer/actions/cleaning/advanced.py:27` — `action_split_and_explode`: `if not col: return lf`
+  - After fixing these 5, audit remaining actions in `analytical.py` and `advanced.py` for the same `return lf` pass-through pattern.
+
 ### Deployment
 
 - [ ] **DEPLOY-CONNECT-1** `[sonnet/medium]` `[deferred — Connect adoption TBD]`: Posit Connect deployment — editable library install handling. Keep code Connect-ready to avoid heavy refactoring when the time comes.

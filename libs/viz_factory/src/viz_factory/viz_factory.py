@@ -105,7 +105,7 @@ class VizFactory:
         ui_filters = plot_config.get('filters', [])
         if ui_filters:
             print(
-                f"  └── 🍃 Tier 3 (The Leaf): Applying {len(ui_filters)} UI filters...")
+                f"  └── Tier 3 (Leaf): Applying {len(ui_filters)} UI filters...")
             try:
                 schema = df.collect_schema()
                 actual_dtypes = {n: schema[n] for n in schema.names()}
@@ -168,7 +168,7 @@ class VizFactory:
                 # (UX-FILTER-1); a string here means a bypass we should fix.
                 if is_numeric and isinstance(val, str):
                     print(
-                        f"[viz_factory] ⚠️ string operand on numeric column "
+                        f"[viz_factory] WARNING: string operand on numeric column "
                         f"{col!r} ({actual_dt}); coercing {val!r}"
                     )
                 if is_numeric:

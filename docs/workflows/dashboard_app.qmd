@@ -52,7 +52,7 @@ graph LR
 
 1.  **Project Navigator (Dark Grey #c0c0c0):** Project selection, context-reactive **Filter Recipe Builder** (add/remove filter rows, Apply commits to plots and data preview), and **System Tools** (Export Bundle — zip with plots, data, recipes, Quarto report).
 2.  **Home Theater (Neutral Grey #d1d1d1):** Unified results mode (ADR-043). Top-level groups from the manifest as pill tabs; each group's plots in a `navset_card_tab`; a **Tier Toggle** strip (T1/T2/T3) above; an independent collapsible Data Preview below with a column selector.
-3.  **Pipeline Audit (Dark Grey #c0c0c0):** Persona-gated — **hidden entirely** for `pipeline_static` and `pipeline_exploration_simple` (theater expands full width); visible for ≥ `pipeline_exploration_advanced` showing Violet (T2) and Yellow (T3) audit nodes.
+3.  **Pipeline Audit (Dark Grey #c0c0c0):** Persona-gated — **hidden entirely** for `pipeline-static` and `pipeline-exploration-simple` (theater expands full width); visible for ≥ `pipeline-exploration-advanced` showing Violet (T2) and Yellow (T3) audit nodes.
 
 ---
 
@@ -66,7 +66,7 @@ graph LR
 | `HomeTheater (home_theater.py)` | Home mode: manifest-driven tabs, filter recipe builder, data preview, export bundle. | `app/handlers/home_theater.py` |
 | `AuditStack (audit_stack.py)` | T2/T3 audit nodes, Apply gate, Revert. | `app/handlers/audit_stack.py` |
 | `BlueprintHandlers (blueprint_handlers.py)` | Blueprint Architect: manifest import, TubeMap, Lineage Rail. | `app/handlers/blueprint_handlers.py` |
-| `ManifestNavigator (manifest_navigator.py)` | Pure manifest introspection — importable anywhere, zero Shiny dependency. | `app/modules/manifest_navigator.py` |
+| `ManifestNavigator (manifest_navigator.py)` | Pure manifest introspection — importable anywhere, zero Shiny dependency. | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` |
 | `Bootloader` | Loads persona template, resolves feature flags via `is_enabled()`, logs persona path at startup. | `app/src/bootloader.py` |
 
 ---

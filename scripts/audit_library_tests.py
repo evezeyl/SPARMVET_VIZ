@@ -1,30 +1,27 @@
 #!/usr/bin/env python3
-"""Audit: Library test coverage and testability check.
+"""Audit: per-library test infrastructure completeness.
 
-For each library in libs/, verifies that the test infrastructure is complete
-and that all tests pass. Reports three things:
+For each library in libs/ with a src/ subdirectory (proper editable package),
+checks that the three test infrastructure layers are present and passing:
+  1. pytest files (test_*.py)
+  2. integrity suite (*_integrity_suite.py)
+  3. debug runners (debug_*.py)
 
-  1. Infrastructure completeness — does the library have unit tests (pytest),
-     an integrity suite (*_integrity_suite.py), and debug scripts (debug_*.py)?
-  2. pytest results — runs pytest on the library's tests/ directory
-  3. Integrity suite results — runs the *_integrity_suite.py wrapper if present
+Reports per-library testability level:
+  FULL    - all three layers present (and passing when tests are run)
+  PARTIAL - has some test files but missing one or more layers (informational, not a blocker)
+  MISSING - no tests/ directory or no test files at all (blocker)
 
-A library is FULLY TESTABLE when it has at least one pytest file AND at least
-one integrity suite or debug script, and all of them pass.
-
-Libraries missing test infrastructure are flagged as PARTIAL or MISSING — these
-require a @dasharch handoff to add the missing layer before the library can be
-considered production-ready.
-
-This audit is intentionally slow (it runs the full test suite). Run on-demand
-before releases or after significant library changes, not on every commit.
+Exit codes:
+  0 - no MISSING libraries and no test failures
+  1 - one or more MISSING libraries OR test failures detected
 
 Usage:
   .venv/bin/python scripts/audit_library_tests.py
-  .venv/bin/python scripts/audit_library_tests.py --output .claude/logs/audits/audit_library_tests_2026-05-12.md
-  .venv/bin/python scripts/audit_library_tests.py --lib transformer   # single library only
-  .venv/bin/python scripts/audit_library_tests.py --skip-suites       # pytest only (faster)
-  .venv/bin/python scripts/audit_library_tests.py --skip-pytest       # infra check only (fastest)
+  .venv/bin/python scripts/audit_library_tests.py --output .claude/logs/audits/audit_library_tests_2026-05-09.md
+  .venv/bin/python scripts/audit_library_tests.py --skip-suites
+  .venv/bin/python scripts/audit_library_tests.py --skip-pytest
+  .venv/bin/python scripts/audit_library_tests.py --lib transformer
 """
 import argparse
 import subprocess
@@ -33,8 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 LIBS_DIR = "libs"
-PYTEST_TIMEOUT = 120   # seconds per library
-SUITE_TIMEOUT = 180    # integrity suites can be slower
+TIMEOUT_SECONDS = 120
 
 
 def find_project_root(start: Path) -> Path:
@@ -52,12 +48,11 @@ def assess_infrastructure(lib_dir: Path) -> dict:
     debug_scripts = sorted(tests_dir.glob("debug_*.py")) if tests_dir.exists() else []
     suite_files = sorted(tests_dir.glob("*_integrity_suite.py")) if tests_dir.exists() else []
 
-    has_tests_dir = tests_dir.exists()
-    has_pytest = len(pytest_files) > 0
-    has_suite = len(suite_files) > 0
-    has_debug = len(debug_scripts) > 0
+    has_pytest = bool(pytest_files)
+    has_suite = bool(suite_files)
+    has_debug = bool(debug_scripts)
 
-    if has_pytest and (has_suite or has_debug):
+    if has_pytest and has_suite and has_debug:
         coverage_level = "FULL"
     elif has_pytest or has_suite or has_debug:
         coverage_level = "PARTIAL"
@@ -73,10 +68,10 @@ def assess_infrastructure(lib_dir: Path) -> dict:
         missing_layers.append("debug scripts (debug_*.py)")
 
     return {
-        "has_tests_dir": has_tests_dir,
-        "pytest_files": [str(f.relative_to(lib_dir)) for f in pytest_files],
-        "debug_scripts": [str(f.relative_to(lib_dir)) for f in debug_scripts],
-        "suite_files": [str(f.relative_to(lib_dir)) for f in suite_files],
+        "has_tests_dir": tests_dir.exists(),
+        "pytest_files": [f.name for f in pytest_files],
+        "debug_scripts": [f.name for f in debug_scripts],
+        "suite_files": [f.name for f in suite_files],
         "coverage_level": coverage_level,
         "missing_layers": missing_layers,
     }
@@ -89,42 +84,46 @@ def run_pytest(python_bin: Path, lib_dir: Path, project_root: Path) -> tuple[int
     if not tests_dir.exists() or not list(tests_dir.glob("test_*.py")):
         return -1, "No pytest files found — skipped"
 
-    result = subprocess.run(
-        [
-            str(python_bin), "-m", "pytest",
-            str(tests_dir),
-            "-q", "--tb=short", "--no-header",
-            f"--timeout={PYTEST_TIMEOUT}",
-        ],
-        capture_output=True,
-        text=True,
-        cwd=str(project_root),
-        timeout=PYTEST_TIMEOUT + 30,
-    )
-    output = (result.stdout + result.stderr).strip()
-    return result.returncode, output
+    try:
+        result = subprocess.run(
+            [str(python_bin), "-m", "pytest", str(tests_dir), "-q", "--tb=short"],
+            capture_output=True,
+            text=True,
+            cwd=str(project_root),
+            timeout=TIMEOUT_SECONDS,
+        )
+        output = (result.stdout + result.stderr).strip()
+        return result.returncode, output
+    except subprocess.TimeoutExpired:
+        return 1, f"TIMEOUT — pytest exceeded {TIMEOUT_SECONDS}s"
 
 
 # ── Integrity suite run ────────────────────────────────────────────────────────
 
-def run_suite(python_bin: Path, suite_path: Path, project_root: Path) -> tuple[int, str]:
-    result = subprocess.run(
-        [str(python_bin), str(suite_path)],
-        capture_output=True,
-        text=True,
-        cwd=str(project_root),
-        timeout=SUITE_TIMEOUT + 30,
-    )
-    output = (result.stdout + result.stderr).strip()
-    return result.returncode, output[-3000:] if len(output) > 3000 else output
+def run_suite(python_bin: Path, suite_path: Path, lib_name: str, project_root: Path) -> tuple[int, str]:
+    out_dir = project_root / "tmpAI" / "audit_lib_tests" / lib_name
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        result = subprocess.run(
+            [str(python_bin), str(suite_path), "--output", str(out_dir)],
+            capture_output=True,
+            text=True,
+            cwd=str(project_root),
+            timeout=TIMEOUT_SECONDS,
+        )
+        output = (result.stdout + result.stderr).strip()
+        return result.returncode, output[-3000:] if len(output) > 3000 else output
+    except subprocess.TimeoutExpired:
+        return 1, f"TIMEOUT — integrity suite exceeded {TIMEOUT_SECONDS}s"
 
 
 # ── Report ────────────────────────────────────────────────────────────────────
 
 def status_icon(code: int) -> str:
     if code == -1:
-        return "⬜ SKIP"
-    return "✅ PASS" if code == 0 else "❌ FAIL"
+        return "SKIP"
+    return "PASS" if code == 0 else "FAIL"
 
 
 def render_report(
@@ -139,104 +138,135 @@ def render_report(
     partial_infra = [r for r in results if r["infra"]["coverage_level"] == "PARTIAL"]
     missing_infra = [r for r in results if r["infra"]["coverage_level"] == "MISSING"]
 
-    pytest_failures = [r for r in results if r.get("pytest_code", -1) == 1]
-    suite_failures = [r for r in results if r.get("suite_code", -1) == 1]
+    # A failure is a non-zero, non-skipped exit code
+    pytest_failures = [r for r in results if r.get("pytest_code", -1) not in (-1, 0)]
+    suite_failures = [r for r in results if r.get("suite_code", -1) not in (-1, 0)]
 
     overall_pass = not pytest_failures and not suite_failures and not missing_infra
 
     lines = [
-        "# Audit Report: Library Test Coverage and Testability",
+        "# Audit Report: Library Test Infrastructure",
         f"Generated: {now}",
         f"Project root: {project_root}",
-        "Rule: rules_verification_testing.md §1 — Standardized Test Architecture",
+        "Rule: rules_verification_testing.md §1 — Standardized Test Naming and Architecture",
         "",
         f"- Libraries assessed: {len(results)}",
-        f"- FULL test infrastructure: {len(full_infra)}",
-        f"- PARTIAL test infrastructure: {len(partial_infra)}",
-        f"- MISSING test infrastructure: {len(missing_infra)}",
-        "",
+        f"- FULL (all three layers): {len(full_infra)}",
+        f"- PARTIAL (missing one or more layers): {len(partial_infra)}",
+        f"- MISSING (no tests at all): {len(missing_infra)}",
     ]
 
     if not skip_pytest:
-        lines += [
-            f"- pytest failures: {len(pytest_failures)}",
-        ]
+        lines += [f"- pytest failures: {len(pytest_failures)}"]
     if not skip_suites:
-        lines += [
-            f"- Integrity suite failures: {len(suite_failures)}",
-        ]
+        lines += [f"- Integrity suite failures: {len(suite_failures)}"]
     lines += [""]
 
-    lines += [f"## Result: {'✅ PASS' if overall_pass else '❌ FAIL'}", ""]
+    lines += [f"## Result: {'PASS' if overall_pass else 'FAIL'}", ""]
 
     # Infrastructure matrix
     lines += [
         "## Infrastructure Matrix",
         "",
-        "| Library | pytest | Integrity Suite | Debug Scripts | Level |",
-        "|---------|--------|----------------|---------------|-------|",
+        "| Library | pytest files | Integrity Suite | Debug Scripts | Level | pytest | Suite |",
+        "|---------|-------------|-----------------|---------------|-------|--------|-------|",
     ]
     for r in results:
         infra = r["infra"]
         pytest_count = len(infra["pytest_files"])
         suite_count = len(infra["suite_files"])
         debug_count = len(infra["debug_scripts"])
-        level_icon = {"FULL": "✅", "PARTIAL": "⚠️", "MISSING": "❌"}[infra["coverage_level"]]
+
+        if skip_pytest:
+            pytest_result = "skipped"
+        else:
+            pytest_result = status_icon(r.get("pytest_code", -1))
+
+        if skip_suites:
+            suite_result = "skipped"
+        else:
+            suite_result = status_icon(r.get("suite_code", -1))
+
         lines.append(
             f"| `{r['lib']}` "
-            f"| {'✅' if pytest_count else '❌'} {pytest_count} file(s) "
-            f"| {'✅' if suite_count else '❌'} {suite_count} suite(s) "
-            f"| {'✅' if debug_count else '❌'} {debug_count} script(s) "
-            f"| {level_icon} {infra['coverage_level']} |"
+            f"| {pytest_count} "
+            f"| {suite_count} "
+            f"| {debug_count} "
+            f"| {infra['coverage_level']} "
+            f"| {pytest_result} "
+            f"| {suite_result} |"
         )
     lines += [""]
 
-    # Missing infrastructure tasks
-    if missing_infra or partial_infra:
-        lines += ["## ⚠️ Missing Test Infrastructure", ""]
-        for r in missing_infra + partial_infra:
-            infra = r["infra"]
-            lines += [
-                f"### `{r['lib']}` — {infra['coverage_level']}",
-                "Missing layers:",
-            ]
+    # Per-library details
+    lines += ["## Per-Library Details", ""]
+    for r in results:
+        infra = r["infra"]
+        lines += [
+            f"### {r['lib']}",
+            "",
+            f"- Level: **{infra['coverage_level']}**",
+            f"- pytest files: {', '.join(infra['pytest_files']) if infra['pytest_files'] else 'none'}",
+            f"- Integrity suites: {', '.join(infra['suite_files']) if infra['suite_files'] else 'none'}",
+            f"- Debug scripts: {', '.join(infra['debug_scripts']) if infra['debug_scripts'] else 'none'}",
+        ]
+        if infra["missing_layers"]:
+            lines += ["- Missing layers:"]
             for layer in infra["missing_layers"]:
-                lines += [f"- {layer}"]
+                lines += [f"  - {layer}"]
+        lines += [""]
+
+        if not skip_pytest and "pytest_code" in r:
+            code = r["pytest_code"]
+            label = status_icon(code)
+            lines += [f"#### pytest: {label}", ""]
+            if r.get("pytest_output"):
+                lines += ["```", r["pytest_output"][-1500:], "```", ""]
+
+        if not skip_suites and "suite_code" in r:
+            code = r["suite_code"]
+            label = status_icon(code)
+            suite_name = infra["suite_files"][0] if infra["suite_files"] else "none"
+            lines += [f"#### Integrity suite `{suite_name}`: {label}", ""]
+            if r.get("suite_output"):
+                lines += ["```", r["suite_output"][-2000:], "```", ""]
+
+    # Findings sections
+    if missing_infra:
+        lines += ["## MISSING Libraries (blockers)", ""]
+        for r in missing_infra:
             lines += [
-                "",
-                "**Action:** File a `@dasharch` handoff in `tasks.md` to add the missing layer.",
-                "See `rules_verification_testing.md §1` for the naming standard.",
-                "",
+                f"- `{r['lib']}` — no test infrastructure found.",
+                "  Add a `tests/` directory with at least one `test_*.py` file.",
             ]
+        lines += [""]
 
-    # Test run results
-    if not skip_pytest:
-        lines += ["## pytest Results", ""]
-        for r in results:
-            code = r.get("pytest_code", -1)
-            icon = status_icon(code)
-            lines += [f"### `{r['lib']}` — {icon}"]
-            if code not in (-1,) and r.get("pytest_output"):
-                lines += ["```", r["pytest_output"][-1500:], "```"]
-            lines += [""]
+    if partial_infra:
+        lines += ["## PARTIAL Libraries (informational — not a blocker)", ""]
+        for r in partial_infra:
+            items = r["infra"]["missing_layers"]
+            lines += [f"- `{r['lib']}`: {'; '.join(items)}"]
+        lines += [
+            "",
+            "PARTIAL is informational only. File a `@dasharch` handoff in `tasks.md` to",
+            "add missing layers when time allows. See `rules_verification_testing.md §1`.",
+            "",
+        ]
 
-    if not skip_suites:
-        lines += ["## Integrity Suite Results", ""]
-        for r in results:
-            code = r.get("suite_code", -1)
-            icon = status_icon(code)
-            suite_name = r["infra"]["suite_files"][0] if r["infra"]["suite_files"] else "—"
-            lines += [f"### `{r['lib']}` — {icon} ({suite_name})"]
-            if code not in (-1,) and r.get("suite_output"):
-                lines += ["```", r["suite_output"][-2000:], "```"]
-            lines += [""]
+    if pytest_failures or suite_failures:
+        lines += ["## Test Failures", ""]
+        for r in pytest_failures:
+            lines += [f"- `{r['lib']}`: pytest exited {r['pytest_code']}"]
+        for r in suite_failures:
+            lines += [f"- `{r['lib']}`: integrity suite exited {r['suite_code']}"]
+        lines += [""]
 
     lines += [
         "## References",
-        "- `rules_verification_testing.md §1` — Standardized Test Naming & Architecture",
-        "- `rules_verification_testing.md §3` — @verify Protocol & Phase-Gating",
-        "- `rules_verification_testing.md §7` — Failure Test Mandate (ADR-034)",
-        "- Routine 10 (Library test coverage) in `.claude/workflows/audit_routine_registry.md`",
+        "- `.claude/rules/rules_verification_testing.md §1` — Standardized Test Naming and Architecture",
+        "- `.claude/rules/rules_verification_testing.md §3` — @verify Protocol and Phase-Gating",
+        "- `.claude/rules/rules_verification_testing.md §7` — Failure Test Mandate (ADR-034)",
+        "- `.claude/workflows/audit_routine_registry.md` — scheduled audit registry",
     ]
 
     return "\n".join(lines)
@@ -246,24 +276,50 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--project-root", default=None)
-    parser.add_argument("--output", default=None)
-    parser.add_argument("--lib", default=None, help="Run against a single library only")
-    parser.add_argument("--skip-suites", action="store_true", help="Skip integrity suite runs")
-    parser.add_argument("--skip-pytest", action="store_true", help="Infrastructure check only, no test execution")
+    parser.add_argument(
+        "--project-root",
+        default=None,
+        help="Project root directory (default: auto-detect from script location)",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Write report to this file in addition to stdout",
+    )
+    parser.add_argument(
+        "--lib",
+        default=None,
+        metavar="NAME",
+        help="Audit a single library by name (e.g. transformer)",
+    )
+    parser.add_argument(
+        "--skip-suites",
+        action="store_true",
+        help="Check infrastructure only; do not execute integrity suites",
+    )
+    parser.add_argument(
+        "--skip-pytest",
+        action="store_true",
+        help="Skip all test execution — infrastructure check only (fastest)",
+    )
     args = parser.parse_args()
 
     project_root = (
-        Path(args.project_root) if args.project_root
+        Path(args.project_root)
+        if args.project_root
         else find_project_root(Path(__file__).resolve().parent)
     )
     python_bin = project_root / ".venv" / "bin" / "python"
     libs_dir = project_root / LIBS_DIR
 
-    lib_dirs = (
-        [libs_dir / args.lib] if args.lib
-        else sorted(d for d in libs_dir.iterdir() if d.is_dir() and not d.name.startswith("."))
-    )
+    # Only scan directories with a src/ subdirectory (proper editable packages).
+    if args.lib:
+        lib_dirs = [libs_dir / args.lib]
+    else:
+        lib_dirs = sorted(
+            d for d in libs_dir.iterdir()
+            if d.is_dir() and (d / "src").is_dir()
+        )
 
     results = []
     for lib_dir in lib_dirs:
@@ -273,21 +329,19 @@ def main() -> int:
 
         if not args.skip_pytest:
             print(f"  Running pytest for {lib_name} ...", file=sys.stderr)
-            try:
-                code, output = run_pytest(python_bin, lib_dir, project_root)
-            except subprocess.TimeoutExpired:
-                code, output = 1, "TIMEOUT — pytest exceeded limit"
+            code, output = run_pytest(python_bin, lib_dir, project_root)
             entry["pytest_code"] = code
             entry["pytest_output"] = output
 
         if not args.skip_suites:
-            suite_files = list((lib_dir / "tests").glob("*_integrity_suite.py")) if (lib_dir / "tests").exists() else []
+            suite_files = (
+                list((lib_dir / "tests").glob("*_integrity_suite.py"))
+                if (lib_dir / "tests").exists()
+                else []
+            )
             if suite_files:
                 print(f"  Running integrity suite for {lib_name} ...", file=sys.stderr)
-                try:
-                    code, output = run_suite(python_bin, suite_files[0], project_root)
-                except subprocess.TimeoutExpired:
-                    code, output = 1, "TIMEOUT — suite exceeded limit"
+                code, output = run_suite(python_bin, suite_files[0], lib_name, project_root)
                 entry["suite_code"] = code
                 entry["suite_output"] = output
             else:
@@ -306,7 +360,7 @@ def main() -> int:
         print(f"\nReport written to: {output_path}", file=sys.stderr)
 
     has_failures = any(
-        r.get("pytest_code", 0) == 1 or r.get("suite_code", 0) == 1
+        r.get("pytest_code", -1) not in (-1, 0) or r.get("suite_code", -1) not in (-1, 0)
         for r in results
     )
     has_missing = any(r["infra"]["coverage_level"] == "MISSING" for r in results)

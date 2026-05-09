@@ -30,7 +30,7 @@ def action_sink_parquet(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     if decision_hash:
         # ADR-031: Use Eager write to support custom metadata hashing
         print(
-            f"      └── 💾 Materializing Anchor (Tier 1) with Logic Hash: {decision_hash[:8]}... to: {path}")
+            f"      └── Materializing Anchor (Tier 1) with Logic Hash: {decision_hash[:8]}... to: {path}")
         df = lf.collect()
 
         # Polars write_parquet 'custom_metadata' is only in recent versions.

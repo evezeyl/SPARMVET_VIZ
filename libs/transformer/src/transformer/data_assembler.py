@@ -123,13 +123,13 @@ class DataAssembler:
                     existing_hash = get_parquet_metadata_hash(path)
                     if existing_hash == decision_hash:
                         print(
-                            f"  ─── 🗲  Short-Circuit: Valid Parquet branch found at {path}. Skipping early steps.")
+                            f"  ─── Short-Circuit: Valid Parquet branch found at {path}. Skipping early steps.")
                         consolidated_lf = pl.scan_parquet(path)
                         start_index = i + 1
                         break
                     else:
                         print(
-                            f"  ─── ⚠️ Cache Invalidation: Logic change detected for {path}. Recomputing...")
+                            f"  ─── WARNING: Cache Invalidation: Logic change detected for {path}. Recomputing...")
 
         # Process the remaining steps
         for i in range(start_index, len(recipe)):
@@ -162,7 +162,7 @@ class DataAssembler:
                     # Log the keys actually found to help debugging manifest syntax
                     actual_keys = list(step.keys())
                     print(
-                        f"⚠️ Warning: Missing join key for {right_id}. Found keys: {actual_keys}. Skipping join.")
+                        f"WARNING: Missing join key for {right_id}. Found keys: {actual_keys}. Skipping join.")
                     continue
 
                 step["__right_df__"] = self.ingredients[right_id]

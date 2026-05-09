@@ -18,11 +18,11 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - `MetadataValidator (metadata_validator.py)`: Ensures user-provided data aligns with manifest contracts. Performs **Malformed Data Gatekeeping** (ADR-034) by trapping missing columns with typo-correction suggestions and enforcing schema types.
 - `IntegritySuite (transformer_integrity_suite.py)` - [Orchestrator]: Programmatically verifies the correctness of every registered action.
 - `Phase3Debugger (debug_phase3_refinements.py)` - [Test Utility]: CLI runner for verifying decision hashing and gatekeeping logic.
-- `WranglerDebugger (debug_wrangler.py)` - [Dev Tool]: CLI harness to test isolated atomic transformations manually.
-- `AssemblerDebugger (debug_assembler.py)` - [Dev Tool]: CLI executor for emulating multi-source relational logic.
-- `PipelineDebugger (debug_pipeline.py)` - [Test Utility]: CLI tool to verify full pipeline execution and materialize output for audit.
-- `ExpressionsDebugger (debug_expressions.py)` - [Dev Tool]: Isolated runner to test atomic Polars expressions (Cast, Coalesce).
-- `DecoratorDebugger (debug_decorator_suite.py)` - [Helper]: Specialized runner for Layer 1 action verification.
+- `debug_wrangler.py` - [Dev Tool]: CLI runner for isolated atomic wrangling verification. Entry: `run_wrangler_debug()`.
+- `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly and `final_contract` output. Entry: `run_assembler_debug()`.
+- `debug_pipeline.py` - [Test Utility]: CLI runner for full pipeline execution with materialized output for audit.
+- `debug_expressions.py` - [Dev Tool]: CLI runner for atomic Polars expressions (Cast, Coalesce).
+- `debug_decorator_suite.py` - [Helper]: CLI runner for Layer 1 action verification.
 - **Action Sub-Packages (ADR-024)**:
   - `Reshapinger (reshaping/core.py)`: Structural transformations (Pivot, Unpivot, Explode, Split).
   - `Cleaner (cleaning/core.py)`: Atomic cleaning (Rename, Replace, Nulls, Selection, Sanitization).

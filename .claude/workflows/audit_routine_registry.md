@@ -26,11 +26,14 @@
 | CSS design token compliance | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | Hardcoded config/path violations | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
-| Library test coverage | On-demand | Manual trigger (or pre-release) | `[ ] Planned` | — | — | — | Local (manual) |
-| Package dependency health | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
-| Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[ ] Planned` | — | — | — | Local (manual) |
+| Library test coverage | On-demand | Manual trigger (or pre-release) | `[x] Active` | 2026-05-09 ❌ | LIB-TESTS-BLUEPRINT-1, LIB-TESTS-VIZ-TIMEOUT-1 | 2026-05-09 | Local (manual) |
+| Package dependency health | On-demand | Manual trigger (or monthly) | `[x] Active` | 2026-05-09 ⚠️ | plotnine PATCH upgrade pending | 2026-05-09 | Local (manual) |
+| Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[x] Active` | 2026-05-09 ✅ | Fixed 2 stale → exclusions | 2026-05-09 | Local (manual) |
 | Manifest coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-14 | — | Local (systemd) |
 | Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
+| **Semantic doc sync** (Agent §17) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ⚠️ — 3 STALE (ExcelHandler class, Comparison Theater, viz_factory count) | — | — | Agent (on-demand) |
+| **ADR behavioral compliance** (Agent §18) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ❌ — ADR-078 VIOLATION: 5 actions silent return lf; ADR-045/053 PASS | — | — | Agent (on-demand) |
+| **Three-source persona consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ — all 8 personas PASS, 0 cascade violations | — | — | Agent (on-demand) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
@@ -395,7 +398,7 @@ Once manual test passes:
   - pytest exits non-zero (test failures)
   - Integrity suite exits non-zero (pipeline failures)
 - **Owner:** Manual (CLI)
-- **Status:** `[ ] Planned`
+- **Status:** `[x] Active (first run: 2026-05-09 — FAIL: blueprint_arch 188 pytest failures in test_schema_registry.py; viz_factory integrity suite timeout; transformer suite exit-0 with 60/62 internal failures post-ADR-078)`
 
 ---
 
@@ -411,7 +414,7 @@ Once manual test passes:
   - Parity mandate packages (polars, plotnine) have updates → action required note
   - MINOR / PATCH updates → informational (exit 0)
 - **Owner:** Manual (CLI)
-- **Status:** `[ ] Planned`
+- **Status:** `[x] Active (first run: 2026-05-09 — FAIL exit 1: importlib_metadata MAJOR update; plotnine PATCH parity mandate trigger; no conflicts)`
 
 ---
 
@@ -432,7 +435,7 @@ Once manual test passes:
   - `CUSTOM` — registration flagged as intentional SPARMVET extension (in exclusions) → informational
 - **Exclusions:** `.claude/workflows/audit_exclusions.yaml` (key: `parity_coverage`)
 - **Owner:** Manual (CLI)
-- **Status:** `[ ] Planned`
+- **Status:** `[x] Active (first run: 2026-05-09 — FAIL exit 1: 2 unresolved stale components fixed → added theme_legend_position and theme_publication to custom_viz_components in audit_exclusions.yaml; 54 plotnine gap informational)`
 
 ---
 
@@ -518,6 +521,111 @@ Once manual test passes:
   - Palette name shadows a built-in (`sparmvet_brand`) → WARNING
 - **Owner:** Local (systemd Thursday slot)
 - **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 3 palettes)
+
+---
+
+## 3b. Agent-Based Audit Routines
+
+These routines require a Claude agent session to run — they perform semantic reasoning that
+cannot be reduced to grep or static analysis. Each routine is invoked on-demand by Eve,
+either via the Claude Code CLI or as a cloud routine at `claude.ai/code/routines`.
+
+**Key distinction:** Scripts detect structural violations (wrong path, missing file, forbidden
+import). Agent routines detect *semantic drift* — places where the intent of a rule diverges
+from what the code or docs actually do. No regex can replace this judgment.
+
+---
+
+### Routine 17: Semantic Documentation Sync (Agent)
+
+- **Type:** Agent (Claude Code session, not a Python script)
+- **Purpose:** Read documentation files (`docs/**/*.qmd`, `libs/*/README.md`) and compare
+  their behavioral claims against the current source code. Identify semantic drift — places
+  where docs describe an interface, behavior, or pattern that the code no longer implements.
+  Distinct from §9 (structural: does the file exist / does the path work?) — this checks
+  *content accuracy*.
+- **Why agent:** A script can check if `README.md` mentions `data_wrangler.py` (path-level).
+  Only an agent can judge whether the README's description of what `DataWrangler` does still
+  matches the implementation after 20 ADRs of evolution.
+- **Frequency:** On-demand — after significant refactors, before releases, or quarterly.
+- **Invocation (CLI):**
+  ```
+  claude --prompt "Run Routine 17: Semantic Documentation Sync for SPARMVET_VIZ.
+  Read each file under docs/ and libs/*/README.md.
+  For each doc, identify the top 3 behavioral claims it makes about the codebase.
+  For each claim, check the source code and report: CURRENT (still accurate),
+  STALE (code changed), or MISSING (implementation does not exist).
+  Write a triage report to .claude/logs/audits/audit_doc_sync_YYYY-MM-DD.md."
+  ```
+- **Output:** `.claude/logs/audits/audit_doc_sync_YYYY-MM-DD.md`
+- **Exclusions:** Placeholder/stub sections marked `[DEFERRED]` or `[TODO]` are expected to
+  diverge and should be noted but not flagged as violations.
+- **Owner:** Agent (on-demand, initiated by Eve)
+- **Status:** `[x] Active (first run: 2026-05-09 — ⚠️ 3 STALE: viz_factory README component count 175 vs 195; ingestion README ExcelHandler documented as class but only CLI main() exists; transformer README "Comparison Theater" terminology not in codebase. Filed DOC-GAP-5. Behavioral claims for transformer/connector/blueprint_arch: all CURRENT.)`
+
+---
+
+### Routine 18: ADR Behavioral Compliance (Agent)
+
+- **Type:** Agent (Claude Code session)
+- **Purpose:** Read the behavioral ADRs and audit the codebase for violations that require
+  semantic judgment — patterns a grep cannot catch. Covers the hardest-to-enforce ADRs:
+  - **ADR-045 Two-Category Law:** Do any `@render.*` functions call `reactive.Value.set()`
+    directly or transitively? Does any handler file contain business logic that belongs in
+    a module?
+  - **ADR-053 No persona name comparisons:** Are there any `if persona == "..."` or
+    `persona in (...)` control-flow checks outside bootloader that escaped the structural scan?
+  - **ADR-075 Blueprint IDE escape hatch gate:** Is `manifest_edit_enabled` gating done via
+    `bootloader.is_enabled()` or is there a residual name check?
+  - **ADR-078 Diagnostic Error Discipline:** Do new actions in `libs/transformer/` raise
+    `SPARMVET_DiagnosticError` on invalid input rather than returning empty data?
+- **Why agent:** The Two-Category Law violation is subtle: a render may not call `.set()`
+  directly but may call a helper that does. A grep for `.set(` produces too many false positives
+  (dict `.set()`, Polars `.set()`, etc.). The agent reads the render, traces the call graph
+  one level, and judges.
+- **Frequency:** On-demand — after any significant refactor of `app/handlers/`, or quarterly.
+- **Invocation (CLI):**
+  ```
+  claude --prompt "Run Routine 18: ADR Behavioral Compliance for SPARMVET_VIZ.
+  Check the following ADRs (read from .claude/knowledge/architecture_decisions.md):
+  ADR-045 (Two-Category Law), ADR-053 (no persona name checks), ADR-078 (diagnostic errors).
+  For each ADR, scan the relevant files and report any violations with file:line references.
+  Write a triage report to .claude/logs/audits/audit_adr_compliance_YYYY-MM-DD.md."
+  ```
+- **Output:** `.claude/logs/audits/audit_adr_compliance_YYYY-MM-DD.md`
+- **Owner:** Agent (on-demand)
+- **Status:** `[x] Active (first run: 2026-05-09 — ❌ ADR-078 VIOLATION: 5 actions in expressions.py/analytical.py/advanced.py silently return lf on invalid input instead of raising SPARMVET_DiagnosticError. Filed ADR-078-ACTIONS-1. ADR-045 PASS. ADR-053 PASS.)`
+
+---
+
+### Routine 19: Three-Source Persona Consistency (Agent)
+
+- **Type:** Agent (Claude Code session)
+- **Purpose:** Verify that the persona capability design document, the persona template YAML
+  files, and the bootloader cascade rules are semantically consistent. Catch divergences that
+  no single script can find because the truth lives across three sources:
+  1. `design/persona_capability_matrix.md` — design intent (what personas should be able to do)
+  2. `config/ui/templates/*_template.yaml` — declared flag values per persona
+  3. `.claude/rules/rules_persona_feature_flags.md` — cascade rules and bootloader behavior
+  If a persona is documented as having Gallery access but its template has `gallery_enabled: false`,
+  or if the cascade doc says flag X depends on Y but the template has X enabled and Y disabled —
+  that's a three-source inconsistency no grep can catch.
+- **Why agent:** Three-source comparison requires holding all three views in mind simultaneously
+  and reasoning about what "equivalent" means across different representations.
+- **Frequency:** On-demand — after any persona addition, flag matrix change, or ADR that adds
+  a new flag dependency.
+- **Invocation (CLI):**
+  ```
+  claude --prompt "Run Routine 19: Three-Source Persona Consistency for SPARMVET_VIZ.
+  Read: (1) design/persona_capability_matrix.md, (2) all config/ui/templates/*.yaml,
+  (3) .claude/rules/rules_persona_feature_flags.md §Flag Matrix and §Cascade Enforcement.
+  For each persona, compare what the design doc says it can do vs what the template enables
+  vs what the cascade rules would produce. Report any inconsistency.
+  Write a triage report to .claude/logs/audits/audit_persona_consistency_YYYY-MM-DD.md."
+  ```
+- **Output:** `.claude/logs/audits/audit_persona_consistency_YYYY-MM-DD.md`
+- **Owner:** Agent (on-demand)
+- **Status:** `[x] Active (first run: 2026-05-09 — ✅ PASS: all 8 personas fully consistent across all three sources. 0 cascade violations. Informational: persona_capability_matrix.md uses longer legacy names vs canonical short names in templates/rules — cosmetic only.)`
 
 ---
 
@@ -722,7 +830,7 @@ chore: add audit routine for ADR-011 cross-lib violations
 
 ---
 
-**Status:** 16 routines designed and documented. All 10 weekly routines now `[x] Active` via systemd user timers (installed 2026-05-09). Routines 11–14 (on-demand) remain `[ ] Planned` — run manually via `./scripts/run_audits.sh ondemand`.  
+**Status:** 19 routines designed and documented. All 10 weekly script routines `[x] Active` via systemd user timers. On-demand script routines §10–12 now `[x] Active` (first run 2026-05-09). Agent routines §17–19 `[ ] Planned` — run on-demand via Claude Code CLI.  
 **Last Updated:** 2026-05-09  
-**Note:** Systemd timer installation activated Sunday/Wednesday/Thursday/Friday slots on 2026-05-09. Routine 16 (palette registry validity) added to Thursday slot alongside CSS/hardcoded-config/template-flags audits. All session-end quick-run scripts (cross-lib, deps, task-drift, template-flags) passed ✅ on 2026-05-09.
-**Next Review:** After first automated run (Sunday 2026-05-11 for cross-lib + deps; Thursday 2026-05-15 for full Thursday group)
+**Note:** §10 (library tests) found real failures: blueprint_arch 188 pytest failures and viz_factory integrity timeout. §11 (package deps) flagged importlib_metadata MAJOR. §12 (parity) fixed 2 stale → exclusions. §17–19 are agent-superior routines — semantic drift, ADR behavioral compliance, three-source persona consistency. Script §9 (doc sync) remains Planned; structural path checks only.
+**Next Review:** After first automated run (Sunday 2026-05-11 for cross-lib; Thursday 2026-05-15 for full Thursday group)

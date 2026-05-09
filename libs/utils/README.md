@@ -2,13 +2,12 @@
 
 **Authority:** ADR-011
 
-Shared utilities used across all application layers. Acts as the neutral resolution point for configuration, hashing, and gallery management — keeping these concerns out of the core analytic pipeline.
+Shared utilities used across all application layers. Acts as the neutral resolution point for configuration, hashing, and shared output helpers — keeping these concerns out of the core analytic pipeline.
 
 ## Key Components
 
 - **ConfigManager (config_loader.py)**: Recursively reads, validates, and dispatches YAML configuration files from `config/`. Supports `!include` tags for modular manifests. Single source of truth for all parsed configuration.
 - **HashingUtility (hashing.py)**: Deterministic SHA-256 fingerprinting for manifests, source files, and Parquet metadata. Produces the `manifest_sha256` and `data_batch_hash` used in session keys and export provenance (ADR-069).
-- **GalleryManager (gallery_manager.py)**: Logic layer for gallery bundle persistence. Handles folder-based storage of `recipe_manifest.yaml`, `example_data.tsv`, `recipe_meta.md`, and `preview_plot.png` in `assets/gallery_data/`. See also `libs/viz_gallery` for the indexing layer.
 - **DebugOutput (debug_output.py)**: Shared CLI output helpers used by debug scripts across `libs/`.
 - **Errors (errors.py)**: Shared exception hierarchy (`SparmvetError`, sub-classes).
 

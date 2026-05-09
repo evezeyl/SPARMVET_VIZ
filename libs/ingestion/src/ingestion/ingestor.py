@@ -99,7 +99,7 @@ class DataIngestor:
                     if key not in post_rename_cols:
                         original = props.get("original_name", key)
                         print(
-                            f"⚠️  [Ingestor] Column '{key}' (source: '{original}') declared in "
+                            f"WARNING [Ingestor] Column '{key}' (source: '{original}') declared in "
                             f"input_fields for '{dataset_name}' but not found in source file. "
                             f"Downstream steps using this column will fail."
                         )

@@ -46,6 +46,16 @@ parity_coverage:
         is used internally by the registry dispatcher, not as a plotnine component.
       review_trigger: "If registry.py internals change the decorator pattern."
 
+    - name: theme_publication
+      reason: "Custom academic publication style theme — SPARMVET-specific, not a plotnine export."
+      review_trigger: "If plotnine ever adds a same-named theme, or if this component is removed."
+
+    - name: theme_legend_position
+      reason: >
+        Custom helper component that adjusts legend position via the theming layer.
+        Not a plotnine theme but a SPARMVET convenience wrapper.
+      review_trigger: "If plotnine adds a theme_legend_position export, or if component is removed."
+
   # Plotnine symbols that are registered but genuinely missing from the installed
   # version (renamed or removed upstream).  These are tracked here rather than
   # silently deleting the registrations so we can make an informed decision.

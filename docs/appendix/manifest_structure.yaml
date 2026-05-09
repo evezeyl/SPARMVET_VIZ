@@ -11,7 +11,7 @@ directory_taxonomy:
   input_fields: "Defines raw incoming schemas (keys: type, original_name, role)."
   wrangling: "Defines Tier 1/Tier 2 transformations for individual data sources."
   output_fields: "Defines the terminal contract schemas (dict of slug: {type, ...})."
-  assembly: "Contains the assembly recipe file(s) for joining multiple ingredients into a collection anchor."
+  join: "Contains the join recipe file(s) for joining multiple ingredients into a collection anchor. Top-level manifest key: join_manifests:."
   plots: "Contains visualization spec files for analysis_groups. Each file has a single 'spec:' root key."
 
 constructor_standard:
