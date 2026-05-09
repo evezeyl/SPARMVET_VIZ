@@ -412,6 +412,18 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ---
 
+## Phase 23: Scientific Audit Hardening (ACTIVE 2026-04-23)
+
+**Objective**: Institutionalize the development-phase audit requirements: mandatory Tier 1 visibility, biological typing standards, and precision renaming.
+
+- [x] **ADR-046**: Formalize the Scientific Audit Protocol (Tier 1 visibility, retention policy). [DONE]
+- [x] **Rulebook Sync**: Update `rules_data_engine.md` and `rules_manifest_structure.md` with whitelisting and typing laws. [DONE]
+- [ ] **Ingestor Diagnostics**: Implement non-breaking warnings for missing manifest columns in `DataIngestor`.
+- [ ] **Audit Materialization**: Standardize the `debug_wrangler.py` and `debug_assembler.py` output paths to a unified `tmp/{date}/{lineage}/` folder structure.
+- [ ] **Lineage 2 (Plasmids)**: Apply new renaming precision standards (`predicted_phenotype`) and verify via Tier 1 audit.
+
+---
+
 ## Phase 24: `home_theater.py` Decomposition (ADR-051) — IMPLEMENTED 2026-05-01
 
 **Objective:** Split `app/handlers/home_theater.py` (2,853 lines pre-flight) into a thin coordinator plus focused handler modules, following ADR-045 decomposition pattern. **Gate met (2026-04-30):** Phase 22-J live-UI test §1 PASSED. **Status (2026-05-01):** ALL STEPS LANDED ON `dev`. ADR-051 → IMPLEMENTED. `home_theater.py`: 2,853 → 1,278 lines (-55.2%).
@@ -722,15 +734,3 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - Apply gate: upstream schema propagates on Apply only (not continuously)
 - Edit/remove: (1) edit in-place + re-Apply, (2) 20-step undo deque, (3) YAML escape hatch
 - `manifest_edit_enabled`: default false all personas; true for developer and qa only
-
----
-
-### Phase 23: Scientific Audit Hardening (ACTIVE 2026-04-23)
-
-**Objective**: Institutionalize the development-phase audit requirements: mandatory Tier 1 visibility, biological typing standards, and precision renaming.
-
-- [x] **ADR-046**: Formalize the Scientific Audit Protocol (Tier 1 visibility, retention policy). [DONE]
-- [x] **Rulebook Sync**: Update `rules_data_engine.md` and `rules_manifest_structure.md` with whitelisting and typing laws. [DONE]
-- [ ] **Ingestor Diagnostics**: Implement non-breaking warnings for missing manifest columns in `DataIngestor`.
-- [ ] **Audit Materialization**: Standardize the `debug_wrangler.py` and `debug_assembler.py` output paths to a unified `tmp/{date}/{lineage}/` folder structure.
-- [ ] **Lineage 2 (Plasmids)**: Apply new renaming precision standards (`predicted_phenotype`) and verify via Tier 1 audit.
