@@ -245,3 +245,16 @@ Source: `audit_in_depth_state_2026-05-09.md`. All findings verified by manual gr
 ### Audit Infrastructure (done)
 
 - [x] **AUDIT-TIMERS-1** `[haiku/low]`: Systemd audit timers installed and verified via `./scripts/systemd/install.sh`.
+
+---
+
+## Blueprint IDE Forms — Color widget batch (archived 2026-05-09, third cleanup)
+
+- [x] **BP-COLOR-1** `[sonnet/medium]`: Color widget — column mapping toggle, palette library picker, hex picker, project palette source.
+- [x] **BP-COLOR-2** `[haiku/low]`: Deployment palette registry — `config/palettes.yaml`; `bootloader.get_palettes()`; color widget "Project palette" source populated from registry; static list replaced with runtime-resolved matplotlib palette names.
+
+---
+
+## Blueprint IDE Forms — BP-COLOR-3 (archived 2026-05-09, fourth cleanup)
+
+- [x] **BP-COLOR-3** `[sonnet/medium]`: `plot_defaults.palette` key in manifest — VizFactory resolves named palette from registry at render time; fallback chain: plot-level override → manifest default → matplotlib library. Library-autonomous (built-ins always present); project palettes injected by app/src/server.py via bootloader.
