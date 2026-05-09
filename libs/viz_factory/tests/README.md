@@ -32,3 +32,13 @@ For geoms and positions, the runner automatically generates a side-by-side compa
 - **Left**: Default (Identity) state.
 - **Right**: Applied manifest state.
 Artifacts are saved as PNG files in `tmp/viz_factory/`.
+
+## Pytest — fast component contract check
+
+```bash
+PYTHONPATH=. ./.venv/bin/python -m pytest libs/viz_factory/tests/ -v
+```
+
+Test modules:
+- `test_deco2_components.py` — DECO-2 wrappers (38 cases)
+- `test_component_schemas.py` — verifies all 7 `@register_plot_component(ui_schema=...)` entries in `COMPONENT_SCHEMAS`. Checks required fields (`label`, `category`, `context`, `params`, `wraps`, `allow_extra_params`), semantic category vocabulary, and that `params` cover the core plotnine constructor surface for each geom.

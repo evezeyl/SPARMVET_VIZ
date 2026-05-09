@@ -2,6 +2,114 @@
 
 The `VizFactory (viz_factory.py)` translates simple YAML configurations into highly complex Plotnine (`ggplot2`) graphical objects. This appendix provides concrete "copy-paste" examples for non-programmers to define their own visual aesthetics without touching Python code.
 
+> **Blueprint Architect IDE**: Plot components annotated with `ui_schema` are discoverable via the component picker (see §0). The schema drives automatic form generation — labels, widget types, and validation rules are declared once in the decorator.
+
+## 0. Blueprint IDE Component Catalog (ADR-075) {#sec-ui-schema}
+
+### What is a component `ui_schema`?
+
+Every `@register_plot_component` decorator in the viz_factory can carry a `ui_schema` dict. When present, the component appears in the Blueprint Architect IDE's component picker with an auto-generated form. The schema describes which plotnine parameters to expose, what widget to use for each, and how the component maps back to the underlying plotnine function.
+
+### Accessing the catalog programmatically
+
+```python
+import viz_factory   # triggers all @register_plot_component decorators
+
+from blueprint_arch.schema_registry import (
+    get_component_catalog,         # all annotated components
+    get_components_for_context,    # filter by "plot"
+)
+
+# All annotated plot components
+catalog = get_component_catalog()
+
+# Same — all geoms/stats/themes/scales are "plot" context
+plot_comps = get_components_for_context("plot")
+```
+
+### Schema field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `label` | Yes | Human-readable name shown in the IDE picker |
+| `category` | Yes | Visualization family (see vocabulary below) |
+| `context` | Yes | Always `["plot"]` for geom/stat/theme/scale components |
+| `tags` | Yes | Search keywords for the picker |
+| `wraps` | Yes | Link to plotnine source (`lib`, `attr_path`) |
+| `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via manifest |
+| `params` | Yes | Dict of param definitions (widget, label, required, …) |
+
+### Category vocabulary
+
+| Category | Visual purpose |
+|---|---|
+| `distribution` | Show spread, quartiles, density — boxplot, violin, histogram |
+| `correlation` | Show relationships between variables — scatter, bubble |
+| `comparison` | Compare values across groups — bar, column, lollipop |
+| `evolution` | Show change over time — line, area, step |
+| `part-to-whole` | Show proportions — stacked bar, pie equivalent |
+| `ranking` | Order items by value — sorted bar, dot plot |
+| `annotation` | Add context to a plot — labels, reference lines, text |
+| `uncertainty` | Show confidence, error, range — errorbar, ribbon |
+
+### Annotated components (BP-SCHEMA-1)
+
+7 components carry `ui_schema` dicts and appear in the Blueprint IDE picker:
+
+| Component | Category | Core params |
+|---|---|---|
+| `geom_boxplot` | `distribution` | alpha, fill, colour, size, width, notch, linetype, position, stat, outlier_colour/shape/size |
+| `geom_point` | `correlation` | alpha, colour, fill, size, shape, stroke, na_rm |
+| `geom_line` | `evolution` | alpha, colour, size, linetype, lineend, linejoin, na_rm |
+| `geom_bar` | `comparison` | alpha, fill, colour, size, stat (count/identity), position (stack/dodge/fill), width |
+| `geom_histogram` | `distribution` | alpha, fill, colour, bins, binwidth, stat, position |
+| `geom_tile` | `correlation` | alpha, fill, colour, width, height, linejoin |
+| `labs` | `annotation` | title, subtitle, caption, x, y, fill, colour, size, shape, alpha |
+
+All other registered components still work from YAML manifests — the `ui_schema` only controls IDE visibility.
+
+### Why `allow_extra_params: True`?
+
+Components do `p + geom_bar(**spec)` — the spec dict passes through directly to plotnine. The `params` dict lists the most common kwargs for the form renderer, but any valid plotnine kwarg can be added directly in the manifest YAML. Setting `allow_extra_params: True` tells the form renderer to allow this without validation errors.
+
+### Adding a `ui_schema` to a new component (developer guide)
+
+```python
+from viz_factory.registry import register_plot_component
+
+@register_plot_component("geom_mygeom", ui_schema={
+    "label": "My Geom",
+    "category": "distribution",           # use the semantic vocabulary above
+    "context": ["plot"],                   # always ["plot"] for geoms
+    "tags": ["distribution", "my-geom"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["geom_mygeom"]}],
+    "allow_extra_params": True,
+    "params": {
+        "alpha": {
+            "widget": "number",
+            "label": "Opacity (0–1)",
+            "required": False,
+            "default": 1.0,
+        },
+        "fill": {
+            "widget": "color",
+            "label": "Fill colour (fixed, not mapped)",
+            "required": False,
+        },
+    },
+})
+def handle_mygeom(p, spec):
+    from plotnine import geom_mygeom
+    return p + geom_mygeom(**spec)
+```
+
+**Rules:**
+- `wraps[0].attr_path` must contain the component name exactly as registered.
+- Every geom should expose `alpha` — it is checked by `test_component_schemas.py::test_all_geoms_have_alpha`.
+- Verify registration with `libs/viz_factory/tests/test_component_schemas.py`.
+
+---
+
 ## 1. Anatomy of a Plot Manifest
 
 Every plot in the dashboard is built from a YAML dictionary that follows this exact skeleton:

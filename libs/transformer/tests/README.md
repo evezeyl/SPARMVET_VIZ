@@ -33,3 +33,12 @@ data_schemas:
 ## Materialization Gate (@verify)
 
 The `--output` argument in runners materializes the result into `tmp/`. Always verify the output data visually or via `glimpse()` before considering a task [DONE].
+
+## Pytest — fast component contract check
+
+```bash
+PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/ -v
+```
+
+Test modules:
+- `test_ui_schemas.py` — verifies all 19 `@register_action(ui_schema=...)` entries in `ACTION_SCHEMAS` (440+ assertions). Checks required fields, valid widget types, context tags, and that `params` keys match the actual `spec.get()` call signatures in each action function.

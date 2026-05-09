@@ -2,6 +2,110 @@
 
 This appendix provides concrete YAML usage examples for the 25+ verified decorators executed by `DataWrangler` and `DataAssembler`. Use these "recipes" in your manifests to configure pipeline transformations without writing any logic.
 
+> **Blueprint Architect IDE**: Every action listed here is also discoverable via the programmatic catalog (see §0). The catalog drives the form generator in the Blueprint Architect IDE — no hand-coded forms needed.
+
+## 0. Blueprint IDE Catalog (ADR-075) {#sec-ui-schema}
+
+### What is a `ui_schema`?
+
+Every `@register_action` decorator in the transformer carries an optional `ui_schema` dict. When present, the action is registered in `ACTION_SCHEMAS` and surfaced in the Blueprint Architect IDE's action picker. The schema drives automatic form generation — widget types, labels, and validation rules are declared once in the decorator, not repeated in UI code.
+
+### Accessing the catalog programmatically
+
+```python
+import transformer.actions   # triggers all @register_action decorators
+
+from blueprint_arch.schema_registry import (
+    get_action_catalog,         # all annotated actions
+    get_actions_for_context,    # filter by "t1" | "t2" | "assembly"
+    get_actions_by_category,    # filter by "cleaning" | "derivation" | ...
+    search_actions,             # case-insensitive full-text search on name + tags
+)
+
+# All actions valid in Tier-1 wrangling
+t1_actions = get_actions_for_context("t1")
+
+# Find null-handling actions by keyword
+null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
+```
+
+### Context tags
+
+| Tag | Valid in | Typical use |
+|---|---|---|
+| `t1` | Tier-1 wrangling block | Cleaning, renaming, filtering, casting |
+| `t2` | Tier-2 wrangling block | Reshaping, aggregation, long-format transforms |
+| `assembly` | Assembly recipe | Joins, cross-source derivation |
+
+### Widget type vocabulary
+
+| Widget | UI control | Use for |
+|---|---|---|
+| `column_selector` | Multi/single dropdown from schema | Column name(s) |
+| `expression` | Code editor with Polars highlighting | `pl.col(...)` expressions |
+| `enum` | Dropdown from `options: [...]` | Fixed categorical choices |
+| `dtype_picker` | Polars dtype dropdown | `cast` dtype selection |
+| `number` | Numeric input | Counts, thresholds, decimals |
+| `string` | Plain text | New column names, regex patterns |
+| `color` | Colour picker | Fill / colour overrides |
+| `column_or_literal` | Column select or literal | Fill values, join keys |
+| `bool` | Checkbox | Flags, on/off options |
+
+### Annotated actions (BP-SCHEMA-1)
+
+19 actions carry `ui_schema` dicts and appear in the Blueprint IDE picker:
+
+**Cleaning:** `fill_nulls` · `drop_nulls` · `keep_columns` · `drop_columns` · `strip_whitespace` · `rename_columns`
+
+**Filtering:** `filter_range` · `filter_eq` · `is_in`
+
+**Derivation:** `add_constant` · `mutate` · `label_if` · `coalesce`
+
+**String / Typing:** `regex_extract` · `cast`
+
+**Ordering:** `sort`
+
+**Reshaping:** `unpivot` · `explode`
+
+**Relational:** `join`
+
+All other registered actions still execute from YAML manifests — the `ui_schema` only controls IDE visibility.
+
+### Adding a `ui_schema` to a new action (developer guide)
+
+```python
+from transformer.actions.base import register_action
+
+@register_action("my_action", ui_schema={
+    "label": "Human-readable label",
+    "category": "cleaning",           # groups actions in the picker
+    "context": ["t1", "t2"],          # which tiers allow this action
+    "tags": ["null", "cleaning"],     # free-text search terms
+    "params": {
+        "columns": {
+            "widget": "column_selector",
+            "multi": True,
+            "label": "Columns",
+            "required": True,
+        },
+        "value": {
+            "widget": "column_or_literal",
+            "label": "Fill value",
+            "required": True,
+        },
+    },
+})
+def action_my_action(lf, spec):
+    ...
+```
+
+**Rules:**
+- Every param must have `widget`, `label`, and `required`.
+- If the function uses `spec.get("key_a", spec.get("key_b"))` as a fallback, both `key_a` and `key_b` must appear as separate params (with a `hint` field explaining the alias).
+- Verify registration with `libs/transformer/tests/test_ui_schemas.py`.
+
+---
+
 ## 1. Reshaping Actions
 
 ### 1.1 `unpivot` (Wide-to-Long)
