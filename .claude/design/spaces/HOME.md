@@ -14,6 +14,8 @@ The core values of HOME — audit trail, transparency, reproducibility, shareabi
 
 The other user spaces exist to serve HOME: BLUEPRINT builds the manifests HOME runs, TEST_LAB prepares the data HOME receives, GALLERY provides the inspiration BLUEPRINT uses.
 
+**Space identity: HOME users produce science from a pipeline.**
+
 ---
 
 ## User Functionalities

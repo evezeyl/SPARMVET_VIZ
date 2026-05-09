@@ -2427,3 +2427,113 @@ All 6 existing persona templates receive `workspaces:` sections whose default sl
 - **SIDEBAR-CONFIGS-1** `[haiku/low]`: Create `config/ui/sidebars/` directory with shared sidebar YAML files for all workspace × tier combinations
 - **SIDEBAR-REGISTRY-1** `[sonnet/high]`: Implement `app/modules/sidebar_registry.py` (panel registry), update `bootloader` to read `workspaces:` config, update `home_theater.py` to iterate slot list, fix `ui.py` right sidebar exclusion (replaces persona name check — task 25-O)
 - **SIDEBAR-VALIDATE-1** `[sonnet/medium]`: Implement `SidebarValidator` + `scripts/validate_persona_config.py` CLI with `--all --strict` mode
+
+---
+
+## ADR-074: Lineage Infrastructure as Shared Provision (2026-05-09)
+
+**Status:** DECIDED — implementation pending
+
+**Context:** Two user spaces require manifest lineage tracing from different angles:
+
+- **HOME export** needs per-plot and per-group provenance: for a given plot, which T1/T2 wrangling steps, which join/assembly recipe, and which plot spec contributed to its output — plus any T3 modifications layered on top. For group-scope exports, all plots in the group must first be discovered (forward), then each traced backward.
+- **BLUEPRINT IDE** needs the same backward trace for visualization and navigation: when a user selects a node, the IDE shows the contributing upstream chain.
+
+Both needs are served by two new functions in `manifest_navigator.py`. That module already lives in `libs/blueprint_arch/` (Phase 29, ADR-067) as formally shared infrastructure — importable by both HOME's export handler and BLUEPRINT's IDE handler without violating the Two-Category Law.
+
+**Key principle:** *HOME users produce science from a pipeline; BLUEPRINT users produce and document pipelines.* This distinction drives the export format: lineage is a documentation/transparency artifact for HOME users, not a publication artifact — it belongs in the report. SVG export of the manifest DAG for pipeline documentation is a BLUEPRINT-scoped feature for pipeline authors, addressed separately in ADR-075.
+
+---
+
+### 1. Two new functions in `libs/blueprint_arch/.../manifest_navigator.py`
+
+**`build_plot_lineage(plot_id, manifest_path) → list[dict]`**
+
+Backward trace from a `plot_id` through all contributing manifest steps, in pipeline order:
+
+1. Data source declarations (raw input files + schema)
+2. T1 wrangling steps (from each contributing data schema)
+3. T2 wrangling steps (if present)
+4. Join/assembly recipe steps
+5. Plot spec
+
+Returns an ordered list of step dicts: `{step_type, source_file, action, params, description}`.
+
+T3 modifications are NOT included — T3 lives in session state, not the manifest. The caller (export handler or BLUEPRINT handler) appends the T3 overlay from `home_state` after calling this function.
+
+**`get_plot_ids_in_group(group_id, manifest_path) → list[str]`**
+
+Forward trace: reads `analysis_groups[group_id].plots` from the manifest and returns the list of `plot_id`s declared in that group. Used as the first step in group-scope export.
+
+---
+
+### 2. Two tracking modes
+
+| Mode | Used when | Sequence |
+|---|---|---|
+| **Backward only** | HOME per-plot export; BLUEPRINT node inspection | `build_plot_lineage(plot_id)` → T3 overlay appended by caller |
+| **Forward then backward** | HOME group-scope export | `get_plot_ids_in_group(group_id)` → `build_plot_lineage()` for each plot_id |
+
+---
+
+### 3. Export bundle — `lineage/lineage_graph.json`
+
+One JSON file per export scope (not one per plot). Shared steps (T1/T2 assembly nodes used by multiple plots) appear **once** as graph nodes with multiple downstream edges — no duplication. Per-plot paths are expressed as lists of node IDs within the shared graph. The `recipes/` folder already contains the actual YAML content; `lineage_graph.json` is a structural index of how those pieces connect.
+
+```json
+{
+  "export_scope": "global",
+  "generated": "2026-05-09T...",
+  "nodes": {
+    "node_001": {"step_type": "data_source", "schema_id": "amr_results", "source_file": "..."},
+    "node_002": {"step_type": "t1_wrangling", "action": "filter_range", "params": {...}},
+    "node_003": {"step_type": "join", "source_file": "assembly/AMR_Profile_Joint.yaml"},
+    "node_004": {"step_type": "plot_spec", "plot_id": "multi_resistance_by_country", "source_file": "..."}
+  },
+  "edges": [
+    {"from": "node_001", "to": "node_002"},
+    {"from": "node_002", "to": "node_003"},
+    {"from": "node_003", "to": "node_004"}
+  ],
+  "plot_paths": {
+    "multi_resistance_by_country": ["node_001", "node_002", "node_003", "node_004"]
+  },
+  "t3_overlay": {
+    "multi_resistance_by_country": []
+  }
+}
+```
+
+---
+
+### 4. `report.qmd` additions
+
+Three lineage-related additions to the report template, all in the report (no separate human-facing files):
+
+1. **Mermaid flowchart** — the full lineage DAG for the export scope, auto-generated from the graph structure. Shared nodes appear once; multiple plot paths branch from the shared trunk. Renders to a visual in HTML/PDF via Quarto's native Mermaid support. No extra dependency — `graphviz` is not added.
+
+2. **Step summary table** — one row per node: Step type | Action/Description | Source file | Plots that use this step. Readable without quarto render (plain markdown in the `.qmd` source). Users who prefer tables over diagrams get full coverage here.
+
+3. **JSON note** — a brief explanatory paragraph adjacent to the download reference: *"`lineage/lineage_graph.json` is a machine-readable version of this lineage graph, intended for tooling and programmatic use (e.g. re-running the pipeline from a script, or building reproducibility checks). Most users can ignore this file — the diagram and summary table above contain the same information in readable form."*
+
+---
+
+### 5. No lineage SVG in HOME export
+
+Pre-rendered SVG of the lineage DAG is explicitly **not** included in HOME exports. The Mermaid block in `report.qmd` is the visual delivery vehicle — it renders when the report is rendered, which is the natural use pattern for this transparency artifact. Adding a standalone SVG would duplicate content and imply publication use, which is not the purpose of lineage documentation.
+
+SVG/PNG export of the manifest DAG for use in pipeline publications is a **BLUEPRINT-scoped feature** (pipeline authors documenting the pipeline architecture itself). This will be addressed in ADR-075.
+
+---
+
+### Consequences
+
+- `manifest_navigator.py` gains two new public functions. Existing five-function public API (ADR-045 §4) is extended — not replaced.
+- `export_handlers.py` calls both new functions at export time, appends T3 overlay from `home_state`, builds `lineage_graph.json`, and generates the Mermaid block + step summary table for `report.qmd`.
+- `blueprint_handlers.py` uses `build_plot_lineage()` for node inspection in the BLUEPRINT IDE (backward trace from selected plot node).
+- `lineage_graph.json` is generated at export time — not stored in session state between exports.
+- No new dependencies added.
+
+**Implementation tasks:**
+- **LINEAGE-NAV-1** `[sonnet/medium]`: Implement `build_plot_lineage()` and `get_plot_ids_in_group()` in `libs/blueprint_arch/.../manifest_navigator.py`
+- **LINEAGE-EXPORT-1** `[sonnet/high]`: Implement `lineage/lineage_graph.json` generation in `export_handlers.py`; add Mermaid flowchart + step summary table + JSON note to `report.qmd` template

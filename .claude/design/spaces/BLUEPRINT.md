@@ -12,6 +12,8 @@ BLUEPRINT is a click-button IDE for building and editing manifests without writi
 
 The goal is that a user who understands their data and what they want to do with it can build a complete manifest with zero Python/R knowledge.
 
+**Space identity: BLUEPRINT users produce and document pipelines.**
+
 ---
 
 ## User Functionalities

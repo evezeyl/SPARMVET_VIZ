@@ -305,6 +305,8 @@ Phases 23-A/B done. 23-C/D/E deferred — not active sprint.
 
 ### Blueprint Architect
 
+- [ ] **LINEAGE-NAV-1** `[sonnet/medium]`: Implement `build_plot_lineage(plot_id, manifest_path)` and `get_plot_ids_in_group(group_id, manifest_path)` in `libs/blueprint_arch/.../manifest_navigator.py`. Backward trace: data sources → T1 → T2 → join/assembly → plot spec, as ordered list of step dicts. Forward trace: reads `analysis_groups[group_id].plots`. T3 overlay appended by caller. ADR-074.
+- [ ] **LINEAGE-EXPORT-1** `[sonnet/high]`: Implement `lineage/lineage_graph.json` generation in `export_handlers.py` (shared-node DAG, one file per export scope, no per-plot duplication); add to `report.qmd` template: Mermaid flowchart + step summary table + JSON explanation note. ADR-074.
 - [ ] **TubeMap aesthetics** `[haiku/low]` — tighter rail/tube look; rename 'ref' → 'Add' in nodes and legend.
 - [ ] Full Blueprint Architect debug pass (field contracts, lineage rail, Zone C layout).
 - [ ] **Action Registry Parity** `[sonnet/high]` (18-F): Expose 175+ `@register_action` entries in UI.
