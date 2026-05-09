@@ -60,6 +60,10 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": "blueprint_enabled",
         "label": "Blueprint Logic",
     },
+    "blueprint_agent_chat": {
+        "gate_flag": "blueprint_agent_enabled",
+        "label": "Blueprint Agent",
+    },
     "gallery_search": {
         "gate_flag": "gallery_enabled",
         "label": "Gallery Search",

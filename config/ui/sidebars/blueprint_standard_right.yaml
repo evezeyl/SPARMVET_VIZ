@@ -1,4 +1,5 @@
 visible: true
 panels:
   - type: blueprint_logic
+  - type: blueprint_agent_chat
   - type: notification_log

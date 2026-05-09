@@ -8,6 +8,8 @@ spec:
   layers:
     - name: position_dodge
       params: {}
+    - name: scale_x_discrete
+      params: {}
     - name: labs
       params:
         title: "Multi-Resistance by Country"
