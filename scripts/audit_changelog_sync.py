@@ -50,13 +50,23 @@ def extract_completed_phases(plan_path: Path) -> list[tuple[str, int]]:
 
 
 def extract_changelog_phases(changelog_path: Path) -> set[str]:
-    """Return set of phase labels mentioned anywhere in the changelog."""
+    """Return set of phase labels mentioned anywhere in the changelog.
+
+    Recognises individual references ("Phase 21-F") and delegation ranges
+    ("phases 3-27" or "phases 3–27") that explicitly hand off to git log or ADRs.
+    """
     if not changelog_path.exists():
         return set()
     text = changelog_path.read_text(encoding="utf-8")
     found = set()
+    # Individual phase mentions: "Phase 21-F", "Phase 31", etc.
     for m in re.finditer(r"Phase\s+(\d+(?:[.-][A-Za-z0-9]+)?)", text, re.IGNORECASE):
         found.add(m.group(1).upper())
+    # Range delegations: "phases 3-27" or "phases 3–27" (en-dash U+2013)
+    for m in re.finditer(r"[Pp]hases?\s+(\d+)\s*[-–]\s*(\d+)", text):
+        lo, hi = int(m.group(1)), int(m.group(2))
+        for n in range(lo, hi + 1):
+            found.add(str(n))
     return found
 
 
@@ -69,12 +79,21 @@ def render_report(
 ) -> str:
     now = datetime.now().isoformat(timespec="seconds")
 
+    def _is_covered(label: str) -> bool:
+        ul = label.upper()
+        if ul in changelog_phases:
+            return True
+        # Sub-phase (e.g. "9-B") is covered if its integer prefix is in the set
+        # (range delegations like "phases 3–27" expand to bare integers)
+        m = re.match(r"^(\d+)", ul)
+        return bool(m and m.group(1) in changelog_phases)
+
     missing_entries = [
         (label, lineno)
         for label, lineno in completed
-        if label.upper() not in changelog_phases
+        if not _is_covered(label)
     ]
-    covered = [(label, lineno) for label, lineno in completed if label.upper() in changelog_phases]
+    covered = [(label, lineno) for label, lineno in completed if _is_covered(label)]
 
     lines = [
         "# Audit Report: Changelog Completeness",
