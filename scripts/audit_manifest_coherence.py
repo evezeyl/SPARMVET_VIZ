@@ -4,9 +4,11 @@
 Goes beyond manifest integrity (does it assemble?) to verify four structural
 contracts WITHOUT running the assembler:
 
-  1. Input field coverage — every slug declared in `input_fields` must match
-     an actual column header in the source TSV.  Catches silent skip-on-mismatch
-     bugs (the engine drops unmatched fields with no error).
+  1. Input field coverage — for every slug declared in `input_fields`, its
+     `original_name` value (the actual TSV column header the ingestor reads) must
+     exist in the source TSV.  Falls back to the slug itself when `original_name`
+     is absent.  Catches broken original_name declarations; the slug is an internal
+     identifier and is never expected to appear as a TSV column name.
 
   2. Action name validity — every `action:` value in `wrangling` and assembly
      `recipe` blocks must be registered via @register_action("name") in the
@@ -157,6 +159,9 @@ def _collect_all_field_slugs(manifest: dict) -> set[str]:
                 continue
             for fields_key in ("input_fields", "output_fields"):
                 fields = schema.get(fields_key, {})
+                # Unnest !include wrapper (same pattern as Check 1)
+                if isinstance(fields, dict) and list(fields.keys()) == [fields_key]:
+                    fields = fields[fields_key]
                 if isinstance(fields, dict):
                     slugs.update(fields.keys())
     return slugs
@@ -236,13 +241,29 @@ def analyse_manifest(
 
             tsv_col_set = set(tsv_cols)
             input_fields = schema.get("input_fields", {})
+            # !include files that carry 'input_fields:' at their root produce
+            # a nested {"input_fields": {...slugs...}} after YAML load. Unnest one
+            # level to mirror ConfigManager's auto-unnesting behaviour.
+            if isinstance(input_fields, dict) and list(input_fields.keys()) == ["input_fields"]:
+                input_fields = input_fields["input_fields"]
             if isinstance(input_fields, dict):
-                for slug in input_fields:
-                    if slug not in tsv_col_set:
+                for slug, field_def in input_fields.items():
+                    # The ingestor maps original_name → slug at load time, so TSV
+                    # column headers always carry the original_name value, not the
+                    # sanitized slug. Use original_name as the TSV lookup key; fall
+                    # back to the slug only when original_name is absent.
+                    if isinstance(field_def, dict):
+                        lookup = field_def.get("original_name") or slug
+                    else:
+                        lookup = slug
+                    if lookup not in tsv_col_set:
                         result["tsv_violations"].append({
                             "schema_id": schema_id,
                             "slug": slug,
-                            "message": f"input_fields slug `{slug}` not in TSV columns",
+                            "message": (
+                                f"input_fields slug `{slug}` "
+                                f"(original_name: `{lookup}`) not found in TSV columns"
+                            ),
                         })
 
     # ── Check 2: Action names ─────────────────────────────────────────────────

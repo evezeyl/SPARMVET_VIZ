@@ -1,0 +1,139 @@
+# Audit Report: Manifest Coherence
+Generated: 2026-05-09T21:34:11
+Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+Rule: ADR-013 (Manifest Data Contract), ADR-041 (Unified Manifest Standard), rules_manifest_structure.md §7
+
+- Manifests assessed: 6
+- Parse errors: 0
+- Manifests with input_fields/TSV mismatches: 5
+- Manifests with invalid action names: 0
+- Manifests with invalid component names: 0
+- Manifests with join key violations: 0
+
+## Result: ❌ FAIL
+
+## ⚠️ Input Fields / TSV Column Mismatches
+
+These `input_fields` slugs do not match any column name in the source TSV.
+The engine will silently skip unmatched fields — this produces missing columns downstream.
+
+### `config/manifests/pipelines/1_Abromics_general_pipeline.yaml`
+- `MLST` → `scheme`: input_fields slug `scheme` not in TSV columns
+- `MLST` → `sequence_type`: input_fields slug `sequence_type` not in TSV columns
+- `MLST` → `locus_1`: input_fields slug `locus_1` not in TSV columns
+- `MLST` → `locus_2`: input_fields slug `locus_2` not in TSV columns
+- `MLST` → `locus_3`: input_fields slug `locus_3` not in TSV columns
+- `MLST` → `locus_4`: input_fields slug `locus_4` not in TSV columns
+- `MLST` → `locus_5`: input_fields slug `locus_5` not in TSV columns
+- `MLST` → `locus_6`: input_fields slug `locus_6` not in TSV columns
+- `MLST` → `locus_7`: input_fields slug `locus_7` not in TSV columns
+
+### `config/manifests/pipelines/1_test_data_ST22_dummy.yaml`
+- `Summary` → `quality_module`: input_fields slug `quality_module` not in TSV columns
+- `Summary` → `taxon`: input_fields slug `taxon` not in TSV columns
+- `Summary` → `genotype`: input_fields slug `genotype` not in TSV columns
+- `Summary` → `phenotype`: input_fields slug `phenotype` not in TSV columns
+- `Summary` → `cge_phenotype`: input_fields slug `cge_phenotype` not in TSV columns
+- `Summary` → `plasmid`: input_fields slug `plasmid` not in TSV columns
+- `Summary` → `ST`: input_fields slug `ST` not in TSV columns
+- `Summary` → `genome_length`: input_fields slug `genome_length` not in TSV columns
+- `Summary` → `N50`: input_fields slug `N50` not in TSV columns
+- `Summary` → `contigs_sup300bp`: input_fields slug `contigs_sup300bp` not in TSV columns
+- `Summary_quality` → `quality_module`: input_fields slug `quality_module` not in TSV columns
+- `Summary_quality` → `taxon`: input_fields slug `taxon` not in TSV columns
+- `Summary_quality` → `genotype`: input_fields slug `genotype` not in TSV columns
+- `Summary_quality` → `phenotype`: input_fields slug `phenotype` not in TSV columns
+- `Summary_quality` → `cge_phenotype`: input_fields slug `cge_phenotype` not in TSV columns
+- `Summary_quality` → `plasmid`: input_fields slug `plasmid` not in TSV columns
+- `Summary_quality` → `ST`: input_fields slug `ST` not in TSV columns
+- `Summary_quality` → `genome_length`: input_fields slug `genome_length` not in TSV columns
+- `Summary_quality` → `N50`: input_fields slug `N50` not in TSV columns
+- `Summary_quality` → `contigs_sup300bp`: input_fields slug `contigs_sup300bp` not in TSV columns
+- `Quality_metrics` → `quality_module`: input_fields slug `quality_module` not in TSV columns
+- `Quality_metrics` → `quality_feedback`: input_fields slug `quality_feedback` not in TSV columns
+- `Quality_metrics` → `n50`: input_fields slug `n50` not in TSV columns
+- `Quality_metrics` → `total_length`: input_fields slug `total_length` not in TSV columns
+- `Quality_metrics` → `largest_contig`: input_fields slug `largest_contig` not in TSV columns
+- `Detailed_summary` → `data`: input_fields slug `data` not in TSV columns
+- `Detailed_summary` → `data_type`: input_fields slug `data_type` not in TSV columns
+- `Detailed_summary` → `predicted_phenotype`: input_fields slug `predicted_phenotype` not in TSV columns
+- `Detailed_summary` → `cge_predicted_phenotype`: input_fields slug `cge_predicted_phenotype` not in TSV columns
+- `Detailed_summary` → `identity`: input_fields slug `identity` not in TSV columns
+- `Detailed_summary` → `overlap`: input_fields slug `overlap` not in TSV columns
+- `Detailed_summary` → `hsp_lengthtotal_length`: input_fields slug `hsp_lengthtotal_length` not in TSV columns
+- `Detailed_summary` → `contig`: input_fields slug `contig` not in TSV columns
+- `Detailed_summary` → `start`: input_fields slug `start` not in TSV columns
+- `Detailed_summary` → `end`: input_fields slug `end` not in TSV columns
+- `Detailed_summary` → `accession`: input_fields slug `accession` not in TSV columns
+- `Quast` → `n50`: input_fields slug `n50` not in TSV columns
+- `Quast` → `total_length`: input_fields slug `total_length` not in TSV columns
+- `Quast` → `largest_contig`: input_fields slug `largest_contig` not in TSV columns
+- `ResFinder` → `gene`: input_fields slug `gene` not in TSV columns
+- `ResFinder` → `predicted_phenotype`: input_fields slug `predicted_phenotype` not in TSV columns
+- `ResFinder` → `identity`: input_fields slug `identity` not in TSV columns
+- `ResFinder` → `overlap`: input_fields slug `overlap` not in TSV columns
+- `MLST` → `scheme`: input_fields slug `scheme` not in TSV columns
+- `MLST` → `sequence_type`: input_fields slug `sequence_type` not in TSV columns
+- `MLST` → `locus_1`: input_fields slug `locus_1` not in TSV columns
+- `MLST` → `locus_2`: input_fields slug `locus_2` not in TSV columns
+- `MLST` → `locus_3`: input_fields slug `locus_3` not in TSV columns
+- `MLST` → `locus_4`: input_fields slug `locus_4` not in TSV columns
+- `MLST` → `locus_5`: input_fields slug `locus_5` not in TSV columns
+- `MLST` → `locus_6`: input_fields slug `locus_6` not in TSV columns
+- `MLST` → `locus_7`: input_fields slug `locus_7` not in TSV columns
+
+### `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`
+- `amr_data` → `gene`: input_fields slug `gene` not in TSV columns
+- `amr_data` → `predicted_phenotype`: input_fields slug `predicted_phenotype` not in TSV columns
+- `amr_data` → `identity`: input_fields slug `identity` not in TSV columns
+- `amr_data` → `overlap`: input_fields slug `overlap` not in TSV columns
+- `amr_data` → `accession`: input_fields slug `accession` not in TSV columns
+- `plasmid_data` → `plasmid_name`: input_fields slug `plasmid_name` not in TSV columns
+- `plasmid_data` → `identity`: input_fields slug `identity` not in TSV columns
+- `plasmid_data` → `overlap`: input_fields slug `overlap` not in TSV columns
+- `plasmid_data` → `accession`: input_fields slug `accession` not in TSV columns
+
+### `config/manifests/pipelines/demo_abromics.yaml`
+- `MLST` → `scheme`: input_fields slug `scheme` not in TSV columns
+- `MLST` → `sequence_type`: input_fields slug `sequence_type` not in TSV columns
+- `MLST` → `locus_1`: input_fields slug `locus_1` not in TSV columns
+- `MLST` → `locus_2`: input_fields slug `locus_2` not in TSV columns
+- `MLST` → `locus_3`: input_fields slug `locus_3` not in TSV columns
+- `MLST` → `locus_4`: input_fields slug `locus_4` not in TSV columns
+- `MLST` → `locus_5`: input_fields slug `locus_5` not in TSV columns
+- `MLST` → `locus_6`: input_fields slug `locus_6` not in TSV columns
+- `MLST` → `locus_7`: input_fields slug `locus_7` not in TSV columns
+
+### `config/manifests/pipelines/figshare_integration.yaml`
+- `fg_phenotypes` → `predicted_phenotype`: input_fields slug `predicted_phenotype` not in TSV columns
+
+## Per-Manifest Summary
+
+| Manifest | Parse | Actions | Components | Join Keys | TSV Fields |
+|----------|-------|---------|------------|-----------|------------|
+| `1_Abromics_general_pipeline.yaml` | ✅ | ✅ | ✅ | ✅ | ❌ 9 |
+| `1_test_data_ST22_dummy.yaml` | ✅ | ✅ | ✅ | ✅ | ❌ 52 |
+| `2_test_data_ST22_dummy.yaml` | ✅ | ✅ | ✅ | ✅ | ❌ 9 |
+| `demo_abromics.yaml` | ✅ | ✅ | ✅ | ✅ | ❌ 9 |
+| `figshare_integration.yaml` | ✅ | ✅ | ✅ | ✅ | ❌ 1 |
+| `stress_test_master.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+## Fix Guidance
+
+**Invalid action name:** Check `rules_persona_bioscientist.md §8` for the authoritative list.
+If the action genuinely does not exist, file an `[ENHANCEMENT REQUEST]` in `tasks.md`.
+
+**Invalid component name:** Scan `libs/viz_factory/src/viz_factory/` for `@register_plot_component`.
+If missing, follow `viz_factory_implementation.md` to add it.
+
+**Join key YAML trap:** `on:` without quotes parses as boolean `True`.
+Always write `'on': column_name` (single-quoted key).
+
+**Input field slug mismatch:** Run `head -1 <source.tsv>` to see actual column names.
+Update the `input_fields` slug to match exactly (case-sensitive).
+
+## References
+- `rules_manifest_structure.md §7` — Canonical recipe syntax, YAML boolean trap
+- `rules_persona_bioscientist.md §8` — Registered action names (authoritative list)
+- `rules_persona_bioscientist.md §3-A/B` — Wrangling and assembly canon
+- Routine 13 (Manifest coherence) in `.claude/workflows/audit_routine_registry.md`

@@ -103,7 +103,7 @@ def render_report(
                 "```",
                 "",
                 "**Fix guidance:**",
-                "- Check `input_fields` slugs match actual TSV column names.",
+                "- Check `input_fields` `original_name` values match actual TSV column headers (slugs are internal identifiers, not TSV headers).",
                 "- Verify all `action:` names exist in the transformer registry.",
                 "- Ensure `final_contract` columns are produced by the recipe.",
                 "- See `rules_persona_bioscientist.md §7` error diagnosis table.",
