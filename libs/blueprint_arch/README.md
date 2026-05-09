@@ -22,6 +22,8 @@ from blueprint_arch.manifest_navigator import (
     build_lineage_chain,       # ordered [{rel, schema_id, role, label, is_active}]
     load_fields_file,          # ADR-041 Rich Dict with ADR-014 unnesting
     resolve_fields_for_schema, # recursive, cycle-guarded
+    build_plot_lineage,        # str, str → list[dict]  backward trace to T1 root (ADR-074)
+    get_plot_ids_in_group,     # str, str → list[str]   forward trace for scope resolution (ADR-074)
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 

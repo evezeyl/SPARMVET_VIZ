@@ -20,20 +20,28 @@ load_fields_file(abs_path)
 resolve_fields_for_schema(schema_id, ctx_map, inc_map, _stack=None)
     Walk ctx_map to find the output fields for schema_id (cycle-safe).
 
+build_plot_lineage(plot_id, manifest_path)
+    Backward trace: data sources → T1/T2 wrangling → join → plot spec.
+    Used by export bundle lineage graph (ADR-074).
+
+get_plot_ids_in_group(group_id, manifest_path)
+    Forward trace: all plot IDs declared under analysis_groups[group_id].
+    Used by export scope resolution (ADR-074).
+
 Constraints (Two-Category Law — ADR-045)
 -----------------------------------------
 - Zero Shiny dependency: no import of shiny, reactive, render, or ui.
 - Importable from headless scripts, test suites, and CLI tools without
   triggering any Shiny registration side-effects.
-- All five functions are pure (no global mutable state).
+- All seven functions are pure (no global mutable state).
 """
 
 from __future__ import annotations
 
 # @deps
-# provides: function:build_sibling_map, function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema
-# consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-045
+# provides: function:build_sibling_map, function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group
+# consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-074
 # @end_deps
 
 from pathlib import Path
@@ -572,3 +580,191 @@ def resolve_fields_for_schema(schema_id: str, ctx_map: dict, inc_map: dict,
                 return inline_val
 
     return {}
+
+
+# ── ADR-074 export / scope helpers ────────────────────────────────────────────
+
+def get_plot_ids_in_group(group_id: str, manifest_path: str) -> list[str]:
+    """Return all plot IDs declared under analysis_groups[group_id].
+
+    str, str → list[str]
+
+    Forward trace used by export scope resolution and test discovery.
+    Returns [] when group_id is absent or the manifest cannot be parsed.
+    ADR-074.
+    """
+    class _CapLoader(yaml.SafeLoader):
+        pass
+
+    # Capture !include values as plain strings — we only need the plot key names.
+    _CapLoader.add_constructor("!include", lambda l, n: l.construct_scalar(n))
+
+    try:
+        raw = Path(manifest_path).read_text(encoding="utf-8")
+        tree = yaml.load(raw, Loader=_CapLoader)  # noqa: S506
+    except Exception:
+        return []
+
+    if not isinstance(tree, dict):
+        return []
+
+    group_spec = (tree.get("analysis_groups") or {}).get(group_id)
+    if not isinstance(group_spec, dict):
+        return []
+
+    plots = group_spec.get("plots") or {}
+    return list(plots.keys()) if isinstance(plots, dict) else []
+
+
+def build_plot_lineage(plot_id: str, manifest_path: str) -> list[dict]:
+    """Backward trace from a plot spec to its T1 data roots.
+
+    str, str → list[dict]
+
+    Returns an ordered list of step dicts representing the data pipeline
+    from raw sources through T1/T2 wrangling, assembly (join), to the
+    plot spec leaf.  T3 overlay nodes are appended by the caller
+    (export_handlers.py).
+
+    Step dict shape:
+        {
+          "step":      int,   # 1-based position in the chain
+          "type":      str,   # "data_source" | "wrangling" | "join" | "plot_spec"
+          "schema_id": str,   # ingredient / join / plot id
+          "label":     str,   # human-readable label from manifest, else schema_id
+          "rel":       str,   # include rel_path or source file path (empty if N/A)
+        }
+
+    Returns [] if plot_id is not found in any analysis_group.
+    ADR-074.
+    """
+    manifest_dir = Path(manifest_path).parent
+
+    class _CapLoader(yaml.SafeLoader):
+        pass
+
+    _MARK = "\x00INC\x00"
+
+    def _capture(loader, node):
+        return f"{_MARK}{loader.construct_scalar(node)}"
+
+    _CapLoader.add_constructor("!include", _capture)
+
+    try:
+        raw = Path(manifest_path).read_text(encoding="utf-8")
+        tree = yaml.load(raw, Loader=_CapLoader)  # noqa: S506
+    except Exception:
+        return []
+
+    if not isinstance(tree, dict):
+        return []
+
+    def _rel_path(val) -> str | None:
+        if isinstance(val, str) and val.startswith(_MARK):
+            return val[len(_MARK):]
+        return None
+
+    # ── Locate the plot and resolve its target_dataset ────────────────────────
+    target_dataset: str | None = None
+    plot_label: str = plot_id
+    found = False
+
+    for _gid, group_spec in (tree.get("analysis_groups") or {}).items():
+        if not isinstance(group_spec, dict):
+            continue
+        plots = group_spec.get("plots") or {}
+        if plot_id not in plots:
+            continue
+        found = True
+        plot_entry = plots[plot_id]
+        if not isinstance(plot_entry, dict):
+            break
+        plot_label = plot_entry.get("label", plot_id)
+
+        spec_val = plot_entry.get("spec")
+        spec_rel = _rel_path(spec_val)
+        if spec_rel:
+            spec_abs = manifest_dir / spec_rel
+            try:
+                spec_content = yaml.safe_load(
+                    spec_abs.read_text(encoding="utf-8")) or {}
+                # ConfigManager auto-unnests a single "spec:" wrapper key
+                if isinstance(spec_content, dict) and "spec" in spec_content:
+                    spec_content = spec_content["spec"]
+                if isinstance(spec_content, dict):
+                    target_dataset = spec_content.get("target_dataset")
+            except Exception:
+                pass
+        elif isinstance(spec_val, dict):
+            target_dataset = spec_val.get("target_dataset")
+        break
+
+    if not found:
+        return []
+
+    # ── Trace backward using the sibling map ──────────────────────────────────
+    ctx_map = build_sibling_map(manifest_path)
+    steps: list[dict] = []
+
+    def _step(type_: str, schema_id: str, label: str, rel: str = "") -> dict:
+        return {
+            "step": len(steps) + 1,
+            "type": type_,
+            "schema_id": schema_id,
+            "label": label,
+            "rel": rel,
+        }
+
+    def _source_path_for(sid: str) -> str:
+        for section in ("data_schemas", "additional_datasets_schemas"):
+            block = (tree.get(section) or {}).get(sid)
+            if isinstance(block, dict):
+                src = block.get("source") or {}
+                if isinstance(src, dict):
+                    return src.get("path") or ""
+        if sid == "metadata_schema":
+            meta = tree.get("metadata_schema")
+            if isinstance(meta, dict):
+                src = meta.get("source") or {}
+                if isinstance(src, dict):
+                    return src.get("path") or ""
+        return ""
+
+    if target_dataset:
+        # Prefer a join entry; fall back to a direct data schema (T1-only path)
+        join_rel = next(
+            (r for r, e in ctx_map.items()
+             if e.get("schema_id") == target_dataset and e.get("role") == "join"),
+            None,
+        )
+
+        if join_rel:
+            for ing_id in ctx_map[join_rel].get("ingredients", []):
+                steps.append(_step("data_source", ing_id, ing_id,
+                                   _source_path_for(ing_id)))
+                wrn_rel = next(
+                    (r for r, e in ctx_map.items()
+                     if e.get("schema_id") == ing_id and e.get("role") == "wrangling"),
+                    None,
+                )
+                if wrn_rel:
+                    steps.append(_step("wrangling", ing_id,
+                                       f"{ing_id} / wrangling", wrn_rel))
+            steps.append(_step("join", target_dataset, target_dataset, join_rel))
+
+        else:
+            # Direct data schema — no assembly layer
+            steps.append(_step("data_source", target_dataset, target_dataset,
+                               _source_path_for(target_dataset)))
+            wrn_rel = next(
+                (r for r, e in ctx_map.items()
+                 if e.get("schema_id") == target_dataset
+                 and e.get("role") == "wrangling"),
+                None,
+            )
+            if wrn_rel:
+                steps.append(_step("wrangling", target_dataset,
+                                   f"{target_dataset} / wrangling", wrn_rel))
+
+    steps.append(_step("plot_spec", plot_id, plot_label))
+    return steps
