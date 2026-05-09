@@ -230,5 +230,10 @@ This registry tracks the purpose, inputs/outputs, and core logic of the various 
    - Rule scripts (like `libs/transformer/src/transformer/actions/cleaning/core.py`) are passively initialized through the local module directory `__init__.py`. This executes their `@register_action(name)` block to populate the global `AVAILABLE_WRANGLING_ACTIONS` dictionary upon app boot.
 4. **Final Contract as a Safe `.select()` Query Guard**:
    - The end-state `output_fields` contract strictly mimics the SQL/Polars `SELECT` command, pruning column noise from intermediate joins and acting as the primary defense against unexpected metadata drift.
-5. **The `spec` Dict Unpacking Technique**: 
+5. **The `spec` Dict Unpacking Technique**:
    - Every registered decorator exclusively accepts `(lf: pl.LazyFrame, spec: Dict[str, Any])`. Direct parameters extraction (like `spec.get("separator", ",")`) must occur inside the wrapper body to guarantee homogeneity in the Registry call signatures.
+6. **`ui_schema` kwarg in `@register_action` and `@register_plot_component` (ADR-075)**:
+   - Each decorator may carry an optional `ui_schema` keyword argument — a dict describing the BLUEPRINT IDE form for that action or component. The schema drives widget generation in the BLUEPRINT Architect without requiring separate schema files. Example: `@register_action("cast", ui_schema={"columns": {"widget": "column_selector", "multi": true}, "dtype": {"widget": "dtype_picker"}})`.
+   - `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` reads all `ui_schema` dicts at startup and builds the action/component picker catalog used by the BLUEPRINT form builder.
+   - If `ui_schema` is absent from a decorator, the action is available in manifests but has no BLUEPRINT form (manual YAML only via the escape hatch).
+   - Action `__doc__` strings serve as the help text displayed in the BLUEPRINT IDE; they are resolved at runtime via `importlib` (air-gap safe).

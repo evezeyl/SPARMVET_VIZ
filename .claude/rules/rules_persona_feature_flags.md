@@ -87,9 +87,15 @@ developer_mode_enabled: true/false   ← GATE for Test Lab
   └─ Full @register_action registry in right sidebar
 
 gallery_enabled: true/false          ← INDEPENDENT (can enable without developer mode)
+
+blueprint_enabled: true/false        ← GATE for Blueprint Architect
+  │
+  └─ manifest_edit_enabled           ← YAML escape hatch in Blueprint IDE (editable mode)
 ```
 
 `gallery_enabled` can be set independently — a `project-independent` persona has Gallery access without full developer mode (Phase 25-A flipped this to `true` for project-independent). It remains a policy choice rather than a technical constraint, so other personas can enable Gallery without enabling `developer_mode_enabled`.
+
+`manifest_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer personas), the escape hatch is **read-only** (visible but not editable, so the user can inspect the manifest fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §3 below.
 
 ---
 
@@ -113,6 +119,7 @@ Six personas exist (`config/ui/templates/`). `qa` is a CI/headless-test persona 
 | `gallery_enabled` | false | false | false | **true** | true | true |
 | `blueprint_enabled` | false | false | false | true | true | true |
 | `test_lab_enabled` | false | false | false | false | true | true |
+| `manifest_edit_enabled` | false | false | false | false | true | true |
 
 **Phase 25 additions** (per ADR-052; not feature flags but persona-template fields):
 
@@ -120,6 +127,12 @@ Six personas exist (`config/ui/templates/`). `qa` is a CI/headless-test persona 
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | `manifest_selector.visible` | false | false | true | true | true | true |
 | `testing_mode` | false | false | true | true | true | true |
+
+**Phase 31 additions** (per ADR-075):
+
+| Field | static | simple | advanced | independent | developer | qa |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `manifest_edit_enabled` | false | false | false | false | true | true |
 
 ---
 
@@ -142,7 +155,11 @@ Six personas exist (`config/ui/templates/`). `qa` is a CI/headless-test persona 
    - Override persona `data_ingestion_enabled` to `False` unconditionally.
    - Do NOT override `metadata_ingestion_enabled`.
 
-4. Right sidebar suppression: enforced structurally in `server.py` / `ui.py` based on persona level string comparison — not via a flag.
+4. If `blueprint_enabled == False`:
+   - Force `manifest_edit_enabled = False`
+   - Print `[Bootloader] WARNING: manifest_edit_enabled=True ignored — blueprint_enabled=False`.
+
+5. Right sidebar suppression: enforced structurally in `server.py` / `ui.py` based on persona level string comparison — not via a flag.
 
 **Note on `audit_report_enabled`:** It is listed in Group A (no inter-flag dependency) because `pipeline-exploration-simple` has `interactivity_enabled=True` but `audit_report_enabled=False`. The cascade above is a safety net — it prevents a misconfigured template from showing the audit export panel in a static-mode persona. No existing template triggers this warning.
 
@@ -217,3 +234,4 @@ if persona in ("pipeline-exploration-advanced", "project-independent", "develope
 | `app/handlers/gallery_handlers.py` | Must use `bootloader.is_enabled()` — `_T3_PERSONAS` set is a known violation |
 | `app/handlers/export_handlers.py` | Must use `bootloader.is_enabled()` — `is_advanced` persona check is a known violation |
 | `app/src/ui.py` | Must use `bootloader.is_enabled()` — right sidebar persona check is a known violation |
+| `app/handlers/blueprint_handlers.py` | Must gate YAML escape hatch writability on `bootloader.is_enabled("manifest_edit_enabled")` |

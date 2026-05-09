@@ -157,6 +157,8 @@ developer_mode_enabled: true
 | `data_ingestion_enabled` | `import_helper_enabled` | — |
 | `developer_mode_enabled` | Nothing | ✅ |
 | `gallery_enabled` | Nothing (can enable without developer mode) | ✅ |
+| `blueprint_enabled` | Nothing | ✅ |
+| `manifest_edit_enabled` | `blueprint_enabled` | — |
 
 ---
 
@@ -208,6 +210,10 @@ features:
   # ── Group E: Developer Features ───────────────────────────────────────────
   developer_mode_enabled: false      # Test Lab + full registry access
   gallery_enabled: false             # Gallery browser
+  blueprint_enabled: false           # Blueprint Architect (manifest design IDE)
+  manifest_edit_enabled: false       # Enables direct YAML editing in BLUEPRINT escape hatch
+                                     # (read-only view always available with blueprint_enabled)
+                                     # Cascade: suppressed when blueprint_enabled: false
 
 automation:
   ghost_save:

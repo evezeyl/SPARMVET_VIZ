@@ -41,7 +41,6 @@ app/
 │   └── bootloader.py      # Path authority & persona bootstrap (ADR-031).
 │
 ├── modules/               # Importable, testable, Shiny-free modules.
-│   ├── manifest_navigator.py   # Pure manifest introspection engine (ADR-045).
 │   ├── orchestrator.py         # DataOrchestrator — Tier 1 assembly bridge.
 │   ├── wrangle_studio.py       # WrangleStudio — Blueprint Architect UI class.
 │   ├── gallery_viewer.py       # GalleryViewer — static gallery browser.
@@ -77,9 +76,11 @@ app/
 
 ---
 
-## 4. `app/modules/manifest_navigator.py` — Public API
+## 4. `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` — Public API
 
-The `ManifestNavigator (manifest_navigator.py)` module exports five public functions (no leading underscore). Internal sub-helpers within those functions remain private.
+**Moved to `libs/blueprint_arch/` in Phase 29 (ADR-067).** The module is formally shared infrastructure (ADR-074) — importable from any context without Shiny side-effects.
+
+The `ManifestNavigator (manifest_navigator.py)` module exports seven public functions (no leading underscore). Internal sub-helpers within those functions remain private.
 
 | Public Function | Signature | Returns |
 |---|---|---|
@@ -88,12 +89,15 @@ The `ManifestNavigator (manifest_navigator.py)` module exports five public funct
 | `build_lineage_chain(selected_rel, ctx_map)` | `str, dict → list[dict]` | Ordered `[{rel, schema_id, role, label, is_active}]` |
 | `load_fields_file(abs_path)` | `Path → dict` | ADR-041 Rich Dict with ADR-014 unnesting |
 | `resolve_fields_for_schema(schema_id, ctx_map, inc_map)` | `str, dict, dict → dict` | ADR-041 Rich Dict, recursive with cycle guard |
+| `build_plot_lineage(plot_id, manifest_path)` | `str, str → list[dict]` | Backward trace from a plot to its T1 root (ADR-074). Used by export bundle lineage graph. |
+| `get_plot_ids_in_group(group_id, manifest_path)` | `str, str → list[str]` | Forward trace — all plot IDs declared in an analysis group (ADR-074). |
 
 **Import pattern** (from any context):
 ```python
-from app.modules.manifest_navigator import (
+from blueprint_arch.manifest_navigator import (
     build_sibling_map, build_schema_registry, build_lineage_chain,
-    load_fields_file, resolve_fields_for_schema
+    load_fields_file, resolve_fields_for_schema,
+    build_plot_lineage, get_plot_ids_in_group
 )
 ```
 
@@ -138,7 +142,8 @@ def define_server(input, output, session, *,
 | Blueprint Architect manifest import / TubeMap / Lineage Rail | `app/handlers/blueprint_handlers.py` |
 | Gallery filtering, preview, clone, submission | `app/handlers/gallery_handlers.py` |
 | Data ingestion / persona switching | `app/handlers/ingestion_handlers.py` |
-| How manifests are parsed structurally (sibling map, registry, lineage) | `app/modules/manifest_navigator.py` |
+| How manifests are parsed structurally (sibling map, registry, lineage) | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` |
+| BLUEPRINT form catalog + `ui_schema` registry at startup | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` (ADR-075) |
 | The static Shiny HTML shell / CSS | `app/src/ui.py` |
 | Path authority / persona bootstrap | `app/src/bootloader.py` |
 | Shared reactive state or tier calcs | `app/src/server.py` (§3 only) |
@@ -192,5 +197,5 @@ Each filter row: `{column: str, op: str, value: str|list, dtype: str}`.
 The decomposition refactor (Phase 22) is **behaviour-neutral** — no logic changes, only structural relocation. Verification complete (2026-04-23):
 
 1. **Import check**: `python -c "from app.src.server import server"` — ✅ passed.
-2. **Navigator unit check**: `python -c "from app.modules.manifest_navigator import build_sibling_map; print('OK')"` — ✅ passed.
+2. **Navigator unit check**: `python -c "from blueprint_arch.manifest_navigator import build_sibling_map; print('OK')"` — ✅ passed (import path updated Phase 29, ADR-067).
 3. **Live UI check**: UI smoke test by user — no major regressions detected. ✅

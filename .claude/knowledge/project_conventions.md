@@ -15,7 +15,9 @@
 | `app/modules/sidebar_registry.py` | Panel type registry (ADR-073) — headless-safe, Two-Category Law | `PANEL_REGISTRY` dict → type name → renderer ref + gate flag | Used by `home_theater.py` slot iteration and `SidebarValidator`. Never import Shiny here. |
 | `scripts/validate_persona_config.py` | Persona + sidebar compatibility validator CLI (ADR-073) | `--persona <id>` / `--all` / `--strict` | Runs `PersonaValidator` + `SidebarValidator`. Use `--strict` in CI. Also runs at app startup (warnings logged, errors block). |
 | `app/src/server.py` | **Thin Orchestrator only** (ADR-045, 228 lines) | Shared state/calcs → Handler delegation | `active_cfg`, `tier1_anchor`, `tier_reference`, `tier3_leaf`, 5× `define_server()` calls |
-| `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema` — importable anywhere, zero Shiny dependency |
+| `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067/ADR-074) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group` — importable anywhere, zero Shiny dependency |
+| `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` | **BLUEPRINT form catalog** (ADR-075, to be created) | `@register_action` + `@register_plot_component` `ui_schema` dicts → widget catalog | Reads `ui_schema` kwarg from registries at startup; builds action/component picker for BLUEPRINT IDE. Headless-safe — zero Shiny imports. |
+| `scripts/migrate_manifests.py` | **Action name migration scanner** (ACTION-RENAME-1, to be created) | Project-wide YAML scan → rename report + apply | Scans `config/manifests/`, persona templates, `assets/gallery_data/` for deprecated action names; reports discrepancies; applies renames with `--apply` flag. |
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
 | `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_recipe_changes` |
 | `app/handlers/blueprint_handlers.py` | Blueprint Architect Shiny wiring (ADR-039/045) | Reactive hooks → Architect UI | `_handle_manifest_import`, `_do_load_component`, `sync_blueprint_mapper`, `_handle_upload_*` |
@@ -180,6 +182,8 @@ Five pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigato
 | `build_lineage_chain(selected_rel, ctx_map)` | — | Ordered `list[node_dict]` for the Rail; `is_active` marks the selected node. |
 | `load_fields_file(abs_path)` | — | Reads standalone fields YAML with ADR-014 unnesting. |
 | `resolve_fields_for_schema(schema_id, ctx_map, inc_map)` | — | Recursive field resolution with cycle guard; returns ADR-041 Rich Dict. |
+| `build_plot_lineage(plot_id, manifest_path)` | — | **ADR-074.** Backward trace from a named plot ID to its T1 root. Returns ordered `list[node_dict]`. Used by the export bundle lineage graph generator. |
+| `get_plot_ids_in_group(group_id, manifest_path)` | — | **ADR-074.** Forward trace — returns all `plot_id` strings declared under the given `analysis_group`. |
 
 **Key constraint**: Only `str` rel-paths are used as ctx dict keys. Inline YAML content (`{"inline": val}`) is stored in the `siblings` dict only — never as a dict key (unhashable).
 

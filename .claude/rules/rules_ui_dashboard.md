@@ -170,7 +170,7 @@ DOM state. See `config/ui/templates/qa_template.yaml`.
 
 ---
 
-## 7. The Blueprint Architect Invariants (ADR-039)
+## 7. The Blueprint Architect Invariants (ADR-039, ADR-075)
 
 The Blueprint Architect provides a "Flight Deck" for manifest design.
 
@@ -180,3 +180,11 @@ The Blueprint Architect provides a "Flight Deck" for manifest design.
   3. **Bottom Footer**: The **Live Data Glimpse** (Table).
 - **The Right Sidebar (The Logic)**: Focuses exclusively on the internal transformation steps of the component selected in the Map.
 - **Logic Sync**: Any modification in the Right Sidebar MUST trigger a reactive update of the Central Stack (Plot & Table) for immediate verification.
+
+**IDE Build Mode additions (ADR-075):**
+- **Form generation from `ui_schema`**: Action and component forms in BLUEPRINT are generated from `ui_schema` dicts embedded in `@register_action` and `@register_plot_component` decorators. The `schema_registry.py` module in `libs/blueprint_arch/` reads these dicts at startup and builds the action/component picker catalog. All form rendering is driven by this catalog — no hardcoded form layouts.
+- **Action picker**: searchable by `tags`, filtered by `context` (`t1` / `t2` / `assembly` / `plot`) and `category`. Position rules are enforced by the `context` tag — the picker only shows actions valid for the current node position.
+- **Apply gate**: upstream schema propagates on Apply only (not continuously). The form reflects the last-applied schema state between Apply presses.
+- **Edit/remove after Apply**: three layers — (1) edit in place + re-Apply, (2) 20-step session undo deque (`BP-UNDO-1`), (3) YAML escape hatch.
+- **YAML escape hatch**: always visible for any persona with `blueprint_enabled: true` (read-only view). Becomes an editable textarea only when `manifest_edit_enabled: true` (developer and qa personas). An editable escape hatch emits a `developer_raw_yaml` T3 node on save. Gate: `bootloader.is_enabled("manifest_edit_enabled")` — never a persona name check. See `rules_persona_feature_flags.md §Group D`.
+- Full ADR-075 spec (widget types, color widget model, help system, action naming) lives in `architecture_decisions.md`.

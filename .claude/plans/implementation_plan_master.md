@@ -678,6 +678,53 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 ---
 
+## Phase 32: Lineage Infrastructure + BLUEPRINT IDE Build Mode (PLANNED — 2026-05-09)
+
+**ADRs:** ADR-074 (Lineage Infrastructure as Shared Provision), ADR-075 (BLUEPRINT IDE Build Mode)
+**Status:** PLANNED. Design complete. Tasks in `tasks.md`.
+**Audit log:** `.claude/logs/audits/audit_2026-05-09.md` (Wave 7)
+
+### ADR-074 — Lineage Infrastructure
+
+| Step | Task ID | Label | Model | Risk |
+|---|---|---|---|---|
+| 32-A | LINEAGE-NAV-1 | Add `build_plot_lineage` + `get_plot_ids_in_group` to `manifest_navigator.py` | sonnet | Med |
+| 32-B | LINEAGE-EXPORT-1 | Export bundle gains `lineage/lineage_graph.json` (shared-node DAG, no per-plot duplication); `report.qmd` gets Mermaid flowchart + step summary table + JSON note | sonnet | Med |
+
+**Key decisions (ADR-074):**
+- Lineage functions live in `libs/blueprint_arch/manifest_navigator.py` — formally shared infrastructure
+- One shared-node DAG per export scope; T1/T2 nodes deduplicated across plots
+- No lineage SVG in HOME export — documentation artifact; SVG/PNG of manifest DAG is BLUEPRINT-scoped (pipeline authors only)
+- `report.qmd`: Mermaid flowchart + step summary table + JSON explanation note (not inline SVG)
+
+### ADR-075 — BLUEPRINT IDE Build Mode
+
+| Step | Task ID | Label | Model | Risk |
+|---|---|---|---|---|
+| 32-C | BP-SCHEMA-1 | `ui_schema` kwarg in `@register_action` + `@register_plot_component`; `schema_registry.py` in `blueprint_arch` | sonnet | Med |
+| 32-D | BP-FORMS-1 | BLUEPRINT form builder — 8 widget types rendered from `ui_schema` dicts | opus | High |
+| 32-E | BP-ESCAPE-1 | YAML escape hatch: read-only (`blueprint_enabled`); editable (`manifest_edit_enabled`) | sonnet | Med |
+| 32-F | BP-UNDO-1 | 20-step session undo deque for BLUEPRINT node edits | sonnet | Med |
+| 32-G | BP-HELP-1 | Python `__doc__` resolved at runtime via `importlib`; optional `doc_url` ("Open in browser", disabled in air-gapped deployments) | sonnet | Med |
+| 32-H | BP-COLOR-1 | Color widget: column mapping \| set literal (palette library \| `from_project_colors` [RESERVED v2] \| custom hex picker) | sonnet | Med |
+| 32-I | BP-FLAG-1 | `manifest_edit_enabled` flag: add to all 6 persona templates (false/false/false/false/true/true); cascade in bootloader | haiku | Low |
+| 32-J | ACTION-RENAME-1 | `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag | haiku | Low |
+
+**Key decisions (ADR-075):**
+- `ui_schema` dict embedded directly in `@register_action` / `@register_plot_component` kwargs — no separate schema files
+- `schema_registry.py` in `blueprint_arch`: reads `ui_schema` dicts at startup; headless-safe; zero Shiny imports
+- 8 widget types: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`
+- Color widget nested model: column mapping | set literal (palette library | `from_project_colors` [RESERVED v2] | custom hex)
+- Project color registry deferred to v2; `from_project_colors` slot reserved (grayed out)
+- Help: Python `__doc__` at runtime via `importlib` — air-gap safe, version-matched. External `doc_url` optional
+- Action naming: align `@register_action` names with Polars for 1:1 wrappers; composite actions keep descriptive names
+- Position rules enforced via `context` tag in `ui_schema`: `t1` / `t2` / `assembly` / `plot`
+- Apply gate: upstream schema propagates on Apply only (not continuously)
+- Edit/remove: (1) edit in-place + re-Apply, (2) 20-step undo deque, (3) YAML escape hatch
+- `manifest_edit_enabled`: default false all personas; true for developer and qa only
+
+---
+
 ### Phase 23: Scientific Audit Hardening (ACTIVE 2026-04-23)
 
 **Objective**: Institutionalize the development-phase audit requirements: mandatory Tier 1 visibility, biological typing standards, and precision renaming.
