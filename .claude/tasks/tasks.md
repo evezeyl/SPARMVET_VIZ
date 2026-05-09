@@ -130,7 +130,7 @@ Two-tier: air-gapped contextual cards per workspace + optional full manual serve
 - [ ] **BP-UNDO-1** `[haiku/low]`: 20-step session undo deque for BLUEPRINT DAG state.
 - [ ] **BP-HELP-1** `[sonnet/medium]`: Help panel — `__doc__` resolution, collapsible sections for composite actions, optional external URL button disabled in isolated deployments.
 - [ ] **BP-COLOR-1** `[sonnet/medium]`: Color widget — column mapping toggle, palette library picker, hex picker, `from_project_colors` slot reserved as v2 placeholder.
-- [ ] **BP-FLAG-1** `[haiku/low]`: Add `manifest_edit_enabled` flag to all six persona templates + `rules_persona_feature_flags.md` + bootloader cascade rule. ADR-075.
+- [x] **BP-FLAG-1** `[haiku/low]`: Add `manifest_edit_enabled` flag to all six persona templates + `rules_persona_feature_flags.md` + bootloader cascade rule. ADR-075.
 
 ### ADR-076 — BLUEPRINT AI Agent Helper (MVP-1)
 
@@ -144,11 +144,11 @@ MVP-1 scope: `.claude/design/adr076_mvp.md`. Order matters — each gate must cl
 
 - [x] **BP-AGENT-INSTRUCT-1** `[sonnet/medium]`: `config/ui/agents/blueprint_default.md` — system prompt: tool-call output format (ADR-076 §10.1), intake questions, data-science guidance (filter ordering, join key validation, two-step cast), AMR/biology domain section placeholder. Create `config/ui/agents/` directory.
 
-- [ ] **BP-AGENT-PANEL-1** `[haiku/low]`: Register `blueprint_agent_chat` panel type in `app/modules/sidebar_registry.py` with `gate_flag: "blueprint_agent_enabled"`. Add to BLUEPRINT workspace `right_sidebar.panels` in `developer_template.yaml` + `qa_template.yaml`.
+- [x] **BP-AGENT-PANEL-1** `[haiku/low]`: Register `blueprint_agent_chat` panel type in `app/modules/sidebar_registry.py` with `gate_flag: "blueprint_agent_enabled"`. Add to BLUEPRINT workspace `right_sidebar.panels` in `developer_template.yaml` + `qa_template.yaml`.
 
 - [ ] **BP-AGENT-UI-1** `[sonnet/medium]`: Chat panel render outputs in `app/handlers/blueprint_handlers.py`: cold-start greeting, conversation log (buffered, "thinking…" indicator), adapter-status banner, single-flight UI gate. No decision accordion, no Apply gate, no data toggle (MVP-1 scope). No streaming.
 
-- [ ] **BP-AGENT-CSS-1** `[haiku/low]`: `.bp-agent-*` block in `config/ui/theme.css` — conversation bubbles, input row, status banner. Dark Grey #c0c0c0 background, SPARMVET Blue #345beb. No inline styles (ADR-055).
+- [x] **BP-AGENT-CSS-1** `[haiku/low]`: `.bp-agent-*` block in `config/ui/theme.css` — conversation bubbles, input row, status banner. Dark Grey #c0c0c0 background, SPARMVET Blue #345beb. No inline styles (ADR-055).
 
 ### Blueprint Architect — Other
 

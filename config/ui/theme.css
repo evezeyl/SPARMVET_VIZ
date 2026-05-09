@@ -754,6 +754,40 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     cursor: not-allowed;
 }
 
+/* Agent status banner — shows adapter state, errors, busy indicator */
+.bp-agent-status-banner {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.bp-agent-status-banner.ok {
+    background-color: #d4edda;
+    color: #155724;
+}
+.bp-agent-status-banner.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.bp-agent-status-banner.busy {
+    background-color: #fff3cd;
+    color: #856404;
+}
+.bp-agent-status-banner .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #345beb;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* ── 20. Filter & Audit Panel Utilities (ADR-055) ─────────────────────────
    Replaces repeated inline style= attributes extracted from handler files.
    Prefer these classes over style= on ui.* components in handler Python.  */
