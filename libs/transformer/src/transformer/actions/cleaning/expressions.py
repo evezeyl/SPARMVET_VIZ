@@ -27,7 +27,7 @@ def action_regex_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     Usage in YAML:
       - action: "regex_extract"
         source: "some_col"
-        pattern: r"v(\d+)\.(\d+)"
+        pattern: r"v(\\d+)\\.(\\d+)"
         target_column: "major_version"
         group: 1
     """

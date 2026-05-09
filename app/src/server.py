@@ -29,6 +29,16 @@ from app.modules.orchestrator_helpers import (
     DEFAULT_HOME_STATE,
 )
 
+# Inject action + component catalogs into blueprint_arch schema_registry (ADR-011).
+# server.py is Tier 3 (orchestration) — the only layer allowed to import from multiple libs.
+try:
+    from transformer.actions.base import ACTION_SCHEMAS as _ACTION_SCHEMAS
+    from viz_factory.registry import COMPONENT_SCHEMAS as _COMPONENT_SCHEMAS
+    from blueprint_arch.schema_registry import register as _register_schema_catalogs
+    _register_schema_catalogs(_ACTION_SCHEMAS, _COMPONENT_SCHEMAS)
+except ImportError:
+    pass
+
 
 
 def server(input, output, session):

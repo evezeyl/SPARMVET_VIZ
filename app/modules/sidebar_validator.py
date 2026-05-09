@@ -153,12 +153,8 @@ class SidebarValidator:
                         continue
 
                     gate = PANEL_REGISTRY[ptype]["gate_flag"]
-                    if gate is not None and not features.get(gate, False):
-                        print(
-                            f"[SidebarValidator] NOTE: [{persona_id}] "
-                            f"{loc_key} includes '{ptype}' "
-                            f"but its gate flag '{gate}' is disabled — panel will be silently skipped."
-                        )
+                    # Gate-disabled panels are silently skipped — designed behavior per ADR-073.
+                    # No announcement needed; the two-layer resolution is the contract.
 
                     if not visible and panels:
                         print(
