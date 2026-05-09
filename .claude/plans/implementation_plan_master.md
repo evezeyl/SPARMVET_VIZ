@@ -585,6 +585,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 | 31-F | EXPORT-VERSION-1 | `git_commit` + `release_version` in all export surfaces | haiku | Low |
 | 31-G | EXPORT-HASH-2 | `decision_hash` from Parquet metadata at export time | sonnet | Med |
 | 31-H | EXPORT-IMG-META-1 | Provenance embedded in PNG/SVG/PDF file metadata | sonnet | Med |
+| 31-I | DEPLOY-CONNECT-1 | Posit Connect editable lib install handling, entry point doc, Connect profile template, clean env smoke test | sonnet | Med |
 
 ### Key decisions (ADR-073)
 

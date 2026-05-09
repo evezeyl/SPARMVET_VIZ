@@ -164,11 +164,21 @@ These items require a design decision or scope confirmation before implementatio
 - [x] **VENDOR-MANIFEST-1**: Created `app/src/www/vendor/VENDOR_MANIFEST.md` — records all vendored assets with version, source URL, licence, and date. Must be updated whenever a vendor asset is added/upgraded. ✅ 2026-05-05
 
 - [x] **DEPLOY-LIBS-1** `[haiku/low]`: Created `scripts/install_libs.sh` — installs all 8 editable libs in one command, VENV-overridable, exits on error, smoke-tested. ✅ 2026-05-05
-- [ ] **TO DISCUSS**: Toggle "show all data" — data shown only abstract; discuss what is exposed and when
+- [x] **TO DISCUSS**: Toggle "show all data" — decided 2026-05-09 → **PREVIEW-ALLROWS-1** ✅
 - [ ] **TO DISCUSS — lab script**: Extract pilot manifest (reconstitution of lineage) — improve reusability (e.g. manifest for results from a specific tool)
 - [ ] **TO DISCUSS — lab script**: Create tool-specific manifest (e.g. single-sheet variant of above)
 - [ ] **TO DISCUSS — lab script**: Combine manifests — format detection, common datasets, branching
-- [ ] **TO DISCUSS**: Prepare to connect — icons local, verify legacy, cytoscape
+- [x] **TO DISCUSS**: Prepare to connect — decided 2026-05-09 → **DEPLOY-CONNECT-1** below ✅
+
+- [ ] **DEPLOY-CONNECT-1** `[sonnet/medium]`: Posit Connect deployment — editable library install handling.
+  **Context (from `connect.md` + `considerations.md`):** Connect uses an isolated Python environment built from `requirements.txt` (or `manifest.json`). `pip install -e ./libs/xxx` (editable installs) do NOT transfer to Connect — the `./libs/` source tree is bundled and the env rebuilt. The `rsconnect-python` bundler must be told about each local lib.
+  **Subtasks:**
+  - [ ] Add each editable lib as a relative path entry in `requirements.txt`: `-e ./libs/ingestion`, `-e ./libs/transformer`, `-e ./libs/utils`, `-e ./libs/viz_factory`, `-e ./libs/viz_gallery`, `-e ./libs/connector`, `-e ./libs/blueprint_arch`, `-e ./libs/test_lab` — Connect will run `pip install -e ./libs/xxx` from the bundled source tree inside its isolated env.
+  - [ ] Document `app/src/main.py` as the entry point for `rsconnect-python` bundle: `rsconnect deploy shiny . --entrypoint app/src/main.py`
+  - [ ] Deployment profile path strategy: set `SPARMVET_PROFILE` as an environment variable in Connect's config, pointing to a profile YAML bundled in `config/deployment/connect/connect_profile.yaml`. Add a `connect_profile.yaml` template.
+  - [ ] Smoke test: clean venv from scratch (no local `.venv`), run `scripts/install_libs.sh`, then `python app/src/main.py` — verify no import errors before pushing to Connect.
+  - [ ] Update `scripts/install_libs.sh` if needed to support both editable (local dev) and Connect (bundled) install paths.
+  **Pre-existing done:** CDN vendoring (DEPLOY-CDN-1 ✅), nav gating (DEPLOY-MODULES-1 ✅), vendor manifest (VENDOR-MANIFEST-1 ✅), install script (DEPLOY-LIBS-1 ✅), no secrets in source (ADR-071 rule 3 ✅).
 
 - [x] **REVIEW-SCOPING-1 — T3 bundle dependency rule**: Already implemented as PersonaValidator Rule 6 (PERSONA-CONFIG-VALIDATE-1). Closed. ✅ 2026-05-09
 
@@ -187,16 +197,34 @@ These items require a design decision or scope confirmation before implementatio
 - [ ] Exports -> retest / debug
 - [ ] proper definition of the session ghost save and save function when Tier 3 activated
 - [ ] import and mapping of the files to the manifest 
-- [ ][FEATURE] Label - x y axisis adjustment module - Automation / User adjustment panel ? Including eg. some connectors to the visualisation layer on t3 
-Allow edit title, allow policy change, color changes, points display  ... all need to be able to be registered in the audit -> we need an edit palette menu possibility - problem that plots are not really interactive so need to make list of elements that can be changed and provide the possibilities - that will not be a small work this ! because it depends on the plot type and elements also ! Could be a good exploration for grant that also 
+- [ ] **PREVIEW-ALLROWS-1** `[sonnet/low]`: Add "Show all rows" toggle to data preview. **Decided 2026-05-09.** Spec:
+  - Toggle button next to the preview row-count label. Off by default (100-row cap). On = uncapped (`.collect()` full frame).
+  - Tooltip on hover: *"Showing all rows — may be slow for large datasets."*
+  - Respects active tier (T1 / T2 / T3) — shows whichever frame the tier toggle selects, unfiltered.
+  - Not persona-gated (useful for all users). Persisted in `home_state` per session.
+  - Implementation: `app/handlers/home_theater.py` `home_data_preview` render — replace hardcoded `head(100)` with conditional on a `reactive.Value[bool]` toggled by a new `input.preview_show_all`.
+- [ ][FEATURE] Label - x y axis adjustment module - Automation / User adjustment panel ? Including eg. some connectors to the visualisation layer on t3.
+  Allow edit title, allow policy change, color changes, points display — all need to be registered in the audit → we need an edit palette menu. Problem: plots are not interactive so need to define the list of adjustable elements per plot type. Large feature, grant-exploration candidate.
 
 ---
 
-## RESEARCH - HOW TO - DECIDE 
-- [ ] Improve audi workflow - how can we reuse audit process to ensure that all the hashes (manifest hash - data hashes) can be stored in a data base associated with results - eg. output a manifest hash directory for each manifest version ? how to allow something similar for data ? Important users might want to associate a database eg lims with the results report - and we need a way to export the information so everything can be imported in the report - how can those things be integrated ? specify new path for audit that can be decided at deploymment eg. via person configuration and output each different manifest with hash and for data ? 
-- [ ] easy lookup functionality ? 
-- [ ] Improve the lab functionalties -> need to collect all information that is disseminated all
-- [ ] audi apply : improvement eg. apply to ex everything except those... to facilate selection by exclusion ?
+## RESEARCH - HOW TO - DECIDE
+
+- [ ] **RESEARCH-LIMS-1** `[opus/high]` `[deferred — awaiting LIMS project]`: Audit database / LIMS integration — how to store manifest hashes + data hashes in a database associated with results; associate a LIMS with the audit report; configurable output path per persona. **ADR decision deferred** until pilot funding project advances and a concrete LIMS target is identified. Note for ADR when ready: likely needs a new deployment profile `locations` key (e.g. `audit_db`) + a new export surface (machine-readable JSON sidecar per bundle).
+- [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: Easy lookup / search functionality in-app (cross-manifest, cross-recipe). Scope undefined — needs concrete use case first.
+- [ ] Improve the lab functionalities → collect all information that is disseminated across Test Lab, Blueprint, and Gallery into a coherent developer workflow. Needs dedicated design session when Test Lab is further along.
+- [ ] audi apply: improvement e.g. apply to everything except those… to facilitate selection by exclusion.
+
+### In-app contextual help — **DECIDED 2026-05-09**
+
+**Decision:** Air-gapped first (works everywhere). Two-tier approach:
+1. **Contextual cards** (per user space — `HELP-INLINE-1`): `?` button per workspace (Home, Blueprint, Gallery, Test Lab) → opens a `ui.modal_show()` with a short Markdown summary for that space. Content stored as `.md` files in `app/src/help/` (bundled with app, no internet required).
+2. **Full manual** (optional, `HELP-DOCS-1`): `docs/_site/` Quarto-rendered HTML bundled with the app and served via Shiny static assets as `/docs/`. A "Full documentation →" link in each contextual card points to `/docs/index.html`. Works air-gapped. Only generated/served if `docs/_site/` is present at deployment time (build step, not always required).
+
+**Consequence:** Air-gapped deployments always get contextual cards. Full manual is opt-in per deployment (run `quarto render docs/` first, include `_site/` in bundle).
+
+- [ ] **HELP-INLINE-1** `[sonnet/medium]`: Implement per-workspace contextual help modals. `?` button in each workspace header → `ui.modal_show()` with content from `app/src/help/<workspace>.md`. Write initial help content for Home and Blueprint.
+- [ ] **HELP-DOCS-1** `[haiku/low]`: Bundle `docs/_site/` as Shiny static assets served at `/docs/`. Conditional: only if `_site/` exists. Add "Full documentation →" link to each contextual card. CI note: add `quarto render docs/` to deployment checklist.
 
 ## 🟡 Deferred / Backlog
 
