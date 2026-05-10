@@ -23,6 +23,7 @@ import sys
 import argparse
 import polars as pl
 from pathlib import Path
+from datetime import datetime
 import matplotlib
 matplotlib.use('Agg')
 
@@ -56,12 +57,21 @@ def main():
     parser.add_argument("--manifest", type=str, required=True,
                         help="Path to the pipeline manifest (.yaml)")
     parser.add_argument("--output_root", type=str,
-                        default=str(project_root / "tmp/materialized_gallery"),
-                        help="Root directory for output PNGs (default: tmp/materialized_gallery/)")
+                        default=None,
+                        help="Root directory for output PNGs (default: tmpAI/YYYY-MM-DD/<manifest>/plots/)")
     parser.add_argument("--tmp", type=str,
-                        default=str(project_root / "tmp"),
-                        help="Directory containing EVE_contracted_*.parquet files (default: tmp/)")
+                        default=None,
+                        help="Directory containing EVE_contracted_*.parquet files (default: tmpAI/YYYY-MM-DD/<manifest>/)")
     args = parser.parse_args()
+
+    # Derive dated defaults from manifest stem — mirrors debug_assembler.py convention
+    lineage_id = Path(args.manifest).stem
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    dated_root = project_root / f"tmpAI/{date_str}/{lineage_id}"
+    if args.tmp is None:
+        args.tmp = str(dated_root)
+    if args.output_root is None:
+        args.output_root = str(dated_root / "plots")
 
     print(f"\n{'='*60}")
     print(f" 🖼️  DEBUG GALLERY — Headless Art Audit")
