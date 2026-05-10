@@ -387,12 +387,39 @@ class WrangleStudio:
                     _plot_error.set(f"Manifest not found: {manifest_path}")
                     return None
                 full_cfg = _CM(manifest_path).raw_config
-                if viz_id not in full_cfg.get("plots", {}):
+
+                # Resolve the plot spec from flat `plots:` (gallery bundles)
+                # or modern `analysis_groups:` (pipeline manifests, ADR-043).
+                render_manifest = None
+                if viz_id in full_cfg.get("plots", {}):
+                    render_manifest = full_cfg
+                else:
+                    for grp_spec in full_cfg.get("analysis_groups", {}).values():
+                        if not isinstance(grp_spec, dict):
+                            continue
+                        plot_entry = grp_spec.get("plots", {}).get(viz_id)
+                        if plot_entry is not None:
+                            spec = (plot_entry.get("spec", plot_entry)
+                                    if isinstance(plot_entry, dict) else plot_entry)
+                            render_manifest = {
+                                "plots": {viz_id: spec},
+                                "plot_defaults": full_cfg.get("plot_defaults", {}),
+                            }
+                            break
+
+                if render_manifest is None:
                     available = list(full_cfg.get("plots", {}).keys())
-                    _plot_error.set(f"Plot ID '{viz_id}' not found in manifest. Available: {', '.join(available[:5])}")
+                    for grp in full_cfg.get("analysis_groups", {}).values():
+                        if isinstance(grp, dict):
+                            available.extend(grp.get("plots", {}).keys())
+                    _plot_error.set(
+                        f"Plot ID '{viz_id}' not found in manifest. "
+                        f"Available: {', '.join(available[:5])}"
+                    )
                     return None
+
                 _plot_error.set("")
-                plt = viz_factory.render(df.lazy(), full_cfg, viz_id)
+                plt = viz_factory.render(df.lazy(), render_manifest, viz_id)
                 return plt
             except Exception as e:
                 msg = str(e)

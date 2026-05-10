@@ -240,7 +240,7 @@ def define_server(input, output, session, *,
                         anchor_dir.mkdir(parents=True, exist_ok=True)
                         out_p = anchor_dir / f"{schema_id}.parquet"
                         bp_project_id = Path(master_path).stem
-                        print(f"🚀 [Architect] Materializing join '{schema_id}'")
+                        print(f"[Architect] Materializing join '{schema_id}'")
                         orchestrator.materialize_tier1(
                             project_id=bp_project_id,
                             collection_id=schema_id,
@@ -248,7 +248,7 @@ def define_server(input, output, session, *,
                         )
                         wrangle_studio.active_anchor_path.set(str(out_p))
                     except Exception as e:
-                        print(f"⚠️ Join materialization failed: {e}")
+                        print(f"[Architect] Join materialization failed: {e}")
 
                 elif role == "plot_spec":
                     target_ds = file_content.get("target_dataset") \
@@ -273,7 +273,7 @@ def define_server(input, output, session, *,
                             anchor_dir.mkdir(parents=True, exist_ok=True)
                             out_p = anchor_dir / f"{target_ds}.parquet"
                             bp_project_id = Path(master_path).stem
-                            print(f"🚀 [Architect] Materializing '{target_ds}' from '{bp_project_id}'")
+                            print(f"[Architect] Materializing '{target_ds}' from '{bp_project_id}'")
                             orchestrator.materialize_tier1(
                                 project_id=bp_project_id,
                                 collection_id=target_ds,
@@ -281,7 +281,7 @@ def define_server(input, output, session, *,
                             )
                             wrangle_studio.active_anchor_path.set(str(out_p))
                         except Exception as e:
-                            print(f"⚠️ Surgical materialization failed: {e}")
+                            print(f"[Architect] Surgical materialization failed: {e}")
 
                 elif role == "plot_wrangling":
                     target_ds = file_content.get("target_dataset") \
@@ -307,7 +307,7 @@ def define_server(input, output, session, *,
                             )
                             wrangle_studio.active_anchor_path.set(str(out_p))
                         except Exception as e:
-                            print(f"⚠️ plot_wrangling materialization failed: {e}")
+                            print(f"[Architect] plot_wrangling materialization failed: {e}")
 
                     if isinstance(file_content, list):
                         wrangling = file_content
@@ -416,7 +416,7 @@ def define_server(input, output, session, *,
                     anchor_dir.mkdir(parents=True, exist_ok=True)
                     out_p = anchor_dir / f"{selected}.parquet"
                     bp_project_id = Path(master_path).stem
-                    print(f"🚀 [Architect Mode B] Materializing join '{selected}'")
+                    print(f"[Architect Mode B] Materializing join '{selected}'")
                     orchestrator.materialize_tier1(
                         project_id=bp_project_id,
                         collection_id=selected,
@@ -424,7 +424,7 @@ def define_server(input, output, session, *,
                     )
                     wrangle_studio.active_anchor_path.set(str(out_p))
                 except Exception as e:
-                    print(f"⚠️ Join materialization failed (Mode B): {e}")
+                    print(f"[Architect Mode B] Join materialization failed: {e}")
             elif role_b in ("plot_spec", "plot_wrangling"):
                 upstream_b: dict = {}
                 if plot_target_ds:
@@ -451,7 +451,7 @@ def define_server(input, output, session, *,
                         )
                         wrangle_studio.active_anchor_path.set(str(out_p))
                     except Exception as _me:
-                        print(f"⚠️ Plot materialization failed (Mode B): {_me}")
+                        print(f"[Architect Mode B] Plot materialization failed: {_me}")
             else:
                 in_f_val = in_f if isinstance(in_f, (dict, list)) else []
                 out_f_val = out_f if isinstance(out_f, (dict, list)) else []
