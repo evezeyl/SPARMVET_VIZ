@@ -1,16 +1,34 @@
-# Handoff — Active State (2026-05-10 quick wins session)
+# Handoff — Active State (2026-05-10 continued session)
 
 **Branch:** dev  
-**Working tree:** uncommitted changes  
-**Status:** All quick-win tasks complete (4/4 haiku/low items):
-  - ADR-078-ACTIONS-1 ✅ (24 silent pass-throughs fixed)
-  - TRANSFORMER-SUITE-FIX ✅ (62/62 clean)
-  - DOC-GAP-5 ✅ (2 README fixes)
-  - DOC-GAP-2 ✅ (persona matrix rows added)
-  - DOC-GAP-3 ✅ (ADR-074 lineage API docs)
-  - LIB-TESTS-VIZ-TIMEOUT-1 ✅ (timeout 120→300s)
+**Working tree:** clean (all changes committed)  
+**Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-**Next session:** Medium-effort item: **LIB-TESTS-BLUEPRINT-1** `[sonnet/medium]` — 188 pytest failures in `blueprint_arch/tests/test_schema_registry.py`. Root cause: missing `allow_extra_params`/`wraps` fields in `@register_plot_component` ui_schema dicts. Fix: scan `libs/viz_factory/src/viz_factory/` for all plot component registrations and add the two missing fields.
+## Session Accomplishments (2026-05-10 afternoon)
+
+### Completed Tasks
+
+1. **LIB-TESTS-BLUEPRINT-1** ✅ `[sonnet/medium]`  
+   188 pytest failures → **0 failures (194/194 tests passing)**  
+   Root cause: Test file was importing `AVAILABLE_WRANGLING_ACTIONS` (function dict) instead of `ACTION_SCHEMAS` (schema dict) from transformer.actions.base  
+   Fix: Changed imports and `register()` call in `libs/blueprint_arch/tests/test_schema_registry.py`  
+   Result: All 58 action catalog tests + 36 component catalog tests + semantic rule tests now pass
+   
+2. **PKG-PLOTNINE-PATCH-1** ✅ `[haiku/low]`  
+   Upgraded plotnine 0.15.3 → 0.15.4 per ADR-036 (Plotnine Parity Mandate)  
+   Pinned version in pyproject.toml: `plotnine>=0.15.4,<0.16.0`  
+   Re-ran parity audit: 222 plotnine symbols, 168 registered (75% coverage)  
+   New components identified (geom_bin2d, stat_bin2d, stat_pointdensity) — registration deferred to BP-ACTION-PARITY-1
+   
+3. **PKG-IMPORTLIB-MAJOR-1** ✅ `[sonnet/low]`  
+   Investigated importlib_metadata 9.0.0 upgrade (MAJOR version bump)  
+   Found breaking change: opentelemetry-api 1.41.1 (pulled by shiny) requires importlib-metadata<8.8.0  
+   Solution: Pinned importlib_metadata to >=6.0,<9.0.0 in pyproject.toml  
+   Verified: `pip check` reports no broken requirements
+
+**Next session:** Remaining audit-driven items in "Do Now":
+  - **DOC-GAP-1** `[sonnet/medium]` — Expand `docs/workflows/ui_persona.qmd` with 4 missing items (Eight Personas, ADR-076 agent flags, ADR-077 cascade table, panel type table)
+  - **DOC-GAP-4** `[haiku/low]` — Triage 8 orphaned `.qmd` files not in `_quarto.yml`
 
 ---
 
