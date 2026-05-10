@@ -21,6 +21,7 @@ from pathlib import Path
 
 import polars as pl
 import yaml
+from PIL import Image
 
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -55,7 +56,13 @@ def render_recipe(recipe_dir: Path, factory: VizFactory) -> bool:
 
         p = factory.render(df, manifest, plot_id)
         p.save(out_path, width=8, height=5, dpi=120, verbose=False)
-        print(f"  ✅ {recipe_dir.name} → preview_plot.png")
+
+        thumb_path = recipe_dir / "preview_thumb.png"
+        with Image.open(out_path) as img:
+            img.thumbnail((100, 75), Image.LANCZOS)
+            img.save(thumb_path)
+
+        print(f"  ✅ {recipe_dir.name} → preview_plot.png + preview_thumb.png")
         return True
 
     except Exception as e:
@@ -95,9 +102,18 @@ def main():
     ok = failed = skipped = 0
     for d in dirs:
         out = d / "preview_plot.png"
-        if out.exists() and not args.force:
-            print(f"  ⏭️  {d.name}: already has preview_plot.png (--force to overwrite)")
+        thumb = d / "preview_thumb.png"
+        if out.exists() and thumb.exists() and not args.force:
+            print(f"  ⏭️  {d.name}: already has preview_plot.png + preview_thumb.png (--force to overwrite)")
             skipped += 1
+            continue
+        # Re-render full plot if missing, or just generate thumb from existing full plot
+        if out.exists() and not thumb.exists() and not args.force:
+            with Image.open(out) as img:
+                img.thumbnail((100, 75), Image.LANCZOS)
+                img.save(thumb)
+            print(f"  🖼️  {d.name}: generated missing preview_thumb.png from existing preview_plot.png")
+            ok += 1
             continue
         if render_recipe(d, factory):
             ok += 1

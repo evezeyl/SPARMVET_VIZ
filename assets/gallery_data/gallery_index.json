@@ -1,12 +1,14 @@
 {
   "metadata": {
-    "generated_at": "2026-05-03 09:34:38",
+    "generated_at": "2026-05-10 18:13:48",
     "count": 34
   },
   "registry": {
     "bar_simple": {
       "name": "Bar Simple",
       "path": "assets/gallery_data/bar_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Ranking",
         "pattern": "1 Numeric, 1 Categorical",
@@ -19,6 +21,8 @@
     "boxplot_simple": {
       "name": "Boxplot Simple",
       "path": "assets/gallery_data/boxplot_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -31,6 +35,8 @@
     "point_simple": {
       "name": "Point Simple",
       "path": "assets/gallery_data/point_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Correlation",
         "pattern": "2 Numeric",
@@ -43,6 +49,8 @@
     "density_simple": {
       "name": "Density Simple",
       "path": "assets/gallery_data/density_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric",
@@ -55,6 +63,8 @@
     "violin_simple": {
       "name": "Violin Simple",
       "path": "assets/gallery_data/violin_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -67,6 +77,8 @@
     "histogram_simple": {
       "name": "Histogram Simple",
       "path": "assets/gallery_data/histogram_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric",
@@ -79,6 +91,8 @@
     "tile_simple": {
       "name": "Tile Simple",
       "path": "assets/gallery_data/tile_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Correlation",
         "pattern": "1 Numeric, 2 Categorical",
@@ -91,6 +105,8 @@
     "boxplot_faceted": {
       "name": "Boxplot Faceted",
       "path": "assets/gallery_data/boxplot_faceted/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Comparison",
         "pattern": "1 Numeric, 2 Categorical (Faceted)",
@@ -103,6 +119,8 @@
     "point_faceted": {
       "name": "Point Faceted",
       "path": "assets/gallery_data/point_faceted/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Comparison",
         "pattern": "2 Numeric, 1 Categorical (Faceted)",
@@ -115,6 +133,8 @@
     "violin_faceted": {
       "name": "Violin Faceted",
       "path": "assets/gallery_data/violin_faceted/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Comparison",
         "pattern": "1 Numeric, 2 Categorical (Faceted)",
@@ -127,6 +147,8 @@
     "ridgeline_advanced": {
       "name": "Ridgeline Advanced",
       "path": "assets/gallery_data/ridgeline_advanced/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -139,6 +161,8 @@
     "lollipop_advanced": {
       "name": "Lollipop Advanced",
       "path": "assets/gallery_data/lollipop_advanced/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Ranking",
         "pattern": "1 Numeric, 1 Categorical",
@@ -151,6 +175,8 @@
     "heatmap_correlation": {
       "name": "Heatmap Correlation",
       "path": "assets/gallery_data/heatmap_correlation/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Correlation",
         "pattern": "3 Numeric (Matrix)",
@@ -163,6 +189,8 @@
     "line_simple": {
       "name": "Line Chart (Simple)",
       "path": "assets/gallery_data/line_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Evolution",
         "pattern": "1 Year, 1 Numeric",
@@ -175,6 +203,8 @@
     "line_grouped": {
       "name": "Line Chart (Grouped)",
       "path": "assets/gallery_data/line_grouped/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Evolution",
         "pattern": "1 Year, 1 Numeric, 1 Categorical",
@@ -187,6 +217,8 @@
     "area_simple": {
       "name": "Area Chart",
       "path": "assets/gallery_data/area_simple/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Evolution",
         "pattern": "1 Year, 1 Numeric",
@@ -199,6 +231,8 @@
     "stacked_bar": {
       "name": "Stacked Bar Chart",
       "path": "assets/gallery_data/stacked_bar/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Part-to-Whole",
         "pattern": "1 Numeric, 2 Categorical",
@@ -211,6 +245,8 @@
     "proportion_bar": {
       "name": "Proportion Bar Chart",
       "path": "assets/gallery_data/proportion_bar/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Part-to-Whole",
         "pattern": "1 Numeric, 2 Categorical",
@@ -223,6 +259,8 @@
     "bar_horizontal": {
       "name": "Horizontal Bar Chart",
       "path": "assets/gallery_data/bar_horizontal/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Ranking",
         "pattern": "1 Numeric, 1 Categorical",
@@ -235,6 +273,8 @@
     "jitter_strip": {
       "name": "Jitter Strip Plot",
       "path": "assets/gallery_data/jitter_strip/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Comparison",
         "pattern": "1 Numeric, 1 Categorical",
@@ -247,6 +287,8 @@
     "bubble": {
       "name": "Bubble Chart",
       "path": "assets/gallery_data/bubble/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Correlation",
         "pattern": "2 Numeric, 1 Categorical",
@@ -259,6 +301,8 @@
     "beeswarm_sina": {
       "name": "Beeswarm / Sina Plot",
       "path": "assets/gallery_data/beeswarm_sina/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -271,6 +315,8 @@
     "ecdf": {
       "name": "ECDF Plot",
       "path": "assets/gallery_data/ecdf/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -283,6 +329,8 @@
     "violin_boxplot": {
       "name": "Violin + Boxplot Overlay",
       "path": "assets/gallery_data/violin_boxplot/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -295,6 +343,8 @@
     "qq_plot": {
       "name": "Q-Q Plot (Quantile-Quantile)",
       "path": "assets/gallery_data/qq_plot/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -307,6 +357,8 @@
     "freqpoly": {
       "name": "Frequency Polygon",
       "path": "assets/gallery_data/freqpoly/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
@@ -319,6 +371,8 @@
     "scatter_smooth": {
       "name": "Scatter Plot with Smoother",
       "path": "assets/gallery_data/scatter_smooth/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Correlation",
         "pattern": "2 Numeric, 1 Categorical",
@@ -331,6 +385,8 @@
     "density_2d_bin": {
       "name": "2D Bin Density",
       "path": "assets/gallery_data/density_2d_bin/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Correlation",
         "pattern": "2 Numeric",
@@ -343,6 +399,8 @@
     "connected_scatter": {
       "name": "Connected Scatter Plot",
       "path": "assets/gallery_data/connected_scatter/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Correlation",
         "pattern": "2 Numeric",
@@ -355,6 +413,8 @@
     "bar_grouped": {
       "name": "Grouped Bar Chart",
       "path": "assets/gallery_data/bar_grouped/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Ranking",
         "pattern": "1 Numeric, 2 Categorical",
@@ -367,6 +427,8 @@
     "error_bar": {
       "name": "Error Bar / Point Range",
       "path": "assets/gallery_data/error_bar/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Comparison",
         "pattern": "1 Numeric, 1 Categorical",
@@ -379,6 +441,8 @@
     "dumbbell": {
       "name": "Dumbbell Chart",
       "path": "assets/gallery_data/dumbbell/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Comparison",
         "pattern": "1 Numeric, 2 Categorical",
@@ -391,6 +455,8 @@
     "stacked_area": {
       "name": "Stacked Area Chart",
       "path": "assets/gallery_data/stacked_area/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Evolution",
         "pattern": "1 Numeric, 2 Categorical",
@@ -403,6 +469,8 @@
     "step_chart": {
       "name": "Step Chart",
       "path": "assets/gallery_data/step_chart/recipe_manifest.yaml",
+      "has_preview": true,
+      "has_thumb": true,
       "taxonomy": {
         "family": "Evolution",
         "pattern": "1 Numeric, 1 Categorical",

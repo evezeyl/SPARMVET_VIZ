@@ -130,6 +130,8 @@ class GalleryManager:
                     registry[recipe_id] = {
                         "name": info.get("name", d.name),
                         "path": str(manifest_path),
+                        "has_preview": (d / "preview_plot.png").exists(),
+                        "has_thumb": (d / "preview_thumb.png").exists(),
                         "taxonomy": {
                             "family": info.get("family", "Unknown"),
                             "pattern": info.get("pattern", "Unknown"),
