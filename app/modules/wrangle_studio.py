@@ -150,6 +150,22 @@ class WrangleStudio:
                     ui.layout_columns(
                         ui.card(
                             ui.card_header("Plan & Actions"),
+                            ui.layout_columns(
+                                ui.input_text(
+                                    "bp_action_search", None,
+                                    placeholder="Search actions...",
+                                ),
+                                ui.input_select(
+                                    "bp_action_context", None,
+                                    choices={
+                                        "": "All contexts",
+                                        "t1": "T1 — Trunk",
+                                        "t2": "T2 — Branch",
+                                        "assembly": "Assembly",
+                                    }
+                                ),
+                                col_widths=[7, 5],
+                            ),
                             ui.input_select("action_selector",
                                             "1. Select Action:", choices=actions),
                             ui.panel_conditional(
@@ -576,6 +592,57 @@ class WrangleStudio:
             val = input.bp_node_click()
             if val is not None:
                 self.selected_node_idx.set(int(val))
+
+        # BP-ACTION-PARITY-1: Reactive action picker — filter by search + context.
+        # Updates action_selector choices using schema_registry when available, falling
+        # back to AVAILABLE_WRANGLING_ACTIONS for actions without ui_schema.
+        @reactive.Effect
+        def _update_action_picker():
+            query = (input.bp_action_search() or "").strip().lower()
+            ctx = (input.bp_action_context() or "").strip()
+
+            try:
+                from blueprint_arch.schema_registry import get_action_catalog, search_actions, get_actions_for_context
+                catalog = get_action_catalog()
+            except Exception:
+                catalog = {}
+
+            if ctx and catalog:
+                in_scope = set(get_actions_for_context(ctx).keys())
+            else:
+                in_scope = set(AVAILABLE_WRANGLING_ACTIONS.keys()) | set(catalog.keys())
+
+            if query and catalog:
+                matched = set(search_actions(query).keys())
+                in_scope = in_scope & matched
+            elif query:
+                # Fallback substring match when catalog is empty
+                in_scope = {k for k in in_scope if query in k}
+
+            with_schema = {
+                k: catalog[k].get("label", k)
+                for k in sorted(in_scope)
+                if k in catalog
+            }
+            without_schema = {
+                k: k
+                for k in sorted(in_scope)
+                if k not in catalog and k in AVAILABLE_WRANGLING_ACTIONS
+            }
+
+            if with_schema and without_schema:
+                choices = {
+                    "Rich form (all params editable)": with_schema,
+                    "YAML fallback (edit via escape hatch)": without_schema,
+                }
+            elif with_schema:
+                choices = with_schema
+            elif without_schema:
+                choices = without_schema
+            else:
+                choices = {"(no matches)": "(no matches)"}
+
+            ui.update_select("action_selector", choices=choices)
 
         @output
         @render.ui
