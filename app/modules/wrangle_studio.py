@@ -232,6 +232,22 @@ class WrangleStudio:
                                 style="overflow-y: auto; max-height: 260px;"
                             ),
                         ),
+                        # BP-FIELD-GAP-1: Field Gap Analysis tool
+                        ui.card(
+                            ui.card_header("Field Gap Analysis"),
+                            ui.layout_columns(
+                                ui.input_text(
+                                    "bp_field_query", None,
+                                    placeholder="Enter field name (slug)...",
+                                ),
+                                ui.input_action_button(
+                                    "btn_field_gap", "Find",
+                                    class_="btn btn-primary btn-sm"
+                                ),
+                                col_widths=[9, 3],
+                            ),
+                            ui.output_ui("field_gap_ui"),
+                        ),
                     )
                 ),
                 ui.nav_panel(
@@ -1243,6 +1259,89 @@ class WrangleStudio:
             if not downstream:
                 return ui.p("No downstream contract.", class_="text-muted italic small")
             return _fields_cards(downstream, "output fields")
+
+        # BP-FIELD-GAP-1: Field Gap Analysis — trace a field name through the loaded tiers.
+        @output
+        @render.ui
+        @reactive.event(input.btn_field_gap)
+        def field_gap_ui():
+            query = (input.bp_field_query() or "").strip().lower()
+            if not query:
+                return ui.div(
+                    ui.p("Enter a field name above and press Find.",
+                         class_="text-muted small fst-italic mt-2")
+                )
+
+            upstream = self.active_upstream.get()
+            downstream = self.active_downstream.get()
+            chain = self.active_lineage_chain.get()
+            info = self.active_component_info.get() or {}
+
+            def _in_fields(fields) -> bool:
+                if isinstance(fields, dict):
+                    return query in {k.lower() for k in fields}
+                if isinstance(fields, list):
+                    return any(
+                        (isinstance(f, dict) and query in (f.get("name", ""), f.get("field", "")).lower())
+                        or (isinstance(f, str) and query == f.lower())
+                        for f in fields
+                    )
+                return False
+
+            up_found = _in_fields(upstream)
+            down_found = _in_fields(downstream)
+            schema_id = info.get("schema_id", "current component")
+
+            rows = []
+
+            if up_found:
+                rows.append(
+                    ui.div(
+                        ui.tags.span("Found", class_="badge bg-success me-2"),
+                        f"'{query}' is in upstream contract (input to {schema_id})",
+                        class_="small mb-1"
+                    )
+                )
+            if down_found:
+                rows.append(
+                    ui.div(
+                        ui.tags.span("Found", class_="badge bg-success me-2"),
+                        f"'{query}' is in output contract (produced by {schema_id})",
+                        class_="small mb-1"
+                    )
+                )
+            if not up_found and not down_found:
+                rows.append(
+                    ui.div(
+                        ui.tags.span("Not here", class_="badge bg-warning text-dark me-2"),
+                        f"'{query}' not found at {schema_id}.",
+                        class_="small mb-1"
+                    )
+                )
+                if len(chain) > 1:
+                    active_idx = next(
+                        (i for i, n in enumerate(chain) if n.get("is_active")), None
+                    )
+                    if active_idx is not None and active_idx > 0:
+                        upstream_nodes = [n["label"] for n in chain[:active_idx]]
+                        rows.append(
+                            ui.div(
+                                ui.tags.span("Hint", class_="badge bg-secondary me-2"),
+                                f"Click upstream in the Rail to check: {', '.join(upstream_nodes)}",
+                                class_="small text-muted mb-1"
+                            )
+                        )
+                    elif active_idx == 0:
+                        rows.append(
+                            ui.div(
+                                ui.tags.span("Hint", class_="badge bg-secondary me-2"),
+                                "This is the root tier. The field must be added "
+                                "here (mutate/derive step in Tier 1 wrangling).",
+                                class_="small text-muted mb-1"
+                            )
+                        )
+
+            return ui.div(*rows, class_="mt-2 p-1")
 
         @reactive.Effect
         @reactive.event(input.btn_add_plot_wrangling)
