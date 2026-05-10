@@ -117,6 +117,8 @@ analysis_groups:
           x: sequence_type
           fill: country
           layers:
+            - name: scale_x_discrete
+              params: {}
             - name: labs
               params:
                 title: "Sequence Types by Country"
@@ -130,6 +132,8 @@ analysis_groups:
           x: sequence_type
           fill: source
           layers:
+            - name: scale_x_discrete
+              params: {}
             - name: labs
               params:
                 title: "Sequence Types by Source"

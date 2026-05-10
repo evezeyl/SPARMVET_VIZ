@@ -7,3 +7,6 @@ family: "Ranking"
 pattern: "2 Categorical"
 description: "Bar chart showing the frequency of MLST sequence types, filled by the origin country."
 difficulty: "Simple"
+layers:
+  - name: scale_x_discrete
+    params: {}
