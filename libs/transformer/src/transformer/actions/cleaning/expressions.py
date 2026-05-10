@@ -1,11 +1,13 @@
 # @deps
 # provides: action:regex_extract, action:cast, action:coalesce, action:label_if, action:mutate, action:regex_replace, action:null_if
+# consumes: libs/utils/src/utils/errors.py (TransformationError)
 # consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
-# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075, ADR-078)
 # @end_deps
 import polars as pl
 from typing import Dict, Any
 from transformer.actions.base import register_action
+from utils.errors import TransformationError
 
 
 @register_action("regex_extract", ui_schema={
@@ -37,7 +39,10 @@ def action_regex_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     group = spec.get("group", 1)
 
     if not source or not pattern or not target:
-        return lf
+        raise TransformationError(
+            "action 'regex_extract' missing required parameters.",
+            tip="Provide 'source', 'pattern', and 'target_column' in the YAML spec."
+        )
 
     # Implementation: Use str.extract to generate a new column
     return lf.with_columns(
@@ -98,7 +103,10 @@ def action_coalesce(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     columns = spec.get("columns", [])
     if len(columns) < 2:
-        return lf
+        raise TransformationError(
+            "action 'coalesce' requires at least 2 columns.",
+            tip="Provide 'columns' as a list of at least 2 column names: [target, fallback1, ...]."
+        )
 
     return lf.with_columns(pl.coalesce(columns).alias(columns[0]))
 
@@ -138,7 +146,10 @@ def action_label_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     else_val = spec.get("otherwise")
 
     if not all([col, new_col, pred, val]):
-        return lf
+        raise TransformationError(
+            "action 'label_if' missing required parameters.",
+            tip="Provide 'column', 'new_column', 'predicate', and 'value' in the YAML spec."
+        )
 
     if pred == ">":
         expr = pl.when(pl.col(col) > val).then(
@@ -159,7 +170,10 @@ def action_label_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         expr = pl.when(pl.col(col) != val).then(
             pl.lit(then_val)).otherwise(pl.lit(else_val))
     else:
-        return lf
+        raise TransformationError(
+            f"action 'label_if' unknown predicate '{pred}'.",
+            tip="Valid values for 'predicate': >, >=, <, <=, ==, !=."
+        )
 
     return lf.with_columns(expr.alias(new_col))
 
@@ -184,7 +198,10 @@ def action_mutate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     expr_str = spec.get("expression")
 
     if not target or not expr_str:
-        return lf
+        raise TransformationError(
+            "action 'mutate' missing required parameters.",
+            tip="Provide 'column' and 'expression' in the YAML spec."
+        )
 
     # Evaluate the expression string within Polars context
     # Note: We assume the expression is a valid Polars string expression using pl.
@@ -203,7 +220,10 @@ def action_regex_replace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     pattern = spec.get("pattern")
     value = spec.get("value", "")
     if not cols or not pattern:
-        return lf
+        raise TransformationError(
+            "action 'regex_replace' missing required parameters.",
+            tip="Provide 'columns' and 'pattern' in the YAML spec."
+        )
     return lf.with_columns(pl.col(cols).str.replace_all(pattern, value))
 
 
@@ -213,5 +233,8 @@ def action_null_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     cols = spec.get("columns", [])
     value = spec.get("value")
     if not cols:
-        return lf
+        raise TransformationError(
+            "action 'null_if' missing required parameter 'columns'.",
+            tip="Provide 'columns' (list) in the YAML spec."
+        )
     return lf.with_columns(pl.when(pl.col(cols) == value).then(None).otherwise(pl.col(cols)))

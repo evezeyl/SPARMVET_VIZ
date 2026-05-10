@@ -108,6 +108,7 @@ def run_suite(output_dir: Path = None):
         out_tsv = out_dir / f"{action}_test.tsv"
         cmd = [sys.executable, str(wrangler_runner),
                "--manifest", str(manifest_path),
+               "--data", str(data_path),
                "--output", str(out_tsv)]
         try:
             # We use a short timeout to prevent hanging

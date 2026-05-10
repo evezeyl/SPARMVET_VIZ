@@ -60,13 +60,9 @@ Items with no blockers — can be started immediately.
 
 *Findings from `audit_adr_compliance_2026-05-09.md` (Routine 18).*
 
-- [ ] **ADR-078-ACTIONS-1** `[AUDIT]` `[sonnet/medium]`: Retrofit `SPARMVET_DiagnosticError` into transformer actions that silently pass through on invalid input. ADR-078 requires this error type — not `ValueError` or silent `return lf`. Files:
-  - `libs/transformer/src/transformer/actions/cleaning/expressions.py:40` — `action_regex_extract`: `if not source/pattern/target: return lf`
-  - `libs/transformer/src/transformer/actions/cleaning/expressions.py:187` — `action_mutate`: `if not target or not expr_str: return lf`
-  - `libs/transformer/src/transformer/actions/cleaning/analytical.py:29` — `action_window_agg`: `if not col: return lf`
-  - `libs/transformer/src/transformer/actions/cleaning/analytical.py:64` — `action_shift`: `if not col: return lf`
-  - `libs/transformer/src/transformer/actions/cleaning/advanced.py:27` — `action_split_and_explode`: `if not col: return lf`
-  - After fixing these 5, audit remaining actions in `analytical.py` and `advanced.py` for the same `return lf` pass-through pattern.
+- [x] **ADR-078-ACTIONS-1** `[AUDIT]` `[sonnet/medium]`: Retrofit `TransformationError` into transformer actions that silently pass through on invalid input. Fixed 24 silent `return lf` pass-throughs across `expressions.py`, `analytical.py`, and `advanced.py`. (Note: the audit report incorrectly named the error class `SPARMVET_DiagnosticError` — actual class is `TransformationError` from `utils.errors`.)
+
+- [x] **TRANSFORMER-SUITE-FIX** `[sonnet/medium]`: Fixed transformer integrity suite failing 60/60 after ADR-078 fix. Root cause: `debug_wrangler.py` and `debug_assembler.py` used `ConfigManager` unconditionally, which enforces `analysis_groups:` presence (a full-pipeline requirement). Standalone wrangling test manifests don't have `analysis_groups:`, so validation fired before any test ran. Fix: bypass `ConfigManager` for manifests without `analysis_groups:`, use `yaml.safe_load()` directly instead. Also fixed missing `--data` argument in the suite's `subprocess` call to `debug_wrangler.py`. Result: 62/62 clean (60 wrangler PASSED, relational_audit PASSED).
 
 ### Deployment
 

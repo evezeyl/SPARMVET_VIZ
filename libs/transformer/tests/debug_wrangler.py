@@ -2,7 +2,7 @@
 # @deps
 # provides: script:debug_wrangler
 # mirrors: app/modules/orchestrator.py (Tier 1 wrangling path)
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/utils/src/utils/config_loader.py
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/utils/src/utils/config_loader.py (full-pipeline manifests only)
 # consumed_by: libs/transformer/tests/transformer_integrity_suite.py
 # doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
@@ -18,6 +18,8 @@ from datetime import datetime
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 # if str(project_root) not in sys.path:
 # STRICT BAN: sys.path.append / sys.path.insert are explicitly forbidden. Rely on pip install -e.
+
+import yaml
 
 try:
     from ingestion.ingestor import DataIngestor
@@ -35,6 +37,16 @@ except ImportError:
         sys.exit(1)
 
 
+def _load_manifest_raw(manifest_path: str) -> dict:
+    """Load a manifest as a raw dict, bypassing ConfigManager validation.
+
+    Used for standalone wrangling manifests (no analysis_groups) that would
+    fail ConfigManager's full-pipeline structural checks.
+    """
+    with open(manifest_path, "r") as f:
+        return yaml.safe_load(f) or {}
+
+
 def run_wrangler_debug(manifest_path: str, data_path_override: str = None, output_path: str = None, tier: str = "all"):
     """
     Consolidated Layer 1 Debugger & Universal Runner (ADR 005 / ADR 013-015).
@@ -50,8 +62,15 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
         sys.exit(1)
 
     try:
-        config_manager = ConfigManager(manifest_path)
-        manifest = config_manager.raw_config
+        raw = _load_manifest_raw(manifest_path)
+        # Use ConfigManager only for full pipeline manifests (have analysis_groups).
+        # Standalone wrangling-only manifests skip ConfigManager to avoid the
+        # analysis_groups validation gate that fires for partial test manifests.
+        if raw.get("analysis_groups"):
+            config_manager = ConfigManager(manifest_path)
+            manifest = config_manager.raw_config
+        else:
+            manifest = raw
     except Exception as e:
         print(f"  └── ❌ Load Error: Failed to parse manifest yaml. {e}")
         sys.exit(1)

@@ -3,11 +3,13 @@ from typing import Dict, Any, List, Union
 import os
 from pathlib import Path
 from transformer.actions.base import register_action
+from utils.errors import TransformationError
 
 # @deps
 # provides: action:split_and_explode, action:derive_categories, action:split_column_to_parts, action:divide_columns
+# consumes: libs/utils/src/utils/errors.py (TransformationError)
 # consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
-# doc: .claude/rules/rules_persona_bioscientist.md#8
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-078)
 # @end_deps
 
 
@@ -24,7 +26,10 @@ def action_split_and_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
     target = columns[0] if (isinstance(columns, list)
                             and len(columns) > 0) else columns
     if not target:
-        return lf
+        raise TransformationError(
+            "action 'split_and_explode' missing required parameter 'columns'.",
+            tip="Provide 'columns' (a single column name or list with one entry) in the YAML spec."
+        )
 
     return lf.with_columns(
         pl.col(target).cast(pl.String).str.split(separator)
@@ -88,7 +93,10 @@ def action_split_column_to_parts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.L
     new_cols = spec.get("new_columns", [])
 
     if not source or not new_cols:
-        return lf
+        raise TransformationError(
+            "action 'split_column_to_parts' missing required parameters.",
+            tip="Provide 'column' and 'new_columns' (list of target column names) in the YAML spec."
+        )
 
     # Implementation: Use str.split_exact to get the parts
     # We cast to Float64 by default if possible to allow downstream math
@@ -110,7 +118,10 @@ def action_divide_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
     new_col = spec.get("new_column")
 
     if not num or not den or not new_col:
-        return lf
+        raise TransformationError(
+            "action 'divide_columns' missing required parameters.",
+            tip="Provide 'numerator', 'denominator', and 'new_column' in the YAML spec."
+        )
 
     # Safety: ensure numeric
     return lf.with_columns(

@@ -2,13 +2,14 @@
 # @deps
 # provides: script:debug_assembler
 # mirrors: app/modules/orchestrator.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py
-# consumed_by: libs/viz_factory/tests/debug_gallery.py
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, libs/utils/src/utils/config_loader.py (full-pipeline manifests only)
+# consumed_by: libs/viz_factory/tests/debug_gallery.py, libs/transformer/tests/transformer_integrity_suite.py
 # doc: .claude/rules/rules_persona_bioscientist.md#7
 # @end_deps
 import argparse
 import os
 import sys
+import yaml
 import polars as pl
 from pathlib import Path
 from typing import Dict
@@ -43,8 +44,16 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
 
     # 1. Load Manifest
     try:
-        config_manager = ConfigManager(manifest_path)
-        manifest = config_manager.raw_config
+        with open(manifest_path) as _f:
+            _raw = yaml.safe_load(_f) or {}
+        # Use ConfigManager only for full pipeline manifests (have analysis_groups).
+        # Assembly test manifests (relational_audit.yaml, etc.) skip it to avoid
+        # the analysis_groups validation gate that fires for partial test manifests.
+        if _raw.get("analysis_groups"):
+            config_manager = ConfigManager(manifest_path)
+            manifest = config_manager.raw_config
+        else:
+            manifest = _raw
     except Exception as e:
         print(f"  └── ❌ Manifest Error: Failed to load {manifest_path}. {e}")
         sys.exit(1)

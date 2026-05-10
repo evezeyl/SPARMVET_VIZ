@@ -1,11 +1,13 @@
 import polars as pl
 from typing import Dict, Any, List, Optional
 from transformer.actions.base import register_action
+from utils.errors import TransformationError
 
 # @deps
 # provides: action:window_agg, action:shift, action:fill_nulls_direction, action:sort, action:sample, action:cum_sum, action:cum_count, action:date_extract, action:date_truncate, action:list_slice, action:list_join, action:is_in, action:z_score, action:percentile, action:value_counts, action:describe_stats, action:select_by_pattern, action:horizontal_stats, action:any_horizontal, action:all_horizontal, action:interpolate
+# consumes: libs/utils/src/utils/errors.py (TransformationError)
 # consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
-# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
+# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075, ADR-078)
 # @end_deps
 
 
@@ -26,7 +28,10 @@ def action_window_agg(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     target = spec.get("target_column", f"{col}_{func_name}")
 
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'window_agg' missing required parameter 'column'.",
+            tip="Provide 'column' in the YAML spec."
+        )
 
     # Map function names to Polars expressions
     mapping = {
@@ -41,7 +46,10 @@ def action_window_agg(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
 
     func_expr = mapping.get(func_name)
     if func_expr is None:
-        return lf
+        raise TransformationError(
+            f"action 'window_agg' unknown function '{func_name}'.",
+            tip=f"Valid values for 'function': {list(mapping.keys())}."
+        )
 
     return lf.with_columns(func_expr.over(partition).alias(target))
 
@@ -61,7 +69,10 @@ def action_shift(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     target = spec.get("target_column", f"{col}_shift_{n}")
 
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'shift' missing required parameter 'column'.",
+            tip="Provide 'column' in the YAML spec."
+        )
 
     return lf.with_columns(pl.col(col).shift(n).alias(target))
 
@@ -79,7 +90,10 @@ def action_fill_nulls_direction(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.La
     direction = spec.get("direction", "forward")
 
     if not cols:
-        return lf
+        raise TransformationError(
+            "action 'fill_nulls_direction' missing required parameter 'columns'.",
+            tip="Provide 'columns' (list) in the YAML spec."
+        )
 
     return lf.with_columns([pl.col(c).fill_null(strategy=direction) for c in cols])
 
@@ -109,7 +123,10 @@ def action_sort(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     descending = spec.get("descending", False)
 
     if not by:
-        return lf
+        raise TransformationError(
+            "action 'sort' missing required parameter 'by' (or 'columns').",
+            tip="Provide 'by' (list of column names) in the YAML spec."
+        )
 
     return lf.sort(by, descending=descending)
 
@@ -160,7 +177,10 @@ def action_date_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     parts = spec.get("parts", ["year"])
 
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'date_extract' missing required parameter 'column'.",
+            tip="Provide 'column' (a date/datetime column) in the YAML spec."
+        )
 
     exprs = []
     for part in parts:
@@ -193,7 +213,10 @@ def action_date_truncate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     every = spec.get("every", "1mo")
 
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'date_truncate' missing required parameter 'column'.",
+            tip="Provide 'column' (a date column) in the YAML spec."
+        )
 
     return lf.with_columns(pl.col(col).dt.truncate(every))
 
@@ -209,7 +232,10 @@ def action_list_slice(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     target = spec.get("target_column", col)
 
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'list_slice' missing required parameter 'column'.",
+            tip="Provide 'column' (a list-type column) in the YAML spec."
+        )
 
     return lf.with_columns(pl.col(col).list.slice(offset, length).alias(target))
 
@@ -222,7 +248,10 @@ def action_list_join(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     target = spec.get("target_column", col)
 
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'list_join' missing required parameter 'column'.",
+            tip="Provide 'column' (a list-type column) in the YAML spec."
+        )
 
     return lf.with_columns(pl.col(col).list.join(separator).alias(target))
 
@@ -243,7 +272,10 @@ def action_is_in(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     values = spec.get("values", [])
 
     if not col or not values:
-        return lf
+        raise TransformationError(
+            "action 'is_in' missing required parameters.",
+            tip="Provide 'column' and 'values' (list) in the YAML spec."
+        )
 
     return lf.filter(pl.col(col).is_in(values))
 
@@ -255,7 +287,10 @@ def action_z_score(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Standardizes columns (z-score)."""
     cols = spec.get("columns", [])
     if not cols:
-        return lf
+        raise TransformationError(
+            "action 'z_score' missing required parameter 'columns'.",
+            tip="Provide 'columns' (list) in the YAML spec."
+        )
     return lf.with_columns([
         ((pl.col(c) - pl.col(c).mean()) / pl.col(c).std()).alias(f"{c}_zscore")
         for c in cols
@@ -268,7 +303,10 @@ def action_percentile(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     col = spec.get("column")
     target = spec.get("target_column", f"{col}_percentile")
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'percentile' missing required parameter 'column'.",
+            tip="Provide 'column' in the YAML spec."
+        )
     return lf.with_columns(pl.col(col).rank(method="average", descending=False).alias(target) / pl.count())
 
 
@@ -277,7 +315,10 @@ def action_value_counts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Returns frequency counts of a column."""
     col = spec.get("column")
     if not col:
-        return lf
+        raise TransformationError(
+            "action 'value_counts' missing required parameter 'column'.",
+            tip="Provide 'column' in the YAML spec."
+        )
     return lf.collect().select(pl.col(col).value_counts()).unnest(col).lazy()
 
 
@@ -293,7 +334,10 @@ def action_select_by_pattern(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
     """Selects columns by regex pattern."""
     pattern = spec.get("pattern")
     if not pattern:
-        return lf
+        raise TransformationError(
+            "action 'select_by_pattern' missing required parameter 'pattern'.",
+            tip="Provide 'pattern' (a regex string) in the YAML spec."
+        )
     return lf.select(pl.col(f"^{pattern}$"))
 
 
@@ -307,7 +351,10 @@ def action_horizontal_stats(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFr
     target = spec.get("target_column", f"horizontal_{operation}")
 
     if not cols:
-        return lf
+        raise TransformationError(
+            "action 'horizontal_stats' missing required parameter 'columns'.",
+            tip="Provide 'columns' (list) in the YAML spec."
+        )
 
     if operation == "sum":
         expr = pl.sum_horizontal(cols)
@@ -318,7 +365,10 @@ def action_horizontal_stats(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFr
     elif operation == "mean":
         expr = pl.mean_horizontal(cols)
     else:
-        return lf
+        raise TransformationError(
+            f"action 'horizontal_stats' unknown operation '{operation}'.",
+            tip="Valid values for 'operation': sum, min, max, mean."
+        )
 
     return lf.with_columns(expr.alias(target))
 
@@ -329,7 +379,10 @@ def action_any_horizontal(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
     cols = spec.get("columns", [])
     target = spec.get("target_column")
     if not cols or not target:
-        return lf
+        raise TransformationError(
+            "action 'any_horizontal' missing required parameters.",
+            tip="Provide 'columns' (list) and 'target_column' in the YAML spec."
+        )
     return lf.with_columns(pl.any_horizontal(cols).alias(target))
 
 
@@ -339,7 +392,10 @@ def action_all_horizontal(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
     cols = spec.get("columns", [])
     target = spec.get("target_column")
     if not cols or not target:
-        return lf
+        raise TransformationError(
+            "action 'all_horizontal' missing required parameters.",
+            tip="Provide 'columns' (list) and 'target_column' in the YAML spec."
+        )
     return lf.with_columns(pl.all_horizontal(cols).alias(target))
 
 
@@ -348,5 +404,8 @@ def action_interpolate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Linearly interpolates missing values."""
     cols = spec.get("columns", [])
     if not cols:
-        return lf
+        raise TransformationError(
+            "action 'interpolate' missing required parameter 'columns'.",
+            tip="Provide 'columns' (list) in the YAML spec."
+        )
     return lf.with_columns(pl.col(cols).interpolate())
