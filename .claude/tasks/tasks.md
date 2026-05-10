@@ -93,8 +93,8 @@ Items with no blockers — can be started immediately.
   2. **Broken clone for `project-independent` persona:** clone silently writes to WrangleStudio with no UI.
   **Fix:** Replace `wrangle_studio.logic_stack.set(valid_nodes)` in `gallery_handlers.py` with a Home T3 transplant — insert a `developer_raw_yaml` RecipeNode into `_pending_t3_nodes` in `home_state`. Gate "Send to T3" on `bootloader.is_enabled("t3_sandbox_enabled")` (§12e). Remove `wrangle_studio` kwarg from `gallery_handlers.define_server()`. Gate `WrangleStudio` instantiation in `server.py`.
   **Unblocks:** 22-J-10 (aesthetic propagation).
-- [ ] **VIZ-DISCRETE-SCALE-1** `[sonnet/low]`: Add `scale_x_discrete` / `scale_y_discrete` layers to existing manifests where Year or Sequence Type columns are used as categorical x/y axes (currently render as continuous). Audit all `analysis_groups` plot specs in `config/manifests/pipelines/`.
-- [ ] **VIZ-GALLERY-THUMB-1** `[sonnet/low]`: Pre-render gallery thumbnails at index build time (`refresh_gallery.py`) for faster visual scanning. Store as `preview_thumb.png` (100×75px) alongside `preview_plot.png`.
+- [x] **VIZ-DISCRETE-SCALE-1** `[sonnet/low]`: ✅ Audited all pipeline plot specs. Added `scale_x_discrete` to 3 specs missing it (`MLST_counts_bar.yaml`, `abromics_st_by_country`, `abromics_st_by_source`). 2_test_data_ST22_dummy plots already correct; `year_distribution.yaml` intentionally keeps `scale_x_continuous` (year is numeric).
+- [x] **VIZ-GALLERY-THUMB-1** `[sonnet/low]`: ✅ `generate_previews.py` now saves `preview_thumb.png` (100px wide, aspect-ratio preserved, LANCZOS) after each full preview render. Handles thumb-only generation from existing full plots. `gallery_manager.py` adds `has_thumb` + `has_preview` fields to index registry. Pre-generated 32 thumbs for existing recipes.
 
 ### Audit Fixes — Library Tests & Dependencies (2026-05-09)
 
@@ -108,7 +108,7 @@ Items with no blockers — can be started immediately.
 ### Infrastructure & Housekeeping
 
 - [ ] **AUDIT-FIRST-TRIAGE-1** `[haiku/low]`: After first scheduled audit runs fire, triage all unprocessed reports per `audit_triage_protocol.md`. Run `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md` to find them.
-- [ ] **TECH-DEBUG-MATERIALIZE-1** `[haiku/low]`: `debug_wrangler.py` / `debug_assembler.py` — auto-create dated `tmpAI/{date}/{lineage}/` subfolders so output paths don't collide across days.
+- [x] **TECH-DEBUG-MATERIALIZE-1** `[haiku/low]`: ✅ `debug_wrangler.py` and `debug_assembler.py` already had dated `tmpAI/{date}/{lineage}/` defaults. Fixed `debug_gallery.py` which still defaulted to fixed `tmp/` paths — now all three scripts share the same dated-path convention.
 - [ ] **HELP-INLINE-1** `[sonnet/medium]`: Per-workspace contextual help modals. `?` button → `ui.modal_show()` with content from `app/src/help/<workspace>.md`. Write initial help content for Home and Blueprint.
 
 ---
