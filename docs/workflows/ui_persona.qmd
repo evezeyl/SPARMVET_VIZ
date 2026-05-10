@@ -22,19 +22,22 @@ They do **not** control which data or pipeline is loaded — that is the job of 
 
 ---
 
-# The Five Personas
+# The Eight Personas
 
-SPARMVET defines five personas in order of increasing capability:
+SPARMVET defines eight personas. Five are production personas (ordered by capability), two are demo variants, and one is reserved for CI automation:
 
 | # | Persona ID | Display name | Intended user |
 |---|---|---|---|
 | 1 | `pipeline-static` | Automated Pipeline — Static | End-user receiving fixed pipeline results; no interaction needed |
-| 2 | `pipeline-exploration-simple` | Pipeline Exploration — Simple | Scientist exploring results with basic filters and exports |
-| 3 | `pipeline-exploration-advanced` | Pipeline Exploration — Advanced | Power user with full sandbox access and audit trail |
-| 4 | `project-independent` | Project Independent User | Researcher managing their own data and manifests |
-| 5 | `developer` | Workflow Developer | Admin or developer building and testing pipelines |
+| 2 | `demo-vetinst` | Demo — Vetinst Reference | Read-only reference demo for NVI/Vetinst presentations; export disabled |
+| 3 | `pipeline-exploration-simple` | Pipeline Exploration — Simple | Scientist exploring results with basic filters and exports |
+| 4 | `web-demo` | Web Demo | Minimal interaction for public web demos; filters enabled, export disabled |
+| 5 | `pipeline-exploration-advanced` | Pipeline Exploration — Advanced | Power user with full sandbox access and audit trail |
+| 6 | `project-independent` | Project Independent User | Researcher managing their own data and manifests |
+| 7 | `developer` | Workflow Developer | Admin or developer building and testing pipelines |
+| 8 | `qa` | QA / CI Automation | Mirrors `developer` flags but disables ghost-save for deterministic Playwright test runs |
 
-Personas are **ordered** — higher personas have all the capabilities of lower ones plus additional features. There are no capability regressions going up the list.
+The five **production personas** (1, 3, 5, 6, 7) are ordered — higher personas have all the capabilities of lower ones plus additional features. The two **demo personas** (2, 4) are independent variants that disable export and advanced features for safe demonstrations. The **qa persona** (8) is not intended for human users.
 
 ---
 
@@ -141,24 +144,57 @@ developer_mode_enabled: true
   └─ Test Lab access (Wrangle Studio, AquaSynthesizer)
   └─ gallery_enabled: true   → Gallery browser (can also be enabled independently)
   └─ Full @register_action registry in right sidebar
+
+blueprint_enabled: true/false   ← independent gate for Blueprint Architect
+  ├─ manifest_edit_enabled      → YAML escape hatch in Blueprint IDE (editable mode)
+  │                                When false: YAML panel is read-only; always visible.
+  │                                FATAL cascade (ADR-077): true requires blueprint_enabled: true.
+  └─ blueprint_agent_enabled    → Conversational AI agent for manifest design (ADR-076)
+                                   When false: agent chat panel absent from Blueprint sidebar.
+                                   FATAL cascade (ADR-077): true requires blueprint_enabled: true.
 ```
+
+### `blueprint_agent:` config block
+
+When `blueprint_agent_enabled: true`, the persona template must also declare a `blueprint_agent:` block specifying the backend and connection details:
+
+```yaml
+blueprint_agent:
+  backend: claude_cli          # claude_cli | claude_api | disabled
+  model: claude-sonnet-4-6     # model ID (claude_api backend only)
+  api_key_env: ANTHROPIC_API_KEY  # env var name for API key (claude_api only)
+  endpoint: ~                  # optional API endpoint override
+  instructions_file: "config/ui/agents/blueprint_agent.md"  # system-prompt template
+  gallery_awareness: true      # whether agent can reference gallery recipes
+```
+
+| Backend | How it connects | Required env vars |
+|---|---|---|
+| `claude_cli` | Calls the Claude Code CLI subprocess (`claude` binary) | Claude Code must be installed and authenticated |
+| `claude_api` | Direct Anthropic API call | `ANTHROPIC_API_KEY` (or the value of `api_key_env`) |
+| `disabled` | Chat panel shows "agent unavailable" banner | None |
+
+If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloader falls back to `DisabledAdapter` and logs the cause. The `qa` persona always uses `backend: disabled` to prevent live API calls during automated test runs.
 
 ## Dependency Summary Table
 
-| Flag | Depends on | Independent? |
-|---|---|---|
-| `interactivity_enabled` | Nothing | ✅ |
-| `comparison_mode_enabled` | `interactivity_enabled` | — |
-| `session_management_enabled` | `interactivity_enabled` | — |
-| `export_enabled` | `interactivity_enabled` | — |
-| `export_enabled` | Nothing | ✅ |
-| `metadata_ingestion_enabled` | Nothing (semi-standalone) | ✅ |
-| `import_helper_enabled` | Nothing | ✅ |
-| `data_ingestion_enabled` | `import_helper_enabled` | — |
-| `developer_mode_enabled` | Nothing | ✅ |
-| `gallery_enabled` | Nothing (can enable without developer mode) | ✅ |
-| `blueprint_enabled` | Nothing | ✅ |
-| `manifest_edit_enabled` | `blueprint_enabled` | — |
+**Cascade type** — *Soft*: bootloader silently forces child to false and logs a warning. *Fatal (ADR-077)*: `PersonaValidator` raises a startup error; app refuses to boot until the template is corrected.
+
+| Flag | Depends on | Independent? | Cascade type |
+|---|---|---|---|
+| `interactivity_enabled` | Nothing | ✅ | — |
+| `comparison_mode_enabled` | `interactivity_enabled` | — | Soft |
+| `session_management_enabled` | `interactivity_enabled` | — | Soft |
+| `export_enabled` | `interactivity_enabled` | — | Soft |
+| `export_enabled` | Nothing (Group A — always safe) | ✅ | — |
+| `metadata_ingestion_enabled` | Nothing (semi-standalone) | ✅ | — |
+| `import_helper_enabled` | Nothing | ✅ | — |
+| `data_ingestion_enabled` | `import_helper_enabled` | — | Soft |
+| `developer_mode_enabled` | Nothing | ✅ | — |
+| `gallery_enabled` | Nothing (can enable without developer mode) | ✅ | — |
+| `blueprint_enabled` | Nothing | ✅ | — |
+| `manifest_edit_enabled` | `blueprint_enabled` | — | **Fatal (ADR-077)** |
+| `blueprint_agent_enabled` | `blueprint_enabled` | — | **Fatal (ADR-077)** |
 
 ---
 
@@ -213,7 +249,18 @@ features:
   blueprint_enabled: false           # Blueprint Architect (manifest design IDE)
   manifest_edit_enabled: false       # Enables direct YAML editing in BLUEPRINT escape hatch
                                      # (read-only view always available with blueprint_enabled)
-                                     # Cascade: suppressed when blueprint_enabled: false
+                                     # FATAL cascade (ADR-077): requires blueprint_enabled: true
+  blueprint_agent_enabled: false     # Conversational AI agent for manifest design (ADR-076)
+                                     # FATAL cascade (ADR-077): requires blueprint_enabled: true
+
+# Required when blueprint_agent_enabled: true
+blueprint_agent:
+  backend: disabled                  # claude_cli | claude_api | disabled
+  model: claude-sonnet-4-6           # model ID — used only with claude_api backend
+  api_key_env: ANTHROPIC_API_KEY     # env var holding the API key (claude_api only)
+  endpoint: ~                        # optional API endpoint override
+  instructions_file: "config/ui/agents/blueprint_agent.md"
+  gallery_awareness: false
 
 automation:
   ghost_save:
@@ -282,7 +329,16 @@ Full analytical access. You can add your own processing steps in T3, compare the
 Everything above, plus you can upload your own data files (including Excel output from pipelines), associate them with the correct pipeline schemas, and switch between different pipeline manifests. Intended for researchers running analyses independently of an automated pipeline.
 
 ## developer
-All features. Access to the Gallery for browsing and cloning recipes, the Test Lab for generating synthetic test data, and the full action registry in the audit panel. Intended for pipeline developers and system administrators.
+All features. Access to the Gallery for browsing and cloning recipes, the Test Lab for generating synthetic test data, the full action registry in the audit panel, and the Blueprint Architect with AI agent assistance. Intended for pipeline developers and system administrators.
+
+## demo-vetinst *(reference demo)*
+Read-only view of plots and data. Export is disabled so the demo environment stays clean between presentations. All interaction and ingestion features are off. Intended for NVI/Vetinst public demonstrations.
+
+## web-demo *(public demo)*
+Filters are enabled so a presenter can show interactive exploration, but export, sessions, and ingestion are all disabled. Intended for web-accessible demos where anonymous visitors should not be able to download data.
+
+## qa *(CI automation only)*
+Identical capabilities to `developer`, but `automation.ghost_save: false` disables background session writes for deterministic Playwright test runs. This persona is set via `SPARMVET_PERSONA=qa` in CI pipelines — it is not intended for human use.
 
 ---
 
@@ -375,6 +431,7 @@ Changing a shared sidebar file propagates to all personas that `!include` it. Cu
 | `audit_stack` | `t3_sandbox_enabled` | home (right) | T3 audit trail panel |
 | `blueprint_nav` | `blueprint_enabled` | blueprint | Pipeline selector + TubeMap node selector |
 | `blueprint_logic` | `blueprint_enabled` | blueprint (right) | Active component logic stack |
+| `blueprint_agent_chat` | `blueprint_agent_enabled` | blueprint (right) | Conversational AI agent for manifest design — asks questions, suggests steps, validates YAML fragments (ADR-076) |
 | `gallery_search` | `gallery_enabled` | gallery | Focus mode: search and filter |
 | `notification_log` | — | any (right) | Alert log (ADR-060) |
 
