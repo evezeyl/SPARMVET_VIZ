@@ -7,7 +7,7 @@ The architectural "Gatekeeper." Reads raw input formats (Excel, TSV) and validat
 ## Key Components
 
 - **DataIngestor (ingestor.py)**: Handles file I/O and enforces manifest schema contracts. Validates column presence, types, and cardinality against `input_fields`. Emits schema-validated `pl.LazyFrame`s.
-- **ExcelHandler (excel_handler.py)**: Authoritative normalisation engine for multi-sheet Excel workbooks. Extracts each sheet to a standardised TSV, ready for ingestion.
+- **Excel-to-TSV CLI (excel_handler.py)**: CLI utility (`main()`) for multi-sheet Excel workbook normalisation. Extracts each sheet to a standardised TSV for subsequent ingestion via DataIngestor.
 
 ## I/O Summary
 

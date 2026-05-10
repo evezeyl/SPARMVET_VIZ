@@ -49,12 +49,12 @@ Items with no blockers — can be started immediately.
   2. Add ADR-076 `blueprint_agent_enabled` flag + `blueprint_agent:` config block schema and backend options
   3. Complete ADR-077 cascade table — add `blueprint_agent_enabled` as fatal cascade (currently only `manifest_edit_enabled` listed)
   4. Add `blueprint_agent_chat` panel type to built-in panel-type table (§11d of ui_implementation_contract.md)
-- [ ] **DOC-GAP-2** `[AUDIT]` `[haiku/low]`: Add `demo-vetinst` and `web-demo` rows to `.claude/knowledge/persona_traceability_matrix.md`.
-- [ ] **DOC-GAP-3** `[AUDIT]` `[haiku/low]`: Add ADR-074 lineage API operator note to `docs/deployment/deployment_guide.qmd` — import path + minimal script example for `build_plot_lineage` / `get_plot_ids_in_group`.
+- [x] **DOC-GAP-2** `[AUDIT]` `[haiku/low]`: Add `demo-vetinst` and `web-demo` rows to `.claude/knowledge/persona_traceability_matrix.md`. ✅ Added to all three tables (Persona Capability Matrix, Right Sidebar Visibility, Filter Behavior).
+- [x] **DOC-GAP-3** `[AUDIT]` `[haiku/low]`: ✅ Added Section 9 to deployment guide with ADR-074 lineage API import path and two usage examples (`build_plot_lineage`, `get_plot_ids_in_group`).
 - [ ] **DOC-GAP-4** `[AUDIT]` `[haiku/low]`: Triage 8 orphaned `.qmd` files not in `_quarto.yml`. For each: add to nav, annotate as archived, or delete. Files: `appendix/data_flow_analogy.qmd`, `appendix/data_lifecycle_theater.qmd`, `appendix/user_guide_gallery.qmd`, `deployment/deployment_guide.qmd`, `reference/troubleshooting.qmd` (duplicate), `reference/wrangling_guide.qmd`, `user_guide/deployment_personas.qmd`, `workflows/ui_persona.qmd`.
-- [ ] **DOC-GAP-5** `[AUDIT]` `[haiku/low]`: Fix 2 semantic drift items found by Routine 17 (`audit_doc_sync_2026-05-09.md`) — bundled because both are ingestion/transformer README corrections:
-  1. `libs/ingestion/README.md` — `ExcelHandler (excel_handler.py)` documented as an importable class with a full method interface. **Reality:** `excel_handler.py` contains only a `main()` CLI function; no `ExcelHandler` class exists. Remove the class description; replace with accurate CLI script description matching the actual implementation.
-  2. `libs/transformer/README.md` — "Reactive State (Tier 3): supports side-by-side inspection in the Comparison Theater". **Reality:** "Comparison Theater" terminology does not exist in source code (`app/handlers/`, `app/modules/`). The T3 predicate pushdown mechanism exists but the named feature does not. Remove or rephrase to match actual Tier Toggle / Comparison Mode implementation.
+- [x] **DOC-GAP-5** `[AUDIT]` `[haiku/low]`: Fix 2 semantic drift items — ✅ both READMEs updated:
+  1. `libs/ingestion/README.md` — Replaced "ExcelHandler class" with accurate "Excel-to-TSV CLI (excel_handler.py)" description.
+  2. `libs/transformer/README.md` — Replaced "Comparison Theater" with "Comparison Mode (T2 reference vs T3 active)".
 
 ### Audit Fixes — ADR Compliance (2026-05-09)
 
@@ -105,7 +105,7 @@ Items with no blockers — can be started immediately.
 *Findings from `audit_library_tests_2026-05-09.md` (Routine 10) and `audit_package_deps_2026-05-09.md` (Routine 11).*
 
 - [ ] **LIB-TESTS-BLUEPRINT-1** `[AUDIT]` `[sonnet/medium]`: Fix 188 pytest failures in `libs/blueprint_arch/tests/test_schema_registry.py`. Root cause: `ui_schema` dicts in `@register_plot_component` decorators (viz_factory) are missing `allow_extra_params` and `wraps` fields required by ADR-075. The schema registry tests validate these fields at load time. Fix: add the missing fields to all `@register_plot_component` registrations in `libs/viz_factory/src/viz_factory/` that don't already declare them.
-- [ ] **LIB-TESTS-VIZ-TIMEOUT-1** `[AUDIT]` `[haiku/low]`: `audit_library_tests.py` times out when running the viz_factory integrity suite (renders all 193+ components, exceeds 120s hard timeout). Fix: increase the subprocess timeout in `scripts/audit_library_tests.py` for viz_factory specifically (e.g. `--timeout 600`), or add a `--skip-integrity` flag for the integrity suite step and note that it must be run manually.
+- [x] **LIB-TESTS-VIZ-TIMEOUT-1** `[AUDIT]` `[haiku/low]`: ✅ Increased `TIMEOUT_SECONDS` in `scripts/audit_library_tests.py` from 120 → 300 (5 min) to allow viz_factory integrity suite (193+ components) to complete.
 - [ ] **PKG-PLOTNINE-PATCH-1** `[AUDIT]` `[haiku/low]`: Upgrade plotnine from 0.15.3 → 0.15.4 (parity mandate package — ADR-036 requires tracking PATCH updates). Steps: (1) check plotnine 0.15.4 changelog for new `geom_*`/`stat_*`/`scale_*` additions; (2) `pip install plotnine==0.15.4`; (3) re-run `audit_parity_coverage.py` to detect any new gaps; (4) update `pyproject.toml` pin.
 - [ ] **PKG-IMPORTLIB-MAJOR-1** `[AUDIT]` `[sonnet/low]`: `importlib_metadata` has a MAJOR update pending (8.7.1 → 9.0.0). It is a transitive dependency (not directly imported). Steps: (1) identify which direct dependency pulls it in (`pip show importlib_metadata`); (2) check that direct dep's changelog for Python 3.12 compat; (3) if safe, allow upgrade and re-run `pip check`; (4) if breaking, pin at 8.x in `pyproject.toml`.
 

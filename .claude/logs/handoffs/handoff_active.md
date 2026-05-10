@@ -1,8 +1,16 @@
-# Handoff — Active State (2026-05-10 fix session)
+# Handoff — Active State (2026-05-10 quick wins session)
 
 **Branch:** dev  
 **Working tree:** uncommitted changes  
-**Status:** ADR-078-ACTIONS-1 complete (24 silent pass-throughs fixed across 3 files). Transformer integrity suite fixed and running 62/62 clean. Next: DOC-GAP-5 (lowest friction, haiku/low), then LIB-TESTS-BLUEPRINT-1.
+**Status:** All quick-win tasks complete (4/4 haiku/low items):
+  - ADR-078-ACTIONS-1 ✅ (24 silent pass-throughs fixed)
+  - TRANSFORMER-SUITE-FIX ✅ (62/62 clean)
+  - DOC-GAP-5 ✅ (2 README fixes)
+  - DOC-GAP-2 ✅ (persona matrix rows added)
+  - DOC-GAP-3 ✅ (ADR-074 lineage API docs)
+  - LIB-TESTS-VIZ-TIMEOUT-1 ✅ (timeout 120→300s)
+
+**Next session:** Medium-effort item: **LIB-TESTS-BLUEPRINT-1** `[sonnet/medium]` — 188 pytest failures in `blueprint_arch/tests/test_schema_registry.py`. Root cause: missing `allow_extra_params`/`wraps` fields in `@register_plot_component` ui_schema dicts. Fix: scan `libs/viz_factory/src/viz_factory/` for all plot component registrations and add the two missing fields.
 
 ---
 

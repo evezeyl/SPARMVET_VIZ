@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 LIBS_DIR = "libs"
-TIMEOUT_SECONDS = 120
+TIMEOUT_SECONDS = 300  # 5 min — allows viz_factory integrity suite (193+ component renders) to complete
 
 
 def find_project_root(start: Path) -> Path:

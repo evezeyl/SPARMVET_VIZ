@@ -19,7 +19,11 @@ import pytest
 import transformer.actions        # noqa: F401 — populates ACTION_SCHEMAS
 import viz_factory                 # noqa: F401 — populates COMPONENT_SCHEMAS
 
+# Import registries and inject into schema_registry
+from transformer.actions.base import ACTION_SCHEMAS
+from viz_factory.registry import COMPONENT_SCHEMAS
 from blueprint_arch.schema_registry import (
+    register,
     get_action_catalog,
     get_component_catalog,
     get_combined_catalog,
@@ -28,6 +32,9 @@ from blueprint_arch.schema_registry import (
     get_components_for_context,
     search_actions,
 )
+
+# Inject the catalogs (required before catalog getters can return data)
+register(ACTION_SCHEMAS, COMPONENT_SCHEMAS)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 

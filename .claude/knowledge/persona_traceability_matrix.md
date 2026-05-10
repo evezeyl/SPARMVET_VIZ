@@ -13,6 +13,8 @@
 | `project-independent` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | true | true |
 | `developer` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | true | true |
 | `qa` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | true | true |
+| `demo-vetinst` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | false | false |
+| `web-demo` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | false | false |
 
 **passive_exploration:** can apply filters and drop columns to explore the view (T1/T2 — plot updates temporarily, nothing saved, no audit trail). Already implemented; previously undocumented.
 **t3_audit:** can promote filters/drops to the T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, recipe export). Controlled by `t3_sandbox_enabled` flag (Phase 25-O).
@@ -50,6 +52,8 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 | `project-independent` | Visible | Standard |
 | `developer` | Visible | Standard |
 | `qa` | Visible | Standard |
+| `demo-vetinst` | **Excluded from layout** | Full width |
+| `web-demo` | **Excluded from layout** | Full width |
 
 ## Filter Behavior per Persona
 
@@ -60,6 +64,8 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 | `pipeline-exploration-advanced` | ✅ | T1/T2 passive exploration + T3 audit | No disclaimer |
 | `project-independent` | ✅ | T1/T2 passive exploration + T3 audit | No disclaimer |
 | `developer` | ✅ | T1/T2 passive exploration + T3 audit | No disclaimer |
+| `demo-vetinst` | ❌ | Read-only view — no filters | — |
+| `web-demo` | ✅ | T1/T2 only — plot updates temporarily, nothing saved | 'Exploration only — filters are not saved and do not modify data permanently' |
 
 **Apply/Audit button (single button — label changes per tier, already correct in code):**
 - T1/T2 → `Apply (N)` — commits to transient `applied_filters` (passive exploration, no audit trail)

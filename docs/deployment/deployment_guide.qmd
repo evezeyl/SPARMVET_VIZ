@@ -262,4 +262,50 @@ The app will validate the profile at startup and log errors if required fields a
 
 ---
 
+# 9. Programmatic Lineage API (ADR-074)
+
+For operators and developers who need to programmatically query the manifest structure — e.g., to audit which plots consume which data sources, or to trace a plot's dependencies upstream to its raw inputs — the **Manifest Lineage API** provides headless access to the same graph logic used internally by the app.
+
+## 9.1 Import
+
+```python
+from blueprint_arch.manifest_navigator import (
+    build_plot_lineage,
+    get_plot_ids_in_group,
+)
+```
+
+## 9.2 Usage examples
+
+**Backward trace — which data sources feed a specific plot:**
+
+```python
+# Trace a plot backward to its raw data sources
+lineage = build_plot_lineage("amr_heatmap", "config/manifests/pipelines/master.yaml")
+for step in lineage:
+    print(f"{step['rel']} ({step['role']}) → {step['schema_id']}")
+# Output:
+#   amr_heatmap (plot) → amr_combined
+#   amr_combined (assembly) → amr_results, metadata
+#   amr_results (data_schema) → [raw input]
+#   metadata (data_schema) → [raw input]
+```
+
+**Forward trace — which plots belong to an analysis group:**
+
+```python
+# List all plot IDs in a specific analysis group
+plot_ids = get_plot_ids_in_group("AMR_Resistance", "config/manifests/pipelines/master.yaml")
+for plot_id in plot_ids:
+    print(plot_id)
+# Output:
+#   amr_heatmap
+#   amr_scatter
+#   phenotype_distribution
+```
+
+The API is fully headless and carries no UI dependencies — suitable for automation, auditing, and CI pipelines.
+
+---
+
 > **Note for developers:** The `config/deployment/local/local_profile.yaml` file (current: `config/connectors/local/local_connector.yaml`) is the developer fallback and is committed to the repository. It uses relative paths under `tmp/` and `assets/` that exist in the repo. Do not use it for production deployments.
