@@ -1,3 +1,8 @@
+---
+draft: true
+---
+<!-- ARCHIVED: Superseded by workflows/wrangling.qmd ("The Assembly Line" analogy). Preserved for historical reference. -->
+
 # The Wrangling Guide: Trunk and Branch
 
 To ensure lightning-fast performance even with millions of rows, SPARMVET_VIZ uses a **Tiered Wrangling Structure**. This architecture separates generic data cleaning from the specific preparation needed for individual plots.

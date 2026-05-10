@@ -1,7 +1,9 @@
 ---
 title: "The Chef's Logic: A Data Lifecycle Analogy"
 subtitle: "Understanding Tier 1 (Trunk) vs Tier 2 (Branch) Wrangling"
+draft: true
 ---
+<!-- ARCHIVED: Superseded by workflows/wrangling.qmd (The Assembly Line analogy). Preserved for historical reference. -->
 
 To help non-programmers and domain experts understand how SPARMVET processes data, we use two primary analogies: **The Tree (Trunk vs. Branch)** and **The Professional Kitchen**.
 

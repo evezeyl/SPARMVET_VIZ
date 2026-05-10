@@ -50,6 +50,7 @@ book:
       - reference/developer_how_to.qmd # Repo standard for Issue submission and PRs
       - reference/ui_style_guide.qmd # CSS panel map, element selectors, style constraints
       - troubleshooting/index.qmd # Startup error catalog — one entry per DeploymentError slug (ADR-078)
+      - deployment/deployment_guide.qmd # Deployment guide — profile YAML, location keys, connector setup (ADR-048, ADR-074)
 
   - part: "Chapter 2: Non-Coder User Guide"
     # Absolute user focus: Visual mapping, No Code, Analogies, YAML 101
@@ -57,6 +58,7 @@ book:
       - user_guide/yaml_101.qmd # YAML basics and Text Editor recommendations
       - user_guide/data_literacy.qmd # Tidy Data (1 var/col), Spelling, Case-sensitivity
       - workflows/dashboard_app.qmd # The UI layout and Persona mapping
+      - workflows/ui_persona.qmd # Eight personas — feature flags, ADR-076/077, panel slot registry
       - workflows/user_preferences.qmd # Changing layout without breaking it
       - workflows/ingestion.qmd # "The Border Control" analogy
       - workflows/wrangling.qmd # "The Assembly Line" analogy

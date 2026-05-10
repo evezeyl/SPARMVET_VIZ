@@ -1,7 +1,9 @@
 ---
 title: "The Data Lifecycle & Comparison Theater"
 subtitle: "A User's Guide to Safe & Rapid Exploration"
+draft: true
 ---
+<!-- ARCHIVED: Superseded by user_guide/audit_pipeline.qmd and ui_implementation_contract §5 (Comparison Mode). Preserved for historical reference. -->
 
 ## 1. The Philosophy: Why Not Just One Dataset?
 
