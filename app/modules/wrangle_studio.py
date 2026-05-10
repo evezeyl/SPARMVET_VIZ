@@ -1341,6 +1341,77 @@ class WrangleStudio:
                             )
                         )
 
+            # BP-FWD-HINT-1: Forward propagation hint — which downstream contracts
+            # would drop this field if it were added/renamed at the current tier?
+            manifest_path = self.active_manifest_path.get()
+            if (up_found or down_found) and manifest_path and chain:
+                try:
+                    from blueprint_arch.manifest_navigator import build_sibling_map as _bsm
+                    ctx = _bsm(manifest_path)
+                    active_idx = next(
+                        (i for i, n in enumerate(chain) if n.get("is_active")), None
+                    )
+                    fwd_warnings = []
+                    if active_idx is not None:
+                        for node in chain[active_idx + 1:]:
+                            node_rel = node.get("rel", "")
+                            entry = ctx.get(node_rel, {})
+                            sib = entry.get("siblings", {})
+                            if not isinstance(sib, dict):
+                                continue
+                            out_slot = sib.get("output_fields")
+                            if not out_slot:
+                                continue
+                            # Check inline final_contract
+                            if isinstance(out_slot, dict) and "inline" in out_slot:
+                                contract_fields = {
+                                    k.lower() for k in out_slot["inline"]
+                                }
+                                if query not in contract_fields:
+                                    fwd_warnings.append(
+                                        f"{node.get('label', node_rel)} — inline contract does not include '{query}'"
+                                    )
+                            elif isinstance(out_slot, str):
+                                # Explicit file — can't load here without inc_map, flag as "check manually"
+                                fwd_warnings.append(
+                                    f"{node.get('label', node_rel)} — has explicit output_fields file (verify '{query}' is listed)"
+                                )
+
+                    if fwd_warnings:
+                        rows.append(
+                            ui.div(
+                                ui.tags.hr(),
+                                ui.div(
+                                    ui.tags.span("Forward impact", class_="badge bg-danger me-2"),
+                                    "These downstream contracts will drop this field unless updated:",
+                                    class_="small fw-bold mb-1"
+                                ),
+                                *[
+                                    ui.div(
+                                        ui.tags.span("Update needed", class_="badge bg-warning text-dark me-2"),
+                                        w,
+                                        class_="small mb-1"
+                                    )
+                                    for w in fwd_warnings
+                                ],
+                                class_="mt-2"
+                            )
+                        )
+                    else:
+                        rows.append(
+                            ui.div(
+                                ui.tags.hr(),
+                                ui.div(
+                                    ui.tags.span("Forward clear", class_="badge bg-success me-2"),
+                                    f"No downstream contract explicitly excludes '{query}'.",
+                                    class_="small"
+                                ),
+                                class_="mt-2"
+                            )
+                        )
+                except Exception:
+                    pass
+
             return ui.div(*rows, class_="mt-2 p-1")
 
         @reactive.Effect
