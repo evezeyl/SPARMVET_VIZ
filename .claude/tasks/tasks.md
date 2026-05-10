@@ -44,11 +44,7 @@ Items with no blockers — can be started immediately.
   - `libs/transformer/src/transformer/data_assembler.py:165` — `⚠️` in print f-string
   - `libs/viz_factory/src/viz_factory/viz_factory.py:108` — `🍃` in print f-string
   - `libs/viz_factory/src/viz_factory/viz_factory.py:171` — `⚠️` in print f-string
-- [ ] **DOC-GAP-1** `[AUDIT]` `[sonnet/medium]`: Expand `docs/workflows/ui_persona.qmd` with 4 missing items:
-  1. Rename "Five Personas" → "Eight Personas" — add `qa`, `demo-vetinst`, `web-demo` sections
-  2. Add ADR-076 `blueprint_agent_enabled` flag + `blueprint_agent:` config block schema and backend options
-  3. Complete ADR-077 cascade table — add `blueprint_agent_enabled` as fatal cascade (currently only `manifest_edit_enabled` listed)
-  4. Add `blueprint_agent_chat` panel type to built-in panel-type table (§11d of ui_implementation_contract.md)
+- [x] **DOC-GAP-1** `[AUDIT]` `[sonnet/medium]`: Expand `docs/workflows/ui_persona.qmd` with 4 missing items. ✅ All 4 gaps addressed: eight personas table (+ demo-vetinst, web-demo, qa), ADR-076 blueprint_agent_enabled flag + config block, ADR-077 fatal cascade entries in dependency table, blueprint_agent_chat panel type added to §11d table.
 - [x] **DOC-GAP-2** `[AUDIT]` `[haiku/low]`: Add `demo-vetinst` and `web-demo` rows to `.claude/knowledge/persona_traceability_matrix.md`. ✅ Added to all three tables (Persona Capability Matrix, Right Sidebar Visibility, Filter Behavior).
 - [x] **DOC-GAP-3** `[AUDIT]` `[haiku/low]`: ✅ Added Section 9 to deployment guide with ADR-074 lineage API import path and two usage examples (`build_plot_lineage`, `get_plot_ids_in_group`).
 - [ ] **DOC-GAP-4** `[AUDIT]` `[haiku/low]`: Triage 8 orphaned `.qmd` files not in `_quarto.yml`. For each: add to nav, annotate as archived, or delete. Files: `appendix/data_flow_analogy.qmd`, `appendix/data_lifecycle_theater.qmd`, `appendix/user_guide_gallery.qmd`, `deployment/deployment_guide.qmd`, `reference/troubleshooting.qmd` (duplicate), `reference/wrangling_guide.qmd`, `user_guide/deployment_personas.qmd`, `workflows/ui_persona.qmd`.
