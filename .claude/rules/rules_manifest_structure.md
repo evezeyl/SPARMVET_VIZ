@@ -189,6 +189,8 @@ spec:
 
 ## 10. `plot_defaults` Block (ADR-081, BP-COLOR-3)
 
+> **Schema scope (designed 2026-05-10):** The full allowed-key set for `plot_defaults` is defined by [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md). The keys documented in this section (`palette`, `theme`) are the currently-implemented subset. Authors using keys outside §7a should expect a non-fatal `PipelineError(severity: warning, who: manifest_author)` once VIZFAC-DEFAULTS-DOCS-1 ships. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 spec > L3 optimisation > L2 plot_defaults > L1 built-ins).
+
 The optional `plot_defaults:` top-level key in a manifest sets defaults applied to every plot in that manifest. Individual plot specs may override any key.
 
 ```yaml

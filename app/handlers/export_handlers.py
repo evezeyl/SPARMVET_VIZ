@@ -208,6 +208,7 @@ def _build_methods_section(
     active_filters: list,
     ds_to_plots: dict,
     tiers_exported: list,
+    t3_aesthetic_overrides: dict | None = None,
 ) -> list[str]:
     """Return QMD lines for the auto-generated Methods section.
 
@@ -282,6 +283,21 @@ def _build_methods_section(
             if reason:
                 sentence += f" *Reason: {reason}*"
             prose_items.append(sentence)
+
+    # Aesthetic overrides prose (from t3_plot_overrides — stored separately per §12c)
+    for p_id, overrides in (t3_aesthetic_overrides or {}).items():
+        plot_label = next(
+            (s.get("title") or p_id.replace("_", " ").title()
+             for pid, s in all_plots if pid == p_id),
+            p_id.replace("_", " ").title(),
+        )
+        if overrides:
+            keys = [k for k in ("fill", "colour", "alpha", "shape", "size", "theme") if k in overrides]
+            if keys:
+                detail = ", ".join(keys)
+                prose_items.append(
+                    f"Plot visual properties ({detail}) were overridden for plot *{plot_label}*."
+                )
 
     if not prose_items:
         return []
@@ -552,6 +568,7 @@ def define_export_server(input, output, session, *,
 
         # ── Collect T3 audit data (per-plot active nodes) ─────────────────
         _t3_by_plot: dict[str, list[dict]] = {}
+        _t3_aesthetic_overrides: dict[str, dict] = {}
         if home_state is not None and bootloader.is_enabled("t3_sandbox_enabled"):
             _state = home_state.get()
             _rbp = _state.get("t3_recipe_by_plot", {}) or {}
@@ -559,6 +576,12 @@ def define_export_server(input, output, session, *,
                 _nodes = [n for n in _rbp.get(f"subtab_{_pid}", []) if n.get("active", True)]
                 if _nodes:
                     _t3_by_plot[_pid] = _nodes
+            # t3_plot_overrides: resolved aesthetic state per plot (separate from recipe nodes)
+            _overrides_all = _state.get("t3_plot_overrides", {}) or {}
+            for _pid, _ in all_plots:
+                _subtab = f"subtab_{_pid}"
+                if _subtab in _overrides_all and _overrides_all[_subtab]:
+                    _t3_aesthetic_overrides[_pid] = _overrides_all[_subtab]
 
         # Dataset → plots mapping (used for folder structure + README + report)
         import re as _re
@@ -875,7 +898,7 @@ def define_export_server(input, output, session, *,
                     zf.writestr(f"{bundle_dir}/recipes/ERROR.txt", str(e))
 
                 # ── t3_steps.yaml (when T3 has committed changes) ─────────
-                if _t3_by_plot:
+                if _t3_by_plot or _t3_aesthetic_overrides:
                     try:
                         import yaml as _yaml
                         t3_steps_data = {
@@ -894,6 +917,9 @@ def define_export_server(input, output, session, *,
                                 for _pid, _nodes in _t3_by_plot.items()
                             },
                         }
+                        # Aesthetic overrides are stored separately from recipe nodes (§12c)
+                        if _t3_aesthetic_overrides:
+                            t3_steps_data["t3_aesthetic_overrides"] = _t3_aesthetic_overrides
                         zf.writestr(
                             f"{bundle_dir}/recipes/t3_steps.yaml",
                             _yaml.safe_dump(t3_steps_data, sort_keys=False, allow_unicode=True),
@@ -1130,6 +1156,7 @@ def define_export_server(input, output, session, *,
                 active_filters=active_filters,
                 ds_to_plots=ds_to_plots,
                 tiers_exported=tiers_exported,
+                t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
             qmd_lines += _methods_lines
 

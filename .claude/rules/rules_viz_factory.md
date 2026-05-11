@@ -85,3 +85,25 @@ Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none (matp
 **Guard rules (no injection when):**
 - Aesthetic (`fill`, `color`) not present in the plot mapping.
 - A `scale_fill_*` or `scale_color_*` layer already declared in the manifest layers list.
+
+## 7. Plot Configuration Cascade (designed 2026-05-10, VIZFAC-PLOT-CASCADE-1)
+
+Plot configuration resolves through a **five-tier priority cascade** at one merge point inside `VizFactory.render()`. The cascade replaces today's three scattered merge sites (`_standardize_config`, `_apply_palette`, `_auto_adjust_axis_labels`) with a single pure function `resolve_plot_config()`.
+
+| Tier | Source | Modifiable by |
+|---|---|---|
+| **L5** | T3 `aesthetic_override` for the active plot | Analyst (T3 sandbox) |
+| **L4** | Plot `spec:` (`analysis_groups.<grp>.plots.<id>.spec`) | Manifest author |
+| **L3** | Optimisation layer (computed from data + spec) — **visual/aesthetic only** | None — emitted by VizFactory |
+| **L2** | Manifest `plot_defaults:` block | Manifest author |
+| **L1** | VizFactory built-in defaults | Developer |
+
+**Resolution rule:** higher tier wins per key (winner-takes-all, no value merging). The `layers:` list is the exception — append-then-deduplicate by `(layer_kind, target)` keeping LAST occurrence (so L5 wins on theme/coord/facet/scale/element_text). `geom_*`/`stat_*` layers never deduplicated.
+
+**Key constraints from the design:**
+- L3 (optimisation) is **purely visual/aesthetic** — MUST NOT change `mapping`, `factory_id`, `geom_*`, `filters`, or `palette`. Allowed: axis text rotation/size, panel spacing, density-aware positions.
+- L5 `aesthetic_override` has a **fixed schema** (design §6): `fill_color` ⊕ `fill_palette` (mutex with warning), `color`, `alpha`, `shape`, `size`, `theme`. `plot_scope` MUST be a single plot_id (never `__all__`).
+- Unknown keys in `plot_defaults` emit `PipelineError(severity: warning, who: manifest_author, surface: notification)` per ADR-079. Non-fatal.
+- §6 above describes today's `_apply_palette` behaviour — under the cascade it remains the renderer for the resolved `palette:` key (now produced by the cascade resolver, not read directly from the manifest dict). Behaviour rules in §6c are unchanged.
+
+**Full design specification:** [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md). Implementation tasks: VIZFAC-RESOLVER-1, VIZFAC-RENDER-WIRE-1, VIZFAC-T3-OVERRIDE-1, VIZFAC-T3-EXPORT-1, VIZFAC-DEFAULTS-DOCS-1, VIZFAC-BLUEPRINT-FORM-1.

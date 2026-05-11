@@ -707,6 +707,8 @@ T3 ghost format stores `t3_recipe_by_plot: {plot_scope: [nodes]}` directly. Back
 
 No primary-key warning ever applies to aesthetic nodes.
 
+**Render-side behaviour (designed 2026-05-10):** `aesthetic_override` nodes are recorded and exported today, but **were never applied to the rendered plot** until VIZFAC-T3-OVERRIDE-1 ships. They participate as **L5 (the highest tier)** in the plot configuration cascade defined at [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md) §6, which fixes the schema as: `fill_color` ⊕ `fill_palette` (mutex with notification warning), `color`, `alpha`, `shape`, `size`, `theme`. `plot_scope` MUST be a single plot_id; cross-plot propagation is achieved by creating one node per plot via the dialog above (the propagation modal duplicates the node with linked id). The cascade rendering path is single-pass — overrides apply at the existing `VizFactory.render()` call site once VIZFAC-RESOLVER-1 + VIZFAC-RENDER-WIRE-1 + VIZFAC-T3-OVERRIDE-1 ship.
+
 #### 12g.10. Undo & re-include
 
 There is no "re-include" node type. The user undoes by deleting the audit node; the data reappears because the recipe no longer removes it. With linked-id propagation, deleting a node from one plot deletes it from every plot. To "un-propagate from one plot only" the user must delete and re-author with a smaller scope.

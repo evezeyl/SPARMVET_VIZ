@@ -3270,29 +3270,236 @@ Tracked as **ADR-079: Runtime Error Discipline** (placeholder authored alongside
 
 ---
 
-## ADR-079: Runtime Error Discipline (2026-05-09) — PLACEHOLDER
+## ADR-079: Runtime Error Discipline — Pipeline Failures Inside a Running Session (2026-05-10)
 
-**Status:** PLACEHOLDER — not designed yet. Created to ensure the runtime-error problem is not lost when ADR-078 ships.
+**Status:** DECIDED — design complete. Implementation tracked as `DIAG-RUNTIME-*` task family (Phase 1 = base class + helpers in `libs/utils/`; Phase 2 = per-component retrofits; Phase 3 = UI surface + audit-trail capture).
 
-**Scope:** Errors raised during a running Shiny session — ingestion of user-uploaded data, wrangling actions, assembly joins, plot rendering. Distinct from ADR-078's startup-time errors because: (a) the operator may not be the relevant audience, (b) the fix is often a data or manifest change rather than a config change, (c) the render path is the running UI not stderr.
+**Authority:** @dasharch
+**Companion:** ADR-077 (no silent suppression), ADR-078 (startup error discipline). ADR-079 is the *runtime-mode* counterpart to ADR-078. Together they define the error discipline for the two distinct classes of failure: pre-session (ADR-078) and in-session (this ADR).
 
-**Pre-decision questions to address when ADR-079 is authored:**
+---
 
-- Does the runtime error class extend `DeploymentError` or sit alongside it? (Likely alongside — different audience semantics.)
-- Where does each runtime error render? Notification toast, plot card overlay, audit panel, modal? (Probably category-dependent.)
-- How does the user discover *what* in their data caused the failure? (Sample row counts, offending value preview, schema diff vs expected.)
-- Should the error be capturable in the export bundle's audit trail so a peer reviewer sees that a plot failed during the session?
+### Context
 
-**Concrete components needing retrofit (when authored):**
+ADR-078 solved the startup case: when the *operator* opens a deployment and the config refuses to load, the error must name the file, the key, and the fix in one block. That assumption — single audience, single render path (stderr), single moment in time (before the app starts) — does not hold for failures that occur after the app is running.
 
-- `libs/ingestion/src/ingestion/ingestor.py` — file-not-found, encoding errors, schema mismatches, sanitization rejections
-- `libs/transformer/src/transformer/data_assembler.py` — `ColumnNotFoundError`, `SchemaError` on join, dtype mismatches, empty result frames
-- `libs/transformer/src/transformer/data_wrangler.py` — action-name not registered, action arg validation
-- `libs/viz_factory/src/viz_factory/viz_factory.py` — component not registered, missing required aesthetic, plotnine render exceptions
-- `app/handlers/audit_stack.py` — T3 Apply failures (downstream invalidation, comment-gate violations)
-- `app/handlers/blueprint_handlers.py` — manifest fragment validation failures during BLUEPRINT IDE editing
+A runtime failure has three things that a startup failure does not:
 
-**Tracked as:** `DIAG-RUNTIME-ADR` `[opus/high]` — author ADR-079 properly when Phase C is largely complete OR when the first runtime-error pain point becomes blocking, whichever comes first.
+1. **Multiple possible audiences.** A wrangling step that breaks because the source TSV has a corrupted Year value is not the operator's fault; it is the data provider's. A manifest cast that produces the wrong dtype is not the analyst's fault; it is the manifest author's. A plotnine exception on an obscure component combination might be a developer bug. The error must say *which* of these is the right next step, because the cost of routing to the wrong person is one round trip per misroute.
+
+2. **Multiple render surfaces.** stderr is invisible to a user clicking around in Shiny. The rendered surface depends on what failed: a plot that won't render needs an in-card overlay where the plot would have been; a Data Import upload that's malformed needs an inline error beside the upload control; a T3 Apply that fails needs a banner in the audit panel; a generic background error needs a toast. One uniform surface is wrong.
+
+3. **An audit-trail expectation.** When the analyst exports a session for peer review, the reviewer needs to know that a particular plot failed during the session — silent absence is misleading. ADR-069 (export audit trail) already captures the analyst's *decisions*; ADR-079 captures the system's *failures* during the same session.
+
+The user framing for the runtime case extends ADR-078's *"point person developer or in charge to implement / deploy find what is the problem fast"* to a runtime audience that includes the analyst, the data provider, and the manifest author — none of whom may be the operator who deployed the app.
+
+---
+
+### General principle (extends ADR-078 §General principle)
+
+> **A runtime failure must surface (a) what specifically broke including a sample of the offending input, (b) which user role can fix it, (c) how to fix it, (d) where in the running UI the failure is visible — and must persist into the session's audit trail so a peer reviewer can see what happened.**
+
+The five ADR-078 fields (component, problem, location, fix, who) remain mandatory. Three new fields are required because the runtime context demands them:
+
+- **`evidence`** — sample rows / offending value / schema diff. Without this the analyst cannot identify the row in their data that caused the failure.
+- **`surface`** — explicit render target. Decides whether the error becomes a plot overlay, a panel inline message, or a toast.
+- **`category`** — pipeline stage (ingestion / wrangling / assembly / visualization / t3_apply / blueprint_edit). Drives both the surface choice and the audit-trail grouping.
+
+Optional fields cover the runtime-specific extras: `severity` (error / warning), `plot_scope` (which plots are affected), `timestamp` (for audit ordering).
+
+---
+
+### Decision — `PipelineError` dataclass (sits alongside `DeploymentError`)
+
+A separate dataclass, defined in `libs/utils/src/utils/pipeline_error.py`. **Sits alongside `DeploymentError`, does not subclass it.** Reasoning: subclassing would force the audience model and render machinery of one to apply to the other, and they are intentionally different. The shared shape (five mandatory fields) is a *convention*, not an inheritance relationship.
+
+```python
+@dataclass(frozen=True)
+class PipelineError:
+    # ── ADR-078 shared shape (mandatory) ─────────────────────────────
+    component: str           # "DataIngestor", "DataAssembler", "DataWrangler",
+                             # "VizFactory", "T3ApplyHandler", "BlueprintEditor"
+    problem: str             # one-sentence, concrete (column name, action name,
+                             # offending value)
+    location: str            # manifest path + slug, plot_id, action step index,
+                             # uploaded-file name
+    fix: str                 # remediation routed to `who`
+    who: str                 # "analyst" | "manifest_author" | "data_provider"
+                             #   | "developer" | "operator"
+
+    # ── Runtime-specific (mandatory) ─────────────────────────────────
+    category: str            # "ingestion" | "wrangling" | "assembly"
+                             #   | "visualization" | "t3_apply" | "blueprint_edit"
+    surface: str             # "plot_overlay" | "notification" | "audit_panel"
+                             #   | "data_import_panel" | "blueprint_inline"
+
+    # ── Runtime-specific (optional) ──────────────────────────────────
+    evidence: dict | None = None
+        # Free-shape diagnostic payload. Conventional keys:
+        #   "sample_rows": list[dict]      — up to 5 rows showing the problem
+        #   "offending_value": Any         — the single value that triggered the failure
+        #   "expected_schema": dict        — column→dtype expected
+        #   "actual_schema":   dict        — column→dtype seen
+        #   "row_count_before": int        — pre-step row count
+        #   "row_count_after":  int        — post-step row count (e.g. 0 after filter)
+        #   "near_match":      str         — typo suggestion ("did you mean ...")
+        #   "file_path":       str         — uploaded file (for ingestion errors)
+    severity: str = "error"  # "error" (operation aborted) | "warning" (succeeded with caveat)
+    plot_scope: tuple[str, ...] = ()  # plot_ids whose card should show the overlay
+    reference: str = ""      # ADR / rule-file pointer (same semantics as ADR-078)
+    timestamp: str = ""      # ISO-8601 — populated automatically; used for audit ordering
+    related: tuple[str, ...] = ()  # other field IDs / step IDs that contributed
+```
+
+Plus three categories of helper:
+
+| Helper | Use |
+|---|---|
+| `error.format()` | Render as a labelled block for tests / logs (parallels ADR-078). |
+| `error.to_audit_row()` | Compact dict for the export-bundle audit appendix (ADR-069 integration). |
+| `make_render_payload(error) -> dict` | Convert to UI-render payload: `{title, body_md, evidence_md, fix_md, severity, surface}`. Decouples error data from the Shiny render code. |
+
+---
+
+### Audience model — `who` field values
+
+Each value names a single role and the file class they edit. Routing by audience avoids the "what should I do?" round-trip that motivated ADR-078.
+
+| `who` | Who they are | Where the fix lives | Example failure |
+|---|---|---|---|
+| `analyst` | Person running the session right now (filter values, T3 decisions, file uploads) | Their UI inputs / the file they just uploaded | T3 filter excludes all rows; uploaded TSV has wrong delimiter |
+| `data_provider` | Source of the data file (lab tech, upstream pipeline) | The TSV/CSV/XLSX file content | Year column has "2022.0xx" malformed values; metadata file missing required column |
+| `manifest_author` | Person who wrote the YAML manifest | A file under `config/manifests/` | Cast Year → Int64 fails because column is non-numeric; join key dtype mismatch |
+| `developer` | SPARMVET maintainer | Python source under `libs/` or `app/` | `@register_action` raised an unexpected exception; plotnine internal error |
+| `operator` | Same as ADR-078 — deployer | `config/deployment/` profile | Connector path resolves to read-only filesystem; environment variable missing |
+
+The same `problem` can route to different `who` values depending on context. A "column not found" error in `DataWrangler` is `manifest_author` if the action came from a manifest, but `analyst` if it came from a T3 sandbox node. The component raising the error is responsible for the routing decision because it has that context.
+
+---
+
+### Render surfaces — `surface` field values
+
+Each surface has an authoritative renderer; `make_render_payload()` is consumed by exactly one of them.
+
+| `surface` | Renderer location | Visual treatment | Used for |
+|---|---|---|---|
+| `plot_overlay` | `app/handlers/home_theater.py` plot render functions | Red-bordered card replacing the plot area: title (`problem`), collapsible "Inspect data" (`evidence`), "How to fix" (`fix`), `who` chip in corner | Wrangling / assembly / visualization failures affecting one or more plots |
+| `notification` | `ui.notification_show()` via shared notifier (ADR-060 pattern) | Toast with `problem` text; click opens detail modal containing `evidence` + `fix` | Background failures (export, ghost save, blueprint apply when no plot is in scope) |
+| `audit_panel` | Right sidebar `audit_stack` panel | Inline timestamped entry — `severity` icon, `problem`, "Show details" disclosure | T3 Apply failures (the audit panel is already where the user is looking) |
+| `data_import_panel` | Left sidebar Data Import panel | Inline error block beside the file input that produced it | Ingestion failures during file upload |
+| `blueprint_inline` | Blueprint IDE form area | Inline below the Apply button or escape-hatch textarea | Manifest fragment validation failures during IDE editing |
+
+**Surface choice is the error-raiser's responsibility, not the UI's.** A wrangling action that fails knows whether it was triggered by a manifest (→ `plot_overlay` for affected plots) or by T3 Apply (→ `audit_panel`); it sets `surface` accordingly. The UI does not guess.
+
+---
+
+### Evidence — what the analyst sees
+
+Evidence converts "the system rejected your input" into "row 47 had value 'unknown' in the Country column, which is not in the expected list". The dataclass keeps `evidence` as a free-shape `dict | None` to allow each failure category to attach what is most diagnostic, with conventional keys (above) for the common cases.
+
+Each renderer has a fallback: if `evidence` is `None`, the panel hides the "Inspect data" section. If a key is present but unrecognised, it is rendered as a key-value row in a generic table.
+
+**Privacy line:** evidence is captured on the running server only. It is included in the export bundle (audit trail integration below) only when the export scope includes the affected plots — global export captures all errors, plot-scope export captures only errors for that plot. The bundle is downloaded by the analyst, so no cross-session leakage.
+
+**Size cap:** `sample_rows` MUST NOT exceed 5 entries; `expected_schema` / `actual_schema` MUST NOT exceed 50 columns. The error-raiser truncates and adds a `"...truncated"` marker if the underlying data is larger. Caps prevent a runaway error from blowing memory or making the UI overlay unreadable.
+
+---
+
+### Audit trail capture (ADR-069 integration)
+
+A new app-level reactive value:
+
+```python
+session_pipeline_errors = reactive.Value([])   # list[PipelineError]
+```
+
+Lives in `app/src/server.py` alongside the other shared reactive values; passed as a kwarg to handlers that emit or render pipeline errors.
+
+**Capture rule:** every `PipelineError` instance, at the moment it is raised and caught at a UI boundary, is appended to this list (with `timestamp` populated). Errors raised inside library code (no Shiny context) are caught by the handler that called the library, which adds `timestamp` and appends.
+
+**Rendering rule:** the `audit_panel` surface always includes the live tail of `session_pipeline_errors` filtered by the active analysis group. The right sidebar audit panel shows a sub-section "Pipeline Issues" beneath the T3 audit trail when this list is non-empty.
+
+**Export rule** (extends ADR-069 §report.qmd):
+
+- `report.qmd` gains a new section `## Pipeline Issues During Session` after the T3 Audit Trail section.
+- One sub-section per affected plot (or "Session-wide" for un-scoped errors).
+- Each error rendered as: severity icon · timestamp · `problem` · `who` chip · collapsible `evidence` table · `fix` blockquote.
+- Section is omitted from `report.qmd` if `session_pipeline_errors` is empty for the export scope.
+- The bundle's `README.txt` reports a count: `Pipeline issues captured: N (M errors, K warnings)`.
+
+**Cleared on session restore.** Each session has its own log; restoring an older session loads that session's captured errors as part of the ghost (extends T3 Ghost format with `pipeline_errors:` list).
+
+---
+
+### Phasing
+
+**Phase 1 — Base class + helpers** (≤ 2 h)
+
+| Deliverable | Status |
+|---|---|
+| `libs/utils/src/utils/pipeline_error.py` — `PipelineError` dataclass + `format()` + `to_audit_row()` + `make_render_payload()` | task `DIAG-RUNTIME-BASE-1` `[sonnet/medium]` |
+| `app/src/render/pipeline_error_renderers.py` — renderer per `surface` (returns `ui.div(...)` etc.) | bundled with `DIAG-RUNTIME-BASE-1` |
+| Unit tests: round-trip dataclass → audit row, render payload shape per surface | bundled |
+
+**Phase 2 — Per-component retrofit** (already-tracked tasks, now unblocked)
+
+| Task | Component | What it covers |
+|---|---|---|
+| `DIAG-RUNTIME-INGESTION-1` | `libs/ingestion/src/ingestion/ingestor.py` | file-not-found, encoding errors, delimiter mismatch, schema mismatches, sanitization rejections; `who: data_provider` for content errors, `who: analyst` for upload errors |
+| `DIAG-RUNTIME-ASSEMBLER-1` | `libs/transformer/src/transformer/data_assembler.py` | `ColumnNotFoundError`, `SchemaError` on join, dtype mismatches, empty result frames, Cartesian-product blowups; `who: manifest_author` for almost all |
+| `DIAG-RUNTIME-WRANGLER-1` | `libs/transformer/src/transformer/data_wrangler.py` | action not registered, action arg validation against `ui_schema`; `who: manifest_author` for manifest-source, `who: analyst` for T3 source |
+| `DIAG-RUNTIME-VIZFACTORY-1` | `libs/viz_factory/src/viz_factory/viz_factory.py` | component not registered, missing required aesthetic, plotnine render exceptions; `who: manifest_author` for spec issues, `who: developer` for plotnine internals |
+| `DIAG-RUNTIME-T3APPLY-1` | `app/handlers/audit_stack.py` | T3 Apply failures (downstream invalidation, comment-gate violations); `surface: audit_panel`; `who: analyst` |
+| `DIAG-RUNTIME-BLUEPRINT-1` | `app/handlers/blueprint_handlers.py` | manifest fragment validation failures during BLUEPRINT IDE editing; `surface: blueprint_inline`; `who: manifest_author` |
+
+Existing `SPARMVET_Error` subclasses (`IngestionError`, `TransformationError`, `VisualizationError`, `ManifestError` in `libs/utils/src/utils/errors.py`) are **kept** and **extended** to carry an optional `to_pipeline_error()` adapter method. This preserves library API stability (existing callers still see the same exception types) while letting the UI boundary convert to the structured form. The existing `tip:` field becomes the `fix:` field at conversion time.
+
+**Phase 3 — UI surface + audit-trail capture** (≤ 3 h)
+
+| Deliverable | Task |
+|---|---|
+| `session_pipeline_errors` reactive value in `server.py`; pass to handlers that emit / render | `DIAG-RUNTIME-AUDIT-1` `[sonnet/medium]` |
+| Audit panel "Pipeline Issues" sub-section render | bundled with `DIAG-RUNTIME-AUDIT-1` |
+| Export bundle `report.qmd` extension (new section after T3 Audit Trail) | bundled with `DIAG-RUNTIME-AUDIT-1` |
+| T3 Ghost format extension (`pipeline_errors:` list) | bundled with `DIAG-RUNTIME-AUDIT-1` |
+| Plot-overlay renderer wired into `home_theater.py` plot renders (replace bare exception traces) | bundled with each Phase-2 task that affects plots |
+
+---
+
+### Migration & backward compatibility
+
+- **No breaking change to library APIs.** The four existing `SPARMVET_Error` subclasses keep their constructors and `tip:` field. New `to_pipeline_error()` adapter is opt-in; library code can keep raising the existing exceptions. The UI boundary is responsible for catching and converting.
+- **No breaking change to existing notifications.** Toasts that already use `ui.notification_show("❌ Failed: ...", type="error")` continue to work; they are *upgrade targets* for Phase 2 retrofits, not regressions.
+- **One canonical surface per error category, but errors that pre-date the retrofit fall back to the existing toast pattern.** Phase 2 progress is independently verifiable per component.
+
+---
+
+### Consequences
+
+- **One canonical runtime-error shape** complementing the startup-error shape from ADR-078. UI renderers, the export bundle, ghost saves, and any future log scraper read the same fields.
+- **Audience routing replaces guessing.** The `who` field eliminates the "is this my problem or a developer bug?" round-trip for the analyst.
+- **Audit-trail completeness.** Peer reviewers of an exported session can see which plots failed and why — silent absence in the export is no longer possible for failures that occurred during the session.
+- **Privacy boundary preserved.** Evidence stays on the running server unless the analyst explicitly exports.
+- **Extensibility.** New pipeline stages (e.g. live scientific re-computation, future export formats) plug in by raising `PipelineError` with an appropriate `category` and `surface`. No new exception class proliferation.
+- **Surface decoupling.** `make_render_payload()` is the single conversion point — UI changes to overlay / notification / panel layouts do not propagate into library code.
+
+---
+
+### Files Governed by This Rule
+
+| File | Governed aspect |
+|---|---|
+| `libs/utils/src/utils/pipeline_error.py` | Authoritative dataclass + helpers + render-payload converter. Do not duplicate. |
+| `libs/utils/src/utils/errors.py` | Existing `SPARMVET_Error` subclasses gain `to_pipeline_error()` adapter; otherwise unchanged. |
+| `app/src/render/pipeline_error_renderers.py` | Per-surface renderers; consumed by handlers via `make_render_payload()`. |
+| `app/src/server.py` | Owns `session_pipeline_errors` reactive value; passes to relevant handlers. |
+| `app/handlers/home_theater.py` | `plot_overlay` surface; reads `session_pipeline_errors` for plot card overlays. |
+| `app/handlers/audit_stack.py` | `audit_panel` surface; T3 Apply error capture. |
+| `app/handlers/blueprint_handlers.py` | `blueprint_inline` surface. |
+| `app/handlers/ingestion_handlers.py` | `data_import_panel` surface. |
+| `app/handlers/export_handlers.py` | Reads `session_pipeline_errors`; writes "Pipeline Issues During Session" section into `report.qmd`. |
+| `libs/ingestion/**`, `libs/transformer/**`, `libs/viz_factory/**` | Phase 2 retrofit targets — raise existing exceptions; UI boundary converts. |
+| `.claude/rules/rules_persona_bioscientist.md` | §7 (Debug Workflow) error-diagnosis table is the canonical reference for `fix:` text on `who: manifest_author` errors — keep aligned. |
 
 ---
 

@@ -33,6 +33,8 @@
 | `libs/utils/src/utils/config_loader.py` | Recursive YAML & Include Resolver | YAML → Python Dict | `ConfigManager`, `!include` |
 | `libs/test_lab/src/test_lab/aqua_synthesizer.py` | [ADR-032/ADR-068] Relational Data Synthesis (SDK Core) | Schema → TSV | `clean_header`, `generate_fake_column`, `--generate_only` |
 | `libs/viz_factory/src/viz_factory.py` | Artist Pillar: Plot Composition | Data + Manifest → ggplot | `VizFactory`, `Plot Layers` |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py` | **Plot config cascade resolver** (VIZFAC-RESOLVER-1, to be created) | Tiered config dicts → flat resolved dict | Pure function `resolve_plot_config()` resolves L5(T3 override) > L4(spec) > L3(optimisation) > L2(plot_defaults) > L1(built-ins). See `.claude/design/plot_config_cascade.md`. |
+| `libs/utils/src/utils/pipeline_error.py` | **Runtime error dataclass** (ADR-079, DIAG-RUNTIME-BASE-1, to be created) | Library exceptions → structured runtime error | `PipelineError` dataclass; sits alongside `DeploymentError` (ADR-078); audience model adds `analyst`/`data_provider`/`manifest_author`; per-category render surfaces. |
 | `libs/viz_gallery/assets/refresh_gallery.py` | [ADR-037] Gallery Indexing & Integrity Refresher | CLI Tool → JSON | `refresh_gallery.py`, Pivot-Index |
 | `app/modules/gallery_viewer.py` | [ADR-033/057] Split-Pane Gallery (full-width) + sidebar filter builder | Main content + sidebar UI | `GalleryViewer.render_explorer_ui()` (main), `GalleryViewer.build_sidebar_ui()` (nav_sidebar accordion — called by home_theater.py sidebar_tools_ui) |
 | `protocol_tiered_data.md` | Logic Protocol for Tiers (ADR-024) | Source of Truth | Short-Circuit, Predicate Pushdown |
@@ -173,6 +175,7 @@ tier1:
 - **B. Layer Composition**: Sequence of geoms -> scales -> themes.
 - **C. Violet Component Standard**: `ComponentName (file_name.py)` ONLY for docs and README lists.
 - **D. Hand-off Rule**: Conversion to Pandas ONLY at the moment of `ggplot()` initialization.
+- **E. Config Cascade (designed 2026-05-10, not yet implemented)**: Plot configuration resolves through five tiers — L5(T3 `aesthetic_override`) > L4(plot `spec:`) > L3(optimisation, computed) > L2(`plot_defaults:`) > L1(built-ins) — at one merge point via `resolve_plot_config()`. Closes the silent gap where T3 `aesthetic_override` nodes were recorded/exported but never rendered. Full design: [.claude/design/plot_config_cascade.md](.claude/design/plot_config_cascade.md). Implementation tracked as VIZFAC-RESOLVER-1 → VIZFAC-BLUEPRINT-FORM-1.
 
 ## 8. Blueprint Architect — Lineage Index (ADR-040 / ADR-045)
 

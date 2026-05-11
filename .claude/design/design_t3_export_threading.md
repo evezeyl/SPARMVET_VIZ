@@ -1,13 +1,19 @@
 # Design: T3 Export Threading + Lineage Recipe
 # Covers: T3 node type gap + export bundle lineage (formerly EXPORT-SGE-2)
-# Status: PARTIALLY COMPLETE — see per-section status below.
+# Status: MOSTLY COMPLETE — aesthetic_override render wiring blocked by VIZFAC-RESOLVER-1.
 #
-# As of 2026-05-09:
+# As of 2026-05-11:
 # - Dead code (single_graph_export_handlers.py): REMOVED ✓
 # - Lineage in export bundle: IMPLEMENTED as lineage_graph.json (shared-node DAG) ✓
 # - T3 threading (filter_row, exclusion_row, drop_column): IMPLEMENTED ✓
 #   via _t3_filter_rows() + _t3_drop_columns() in home_theater.py
-# - T3 threading for future node types (aesthetic_override, rename, derive): pending
+# - t3_plot_overrides in export bundle: IMPLEMENTED ✓
+#   export_handlers.py collects t3_plot_overrides dict and includes it in
+#   t3_steps.yaml as "t3_aesthetic_overrides:" key; Methods prose extended.
+# - aesthetic_override RENDERING (L5 cascade): PENDING — blocked by VIZFAC-RESOLVER-1.
+#   The overrides are correctly recorded, exported, and shown in the audit panel,
+#   but are not yet applied to rendered plots. That wiring is VIZFAC-T3-OVERRIDE-1.
+# - T3 threading for rename/derive/pivot node types: pending (no node types yet)
 
 ---
 

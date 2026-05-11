@@ -76,15 +76,21 @@ Items with no blockers — can be started immediately.
 
 ### Runtime Error Discipline
 
-- [ ] **DIAG-RUNTIME-ADR** `[opus/high]`: Author ADR-079. Open questions: separate class vs extend `DeploymentError`; render path per category; how user discovers what caused the failure; whether errors are captured in export audit trail.
+- [x] **DIAG-RUNTIME-ADR** `[opus/high]`: ✅ ADR-079 authored 2026-05-10 (replaces placeholder). Decisions: `PipelineError` sits alongside `DeploymentError` (shared 5-field shape, no inheritance); render surface is per-category (`plot_overlay`/`notification`/`audit_panel`/`data_import_panel`/`blueprint_inline`); `evidence` dict carries sample rows + offending values + schema diff (5-row / 50-col cap); audit-trail capture via new `session_pipeline_errors` reactive value, written to `report.qmd` "Pipeline Issues During Session" section and into T3 Ghost. Audience model adds `analyst` / `data_provider` / `manifest_author` to ADR-078's `operator` / `developer`.
+- [ ] **DIAG-RUNTIME-BASE-1** `[sonnet/medium]`: Phase 1 — `PipelineError` dataclass + helpers + per-surface renderers. Files: `libs/utils/src/utils/pipeline_error.py` (dataclass, `format()`, `to_audit_row()`, `make_render_payload()`); `app/src/render/pipeline_error_renderers.py` (one renderer per `surface` value). Plus unit tests asserting field shape and render-payload structure per surface. Unblocks all DIAG-RUNTIME-* retrofits.
+- [ ] **DIAG-RUNTIME-AUDIT-1** `[sonnet/medium]`: Phase 3 — `session_pipeline_errors` reactive value in `server.py` + audit panel "Pipeline Issues" sub-section + `report.qmd` "Pipeline Issues During Session" section + T3 Ghost `pipeline_errors:` extension. Depends on DIAG-RUNTIME-BASE-1.
 
 ### Blueprint Architect
 
-- [ ] **BP-DEBUG-1** `[sonnet/high]`: Full Blueprint Architect debug pass — field contracts rendering, lineage rail accuracy, Zone C layout stability.
-- [ ] **BP-ACTION-PARITY-1** `[sonnet/high]`: Expose 175+ `@register_action` entries in Blueprint IDE UI (18-F).
+- [x] **BP-DEBUG-1** `[sonnet/high]`: Full Blueprint Architect debug pass — field contracts rendering, lineage rail accuracy, Zone C layout stability. ✅ Committed ee05ea0.
+  - [x] Fixed `architect_active_plot` — now resolves plot specs from `analysis_groups` for pipeline manifests (was silently returning None since ADR-043). Builds synthetic flat manifest before `VizFactory.render()` call.
+  - [x] Fixed 8 emoji violations in `blueprint_handlers.py` `print()` calls (`rules_code_quality.md §1`).
+  - [x] Zone C layout stability reviewed — `bp_action_form_ui` 4-way dependency is intentional, no Rule R4 violation. `ui.js_eval` click-simulation in `handle_lineage_node_click` (wrangle_studio.py:1207) is fragile UX but not a crash risk; tracked as BP-LINEAGE-NAV-1.
+- [ ] **BP-LINEAGE-NAV-1** `[sonnet/medium]`: Replace `ui.js_eval("document.getElementById('btn_import_manifest').click()")` in `handle_lineage_node_click` with a shared `reactive.Value(selected_lineage_rel)` that both lineage rail clicks and the Import button write to; a single `@reactive.Effect` watches it and calls `_do_load_component()` directly. Eliminates race condition and DOM-dependency.
+- [x] **BP-ACTION-PARITY-1** `[sonnet/medium]`: Expose `@register_action` entries in Blueprint IDE UI (18-F). ✅ Committed acb27ce. Added search + context filter to action picker; choices grouped into "Rich form" (19 with ui_schema) and "YAML fallback" (43 without); reactive via `_update_action_picker()` effect.
 - [ ] **BP-VISUAL-FORK-1** `[sonnet/high]`: Visual Forking — select node → initiate new branch → YAML additions (18-F).
-- [ ] **BP-FIELD-GAP-1** `[sonnet/medium]`: Field Gap Analysis tool — field name → walk lineage to earliest insertion point.
-- [ ] **BP-FWD-HINT-1** `[sonnet/medium]`: Forward propagation hint — show which output_fields / final_contract files need updating when a field is added or renamed.
+- [x] **BP-FIELD-GAP-1** `[sonnet/medium]`: Field Gap Analysis tool — field name → walk lineage to earliest insertion point. ✅ Committed c41488c. Input + Find button added to Interface tab; field_gap_ui checks active_upstream/downstream and provides Rail navigation hints when field not found at current tier.
+- [x] **BP-FWD-HINT-1** `[sonnet/medium]`: Forward propagation hint — show which output_fields / final_contract files need updating when a field is added or renamed. ✅ Committed 29300a2. Integrated into field_gap_ui: scans downstream chain nodes for explicit output_fields contracts that exclude the queried field; inline contracts checked directly, file-linked ones emit manual-verify warning.
 
 ### Gallery & Visualization
 
@@ -118,19 +124,16 @@ Items with no blockers — can be started immediately.
 Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
 
 - [ ] **ADR045-REFACTOR** `[opus/high]`: Several files in `app/modules/` import `shiny` directly, violating the Two-Category Law. Decision needed: scope and migration plan before touching live handlers. [Not sure if wrong — it's part of the app itself]
-- [ ] **VIZFAC-PLOT-CASCADE-1** `[opus/high]` `[design-thinking]`: Design the plot configuration priority cascade.
+- [x] **VIZFAC-PLOT-CASCADE-1** `[opus/high]` `[design-thinking]`: ✅ Design spec authored 2026-05-10 at [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md). Five-tier cascade L5(T3 override) > L4(spec) > L3(optimisation) > L2(plot_defaults) > L1(built-ins) resolved at one merge point via new `resolve_plot_config()` pure function. Closes the silent gap where T3 `aesthetic_override` nodes are recorded/exported but never rendered. Locks `plot_defaults:` schema (§7a) and reserves L3 hooks (§5c) for future optimisation heuristics. Six concrete implementation tasks emitted below (VIZFAC-RESOLVER-1 through VIZFAC-BLUEPRINT-FORM-1).
 
-  **Proposed priority order (highest wins):**
-  1. `spec:` — explicit per-plot settings in `analysis_groups.<group>.plots.<id>.spec`
-  2. Optimization layer — computed at render time from data (auto-label sizing, axis rotation, density-aware positioning).
-  3. `plot_defaults:` — manifest-level fallback block.
-  4. VizFactory built-in defaults.
+#### Cascade implementation (derived from VIZFAC-PLOT-CASCADE-1 design)
 
-  **Open questions:** schema for `plot_defaults:`; merge point (`VizFactory.render()`); T3 `aesthetic_override` interaction (T3 > spec > optimization > plot_defaults > built-ins); Blueprint IDE surface for `plot_defaults`.
-
-  **Decided:** Optimization layer = purely visual/aesthetic; Path B (two-pass render) correct long-term; current `_auto_adjust_axis_labels()` stays as-is until designed.
-
-  **Next step:** `.claude/design/plot_config_cascade.md` spec doc, then concrete implementation tasks.
+- [ ] **VIZFAC-RESOLVER-1** `[sonnet/high]`: Create `libs/viz_factory/src/viz_factory/plot_config_resolver.py` with `resolve_plot_config()`, `compute_optimisation_layer()`, `_dedupe_layers()`, `_BUILTIN_DEFAULTS`. Pure functions, no plotnine import. Unit tests assert provenance per key for all 5 tiers + dedup order on `theme_*`/`coord_*`/`facet_*`/`scale_*_*`/`element_text` per cascade truth table (design §11).
+- [ ] **VIZFAC-RENDER-WIRE-1** `[sonnet/medium]` `[blocked: VIZFAC-RESOLVER-1]`: Refactor `VizFactory.render()` to use `resolve_plot_config()`. Move `factory_id` normalisation, flat-aesthetic promotion, and `_auto_adjust_axis_labels()` into the resolver. `viz_factory_integrity_suite` MUST pass unchanged.
+- [ ] **VIZFAC-T3-OVERRIDE-1** `[sonnet/medium]` `[blocked: VIZFAC-RENDER-WIRE-1, DIAG-RUNTIME-BASE-1]`: Wire `aesthetic_override` into `home_theater.py` plot renders — extract `home_state["t3_plot_overrides"].get(plot_id)`, pass as `aesthetic_override=` kwarg. Schema validation per design §6 (mutex check on `fill_color`/`fill_palette`, key whitelist) emits `PipelineError`.
+- [ ] **VIZFAC-T3-EXPORT-1** `[sonnet/medium]` `[blocked: VIZFAC-T3-OVERRIDE-1]`: Same wiring in `export_handlers.py` so exported plots reflect T3 overrides. Subsumes part of TECH-T3-THREAD-1 scope.
+- [ ] **VIZFAC-DEFAULTS-DOCS-1** `[sonnet/low]` `[blocked: VIZFAC-RESOLVER-1]`: Document `plot_defaults:` allowed keys (design §7a) in `rules_manifest_structure.md §10`, `rules_viz_factory.md §6`, `docs/appendix/manifest_structure.yaml`. Unknown-key warning machinery emits `PipelineError(who: manifest_author, surface: notification)`.
+- [ ] **VIZFAC-BLUEPRINT-FORM-1** `[sonnet/medium]` `[blocked: VIZFAC-DEFAULTS-DOCS-1]`: Blueprint IDE — mount `plot_defaults` editor form in BLUEPRINT logic sidebar when active node is the manifest root. Form fields driven by §7a allowed keys + their `ui_schema` (mirror action-picker pattern).
 
 - [ ] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. Needs dedicated design session before implementation.
 - [ ] **UX-APPLY-IMPROVE-1** `[sonnet/medium]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. Needs design pass before scoping.
@@ -141,14 +144,14 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 
 ## ⏳ Deferred / Blocked
 
-### Blocked by DIAG-RUNTIME-ADR (author ADR-079 first)
+### Blocked by DIAG-RUNTIME-BASE-1 (Phase 1 base class — see ADR-079)
 
-- [ ] **DIAG-RUNTIME-INGESTION-1** `[deferred until DIAG-RUNTIME-ADR]`: Retrofit `libs/ingestion/src/ingestion/ingestor.py` — file-not-found, encoding errors, schema mismatches, sanitization rejections.
-- [ ] **DIAG-RUNTIME-ASSEMBLER-1** `[deferred until DIAG-RUNTIME-ADR]`: Retrofit `libs/transformer/src/transformer/data_assembler.py` — `ColumnNotFoundError`, `SchemaError` on join, dtype mismatches, empty result frames, Cartesian-product blowups.
-- [ ] **DIAG-RUNTIME-WRANGLER-1** `[deferred until DIAG-RUNTIME-ADR]`: Retrofit `libs/transformer/src/transformer/data_wrangler.py` — action-name not registered, action arg validation against `ui_schema`.
-- [ ] **DIAG-RUNTIME-VIZFACTORY-1** `[deferred until DIAG-RUNTIME-ADR]`: Retrofit `libs/viz_factory/src/viz_factory/viz_factory.py` — component not registered, missing required aesthetic, plotnine render exceptions.
-- [ ] **DIAG-RUNTIME-T3APPLY-1** `[deferred until DIAG-RUNTIME-ADR]`: T3 Apply path failures in `app/handlers/audit_stack.py`.
-- [ ] **DIAG-RUNTIME-BLUEPRINT-1** `[deferred until DIAG-RUNTIME-ADR]`: Manifest fragment validation failures during BLUEPRINT IDE editing.
+- [ ] **DIAG-RUNTIME-INGESTION-1** `[sonnet/medium]` `[blocked: DIAG-RUNTIME-BASE-1]`: Retrofit `libs/ingestion/src/ingestion/ingestor.py` — file-not-found, encoding errors, delimiter mismatch, schema mismatches, sanitization rejections. `who: data_provider` for content errors, `who: analyst` for upload errors. `surface: data_import_panel`. ADR-079 Phase 2.
+- [ ] **DIAG-RUNTIME-ASSEMBLER-1** `[sonnet/medium]` `[blocked: DIAG-RUNTIME-BASE-1]`: Retrofit `libs/transformer/src/transformer/data_assembler.py` — `ColumnNotFoundError`, `SchemaError` on join, dtype mismatches, empty result frames, Cartesian-product blowups. `who: manifest_author`. `surface: plot_overlay` (with `plot_scope` populated). ADR-079 Phase 2.
+- [ ] **DIAG-RUNTIME-WRANGLER-1** `[sonnet/medium]` `[blocked: DIAG-RUNTIME-BASE-1]`: Retrofit `libs/transformer/src/transformer/data_wrangler.py` — action-name not registered, action arg validation against `ui_schema`. `who: manifest_author` for manifest-source nodes, `who: analyst` for T3 sandbox nodes. `surface: plot_overlay` or `audit_panel` depending on origin. ADR-079 Phase 2.
+- [ ] **DIAG-RUNTIME-VIZFACTORY-1** `[sonnet/medium]` `[blocked: DIAG-RUNTIME-BASE-1]`: Retrofit `libs/viz_factory/src/viz_factory/viz_factory.py` — component not registered, missing required aesthetic, plotnine render exceptions. `who: manifest_author` for spec issues, `who: developer` for plotnine internals. `surface: plot_overlay`. ADR-079 Phase 2.
+- [ ] **DIAG-RUNTIME-T3APPLY-1** `[sonnet/medium]` `[blocked: DIAG-RUNTIME-BASE-1]`: T3 Apply path failures in `app/handlers/audit_stack.py` — downstream invalidation, comment-gate violations. `who: analyst`. `surface: audit_panel`. ADR-079 Phase 2.
+- [ ] **DIAG-RUNTIME-BLUEPRINT-1** `[sonnet/medium]` `[blocked: DIAG-RUNTIME-BASE-1]`: Manifest fragment validation failures during BLUEPRINT IDE editing. `who: manifest_author`. `surface: blueprint_inline`. ADR-079 Phase 2.
 
 ### Blocked by library limitations
 
@@ -161,7 +164,7 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 - [ ] **22-J-10** `[sonnet/medium]`: Aesthetic propagation (color/shape/fill) — deferred until GALLERY-CLONE-DECOUPLE-1 ships.
 - [ ] **PROP-2** `[sonnet/medium]`: Filter inventory panel — effective filter set per plot with per-filter tooltip.
 - [ ] **EXPORT-TUBEMAP** `[sonnet/high]`: Embed static tube map SVG in global export Quarto report. Requires headless render path for `BlueprintMapper.generate_cy_elements()`. Blocked by Blueprint Architect stability + headless Cytoscape.js SVG capability.
-- [ ] **TECH-T3-THREAD-1** `[sonnet/low]`: When new T3 node types are added (e.g. `aesthetic_override`, `rename`, `derive`), add them to `_t3_filter_rows()` / `_t3_drop_columns()` helpers in `home_theater.py` (or new helper) and ensure export path in `export_handlers.py` applies them. Note: `filter_row`, `exclusion_row`, `drop_column` are already threaded. Lineage graph already in bundle (`lineage_graph.json`). Dead code already removed. Design doc at `.claude/design/design_t3_export_threading.md` — needs update to reflect actual state.
+- [x] **TECH-T3-THREAD-1** `[sonnet/medium]`: `t3_plot_overrides` (aesthetic override state) now collected and included in export bundle: `t3_steps.yaml` gains `t3_aesthetic_overrides:` key; `_build_methods_section()` extended with aesthetic override prose; design doc updated. Rendering gap (L5 cascade) blocked by VIZFAC-RESOLVER-1 and tracked as VIZFAC-T3-OVERRIDE-1.
 
 ### Planned / Large-scale backlog
 
@@ -184,7 +187,7 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
     --invert-paths
   git push origin dev --force
   ```
-- [ ] **PYPROJECT-DEPS-1** `[haiku/low]` `[repo-hygiene]`: Verify each of the 8 editable libs under `libs/` declares `libs/utils` as an explicit dependency in its `pyproject.toml` wherever it imports from utils.
+- [x] **PYPROJECT-DEPS-1** `[haiku/low]` `[repo-hygiene]`: All libs that import utils (`blueprint_arch`, `connector`, `transformer`, `viz_factory`) already declare `"libs/utils"` in their `pyproject.toml`. `ingestion`, `test_lab`, `viz_gallery` have zero utils imports — no changes needed.
 - [ ] **ACTION-RENAME-1** `[sonnet/medium]` `[repo-hygiene]`: Audit `@register_action` and `@register_plot_component` names for alignment with Polars/Plotnine naming. Provide compatibility shims and write `scripts/migrate_manifests.py` (script does not exist yet — separate from `assets/scripts/normalize_manifest_fields.py` which normalizes field dict format, not action names).
 - [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: Remaining cross-lib import violations — `blueprint_arch/blueprint_mapper.py` → `utils.config_loader`, `transformer/pipeline.py` → `utils.config_loader` + `ingestion.ingestor`, `transformer/data_assembler.py` → `utils.hashing`, `transformer/data_wrangler.py` + `metadata_validator.py` → `utils.errors`, `viz_factory/viz_factory.py` → `utils.errors`.
 - [ ] **CODE-COMMENT-STANDARD** `[sonnet/low]` `[active]`: Enforce commenting standard across `libs/` + `app/` — Emoji ban (§1) + WHY-not-WHAT comment philosophy (§2). No script needed. Run `grep -rE '(#.*[✅❌🔧🚀]|# TODO)' libs/ app/` to find violations. Note: do NOT add docstring tiers yet — that is CODE-DOCS-RETROSPECTIVE below.
@@ -202,6 +205,7 @@ _No current enhancement requests. Append items here using the `[ENHANCEMENT REQU
 
 Tasks requiring user decision, user action, or explicit discussion before implementation can proceed.
 
+- [ ] Discuss - Aesthetics / automation visuals -> capture and adding to T3 audit ? possibilities ? Consequences ? Gating ?  
 - [ ] **[@user] Taxonomy Data Audit**: Verify/correct tags in `assets/gallery_data/*/recipe_manifest.yaml` against `assets/gallery_data/TAXONOMY_CHEATSHEET.md`.
 - [ ] **[@user] UX-CSS-DEMO**: Review `assets/demo/demo_vetinst.css` after default theme is finalised.
 - [ ] **[FEATURE]** Label x/y axis adjustment module — edit title, policy change, color changes, points display — registered in audit. Large feature, grant-exploration candidate.
