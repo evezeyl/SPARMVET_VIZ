@@ -271,3 +271,42 @@ Completed items moved from `tasks.md` on 2026-05-11 cleanup. All items verified 
   - `home_theater.py`: Added `ui.output_ui("aesthetic_style_panel_ui")` in the Home right sidebar block, below `audit_stack_tools_ui` (inside the `audit_stack` gate block).
 - **Design notes:** No column-presence check for aesthetics (they apply regardless of schema). `alpha` is per-plot only per §12g.9. Color/shape/fill fire the propagation dialog.
 - **Verification:** `from app.src.main import app; print('OK')` → OK. 97 tests pass.
+
+### PROP-2 [DONE]
+- **Files:** `app/handlers/home_theater.py`
+- **Changes:**
+  - Added `filter_inventory_ui` `@output @render.ui` in `home_theater.py::define_server()` (PROP-2 section, before `notification_log_panel_ui`).
+  - Reads `applied_filters` (global left-sidebar committed filters) + T3 `filter_row` / `exclusion_row` nodes for the active plot subtab from `home_state["t3_recipe_by_plot"]`.
+  - Renders a compact per-filter row list: sidebar filters get a teal-on-blue `sidebar` badge; T3 nodes get a teal-on-teal `T3` badge; `⚠️` prefix for primary-key-warning nodes. Monospace value display with truncation at 24 chars.
+  - Each row has a `ui.tooltip()` with full detail (source, column, op, value, reason).
+  - Empty state: returns `ui.div()` (nothing shown when no filters active).
+  - Mounted in `right_sidebar_content_ui` inside the Pipeline Audit card, after `audit_nodes_header_ui` and before the "Inherited (Tier 2)" section.
+  - Updated `@deps` block: added `output:filter_inventory_ui (PROP-2)` to provides line.
+- **Design notes:** Read-only — no `reactive.Value.set()` calls (Rule R1 compliant). Uses palette values from `rules_css_style_spec.md §1f`: `#eef0fb`/`#345beb` for sidebar badge, `#e6f7f5`/`#0b6358` for T3 badge. No new CSS classes — all inline styles.
+- **Verification:** `from app.src.main import app; print('OK')` → OK.
+
+## Infrastructure & Housekeeping
+
+### AUDIT-FIRST-TRIAGE-1 [DONE]
+- **Audits triaged:** `audit_deps_2026-05-10.md`, `audit_cross_lib_2026-05-10.md`
+- **Results:**
+  - `audit_deps_2026-05-10.md`: ✅ PASS — all 27 load-bearing files carry @deps blocks. No violations.
+  - `audit_cross_lib_2026-05-10.md`: ⚠️ KNOWN DEBT ONLY — 1 existing tech-debt violation (tracked in tasks.md). No new violations.
+- **Triage action:** Marked both as processed with Status lines (0 new tasks created, 1 acceptable debt noted).
+- **Verification:** `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md` → returns 0 files (all audits processed).
+
+## Blueprint Architect
+
+### BP-VISUAL-FORK-1 [DONE]
+- **Task:** Visual Forking — select node → initiate new branch → YAML additions (18-F). `[sonnet/high]`
+- **Files changed:**
+  - `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` — added `generate_fork_yaml(schema_id, role, new_id, raw_config) -> str`; updated @deps `provides:` to include `function:generate_fork_yaml`; updated module docstring Public API section.
+  - `app/handlers/blueprint_handlers.py` — added `generate_fork_yaml` to import; added Visual Fork block gated on `manifest_edit_enabled`: `_fork_preview_text` reactive, `bp_fork_ui` render, `bp_fork_preview_ui` render, `_handle_fork_preview` effect, `_handle_fork_write` effect, `_clear_fork_preview_on_node_change` effect; updated @deps.
+  - `app/handlers/home_theater.py` — mounted "Fork Node" card in Blueprint right sidebar after "Plot Defaults" card, gated on `manifest_edit_enabled`.
+- **Design notes:**
+  - `generate_fork_yaml` is pure library code (zero Shiny imports — Two-Category Law ADR-045). Handles four forkable roles: `wrangling`/`input_fields`/`output_fields` (data_schemas), `join` (join_manifests), `plot_spec` (analysis_groups).
+  - `bp_fork_ui` reads only `active_component_info` (Rule R4 — never reads its own inputs). `bp_fork_preview_ui` reads only `_fork_preview_text`. Both are separate outputs.
+  - `_write_fork_to_manifest` checks for `!include` directives before attempting auto-write; shows paste-manual instructions when present (YAML safety constraint).
+  - `_clear_fork_preview_on_node_change` uses idempotent guard (Rule R3) to avoid infinite reactive loop.
+  - New component ID validated as `^[a-zA-Z_][a-zA-Z0-9_]*$` before generating YAML.
+- **Verification:** `from app.src.main import app; print('OK')` → OK.

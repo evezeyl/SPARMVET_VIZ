@@ -15,12 +15,13 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection
+# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_fork_ui, output:bp_fork_preview_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_fork_preview, effect:_handle_fork_write
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
+# consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))
+# consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_fork_ui"))
 # doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076
 # @end_deps
 
@@ -40,6 +41,7 @@ from blueprint_arch.manifest_navigator import (
     build_lineage_chain,
     build_schema_registry,
     build_sibling_map,
+    generate_fork_yaml,
     load_fields_file,
     resolve_fields_for_schema,
 )
@@ -998,6 +1000,185 @@ def define_server(input, output, session, *,
             wrangle_studio.active_raw_yaml.set(raw)
             wrangle_studio.data_ready_signal.set(wrangle_studio.data_ready_signal.get() + 1)
             ui.notification_show("Manifest YAML updated and re-parsed.", type="message")
+
+    # ── BP-VISUAL-FORK-1: Visual Fork (manifest_edit_enabled only) ───────────
+
+    if bootloader.is_enabled("manifest_edit_enabled"):
+        _fork_preview_text: reactive.Value[str] = reactive.Value("")
+
+        def _write_fork_to_manifest(master_path: str, fork_text: str) -> tuple[bool, str]:
+            """Append fork_text to the master manifest file.
+
+            Only safe when the manifest has NO !include directives — yaml.safe_load
+            cannot round-trip files with !include tags.  When includes are present,
+            the fork text is shown for manual paste instead.
+
+            Returns (success: bool, message: str).
+            """
+            if not master_path or not Path(master_path).exists():
+                return False, "No active manifest path."
+            try:
+                raw = Path(master_path).read_text(encoding="utf-8")
+            except OSError as exc:
+                return False, f"Cannot read manifest: {exc}"
+
+            if "!include" in raw:
+                return False, (
+                    "This manifest uses !include directives — auto-write is not safe. "
+                    "Copy the YAML fragment above and paste it into the manifest file manually."
+                )
+            try:
+                # Append the fork block as a YAML comment-separated section
+                separator = "\n# --- visual fork added by Blueprint Architect ---\n"
+                new_raw = raw.rstrip() + separator + fork_text
+                # Validate the combined YAML parses cleanly before writing
+                yaml.safe_load(new_raw)
+            except Exception as exc:
+                return False, f"YAML merge validation failed: {exc}"
+            try:
+                Path(master_path).write_text(new_raw, encoding="utf-8")
+            except OSError as exc:
+                return False, f"Cannot write manifest: {exc}"
+            return True, "Fork YAML written to manifest."
+
+        @output
+        @render.ui
+        def bp_fork_ui():
+            """Fork Node form — reads active_component_info only (Rule R4: never reads its own inputs)."""
+            info = wrangle_studio.active_component_info.get() if wrangle_studio else {}
+            schema_id = info.get("schema_id", "")
+            role = info.get("role", "")
+            forkable_roles = {"wrangling", "input_fields", "output_fields", "join", "plot_spec"}
+            if not schema_id or role not in forkable_roles:
+                return ui.div(
+                    ui.tags.small(
+                        "Select a forkable node (data schema, join, or plot) in the TubeMap.",
+                        class_="text-muted",
+                    ),
+                    class_="p-2",
+                )
+            return ui.div(
+                ui.tags.small(
+                    f"Fork: {schema_id} ({role})",
+                    class_="text-muted d-block mb-2",
+                ),
+                ui.input_text(
+                    "bp_fork_new_id",
+                    "New component ID",
+                    value=f"{schema_id}_fork",
+                    placeholder="snake_case_id",
+                    width="100%",
+                ),
+                ui.div(
+                    ui.input_action_button(
+                        "btn_bp_fork_preview",
+                        "Preview YAML",
+                        class_="btn btn-primary btn-sm",
+                    ),
+                    ui.input_action_button(
+                        "btn_bp_fork_write",
+                        "Write to manifest",
+                        class_="btn btn-warning btn-sm ms-2",
+                    ),
+                    class_="d-flex mt-2",
+                ),
+                ui.output_ui("bp_fork_preview_ui"),
+                class_="p-2",
+            )
+
+        @output
+        @render.ui
+        def bp_fork_preview_ui():
+            """Shows generated fork YAML — reads _fork_preview_text only (Rule R4)."""
+            text = _fork_preview_text.get()
+            if not text:
+                return ui.div()
+            return ui.div(
+                ui.tags.pre(
+                    text,
+                    class_="bp-escape-pre mt-2",
+                    style="max-height:220px;overflow-y:auto;font-size:0.78rem;",
+                ),
+                ui.tags.small(
+                    "Review, then click 'Write to manifest' or paste manually.",
+                    class_="text-muted d-block mt-1",
+                ),
+            )
+
+        @reactive.Effect
+        @reactive.event(input.btn_bp_fork_preview)
+        def _handle_fork_preview():
+            """Generate fork YAML from generate_fork_yaml() and cache in _fork_preview_text."""
+            info = wrangle_studio.active_component_info.get() if wrangle_studio else {}
+            schema_id = info.get("schema_id", "")
+            role = info.get("role", "")
+            if not schema_id or not role:
+                ui.notification_show("No component selected.", type="warning")
+                return
+            try:
+                new_id = (input.bp_fork_new_id() or "").strip()
+            except Exception:
+                new_id = ""
+            if not new_id:
+                ui.notification_show("Enter a new component ID first.", type="warning")
+                return
+            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", new_id):
+                ui.notification_show(
+                    "New ID must be snake_case (letters, digits, underscores only).",
+                    type="warning",
+                )
+                return
+            if active_cfg is None:
+                ui.notification_show("No active manifest configuration.", type="warning")
+                return
+            try:
+                cfg = active_cfg()
+                raw_config = cfg.raw_config
+            except Exception as exc:
+                ui.notification_show(f"Cannot read manifest config: {exc}", type="error")
+                return
+            fork_text = generate_fork_yaml(schema_id, role, new_id, raw_config)
+            if not fork_text:
+                ui.notification_show(
+                    f"Could not generate fork for role '{role}' / id '{schema_id}'. "
+                    "Ensure the manifest is loaded and the node is forkable.",
+                    type="warning",
+                )
+                _fork_preview_text.set("")
+                return
+            _fork_preview_text.set(fork_text)
+
+        @reactive.Effect
+        @reactive.event(input.btn_bp_fork_write)
+        def _handle_fork_write():
+            """Write cached fork YAML to the active manifest file (inline manifests only)."""
+            fork_text = _fork_preview_text.get()
+            if not fork_text:
+                ui.notification_show(
+                    "Generate a preview first before writing.", type="warning"
+                )
+                return
+            master_path = safe_input(input, "stored_manifest_selector", None)
+            success, msg = _write_fork_to_manifest(master_path or "", fork_text)
+            if success:
+                ui.notification_show(msg, type="message", duration=5)
+                _fork_preview_text.set("")
+                # Re-load sibling map so new node appears in the TubeMap
+                try:
+                    ctx_map = build_sibling_map(master_path)
+                    component_ctx_map.set(ctx_map)
+                except Exception:
+                    pass
+            else:
+                ui.notification_show(msg, type="warning", duration=8)
+
+        @reactive.Effect
+        def _clear_fork_preview_on_node_change():
+            """Clear stale fork preview when the selected TubeMap node changes (Rule R3 idempotent guard)."""
+            _ = wrangle_studio.active_component_info.get()  # subscribe
+            cur = _fork_preview_text.get()
+            if cur:  # idempotent guard — only write when a clear is actually needed
+                _fork_preview_text.set("")
 
     # ── Blueprint AI Agent (ADR-076) ─────────────────────────────────────────
 

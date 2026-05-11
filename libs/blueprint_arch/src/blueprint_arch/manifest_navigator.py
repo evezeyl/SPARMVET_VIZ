@@ -28,6 +28,10 @@ get_plot_ids_in_group(group_id, manifest_path)
     Forward trace: all plot IDs declared under analysis_groups[group_id].
     Used by export scope resolution (ADR-074).
 
+generate_fork_yaml(schema_id, role, new_id, raw_config)
+    Generate a YAML fragment for forking a manifest component.
+    Used by the Blueprint Architect Visual Fork feature (BP-VISUAL-FORK-1).
+
 Constraints (Two-Category Law — ADR-045)
 -----------------------------------------
 - Zero Shiny dependency: no import of shiny, reactive, render, or ui.
@@ -39,7 +43,7 @@ Constraints (Two-Category Law — ADR-045)
 from __future__ import annotations
 
 # @deps
-# provides: function:build_sibling_map, function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group
+# provides: function:build_sibling_map, function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_fork_yaml
 # consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-074
 # @end_deps
@@ -768,3 +772,91 @@ def build_plot_lineage(plot_id: str, manifest_path: str) -> list[dict]:
 
     steps.append(_step("plot_spec", plot_id, plot_label))
     return steps
+
+
+def generate_fork_yaml(
+    schema_id: str,
+    role: str,
+    new_id: str,
+    raw_config: dict,
+) -> str:
+    """Return a YAML fragment that adds a forked copy of schema_id to the manifest.
+
+    The fragment targets the same top-level section as the original node.
+    Forkable roles and target sections:
+
+      wrangling / input_fields / output_fields
+          → data_schemas (primary) or additional_datasets_schemas (fallback)
+          Fork copies the source block and resets wrangling to empty tier1/tier2.
+
+      join
+          → join_manifests
+          Fork copies ingredients list and resets recipe + final_contract.
+
+      plot_spec
+          → analysis_groups.<group_id>.plots
+          Fork copies the spec dict under a new plot_id with a derived label.
+
+    Returns an empty string when schema_id is not found or the role is not
+    forkable (e.g., data_source, unknown).
+
+    Designed to be pasted into the manifest YAML or written via
+    _write_fork_to_manifest() in blueprint_handlers.py.
+    """
+    block: dict = {}
+
+    if role in ("wrangling", "input_fields", "output_fields"):
+        for section in ("data_schemas", "additional_datasets_schemas"):
+            schema = (raw_config.get(section) or {}).get(schema_id)
+            if isinstance(schema, dict):
+                block = {
+                    section: {
+                        new_id: {
+                            "source": dict(schema.get("source") or {}),
+                            "input_fields": {},
+                            "wrangling": {"tier1": [], "tier2": []},
+                            "output_fields": {},
+                        }
+                    }
+                }
+                break
+
+    elif role == "join":
+        join_def = (raw_config.get("join_manifests") or {}).get(schema_id)
+        if isinstance(join_def, dict):
+            block = {
+                "join_manifests": {
+                    new_id: {
+                        "ingredients": list(join_def.get("ingredients") or []),
+                        "recipe": [],
+                        "final_contract": {},
+                    }
+                }
+            }
+
+    elif role == "plot_spec":
+        for grp_id, grp_val in (raw_config.get("analysis_groups") or {}).items():
+            if not isinstance(grp_val, dict):
+                continue
+            plots = grp_val.get("plots") or {}
+            if schema_id not in plots:
+                continue
+            plot_def = plots[schema_id]
+            spec = (plot_def.get("spec") or {}) if isinstance(plot_def, dict) else {}
+            block = {
+                "analysis_groups": {
+                    grp_id: {
+                        "plots": {
+                            new_id: {
+                                "label": new_id.replace("_", " ").title(),
+                                "spec": dict(spec) if isinstance(spec, dict) else {},
+                            }
+                        }
+                    }
+                }
+            }
+            break
+
+    if not block:
+        return ""
+    return yaml.dump(block, default_flow_style=False, sort_keys=False, allow_unicode=True)

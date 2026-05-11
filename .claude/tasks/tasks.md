@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-11 (VIZFAC-BLUEPRINT-FORM-1, HELP-INLINE-1, ACTION-RENAME-1, 22-J-10 complete; labs duplicate fixed; migrate_manifests.py written) by @dasharch
+**Last Updated:** 2026-05-11 (BP-VISUAL-FORK-1 complete) by @dasharch
 
 ---
 
@@ -67,7 +67,7 @@ Items with no blockers — can be started immediately.
 
 > BP-LINEAGE-NAV-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
-- [ ] **BP-VISUAL-FORK-1** `[sonnet/high]`: Visual Forking — select node → initiate new branch → YAML additions (18-F).
+> BP-VISUAL-FORK-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ### Gallery & Visualization
 
@@ -86,7 +86,7 @@ Items with no blockers — can be started immediately.
 
 ### Infrastructure & Housekeeping
 
-- [ ] **AUDIT-FIRST-TRIAGE-1** `[haiku/low]`: After first scheduled audit runs fire, triage all unprocessed reports per `audit_triage_protocol.md`. Run `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md` to find them.
+> AUDIT-FIRST-TRIAGE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 > HELP-INLINE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ---
@@ -94,6 +94,8 @@ Items with no blockers — can be started immediately.
 ## 🤔 Needs Discussion / Decision
 
 Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
+
+- [ ] Can we leverage python great docs to improve the documentation? particularly for the UI - but also for the rest of the libraries and for developers? <>https://github.com/posit-dev/great-docs>
 
 - [ ] **ADR045-REFACTOR** `[opus/high]`: Several files in `app/modules/` import `shiny` directly, violating the Two-Category Law. Decision needed: scope and migration plan before touching live handlers. [Not sure if wrong — it's part of the app itself]
 
@@ -127,7 +129,8 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 > VIZFAC-T3-EXPORT-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 > VIZFAC-BLUEPRINT-FORM-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
-- [ ] **PROP-2** `[sonnet/medium]`: Filter inventory panel — effective filter set per plot with per-filter tooltip.
+
+> PROP-2: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 - [ ] **EXPORT-TUBEMAP** `[sonnet/high]`: Embed static tube map SVG in global export Quarto report. Requires headless render path for `BlueprintMapper.generate_cy_elements()`. Blocked by Blueprint Architect stability + headless Cytoscape.js SVG capability.
 
 ### Planned / Large-scale backlog

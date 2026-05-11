@@ -28,7 +28,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
 # consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
@@ -1438,6 +1438,18 @@ def define_server(input, output, session, *,
                     class_="mb-2 shadow-sm border-0"
                 ),
             ]
+            # BP-VISUAL-FORK-1: Fork Node card (manifest_edit_enabled only)
+            if bootloader.is_enabled("manifest_edit_enabled"):
+                parts.append(
+                    ui.card(
+                        ui.card_header(
+                            ui.div(ui.h5("Fork Node", class_="mb-0"),
+                                   class_="d-flex justify-content-center w-100")
+                        ),
+                        ui.output_ui("bp_fork_ui"),
+                        class_="mb-2 shadow-sm border-0"
+                    )
+                )
             if bootloader.is_enabled("blueprint_agent_enabled"):
                 parts.append(
                     ui.card(
@@ -1468,6 +1480,8 @@ def define_server(input, output, session, *,
                     ui.div(
                         ui.output_ui("recipe_pending_badge_ui"),
                         ui.output_ui("audit_nodes_header_ui"),
+                        # PROP-2: effective filter summary (sidebar + T3 nodes)
+                        ui.output_ui("filter_inventory_ui"),
                         ui.h6("Inherited (Tier 2)", class_="text-muted spv-label-caps"),
                         ui.output_ui("audit_nodes_tier2"),
                         ui.hr(class_="spv-divider"),
@@ -1522,6 +1536,100 @@ def define_server(input, output, session, *,
         return ui.div(
             ui.p("—", class_="text-muted p-3 text-center"),
             class_="sidebar-content p-0"
+        )
+
+    # ── PROP-2: Filter Inventory Panel ────────────────────────────────────────
+    # Effective filter summary for the active plot: combines applied_filters
+    # (global left-sidebar rows) with T3 filter/exclusion nodes for this plot.
+    # Read-only — no state writes. Per-filter tooltips carry full detail.
+
+    @output
+    @render.ui
+    def filter_inventory_ui():
+        filters = applied_filters.get()
+        t3_nodes: list[dict] = []
+        active_sub = ""
+        if home_state is not None:
+            state = home_state.get()
+            active_sub = state.get("active_plot_subtab", "")
+            by_plot = state.get("t3_recipe_by_plot", {}) or {}
+            t3_nodes = [
+                n for n in by_plot.get(active_sub, [])
+                if n.get("active", True)
+                and n.get("node_type") in ("filter_row", "exclusion_row")
+            ]
+
+        if not filters and not t3_nodes:
+            return ui.div()
+
+        _OP = {"eq": "=", "ne": "≠", "gt": ">", "ge": "≥",
+               "lt": "<", "le": "≤", "in": "∈", "not_in": "∉"}
+
+        def _fmt_val(v) -> str:
+            if isinstance(v, (list, tuple)):
+                items = [str(x) for x in v]
+                suffix = f", +{len(items) - 3}" if len(items) > 3 else ""
+                return "{" + ", ".join(items[:3]) + suffix + "}"
+            s = str(v)
+            return s if len(s) <= 24 else s[:24] + "…"
+
+        _ROW = (
+            "display:flex;align-items:center;gap:4px;"
+            "font-size:0.75rem;padding:1px 4px;"
+        )
+        _BADGE_SB = (
+            "font-size:0.65rem;padding:0 3px;border-radius:3px;"
+            "background:#eef0fb;color:#345beb;margin-left:auto;white-space:nowrap;"
+        )
+        _BADGE_T3 = (
+            "font-size:0.65rem;padding:0 3px;border-radius:3px;"
+            "background:#e6f7f5;color:#0b6358;margin-left:auto;white-space:nowrap;"
+        )
+        _MONO = (
+            "font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"
+            "flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+        )
+
+        rows: list = [ui.div(
+            "Active Filters",
+            class_="spv-text-xs text-muted fw-bold",
+            style="padding:2px 4px 1px;",
+        )]
+        for f in filters:
+            col = f.get("column", "?")
+            op  = _OP.get(f.get("op", "eq"), f.get("op", "eq"))
+            val = _fmt_val(f.get("value", ""))
+            rows.append(ui.tooltip(
+                ui.div(
+                    ui.span(f"🔍 {col} {op} {val}", style=_MONO),
+                    ui.span("sidebar", style=_BADGE_SB),
+                    style=_ROW,
+                ),
+                f"Source: sidebar | {col} {f.get('op')} {f.get('value')}",
+                placement="left",
+            ))
+        for n in t3_nodes:
+            nt  = n.get("node_type", "")
+            p   = n.get("params", {})
+            col = p.get("column", "?")
+            op  = _OP.get(p.get("op", "eq"), p.get("op", "eq"))
+            val = _fmt_val(p.get("value", ""))
+            icon   = "🚫" if nt == "exclusion_row" else "🔍"
+            pk_pfx = "⚠️" if n.get("primary_key_warning") else ""
+            reason = (n.get("reason") or "").strip() or "no reason yet"
+            rows.append(ui.tooltip(
+                ui.div(
+                    ui.span(f"{pk_pfx}{icon} {col} {op} {val}", style=_MONO),
+                    ui.span("T3", style=_BADGE_T3),
+                    style=_ROW,
+                ),
+                f"T3 audit | Reason: {reason}",
+                placement="left",
+            ))
+
+        return ui.div(
+            *rows,
+            style="padding:2px 0 4px;border-bottom:1px solid #e9ecef;",
         )
 
     # ── UX-NOTIF-1: Persistent Alert Log ──────────────────────────────────────
