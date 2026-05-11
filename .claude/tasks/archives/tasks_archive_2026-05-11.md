@@ -310,3 +310,38 @@ Completed items moved from `tasks.md` on 2026-05-11 cleanup. All items verified 
   - `_clear_fork_preview_on_node_change` uses idempotent guard (Rule R3) to avoid infinite reactive loop.
   - New component ID validated as `^[a-zA-Z_][a-zA-Z0-9_]*$` before generating YAML.
 - **Verification:** `from app.src.main import app; print('OK')` → OK.
+
+---
+
+## UI Debugging (Session 9, 2026-05-11)
+
+### UX-DEBUG-EXPORT-1 [DONE]
+- **Task:** Retest export pipeline end-to-end. `[sonnet/medium]`
+- **Approach:** Headless pure-function testing via `app/tests/audit_export_bundle.py` and inline function tests for `_build_methods_section` (4 cases), ZIP assembly simulation, PNG provenance embedding.
+- **Verification:** All headless export tests PASS. Playwright gap documented for live rendering (requires app process + `qa` persona).
+
+### UX-DEBUG-GHOST-1 [DONE]
+- **Task:** Test T3 ghost save/restore flow. `[sonnet/medium]`
+- **Approach:** Traced write path: `audit_stack.py:_write_t3_ghost` (called on `btn_apply` reactive event) → `session_manager.write_t3_ghost`. Ran existing `app/tests/debug_session_flow.py` which covers 15 scenarios end-to-end.
+- **Result:** 15/15 PASS — session key computation, assembly ghost write/read, fast-path restore, reassemble on missing Parquet, T3 ghost write (2 saves, newest-first order), gatekeeper, recipe SHA256, methods text generation, label update, list sessions, export zip, import zip roundtrip, delete.
+
+### UX-DEBUG-IMPORT-1 [DONE]
+- **Task:** Test file import and schema mapping. `[sonnet/medium]`
+- **Approach:** Created `app/tests/debug_data_import.py` (new file) with 11 headless scenarios: happy path TSV, missing column error, fuzzy suggestion, empty contract passthrough, enforce_schema categorical cast, enforce_schema source_name rename, CSV comma-sep read, source.path resolution, raw_data fallback path.
+- **Fixed:** `metadata_validator.py` line 62 — `transformed.columns` (deprecated PerformanceWarning) → `transformed.collect_schema().names()`.
+- **Result:** 11/11 PASS. Playwright gap documented for UI widget interactions.
+- **Files changed:** `app/tests/debug_data_import.py` (new), `libs/transformer/src/transformer/metadata_validator.py` (line 62 fix).
+
+---
+
+## Deployment (Session 9, 2026-05-11)
+
+### DEPLOY-CONNECT-1 [DONE]
+- **Task:** Posit Connect deployment — editable library install handling. `[sonnet/medium]`
+- **Deliverables:**
+  - `requirements-connect.txt` — PyPI-only pin file with `--find-links pkgs/` header; all runtime deps pinned from current `.venv`; local lib names listed (resolved from `pkgs/`).
+  - `config/deployment/connect/connect_profile_template.yaml` — fully documented profile template; notes on `SPARMVET_PROFILE`, `SPARMVET_PERSONA`, `project_root`, `data_ingestion_enabled` deployment override.
+  - `assets/scripts/bundle_connect.sh` — prep script: builds wheels for all local libs into `pkgs/` via `pip wheel --no-deps`, verifies requirements file, checks entry point, optionally calls `rsconnect deploy shiny`.
+  - `config/deployment/README.md` — updated directory tree; new "Posit Connect Deployment" section with quick-start commands, required env vars table, and explanation of the wheel-build approach.
+- **Connect-readiness decision:** `pip wheel --no-deps -w pkgs/` for all libs, then `--find-links pkgs/` in requirements. This lets Connect's `pip install -r requirements-connect.txt` resolve local packages from the bundle without editable installs.
+- **Entry point:** `app/src/main:app` (ASGI Shiny application object).

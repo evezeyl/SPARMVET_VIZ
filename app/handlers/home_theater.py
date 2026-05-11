@@ -1386,7 +1386,7 @@ def define_server(input, output, session, *,
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
-        # --- 🏗️ Blueprint Architect (Wrangle Studio) ---
+        # --- Blueprint Architect (Wrangle Studio) ---
         if active_sidebar == "Wrangle Studio":
             selected_node = safe_input(input, "blueprint_node_clicked", None)
             stack = wrangle_studio.logic_stack.get()
@@ -1502,7 +1502,7 @@ def define_server(input, output, session, *,
 
             return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")
 
-        # --- 🖼️ Gallery ---
+        # --- Gallery ---
         if active_sidebar == "Gallery":
             return ui.div(
                 ui.card(
@@ -1518,7 +1518,7 @@ def define_server(input, output, session, *,
                 class_="sidebar-content p-0"
             )
 
-        # --- 🛠️ Test Lab ---
+        # --- Test Lab ---
         if active_sidebar == "Test Lab":
             return ui.div(
                 ui.card(

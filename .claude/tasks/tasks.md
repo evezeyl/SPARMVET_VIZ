@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-11 (BP-VISUAL-FORK-1 complete) by @dasharch
+**Last Updated:** 2026-05-11 (DEPLOY-CONNECT-1, UX-DEBUG-* complete) by @dasharch
 
 ---
 
@@ -33,17 +33,13 @@ Items with no blockers — can be started immediately.
 
 ### Deployment
 
-- [ ] **DEPLOY-CONNECT-1** `[sonnet/medium]` `[deferred — Connect adoption TBD]`: Posit Connect deployment — editable library install handling. Keep code Connect-ready to avoid heavy refactoring when the time comes.
-  - [ ] Add each editable lib as relative path entry in `requirements.txt`: `-e ./libs/ingestion`, `-e ./libs/transformer`, etc.
-  - [ ] Document `app/src/main.py` as entry point for `rsconnect-python` bundle.
-  - [ ] Deployment profile via `SPARMVET_PROFILE` env var; add `config/deployment/connect/connect_profile.yaml` template.
-  - [ ] Smoke test: clean venv from scratch, run `scripts/install_libs.sh`, verify no import errors.
+> DEPLOY-CONNECT-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ### UI Debugging
 
-- [ ] **UX-DEBUG-EXPORT-1** `[sonnet/medium]`: Retest and debug the export pipeline end-to-end against a real data session.
-- [ ] **UX-DEBUG-GHOST-1** `[sonnet/medium]`: Define and test the session ghost save/restore flow when Tier 3 is activated — confirm T3 state survives a page refresh.
-- [ ] **UX-DEBUG-IMPORT-1** `[sonnet/medium]`: Test file import and schema mapping from user-uploaded files through to manifest association.
+> UX-DEBUG-EXPORT-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+> UX-DEBUG-GHOST-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+> UX-DEBUG-IMPORT-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ### Runtime Error Discipline
 

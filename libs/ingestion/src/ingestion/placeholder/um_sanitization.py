@@ -59,11 +59,9 @@ def validate_metadata(df, schema_config):
     # Return results
     is_valid = len(errors) == 0
     return is_valid, errors 
-#TODO this should be expended to do maybe some : data type transformation / check for minimal set of required columns
-# TODO in case of failure (joint, reading data) : it should inform
-# TODO it should remove formatting errors eg space, windows characters osv 
-
-# TODO Orchestrator in app_shell catches these errors and displays them neatly in a Shiny ui.output_text_verbatim box
+# Placeholder — extend to: data type transformation, minimal required column check,
+# strip formatting errors (whitespace, Windows line endings), and surface failures via
+# PipelineError (see ADR-079) rather than bare return values.
 
 
 

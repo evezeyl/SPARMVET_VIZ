@@ -1,0 +1,75 @@
+# SPARMVET_VIZ — Posit Connect requirements (ADR-048, DEPLOY-CONNECT-1)
+#
+# Purpose: PyPI-only pin list for Posit Connect deployment.
+#          Connect cannot install editable source packages (-e ./libs/...).
+#          Local libs (utils, ingestion, transformer, etc.) are installed as
+#          wheels pre-built into pkgs/ via assets/scripts/bundle_connect.sh.
+#
+# Workflow:
+#   1. Run: bash assets/scripts/bundle_connect.sh
+#      Builds wheels for all local libs into pkgs/
+#   2. Run: rsconnect deploy shiny . --entrypoint app/src/main:app \
+#              --requirements requirements-connect.txt
+#
+# The --find-links line below tells pip to look in pkgs/ before PyPI.
+# pkgs/ is included in the Connect bundle by rsconnect automatically
+# when it is present at the project root.
+
+--find-links pkgs/
+
+# ── Local library packages (wheels built by bundle_connect.sh) ────────────────
+utils
+ingestion
+transformer
+connector
+viz_factory
+viz_gallery
+blueprint_arch
+app
+
+# ── Runtime dependencies (pinned from .venv, no test tooling) ─────────────────
+anyio==4.13.0
+asgiref==3.11.1
+certifi==2026.4.22
+charset-normalizer==3.4.7
+click==8.3.3
+contourpy==1.3.3
+cycler==0.12.1
+fastexcel==0.20.1
+fonttools==4.62.1
+greenlet==3.5.0
+h11==0.16.0
+htmltools==0.6.0
+idna==3.13
+importlib_metadata==8.7.1
+Jinja2==3.1.6
+kiwisolver==1.5.0
+linkify-it-py==2.1.0
+markdown-it-py==4.0.0
+MarkupSafe==3.0.3
+matplotlib==3.10.9
+mdit-py-plugins==0.5.0
+mdurl==0.1.2
+mizani==0.14.4
+narwhals==2.20.0
+numpy==2.4.4
+opentelemetry-api==1.41.1
+orjson==3.11.8
+packaging==26.2
+pandas==3.0.2
+patsy==1.0.2
+pillow==12.2.0
+plotnine==0.15.4
+polars==1.40.1
+prompt_toolkit==3.0.52
+pyarrow==24.0.0
+Pygments==2.20.0
+pyyaml>=6.0.0
+requests==2.33.1
+shiny==1.6.0
+shinychat==0.3.0
+starlette>=0.40.0
+typing_extensions>=4.0.0
+uvicorn>=0.20.0
+watchfiles>=0.18.0
+websockets>=12.0

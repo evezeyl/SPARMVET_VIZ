@@ -9,9 +9,13 @@ One Docker image + one deployment profile = one running SPARMVET instance.
 ```
 config/deployment/
 ├── local/
-│   └── local_profile.yaml      ← Dev fallback (resolution level 4)
+│   └── local_profile.yaml               ← Dev fallback (resolution level 4)
+├── connect/
+│   └── connect_profile_template.yaml    ← Posit Connect template (DEPLOY-CONNECT-1)
+├── pipeline_test/
+│   └── pipeline_test_profile.yaml       ← Headless CI profile
 └── templates/
-    └── connector_template.yaml ← Full schema reference with inline comments
+    └── connector_template.yaml          ← Full schema reference with inline comments
 ```
 
 ## Profile Resolution Order
@@ -49,6 +53,42 @@ All location paths are relative to `project_root` (if set), otherwise relative t
 | `filesystem` (default) | `FilesystemConnector` | Local PC, server, Galaxy-mounted dirs |
 | `galaxy` | `GalaxyConnector` | Falls back to `_GALAXY_JOB_HOME_DIR` env var if `project_root` absent |
 | `irida` | `IridaConnector` | Token via `SPARMVET_IRIDA_TOKEN` env var; fetch implementation Phase 23-D |
+
+## Posit Connect Deployment (DEPLOY-CONNECT-1)
+
+Posit Connect cannot install editable source packages (`-e ./libs/...`). The
+`connect/` directory contains the profile template and a bundle prep script.
+
+**Quick start:**
+
+```bash
+# 1. Build wheels for all local libs into pkgs/
+bash assets/scripts/bundle_connect.sh
+
+# 2. Review / fill in config/deployment/connect/connect_profile_template.yaml
+
+# 3. Deploy (requires CONNECT_SERVER + CONNECT_API_KEY env vars)
+bash assets/scripts/bundle_connect.sh --deploy
+```
+
+**Entry point:** `app/src/main:app` (the ASGI Shiny application object).
+
+**Required environment variables on the Connect server:**
+
+| Variable | Value | Purpose |
+|---|---|---|
+| `SPARMVET_PROFILE` | path to your filled-in profile | Profile resolution level 1 |
+| `SPARMVET_PERSONA` | e.g. `pipeline-static` | Override default persona |
+
+**What `bundle_connect.sh` does:**
+1. Builds wheels for `libs/*` and `app/` into `pkgs/` using `pip wheel --no-deps`
+2. Verifies all local libs are listed in `requirements-connect.txt`
+3. Checks the app entry point imports cleanly
+4. Optionally calls `rsconnect deploy shiny` with the correct entrypoint and env vars
+
+**`requirements-connect.txt`** is the PyPI-only pin file used on Connect.
+The `--find-links pkgs/` line at the top tells pip to use the pre-built wheels
+for local packages before looking at PyPI.
 
 ## Full Schema Reference
 

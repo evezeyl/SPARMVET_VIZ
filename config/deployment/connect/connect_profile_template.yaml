@@ -1,0 +1,70 @@
+# SPARMVET_VIZ — Posit Connect Deployment Profile Template (ADR-048)
+#
+# Copy this file, fill in the path values, and point SPARMVET_PROFILE at
+# the result on the Connect server, or commit it as the production profile.
+#
+# Profile resolution order (first match wins):
+#   1. SPARMVET_PROFILE env var  ← recommended for Connect
+#   2. ~/.sparmvet/profile.yaml
+#   3. /etc/sparmvet/profile.yaml
+#   4. config/deployment/local/local_profile.yaml  (dev fallback only)
+#
+# On Connect set:
+#   SPARMVET_PROFILE=/connect/content/<app-guid>/connect_profile.yaml
+#   SPARMVET_PERSONA=pipeline-static   (or whichever persona this deployment shows)
+#
+# If the pipeline produces data via an automated script (not user upload):
+#   Set data_ingestion_enabled: false  in the persona template
+#   so the Data Import panel is suppressed and data is always pipeline-provided.
+
+deployment_type: filesystem
+deployment_name: "SPARMVET — Production (Posit Connect)"
+
+# The manifest to load at startup.
+# Relative to project_root below.
+# If absent, the manifest selector appears in the UI (persona-gated).
+default_manifest: "manifests/my_pipeline/master.yaml"
+
+# Persona to activate. For a locked pipeline deployment use pipeline-static.
+# See config/ui/templates/ for the full list.
+default_persona: pipeline-static
+
+# Absolute base path on the Connect server.
+# All locations below are relative to this.
+project_root: "/connect/content/PLACEHOLDER_APP_GUID"
+
+locations:
+  # Location 1 — Raw input files (populated by your pipeline, not by the app).
+  # The pipeline writes TSV/CSV here; the app reads it at T1 materialisation.
+  raw_data: "inputs/"
+
+  # Location 2 — Pipeline YAML manifests.
+  # Contains master.yaml and its !include fragments.
+  manifests: "manifests/"
+
+  # Location 3 — Tier 1 & 2 Parquet caches.
+  # App writes here on first run; reads on subsequent runs.
+  # Must be writable by the Connect app process.
+  curated_data: "parquet/"
+
+  # Location 4 — User-writable space.
+  # Export bundles, session saves, T3 artifacts.
+  # Must be writable. On Connect this is typically the app's persistent storage.
+  user_sessions: "sessions/"
+
+  # Location 5 — Gallery assets (read-only).
+  gallery: "gallery/"
+
+scripts:
+  # Leave paths as-is; they are relative to project_root.
+  test_data_gen: "libs/generator_utils/src/generator_utils/aqua_synthesizer.py"
+  excel_parser: "libs/ingestion/src/ingestion/excel_handler.py"
+
+runtime:
+  # On Connect the interpreter is resolved by rsconnect. Do not change.
+  python_interpreter: "python"
+
+# Deployment-level feature overrides (applied on top of persona template flags).
+# Set data_ingestion_enabled: false when data is always pushed by the pipeline.
+# metadata_ingestion_enabled remains user-controllable and is NOT overridden here.
+# data_ingestion_enabled: false

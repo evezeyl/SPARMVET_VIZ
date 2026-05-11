@@ -18,7 +18,7 @@
 | `scripts/run_audits.sh` | Audit wrapper — groups scripts by day slot; enforces `dev` branch (ADR-080) | `./scripts/run_audits.sh <sunday\|wednesday\|thursday\|friday\|all\|ondemand>` | Auto-switches to `dev` branch; prints unprocessed report summary at end. Session-end quick run: pass `sunday` for the four highest-value scripts. |
 | `scripts/systemd/` | Systemd user timer units for persistent audit scheduling (ADR-080) | `./scripts/systemd/install.sh` (one-time setup) | `sparmvet-audit@.service` + 4 `.timer` files with `Persistent=true` — fires missed runs on next boot. See `schedule_commands.md §D`. |
 | `app/src/server.py` | **Thin Orchestrator only** (ADR-045, 228 lines) | Shared state/calcs → Handler delegation | `active_cfg`, `tier1_anchor`, `tier_reference`, `tier3_leaf`, 5× `define_server()` calls |
-| `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067/ADR-074) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group` — importable anywhere, zero Shiny dependency |
+| `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067/ADR-074) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group`, `generate_fork_yaml` — importable anywhere, zero Shiny dependency |
 | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` | **BLUEPRINT form catalog** (ADR-075, to be created) | `@register_action` + `@register_plot_component` `ui_schema` dicts → widget catalog | Reads `ui_schema` kwarg from registries at startup; builds action/component picker for BLUEPRINT IDE. Headless-safe — zero Shiny imports. |
 | `scripts/migrate_manifests.py` | **Action name migration scanner** (ACTION-RENAME-1, to be created) | Project-wide YAML scan → rename report + apply | Scans `config/manifests/`, persona templates, `assets/gallery_data/` for deprecated action names; reports discrepancies; applies renames with `--apply` flag. |
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
@@ -179,7 +179,7 @@ tier1:
 
 ## 8. Blueprint Architect — Lineage Index (ADR-040 / ADR-045)
 
-Five pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` provide the manifest structural index powering the Blueprint Architect (moved to `libs/blueprint_arch/` in Phase 29, ADR-067):
+Eight pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` provide the manifest structural index powering the Blueprint Architect (moved to `libs/blueprint_arch/` in Phase 29, ADR-067):
 
 | Function | Keyed by | Value summary |
 | :--- | :--- | :--- |
@@ -190,6 +190,7 @@ Five pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigato
 | `resolve_fields_for_schema(schema_id, ctx_map, inc_map)` | — | Recursive field resolution with cycle guard; returns ADR-041 Rich Dict. |
 | `build_plot_lineage(plot_id, manifest_path)` | — | **ADR-074.** Backward trace from a named plot ID to its T1 root. Returns ordered `list[node_dict]`. Used by the export bundle lineage graph generator. |
 | `get_plot_ids_in_group(group_id, manifest_path)` | — | **ADR-074.** Forward trace — returns all `plot_id` strings declared under the given `analysis_group`. |
+| `generate_fork_yaml(schema_id, role, new_id, raw_config)` | — | **BP-VISUAL-FORK-1.** Returns a YAML fragment for forking a manifest node. Forkable roles: `wrangling`/`input_fields`/`output_fields` (→ `data_schemas`), `join` (→ `join_manifests`), `plot_spec` (→ `analysis_groups`). Returns `""` when the role is not forkable. Consumed by `blueprint_handlers.py` (gated: `manifest_edit_enabled`). |
 
 **Key constraint**: Only `str` rel-paths are used as ctx dict keys. Inline YAML content (`{"inline": val}`) is stored in the `siblings` dict only — never as a dict key (unhashable).
 

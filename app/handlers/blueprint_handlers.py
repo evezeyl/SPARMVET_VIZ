@@ -543,7 +543,7 @@ def define_server(input, output, session, *,
         except Exception as e:
             print(f"[sync_blueprint_mapper] Failed: {e}")
 
-    # --- 🏗️ Phase 18: Wrangle Studio Manifest Management ---
+    # --- Phase 18: Wrangle Studio Manifest Management ---
     @reactive.Effect
     @reactive.event(input.sidebar_nav)
     def _init_wrangle_manifests():

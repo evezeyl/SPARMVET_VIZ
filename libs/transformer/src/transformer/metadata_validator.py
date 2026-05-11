@@ -59,7 +59,7 @@ class MetadataValidator:
             # 1. Handle Renaming (if 'source_name' is provided)
             # This allows mapping raw headers to standardized internal names
             source = props.get("source_name")
-            if source and source in transformed.columns and source != col_name:
+            if source and source in transformed.collect_schema().names() and source != col_name:
                 transformed = transformed.rename({source: col_name})
 
             # 2. Handle Type Casting
