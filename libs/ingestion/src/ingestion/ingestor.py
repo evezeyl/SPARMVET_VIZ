@@ -1,6 +1,7 @@
 # @deps
 # provides: class:DataIngestor, method:ingest, method:find_file
 # consumes: libs/ingestion/src/ingestion/sanitizer.py
+#           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-INGESTION-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-013
 # @end_deps
@@ -8,6 +9,8 @@ import polars as pl
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
 from ingestion.sanitizer import DataSanitizer
+from utils.errors import IngestionError
+from utils.pipeline_error import PipelineError
 
 
 class DataIngestor:
@@ -21,8 +24,22 @@ class DataIngestor:
     def __init__(self, data_dir: str):
         self.data_dir = Path(data_dir)
         if not self.data_dir.exists():
-            raise FileNotFoundError(
-                f"Data directory not found: {self.data_dir}")
+            pe = PipelineError(
+                component="DataIngestor",
+                problem=f"Data directory not found: {self.data_dir}",
+                location="DataIngestor.__init__",
+                fix=(
+                    "Verify that the 'data_dir' path in your deployment profile or manifest "
+                    "source block points to an existing directory containing the source TSV/Parquet files."
+                ),
+                who="operator",
+                category="ingestion",
+                surface="data_import_panel",
+                severity="error",
+                evidence={"path": str(self.data_dir)},
+            )
+            print(pe.format())
+            raise IngestionError(pe.problem, tip=pe.fix)
 
     def find_file(self, dataset_name: str) -> Optional[Path]:
         """
@@ -66,8 +83,23 @@ class DataIngestor:
                 lf = pl.scan_csv(resolved_path, separator="\t")
             else:
                 search_context = source_path if source_path else self.data_dir
-                raise FileNotFoundError(
-                    f"Could not locate a physical file for dataset '{dataset_name}' at {search_context}")
+                pe = PipelineError(
+                    component="DataIngestor",
+                    problem=f"Could not locate a physical file for dataset '{dataset_name}' at {search_context}.",
+                    location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
+                    fix=(
+                        "Check that the manifest 'source.path' key points to an existing file, "
+                        "or that a TSV matching the dataset name exists in the data directory. "
+                        "Use an explicit 'source: {type: local_tsv, path: ...}' block to avoid fuzzy discovery."
+                    ),
+                    who="data_provider",
+                    category="ingestion",
+                    surface="data_import_panel",
+                    severity="error",
+                    evidence={"dataset_name": dataset_name, "search_context": str(search_context)},
+                )
+                print(pe.format())
+                raise IngestionError(pe.problem, tip=pe.fix)
 
         try:
             # ADR-013: Use 'input_fields' for raw ingestion mapping
@@ -98,11 +130,22 @@ class DataIngestor:
                 for key, props in fields_data.items():
                     if key not in post_rename_cols:
                         original = props.get("original_name", key)
-                        print(
-                            f"WARNING [Ingestor] Column '{key}' (source: '{original}') declared in "
-                            f"input_fields for '{dataset_name}' but not found in source file. "
-                            f"Downstream steps using this column will fail."
+                        pe = PipelineError(
+                            component="DataIngestor",
+                            problem=f"Column '{key}' declared in input_fields for '{dataset_name}' but not found in source file.",
+                            location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
+                            fix=(
+                                f"Check that the source TSV contains a column named '{original}'. "
+                                "Use 'original_name:' in the input_fields declaration to remap a differently-named column. "
+                                "Downstream wrangling steps referencing this column will fail."
+                            ),
+                            who="data_provider",
+                            category="ingestion",
+                            surface="data_import_panel",
+                            severity="warning",
+                            evidence={"slug": key, "expected_source_name": original, "available_columns": list(post_rename_cols)[:20]},
                         )
+                        print(pe.format())
 
             # --- Sanitize: strip whitespace + normalize null sentinels (INGEST-SANITIZE-1) ---
             # Runs after rename so column names are stable; runs before cast so empty strings
@@ -128,9 +171,26 @@ class DataIngestor:
                 lf = lf.with_columns(cast_exprs)
 
             return lf, resolved_path
-        except Exception as e:
-            raise ValueError(
-                f"Polars failed to parse or rename {resolved_path.name}. Error: {e}")
+        except (IngestionError, Exception) as e:
+            if isinstance(e, IngestionError):
+                raise
+            pe = PipelineError(
+                component="DataIngestor",
+                problem=f"Failed to parse '{resolved_path.name}': {type(e).__name__}: {e}",
+                location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
+                fix=(
+                    "Verify that the file is a valid TSV (tab-separated) or Parquet file. "
+                    "Common causes: wrong delimiter, encoding issues (use UTF-8), "
+                    "truncated file, or a column type mismatch during cast."
+                ),
+                who="data_provider",
+                category="ingestion",
+                surface="data_import_panel",
+                severity="error",
+                evidence={"file": str(resolved_path), "error_type": type(e).__name__, "error_detail": str(e)[:200]},
+            )
+            print(pe.format())
+            raise IngestionError(pe.problem, tip=pe.fix) from e
 
     def validate_schema(self, lf: pl.LazyFrame, dataset_schema: Dict[str, Any]) -> bool:
         """

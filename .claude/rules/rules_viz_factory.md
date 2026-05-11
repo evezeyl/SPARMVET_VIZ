@@ -64,12 +64,15 @@ VizFactory supports named palette injection via the `palette:` key in manifests 
 ```yaml
 plot_defaults:
   palette: nvi_official      # applies to ALL plots in the manifest
+  # Full plot_defaults schema → rules_manifest_structure.md §10
 
 # Per-plot override (inside analysis_groups plot spec):
 palette: sparmvet_brand      # overrides plot_defaults.palette for this plot
 ```
 
 Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none (matplotlib default)**.
+
+`palette` is one of several `plot_defaults` keys. The authoritative schema (palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation toggles) is documented at `rules_manifest_structure.md §10`. Unknown keys emit `PipelineError(severity: warning, who: manifest_author, surface: notification)`.
 
 ### 6c. Scale injection rules
 
@@ -106,4 +109,4 @@ Plot configuration resolves through a **five-tier priority cascade** at one merg
 - Unknown keys in `plot_defaults` emit `PipelineError(severity: warning, who: manifest_author, surface: notification)` per ADR-079. Non-fatal.
 - §6 above describes today's `_apply_palette` behaviour — under the cascade it remains the renderer for the resolved `palette:` key (now produced by the cascade resolver, not read directly from the manifest dict). Behaviour rules in §6c are unchanged.
 
-**Full design specification:** [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md). Implementation tasks: VIZFAC-RESOLVER-1, VIZFAC-RENDER-WIRE-1, VIZFAC-T3-OVERRIDE-1, VIZFAC-T3-EXPORT-1, VIZFAC-DEFAULTS-DOCS-1, VIZFAC-BLUEPRINT-FORM-1.
+**Full design specification:** [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md). Implementation tasks: ~~VIZFAC-RESOLVER-1~~ ✓, ~~VIZFAC-DEFAULTS-DOCS-1~~ ✓, ~~VIZFAC-RENDER-WIRE-1~~ ✓, VIZFAC-T3-OVERRIDE-1, VIZFAC-T3-EXPORT-1, VIZFAC-BLUEPRINT-FORM-1.

@@ -138,3 +138,57 @@ Completed items moved from `tasks.md` on 2026-05-11 cleanup. All items verified 
 ## VizFactory Cascade — VIZFAC-RESOLVER-1 (2026-05-11)
 
 - [x] **VIZFAC-RESOLVER-1** `[sonnet/high]`: Created `libs/viz_factory/src/viz_factory/plot_config_resolver.py` — `resolve_plot_config()`, `compute_optimisation_layer()`, `_dedupe_layers()`, `_normalise_spec()`, `_BUILTIN_DEFAULTS`. Pure functions, no plotnine import. 75 unit tests in `libs/viz_factory/tests/test_plot_config_resolver.py` — all pass. Full cascade truth table (L1→L5 theme/palette provenance, L3 axis-text emit + L4 dedup suppression, L5 mutex warn, geom accumulation, layer dedup). **Unblocks:** VIZFAC-RENDER-WIRE-1, VIZFAC-DEFAULTS-DOCS-1.
+
+---
+
+## VizFactory Cascade — VIZFAC-DEFAULTS-DOCS-1 (2026-05-11)
+
+- [x] **VIZFAC-DEFAULTS-DOCS-1** `[sonnet/low]`: Documented `plot_defaults:` allowed keys (design §7a) across three files:
+  - `rules_manifest_structure.md §10` — expanded from `{palette, theme}` stubs to full schema: `palette`, `theme`, `default_font_family`, `facet_panel_spacing`, `legend_position`, `optimisation{auto_axis_text, density_jitter, panel_spacing, legend_ncol}`. Removed VIZFAC-DEFAULTS-DOCS-1 placeholder note. Added §10a/§10b/§10c sub-headings.
+  - `rules_viz_factory.md §6b` — added cross-reference to `rules_manifest_structure.md §10` for full schema; noted unknown-key PipelineError. Updated §7 implementation task list (struck through completed tasks).
+  - `docs/appendix/manifest_structure.yaml` `plot_defaults_block` — expanded comment to reference cascade + unknown-key warning; added all §7a keys with inline comments. **Unblocks:** VIZFAC-BLUEPRINT-FORM-1.
+
+---
+
+## VizFactory Cascade — VIZFAC-RENDER-WIRE-1 (2026-05-11)
+
+- [x] **VIZFAC-RENDER-WIRE-1** `[sonnet/medium]`: Refactored `VizFactory.render()` to use `resolve_plot_config()` as the single merge point for the five-tier cascade (VIZFAC-PLOT-CASCADE-1).
+  - **Files changed:** `libs/viz_factory/src/viz_factory/viz_factory.py`
+  - **What changed:** render() now calls `resolve_plot_config(raw_spec, plot_defaults, df_pandas)` after filter pushdown and a single `df.collect().to_pandas()` call. Walks `resolved["layers"]` to apply components; batches `element_text` layers into one `theme()` call. Derives `has_fill_scale`/`has_color_scale` from `resolved["palette_scope"]`. Emits print warnings (ADR-079 marker) for `_unknown_plot_defaults_keys` and `_l5_mutex_warn`.
+  - **Removed from render() path:** `_standardize_config()`, separate theme/coord/facet injection guards, `_auto_adjust_axis_labels()` (all now handled by `_normalise_spec()` + `compute_optimisation_layer()` in the resolver). Methods kept as private deprecated members.
+  - **New import:** `from viz_factory.plot_config_resolver import resolve_plot_config`
+  - **Verification:** 195/195 viz_factory tests pass; 97/97 fast regression baseline green.
+  - **Unblocks:** VIZFAC-T3-OVERRIDE-1 (L5 aesthetic_override now flows through resolved["layers"]).
+
+---
+
+## ADR-079 Phase 2 — DIAG-RUNTIME-ASSEMBLER-1 (2026-05-11)
+
+- [x] **DIAG-RUNTIME-ASSEMBLER-1** `[sonnet/medium]`: Retrofitted `libs/transformer/src/transformer/data_assembler.py` with structured PipelineError diagnostics (ADR-079 Phase 2).
+  - **Files changed:** `libs/transformer/src/transformer/data_assembler.py`
+  - **What changed:** All 4 error paths converted from bare `ValueError`/`print`+`continue` to `PipelineError` + `raise TransformationError`:
+    1. No recipe / no ingredients: `ValueError` → `PipelineError(category="assembly", who="manifest_author") + TransformationError`
+    2. Missing `right_ingredient`: `ValueError` → structured PipelineError with available ingredient list
+    3. Missing join key: was `print("WARNING...") + continue` (silent skip, bad data produced) → now `PipelineError + raise TransformationError` (behavior fix — no longer silently skips!)
+    4. Action execution: wrapped `get_action_function()` + `action_func()` in try/except catching `ValueError`, `ColumnNotFoundError`, `SchemaError`, generic `Exception` → PipelineError + TransformationError for each
+  - **New imports:** `from utils.pipeline_error import PipelineError` (already had `TransformationError`)
+  - **Updated `@deps` block:** added `pipeline_error.py` to `consumes:`
+  - **Verification:** 168/168 transformer tests pass.
+  - **Key behavior fix:** Missing join key previously silently continued with no error (wrong data produced). Now raises immediately with a diagnostic that identifies the affected step and available keys.
+
+---
+
+## ADR-079 Phase 2 — DIAG-RUNTIME-WRANGLER-1 (2026-05-11)
+
+- [x] **DIAG-RUNTIME-WRANGLER-1** `[sonnet/medium]`: Retrofitted `libs/transformer/src/transformer/data_wrangler.py` with structured PipelineError diagnostics (ADR-079 Phase 2).
+  - **Files changed:** `libs/transformer/src/transformer/data_wrangler.py`
+  - **What changed:**
+    1. Added `from utils.pipeline_error import PipelineError` import
+    2. Updated `@deps` block to document `pipeline_error.py` dependency
+    3. Changed `for rule in wrangling_rules:` → `for step_idx, rule in enumerate(wrangling_rules):` for step-level location reporting in PipelineError
+    4. Missing `action` key: `raise ValueError` → `PipelineError(category="wrangling") + raise TransformationError` with `evidence={"step_keys": str(list(rule.keys()))}`
+    5. Missing columns: upgraded existing bare `TransformationError` to emit `PipelineError` first with full evidence dict (`missing_columns`, `near_match`, `available_columns[:20]`)
+    6. Unregistered action: `ValueError` from registry → `PipelineError + raise TransformationError from exc`
+    7. `action_func()` execution: try/except for `ColumnNotFoundError` and generic `Exception` → PipelineError + TransformationError for each
+  - **Verification:** 168/168 transformer tests pass.
+  - **Unblocks:** DIAG-RUNTIME-AUDIT-1 (Phase 3 — UI sink for structured errors).

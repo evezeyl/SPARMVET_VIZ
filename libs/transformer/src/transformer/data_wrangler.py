@@ -1,6 +1,7 @@
 # @deps
 # provides: class:DataWrangler, method:_resolve_tier, method:run
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
+#           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-WRANGLER-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/debug_wrangler.py
 # doc: .claude/rules/rules_data_engine.md
 # @end_deps
@@ -9,6 +10,7 @@ from typing import Dict, Any, List
 # Import the registry functions
 from transformer.registry import get_action_function
 from utils.errors import TransformationError, ManifestError
+from utils.pipeline_error import PipelineError
 
 
 class DataWrangler:
@@ -105,11 +107,26 @@ class DataWrangler:
 
         transformed_lf = lf
 
-        for rule in wrangling_rules:
+        for step_idx, rule in enumerate(wrangling_rules):
             action_name = rule.get("action")
             if not action_name:
-                raise ValueError(
-                    "A wrangling rule is missing the 'action' key.")
+                pe = PipelineError(
+                    component="DataWrangler",
+                    problem=f"Wrangling step {step_idx} is missing the 'action' key.",
+                    location=f"wrangling step {step_idx}",
+                    fix=(
+                        "Every wrangling step must use the canonical 'action:' key format. "
+                        "Shorthand like '- mutate: [...]' is silently ignored by the engine."
+                    ),
+                    who="manifest_author",
+                    category="wrangling",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"step_keys": str(list(rule.keys()))},
+                    reference="rules_manifest_structure.md §7",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix)
 
             # 1. Resolve targets (inject back into rule for standard spec compliance)
             raw_selectors = rule.get("columns", rule.get(
@@ -154,19 +171,82 @@ class DataWrangler:
                 if suggestions:
                     tip += f" Hint: Did you mean {list(suggestions.values())}?"
 
-                raise TransformationError(
-                    f"Action '{action_name}' failed. Missing columns: {missing}",
-                    tip=tip
+                pe = PipelineError(
+                    component="DataWrangler",
+                    problem=f"Action '{action_name}' — column(s) {missing} not found in current frame.",
+                    location=f"wrangling step {step_idx}: action='{action_name}'",
+                    fix=tip,
+                    who="manifest_author",
+                    category="wrangling",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={
+                        "missing_columns": missing,
+                        "near_match": str(suggestions) if suggestions else None,
+                        "available_columns": all_cols[:20],
+                    },
+                    reference="rules_manifest_structure.md §7",
                 )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix)
 
             # 2. Resolve primary keys for safety
             pks = [col for col, props in self.data_schema.items()
                    if isinstance(props, dict) and props.get("is_primary_key")]
             rule["__metadata__"] = {"primary_keys": pks}
 
-            # 3. Fetch and execute the action with (lf, spec) signature
-            action_func = get_action_function(action_name)
-            transformed_lf = action_func(transformed_lf, rule)
+            # 3. Fetch and execute the action (ADR-079 Phase 2 — DIAG-RUNTIME-WRANGLER-1).
+            try:
+                action_func = get_action_function(action_name)
+            except ValueError as exc:
+                pe = PipelineError(
+                    component="DataWrangler",
+                    problem=f"Action '{action_name}' is not registered.",
+                    location=f"wrangling step {step_idx}",
+                    fix=(
+                        f"'{action_name}' is not a registered wrangling action. "
+                        "See rules_persona_bioscientist.md §8 for the authoritative action list."
+                    ),
+                    who="manifest_author",
+                    category="wrangling",
+                    surface="plot_overlay",
+                    severity="error",
+                    reference="rules_persona_bioscientist.md §8",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix) from exc
+
+            try:
+                transformed_lf = action_func(transformed_lf, rule)
+            except pl.exceptions.ColumnNotFoundError as exc:
+                pe = PipelineError(
+                    component="DataWrangler",
+                    problem=f"Column not found during '{action_name}': {exc}",
+                    location=f"wrangling step {step_idx}: action='{action_name}'",
+                    fix="Verify the column name in the action spec matches the data schema exactly.",
+                    who="manifest_author",
+                    category="wrangling",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"polars_error": str(exc)},
+                    reference="rules_manifest_structure.md §7",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix) from exc
+            except Exception as exc:
+                pe = PipelineError(
+                    component="DataWrangler",
+                    problem=f"Action '{action_name}' raised {type(exc).__name__}: {exc}",
+                    location=f"wrangling step {step_idx}: action='{action_name}'",
+                    fix="Review the action parameters and the data state at this step.",
+                    who="manifest_author",
+                    category="wrangling",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix) from exc
 
         return transformed_lf
 

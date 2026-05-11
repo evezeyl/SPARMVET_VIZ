@@ -187,24 +187,44 @@ spec:
 
 ---
 
-## 10. `plot_defaults` Block (ADR-081, BP-COLOR-3)
+## 10. `plot_defaults` Block (ADR-081, BP-COLOR-3, VIZFAC-PLOT-CASCADE-1)
 
-> **Schema scope (designed 2026-05-10):** The full allowed-key set for `plot_defaults` is defined by [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md). The keys documented in this section (`palette`, `theme`) are the currently-implemented subset. Authors using keys outside §7a should expect a non-fatal `PipelineError(severity: warning, who: manifest_author)` once VIZFAC-DEFAULTS-DOCS-1 ships. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 spec > L3 optimisation > L2 plot_defaults > L1 built-ins).
+The optional `plot_defaults:` top-level key in a manifest sets defaults applied to every plot in that manifest. Individual plot specs may override any key. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 spec > L3 optimisation > L2 plot_defaults > L1 built-ins). Full cascade spec: [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md).
 
-The optional `plot_defaults:` top-level key in a manifest sets defaults applied to every plot in that manifest. Individual plot specs may override any key.
+### 10a. Allowed keys (authoritative — extend by ADR amendment only)
 
 ```yaml
 plot_defaults:
-  palette: nvi_official      # Named palette (see config/palettes.yaml or built-ins)
-  theme: theme_light         # Optional — default theme for all plots in this manifest
+  # Visual style
+  palette:             nvi_official       # project palette name or matplotlib name (see §10b)
+  theme:               theme_light        # registered theme component name (e.g. theme_bw)
+  default_font_family: "Liberation Sans"  # plotnine default font family
+
+  # Layout
+  facet_panel_spacing: 0.1    # float 0–1; plotnine default 0.05; increase for dense facets
+  legend_position:     "right" # "right" | "top" | "bottom" | "left" | "none"
+
+  # Optimisation toggles (reserved — disabled by default except auto_axis_text)
+  optimisation:
+    auto_axis_text: true   # auto-rotate axis labels when text is long (default true)
+    density_jitter: false  # jitter geom_point on dense scatter (default false)
+    panel_spacing:  false  # auto-adjust facet panel spacing (default false)
+    legend_ncol:    false  # auto-set legend column count (default false)
 ```
 
-### `palette` key
+**Unknown key warning:** keys not in the list above emit `PipelineError(severity: warning, who: manifest_author, surface: notification)`. Non-fatal — experimental keys are allowed — but the warning prevents silent typos.
+
+### 10b. `palette` key
 
 - Value must be either a project palette name (defined in `config/palettes.yaml`) or a matplotlib palette name (`Blues`, `viridis`, `Set1`, etc.).
-- VizFactory resolves the palette at render time via `_apply_palette()`.
+- VizFactory resolves the palette at render time via the cascade resolver.
 - Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none**.
 - Scale injection is skipped when the plot mapping has no `fill` / `color` aesthetic, or when the manifest already declares a `scale_fill_*` / `scale_color_*` layer.
+
+### 10c. `theme` key
+
+- Value must be a registered theme component name. Examples: `theme_bw`, `theme_light`, `theme_minimal`, `theme_dashboard`.
+- Per-plot `theme:` in the spec overrides this default (L4 wins over L2).
 
 ### Built-in palettes (always available, no `config/palettes.yaml` required)
 

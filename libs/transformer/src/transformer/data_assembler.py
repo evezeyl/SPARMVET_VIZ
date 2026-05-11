@@ -1,6 +1,7 @@
 # @deps
 # provides: class:DataAssembler, method:assemble
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
+#           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-ASSEMBLER-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
 # doc: .claude/rules/rules_manifest_structure.md#7
 # @end_deps
@@ -9,6 +10,8 @@ from typing import Dict, List, Any
 import polars as pl
 from transformer.registry import get_action_function
 from utils.hashing import generate_config_hash, get_parquet_metadata_hash
+from utils.errors import TransformationError
+from utils.pipeline_error import PipelineError
 
 
 class DataAssembler:
@@ -93,8 +96,19 @@ class DataAssembler:
         if not recipe or len(self.ingredients) == 0:
             if len(self.ingredients) == 1:
                 return list(self.ingredients.values())[0]
-            raise ValueError(
-                "Assembly failed: No recipe provided and no ingredients found.")
+            pe = PipelineError(
+                component="DataAssembler",
+                problem="No recipe and no ingredients — cannot assemble.",
+                location="assemble() entry",
+                fix="Verify that the manifest declares at least one data_schema and a join_manifests recipe.",
+                who="manifest_author",
+                category="assembly",
+                surface="plot_overlay",
+                severity="error",
+                reference="rules_manifest_structure.md §7",
+            )
+            print(pe.format())
+            raise TransformationError(pe.problem, tip=pe.fix)
 
         # --- Decision Metadata Hash Calculation (ADR-024 refinement) ---
         # ADR-016: We hash a clean copy of the recipe to avoid mutation-induced invalidation.
@@ -145,11 +159,23 @@ class DataAssembler:
             # Resolve the right-hand ingredient if it's a join-type action
             right_id = step.get("right_ingredient")
             if right_id:
-                # STRICT REQUIREMENT: Crash if ingredient is missing (User Correction)
+                # Crash if ingredient is missing — the manifest's right_ingredient key is wrong.
                 if right_id not in self.ingredients:
                     available = ", ".join(self.ingredients.keys())
-                    raise ValueError(
-                        f"Assembly failed: Ingredient '{right_id}' required by {action_name} step is missing. Available: {available}")
+                    pe = PipelineError(
+                        component="DataAssembler",
+                        problem=f"Ingredient '{right_id}' required by '{action_name}' step is not available.",
+                        location=f"assembly step {i}: action='{action_name}', right_ingredient='{right_id}'",
+                        fix=f"Check right_ingredient spelling. Available ingredients: {available}",
+                        who="manifest_author",
+                        category="assembly",
+                        surface="plot_overlay",
+                        severity="error",
+                        evidence={"available_ingredients": available},
+                        reference="rules_manifest_structure.md §7",
+                    )
+                    print(pe.format())
+                    raise TransformationError(pe.problem, tip=pe.fix)
 
                 # DEFENSIVE: Skip if join keys are missing (ADR-012)
                 # We check multiple possible keys to be extremely robust
@@ -159,11 +185,24 @@ class DataAssembler:
                             step.get(True))  # Handle YAML boolean 'on'
 
                 if action_name in ("join", "join_filter") and not join_key:
-                    # Log the keys actually found to help debugging manifest syntax
                     actual_keys = list(step.keys())
-                    print(
-                        f"WARNING: Missing join key for {right_id}. Found keys: {actual_keys}. Skipping join.")
-                    continue
+                    pe = PipelineError(
+                        component="DataAssembler",
+                        problem=f"Join key missing for '{action_name}' with right_ingredient='{right_id}'.",
+                        location=f"assembly step {i}: action='{action_name}'",
+                        fix=(
+                            "Add 'on': <column> to the join step (quoted — 'on' is a YAML boolean trap). "
+                            f"Found keys in step: {actual_keys}"
+                        ),
+                        who="manifest_author",
+                        category="assembly",
+                        surface="plot_overlay",
+                        severity="error",
+                        evidence={"step_keys_found": str(actual_keys)},
+                        reference="docs/appendix/manifest_structure.yaml §yaml_resilience",
+                    )
+                    print(pe.format())
+                    raise TransformationError(pe.problem, tip=pe.fix)
 
                 step["__right_df__"] = self.ingredients[right_id]
 
@@ -176,8 +215,80 @@ class DataAssembler:
                 if action_name == "join" and right_id == first_key:
                     continue
 
-            # Execute the action via the shared registry (ADR-018)
-            action_func = get_action_function(action_name)
-            consolidated_lf = action_func(consolidated_lf, step)
+            # Execute the action via the shared registry (ADR-018).
+            # Wrap Polars and registry errors in PipelineError for structured diagnostics
+            # (ADR-079 Phase 2 — DIAG-RUNTIME-ASSEMBLER-1).
+            try:
+                action_func = get_action_function(action_name)
+            except ValueError as exc:
+                pe = PipelineError(
+                    component="DataAssembler",
+                    problem=f"Unknown assembly action '{action_name}'.",
+                    location=f"assembly step {i}",
+                    fix=(
+                        f"'{action_name}' is not registered. Check the action name in the manifest recipe. "
+                        "See rules_persona_bioscientist.md §8 for the authoritative action list."
+                    ),
+                    who="manifest_author",
+                    category="assembly",
+                    surface="plot_overlay",
+                    severity="error",
+                    reference="rules_persona_bioscientist.md §8",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix) from exc
+
+            try:
+                consolidated_lf = action_func(consolidated_lf, step)
+            except pl.exceptions.ColumnNotFoundError as exc:
+                pe = PipelineError(
+                    component="DataAssembler",
+                    problem=f"Column not found during '{action_name}': {exc}",
+                    location=f"assembly step {i}: action='{action_name}'",
+                    fix=(
+                        "Verify the column exists at this point in the recipe. "
+                        "Columns from a joined ingredient are only available AFTER the join step."
+                    ),
+                    who="manifest_author",
+                    category="assembly",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"polars_error": str(exc)},
+                    reference="rules_persona_bioscientist.md §3-B",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix) from exc
+            except pl.exceptions.SchemaError as exc:
+                pe = PipelineError(
+                    component="DataAssembler",
+                    problem=f"Schema mismatch during '{action_name}': {exc}",
+                    location=f"assembly step {i}: action='{action_name}'",
+                    fix=(
+                        "Join keys on both sides must share the same dtype. "
+                        "Add a cast step before the join to normalise the mismatched column."
+                    ),
+                    who="manifest_author",
+                    category="assembly",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"polars_error": str(exc)},
+                    reference="rules_persona_bioscientist.md §3-B",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix) from exc
+            except Exception as exc:
+                pe = PipelineError(
+                    component="DataAssembler",
+                    problem=f"Assembly step '{action_name}' raised an unexpected error: {type(exc).__name__}",
+                    location=f"assembly step {i}: action='{action_name}'",
+                    fix="Review the step parameters and the data state at this point in the recipe.",
+                    who="manifest_author",
+                    category="assembly",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix) from exc
 
         return consolidated_lf

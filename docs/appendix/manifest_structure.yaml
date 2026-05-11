@@ -51,20 +51,29 @@ analysis_groups_structure:
             label: "Human-readable plot name"
             spec: !include <basename>/plots/<plot_id>.yaml
   plot_defaults_block: |
-    # Optional manifest-level defaults applied to every plot in the manifest.
-    # Individual plot specs may override any key.
+    # Optional manifest-level defaults applied to every plot (L2 in five-tier cascade).
+    # Individual plot specs may override any key (L4 wins over L2).
+    # Unknown keys → PipelineError(severity: warning, who: manifest_author, surface: notification).
+    # Authoritative schema: rules_manifest_structure.md §10 / plot_config_cascade.md §7a.
     #
     # palette: (BP-COLOR-3) — named palette applied as fill/colour scale to every plot.
     #   Resolution order: plot-level palette > plot_defaults.palette > matplotlib default.
-    #   Value must be either:
-    #     a) A project palette name defined in config/palettes.yaml  → scale_*_manual (hex list)
-    #     b) A matplotlib palette name (e.g. "Blues", "viridis", "Set1") → scale_*_brewer / scale_*_viridis_d
-    #   The scale is injected only for aesthetics present in the plot mapping (fill / color).
-    #   It is never injected when the manifest already declares a scale_fill_* or scale_color_* layer.
+    #   Value: a) project palette from config/palettes.yaml → scale_*_manual (hex list)
+    #          b) matplotlib name (e.g. "Blues", "viridis") → scale_*_brewer / scale_*_viridis_d
+    #   Only injected for aesthetics in the plot mapping (fill / color).
+    #   Never injected when manifest already declares scale_fill_* or scale_color_* layer.
     #
     plot_defaults:
       palette: nvi_official              # Named palette from config/palettes.yaml (or matplotlib)
-      theme: theme_light                 # Optional — applies to all plots as the default theme
+      theme: theme_light                 # Registered theme component name (e.g. theme_bw)
+      default_font_family: "Liberation Sans"  # plotnine font family default
+      facet_panel_spacing: 0.1          # float 0–1; plotnine default 0.05
+      legend_position: "right"          # "right" | "top" | "bottom" | "left" | "none"
+      optimisation:                     # All default false except auto_axis_text
+        auto_axis_text: true
+        density_jitter: false
+        panel_spacing: false
+        legend_ncol: false
 
   plot_spec_file_format: |
     spec:

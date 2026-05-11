@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-11 (session hygiene: archived DIAG-RUNTIME-BASE-1, BP-LINEAGE-NAV-1, GALLERY-CLONE-DECOUPLE-1, VIZFAC-RESOLVER-1; unblocked DIAG-RUNTIME Phase 2 × 6, 22-J-10, VIZFAC-RENDER-WIRE-1, VIZFAC-DEFAULTS-DOCS-1) by @dasharch
+**Last Updated:** 2026-05-11 (VIZFAC-RENDER-WIRE-1 complete: render() wired to resolve_plot_config(); 195 + 97 tests green) by @dasharch
 
 ---
 
@@ -51,8 +51,9 @@ Items with no blockers — can be started immediately.
 
 - [ ] **DIAG-RUNTIME-AUDIT-1** `[sonnet/medium]`: Phase 3 — `session_pipeline_errors` reactive value in `server.py` + audit panel "Pipeline Issues" sub-section + `report.qmd` "Pipeline Issues During Session" section + T3 Ghost `pipeline_errors:` extension. Depends on DIAG-RUNTIME-BASE-1.
 - [ ] **DIAG-RUNTIME-INGESTION-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Retrofit `libs/ingestion/src/ingestion/ingestor.py` — file-not-found, encoding errors, delimiter mismatch, schema mismatches, sanitization rejections. `who: data_provider` for content errors, `who: analyst` for upload errors. `surface: data_import_panel`. ADR-079 Phase 2.
-- [ ] **DIAG-RUNTIME-ASSEMBLER-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Retrofit `libs/transformer/src/transformer/data_assembler.py` — `ColumnNotFoundError`, `SchemaError` on join, dtype mismatches, empty result frames, Cartesian-product blowups. `who: manifest_author`. `surface: plot_overlay` (with `plot_scope` populated). ADR-079 Phase 2.
-- [ ] **DIAG-RUNTIME-WRANGLER-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Retrofit `libs/transformer/src/transformer/data_wrangler.py` — action-name not registered, action arg validation against `ui_schema`. `who: manifest_author` for manifest-source nodes, `who: analyst` for T3 sandbox nodes. `surface: plot_overlay` or `audit_panel` depending on origin. ADR-079 Phase 2.
+> DIAG-RUNTIME-ASSEMBLER-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
+> DIAG-RUNTIME-WRANGLER-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 - [ ] **DIAG-RUNTIME-VIZFACTORY-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Retrofit `libs/viz_factory/src/viz_factory/viz_factory.py` — component not registered, missing required aesthetic, plotnine render exceptions. `who: manifest_author` for spec issues, `who: developer` for plotnine internals. `surface: plot_overlay`. ADR-079 Phase 2.
 - [ ] **DIAG-RUNTIME-T3APPLY-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: T3 Apply path failures in `app/handlers/audit_stack.py` — downstream invalidation, comment-gate violations. `who: analyst`. `surface: audit_panel`. ADR-079 Phase 2.
 - [ ] **DIAG-RUNTIME-BLUEPRINT-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Manifest fragment validation failures during BLUEPRINT IDE editing. `who: manifest_author`. `surface: blueprint_inline`. ADR-079 Phase 2.
@@ -71,8 +72,8 @@ Items with no blockers — can be started immediately.
 
 ### VizFactory Cascade — Unblocked 2026-05-11
 
-- [ ] **VIZFAC-RENDER-WIRE-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Refactor `VizFactory.render()` to use `resolve_plot_config()`. Move `factory_id` normalisation, flat-aesthetic promotion, and `_auto_adjust_axis_labels()` into the resolver. `viz_factory_integrity_suite` MUST pass unchanged.
-- [ ] **VIZFAC-DEFAULTS-DOCS-1** `[sonnet/low]` `[unblocked 2026-05-11]`: Document `plot_defaults:` allowed keys (design §7a) in `rules_manifest_structure.md §10`, `rules_viz_factory.md §6`, `docs/appendix/manifest_structure.yaml`. Unknown-key warning machinery emits `PipelineError(who: manifest_author, surface: notification)`.
+> VIZFAC-RENDER-WIRE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+> VIZFAC-DEFAULTS-DOCS-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ### Audit Fixes — Library Tests & Dependencies (2026-05-09)
 

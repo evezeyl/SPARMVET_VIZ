@@ -20,6 +20,7 @@ from __future__ import annotations
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3
 # consumes: app/modules/wrangle_studio.py, app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+#           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044
 # @end_deps
@@ -27,6 +28,7 @@ from __future__ import annotations
 from shiny import reactive, render, ui
 
 from transformer.data_wrangler import DataWrangler
+from utils.pipeline_error import PipelineError
 from app.modules.session_manager import (
     make_recipe_node,
     gatekeeper_blocked,
@@ -172,6 +174,19 @@ def define_server(input, output, session, *,
         # Gatekeeper over EVERYTHING (committed + pending across all plots)
         blocked = gatekeeper_blocked(all_committed + pending)
         if blocked:
+            blocked_types = list({n.get("node_type", "unknown") for n in blocked})
+            pe = PipelineError(
+                component="AuditStack",
+                problem=f"{len(blocked)} T3 node(s) are missing required reason fields.",
+                location="handle_apply()",
+                fix="Fill in the 'Reason' text field for every highlighted node before pressing Apply.",
+                who="analyst",
+                category="t3_apply",
+                surface="audit_panel",
+                severity="warning",
+                evidence={"blocked_count": len(blocked), "node_types": blocked_types},
+            )
+            print(pe.format())
             _notify(
                 f"⛔ {len(blocked)} node(s) require a reason before applying.",
                 type="error", duration=6,
@@ -674,5 +689,16 @@ def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None)
             label=state.get("t3_ghost_label", ""),
             notification_log=notif_log or [],
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        pe = PipelineError(
+            component="AuditStack",
+            problem=f"T3 ghost save failed: {type(exc).__name__}: {exc}",
+            location="_write_t3_ghost()",
+            fix="Check that the session directory is writable and the deployment profile 'user_sessions' path is valid. T3 state was applied in-memory but will not survive a page refresh.",
+            who="operator",
+            category="t3_apply",
+            surface="audit_panel",
+            severity="warning",
+            evidence={"session_key": session_key, "error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
+        )
+        print(pe.format())

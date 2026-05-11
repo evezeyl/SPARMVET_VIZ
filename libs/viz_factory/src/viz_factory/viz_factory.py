@@ -3,12 +3,16 @@ from plotnine import ggplot, aes
 from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
+from viz_factory.plot_config_resolver import resolve_plot_config
 from utils.errors import VisualizationError
+from utils.pipeline_error import PipelineError
 import difflib
 
 # @deps
 # provides: class:VizFactory, method:render, method:_apply_palette
 # consumes: libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENTS via get_component)
+#           libs/viz_factory/src/viz_factory/plot_config_resolver.py (resolve_plot_config — VIZFAC-RENDER-WIRE-1)
+#           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-VIZFACTORY-1)
 # consumed_by: app/handlers/home_theater.py, libs/viz_factory/tests/debug_gallery.py, app/src/server.py
 # doc: .claude/rules/rules_viz_factory.md
 # note: palette_registry is injected by app/src/server.py (bootloader.get_palettes()) — BP-COLOR-3
@@ -66,46 +70,44 @@ class VizFactory:
         """
         Main entry point for rendering a single plot by ID from a manifest.
         Supports both Polars LazyFrame and DataFrame.
+
+        Uses the five-tier plot config cascade (VIZFAC-PLOT-CASCADE-1):
+        L5 (T3 aesthetic_override) > L4 (spec) > L3 (optimisation) >
+        L2 (plot_defaults) > L1 (built-ins). Delegation to resolve_plot_config()
+        is the single merge point — _standardize_config and _auto_adjust_axis_labels
+        are no longer called from this path (VIZFAC-RENDER-WIRE-1).
         """
-        # Ensure it's a LazyFrame for consistent ADR-010 handling
+        # Ensure LazyFrame for consistent ADR-010 handling
         if isinstance(df, pl.DataFrame):
             df = df.lazy()
 
-        raw_plot_config = manifest.get('plots', {}).get(plot_id)
-        if not raw_plot_config:
-            raise KeyError(f"Plot ID '{plot_id}' not found in manifest.")
+        raw_spec = manifest.get('plots', {}).get(plot_id)
+        if not raw_spec:
+            pe = PipelineError(
+                component="VizFactory",
+                problem=f"Plot ID '{plot_id}' not found in manifest.",
+                location=f"VizFactory.render(plot_id='{plot_id}')",
+                fix=(
+                    "Verify that the plot_id is declared under 'analysis_groups.<group>.plots' "
+                    "in the manifest and that the `spec: !include` path resolves correctly."
+                ),
+                who="manifest_author",
+                category="visualization",
+                surface="plot_overlay",
+                severity="error",
+                evidence={"plot_id": plot_id, "available_plots": list(manifest.get("plots", {}).keys())},
+            )
+            print(pe.format())
+            raise VisualizationError(pe.problem, tip=pe.fix)
 
-        # 1. Standardize Manifest (Handle factory_id and flat aesthetics)
-        plot_config = self._standardize_config(
-            raw_plot_config, manifest.get('plot_defaults', {}))
+        plot_defaults = manifest.get('plot_defaults') or {}
 
-        # 2. Validate Aesthetics (ADR-034)
-        mapping_spec = plot_config.get('mapping', {})
-        all_cols = df.columns
-        for aesthetic, col_name in mapping_spec.items():
-            if col_name not in all_cols:
-                matches = difflib.get_close_matches(
-                    col_name, all_cols, n=1, cutoff=0.6)
-                tip = f"Ensure column '{col_name}' exists in the current dataset."
-                if matches:
-                    tip += f" Hint: Did you mean '{matches[0]}'?"
-                raise VisualizationError(
-                    f"Aesthetic '{aesthetic}' references unknown column '{col_name}'.",
-                    tip=tip
-                )
-
-        # Initialize mapping (Agnostic Mapping)
-        mapping = aes(**mapping_spec)
-
-        # 2. Tier 3: Apply UI-driven Filters (Predicate Pushdown)
-        # DEMO-4: read actual column dtype from the LF schema and coerce
-        # string filter values when the column is numeric. The UI sends
-        # string operands regardless of column type (selectize/text input).
-        # Without coercion, polars rejects "2022" > Float64 column, etc.
-        ui_filters = plot_config.get('filters', [])
+        # 1. Tier 3: Apply UI-driven filters (predicate pushdown on LazyFrame).
+        # Must happen before collect() to preserve lazy evaluation.
+        # DEMO-4: coerce string filter values to column dtype for numeric columns.
+        ui_filters = raw_spec.get('filters', [])
         if ui_filters:
-            print(
-                f"  └── Tier 3 (Leaf): Applying {len(ui_filters)} UI filters...")
+            print(f"  └── Tier 3 (Leaf): Applying {len(ui_filters)} UI filters...")
             try:
                 schema = df.collect_schema()
                 actual_dtypes = {n: schema[n] for n in schema.names()}
@@ -162,10 +164,7 @@ class VizFactory:
                     df = df.filter(expr if op == "in" else ~expr)
                     continue
 
-                # Scalar ops: coerce value to column dtype before compare.
-                # Log when a string operand reaches a numeric column — the
-                # filter widget should be emitting native numerics already
-                # (UX-FILTER-1); a string here means a bypass we should fix.
+                # String operand on a numeric column — coerce before compare.
                 if is_numeric and isinstance(val, str):
                     print(
                         f"[viz_factory] WARNING: string operand on numeric column "
@@ -187,77 +186,160 @@ class VizFactory:
                 elif op == "le":
                     df = df.filter(pl.col(col) <= val)
 
-        # 3. Instantiate the ggplot object & ADR-010: Hand-off to Pandas strictly at init.
-        # We materialise here after all UI/Leaf filters are pushed down.
-        p = ggplot(df.collect().to_pandas(), mapping)
+        # 2. Single materialisation point — after all Polars filters (ADR-010).
+        df_pandas = df.collect().to_pandas()
 
-        # 3. Apply Layers sequentially
-        layers = plot_config.get('layers', [])
-        applied_layers = []
-        for layer_spec in layers:
-            layer_name = layer_spec.get('name')
-            layer_params = layer_spec.get('params', {})
+        # 3. Resolve five-tier cascade (L1 built-ins through L5 T3 override).
+        resolved = resolve_plot_config(raw_spec, plot_defaults, df_pandas)
 
-            # Fetch the registered component
-            component_func = get_component(layer_name)
+        # 4. Emit structured warnings for unrecognised plot_defaults keys and L5 mutex (ADR-079).
+        for key in resolved["_unknown_plot_defaults_keys"]:
+            pe = PipelineError(
+                component="VizFactory",
+                problem=f"Unknown plot_defaults key '{key}' — ignored.",
+                location=f"VizFactory.render(plot_id='{plot_id}')",
+                fix=(
+                    f"Remove or correct the key '{key}' in the manifest 'plot_defaults:' block. "
+                    "Valid keys: palette, theme, default_font_family, facet_panel_spacing, "
+                    "legend_position, optimisation. See rules_manifest_structure.md §10."
+                ),
+                who="manifest_author",
+                category="visualization",
+                surface="notification",
+                severity="warning",
+                evidence={"unknown_key": key},
+                reference="rules_manifest_structure.md §10",
+            )
+            print(pe.format())
+        if resolved["_l5_mutex_warn"]:
+            pe = PipelineError(
+                component="VizFactory",
+                problem="T3 aesthetic_override supplied both 'fill_color' and 'fill_palette' (mutex). fill_palette takes precedence.",
+                location=f"VizFactory.render(plot_id='{plot_id}')",
+                fix="Use either 'fill_color' (hex) OR 'fill_palette' (palette name) — not both. See ui_implementation_contract.md §12g.9.",
+                who="analyst",
+                category="t3_apply",
+                surface="audit_panel",
+                severity="warning",
+            )
+            print(pe.format())
 
-            # Pipe the plot object through the component
-            p = component_func(p, layer_params)
-            applied_layers.append(layer_name)
+        # 5. Validate aesthetics — all mapped columns must exist in the dataset.
+        mapping_spec = resolved["mapping"]
+        all_cols = list(df_pandas.columns)
+        for aesthetic, col_name in mapping_spec.items():
+            if col_name not in all_cols:
+                matches = difflib.get_close_matches(col_name, all_cols, n=1, cutoff=0.6)
+                tip = f"Ensure column '{col_name}' exists in the target_dataset after all wrangling and assembly steps."
+                if matches:
+                    tip += f" Hint: Did you mean '{matches[0]}'?"
+                pe = PipelineError(
+                    component="VizFactory",
+                    problem=f"Aesthetic '{aesthetic}' references unknown column '{col_name}'.",
+                    location=f"VizFactory.render(plot_id='{plot_id}')",
+                    fix=tip,
+                    who="manifest_author",
+                    category="visualization",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={
+                        "aesthetic": aesthetic,
+                        "column": col_name,
+                        "near_match": matches[0] if matches else None,
+                        "available_columns": all_cols[:20],
+                    },
+                    reference="rules_manifest_structure.md §8",
+                )
+                print(pe.format())
+                raise VisualizationError(pe.problem, tip=pe.fix)
+
+        # 6. Build the ggplot object.
+        p = ggplot(df_pandas, aes(**mapping_spec))
+
+        # 7. Apply resolved layers sequentially.
+        # element_text layers are batched and applied together via a single theme()
+        # call to avoid redundant theme accumulation overhead.
+        element_text_batch: dict = {}
+        for layer_spec in resolved["layers"]:
+            layer_name = layer_spec.get("name")
+            # Strip internal _tier / _meta keys before passing to components.
+            layer_params = {k: v for k, v in layer_spec.get("params", {}).items()}
+
+            if layer_name == "element_text":
+                # Collect axis-text overrides; target is the theme kwarg name.
+                target = layer_params.pop("target", None)
+                if target:
+                    element_text_batch[target] = layer_params
+                continue
+
+            try:
+                component_func = get_component(layer_name)
+            except ValueError as exc:
+                all_registered = list(__import__("viz_factory.registry", fromlist=["PLOT_COMPONENTS"]).PLOT_COMPONENTS.keys())
+                matches = difflib.get_close_matches(layer_name, all_registered, n=1, cutoff=0.6)
+                pe = PipelineError(
+                    component="VizFactory",
+                    problem=f"Layer component '{layer_name}' is not registered.",
+                    location=f"VizFactory.render(plot_id='{plot_id}')",
+                    fix=(
+                        f"'{layer_name}' is not a registered plot component. "
+                        + (f"Did you mean '{matches[0]}'? " if matches else "")
+                        + "See rules_viz_factory.md §1 and libs/viz_factory/src/viz_factory/ for the component list."
+                    ),
+                    who="manifest_author",
+                    category="visualization",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"layer_name": layer_name, "near_match": matches[0] if matches else None},
+                    reference="rules_viz_factory.md §1",
+                )
+                print(pe.format())
+                raise VisualizationError(pe.problem, tip=pe.fix) from exc
+            try:
+                p = component_func(p, layer_params)
+            except Exception as exc:
+                pe = PipelineError(
+                    component="VizFactory",
+                    problem=f"Layer '{layer_name}' raised {type(exc).__name__}: {exc}",
+                    location=f"VizFactory.render(plot_id='{plot_id}')",
+                    fix="Review the layer parameters in the manifest spec. Check that all parameter values match the plotnine API for this component.",
+                    who="manifest_author",
+                    category="visualization",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"layer_name": layer_name, "params": str(layer_params)[:200], "error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
+                )
+                print(pe.format())
+                raise VisualizationError(pe.problem, tip=pe.fix) from exc
             print(f"Applied layer: {layer_name}")
 
-        # 4. Inject Defaults for missing layer categories
-        # Theme: Manifest defaults or fallback
-        if not any(l.startswith("theme_") or l.startswith("element_") for l in applied_layers):
-            theme_name = plot_config.get('theme', _DEFAULT_THEME)
-            try:
-                theme_func = get_component(theme_name)
-                p = theme_func(p, {})
-                print(f"Applied default theme: {theme_name}")
-            except:
-                from plotnine import theme_bw
-                p = p + theme_bw()
-                print(f"Applied fallback theme: theme_bw")
+        # Apply batched element_text axis overrides (L3 optimisation + any L4/L5).
+        if element_text_batch:
+            from plotnine import theme, element_text
+            theme_kwargs = {
+                target: element_text(**et_params)
+                for target, et_params in element_text_batch.items()
+            }
+            p = p + theme(**theme_kwargs)
+            print(f"Applied axis text overrides: {list(element_text_batch.keys())}")
 
-        # Coord default: coord_cartesian
-        if not any(l.startswith("coord_") for l in applied_layers):
-            from plotnine import coord_cartesian
-            p = p + coord_cartesian()
-            print(f"Applied default layer: {_DEFAULT_COORD}")
-
-        # Facet: Handle flat 'facet_by' or default
-        if not any(l.startswith("facet_") for l in applied_layers):
-            facet_col = plot_config.get('facet_by')
-            if facet_col:
-                from plotnine import facet_wrap
-                p = p + facet_wrap(f"~{facet_col}")
-                print(f"Applied facet_wrap: ~{facet_col}")
-            else:
-                from plotnine import facet_null
-                p = p + facet_null()
-                print(f"Applied default layer: {_DEFAULT_FACET}")
-
-        # Labels — support both flat 'title' and structured 'labels' block
-        # e.g. labels: {title: "...", x: "Year", fill: "Multiresistant"}
-        labels_block = plot_config.get('labels', {})
-        title = plot_config.get('title')
-        if title and 'title' not in labels_block:
-            labels_block['title'] = title
+        # 8. Apply flat labels / guides blocks (backwards-compat with spec-level dicts).
+        # In typical manifests these come from a labs layer; the flat keys are legacy.
+        labels_block = resolved.get("labels", {})
         if labels_block:
             from plotnine import labs
             p = p + labs(**labels_block)
             print(f"Applied labels: {list(labels_block.keys())}")
 
-        # Guides — support structured 'guides' block
-        # e.g. guides: {fill: {name: guide_legend, title: "Multiresistant"}}
-        guides_block = plot_config.get('guides', {})
+        guides_block = resolved.get("guides", {})
         if guides_block:
             from plotnine import guides, guide_legend, guide_colorbar
             guide_map = {}
             _guide_ctors = {"guide_legend": guide_legend, "guide_colorbar": guide_colorbar}
             for aes_key, guide_spec in guides_block.items():
                 if isinstance(guide_spec, dict):
-                    ctor_name = guide_spec.pop('name', 'guide_legend')
+                    guide_spec = dict(guide_spec)  # copy before pop
+                    ctor_name = guide_spec.pop("name", "guide_legend")
                     ctor = _guide_ctors.get(ctor_name, guide_legend)
                     guide_map[aes_key] = ctor(**guide_spec)
                 elif guide_spec is False or guide_spec == "none":
@@ -266,37 +348,14 @@ class VizFactory:
                 p = p + guides(**guide_map)
                 print(f"Applied guides: {list(guide_map.keys())}")
 
-        # 5. Auto-adjust axis label orientation/size.
-        # Per-axis guard: only skip an axis if the manifest already addressed it
-        # via an explicit element_text layer targeting that axis specifically.
-        manifest_axis_x_set = any(
-            l.get("name") == "element_text" and
-            l.get("params", {}).get("target", "").startswith("axis_text_x")
-            for l in plot_config.get("layers", [])
-        )
-        manifest_axis_y_set = any(
-            l.get("name") == "element_text" and
-            l.get("params", {}).get("target", "").startswith("axis_text_y")
-            for l in plot_config.get("layers", [])
-        )
-        p = self._auto_adjust_axis_labels(
-            p,
-            df_collected=p.data,
-            x_col=None if manifest_axis_x_set else mapping_spec.get("x"),
-            y_col=None if manifest_axis_y_set else mapping_spec.get("y"),
-        )
-
-        # 6. Palette injection (BP-COLOR-3)
-        # Resolution: plot-level 'palette' > manifest 'plot_defaults.palette' > none.
-        # _standardize_config already merged plot_defaults into plot_config, so a
-        # manifest-level default is visible here as plot_config['palette'].
-        palette_name = plot_config.get("palette")
+        # 9. Palette injection (BP-COLOR-3, §6c).
+        # palette_scope encodes which aesthetics still need a scale after dedup —
+        # has_fill_scale / has_color_scale invert this for _apply_palette's API.
+        palette_name = resolved["palette"]
         if palette_name:
-            has_fill_scale = any(l.startswith("scale_fill_") for l in applied_layers)
-            has_color_scale = any(
-                l.startswith("scale_color_") or l.startswith("scale_colour_")
-                for l in applied_layers
-            )
+            palette_scope = resolved["palette_scope"]
+            has_fill_scale = "fill" not in palette_scope
+            has_color_scale = "color" not in palette_scope
             p = self._apply_palette(
                 p, palette_name, mapping_spec, has_fill_scale, has_color_scale
             )
@@ -495,10 +554,18 @@ class VizFactory:
                         p = p + scale_color_viridis_d(option=palette_name)
                     print(f"[VizFactory] Applied viridis palette '{palette_name}'")
                 except Exception as exc:
-                    print(
-                        f"[VizFactory] WARNING: palette '{palette_name}' failed "
-                        f"(scale_*_viridis_d): {exc}"
+                    pe = PipelineError(
+                        component="VizFactory",
+                        problem=f"Viridis palette '{palette_name}' failed to apply: {exc}",
+                        location="_apply_palette",
+                        fix=f"Check that '{palette_name}' is a valid viridis option (viridis, plasma, magma, inferno, cividis).",
+                        who="manifest_author",
+                        category="visualization",
+                        surface="plot_overlay",
+                        severity="warning",
+                        evidence={"palette_name": palette_name, "error": str(exc)[:200]},
                     )
+                    print(pe.format())
             else:
                 try:
                     from plotnine import scale_fill_brewer, scale_color_brewer
@@ -508,11 +575,22 @@ class VizFactory:
                         p = p + scale_color_brewer(palette=palette_name)
                     print(f"[VizFactory] Applied brewer palette '{palette_name}'")
                 except Exception as exc:
-                    print(
-                        f"[VizFactory] WARNING: palette '{palette_name}' not found in "
-                        f"project registry or matplotlib. Check the palette name in the "
-                        f"manifest. Valid project palettes: "
-                        f"{list(self._palette_registry.keys()) or ['(none registered)']}"
+                    pe = PipelineError(
+                        component="VizFactory",
+                        problem=f"Palette '{palette_name}' not found in project registry or plotnine/RColorBrewer.",
+                        location="_apply_palette",
+                        fix=(
+                            f"Check the palette name in the manifest. "
+                            f"Valid project palettes: {list(self._palette_registry.keys()) or ['(none registered)']}. "
+                            "Or use a matplotlib/RColorBrewer name such as 'Blues', 'Set1', 'viridis'."
+                        ),
+                        who="manifest_author",
+                        category="visualization",
+                        surface="plot_overlay",
+                        severity="warning",
+                        evidence={"palette_name": palette_name, "error": str(exc)[:200]},
+                        reference="rules_viz_factory.md §6c",
                     )
+                    print(pe.format())
 
         return p
