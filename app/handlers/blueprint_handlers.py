@@ -519,7 +519,7 @@ def define_server(input, output, session, *,
 
     # ── Shiny reactive handlers ───────────────────────────────────────────────
 
-    # --- 🧬 Blueprint Architect Visual Sync (ADR-039) ---
+    # --- Blueprint Architect Visual Sync (ADR-039) ---
     @reactive.Effect
     def sync_blueprint_mapper():
         """Syncs TubeMap from the Architect's own manifest selector."""

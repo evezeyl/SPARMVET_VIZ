@@ -345,3 +345,24 @@ Completed items moved from `tasks.md` on 2026-05-11 cleanup. All items verified 
   - `config/deployment/README.md` — updated directory tree; new "Posit Connect Deployment" section with quick-start commands, required env vars table, and explanation of the wheel-build approach.
 - **Connect-readiness decision:** `pip wheel --no-deps -w pkgs/` for all libs, then `--find-links pkgs/` in requirements. This lets Connect's `pip install -r requirements-connect.txt` resolve local packages from the bundle without editable installs.
 - **Entry point:** `app/src/main:app` (ASGI Shiny application object).
+
+---
+
+### CODE-COMMENT-STANDARD [DONE] (Session 9, 2026-05-11)
+- **Task:** Enforce emoji ban + comment philosophy across `libs/` + `app/`. `[sonnet/low]`
+- **Scan:** `grep -rnP '#.*[\x{1F300}-\x{1F9FF}\x{2600}-\x{27BF}]|# TODO|# FIXME|# XXX' libs/ app/ --include="*.py"`
+- **Found:** 8 violations — all in `app/` (test_shiny_smoke.py:59, gallery_handlers.py:54, blueprint_handlers.py:522, home_theater.py 5 lines).
+- **Fixed:** Stripped emoji from all 8 inline comments via sed. `exporter.py:32` emoji preserved — it is inside `f.write()` writing markdown content (allowed per rule §1: generated output, not source).
+- **Verification:** Re-scan returns 0. App import OK. 192/192 fast regression tests pass.
+
+---
+
+### ADR-011 cross-lib violations [DONE] (Session 11, 2026-05-11)
+- **Task:** Audit + fix remaining cross-lib import violations. `[opus/high]`
+- **Audit result:** All cross-lib imports in `libs/*/src/` go ONLY to `utils.*` — no peer-to-peer domain-lib violations remain. The transformer→ingestion claim in tasks.md was stale: `transformer/pipeline.py:20` uses `TYPE_CHECKING` guard; `DataIngestor` is injected by the caller (Clear Lines compliant).
+- **Real bug found:** 4 `pyproject.toml` files (`blueprint_arch`, `connector`, `transformer`, `viz_factory`) declared `"libs/utils"` as a dependency — invalid PEP 508 spec (pip cannot resolve a slash-separated path string as a package name). Only `ingestion` was correct with `"utils"`.
+- **Fix:** Standardised all 4 to `"utils"` (matching `ingestion`). Also declared all lib deps in `app/pyproject.toml` per Tier 3 rule (utils, ingestion, transformer, viz_factory, blueprint_arch).
+- **Note:** `pip show <lib>` metadata in the existing venv is cached; `Requires:` will refresh only on next `pip install -e ./libs/<name>/`. App runtime unaffected because libs were installed via editable git+ssh URLs at venv creation.
+- **Stale @deps fixed:** Updated `libs/transformer/src/transformer/pipeline.py` header to use `consumes_typeonly:` for the TYPE_CHECKING `ingestion.ingestor` import.
+- **Verification:** 265/265 fast regression tests pass. App import OK.
+- **Files changed:** `libs/blueprint_arch/pyproject.toml`, `libs/connector/pyproject.toml`, `libs/transformer/pyproject.toml`, `libs/viz_factory/pyproject.toml`, `app/pyproject.toml`, `libs/transformer/src/transformer/pipeline.py`.

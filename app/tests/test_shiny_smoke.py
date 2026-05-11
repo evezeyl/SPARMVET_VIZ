@@ -56,7 +56,7 @@ def _load_project(page: Page, base_url: str, project_id: str = "1_test_data_ST22
     page.wait_for_selector("#project_id", timeout=20_000)
     page.locator("#project_id").select_option(project_id)
     # Wait for dynamic_tabs group nav pills — the first group in 1_test_data_ST22_dummy
-    # is "Quality Control" (description "📊 Quality Control"). This is the slowest step
+    # is "Quality Control". This is the slowest step
     # (tier1 materialization + dynamic_tabs render). 60s covers cold-start scenarios.
     page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=60_000)
     _wait_shiny(page)

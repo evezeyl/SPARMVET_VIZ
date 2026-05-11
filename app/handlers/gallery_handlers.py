@@ -51,7 +51,7 @@ def define_server(input, output, session, *,
         §13 Home Module State Object — receives transplanted RecipeNodes.
     """
 
-    # --- 🔬 Gallery Taxonomy 'Select All' Logic ---
+    # --- Gallery Taxonomy 'Select All' Logic ---
 
     def _pivot_choices(key: str, fallback: list[str]) -> list[str]:
         """Read sorted choices for a pivot axis from gallery_index.json."""

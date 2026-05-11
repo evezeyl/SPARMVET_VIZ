@@ -1187,14 +1187,14 @@ def define_server(input, output, session, *,
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
-        # 🟢 Gallery (ADR-057: filter + recipe selector moved here from internal sidebar)
+        # Gallery (ADR-057: filter + recipe selector moved here from internal sidebar)
         if active_sidebar == "Gallery":
             return ui.div(
                 gallery_viewer.build_sidebar_ui(),
                 ui.output_ui("notification_log_panel_ui"),
             )
 
-        # 🔵 Manifest Workbench (Wrangle Studio)
+        # Manifest Workbench (Wrangle Studio)
         if active_sidebar == "Wrangle Studio":
             return ui.div(
                 ui.accordion(
@@ -1242,7 +1242,7 @@ def define_server(input, output, session, *,
                 ui.output_ui("notification_log_panel_ui"),
             )
 
-        # 🏠 Standard Operation Sidebar (Home — ADR-043 / ADR-073)
+        # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
         # Build project state needed by some panel renderers.
         try:
             proj_choices = list(bootloader.available_projects.keys())
@@ -1376,7 +1376,7 @@ def define_server(input, output, session, *,
             ui.output_ui("notification_log_panel_ui") if include_notification_log else ui.div(),
         )
 
-    # --- 📐 Right Sidebar Context Matrix (ADR-039 / ADR-044) ---
+    # --- Right Sidebar Context Matrix (ADR-039 / ADR-044) ---
     @output
     @render.ui
     def right_sidebar_content_ui():
@@ -1463,7 +1463,7 @@ def define_server(input, output, session, *,
                 )
             return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")
 
-        # --- 🏠 Home Theater (ADR-043 / ADR-044 / ADR-073) ---
+        # --- Home Theater (ADR-043 / ADR-044 / ADR-073) ---
         if active_sidebar in ("Home", None, ""):
             # Iterate right sidebar slot list for Home workspace.
             right_cfg = bootloader.get_sidebar_config("home", "right")

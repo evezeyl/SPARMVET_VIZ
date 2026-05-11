@@ -1,8 +1,9 @@
 # PipelineExecutor (pipeline.py)
 # @deps
 # provides: class:PipelineExecutor
-# consumes: libs/utils/src/utils/config_loader.py (ConfigManager), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py
-# consumed_by: libs/transformer/tests/debug_pipeline.py
+# consumes: utils.config_loader (ConfigManager), transformer.data_wrangler, transformer.data_assembler
+# consumes_typeonly: ingestion.ingestor (DataIngestor — TYPE_CHECKING guard, injected at runtime per Clear Lines policy)
+# consumed_by: libs/transformer/tests/debug_pipeline.py, app/modules/orchestrator.py
 # doc: .claude/rules/rules_data_engine.md, .claude/rules/rules_runtime_environment.md#4
 # @end_deps
 import polars as pl

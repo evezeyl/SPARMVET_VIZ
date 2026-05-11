@@ -151,8 +151,8 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
   git push origin dev --force
   ```
 > ACTION-RENAME-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
-- [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: Remaining cross-lib import violations — `blueprint_arch/blueprint_mapper.py` → `utils.config_loader`, `transformer/pipeline.py` → `utils.config_loader` + `ingestion.ingestor`, `transformer/data_assembler.py` → `utils.hashing`, `transformer/data_wrangler.py` + `metadata_validator.py` → `utils.errors`, `viz_factory/viz_factory.py` → `utils.errors`.
-- [ ] **CODE-COMMENT-STANDARD** `[sonnet/low]` `[active]`: Enforce commenting standard across `libs/` + `app/` — Emoji ban (§1) + WHY-not-WHAT comment philosophy (§2). No script needed. Run `grep -rE '(#.*[✅❌🔧🚀]|# TODO)' libs/ app/` to find violations. Note: do NOT add docstring tiers yet — that is CODE-DOCS-RETROSPECTIVE below.
+> ADR-011 cross-lib violations: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+> CODE-COMMENT-STANDARD: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 - [ ] **CODE-DOCS-RETROSPECTIVE** `[deferred — pre-deployment review sprint]`: Developer-level docstrings across all `libs/` + `app/`. Tier A (module header) + Tier B (public functions) + Tier C (`@register_action` / `@register_plot_component`). Implementation order: `libs/transformer/` → `libs/viz_factory/` → `app/handlers/` → remaining libs → `app/src/`. Write `scripts/audit_code_quality.py` first (see `rules_code_quality.md §4-§5`). Do not start until pre-deployment sprint begins.
 
 ---

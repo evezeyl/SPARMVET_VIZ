@@ -10,4 +10,10 @@ dependencies = [
     "polars>=1.0.0",
     "pandas>=2.0.0",
     "pyyaml>=6.0.0",
+    # Tier 3 orchestration: app/ may depend on any libs/ package (ADR-011).
+    "utils",
+    "ingestion",
+    "transformer",
+    "viz_factory",
+    "blueprint_arch",
 ]
