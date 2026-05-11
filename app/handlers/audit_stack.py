@@ -106,7 +106,8 @@ def define_server(input, output, session, *,
                   wrangle_studio, recipe_pending, snapshot_recipe,
                   active_cfg, active_collection_id,
                   home_state=None, session_manager=None,
-                  notification_log=None, bootloader=None):
+                  notification_log=None, bootloader=None,
+                  session_pipeline_errors=None):
     """Register all Pipeline Audit reactive handlers."""
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -664,6 +665,52 @@ def define_server(input, output, session, *,
                 placement="top",
             )
         return ui.input_action_button("btn_apply", "Apply", class_="btn-primary w-100")
+
+    # ------------------------------------------------------------------
+    # pipeline_issues_ui — DIAG-RUNTIME-AUDIT-1 structured error log
+    # ------------------------------------------------------------------
+
+    @output
+    @render.ui
+    def pipeline_issues_ui():
+        if session_pipeline_errors is None:
+            return ui.div()
+        entries = session_pipeline_errors.get()
+        if not entries:
+            return ui.div()
+
+        # Only show errors (not warnings) in the sidebar header, warnings go to notification_log
+        errors = [e for e in entries if e.get("severity", "error") == "error"]
+        if not errors:
+            return ui.div()
+
+        items = []
+        for e in errors[-10:]:  # cap at 10 most recent
+            ts = e.get("timestamp", "")[:19].replace("T", " ")
+            comp = e.get("component", "?")
+            prob = e.get("problem", "Unknown error")
+            items.append(
+                ui.div(
+                    ui.div(
+                        ui.span(f"[{comp}]", class_="spv-text-xs text-danger fw-bold"),
+                        ui.span(ts, class_="spv-text-xs text-muted ms-1"),
+                        class_="d-flex justify-content-between",
+                    ),
+                    ui.div(prob[:120], class_="spv-text-xs"),
+                    class_="spv-audit-issue-entry mb-1 p-1",
+                    style="background:#fff0f0;border-radius:3px;border-left:3px solid #d62828;",
+                )
+            )
+
+        return ui.div(
+            ui.div(
+                ui.tags.strong(f"Runtime issues ({len(errors)})", class_="spv-text-xs text-danger"),
+                class_="mb-1",
+            ),
+            *items,
+            class_="p-2",
+            id="pipeline_issues_panel",
+        )
 
 
 # ---------------------------------------------------------------------------

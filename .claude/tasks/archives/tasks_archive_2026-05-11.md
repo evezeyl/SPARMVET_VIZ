@@ -192,3 +192,66 @@ Completed items moved from `tasks.md` on 2026-05-11 cleanup. All items verified 
     7. `action_func()` execution: try/except for `ColumnNotFoundError` and generic `Exception` → PipelineError + TransformationError for each
   - **Verification:** 168/168 transformer tests pass.
   - **Unblocks:** DIAG-RUNTIME-AUDIT-1 (Phase 3 — UI sink for structured errors).
+
+---
+
+## ADR-079 Phase 2+3 — Runtime Error Discipline (2026-05-11 session continued)
+
+### DIAG-RUNTIME-INGESTION-1 [DONE]
+- **Files:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/ingestion/pyproject.toml`
+- **Changes:** Added `utils` to pyproject.toml deps. Retrofitted all error paths in `DataIngestor.__init__` (dir not found) and `ingest()` (file not found, column missing warning, parse exception) with structured `PipelineError` + `raise IngestionError`. Warning path upgraded from bare print to `PipelineError(severity="warning")`.
+
+### DIAG-RUNTIME-VIZFACTORY-1 [DONE]
+- **Files:** `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **Changes:** Retrofitted all error paths: plot_id not found, unknown plot_defaults keys, L5 mutex warning, missing aesthetic column, unregistered component, component execution failure, viridis and brewer palette failures. All paths emit `PipelineError` before raising `VisualizationError`. Used `difflib.get_close_matches` for near-match suggestions.
+- **Verification:** 195/195 tests passed.
+
+### DIAG-RUNTIME-T3APPLY-1 [DONE]
+- **Files:** `app/handlers/audit_stack.py`
+- **Changes:** Gatekeeper block in `handle_apply()` now emits `PipelineError(who="analyst", category="t3_apply", surface="audit_panel", severity="warning")` before the `_notify()` call. Ghost save failure `except Exception: pass` upgraded to `PipelineError(who="operator", severity="warning")` with session_key evidence.
+
+### DIAG-RUNTIME-BLUEPRINT-1 [DONE]
+- **Files:** `app/handlers/blueprint_handlers.py`
+- **Changes:** File load failure (Mode A), import failure (Mode B), and YAML escape hatch parse error all retrofitted with `PipelineError(who="manifest_author", category="blueprint_edit", surface="blueprint_inline")` + `print(pe.format())` before existing `ui.notification_show(...)` calls.
+
+### DIAG-RUNTIME-AUDIT-1 [DONE]
+- **Files:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/export_handlers.py`
+- **Changes (Phase 3 UI sink):**
+  - `server.py`: Added `session_pipeline_errors = reactive.Value([])` and wired to `_define_home_theater_server` and `_define_audit_server` calls.
+  - `home_theater.py`: Added `session_pipeline_errors=None` kwarg to `define_server`. In both the main group plot handler and the comparison baseline handler render error catch blocks, added `session.on_flushed(callback, once=True)` pattern (R1-compliant) to append structured error entries to `session_pipeline_errors`. Passed `session_pipeline_errors` to `define_export_server`.
+  - `audit_stack.py`: Added `session_pipeline_errors=None` kwarg to `define_server`. Added `pipeline_issues_ui` `@output @render.ui` output — displays last 10 error-severity entries from `session_pipeline_errors` as a compact panel with red left-border cards.
+  - `export_handlers.py`: Added `session_pipeline_errors=None` kwarg to `define_export_server`. Added "Pipeline Issues During Session" section in `report.qmd` generation — renders as a markdown table of timestamp, component, severity, problem.
+- **Note:** T3 Ghost `pipeline_errors:` field extension deferred — ghost format controlled by `session_manager.write_t3_ghost()` and adding to ghost format requires coordination with session restore logic.
+
+---
+
+## VizFactory T3 Override Wiring (2026-05-11 session continued)
+
+### VIZFAC-T3-OVERRIDE-1 [DONE]
+- **Files:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/home_theater.py`
+- **Changes:**
+  - `viz_factory.py`: `render()` now accepts `aesthetic_override: dict | None = None` and passes it to `resolve_plot_config()`.
+  - `home_theater.py`: In the group plot handler, extracts `home_state["t3_plot_overrides"].get(this_subtab)` and passes it as `aesthetic_override=` kwarg to `viz_factory.render()`.
+- **Verification:** 195/195 viz_factory tests pass; `from app.src.main import app` OK.
+
+### VIZFAC-T3-EXPORT-1 [DONE]
+- **Files:** `app/handlers/export_handlers.py`
+- **Changes:** `viz_factory.render()` call in the export bundle loop now passes `aesthetic_override=_t3_aesthetic_overrides.get(p_id)` so exported plots reflect analyst T3 aesthetic overrides.
+
+### VIZFAC-BLUEPRINT-FORM-1 [DONE]
+- **Files:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/src/server.py`
+- **Changes:**
+  - `blueprint_handlers.py`: Added `active_cfg=None` to `define_server` signature. Added `bp_plot_defaults_form_ui` `@output @render.ui` — renders form inputs for `palette`, `theme`, `default_font_family`, `facet_panel_spacing`, `legend_position` when `active_viz_id` is empty/None (manifest root selected). Added `_bp_apply_plot_defaults` `@reactive.Effect` triggered by `input.bp_pd_apply` — writes resolved dict to `cfg.raw_config["plot_defaults"]` (session-only, no disk write).
+  - `home_theater.py`: Added "Plot Defaults" card with `ui.output_ui("bp_plot_defaults_form_ui")` in Blueprint right sidebar rendering block.
+  - `server.py`: Added `active_cfg=active_cfg` to `_define_blueprint_server()` call.
+- **Note:** Session-only apply — `ConfigManager` does not expose its file path, so disk writes deferred. Changes survive within the session via `cfg.raw_config["plot_defaults"]` mutation.
+- **Verification:** `from app.src.main import app; print('OK')` → OK.
+
+### HELP-INLINE-1 [DONE]
+- **Files:** `app/handlers/home_theater.py`, `app/src/help/home.md`, `app/src/help/blueprint.md`, `app/src/help/gallery.md`, `app/src/help/test_lab.md`
+- **Changes:**
+  - Created `app/src/help/` directory with four markdown files — home, blueprint, gallery, test_lab.
+  - `home_theater.py` `sidebar_nav_ui`: wrapped navset_pill in a div; added `btn_help_ws` action button below the workspace pills.
+  - Added `_show_workspace_help` `@reactive.Effect` (triggered by `input.btn_help_ws`): reads `sidebar_nav` value → maps to the appropriate help file → calls `ui.modal_show()` with `ui.markdown()` content.
+  - `_HELP_DIR` computed as `Path(__file__).parent.parent / "src" / "help"` — path-agnostic.
+- **Verification:** `from app.src.main import app; print('OK')` → OK.

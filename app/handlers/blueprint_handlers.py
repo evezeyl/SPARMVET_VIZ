@@ -18,6 +18,7 @@ from __future__ import annotations
 # provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)
+# consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))
 # doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076
@@ -47,12 +48,14 @@ from blueprint_arch.agent_context import build_system_prompt
 from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from utils.config_loader import ConfigManager
+from utils.pipeline_error import PipelineError
 
 
 def define_server(input, output, session, *,
                   bootloader, wrangle_studio, orchestrator, safe_input,
                   includes_map, component_ctx_map, schema_registry,
-                  selected_lineage_rel=None):
+                  selected_lineage_rel=None,
+                  active_cfg=None):
     """Register all Blueprint Architect reactive handlers.
 
     Parameters
@@ -355,6 +358,18 @@ def define_server(input, output, session, *,
                 msg = f"✅ Loaded '{abs_file.name}' ({len(nodes)} step(s))"
                 ui.notification_show(msg, type="message")
             except Exception as e:
+                pe = PipelineError(
+                    component="BlueprintHandlers",
+                    problem=f"Failed to load component file: {type(e).__name__}: {e}",
+                    location="_load_component_from_selection()",
+                    fix="Check that the selected manifest component file exists and contains valid YAML. Verify the !include path resolves correctly from the manifest root.",
+                    who="manifest_author",
+                    category="blueprint_edit",
+                    surface="blueprint_inline",
+                    severity="error",
+                    evidence={"error_type": type(e).__name__, "error_detail": str(e)[:200]},
+                )
+                print(pe.format())
                 ui.notification_show(f"❌ Failed to load file: {e}", type="error")
             return
 
@@ -486,6 +501,18 @@ def define_server(input, output, session, *,
             ui.notification_show(
                 f"✅ Imported {len(nodes)} steps from '{selected}'", type="message")
         except Exception as e:
+            pe = PipelineError(
+                component="BlueprintHandlers",
+                problem=f"Manifest import failed: {type(e).__name__}: {e}",
+                location="_load_component_from_selection() Mode B",
+                fix="Verify the manifest YAML is well-formed and all !include paths resolve. Check that the selected component ID exists in the manifest.",
+                who="manifest_author",
+                category="blueprint_edit",
+                surface="blueprint_inline",
+                severity="error",
+                evidence={"error_type": type(e).__name__, "error_detail": str(e)[:200]},
+            )
+            print(pe.format())
             ui.notification_show(f"❌ Import failed: {e}", type="error")
 
     # ── Shiny reactive handlers ───────────────────────────────────────────────
@@ -951,6 +978,19 @@ def define_server(input, output, session, *,
             try:
                 yaml.safe_load(raw)
             except Exception as exc:
+                pe = PipelineError(
+                    component="BlueprintHandlers",
+                    problem=f"YAML escape hatch parse error: {type(exc).__name__}: {exc}",
+                    location="_bp_save_yaml_hatch()",
+                    fix="Fix the YAML syntax error shown above. Common issues: wrong indentation, unquoted colons, missing closing brackets, or reserved word traps (e.g. 'on' must be quoted as 'on':).",
+                    who="manifest_author",
+                    category="blueprint_edit",
+                    surface="blueprint_inline",
+                    severity="error",
+                    evidence={"error_type": type(exc).__name__, "error_detail": str(exc)[:300]},
+                    reference="rules_manifest_structure.md §7",
+                )
+                print(pe.format())
                 ui.notification_show(
                     f"YAML parse error: {exc}", type="error", duration=8
                 )
@@ -978,6 +1018,105 @@ def define_server(input, output, session, *,
     def _render_message(role: str, text: str):
         css_class = "bp-agent-message user" if role == "user" else "bp-agent-message agent"
         return ui.div(text, class_=css_class)
+
+    # ------------------------------------------------------------------
+    # bp_plot_defaults_form_ui — VIZFAC-BLUEPRINT-FORM-1
+    # Shows editable plot_defaults for the active manifest (manifest root node).
+    # Shown when no sub-component is selected (active_viz_id empty / None).
+    # ------------------------------------------------------------------
+
+    # Allowed plot_defaults keys per rules_manifest_structure.md §10.
+    _PLOT_DEFAULT_KEYS = ["palette", "theme", "default_font_family",
+                          "facet_panel_spacing", "legend_position"]
+    _THEME_CHOICES = ["theme_light", "theme_bw", "theme_minimal",
+                      "theme_classic", "theme_dashboard"]
+    _LEGEND_CHOICES = ["right", "top", "bottom", "left", "none"]
+
+    @output
+    @render.ui
+    def bp_plot_defaults_form_ui():
+        """Edit form for manifest-level plot_defaults (manifest root node). VIZFAC-BLUEPRINT-FORM-1."""
+        # Only render when active_cfg is available and no sub-component is selected
+        if active_cfg is None:
+            return ui.div()
+        active_id = wrangle_studio.active_viz_id.get() if wrangle_studio is not None else None
+        if active_id:
+            # A specific schema/plot/assembly node is selected — form not relevant here
+            return ui.div()
+
+        try:
+            cfg = active_cfg()
+            defaults = cfg.raw_config.get("plot_defaults") or {}
+        except Exception:
+            return ui.div()
+
+        palette_val = defaults.get("palette", "")
+        theme_val = defaults.get("theme", "theme_light")
+        font_val = defaults.get("default_font_family", "")
+        spacing_val = str(defaults.get("facet_panel_spacing", "0.05"))
+        legend_val = defaults.get("legend_position", "right")
+
+        return ui.div(
+            ui.tags.small("Active manifest — plot_defaults", class_="text-muted d-block mb-2"),
+            ui.input_text("bp_pd_palette", "Palette", value=palette_val,
+                          placeholder="e.g. nvi_official or Blues"),
+            ui.input_select("bp_pd_theme", "Theme",
+                            choices={t: t for t in _THEME_CHOICES},
+                            selected=theme_val if theme_val in _THEME_CHOICES else "theme_light"),
+            ui.input_text("bp_pd_font", "Default font family", value=font_val,
+                          placeholder="e.g. Liberation Sans"),
+            ui.input_text("bp_pd_spacing", "Facet panel spacing", value=spacing_val,
+                          placeholder="0.05 – 1.0"),
+            ui.input_select("bp_pd_legend", "Legend position",
+                            choices={v: v for v in _LEGEND_CHOICES},
+                            selected=legend_val if legend_val in _LEGEND_CHOICES else "right"),
+            ui.input_action_button("bp_pd_apply", "Apply to session",
+                                   class_="btn-primary btn-sm w-100 mt-2"),
+            ui.tags.small(
+                "Changes are session-only. Edit YAML directly to persist.",
+                class_="text-muted d-block mt-1",
+            ),
+            class_="p-2",
+        )
+
+    @reactive.Effect
+    @reactive.event(input.bp_pd_apply)
+    def _bp_apply_plot_defaults():
+        """Write bp_plot_defaults form values into the active manifest raw_config (session-only)."""
+        if active_cfg is None:
+            return
+        try:
+            cfg = active_cfg()
+        except Exception:
+            return
+        try:
+            palette = (getattr(input, "bp_pd_palette")() or "").strip()
+            theme = (getattr(input, "bp_pd_theme")() or "theme_light").strip()
+            font = (getattr(input, "bp_pd_font")() or "").strip()
+            spacing_raw = (getattr(input, "bp_pd_spacing")() or "0.05").strip()
+            legend = (getattr(input, "bp_pd_legend")() or "right").strip()
+        except Exception:
+            return
+
+        try:
+            spacing = float(spacing_raw)
+        except (ValueError, TypeError):
+            spacing = 0.05
+
+        new_defaults: dict = {}
+        if palette:
+            new_defaults["palette"] = palette
+        if theme:
+            new_defaults["theme"] = theme
+        if font:
+            new_defaults["default_font_family"] = font
+        if spacing != 0.05 or "facet_panel_spacing" in (cfg.raw_config.get("plot_defaults") or {}):
+            new_defaults["facet_panel_spacing"] = spacing
+        if legend and legend != "right":
+            new_defaults["legend_position"] = legend
+
+        cfg.raw_config["plot_defaults"] = new_defaults
+        ui.notification_show("plot_defaults updated for this session.", type="message", duration=3)
 
     @output
     @render.ui

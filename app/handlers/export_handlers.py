@@ -13,6 +13,7 @@ from __future__ import annotations
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, function:_build_methods_section
 # consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, polars, shiny
+#            reactive.Value:session_pipeline_errors (DIAG-RUNTIME-AUDIT-1 — included in report.qmd pipeline issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/design/export_specification.md
 # @end_deps
@@ -321,7 +322,8 @@ def define_export_server(input, output, session, *,
                          tier_toggle, applied_filters,
                          home_state, safe_input,
                          active_home_subtab=None,
-                         notification_log=None):
+                         notification_log=None,
+                         session_pipeline_errors=None):
     """Register export-bundle + system-tools handlers.
 
     Reactive deps (kwargs):
@@ -741,7 +743,11 @@ def define_export_server(input, output, session, *,
                         else:
                             lf = tier1_anchor()
 
-                        fig = viz_factory.render(lf, synthetic_manifest, p_id)
+                        # VIZFAC-T3-EXPORT-1: pass L5 aesthetic_override so
+                        # exported plots reflect analyst T3 overrides.
+                        _plot_override = _t3_aesthetic_overrides.get(p_id)
+                        fig = viz_factory.render(lf, synthetic_manifest, p_id,
+                                                 aesthetic_override=_plot_override)
 
                         # Save user-chosen format → zip under {dataset}/plots/
                         plot_path = tmpdir_path / f"{p_id}.{plot_fmt}"
@@ -1231,6 +1237,30 @@ def define_export_server(input, output, session, *,
                             f"| {_i} | `{_action}` | {_details} | {_reason} |"
                         )
                     qmd_lines.append("")
+
+            # ── Pipeline Issues section ───────────────────────────────────
+            _pe_entries = (
+                session_pipeline_errors.get()
+                if session_pipeline_errors is not None else []
+            )
+            if _pe_entries:
+                qmd_lines += ["## Pipeline Issues During Session", ""]
+                qmd_lines.append(
+                    "> The following runtime errors or warnings occurred during this session. "
+                    "Review these before publishing results."
+                )
+                qmd_lines.append("")
+                qmd_lines += [
+                    "| Time | Component | Severity | Problem |",
+                    "|------|-----------|----------|---------|",
+                ]
+                for _pe in _pe_entries:
+                    _ts = (_pe.get("timestamp") or "")[:19].replace("T", " ")
+                    _comp = _pe.get("component", "?")
+                    _sev = _pe.get("severity", "error").upper()
+                    _prob = (_pe.get("problem") or "Unknown error")[:120].replace("|", "\\|")
+                    qmd_lines.append(f"| {_ts} | `{_comp}` | {_sev} | {_prob} |")
+                qmd_lines.append("")
 
             # ── Data Lineage section ──────────────────────────────────────
             if _lineage_ok and _lineage_nodes:

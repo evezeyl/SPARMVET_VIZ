@@ -30,6 +30,7 @@ from __future__ import annotations
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot)
 # consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+#              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073
 # @end_deps
@@ -106,7 +107,8 @@ def define_server(input, output, session, *,
                   active_home_subtab, tier_toggle,
                   home_state=None, session_manager=None,
                   data_refresh_trigger=None,
-                  notification_log=None):
+                  notification_log=None,
+                  session_pipeline_errors=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -148,6 +150,8 @@ def define_server(input, output, session, *,
         Contains t3_recipe, applied_filters, tier_toggle, and navigation state.
     session_manager : SessionManager | None
         §12d Session ghost save/restore manager.
+    session_pipeline_errors : reactive.Value[list] | None
+        DIAG-RUNTIME-AUDIT-1: accumulates structured runtime error entries.
     """
 
     from app.modules.notification_utils import make_notifier
@@ -434,9 +438,33 @@ def define_server(input, output, session, *,
             if drops:
                 lf = lf.drop(drops)
 
+            # VIZFAC-T3-OVERRIDE-1: Extract L5 aesthetic_override from home_state.
+            _t3_overrides = (
+                (home_state.get() if home_state is not None else {})
+                .get("t3_plot_overrides", {})
+                .get(this_subtab)
+            )
+
             try:
-                return viz_factory.render(lf, synthetic_manifest, p_id)
+                return viz_factory.render(lf, synthetic_manifest, p_id,
+                                          aesthetic_override=_t3_overrides)
             except Exception as e:
+                # Capture error for session_pipeline_errors without violating R1
+                # (cannot call reactive.Value.set inside @render.*).
+                if session_pipeline_errors is not None:
+                    from datetime import datetime
+                    _entry = {
+                        "timestamp": datetime.now().isoformat(),
+                        "component": "VizFactory",
+                        "problem": str(e)[:200],
+                        "severity": "error",
+                        "location": f"render(plot_id='{p_id}')",
+                    }
+                    def _append_render_error(entry=_entry):
+                        current = session_pipeline_errors.get()
+                        if len(current) < 50:
+                            session_pipeline_errors.set(current + [entry])
+                    session.on_flushed(_append_render_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",
@@ -494,6 +522,20 @@ def define_server(input, output, session, *,
             try:
                 return viz_factory.render(lf, synthetic_manifest, p_id)
             except Exception as e:
+                if session_pipeline_errors is not None:
+                    from datetime import datetime
+                    _entry = {
+                        "timestamp": datetime.now().isoformat(),
+                        "component": "VizFactory",
+                        "problem": str(e)[:200],
+                        "severity": "error",
+                        "location": f"render(plot_id='{p_id}', mode='cmp_base')",
+                    }
+                    def _append_cmp_error(entry=_entry):
+                        current = session_pipeline_errors.get()
+                        if len(current) < 50:
+                            session_pipeline_errors.set(current + [entry])
+                    session.on_flushed(_append_cmp_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",
@@ -1094,11 +1136,46 @@ def define_server(input, output, session, *,
             if bootloader.is_enabled("show_persona_badge")
             else None
         )
-        return ui.navset_pill(
-            *nav_items,
-            id="sidebar_nav",
-            header=badge,
+        help_btn = ui.input_action_button(
+            "btn_help_ws", "? Help",
+            class_="btn btn-outline-secondary btn-sm w-100 mt-2",
+            style="font-size:0.75rem;",
         )
+        return ui.div(
+            ui.navset_pill(
+                *nav_items,
+                id="sidebar_nav",
+                header=badge,
+            ),
+            help_btn,
+        )
+
+    # HELP-INLINE-1: workspace help modal
+    _HELP_DIR = Path(__file__).parent.parent / "src" / "help"
+
+    @reactive.Effect
+    @reactive.event(input.btn_help_ws)
+    def _show_workspace_help():
+        ws = safe_input(input, "sidebar_nav", "Home")
+        _ws_file_map = {
+            "Home": "home.md",
+            "Wrangle Studio": "blueprint.md",
+            "Gallery": "gallery.md",
+            "Test Lab": "test_lab.md",
+        }
+        md_file = _HELP_DIR / _ws_file_map.get(ws, "home.md")
+        try:
+            md_text = md_file.read_text(encoding="utf-8")
+        except Exception:
+            md_text = f"No help available for **{ws}**."
+        m = ui.modal(
+            ui.markdown(md_text),
+            title=f"{ws} — Help",
+            easy_close=True,
+            footer=ui.modal_button("Close"),
+            size="lg",
+        )
+        ui.modal_show(m)
 
     # 4. Sidebar Tools (Contextual Manifest Workbench)
     @output(id="sidebar_tools_ui")
@@ -1351,6 +1428,15 @@ def define_server(input, output, session, *,
                     ui.output_ui("bp_help_panel_ui"),
                     class_="mb-2 shadow-sm border-0"
                 ),
+                # VIZFAC-BLUEPRINT-FORM-1: plot_defaults editor (manifest root node)
+                ui.card(
+                    ui.card_header(
+                        ui.div(ui.h5("Plot Defaults", class_="mb-0"),
+                               class_="d-flex justify-content-center w-100")
+                    ),
+                    ui.output_ui("bp_plot_defaults_form_ui"),
+                    class_="mb-2 shadow-sm border-0"
+                ),
             ]
             if bootloader.is_enabled("blueprint_agent_enabled"):
                 parts.append(
@@ -1499,6 +1585,7 @@ def define_server(input, output, session, *,
         safe_input=safe_input,
         active_home_subtab=active_home_subtab,
         notification_log=notification_log,
+        session_pipeline_errors=session_pipeline_errors,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

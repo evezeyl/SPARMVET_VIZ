@@ -49,14 +49,19 @@ Items with no blockers — can be started immediately.
 
 > DIAG-RUNTIME-BASE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
-- [ ] **DIAG-RUNTIME-AUDIT-1** `[sonnet/medium]`: Phase 3 — `session_pipeline_errors` reactive value in `server.py` + audit panel "Pipeline Issues" sub-section + `report.qmd` "Pipeline Issues During Session" section + T3 Ghost `pipeline_errors:` extension. Depends on DIAG-RUNTIME-BASE-1.
-- [ ] **DIAG-RUNTIME-INGESTION-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Retrofit `libs/ingestion/src/ingestion/ingestor.py` — file-not-found, encoding errors, delimiter mismatch, schema mismatches, sanitization rejections. `who: data_provider` for content errors, `who: analyst` for upload errors. `surface: data_import_panel`. ADR-079 Phase 2.
+> DIAG-RUNTIME-AUDIT-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
+> DIAG-RUNTIME-INGESTION-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
 > DIAG-RUNTIME-ASSEMBLER-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 > DIAG-RUNTIME-WRANGLER-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
-- [ ] **DIAG-RUNTIME-VIZFACTORY-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Retrofit `libs/viz_factory/src/viz_factory/viz_factory.py` — component not registered, missing required aesthetic, plotnine render exceptions. `who: manifest_author` for spec issues, `who: developer` for plotnine internals. `surface: plot_overlay`. ADR-079 Phase 2.
-- [ ] **DIAG-RUNTIME-T3APPLY-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: T3 Apply path failures in `app/handlers/audit_stack.py` — downstream invalidation, comment-gate violations. `who: analyst`. `surface: audit_panel`. ADR-079 Phase 2.
-- [ ] **DIAG-RUNTIME-BLUEPRINT-1** `[sonnet/medium]` `[unblocked 2026-05-11]`: Manifest fragment validation failures during BLUEPRINT IDE editing. `who: manifest_author`. `surface: blueprint_inline`. ADR-079 Phase 2.
+
+> DIAG-RUNTIME-VIZFACTORY-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
+> DIAG-RUNTIME-T3APPLY-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
+> DIAG-RUNTIME-BLUEPRINT-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ### Blueprint Architect
 
@@ -82,7 +87,7 @@ Items with no blockers — can be started immediately.
 ### Infrastructure & Housekeeping
 
 - [ ] **AUDIT-FIRST-TRIAGE-1** `[haiku/low]`: After first scheduled audit runs fire, triage all unprocessed reports per `audit_triage_protocol.md`. Run `grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md` to find them.
-- [ ] **HELP-INLINE-1** `[sonnet/medium]`: Per-workspace contextual help modals. `?` button → `ui.modal_show()` with content from `app/src/help/<workspace>.md`. Write initial help content for Home and Blueprint.
+> HELP-INLINE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ---
 
@@ -117,9 +122,11 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 
 ### Blocked by other tasks
 
-- [ ] **VIZFAC-T3-OVERRIDE-1** `[sonnet/medium]` `[blocked: VIZFAC-RENDER-WIRE-1]`: Wire `aesthetic_override` into `home_theater.py` plot renders — extract `home_state["t3_plot_overrides"].get(plot_id)`, pass as `aesthetic_override=` kwarg. Schema validation per design §6 (mutex check on `fill_color`/`fill_palette`, key whitelist) emits `PipelineError`.
-- [ ] **VIZFAC-T3-EXPORT-1** `[sonnet/medium]` `[blocked: VIZFAC-T3-OVERRIDE-1]`: Same wiring in `export_handlers.py` so exported plots reflect T3 overrides. Subsumes part of TECH-T3-THREAD-1 scope.
-- [ ] **VIZFAC-BLUEPRINT-FORM-1** `[sonnet/medium]` `[blocked: VIZFAC-DEFAULTS-DOCS-1]`: Blueprint IDE — mount `plot_defaults` editor form in BLUEPRINT logic sidebar when active node is the manifest root. Form fields driven by §7a allowed keys + their `ui_schema` (mirror action-picker pattern).
+> VIZFAC-T3-OVERRIDE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
+> VIZFAC-T3-EXPORT-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
+> VIZFAC-BLUEPRINT-FORM-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 - [ ] **PROP-2** `[sonnet/medium]`: Filter inventory panel — effective filter set per plot with per-filter tooltip.
 - [ ] **EXPORT-TUBEMAP** `[sonnet/high]`: Embed static tube map SVG in global export Quarto report. Requires headless render path for `BlueprintMapper.generate_cy_elements()`. Blocked by Blueprint Architect stability + headless Cytoscape.js SVG capability.
 
