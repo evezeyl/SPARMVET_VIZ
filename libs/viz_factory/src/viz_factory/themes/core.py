@@ -1,7 +1,7 @@
 from typing import Dict, Any
 
 # @deps
-# provides: component:theme_gray, component:theme_bw, component:theme_linedraw, component:theme_light, component:theme_minimal, component:theme_classic, component:theme_void, component:theme_dark, component:theme_538, component:theme_matplotlib, component:theme_seaborn, component:theme_tufte, component:theme_xkcd, component:theme_dashboard, component:theme_publication, component:theme_legend_position, component:theme_custom, component:element_text, component:element_line, component:element_rect, component:element_blank, component:labs
+# provides: component:theme_gray, component:theme_bw, component:theme_linedraw, component:theme_light, component:theme_minimal, component:theme_classic, component:theme_void, component:theme_dark, component:theme_538, component:theme_matplotlib, component:theme_seaborn, component:theme_tufte, component:theme_xkcd, component:theme_dashboard, component:theme_publication, component:theme_legend_position, component:theme_custom, component:element_text, component:element_line, component:element_rect, component:element_blank, component:xlab, component:ylab, component:ggtitle, component:annotate
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry)
 # doc: .claude/rules/rules_viz_factory.md
 # @end_deps
@@ -177,15 +177,8 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + theme(**{target: element_blank()})
 
 
-@register_plot_component("labs")
-def handle_labs(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    """
-    Electronic Artist Pillar - Multi-Label Modifier.
-    Allows setting x, y, title, subtitle, caption, and aesthetic labels (fill, color, etc.)
-    """
-    from plotnine import labs
-    return p + labs(**spec)
-
+# labs is registered with full ui_schema in geoms/core.py — canonical location.
+# The duplicate here was removed (ACTION-RENAME-1) to eliminate the startup warning.
 
 # ── DECO-2: convenience label/annotation wrappers (added 2026-04-30) ──────────
 # Manifest authors often want one-line label setters rather than the full

@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-11 (VIZFAC-RENDER-WIRE-1 complete: render() wired to resolve_plot_config(); 195 + 97 tests green) by @dasharch
+**Last Updated:** 2026-05-11 (VIZFAC-BLUEPRINT-FORM-1, HELP-INLINE-1, ACTION-RENAME-1, 22-J-10 complete; labs duplicate fixed; migrate_manifests.py written) by @dasharch
 
 ---
 
@@ -73,7 +73,7 @@ Items with no blockers — can be started immediately.
 
 > GALLERY-CLONE-DECOUPLE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
-- [ ] **22-J-10** `[sonnet/medium]` `[unblocked 2026-05-11]`: Aesthetic propagation (color/shape/fill) — per-plot scoping, propagation dialog, `aesthetic_override` linked-id linking across stacks (§12g.9). Unblocked by GALLERY-CLONE-DECOUPLE-1.
+> 22-J-10: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 
 ### VizFactory Cascade — Unblocked 2026-05-11
 
@@ -151,7 +151,7 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
     --invert-paths
   git push origin dev --force
   ```
-- [ ] **ACTION-RENAME-1** `[sonnet/medium]` `[repo-hygiene]`: Audit `@register_action` and `@register_plot_component` names for alignment with Polars/Plotnine naming. Provide compatibility shims and write `scripts/migrate_manifests.py` (script does not exist yet — separate from `assets/scripts/normalize_manifest_fields.py` which normalizes field dict format, not action names).
+> ACTION-RENAME-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 - [ ] **ADR-011 cross-lib violations** `[opus/high]` `[repo-hygiene]`: Remaining cross-lib import violations — `blueprint_arch/blueprint_mapper.py` → `utils.config_loader`, `transformer/pipeline.py` → `utils.config_loader` + `ingestion.ingestor`, `transformer/data_assembler.py` → `utils.hashing`, `transformer/data_wrangler.py` + `metadata_validator.py` → `utils.errors`, `viz_factory/viz_factory.py` → `utils.errors`.
 - [ ] **CODE-COMMENT-STANDARD** `[sonnet/low]` `[active]`: Enforce commenting standard across `libs/` + `app/` — Emoji ban (§1) + WHY-not-WHAT comment philosophy (§2). No script needed. Run `grep -rE '(#.*[✅❌🔧🚀]|# TODO)' libs/ app/` to find violations. Note: do NOT add docstring tiers yet — that is CODE-DOCS-RETROSPECTIVE below.
 - [ ] **CODE-DOCS-RETROSPECTIVE** `[deferred — pre-deployment review sprint]`: Developer-level docstrings across all `libs/` + `app/`. Tier A (module header) + Tier B (public functions) + Tier C (`@register_action` / `@register_plot_component`). Implementation order: `libs/transformer/` → `libs/viz_factory/` → `app/handlers/` → remaining libs → `app/src/`. Write `scripts/audit_code_quality.py` first (see `rules_code_quality.md §4-§5`). Do not start until pre-deployment sprint begins.

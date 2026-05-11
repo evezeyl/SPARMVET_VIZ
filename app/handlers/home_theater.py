@@ -28,7 +28,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot)
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_reference, output:table_reference, output:plot_leaf, output:table_leaf, output:comparison_mode_toggle_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot
 # consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
@@ -1477,6 +1477,8 @@ def define_server(input, output, session, *,
                     class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto",
                 ))
                 parts.append(ui.output_ui("audit_stack_tools_ui"))
+                # 22-J-10: aesthetic style override panel
+                parts.append(ui.output_ui("aesthetic_style_panel_ui"))
 
             if "notification_log" in right_types:
                 parts.append(ui.output_ui("notification_log_panel_ui"))

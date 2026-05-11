@@ -255,3 +255,19 @@ Completed items moved from `tasks.md` on 2026-05-11 cleanup. All items verified 
   - Added `_show_workspace_help` `@reactive.Effect` (triggered by `input.btn_help_ws`): reads `sidebar_nav` value → maps to the appropriate help file → calls `ui.modal_show()` with `ui.markdown()` content.
   - `_HELP_DIR` computed as `Path(__file__).parent.parent / "src" / "help"` — path-agnostic.
 - **Verification:** `from app.src.main import app; print('OK')` → OK.
+
+### ACTION-RENAME-1 [DONE]
+- **Files:** `libs/viz_factory/src/viz_factory/themes/core.py`, `scripts/migrate_manifests.py`
+- **Changes:**
+  - **Audit finding:** All 60 registered action names and 194 registered plot component names already align with Polars/Plotnine naming conventions. No renames needed.
+  - **Bug fix:** Duplicate `labs` registration in `themes/core.py` (overwriting the richer ui_schema version in `geoms/core.py`) eliminated the startup warning "Overwriting plotting component: labs". Removed the duplicate; kept the full ui_schema version in `geoms/core.py` (canonical location). Updated `@deps` block in `themes/core.py` to remove `component:labs` and add the convenience label wrappers (`xlab`, `ylab`, `ggtitle`, `annotate`) that ARE defined there.
+  - **New script:** `scripts/migrate_manifests.py` — context-aware YAML rename tool. Matches `action: <name>` and `- name: <name>` patterns only (not free text). Supports `--inventory` (list all used names), `--dry-run`, `--old`/`--new` rename, and `--roots` to restrict scope.
+- **Verification:** `from app.src.main import app` → OK (no "Overwriting" warning). 42 viz_factory tests pass. 55 core unit tests pass.
+
+### 22-J-10 [DONE]
+- **Files:** `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`
+- **Changes:**
+  - `audit_stack.py`: Added `_aesthetic_scratch` local reactive. Added `aesthetic_style_panel_ui` `@output @render.ui` — accordion "Plot Style" panel with `ast_fill_color`, `ast_colour`, `ast_alpha` (slider), `ast_shape` (select) inputs and `btn_aesthetic_apply` button. Added `_handle_aesthetic_apply` effect: applies alpha directly to `t3_plot_overrides[active_sub]` (per-plot, no dialog); for fill_color/colour/shape, stores in `_aesthetic_scratch` and opens inline propagation modal (`aesthetic_propagation_choice` / `aesthetic_propagation_except` / `aesthetic_propagation_confirm`). Added `_handle_aesthetic_propagation_confirm` effect: resolves choice → target plots → writes to `t3_plot_overrides` for each target.
+  - `home_theater.py`: Added `ui.output_ui("aesthetic_style_panel_ui")` in the Home right sidebar block, below `audit_stack_tools_ui` (inside the `audit_stack` gate block).
+- **Design notes:** No column-presence check for aesthetics (they apply regardless of schema). `alpha` is per-plot only per §12g.9. Color/shape/fill fire the propagation dialog.
+- **Verification:** `from app.src.main import app; print('OK')` → OK. 97 tests pass.

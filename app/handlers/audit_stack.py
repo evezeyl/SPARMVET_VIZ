@@ -18,7 +18,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3
+# provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:pipeline_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
 # consumes: app/modules/wrangle_studio.py, app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1)
 # consumed_by: app/src/server.py
@@ -665,6 +665,210 @@ def define_server(input, output, session, *,
                 placement="top",
             )
         return ui.input_action_button("btn_apply", "Apply", class_="btn-primary w-100")
+
+    # ------------------------------------------------------------------
+    # 22-J-10: aesthetic_style_panel_ui + _handle_aesthetic_apply
+    # Per-plot style overrides (fill_color, colour, alpha, shape).
+    # color/shape/fill → propagation dialog; alpha → per-plot direct.
+    # ------------------------------------------------------------------
+
+    # Scratch state: {fill_color, colour, alpha, shape} from the latest
+    # "Apply Style" press — held until the propagation choice is confirmed.
+    _aesthetic_scratch = reactive.Value({})
+
+    @output
+    @render.ui
+    def aesthetic_style_panel_ui():
+        """Compact plot-style override form for the active plot sub-tab."""
+        if home_state is None:
+            return ui.div()
+        state = home_state.get()
+        active_sub = state.get("active_plot_subtab", "")
+        existing = state.get("t3_plot_overrides", {}).get(active_sub, {})
+        return ui.accordion(
+            ui.accordion_panel(
+                "Plot Style",
+                ui.div(
+                    ui.input_text(
+                        "ast_fill_color", "Fill colour (hex or name)",
+                        value=existing.get("fill_color", ""),
+                        placeholder="#345beb or steelblue",
+                    ),
+                    ui.input_text(
+                        "ast_colour", "Outline colour",
+                        value=existing.get("colour", ""),
+                        placeholder="black",
+                    ),
+                    ui.input_slider(
+                        "ast_alpha", "Opacity (alpha)",
+                        min=0.1, max=1.0, value=float(existing.get("alpha", 1.0)), step=0.05,
+                    ),
+                    ui.input_select(
+                        "ast_shape", "Point shape",
+                        choices={"": "Default", "16": "● Circle", "17": "▲ Triangle",
+                                 "15": "■ Square", "18": "◆ Diamond", "1": "○ Hollow circle"},
+                        selected=str(existing.get("shape", "")),
+                    ),
+                    ui.input_action_button(
+                        "btn_aesthetic_apply", "Apply Style",
+                        class_="btn-primary btn-sm w-100 mt-2",
+                    ),
+                    class_="p-2 spv-text-xs",
+                ),
+                value="plot_style",
+            ),
+            open=False,
+            class_="mb-2",
+        )
+
+    @reactive.Effect
+    @reactive.event(input.btn_aesthetic_apply)
+    def _handle_aesthetic_apply():
+        """Collect style inputs, apply alpha directly, open propagation dialog for others."""
+        if home_state is None:
+            return
+        state = home_state.get()
+        active_sub = state.get("active_plot_subtab", "")
+        if not active_sub:
+            return
+
+        try:
+            fill_color = (input.ast_fill_color() or "").strip()
+            colour = (input.ast_colour() or "").strip()
+            alpha = float(input.ast_alpha() if hasattr(input, "ast_alpha") else 1.0)
+            shape_raw = (input.ast_shape() or "").strip()
+            shape = int(shape_raw) if shape_raw.isdigit() else None
+        except Exception:
+            return
+
+        # Alpha is always per-plot: apply directly to t3_plot_overrides.
+        overrides_all = dict(state.get("t3_plot_overrides", {}))
+        current = dict(overrides_all.get(active_sub, {}))
+        if alpha < 1.0:
+            current["alpha"] = round(alpha, 2)
+        elif "alpha" in current:
+            del current["alpha"]
+        overrides_all[active_sub] = current
+        home_state.set({**state, "t3_plot_overrides": overrides_all})
+
+        # Non-alpha aesthetics: open propagation dialog if any are set.
+        has_propagatable = bool(fill_color or colour or shape is not None)
+        if not has_propagatable:
+            return
+
+        _aesthetic_scratch.set({
+            "fill_color": fill_color or None,
+            "colour": colour or None,
+            "shape": shape,
+            "active_sub": active_sub,
+        })
+
+        # Build the propagation modal (simplified — no column-presence check for aesthetics).
+        summary_parts = []
+        if fill_color:
+            summary_parts.append(f"fill={fill_color}")
+        if colour:
+            summary_parts.append(f"colour={colour}")
+        if shape is not None:
+            summary_parts.append(f"shape={shape}")
+        summary = ", ".join(summary_parts)
+
+        # Collect all subtabs for the except-picker.
+        try:
+            all_specs = state.get("t3_recipe_by_plot", {})
+            all_subs = list(all_specs.keys())
+        except Exception:
+            all_subs = [active_sub]
+        others = [s for s in all_subs if s != active_sub]
+
+        m = ui.modal(
+            ui.tags.small(f"Aesthetics: {summary}", class_="d-block text-muted mb-2"),
+            ui.input_radio_buttons(
+                "aesthetic_propagation_choice",
+                label="Apply to:",
+                choices={
+                    "this": "This plot only",
+                    "all": "All plots",
+                    "except": "All plots except…",
+                },
+                selected="this",
+            ),
+            ui.input_selectize(
+                "aesthetic_propagation_except",
+                label=ui.tags.small("(only with 'All plots except…')", class_="text-muted"),
+                choices={s: s.removeprefix("subtab_").replace("_", " ").title() for s in others},
+                selected=[],
+                multiple=True,
+                options={"placeholder": "Plots to exclude…", "plugins": ["remove_button"]},
+            ),
+            ui.input_action_button(
+                "aesthetic_propagation_confirm", "Apply Style",
+                class_="btn-primary w-100 mt-2",
+            ),
+            title="Plot Style — choose scope",
+            easy_close=True,
+            footer=ui.modal_button("Cancel"),
+            size="m",
+        )
+        ui.modal_show(m)
+
+    @reactive.Effect
+    @reactive.event(input.aesthetic_propagation_confirm)
+    def _handle_aesthetic_propagation_confirm():
+        """Commit aesthetic overrides to t3_plot_overrides for the chosen plots."""
+        if home_state is None:
+            return
+        scratch = _aesthetic_scratch.get()
+        if not scratch:
+            ui.modal_remove()
+            return
+
+        state = home_state.get()
+        active_sub = scratch.get("active_sub", state.get("active_plot_subtab", ""))
+        try:
+            choice = input.aesthetic_propagation_choice()
+        except Exception:
+            choice = "this"
+        try:
+            except_picks = list(input.aesthetic_propagation_except() or [])
+        except Exception:
+            except_picks = []
+
+        try:
+            all_specs = state.get("t3_recipe_by_plot", {})
+            all_subs = list(all_specs.keys())
+        except Exception:
+            all_subs = [active_sub]
+
+        if choice == "this":
+            targets = [active_sub]
+        elif choice == "all":
+            targets = list(all_subs)
+        elif choice == "except":
+            targets = [s for s in all_subs if s not in set(except_picks)]
+        else:
+            targets = [active_sub]
+
+        overrides_all = dict(state.get("t3_plot_overrides", {}))
+        for sub in targets:
+            current = dict(overrides_all.get(sub, {}))
+            if scratch.get("fill_color"):
+                current["fill_color"] = scratch["fill_color"]
+            if scratch.get("colour"):
+                current["colour"] = scratch["colour"]
+            if scratch.get("shape") is not None:
+                current["shape"] = scratch["shape"]
+            overrides_all[sub] = current
+
+        home_state.set({**state, "t3_plot_overrides": overrides_all})
+        _aesthetic_scratch.set({})
+        ui.modal_remove()
+
+        n_targets = len(targets)
+        _notify(
+            f"Style applied to {n_targets} plot(s).",
+            type="message", duration=3,
+        )
 
     # ------------------------------------------------------------------
     # pipeline_issues_ui — DIAG-RUNTIME-AUDIT-1 structured error log
