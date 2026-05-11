@@ -3,11 +3,12 @@ Gallery Shiny wiring (ADR-037 / ADR-045, Phase 22-F).
 
 Entry point:
     define_server(input, output, session, *,
-                  bootloader, wrangle_studio, safe_input,
+                  bootloader, safe_input,
                   current_persona=None, home_state=None)
 
 Concern: Gallery filtering, preview rendering, recipe clone, gallery_browser_anchor.
-         Phase 22-F: persona-gated "Send to T3" transplant.
+         Clone transplants a developer_raw_yaml RecipeNode into home_state._pending_t3_nodes
+         (§12e). Gated on t3_sandbox_enabled.
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.* decorators
 only. It MUST NOT be imported by non-Shiny contexts.
 """
@@ -16,24 +17,25 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (gallery_handlers)
-# consumes: app/modules/wrangle_studio.py, app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: app/src/bootloader.py, libs/transformer/src/transformer/data_wrangler.py (removed — clone now builds RecipeNode directly)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/ui_implementation_contract.md#12e
 # @end_deps
 
 import base64
+import hashlib
 import json
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 import polars as pl
 import yaml
 from shiny import reactive, render, ui
 
-from transformer.data_wrangler import DataWrangler
-
 
 def define_server(input, output, session, *,
-                  bootloader, wrangle_studio, safe_input,
+                  bootloader, safe_input,
                   current_persona=None, home_state=None):
     """Register all Gallery reactive handlers.
 
@@ -41,8 +43,6 @@ def define_server(input, output, session, *,
     ----------
     bootloader : Bootloader
         Path Authority instance (ADR-031).
-    wrangle_studio : WrangleStudio
-        Shared WrangleStudio state (receives cloned recipes).
     safe_input : callable
         Shared utility: safe_input(input_obj, key, default) → value.
     current_persona : reactive.Value[str] | None
@@ -154,6 +154,17 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_clone_gallery)
     def handle_gallery_clone():
+        # Gate: only personas with T3 sandbox can receive transplants (§12e).
+        if not bootloader.is_enabled("t3_sandbox_enabled"):
+            ui.notification_show(
+                "Send to T3 is not available for this persona.",
+                type="warning", duration=5,
+            )
+            return
+
+        if home_state is None:
+            return
+
         recipe_id = safe_input(input, "gallery_recipe_select", None)
         if not recipe_id:
             return
@@ -172,28 +183,44 @@ def define_server(input, output, session, *,
 
             file_path = recipe_entry["path"]
             with open(file_path, "r") as f:
-                manifest = yaml.safe_load(f)
+                raw_yaml = f.read()
+                manifest = yaml.safe_load(raw_yaml)
 
+            # Extract the wrangling block as the YAML fragment for T3.
             wrangling_raw = manifest.get("wrangling", {})
-            # Handle both list and dict formats for backward compatibility
-            tier3_raw = wrangling_raw.get("tier3", []) if isinstance(
-                wrangling_raw, dict) else wrangling_raw
+            yaml_fragment = yaml.dump(
+                {"wrangling": wrangling_raw}, default_flow_style=False, allow_unicode=True,
+            )
+            gallery_yaml_hash = hashlib.sha256(raw_yaml.encode()).hexdigest()[:16]
 
-            new_steps = DataWrangler._resolve_tier(tier3_raw, "all")
-            valid_nodes = []
-            for step in new_steps:
-                action = step.get("action", "unknown")
-                params = {k: v for k, v in step.items() if k != "action"}
-                valid_nodes.append({
-                    "action": action,
-                    "params": params,
-                    "comment": f"Ghost-loaded from Reference: {recipe_id}"
-                })
-            wrangle_studio.logic_stack.set(valid_nodes)
+            # Build a developer_raw_yaml RecipeNode (§12b / §12e).
+            node: dict = {
+                "node_type": "developer_raw_yaml",
+                "id": str(uuid.uuid4()),
+                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M"),
+                "plot_scope": "__all__",
+                "plot_scopes_intent": ["__all_at_apply__"],
+                "params": {"yaml_fragment": yaml_fragment},
+                "reason": "",  # empty — blocks btn_apply until user fills it in
+                "gallery_source": {
+                    "gallery_id": recipe_id,
+                    "gallery_yaml_hash": gallery_yaml_hash,
+                },
+            }
+
+            # Append to pending nodes in home_state (§12g.7).
+            cur = home_state.get()
+            pending = list(cur.get("_pending_t3_nodes", []))
+            pending.append(node)
+            home_state.set({**cur, "_pending_t3_nodes": pending})
+
             ui.notification_show(
-                f"✅ Recipe '{recipe_id}' cloned to Sandbox.", type="success")
+                f"Recipe '{recipe_id}' sent to T3 sandbox. "
+                "Add a reason in the Audit panel, then press Apply.",
+                type="message", duration=8,
+            )
         except Exception as e:
-            print(f"❌ Clone failed: {e}")
+            ui.notification_show(f"Clone failed: {e}", type="error", duration=10)
 
     # --- Gallery Content Resolution (ADR-037) ---
     @reactive.Calc

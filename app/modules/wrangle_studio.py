@@ -5,7 +5,8 @@
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)
 # consumes: app/src/bootloader.py (method:get_palettes — via self._bootloader, optional)
-# consumed_by: app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/handlers/audit_stack.py, app/handlers/gallery_handlers.py, app/src/server.py
+# consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)
+# consumed_by: app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/handlers/audit_stack.py, app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-004, .claude/knowledge/architecture_decisions.md#ADR-075
 # @end_deps
 
@@ -293,7 +294,7 @@ class WrangleStudio:
 
     def define_server(self, input, output, session, available_cols, get_base_data,
                       viz_factory, get_schema_registry=None, get_includes_map=None,
-                      bootloader=None):
+                      bootloader=None, selected_lineage_rel=None):
         # Store bootloader so instance methods (e.g. _render_action_form) can access it
         self._bootloader = bootloader
 
@@ -1434,14 +1435,18 @@ class WrangleStudio:
         @reactive.Effect
         @reactive.event(input.lineage_node_rel)
         def handle_lineage_node_click():
-            """When user clicks a Rail node, load that component into the 3-column panel.
-            Updates the pipeline selector then programmatically fires btn_import_manifest.
+            """When user clicks a Rail node, signal blueprint_handlers to load that component.
+
+            Writes to selected_lineage_rel (BP-LINEAGE-NAV-1) so blueprint_handlers'
+            _load_component_from_selection effect calls _do_load_component() directly —
+            no js_eval DOM dependency, no race condition from async ui.update_select.
             """
             rel = input.lineage_node_rel()
             if not rel:
                 return
             ui.update_select("dataset_pipeline_selector", selected=rel)
-            ui.js_eval("document.getElementById('btn_import_manifest').click();")
+            if selected_lineage_rel is not None:
+                selected_lineage_rel.set(rel)
 
         @output
         @render.ui

@@ -1,6 +1,7 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio, app.modules.test_lab_studio, app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio (gated: developer_mode_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# provides: reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003
 # @end_deps
@@ -88,8 +89,12 @@ def server(input, output, session):
     # VizFactory works with built-ins alone when no registry is passed (library independence).
     viz_factory = VizFactory(palette_registry=bootloader.get_palettes())
 
-    # Module Initialization (Phase 11-F / ADR-039)
-    wrangle_studio = WrangleStudio(session.id)
+    # Module Initialization (Phase 11-F / ADR-039 / ADR-071 positive inclusion)
+    # WrangleStudio is created only when developer_mode_enabled — same flag gate used in
+    # home_theater. All handler delegations that receive wrangle_studio are already gated
+    # on developer_mode_enabled, blueprint_enabled, or t3_sandbox_enabled, all of which
+    # require developer_mode_enabled to be true in every current persona template.
+    wrangle_studio = WrangleStudio(session.id) if bootloader.is_enabled("developer_mode_enabled") else None
     dev_studio = TestLabStudio() if bootloader.is_enabled("test_lab_enabled") else None
 
     # State Management
@@ -116,6 +121,10 @@ def server(input, output, session):
     _includes_map: reactive.Value = reactive.Value({})      # rel_path → abs_path for !include files
     _component_ctx_map: reactive.Value = reactive.Value({}) # rel_path → {role, schema_id, ...}
     _schema_registry: reactive.Value = reactive.Value({})   # schema_id → structural entry
+    # BP-LINEAGE-NAV-1: shared signal — both lineage rail clicks and btn_import_manifest write
+    # here; a single @reactive.Effect in blueprint_handlers calls _do_load_component() directly,
+    # eliminating the js_eval → DOM click → input race condition.
+    _selected_lineage_rel: reactive.Value = reactive.Value(None)
 
     print(f"DEBUG: Initializing Server with Persona: {bootloader.persona_display_name}")
     current_persona = reactive.Value(bootloader.persona_display_name)
@@ -186,12 +195,14 @@ def server(input, output, session):
 
 
     # Module Server Definitions
-    wrangle_studio.define_server(
-        input, output, session, lambda: tier1_anchor().collect_schema().names(), tier1_anchor, viz_factory,
-        get_schema_registry=lambda: _schema_registry.get(),
-        get_includes_map=lambda: _includes_map.get(),
-        bootloader=bootloader,
-    )
+    if bootloader.is_enabled("developer_mode_enabled"):
+        wrangle_studio.define_server(
+            input, output, session, lambda: tier1_anchor().collect_schema().names(), tier1_anchor, viz_factory,
+            get_schema_registry=lambda: _schema_registry.get(),
+            get_includes_map=lambda: _includes_map.get(),
+            bootloader=bootloader,
+            selected_lineage_rel=_selected_lineage_rel,
+        )
     if bootloader.is_enabled("test_lab_enabled"):
         dev_studio.define_server(input, output, session)
 
@@ -251,15 +262,15 @@ def server(input, output, session):
             includes_map=_includes_map,
             component_ctx_map=_component_ctx_map,
             schema_registry=_schema_registry,
+            selected_lineage_rel=_selected_lineage_rel,
         )
 
-    # Gallery: filtering, preview, clone
+    # Gallery: filtering, preview, clone → T3 transplant (GALLERY-CLONE-DECOUPLE-1)
     if bootloader.is_enabled("gallery_enabled"):
         from app.handlers.gallery_handlers import define_server as _define_gallery_server
         _define_gallery_server(
             input, output, session,
             bootloader=bootloader,
-            wrangle_studio=wrangle_studio,
             safe_input=_safe_input,
             current_persona=current_persona,
             home_state=home_state,

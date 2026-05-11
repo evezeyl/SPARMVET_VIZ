@@ -15,9 +15,10 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch
+# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)
+# consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"))
 # doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076
 # @end_deps
@@ -50,7 +51,8 @@ from utils.config_loader import ConfigManager
 
 def define_server(input, output, session, *,
                   bootloader, wrangle_studio, orchestrator, safe_input,
-                  includes_map, component_ctx_map, schema_registry):
+                  includes_map, component_ctx_map, schema_registry,
+                  selected_lineage_rel=None):
     """Register all Blueprint Architect reactive handlers.
 
     Parameters
@@ -70,6 +72,9 @@ def define_server(input, output, session, *,
         Per-session sibling map: rel_path → {role, schema_id, ...}.
     schema_registry : reactive.Value[dict]
         Per-session schema registry: schema_id → structural entry.
+    selected_lineage_rel : reactive.Value[str | None]
+        BP-LINEAGE-NAV-1: shared signal written by lineage rail clicks and btn_import_manifest.
+        _load_component_from_selection watches it and calls _do_load_component() directly.
     """
 
     # BP-UNDO-1: 20-step session undo deque (ADR-082 placeholder)
@@ -669,13 +674,37 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_import_manifest)
     def _handle_manifest_import():
-        """Thin wrapper — reads Shiny inputs and delegates to _do_load_component."""
+        """Write selected component to shared signal — _load_component_from_selection fires next.
+
+        BP-LINEAGE-NAV-1: btn_import_manifest no longer calls _do_load_component() directly.
+        Both this effect and handle_lineage_node_click (wrangle_studio.py) write to
+        selected_lineage_rel; _load_component_from_selection is the single call site.
+        """
         master_path = input.stored_manifest_selector()
         selected    = input.dataset_pipeline_selector()
-        if not master_path or not selected:
+        if not master_path or not selected or selected_lineage_rel is None:
+            return
+        selected_lineage_rel.set(selected)
+
+    @reactive.Effect
+    @reactive.event(selected_lineage_rel)
+    def _load_component_from_selection():
+        """Single call site for _do_load_component — watches the shared lineage signal.
+
+        Fires when either btn_import_manifest or a lineage rail click writes a new rel path.
+        Reads master_path directly from input (no race: selected_lineage_rel carries the
+        chosen rel, bypassing the async ui.update_select lag).
+        """
+        if selected_lineage_rel is None:
+            return
+        rel = selected_lineage_rel.get()
+        if not rel:
+            return
+        master_path = safe_input(input, "stored_manifest_selector", None)
+        if not master_path:
             return
         _do_load_component(
-            master_path, selected,
+            master_path, rel,
             inc_map=includes_map.get(),
             ctx_map=component_ctx_map.get(),
         )
