@@ -24,9 +24,18 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+try:
+    import yaml
+    _YAML_AVAILABLE = True
+except ImportError:
+    _YAML_AVAILABLE = False
+
 TASKS_FILE = ".claude/tasks/tasks.md"
-# Matches backtick-quoted strings that look like file paths (contain / or .py/.yaml/.md)
-PATH_RE = re.compile(r"`([^`]+\.[a-zA-Z]{1,5}(?:[^`/]*)?)`")
+EXCLUSIONS_FILE = ".claude/workflows/audit_exclusions.yaml"
+
+# Matches backtick-quoted strings that look like file paths.
+# Stops at `:` to avoid capturing line-number suffixes like `pipeline.py:21`.
+PATH_RE = re.compile(r"`([^`]+\.[a-zA-Z]{1,5})[:`]?[^`]*`")
 # Only look at open tasks (not archived or done lines)
 OPEN_TASK_RE = re.compile(r"^\s*-\s+\[[ ]\]")
 
@@ -39,6 +48,19 @@ def find_project_root(start: Path) -> Path:
         if (parent / "CLAUDE.md").exists() or (parent / ".venv").exists():
             return parent
     return start
+
+
+def load_exclusions(project_root: Path) -> set[str]:
+    """Return set of file paths excluded from drift checking via audit_exclusions.yaml."""
+    exclusions_path = project_root / EXCLUSIONS_FILE
+    if not exclusions_path.exists() or not _YAML_AVAILABLE:
+        return set()
+    try:
+        data = yaml.safe_load(exclusions_path.read_text(encoding="utf-8")) or {}
+        entries = data.get("task_drift", {}).get("expected_absent_files", [])
+        return {e["path"] for e in entries if isinstance(e, dict) and "path" in e}
+    except Exception:
+        return set()
 
 
 def extract_task_paths(tasks_path: Path) -> list[tuple[int, str, str]]:
@@ -61,13 +83,19 @@ def extract_task_paths(tasks_path: Path) -> list[tuple[int, str, str]]:
     return results
 
 
-def check_paths(task_paths: list[tuple[int, str, str]], project_root: Path) -> list[dict]:
+def check_paths(
+    task_paths: list[tuple[int, str, str]],
+    project_root: Path,
+    excluded: set[str],
+) -> list[dict]:
     violations = []
-    seen = set()
+    seen: set[str] = set()
     for lineno, raw_path, task_text in task_paths:
         if raw_path in seen:
             continue
         seen.add(raw_path)
+        if raw_path in excluded:
+            continue
         full = project_root / raw_path
         if not full.exists():
             violations.append({
@@ -150,8 +178,9 @@ def main() -> int:
         print(f"ERROR: Tasks file not found: {tasks_path}", file=sys.stderr)
         return 2
 
+    excluded = load_exclusions(project_root)
     task_paths = extract_task_paths(tasks_path)
-    violations = check_paths(task_paths, project_root)
+    violations = check_paths(task_paths, project_root, excluded)
     report = render_report(violations, task_paths, tasks_path, project_root)
 
     print(report)

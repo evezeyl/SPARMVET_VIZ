@@ -5,7 +5,7 @@
 # `review_trigger` (what change would require re-evaluating the exclusion).
 #
 # Authority: @dasharch
-# Updated: 2026-05-09
+# Updated: 2026-05-12
 #
 # HOW TO USE
 # ----------
@@ -164,12 +164,19 @@ manifest_coherence:
 
 cross_lib:
   known_violations:
-    - from_lib: transformer
-      to_lib: ingestion
-      reason: "Legacy coupling pre-ADR-011. Tracked as tech debt. Do not expand."
-      review_trigger: "When transformer is refactored to remove ingestion imports."
+    # transformer→ingestion: resolved 2026-05-11. The only import is inside
+    # `if TYPE_CHECKING:` (consumes_typeonly: pattern). audit_cross_lib.py now
+    # skips TYPE_CHECKING blocks — this entry is retained for documentation only.
+    # blueprint_arch→utils: utils is TIER1_BASE, filtered in scan() before
+    # reaching KNOWN_VIOLATIONS — always a dead entry, removed 2026-05-12.
 
-    - from_lib: blueprint_arch
-      to_lib: utils
-      reason: "utils is Tier 1 (allowed for domain libs) but blueprint_arch pyproject.toml does not yet declare it."
-      review_trigger: "When blueprint_arch/pyproject.toml adds utils as an explicit dependency."
+# ── audit_task_drift.py ───────────────────────────────────────────────────────
+task_drift:
+  expected_absent_files:
+    - path: "scripts/audit_code_quality.py"
+      reason: >
+        Intentionally deferred — rules_code_quality.md §5 explicitly states
+        "Do not write this script until the implementation sprint begins."
+        The task CODE-DOCS-RETROSPECTIVE references it by design before the
+        file is created.
+      review_trigger: "When the pre-deployment documentation sprint begins."

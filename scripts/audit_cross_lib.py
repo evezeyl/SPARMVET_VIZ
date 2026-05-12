@@ -32,10 +32,10 @@ DOMAIN_LIBS = {
 TIER1_BASE = "utils"
 
 # Known existing violations (tech debt — do not remove entries until fixed)
-KNOWN_VIOLATIONS = {
-    # ("from_lib", "to_lib", substring_in_import)
-    ("transformer", "ingestion"),
-    ("blueprint_arch", "utils"),  # utils imports are now allowed — re-check if this shows
+KNOWN_VIOLATIONS: set[tuple[str, str]] = {
+    # transformer→ingestion was here but the only import is inside `if TYPE_CHECKING:`
+    # (consumes_typeonly: pattern, ADR-011 resolved 2026-05-11) — excluded by extract_imports.
+    # blueprint_arch→utils: utils is TIER1_BASE, filtered before this check — dead entry removed.
 }
 
 
@@ -46,19 +46,44 @@ def find_project_root(start: Path) -> Path:
     return start
 
 
+def _is_type_checking_block(node: ast.AST) -> bool:
+    """Return True if node is an `if TYPE_CHECKING:` or `if typing.TYPE_CHECKING:` block."""
+    if not isinstance(node, ast.If):
+        return False
+    test = node.test
+    return (
+        (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or
+        (isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING")
+    )
+
+
 def extract_imports(filepath: Path) -> list[tuple[int, str]]:
-    """Return list of (line_number, module_string) for all imports in file."""
+    """Return (line_number, module_string) for runtime imports only.
+
+    Imports inside `if TYPE_CHECKING:` blocks are excluded — they never execute
+    at runtime and are not ADR-011 violations (consumes_typeonly: pattern).
+    """
     try:
         tree = ast.parse(filepath.read_text(encoding="utf-8"))
     except SyntaxError:
         return []
+
+    # Collect line numbers of imports that live inside TYPE_CHECKING blocks.
+    type_checking_lines: set[int] = set()
+    for node in ast.walk(tree):
+        if _is_type_checking_block(node):
+            for child in ast.walk(node):
+                if isinstance(child, (ast.Import, ast.ImportFrom)):
+                    type_checking_lines.add(child.lineno)
+
     results = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            for alias in node.names:
-                results.append((node.lineno, alias.name))
+            if node.lineno not in type_checking_lines:
+                for alias in node.names:
+                    results.append((node.lineno, alias.name))
         elif isinstance(node, ast.ImportFrom):
-            if node.module:
+            if node.lineno not in type_checking_lines and node.module:
                 results.append((node.lineno, node.module))
     return results
 
