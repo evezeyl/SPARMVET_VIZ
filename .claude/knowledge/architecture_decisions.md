@@ -110,6 +110,9 @@
 - **Integrity Rule:** No symlinks. Each module must define its own dependencies, ensuring that if extracted, it could function as a standalone library.
 - **Dependency Rule:** Legacy requirements (`requirements.txt`, `requires.txt`) are strictly **FORBIDDEN**; the `pyproject.toml` file is the sole source of truth for module dependencies.
 - **Two-Tier Model (clarified 2026-05-09):** `libs/utils/` is the **base layer** — may be imported by any domain lib, but must be declared explicitly in that lib's `pyproject.toml`. All other `libs/` are **domain layers** — zero peer-to-peer cross-lib imports permitted. `app/` and `assets/scripts/` are the **orchestration layer** — the only place that imports from multiple libs. Goal: each domain lib is usable standalone; if you want a different UI (CLI, API, Galaxy), import only the layers you need. See `rules_runtime_environment.md §4`.
+- **pyproject.toml naming standard (resolved 2026-05-11):** Use the package name in dependencies — `"utils"`, not `"libs/utils"`. The path form is not a valid PEP 508 specifier and pip cannot resolve it. Four libs corrected: `blueprint_arch`, `connector`, `transformer`, `viz_factory`. Reference: `ingestion/pyproject.toml` as the canonical correct example.
+- **TYPE_CHECKING guard (clarified 2026-05-11):** A domain lib may reference another domain lib's type **for static analysis only** if guarded by `if TYPE_CHECKING:`. The annotated type must never be instantiated at runtime in the domain lib — the instance is injected by the Tier 3 orchestration layer (caller). Documented in `@deps` with `consumes_typeonly:` keyword. This is NOT a violation of the Clear Lines policy.
+- **Compliance status (2026-05-11):** All previously tracked violations resolved. `transformer→ingestion` was TYPE_CHECKING-only (not a runtime violation). All `"libs/utils"` pyproject entries corrected to `"utils"`.
 
 ## ADR 012: Staged Data Assembly
 

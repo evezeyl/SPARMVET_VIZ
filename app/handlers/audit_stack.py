@@ -552,7 +552,7 @@ def define_server(input, output, session, *,
     def _handle_delete():
         """Linked-id permanent deletion across all per-plot stacks.
 
-        Phase 22-J / ADR-049 §12g.10: clicking 🗑 on any copy removes EVERY
+        Phase 22-J / ADR-049 §12g.10: clicking the delete icon on any copy removes EVERY
         copy sharing that id from every plot's stack and from pending nodes.
         """
         if home_state is None:

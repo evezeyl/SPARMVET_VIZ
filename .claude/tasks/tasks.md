@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-11 (DEPLOY-CONNECT-1, UX-DEBUG-* complete) by @dasharch
+**Last Updated:** 2026-05-11 (Full audit — EMOJI-DOCSTRING-1, VIZ-README-COUNT-1 fixed; CROSS-LIB-SCRIPT-1, TASK-DRIFT-EXCLUSION-1 added) by @dasharch
 
 ---
 
@@ -84,6 +84,12 @@ Items with no blockers — can be started immediately.
 
 > AUDIT-FIRST-TRIAGE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
 > HELP-INLINE-1: COMPLETED 2026-05-11. Archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md)
+
+### Audit Fixes — Code Hygiene (2026-05-11)
+
+- [ ] **CROSS-LIB-SCRIPT-1** `[haiku/low]`: Update `scripts/audit_cross_lib.py` to skip imports inside `if TYPE_CHECKING:` blocks. Currently it flags `libs/transformer/src/transformer/pipeline.py:21` as a known-tech-debt cross-lib violation even though the import is properly guarded and is NOT a runtime violation (documented as `consumes_typeonly:`). Expected outcome after fix: `pipeline.py` shows 0 violations in the script output.
+
+- [ ] **TASK-DRIFT-EXCLUSION-1** `[haiku/low]`: Add `scripts/audit_code_quality.py` to `.claude/workflows/audit_exclusions.yaml` under the `task_drift` key as an expected-absent file. Rationale: `rules_code_quality.md §5` explicitly defers this script to the pre-deployment sprint — the task exists in `tasks.md` by design before the file is created. The `audit_task_drift.py` script should not flag it as a drift violation.
 
 ---
 

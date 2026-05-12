@@ -73,7 +73,7 @@ def make_recipe_node(
         Default: fresh hex UUID.
     primary_key_warning : bool
         Set True when the targeted column is a join key (§12g.5). Persists in
-        the ghost; renders as ⚠️ banner on the audit card and as a marker in
+        the ghost; renders as a warning banner on the audit card and as a marker in
         the export Methods section.
     """
     node: RecipeNode = {

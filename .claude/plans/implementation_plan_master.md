@@ -697,7 +697,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 | 31-G | EXPORT-HASH-2 | ✅ |
 | 31-H | EXPORT-IMG-META-1 | ✅ |
 | — | IMPORT-UI-1 | ✅ (unified import panel) |
-| — | DEPLOY-CONNECT-1 | deferred |
+| 31-I | DEPLOY-CONNECT-1 | ✅ (2026-05-11) |
 
 ### Open / deferred
 

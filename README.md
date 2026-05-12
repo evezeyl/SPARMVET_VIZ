@@ -92,6 +92,22 @@ The built-in `sparmvet_brand` palette is always available even without this file
 
 See [Deployment Configuration](./docs/user_guide/deployment_personas.qmd) for the full guide, dependency rules, and how to create a custom profile.
 
+### Posit Connect deployment
+
+Posit Connect cannot install editable source packages (`-e ./libs/...`). Use the bundler script instead:
+
+```bash
+# 1. Build wheels for all local libs into pkgs/
+bash assets/scripts/bundle_connect.sh
+
+# 2. Fill in config/deployment/connect/connect_profile_template.yaml
+
+# 3. Deploy (requires CONNECT_SERVER + CONNECT_API_KEY env vars)
+bash assets/scripts/bundle_connect.sh --deploy
+```
+
+Entry point: `app/src/main:app`. See [config/deployment/README.md](./config/deployment/README.md) for required env vars and full instructions.
+
 ---
 
 ## 📖 Documentation
@@ -121,6 +137,7 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 | `create_test_deployment.py` | Generate a dev deployment profile (ADR-048) |
 | `build_dep_graph.py` | Rebuild the `@deps` dependency graph |
 | `generate_demo_data.py` | Generate synthetic demo data via AquaSynthesizer |
+| `bundle_connect.sh` | Build wheels for all local libs and optionally deploy to Posit Connect (DEPLOY-CONNECT-1) |
 
 > Note: `debug_viz_factory_audit.py` was relocated to `libs/viz_factory/tests/` (ADR-032 — library-internal debug runners belong in their own `libs/<x>/tests/`).
 

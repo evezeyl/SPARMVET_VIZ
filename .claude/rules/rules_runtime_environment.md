@@ -63,11 +63,13 @@ Each library in `./libs/` is designed to be **independently installable and reus
 - May import from any library in `./libs/`.
 - This is the ONLY layer that orchestrates multiple libraries together.
 
-**Existing violations** (tech debt — do not expand; tracked in tasks.md `ADR-011 cross-lib violations`):
-- `libs/transformer/` → `libs/ingestion/`, `libs/utils/`
-- `libs/blueprint_arch/` → `libs/utils/`
+**`pyproject.toml` dependency naming standard (resolved 2026-05-11):** When declaring a local lib as a dependency, use the **package name** (e.g., `"utils"`, `"ingestion"`), NOT the path form `"libs/utils"`. The path form is not a valid PEP 508 specifier — pip cannot resolve it. All four affected `pyproject.toml` files (`blueprint_arch`, `connector`, `transformer`, `viz_factory`) have been corrected. The canonical example is `ingestion/pyproject.toml` which already used `"utils"` correctly.
 
-`libs/utils/` imports are the only acceptable cross-lib exception going forward, and must always be declared in `pyproject.toml`.
+**`TYPE_CHECKING` guard — cross-lib type annotations:** If a domain lib needs to reference a type from another domain lib **solely for static analysis** (e.g., a function signature annotation), the import MUST be guarded by `if TYPE_CHECKING:` and never used at runtime. The injected object is passed by the caller (Tier 3 orchestration layer). Use `consumes_typeonly:` in the `@deps` block to document this pattern. Example: `libs/transformer/pipeline.py` annotates `DataIngestor` for type-checking only — the actual instance is injected at runtime by the caller (orchestrator or test runner). This is **not** a violation of the Clear Lines policy.
+
+**Existing tech debt (do not expand):** All previously listed violations have been resolved. The `transformer→ingestion` item was a TYPE_CHECKING-only annotation (not a runtime violation). The `"libs/utils"` pyproject entries have been corrected. Track any new violations in `tasks.md`.
+
+`libs/utils/` imports are the only acceptable cross-lib exception going forward, and must always be declared in `pyproject.toml` using the package name `"utils"`.
 
 ## 5. Python Interpreter Authority
 

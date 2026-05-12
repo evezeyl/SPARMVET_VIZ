@@ -35,6 +35,7 @@ not in source logic or developer-level annotations.
 - All `.md` files: tasks, changelogs, rules, README, handoffs
 - Quarto `.qmd` documentation files
 - `tasks.md` section headers and priority markers
+- **`f.write()` / string literals that produce markdown content** — e.g., `f.write("## Section 📊\n")` in an export bundle generator that writes `.qmd` or `.md` output files. The emoji appears in the *output document*, not in source comments or error messages. Treat these the same as YAML `label:` values.
 
 **The test/debug script exception is intentional.** Scripts like `debug_wrangler.py` and
 `transformer_integrity_suite.py` produce terminal tables for developer review — the emoji

@@ -124,6 +124,7 @@ deps:
 |---|---|---|
 | `provides:` | Names/contracts exported by this file | Update all `consumes:` references if renamed |
 | `consumes:` | Names/contracts this file depends on | Must be updated if the provider renames/removes |
+| `consumes_typeonly:` | A type from another domain lib used **only for static analysis** (`TYPE_CHECKING` guard). Never imported at runtime — instance injected by the Tier 3 caller. This is NOT a Clear Lines violation. | No runtime co-update needed; note if the annotated type's signature changes |
 | `mirrors:` | Must stay behaviourally in sync with this file | Read both files together; any logic change in one must be reflected in the other |
 | `documents:` | This file is the human description of that file's contract | Update when the documented file's interface changes |
 | `doc:` | The rule/doc file that governs this file's interface | Read before changing; update after if the interface changed |

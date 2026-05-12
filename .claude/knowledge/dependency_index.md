@@ -268,6 +268,13 @@
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
 
+## `app/tests/debug_data_import.py`
+- **Role:** `info`
+- **provides:** `debug:data_import_headless`
+- **consumes:** `transformer/metadata_validator.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `manual @verify`, `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#9`, `.claude/rules/ui_implementation_contract.md#10`
+
 ## `app/tests/debug_home_theater.py`
 - **Role:** `info`
 - **provides:** `debug:home_theater_headless`
@@ -614,8 +621,8 @@
 ## `libs/transformer/src/transformer/pipeline.py`
 - **Role:** `wrangle`
 - **provides:** `class:PipelineExecutor`
-- **consumes:** `libs/utils/src/utils/config_loader.py (ConfigManager)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`
-- **consumed_by:** `libs/transformer/tests/debug_pipeline.py`
+- **consumes:** `utils.config_loader (ConfigManager)`, `transformer.data_wrangler`, `transformer.data_assembler`
+- **consumed_by:** `libs/transformer/tests/debug_pipeline.py`, `app/modules/orchestrator.py`
 - **doc:** `.claude/rules/rules_data_engine.md`, `.claude/rules/rules_runtime_environment.md#4`
 
 ## `libs/transformer/src/transformer/registry.py`
