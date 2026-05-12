@@ -366,3 +366,11 @@ Completed items moved from `tasks.md` on 2026-05-11 cleanup. All items verified 
 - **Stale @deps fixed:** Updated `libs/transformer/src/transformer/pipeline.py` header to use `consumes_typeonly:` for the TYPE_CHECKING `ingestion.ingestor` import.
 - **Verification:** 265/265 fast regression tests pass. App import OK.
 - **Files changed:** `libs/blueprint_arch/pyproject.toml`, `libs/connector/pyproject.toml`, `libs/transformer/pyproject.toml`, `libs/viz_factory/pyproject.toml`, `app/pyproject.toml`, `libs/transformer/src/transformer/pipeline.py`.
+
+---
+
+## Audit Fixes — Code Hygiene (2026-05-12)
+
+- [x] **CROSS-LIB-SCRIPT-1** `[haiku/low]`: Updated `scripts/audit_cross_lib.py` to skip imports inside `if TYPE_CHECKING:` blocks. Added `_is_type_checking_block()` AST helper; rewrote `extract_imports()` to collect TYPE_CHECKING-guarded line numbers and exclude them. Cleared dead `KNOWN_VIOLATIONS` entries (transformer→ingestion now excluded by extractor; blueprint_arch→utils was unreachable). Result: `✅ PASS — No cross-lib violations found.`
+
+- [x] **TASK-DRIFT-EXCLUSION-1** `[haiku/low]`: Added `scripts/audit_code_quality.py` to `.claude/workflows/audit_exclusions.yaml` under `task_drift.expected_absent_files`. Updated `scripts/audit_task_drift.py` to (1) load exclusions from `audit_exclusions.yaml` via new `load_exclusions()`, (2) fix PATH_RE regex that was incorrectly capturing `:N` line-number suffixes as part of file paths (making valid files appear missing). Result: `✅ PASS — All file references in open tasks point to existing files.`
