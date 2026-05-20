@@ -41,7 +41,7 @@ canonical_recipe_syntax:
 
 analysis_groups_structure:
   description: "Top-level key in master manifest. Defines groups and plots rendered in the Home Theater."
-  note: "This is the ONLY way to render plots in the application. The legacy flat 'plots:' key is no longer used."
+  note: "This is the ONLY authoring format for plots. DEPRECATED (removal task: LEGACY-FLAT-PLOTS-1): flat 'plots:' key at manifest root is removed as an authoring pattern."
   format: |
     analysis_groups:
       <group_id>:                         # snake_case, no spaces, no emoji
@@ -76,7 +76,9 @@ analysis_groups_structure:
         legend_ncol: false
 
   plot_spec_file_format: |
-    # Grammar-of-graphics format (ADR-083). factory_id is not supported.
+    # DEPRECATED (ADR-083, 2026-05-20): factory_id is removed — raises PipelineError.
+    # Migration: assets/scripts/migrate_plot_specs.py --apply | Removal task: BP-PLOT-LEGACY-REMOVE-1
+    # Current grammar-of-graphics format:
     spec:
       target_dataset: <assembly_id>      # Must match a join_manifests key
       mapping:

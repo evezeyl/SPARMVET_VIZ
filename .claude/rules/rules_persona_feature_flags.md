@@ -23,7 +23,7 @@ These flags are always meaningful regardless of any other flag.
 | Flag | Default (static) | Effect when true |
 |---|---|---|
 | `export_enabled` | `true` | Export accordion panel: bundle zip + 3-way scope toggle. Gates the full panel. (`demo-vetinst`/`web-demo`: `false`) |
-| `audit_report_enabled` | `false` | Retained in validator for backwards compat — **no longer used by UI** (2026-05-04 redesign). T3 audit trail is auto-included in `report.qmd` inside the bundle. |
+| `audit_report_enabled` | `false` | **DEPRECATED (2026-05-04, removal task: LEGACY-AUDIT-FLAG-1).** UI ignores this flag — T3 audit trail is auto-included in `report.qmd`. Flag retained in validator only for backwards compat with existing templates. Do not add to new templates. |
 
 No dependencies. Safe to enable in any persona.
 

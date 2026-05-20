@@ -195,7 +195,7 @@ t3_steps:
       committed_at: "..."
 ```
 
-**No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` persona flag is retained in the validator for backwards compat but is unused by the UI.
+**No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` persona flag is **DEPRECATED (removal task: LEGACY-AUDIT-FLAG-1)** — retained in validator only for backwards compat, unused by the UI.
 
 **Single Graph Export accordion removed.** Superseded by the "Active plot" scope option in the 3-way toggle (see §7.3).
 
@@ -541,7 +541,7 @@ T3 ghost is never written on intermediate filter edits — only on apply or pane
 
 ### 12f. Export Report Spec
 
-**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` persona flag is retained in the validator for backwards compat but is no longer used by the UI.
+**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` persona flag is **DEPRECATED (removal task: LEGACY-AUDIT-FLAG-1)** — retained in validator only for backwards compat, unused by the UI.
 
 **Format:** `report.qmd` is a Quarto source file included in the bundle ZIP. Users render it locally with `quarto render report.qmd`. The T3 Audit Trail section is part of this file.
 

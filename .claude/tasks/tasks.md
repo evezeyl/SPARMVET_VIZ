@@ -142,6 +142,41 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 - [ ] **UX-GALLEXP-1** `[sonnet/medium]`: Gallery Explorer right sidebar — functionality TBD.
 - [ ] **UX-DEVINSP-1** `[sonnet/medium]`: Test Lab right sidebar + left sidebar redesign — functionality TBD.
 
+### Legacy removal (tracked per rules_legacy_management.md §6)
+> Protocol: dep-sweep → impact assessment → migration path → code removal → test sweep → doc consistency sweep → ADR record.
+> All 7 steps required before a task is [DONE].
+
+- [ ] **LEGACY-FLAT-PLOTS-1** `[sonnet/medium]`: Full removal of flat `plots:` authoring key.
+  - **Dep sweep:** `grep -rn "\.get\('plots'" libs/ app/` — known hits: `config_loader.py:160,163,173,184`, `viz_factory.py:92,106`, `blueprint_mapper.py:195,200,208,212,421`
+  - **Code:** Remove root-level `plots:` init in `config_loader.py`. Add `ConfigurationError` if `plots:` found at manifest root (not inside `analysis_groups`). Update VizFactory to read exclusively from the post-ConfigManager flattened dict, not from raw manifest.
+  - **Tests:** `grep -rn "plots" libs/utils/tests/ libs/viz_factory/tests/` — remove any tests using flat `plots:` as authoring input; add error-path test.
+  - **Doc sweep:** `rules_manifest_structure.md`, `docs/appendix/manifest_structure.yaml`, `docs/appendix/Standards_yaml.qmd`, `libs/utils/README.md`, `libs/viz_factory/README.md` — update tombstones to REMOVED.
+  - **Gate:** `grep -rn "^plots:" config/manifests/` = zero hits. Full test suite passes.
+
+- [ ] **LEGACY-AUDIT-FLAG-1** `[haiku/low]`: Full removal of `audit_report_enabled` flag.
+  - **Dep sweep:** Known hits: `persona_validator.py:27,41,124`, `bootloader.py:441`, `test_persona_validator.py`, all 8 `config/ui/templates/*_template.yaml`
+  - **Code:** Remove from `persona_validator.py` known-flags list and cascade check. Remove from `bootloader.py` interactivity cascade. Remove key from all 8 template YAMLs.
+  - **Tests:** Update `test_persona_validator.py` — remove the `audit_report_enabled=True` cascade test (lines 147–152); confirm remaining tests still pass.
+  - **Doc sweep:** `rules_persona_feature_flags.md` flag table, `ui_implementation_contract.md` §7.2 and §12f, `docs/workflows/ui_persona.qmd` if referenced — convert DEPRECATED markers to REMOVED tombstones with expiry Phase 35.
+  - **ADR:** Note removal in ADR or session log.
+  - **Gate:** `grep -rn "audit_report_enabled" app/ config/` = zero hits. Full test suite passes.
+
+- [ ] **LEGACY-TYPE-ALIASES-1** `[sonnet/low]`: Remove deprecated type aliases `character` / `string` (→ `categorical`).
+  - **Dep sweep:** `grep -rn "\"character\"\|\"string\"\|'character'\|'string'" libs/ingestion/ libs/transformer/ libs/utils/` — confirm exactly where aliases are accepted (may be ingestion schema validator or config_loader type coercion).
+  - **Manifest scan:** `grep -rn "type: character\|type: string" config/manifests/` — if any hits, migrate them first before removing engine support.
+  - **Code:** Remove alias acceptance. Raise `ConfigurationError`: `"Type 'character' is deprecated — use 'categorical'. See rules_manifest_structure.md §9."`.
+  - **Tests:** Add error-path test for deprecated alias.
+  - **Doc sweep:** `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone. `rules_manifest_structure.md §9`. Any README mentioning type values.
+  - **Gate:** `grep -rn "type: character\|type: string" config/` = zero hits. Engine raises error on alias. Test suite passes.
+
+- [ ] **LEGACY-FLAT-WRANGLING-1** `[sonnet/low]`: Remove engine acceptance of flat `wrangling: []` list.
+  - **Dep sweep:** `grep -rn "wrangling" libs/transformer/src/ libs/utils/src/` — find exactly where flat list is tolerated vs tiered structure enforced.
+  - **Manifest scan:** `grep -rn "^wrangling:" config/manifests/` — any flat (non-tiered) wrangling blocks must be migrated first. Run `debug_assembler.py` to verify after migration.
+  - **Code:** Remove flat-list tolerance. Raise `ConfigurationError`: `"Flat 'wrangling:' list is deprecated — use tiered structure with 'tier1:' / 'tier2:'. See rules_data_engine.md §3."`.
+  - **Tests:** Remove any tests using flat wrangling as valid input; add error-path test.
+  - **Doc sweep:** `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone. `rules_data_engine.md §3` proactive-refactoring note → update to say engine rejects flat lists. `docs/appendix/manifest_structure.yaml`.
+  - **Gate:** `grep -rn "^  wrangling:\s*\[" config/` = zero hits. Engine rejects flat lists. Test suite passes.
+
 ### Repo hygiene / tech debt
 
 - [ ] **REPO-CLEAN-1** `[haiku/low]` `[repo-hygiene]`: Full git history purge — remove EVE_WORK/, session logs, .vscode user files from ALL past commits. Prerequisite: backup to external disc + gdrive sync.

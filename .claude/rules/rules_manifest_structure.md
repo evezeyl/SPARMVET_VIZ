@@ -101,7 +101,11 @@ The key `on` is a **YAML reserved word** that is silently parsed as boolean `Tru
 
 ## 8. `analysis_groups` Structure (Manifest-Driven Home Theater)
 
-The `analysis_groups` top-level key defines the groups and plots rendered in the Home Theater (Phase 21-B). **This is the ONLY way to render plots in the app.** The legacy flat `plots:` key at the manifest root is no longer used.
+> **DEPRECATED authoring pattern (Phase 21-B, 2026-05-20):** A flat `plots:` key at the manifest root is no longer valid as an authoring format.
+> Use `analysis_groups:` exclusively (see below). ConfigManager still builds an internal flat plots dict from `analysis_groups` at load time — that is an engine implementation detail, not an authoring target.
+> **Removal task:** LEGACY-FLAT-PLOTS-1 (remove backward-compat read path from ConfigManager + viz_factory.py)
+
+The `analysis_groups` top-level key defines the groups and plots rendered in the Home Theater (Phase 21-B). **This is the ONLY authoring format for plots.**
 
 ```yaml
 analysis_groups:
@@ -144,7 +148,12 @@ Reserve `description:` for longer prose; use `label:` for short emoji-rich tab t
 
 ### Plot spec file structure (`plots/<plot_id>.yaml`)
 
-Plot specs use a grammar-of-graphics format (ADR-083): explicit `geom_*` layers in `layers:`, all aesthetics in a `mapping:` block. The legacy `factory_id` shorthand is not supported.
+> **DEPRECATED (ADR-083, 2026-05-20):** `factory_id` shorthand (e.g. `factory_id: bar_logic`) is removed.
+> Use explicit `geom_*` layers in `layers:` and all aesthetics under `mapping:` (see canonical format below).
+> Engine raises `PipelineError` when `factory_id` is present. Migration: `assets/scripts/migrate_plot_specs.py --apply`.
+> **Removal task:** BP-PLOT-LEGACY-REMOVE-1
+
+Plot specs use a grammar-of-graphics format (ADR-083): explicit `geom_*` layers in `layers:`, all aesthetics in a `mapping:` block.
 
 ```yaml
 spec:

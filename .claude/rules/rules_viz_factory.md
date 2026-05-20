@@ -46,7 +46,7 @@ No visual component is considered verified without:
 ## 5. Theme Sovereignty
 
 - **Custom Themes**: The `theme_dashboard` is the authoritative style for the SPARMVET UI.
-- **3rd-Party Parity**: Support for Seaborn, 538, and Tufte themes must be maintained to ensure legacy compatibility.
+- **3rd-Party Parity**: Seaborn, 538, and Tufte themes are actively registered components (`theme_seaborn`, `theme_538`, `theme_tufte` in `themes/core.py`). They are fully supported and available to manifest authors — not deprecated.
 
 ## 6. Palette Injection (ADR-081, BP-COLOR-3)
 

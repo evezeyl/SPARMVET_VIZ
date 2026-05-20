@@ -35,6 +35,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 | **UI Contract** | Theater Layout, Tier Toggle, Persona Masking, Audit Stack | [ui_implementation_contract.md](./.claude/rules/ui_implementation_contract.md) |
 | **App Structure** | Server decomposition, Handler/Module boundary law | [rules_app_structure.md](./.claude/rules/rules_app_structure.md) |
 | **Code Quality** | Emoji ban (active), comment philosophy, pre-deployment doc tiers (deferred) | [rules_code_quality.md](./.claude/rules/rules_code_quality.md) |
+| **Legacy Management** | Deprecation markers, Historical preservation, Tombstone expiry — read when marking anything as deprecated/removed | [rules_legacy_management.md](./.claude/rules/rules_legacy_management.md) |
 
 ## 2. Primary Technical Bible
 

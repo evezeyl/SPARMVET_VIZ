@@ -145,7 +145,12 @@ recipe:
 
 ### 3-C. Plot specs (in `plots/<plot_id>.yaml`)
 
-Use grammar-of-graphics format (ADR-083): explicit `geom_*` layer first, all aesthetics under `mapping:`. The legacy `factory_id` shorthand is not supported — the engine will raise a `PipelineError` if it is present.
+> **DEPRECATED (ADR-083, 2026-05-20):** `factory_id` shorthand (e.g. `factory_id: bar_logic`) is removed.
+> Use explicit `geom_*` layers in `layers:` and aesthetics under `mapping:` (see canonical format below).
+> Engine raises `PipelineError` when `factory_id` is present. Migration: `assets/scripts/migrate_plot_specs.py --apply`.
+> **Removal task:** BP-PLOT-LEGACY-REMOVE-1
+
+Use grammar-of-graphics format (ADR-083): explicit `geom_*` layer first, all aesthetics under `mapping:`.
 
 ```yaml
 spec:

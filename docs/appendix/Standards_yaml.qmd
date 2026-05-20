@@ -56,13 +56,17 @@ input_fields:
 | `date` | Calendar dates or timestamps | Sampling dates, submission dates |
 | `boolean` | True/False, presence/absence | Resistance flags, pass/fail status |
 
-> **Note:** `character` and `string` are legacy aliases for `categorical` accepted by the engine for backward compatibility, but **new manifests must use `categorical`**.
+> **DEPRECATED (removal task: LEGACY-TYPE-ALIASES-1):** `character` and `string` as type values are deprecated aliases for `categorical`.
+> New manifests MUST use `categorical`. Existing manifests using these aliases should be migrated. Engine acceptance of aliases will be removed.
 
 ---
 
 ## 2. Wrangling Block Rules (Tiered Structure)
 
-All wrangling logic must use the **tiered structure** (ADR-041). A flat list is accepted by the engine for legacy compatibility but is not recommended for new manifests.
+All wrangling logic must use the **tiered structure** (ADR-041).
+
+> **DEPRECATED (removal task: LEGACY-FLAT-WRANGLING-1):** A flat `wrangling: []` list at manifest root is a deprecated authoring pattern.
+> New manifests MUST use the tiered structure. Engine acceptance of flat lists will be removed.
 
 ```yaml
 wrangling:
