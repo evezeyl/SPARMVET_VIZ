@@ -137,8 +137,10 @@ When in doubt, restate the definition above and confirm before building or editi
 
 > **Resolved 2026-05-20 → ADR-082.** The answers Eve annotated below are now locked in
 > ADR-082 (preview=on-Apply; branch=node-level lineage bifurcation / fragment-per-component;
-> escape-hatch=yes, comments-lost-on-roundtrip MVP; manifest-draft autosave=yes; libraries=same
-> as HOME; AI=advise-only/Socratic with a definition file). Retained here as the discussion record.
+> escape-hatch=yes; **intent comments = free-text `comment:` field per node/step/group/plot with a
+> good-practice hover tooltip, preserved by the ingest** (`#` comments not round-tripped — ruamel v2);
+> manifest-draft autosave=yes; libraries=same as HOME; AI=advise-only/Socratic with a definition file).
+> Retained here as the discussion record.
 
 - **Preview trigger**: should results update live (on every change) or only on explicit "Run" push? [Run push]Live is more IDE-like but expensive; push is safer for large data. Probably configurable, defaulting to push [Good if can use a default here].
 - **Branch storage**: branches as separate YAML files, or as named variants within one file? Needs decision before building branching.[separate files - branches will mostly be used to create different plots for same data, or eg to keep data wide vs long format and then different plot]

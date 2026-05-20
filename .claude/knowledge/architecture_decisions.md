@@ -3653,7 +3653,7 @@ Resolves §6 of the research draft. Two were already settled by the May 10–11 
 | **Q1 — Preview trigger** | **On-Apply only.** Editing a node marks it pending; the Glimpse + plot recompute on Apply. Matches the HOME T3 Apply mental model and the existing `btn_bp_apply_node` gate. | Ratified (implemented) |
 | **Q2 — T3 authoring scope** | **Manifest only (T1/T2 + plots).** BLUEPRINT never authors or previews T3. T3 is HOME-only (publication finisher). Clean separation of concerns: BLUEPRINT = pipeline author, HOME = analyst. | Decided |
 | **Q3 — Branch storage** | **LOCKED (2026-05-20): branch = lineage bifurcation at a node.** A "branch" (Eve's manifest sense) splits one lineage into two **at a chosen node**: everything *upstream* of the node stays **shared** (the Tier 1 trunk is materialized once via `sink_parquet`; branches read it via `scan_parquet` — no recompute), and the child lineages **diverge downstream**. Physically this is the existing **fragment-per-component** structure — each branch is a new `!include` fragment (`wrangling/`, `output_fields/`, `assembly/`, `plots/`) wired into the master manifest; the canonical example is `Summary` / `Summary_quality` (shared source + `input_fields`, divergent wrangling/`output_fields`). This is the **Bifurcation Point Rule** (`rules_data_engine.md`) made interactive. NOT whole-file duplication: duplicating an entire manifest is the *rare* path, used only when adding genuinely new data (the usual start is a boilerplate template). Terminology: the TubeMap graph *fan-out* is the visual; the *manifest branch* is the lineage split. | Locked |
-| **Q4 — YAML comment round-trip** | **Document the limitation for MVP** — comments are lost when a manifest is round-tripped through the form view. *v2:* evaluate `ruamel.yaml` round-trip mode if comment preservation becomes a real user need. | Decided (lean) |
+| **Q4 — Comments / intent documentation** | **`comment:` keys (data-level), not `#` comments.** Intent documentation is a first-class **free-text `comment` field on every node / step / group / plot**, surfaced in the BLUEPRINT form. It is written into the manifest YAML as a `comment:` data key and is **preserved by the ingest** (PyYAML `SafeLoader` keeps data keys; round-trip-safe with no new dependency). The comment input MUST carry a **hover tooltip** nudging good-comment practice (e.g. "Write your intent — *why* this step, not what"). Hand-written **`#` free-form comments are NOT preserved** through a form round-trip (PyYAML strips them on load and `yaml.dump` on save) — accepted limitation. *v2:* adopt `ruamel.yaml` round-trip across loader + save paths only if `#`-comment preservation becomes a real need. Build task: BP-COMMENTS-1. | Decided 2026-05-20 |
 | **Q5 — Join authoring** | **Dedicated Joint Designer pane.** A BLUEPRINT sub-surface showing left + right ingredient schemas side-by-side with a live key-match preview, producing a canonical `join` recipe step. Not just a generic action form. | Decided |
 | **Q6 — Group/plot creation** | **Sidebar inventory list (MVP)** — a persistent list of all groups/plots with create/delete/assign affordances. **Expandable to Q6-C (add TubeMap context menu) in v2** — the two are independent affordances over the same group/plot CRUD; the context menu is purely additive, no rework. | Decided + v2 path |
 | **Q7 — Data inspection** | **Glimpse only** (current DataGrid + preview). No per-column stats panel or profiler in MVP. | Decided |
@@ -3670,7 +3670,7 @@ Eve annotated `BLUEPRINT.md` Open Questions directly; captured here:
 - **AI assistant definition file** — confirmed already implemented: `config/ui/agents/blueprint_default.md`, wired via persona `instructions_file` → `bootloader.get_agent_config()` (ADR-076 / BP-AGENT-INSTRUCT-1).
 - **Library loading** — BLUEPRINT loads the same libraries as HOME (it authors manifests HOME runs); library-set variation stays out of scope.
 - **Pattern helper** — reuse the TEST_LAB component if feasible (design-time check); not MVP-blocking.
-- **Escape-hatch comments** — comments are lost on form round-trip in MVP (documented limitation, Q4); `ruamel.yaml` round-trip is a v2 candidate.
+- **Comments / intent (Q4, revised)** — intent documentation is a free-text `comment:` data field per node/step/group/plot, surfaced in the form with a good-practice hover tooltip, preserved by the ingest (no new dependency). Build task BP-COMMENTS-1. Hand-written `#` comments still lost on form round-trip (ruamel deferred to v2). Save/Export paths inherit this — the `comment:` keys survive `yaml.dump`.
 - **Branch storage (Q3)** — LOCKED (see §2 table): branch = node-level lineage bifurcation, shared upstream by reference, divergent downstream fragment. BP-BRANCH-NODE-1 (reshaped from BP-FORK-FILES-1) builds it. Open implementation-level UX detail: how much BLUEPRINT auto-detects the bifurcation node vs. the user choosing it explicitly — decided at task time, not ADR-blocking.
 
 ---
@@ -3690,7 +3690,7 @@ Each of the functionalities listed in `BLUEPRINT.md` is classified MVP (ships in
 | 7 | Add info/metadata | MVP | GAP — manifest `info:` block is YAML-only today (BP-META-1) |
 | 8 | Visualise the DAG (TubeMap) | MVP | DONE |
 | 9 | Isolate lineage | MVP | PARTIAL — Lineage Rail done; hide-unrelated isolation deferred to v2 |
-| 10 | Branch (fork) | MVP | DONE (Visual Fork); clean `variants:` block is v2 (Q3) |
+| 10 | Branch (node-level lineage bifurcation, Q3) | MVP | PARTIAL — current Visual Fork appends into the manifest; rework to node-level bifurcation with shared upstream by reference (BP-BRANCH-NODE-1) |
 | 11 | Preview results (on-Apply) | MVP | DONE |
 | 12 | Use actions from libraries | MVP | DONE (catalog picker, context-filtered) |
 | 13 | Auto-match helper | MVP | PARTIAL — Field Gap Analysis + forward-prop hints done; column auto-mapping suggestions v2 |
@@ -3702,6 +3702,7 @@ Each of the functionalities listed in `BLUEPRINT.md` is classified MVP (ships in
 | — | Joint Designer pane (Q5) | MVP | NEW — (BP-JOINT-1) |
 | — | enum visual preview (ADR-075 §2) | MVP | GAP #3 — (BP-ENUM-PREVIEW-1) |
 | — | expression code-editor w/ autocomplete (ADR-075 §2) | MVP | GAP #4 — (BP-EXPR-EDITOR-1) |
+| — | Intent comment field per node/step/group/plot (Q4) | MVP | PARTIAL — wrangling nodes have a `comment`; extend to all + hover tooltip (BP-COMMENTS-1) |
 
 ---
 
@@ -3741,7 +3742,7 @@ Verification found the form layer is **half-built**: the rich 8-widget renderer 
 ### Consequences
 
 - **Documentation:** `BLUEPRINT.md` "Current State" section refreshed (was stale — claimed forms unbuilt); feature set locked. `rules_ui_dashboard.md §7` gains the L1–L4 layer model and the Joint Designer + group/plot inventory surfaces. `blueprint_architect_ux_spec.md` updated for the new panes. Research draft marked RESOLVED.
-- **Tasks:** New Phase 32 tasks spawned — BP-FORMS-UNIFY-1, BP-COMPONENT-SCHEMA-1, BP-COMPONENT-FORMS-1, BP-JOINT-1, BP-GROUPS-1, BP-META-1, BP-NEW-1, BP-VALIDATE-1, BP-ENUM-PREVIEW-1, BP-EXPR-EDITOR-1. The originally-open BP-FORMS-1 is reframed: action-form rendering is DONE; remaining form work is tracked under the new task IDs.
+- **Tasks:** New Phase 32 (cont.) tasks spawned — BP-FORMS-UNIFY-1, BP-ENUM-PREVIEW-1, BP-EXPR-EDITOR-1, BP-COMPONENT-SCHEMA-1, BP-COMPONENT-FORMS-1, BP-JOINT-1, BP-GROUPS-1, BP-META-1, BP-NEW-1, BP-VALIDATE-1, BP-CSS-LEGEND-1, BP-SMOKE-1, BP-AUTOSAVE-1, BP-BRANCH-NODE-1. The originally-open BP-FORMS-1 is reframed: action-form rendering is DONE (verified); BP-ESCAPE-1/BP-UNDO-1/BP-HELP-1 implemented; remaining form/feature work is tracked under the new task IDs.
 - **Persona:** No new flags. All BLUEPRINT capability remains gated by `blueprint_enabled`; editable YAML escape hatch + Visual Fork by `manifest_edit_enabled` (ADR-075 §7, ADR-077 fatal cascade).
 - **Tests:** Smoke coverage to add — add-node opens full form; component form renders; Joint Designer key-match preview; group/plot inventory create/delete.
 - **CSS:** TubeMap legend currently uses forbidden Bootstrap colours (`#0d6efd`, `#198754`) — flagged for correction against `rules_css_style_spec.md` (BP-CSS-LEGEND-1).
@@ -3752,6 +3753,7 @@ Verification found the form layer is **half-built**: the rich 8-widget renderer 
 2. **BP-ENUM-PREVIEW-1** `[sonnet/medium]` + **BP-EXPR-EDITOR-1** `[sonnet/high]` — ADR-075 §2 widget gaps (#3, #4). Independent, can parallelise.
 3. **BP-COMPONENT-SCHEMA-1** `[sonnet/high]` → **BP-COMPONENT-FORMS-1** `[opus/high]` — component schema parity then component form path (gap #2).
 4. **BP-JOINT-1** `[opus/high]` — Joint Designer pane (Q5).
-5. **BP-GROUPS-1** `[sonnet/high]` + **BP-META-1** `[sonnet/medium]` + **BP-NEW-1** `[sonnet/medium]` + **BP-VALIDATE-1** `[sonnet/medium]` — remaining MVP functionalities (#6, #7, #2-create, #16).
-6. **BP-CSS-LEGEND-1** `[haiku/low]` — legend colour fix.
-7. *v2:* clean `variants:` block (Q3), lineage isolation (#9), TubeMap context menu (Q6-C), column auto-map suggestions (#13).
+5. **BP-BRANCH-NODE-1** `[opus/high]` — node-level lineage bifurcation (Q3); replaces the current Visual Fork append behaviour.
+6. **BP-COMMENTS-1** `[sonnet/medium]` — free-text intent `comment` field per node/step/group/plot + good-practice hover tooltip (Q4). **BP-GROUPS-1** `[sonnet/high]` (build CRUD decoupled from the sidebar UI so the TubeMap context menu is additive later — Q6) + **BP-META-1** `[sonnet/medium]` + **BP-NEW-1** `[sonnet/medium]` + **BP-VALIDATE-1** `[sonnet/medium]` — remaining MVP functionalities (#6, #7, #2-create, #16).
+7. **BP-AUTOSAVE-1** `[sonnet/high]` — manifest-draft autosave (§2a). **BP-SMOKE-1** `[sonnet/medium]` — functional smoke for BP-ESCAPE-1/BP-HELP-1. **BP-CSS-LEGEND-1** `[haiku/low]` — legend colour fix.
+8. *v2:* lineage isolation (#9), TubeMap context menu (Q6-C), column auto-map suggestions (#13), whole-manifest duplication (BP-DUPLICATE-1).
