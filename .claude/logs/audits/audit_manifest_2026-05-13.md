@@ -114,3 +114,5 @@ Rule: All pipeline manifests must assemble without error (ADR-041, ADR-024)
 - `.claude/rules/rules_data_engine.md` — 3-Tier lifecycle, wrangling standards
 - `libs/transformer/tests/debug_assembler.py` — assembler debug runner
 - Routine 3 (Manifest integrity) in `.claude/workflows/audit_routine_registry.md`
+Status: PROCESSED
+Triaged: 2026-05-20 — Script bug, not a manifest error. All 6 manifests fail with "could not determine a constructor for the tag '!include'" because debug_assembler.py uses yaml.safe_load() which does not register the !include constructor. Manifests are structurally sound (coherence audit PASS 6/6). Root cause: Phase 28 modularised manifests with !include but debug_assembler.py was not updated. Fix needed: use ConfigManager from libs/utils/src/utils/config_loader.py instead of yaml.safe_load. Task added: MANIFEST-AUDIT-SCRIPT-1.

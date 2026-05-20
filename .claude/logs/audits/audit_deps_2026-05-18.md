@@ -41,3 +41,5 @@ All 27 load-bearing file(s) carry a @deps block.
 - `workspace_standard.md §5` — @deps annotation format, coupling keywords, maintenance protocol
 - `workspace_standard.md §5-E` — Mandatory Maintenance Protocol (SESSION LAW)
 - `.claude/knowledge/dependency_index.md` — Auto-generated from @deps by `build_dep_graph.py`
+Status: PROCESSED
+Triaged: 2026-05-20 — PASS, no action required.

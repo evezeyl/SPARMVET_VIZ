@@ -42,3 +42,5 @@ Update the `input_fields` slug to match exactly (case-sensitive).
 - `rules_persona_bioscientist.md §8` — Registered action names (authoritative list)
 - `rules_persona_bioscientist.md §3-A/B` — Wrangling and assembly canon
 - Routine 13 (Manifest coherence) in `.claude/workflows/audit_routine_registry.md`
+Status: PROCESSED
+Triaged: 2026-05-20 — PASS, no action required.

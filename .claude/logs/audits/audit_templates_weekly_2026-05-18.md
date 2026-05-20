@@ -28,3 +28,5 @@ All persona templates pass strict validation.
 - `scripts/validate_persona_config.py` — validator CLI
 - `config/ui/templates/` — all persona template files
 - Routine 8 (Template flag completeness) in `.claude/workflows/audit_routine_registry.md`
+Status: PROCESSED
+Triaged: 2026-05-20 — PASS, no action required.

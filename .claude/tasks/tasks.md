@@ -26,6 +26,31 @@
 
 Items with no blockers — can be started immediately.
 
+### Phase 18-F — Action Registry ui_schema Parity (prerequisite for BP-FORMS-1)
+
+- [ ] **ACTION-UISCHEMA-1** `[sonnet/medium]`: Add `ui_schema` dicts to the **42 remaining `@register_action` decorators** that currently have none. The 2 engine-internal actions (`sink_parquet`, `scan_parquet`) are excluded — they are not user-facing and must not appear in the Blueprint form picker. All 8 widget types must be used as appropriate: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`. Context tags (`t1`/`t2`/`assembly`/`plot`) must reflect valid position rules. Use existing `ui_schema` examples in `cleaning/core.py`, `cleaning/expressions.py`, `relational/joins.py`, `reshaping/core.py` as canonical patterns. Missing actions (in order of BIOSCIENTIST §8 categories): `all_horizontal`, `any_horizontal`, `count_by_group`, `cum_count`, `cum_sum`, `date_extract`, `date_truncate`, `derive_categories`, `describe_stats`, `divide_columns`, `drop_duplicates`, `fill_nulls_direction`, `horizontal_stats`, `interpolate`, `join_filter`, `list_join`, `list_slice`, `null_if`, `percentile`, `pivot`, `recode_values`, `regex_replace`, `rename`, `replace_values`, `round_numeric`, `sample`, `sanitize_column_names`, `select_by_pattern`, `shift`, `split_and_explode`, `split_column`, `split_column_to_parts`, `split_to_list`, `summarize`, `to_struct`, `unique`, `unique_rows`, `unnest`, `value_counts`, `window_agg`, `z_score`. **Must complete before BP-FORMS-1.**
+
+### Phase 32 — Blueprint IDE Build Mode (ADR-075)
+
+- [ ] **BP-FORMS-1** `[opus/high]`: **Depends on ACTION-UISCHEMA-1.** Blueprint form builder — render action/component forms from `ui_schema` dicts (8 widget types: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`). Position rules via `context` tag (`t1`/`t2`/`assembly`/`plot`). Apply gate: upstream schema propagates on Apply only. Full spec: `architecture_decisions.md` ADR-075 + `implementation_plan_master.md` §Phase 32, step 32-D.
+- [ ] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only pre block when `blueprint_enabled`; editable textarea when `manifest_edit_enabled`. Emits `developer_raw_yaml` T3 node on save. Gate via `bootloader.is_enabled("manifest_edit_enabled")`. Spec: ADR-075, `ui_implementation_contract.md §7 (YAML escape hatch)`.
+- [ ] **BP-UNDO-1** `[sonnet/medium]`: 20-step session undo deque for Blueprint node edits. Edit-in-place + re-Apply is layer 1; undo deque is layer 2; YAML escape hatch is layer 3. Spec: ADR-075.
+- [ ] **BP-HELP-1** `[sonnet/medium]`: Resolve `__doc__` from `@register_action` / `@register_plot_component` at runtime via `importlib`. Render as docstring block in form. Optional `doc_url` field (disabled in air-gapped deployments). Spec: ADR-075.
+- [ ] **ACTION-RENAME-1** `[haiku/low]`: `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag. Spec: implementation plan §Phase 32, step 32-J.
+
+### Phase 33 — Blueprint AI Agent MVP-1 (ADR-076)
+
+- [ ] **BP-AGENT-PARSER-1** `[sonnet/medium]`: Fenced-block extractor (`agent_tool_parser.py`) — parse structured tool-call blocks from agent text output. Spec: ADR-076, implementation plan §Phase 33, step 33-C.
+- [ ] **BP-AGENT-TOOLS-1** `[sonnet/medium]`: 3 MVP tools for the agent — `get_available_actions`, `get_available_components`, `get_field_contract`. Spec: ADR-076, step 33-D.
+- [ ] **BP-AGENT-INSTRUCT-1** `[sonnet/medium]`: System prompt file `config/ui/agents/blueprint_default.md`. Spec: ADR-076, step 33-E.
+- [ ] **BP-AGENT-PANEL-1** `[haiku/low]`: Register `blueprint_agent_chat` panel in sidebar registry + persona templates. Spec: ADR-076, step 33-F.
+- [ ] **BP-AGENT-UI-1** `[sonnet/medium]`: Chat panel render outputs in `app/handlers/blueprint_handlers.py`. Spec: ADR-076, step 33-G.
+- [ ] **BP-AGENT-CSS-1** `[haiku/low]`: `.bp-agent-*` CSS rule block in `config/ui/theme.css`. Spec: ADR-076 + `rules_css_style_spec.md §5` (Chat/Conversational Panel Pattern).
+
+### Audit script fixes
+
+- [ ] **MANIFEST-INCLUDE-1** `[sonnet/low]`: Any script that loads a **full pipeline manifest** (manifests with `analysis_groups`, modularised via `!include` in Phase 28) must use `ConfigManager` from `libs/utils/src/utils/config_loader.py`, not bare `yaml.safe_load()`. Standalone decorator/wrangling manifests (small fragments, no `!include`) are exempt. Confirmed broken: `libs/transformer/tests/debug_assembler.py:48` — causes `scripts/audit_manifest_integrity.py` to falsely report all 6 pipeline manifests as FAIL. Also check: `libs/viz_factory/tests/debug_runner.py:48` (fallback comment only, not fixed), `libs/viz_gallery/src/viz_gallery/gallery_manager.py:125` (gallery recipes are standalone — verify if any use `!include`), `libs/viz_gallery/assets/generate_previews.py:47`, `libs/viz_gallery/tests/debug_gallery_submission.py:50`. After fix, re-run `audit_manifest_integrity.py` → expect 6/6 PASS.
+
 ---
 
 ## 🤔 Needs Discussion / Decision
@@ -129,7 +154,8 @@ Tasks requiring user decision, user action, or explicit discussion before implem
 
 Context and status notes from recent sessions. Add here instead of inside active task sections.
 
-- **2026-05-12** — Do Now is empty. All recent work (CROSS-LIB-SCRIPT-1, TASK-DRIFT-EXCLUSION-1, EMOJI-DOCSTRING-1, VIZ-README-COUNT-1) archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md). No blockers cleared since last session; remaining open items all require discussion or user input.
+- **2026-05-20** — Triaged 11 unprocessed audit files from 2026-05-13/18. 10 PASS (marked PROCESSED). 1 actionable finding: `audit_manifest_integrity.py` reports 6/6 manifests FAIL because `debug_assembler.py` uses `yaml.safe_load()` — `!include` not supported. All manifests are structurally fine (coherence audit PASS). Task added: MANIFEST-INCLUDE-1 in Do Now.
+- **2026-05-12** — All recent work (CROSS-LIB-SCRIPT-1, TASK-DRIFT-EXCLUSION-1, EMOJI-DOCSTRING-1, VIZ-README-COUNT-1) archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md).
 
 ---
 

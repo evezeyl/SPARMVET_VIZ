@@ -19,3 +19,5 @@ Rule: `.claude/rules/rules_viz_factory.md §6` | ADR-081
 - `.claude/rules/rules_viz_factory.md §6` — Palette Injection (ADR-081)
 - `app/src/bootloader.py` — `get_palettes()` method (never returns empty)
 - `libs/viz_factory/src/viz_factory/viz_factory.py` — `_BUILTIN_PALETTES`, `_apply_palette()`
+Status: PROCESSED
+Triaged: 2026-05-20 — PASS, no action required.
