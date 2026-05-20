@@ -5,7 +5,8 @@
 # provides: function:_enum_preview_legend (BP-ENUM-PREVIEW-1), constants:_LINETYPE_DASHARRAY/_POSITION_DESC
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog, search_actions, get_actions_for_context; get_component_catalog, search_components, get_components_for_context — BP-COMPONENT-FORMS-1)
-# consumes: node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1); action key ({"action":...}) for wrangling nodes
+# consumes: node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes
+# consumes: __mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices
 # consumes: app/src/bootloader.py (method:get_palettes — via self._bootloader, optional)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, loaded via ui.py head)
@@ -782,37 +783,60 @@ class WrangleStudio:
 
             # BP-COMPONENT-FORMS-1: component nodes (plot layers) get the same ui_schema
             # form as actions, sourced from the component catalog. The __mapping__ node
-            # stays read-only here — the dedicated aes form is BP-MAPPING-FORM-1.
+            # gets a dedicated aes column-picker form (BP-MAPPING-FORM-1).
             component_name = node.get("component")
             if component_name is not None:
                 if component_name == "__mapping__":
-                    aes_rows = [
-                        ui.div(
-                            ui.span(f"{k}:", class_="text-muted small me-1",
-                                    style="min-width:48px;display:inline-block;"),
-                            ui.span(v, class_="fw-bold small"),
-                            class_="mb-1"
+                    # BP-MAPPING-FORM-1: editable aes mapping form.
+                    # Each standard aesthetic key gets its own column selector (optional).
+                    # Input IDs are bp_map_{key} — distinct from bp_form_* to avoid collisions.
+                    _AES_KEYS = [
+                        ("x", "X axis"),
+                        ("y", "Y axis"),
+                        ("fill", "Fill"),
+                        ("color", "Color"),
+                        ("size", "Size"),
+                        ("alpha", "Alpha"),
+                        ("shape", "Shape"),
+                        ("facet_by", "Facet by"),
+                    ]
+                    upstream_cols = self._extract_upstream_cols()
+                    col_choices = {"": "(not set)", **{k: k for k in upstream_cols}}
+
+                    aes_widgets = []
+                    for aes_key, aes_label in _AES_KEYS:
+                        current_val = current_params.get(aes_key, "")
+                        aes_widgets.append(
+                            ui.input_select(
+                                f"bp_map_{aes_key}",
+                                aes_label,
+                                choices=col_choices,
+                                selected=current_val if current_val in upstream_cols else "",
+                            )
                         )
-                        for k, v in current_params.items()
-                    ]
-                    body = aes_rows if aes_rows else [
-                        ui.p("No aesthetics defined.", class_="text-muted small")
-                    ]
+
                     return ui.div(
                         ui.div(
                             ui.span(f"Layer {idx + 1}: ", class_="text-muted small"),
                             ui.span("Aesthetic Mapping", class_="fw-bold small"),
                             ui.span(
-                                "read-only", class_="badge ms-2",
-                                style="background:#6c757d;color:#fff;font-size:0.65rem;"
+                                "aes", class_="badge ms-2",
+                                style="background:#10a395;color:#fff;font-size:0.65rem;"
                             ),
                             class_="mb-2"
                         ),
-                        *body,
-                        ui.p(
-                            "Mapping editing available in BP-MAPPING-FORM-1.",
-                            class_="text-muted fst-italic",
-                            style="font-size:0.72rem;margin-top:8px;"
+                        ui.input_text(
+                            "bp_form_comment", "Comment",
+                            value=current_comment,
+                            placeholder="Why this mapping?"
+                        ),
+                        *aes_widgets,
+                        ui.div(
+                            ui.input_action_button(
+                                "btn_bp_apply_node", "Apply",
+                                class_="btn btn-primary btn-sm w-100"
+                            ),
+                            class_="mt-3"
                         ),
                         class_="bp-form-container p-2"
                     )

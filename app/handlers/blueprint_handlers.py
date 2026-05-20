@@ -18,7 +18,7 @@ from __future__ import annotations
 # provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_fork_ui, output:bp_fork_preview_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_fork_preview, effect:_handle_fork_write
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
-# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1)
+# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1)
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
@@ -868,12 +868,33 @@ def define_server(input, output, session, *,
 
         node = nodes[idx]
 
-        # BP-COMPONENT-FORMS-1: branch by node kind. Component (plot layer) nodes resolve
-        # their schema from the component catalog; action nodes from the action catalog.
-        # The __mapping__ node is read-only (no Apply button) — guard defensively.
+        # BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1: branch by node kind.
+        # Component (plot layer) nodes resolve schema from component catalog.
+        # __mapping__ node uses bp_map_{aes_key} inputs (dedicated aes form).
+        # Action nodes resolve schema from action catalog.
         component_name = node.get("component")
         is_component = component_name is not None
+        new_comment = safe_input(input, "bp_form_comment", node.get("comment", ""))
+
         if is_component and component_name == "__mapping__":
+            # BP-MAPPING-FORM-1: read aes mapping inputs and rebuild mapping params.
+            _AES_KEYS = ["x", "y", "fill", "color", "size", "alpha", "shape", "facet_by"]
+            new_params = {
+                k: v
+                for k in _AES_KEYS
+                for v in [safe_input(input, f"bp_map_{k}", "")]
+                if v
+            }
+            _snapshot_state()
+            updated = list(nodes)
+            updated[idx] = {
+                "component": "__mapping__",
+                "params": new_params,
+                "comment": new_comment,
+            }
+            wrangle_studio.logic_stack.set(updated)
+            wrangle_studio.invalidated_from.set(None)
+            ui.notification_show("Aesthetic mapping updated.", type="message")
             return
 
         node_kind_key = "component" if is_component else "action"
@@ -891,7 +912,6 @@ def define_server(input, output, session, *,
             ui_schema = {}
 
         params_schema = ui_schema.get("params", {})
-        new_comment = safe_input(input, "bp_form_comment", node.get("comment", ""))
         new_params: dict = {}
 
         for param_key, param_def in params_schema.items():
