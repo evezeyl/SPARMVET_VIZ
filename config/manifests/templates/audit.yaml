@@ -1,91 +1,91 @@
-# Audit / Quality Control Manifest Template
-# Use for auditing lab submission logs, pipeline run records, or QC dashboards.
-
-id: "audit_01"
-type: "audit"
+id: audit_01
+type: audit
 info:
-  display_name: "Lab Submission Audit"
-  category: "Quality Control"
-  description: "Template for auditing lab submission data: TAT monitoring, throughput, and status tracking."
-  version: "1.0"
-
+  display_name: Lab Submission Audit
+  category: Quality Control
+  description: 'Template for auditing lab submission data: TAT monitoring, throughput,
+    and status tracking.'
+  version: '1.0'
 data_schemas:
   submission_logs:
     source:
-      type: "local_tsv"
-      path: "./assets/audit_data/submission_logs.tsv"
+      type: local_tsv
+      path: ./assets/audit_data/submission_logs.tsv
     input_fields:
       lab_id:
-        original_name: "lab_id"
-        type: "categorical"
+        original_name: lab_id
+        type: categorical
         is_primary_key: true
-        label: "Source Laboratory"
+        label: Source Laboratory
       submission_date:
-        original_name: "submission_date"
-        type: "categorical"
-        label: "Date of Submission"
+        original_name: submission_date
+        type: categorical
+        label: Date of Submission
       status:
-        original_name: "status"
-        type: "categorical"
-        label: "Processing Status"
+        original_name: status
+        type: categorical
+        label: Processing Status
       turnaround_time:
-        original_name: "turnaround_time"
-        type: "numeric"
-        label: "TAT (Days)"
+        original_name: turnaround_time
+        type: numeric
+        label: TAT (Days)
     wrangling:
       tier1:
-        - action: "strip_whitespace"
+      - action: strip_whitespace
     output_fields:
       lab_id:
-        original_name: "lab_id"
-        type: "categorical"
-        label: "Source Laboratory"
+        original_name: lab_id
+        type: categorical
+        label: Source Laboratory
       submission_date:
-        original_name: "submission_date"
-        type: "categorical"
-        label: "Date of Submission"
+        original_name: submission_date
+        type: categorical
+        label: Date of Submission
       status:
-        original_name: "status"
-        type: "categorical"
-        label: "Processing Status"
+        original_name: status
+        type: categorical
+        label: Processing Status
       turnaround_time:
-        original_name: "turnaround_time"
-        type: "numeric"
-        label: "TAT (Days)"
-
+        original_name: turnaround_time
+        type: numeric
+        label: TAT (Days)
 plot_defaults:
   height: 500
-  theme: "theme_minimal"
+  theme: theme_minimal
   show_legend: true
-
 analysis_groups:
   Performance:
-    description: "⏱️ Lab Speed and Efficiency"
+    description: ⏱️ Lab Speed and Efficiency
     plots:
       tat_distribution:
-        info: "Distribution of turnaround times per laboratory."
+        info: Distribution of turnaround times per laboratory.
         spec:
-          factory_id: "boxplot_logic"
-          target_dataset: "submission_logs"
-          x: "lab_id"
-          y: "turnaround_time"
-          fill: "lab_id"
-          title: "Turnaround Time by Laboratory"
+          target_dataset: submission_logs
+          title: Turnaround Time by Laboratory
           family: Distribution
-          pattern: "1 Numeric, 1 Categorical"
+          pattern: 1 Numeric, 1 Categorical
           difficulty: Simple
-
+          mapping:
+            x: lab_id
+            y: turnaround_time
+            fill: lab_id
+          layers:
+          - name: geom_boxplot
+            params: {}
   Volumes:
-    description: "📦 Throughput and Backlogs"
+    description: 📦 Throughput and Backlogs
     plots:
       submission_status:
-        info: "Submissions by current processing status."
+        info: Submissions by current processing status.
         spec:
-          factory_id: "bar_logic"
-          target_dataset: "submission_logs"
-          x: "status"
-          fill: "lab_id"
-          title: "Submissions by Current Status"
+          target_dataset: submission_logs
+          title: Submissions by Current Status
           family: Ranking
-          pattern: "2 Categorical"
+          pattern: 2 Categorical
           difficulty: Beginner
+          mapping:
+            x: status
+            fill: lab_id
+          layers:
+          - name: geom_bar
+            params: {}

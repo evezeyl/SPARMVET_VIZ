@@ -1,44 +1,42 @@
-id: "stress_test_master"
+id: stress_test_master
 info:
-  display_name: "STRESS: Master Performance Baseline"
-  description: "Bulletproof stress test manifest for verifying Tier 3 responsiveness and Comparison Theater."
-
+  display_name: 'STRESS: Master Performance Baseline'
+  description: Bulletproof stress test manifest for verifying Tier 3 responsiveness
+    and Comparison Theater.
 data_schemas:
   Stress_Source:
     source:
-      type: "local_tsv"
-      path: "assets/test_data/STRESS/STRESS_data.tsv"
+      type: local_tsv
+      path: assets/test_data/STRESS/STRESS_data.tsv
     input_fields: !include 'stress_test_master/input_fields/Stress_Source_input_fields.yaml'
     wrangling: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
     output_fields: !include 'stress_test_master/output_fields/Stress_Source_output_fields.yaml'
-
 join_manifests:
   Master_Collection:
     ingredients:
-      - dataset_id: "Stress_Source"
+    - dataset_id: Stress_Source
     recipe: !include 'stress_test_master/wrangling/Master_Collection_recipe.yaml'
-
 plot_defaults:
-  default_font_family: "Liberation Sans"
-
+  default_font_family: Liberation Sans
 plots:
   final_plot: !include 'stress_test_master/plots/final_plot.yaml'
-
 analysis_groups:
   Stress_Distribution:
-    label: "Distribution Analysis"
+    label: Distribution Analysis
     plots:
       stress_species_amr:
-        label: "Species x AMR Distribution"
+        label: Species x AMR Distribution
         spec:
-          factory_id: bar_logic
           target_dataset: Master_Collection
-          x: species
-          fill: amr_class
           layers:
-            - name: labs
-              params:
-                title: "STRESS TEST: Species x AMR Distribution"
-                x: "Species"
-                y: "Observed Count"
-                fill: "AMR Class"
+          - name: geom_bar
+            params: {}
+          - name: labs
+            params:
+              title: 'STRESS TEST: Species x AMR Distribution'
+              x: Species
+              y: Observed Count
+              fill: AMR Class
+          mapping:
+            x: species
+            fill: amr_class

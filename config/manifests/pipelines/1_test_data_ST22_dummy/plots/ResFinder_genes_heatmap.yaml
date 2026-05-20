@@ -1,17 +1,27 @@
-title: "AMR Genes Presence by Category"
-target_dataset: "ResFinder"
-x: "gene"
-y: "sample_id"
-fill: "phenotype"  # Categorical fill per AMR class
+title: AMR Genes Presence by Category
+target_dataset: ResFinder
 layers:
-  - name: "geom_tile"
-    params: {color: "white", size: 0.1}
-  - name: "element_text"
-    params: {target: "axis_text_x", angle: 90, hjust: 1, vjust: 0.5, size: 8}
-  - name: "element_text"
-    params: {target: "axis_text_y", size: 4} # Many samples, small font
-  - name: "theme_minimal"
-    params: {}
-family: "Correlation"
-pattern: "1 Numeric, 2 Categorical"
-difficulty: "Intermediate"
+- name: geom_tile
+  params:
+    color: white
+    size: 0.1
+- name: element_text
+  params:
+    target: axis_text_x
+    angle: 90
+    hjust: 1
+    vjust: 0.5
+    size: 8
+- name: element_text
+  params:
+    target: axis_text_y
+    size: 4
+- name: theme_minimal
+  params: {}
+family: Correlation
+pattern: 1 Numeric, 2 Categorical
+difficulty: Intermediate
+mapping:
+  x: gene
+  y: sample_id
+  fill: phenotype

@@ -1,9 +1,12 @@
-factory_id: bar_logic
 target_dataset: figshare_triple_join
-x: mic_id
-fill: predicted_phenotype
 title: Phenotypic Resistance per Antibiotic
 family: Distribution
 pattern: 2 Categorical
 description: Count of phenotype (R/S/I) per antibiotic (mic_id).
 difficulty: Beginner
+mapping:
+  x: mic_id
+  fill: predicted_phenotype
+layers:
+- name: geom_bar
+  params: {}

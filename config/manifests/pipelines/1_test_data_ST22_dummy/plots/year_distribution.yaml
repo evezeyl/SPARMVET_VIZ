@@ -1,13 +1,16 @@
-factory_id: "bar_logic"
-target_dataset: "MLST_with_metadata"
-x: "year"
-fill: "country"
-title: "Sample Count by Year (T1 = all years, T2 = 2023–2025 only)"
-family: "Ranking"
-pattern: "1 Numeric, 1 Categorical"
-description: "Use this plot to verify T1↔T2 toggle. T2 drops rows outside 2023-2025 — earlier years disappear."
-difficulty: "Simple"
+target_dataset: MLST_with_metadata
+title: Sample Count by Year (T1 = all years, T2 = 2023–2025 only)
+family: Ranking
+pattern: 1 Numeric, 1 Categorical
+description: Use this plot to verify T1↔T2 toggle. T2 drops rows outside 2023-2025
+  — earlier years disappear.
+difficulty: Simple
 layers:
-  - name: "scale_x_continuous"
-    params:
-      breaks_integer: true
+- name: geom_bar
+  params: {}
+- name: scale_x_continuous
+  params:
+    breaks_integer: true
+mapping:
+  x: year
+  fill: country

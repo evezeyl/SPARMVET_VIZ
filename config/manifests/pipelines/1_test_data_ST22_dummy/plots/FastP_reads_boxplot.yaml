@@ -1,8 +1,11 @@
-factory_id: "boxplot_logic"
-target_dataset: "FastP"
-x: "sample_id"
-y: "total_reads"
-title: "Total Reads by Sample (QC)"
-family: "Distribution"
-pattern: "1 Numeric, 1 Categorical"
-difficulty: "Simple"
+target_dataset: FastP
+title: Total Reads by Sample (QC)
+family: Distribution
+pattern: 1 Numeric, 1 Categorical
+difficulty: Simple
+mapping:
+  x: sample_id
+  y: total_reads
+layers:
+- name: geom_boxplot
+  params: {}

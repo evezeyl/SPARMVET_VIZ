@@ -1,17 +1,19 @@
 spec:
-  factory_id: bar_logic
   target_dataset: Plasmid_Profile_Joint
-  x: Year
-  fill: plasmid_name
-  facet_by: Country
   theme: theme_light
   layers:
-    - name: position_dodge
-      params: {}
-    - name: scale_x_discrete
-      params: {}
-    - name: labs
-      params:
-        title: "Plasmid Prevalence by Country"
-        fill: "Plasmid Type"
-        x: "Year"
+  - name: geom_bar
+    params: {}
+  - name: position_dodge
+    params: {}
+  - name: scale_x_discrete
+    params: {}
+  - name: labs
+    params:
+      title: Plasmid Prevalence by Country
+      fill: Plasmid Type
+      x: Year
+  mapping:
+    x: Year
+    fill: plasmid_name
+    facet_by: Country

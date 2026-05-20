@@ -1,12 +1,17 @@
-factory_id: "violin_logic"
-target_dataset: "Quast_with_metadata"
-x: "source"
-y: "value"
-fill: "source"
-facet_by: "metric"
-facet_scales: "free_y"
-title: "🐱 Miaou — Assembly Metric Distributions by Source"
-family: "Distribution"
-pattern: "1 Numeric, 1 Categorical"
-description: "Violin plot showing the distribution of n50, total_length, and largest_contig per source, facetted by metric. Wide bellies = wide spread, narrow tails = consistent values."
-difficulty: "Intermediate"
+target_dataset: Quast_with_metadata
+facet_scales: free_y
+title: 🐱 Miaou — Assembly Metric Distributions by Source
+family: Distribution
+pattern: 1 Numeric, 1 Categorical
+description: Violin plot showing the distribution of n50, total_length, and largest_contig
+  per source, facetted by metric. Wide bellies = wide spread, narrow tails = consistent
+  values.
+difficulty: Intermediate
+mapping:
+  x: source
+  y: value
+  fill: source
+  facet_by: metric
+layers:
+- name: geom_violin
+  params: {}

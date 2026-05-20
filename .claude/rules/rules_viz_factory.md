@@ -104,7 +104,7 @@ Plot configuration resolves through a **five-tier priority cascade** at one merg
 **Resolution rule:** higher tier wins per key (winner-takes-all, no value merging). The `layers:` list is the exception — append-then-deduplicate by `(layer_kind, target)` keeping LAST occurrence (so L5 wins on theme/coord/facet/scale/element_text). `geom_*`/`stat_*` layers never deduplicated.
 
 **Key constraints from the design:**
-- L3 (optimisation) is **purely visual/aesthetic** — MUST NOT change `mapping`, `factory_id`, `geom_*`, `filters`, or `palette`. Allowed: axis text rotation/size, panel spacing, density-aware positions.
+- L3 (optimisation) is **purely visual/aesthetic** — MUST NOT change `mapping`, `layers`, `geom_*`, `filters`, or `palette`. Allowed: axis text rotation/size, panel spacing, density-aware positions.
 - L5 `aesthetic_override` has a **fixed schema** (design §6): `fill_color` ⊕ `fill_palette` (mutex with warning), `color`, `alpha`, `shape`, `size`, `theme`. `plot_scope` MUST be a single plot_id (never `__all__`).
 - Unknown keys in `plot_defaults` emit `PipelineError(severity: warning, who: manifest_author, surface: notification)` per ADR-079. Non-fatal.
 - §6 above describes today's `_apply_palette` behaviour — under the cascade it remains the renderer for the resolved `palette:` key (now produced by the cascade resolver, not read directly from the manifest dict). Behaviour rules in §6c are unchanged.

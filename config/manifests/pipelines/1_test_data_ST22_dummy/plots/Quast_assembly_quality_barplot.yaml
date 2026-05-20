@@ -1,12 +1,16 @@
-factory_id: "boxplot_logic"
-target_dataset: "Quast_with_metadata"
-x: "metric"
-y: "value"
-facet_by: "metric"
-facet_scales: "free_y"
-fill: "metric"
-title: "Assembly Quality Metrics (Quast)"
-family: "Distribution"
-pattern: "1 Numeric, 1 Categorical"
-description: "Facetted boxplot to identify assembly outliers across metrics (N50, Length, etc.)."
-difficulty: "Intermediate"
+target_dataset: Quast_with_metadata
+facet_scales: free_y
+title: Assembly Quality Metrics (Quast)
+family: Distribution
+pattern: 1 Numeric, 1 Categorical
+description: Facetted boxplot to identify assembly outliers across metrics (N50, Length,
+  etc.).
+difficulty: Intermediate
+mapping:
+  x: metric
+  y: value
+  fill: metric
+  facet_by: metric
+layers:
+- name: geom_boxplot
+  params: {}

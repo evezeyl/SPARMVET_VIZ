@@ -1,21 +1,30 @@
-title: "Selected Virulence Genes Count"
-target_dataset: "ST22_Anchor"
-x: "sample_id"
-fill: "Selected_Virulence_Genes" # Stacked bar by gene
+title: Selected Virulence Genes Count
+target_dataset: ST22_Anchor
 layers:
-  - name: "theme_minimal"
-    params: {}
-  - name: "geom_bar"
-    params: {stat: "count", width: 0.7}
-  - name: "labs"
-    params:
-      x: "Sample Id"
-      y: "Count"
-      fill: "Selected Virulence Genes"
-  - name: "element_text"
-    params: {target: "axis_text_x", angle: 90, hjust: 1, vjust: 0.5, size: 6}
-  - name: "theme_legend_position"
-    params: {position: "bottom"}
-family: "Ranking"
-pattern: "1 Numeric, 1 Categorical"
-difficulty: "Intermediate"
+- name: theme_minimal
+  params: {}
+- name: geom_bar
+  params:
+    stat: count
+    width: 0.7
+- name: labs
+  params:
+    x: Sample Id
+    y: Count
+    fill: Selected Virulence Genes
+- name: element_text
+  params:
+    target: axis_text_x
+    angle: 90
+    hjust: 1
+    vjust: 0.5
+    size: 6
+- name: theme_legend_position
+  params:
+    position: bottom
+family: Ranking
+pattern: 1 Numeric, 1 Categorical
+difficulty: Intermediate
+mapping:
+  x: sample_id
+  fill: Selected_Virulence_Genes

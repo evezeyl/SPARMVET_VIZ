@@ -278,9 +278,9 @@ def main():
             "description": "Auto-scaffolded plotting group",
             "plots": {
                 "demo_bar": {
-                    "factory_id": "bar_logic",
-                    "target_dataset": first_dataset_key,  # Dynamic explicit dataset target
-                    "target_col": "Replace_Me",
+                    "target_dataset": first_dataset_key,
+                    "mapping": {"x": "Replace_Me"},
+                    "layers": [{"name": "geom_bar", "params": {}}],
                     "title": "Replace Me Title"
                 }
             }

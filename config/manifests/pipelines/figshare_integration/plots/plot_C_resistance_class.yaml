@@ -1,9 +1,12 @@
-factory_id: bar_logic
 target_dataset: figshare_triple_join
-x: resistance_class
-fill: host_animal_common
 title: Resistance Class by Host Animal
 family: Distribution
 pattern: 2 Categorical
 description: Count of resistance_class faceted by host_animal_common.
 difficulty: Beginner
+mapping:
+  x: resistance_class
+  fill: host_animal_common
+layers:
+- name: geom_bar
+  params: {}

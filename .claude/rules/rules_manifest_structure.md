@@ -144,17 +144,19 @@ Reserve `description:` for longer prose; use `label:` for short emoji-rich tab t
 
 ### Plot spec file structure (`plots/<plot_id>.yaml`)
 
+Plot specs use a grammar-of-graphics format (ADR-083): explicit `geom_*` layers in `layers:`, all aesthetics in a `mapping:` block. The legacy `factory_id` shorthand is not supported.
+
 ```yaml
 spec:
-  factory_id: bar_logic          # Registered factory: bar_logic, scatter_logic, heatmap_logic
-  target_dataset: <join_id>  # Must match a join_manifests key
-  x: <column>                    # Aesthetic mapping — column must exist in target_dataset
-  y: <column>                    # Optional
-  fill: <column>                 # Optional
-  color: <column>                # Optional
-  facet_by: <column>             # Optional — triggers facet_wrap(~<column>)
+  target_dataset: <join_id>      # Must match a join_manifests key
+  mapping:
+    x: <column>                  # Aesthetic mapping — column must exist in target_dataset
+    fill: <column>               # Optional
+    facet_by: <column>           # Optional — triggers facet_wrap(~<column>)
   theme: theme_light             # Optional — must be a registered theme component
-  layers:                        # Optional but required for position, labels, guides
+  layers:
+    - name: geom_bar             # Primary geom — always first. See registered components.
+      params: {}
     - name: position_dodge       # For side-by-side bars
       params: {}
     - name: labs
@@ -164,15 +166,9 @@ spec:
         x: "X Axis Label"
 ```
 
-**`position` and `labels` as flat keys are NOT supported.** They must appear as named layers. See registered components in `libs/viz_factory/src/viz_factory/`.
+Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_tile`, `geom_boxplot`, `geom_violin`. See `libs/viz_factory/src/viz_factory/geoms/` for the full registered list.
 
-### Registered `factory_id` values
-
-| `factory_id` | Geom injected | Notes |
-|---|---|---|
-| `bar_logic` | `geom_bar` (no `y`) or `geom_col` (with `y`) | For `dodge`, add `position_dodge` layer |
-| `scatter_logic` | `geom_point` | |
-| `heatmap_logic` | `geom_tile` | Uses `fill` aesthetic |
+**`position`, `labels`, and `color`/`fill` scales as flat keys are NOT supported.** They must appear as named layers. See registered components in `libs/viz_factory/src/viz_factory/`.
 
 ---
 

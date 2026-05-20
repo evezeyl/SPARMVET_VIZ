@@ -178,9 +178,12 @@ Result: UNION of {MLST.input_fields} ∪ {metadata_schema.output_fields}
   mlst_bar:
     info: ...
     spec:
-      factory_id: bar_logic
       target_dataset: MLST_with_metadata   # ← here, under spec
-      x: sequence_type
+      mapping:
+        x: sequence_type
+      layers:
+        - name: geom_bar
+          params: {}
   ```
   **Not** at `mlst_bar.target_dataset`. Resolution code must check both levels.
 
@@ -329,7 +332,8 @@ mlst_bar:         # plot_id
   info: ...
   spec:           # ← spec wrapper (Phase 11-D convention)
     target_dataset: MLST_with_metadata   # ← nested here
-    factory_id: bar_logic
+    mapping:
+      x: sequence_type
 ```
 
 Fix: always check `pspec.get("target_dataset") or pspec.get("spec", {}).get("target_dataset")`
@@ -375,8 +379,8 @@ In Mode B, the analysis_groups scan must run **unconditionally** (not only when 
       ▼
 [analysis_groups.G.plots.P]
   spec.target_dataset: Y    ──► which assembly feeds this plot
-  spec.factory_id: bar_logic
-  spec.x / spec.fill / ...  ──► column mapping (must exist in target_dataset output)
+  spec.mapping.x / spec.mapping.fill / ...  ──► column mapping (must exist in target_dataset output)
+  spec.layers[0].name: geom_bar / geom_point / ...  ──► primary geom (ADR-083)
   pre_plot_wrangling         ──► optional Tier 2 transform before rendering
       │
       ▼

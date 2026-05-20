@@ -145,17 +145,19 @@ recipe:
 
 ### 3-C. Plot specs (in `plots/<plot_id>.yaml`)
 
-Use `layers:` for all non-aesthetic parameters:
+Use grammar-of-graphics format (ADR-083): explicit `geom_*` layer first, all aesthetics under `mapping:`. The legacy `factory_id` shorthand is not supported — the engine will raise a `PipelineError` if it is present.
 
 ```yaml
 spec:
-  factory_id: bar_logic
   target_dataset: AMR_Profile_Joint
-  x: Year
-  fill: Multiresistant
-  facet_by: Country
+  mapping:
+    x: Year
+    fill: Multiresistant
+    facet_by: Country
   theme: theme_light
   layers:
+    - name: geom_bar
+      params: {}
     - name: position_dodge
       params: {}
     - name: labs

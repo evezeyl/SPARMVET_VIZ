@@ -76,15 +76,18 @@ analysis_groups_structure:
         legend_ncol: false
 
   plot_spec_file_format: |
+    # Grammar-of-graphics format (ADR-083). factory_id is not supported.
     spec:
-      factory_id: bar_logic              # Registered: bar_logic, scatter_logic, heatmap_logic
-      target_dataset: <assembly_id>      # Must match an join_manifests key
-      x: <column>
-      fill: <column>
-      facet_by: <column>                 # Optional
+      target_dataset: <assembly_id>      # Must match a join_manifests key
+      mapping:
+        x: <column>
+        fill: <column>
+        facet_by: <column>               # Optional
       palette: nvi_official              # Optional — overrides plot_defaults.palette for this plot
       theme: theme_light                 # Optional (registered theme component name)
-      layers:                            # Required for position, labels, guides
+      layers:
+        - name: geom_bar                 # Primary geom first (geom_bar, geom_point, geom_tile…)
+          params: {}
         - name: position_dodge           # For side-by-side bars
           params: {}
         - name: labs
