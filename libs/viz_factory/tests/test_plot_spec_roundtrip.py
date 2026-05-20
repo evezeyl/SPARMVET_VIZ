@@ -1,8 +1,9 @@
 """Round-trip truth table for normalise_plot_spec / serialise_plot_spec (BP-PLOT-MODEL-1).
 
 Tests the public seam introduced by ADR-083:
-  - normalise_plot_spec: promotes flat aes → mapping, factory_id → geom layer, collects _meta
-  - serialise_plot_spec: inverse — emits mapping + explicit layers, expands _meta, never factory_id
+  - normalise_plot_spec: collects gallery/author metadata into _meta; hard-fails on removed
+    legacy keys (factory_id, flat aesthetics — ADR-083)
+  - serialise_plot_spec: inverse — emits mapping + explicit layers, expands _meta
   - Round-trip render-equivalence: serialise(normalise(raw)) re-normalises to equivalent spec
   - Idempotency of normalise: normalise(normalise(x)) == normalise(x)
 
@@ -16,7 +17,6 @@ import pytest
 from viz_factory.plot_config_resolver import (
     normalise_plot_spec,
     serialise_plot_spec,
-    _FLAT_AESTHETIC_KEYS,
     _CANONICAL_SPEC_KEYS,
 )
 
@@ -46,8 +46,8 @@ def _is_render_equivalent(a: dict, b: dict) -> bool:
 class TestNormaliseMeta:
     def test_unknown_keys_moved_to_meta(self):
         spec = {
-            "factory_id": "bar_logic",
-            "x": "Year",
+            "mapping": {"x": "Year"},
+            "layers": [{"name": "geom_bar", "params": {}}],
             "family": "Distribution",
             "pattern": "1 Numeric, 1 Categorical",
             "difficulty": "Simple",
@@ -60,7 +60,7 @@ class TestNormaliseMeta:
 
     def test_existing_meta_merged(self):
         spec = {
-            "x": "Year",
+            "mapping": {"x": "Year"},
             "_meta": {"author": "Eve"},
             "family": "Distribution",
         }
@@ -69,7 +69,7 @@ class TestNormaliseMeta:
         assert result["_meta"]["family"] == "Distribution"
 
     def test_no_unknown_keys_no_meta(self):
-        spec = {"x": "Year", "factory_id": "scatter_logic"}
+        spec = {"mapping": {"x": "Year"}, "layers": [{"name": "geom_point", "params": {}}]}
         result = normalise_plot_spec(spec)
         assert "_meta" not in result
 
@@ -94,9 +94,9 @@ class TestNormaliseMeta:
     def test_geom_taxonomy_key_not_canonical(self):
         # 'geom' is a gallery taxonomy field, NOT in _CANONICAL_SPEC_KEYS
         # (it differs from the 'layers' geom layer concept)
-        spec = {"x": "Year", "geom": "geom_violin"}
+        spec = {"mapping": {"x": "Year"}, "geom": "geom_violin"}
         result = normalise_plot_spec(spec)
-        assert "geom" not in result or result.get("_meta", {}).get("geom") == "geom_violin"
+        assert result.get("_meta", {}).get("geom") == "geom_violin"
 
 
 # ---------------------------------------------------------------------------
@@ -104,22 +104,6 @@ class TestNormaliseMeta:
 # ---------------------------------------------------------------------------
 
 class TestNormaliseIdempotency:
-    def test_idempotent_flat_spec(self):
-        spec = {"factory_id": "bar_logic", "x": "Year", "fill": "Country"}
-        once = normalise_plot_spec(spec)
-        twice = normalise_plot_spec(once)
-        assert once == twice
-
-    def test_idempotent_with_meta(self):
-        spec = {
-            "factory_id": "scatter_logic",
-            "x": "x_col", "y": "y_col",
-            "family": "Correlation",
-        }
-        once = normalise_plot_spec(spec)
-        twice = normalise_plot_spec(once)
-        assert once == twice
-
     def test_idempotent_canonical_form(self):
         spec = {
             "mapping": {"x": "Year", "fill": "Country"},
@@ -129,12 +113,15 @@ class TestNormaliseIdempotency:
         twice = normalise_plot_spec(once)
         assert once == twice
 
-    def test_idempotent_no_geom_duplication(self):
-        spec = {"factory_id": "bar_logic", "x": "Year"}
+    def test_idempotent_with_meta(self):
+        spec = {
+            "mapping": {"x": "x_col", "y": "y_col"},
+            "layers": [{"name": "geom_point", "params": {}}],
+            "family": "Correlation",
+        }
         once = normalise_plot_spec(spec)
         twice = normalise_plot_spec(once)
-        geom_bars = [l for l in twice.get("layers", []) if l["name"] == "geom_bar"]
-        assert len(geom_bars) == 1
+        assert once == twice
 
 
 # ---------------------------------------------------------------------------
@@ -145,30 +132,39 @@ class TestSerialisePlotSpec:
     def test_mapping_not_flat(self):
         """Serialised form uses mapping: not flat x/y/fill."""
         normalised = normalise_plot_spec({
-            "factory_id": "scatter_logic", "x": "Year", "y": "count",
+            "mapping": {"x": "Year", "y": "count"},
+            "layers": [{"name": "geom_point", "params": {}}],
         })
         out = serialise_plot_spec(normalised)
         assert "mapping" in out
         assert out["mapping"]["x"] == "Year"
-        # flat keys must not be at top level in output (except inside mapping)
-        for aes_key in _FLAT_AESTHETIC_KEYS:
-            assert aes_key not in out or aes_key == "mapping"
+        # flat aesthetic keys must not appear at top level in output
+        for aes_key in ("x", "y", "fill", "color", "colour", "size", "alpha", "shape"):
+            assert aes_key not in out
 
     def test_no_factory_id_in_output(self):
-        normalised = normalise_plot_spec({"factory_id": "bar_logic", "x": "Year"})
+        """Serialised canonical spec never contains factory_id."""
+        normalised = normalise_plot_spec({
+            "mapping": {"x": "Year"},
+            "layers": [{"name": "geom_bar", "params": {}}],
+        })
         out = serialise_plot_spec(normalised)
         assert "factory_id" not in out
 
     def test_geom_in_layers(self):
-        normalised = normalise_plot_spec({"factory_id": "bar_logic", "x": "Year"})
+        """Layers are preserved through normalise→serialise."""
+        normalised = normalise_plot_spec({
+            "mapping": {"x": "Year"},
+            "layers": [{"name": "geom_bar", "params": {}}],
+        })
         out = serialise_plot_spec(normalised)
         assert "layers" in out
         assert out["layers"][0]["name"] == "geom_bar"
 
     def test_meta_expanded_to_top_level(self):
         normalised = normalise_plot_spec({
-            "factory_id": "violin_logic",
-            "x": "species", "y": "value",
+            "mapping": {"x": "species", "y": "value"},
+            "layers": [{"name": "geom_violin", "params": {}}],
             "family": "Distribution",
             "difficulty": "Intermediate",
         })
@@ -227,16 +223,22 @@ class TestSerialisePlotSpec:
 # ---------------------------------------------------------------------------
 
 class TestRoundTrip:
-    def test_round_trip_flat_spec(self):
-        """serialise(normalise(flat_spec)) re-normalises to a render-equivalent spec."""
-        raw = {"factory_id": "bar_logic", "x": "Year", "fill": "Country"}
+    def test_round_trip_canonical_bar(self):
+        """serialise(normalise(canonical_spec)) re-normalises to a render-equivalent spec."""
+        raw = {
+            "mapping": {"x": "Year", "fill": "Country"},
+            "layers": [{"name": "geom_bar", "params": {}}],
+        }
         step1 = normalise_plot_spec(raw)
         step2 = serialise_plot_spec(step1)
         step3 = normalise_plot_spec(step2)
         assert _is_render_equivalent(step1, step3)
 
     def test_round_trip_heatmap(self):
-        raw = {"factory_id": "heatmap_logic", "x": "Gene", "y": "Sample", "color": "value"}
+        raw = {
+            "mapping": {"x": "Gene", "y": "Sample", "fill": "value"},
+            "layers": [{"name": "geom_tile", "params": {}}],
+        }
         step1 = normalise_plot_spec(raw)
         step2 = serialise_plot_spec(step1)
         step3 = normalise_plot_spec(step2)
@@ -244,8 +246,8 @@ class TestRoundTrip:
 
     def test_round_trip_with_meta(self):
         raw = {
-            "factory_id": "boxplot_logic",
-            "x": "sample_id", "y": "total_reads",
+            "mapping": {"x": "sample_id", "y": "total_reads"},
+            "layers": [{"name": "geom_boxplot", "params": {}}],
             "family": "Distribution",
             "pattern": "1 Numeric, 1 Categorical",
             "difficulty": "Simple",
@@ -277,9 +279,9 @@ class TestRoundTrip:
     def test_round_trip_with_extra_layers(self):
         """Non-geom layers are preserved through the round-trip."""
         raw = {
-            "factory_id": "bar_logic",
-            "x": "Year", "fill": "Country",
+            "mapping": {"x": "Year", "fill": "Country"},
             "layers": [
+                {"name": "geom_bar", "params": {}},
                 {"name": "position_dodge", "params": {}},
                 {"name": "labs", "params": {"title": "Test Plot"}},
             ],
@@ -294,9 +296,12 @@ class TestRoundTrip:
         assert "position_dodge" in layer_names
         assert "labs" in layer_names
 
-    def test_serialise_then_normalise_no_factory_id(self):
-        """Serialised form has no factory_id; normalise of that form must not re-inject geom."""
-        raw = {"factory_id": "bar_logic", "x": "Year"}
+    def test_serialise_then_normalise_stable(self):
+        """Serialising and re-normalising a canonical spec is idempotent; no geom duplication."""
+        raw = {
+            "mapping": {"x": "Year"},
+            "layers": [{"name": "geom_bar", "params": {}}],
+        }
         serialised = serialise_plot_spec(normalise_plot_spec(raw))
         assert "factory_id" not in serialised
         # Re-normalising adds nothing new (geom already in layers)
@@ -310,13 +315,20 @@ class TestRoundTrip:
 # ---------------------------------------------------------------------------
 
 class TestCanonicalSpecKeys:
-    def test_flat_aes_keys_in_canonical(self):
-        for k in _FLAT_AESTHETIC_KEYS:
-            assert k in _CANONICAL_SPEC_KEYS, f"{k!r} missing from _CANONICAL_SPEC_KEYS"
+    def test_flat_aes_keys_not_canonical(self):
+        """Flat aesthetic keys are NOT canonical — ADR-083 removed them; use mapping: block."""
+        for k in ("x", "y", "fill", "color", "colour", "size", "alpha", "shape", "label"):
+            assert k not in _CANONICAL_SPEC_KEYS, (
+                f"flat aes key {k!r} must NOT be in _CANONICAL_SPEC_KEYS"
+            )
+
+    def test_factory_id_not_canonical(self):
+        """factory_id was removed in ADR-083 and must not be in _CANONICAL_SPEC_KEYS."""
+        assert "factory_id" not in _CANONICAL_SPEC_KEYS
 
     def test_known_structural_keys_in_canonical(self):
         for k in ("target_dataset", "mapping", "layers", "theme", "facet_by",
-                  "palette", "labels", "guides", "filters", "title", "factory_id", "_meta"):
+                  "palette", "labels", "guides", "filters", "title", "_meta"):
             assert k in _CANONICAL_SPEC_KEYS, f"{k!r} missing from _CANONICAL_SPEC_KEYS"
 
     def test_taxonomy_keys_not_canonical(self):

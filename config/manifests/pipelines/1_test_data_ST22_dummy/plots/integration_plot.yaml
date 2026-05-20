@@ -1,5 +1,4 @@
 target_dataset: ST22_Anchor
-color: status
 title: Integrated Virulence & MLST Typing
 family: Correlation
 pattern: 2 Categorical

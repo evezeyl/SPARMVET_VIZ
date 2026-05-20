@@ -179,52 +179,31 @@ class TestDedupeLayers:
 # ---------------------------------------------------------------------------
 
 class TestNormaliseSpec:
-    def test_flat_aesthetics_promoted_to_mapping(self):
-        spec = {"x": "Year", "fill": "Country", "factory_id": "bar_logic"}
+    def test_canonical_mapping_preserved(self):
+        spec = {"mapping": {"x": "Year", "fill": "Country"}}
         result = normalise_plot_spec(spec)
         assert result["mapping"]["x"] == "Year"
         assert result["mapping"]["fill"] == "Country"
 
     def test_explicit_mapping_not_overwritten(self):
-        spec = {"x": "Year", "mapping": {"x": "Month"}}
+        spec = {"mapping": {"x": "Month", "fill": "Country"}}
         result = normalise_plot_spec(spec)
         assert result["mapping"]["x"] == "Month"
 
-    def test_bar_logic_injects_geom_bar(self):
-        spec = {"factory_id": "bar_logic", "x": "Year"}
-        result = normalise_plot_spec(spec)
-        assert result["layers"][0]["name"] == "geom_bar"
-
-    def test_bar_logic_injects_geom_col_when_y_present(self):
-        spec = {"factory_id": "bar_logic", "x": "Year", "y": "count"}
-        result = normalise_plot_spec(spec)
-        assert result["layers"][0]["name"] == "geom_col"
-
-    def test_heatmap_logic_remaps_color_to_fill(self):
-        spec = {"factory_id": "heatmap_logic", "x": "Year", "color": "value"}
-        result = normalise_plot_spec(spec)
-        assert "fill" in result["mapping"]
-        assert "color" not in result["mapping"]
-
-    def test_heatmap_logic_injects_geom_tile(self):
-        spec = {"factory_id": "heatmap_logic", "x": "Year", "y": "Gene"}
-        result = normalise_plot_spec(spec)
-        assert result["layers"][0]["name"] == "geom_tile"
-
-    def test_no_factory_id_no_geom_injected(self):
-        spec = {"x": "Year", "layers": []}
+    def test_no_geom_injected_by_default(self):
+        spec = {"mapping": {"x": "Year"}, "layers": []}
         result = normalise_plot_spec(spec)
         assert result["layers"] == []
 
-    def test_existing_geom_not_duplicated(self):
-        spec = {
-            "factory_id": "bar_logic",
-            "x": "Year",
-            "layers": [{"name": "geom_bar", "params": {}}],
-        }
-        result = normalise_plot_spec(spec)
-        geom_bars = [l for l in result["layers"] if l["name"] == "geom_bar"]
-        assert len(geom_bars) == 1
+    def test_factory_id_raises_visualization_error(self):
+        from utils.errors import VisualizationError
+        with pytest.raises(VisualizationError, match="factory_id"):
+            normalise_plot_spec({"factory_id": "bar_logic", "mapping": {"x": "Year"}})
+
+    def test_flat_aes_raises_visualization_error(self):
+        from utils.errors import VisualizationError
+        with pytest.raises(VisualizationError, match="flat aesthetic"):
+            normalise_plot_spec({"x": "Year", "fill": "Country"})
 
 
 # ---------------------------------------------------------------------------
@@ -349,9 +328,11 @@ class TestResolvePlotConfigLayerAccumulation:
     def test_geom_layers_accumulate(self):
         """geom_bar and geom_text both survive — no dedup."""
         raw_spec = {
-            "factory_id": "bar_logic",
-            "x": "Year",
-            "layers": [{"name": "geom_text", "params": {}}],
+            "mapping": {"x": "Year"},
+            "layers": [
+                {"name": "geom_bar", "params": {}},
+                {"name": "geom_text", "params": {}},
+            ],
         }
         result = resolve_plot_config(raw_spec, {}, None)
         names = _layer_names(result["layers"])
@@ -375,20 +356,25 @@ class TestResolvePlotConfigLayerAccumulation:
         assert coords == ["coord_flip"]
 
 
-class TestResolvePlotConfigFactoryId:
-    def test_factory_id_recorded_in_provenance(self):
-        result = resolve_plot_config({"factory_id": "scatter_logic"}, {}, None)
-        assert result["factory_id"] == "scatter_logic"
-        assert result["_provenance"]["factory_id"] == "L4"
+class TestLegacyErrors:
+    """ADR-083: factory_id and flat aesthetics raise VisualizationError (not silently ignored)."""
 
-    def test_no_factory_id_is_none(self):
-        result = resolve_plot_config({}, {}, None)
-        assert result["factory_id"] is None
+    def test_factory_id_raises_via_resolver(self):
+        from utils.errors import VisualizationError
+        with pytest.raises(VisualizationError, match="factory_id"):
+            resolve_plot_config({"factory_id": "scatter_logic"}, {}, None)
+
+    def test_flat_aes_raises_via_resolver(self):
+        from utils.errors import VisualizationError
+        with pytest.raises(VisualizationError, match="flat aesthetic"):
+            resolve_plot_config({"x": "Year", "fill": "Country"}, {}, None)
 
 
 class TestResolvePlotConfigFacetBy:
     def test_facet_by_injects_facet_wrap(self):
-        result = resolve_plot_config({"x": "Year", "facet_by": "Country"}, {}, None)
+        result = resolve_plot_config(
+            {"mapping": {"x": "Year"}, "facet_by": "Country"}, {}, None
+        )
         assert result["facet_by"] == "Country"
         facet_layers = [l for l in result["layers"] if l["name"] == "facet_wrap"]
         assert len(facet_layers) >= 1
@@ -396,7 +382,7 @@ class TestResolvePlotConfigFacetBy:
 
     def test_facet_wrap_not_duplicated_if_explicit(self):
         spec = {
-            "x": "Year",
+            "mapping": {"x": "Year"},
             "facet_by": "Country",
             "layers": [{"name": "facet_wrap", "params": {"facets": "~Country", "ncol": 3}}],
         }
@@ -449,8 +435,8 @@ class TestResolvePlotConfigL5GeomOverrides:
 
 
 class TestResolvePlotConfigMapping:
-    def test_mapping_from_flat_spec(self):
-        result = resolve_plot_config({"x": "Year", "fill": "Country"}, {}, None)
+    def test_mapping_from_canonical_spec(self):
+        result = resolve_plot_config({"mapping": {"x": "Year", "fill": "Country"}}, {}, None)
         assert result["mapping"]["x"] == "Year"
         assert result["mapping"]["fill"] == "Country"
         assert result["_provenance"]["mapping"] == "L4"
@@ -463,16 +449,16 @@ class TestResolvePlotConfigMapping:
 
 class TestResolvePlotConfigPaletteScope:
     def test_palette_scope_fill(self):
-        result = resolve_plot_config({"fill": "Country"}, {}, None)
+        result = resolve_plot_config({"mapping": {"fill": "Country"}}, {}, None)
         assert "fill" in result["palette_scope"]
 
     def test_palette_scope_empty_when_no_aesthetics(self):
-        result = resolve_plot_config({"x": "Year"}, {}, None)
+        result = resolve_plot_config({"mapping": {"x": "Year"}}, {}, None)
         assert result["palette_scope"] == set()
 
     def test_palette_scope_excludes_fill_when_scale_fill_present(self):
         spec = {
-            "fill": "Country",
+            "mapping": {"fill": "Country"},
             "layers": [{"name": "scale_fill_brewer", "params": {}}],
         }
         result = resolve_plot_config(spec, {}, None)
@@ -481,12 +467,12 @@ class TestResolvePlotConfigPaletteScope:
 
 class TestResolvePlotConfigElementText:
     def test_element_text_empty_when_no_df(self):
-        result = resolve_plot_config({"x": "Year"}, {}, None)
+        result = resolve_plot_config({"mapping": {"x": "Year"}}, {}, None)
         assert result["element_text"] == {}
 
     def test_element_text_from_spec_layer(self):
         spec = {
-            "x": "Year",
+            "mapping": {"x": "Year"},
             "layers": [
                 {"name": "element_text", "params": {"target": "axis_text_x", "rotation": 45}},
             ],
@@ -500,13 +486,13 @@ class TestResolvePlotConfigProvenanceCompleteness:
     def test_provenance_has_mandatory_keys(self):
         result = resolve_plot_config({}, {}, None)
         for key in ("mapping", "palette", "facet_by", "title",
-                    "labels", "guides", "filters", "factory_id", "theme"):
+                    "labels", "guides", "filters", "theme"):
             assert key in result["_provenance"], f"missing provenance key: {key}"
 
     def test_default_provenance_all_l1(self):
         result = resolve_plot_config({}, {}, None)
         for key in ("mapping", "palette", "facet_by", "title",
-                    "labels", "guides", "filters", "factory_id", "theme"):
+                    "labels", "guides", "filters", "theme"):
             assert result["_provenance"][key] == "L1", (
                 f"expected L1 for {key}, got {result['_provenance'][key]}"
             )
@@ -541,7 +527,7 @@ class TestComputeOptimisationLayer:
         import pandas as pd
         vals = [f"verylongname_{i}" for i in range(5)]  # max_len > 12
         df = pd.DataFrame({"x_col": vals})
-        layers = compute_optimisation_layer({}, {"x": "x_col"}, df)
+        layers = compute_optimisation_layer({}, {"mapping": {"x": "x_col"}}, df)
         x_layers = [l for l in layers if l["params"].get("target") == "axis_text_x"]
         assert len(x_layers) == 1
         assert x_layers[0]["params"]["rotation"] == 45
@@ -550,7 +536,7 @@ class TestComputeOptimisationLayer:
         import pandas as pd
         vals = ["medium7x" for _ in range(5)]  # max_len == 8 (> 6, <= 12)
         df = pd.DataFrame({"x_col": vals})
-        layers = compute_optimisation_layer({}, {"x": "x_col"}, df)
+        layers = compute_optimisation_layer({}, {"mapping": {"x": "x_col"}}, df)
         x_layers = [l for l in layers if l["params"].get("target") == "axis_text_x"]
         assert len(x_layers) == 1
         assert x_layers[0]["params"]["rotation"] == 35
@@ -560,7 +546,7 @@ class TestComputeOptimisationLayer:
         # 15 unique values, each short — triggers size adjustment (not rotation)
         vals = [f"ab{i}" for i in range(15)]  # n_unique > 12, max_len <= 6
         df = pd.DataFrame({"x_col": vals})
-        layers = compute_optimisation_layer({}, {"x": "x_col"}, df)
+        layers = compute_optimisation_layer({}, {"mapping": {"x": "x_col"}}, df)
         x_layers = [l for l in layers if l["params"].get("target") == "axis_text_x"]
         assert len(x_layers) == 1
         assert "rotation" not in x_layers[0]["params"]
@@ -569,7 +555,7 @@ class TestComputeOptimisationLayer:
     def test_numeric_x_no_adjustment(self):
         import pandas as pd
         df = pd.DataFrame({"x_col": list(range(20))})
-        layers = compute_optimisation_layer({}, {"x": "x_col"}, df)
+        layers = compute_optimisation_layer({}, {"mapping": {"x": "x_col"}}, df)
         x_layers = [l for l in layers if l["params"].get("target") == "axis_text_x"]
         assert x_layers == []
 
@@ -577,7 +563,7 @@ class TestComputeOptimisationLayer:
         import pandas as pd
         vals = [f"verylongname_{i}" for i in range(3)]
         df = pd.DataFrame({"x_col": vals})
-        layers = compute_optimisation_layer({}, {"x": "x_col"}, df)
+        layers = compute_optimisation_layer({}, {"mapping": {"x": "x_col"}}, df)
         for layer in layers:
             assert layer["name"] == "element_text"
 
@@ -594,7 +580,7 @@ class TestL3SuppressedByL4:
         df = pd.DataFrame({"x_col": vals})
 
         raw_spec = {
-            "x": "x_col",
+            "mapping": {"x": "x_col"},
             "layers": [
                 {"name": "element_text", "params": {"target": "axis_text_x", "rotation": 0}},
             ],
@@ -615,7 +601,7 @@ class TestL3SuppressedByL4:
 
         vals = [f"verylongname_{i}" for i in range(5)]
         df = pd.DataFrame({"x_col": vals})
-        raw_spec = {"x": "x_col"}
+        raw_spec = {"mapping": {"x": "x_col"}}
         result = resolve_plot_config(raw_spec, {}, df)
 
         x_et = [l for l in result["layers"]

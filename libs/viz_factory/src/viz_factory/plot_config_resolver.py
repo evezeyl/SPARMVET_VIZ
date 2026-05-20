@@ -2,7 +2,7 @@
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
 #           function:normalise_plot_spec, function:serialise_plot_spec
-# consumes: -   (pure functions — no plotnine import, no cross-lib imports)
+# consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
 #              libs/viz_factory/tests/test_plot_spec_roundtrip.py
@@ -31,6 +31,8 @@ from __future__ import annotations
 
 import copy
 
+from utils.errors import VisualizationError
+
 # ---------------------------------------------------------------------------
 # L1 — Built-in defaults (constants)
 # ---------------------------------------------------------------------------
@@ -52,18 +54,8 @@ _BUILTIN_DEFAULTS: dict = {
     "labels":         {},
     "guides":         {},
     "filters":        [],
-    "factory_id":     None,
     "element_text":   {},   # convenience dict for L3 axis-text overrides
     "theme":          "theme_bw",  # derived from resolved layers after dedup
-}
-
-# factory_id → default base geom (may be overridden by bar_logic y-check)
-_FACTORY_GEOMS: dict[str, dict] = {
-    "heatmap_logic":  {"name": "geom_tile",    "params": {"color": "white", "size": 0.1}},
-    "bar_logic":      {"name": "geom_bar",      "params": {}},
-    "scatter_logic":  {"name": "geom_point",    "params": {}},
-    "boxplot_logic":  {"name": "geom_boxplot",  "params": {}},
-    "violin_logic":   {"name": "geom_violin",   "params": {}},
 }
 
 # Allowed keys in plot_defaults: (unknown keys emit a PipelineError warning)
@@ -72,17 +64,18 @@ _VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset({
     "facet_panel_spacing", "legend_position", "optimisation", "layers",
 })
 
-# Flat aesthetic keys that may appear at the spec top level (legacy/shorthand)
-_FLAT_AESTHETIC_KEYS: tuple = ("x", "y", "color", "colour", "fill",
-                               "size", "alpha", "shape", "label")
-
 # Keys recognised as part of the spec (not taxonomy / author metadata).
 # Any key NOT in this set is moved into the _meta passthrough dict by normalise_plot_spec.
 _CANONICAL_SPEC_KEYS: frozenset = frozenset({
     "target_dataset", "mapping", "layers", "theme", "facet_by",
-    "palette", "labels", "guides", "filters", "title", "factory_id",
-    "_meta",
-} | set(_FLAT_AESTHETIC_KEYS))
+    "palette", "labels", "guides", "filters", "title", "_meta",
+})
+
+# Former flat aesthetic keys — checked early in normalise_plot_spec to raise a
+# helpful error (ADR-083). Not exported; use mapping: block for canonical specs.
+_LEGACY_FLAT_AES: frozenset = frozenset(
+    ("x", "y", "color", "colour", "fill", "size", "alpha", "shape", "label")
+)
 
 
 # ---------------------------------------------------------------------------
@@ -156,11 +149,11 @@ def _dedupe_layers(layers: list[dict]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Spec normalisation — factory_id translation and flat aesthetic promotion
+# Spec normalisation — collect _meta, hard-fail on removed legacy keys
 # ---------------------------------------------------------------------------
 
 def normalise_plot_spec(raw_spec: dict) -> dict:
-    """Promote flat aesthetics → mapping, expand factory_id → base geom, collect _meta.
+    """Normalise a plot spec: collect gallery/author metadata into _meta.
 
     Pure transformation of the L4 spec; does not merge tiers. Idempotent.
 
@@ -168,42 +161,44 @@ def normalise_plot_spec(raw_spec: dict) -> dict:
     moved into a ``_meta`` passthrough dict and preserved verbatim. serialise_plot_spec
     re-expands ``_meta`` to the top level when writing back to YAML.
 
-    factory_id is still recognised transitionally (BP-PLOT-LEGACY-REMOVE-1 will
-    delete the reader and emit a hard PipelineError on legacy keys).
+    Raises VisualizationError for removed legacy keys (ADR-083):
+      - factory_id: replaced by explicit geom_* layers in layers:
+      - flat aesthetic keys (x, y, fill, …) at top level: replaced by mapping: block
     """
+    # Fast-fail on removed legacy keys — actionable errors with migration instructions.
+    if "factory_id" in raw_spec:
+        factory_id = raw_spec["factory_id"]
+        raise VisualizationError(
+            f"Plot spec uses removed key 'factory_id' (value: {factory_id!r}). "
+            "factory_id was removed in ADR-083. Use explicit 'geom_*' layer in "
+            "'layers:' and all aesthetics under 'mapping:'.",
+            tip=(
+                f"Replace 'factory_id: {factory_id}' with the appropriate geom layer "
+                "in 'layers:'. Run 'assets/scripts/migrate_plot_specs.py --apply' "
+                "for automatic migration of all plot specs."
+            ),
+        )
+    flat_aes_found = sorted(_LEGACY_FLAT_AES & raw_spec.keys())
+    if flat_aes_found:
+        raise VisualizationError(
+            f"Plot spec contains flat aesthetic key(s) {flat_aes_found!r} at top level. "
+            "Flat aesthetics were removed in ADR-083. Place all aesthetics under "
+            "a 'mapping:' block.",
+            tip=(
+                "Use 'mapping: {x: col_name, fill: col_name}' instead of top-level "
+                "'x: col_name, fill: col_name'. Run "
+                "'assets/scripts/migrate_plot_specs.py --apply' for automatic migration."
+            ),
+        )
+
     spec = copy.deepcopy(raw_spec)
 
-    # 1. Collect existing _meta and extract non-canonical keys into it.
+    # Collect existing _meta and extract non-canonical keys into it.
     meta: dict = dict(spec.pop("_meta", {}))
     for k in [k for k in list(spec.keys()) if k not in _CANONICAL_SPEC_KEYS]:
         meta[k] = spec.pop(k)
 
-    # 2. Promote flat aesthetics to mapping (if mapping not already explicit).
-    if "mapping" not in spec:
-        mapping = {k: spec[k] for k in _FLAT_AESTHETIC_KEYS if k in spec}
-        if mapping:
-            spec["mapping"] = mapping
-
-    # 3. factory_id → base geom (prepend if not already present).
-    factory_id = spec.get("factory_id")
-    if factory_id:
-        base_geom = copy.deepcopy(_FACTORY_GEOMS.get(factory_id))
-        if base_geom:
-            mapping = spec.get("mapping", {})
-            # bar_logic: use geom_col when y aesthetic is explicitly mapped
-            if factory_id == "bar_logic" and "y" in mapping:
-                base_geom = {"name": "geom_col", "params": {}}
-            # heatmap_logic: remap 'color' → 'fill' in mapping
-            if factory_id == "heatmap_logic" and "color" in mapping:
-                spec["mapping"] = dict(mapping)
-                spec["mapping"]["fill"] = spec["mapping"].pop("color")
-
-            existing_layers = spec.get("layers", [])
-            existing_geoms = {l.get("name") for l in existing_layers}
-            if base_geom["name"] not in existing_geoms:
-                spec["layers"] = [base_geom] + existing_layers
-
-    # 4. Re-attach _meta only when non-empty.
+    # Re-attach _meta only when non-empty.
     if meta:
         spec["_meta"] = meta
 
@@ -220,7 +215,6 @@ def serialise_plot_spec(canonical: dict) -> dict:
     - Re-expands ``_meta`` keys back to the top level (taxonomy, author notes).
     - Strips internal ``_tier`` / ``_meta`` markers from layer dicts.
 
-    Not a perfect round-trip: flat aes keys and factory_id are intentionally dropped.
     Round-trip render-equivalence holds: the geom layer and mapping are preserved.
     """
     out: dict = {}
@@ -282,10 +276,8 @@ def compute_optimisation_layer(
     if df_collected is None:
         return []
 
-    # Derive mapping from seed (already has L2) + peek at raw_spec for L4 keys
+    # Derive mapping from seed (already has L2) + peek at raw_spec for L4 mapping
     mapping = dict(seed.get("mapping") or {})
-    if not mapping:
-        mapping = {k: raw_spec[k] for k in _FLAT_AESTHETIC_KEYS if k in raw_spec}
     if not mapping:
         raw_mapping = raw_spec.get("mapping") or {}
         mapping = dict(raw_mapping)
@@ -384,7 +376,7 @@ def resolve_plot_config(
     -------
     dict with keys:
       mapping, layers, theme, facet_by, palette, palette_scope,
-      labels, guides, filters, title, factory_id, element_text,
+      labels, guides, filters, title, element_text,
       _provenance, _unknown_plot_defaults_keys, _l5_mutex_warn
 
     The `_provenance` dict maps config keys → "L1".."L5".
@@ -405,7 +397,7 @@ def resolve_plot_config(
     for layer in _L1_LAYERS:
         all_layers.append(copy.deepcopy(layer))
     for key in ("mapping", "palette", "facet_by", "title",
-                "labels", "guides", "filters", "factory_id", "theme"):
+                "labels", "guides", "filters", "theme"):
         provenance[key] = "L1"
 
     # ── L2: plot_defaults ────────────────────────────────────────────────────
@@ -438,11 +430,6 @@ def resolve_plot_config(
     if spec.get("mapping"):
         seed["mapping"] = spec["mapping"]
         provenance["mapping"] = "L4"
-
-    # factory_id
-    if spec.get("factory_id"):
-        seed["factory_id"] = spec["factory_id"]
-        provenance["factory_id"] = "L4"
 
     # facet_by
     if spec.get("facet_by"):
@@ -481,7 +468,7 @@ def resolve_plot_config(
         all_layers.append({"name": spec["theme"], "params": {}, "_tier": "L4"})
         provenance["theme"] = "L4"
 
-    # spec layers (includes factory_id-injected base geom after _normalise_spec)
+    # spec layers
     for layer in spec.get("layers", []):
         all_layers.append({**layer, "_tier": "L4"})
 
