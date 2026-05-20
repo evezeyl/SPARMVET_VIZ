@@ -15,7 +15,7 @@ from viz_factory.plot_config_resolver import (
     compute_optimisation_layer,
     _dedupe_layers,
     _layer_dedup_key,
-    _normalise_spec,
+    normalise_plot_spec,
     _BUILTIN_DEFAULTS,
 )
 
@@ -175,45 +175,45 @@ class TestDedupeLayers:
 
 
 # ---------------------------------------------------------------------------
-# _normalise_spec
+# normalise_plot_spec
 # ---------------------------------------------------------------------------
 
 class TestNormaliseSpec:
     def test_flat_aesthetics_promoted_to_mapping(self):
         spec = {"x": "Year", "fill": "Country", "factory_id": "bar_logic"}
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         assert result["mapping"]["x"] == "Year"
         assert result["mapping"]["fill"] == "Country"
 
     def test_explicit_mapping_not_overwritten(self):
         spec = {"x": "Year", "mapping": {"x": "Month"}}
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         assert result["mapping"]["x"] == "Month"
 
     def test_bar_logic_injects_geom_bar(self):
         spec = {"factory_id": "bar_logic", "x": "Year"}
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         assert result["layers"][0]["name"] == "geom_bar"
 
     def test_bar_logic_injects_geom_col_when_y_present(self):
         spec = {"factory_id": "bar_logic", "x": "Year", "y": "count"}
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         assert result["layers"][0]["name"] == "geom_col"
 
     def test_heatmap_logic_remaps_color_to_fill(self):
         spec = {"factory_id": "heatmap_logic", "x": "Year", "color": "value"}
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         assert "fill" in result["mapping"]
         assert "color" not in result["mapping"]
 
     def test_heatmap_logic_injects_geom_tile(self):
         spec = {"factory_id": "heatmap_logic", "x": "Year", "y": "Gene"}
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         assert result["layers"][0]["name"] == "geom_tile"
 
     def test_no_factory_id_no_geom_injected(self):
         spec = {"x": "Year", "layers": []}
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         assert result["layers"] == []
 
     def test_existing_geom_not_duplicated(self):
@@ -222,7 +222,7 @@ class TestNormaliseSpec:
             "x": "Year",
             "layers": [{"name": "geom_bar", "params": {}}],
         }
-        result = _normalise_spec(spec)
+        result = normalise_plot_spec(spec)
         geom_bars = [l for l in result["layers"] if l["name"] == "geom_bar"]
         assert len(geom_bars) == 1
 

@@ -1,5 +1,5 @@
 # @deps
-# provides: function:get_action_catalog, function:get_component_catalog, function:get_combined_catalog, function:get_actions_for_context, function:get_actions_by_category, function:get_components_for_context, function:register
+# provides: function:get_action_catalog, function:get_component_catalog, function:get_combined_catalog, function:get_actions_for_context, function:get_actions_by_category, function:get_components_for_context, function:search_actions, function:search_components, function:register
 # consumes: nothing — catalogs injected at startup by app/src/server.py via register()
 # consumed_by: app/handlers/blueprint_handlers.py, app/modules/wrangle_studio.py
 # doc: .claude/knowledge/architecture_decisions.md (ADR-075), .claude/rules/rules_app_structure.md §2
@@ -102,6 +102,26 @@ def search_actions(query: str) -> dict:
     q = query.lower()
     results = {}
     for name, schema in get_action_catalog().items():
+        haystack = " ".join([
+            name,
+            schema.get("label", ""),
+            schema.get("category", ""),
+            " ".join(schema.get("tags", [])),
+        ]).lower()
+        if q in haystack:
+            results[name] = schema
+    return results
+
+
+def search_components(query: str) -> dict:
+    """Simple keyword search across component name, label, tags, and category.
+
+    Parallel to search_actions — used by the BLUEPRINT plot-layer picker
+    (BP-COMPONENT-FORMS-1) when the context selector is set to 'plot'.
+    """
+    q = query.lower()
+    results = {}
+    for name, schema in get_component_catalog().items():
         haystack = " ".join([
             name,
             schema.get("label", ""),

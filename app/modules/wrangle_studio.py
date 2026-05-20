@@ -4,7 +4,8 @@
 # provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc
 # provides: function:_enum_preview_legend (BP-ENUM-PREVIEW-1), constants:_LINETYPE_DASHARRAY/_POSITION_DESC
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
-# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)
+# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog, search_actions, get_actions_for_context; get_component_catalog, search_components, get_components_for_context — BP-COMPONENT-FORMS-1)
+# consumes: node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1); action key ({"action":...}) for wrangling nodes
 # consumes: app/src/bootloader.py (method:get_palettes — via self._bootloader, optional)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, loaded via ui.py head)
@@ -229,6 +230,7 @@ class WrangleStudio:
                                         "t1": "T1 — Trunk",
                                         "t2": "T2 — Branch",
                                         "assembly": "Assembly",
+                                        "plot": "Plot — Layers",
                                     }
                                 ),
                                 col_widths=[7, 5],
@@ -602,22 +604,36 @@ class WrangleStudio:
             # Create a stub node (default/empty params), append it, and select it so the
             # rich form (bp_action_form_ui, right sidebar) opens for configuration. The
             # user fills the form and presses Apply (btn_bp_apply_node) to commit params.
-            action = input.action_selector()
-            if not action or action == "(no matches)":
+            selected = input.action_selector()
+            if not selected or selected == "(no matches)":
                 return
 
-            if action in ("join", "join_filter"):
+            if selected in ("join", "join_filter"):
                 # Join keeps its dedicated modal until the Joint Designer (BP-JOINT-1).
                 self.show_join_modal(input, session, available_cols)
                 return
 
+            # BP-COMPONENT-FORMS-1: decide node kind by catalog membership.
+            # Component (plot layer) names never collide with action names.
+            try:
+                from blueprint_arch.schema_registry import get_component_catalog
+                is_component = selected in get_component_catalog()
+            except Exception:
+                is_component = False
+
+            stub = (
+                {"component": selected, "params": {}, "comment": ""}
+                if is_component
+                else {"action": selected, "params": {}, "comment": ""}
+            )
+
             curr = self.logic_stack.get().copy()
-            curr.append({"action": action, "params": {}, "comment": ""})
+            curr.append(stub)
             self.logic_stack.set(curr)
             self.selected_node_idx.set(len(curr) - 1)
             self.invalidated_from.set(None)
             ui.notification_show(
-                f"Added '{action}' — configure it in the form on the right, then Apply.",
+                f"Added '{selected}' — configure it in the form on the right, then Apply.",
                 type="message",
             )
 
@@ -671,6 +687,36 @@ class WrangleStudio:
         def _update_action_picker():
             query = (input.bp_action_search() or "").strip().lower()
             ctx = (input.bp_action_context() or "").strip()
+
+            # BP-COMPONENT-FORMS-1: plot context lists viz_factory layer components,
+            # grouped by category. Names never collide with action names.
+            if ctx == "plot":
+                try:
+                    from blueprint_arch.schema_registry import (
+                        get_components_for_context, search_components,
+                    )
+                    comp_catalog = get_components_for_context("plot")
+                except Exception:
+                    comp_catalog = {}
+
+                in_scope = set(comp_catalog.keys())
+                if query and comp_catalog:
+                    in_scope = in_scope & set(search_components(query).keys())
+                elif query:
+                    in_scope = {k for k in in_scope if query in k}
+
+                grouped: dict = {}
+                for k in sorted(in_scope):
+                    schema = comp_catalog[k]
+                    cat_label = schema.get("category", "other").capitalize()
+                    grouped.setdefault(cat_label, {})[k] = schema.get("label", k)
+
+                if grouped:
+                    choices = grouped if len(grouped) > 1 else next(iter(grouped.values()))
+                else:
+                    choices = {"(no matches)": "(no matches)"}
+                ui.update_select("action_selector", choices=choices)
+                return
 
             try:
                 from blueprint_arch.schema_registry import get_action_catalog, search_actions, get_actions_for_context
@@ -731,9 +777,95 @@ class WrangleStudio:
                 )
 
             node = nodes[idx]
-            action_name = node.get("action", "")
             current_params = node.get("params", {})
             current_comment = node.get("comment", "")
+
+            # BP-COMPONENT-FORMS-1: component nodes (plot layers) get the same ui_schema
+            # form as actions, sourced from the component catalog. The __mapping__ node
+            # stays read-only here — the dedicated aes form is BP-MAPPING-FORM-1.
+            component_name = node.get("component")
+            if component_name is not None:
+                if component_name == "__mapping__":
+                    aes_rows = [
+                        ui.div(
+                            ui.span(f"{k}:", class_="text-muted small me-1",
+                                    style="min-width:48px;display:inline-block;"),
+                            ui.span(v, class_="fw-bold small"),
+                            class_="mb-1"
+                        )
+                        for k, v in current_params.items()
+                    ]
+                    body = aes_rows if aes_rows else [
+                        ui.p("No aesthetics defined.", class_="text-muted small")
+                    ]
+                    return ui.div(
+                        ui.div(
+                            ui.span(f"Layer {idx + 1}: ", class_="text-muted small"),
+                            ui.span("Aesthetic Mapping", class_="fw-bold small"),
+                            ui.span(
+                                "read-only", class_="badge ms-2",
+                                style="background:#6c757d;color:#fff;font-size:0.65rem;"
+                            ),
+                            class_="mb-2"
+                        ),
+                        *body,
+                        ui.p(
+                            "Mapping editing available in BP-MAPPING-FORM-1.",
+                            class_="text-muted fst-italic",
+                            style="font-size:0.72rem;margin-top:8px;"
+                        ),
+                        class_="bp-form-container p-2"
+                    )
+
+                try:
+                    from blueprint_arch.schema_registry import get_component_catalog
+                    comp_schema = get_component_catalog().get(component_name, {})
+                except Exception:
+                    comp_schema = {}
+
+                upstream_cols = self._extract_upstream_cols()
+                if comp_schema:
+                    form_widgets = self._render_action_form(
+                        component_name, comp_schema, current_params, upstream_cols
+                    )
+                    header_label = comp_schema.get("label", component_name)
+                else:
+                    form_widgets = [
+                        ui.p(
+                            f"No form schema registered for '{component_name}'. "
+                            "Edit params via the YAML escape hatch.",
+                            class_="text-muted small"
+                        )
+                    ]
+                    header_label = component_name
+
+                return ui.div(
+                    ui.div(
+                        ui.span(f"Layer {idx + 1}: ", class_="text-muted small"),
+                        ui.span(header_label, class_="fw-bold small"),
+                        ui.span(
+                            "geom", class_="badge ms-2",
+                            style="background:#345beb;color:#fff;font-size:0.65rem;"
+                        ),
+                        class_="mb-2"
+                    ),
+                    ui.input_text(
+                        "bp_form_comment", "Comment",
+                        value=current_comment,
+                        placeholder="Why this layer?"
+                    ),
+                    *form_widgets,
+                    ui.div(
+                        ui.input_action_button(
+                            "btn_bp_apply_node", "Apply",
+                            class_="btn btn-primary btn-sm w-100"
+                        ),
+                        class_="mt-3"
+                    ),
+                    class_="bp-form-container p-2"
+                )
+
+            action_name = node.get("action", "")
 
             try:
                 from blueprint_arch.schema_registry import get_action_catalog
@@ -1644,12 +1776,32 @@ class WrangleStudio:
             ui_nodes = []
 
             for i, node in enumerate(nodes):
-                action = node.get("action", "unknown")
                 comment = node.get("comment", "")
                 params = node.get("params", {})
 
+                # Discriminate action nodes (wrangling) vs component nodes (plot layers)
+                component_name = node.get("component")
+                if component_name is not None:
+                    if component_name == "__mapping__":
+                        display_name = "mapping (aes)"
+                        kind_badge = ui.span(
+                            "aes", class_="badge ms-1",
+                            style="background:#10a395;color:#fff;font-size:0.65rem;"
+                        )
+                    else:
+                        display_name = component_name
+                        kind_badge = ui.span(
+                            "geom", class_="badge ms-1",
+                            style="background:#345beb;color:#fff;font-size:0.65rem;"
+                        )
+                    is_readonly = True
+                else:
+                    display_name = node.get("action", "unknown")
+                    kind_badge = ui.span("")
+                    is_readonly = False
+
                 is_selected = (selected_idx == i)
-                is_stale = (inv_from is not None and i >= inv_from)
+                is_stale = (inv_from is not None and i >= inv_from and not is_readonly)
 
                 extra_class = (
                     " bp-node-selected" if is_selected
@@ -1669,7 +1821,8 @@ class WrangleStudio:
                 ui_nodes.append(
                     ui.div(
                         ui.div(
-                            ui.span(f"{i + 1}. {action}", class_="fw-bold small"),
+                            ui.span(f"{i + 1}. {display_name}", class_="fw-bold small"),
+                            kind_badge,
                             stale_el,
                         ),
                         ui.div(
@@ -1966,11 +2119,13 @@ class WrangleStudio:
                 )
 
             elif widget_type == "number":
-                elem = ui.input_numeric(
-                    input_id, label,
-                    value=(float(current_val) if current_val is not None
-                           else float(param_def.get("default", 0)))
-                )
+                if current_val is not None:
+                    num_val = float(current_val)
+                else:
+                    _default = param_def.get("default", 0)
+                    # default may be explicitly null (optional param) — render empty field
+                    num_val = float(_default) if _default is not None else None
+                elem = ui.input_numeric(input_id, label, value=num_val)
 
             elif widget_type == "bool":
                 elem = ui.input_checkbox(

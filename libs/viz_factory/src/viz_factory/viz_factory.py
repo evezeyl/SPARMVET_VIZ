@@ -14,8 +14,10 @@ import difflib
 #           libs/viz_factory/src/viz_factory/plot_config_resolver.py (resolve_plot_config — VIZFAC-RENDER-WIRE-1)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-VIZFACTORY-1)
 # consumed_by: app/handlers/home_theater.py, libs/viz_factory/tests/debug_gallery.py, app/src/server.py
-# doc: .claude/rules/rules_viz_factory.md
+# doc: .claude/rules/rules_viz_factory.md, .claude/design/plot_authoring_model.md
 # note: palette_registry is injected by app/src/server.py (bootloader.get_palettes()) — BP-COLOR-3
+# note: _standardize_config and _auto_adjust_axis_labels removed (BP-PLOT-MODEL-1) — both were
+#       dead code; resolve_plot_config() is the single merge point (VIZFAC-RENDER-WIRE-1)
 # @end_deps
 
 
@@ -368,144 +370,6 @@ class VizFactory:
             )
 
         return p
-
-    @staticmethod
-    def _auto_adjust_axis_labels(p, df_collected, x_col: str | None, y_col: str | None = None):
-        """
-        Heuristically adjust x-axis label rotation and y-axis label font size
-        to prevent crowding. Applied automatically unless the manifest has an
-        explicit element_text layer.
-
-        X-axis rules (categorical only — numeric/date left as-is):
-          max_len > 12 or n_unique > 8  → 45° rotation, size 8, ha right
-          max_len > 6  or n_unique > 5  → 35° rotation, size 9, ha right
-          otherwise                      → no change
-
-        Y-axis rules (any dtype):
-          n_unique > 20 or max_len > 20  → size 7
-          n_unique > 12 or max_len > 12  → size 8
-          otherwise                      → no change
-        """
-        import pandas as pd
-        from plotnine import theme, element_text
-
-        x_kwargs = {}
-        y_kwargs = {}
-
-        # --- X-axis ---
-        if x_col is not None and x_col in df_collected.columns:
-            col = df_collected[x_col]
-            if not (pd.api.types.is_numeric_dtype(col) or
-                    pd.api.types.is_datetime64_any_dtype(col)):
-                unique_vals = col.dropna().unique()
-                n_unique = len(unique_vals)
-                max_len = max((len(str(v)) for v in unique_vals), default=0)
-
-                # Rotation only warranted for genuinely long labels.
-                # Short labels (≤6 chars, e.g. ST codes "131", "1485") stay
-                # horizontal even when numerous — reduce size instead.
-                if max_len > 12:
-                    x_kwargs = {"rotation": 45, "size": 8, "ha": "right"}
-                elif max_len > 6:
-                    x_kwargs = {"rotation": 35, "size": 9, "ha": "right"}
-                elif n_unique > 12:
-                    x_kwargs = {"size": 8}   # many short labels: shrink, no rotation
-                elif n_unique > 6:
-                    x_kwargs = {"size": 9}
-
-                if x_kwargs:
-                    rot = x_kwargs.get("rotation", 0)
-                    print(f"Auto-adjusted x-axis: rotation={rot}°, "
-                          f"size={x_kwargs['size']}, n_unique={n_unique}, max_len={max_len}")
-
-        # --- Y-axis ---
-        if y_col is not None and y_col in df_collected.columns:
-            col = df_collected[y_col]
-            # For categorical Y (e.g. horizontal bar charts)
-            if not (pd.api.types.is_numeric_dtype(col) or
-                    pd.api.types.is_datetime64_any_dtype(col)):
-                unique_vals = col.dropna().unique()
-                n_unique = len(unique_vals)
-                max_len = max((len(str(v)) for v in unique_vals), default=0)
-                if n_unique > 20 or max_len > 20:
-                    y_kwargs = {"size": 7}
-                elif n_unique > 12 or max_len > 12:
-                    y_kwargs = {"size": 8}
-            else:
-                # Numeric Y: many unique values means densely packed tick labels
-                n_unique = df_collected[y_col].dropna().nunique()
-                if n_unique > 20:
-                    y_kwargs = {"size": 7}
-                elif n_unique > 12:
-                    y_kwargs = {"size": 8}
-
-            if y_kwargs:
-                print(f"Auto-adjusted y-axis: size={y_kwargs['size']}, n_unique={n_unique}")
-
-        if x_kwargs or y_kwargs:
-            theme_kwargs = {}
-            if x_kwargs:
-                theme_kwargs["axis_text_x"] = element_text(**x_kwargs)
-            if y_kwargs:
-                theme_kwargs["axis_text_y"] = element_text(**y_kwargs)
-            p = p + theme(**theme_kwargs)
-
-        return p
-
-    def _standardize_config(self, plot_config: Dict[str, Any], manifest_defaults: Dict[str, Any]) -> Dict[str, Any]:
-        """ Standardizes high-level or legacy manifests into the mapping/layers spec. """
-        import copy
-        config = copy.deepcopy(plot_config)
-
-        # Merge manifest-level defaults
-        for k, v in manifest_defaults.items():
-            if k not in config:
-                config[k] = v
-
-        # 1. Promote flat aesthetics to mapping if mapping is missing
-        if 'mapping' not in config:
-            mapping = {}
-            # List of aesthetics to extract from top level
-            possible_aes = ['x', 'y', 'color', 'fill',
-                            'size', 'alpha', 'shape', 'label']
-            for aes_key in possible_aes:
-                if aes_key in config:
-                    mapping[aes_key] = config[aes_key]
-
-            if mapping:
-                config['mapping'] = mapping
-
-        # 2. Handle factory_id translation
-        # Injects the base geom at position 0 if not already present, even when
-        # additional layers (position, labs) are already declared in the manifest.
-        factory_id = config.get('factory_id')
-        if factory_id:
-            base_geom = None
-            if factory_id == "heatmap_logic":
-                # Heatmaps use 'fill' for tiles; manifests may declare 'color'
-                if 'mapping' in config and 'color' in config['mapping']:
-                    config['mapping']['fill'] = config['mapping']['color']
-                base_geom = {"name": "geom_tile", "params": {"color": "white", "size": 0.1}}
-            elif factory_id == "bar_logic":
-                if 'mapping' in config and 'y' in config['mapping']:
-                    base_geom = {"name": "geom_col", "params": {}}
-                else:
-                    base_geom = {"name": "geom_bar", "params": {}}
-            elif factory_id == "scatter_logic":
-                base_geom = {"name": "geom_point", "params": {}}
-            elif factory_id == "boxplot_logic":
-                base_geom = {"name": "geom_boxplot", "params": {}}
-            elif factory_id == "violin_logic":
-                base_geom = {"name": "geom_violin", "params": {}}
-
-            if base_geom:
-                existing = config.get('layers', [])
-                # Only prepend if the geom type is not already declared
-                geom_names = {l.get('name') for l in existing}
-                if base_geom['name'] not in geom_names:
-                    config['layers'] = [base_geom] + existing
-
-        return config
 
     def _apply_palette(
         self,

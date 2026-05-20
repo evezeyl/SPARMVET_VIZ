@@ -58,7 +58,7 @@ Implementation order locked by ADR-082 §Implementation Order. Each closes a gap
 > REMOVED, not kept. Removal (task 8) is gated on all producers emitting canonical (tasks 5+6+7).
 > Build order: 1 → (2,4,5,6,7 parallelizable after 1) → 3 → 8 last.
 
-- [ ] **BP-PLOT-MODEL-1** `[sonnet/high]`: Foundation seam (ADR-083 §2-3, §6). In `libs/viz_factory/src/viz_factory/plot_config_resolver.py`:
+- [x] **BP-PLOT-MODEL-1** `[sonnet/high]`: Foundation seam (ADR-083 §2-3, §6). In `libs/viz_factory/src/viz_factory/plot_config_resolver.py`:
   - Promote `_normalise_spec` → public `normalise_plot_spec(raw) -> canonical` (transitional: still expands factory_id + flat-aes during migration).
   - Add inverse `serialise_plot_spec(canonical) -> yaml_dict` (emit `mapping:` + explicit geom `layers:`; never factory_id/flat; re-attach `_meta`).
   - `_meta` passthrough: unknown + taxonomy keys (`family`, `pattern`, `difficulty`, author notes) preserved verbatim; per-layer `comment` preserved, stripped only before plotnine.
@@ -66,14 +66,15 @@ Implementation order locked by ADR-082 §Implementation Order. Each closes a gap
   - Tests: `libs/viz_factory/tests/test_plot_spec_roundtrip.py` — round-trip law `serialise(normalise(raw))` render-equivalent; `_meta` preservation; idempotency.
   - **Delete dead `_standardize_config`** (viz_factory.py:455 — docstring says resolver replaced it; confirmed uncalled).
   - Update `@deps` (provides: `normalise_plot_spec`, `serialise_plot_spec`). No Shiny, no render behaviour change.
-- [ ] **BP-PLOT-LOAD-1** `[sonnet/high]`: BLUEPRINT plot_spec load → populate mapping form + layer nodes (geom incl.) via `normalise_plot_spec`. The `plot_spec` branch (blueprint_handlers.py:264) currently only visualizes — never sets `logic_stack`. Read-only first (no commit). Depends BP-PLOT-MODEL-1. ADR-083 §4.
-- [ ] **BP-COMPONENT-FORMS-1** `[opus/high]`: Component form path. Depends BP-PLOT-MODEL-1 + BP-PLOT-LOAD-1 + BP-COMPONENT-SCHEMA-1(done). ADR-082 §5, ADR-083 §4.
-  - `schema_registry.py`: add `search_components(query)` (parallel to `search_actions`); update `@deps`.
-  - `wrangle_studio.py`: add `plot` option to `bp_action_context` selector; `_update_action_picker` populates from `get_components_for_context("plot")` + `search_components` when ctx=`plot`.
-  - `add_node`: decide kind by catalog membership → `{component: name, params:{}, comment:""}` vs existing `{action: ...}` (names never collide).
-  - `bp_action_form_ui`: branch on `node.get("component")` → `get_component_catalog()`; else `get_action_catalog()`. Same `_render_action_form` call.
-  - `logic_stack_ui` (line 1647): label = `node.get("action") or node.get("component", "unknown")`.
-  - `blueprint_handlers.py` `_bp_apply_node_handler`: same kind-branch; rebuild node preserving `component`/`action` key.
+- [x] **BP-PLOT-LOAD-1** `[sonnet/high]`: BLUEPRINT plot_spec load → populate mapping form + layer nodes (geom incl.) via `normalise_plot_spec`. The `plot_spec` branch (blueprint_handlers.py:264) currently only visualizes — never sets `logic_stack`. Read-only first (no commit). Depends BP-PLOT-MODEL-1. ADR-083 §4. **Done 2026-05-20** — plot_spec branch calls `normalise_plot_spec`, builds `plot_nodes` list (`__mapping__` + layer component nodes), sets `logic_stack`; `logic_stack_ui` renders kind badges (aes/geom); `bp_action_form_ui` returns read-only view for component nodes without Apply button.
+- [x] **BP-COMPONENT-FORMS-1** `[opus/high]`: Component form path. Depends BP-PLOT-MODEL-1 + BP-PLOT-LOAD-1 + BP-COMPONENT-SCHEMA-1(done). ADR-082 §5, ADR-083 §4. **Done 2026-05-20.**
+  - `schema_registry.py`: added `search_components(query)` (parallel to `search_actions`); `@deps` updated.
+  - `wrangle_studio.py`: added `plot` ("Plot — Layers") option to `bp_action_context`; `_update_action_picker` branches on ctx==`plot` → `get_components_for_context("plot")` + `search_components`, grouped by category.
+  - `add_node`: decides kind by `get_component_catalog()` membership → `{component: name, ...}` vs `{action: ...}`.
+  - `bp_action_form_ui`: branches on `node.get("component")` → `get_component_catalog()` + same `_render_action_form` (Apply button + comment). `__mapping__` stays read-only (→ BP-MAPPING-FORM-1).
+  - `logic_stack_ui`: already discriminates (BP-PLOT-LOAD-1) — geom/aes badges.
+  - `blueprint_handlers.py` `_bp_apply_node_handler`: kind-branch via `node_kind_key`/`node_name`; rebuilds preserving `component`/`action`; component edits don't mark downstream stale; `__mapping__` guarded out.
+  - **Robustness fix:** shared `number` widget crashed on explicit `default: null` (`stat_ecdf.n`) — now renders empty field. Verified: 191/191 component forms + 60/60 action forms render headless, 0 failures; 200 unit tests + 14 smoke pass.
 - [ ] **BP-MAPPING-FORM-1** `[sonnet/medium]`: Dedicated mapping form (x/y/fill/color/facet_by column pickers) — `mapping` is `aes()`, not a component; own widget set. Depends BP-PLOT-MODEL-1. ADR-083 §4.
 - [ ] **BP-PLOT-COMMIT-1** `[opus/high]`: Correct commit (ADR-083 §8). `serialise_plot_spec` → write plot spec file's `layers:`; route wrangling action nodes to their **source tier** (tier1/tier2 of the loaded component); **kill the tier3 dump** in `_handle_manifest_save_internal` (blueprint_handlers.py:826-828) + `btn_download_manifest` (:971). BLUEPRINT emits canonical only (no factory_id), never T3 (ADR-082 §4). Depends BP-PLOT-MODEL-1. **Fixes the pre-existing tier3 bug** flagged 2026-05-20.
 - [ ] **BP-PLOT-MIGRATE-1** `[sonnet/medium]`: `assets/scripts/migrate_plot_specs.py` (argparse, per rules_asset_scripts). Rewrite the **19 legacy manifests** in `config/manifests/` (13 plot specs + 6 masters) to canonical: factory_id→explicit geom (bar y-check → geom_col/geom_bar; heatmap color→fill + geom_tile; scatter→geom_point; boxplot→geom_boxplot; violin→geom_violin), flat aes→`mapping:`. Scan `tests/` fixtures too. Verify render parity before/after via `debug_gallery.py`. **Update generators that emit factory_id**: `create_manifest.py:281`, `debug_bootstrap_viz_yamls.py` → emit canonical. Depends BP-PLOT-MODEL-1.

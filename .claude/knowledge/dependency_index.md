@@ -94,7 +94,7 @@
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_fork_ui`, `output:bp_fork_preview_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_fork_preview`, `effect:_handle_fork_write`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)`, `libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1)`, `function:normalise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1)`, `libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_fork_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`
 
@@ -231,7 +231,7 @@
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
 - **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`
-- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1); action key ({"action":...}) for wrangling nodes`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -432,7 +432,7 @@
 
 ## `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
 - **Role:** `info`
-- **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`, `function:register`
+- **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`, `function:search_actions`, `function:search_components`, `function:register`
 - **consumes:** `nothing — catalogs injected at startup by app/src/server.py via register()`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/modules/wrangle_studio.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md (ADR-075)`, `.claude/rules/rules_app_structure.md §2`
@@ -758,7 +758,7 @@
 - **provides:** `function:resolve_plot_config`, `function:compute_optimisation_layer`
 - **consumes:** `-   (pure functions — no plotnine import`, `no cross-lib imports)`
 - **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
-- **doc:** `.claude/design/plot_config_cascade.md`
+- **doc:** `.claude/design/plot_config_cascade.md`, `.claude/design/plot_authoring_model.md`
 
 ## `libs/viz_factory/src/viz_factory/positions/core.py`
 - **Role:** `plot`
@@ -789,7 +789,7 @@
 - **provides:** `class:VizFactory`, `method:render`, `method:_apply_palette`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENTS via get_component)`
 - **consumed_by:** `app/handlers/home_theater.py`, `libs/viz_factory/tests/debug_gallery.py`, `app/src/server.py`
-- **doc:** `.claude/rules/rules_viz_factory.md`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/design/plot_authoring_model.md`
 
 ## `libs/viz_factory/tests/debug_audit.py`
 - **Role:** `plot`

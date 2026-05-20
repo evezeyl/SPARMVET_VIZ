@@ -18,7 +18,8 @@ from __future__ import annotations
 # provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_fork_ui, output:bp_fork_preview_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_fork_preview, effect:_handle_fork_write
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
-# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)
+# consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1)
+# consumes: function:normalise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1)
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
@@ -47,6 +48,7 @@ from blueprint_arch.manifest_navigator import (
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
+from viz_factory.plot_config_resolver import normalise_plot_spec
 from blueprint_arch.agent_context import build_system_prompt
 from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
@@ -277,6 +279,26 @@ def define_server(input, output, session, *,
                     wrangle_studio.active_upstream.set(upstream_fields)
                     wrangle_studio.active_downstream.set([])
                     wrangle_studio.active_viz_id.set(schema_id)
+
+                    # Populate logic_stack with plot spec nodes (read-only; BP-PLOT-LOAD-1)
+                    # BP-PLOT-COMMIT-1 handles writing back. component nodes use {"component":...}
+                    if isinstance(file_content, dict):
+                        canonical = normalise_plot_spec(file_content)
+                        plot_nodes: list = []
+                        mapping = canonical.get("mapping", {})
+                        if mapping:
+                            plot_nodes.append(
+                                {"component": "__mapping__", "params": mapping, "comment": ""}
+                            )
+                        for layer in canonical.get("layers", []):
+                            plot_nodes.append({
+                                "component": layer.get("name", ""),
+                                "params": layer.get("params", {}),
+                                "comment": "",
+                            })
+                        wrangle_studio.logic_stack.set(plot_nodes)
+                    else:
+                        wrangle_studio.logic_stack.set([])
 
                     if target_ds:
                         try:
@@ -845,12 +867,26 @@ def define_server(input, output, session, *,
             return
 
         node = nodes[idx]
-        action_name = node.get("action", "")
+
+        # BP-COMPONENT-FORMS-1: branch by node kind. Component (plot layer) nodes resolve
+        # their schema from the component catalog; action nodes from the action catalog.
+        # The __mapping__ node is read-only (no Apply button) — guard defensively.
+        component_name = node.get("component")
+        is_component = component_name is not None
+        if is_component and component_name == "__mapping__":
+            return
+
+        node_kind_key = "component" if is_component else "action"
+        node_name = component_name if is_component else node.get("action", "")
 
         try:
-            from blueprint_arch.schema_registry import get_action_catalog
-            catalog = get_action_catalog()
-            ui_schema = catalog.get(action_name, {})
+            if is_component:
+                from blueprint_arch.schema_registry import get_component_catalog
+                catalog = get_component_catalog()
+            else:
+                from blueprint_arch.schema_registry import get_action_catalog
+                catalog = get_action_catalog()
+            ui_schema = catalog.get(node_name, {})
         except Exception:
             ui_schema = {}
 
@@ -950,19 +986,24 @@ def define_server(input, output, session, *,
 
         updated = list(nodes)
         updated[idx] = {
-            "action": action_name,
+            node_kind_key: node_name,
             "params": new_params,
             "comment": new_comment,
         }
         wrangle_studio.logic_stack.set(updated)
 
-        # Mark downstream nodes as schema-stale after edit
-        wrangle_studio.invalidated_from.set(
-            idx + 1 if idx + 1 < len(updated) else None
-        )
+        # Mark downstream nodes as schema-stale after edit (action nodes only —
+        # plot layers do not propagate an upstream schema).
+        if is_component:
+            wrangle_studio.invalidated_from.set(None)
+        else:
+            wrangle_studio.invalidated_from.set(
+                idx + 1 if idx + 1 < len(updated) else None
+            )
 
+        unit = "Layer" if is_component else "Step"
         ui.notification_show(
-            f"Step {idx + 1} ({action_name}) updated.", type="message"
+            f"{unit} {idx + 1} ({node_name}) updated.", type="message"
         )
 
     @render.download(filename=lambda: f"exported_manifest_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml")

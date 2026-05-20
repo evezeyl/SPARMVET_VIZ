@@ -1,10 +1,12 @@
 # @deps
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
-#           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS
+#           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
+#           function:normalise_plot_spec, function:serialise_plot_spec
 # consumes: -   (pure functions — no plotnine import, no cross-lib imports)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
-#              libs/viz_factory/tests/test_plot_config_resolver.py
-# doc: .claude/design/plot_config_cascade.md
+#              libs/viz_factory/tests/test_plot_config_resolver.py,
+#              libs/viz_factory/tests/test_plot_spec_roundtrip.py
+# doc: .claude/design/plot_config_cascade.md, .claude/design/plot_authoring_model.md
 # @end_deps
 """
 Five-tier plot configuration cascade resolver (ADR-024 / cascade design 2026-05-10).
@@ -73,6 +75,14 @@ _VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset({
 # Flat aesthetic keys that may appear at the spec top level (legacy/shorthand)
 _FLAT_AESTHETIC_KEYS: tuple = ("x", "y", "color", "colour", "fill",
                                "size", "alpha", "shape", "label")
+
+# Keys recognised as part of the spec (not taxonomy / author metadata).
+# Any key NOT in this set is moved into the _meta passthrough dict by normalise_plot_spec.
+_CANONICAL_SPEC_KEYS: frozenset = frozenset({
+    "target_dataset", "mapping", "layers", "theme", "facet_by",
+    "palette", "labels", "guides", "filters", "title", "factory_id",
+    "_meta",
+} | set(_FLAT_AESTHETIC_KEYS))
 
 
 # ---------------------------------------------------------------------------
@@ -149,20 +159,32 @@ def _dedupe_layers(layers: list[dict]) -> list[dict]:
 # Spec normalisation — factory_id translation and flat aesthetic promotion
 # ---------------------------------------------------------------------------
 
-def _normalise_spec(raw_spec: dict) -> dict:
-    """Promote flat aesthetics → mapping and expand factory_id → base geom layer.
+def normalise_plot_spec(raw_spec: dict) -> dict:
+    """Promote flat aesthetics → mapping, expand factory_id → base geom, collect _meta.
 
-    This is a pure transformation of the L4 spec; it does not merge tiers.
+    Pure transformation of the L4 spec; does not merge tiers. Idempotent.
+
+    Keys not in _CANONICAL_SPEC_KEYS (gallery taxonomy, author notes, etc.) are
+    moved into a ``_meta`` passthrough dict and preserved verbatim. serialise_plot_spec
+    re-expands ``_meta`` to the top level when writing back to YAML.
+
+    factory_id is still recognised transitionally (BP-PLOT-LEGACY-REMOVE-1 will
+    delete the reader and emit a hard PipelineError on legacy keys).
     """
     spec = copy.deepcopy(raw_spec)
 
-    # 1. Promote flat aesthetics to mapping (if mapping not already explicit)
+    # 1. Collect existing _meta and extract non-canonical keys into it.
+    meta: dict = dict(spec.pop("_meta", {}))
+    for k in [k for k in list(spec.keys()) if k not in _CANONICAL_SPEC_KEYS]:
+        meta[k] = spec.pop(k)
+
+    # 2. Promote flat aesthetics to mapping (if mapping not already explicit).
     if "mapping" not in spec:
         mapping = {k: spec[k] for k in _FLAT_AESTHETIC_KEYS if k in spec}
         if mapping:
             spec["mapping"] = mapping
 
-    # 2. factory_id → base geom (prepend if not already present)
+    # 3. factory_id → base geom (prepend if not already present).
     factory_id = spec.get("factory_id")
     if factory_id:
         base_geom = copy.deepcopy(_FACTORY_GEOMS.get(factory_id))
@@ -181,7 +203,63 @@ def _normalise_spec(raw_spec: dict) -> dict:
             if base_geom["name"] not in existing_geoms:
                 spec["layers"] = [base_geom] + existing_layers
 
+    # 4. Re-attach _meta only when non-empty.
+    if meta:
+        spec["_meta"] = meta
+
     return spec
+
+
+def serialise_plot_spec(canonical: dict) -> dict:
+    """Serialise a canonical (normalised) plot spec to a YAML-ready dict.
+
+    The inverse of normalise_plot_spec for BLUEPRINT authoring and manifest emission:
+    - Emits explicit ``mapping:`` (never flat x/y/fill).
+    - Emits explicit ``layers:`` (geom is layers[0]).
+    - Never emits ``factory_id`` — the canonical form is geom-first.
+    - Re-expands ``_meta`` keys back to the top level (taxonomy, author notes).
+    - Strips internal ``_tier`` / ``_meta`` markers from layer dicts.
+
+    Not a perfect round-trip: flat aes keys and factory_id are intentionally dropped.
+    Round-trip render-equivalence holds: the geom layer and mapping are preserved.
+    """
+    out: dict = {}
+
+    # target_dataset first for readability
+    if "target_dataset" in canonical:
+        out["target_dataset"] = canonical["target_dataset"]
+
+    # mapping (never flat aes)
+    mapping = canonical.get("mapping")
+    if mapping:
+        out["mapping"] = dict(mapping)
+
+    # layers — strip internal keys, always include even when empty list
+    raw_layers = canonical.get("layers")
+    if raw_layers is not None:
+        clean: list = []
+        for layer in raw_layers:
+            entry: dict = {"name": layer["name"], "params": dict(layer.get("params", {}))}
+            clean.append(entry)
+        out["layers"] = clean
+
+    # scalar optional fields
+    for key in ("theme", "facet_by", "palette", "title"):
+        val = canonical.get(key)
+        if val:
+            out[key] = val
+
+    # collection optional fields (only when non-empty)
+    for key in ("labels", "guides", "filters"):
+        val = canonical.get(key)
+        if val:
+            out[key] = val
+
+    # re-expand _meta keys to top level (taxonomy, author notes, etc.)
+    for k, v in (canonical.get("_meta") or {}).items():
+        out[k] = v
+
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -354,7 +432,7 @@ def resolve_plot_config(
         all_layers.append({**layer, "_tier": "L3"})
 
     # ── L4: Plot spec ────────────────────────────────────────────────────────
-    spec = _normalise_spec(raw_spec)
+    spec = normalise_plot_spec(raw_spec)
 
     # Mapping
     if spec.get("mapping"):
