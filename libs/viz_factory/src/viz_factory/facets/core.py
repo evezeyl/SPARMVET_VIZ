@@ -10,7 +10,25 @@ from plotnine import facet_wrap, facet_grid, ggplot
 from viz_factory.registry import register_plot_component
 
 
-@register_plot_component("facet_wrap")
+@register_plot_component("facet_wrap", ui_schema={
+    "label": "Facet wrap (1D panels)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "wrap", "panel", "small-multiples", "grid"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["facet_wrap"]}],
+    "allow_extra_params": False,
+    "params": {
+        "facets": {"widget": "string", "label": "Column to facet by (column name)", "required": True},
+        "nrow": {"widget": "number", "label": "Number of rows (auto if omitted)", "required": False},
+        "ncol": {"widget": "number", "label": "Number of columns (auto if omitted)", "required": False},
+        "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
+                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
+        "dir": {"widget": "enum", "label": "Fill direction", "required": False,
+                "default": "h", "options": ["h", "v"]},
+        "strip_position": {"widget": "enum", "label": "Strip label position", "required": False,
+                           "default": "top", "options": ["top", "bottom", "left", "right"]},
+    },
+})
 def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard individual panel wrapping."""
     # Ensure facets is a list or string
@@ -18,7 +36,23 @@ def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + facet_wrap(facets=facets, **spec)
 
 
-@register_plot_component("facet_grid")
+@register_plot_component("facet_grid", ui_schema={
+    "label": "Facet grid (2D panels)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "grid", "panel", "2D", "rows", "cols"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["facet_grid"]}],
+    "allow_extra_params": False,
+    "params": {
+        "rows": {"widget": "string", "label": "Row facet column (or leave empty for none)", "required": False},
+        "cols": {"widget": "string", "label": "Column facet column (or leave empty for none)", "required": False},
+        "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
+                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
+        "space": {"widget": "enum", "label": "Panel space", "required": False,
+                  "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
+        "margins": {"widget": "bool", "label": "Show margin (total) panels", "required": False, "default": False},
+    },
+})
 def handle_facet_grid(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     Standard 2D grid of panels.
@@ -36,31 +70,74 @@ def handle_facet_grid(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + facet_grid(**spec)
 
 
-@register_plot_component("facet_rows")
+@register_plot_component("facet_rows", ui_schema={
+    "label": "Facet rows (vertical stack)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "rows", "vertical", "stack", "panel"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["facet_grid"]}],
+    "allow_extra_params": False,
+    "params": {
+        "facets": {"widget": "string", "label": "Column to use as row facets", "required": True},
+        "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
+                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
+    },
+})
 def handle_facet_rows(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Shortcut for vertical-only stacking in a grid."""
     row_var = spec.pop("facets", None)
     return p + facet_grid(rows=row_var, **spec)
 
 
-@register_plot_component("facet_cols")
+@register_plot_component("facet_cols", ui_schema={
+    "label": "Facet cols (horizontal layout)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "cols", "horizontal", "panel"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["facet_grid"]}],
+    "allow_extra_params": False,
+    "params": {
+        "facets": {"widget": "string", "label": "Column to use as column facets", "required": True},
+        "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
+                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
+    },
+})
 def handle_facet_cols(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Shortcut for horizontal-only stacking in a grid."""
     col_var = spec.pop("facets", None)
     return p + facet_grid(cols=col_var, **spec)
 
 
-@register_plot_component("facet_null")
+@register_plot_component("facet_null", ui_schema={
+    "label": "Facet null (single panel)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "null", "single", "disable"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["facet_null"]}],
+    "allow_extra_params": False,
+    "params": {},
+})
 def handle_facet_null(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
-    Default single-panel display. 
+    Default single-panel display.
     This is useful for explicitly disabling multi-panel layouts.
     """
     from plotnine import facet_null
     return p + facet_null(**spec)
 
 
-@register_plot_component("facet_scales")
+@register_plot_component("facet_scales", ui_schema={
+    "label": "Facet scales (override)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "scales", "free", "fixed"],
+    "wraps": [],
+    "allow_extra_params": False,
+    "params": {
+        "scales": {"widget": "enum", "label": "Scale freedom", "required": True,
+                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
+    },
+})
 def handle_facet_scales(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to modify facet scales (free, free_x, free_y)."""
     if hasattr(p, 'facet') and p.facet:
@@ -69,7 +146,18 @@ def handle_facet_scales(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p
 
 
-@register_plot_component("facet_space")
+@register_plot_component("facet_space", ui_schema={
+    "label": "Facet space (panel spacing)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "space", "panel", "spacing"],
+    "wraps": [],
+    "allow_extra_params": False,
+    "params": {
+        "space": {"widget": "enum", "label": "Panel space", "required": True,
+                  "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
+    },
+})
 def handle_facet_space(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to modify facet space (fixed, free)."""
     if hasattr(p, 'facet') and p.facet:
@@ -77,7 +165,17 @@ def handle_facet_space(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p
 
 
-@register_plot_component("facet_labeller")
+@register_plot_component("facet_labeller", ui_schema={
+    "label": "Facet labeller",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "label", "strip", "text"],
+    "wraps": [],
+    "allow_extra_params": False,
+    "params": {
+        "labeller": {"widget": "string", "label": "Labeller function name (e.g. 'label_both')", "required": True},
+    },
+})
 def handle_facet_labeller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set facet labeller on the current facet object."""
     labeller = spec.get('labeller', spec.get('value'))
@@ -92,7 +190,17 @@ def handle_facet_labeller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p
 
 
-@register_plot_component("facet_margins")
+@register_plot_component("facet_margins", ui_schema={
+    "label": "Facet margins (totals)",
+    "category": "facet",
+    "context": ["plot"],
+    "tags": ["facet", "margins", "total", "summary"],
+    "wraps": [],
+    "allow_extra_params": False,
+    "params": {
+        "margins": {"widget": "bool", "label": "Show margin (total) panels", "required": False, "default": True},
+    },
+})
 def handle_facet_margins(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set facet margins."""
     if hasattr(p, 'facet') and p.facet:

@@ -1,6 +1,7 @@
 # @deps
 # provides: app_ui (Shiny UI definition, page_fillable layout)
 # consumes: pathlib, shiny, app.src.bootloader, base64, mimetypes
+# consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
 # @end_deps
@@ -53,6 +54,8 @@ app_ui = ui.page_fillable(
         # Source: app/src/www/vendor/ — pinned versions, no CDN dependency.
         ui.tags.link(
             rel="stylesheet", href="/vendor/bootstrap-icons.css"),
+        # [BP-EXPR-EDITOR-1] Expression widget column autocomplete — vanilla JS, no CDN.
+        ui.tags.script(src="/bp_expr_editor.js"),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
         ui.tags.script(src="/vendor/cytoscape.min.js"),

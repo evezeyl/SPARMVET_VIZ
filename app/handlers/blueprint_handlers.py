@@ -19,6 +19,7 @@ from __future__ import annotations
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1)
+# note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_fork_ui"))
@@ -884,9 +885,15 @@ def define_server(input, output, session, *,
             elif widget_type == "bool":
                 new_params[param_key] = bool(safe_input(input, input_id, False))
             elif widget_type in ("enum", "dtype_picker"):
-                val = safe_input(input, input_id, "")
+                multi = param_def.get("multi", False) if widget_type == "enum" else False
+                val = safe_input(input, input_id, [] if multi else "")
                 if val:
-                    new_params[param_key] = val
+                    if multi:
+                        new_params[param_key] = (
+                            val if isinstance(val, list) else [val]
+                        )
+                    else:
+                        new_params[param_key] = val
             elif widget_type == "column_or_literal":
                 mode_id = f"bp_form_{param_key}_mode"
                 mode = safe_input(input, mode_id, "literal")

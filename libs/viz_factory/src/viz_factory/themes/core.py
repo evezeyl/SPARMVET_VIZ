@@ -33,90 +33,241 @@ def _apply_theme_safely(base_theme_func, spec: Dict[str, Any]) -> Any:
     return p_theme
 
 
-@register_plot_component("theme_gray")
+_THEME_BASE_PARAMS = {
+    "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 11},
+    "base_family": {"widget": "string", "label": "Base font family", "required": False},
+}
+
+
+@register_plot_component("theme_gray", ui_schema={
+    "label": "Theme gray (ggplot2 default)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "gray", "grey", "ggplot2", "default"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_gray"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_gray(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_gray, spec)
 
 
-@register_plot_component("theme_bw")
+@register_plot_component("theme_bw", ui_schema={
+    "label": "Theme black & white",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "bw", "black", "white", "clean"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_bw"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_bw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_bw, spec)
 
 
-@register_plot_component("theme_linedraw")
+@register_plot_component("theme_linedraw", ui_schema={
+    "label": "Theme linedraw",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "linedraw", "black", "lines"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_linedraw"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_linedraw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_linedraw, spec)
 
 
-@register_plot_component("theme_light")
+@register_plot_component("theme_light", ui_schema={
+    "label": "Theme light",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "light", "clean", "minimal"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_light"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_light(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_light, spec)
 
 
-@register_plot_component("theme_minimal")
+@register_plot_component("theme_minimal", ui_schema={
+    "label": "Theme minimal",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "minimal", "clean", "no-background"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_minimal"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_minimal(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_minimal, spec)
 
 
-@register_plot_component("theme_classic")
+@register_plot_component("theme_classic", ui_schema={
+    "label": "Theme classic (axes only)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "classic", "axes", "no-grid", "publication"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_classic"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_classic(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_classic, spec)
 
 
-@register_plot_component("theme_void")
+@register_plot_component("theme_void", ui_schema={
+    "label": "Theme void (no axes, no grid)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "void", "blank", "empty", "map"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_void"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_void(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_void, spec)
 
 
-@register_plot_component("theme_dark")
+@register_plot_component("theme_dark", ui_schema={
+    "label": "Theme dark",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "dark", "night", "dark-background"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_dark"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_dark(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_dark, spec)
 
 
-@register_plot_component("theme_538")
+@register_plot_component("theme_538", ui_schema={
+    "label": "Theme FiveThirtyEight (538)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "538", "fivethirtyeight", "news", "editorial"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_538"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_538(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_538, spec)
 
 
-@register_plot_component("theme_matplotlib")
+@register_plot_component("theme_matplotlib", ui_schema={
+    "label": "Theme matplotlib (default)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "matplotlib", "python", "default"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_matplotlib"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_matplotlib(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_matplotlib, spec)
 
 
-@register_plot_component("theme_seaborn")
+@register_plot_component("theme_seaborn", ui_schema={
+    "label": "Theme seaborn",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "seaborn", "stats", "sns"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_seaborn"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_seaborn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_seaborn, spec)
 
 
-@register_plot_component("theme_tufte")
+@register_plot_component("theme_tufte", ui_schema={
+    "label": "Theme Tufte (minimalist data-ink)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "tufte", "minimalist", "data-ink", "publication"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_tufte"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_tufte(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_tufte, spec)
 
 
-@register_plot_component("theme_xkcd")
+@register_plot_component("theme_xkcd", ui_schema={
+    "label": "Theme xkcd (hand-drawn style)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "xkcd", "comic", "hand-drawn", "fun"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_xkcd"]}],
+    "allow_extra_params": False,
+    "params": _THEME_BASE_PARAMS,
+})
 def handle_theme_xkcd(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_xkcd, spec)
 
 
-@register_plot_component("theme_dashboard")
+@register_plot_component("theme_dashboard", ui_schema={
+    "label": "Theme dashboard (SPARMVET)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "dashboard", "sparmvet", "default", "bw"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_bw"]}],
+    "allow_extra_params": False,
+    "params": {
+        "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 14},
+        "base_family": {"widget": "string", "label": "Base font family", "required": False},
+    },
+})
 def handle_theme_dashboard(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec.setdefault("base_size", 14)
     return p + _apply_theme_safely(theme_bw, spec)
 
 
-@register_plot_component("theme_publication")
+@register_plot_component("theme_publication", ui_schema={
+    "label": "Theme publication (classic, small font)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "publication", "journal", "classic", "print"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme_classic"]}],
+    "allow_extra_params": False,
+    "params": {
+        "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 11},
+        "base_family": {"widget": "string", "label": "Base font family", "required": False},
+    },
+})
 def handle_theme_publication(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec.setdefault("base_size", 11)
     return p + _apply_theme_safely(theme_classic, spec)
 
 
-@register_plot_component("theme_legend_position")
+@register_plot_component("theme_legend_position", ui_schema={
+    "label": "Legend position",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "legend", "position", "placement"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme"]}],
+    "allow_extra_params": False,
+    "params": {
+        "position": {"widget": "enum", "label": "Legend position", "required": True,
+                     "default": "right", "options": ["top", "bottom", "left", "right", "none"]},
+    },
+})
 def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     pos = spec.get("position", "right")
     return p + theme(legend_position=pos)
 
 
-@register_plot_component("theme_custom")
+@register_plot_component("theme_custom", ui_schema={
+    "label": "Custom theme (element dict)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "custom", "element_text", "element_rect", "element_line"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["theme"]}],
+    "allow_extra_params": True,
+    "params": {},
+})
 def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     theme_kwargs = {}
     for key, val in spec.items():
@@ -137,7 +288,25 @@ def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + theme(**theme_kwargs)
 
 
-@register_plot_component("element_text")
+@register_plot_component("element_text", ui_schema={
+    "label": "Element text (theme override)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "element_text", "font", "axis", "text", "rotate"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["element_text"]}],
+    "allow_extra_params": False,
+    "params": {
+        "target": {"widget": "string", "label": "Theme target (e.g. axis_text_x, strip_text)", "required": True},
+        "size": {"widget": "number", "label": "Font size", "required": False},
+        "colour": {"widget": "color", "label": "Text colour", "required": False},
+        "face": {"widget": "enum", "label": "Font face", "required": False,
+                 "options": ["plain", "italic", "bold", "bold.italic"]},
+        "family": {"widget": "string", "label": "Font family", "required": False},
+        "angle": {"widget": "number", "label": "Rotation angle (degrees)", "required": False, "default": 0},
+        "hjust": {"widget": "number", "label": "Horizontal justification (0–1)", "required": False},
+        "vjust": {"widget": "number", "label": "Vertical justification (0–1)", "required": False},
+    },
+})
 def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme text modifier. Requires 'target'."""
     target = spec.pop("target", None)
@@ -147,7 +316,21 @@ def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + theme(**{target: element_text(**spec)})
 
 
-@register_plot_component("element_line")
+@register_plot_component("element_line", ui_schema={
+    "label": "Element line (theme override)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "element_line", "axis", "grid", "line"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["element_line"]}],
+    "allow_extra_params": False,
+    "params": {
+        "target": {"widget": "string", "label": "Theme target (e.g. axis_line, panel_grid)", "required": True},
+        "colour": {"widget": "color", "label": "Line colour", "required": False},
+        "size": {"widget": "number", "label": "Line width", "required": False},
+        "linetype": {"widget": "enum", "label": "Line type", "required": False,
+                     "options": ["solid", "dashed", "dotted", "dotdash", "longdash", "twodash"]},
+    },
+})
 def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme line modifier. Requires 'target'."""
     target = spec.pop("target", None)
@@ -157,7 +340,20 @@ def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + theme(**{target: element_line(**spec)})
 
 
-@register_plot_component("element_rect")
+@register_plot_component("element_rect", ui_schema={
+    "label": "Element rect (theme override)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "element_rect", "panel", "background", "border"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["element_rect"]}],
+    "allow_extra_params": False,
+    "params": {
+        "target": {"widget": "string", "label": "Theme target (e.g. panel_background, legend_key)", "required": True},
+        "fill": {"widget": "color", "label": "Fill colour", "required": False},
+        "colour": {"widget": "color", "label": "Border colour", "required": False},
+        "size": {"widget": "number", "label": "Border line width", "required": False},
+    },
+})
 def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme rect modifier. Requires 'target'."""
     target = spec.pop("target", None)
@@ -167,7 +363,17 @@ def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + theme(**{target: element_rect(**spec)})
 
 
-@register_plot_component("element_blank")
+@register_plot_component("element_blank", ui_schema={
+    "label": "Element blank (remove element)",
+    "category": "theme",
+    "context": ["plot"],
+    "tags": ["theme", "element_blank", "remove", "hide", "axis"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["element_blank"]}],
+    "allow_extra_params": False,
+    "params": {
+        "target": {"widget": "string", "label": "Theme target to remove (e.g. axis_text_x, panel_grid)", "required": True},
+    },
+})
 def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme blank modifier. Requires 'target'."""
     target = spec.pop("target", None)
@@ -184,7 +390,17 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 # Manifest authors often want one-line label setters rather than the full
 # labs(x=..., y=...) call. These wrap plotnine's single-axis helpers.
 
-@register_plot_component("xlab")
+@register_plot_component("xlab", ui_schema={
+    "label": "X-axis label",
+    "category": "annotation",
+    "context": ["plot"],
+    "tags": ["label", "xlab", "axis", "x", "title"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["xlab"]}],
+    "allow_extra_params": False,
+    "params": {
+        "label": {"widget": "string", "label": "X-axis label text", "required": True},
+    },
+})
 def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the x-axis label.
 
@@ -196,7 +412,17 @@ def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + xlab(label)
 
 
-@register_plot_component("ylab")
+@register_plot_component("ylab", ui_schema={
+    "label": "Y-axis label",
+    "category": "annotation",
+    "context": ["plot"],
+    "tags": ["label", "ylab", "axis", "y", "title"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["ylab"]}],
+    "allow_extra_params": False,
+    "params": {
+        "label": {"widget": "string", "label": "Y-axis label text", "required": True},
+    },
+})
 def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the y-axis label."""
     from plotnine import ylab
@@ -204,7 +430,18 @@ def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + ylab(label)
 
 
-@register_plot_component("ggtitle")
+@register_plot_component("ggtitle", ui_schema={
+    "label": "Plot title (ggtitle)",
+    "category": "annotation",
+    "context": ["plot"],
+    "tags": ["label", "ggtitle", "title", "subtitle"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["ggtitle"]}],
+    "allow_extra_params": False,
+    "params": {
+        "title": {"widget": "string", "label": "Plot title text", "required": True},
+        "subtitle": {"widget": "string", "label": "Subtitle (below title)", "required": False},
+    },
+})
 def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the plot title (and optional subtitle)."""
     from plotnine import ggtitle
@@ -215,7 +452,28 @@ def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + ggtitle(title)
 
 
-@register_plot_component("annotate")
+@register_plot_component("annotate", ui_schema={
+    "label": "Annotate (free-form layer)",
+    "category": "annotation",
+    "context": ["plot"],
+    "tags": ["annotate", "text", "segment", "rect", "line", "arrow"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["annotate"]}],
+    "allow_extra_params": True,
+    "params": {
+        "geom": {"widget": "enum", "label": "Annotation geom type", "required": True,
+                 "options": ["text", "label", "segment", "rect", "point", "line"]},
+        "x": {"widget": "number", "label": "X position", "required": False},
+        "y": {"widget": "number", "label": "Y position", "required": False},
+        "label": {"widget": "string", "label": "Text label (for text/label geom)", "required": False},
+        "xmin": {"widget": "number", "label": "X min (for rect)", "required": False},
+        "xmax": {"widget": "number", "label": "X max (for rect)", "required": False},
+        "ymin": {"widget": "number", "label": "Y min (for rect/segment)", "required": False},
+        "ymax": {"widget": "number", "label": "Y max (for rect/segment)", "required": False},
+        "colour": {"widget": "color", "label": "Colour", "required": False},
+        "size": {"widget": "number", "label": "Size", "required": False},
+        "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False},
+    },
+})
 def handle_annotate(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Add a free-form annotation layer (text, segment, rect, etc.).
 

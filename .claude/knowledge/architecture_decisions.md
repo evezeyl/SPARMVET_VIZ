@@ -3757,3 +3757,64 @@ Verification found the form layer is **half-built**: the rich 8-widget renderer 
 6. **BP-COMMENTS-1** `[sonnet/medium]` — free-text intent `comment` field per node/step/group/plot + good-practice hover tooltip (Q4). **BP-GROUPS-1** `[sonnet/high]` (build CRUD decoupled from the sidebar UI so the TubeMap context menu is additive later — Q6) + **BP-META-1** `[sonnet/medium]` + **BP-NEW-1** `[sonnet/medium]` + **BP-VALIDATE-1** `[sonnet/medium]` — remaining MVP functionalities (#6, #7, #2-create, #16).
 7. **BP-AUTOSAVE-1** `[sonnet/high]` — manifest-draft autosave (§2a). **BP-SMOKE-1** `[sonnet/medium]` — functional smoke for BP-ESCAPE-1/BP-HELP-1. **BP-CSS-LEGEND-1** `[haiku/low]` — legend colour fix.
 8. *v2:* lineage isolation (#9), TubeMap context menu (Q6-C), column auto-map suggestions (#13), whole-manifest duplication (BP-DUPLICATE-1).
+
+---
+
+## ADR-083: Canonical Plot Model & BLUEPRINT Authoring Seam (2026-05-20)
+
+**Status:** ACCEPTED. Authority: @dasharch. Full design: `.claude/design/plot_authoring_model.md`.
+**Refines:** ADR-082 §5 (form unification), ADR-081 / `plot_config_cascade.md` (render cascade), ADR-036 (Artist parity).
+
+**Context.** BP-COMPONENT-FORMS-1 ("configure plot/geom nodes via the shared form") surfaced a deeper
+question: a plot spec mixes abstraction levels — the primary geom is hidden behind `factory_id`, the
+mapping is flat (`x:`/`y:`/`fill:`), and only secondary components live in `layers:`. So the geom and
+mapping are not layers, which makes incremental layer authoring and lossless load/save impossible. The
+risk was building a half-feature on a shaky abstraction ("cutting the branch under our feet").
+
+Investigation found the render path **already** normalises sugar into a grammar-of-graphics model:
+`_normalise_spec` (plot_config_resolver.py:152) promotes flat aesthetics → `mapping` and expands
+`factory_id` → a prepended geom layer; `resolve_plot_config` consumes that. So the correct internal model
+already exists — it just isn't named, shared, or invertible.
+
+**Decision.**
+1. **One canonical plot model** (grammar-of-graphics, plotnine-faithful): `mapping` (= `aes()`) + ordered
+   `layers` where `layers[0]` is the primary geom, plus plot-level scalars (`theme`, `facet_by`,
+   `palette`, `target_dataset`), `labels`, `guides`, and a `_meta` passthrough. This is the *only*
+   in-code definition of "a plot." See design doc §2.
+2. **One shared seam.** Promote `_normalise_spec` → public `normalise_plot_spec(raw)` and add its inverse
+   `serialise_plot_spec(canonical)`. The renderer and BLUEPRINT both use it, so they cannot drift.
+3. **`factory_id` and top-level flat aesthetics are REMOVED, not kept** (clean break — one format, one
+   path). A lingering second representation is exactly the ambiguity that breeds bugs (the lossy
+   round-trip). `factory_id` has no plotnine analogue and is not renamed in place. The "pick a chart type"
+   UX survives only as a BLUEPRINT authoring **template** that seeds a geom layer, never a stored key.
+   Component names (`geom_*`, `scale_*`, …) already match plotnine — unchanged.
+   **Transition discipline (design doc §7a):** the legacy reader is removed **last**, only after every
+   producer emits canonical (manifests, generators, BLUEPRINT commit, format-authority docs). Until then
+   `normalise_plot_spec` still expands legacy (safety net). On removal, legacy keys raise a hard helpful
+   `PipelineError` — silent sugar becomes a loud failure. Also delete the dead `_standardize_config`
+   (viz_factory.py:455, confirmed uncalled).
+4. **BLUEPRINT authors L4** on the canonical model: load via `normalise_plot_spec` → mapping form + layer
+   nodes (geom included); edit/add layers via the shared 8-widget form (BP-COMPONENT-FORMS-1); commit via
+   `serialise_plot_spec` → the plot spec file's `layers:`.
+5. **HOME stays narrow (L5).** ADR-082 §4 boundary holds — HOME authors only `aesthetic_override`
+   (session-only); the render cascade merges L4 (BLUEPRINT) + L5 (HOME). Both work efficiently because
+   BLUEPRINT serialises the very model the renderer normalises to.
+6. **The tier3 commit dump is a bug** (blueprint_handlers.py:826-828, 971): it wipes tier1/tier2 and writes
+   the logic stack to `wrangling.tier3`, contradicting ADR-082 §4. Fixed by BP-PLOT-COMMIT-1 — wrangling
+   nodes route to their source tier; plot layers route to the plot spec; T3 is never written by BLUEPRINT.
+
+**Consequences.**
+- **No render-path change during transition.** Existing plots render unchanged until migration completes
+  (reader is transitional). End state: one canonical format; legacy keys raise a hard error.
+  Round-trip law: `serialise(normalise(raw))` is render-equivalent to `raw`.
+- **Blast radius (inventoried 2026-05-20):** legacy reader in `plot_config_resolver.py` (+ dead
+  `_standardize_config`); 19 manifests in `config/manifests/` (13 plot specs + 6 masters); 2 generators
+  (`create_manifest.py`, `debug_bootstrap_viz_yamls.py`); format-authority docs/rules (5 files +
+  `docs/appendix/manifest_structure.yaml` + structural-reference template); `test_plot_config_resolver.py`.
+  Gallery recipes are already canonical (mapping + explicit geom layers; 0 factory_id) — the exemplar.
+- **Resequencing (8 tasks, clean break — design doc §9).** **BP-PLOT-MODEL-1** (seam + delete dead code) →
+  **BP-PLOT-LOAD-1** → **BP-COMPONENT-FORMS-1** → **BP-MAPPING-FORM-1** → **BP-PLOT-COMMIT-1** (serialise +
+  kill tier3 dump) → **BP-PLOT-MIGRATE-1** (manifests + generators) → **BP-PLOT-DOCS-1** (format authority)
+  → **BP-PLOT-LEGACY-REMOVE-1** (remove reader + hard error; gated on COMMIT+MIGRATE+DOCS).
+- **Lasting + extensible:** any new plotnine component is just a new layer; HOME-adds-layer (if ever
+  un-gated) already fits the cascade's append-then-dedupe.

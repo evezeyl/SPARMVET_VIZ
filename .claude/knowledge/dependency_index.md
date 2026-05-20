@@ -230,10 +230,10 @@
 
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
-- **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`
-- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`
+- **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
@@ -265,7 +265,7 @@
 ## `app/src/ui.py`
 - **Role:** `ref`
 - **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
-- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
 
@@ -774,7 +774,7 @@
 
 ## `libs/viz_factory/src/viz_factory/scales/core.py`
 - **Role:** `plot`
-- **provides:** `component:scale_color_gradient`, `component:scale_fill_gradient`, `component:scale_color_gradient2`, `component:scale_fill_gradient2`, `component:scale_color_gradientn`, `component:scale_fill_gradientn`, `component:scale_color_distiller`, `component:scale_fill_distiller`, `component:scale_color_cmap`, `component:scale_fill_cmap`, `component:scale_color_viridis_d`, `component:scale_fill_viridis_d`, `component:scale_color_viridis_c`, `component:scale_fill_viridis_c`, `component:scale_color_cmap_d`, `component:scale_fill_cmap_d`, `component:scale_color_discrete`, `component:scale_fill_discrete`, `component:scale_color_brewer`, `component:scale_fill_brewer`, `component:scale_color_manual`, `component:scale_fill_manual`, `component:scale_x_continuous`, `component:scale_y_continuous`, `component:scale_x_discrete`, `component:scale_y_discrete`, `component:scale_x_log10`, `component:scale_y_log10`, `component:scale_x_reverse`
+- **provides:** `component:scale_color_gradient`, `component:scale_fill_gradient`, `component:scale_color_gradient2`, `component:scale_fill_gradient2`, `component:scale_color_gradientn`, `component:scale_fill_gradientn`, `component:scale_color_distiller`, `component:scale_fill_distiller`, `component:scale_color_cmap`, `component:scale_fill_cmap`, `component:scale_color_viridis_d`, `component:scale_fill_viridis_d`, `component:scale_color_viridis_c`, `component:scale_fill_viridis_c`, `component:scale_color_cmap_d`, `component:scale_fill_cmap_d`, `component:scale_color_discrete`, `component:scale_fill_discrete`, `component:scale_color_brewer`, `component:scale_fill_brewer`, `component:scale_color_manual`, `component:scale_fill_manual`, `component:scale_x_continuous`, `component:scale_y_continuous`, `component:scale_x_discrete`, `component:scale_y_discrete`, `component:scale_x_log10`, `component:scale_y_log10`, `component:scale_x_reverse`, `component:scale_y_reverse`, `component:scale_x_datetime`, `component:scale_y_datetime`, `component:scale_x_date`, `component:scale_y_date`, `component:scale_x_sqrt`, `component:scale_y_sqrt`, `component:scale_x_symlog`, `component:scale_y_symlog`, `component:scale_x_timedelta`, `component:scale_y_timedelta`, `component:scale_size_continuous`, `component:scale_size_discrete`, `component:scale_shape_discrete`, `component:scale_alpha_continuous`, `component:scale_alpha_discrete`, `component:scale_linetype_discrete`, `component:scale_stroke_continuous`, `component:scale_color_identity`, `component:scale_fill_identity`, `component:scale_size_identity`, `component:scale_shape_identity`, `component:scale_alpha_identity`, `component:scale_linetype_identity`, `component:scale_stroke_identity`, `component:scale_alpha`, `component:scale_alpha_manual`, `component:scale_size`, `component:scale_size_manual`, `component:scale_size_area`, `component:scale_shape`, `component:scale_shape_manual`, `component:scale_linetype`, `component:scale_linetype_manual`, `component:scale_color_hue`, `component:scale_fill_hue`, `component:scale_color_continuous`, `component:scale_fill_continuous`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
 - **doc:** `.claude/rules/rules_viz_factory.md`
 

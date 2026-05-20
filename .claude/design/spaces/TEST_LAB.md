@@ -31,17 +31,21 @@ Primary audiences:
 
 | Functionality | What the user can do |
 |---|---|
-| **Boilerplate manifest from files** | Point TEST_LAB at a set of data files; it reads column names and types and generates a skeleton manifest YAML with correct column references, ready to edit in BLUEPRINT |
-| **ID reconciliation + primary key selection** | After reconciling IDs across files, user selects which columns are primary keys (join keys, must be unique). ID cleaning recipes are automatically baked into the boilerplate manifest as tier1 wrangling steps |
+| **Boilerplate manifest from files** | Point TEST_LAB at a set of data files; it reads column names and types and generates a skeleton manifest YAML with correct column references, recognizing data types, ready to edit in BLUEPRINT |
+| **ID reconciliation + primary key selection** | After reconciling IDs across files, user selects which columns are primary keys (ID as join keys, must be unique). ID cleaning recipes are automatically baked into the boilerplate manifest as tier1 wrangling steps |
+
+#TODO here we need to consider secondary keys maybe - see the example manifest config/manifests/pipelines/1_test_data_ST22_dummy.yaml 
+#TODO also for the broiler plate - need to allow the !include and pre-split the bolerplate manifest in the main manifest and include fields - there is a file that describe the manifest structure - find and add information for the specifications
 
 ### Anonymisation (PROCESS 1: Real Data → Reversible Mapping)
 
-Anonymisation takes a data file with an ID column and replaces all ID values with consistent synthetic equivalents. The same original ID always maps to the same anonymised ID. Mappings are stored with access control — authorized users can deidentify results. **Anonymisation handles ID columns only** — the rest of the data is passed through unchanged.
+Anonymisation takes a data file with an ID column and replaces all ID values with consistent synthetic equivalents. The same original ID always maps to the same anonymised ID. #TODO REVIEW : Mappings are output in tsv file - no specific acess control but plan for it if we can eventually implement later without refactoring. **Anonymisation handles ID/key columns only** — the rest of the data is passed through unchanged.
 
 | Functionality | What the user can do |
 |---|---|
 | **Anonymise ID column** | Take a file with an ID column; replace all ID values with consistent synthetic equivalents. Same original_id always → same anon_id (preserves joins across files). Safe to share, reversible by authorized users |
-| **Access-controlled mapping storage** | Store original_id → anon_id mapping (TSV) with user role restrictions (admin only, researchers, specific users); TSV can be joined with anonymised data to deidentify results |
+| **Access-controlled mapping storage** | Store original_id → anon_id mapping (TSV). #TODO - [Not now : with user role restrictions (admin only, researchers, specific users)]; TSV can be joined with anonymised data to deidentify results |
+#TODO -> maybe we need a "de-annomisation functionality then also
 | **ID pattern for synthetic IDs** | Choose how synthetic IDs are generated: simple sequencing (ANON_0001, ANON_0002, ...), hash-based, or custom pattern |
 | **Ensure ID consistency across files** | When anonymising multiple related files with the same ID column, same original_id maps to same anon_id everywhere (required for joins to remain valid post-anonymisation) |
 
@@ -51,10 +55,10 @@ Synthetic data generation creates independent, fresh data matching a schema. No 
 
 | Functionality | What the user can do |
 |---|---|
-| **Generate clean synthetic data from schema** | Define column names, types, constraints; system generates plausible synthetic data matching that schema |
+| **Generate clean synthetic data from schema** | Define column names, types, constraints; system generates plausible synthetic data matching that schema | #TODO read the data files and create synthetic data - there is already a script that does part of this - see maybe in assets/scripts or scripts? 
 | **Generate synthetic data from example** | Upload real data; system learns schema, distributions, patterns; generates synthetic data mimicking structure without linking to originals |
-| **Control synthetic distributions** | Set min/max, categorical allowed values, ID patterns, string format per column |
-| **Inject controlled errors / edge cases** | Generate datasets with intentional defects (missing values, wrong types, duplicate IDs, out-of-range values, empty groups, single-row groups, non-matching IDs) for testing |
+| **Control synthetic distributions** | Set min/max, categorical allowed values, ID patterns, string format per column | #TODO Allow adding categorical values for increasing diversity dataset
+| **Inject controlled errors / edge cases** | Generate datasets with intentional defects (missing values, wrong types, duplicate IDs, out-of-range values, 7 empty groups, single-row groups, non-matching IDs) for testing | #TODO should we add wrong types also and other schema errors ? #TODO we need to think about possibility to add later other edge cases if necessary  
 | **Named error scenarios** | Save & reload named edge-case scenario definitions to use as regression test suite |
 
 ### ID Reconciliation Engine (for Manifest Scaffolding & Data Ingestion)
@@ -65,10 +69,11 @@ Synthetic data generation creates independent, fresh data matching a schema. No 
 | **Pairwise ID matching** | For each file pair, view side-by-side table of IDs with match status (exact, pattern-based, unmatched); certainty score per pair (not global) |
 | **Pattern-based matching suggestions** | Engine suggests transformation rules (prefix/suffix removal, delimiter extraction, case normalization, substring extraction, regex); user verifies each match < 100% certainty |
 | **Recode workflow** | If pattern matching insufficient, user can clean problematic IDs (trim, extract, normalize, custom regex); engine re-runs matching after cleaning |
-| **Transformation recipe storage** | Save declarative recipe (YAML format) with audit log for reuse on future imports of same file types |
-| **Progressive processing** | Handle large files via sample-based preview → full-file matching; user verifies preview, then engine processes all rows |
+| **Transformation recipe storage** | Save declarative recipe (YAML format) with audit log for reuse on future imports of same file types | #TODO audit log is more to have it human understandable of the steps that were necessary - easier to read
+| **Progressive processing** | Handle large files via sample-based preview → full-file matching; user verifies preview, then engine processes all rows | #TODO IMPORTANT! this is not what I think we had decided, we had decided we can do bach after baches if necessary so not do all at once but do all if necessary 
 | **Many-to-many detection & suppression** | Flag if one ID maps to multiple others (indicates data error); offer option to suppress and continue if user confirms intentional |
 
+#TODO - we need to be able to use this and then create the boilerplate manifest - we need to think how to allow standalone and continuation of workflow ? 
 ---
 
 ## ID Reconciliation Engine — Detailed Design
@@ -80,9 +85,9 @@ The ID Reconciliation Engine is the foundational tool for **Manifest Scaffolding
 1. Analyzes ID formats across multiple files
 2. Suggests compatible file pairs and matching order
 3. Performs pairwise matching with per-pair certainty scores
-4. Requires user verification for all matches < 100%
+4. Requires user verification for all matches < 100%> - #TODO 100% certainty is exact string match
 5. Generates reusable transformation recipes
-6. Flags data quality issues (many-to-many relationships)
+6. Flags data quality issues (many-to-many relationships) #TODO think about secondary key possibilities ? 
 
 **Integration point:** Manifest Scaffolding workflow calls the ID Reconciliation Engine as step 1 before boilerplate generation.
 
@@ -95,6 +100,7 @@ User uploads: metadata.tsv (sample_id column) + amr_results.tsv (S_id column)
               │   - metadata: "sample_S001", "sample_S002", "sample_S999"
               │   - amr_results: "S001", "S002", "S999_QC_pass"
               │   ✓ Formats are compatible (IDs are present in both)
+              #TODO type detection ? or where ? 
               │
               ├─ PHASE 1: Exact Match
               │   Left ID          │ Certainty │ Right ID
@@ -113,7 +119,7 @@ User uploads: metadata.tsv (sample_id column) + amr_results.tsv (S_id column)
               │   Certainty: 87% (pattern-based, not exact)
               │
               ├─ PHASE 3: User Verification
-              │   100% matches → auto-accept (user can override)
+              │   100% matches → auto-accept (user can override) #TODO defined as exact string match
               │   87% match → MUST verify:
               │     "sample_S999 → S999_QC_pass. Is this correct? [Yes/No/Manual Pick]"
               │   Unmatched → User choice:
@@ -127,6 +133,8 @@ User uploads: metadata.tsv (sample_id column) + amr_results.tsv (S_id column)
                  - Recipe saved for reuse on future imports
 ```
 
+#TODO option for review - unmatched ? keep or delete ? 
+
 ### Design Decisions Locked
 
 #### 1. Certainty Scoring (Per Pair, Not Global)
@@ -136,9 +144,9 @@ Each ID pair receives an individual certainty score:
 | Score | Meaning | User Action |
 |---|---|---|
 | **100%** | Exact string match | Auto-accept (user can override/reject) |
-| **95%** | Pattern match (e.g., remove prefix, extract from delimiter) | MUST manually verify each pair |
+| **95%** | Pattern match (e.g., remove prefix, extract from delimiter) | MUST manually verify each pair | #TODO after verify ? update match to 100% ? in case we need a second round ? 
 | **80%** | Fuzzy match (e.g., Levenshtein distance, substring similarity) | MUST manually verify each pair |
-| **0%** | No match found | User decides: leave unmatched, try manual pairing, or recode |
+| **0%** | No match found | User decides: leave unmatched, try manual pairing, recode, or remove |
 
 **Critical rule:** No false positives allowed. Any match < 100% requires explicit user confirmation.
 
@@ -203,7 +211,7 @@ Recipe is reusable: future imports of the same file types apply these steps auto
 ║ sample_S997            ║ ❌ UNMATCHED          ║    0%      ║ ? Action req ║
 ╚════════════════════════╩════════════════════════╩════════════╩══════════════╝
 ```
-
+# TODO Here I think user should first check all those 100% matched and then bulk accept those. Then procede in decreaseing "certainty" accepting match, or manually maching other samples so the review step. I think the app should be smart eg to find eventuall new patterns matching ? solutions ? So basically we fix the easier first and then go to the difficilt cases
 User can:
 - Click "Review" → see transformation steps that produced the match
 - Click "❌" → choose "Leave unmatched" | "Manual pick" | "Recode"

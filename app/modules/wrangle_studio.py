@@ -2,12 +2,14 @@
 
 # @deps
 # provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc
+# provides: function:_enum_preview_legend (BP-ENUM-PREVIEW-1), constants:_LINETYPE_DASHARRAY/_POSITION_DESC
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog)
 # consumes: app/src/bootloader.py (method:get_palettes — via self._bootloader, optional)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)
+# consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, loaded via ui.py head)
 # consumed_by: app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/handlers/audit_stack.py, app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-004, .claude/knowledge/architecture_decisions.md#ADR-075
+# doc: .claude/knowledge/architecture_decisions.md#ADR-004, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-082
 # @end_deps
 
 from pathlib import Path
@@ -15,6 +17,72 @@ from shiny import ui, reactive, render
 import polars as pl
 import yaml
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+
+
+# BP-ENUM-PREVIEW-1: SVG dash patterns for plotnine linetype enum options.
+_LINETYPE_DASHARRAY: dict[str, str] = {
+    "solid":    "none",
+    "dashed":   "8,4",
+    "dotted":   "2,4",
+    "dotdash":  "8,4,2,4",
+    "longdash": "16,4",
+    "twodash":  "8,4,2,4,8,4",
+    "blank":    "0,100",  # no line drawn
+}
+
+# Short descriptions for position-adjustment enum options.
+_POSITION_DESC: dict[str, str] = {
+    "identity":     "No adjustment",
+    "dodge":        "Side-by-side",
+    "dodge2":       "Side-by-side with gap",
+    "jitter":       "Random scatter",
+    "jitterdodge":  "Jitter within dodge",
+    "stack":        "Stack (cumulative)",
+    "fill":         "Proportional stack (100%)",
+}
+
+
+def _enum_preview_legend(options: list) -> list:
+    """Build static visual legend elements for preview-enabled enum widgets (BP-ENUM-PREVIEW-1).
+
+    Returns a list of ui elements to append below the select input, or [] when
+    the option set is not one of the recognised preview families.
+    """
+    str_opts = [str(o) for o in options]
+
+    if all(o in _LINETYPE_DASHARRAY for o in str_opts):
+        items = []
+        for opt in str_opts:
+            da = _LINETYPE_DASHARRAY[opt]
+            dash_attr = f'stroke-dasharray="{da}"' if da != "none" else ""
+            svg = (
+                f'<svg width="50" height="12" xmlns="http://www.w3.org/2000/svg">'
+                f'<line x1="2" y1="6" x2="48" y2="6" stroke="#555"'
+                f' stroke-width="2" {dash_attr}/>'
+                f'</svg>'
+            )
+            items.append(
+                ui.div(
+                    ui.HTML(svg),
+                    ui.span(opt, style="font-size:0.72rem; color:#555;"),
+                    class_="spv-enum-preview-row",
+                )
+            )
+        return [ui.div(*items, class_="spv-enum-preview")]
+
+    if all(o in _POSITION_DESC for o in str_opts):
+        items = []
+        for opt in str_opts:
+            items.append(
+                ui.div(
+                    ui.span(f"{opt}: ", style="font-size:0.72rem; font-weight:600; color:#345beb;"),
+                    ui.span(_POSITION_DESC[opt], style="font-size:0.72rem; color:#6c757d;"),
+                    class_="spv-enum-preview-row",
+                )
+            )
+        return [ui.div(*items, class_="spv-enum-preview")]
+
+    return []
 
 
 def _resolve_action_doc(wraps_entry: dict) -> str:
@@ -42,8 +110,6 @@ class WrangleStudio:
         self.session_id = session_id
         # Reactive list of active nodes: [{"action": "rename", "params": {"columns": ["x"], "new_name": "y"}}]
         self.logic_stack = reactive.Value([])
-        # Temporary storage for node being annotated
-        self.pending_node = reactive.Value(None)
 
         # Expanded Manifest Data (ADR-031 Expansion)
         self.active_raw_yaml = reactive.Value("")
@@ -168,20 +234,21 @@ class WrangleStudio:
                                 col_widths=[7, 5],
                             ),
                             ui.input_select("action_selector",
-                                            "1. Select Action:", choices=actions),
+                                            "Select action:", choices=actions),
                             ui.panel_conditional(
                                 "input.action_selector == 'join' || input.action_selector == 'join_filter'",
-                                ui.input_select("secondary_dataset_selector", "2b. Secondary Dataset:", choices=[
+                                ui.input_select("column_selector", "Left join key:", choices=[
+                                                "Select a Dataset first"]),
+                                ui.input_select("secondary_dataset_selector", "Secondary dataset:", choices=[
                                                 "Select a source file..."]),
-                                ui.input_select("right_on_selector", "2c. Right Join Key:", choices=[
-                                                "Select a Dataset first"])
+                                ui.input_select("right_on_selector", "Right join key:", choices=[
+                                                "Select a Dataset first"]),
                             ),
-                            ui.input_select("column_selector", "2. Target Column / Key:", choices=[
-                                "Select a Dataset first"]),
-                            ui.input_text(
-                                "new_param_value", "3. Parameter (e.g. New Name):", placeholder="Optional..."),
                             ui.input_action_button(
-                                "btn_add_node", "➕ Add Transformation Node", class_="btn-primary"),
+                                "btn_add_node", "➕ Add Node", class_="btn-primary"),
+                            ui.p(
+                                "Click Add, then configure the step in the form on the right and press Apply.",
+                                class_="ultra-small text-muted mt-1 mb-0"),
                             ui.div(
                                 ui.h6("Action Help"),
                                 ui.output_text("action_help_text"),
@@ -531,41 +598,28 @@ class WrangleStudio:
         @reactive.Effect
         @reactive.event(input.btn_add_node)
         def add_node():
+            # BP-FORMS-UNIFY-1: adding a node uses the SAME ui_schema form as editing.
+            # Create a stub node (default/empty params), append it, and select it so the
+            # rich form (bp_action_form_ui, right sidebar) opens for configuration. The
+            # user fills the form and presses Apply (btn_bp_apply_node) to commit params.
             action = input.action_selector()
-            target_col = input.column_selector()
-            extra_val = input.new_param_value()
+            if not action or action == "(no matches)":
+                return
 
-            if action in ["join", "join_filter"]:
-                # Trigger Join Preview Modal (ADR-012)
+            if action in ("join", "join_filter"):
+                # Join keeps its dedicated modal until the Joint Designer (BP-JOINT-1).
                 self.show_join_modal(input, session, available_cols)
                 return
 
-            # Stage the node and show Annotation Modal
-            self.pending_node.set({
-                "action": action,
-                "target_col": target_col,
-                "extra_val": extra_val
-            })
-            self.show_annotation_modal(action, target_col, extra_val)
-
-        @reactive.Effect
-        @reactive.event(input.btn_confirm_node)
-        def handle_confirm_node():
-            comment = input.node_comment_modal()
-            if not comment:
-                ui.notification_show("⚠️ Comment is mandatory.", type="error")
-                return
-
-            node_data = self.pending_node.get()
-            if node_data:
-                self._finalize_add_node(
-                    node_data["action"],
-                    node_data["target_col"],
-                    node_data["extra_val"],
-                    comment
-                )
-                ui.modal_remove()
-                self.pending_node.set(None)
+            curr = self.logic_stack.get().copy()
+            curr.append({"action": action, "params": {}, "comment": ""})
+            self.logic_stack.set(curr)
+            self.selected_node_idx.set(len(curr) - 1)
+            self.invalidated_from.set(None)
+            ui.notification_show(
+                f"Added '{action}' — configure it in the form on the right, then Apply.",
+                type="message",
+            )
 
         @reactive.Effect
         @reactive.event(input.confirm_join)
@@ -1725,56 +1779,6 @@ class WrangleStudio:
         tree_id = f"ya_{abs(hash(path)) % 9999999}"
         return ui.accordion(*panels, id=tree_id, multiple=True)
 
-    def _finalize_add_node(self, action, target_col, extra_val, comment):
-        curr = self.logic_stack.get().copy()
-        params = {"columns": [target_col]}
-
-        if action == "rename" and extra_val:
-            params["new_name"] = extra_val
-        elif action == "cast" and extra_val:
-            params["dtype"] = extra_val
-        elif action == "fill_nulls" and extra_val:
-            params["value"] = extra_val
-
-        curr.append({"action": action, "params": params, "comment": comment})
-        self.logic_stack.set(curr)
-        ui.notification_show(
-            f"Node added: {action}({target_col})", type="message")
-
-    def show_annotation_modal(self, action, target_col, extra_val):
-        m = ui.modal(
-            ui.div(
-                ui.h3("Annotate Transformation", class_="mb-3"),
-                ui.div(
-                    ui.tags.b("Action: "), ui.tags.span(action),
-                    ui.br(),
-                    ui.tags.b("Target: "), ui.tags.span(target_col),
-                    ui.br(),
-                    ui.tags.b("Parameter: "), ui.tags.span(
-                        extra_val) if extra_val else ui.tags.i("None"),
-                    class_="mb-3 p-2 border rounded bg-white"
-                ),
-                ui.input_text_area("node_comment_modal", "Justification / User Note:",
-                                   placeholder="Explain the purpose of this transformation step...",
-                                   width="100%", rows=3),
-                class_="p-2"
-            ),
-            title="ADR-026: Mandatory User Note",
-            footer=ui.div(
-                ui.modal_button("Cancel"),
-                ui.input_action_button(
-                    "btn_confirm_node", "Confirm & Append", class_="btn-success")
-            ),
-            size="m",
-            easy_close=False,
-            # class_ is not natively supported in ui.modal but we can wrap content
-        )
-        # Note: We use the CSS class in ui.py to target the modal dialog if needed,
-        # or we wrap the content in a styled div.
-        # But wait, ui.modal in shiny-python doesn't easily expose the top-level class.
-        # I'll use a direct style tag for the modal body if needed.
-        ui.modal_show(m)
-
     def show_join_modal(self, input, session, available_cols):
         # 1. Validation Logic
         left_col = input.column_selector()
@@ -1898,20 +1902,61 @@ class WrangleStudio:
                 )
 
             elif widget_type == "expression":
-                elem = ui.input_text_area(
-                    input_id, label,
-                    value=str(current_val or ""),
-                    placeholder='pl.col("column").str.strip_chars()',
-                    rows=3
+                import json as _json
+                col_names = list(upstream_cols.keys())
+                col_preview = (
+                    ", ".join(col_names[:6]) + ("…" if len(col_names) > 6 else "")
+                    if col_names else "(no upstream columns)"
+                )
+                # BP-EXPR-EDITOR-1: wrap textarea in .bp-expr-container so that
+                # bp_expr_editor.js can attach column autocomplete on pl.col(' trigger.
+                elem = ui.div(
+                    ui.input_text_area(
+                        input_id, label,
+                        value=str(current_val or ""),
+                        placeholder='pl.col("column").str.strip_chars()',
+                        rows=3,
+                    ),
+                    ui.p(
+                        ui.span("Columns: ", style="font-weight:600;"),
+                        ui.span(col_preview,
+                                style="font-family:monospace; font-size:0.72rem;"
+                                      " color:#345beb;"),
+                        class_="ultra-small text-muted mt-1 mb-0",
+                    ),
+                    class_="bp-expr-container",
+                    **{"data-columns": _json.dumps(col_names)},
                 )
 
             elif widget_type == "enum":
                 options = param_def.get("options", [])
-                elem = ui.input_select(
-                    input_id, label,
-                    choices={v: v for v in options},
-                    selected=str(current_val or (options[0] if options else ""))
-                )
+                multi = param_def.get("multi", False)
+                show_preview = param_def.get("preview", False)
+
+                if multi:
+                    if isinstance(current_val, list):
+                        selected = current_val
+                    elif current_val is not None:
+                        selected = [str(current_val)]
+                    else:
+                        default = param_def.get("default", [])
+                        selected = default if isinstance(default, list) else [str(default)] if default else []
+                    select_widget = ui.input_selectize(
+                        input_id, label,
+                        choices=[str(o) for o in options],
+                        selected=selected,
+                        multiple=True,
+                    )
+                else:
+                    select_widget = ui.input_select(
+                        input_id, label,
+                        choices={str(v): str(v) for v in options},
+                        selected=str(current_val if current_val is not None
+                                     else (options[0] if options else "")),
+                    )
+
+                legend = _enum_preview_legend(options) if show_preview else []
+                elem = ui.div(select_widget, *legend) if legend else select_widget
 
             elif widget_type == "dtype_picker":
                 elem = ui.input_select(

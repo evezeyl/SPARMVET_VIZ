@@ -24,6 +24,8 @@
  *  15. Scientific Table Alignment & Zebra Grid
  *  16. Theater & Audit Sidebar Typography Harmonization
  *  17. Educational Guidance Pane Content  ← edit here to restyle guidance markdown
+ *  24. Blueprint IDE — Enum Preview Legend (BP-ENUM-PREVIEW-1)
+ *  25. Blueprint IDE — Expression Widget Autocomplete (BP-EXPR-EDITOR-1)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1051,4 +1053,49 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     border-color: #dee2e6;
     cursor: not-allowed;
     pointer-events: none;
+}
+
+/* ── 24. Blueprint IDE — Enum Preview Legend (BP-ENUM-PREVIEW-1) ─────────── */
+/* Static visual legend shown below enum selects that carry preview: true */
+.spv-enum-preview {
+    margin-top: 4px;
+    padding: 4px 6px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.spv-enum-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 1px 2px;
+}
+
+/* ── 25. Blueprint IDE — Expression Widget Autocomplete (BP-EXPR-EDITOR-1) ── */
+/* Floating dropdown rendered by bp_expr_editor.js on pl.col(' trigger */
+#bp-expr-autocomplete {
+    position: absolute;
+    z-index: 9999;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    overflow: hidden;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.bp-expr-autocomplete-item {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-family: monospace;
+    cursor: pointer;
+    color: #1a1a1a;
+    white-space: nowrap;
+}
+.bp-expr-autocomplete-item:hover {
+    background: #eef0fb;
+    color: #345beb;
 }

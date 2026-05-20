@@ -13,7 +13,28 @@ from plotnine import (
 from viz_factory.registry import register_plot_component
 
 
-@register_plot_component("guides")
+@register_plot_component("guides", ui_schema={
+    "label": "Guides container",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "colorbar", "hide", "none"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guides"]}],
+    "allow_extra_params": True,
+    "params": {
+        "color": {"widget": "enum", "label": "Color guide", "required": False,
+                  "options": ["legend", "colorbar", "none"]},
+        "fill": {"widget": "enum", "label": "Fill guide", "required": False,
+                 "options": ["legend", "colorbar", "none"]},
+        "shape": {"widget": "enum", "label": "Shape guide", "required": False,
+                  "options": ["legend", "none"]},
+        "size": {"widget": "enum", "label": "Size guide", "required": False,
+                 "options": ["legend", "none"]},
+        "linetype": {"widget": "enum", "label": "Linetype guide", "required": False,
+                     "options": ["legend", "none"]},
+        "alpha": {"widget": "enum", "label": "Alpha guide", "required": False,
+                  "options": ["legend", "none"]},
+    },
+})
 def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     Main guides container. Allows setting multiple guides at once.
@@ -36,7 +57,23 @@ def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**guide_specs)
 
 
-@register_plot_component("guide_legend")
+@register_plot_component("guide_legend", ui_schema={
+    "label": "Legend guide",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "key", "rows", "cols"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic to apply guide to (e.g. color, fill)", "required": True},
+        "title": {"widget": "string", "label": "Legend title (default: scale name)", "required": False},
+        "nrow": {"widget": "number", "label": "Number of rows in key", "required": False},
+        "ncol": {"widget": "number", "label": "Number of columns in key", "required": False},
+        "reverse": {"widget": "bool", "label": "Reverse key order", "required": False, "default": False},
+        "label_position": {"widget": "enum", "label": "Key label position", "required": False,
+                           "default": "right", "options": ["top", "bottom", "left", "right"]},
+    },
+})
 def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     Apply a legend guide to a specific mapping.
@@ -49,7 +86,22 @@ def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: guide_legend(**spec)})
 
 
-@register_plot_component("guide_colorbar")
+@register_plot_component("guide_colorbar", ui_schema={
+    "label": "Colorbar guide",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "colorbar", "continuous", "gradient"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_colorbar"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic to apply guide to (e.g. color, fill)", "required": True},
+        "title": {"widget": "string", "label": "Colorbar title", "required": False},
+        "barwidth": {"widget": "number", "label": "Bar width (grid units)", "required": False},
+        "barheight": {"widget": "number", "label": "Bar height (grid units)", "required": False},
+        "nbin": {"widget": "number", "label": "Number of color bins", "required": False, "default": 300},
+        "reverse": {"widget": "bool", "label": "Reverse colorbar direction", "required": False, "default": False},
+    },
+})
 def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     Apply a colorbar guide to a specific mapping (usually color or fill).
@@ -62,13 +114,36 @@ def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: guide_colorbar(**spec)})
 
 
-@register_plot_component("guide_colourbar")
+@register_plot_component("guide_colourbar", ui_schema={
+    "label": "Colourbar guide (alias)",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "colorbar", "colourbar", "continuous", "gradient"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_colorbar"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic to apply guide to", "required": True},
+        "title": {"widget": "string", "label": "Colourbar title", "required": False},
+        "barwidth": {"widget": "number", "label": "Bar width (grid units)", "required": False},
+        "barheight": {"widget": "number", "label": "Bar height (grid units)", "required": False},
+    },
+})
 def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Alias for guide_colorbar."""
     return handle_guide_colorbar(p, spec)
 
 
-@register_plot_component("guide_none")
+@register_plot_component("guide_none", ui_schema={
+    "label": "Remove guide (hide legend)",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "none", "hide", "remove", "legend"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guides"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic to hide guide for (e.g. color, fill)", "required": True},
+    },
+})
 def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     Remove the guide for a specific mapping.
@@ -81,7 +156,18 @@ def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: False})
 
 
-@register_plot_component("guide_nrow")
+@register_plot_component("guide_nrow", ui_schema={
+    "label": "Legend rows count",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "rows", "layout"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
+        "nrow": {"widget": "number", "label": "Number of rows in legend", "required": True},
+    },
+})
 def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     Helper to set nrow for a legend.
@@ -95,7 +181,18 @@ def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: guide_legend(nrow=nrow, **spec)})
 
 
-@register_plot_component("guide_ncol")
+@register_plot_component("guide_ncol", ui_schema={
+    "label": "Legend columns count",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "cols", "columns", "layout"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
+        "ncol": {"widget": "number", "label": "Number of columns in legend", "required": True},
+    },
+})
 def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     Helper to set ncol for a legend.
@@ -109,7 +206,18 @@ def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: guide_legend(ncol=ncol, **spec)})
 
 
-@register_plot_component("guide_title")
+@register_plot_component("guide_title", ui_schema={
+    "label": "Legend title",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "title"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
+        "title": {"widget": "string", "label": "Legend title text", "required": True},
+    },
+})
 def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set title for a guide."""
     mapping = spec.pop("mapping", None)
@@ -121,7 +229,18 @@ def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: guide_legend(title=title, **spec)})
 
 
-@register_plot_component("guide_label")
+@register_plot_component("guide_label", ui_schema={
+    "label": "Legend labels toggle",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "labels", "show", "hide"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
+        "labels": {"widget": "bool", "label": "Show labels", "required": False, "default": True},
+    },
+})
 def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to toggle/format labels for a guide."""
     mapping = spec.pop("mapping", None)
@@ -132,7 +251,19 @@ def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: guide_legend(labels=labels, **spec)})
 
 
-@register_plot_component("guide_direction")
+@register_plot_component("guide_direction", ui_schema={
+    "label": "Legend direction",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "direction", "horizontal", "vertical"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
+        "direction": {"widget": "enum", "label": "Legend direction", "required": True,
+                      "default": "horizontal", "options": ["horizontal", "vertical"]},
+    },
+})
 def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set direction for a guide."""
     mapping = spec.pop("mapping", None)
@@ -143,7 +274,18 @@ def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + guides(**{mapping: guide_legend(direction=direction, **spec)})
 
 
-@register_plot_component("guide_reverse")
+@register_plot_component("guide_reverse", ui_schema={
+    "label": "Reverse legend",
+    "category": "guide",
+    "context": ["plot"],
+    "tags": ["guide", "legend", "reverse", "order"],
+    "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "allow_extra_params": False,
+    "params": {
+        "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
+        "reverse": {"widget": "bool", "label": "Reverse legend key order", "required": False, "default": True},
+    },
+})
 def handle_guide_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to reverse a guide."""
     mapping = spec.pop("mapping", None)
