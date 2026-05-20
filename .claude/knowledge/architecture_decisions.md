@@ -3618,3 +3618,140 @@ Resolution order: **plot-level palette > `plot_defaults.palette` > no palette (m
 - On unknown palette name: WARNING with the valid project palette names listed
 
 **Affected files:** `config/palettes.yaml`, `app/src/bootloader.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/src/server.py`, `app/modules/wrangle_studio.py`, `app/handlers/blueprint_handlers.py`, `docs/appendix/manifest_structure.yaml`
+
+---
+
+## ADR-082: BLUEPRINT Full Feature Set & Build-Mode Contract (2026-05-20)
+
+**Status:** ACCEPTED — decided with Eve 2026-05-20. Supersedes the research draft `.claude/design/blueprint_full_feature_set_research.md` (now RESOLVED). Umbrella ADR over ADR-039/040/056/067/071/074/075/076.
+
+**Context:** BLUEPRINT is a visual IDE for building and editing SPARMVET manifests without writing code. Prior ADRs locked individual pieces (TubeMap navigation, lineage rail, shared infrastructure, the IDE build-mode design, the AI agent). No single ADR named the *full* feature set or how the parts compose into one user experience, and the design had drifted ahead of the docs: between 2026-05-09 and 2026-05-11 the form builder, searchable action picker (BP-ACTION-PARITY-1), Field Gap Analysis (BP-FIELD-GAP-1), forward-propagation hints (BP-FWD-HINT-1), and Visual Fork (BP-VISUAL-FORK-1) all shipped without an umbrella contract. A 2026-05-20 verification pass against the running implementation surfaced four mismatches with the redefined design (below). This ADR locks the feature set so a new contributor can read one document end-to-end, and so the remaining build work is scoped against an agreed target.
+
+**Key principle (unchanged):** *BLUEPRINT users produce and document pipelines.* The IDE output is a valid SPARMVET manifest YAML loadable directly into HOME. HOME users produce science from a pipeline; the BLUEPRINT/HOME split is the spine of every decision below.
+
+---
+
+### 1. The Four-Layer Feature Lock
+
+BLUEPRINT is locked into four composable layers. Each layer has an owning ADR; this ADR names the composition.
+
+| Layer | Capability | Owning ADR(s) | State (2026-05-20) |
+|---|---|---|---|
+| **L1 — Navigation** | TubeMap DAG (primary surface) + Lineage Rail + 3-column contract viewer | ADR-039, ADR-040, ADR-074 | DONE |
+| **L2 — Forms** | Action/component picker + 8-widget form renderer driven by `ui_schema` | ADR-075 (this ADR extends) | PARTIAL — see §5 |
+| **L3 — Data view** | Live Data Glimpse (on-Apply) | this ADR | DONE (glimpse only — Q7) |
+| **L4 — Helpers** | AI agent + YAML escape hatch + 20-step undo + Visual Fork | ADR-075, ADR-076 | DONE |
+
+---
+
+### 2. Decisions on the Seven Open Questions
+
+Resolves §6 of the research draft. Two were already settled by the May 10–11 implementation and are ratified here.
+
+| Q | Decision | Source |
+|---|---|---|
+| **Q1 — Preview trigger** | **On-Apply only.** Editing a node marks it pending; the Glimpse + plot recompute on Apply. Matches the HOME T3 Apply mental model and the existing `btn_bp_apply_node` gate. | Ratified (implemented) |
+| **Q2 — T3 authoring scope** | **Manifest only (T1/T2 + plots).** BLUEPRINT never authors or previews T3. T3 is HOME-only (publication finisher). Clean separation of concerns: BLUEPRINT = pipeline author, HOME = analyst. | Decided |
+| **Q3 — Branch storage** | **LOCKED (2026-05-20): branch = lineage bifurcation at a node.** A "branch" (Eve's manifest sense) splits one lineage into two **at a chosen node**: everything *upstream* of the node stays **shared** (the Tier 1 trunk is materialized once via `sink_parquet`; branches read it via `scan_parquet` — no recompute), and the child lineages **diverge downstream**. Physically this is the existing **fragment-per-component** structure — each branch is a new `!include` fragment (`wrangling/`, `output_fields/`, `assembly/`, `plots/`) wired into the master manifest; the canonical example is `Summary` / `Summary_quality` (shared source + `input_fields`, divergent wrangling/`output_fields`). This is the **Bifurcation Point Rule** (`rules_data_engine.md`) made interactive. NOT whole-file duplication: duplicating an entire manifest is the *rare* path, used only when adding genuinely new data (the usual start is a boilerplate template). Terminology: the TubeMap graph *fan-out* is the visual; the *manifest branch* is the lineage split. | Locked |
+| **Q4 — YAML comment round-trip** | **Document the limitation for MVP** — comments are lost when a manifest is round-tripped through the form view. *v2:* evaluate `ruamel.yaml` round-trip mode if comment preservation becomes a real user need. | Decided (lean) |
+| **Q5 — Join authoring** | **Dedicated Joint Designer pane.** A BLUEPRINT sub-surface showing left + right ingredient schemas side-by-side with a live key-match preview, producing a canonical `join` recipe step. Not just a generic action form. | Decided |
+| **Q6 — Group/plot creation** | **Sidebar inventory list (MVP)** — a persistent list of all groups/plots with create/delete/assign affordances. **Expandable to Q6-C (add TubeMap context menu) in v2** — the two are independent affordances over the same group/plot CRUD; the context menu is purely additive, no rework. | Decided + v2 path |
+| **Q7 — Data inspection** | **Glimpse only** (current DataGrid + preview). No per-column stats panel or profiler in MVP. | Decided |
+
+---
+
+### 2a. Refinements & Deferrals from BLUEPRINT.md Annotations (2026-05-20)
+
+Eve annotated `BLUEPRINT.md` Open Questions directly; captured here:
+
+- **Preview default** — on-Apply (push) is the default; per-persona "live" opt-in is a possible v2 (Q1 confirmed).
+- **Manifest-draft autosave (NEW, DECIDED)** — BLUEPRINT MUST persist the in-progress manifest draft + undo history to disk and restore it on reload/crash, modeled on HOME's ghost-save pattern (ui_implementation_contract.md §12d) but persisting *manifest-draft* state, not data-tier state. This is a new capability beyond the in-memory undo deque (BP-UNDO-1). Tracked as BP-AUTOSAVE-1. Storage: `_sessions/`-style location keyed by manifest path/hash.
+- **AI assistant behaviour** — advise-only, NEVER blocking. On an ill-advised choice the assistant opens a Socratic discussion ("is there a better solution? why do you want this?") rather than refusing — an ill-advised insistence usually signals something unclear. Folded into `config/ui/agents/blueprint_default.md` (already exists; refine its instructions). No code gate change.
+- **AI assistant definition file** — confirmed already implemented: `config/ui/agents/blueprint_default.md`, wired via persona `instructions_file` → `bootloader.get_agent_config()` (ADR-076 / BP-AGENT-INSTRUCT-1).
+- **Library loading** — BLUEPRINT loads the same libraries as HOME (it authors manifests HOME runs); library-set variation stays out of scope.
+- **Pattern helper** — reuse the TEST_LAB component if feasible (design-time check); not MVP-blocking.
+- **Escape-hatch comments** — comments are lost on form round-trip in MVP (documented limitation, Q4); `ruamel.yaml` round-trip is a v2 candidate.
+- **Branch storage (Q3)** — LOCKED (see §2 table): branch = node-level lineage bifurcation, shared upstream by reference, divergent downstream fragment. BP-BRANCH-NODE-1 (reshaped from BP-FORK-FILES-1) builds it. Open implementation-level UX detail: how much BLUEPRINT auto-detects the bifurcation node vs. the user choosing it explicitly — decided at task time, not ADR-blocking.
+
+---
+
+### 3. MVP Feature Inventory — BLUEPRINT.md's 18 Functionalities
+
+Each of the functionalities listed in `BLUEPRINT.md` is classified MVP (ships in Phase 32) / v2 (planned, deferred) / out-of-scope. "State" reflects the 2026-05-20 verification.
+
+| # | Functionality | Tier | State |
+|---|---|---|---|
+| 1 | Open existing manifest | MVP | DONE |
+| 2 | Create new manifest from scratch | MVP | GAP — only import exists (BP-NEW-1) |
+| 3 | Add nodes | MVP | PARTIAL — primitive add UI; unify with rich form (BP-FORMS-UNIFY-1, gap #1) |
+| 4 | Configure action nodes | MVP | DONE (rich 8-widget edit form, all 60 actions verified) |
+| 5 | Configure plot/component nodes | MVP | GAP — no component form renderer; 7/191 components schemed (gap #2, BP-COMPONENT-* tasks) |
+| 6 | Add groups | MVP | GAP — Q6 sidebar inventory (BP-GROUPS-1) |
+| 7 | Add info/metadata | MVP | GAP — manifest `info:` block is YAML-only today (BP-META-1) |
+| 8 | Visualise the DAG (TubeMap) | MVP | DONE |
+| 9 | Isolate lineage | MVP | PARTIAL — Lineage Rail done; hide-unrelated isolation deferred to v2 |
+| 10 | Branch (fork) | MVP | DONE (Visual Fork); clean `variants:` block is v2 (Q3) |
+| 11 | Preview results (on-Apply) | MVP | DONE |
+| 12 | Use actions from libraries | MVP | DONE (catalog picker, context-filtered) |
+| 13 | Auto-match helper | MVP | PARTIAL — Field Gap Analysis + forward-prop hints done; column auto-mapping suggestions v2 |
+| 14 | Pattern-matching escalation ladder | v2 | DEFERRED — regex retry + agentic hook; exploratory (BLUEPRINT.md Open Q) |
+| 15 | AI manifest assistant | MVP | DONE (ADR-076 MVP-1) |
+| 16 | Validate (inline errors) | MVP | GAP — validator exists; inline BLUEPRINT surfacing not wired (BP-VALIDATE-1) |
+| 17 | Save manifest to disk | MVP | DONE (`btn_save_internal`) |
+| 18 | Export/download manifest | MVP | DONE (`btn_download_manifest`) |
+| — | Joint Designer pane (Q5) | MVP | NEW — (BP-JOINT-1) |
+| — | enum visual preview (ADR-075 §2) | MVP | GAP #3 — (BP-ENUM-PREVIEW-1) |
+| — | expression code-editor w/ autocomplete (ADR-075 §2) | MVP | GAP #4 — (BP-EXPR-EDITOR-1) |
+
+---
+
+### 4. T1/T2 vs T3 Boundary Statement (authoritative)
+
+- **BLUEPRINT writes the manifest:** `input_fields`, `wrangling.tier1`, `wrangling.tier2`, `join_manifests` (assembly), `output_fields`/`final_contract`, `analysis_groups`, and plot specs.
+- **BLUEPRINT never writes T3.** T3 audit nodes (filters, exclusions, column drops, aesthetic overrides) are authored exclusively in HOME by the analyst (ui_implementation_contract.md §12). BLUEPRINT does not preview, simulate, or read T3.
+- This boundary is a hard invariant. Any future request to surface T3 in BLUEPRINT requires a superseding ADR.
+
+---
+
+### 5. Form Architecture — Unification Mandate (resolves gaps #1, #2)
+
+Verification found the form layer is **half-built**: the rich 8-widget renderer (`_render_action_form`) is wired only for *editing* a node already in the logic stack (right sidebar), while *adding* a node uses a primitive Focus-tab UI (single column selector + one free-text param). Plot/component nodes have no form path at all.
+
+**Mandate:**
+1. **Add == Edit.** Adding a node MUST present the same `ui_schema`-driven form as editing one. The primitive add-node UI is retired. A node is created with an empty/default param set and immediately opened in the full form. (BP-FORMS-UNIFY-1)
+2. **Component forms.** Plot/component nodes MUST be configurable via the same renderer, driven by `COMPONENT_SCHEMAS`. This requires (a) a component-schema parity pass analogous to ACTION-UISCHEMA-1 (7/191 components currently schemed) and (b) a component branch in the form output path. (BP-COMPONENT-SCHEMA-1, BP-COMPONENT-FORMS-1)
+3. **Renderer reuse.** Both action and component forms share `_render_action_form` (renamed/generalised as needed). The 8-widget vocabulary is unchanged (ADR-075 §2).
+
+**Verification baseline (2026-05-20):** all 60 transformer actions render their forms headless with zero failures; all 8 widget types handled. Widget usage: column_selector 64, string 51, enum 12, number 9, column_or_literal 8, dtype_picker 1, expression 1, bool 1. The `expression` widget is used only by `mutate.expression`, scoping the code-editor work (gap #4) to that one field.
+
+---
+
+### 6. Out of Scope (explicit)
+
+- **Pattern helper sharing with TEST_LAB** — each space keeps its own implementation until a clear duplication emerges (separate ADR).
+- **Real-time collaboration / concurrent edit** — single-user only.
+- **Manifest version control / diff viewer** — defer to git tooling.
+- **Schema migration on action rename** — `ACTION-RENAME-1` script (separate task).
+- **Pattern-matching agentic escalation (BLUEPRINT.md #14)** — exploratory, opt-in hook only, not authorized for general deployment (BLUEPRINT.md Open Q).
+- **Full data profiler (Q7-C)** — overlaps downstream tooling.
+- **Library-set variation in BLUEPRINT** — BLUEPRINT loads the same libraries as HOME.
+
+---
+
+### Consequences
+
+- **Documentation:** `BLUEPRINT.md` "Current State" section refreshed (was stale — claimed forms unbuilt); feature set locked. `rules_ui_dashboard.md §7` gains the L1–L4 layer model and the Joint Designer + group/plot inventory surfaces. `blueprint_architect_ux_spec.md` updated for the new panes. Research draft marked RESOLVED.
+- **Tasks:** New Phase 32 tasks spawned — BP-FORMS-UNIFY-1, BP-COMPONENT-SCHEMA-1, BP-COMPONENT-FORMS-1, BP-JOINT-1, BP-GROUPS-1, BP-META-1, BP-NEW-1, BP-VALIDATE-1, BP-ENUM-PREVIEW-1, BP-EXPR-EDITOR-1. The originally-open BP-FORMS-1 is reframed: action-form rendering is DONE; remaining form work is tracked under the new task IDs.
+- **Persona:** No new flags. All BLUEPRINT capability remains gated by `blueprint_enabled`; editable YAML escape hatch + Visual Fork by `manifest_edit_enabled` (ADR-075 §7, ADR-077 fatal cascade).
+- **Tests:** Smoke coverage to add — add-node opens full form; component form renders; Joint Designer key-match preview; group/plot inventory create/delete.
+- **CSS:** TubeMap legend currently uses forbidden Bootstrap colours (`#0d6efd`, `#198754`) — flagged for correction against `rules_css_style_spec.md` (BP-CSS-LEGEND-1).
+
+### Implementation Order (Phase 32 continuation)
+
+1. **BP-FORMS-UNIFY-1** `[opus/high]` — add-node uses the rich form (gap #1). Unblocks consistent authoring.
+2. **BP-ENUM-PREVIEW-1** `[sonnet/medium]` + **BP-EXPR-EDITOR-1** `[sonnet/high]` — ADR-075 §2 widget gaps (#3, #4). Independent, can parallelise.
+3. **BP-COMPONENT-SCHEMA-1** `[sonnet/high]` → **BP-COMPONENT-FORMS-1** `[opus/high]` — component schema parity then component form path (gap #2).
+4. **BP-JOINT-1** `[opus/high]` — Joint Designer pane (Q5).
+5. **BP-GROUPS-1** `[sonnet/high]` + **BP-META-1** `[sonnet/medium]` + **BP-NEW-1** `[sonnet/medium]` + **BP-VALIDATE-1** `[sonnet/medium]` — remaining MVP functionalities (#6, #7, #2-create, #16).
+6. **BP-CSS-LEGEND-1** `[haiku/low]` — legend colour fix.
+7. *v2:* clean `variants:` block (Q3), lineage isolation (#9), TubeMap context menu (Q6-C), column auto-map suggestions (#13).

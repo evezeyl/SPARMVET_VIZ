@@ -9,6 +9,7 @@
 ## `.claude/design/blueprint_full_feature_set_research.md`
 - **Role:** `info`
 - **documents:** `.claude/design/spaces/BLUEPRINT.md`, `.claude/knowledge/blueprint_architect_ux_spec.md`
+- **consumed_by:** `.claude/knowledge/architecture_decisions.md`
 
 ## `.claude/rules/rules_app_structure.md`
 - **Role:** `meta`

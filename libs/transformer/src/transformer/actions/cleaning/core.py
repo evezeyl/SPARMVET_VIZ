@@ -52,7 +52,17 @@ def action_drop_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.drop_nulls(subset=columns)
 
 
-@register_action("replace_values")
+@register_action("replace_values", ui_schema={
+    "label": "Replace values",
+    "category": "cleaning",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["replace", "values", "recode", "string"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
+        "to_replace": {"widget": "string", "label": "Values to replace (YAML list)", "required": True, "hint": "[old_val1, old_val2]"},
+        "new_value": {"widget": "column_or_literal", "label": "Replacement value", "required": True},
+    },
+})
 def action_replace_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Replaces a specific list of strings with a new value across multiple columns.
@@ -72,7 +82,17 @@ def action_replace_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
 
 # --- From renaming.py ---
 
-@register_action("rename")
+@register_action("rename", ui_schema={
+    "label": "Rename column",
+    "category": "renaming",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["rename", "column", "naming"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": False, "label": "Source column", "required": False},
+        "new_name": {"widget": "string", "label": "New name", "required": False},
+        "mapping": {"widget": "string", "label": "Rename mapping (YAML dict old: new)", "required": False, "hint": "{old_name: new_name, ...}"},
+    },
+})
 def action_rename(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Renames columns according to spec.
@@ -105,7 +125,16 @@ def action_rename(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
 
 # --- From duplicates.py ---
 
-@register_action("drop_duplicates")
+@register_action("drop_duplicates", ui_schema={
+    "label": "Drop duplicates",
+    "category": "cleaning",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["dedup", "unique", "cleaning"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Subset columns (leave empty for all)", "required": False},
+        "maintain_order": {"widget": "enum", "label": "Maintain order", "required": False, "default": False, "options": [True, False]},
+    },
+})
 def action_drop_duplicates(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Drops duplicate rows based on one or more columns as a subset.
@@ -120,7 +149,15 @@ def action_drop_duplicates(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFra
     return lf.unique(subset=columns)
 
 
-@register_action("unique_rows")
+@register_action("unique_rows", ui_schema={
+    "label": "Unique rows (all columns)",
+    "category": "cleaning",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["dedup", "unique", "cleaning"],
+    "params": {
+        "maintain_order": {"widget": "enum", "label": "Maintain order", "required": False, "default": True, "options": [True, False]},
+    },
+})
 def action_unique_rows(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Drops duplicate rows based on ALL columns (subset=None).
@@ -130,7 +167,17 @@ def action_unique_rows(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.unique(subset=None, maintain_order=maintain_order)
 
 
-@register_action("recode_values")
+@register_action("recode_values", ui_schema={
+    "label": "Recode values",
+    "category": "cleaning",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["recode", "categorize", "conditional", "clean"],
+    "params": {
+        "column": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
+        "new_column": {"widget": "string", "label": "Output column name (leave blank to overwrite)", "required": False},
+        "rules": {"widget": "string", "label": "Rules (YAML list of {matches/starts_with/…: val, value: out})", "required": True, "hint": "[{matches: 'S', value: 0}, {default: 1}]"},
+    },
+})
 def action_recode_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Recodes values in a column based on a series of predicates.
@@ -194,7 +241,15 @@ def action_recode_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
 # --- From naming.py ---
 
 
-@register_action("sanitize_column_names")
+@register_action("sanitize_column_names", ui_schema={
+    "label": "Sanitize column names",
+    "category": "renaming",
+    "context": ["t1"],
+    "tags": ["rename", "snake_case", "clean", "naming"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns to sanitize (leave empty for all)", "required": False},
+    },
+})
 def action_sanitize_column_names(lf: pl.LazyFrame, spec: Dict[str, Any] = {}) -> pl.LazyFrame:
     """
     Sanitizes column names into safe snake_case using the project-standard utility.
@@ -316,7 +371,16 @@ def action_strip_whitespace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFr
     return lf.with_columns(pl.col(process_cols).str.strip_chars(' \t\n\r"'))
 
 
-@register_action("round_numeric")
+@register_action("round_numeric", ui_schema={
+    "label": "Round numeric",
+    "category": "numeric",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["numeric", "round", "precision"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Numeric columns", "required": True, "dtype_filter": ["numeric"]},
+        "decimals": {"widget": "number", "label": "Decimal places", "required": False, "default": 2},
+    },
+})
 def action_round_numeric(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Rounds numeric columns to a specified number of decimal places.
@@ -432,7 +496,16 @@ def action_rename_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
     return action_rename(lf, spec)
 
 
-@register_action("unique")
+@register_action("unique", ui_schema={
+    "label": "Unique (alias for drop_duplicates)",
+    "category": "cleaning",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["dedup", "unique", "cleaning"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Subset columns (leave empty for all)", "required": False},
+        "maintain_order": {"widget": "enum", "label": "Maintain order", "required": False, "default": False, "options": [True, False]},
+    },
+})
 def action_unique(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Alias for drop_duplicates."""
     return action_drop_duplicates(lf, spec)

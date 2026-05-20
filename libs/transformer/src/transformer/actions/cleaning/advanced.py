@@ -13,7 +13,16 @@ from utils.errors import TransformationError
 # @end_deps
 
 
-@register_action("split_and_explode")
+@register_action("split_and_explode", ui_schema={
+    "label": "Split and explode",
+    "category": "reshaping",
+    "context": ["t1", "t2"],
+    "tags": ["split", "explode", "long-format", "string"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": False, "label": "String column to split and explode", "required": True},
+        "separator": {"widget": "string", "label": "Separator", "required": False, "default": ","},
+    },
+})
 def action_split_and_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Splits a string column by a separator and explodes it into multiple rows.
@@ -36,7 +45,21 @@ def action_split_and_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
     ).explode(target)
 
 
-@register_action("derive_categories")
+@register_action("derive_categories", ui_schema={
+    "label": "Derive categories (lookup file)",
+    "category": "derivation",
+    "context": ["t1", "t2"],
+    "tags": ["lookup", "categories", "mapping", "reference"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
+        "target_column": {"widget": "string", "label": "Output column name", "required": True},
+        "reference_file": {"widget": "string", "label": "Path to reference TSV file", "required": True},
+        "lookup_left": {"widget": "string", "label": "Source column for lookup (optional override)", "required": False},
+        "lookup_right": {"widget": "string", "label": "Lookup key column in reference file", "required": True},
+        "extract_column": {"widget": "string", "label": "Value column in reference file to extract", "required": True},
+        "separator": {"widget": "string", "label": "Multi-value separator", "required": False, "default": ", "},
+    },
+})
 def action_derive_categories(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     A lookup-based action that maps messy strings to clean categories
@@ -82,7 +105,17 @@ def action_derive_categories(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
     ])
 
 
-@register_action("split_column_to_parts")
+@register_action("split_column_to_parts", ui_schema={
+    "label": "Split column to parts",
+    "category": "reshaping",
+    "context": ["t1", "t2"],
+    "tags": ["split", "string", "columns", "parse"],
+    "params": {
+        "column": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
+        "separator": {"widget": "string", "label": "Separator", "required": False, "default": "/"},
+        "new_columns": {"widget": "string", "label": "Output column names (YAML list)", "required": True, "hint": "[part_a, part_b]"},
+    },
+})
 def action_split_column_to_parts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Splits a string column into multiple new columns using a separator.
@@ -107,7 +140,17 @@ def action_split_column_to_parts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.L
     ).unnest("temp_struct")
 
 
-@register_action("divide_columns")
+@register_action("divide_columns", ui_schema={
+    "label": "Divide columns (ratio)",
+    "category": "numeric",
+    "context": ["t1", "t2"],
+    "tags": ["ratio", "divide", "numeric", "derivation"],
+    "params": {
+        "numerator": {"widget": "column_selector", "multi": False, "label": "Numerator column", "required": True, "dtype_filter": ["numeric"]},
+        "denominator": {"widget": "column_selector", "multi": False, "label": "Denominator column", "required": True, "dtype_filter": ["numeric"]},
+        "new_column": {"widget": "string", "label": "Output column name", "required": True},
+    },
+})
 def action_divide_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Calculates the ratio between two columns.

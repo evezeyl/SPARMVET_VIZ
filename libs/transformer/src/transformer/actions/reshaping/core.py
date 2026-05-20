@@ -56,7 +56,15 @@ def action_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.explode(columns)
 
 
-@register_action("unnest")
+@register_action("unnest", ui_schema={
+    "label": "Unnest struct columns",
+    "category": "reshaping",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["unnest", "struct", "flatten", "reshaping"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Struct columns to unnest", "required": True},
+    },
+})
 def action_unnest(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Unnests struct columns into multiple columns.
@@ -68,7 +76,16 @@ def action_unnest(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.unnest(columns)
 
 
-@register_action("split_to_list")
+@register_action("split_to_list", ui_schema={
+    "label": "Split string to list",
+    "category": "reshaping",
+    "context": ["t1", "t2"],
+    "tags": ["split", "list", "string", "parse"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "String columns", "required": True},
+        "separator": {"widget": "string", "label": "Separator", "required": False, "default": ","},
+    },
+})
 def action_split_to_list(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Splits a string column into a List column.
@@ -81,7 +98,16 @@ def action_split_to_list(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     return lf.with_columns(pl.col(columns).str.split(separator))
 
 
-@register_action("to_struct")
+@register_action("to_struct", ui_schema={
+    "label": "Pack columns into struct",
+    "category": "reshaping",
+    "context": ["t1", "t2"],
+    "tags": ["struct", "pack", "reshaping"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns to pack into struct", "required": True},
+        "target_column": {"widget": "string", "label": "Output struct column name", "required": True},
+    },
+})
 def action_to_struct(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Combines multiple columns into a struct.
@@ -94,7 +120,18 @@ def action_to_struct(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(pl.struct(columns).alias(target)).drop(columns)
 
 
-@register_action("pivot")
+@register_action("pivot", ui_schema={
+    "label": "Pivot (long → wide)",
+    "category": "reshaping",
+    "context": ["t2", "assembly"],
+    "tags": ["pivot", "wide-format", "reshaping", "aggregate"],
+    "params": {
+        "index": {"widget": "column_selector", "multi": True, "label": "Index columns (row identifiers)", "required": True},
+        "on": {"widget": "column_selector", "multi": False, "label": "Column whose values become new column headers", "required": True},
+        "values": {"widget": "column_selector", "multi": False, "label": "Values column", "required": True},
+        "aggregate_function": {"widget": "enum", "label": "Aggregation function", "required": False, "default": "first", "options": ["first", "last", "min", "max", "mean", "sum", "count"]},
+    },
+})
 def action_pivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Pivots a LazyFrame from long to wide format (Materializes!).
@@ -117,7 +154,18 @@ def action_pivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return df.lazy()
 
 
-@register_action("split_column")
+@register_action("split_column", ui_schema={
+    "label": "Split column by delimiter",
+    "category": "reshaping",
+    "context": ["t1", "t2"],
+    "tags": ["split", "string", "columns", "parse", "delimiter"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
+        "new_columns": {"widget": "string", "label": "Output column names (YAML list)", "required": True, "hint": "[col_a, col_b]"},
+        "delimiter": {"widget": "string", "label": "Delimiter", "required": False, "default": " "},
+        "drop_source": {"widget": "enum", "label": "Drop source column", "required": False, "default": False, "options": [True, False]},
+    },
+})
 def action_split_column(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Split a string column into multiple new columns based on a delimiter.

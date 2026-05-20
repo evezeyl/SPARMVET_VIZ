@@ -213,7 +213,17 @@ def action_mutate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.with_columns(expr.alias(target))
 
 
-@register_action("regex_replace")
+@register_action("regex_replace", ui_schema={
+    "label": "Regex replace",
+    "category": "string",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["string", "regex", "replace", "clean"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
+        "pattern": {"widget": "string", "label": "Regex pattern", "required": True},
+        "value": {"widget": "string", "label": "Replacement string", "required": False, "default": ""},
+    },
+})
 def action_regex_replace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Regex-based string replacement."""
     cols = spec.get("columns", [])
@@ -227,7 +237,16 @@ def action_regex_replace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     return lf.with_columns(pl.col(cols).str.replace_all(pattern, value))
 
 
-@register_action("null_if")
+@register_action("null_if", ui_schema={
+    "label": "Null if value",
+    "category": "cleaning",
+    "context": ["t1", "t2", "assembly"],
+    "tags": ["null", "missing", "clean", "replace"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
+        "value": {"widget": "column_or_literal", "label": "Value to convert to null", "required": True},
+    },
+})
 def action_null_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Converts a specific value to null."""
     cols = spec.get("columns", [])

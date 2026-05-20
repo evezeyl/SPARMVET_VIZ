@@ -9,7 +9,18 @@ from transformer.actions.base import register_action
 # @end_deps
 
 
-@register_action("summarize")
+@register_action("summarize", ui_schema={
+    "label": "Summarize (group + aggregate)",
+    "category": "aggregation",
+    "context": ["t2", "assembly"],
+    "tags": ["group", "aggregate", "summarize", "count", "sum", "mean"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns to aggregate", "required": True},
+        "group_by": {"widget": "column_selector", "multi": True, "label": "Group by columns", "required": False},
+        "agg": {"widget": "enum", "label": "Aggregation type", "required": False, "default": "count", "options": ["count", "sum", "mean"]},
+        "new_name": {"widget": "string", "label": "Output column name (single-column aggregation only)", "required": False},
+    },
+})
 def action_summarize(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Groups by specific columns and aggregates the target column(s).
@@ -46,7 +57,16 @@ def action_summarize(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     return lf.group_by(group_by_cols).agg(agg_exprs)
 
 
-@register_action("count_by_group")
+@register_action("count_by_group", ui_schema={
+    "label": "Count by group (window)",
+    "category": "aggregation",
+    "context": ["t2"],
+    "tags": ["count", "group", "window", "frequency"],
+    "params": {
+        "group_by": {"widget": "column_selector", "multi": True, "label": "Group by columns", "required": True},
+        "new_column": {"widget": "string", "label": "Output count column name", "required": False, "default": "group_count"},
+    },
+})
 def action_count_by_group(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Calculates the count of rows per group and adds it as a new column 

@@ -1,13 +1,22 @@
 ---
 trigger: manual
-status: NEEDS_DISCUSSION_WITH_USER
+status: RESOLVED
 prepared_by: "@dasharch"
 prepared_at: 2026-05-09
-target_adr: TBD (proposed: ADR-082 — BLUEPRINT Full Feature Set Lock)
+resolved_at: 2026-05-20
+target_adr: ADR-082 (AUTHORED 2026-05-20)
 deps:
   documents: [.claude/design/spaces/BLUEPRINT.md, .claude/knowledge/blueprint_architect_ux_spec.md]
-  consumed_by: []
+  consumed_by: [.claude/knowledge/architecture_decisions.md]
 ---
+
+> **RESOLVED 2026-05-20** — All seven decision points (§6) were settled with Eve and the
+> output written as **ADR-082: BLUEPRINT Full Feature Set & Build-Mode Contract** in
+> `.claude/knowledge/architecture_decisions.md`. Q1 (preview=on-Apply) and Q3 (variant-in-manifest)
+> were ratified from the May 10–11 implementation; Q2=manifest-only, Q4=document-limitation,
+> Q5=dedicated Joint Designer, Q6=sidebar inventory (→ context-menu in v2), Q7=glimpse-only.
+> A 2026-05-20 verification pass also found four implementation gaps now tracked as Phase 32
+> tasks. This document is retained as the research record; ADR-082 is authoritative.
 
 # BLUEPRINT Architect — Full Feature Set ADR Research & Discussion Prep
 

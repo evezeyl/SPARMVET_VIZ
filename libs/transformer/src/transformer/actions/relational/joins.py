@@ -52,7 +52,19 @@ def join_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
             "Join action requires either 'on' or both 'left_on' and 'right_on'.")
 
 
-@register_action("join_filter")
+@register_action("join_filter", ui_schema={
+    "label": "Join filter (inner join whitelist)",
+    "category": "relational",
+    "context": ["assembly"],
+    "tags": ["join", "filter", "inner", "whitelist", "relational"],
+    "params": {
+        "right_ingredient": {"widget": "string", "label": "Right ingredient ID (data_schemas key)", "required": True},
+        "on": {"widget": "column_selector", "multi": False, "label": "Join column (symmetric)", "required": False,
+               "hint": "Forces inner join — rows without a match are dropped"},
+        "left_on": {"widget": "column_selector", "multi": False, "label": "Left join column", "required": False},
+        "right_on": {"widget": "string", "label": "Right join column name", "required": False},
+    },
+})
 def join_filter_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
     Inner Join Filter. Acts as a whitelist filter using a reference table.

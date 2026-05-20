@@ -170,9 +170,20 @@ DOM state. See `config/ui/templates/qa_template.yaml`.
 
 ---
 
-## 7. The Blueprint Architect Invariants (ADR-039, ADR-075)
+## 7. The Blueprint Architect Invariants (ADR-039, ADR-075, ADR-082)
 
 The Blueprint Architect provides a "Flight Deck" for manifest design.
+
+**Feature set lock (ADR-082).** BLUEPRINT is four composable layers; the full feature set, the MVP/v2/out-of-scope inventory, and the T1/T2-vs-T3 boundary are authoritative in ADR-082.
+
+| Layer | Capability | Owning ADR(s) |
+|---|---|---|
+| L1 — Navigation | TubeMap DAG + Lineage Rail + 3-column contract viewer | ADR-039/040/074 |
+| L2 — Forms | Action/component picker + 8-widget `ui_schema` renderer | ADR-075 |
+| L3 — Data view | Live Data Glimpse (on-Apply) | ADR-082 |
+| L4 — Helpers | AI agent + YAML escape hatch + undo + branch | ADR-075/076/082 |
+
+**Branching = lineage bifurcation at a node (ADR-082 Q3, LOCKED).** A "branch" splits one lineage in two **at a chosen node**: upstream stays **shared** (Tier 1 trunk materialized once, branches `scan_parquet` it — no recompute), child lineages diverge downstream. Physically it is the **fragment-per-component** `!include` structure (canonical: `Summary` / `Summary_quality`) — the Bifurcation Point Rule (`rules_data_engine.md`) made interactive. The TubeMap *fan-out* is the visual; the *manifest branch* is the lineage split. Whole-manifest duplication is a separate rare path (new data only). **BLUEPRINT never authors T3** — T3 is HOME-only (ADR-082 §4).
 
 - **The Central Vertical Stack (The Theater)**:
   1. **Top Header**: The **Interactive TubeMap** (DAG). Must be collapsible to maximize workspace.

@@ -28,15 +28,40 @@ Items with no blockers — can be started immediately.
 
 ### Phase 18-F — Action Registry ui_schema Parity (prerequisite for BP-FORMS-1)
 
-- [ ] **ACTION-UISCHEMA-1** `[sonnet/medium]`: Add `ui_schema` dicts to the **42 remaining `@register_action` decorators** that currently have none. The 2 engine-internal actions (`sink_parquet`, `scan_parquet`) are excluded — they are not user-facing and must not appear in the Blueprint form picker. All 8 widget types must be used as appropriate: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`. Context tags (`t1`/`t2`/`assembly`/`plot`) must reflect valid position rules. Use existing `ui_schema` examples in `cleaning/core.py`, `cleaning/expressions.py`, `relational/joins.py`, `reshaping/core.py` as canonical patterns. Missing actions (in order of BIOSCIENTIST §8 categories): `all_horizontal`, `any_horizontal`, `count_by_group`, `cum_count`, `cum_sum`, `date_extract`, `date_truncate`, `derive_categories`, `describe_stats`, `divide_columns`, `drop_duplicates`, `fill_nulls_direction`, `horizontal_stats`, `interpolate`, `join_filter`, `list_join`, `list_slice`, `null_if`, `percentile`, `pivot`, `recode_values`, `regex_replace`, `rename`, `replace_values`, `round_numeric`, `sample`, `sanitize_column_names`, `select_by_pattern`, `shift`, `split_and_explode`, `split_column`, `split_column_to_parts`, `split_to_list`, `summarize`, `to_struct`, `unique`, `unique_rows`, `unnest`, `value_counts`, `window_agg`, `z_score`. **Must complete before BP-FORMS-1.**
+- [x] **ACTION-UISCHEMA-1** `[sonnet/medium]`: Add `ui_schema` dicts to the **42 remaining `@register_action` decorators** that currently have none. The 2 engine-internal actions (`sink_parquet`, `scan_parquet`) are excluded — they are not user-facing and must not appear in the Blueprint form picker. All 8 widget types must be used as appropriate: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`. Context tags (`t1`/`t2`/`assembly`/`plot`) must reflect valid position rules. Use existing `ui_schema` examples in `cleaning/core.py`, `cleaning/expressions.py`, `relational/joins.py`, `reshaping/core.py` as canonical patterns. Missing actions (in order of BIOSCIENTIST §8 categories): `all_horizontal`, `any_horizontal`, `count_by_group`, `cum_count`, `cum_sum`, `date_extract`, `date_truncate`, `derive_categories`, `describe_stats`, `divide_columns`, `drop_duplicates`, `fill_nulls_direction`, `horizontal_stats`, `interpolate`, `join_filter`, `list_join`, `list_slice`, `null_if`, `percentile`, `pivot`, `recode_values`, `regex_replace`, `rename`, `replace_values`, `round_numeric`, `sample`, `sanitize_column_names`, `select_by_pattern`, `shift`, `split_and_explode`, `split_column`, `split_column_to_parts`, `split_to_list`, `summarize`, `to_struct`, `unique`, `unique_rows`, `unnest`, `value_counts`, `window_agg`, `z_score`. **Must complete before BP-FORMS-1.**
 
-### Phase 32 — Blueprint IDE Build Mode (ADR-075)
+### Phase 32 — Blueprint IDE Build Mode (ADR-075 / ADR-082)
 
-- [ ] **BP-FORMS-1** `[opus/high]`: **Depends on ACTION-UISCHEMA-1.** Blueprint form builder — render action/component forms from `ui_schema` dicts (8 widget types: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`). Position rules via `context` tag (`t1`/`t2`/`assembly`/`plot`). Apply gate: upstream schema propagates on Apply only. Full spec: `architecture_decisions.md` ADR-075 + `implementation_plan_master.md` §Phase 32, step 32-D.
-- [ ] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only pre block when `blueprint_enabled`; editable textarea when `manifest_edit_enabled`. Emits `developer_raw_yaml` T3 node on save. Gate via `bootloader.is_enabled("manifest_edit_enabled")`. Spec: ADR-075, `ui_implementation_contract.md §7 (YAML escape hatch)`.
-- [ ] **BP-UNDO-1** `[sonnet/medium]`: 20-step session undo deque for Blueprint node edits. Edit-in-place + re-Apply is layer 1; undo deque is layer 2; YAML escape hatch is layer 3. Spec: ADR-075.
-- [ ] **BP-HELP-1** `[sonnet/medium]`: Resolve `__doc__` from `@register_action` / `@register_plot_component` at runtime via `importlib`. Render as docstring block in form. Optional `doc_url` field (disabled in air-gapped deployments). Spec: ADR-075.
+> **2026-05-20 verification + ADR-082 feature lock.** Verified this session: all 60 transformer
+> action forms render headless (zero failures, all 8 widget types). BP-FORMS-1 (action-form
+> rendering), BP-UNDO-1, BP-ESCAPE-1, BP-HELP-1 are implemented (commit `ab113c3` + later). The
+> full BLUEPRINT feature set is now locked by **ADR-082**; remaining form/feature work is tracked
+> as the new task IDs below.
+
+- [x] **BP-FORMS-1** `[opus/high]`: Form renderer — all 8 widget types, column selector with upstream schema propagation on Apply, edit-in-place flow, schema invalidation markers. **Verified 2026-05-20** (60/60 action forms render headless). Component forms + add/edit unification split out to BP-COMPONENT-* / BP-FORMS-UNIFY-1 (ADR-082 §5).
+- [x] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only when `blueprint_enabled`; editable when `manifest_edit_enabled`. Implemented (`bp_save_yaml_hatch`). *Functional smoke pending → BP-SMOKE-1.*
+- [x] **BP-UNDO-1** `[sonnet/medium]`: 20-step session undo deque (`_snapshot_state`/`_undo`). Implemented.
+- [x] **BP-HELP-1** `[sonnet/medium]`: `__doc__` resolution via `importlib` + docstring block + optional `doc_url`. Implemented (`bp_help_panel_ui`, `_resolve_action_doc`). *Functional smoke pending → BP-SMOKE-1.*
 - [ ] **ACTION-RENAME-1** `[haiku/low]`: `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag. Spec: implementation plan §Phase 32, step 32-J.
+
+### Phase 32 (cont.) — ADR-082 spawned tasks (BLUEPRINT feature set)
+
+Implementation order locked by ADR-082 §Implementation Order. Each closes a gap from the 2026-05-20 verification or a Q5/Q6 decision.
+
+- [ ] **BP-FORMS-UNIFY-1** `[opus/high]`: Add-node MUST use the same `ui_schema` rich form as edit-node. Retire the primitive Focus-tab add UI (single column + one free-text param). New node created with default params, opened immediately in full form. Gap #1, ADR-082 §5.
+- [ ] **BP-ENUM-PREVIEW-1** `[sonnet/medium]`: Implement `preview: true` in the enum widget renderer — visual sample for linetype/position/shape enums (currently ignored; renders plain dropdown). Gap #3, ADR-075 §2.
+- [ ] **BP-EXPR-EDITOR-1** `[sonnet/high]`: `expression` widget → schema-aware code editor with column autocomplete (currently plain textarea). Scope: `mutate.expression` (only expression-widget field). Vendor any JS locally (ADR-071, no CDN). Gap #4, ADR-075 §2.
+- [ ] **BP-COMPONENT-SCHEMA-1** `[sonnet/high]`: Component `ui_schema` parity pass — add schemas to remaining plot components (7/191 schemed today). Analogous to ACTION-UISCHEMA-1. Prereq for BP-COMPONENT-FORMS-1. Gap #2.
+- [ ] **BP-COMPONENT-FORMS-1** `[opus/high]`: Component form path — configure plot/geom nodes via the shared 8-widget renderer driven by `COMPONENT_SCHEMAS`. Logic stack must handle plot nodes. Depends on BP-COMPONENT-SCHEMA-1. Gap #2, ADR-082 §5.
+- [ ] **BP-JOINT-1** `[opus/high]`: Dedicated Joint Designer pane — left + right ingredient schemas side-by-side, live key-match preview, emits canonical `join` recipe step. Q5, ADR-082.
+- [ ] **BP-GROUPS-1** `[sonnet/high]`: Group/plot sidebar inventory — persistent list with create/delete/assign affordances (MVP). v2: TubeMap context menu (Q6-C). Q6, ADR-082.
+- [ ] **BP-META-1** `[sonnet/medium]`: Form UI for manifest `info:` block (description/author/version/tags) — YAML-only today. Functionality #7, ADR-082.
+- [ ] **BP-NEW-1** `[sonnet/medium]`: "Create new manifest from scratch" flow — currently only import exists. Functionality #2, ADR-082.
+- [ ] **BP-VALIDATE-1** `[sonnet/medium]`: Inline manifest validation surfacing in BLUEPRINT (validator exists; not wired to UI). Functionality #16, ADR-082.
+- [ ] **BP-CSS-LEGEND-1** `[haiku/low]`: TubeMap legend uses forbidden Bootstrap colours (`#0d6efd`, `#198754`) — correct against `rules_css_style_spec.md §1c`. ADR-082 Consequences.
+- [ ] **BP-SMOKE-1** `[sonnet/medium]`: Functional smoke pass for BP-ESCAPE-1 + BP-HELP-1 in the running app (qa persona) — confirm escape-hatch save round-trips and help panel resolves `__doc__`.
+- [ ] **BP-AUTOSAVE-1** `[sonnet/high]`: Persist the in-progress BLUEPRINT manifest draft + undo history to disk; restore on reload/crash. Modeled on HOME ghost-save (ui_implementation_contract.md §12d) but persists manifest-draft state, not data-tier state. Decided 2026-05-20 (ADR-082 §2a).
+- [ ] **BP-BRANCH-NODE-1** `[opus/high]` (was BP-FORK-FILES-1): Implement node-level **lineage bifurcation** (ADR-082 Q3, LOCKED). User picks a bifurcation node → BLUEPRINT creates a new divergent downstream fragment (`wrangling/`/`output_fields/`/`assembly/`/`plots/`) that **references shared upstream** (no recompute — upstream Tier 1 anchor stays materialized once) and wires it into the master via `!include`. Canonical pattern: `Summary` / `Summary_quality`. Replaces the current Visual Fork append-into-manifest behaviour. Open UX detail (decide at task time): auto-detect bifurcation point vs. explicit user choice. Whole-manifest duplication is a separate rare path (BP-DUPLICATE-1, deferred — only for genuinely new data).
 
 ### Phase 33 — Blueprint AI Agent MVP-1 (ADR-076)
 
@@ -122,9 +147,7 @@ Tasks requiring user decision, user action, or explicit discussion before implem
 - [ ] **[TO DISCUSS]** Lab script: Extract pilot manifest (reconstitution of lineage) — improve reusability.
 - [ ] **[TO DISCUSS]** Lab script: Create tool-specific manifest (e.g. single-sheet variant).
 - [ ] **[TO DISCUSS]** Lab script: Combine manifests — format detection, common datasets, branching.
-- [ ] **[TO DISCUSS] BP-ADR-FULL-1** (ADR-082) — see `.claude/design/blueprint_full_feature_set_research.md` §6. Eve's input needed on Q1 (preview trigger), Q2 (T3 boundary), Q5 (joint UI), Q7 (data inspection scope) before authoring.
-  - **Research & discussion prep:** [.claude/design/blueprint_full_feature_set_research.md](../../.claude/design/blueprint_full_feature_set_research.md) — read TL;DR (§0), then §6 (7 open decision points)
-  - **Pre-discussion reading:** `.claude/design/spaces/BLUEPRINT.md` (~5 min) + `.claude/knowledge/blueprint_architect_ux_spec.md` (~10 min) + research doc §6 (~10 min)
+- [x] **BP-ADR-FULL-1** (ADR-082) — **RESOLVED 2026-05-20.** All 7 decision points settled with Eve; **ADR-082 (BLUEPRINT Full Feature Set & Build-Mode Contract)** authored in `architecture_decisions.md`. Research draft marked RESOLVED. Spawned Phase 32 (cont.) task slate above.
 
 ---
 
@@ -154,6 +177,7 @@ Tasks requiring user decision, user action, or explicit discussion before implem
 
 Context and status notes from recent sessions. Add here instead of inside active task sections.
 
+- **2026-05-20 (BLUEPRINT feature lock)** — Verified BP-FORMS-1 against the running implementation: all 60 transformer action forms render headless (zero failures, all 8 widget types). Found the form layer is half-built (add-node primitive vs edit-node rich; no component form path; 7/191 components schemed) + 2 ADR-075 widget gaps (enum preview, expression editor). Authored **ADR-082 (BLUEPRINT Full Feature Set & Build-Mode Contract)** — locked 4-layer model, 7 decision points, MVP/v2 inventory, T1/T2-vs-T3 boundary. Key decision with Eve: **branch = node-level lineage bifurcation** (shared upstream by reference, divergent downstream fragment-per-component `!include`) — NOT whole-manifest duplication; terminology fix (graph fan-out ≠ manifest branch). Spawned 12 Phase 32 (cont.) tasks. Research draft → RESOLVED.
 - **2026-05-20** — Triaged 11 unprocessed audit files from 2026-05-13/18. 10 PASS (marked PROCESSED). 1 actionable finding: `audit_manifest_integrity.py` reports 6/6 manifests FAIL because `debug_assembler.py` uses `yaml.safe_load()` — `!include` not supported. All manifests are structurally fine (coherence audit PASS). Task added: MANIFEST-INCLUDE-1 in Do Now.
 - **2026-05-12** — All recent work (CROSS-LIB-SCRIPT-1, TASK-DRIFT-EXCLUSION-1, EMOJI-DOCSTRING-1, VIZ-README-COUNT-1) archived → [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md).
 
