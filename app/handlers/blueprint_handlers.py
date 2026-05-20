@@ -19,7 +19,9 @@ from __future__ import annotations
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
-# consumes: function:normalise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1)
+# consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
+# provides: function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit), helper:_bundle_filename (full-manifest zip)
+# consumes: reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
@@ -32,6 +34,7 @@ import io
 import json
 import re
 import uuid
+import zipfile
 from collections import deque
 from datetime import datetime
 from pathlib import Path
@@ -48,7 +51,7 @@ from blueprint_arch.manifest_navigator import (
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
-from viz_factory.plot_config_resolver import normalise_plot_spec
+from viz_factory.plot_config_resolver import normalise_plot_spec, serialise_plot_spec
 from blueprint_arch.agent_context import build_system_prompt
 from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
@@ -109,26 +112,113 @@ def define_server(input, output, session, *,
         """
         Normalizes potentially flat manifest nodes into structured UI nodes.
         ADR-031: Supports both Structure (params: {}) and Flat (top-level keys) formats.
+
+        BP-PLOT-COMMIT-1: each node is tagged with its source tier (``_tier``) so the
+        commit path can route it back to the same wrangling.tier{1,2} on Save. A bare
+        list (legacy flat / recipe) defaults to tier1. Legacy tier3 nodes (artifacts of
+        the pre-BP-PLOT-COMMIT-1 dump bug) are folded into tier2 — BLUEPRINT never
+        authors T3 (ADR-082 §4).
         """
         nodes = []
-        raw_list = []
+        tagged: list = []  # (raw_node, tier_name)
 
         if isinstance(wrangling, list):
-            raw_list = wrangling
+            tagged = [(n, "tier1") for n in wrangling]
         elif isinstance(wrangling, dict):
             for tier in ["tier1", "tier2", "tier3"]:
-                raw_list.extend(wrangling.get(tier, []))
+                dest = "tier2" if tier == "tier3" else tier
+                tagged.extend((n, dest) for n in wrangling.get(tier, []))
 
-        for node in raw_list:
+        for node, tier_name in tagged:
             if not isinstance(node, dict):
                 continue
             n = node.copy()
             action = n.pop("action", "unknown_action")
             comment = n.pop("comment", source_name)
             params = n.pop("params", n)
-            nodes.append({"action": action, "params": params, "comment": comment})
+            nodes.append({
+                "action": action, "params": params,
+                "comment": comment, "_tier": tier_name,
+            })
 
         return nodes
+
+    def _serialise_component_for_save(role, nodes, raw_text):
+        """Pure: serialise the live logic_stack back to the component file's dict shape.
+
+        BP-PLOT-COMMIT-1 (ADR-083 §8). Routes by component role:
+          - plot_spec     -> canonical {mapping, layers, ...} via serialise_plot_spec;
+                             wrapped in {spec: ...} iff the source file used that wrapper.
+                             Plot-level scalars / taxonomy (target_dataset, theme, palette,
+                             family, ...) are recovered from the original file; mapping +
+                             layers are taken from the live stack (authoritative).
+          - wrangling /   -> {wrangling: {tier1: [...], tier2: [...]}} (or {recipe: ...}),
+            plot_wrangling    action nodes routed to their source tier via the _tier marker.
+                              T3 is never written (ADR-082 §4) — _parse_logic_to_nodes folded
+                              any legacy tier3 into tier2 on load.
+
+        Raises ValueError for roles that cannot be saved from the logic stack.
+        """
+        try:
+            original = yaml.safe_load(raw_text) or {}
+        except Exception:
+            original = {}
+
+        if role == "plot_spec":
+            had_wrapper = (isinstance(original, dict)
+                           and isinstance(original.get("spec"), dict))
+            base = (original["spec"] if had_wrapper
+                    else (original if isinstance(original, dict) else {}))
+            canonical = normalise_plot_spec(base)
+
+            # Live stack is authoritative for mapping + layers.
+            mapping: dict = {}
+            layers: list = []
+            for node in nodes:
+                comp = node.get("component")
+                if comp is None:
+                    continue  # ignore stray action nodes in a plot spec
+                if comp == "__mapping__":
+                    mapping = dict(node.get("params", {}))
+                else:
+                    layers.append({"name": comp,
+                                   "params": dict(node.get("params", {}))})
+            canonical["mapping"] = mapping
+            canonical["layers"] = layers
+
+            spec_out = serialise_plot_spec(canonical)
+            return {"spec": spec_out} if had_wrapper else spec_out
+
+        if role in ("wrangling", "plot_wrangling"):
+            # Preserve the original container key (wrangling vs recipe) for round-trip.
+            container_key = "wrangling"
+            if isinstance(original, dict) and "recipe" in original \
+                    and "wrangling" not in original:
+                container_key = "recipe"
+
+            tiers: dict = {"tier1": [], "tier2": []}
+            for node in nodes:
+                if node.get("action") is None:
+                    continue  # ignore stray component nodes
+                tier = node.get("_tier", "tier1")
+                if tier not in tiers:
+                    tier = "tier1"
+                step = {"action": node["action"]}
+                step.update(node.get("params", {}))
+                comment = node.get("comment", "")
+                if comment:
+                    step["comment"] = comment
+                tiers[tier].append(step)
+
+            block: dict = {"tier1": tiers["tier1"]}
+            if tiers["tier2"]:
+                block["tier2"] = tiers["tier2"]
+            return {container_key: block}
+
+        raise ValueError(
+            f"Save is not supported for component role '{role}'. "
+            "Editable roles: plot_spec, wrangling, plot_wrangling."
+        )
 
     def _extract_wrangling_for_id(cfg, lid):
         """Helper to find wrangling block in complex manifest."""
@@ -176,6 +266,8 @@ def define_server(input, output, session, *,
                 nodes = _parse_logic_to_nodes(wrangling, abs_file.name)
                 wrangle_studio.logic_stack.set(nodes)
                 wrangle_studio.active_raw_yaml.set(raw_text)
+                # BP-PLOT-COMMIT-1: remember the loaded fragment file so Save writes here.
+                wrangle_studio.active_component_path.set(str(abs_file))
 
                 ctx = component_ctx_map.get().get(selected, {})
                 role = ctx.get("role", "unknown")
@@ -435,6 +527,8 @@ def define_server(input, output, session, *,
             wrangle_studio.logic_stack.set(nodes)
             wrangle_studio.active_raw_yaml.set(
                 yaml.dump(raw, default_flow_style=False, sort_keys=False))
+            # BP-PLOT-COMMIT-1: inline component (no standalone file) — Save is disabled.
+            wrangle_studio.active_component_path.set("")
 
             ctx_map_b = ctx_map or component_ctx_map.get()
             comp_entry = ctx_map_b.get(selected, {})
@@ -836,23 +930,42 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_save_internal)
     def _handle_manifest_save_internal():
-        path_str = input.stored_manifest_selector()
-        if not path_str or not Path(path_str).exists():
+        # BP-PLOT-COMMIT-1 (ADR-083 §8): write the LOADED component file in its native
+        # shape — plot specs serialise mapping+layers; wrangling routes nodes to their
+        # source tier. The legacy tier3 dump (which wiped tier1/tier2 of the master
+        # manifest) is removed: BLUEPRINT never authors T3 (ADR-082 §4).
+        comp_path = wrangle_studio.active_component_path.get()
+        if not comp_path:
+            ui.notification_show(
+                "This component was loaded inline — open it as a file to save, "
+                "or edit it via the YAML escape hatch.", type="warning")
             return
+        if not Path(comp_path).exists():
+            ui.notification_show(
+                f"❌ Component file no longer exists: {Path(comp_path).name}",
+                type="error")
+            return
+
+        info = wrangle_studio.active_component_info.get() or {}
+        role = info.get("role", "")
+        nodes = wrangle_studio.logic_stack.get()
+        raw_text = wrangle_studio.active_raw_yaml.get()
+
         try:
-            with open(path_str, "r") as f:
-                content = yaml.safe_load(f) or {}
-            nodes = wrangle_studio.logic_stack.get()
-            if "wrangling" not in content:
-                content["wrangling"] = {}
-            content["wrangling"]["tier1"] = []
-            content["wrangling"]["tier2"] = []
-            content["wrangling"]["tier3"] = nodes
-            with open(path_str, "w") as f:
+            content = _serialise_component_for_save(role, nodes, raw_text)
+        except ValueError as ve:
+            ui.notification_show(f"⚠️ {ve}", type="warning")
+            return
+        except Exception as e:
+            ui.notification_show(f"❌ Save failed: {e}", type="error")
+            return
+
+        try:
+            with open(comp_path, "w") as f:
                 yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             ui.notification_show(
-                f"✅ Saved to {Path(path_str).name}", type="success")
-        except Exception as e:
+                f"✅ Saved to {Path(comp_path).name}", type="success")
+        except OSError as e:
             ui.notification_show(f"❌ Save failed: {e}", type="error")
 
     @reactive.Effect
@@ -1004,12 +1117,18 @@ def define_server(input, output, session, *,
 
         _snapshot_state()
 
-        updated = list(nodes)
-        updated[idx] = {
+        rebuilt = {
             node_kind_key: node_name,
             "params": new_params,
             "comment": new_comment,
         }
+        # BP-PLOT-COMMIT-1: preserve the source-tier marker across edits (action nodes
+        # only — component/plot nodes have no tier).
+        if not is_component and node.get("_tier"):
+            rebuilt["_tier"] = node["_tier"]
+
+        updated = list(nodes)
+        updated[idx] = rebuilt
         wrangle_studio.logic_stack.set(updated)
 
         # Mark downstream nodes as schema-stale after edit (action nodes only —
@@ -1026,12 +1145,40 @@ def define_server(input, output, session, *,
             f"{unit} {idx + 1} ({node_name}) updated.", type="message"
         )
 
-    @render.download(filename=lambda: f"exported_manifest_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml")
+    def _bundle_filename():
+        try:
+            mp = wrangle_studio.active_manifest_path.get() or ""
+        except Exception:
+            mp = ""
+        stem = Path(mp).stem if mp else "manifest"
+        return f"{stem}_bundle_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+
+    @render.download(filename=_bundle_filename)
     def btn_download_manifest():
-        nodes = wrangle_studio.logic_stack.get()
-        manifest_data = {"wrangling": {"tier1": [], "tier2": [], "tier3": nodes}}
-        buf = io.StringIO()
-        yaml.dump(manifest_data, buf, default_flow_style=False, sort_keys=False)
+        # BP-PLOT-COMMIT-1 (ADR-083 §8): emit the FULL multi-file manifest as a zip —
+        # the master .yaml plus its mirrored basename/ directory (all !include
+        # fragments: input_fields/, wrangling/, output_fields/, assembly/, plots/).
+        # Reflects the on-disk state, so the workflow is Save (commit fragment) ->
+        # Download (bundle the tree). The old tier3 dump is removed.
+        master = (wrangle_studio.active_manifest_path.get()
+                  or safe_input(input, "stored_manifest_selector", None))
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            if master and Path(master).exists():
+                mp = Path(master)
+                zf.write(mp, arcname=mp.name)
+                # Mirrored basename/ directory holds every !include fragment.
+                mirror = mp.parent / mp.stem
+                if mirror.is_dir():
+                    for f in sorted(mirror.rglob("*")):
+                        if f.is_file():
+                            arc = Path(mp.stem) / f.relative_to(mirror)
+                            zf.write(f, arcname=str(arc))
+            else:
+                # No master resolved — fall back to the active fragment alone.
+                comp = wrangle_studio.active_component_path.get()
+                if comp and Path(comp).exists():
+                    zf.write(Path(comp), arcname=Path(comp).name)
         yield buf.getvalue()
 
     # ── BP-ESCAPE-1: YAML escape hatch Save (manifest_edit_enabled only) ──────

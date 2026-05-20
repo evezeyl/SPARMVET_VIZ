@@ -7,6 +7,7 @@
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog, search_actions, get_actions_for_context; get_component_catalog, search_components, get_components_for_context — BP-COMPONENT-FORMS-1)
 # consumes: node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes
 # consumes: __mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices
+# provides: reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path, Save target); node marker _tier on action stubs (source-tier routing on commit, set from bp_action_context)
 # consumes: app/src/bootloader.py (method:get_palettes — via self._bootloader, optional)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, loaded via ui.py head)
@@ -137,6 +138,10 @@ class WrangleStudio:
         # Master manifest path — set on every component import so architect_active_plot
         # can load the full resolved config via ConfigManager (not just the fragment)
         self.active_manifest_path = reactive.Value("")
+        # BP-PLOT-COMMIT-1: absolute path of the loaded component FILE (the !include
+        # fragment), so Save writes back to that file — not the master manifest.
+        # Empty string when the component was loaded inline (no standalone file).
+        self.active_component_path = reactive.Value("")
         # Anchor parquet path set after materialization so surgical calc reacts to it
         self.active_anchor_path = reactive.Value("")
 
@@ -622,11 +627,17 @@ class WrangleStudio:
             except Exception:
                 is_component = False
 
-            stub = (
-                {"component": selected, "params": {}, "comment": ""}
-                if is_component
-                else {"action": selected, "params": {}, "comment": ""}
-            )
+            if is_component:
+                stub = {"component": selected, "params": {}, "comment": ""}
+            else:
+                # BP-PLOT-COMMIT-1: new action nodes inherit their tier from the picker
+                # context selector (T1 -> tier1, T2 -> tier2; assembly/default -> tier1).
+                try:
+                    ctx = (input.bp_action_context() or "").strip()
+                except Exception:
+                    ctx = "t1"
+                tier = "tier2" if ctx == "t2" else "tier1"
+                stub = {"action": selected, "params": {}, "comment": "", "_tier": tier}
 
             curr = self.logic_stack.get().copy()
             curr.append(stub)
