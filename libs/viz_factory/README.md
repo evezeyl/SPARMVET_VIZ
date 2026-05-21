@@ -21,6 +21,80 @@ The `VizFactory (viz_factory.py)` is agnostic to the analytical depth of the inc
 
 - **Visual Cookbook Integration (ADR-033)**: Supports educational split-pane documentation, pairing technical manifests with structured Markdown guidance for enhanced visual literacy.
 
+## Canonical Plot Spec Format (ADR-083)
+
+As of ADR-083, all plot specs must use the grammar-of-graphics format: explicit `geom_*` layers in `layers:`, aesthetics in `mapping:`. The `factory_id` shorthand key is **removed** — any spec containing it receives a hard `VisualizationError` at normalisation time.
+
+```yaml
+spec:
+  target_dataset: AMR_Profile_Joint
+  mapping:
+    x: Year
+    fill: Multiresistant
+  theme: theme_light
+  layers:
+    - name: geom_bar
+      params: {}
+    - name: labs
+      params:
+        title: "Resistance by Year"
+```
+
+**Migration:** If you have manifests that still use `factory_id`, run:
+
+```bash
+./.venv/bin/python assets/scripts/migrate_plot_specs.py --apply
+```
+
+The script rewrites all `factory_id:` keys to their equivalent explicit `geom_*` layer in place.
+
+---
+
+## Plot Config Resolver (`plot_config_resolver.py`)
+
+The resolver is the single merge point for all configuration tiers. It implements `resolve_plot_config()` which collapses the five-tier cascade into a single flat config dict consumed by `VizFactory.render()`.
+
+### Five-tier cascade (L5 wins per key)
+
+| Tier | Source | Who controls |
+|---|---|---|
+| **L5** | T3 `aesthetic_override` for the active plot | Analyst (T3 sandbox) |
+| **L4** | Plot `spec:` in `analysis_groups` | Manifest author |
+| **L3** | Optimisation layer (axis text, panel spacing — visual only) | VizFactory |
+| **L2** | Manifest `plot_defaults:` block | Manifest author |
+| **L1** | VizFactory built-in defaults (`theme_bw`, `coord_cartesian`, `facet_null`) | Developer |
+
+`layers:` lists are deduplicated by `(layer_kind, target)` — highest tier wins for the same kind. `geom_*`/`stat_*` layers are never deduplicated (stack in order).
+
+### Public functions
+
+```python
+from viz_factory.plot_config_resolver import (
+    normalise_plot_spec,    # (raw_spec: dict) -> dict  — idempotent L4 normalisation; raises VisualizationError on factory_id
+    serialise_plot_spec,    # (canonical: dict) -> dict — serialise-safe form for Blueprint YAML save; never emits factory_id
+    resolve_plot_config,    # (l4_spec, l2_defaults, df, l5_override) -> dict — full cascade merge
+)
+```
+
+---
+
+## Palette Injection (ADR-081)
+
+`VizFactory` accepts a `palette_registry` dict at construction time (injected by `bootloader.get_palettes()`). Palette names are resolved from the plot config cascade and applied via `_apply_palette()`:
+
+| Palette name | Scale injected |
+|---|---|
+| Project palette name (in registry) | `scale_fill_manual` / `scale_color_manual` with hex list |
+| Viridis family (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) | `scale_fill_viridis_d` / `scale_color_viridis_d` |
+| Any other string | `scale_fill_brewer` / `scale_color_brewer` |
+| Unknown name | Warning with list of valid palette names; no scale injected |
+
+Scale injection is skipped when:
+- The plot mapping has no `fill` or `color` aesthetic
+- The manifest already declares a `scale_fill_*` or `scale_color_*` layer
+
+---
+
 ## Smart Default Hierarchy
 
 The `VizFactory (viz_factory.py)` implements a tiered default injection policy to ensure plots render successfully even with sparse manifest definitions:

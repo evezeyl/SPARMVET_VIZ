@@ -64,7 +64,7 @@ Items with no blockers — can be started immediately.
 
 - [x] **DOC-LIBREADME-TRANSFORMER-1** `[sonnet/medium]`: Update `libs/transformer/README.md` — done 2026-05-21. Added: full action registry table (all 8 categories, 50+ actions); detection-based manifest loading explanation for `debug_assembler.py`. Existing sections (tiered wrangling, ui_schema, widget vocab, tests) were already current.
 
-- [ ] **DOC-LIBREADME-VIZFACTORY-1** `[sonnet/medium]`: Update `libs/viz_factory/README.md` — canonical plot spec format (ADR-083), `normalise_plot_spec`/`serialise_plot_spec` public API, `plot_config_resolver.py` cascade tiers, why `factory_id` is gone (hard `VisualizationError`), how palette injection works, `migrate_plot_specs.py` migration tool.
+- [x] **DOC-LIBREADME-VIZFACTORY-1** `[sonnet/medium]`: Update `libs/viz_factory/README.md` — done 2026-05-21. Added: ADR-083 canonical plot spec section with factory_id removal note and migrate_plot_specs.py; five-tier cascade table with normalise_plot_spec/serialise_plot_spec/resolve_plot_config public API; palette injection table.
 
 - [ ] **DOC-LIBREADME-OTHERS-1** `[haiku/low]`: Check READMEs exist and are not stale for `libs/ingestion/`, `libs/utils/`, `libs/connector/`, `libs/test_lab/`. If a README is absent, create a one-page stub with: purpose, public API summary, editable install, how to run tests. If present and recent, skip.
 
