@@ -108,6 +108,32 @@ Implementation order locked by ADR-082 §Implementation Order. Each closes a gap
 
 - [x] **MANIFEST-INCLUDE-1** `[sonnet/low]`: Fixed `libs/transformer/tests/debug_assembler.py` — replaced two-pass `yaml.safe_load` + conditional `ConfigManager` pattern with a detection-based approach: read manifest text, use `ConfigManager` when `!include` present (pipeline manifests), `yaml.safe_load` otherwise (partial test manifests). Avoids triggering `ConfigManager`'s `sys.exit()` path for partial manifests. Verified: `audit_manifest_integrity.py` now reports 6/6 PASS (was all FAIL). Other files verified exempt: `debug_runner.py` already uses ConfigManager with safe_load fallback; `gallery_manager.py`, `generate_previews.py`, `debug_gallery_submission.py` load gallery recipe manifests (standalone, no `!include`). **Done 2026-05-21.**
 
+### Documentation & Hygiene Sprint (pre-build-continuation gate)
+
+> **2026-05-21 decision.** Pause building. Document what has been built, run audits, clean task file.
+> Moving `.claude/knowledge/` content into `docs/` is deferred to near-end-of-build.
+> All docs go under `docs/` (user-facing + developer-facing). Each lib also gets its own `README.md`.
+>
+> **OPUS constraint:** Must verify all claims against actual code before writing. Do NOT invent or extrapolate.
+> Check the file, then describe it. Every claim about a function signature, file path, or behaviour
+> must be confirmed with a `Read` or `grep` before it appears in any doc.
+
+- [ ] **DOC-BLUEPRINT-1** `[opus/high]`: Write `docs/workflows/blueprint_architect.qmd` — comprehensive workflow doc for the BLUEPRINT Architect workspace. Must cover: (1) what BLUEPRINT is for (manifest design, not T3 wrangling); (2) the four composable layers (Navigation/TubeMap, Forms, Data Glimpse, Helpers); (3) step-by-step workflow — import manifest → TubeMap → select node → fill form → Apply → commit/download; (4) **lineage bifurcation (branching)** with special detail: *when* to branch a `data_schema` (only for genuinely different processing paths — different QC thresholds, reference databases, instrument type), *why* the empty seed (not prefilled) — the T1-shared / T2-diverges mental model, *how* text-level insertion preserves `!include` directives, *why* the branch plan validates + refuses to clobber; (5) the plot authoring model — canonical grammar-of-graphics, why `factory_id` was removed cleanly; (6) Joint Designer — why live key-match preview, what asymmetric vs symmetric joins mean; (7) AI Agent — fenced-block protocol, 3 MVP tools, when to use vs YAML escape hatch. **OPUS constraint applies.** Verify every function name and file path against actual code before writing.
+
+- [ ] **DOC-BLUEPRINT-USER-1** `[sonnet/medium]`: Write `docs/user_guide/blueprint_manifest_authoring.qmd` — user-facing (non-developer) guide for manifest authoring in BLUEPRINT. Audience: bioscientist who wants to build or modify a pipeline manifest. Cover: the 3-step canonical YAML authoring flow (data_schema → join → plot); how to use the form UI vs YAML escape hatch; the branching decision guide (plain-English version of the branching rules); validation and what PASS/FAIL means; when to call for developer help. Keep concrete, use examples from existing manifests under `config/manifests/`.
+
+- [ ] **DOC-LIBREADME-BLUEPRINT-ARCH-1** `[sonnet/medium]`: Write/update `libs/blueprint_arch/README.md` — developer README for the `blueprint_arch` library. Cover: purpose (pure manifest introspection, headless-safe, zero Shiny); public API (7 functions in `manifest_navigator.py` + `group_plot_manager.py` + `schema_registry.py` + `agent_tools.py` + `agent_tool_parser.py`); `join_designer.py`; editable install; how to run headless tests. **OPUS constraint applies.**
+
+- [ ] **DOC-LIBREADME-TRANSFORMER-1** `[sonnet/medium]`: Update `libs/transformer/README.md` to reflect current state — action registry (all categories from `rules_persona_bioscientist.md §8`), `ui_schema` annotation on actions (what it is, why), `debug_assembler.py` usage (detection-based manifest loading), tiered wrangling structure. Check what's actually in the file first; update only what is stale or missing.
+
+- [ ] **DOC-LIBREADME-VIZFACTORY-1** `[sonnet/medium]`: Update `libs/viz_factory/README.md` — canonical plot spec format (ADR-083), `normalise_plot_spec`/`serialise_plot_spec` public API, `plot_config_resolver.py` cascade tiers, why `factory_id` is gone (hard `VisualizationError`), how palette injection works, `migrate_plot_specs.py` migration tool.
+
+- [ ] **DOC-LIBREADME-OTHERS-1** `[haiku/low]`: Check READMEs exist and are not stale for `libs/ingestion/`, `libs/utils/`, `libs/connector/`, `libs/test_lab/`. If a README is absent, create a one-page stub with: purpose, public API summary, editable install, how to run tests. If present and recent, skip.
+
+- [ ] **TASK-ARCHIVE-1** `[haiku/low]`: Archive all completed `[x]` items from Phase 32 and Phase 33 sections in `tasks.md` into the appropriate archive file (`.claude/tasks/tasks_archive_phase32.md` + `.claude/tasks/tasks_archive_phase33.md`). Replace sections with skeletal pointer per `rules_verification_testing.md §4`. Update archive table at bottom of tasks.md. Also update `Last Updated` header.
+
+- [ ] **AUDIT-PASS-1** `[sonnet/low]`: Run the full audit suite + test suites and report findings. Steps: (1) `scripts/run_audits.sh`; (2) `SPARMVET_PERSONA=qa .venv/bin/python -m pytest app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py -v`; (3) `scripts/build_dep_graph.py`. Triage any new audit findings per `.claude/workflows/audit_triage_protocol.md`. Add any actionable findings as tasks in Do Now.
+
 ---
 
 ## 🤔 Needs Discussion / Decision
