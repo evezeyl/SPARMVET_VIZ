@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-21 (Phase 34 TEST_LAB tasks added; UX-DEVINSP-1 superseded) by @dasharch
+**Last Updated:** 2026-05-21 (Phase 34 tasks + hygiene sprint archived; audit findings added) by @dasharch
 
 ---
 
@@ -48,29 +48,7 @@ Items with no blockers — can be started immediately.
 
 ### Documentation & Hygiene Sprint (pre-build-continuation gate)
 
-> **2026-05-21 decision.** Pause building. Document what has been built, run audits, clean task file.
-> Moving `.claude/knowledge/` content into `docs/` is deferred to near-end-of-build.
-> All docs go under `docs/` (user-facing + developer-facing). Each lib also gets its own `README.md`.
->
-> **OPUS constraint:** Must verify all claims against actual code before writing. Do NOT invent or extrapolate.
-> Check the file, then describe it. Every claim about a function signature, file path, or behaviour
-> must be confirmed with a `Read` or `grep` before it appears in any doc.
-
-- ~~**DOC-BLUEPRINT-1**~~ `[opus/high]` — **DONE 2026-05-21.** `docs/workflows/blueprint_architect.qmd` (9 sections). History: [tasks_archive_phase32.md](archives/tasks_archive_phase32.md).
-
-- [x] **DOC-BLUEPRINT-USER-1** `[sonnet/medium]`: Write `docs/user_guide/blueprint_manifest_authoring.qmd` — user-facing (non-developer) guide for manifest authoring in BLUEPRINT. Audience: bioscientist who wants to build or modify a pipeline manifest. Cover: the 3-step canonical YAML authoring flow (data_schema → join → plot); how to use the form UI vs YAML escape hatch; the branching decision guide (plain-English version of the branching rules); validation and what PASS/FAIL means; when to call for developer help. Keep concrete, use examples from existing manifests under `config/manifests/`.
-
-- [x] **DOC-LIBREADME-BLUEPRINT-ARCH-1** `[sonnet/medium]`: Write/update `libs/blueprint_arch/README.md` — done 2026-05-21. Added: `generate_branch_plan` to manifest_navigator API; `search_components` to schema_registry API; new sections for `group_plot_manager.py`, `agent_tools.py`, `agent_tool_parser.py`, `join_designer.py`; updated tests table listing all 4 test files.
-
-- [x] **DOC-LIBREADME-TRANSFORMER-1** `[sonnet/medium]`: Update `libs/transformer/README.md` — done 2026-05-21. Added: full action registry table (all 8 categories, 50+ actions); detection-based manifest loading explanation for `debug_assembler.py`. Existing sections (tiered wrangling, ui_schema, widget vocab, tests) were already current.
-
-- [x] **DOC-LIBREADME-VIZFACTORY-1** `[sonnet/medium]`: Update `libs/viz_factory/README.md` — done 2026-05-21. Added: ADR-083 canonical plot spec section with factory_id removal note and migrate_plot_specs.py; five-tier cascade table with normalise_plot_spec/serialise_plot_spec/resolve_plot_config public API; palette injection table.
-
-- [x] **DOC-LIBREADME-OTHERS-1** `[haiku/low]`: Check READMEs for `libs/ingestion/`, `libs/utils/`, `libs/connector/`, `libs/test_lab/` — done 2026-05-21. All four exist with purpose, key components, install, and tests sections. No stubs needed; all current.
-
-- [x] **TASK-ARCHIVE-1** `[haiku/low]`: Archive all completed `[x]` items from Phase 32 and Phase 33 sections — done 2026-05-21. Archives: [tasks_archive_phase32.md](archives/tasks_archive_phase32.md), [tasks_archive_phase33.md](archives/tasks_archive_phase33.md).
-
-- [x] **AUDIT-PASS-1** `[sonnet/low]`: Run the full audit suite + test suites. Done 2026-05-21. Results: all 10 scheduled audits PASS; 26/26 Playwright smoke tests pass (3 persona-skipped expected); dep graph regenerated (134 nodes, 259 edges). Task-drift FAIL: 3 items — DOC-BLUEPRINT-USER-1 (pending, expected), task_archive_phase33 (false positive — file exists), `scripts/build_dep_graph.py` (false positive — actual path is `assets/scripts/build_dep_graph.py`). No new actionable tasks.
+> Status: COMPLETED. Detailed history moved to: [tasks_archive_hygiene_2026-05-21.md](archives/tasks_archive_hygiene_2026-05-21.md)
 
 ### Phase 34 — TEST_LAB Build
 
@@ -261,7 +239,6 @@ Tasks requiring user decision, user action, or explicit discussion before implem
 - [ ] **[TO DISCUSS]** Lab script: Extract pilot manifest (reconstitution of lineage) — improve reusability.
 - [ ] **[TO DISCUSS]** Lab script: Create tool-specific manifest (e.g. single-sheet variant).
 - [ ] **[TO DISCUSS]** Lab script: Combine manifests — format detection, common datasets, branching.
-- [x] **BP-ADR-FULL-1** (ADR-082) — **RESOLVED 2026-05-20.** All 7 decision points settled with Eve; **ADR-082 (BLUEPRINT Full Feature Set & Build-Mode Contract)** authored in `architecture_decisions.md`. Research draft marked RESOLVED. Spawned Phase 32 (cont.) task slate above.
 
 ---
 
@@ -286,6 +263,7 @@ Tasks requiring user decision, user action, or explicit discussion before implem
 | May-12 hygiene | Audit script fixes (CROSS-LIB-SCRIPT-1, TASK-DRIFT-EXCLUSION-1) | 2026-05-12 | [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md) |
 | Phase 18-F, 32, 32-cont, audit-fixes | ACTION-UISCHEMA-1, BP-FORMS-1/ESCAPE/UNDO/HELP, ACTION-RENAME-1, all ADR-082 spawned BP-* tasks, MANIFEST-INCLUDE-1 | 2026-05-21 | [tasks_archive_phase32.md](archives/tasks_archive_phase32.md) |
 | Phase 33 | BP-AGENT-PARSER-1/TOOLS/INSTRUCT/PANEL/UI/CSS — all ADR-076 MVP-1 agent tasks | 2026-05-21 | [tasks_archive_phase33.md](archives/tasks_archive_phase33.md) |
+| Documentation & Hygiene Sprint | DOC-BLUEPRINT-1/USER-1, DOC-LIBREADME-*, TASK-ARCHIVE-1, AUDIT-PASS-1, BP-ADR-FULL-1 | 2026-05-21 | [tasks_archive_hygiene_2026-05-21.md](archives/tasks_archive_hygiene_2026-05-21.md) |
 
 ---
 
