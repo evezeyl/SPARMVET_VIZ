@@ -15,7 +15,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_fork_ui, output:bp_fork_preview_ui, output:bp_groups_inventory_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_fork_preview, effect:_handle_fork_write
+# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_branch_ui, output:bp_branch_preview_ui, output:bp_groups_inventory_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_branch_preview, effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation, replaces Visual Fork)
 # provides: effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)
 # provides: helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts manifest rebuild logic so CRUD Effects can call it after mutations)
 # provides: output:bp_meta_form_ui, effect:_handle_meta_save (BP-META-1 — manifest info: block read/edit form)
@@ -23,7 +23,7 @@ from __future__ import annotations
 # provides: output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — manifest coherence validation via subprocess)
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — manifest-draft ghost save/restore)
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
-# consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
+# consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match, build_join_step, parse_join_step — BP-JOINT-1 Joint Designer pane)
@@ -34,7 +34,7 @@ from __future__ import annotations
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_fork_ui"), ui.output_ui("bp_groups_inventory_ui"), ui.output_ui("bp_meta_form_ui"))
+# consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_branch_ui"), ui.output_ui("bp_groups_inventory_ui"), ui.output_ui("bp_meta_form_ui"))
 # doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076, .claude/knowledge/architecture_decisions.md#ADR-082
 # @end_deps
 
@@ -58,7 +58,7 @@ from blueprint_arch.manifest_navigator import (
     build_lineage_chain,
     build_schema_registry,
     build_sibling_map,
-    generate_fork_yaml,
+    generate_branch_plan,
     load_fields_file,
     resolve_fields_for_schema,
 )
@@ -1356,114 +1356,150 @@ def define_server(input, output, session, *,
             wrangle_studio.data_ready_signal.set(wrangle_studio.data_ready_signal.get() + 1)
             ui.notification_show("Manifest YAML updated and re-parsed.", type="message")
 
-    # ── BP-VISUAL-FORK-1: Visual Fork (manifest_edit_enabled only) ───────────
+    # ── BP-BRANCH-NODE-1: node-level lineage bifurcation (manifest_edit_enabled) ──
+    # Replaces the legacy Visual Fork (append-into-manifest). A branch splits one
+    # lineage at the selected node: shared upstream stays shared by !include
+    # reference; the divergent downstream is written as new empty fragment files
+    # wired into the master via fresh !include keys (ADR-082 Q3). Works WITH
+    # !include manifests — the master is edited by text-level insertion that
+    # leaves every existing !include tag untouched.
 
     if bootloader.is_enabled("manifest_edit_enabled"):
-        _fork_preview_text: reactive.Value[str] = reactive.Value("")
+        _branch_plan: reactive.Value[dict] = reactive.Value({})
 
-        def _write_fork_to_manifest(master_path: str, fork_text: str) -> tuple[bool, str]:
-            """Append fork_text to the master manifest file.
+        def _yaml_parses_with_includes(text: str) -> tuple[bool, str]:
+            """Validate text parses as YAML, tolerating !include tags (no resolution)."""
+            class _L(yaml.SafeLoader):
+                pass
+            _L.add_constructor("!include", lambda l, n: l.construct_scalar(n))
+            try:
+                yaml.load(text, Loader=_L)  # noqa: S506 – controlled loader
+                return True, ""
+            except Exception as exc:
+                return False, str(exc)
 
-            Only safe when the manifest has NO !include directives — yaml.safe_load
-            cannot round-trip files with !include tags.  When includes are present,
-            the fork text is shown for manual paste instead.
+        def _write_branch_plan(plan: dict) -> tuple[bool, str]:
+            """Write the divergent fragment files + the updated master to disk.
 
-            Returns (success: bool, message: str).
+            Validates the new master text parses (with !include tolerated) before
+            touching the master, and refuses to clobber any existing fragment file.
+            Rolls back any fragment it created if the master write fails.
             """
+            if not plan or not plan.get("ok"):
+                return False, (plan or {}).get("error") or "No branch plan to write."
+            master_path = (
+                (wrangle_studio.active_manifest_path.get() if wrangle_studio else "")
+                or safe_input(input, "stored_manifest_selector", None) or ""
+            )
             if not master_path or not Path(master_path).exists():
                 return False, "No active manifest path."
-            try:
-                raw = Path(master_path).read_text(encoding="utf-8")
-            except OSError as exc:
-                return False, f"Cannot read manifest: {exc}"
 
-            if "!include" in raw:
-                return False, (
-                    "This manifest uses !include directives — auto-write is not safe. "
-                    "Copy the YAML fragment above and paste it into the manifest file manually."
-                )
+            for frag in plan["fragments"]:
+                if Path(frag["abs_path"]).exists():
+                    return False, (
+                        f"Fragment already exists: {frag['rel_include']}. "
+                        "Choose a different branch ID."
+                    )
+            ok, msg = _yaml_parses_with_includes(plan["new_master_text"])
+            if not ok:
+                return False, f"Branch would produce invalid YAML: {msg}"
+
+            created: list[Path] = []
             try:
-                # Append the fork block as a YAML comment-separated section
-                separator = "\n# --- visual fork added by Blueprint Architect ---\n"
-                new_raw = raw.rstrip() + separator + fork_text
-                # Validate the combined YAML parses cleanly before writing
-                yaml.safe_load(new_raw)
-            except Exception as exc:
-                return False, f"YAML merge validation failed: {exc}"
-            try:
-                Path(master_path).write_text(new_raw, encoding="utf-8")
+                for frag in plan["fragments"]:
+                    fp = Path(frag["abs_path"])
+                    fp.parent.mkdir(parents=True, exist_ok=True)
+                    fp.write_text(frag["content"], encoding="utf-8")
+                    created.append(fp)
+                Path(master_path).write_text(plan["new_master_text"], encoding="utf-8")
             except OSError as exc:
-                return False, f"Cannot write manifest: {exc}"
-            return True, "Fork YAML written to manifest."
+                for fp in created:
+                    try:
+                        fp.unlink()
+                    except OSError:
+                        pass
+                return False, f"Write failed: {exc}"
+            return True, plan.get("summary") or "Branch written to manifest."
 
         @output
         @render.ui
-        def bp_fork_ui():
-            """Fork Node form — reads active_component_info only (Rule R4: never reads its own inputs)."""
+        def bp_branch_ui():
+            """Branch Node form — reads active_component_info only (Rule R4: never reads its own inputs)."""
             info = wrangle_studio.active_component_info.get() if wrangle_studio else {}
             schema_id = info.get("schema_id", "")
             role = info.get("role", "")
-            forkable_roles = {"wrangling", "input_fields", "output_fields", "join", "plot_spec"}
-            if not schema_id or role not in forkable_roles:
+            branchable_roles = {"wrangling", "input_fields", "output_fields", "join", "plot_spec"}
+            if not schema_id or role not in branchable_roles:
                 return ui.div(
                     ui.tags.small(
-                        "Select a forkable node (data schema, join, or plot) in the TubeMap.",
+                        "Select a branchable node (data schema, assembly, or plot) "
+                        "in the TubeMap to split its lineage.",
                         class_="text-muted",
                     ),
                     class_="p-2",
                 )
             return ui.div(
                 ui.tags.small(
-                    f"Fork: {schema_id} ({role})",
+                    f"Branch: {schema_id} ({role}) — shares upstream, diverges downstream",
                     class_="text-muted d-block mb-2",
                 ),
                 ui.input_text(
-                    "bp_fork_new_id",
-                    "New component ID",
-                    value=f"{schema_id}_fork",
+                    "bp_branch_new_id",
+                    "New branch ID",
+                    value=f"{schema_id}_v2",
                     placeholder="snake_case_id",
                     width="100%",
                 ),
                 ui.div(
                     ui.input_action_button(
-                        "btn_bp_fork_preview",
-                        "Preview YAML",
+                        "btn_bp_branch_preview",
+                        "Preview branch",
                         class_="btn btn-primary btn-sm",
                     ),
                     ui.input_action_button(
-                        "btn_bp_fork_write",
-                        "Write to manifest",
+                        "btn_bp_branch_write",
+                        "Create branch",
                         class_="btn btn-warning btn-sm ms-2",
                     ),
                     class_="d-flex mt-2",
                 ),
-                ui.output_ui("bp_fork_preview_ui"),
+                ui.output_ui("bp_branch_preview_ui"),
                 class_="p-2",
             )
 
         @output
         @render.ui
-        def bp_fork_preview_ui():
-            """Shows generated fork YAML — reads _fork_preview_text only (Rule R4)."""
-            text = _fork_preview_text.get()
-            if not text:
+        def bp_branch_preview_ui():
+            """Shows the planned branch — reads _branch_plan only (Rule R4)."""
+            plan = _branch_plan.get()
+            if not plan:
                 return ui.div()
+            if not plan.get("ok"):
+                return ui.div(
+                    ui.tags.small(plan.get("error", "Cannot branch this node."),
+                                  class_="text-danger d-block mt-2"),
+                )
+            frags = "\n".join(
+                f"  + {f['rel_include']}  (empty)" for f in plan.get("fragments", [])
+            )
+            preview = plan.get("summary", "") + "\n\nNew fragment files:\n" + frags
             return ui.div(
                 ui.tags.pre(
-                    text,
+                    preview,
                     class_="bp-escape-pre mt-2",
                     style="max-height:220px;overflow-y:auto;font-size:0.78rem;",
                 ),
                 ui.tags.small(
-                    "Review, then click 'Write to manifest' or paste manually.",
+                    "Shared upstream is referenced by !include (no recompute). "
+                    "Click 'Create branch' to write the fragments and wire them in.",
                     class_="text-muted d-block mt-1",
                 ),
             )
 
         @reactive.Effect
-        @reactive.event(input.btn_bp_fork_preview)
-        def _handle_fork_preview():
-            """Generate fork YAML from generate_fork_yaml() and cache in _fork_preview_text."""
+        @reactive.event(input.btn_bp_branch_preview)
+        def _handle_branch_preview():
+            """Plan a node-level branch via generate_branch_plan() and cache it."""
             info = wrangle_studio.active_component_info.get() if wrangle_studio else {}
             schema_id = info.get("schema_id", "")
             role = info.get("role", "")
@@ -1471,69 +1507,54 @@ def define_server(input, output, session, *,
                 ui.notification_show("No component selected.", type="warning")
                 return
             try:
-                new_id = (input.bp_fork_new_id() or "").strip()
+                new_id = (input.bp_branch_new_id() or "").strip()
             except Exception:
                 new_id = ""
             if not new_id:
-                ui.notification_show("Enter a new component ID first.", type="warning")
+                ui.notification_show("Enter a new branch ID first.", type="warning")
                 return
-            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", new_id):
-                ui.notification_show(
-                    "New ID must be snake_case (letters, digits, underscores only).",
-                    type="warning",
-                )
-                return
-            if active_cfg is None:
-                ui.notification_show("No active manifest configuration.", type="warning")
-                return
-            try:
-                cfg = active_cfg()
-                raw_config = cfg.raw_config
-            except Exception as exc:
-                ui.notification_show(f"Cannot read manifest config: {exc}", type="error")
-                return
-            fork_text = generate_fork_yaml(schema_id, role, new_id, raw_config)
-            if not fork_text:
-                ui.notification_show(
-                    f"Could not generate fork for role '{role}' / id '{schema_id}'. "
-                    "Ensure the manifest is loaded and the node is forkable.",
-                    type="warning",
-                )
-                _fork_preview_text.set("")
-                return
-            _fork_preview_text.set(fork_text)
+            master_path = (
+                (wrangle_studio.active_manifest_path.get() if wrangle_studio else "")
+                or safe_input(input, "stored_manifest_selector", None) or ""
+            )
+            plan = generate_branch_plan(master_path, schema_id, role, new_id)
+            _branch_plan.set(plan)
+            if not plan.get("ok"):
+                ui.notification_show(plan.get("error", "Cannot branch this node."),
+                                     type="warning", duration=8)
 
         @reactive.Effect
-        @reactive.event(input.btn_bp_fork_write)
-        def _handle_fork_write():
-            """Write cached fork YAML to the active manifest file (inline manifests only)."""
-            fork_text = _fork_preview_text.get()
-            if not fork_text:
+        @reactive.event(input.btn_bp_branch_write)
+        def _handle_branch_write():
+            """Write the planned branch to disk (fragments + master), then reload the TubeMap."""
+            plan = _branch_plan.get()
+            if not plan or not plan.get("ok"):
                 ui.notification_show(
-                    "Generate a preview first before writing.", type="warning"
+                    "Preview a valid branch first before creating it.", type="warning"
                 )
                 return
-            master_path = safe_input(input, "stored_manifest_selector", None)
-            success, msg = _write_fork_to_manifest(master_path or "", fork_text)
+            success, msg = _write_branch_plan(plan)
             if success:
-                ui.notification_show(msg, type="message", duration=5)
-                _fork_preview_text.set("")
-                # Re-load sibling map so new node appears in the TubeMap
+                ui.notification_show(msg, type="message", duration=6)
+                _branch_plan.set({})
+                # Reload sibling map so the new branch node appears in the TubeMap.
+                master_path = (
+                    (wrangle_studio.active_manifest_path.get() if wrangle_studio else "")
+                    or safe_input(input, "stored_manifest_selector", None) or ""
+                )
                 try:
-                    ctx_map = build_sibling_map(master_path)
-                    component_ctx_map.set(ctx_map)
+                    component_ctx_map.set(build_sibling_map(master_path))
                 except Exception:
                     pass
             else:
                 ui.notification_show(msg, type="warning", duration=8)
 
         @reactive.Effect
-        def _clear_fork_preview_on_node_change():
-            """Clear stale fork preview when the selected TubeMap node changes (Rule R3 idempotent guard)."""
+        def _clear_branch_preview_on_node_change():
+            """Clear a stale branch plan when the selected TubeMap node changes (Rule R3 idempotent guard)."""
             _ = wrangle_studio.active_component_info.get()  # subscribe
-            cur = _fork_preview_text.get()
-            if cur:  # idempotent guard — only write when a clear is actually needed
-                _fork_preview_text.set("")
+            if _branch_plan.get():  # idempotent guard — only clear when needed
+                _branch_plan.set({})
 
     # ── Blueprint AI Agent (ADR-076) ─────────────────────────────────────────
 

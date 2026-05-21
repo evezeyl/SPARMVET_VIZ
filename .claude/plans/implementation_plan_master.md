@@ -268,7 +268,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 - [x] Clickable Cytoscape DAG nodes driving the Lineage Rail — **DONE** (implemented with Cytoscape + dagre, not Mermaid/SVG; `cy_tubemap` canvas, `initCyTubeMap` JS, node tap → lineage rail update).
 - [ ] Action Registry parity in IDE forms — form UI infrastructure is done (`schema_registry.py`, `_render_action_form`, `bp_action_form_ui`); only ~20 of 65 registered actions have `ui_schema` metadata. Remaining ~45 actions need `ui_schema` added to their `@register_action` decorator before they appear in the Blueprint form picker.
-- [x] Visual Forking: select node → initiate new branch → produce YAML additions. **DONE** (BP-VISUAL-FORK-1, 2026-05-11 — `generate_fork_yaml()` in `manifest_navigator.py`; fork UI in `blueprint_handlers.py`; "Fork Node" card in Blueprint right sidebar; gated on `manifest_edit_enabled`).
+- [x] Branch (node-level lineage bifurcation): select node → split lineage, shared upstream by `!include`, divergent downstream as new fragments. **DONE** (BP-BRANCH-NODE-1, 2026-05-21, ADR-082 Q3 — `generate_branch_plan()` in `manifest_navigator.py`; Branch UI in `blueprint_handlers.py`; "Branch Node" card; gated on `manifest_edit_enabled`; works WITH `!include` manifests). Supersedes the 2026-05-11 Visual Fork (`generate_fork_yaml`, append-into-manifest, refused `!include` manifests).
 
 ---
 

@@ -28,9 +28,11 @@ get_plot_ids_in_group(group_id, manifest_path)
     Forward trace: all plot IDs declared under analysis_groups[group_id].
     Used by export scope resolution (ADR-074).
 
-generate_fork_yaml(schema_id, role, new_id, raw_config)
-    Generate a YAML fragment for forking a manifest component.
-    Used by the Blueprint Architect Visual Fork feature (BP-VISUAL-FORK-1).
+generate_branch_plan(master_path, schema_id, role, new_id)
+    Plan a node-level lineage bifurcation: shared upstream by !include reuse,
+    divergent downstream as new empty fragment files wired into the master.
+    Used by the Blueprint Architect Branch Node feature (BP-BRANCH-NODE-1,
+    ADR-082 Q3). Replaces the legacy append-into-manifest Visual Fork.
 
 Constraints (Two-Category Law — ADR-045)
 -----------------------------------------
@@ -43,11 +45,12 @@ Constraints (Two-Category Law — ADR-045)
 from __future__ import annotations
 
 # @deps
-# provides: function:build_sibling_map, function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_fork_yaml
+# provides: function:build_sibling_map, function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)
 # consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-074
 # @end_deps
 
+import re
 from pathlib import Path
 
 import yaml
@@ -774,89 +777,279 @@ def build_plot_lineage(plot_id: str, manifest_path: str) -> list[dict]:
     return steps
 
 
-def generate_fork_yaml(
+# ── BP-BRANCH-NODE-1: node-level lineage bifurcation (ADR-082 Q3) ───────────────
+
+_INC_MARK = "\x00INC\x00"
+
+
+def _load_captured(raw: str):
+    """Load YAML capturing every !include target as a marked string (non-resolving)."""
+    class _CapLoader(yaml.SafeLoader):
+        pass
+
+    def _capture(loader, node):
+        return f"{_INC_MARK}{loader.construct_scalar(node)}"
+
+    _CapLoader.add_constructor("!include", _capture)
+    return yaml.load(raw, Loader=_CapLoader)  # noqa: S506 – controlled loader
+
+
+def _inc_path(val):
+    """Return the !include rel-path if val is a captured marker, else None."""
+    if isinstance(val, str) and val.startswith(_INC_MARK):
+        return val[len(_INC_MARK):]
+    return None
+
+
+def _render_block_key(key: str, value, indent: int) -> str:
+    """yaml.dump {key: value} and re-indent every line by `indent` spaces."""
+    pad = " " * indent
+    dumped = yaml.dump(
+        {key: value}, default_flow_style=False, sort_keys=False, allow_unicode=True
+    ).rstrip("\n")
+    return "\n".join((pad + line) if line else line for line in dumped.split("\n"))
+
+
+def _insert_after_top_level_anchor(raw: str, anchor: str, block_text: str) -> str | None:
+    """Insert block_text immediately after a top-level key line `anchor` (col 0)."""
+    lines = raw.split("\n")
+    for i, line in enumerate(lines):
+        if line.rstrip() == anchor and not line.startswith((" ", "\t")):
+            return "\n".join(lines[:i + 1] + block_text.split("\n") + lines[i + 1:])
+    return None
+
+
+def _insert_into_group_plots(raw: str, group_id: str, block_text: str) -> str | None:
+    """Insert block_text after the `plots:` line nested under `  <group_id>:`."""
+    lines = raw.split("\n")
+    in_group = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        # group header at indent 2
+        if line.startswith("  ") and not line.startswith("   ") and stripped == f"{group_id}:":
+            in_group = True
+            continue
+        if in_group:
+            # a new indent-2 sibling ends the group before we found plots:
+            if line.startswith("  ") and not line.startswith("   ") and stripped.endswith(":"):
+                if stripped != "plots:":
+                    return None
+            if stripped == "plots:":
+                return "\n".join(lines[:i + 1] + block_text.split("\n") + lines[i + 1:])
+    return None
+
+
+def _branch_error(msg: str) -> dict:
+    return {"ok": False, "error": msg, "summary": "",
+            "new_master_text": "", "fragments": []}
+
+
+def generate_branch_plan(
+    master_path: str,
     schema_id: str,
     role: str,
     new_id: str,
-    raw_config: dict,
-) -> str:
-    """Return a YAML fragment that adds a forked copy of schema_id to the manifest.
+) -> dict:
+    """Plan a node-level lineage bifurcation (ADR-082 Q3 / BP-BRANCH-NODE-1).
 
-    The fragment targets the same top-level section as the original node.
-    Forkable roles and target sections:
+    Splits one lineage in two AT the selected node: everything upstream stays
+    SHARED (reused by the same !include reference, or copied inline for small
+    mappings like source/ingredients), and the divergent downstream is written
+    as NEW empty fragment files wired into the master via fresh !include keys.
+    This is the Bifurcation Point Rule (rules_data_engine.md) made interactive —
+    the canonical example is Summary / Summary_quality (shared input_fields,
+    divergent wrangling + output_fields).
 
-      wrangling / input_fields / output_fields
-          → data_schemas (primary) or additional_datasets_schemas (fallback)
-          Fork copies the source block and resets wrangling to empty tier1/tier2.
+    Returns:
+      {
+        "ok": bool,
+        "error": str,                # populated when ok is False
+        "summary": str,              # human description for a notification
+        "new_master_text": str,      # full master YAML with the branch inserted
+        "fragments": [               # NEW empty fragment files to create on disk
+            {"abs_path": str, "rel_include": str, "content": str}, ...
+        ],
+      }
 
-      join
-          → join_manifests
-          Fork copies ingredients list and resets recipe + final_contract.
+    Role handling (the selected node's role decides what is shared vs divergent):
+      wrangling / input_fields / output_fields  → branch a data_schema:
+          SHARED  : source (copied inline), input_fields (!include reused)
+          DIVERGE : new wrangling fragment (tier1: []/tier2: []) + new empty
+                    output_fields fragment ({})
+      join                                       → branch an assembly:
+          SHARED  : ingredients (copied inline)
+          DIVERGE : new recipe fragment ([]) + new output_fields fragment ({})
+      plot_spec                                  → branch a plot (leaf node):
+          SHARED  : target_dataset (carried inside the copied spec)
+          SEED    : a COPY of the original spec under new_id — a plot is a leaf,
+                    the whole spec is the branch unit, and an empty plot cannot
+                    render. (Distinct from the empty-seed rule for data_schemas.)
 
-      plot_spec
-          → analysis_groups.<group_id>.plots
-          Fork copies the spec dict under a new plot_id with a derived label.
-
-    Returns an empty string when schema_id is not found or the role is not
-    forkable (e.g., data_source, unknown).
-
-    Designed to be pasted into the manifest YAML or written via
-    _write_fork_to_manifest() in blueprint_handlers.py.
+    Pure (no Shiny). Reads master_path with a non-resolving loader so !include
+    references survive as strings, then performs a text-level insertion that
+    preserves all existing !include tags untouched.
     """
-    block: dict = {}
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", new_id or ""):
+        return _branch_error("New ID must be snake_case (letters, digits, underscores only).")
 
+    mp = Path(master_path)
+    if not master_path or not mp.exists():
+        return _branch_error("Master manifest not found.")
+
+    try:
+        raw = mp.read_text(encoding="utf-8")
+        tree = _load_captured(raw)
+    except Exception as exc:
+        return _branch_error(f"Cannot read manifest: {exc}")
+    if not isinstance(tree, dict):
+        return _branch_error("Manifest is not a valid YAML mapping.")
+
+    master_dir = mp.parent
+    basename = mp.stem
+
+    # ── data_schema branch ──────────────────────────────────────────────────
     if role in ("wrangling", "input_fields", "output_fields"):
-        for section in ("data_schemas", "additional_datasets_schemas"):
-            schema = (raw_config.get(section) or {}).get(schema_id)
-            if isinstance(schema, dict):
-                block = {
-                    section: {
-                        new_id: {
-                            "source": dict(schema.get("source") or {}),
-                            "input_fields": {},
-                            "wrangling": {"tier1": [], "tier2": []},
-                            "output_fields": {},
-                        }
-                    }
-                }
+        section = None
+        block = None
+        for sec in ("data_schemas", "additional_datasets_schemas"):
+            d = tree.get(sec) or {}
+            if schema_id in d and isinstance(d[schema_id], dict):
+                section, block = sec, d[schema_id]
                 break
+        if block is None:
+            return _branch_error(f"Data schema '{schema_id}' not found.")
+        if new_id in (tree.get(section) or {}):
+            return _branch_error(f"ID '{new_id}' already exists in {section}.")
 
-    elif role == "join":
-        join_def = (raw_config.get("join_manifests") or {}).get(schema_id)
-        if isinstance(join_def, dict):
-            block = {
-                "join_manifests": {
-                    new_id: {
-                        "ingredients": list(join_def.get("ingredients") or []),
-                        "recipe": [],
-                        "final_contract": {},
-                    }
-                }
-            }
+        wrn_rel = f"{basename}/wrangling/{new_id}_wrangling.yaml"
+        out_rel = f"{basename}/output_fields/{new_id}_output_fields.yaml"
 
-    elif role == "plot_spec":
-        for grp_id, grp_val in (raw_config.get("analysis_groups") or {}).items():
-            if not isinstance(grp_val, dict):
+        lines = [f"  {new_id}:"]
+        source = block.get("source")
+        if source not in (None, {}, []):
+            lines.append(_render_block_key("source", source, indent=4))
+
+        inp_raw = block.get("input_fields")
+        inp_inc = _inc_path(inp_raw)
+        if inp_inc:
+            lines.append(f"    input_fields: !include '{inp_inc}'")
+        elif inp_raw not in (None, {}, []):
+            lines.append(_render_block_key("input_fields", inp_raw, indent=4))
+        else:
+            lines.append("    input_fields: {}")
+
+        lines.append(f"    wrangling: !include '{wrn_rel}'")
+        lines.append(f"    output_fields: !include '{out_rel}'")
+        block_text = "\n".join(lines)
+
+        new_master = _insert_after_top_level_anchor(raw, f"{section}:", block_text)
+        if new_master is None:
+            return _branch_error(f"Could not locate '{section}:' in the manifest.")
+
+        return {
+            "ok": True, "error": "",
+            "summary": (f"Branched {schema_id} -> {new_id}: shares source + "
+                        "input_fields; new empty wrangling + output_fields."),
+            "new_master_text": new_master,
+            "fragments": [
+                {"abs_path": str(master_dir / wrn_rel), "rel_include": wrn_rel,
+                 "content": "tier1: []\ntier2: []\n"},
+                {"abs_path": str(master_dir / out_rel), "rel_include": out_rel,
+                 "content": "{}\n"},
+            ],
+        }
+
+    # ── join / assembly branch ──────────────────────────────────────────────
+    if role == "join":
+        join_def = (tree.get("join_manifests") or {}).get(schema_id)
+        if not isinstance(join_def, dict):
+            return _branch_error(f"Assembly '{schema_id}' not found in join_manifests.")
+        if new_id in (tree.get("join_manifests") or {}):
+            return _branch_error(f"ID '{new_id}' already exists in join_manifests.")
+
+        rec_rel = f"{basename}/assembly/{new_id}_assembly.yaml"
+        out_rel = f"{basename}/assembly/{new_id}_assembly_output_fields.yaml"
+
+        lines = [f"  {new_id}:"]
+        ingredients = join_def.get("ingredients")
+        if ingredients not in (None, {}, []):
+            lines.append(_render_block_key("ingredients", ingredients, indent=4))
+        lines.append(f"    recipe: !include '{rec_rel}'")
+        lines.append(f"    output_fields: !include '{out_rel}'")
+        block_text = "\n".join(lines)
+
+        new_master = _insert_after_top_level_anchor(raw, "join_manifests:", block_text)
+        if new_master is None:
+            return _branch_error("Could not locate 'join_manifests:' in the manifest.")
+
+        return {
+            "ok": True, "error": "",
+            "summary": (f"Branched assembly {schema_id} -> {new_id}: shares "
+                        "ingredients; new empty recipe + output_fields."),
+            "new_master_text": new_master,
+            "fragments": [
+                {"abs_path": str(master_dir / rec_rel), "rel_include": rec_rel,
+                 "content": "[]\n"},
+                {"abs_path": str(master_dir / out_rel), "rel_include": out_rel,
+                 "content": "{}\n"},
+            ],
+        }
+
+    # ── plot_spec branch (leaf duplication, shares target_dataset) ───────────
+    if role == "plot_spec":
+        group_id = None
+        plot_def = None
+        for gid, gval in (tree.get("analysis_groups") or {}).items():
+            if not isinstance(gval, dict):
                 continue
-            plots = grp_val.get("plots") or {}
-            if schema_id not in plots:
-                continue
-            plot_def = plots[schema_id]
-            spec = (plot_def.get("spec") or {}) if isinstance(plot_def, dict) else {}
-            block = {
-                "analysis_groups": {
-                    grp_id: {
-                        "plots": {
-                            new_id: {
-                                "label": new_id.replace("_", " ").title(),
-                                "spec": dict(spec) if isinstance(spec, dict) else {},
-                            }
-                        }
-                    }
-                }
-            }
-            break
+            plots = gval.get("plots") or {}
+            if schema_id in plots and isinstance(plots[schema_id], dict):
+                group_id, plot_def = gid, plots[schema_id]
+                break
+        if plot_def is None:
+            return _branch_error(f"Plot '{schema_id}' not found in any analysis_group.")
+        if new_id in (((tree.get("analysis_groups") or {}).get(group_id) or {}).get("plots") or {}):
+            return _branch_error(f"Plot ID '{new_id}' already exists in group '{group_id}'.")
 
-    if not block:
-        return ""
-    return yaml.dump(block, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        spec_rel = f"{basename}/plots/{new_id}.yaml"
+
+        # Seed the new plot fragment with a COPY of the original spec content.
+        spec_raw = plot_def.get("spec")
+        spec_inc = _inc_path(spec_raw)
+        if spec_inc:
+            try:
+                src_spec_text = (master_dir / spec_inc).read_text(encoding="utf-8")
+            except Exception as exc:
+                return _branch_error(f"Cannot read source plot spec '{spec_inc}': {exc}")
+        elif isinstance(spec_raw, dict) and spec_raw:
+            src_spec_text = yaml.dump(
+                {"spec": spec_raw}, default_flow_style=False, sort_keys=False,
+                allow_unicode=True)
+        else:
+            return _branch_error(f"Plot '{schema_id}' has no usable spec to branch.")
+
+        label = (plot_def.get("label") or new_id.replace("_", " ").title())
+        block_text = "\n".join([
+            f"      {new_id}:",
+            f"        label: \"{label} (branch)\"",
+            f"        spec: !include '{spec_rel}'",
+        ])
+
+        new_master = _insert_into_group_plots(raw, group_id, block_text)
+        if new_master is None:
+            return _branch_error(
+                f"Could not locate the 'plots:' block under group '{group_id}'.")
+
+        return {
+            "ok": True, "error": "",
+            "summary": (f"Branched plot {schema_id} -> {new_id} in group "
+                        f"'{group_id}': shares target_dataset (spec copied)."),
+            "new_master_text": new_master,
+            "fragments": [
+                {"abs_path": str(master_dir / spec_rel), "rel_include": spec_rel,
+                 "content": src_spec_text},
+            ],
+        }
+
+    return _branch_error(
+        f"Role '{role}' is not branchable. Select a data schema, assembly, or plot node.")

@@ -1458,15 +1458,15 @@ def define_server(input, output, session, *,
                     class_="mb-2 shadow-sm border-0"
                 ),
             ]
-            # BP-VISUAL-FORK-1: Fork Node card (manifest_edit_enabled only)
+            # BP-BRANCH-NODE-1: Branch Node card (manifest_edit_enabled only)
             if bootloader.is_enabled("manifest_edit_enabled"):
                 parts.append(
                     ui.card(
                         ui.card_header(
-                            ui.div(ui.h5("Fork Node", class_="mb-0"),
+                            ui.div(ui.h5("Branch Node", class_="mb-0"),
                                    class_="d-flex justify-content-center w-100")
                         ),
-                        ui.output_ui("bp_fork_ui"),
+                        ui.output_ui("bp_branch_ui"),
                         class_="mb-2 shadow-sm border-0"
                     )
                 )
