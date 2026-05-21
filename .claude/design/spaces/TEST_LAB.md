@@ -294,7 +294,7 @@ SUGGEST SEQUENCE:
 
 RATIONALE: Start easy, build pattern understanding, tackle hardest last.
 ```
-
+#TODO - Well we have to consider - if exact match its a fast review so yeah ok - but maybe a warning about complex transformation detected between tables osv - extraction in this case as your example is not so complex... but then if seems really complex would a message telling the user maybe to clean the format before could be preferable ? or not ? 
 ---
 
 ## Manifest Scaffolding — Primary Key Selection & Recipe Integration
@@ -305,7 +305,7 @@ After ID reconciliation is complete and user has verified matches, the scaffoldi
 
 ```
 1. User identifies primary keys in input_fields
-   - For each file/schema, which columns are the join keys?
+   - For each file/schema, which columns are the join keys? #TODO --- the joints will not be defined in the boilerplate but by primary key field at first but its important to ensure that the ones that will be selected and joined in after in the bluerprint
    - E.g., metadata_schema → sample_id
    - E.g., amr_schema → sample_id
    - User confirms these are unique (or will become unique after cleaning)
@@ -330,7 +330,7 @@ After ID reconciliation is complete and user has verified matches, the scaffoldi
 ```
 
 ### Example Boilerplate Manifest (with recipes baked in)
-
+#TODO does this example conform with our way of doing schema ? if so very good, just would like a check, I like it like that
 ```yaml
 info:
   id: sample_amr_pipeline
@@ -428,11 +428,11 @@ output_fields:
 ### Design Decisions Locked
 
 **Q1: ID Mapping & Reversibility** → **Scenario B (Reversible with Access Control)**
-- Store original_id → anon_id mapping (YAML file)
-- Access-controlled: admin/researcher/specific users can deidentify
-- User/role who performs anonymisation decides access level
+- Store original_id → anon_id mapping (YAML file) #TODO no we decided tsv file
+- Access-controlled: admin/researcher/specific users can deidentify #TODO no this is controled by access or will be dealt afterwards - we have no admin system but we could think of one as enhancements
+- User/role who performs anonymisation decides access level #TODO see above
 
-**Q2: Access Control** → **By User Role**
+**Q2: Access Control** → **By User Role** #TODO see aboive - right now think about one person choosen to do the anonymization that will share the anonymized data with another and keep the tsv with identities for herself
 - Admin: sees original data + mapping
 - Researcher (if authorized): sees anonymised data + mapping
 - Public/Other: sees anonymised data only, no mapping

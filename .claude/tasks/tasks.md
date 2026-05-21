@@ -42,7 +42,7 @@ Items with no blockers — can be started immediately.
 - [x] **BP-ESCAPE-1** `[sonnet/medium]`: YAML escape hatch — read-only when `blueprint_enabled`; editable when `manifest_edit_enabled`. Implemented (`bp_save_yaml_hatch`). *Functional smoke pending → BP-SMOKE-1.*
 - [x] **BP-UNDO-1** `[sonnet/medium]`: 20-step session undo deque (`_snapshot_state`/`_undo`). Implemented.
 - [x] **BP-HELP-1** `[sonnet/medium]`: `__doc__` resolution via `importlib` + docstring block + optional `doc_url`. Implemented (`bp_help_panel_ui`, `_resolve_action_doc`). *Functional smoke pending → BP-SMOKE-1.*
-- [ ] **ACTION-RENAME-1** `[haiku/low]`: `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag. Spec: implementation plan §Phase 32, step 32-J.
+- [x] **ACTION-RENAME-1** `[haiku/low]`: `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag. Spec: implementation plan §Phase 32, step 32-J. **DONE** (shipped `fa5a78d`; verified: --inventory lists 140 files, --dry-run finds `filter_rows` stale usage in beeswarm_sina gallery, --apply works).
 
 ### Phase 32 (cont.) — ADR-082 spawned tasks (BLUEPRINT feature set)
 
