@@ -220,6 +220,14 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 
 - [ ] **ADR-045-ANCHOR-SET-1** `[sonnet/medium]` `[adr-violation]`: `app/handlers/home_theater.py` — `anchor_path.set(str(out_path))` is called inside `@render.ui dynamic_tabs()`, violating ADR-045 Rule R1 (renders must be read-only). Extract to a dedicated `@reactive.Effect` with idempotent guard: `if anchor_path.get() != str(out_path): anchor_path.set(str(out_path))`. Audit report: `.claude/logs/audits/audit_adr_compliance_2026-05-21.md`.
 
+- [ ] **VIZFAC-SUITE-TIMEOUT-1** `[sonnet/low]` `[test-infra]`: `viz_factory` integrity suite exceeds 300s audit timeout. The suite runs `debug_runner.py` as a subprocess per registered component (168+), rendering a PNG for each — inherently slow. Options: (1) increase audit script timeout to 600s, (2) add `--fast` flag that skips PNG rendering and only validates registry/manifest parsing, (3) split into fast (registry) + slow (render) suites. Audit report: `.claude/logs/audits/audit_library_tests_2026-05-21.md`.
+
+- [ ] **DOC-SYNC-PLATFORM-1** `[haiku/low]` `[doc-sync]`: `docs/vision/platform_evolution.qmd` line 115 references `docs/vision/gallery.qmd` as a planned document — file does not exist. Either create a stub or mark the table entry as `[PLANNED]`. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
+
+- [ ] **DOC-SYNC-TESTING-1** `[haiku/low]` `[doc-sync]`: `docs/reference/testing.qmd` line 65 references `assets/scripts/create_test_data.py` which does not exist. The synthetic data tool is now AquaSynthesizer (`libs/test_lab/src/test_lab/aqua_synthesizer.py`, Phase 34). Update the doc to reference the correct tool and path. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
+
+- [ ] **PERSONA-DATAIMPORT-FLAG-DOC-1** `[haiku/low]` `[doc-sync]`: `data_import_panel_visible` is declared in all 8 persona templates but is absent from `rules_persona_feature_flags.md`. Determine: is this superseded by ADR-073 sidebar slot registry (which handles panel visibility declaratively)? If yes, add a note to the rules file and flag it as superseded. If still active, add it to the flag matrix. Audit report: `.claude/logs/audits/audit_persona_consistency_2026-05-21.md`.
+
 - [ ] **DOC-BLUEPRINT-PANELS-1** `[haiku/low]` `[doc-sync]`: `docs/user_guide/blueprint_manifest_authoring.qmd` — Blueprint IDE panel table is missing "Master Manifest" and "External Exchange" panels; "YAML" should be "YAML Escape Hatch". Verify against `app/handlers/blueprint_handlers.py` blueprint panel construction code before fixing. Audit report: `.claude/logs/audits/audit_doc_sync_2026-05-21.md`.
 
 - [ ] **REPO-CLEAN-1** `[haiku/low]` `[repo-hygiene]`: Full git history purge — remove EVE_WORK/, session logs, .vscode user files from ALL past commits. Prerequisite: backup to external disc + gdrive sync.

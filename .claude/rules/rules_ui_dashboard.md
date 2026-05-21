@@ -2,7 +2,7 @@
 trigger: always_on
 deps:
   provides: [rule:ui_orchestration, rule:theatre_layout, rule:sidebar_law]
-  documents: [app/handlers/home_theater.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, libs/utils/src/utils/blueprint_mapper.py]
+  documents: [app/handlers/home_theater.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py]
   consumed_by: [.claude/knowledge/dependency_index.md]
 ---
 

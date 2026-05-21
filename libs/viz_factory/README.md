@@ -187,7 +187,7 @@ Verifies every registered component imports correctly, accepts realistic specs, 
 ```
 
 Test modules:
-- `tests/test_deco2_components.py` — DECO-2 wrappers (38 cases)
+- `libs/viz_factory/tests/test_deco2_components.py` — DECO-2 wrappers (38 cases)
 
 ### 2. Integrity suite — end-to-end PNG materialisation
 

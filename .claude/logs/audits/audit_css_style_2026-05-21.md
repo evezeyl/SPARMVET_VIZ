@@ -1,3 +1,4 @@
+Status: PROCESSED
 # Audit Report: CSS Design Token Compliance
 Generated: 2026-05-21T16:09:44
 Scanned: config/ui/theme.css
