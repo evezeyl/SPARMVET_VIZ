@@ -14,13 +14,13 @@ from typing import Dict, List, Optional
 
 # ── Cytoscape node/edge colours ───────────────────────────────────────────────
 _CY_COLOURS = {
-    "trunk":   {"bg": "#0d6efd", "border": "#0a58ca", "text": "#ffffff"},
+    "trunk":   {"bg": "#345beb", "border": "#2a4bc4", "text": "#ffffff"},
     "add":     {"bg": "#6c757d", "border": "#495057", "text": "#ffffff"},
     "meta":    {"bg": "#fd7e14", "border": "#dc6a0d", "text": "#ffffff"},
     "wrangle": {"bg": "#ffc107", "border": "#e0a800", "text": "#212529"},
     "branch":  {"bg": "#9c27b0", "border": "#7b1fa2", "text": "#ffffff"},
-    "plot":    {"bg": "#198754", "border": "#146c43", "text": "#ffffff"},
-    "info":    {"bg": "#e3f2fd", "border": "#1976d2", "text": "#1a1a1a"},
+    "plot":    {"bg": "#10a395", "border": "#0d8a7e", "text": "#ffffff"},
+    "info":    {"bg": "#eef0fb", "border": "#345beb", "text": "#1a1a1a"},
 }
 
 # Each tier maps to a numeric rank used by dagre for lane ordering (LR layout)
@@ -244,13 +244,13 @@ class BlueprintMapper:
         lines = [
             "graph LR",
             "%% Styling",
-            "classDef trunk   fill:#0d6efd,stroke:#fff,stroke-width:2px,color:#fff",
+            "classDef trunk   fill:#345beb,stroke:#fff,stroke-width:2px,color:#fff",
             "classDef add     fill:#6c757d,stroke:#fff,stroke-width:2px,color:#fff",
             "classDef meta    fill:#fd7e14,stroke:#fff,stroke-width:2px,color:#fff",
             "classDef wrangle fill:#ffc107,stroke:#555,stroke-width:1px,color:#212529",
             "classDef branch  fill:#9c27b0,stroke:#fff,stroke-width:2px,color:#fff",
-            "classDef plot    fill:#198754,stroke:#fff,stroke-width:2px,color:#fff",
-            "classDef info    fill:#e3f2fd,stroke:#1976d2,stroke-width:1px,color:#1a1a1a",
+            "classDef plot    fill:#10a395,stroke:#fff,stroke-width:2px,color:#fff",
+            "classDef info    fill:#eef0fb,stroke:#345beb,stroke-width:1px,color:#1a1a1a",
             "classDef activeNode stroke:#212529,stroke-width:4px,stroke-dasharray:5 5",
             "%% Nodes",
         ]

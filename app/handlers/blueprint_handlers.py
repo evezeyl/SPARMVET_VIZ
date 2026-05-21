@@ -20,6 +20,8 @@ from __future__ import annotations
 # provides: helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts manifest rebuild logic so CRUD Effects can call it after mutations)
 # provides: output:bp_meta_form_ui, effect:_handle_meta_save (BP-META-1 — manifest info: block read/edit form)
 # provides: effects:_handle_new_manifest_btn/_handle_new_manifest_submit (BP-NEW-1 — create manifest from scratch)
+# provides: output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — manifest coherence validation via subprocess)
+# provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — manifest-draft ghost save/restore)
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
@@ -37,9 +39,11 @@ from __future__ import annotations
 # @end_deps
 
 import asyncio
+import hashlib
 import io
 import json
 import re
+import subprocess
 import uuid
 import zipfile
 from collections import deque
@@ -73,6 +77,61 @@ from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from utils.config_loader import ConfigManager
 from utils.pipeline_error import PipelineError
+
+
+# ── BP-AUTOSAVE-1: pure draft ghost helpers ───────────────────────────────────
+
+def _draft_key(manifest_path: str) -> str:
+    """Filesystem-safe key for a manifest's draft ghost file."""
+    stem = Path(manifest_path).stem
+    h = hashlib.sha256(manifest_path.encode()).hexdigest()[:12]
+    return f"{h}_{stem}"
+
+
+def _write_bp_draft(
+    draft_dir: Path,
+    manifest_path: str,
+    logic_stack: list,
+    undo_list: list,
+) -> None:
+    """Atomically write the blueprint draft ghost to disk.
+
+    Uses a .tmp file + rename to avoid partial reads.
+    """
+    try:
+        draft_dir.mkdir(parents=True, exist_ok=True)
+        key = _draft_key(manifest_path)
+        manifest_sha = hashlib.sha256(
+            Path(manifest_path).read_bytes()
+        ).hexdigest()
+        data = {
+            "manifest_path": manifest_path,
+            "manifest_sha256": manifest_sha,
+            "saved_at": datetime.now().isoformat(timespec="seconds"),
+            "logic_stack": logic_stack,
+            "undo_stack": undo_list,
+        }
+        tmp = draft_dir / f"{key}.tmp"
+        tmp.write_text(json.dumps(data, default=str), encoding="utf-8")
+        tmp.rename(draft_dir / f"{key}.json")
+    except Exception as e:
+        print(f"[BP-AUTOSAVE] write failed: {e}")
+
+
+def _read_bp_draft(draft_dir: Path, manifest_path: str) -> dict | None:
+    """Read a blueprint draft; returns None if absent or if manifest SHA256 changed."""
+    try:
+        key = _draft_key(manifest_path)
+        draft_file = draft_dir / f"{key}.json"
+        if not draft_file.exists():
+            return None
+        data = json.loads(draft_file.read_text(encoding="utf-8"))
+        current_sha = hashlib.sha256(Path(manifest_path).read_bytes()).hexdigest()
+        if data.get("manifest_sha256") != current_sha:
+            return None
+        return data
+    except Exception:
+        return None
 
 
 def define_server(input, output, session, *,
@@ -110,6 +169,30 @@ def define_server(input, output, session, *,
     # BP-GROUPS-1: group/plot CRUD local state
     _groups_refresh: reactive.Value = reactive.Value(0)   # bumped after every CRUD mutation
     _grp_modal_ctx: reactive.Value = reactive.Value({})   # transient context for open modals
+
+    # BP-VALIDATE-1: last validation result {pass, checks, violations, raw_text}
+    _validate_result: reactive.Value = reactive.Value(None)
+
+    # BP-AUTOSAVE-1: manifest-draft ghost save
+    _ghost_enabled = bootloader.get_automation_setting("ghost_save", "enabled") is not False
+    _draft_dir = bootloader.get_location("user_sessions") / "_blueprint_drafts"
+    _draft_save_time: reactive.Value[str] = reactive.Value("")
+
+    @reactive.Effect
+    def _autosave_blueprint_draft():
+        """Write active logic_stack to a draft ghost on every stack change. BP-AUTOSAVE-1.
+
+        Gated on automation.ghost_save.enabled (False in qa persona for deterministic tests).
+        """
+        stack = wrangle_studio.logic_stack.get()
+        if not _ghost_enabled:
+            return
+        with reactive.isolate():
+            manifest_path = wrangle_studio.active_manifest_path.get()
+            if not manifest_path or not Path(manifest_path).exists():
+                return
+            _write_bp_draft(_draft_dir, manifest_path, stack, list(undo_stack))
+            _draft_save_time.set(datetime.now().strftime("%H:%M:%S"))
 
     def _snapshot_state():
         """Capture current logic_stack state for undo history."""
@@ -796,11 +879,30 @@ def define_server(input, output, session, *,
         # UX-NOTIF-3: Project-load notification — surface component count on manifest reload
         manifest_name = Path(path).name
         n_components = len(ctx_map) if ctx_map else len(inc_map)
-        ui.notification_show(
-            f"Blueprint: {manifest_name} ({n_components} component(s))",
-            type="message",
-            duration=4,
-        )
+
+        # BP-AUTOSAVE-1: restore draft ghost if SHA256 matches the manifest on disk
+        draft = _read_bp_draft(_draft_dir, path)
+        if draft and draft.get("logic_stack"):
+            wrangle_studio.logic_stack.set(draft["logic_stack"])
+            undo_stack.clear()
+            for entry in draft.get("undo_stack", []):
+                undo_stack.append(entry)
+            saved_at = draft.get("saved_at", "")
+            _draft_save_time.set(saved_at)
+            n_nodes = len(draft["logic_stack"])
+            ui.notification_show(
+                f"Blueprint: {manifest_name} — draft restored "
+                f"({n_nodes} node(s), saved {saved_at})",
+                type="message",
+                duration=6,
+            )
+        else:
+            wrangle_studio.logic_stack.set([])
+            ui.notification_show(
+                f"Blueprint: {manifest_name} ({n_components} component(s))",
+                type="message",
+                duration=4,
+            )
 
     @reactive.Effect
     @reactive.event(input.blueprint_node_clicked)
@@ -2527,3 +2629,122 @@ def define_server(input, output, session, *,
                          choices=choices,
                          selected=str(dest))
         ui.notification_show(f"Manifest '{slug}.yaml' created.", type="message")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BP-VALIDATE-1 — Inline manifest coherence validation (ADR-082 Q16)
+    # Runs scripts/audit_manifest_coherence.py as a subprocess and surfaces
+    # the result (PASS/FAIL + per-check counts) in the Blueprint sidebar.
+    # The validator is a static check: no assembler, no data materialization.
+    # ══════════════════════════════════════════════════════════════════════
+
+    @output
+    @render.ui
+    def bp_validate_ui():
+        """Manifest coherence validation panel. BP-VALIDATE-1."""
+        path = safe_input(input, "stored_manifest_selector", None)
+        if not path or not Path(path).exists():
+            return ui.div("Load a manifest first.", class_="ultra-small text-muted p-2")
+
+        result = _validate_result.get()
+        btn = ui.input_action_button(
+            "btn_bp_validate", "Run validation",
+            class_="btn-primary btn-sm w-100",
+        )
+
+        if result is None:
+            return ui.div(btn, class_="p-2")
+
+        passed = result.get("pass", False)
+        status_color = "#0b6358" if passed else "#d62828"
+        status_bg    = "#d5efec" if passed else "#ffe0e0"
+        status_label = "PASS" if passed else "FAIL"
+
+        checks = result.get("checks", [])
+        check_rows = [
+            ui.tags.div(
+                ui.tags.span("✅" if ok else "❌", style="margin-right:4px;"),
+                ui.tags.span(label, style="font-size:0.75rem;"),
+                ui.tags.span(f" ({count})", style="font-size:0.72rem;color:#6c757d;"),
+                style="margin-bottom:2px;",
+            )
+            for label, ok, count in checks
+        ]
+
+        return ui.div(
+            ui.div(
+                ui.tags.strong(status_label),
+                style=(f"font-size:0.8rem;background:{status_bg};color:{status_color};"
+                       "border-radius:4px;padding:4px 8px;margin-bottom:6px;"),
+            ),
+            *check_rows,
+            ui.tags.small(
+                result.get("manifest_name", ""),
+                class_="text-muted d-block mt-1 mb-2",
+            ),
+            btn,
+            class_="p-2",
+        )
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_validate)
+    def _handle_validate():
+        """Run audit_manifest_coherence.py and parse result into _validate_result. BP-VALIDATE-1."""
+        path = safe_input(input, "stored_manifest_selector", None)
+        if not path or not Path(path).exists():
+            ui.notification_show("No manifest loaded.", type="warning")
+            return
+
+        try:
+            proc = subprocess.run(
+                [".venv/bin/python", "scripts/audit_manifest_coherence.py",
+                 "--manifest", path, "--skip-tsv"],
+                capture_output=True, text=True, timeout=30,
+            )
+            stdout = proc.stdout or ""
+        except Exception as e:
+            _validate_result.set({"pass": False, "checks": [], "manifest_name": path,
+                                   "raw_text": str(e)})
+            ui.notification_show(f"Validation error: {e}", type="error")
+            return
+
+        # Parse pass/fail and violation counts from the markdown output
+        passed = "## Result: ✅ PASS" in stdout
+
+        def _count(label: str) -> tuple[str, bool, int]:
+            for line in stdout.splitlines():
+                if label in line:
+                    try:
+                        n = int(line.strip().split(":")[-1].strip())
+                        return label, n == 0, n
+                    except ValueError:
+                        pass
+            return label, True, 0
+
+        checks = [
+            _count("Parse errors"),
+            _count("invalid action names"),
+            _count("invalid component names"),
+            _count("join key violations"),
+        ]
+
+        _validate_result.set({
+            "pass": passed,
+            "checks": checks,
+            "manifest_name": Path(path).name,
+            "raw_text": stdout,
+        })
+        status = "PASS" if passed else "FAIL"
+        ui.notification_show(f"Validation {status}: {Path(path).name}", type="message")
+
+    @output
+    @render.ui
+    def bp_draft_status_ui():
+        """Timestamp line showing last autosave time. BP-AUTOSAVE-1."""
+        ts = _draft_save_time.get()
+        if not ts:
+            return ui.div()
+        return ui.tags.small(
+            f"Draft saved {ts}",
+            class_="text-muted d-block",
+            style="font-size:0.65rem;padding:2px 4px;",
+        )

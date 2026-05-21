@@ -189,13 +189,13 @@ class WrangleStudio:
                                     class_="btn btn-sm btn-outline-secondary control-btn",
                                     title="Fit all"),
                                 ui.tags.span("● Source",
-                                    style="font-size:0.65rem;color:#fff;background:#0d6efd;border-radius:8px;padding:1px 6px;"),
+                                    style="font-size:0.65rem;color:#fff;background:#345beb;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("● Wrangle",
                                     style="font-size:0.65rem;color:#212529;background:#ffc107;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("◆ Join",
                                     style="font-size:0.65rem;color:#fff;background:#9c27b0;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("■ Plot",
-                                    style="font-size:0.65rem;color:#fff;background:#198754;border-radius:8px;padding:1px 6px;"),
+                                    style="font-size:0.65rem;color:#fff;background:#10a395;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("● Add",
                                     style="font-size:0.65rem;color:#fff;background:#6c757d;border-radius:8px;padding:1px 6px;"),
                                 ui.tags.span("● Meta",
@@ -1205,7 +1205,7 @@ class WrangleStudio:
 
             # Header row: slug + type badge + PK marker
             header_parts = [
-                ui.tags.code(slug, style="font-size:0.8rem;color:#0d6efd;"),
+                ui.tags.code(slug, style="font-size:0.8rem;color:#345beb;"),
             ]
             if is_pk:
                 header_parts.append(
@@ -1247,7 +1247,7 @@ class WrangleStudio:
                 ui.tags.div(*detail_parts, style="margin-top:2px;padding-left:4px;"
                             ) if detail_parts else ui.tags.span(),
                 style=(
-                    "border-left:3px solid #0d6efd;padding:4px 8px;margin-bottom:4px;"
+                    "border-left:3px solid #345beb;padding:4px 8px;margin-bottom:4px;"
                     "background:#f8f9fa;border-radius:0 4px 4px 0;"
                 )
             )
@@ -1335,7 +1335,7 @@ class WrangleStudio:
                 )
 
             role_colors = {
-                "input_fields": "#0d6efd", "output_fields": "#198754",
+                "input_fields": "#345beb", "output_fields": "#10a395",
                 "wrangling": "#ffc107", "join": "#0dcaf0",
                 "plot_wrangling": "#fd7e14", "plot_spec": "#6c757d",
             }

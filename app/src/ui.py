@@ -84,13 +84,13 @@ function initCyTubeMap(elementsJson, containerId) {
 
     // ── Colour palette (mirrors _CY_COLOURS in blueprint_mapper.py) ──────────
     var palette = {
-        trunk:   { bg: '#0d6efd', border: '#0a58ca', text: '#ffffff' },
+        trunk:   { bg: '#345beb', border: '#2a4bc4', text: '#ffffff' },
         add:     { bg: '#6c757d', border: '#495057', text: '#ffffff' },
         meta:    { bg: '#fd7e14', border: '#dc6a0d', text: '#ffffff' },
         wrangle: { bg: '#ffc107', border: '#e0a800', text: '#212529' },
         branch:  { bg: '#9c27b0', border: '#7b1fa2', text: '#ffffff' },
-        plot:    { bg: '#198754', border: '#146c43', text: '#ffffff' },
-        info:    { bg: '#e3f2fd', border: '#1976d2', text: '#1a1a1a' },
+        plot:    { bg: '#10a395', border: '#0d8a7e', text: '#ffffff' },
+        info:    { bg: '#eef0fb', border: '#345beb', text: '#1a1a1a' },
     };
 
     function styleFor(role) {

@@ -1209,6 +1209,7 @@ def define_server(input, output, session, *,
                         ui.tags.small(
                             "Select a project manifest. Click any node in the TubeMap to navigate.",
                             class_="text-muted d-block mt-1"),
+                        ui.output_ui("bp_draft_status_ui"),
                         icon=ui.tags.i(class_="bi bi-diagram-3")
                     ),
                     ui.accordion_panel(
@@ -1233,6 +1234,11 @@ def define_server(input, output, session, *,
                         ui.download_button("btn_download_manifest", "💾 Download/Export",
                                            class_="btn-outline-primary w-100"),
                         icon=ui.tags.i(class_="bi bi-cloud-arrow-up")
+                    ),
+                    ui.accordion_panel(
+                        "🔍 Validate",
+                        ui.output_ui("bp_validate_ui"),
+                        icon=ui.tags.i(class_="bi bi-check-circle")
                     ),
                     ui.accordion_panel(
                         "🔤 YAML Escape Hatch",
@@ -1652,7 +1658,7 @@ def define_server(input, output, session, *,
     def notification_log_panel_ui():
         """Render the last-20 notifications as a collapsible accordion in the right sidebar."""
         _type_color = {
-            "success": "#198754",
+            "success": "#10a395",
             "warning": "#ca6f00",
             "error": "#dc3545",
             "message": "#345beb",
