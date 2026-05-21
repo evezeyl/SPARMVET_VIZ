@@ -24,6 +24,7 @@ from blueprint_arch.manifest_navigator import (
     resolve_fields_for_schema, # recursive, cycle-guarded
     build_plot_lineage,        # str, str → list[dict]  backward trace to T1 root (ADR-074)
     get_plot_ids_in_group,     # str, str → list[str]   forward trace for scope resolution (ADR-074)
+    generate_branch_plan,      # str, str → dict  branch plan for a lineage split (ADR-082)
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 
@@ -58,6 +59,7 @@ from blueprint_arch.schema_registry import (
     get_actions_by_category,      # (category: str) -> dict  filter by "cleaning" | "derivation" | ...
     get_components_for_context,   # (context: str) -> dict  filter by "plot"
     search_actions,               # (query: str) -> dict  case-insensitive search on name + tags
+    search_components,            # (query: str) -> dict  case-insensitive search on component name + tags
 )
 ```
 
@@ -133,16 +135,99 @@ import viz_factory            # triggers all @register_plot_component decorators
 
 In test files, place these imports at module level so all test functions see a populated catalog.
 
+---
+
+## Group & Plot Manager (ADR-082)
+
+`group_plot_manager.py` provides headless-safe CRUD operations for `analysis_groups` and their `plots` entries in a manifest. All functions read and write the manifest file directly — no Shiny state.
+
+### Public API
+
+```python
+from blueprint_arch.group_plot_manager import (
+    list_groups_plots,  # (manifest_path) -> dict[group_id, list[plot_id]]
+    create_group,       # (manifest_path, group_id, label) -> None
+    delete_group,       # (manifest_path, group_id) -> None
+    create_plot,        # (manifest_path, group_id, plot_id, label) -> None
+    delete_plot,        # (manifest_path, group_id, plot_id) -> None
+    assign_plot,        # (manifest_path, group_id, plot_id, spec_path) -> None
+)
+```
+
+All functions raise `KeyError` when a referenced group or plot does not exist. `create_group` and `create_plot` raise `ValueError` on duplicate IDs.
+
+---
+
+## Agent Tools (ADR-076)
+
+`agent_tools.py` exposes a narrow headless-safe tool catalog used by the BLUEPRINT AI Agent to query the manifest structure and component registry.
+
+### Public API
+
+```python
+from blueprint_arch.agent_tools import get_tool_definitions, call_tool
+
+definitions = get_tool_definitions()   # list[dict] — Claude-compatible tool schemas
+result = call_tool("get_available_actions", {"context": "t1"})
+```
+
+**Registered tools:**
+
+| Tool name | Description |
+|---|---|
+| `get_available_actions` | Returns actions valid for a given context (`t1`, `t2`, `assembly`) |
+| `get_available_components` | Returns plot components valid for the `plot` context |
+| `get_field_contract` | Returns `input_fields` and `output_fields` for a named schema in the active manifest |
+
+---
+
+## Agent Tool Parser
+
+`agent_tool_parser.py` parses raw model text for embedded tool calls and manages the tool schema registry used by the agent adapter.
+
+### Public API
+
+```python
+from blueprint_arch.agent_tool_parser import (
+    extract_tool_calls,      # (text, *, strict_unknown=False) -> ParseResult
+    register_tool_schema,    # (tool_name, *, required, properties) -> None
+    get_registered_tools,    # () -> dict[str, dict]
+    ParsedToolCall,          # dataclass: name, args, raw
+    ParseResult,             # dataclass: calls, leftovers, errors
+)
+```
+
+`extract_tool_calls` parses XML-style `<tool_call>` blocks from agent response text. `strict_unknown=True` raises on any tool name not registered via `register_tool_schema`.
+
+---
+
+## Join Designer (ADR-082, BP-JOINT-1)
+
+`join_designer.py` provides the headless logic for the Joint Designer pane — real-data key-match preview, canonical step construction, and step parsing.
+
+### Public API
+
+```python
+from blueprint_arch.join_designer import (
+    compute_key_match,  # (left_rows, right_rows, left_dtypes, right_dtypes, sample_n) -> dict
+    build_join_step,    # (right_ingredient, left_keys, right_keys, how, comment) -> dict
+    parse_join_step,    # (step: dict) -> dict  normalises unquoted-'on' boolean trap
+)
+```
+
+`compute_key_match` returns `{overlap_count, left_only, right_only, sample_matches}` — the data that drives the overlap preview in the IDE. `build_join_step` always emits the string key `"on"` (quoted) for symmetric joins, avoiding the YAML boolean trap. `parse_join_step` applies the same `step.get(True)` fallback as the assembler for loading existing manifests that contain unquoted `on:`.
+
+---
+
 ## Tests
 
 ```bash
 PYTHONPATH=. .venv/bin/python -m pytest libs/blueprint_arch/tests/ -v
 ```
 
-`libs/blueprint_arch/tests/test_schema_registry.py` verifies:
-- Both catalogs load and are non-empty when transformer and viz_factory are installed
-- All 19 annotated transformer actions and 7 annotated viz_factory components are present
-- Every schema entry has required structural fields (`label`, `category`, `context`, `params`)
-- Every param entry has required fields (`widget`, `label`, `required`)
-- Widget types are from the declared vocabulary; context tags are from the declared vocabulary
-- Filtering (`get_actions_for_context`, `get_actions_by_category`) and search functions return correct subsets
+| Test file | Covers |
+|---|---|
+| `test_schema_registry.py` | Catalog loading, all 19 transformer actions and 7 viz components present, structural field validation, filtering and search correctness |
+| `test_lineage_nav.py` | `build_sibling_map`, `build_lineage_chain`, `build_schema_registry`, `generate_branch_plan` against fixture manifests |
+| `test_join_designer.py` | `compute_key_match` overlap logic, `build_join_step` output shape, `parse_join_step` boolean-trap handling |
+| `test_group_plot_manager.py` | CRUD round-trips for groups and plots, error cases for duplicates and missing IDs |
