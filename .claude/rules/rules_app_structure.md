@@ -40,7 +40,7 @@ app/
 │   ├── ui.py              # Static Shiny UI shell. CSS. No reactive logic.
 │   └── bootloader.py      # Path authority & persona bootstrap (ADR-031).
 │
-├── modules/               # Importable, testable, Shiny-free modules.
+├── modules/               # App-layer modules: importable and testable. May import Shiny for UI-helper classes (by design — app layer only).
 │   ├── orchestrator.py         # DataOrchestrator — Tier 1 assembly bridge.
 │   ├── wrangle_studio.py       # WrangleStudio — Blueprint Architect UI class.
 │   ├── gallery_viewer.py       # GalleryViewer — static gallery browser.

@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-21 (TASK-ARCHIVE-1 — archived Phase 18-F, 32, 33, audit-script-fixes + DOC-BLUEPRINT-1) by @dasharch
+**Last Updated:** 2026-05-21 (Phase 34 TEST_LAB tasks added; UX-DEVINSP-1 superseded) by @dasharch
 
 ---
 
@@ -72,20 +72,91 @@ Items with no blockers — can be started immediately.
 
 - [x] **AUDIT-PASS-1** `[sonnet/low]`: Run the full audit suite + test suites. Done 2026-05-21. Results: all 10 scheduled audits PASS; 26/26 Playwright smoke tests pass (3 persona-skipped expected); dep graph regenerated (134 nodes, 259 edges). Task-drift FAIL: 3 items — DOC-BLUEPRINT-USER-1 (pending, expected), task_archive_phase33 (false positive — file exists), `scripts/build_dep_graph.py` (false positive — actual path is `assets/scripts/build_dep_graph.py`). No new actionable tasks.
 
+### Phase 34 — TEST_LAB Build
+
+> **Design:** `.claude/design/spaces/TEST_LAB.md` — all design decisions locked 2026-05-21.  
+> **Build order:** 34-A (library) → 34-B (utils) → 34-C (bootstrapper) → 34-D (scaffold) → 34-E (synth) → 34-F (anon) → 34-G (reformat) → 34-H (UI last).  
+> **Note:** `UX-DEVINSP-1` (Deferred — TEST_LAB sidebar redesign) is superseded by TL-UI-SHELL-1.
+
+#### 34-A — ID Reconciliation Library
+
+- [ ] **TL-IDLIB-1** `[haiku/low]`: Scaffold `libs/id_reconciliation/` — `pyproject.toml` (deps: `polars`, `utils`), module structure (`__init__.py`, empty module files), editable install, empty `tests/conftest.py`. Gate: `from id_reconciliation import IDReconciliationEngine` succeeds.
+
+- [ ] **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe`) + `matcher.py` (exact 1.0; fuzzy scored; unmatched 0.0). Port logic from `libs/test_lab/src/test_lab/reconciler.py` — do not duplicate. Gate: `test_exact_match` + `test_pattern_match` pass.  
+  Depends: TL-IDLIB-1.
+
+- [ ] **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; ranked by `expected_matches DESC, expected_certainty DESC, simplicity ASC`). Builds on `suggest_regex` in `reconciler.py`. Gate: `test_pattern_suggestion` passes — prefix `"sample_"` detected and ranked first.  
+  Depends: TL-IDLIB-1.
+
+- [ ] **TL-IDLIB-RECIPE-1** `[sonnet/medium]`: Recode workflow + recipe persistence — `recipe.py` (`apply_recode_step` for: `regex_replace`, `mutate` via Polars expression, `drop_duplicates`, `null_if`, `drop_nulls`; `TransformationRecipe.to_yaml` / `from_yaml`). Gate: `test_recipe_persistence` (save+load round-trip) + `test_recode_workflow` (prefix removal + delimiter extraction) pass.  
+  Depends: TL-IDLIB-1.
+
+- [ ] **TL-IDLIB-CORE-1** `[sonnet/high]`: IDReconciliationEngine orchestrator — `core.py` (`precheck_compatibility`, `match_pair`, `suggest_patterns`, `apply_pattern`, `generate_recipe`, `detect_many_to_many`, `format_match_table`). Progressive matching: full file via Polars LazyFrame, chunks default 50 rows (configurable in persona config). Recode threshold: 50 unmatched triggers "clean first" (configurable). Gate: `test_many_to_many_detection` + progressive chunking test + `format_match_table` returns parseable string.  
+  Depends: TL-IDLIB-MATCH-1, TL-IDLIB-PATTERN-1, TL-IDLIB-RECIPE-1.
+
+- [ ] **TL-IDLIB-TESTS-1** `[sonnet/medium]`: Full test suite — unit tests per module + `id_reconciliation_integrity_suite.py` orchestrator. Cases: exact match, pattern suggestion, many-to-many detection, recipe round-trip, all 5 recode action types, multi-file sequencing suggestion. Gate: `pytest libs/id_reconciliation/tests/ -q` all pass.  
+  Depends: TL-IDLIB-CORE-1.
+
+#### 34-B — Pattern Helper in `libs/utils/`
+
+- [ ] **TL-UTILS-PATTERN-1** `[sonnet/low]`: Extract ID pattern matching primitives (prefix/suffix detection, delimiter extraction, regex generalisation) into `libs/utils/src/utils/id_patterns.py`. Update `libs/id_reconciliation/` to import from there. Update `libs/blueprint_arch/join_designer.py` to also use this helper. Gate: both libs import cleanly; no pattern logic duplicated between them.  
+  Depends: TL-IDLIB-PATTERN-1.
+
+#### 34-C — ManifestBootstrapper Fixes
+
+- [ ] **TL-BOOTSTRAP-FIX-1** `[sonnet/low]`: Fix `libs/test_lab/src/test_lab/bootstrapper.py`: (1) `"plotting"` → `"analysis_groups"`, (2) remove hardcoded spurious `metadata_schema:` entry, (3) add `join_manifests: {}` stub, (4) accept optional `id_cleaning_recipes: dict` and bake valid cleaning actions into `tier1:` wrangling. Gate: headless test generates manifest that passes `debug_assembler.py` without error.  
+  Depends: TL-IDLIB-RECIPE-1.
+
+#### 34-D — Manifest Scaffolding ZIP
+
+- [ ] **TL-SCAFFOLD-1** `[sonnet/medium]`: ZIP boilerplate output — `libs/test_lab/src/test_lab/scaffolder.py` (or extend bootstrapper). Input: TSV paths + `TransformationRecipe` objects. Output: ZIP with master YAML (`data_schemas:`, `join_manifests:` pre-filled, `analysis_groups: {}`) + fragment files (`input_fields/`, `wrangling/`, `assembly/`). ID cleaning steps baked into `tier1:` wrangling. Gate: unzip → `debug_assembler.py` runs without error; `data_schemas:` key confirmed; `ingredients:` format confirmed; `'on':` quoted.  
+  Depends: TL-BOOTSTRAP-FIX-1, TL-IDLIB-CORE-1.
+
+#### 34-E — Synthetic Data Upgrade
+
+- [ ] **TL-SYNTH-1** `[sonnet/high]`: Upgrade `libs/test_lab/src/test_lab/aqua_synthesizer.py` — `propose_config(source)` + `generate(config)` two-step flow; `mode: demo | stress_test`; `error_injection` block (missing_values, wrong_type, duplicate_ids, pk_mismatches, schema_errors, malformed_fields); YAML archive config output with prominent "NOT a pipeline manifest" header; named scenario save/load/list (`libs/test_lab/scenarios/`). Gate: demo generates clean TSV; stress_test injects at stated rate ±2%; scenario round-trip; `pytest libs/test_lab/tests/ -q` passes.
+
+#### 34-F — Anonymisation Tool
+
+- [ ] **TL-ANON-1** `[sonnet/medium]`: `libs/test_lab/src/test_lab/anonymiser.py` — `anonymise(filepath, id_column, personal_columns, pattern)` + `anonymise_batch` (multi-file consistency). Patterns: sequential, hash, custom. Outputs: anonymised TSV + mapping TSV + de-anonymisation instructions. Gate: round-trip test (anonymise → BLUEPRINT join → IDs restored); multi-file consistency test; personal column stripping verified.
+
+#### 34-G — Reformatting Tools
+
+- [ ] **TL-REFORMAT-1** `[haiku/low]`: `libs/test_lab/src/test_lab/reformatter.py` — wire `ExcelHandler` (already in `libs/ingestion/`) for XLSX → TSV (multi-sheet); add CSV → TSV (any delimiter); bulk folder processing. Gate: multi-sheet XLSX → N TSV files; CSV with comma delimiter converts correctly.
+
+#### 34-H — UI (gates on library tasks)
+
+- [ ] **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion (panels: ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting); view title banner; `test_lab_enabled` persona flag gate (ADR-071); add `test_lab` sidebar slot type to `app/modules/sidebar_registry.py`. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` → no TEST_LAB nav.
+
+- [ ] **TL-UI-REFORMAT-1** `[haiku/low]`: Reformatting panel — file upload (XLSX/CSV), sheet assignment UI (XLSX), convert button, TSV download.  
+  Depends: TL-REFORMAT-1, TL-UI-SHELL-1.
+
+- [ ] **TL-UI-RECONCILE-1** `[sonnet/high]`: ID Reconciliation panel — multi-file upload (2–6), PRE-CHECK result, pairwise match table (side-by-side, certainty sort, chunked 50 rows, bulk-accept 100% button, per-row verify/reject), pattern suggestion panel (ranked, apply), recode workflow (action picker, preview, re-run), many-to-many dialog (mandatory written reason), recipe download (YAML).  
+  Depends: TL-IDLIB-CORE-1, TL-UI-SHELL-1.
+
+- [ ] **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload or "Continue from ID Reconciliation", join key selection, boilerplate ZIP download with baked-in steps summary.  
+  Depends: TL-SCAFFOLD-1, TL-UI-RECONCILE-1.
+
+- [ ] **TL-UI-SYNTH-1** `[sonnet/medium]`: Synthetic Data panel — schema/file upload, proposed config review table (per-column editable), mode toggle (Demo/Stress test), error injection block (stress_test only), n_rows input, generate button, scenario save/load, download TSV + YAML config.  
+  Depends: TL-SYNTH-1, TL-UI-SHELL-1.
+
+- [ ] **TL-UI-ANON-1** `[sonnet/medium]`: Anonymisation panel — multi-file upload, ID column selector, personal column selector, pattern picker, generate button, download anonymised TSV(s) + mapping TSV + instructions.  
+  Depends: TL-ANON-1, TL-UI-SHELL-1.
+
 ---
 
 ## 🤔 Needs Discussion / Decision
 
 Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
 
-- [ ] Can we leverage python great docs to improve the documentation? particularly for the UI - but also for the rest of the libraries and for developers? <>https://github.com/posit-dev/great-docs>
+- [ ] **GREAT-DOCS-1** `[sonnet/medium]`: Evaluate `great-docs` (https://github.com/posit-dev/great-docs) for auto-generating developer and UI documentation from the existing codebase. Needs discussion: which audiences/surfaces benefit most, how it fits the Quarto DRY workflow, and how it complements CODE-DOCS-RETROSPECTIVE docstrings. **Depends on:** CODE-DOCS-RETROSPECTIVE (docstrings must exist before auto-gen is meaningful). Start with a proof-of-concept on one library before scoping full adoption.
 
-- [ ] **ADR045-REFACTOR** `[opus/high]`: Several files in `app/modules/` import `shiny` directly, violating the Two-Category Law. Decision needed: scope and migration plan before touching live handlers. [Not sure if wrong — it's part of the app itself]
 
-- [ ] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. Needs dedicated design session before implementation.
+- [ ] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. Needs dedicated design session before implementation. **Note (2026-05-21):** TEST_LAB design (`.claude/design/spaces/TEST_LAB.md`) is almost finished — schedule this after Phase 34 is complete.
 - [ ] **UX-APPLY-IMPROVE-1** `[sonnet/medium]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. Needs design pass before scoping.
-- [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: Easy lookup / search in-app (cross-manifest, cross-recipe). Scope undefined — needs concrete use case first.
+- [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: In-app search for plot types, plot properties, and recipe components — cross-manifest, cross-recipe. Use case: scientist wants to find plots by what they show (e.g. "distribution", "trend"), by required data pattern, or by aesthetic mapping. Design questions: fuzzy search on plot definitions and taxonomy fields? Keyword index built from manifests at load time? How efficient can this be? Needs a concrete spike / prototype before scoping. Links to Gallery taxonomy (ADR-063) and recipe meta taxonomy fields.
 - [ ] **PROP-3** `[opus/high]`: Propagation TubeMap — graph viz of audit blast radius. Needs own design pass + ADR before implementation.
+  > **What "propagation" means here:** when a T3 audit node (filter, exclusion) is applied across multiple plots via the propagation dialog (scope: this plot / all plots / all except...), the Propagation TubeMap would be a graph showing which plots are affected — blast-radius visualization of that audit decision. This is **distinct from the Blueprint TubeMap** (pipeline DAG from manifest structure). The T3 propagation dialog itself is designed in `ui_implementation_contract.md §12g` but not yet implemented. PROP-3 is a further visualization layer on top of that, also not yet implemented.
 
 ---
 
@@ -108,7 +179,7 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 - [ ] **23-E** `[sonnet/medium]`: Per-system quick-start guides (Galaxy / IRIDA / server / local).
 - [ ] **RESEARCH-LIMS-1** `[opus/high]` `[deferred — awaiting LIMS project]`: Audit database / LIMS integration — manifest hashes + data hashes in DB; LIMS link in audit report; configurable output path per persona.
 - [ ] **UX-GALLEXP-1** `[sonnet/medium]`: Gallery Explorer right sidebar — functionality TBD.
-- [ ] **UX-DEVINSP-1** `[sonnet/medium]`: Test Lab right sidebar + left sidebar redesign — functionality TBD.
+- ~~**UX-DEVINSP-1**~~ — superseded by TL-UI-SHELL-1 (Phase 34-H). Design locked 2026-05-21 in `.claude/design/spaces/TEST_LAB.md`.
 
 ### Legacy removal (tracked per rules_legacy_management.md §6)
 > Protocol: dep-sweep → impact assessment → migration path → code removal → test sweep → doc consistency sweep → ADR record.
