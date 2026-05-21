@@ -1428,6 +1428,7 @@ def define_server(input, output, session, *,
             info = wrangle_studio.active_component_info.get() if wrangle_studio else {}
             schema_id = info.get("schema_id", "")
             role = info.get("role", "")
+            schema_type = info.get("schema_type", "")
             branchable_roles = {"wrangling", "input_fields", "output_fields", "join", "plot_spec"}
             if not schema_id or role not in branchable_roles:
                 return ui.div(
@@ -1438,7 +1439,31 @@ def define_server(input, output, session, *,
                     ),
                     class_="p-2",
                 )
+
+            # Guidance note for data_schema branches — branching here is only
+            # appropriate when raw data genuinely splits into two distinct processing
+            # units. For most analytical variations, branch at assembly or plot level
+            # instead (those share the Tier 1 anchor parquet at runtime, zero recompute).
+            guidance = ui.div()
+            if schema_type == "data_schema":
+                guidance = ui.div(
+                    ui.tags.p(
+                        ui.tags.strong("When to branch a data schema: "),
+                        "only when you need two genuinely different processing paths "
+                        "from the same raw data — e.g. different QC thresholds, different "
+                        "reference databases, or splitting by instrument type. For analytical "
+                        "variations (different plots, different aggregations of the same data), "
+                        "branch at the assembly or plot level instead — those branches share "
+                        "the Tier 1 anchor with zero recompute.",
+                        class_="mb-0",
+                    ),
+                    class_="p-2 mt-1 mb-2",
+                    style="font-size:0.78rem; color:#6c757d; "
+                          "border-left:3px solid #dee2e6;",
+                )
+
             return ui.div(
+                guidance,
                 ui.tags.small(
                     f"Branch: {schema_id} ({role}) — shares upstream, diverges downstream",
                     class_="text-muted d-block mb-2",
