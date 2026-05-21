@@ -761,10 +761,10 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 
 ---
 
-## Phase 33: BLUEPRINT AI Agent MVP-1 (IN PROGRESS — 2026-05-09)
+## Phase 33: BLUEPRINT AI Agent MVP-1 (COMPLETE — 2026-05-21)
 
 **ADRs:** ADR-076 (BLUEPRINT AI Agent Helper), ADR-077 (Fail-Fast Cascade Enforcement)
-**Status:** IN PROGRESS. Adapter layer complete; UI wiring pending.
+**Status:** COMPLETE. All substeps verified 2026-05-21 (@sync — tasks were implemented 2026-05-09 but not marked done).
 **Audit log:** `.claude/logs/audits/audit_2026-05-09.md`
 
 ### Objective
@@ -777,12 +777,12 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 |---|---|---|---|---|
 | 33-A | BP-AGENT-FLAG-1 | `blueprint_agent_enabled` flag + `blueprint_agent:` config block in persona templates | haiku | ✅ (Phase 31) |
 | 33-B | BP-AGENT-1 | `AgentAdapter` protocol + `ClaudeCliAdapter` + `DisabledAdapter` + `agent_context.py` | sonnet | ✅ |
-| 33-C | BP-AGENT-PARSER-1 | Fenced-block extractor (`agent_tool_parser.py`) | sonnet | open |
-| 33-D | BP-AGENT-TOOLS-1 | 3 MVP tools (`get_available_actions`, `get_available_components`, `get_field_contract`) | sonnet | open |
-| 33-E | BP-AGENT-INSTRUCT-1 | System prompt file `config/ui/agents/blueprint_default.md` | sonnet | open |
-| 33-F | BP-AGENT-PANEL-1 | Register `blueprint_agent_chat` panel in sidebar registry + persona templates | haiku | open |
-| 33-G | BP-AGENT-UI-1 | Chat panel render outputs in `blueprint_handlers.py` | sonnet | open |
-| 33-H | BP-AGENT-CSS-1 | `.bp-agent-*` rule block in `config/ui/theme.css` | haiku | open |
+| 33-C | BP-AGENT-PARSER-1 | Fenced-block extractor (`agent_tool_parser.py`) | sonnet | ✅ |
+| 33-D | BP-AGENT-TOOLS-1 | 3 MVP tools (`get_available_actions`, `get_available_components`, `get_field_contract`) | sonnet | ✅ |
+| 33-E | BP-AGENT-INSTRUCT-1 | System prompt file `config/ui/agents/blueprint_default.md` | sonnet | ✅ |
+| 33-F | BP-AGENT-PANEL-1 | Register `blueprint_agent_chat` panel in sidebar registry + persona templates | haiku | ✅ |
+| 33-G | BP-AGENT-UI-1 | Chat panel render outputs in `blueprint_handlers.py` | sonnet | ✅ |
+| 33-H | BP-AGENT-CSS-1 | `.bp-agent-*` rule block in `config/ui/theme.css` | haiku | ✅ |
 
 ### Key decisions (ADR-076 implemented)
 

@@ -43,17 +43,15 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
     print(f"[{'='*60}]\n")
 
     # 1. Load Manifest
+    # Full pipeline manifests use !include directives → require ConfigManager.
+    # Partial test manifests (no !include) use yaml.safe_load directly.
     try:
-        with open(manifest_path) as _f:
-            _raw = yaml.safe_load(_f) or {}
-        # Use ConfigManager only for full pipeline manifests (have analysis_groups).
-        # Assembly test manifests (relational_audit.yaml, etc.) skip it to avoid
-        # the analysis_groups validation gate that fires for partial test manifests.
-        if _raw.get("analysis_groups"):
+        manifest_text = Path(manifest_path).read_text(encoding="utf-8")
+        if "!include" in manifest_text:
             config_manager = ConfigManager(manifest_path)
             manifest = config_manager.raw_config
         else:
-            manifest = _raw
+            manifest = yaml.safe_load(manifest_text) or {}
     except Exception as e:
         print(f"  └── ❌ Manifest Error: Failed to load {manifest_path}. {e}")
         sys.exit(1)
