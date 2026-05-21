@@ -27,6 +27,8 @@ _REQUIRED_FLAGS = [
     "audit_report_enabled",
     "metadata_ingestion_enabled",
     "data_ingestion_enabled",
+    "manifest_edit_enabled",
+    "blueprint_agent_enabled",
 ]
 
 # Child flags that require their master gate to be True — soft cascade.

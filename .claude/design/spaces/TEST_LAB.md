@@ -56,11 +56,11 @@ Synthetic data generation creates independent, fresh data matching a schema. No 
 
 | Functionality | What the user can do |
 |---|---|
-| **Generate clean synthetic data from schema** | Define column names, types, constraints; system generates plausible synthetic data matching that schema | #TODO read the data files and create synthetic data - there is already a script that does part of this - see maybe in assets/scripts or scripts? 
-| **Generate synthetic data from example** | Upload real data; system learns schema, distributions, patterns; generates synthetic data mimicking structure without linking to originals |
-| **Control synthetic distributions** | Set min/max, categorical allowed values, ID patterns, string format per column | #TODO Allow adding categorical values for increasing diversity dataset
-| **Inject controlled errors / edge cases** | Generate datasets with intentional defects (missing values, wrong types, duplicate IDs, out-of-range values, 7 empty groups, single-row groups, non-matching IDs) for testing | #TODO should we add wrong types also and other schema errors ? #TODO we need to think about possibility to add later other edge cases if necessary  
-| **Named error scenarios** | Save & reload named edge-case scenario definitions to use as regression test suite |
+| **Generate synthetic data from schema** | Define column names, types, constraints — system generates plausible synthetic data. Built on `AquaSynthesizer` (`libs/test_lab/`). Two modes: **Demo** (clean realistic data) and **Stress test** (with controlled error injection) |
+| **Generate synthetic data from example** | Upload real data — system learns schema + distributions per column (type, range, allowed values), proposes a generation config for user review; user adjusts, then generates. No link to original data |
+| **Control synthetic distributions per column** | Two-step flow: system proposes config → user adjusts before generating. Extend allowed values beyond source data (diversity). YAML config saved for reproducibility and human adjustment after experience |
+| **Inject controlled errors / edge cases** | Error types: missing values (null, messy strings like "-", "N/A"), wrong types (string in numeric column), duplicate IDs, PK mismatches across files, out-of-range values, empty groups, single-row groups. Schema-level errors: missing column, wrong column name, extra column. All error types configurable by rate/column |
+| **Named error scenarios** | Save full generation config (schema + distributions + error injection) as named YAML file. Reload by name to reproduce exactly — regression test suite for the app |
 
 ### ID Reconciliation Engine (for Manifest Scaffolding & Data Ingestion)
 
@@ -633,6 +633,12 @@ Generate fresh, independent data matching a schema. Used for:
 - Safe sharing when true anonymity (not reversibility) is required
 - Developing & validating manifests without real data
 
+### Two Modes
+
+**Demo mode** — clean, realistic synthetic data for sharing and visualization development. No injected errors. Distributions match the real data or schema ranges.
+
+**Stress test mode** — same data with controlled error injection to validate app behavior (ingest failures, join mismatches, malformed fields, schema errors). Used for regression testing and edge-case exploration.
+
 ### Workflow: Generate Synthetic Data
 
 ```
@@ -640,109 +646,138 @@ Generate fresh, independent data matching a schema. Used for:
    Option A: Upload schema (column names, types, constraints)
    Option B: Upload example real data (system learns schema + distributions)
 
-2. User configures per-column generation strategy
-   - Numeric: min, max, distribution (uniform, normal, etc.)
-   - Categorical: allowed_values
-   - ID: pattern (sequencing, hash, custom)
-   - String: length, format, freetext variety
-   - Error injection: % missing, % wrong type, % duplicates, etc. #TODO Think in the context of the app - what kind of errors we would like to introduce for testing, could aslo be eg malformated fields - to ensure eg ingest is failing osv -> you need to think to establish a good way to test both the functionning of the app - and in the otherway to create test data that will allow eg automatic testing of successull information or just demo data creation for example 
+2. System proposes generation config (two-step flow):
+   - Inspects columns → proposes types, ranges, and distribution parameters
+   - For Option B: matches observed distributions (min/max for numerics,
+     unique values for categoricals, null rates)
+   - User reviews the proposed config and adjusts as needed:
+     - Change distribution (uniform → normal, etc.)
+     - Extend allowed_values for categoricals
+     - Set ID pattern (sequential, hash, custom prefix)
+     - Switch to Demo or Stress test mode
 
-3. System generates synthetic dataset
-   - Independent from any original data (no mapping) #TODO what do you mean no mappig - scheme and range / levels values should be used - but can be increased ... maybe actually can go into two steps 1 determine and propose and 2 user adjust and then "press run" 
-   - Matches schema & distributions
-   - Ready for testing
+3. User presses Generate
+   - For Demo mode: clean output matching schema + distributions
+   - For Stress test mode: user configures error injection before generating:
+       • missing values (per column, configurable rate)
+       • wrong type (e.g. string in numeric column, rate)
+       • duplicate IDs (rate)
+       • PK mismatches (IDs in one file not in another, rate)
+       • schema-level errors (missing column, wrong column name, extra column)
+       • malformed fields (unparseable dates, out-of-range values)
+   - Output: TSV + accompanying synthetic_data_config.yaml (see below)
 
-4. User can save error scenario
+4. User can save as a named scenario
    - Name: "edge_case_duplicates_10pct"
-   - Definition: {columns, error_rates, constraints}
-   - Reusable for regression testing #TODO yes see comment above
+   - Saves full config: schema + distributions + error injection params
+   - Reusable for regression testing across app versions
 ```
 
-### Example Synthetic Data Configuration (YAML) #TODO I am not even sure we need to go trough a manifest but that maybe a good thing yes to document how the synthetic data has been generated - however this manifest will be used differently than the analysis manifest in HOME - so the manifest should be for archive and associated to the reconstitution tsv then ok - I like this transparency
+### Synthetic Data Config YAML — Purpose and Format
+
+> **This YAML is NOT a pipeline manifest.** It is an archive/transparency record saved
+> alongside the generated TSV. It is never loaded by the HOME or BLUEPRINT data engine
+> and never goes through the wrangling/ingestion pipeline. Its only purpose is to document
+> what was generated and how, so the generation can be reproduced exactly.
+>
+> This is distinct from the analysis manifests used in HOME and BLUEPRINT, which define
+> data schemas, wrangling steps, and join recipes for actual data processing.
 
 ```yaml
-synthetic_data_config:
-  source: schema  # or "example_data"
-  
-  columns:
-    sample_id:
-      type: categorical
-      pattern: "SAMPLE_{:05d}"
-      size: 100  # Generate 100 unique samples
-    
-    collection_date:
-      type: numeric  # Unix timestamp
-      min: 1704067200  # 2024-01-01
-      max: 1735689599  # 2024-12-31
-      distribution: uniform
-    
-    age:
-      type: numeric
-      min: 18
-      max: 90
-      distribution: normal
-      mean: 45
-      stdev: 15
-    
-    site_name:
-      type: categorical
-      allowed_values: ["Site_A", "Site_B", "Site_C", "Site_D"]
-    
-    test_result:
-      type: categorical
-      allowed_values: ["positive", "negative"]
-    
-    # Error injection
-    missing_value_columns:
-      - {column: age, rate: 0.02}  # 2% missing
-      - {column: test_result, rate: 0.01}
-    
-    wrong_type_columns:
-      - {column: age, rate: 0.01}  # 1% will be string instead of numeric
-    
-    duplicate_ids:
-      rate: 0.00  # 0% duplicates (0 = no duplicates)
-  
-  output:
-    rows: 100
-    filename: "synthetic_test_data.tsv"
+# synthetic_data_config.yaml
+# Archive record — saved alongside the generated TSV.
+# NOT a pipeline manifest. NOT processed by the SPARMVET data engine.
+
+metadata:
+  generated_at: "2026-05-21T14:30:00"
+  source: "example_data"      # or "schema"
+  source_file: "real_metadata.tsv"   # if source=example_data
+  n_rows: 100
+  mode: demo                  # demo | stress_test
+  output_file: "synthetic_test_data.tsv"
+
+columns:
+  sample_id:
+    type: id
+    pattern: "SAMPLE_{:05d}"    # sequential ID pattern
+    unique: true
+
+  collection_date:
+    type: date
+    min: "2024-01-01"
+    max: "2024-12-31"
+    distribution: uniform
+
+  age:
+    type: numeric
+    min: 18
+    max: 90
+    distribution: normal
+    mean: 45
+    stdev: 15
+
+  site_name:
+    type: categorical
+    allowed_values: ["Site_A", "Site_B", "Site_C", "Site_D"]
+    # extend_with: ["Site_E"]   # add values beyond observed set
+
+  test_result:
+    type: categorical
+    allowed_values: ["positive", "negative"]
+
+# error_injection block is only present for mode: stress_test
+error_injection:
+  missing_values:
+    - {column: age, rate: 0.02}
+    - {column: test_result, rate: 0.01}
+  wrong_type:
+    - {column: age, rate: 0.01}   # string injected into numeric column
+  duplicate_ids:
+    column: sample_id
+    rate: 0.05                     # 5% of IDs will be duplicated
+  pk_mismatches:
+    rate: 0.03                     # 3% of IDs will not match the join partner file
+  schema_errors:
+    missing_column: null           # name of column to drop entirely, or null
+    wrong_column_name: null        # {from: old_name, to: typo_name}, or null
+    extra_column: null             # name of extra column to inject, or null
 ```
 
 ### Named Error Scenarios (Saved & Reusable)
 
-Users can save scenario definitions for regression testing:
+Users can save a named scenario: the full config (schema + distributions + error injection params)
+is saved as a YAML file in the `test_lab/scenarios/` directory. The file is the same format as
+above, with an added `name:` and `description:` in the `metadata:` block.
 
 ```yaml
-error_scenario:
+# scenario: edge_case_duplicates_10pct.yaml
+metadata:
   name: "edge_case_duplicates_10pct"
-  description: "10% duplicate sample IDs to test join error handling"
-  
-  columns:
-    sample_id:
-      type: categorical
-      pattern: "SAMPLE_{:05d}"
-      size: 100
-      # Override: force duplicates
-      duplicate_ids:
-        rate: 0.10  # 10% will be duplicates
-    
-    collection_date:
-      type: numeric
-      min: 1704067200
-      max: 1735689599
-    
-    # ... other columns ...
-  
-  output:
-    rows: 100
-    filename: "synthetic_edge_case_duplicates_10pct.tsv"
+  description: "10% duplicate sample IDs — tests join error handling in ingest layer"
+  generated_at: "2026-05-21T14:30:00"
+  source: "schema"
+  n_rows: 100
+  mode: stress_test
+  output_file: "synthetic_edge_case_duplicates_10pct.tsv"
+
+columns:
+  sample_id:
+    type: id
+    pattern: "SAMPLE_{:05d}"
+    unique: true
+  collection_date:
+    type: date
+    min: "2024-01-01"
+    max: "2024-12-31"
+
+error_injection:
+  duplicate_ids:
+    column: sample_id
+    rate: 0.10
 ```
 
-When user later wants to run the same test:
-```bash
-TEST_LAB.generate_synthetic_data(scenario_name="edge_case_duplicates_10pct")
-# Generates: synthetic_edge_case_duplicates_10pct.tsv (identical structure, same error patterns)
-```
+Saved scenarios are listed in the TEST_LAB UI and can be re-run with one click to regenerate
+the same TSV (identical structure and error patterns) for regression testing across app versions.
 
 ---
 
@@ -751,14 +786,14 @@ TEST_LAB.generate_synthetic_data(scenario_name="edge_case_duplicates_10pct")
 - TEST_LAB does not run the main analysis — that is HOME.
 - TEST_LAB does not build or edit manifests beyond generating a boilerplate scaffold — that is BLUEPRINT.
 - TEST_LAB does not curate or share recipes — that is GALLERY.
-- TEST_LAB does not permanently store anonymised data on behalf of the user — it produces files the user downloads.#TODO though temporary session save should be good - eg if not finish the user could resume ? discuss 
+- TEST_LAB does not permanently store anonymised data on behalf of the user — it produces files the user downloads. Session state (in-progress reconciliation, unsaved config) is held in memory for the duration of the browser session only. If the user closes the tab, work is lost. Named test scenarios are the exception — these are saved as YAML files and persist across sessions.
 
 ---
-#TODO possibility adding more tools afterwards ? 
+
 ## Key Design Constraints
 
-- **Stateless tools**: each TEST_LAB utility runs to completion and returns a file (or several files) or a result. #TODO what would be the result case ? 
-No persistent session state between tool invocations (except named test scenarios, which are saved as files).#TODO discuss ? is it required in case of non finished work ? 
+- **Stateless tools**: each TEST_LAB utility runs to completion and returns a file (or several files), or displays a result in the UI (e.g. ID reconciliation match table before the user downloads the recipe). No persistent session state between tool invocations, except named test scenarios (saved as YAML files) and ID reconciliation recipes (saved as YAML files). New tools can be added later by adding a new panel to the left sidebar accordion — the architecture is open for extension.
+
 - **No data leaves the server**: anonymisation and synthetic generation happen server-side; the user downloads the result. Raw data is never sent to an external service.
 - **Pattern helper shared with BLUEPRINT**: the ID/column pattern matching logic should be the same component. Design for reuse from the start.
 - **Positive inclusion** (ADR-071): TEST_LAB panel is only mounted when `test_lab_enabled` is true in persona config.
@@ -771,7 +806,9 @@ No persistent session state between tool invocations (except named test scenario
 | Code module | Role |
 |---|---|
 | `test_lab_studio.py` | UI and server handlers for all TEST_LAB tools |
-#TODO I guess the associated utilities / will require its own library correct? test_lab already existing - need to build modular 
+| `libs/test_lab/` | Existing library — `aqua_synthesizer.py`, `reconciler.py`, `bootstrapper.py` are the foundations to build on |
+| `libs/id_reconciliation/` | New library (to be created) — pure ID matching logic, pattern detection, recipe generation. Tier 1 only (utils + polars). See `id_reconciliation_module_sketch.md`. |
+
 ---
 
 ## Current State
@@ -787,8 +824,8 @@ No persistent session state between tool invocations (except named test scenario
 
 ## Open Questions
 
-- **Pattern helper**: shared component with BLUEPRINT, or separate implementations? Needs a decision before building either (to avoid duplication). #TODO best would be shared component BUT then we need to check where to place that eg in utils ? to avoid cross library imports OR need to be used as script ? 
-- **Anonymisation fidelity**: plausible ranges sufficient (same types + realistic value ranges). Full distributional matching deferred — can be improved later without refactoring. 
-- **Test scenario format**: how are named error scenarios stored? A JSON schema + generation params file seems cleanest. Where does it live (session dir? dedicated test_lab dir?)? - #TODO if its only for machine then json is ok - I guess its in the test_lab library 
+- **Pattern helper placement**: shared component with BLUEPRINT to avoid duplication. Placed in `libs/utils/` (Tier 1) — the only cross-lib import allowed by the Clear Lines policy. Both `libs/id_reconciliation/` and `libs/blueprint_arch/` can then import it without violating peer-import rules.
+- **Anonymisation fidelity**: plausible ranges sufficient (same types + realistic value ranges). Full distributional matching deferred — can be improved later without refactoring.
+- **Test scenario storage**: YAML format (human-readable for user adjustment). Lives in `libs/test_lab/` under a `scenarios/` subdirectory. Not processed by the data engine.
 - **Boilerplate manifest scope**: structure only (input_fields, output_fields, primary key definitions, verified join keys). The exception is ID cleaning recipes from ID reconciliation — those are baked in because they are required prerequisites, not analysis logic. All other wrangling belongs in BLUEPRINT.
-- **UI structure**: one tab per tool category, or a single list with a category filter? Start with tabs given the distinct tool types.#TODO should we not leverage the left sidebar to have the different tools in accordeons ? we need to discuss for that what is the best here 
+- **UI structure**: left sidebar accordion with one panel per tool category (ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation). Each panel expands in place. This matches the sidebar pattern used in HOME and BLUEPRINT and avoids a separate tab-switching layer inside the TEST_LAB workspace.

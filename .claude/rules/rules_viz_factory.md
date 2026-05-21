@@ -35,9 +35,10 @@ No visual component is considered verified without:
 
 `VizFactory.render()` accepts a `filters` key in the plot config dict. This is the Tier 3 predicate pushdown interface (ADR-024). Filters are applied to the Polars LazyFrame before Pandas hand-off.
 
-**Authoritative op list:** `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`.
+**Authoritative op list:** `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`, `between`.
 
-- `in` / `not_in`: `value` must be a Python list; `pl.col(col).is_in(val)`.
+- `in` / `not_in`: `value` must be a Python list; `pl.col(col).cast(Utf8).is_in(str_vals)` (string-cast both sides).
+- `between`: `value` must be `[lo, hi]`; uses `pl.col(c).is_between(lo, hi, closed=...)`. Honours optional `closed` field (`'both'` default = inclusive, `'none'` = exclusive).
 - Adding new ops requires updating `viz_factory.py:render()` **and** documenting here.
 - The `dtype` key from the filter recipe builder is UI-layer metadata — strip it before injecting into `plot_config["filters"]`.
 

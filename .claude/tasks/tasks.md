@@ -147,6 +147,10 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 
 ### Repo hygiene / tech debt
 
+- [ ] **ADR-045-ANCHOR-SET-1** `[sonnet/medium]` `[adr-violation]`: `app/handlers/home_theater.py` — `anchor_path.set(str(out_path))` is called inside `@render.ui dynamic_tabs()`, violating ADR-045 Rule R1 (renders must be read-only). Extract to a dedicated `@reactive.Effect` with idempotent guard: `if anchor_path.get() != str(out_path): anchor_path.set(str(out_path))`. Audit report: `.claude/logs/audits/audit_adr_compliance_2026-05-21.md`.
+
+- [ ] **DOC-BLUEPRINT-PANELS-1** `[haiku/low]` `[doc-sync]`: `docs/user_guide/blueprint_manifest_authoring.qmd` — Blueprint IDE panel table is missing "Master Manifest" and "External Exchange" panels; "YAML" should be "YAML Escape Hatch". Verify against `app/handlers/blueprint_handlers.py` blueprint panel construction code before fixing. Audit report: `.claude/logs/audits/audit_doc_sync_2026-05-21.md`.
+
 - [ ] **REPO-CLEAN-1** `[haiku/low]` `[repo-hygiene]`: Full git history purge — remove EVE_WORK/, session logs, .vscode user files from ALL past commits. Prerequisite: backup to external disc + gdrive sync.
   ```bash
   pip install git-filter-repo

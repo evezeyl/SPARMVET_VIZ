@@ -31,9 +31,9 @@
 | Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[x] Active` | 2026-05-09 ✅ | Fixed 2 stale → exclusions | 2026-05-09 | Local (manual) |
 | Manifest coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ✅ (6/6 PASS) | 2026-05-27 | — | Local (systemd) |
 | Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
-| **Semantic doc sync** (Agent §17) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ⚠️ — 3 STALE (ExcelHandler class, Comparison Theater, viz_factory count) | — | — | Agent (on-demand) |
-| **ADR behavioral compliance** (Agent §18) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ❌ — ADR-078 VIOLATION: 5 actions silent return lf; ADR-045/053 PASS | — | — | Agent (on-demand) |
-| **Three-source persona consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ — all 8 personas PASS, 0 cascade violations | — | — | Agent (on-demand) |
+| **Semantic doc sync** (Agent §17) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ⚠️ — 4 STALE (generate_branch_plan sig, group_plot_manager returns, get_registered_tools return, Blueprint panel table). 3 fixed this session; DOC-BLUEPRINT-PANELS-1 deferred. | — | — | Agent (on-demand) |
+| **ADR behavioral compliance** (Agent §18) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ❌ — ADR-045 VIOLATION: anchor_path.set() inside @render.ui dynamic_tabs (home_theater.py). Fix tracked ADR-045-ANCHOR-SET-1. | — | — | Agent (on-demand) |
+| **Three-source persona consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ✅ — all 8 personas PASS runtime. 4 doc-gap warnings (wrangle_studio_enabled already in matrix; audit script updated for manifest_edit_enabled + blueprint_agent_enabled). | — | — | Agent (on-demand) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)

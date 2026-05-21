@@ -133,6 +133,22 @@ def _walk_layer_names(obj: object, depth: int = 0) -> list[str]:
     return names
 
 
+def _walk_factory_id_violations(obj: object, depth: int = 0) -> list[str]:
+    """Return context paths where factory_id key is used (ADR-083 violation)."""
+    if depth > 20:
+        return []
+    violations = []
+    if isinstance(obj, dict):
+        if "factory_id" in obj:
+            violations.append(str(obj.get("factory_id", "<missing>")))
+        for v in obj.values():
+            violations.extend(_walk_factory_id_violations(v, depth + 1))
+    elif isinstance(obj, list):
+        for item in obj:
+            violations.extend(_walk_factory_id_violations(item, depth + 1))
+    return violations
+
+
 def _walk_join_steps(obj: object, depth: int = 0) -> list[dict]:
     """Collect all join action step dicts."""
     if depth > 20:
@@ -186,6 +202,7 @@ def analyse_manifest(
         "action_violations": [], # {context, action_name}
         "component_violations": [],  # {context, name}
         "join_violations": [],   # {context, key, message}
+        "factory_id_violations": [],  # list of factory_id values found (ADR-083)
     }
 
     raw = _load_yaml_with_includes(manifest_path)
@@ -287,6 +304,11 @@ def analyse_manifest(
                 "context": manifest_path.name,
             })
 
+    # ── Check 5: Deprecated factory_id key (ADR-083) ─────────────────────────
+    # factory_id was removed in ADR-083. Any manifest using it will get a
+    # hard VisualizationError at runtime. Use explicit geom_* layers instead.
+    result["factory_id_violations"] = _walk_factory_id_violations(manifest)
+
     # ── Check 4: Join key symmetry ────────────────────────────────────────────
     if not skip_join and all_slugs:
         join_steps = _walk_join_steps(manifest)
@@ -333,8 +355,9 @@ def render_report(
     action_fails = [r for r in results if r["action_violations"]]
     component_fails = [r for r in results if r["component_violations"]]
     join_fails = [r for r in results if r["join_violations"]]
+    factory_id_fails = [r for r in results if r.get("factory_id_violations")]
 
-    overall_pass = not any([parse_errors, tsv_fails, action_fails, component_fails, join_fails])
+    overall_pass = not any([parse_errors, tsv_fails, action_fails, component_fails, join_fails, factory_id_fails])
 
     lines = [
         "# Audit Report: Manifest Coherence",
@@ -353,6 +376,7 @@ def render_report(
     ]
     if not skip_join:
         lines.append(f"- Manifests with join key violations: {len(join_fails)}")
+    lines.append(f"- Manifests with deprecated factory_id key (ADR-083): {len(factory_id_fails)}")
     lines += ["", f"## Result: {'✅ PASS' if overall_pass else '❌ FAIL'}", ""]
 
     # Parse errors — highest priority
@@ -398,6 +422,21 @@ def render_report(
                 lines.append(f"- {v['message']}")
             lines.append("")
 
+    # Deprecated factory_id violations (ADR-083)
+    if factory_id_fails:
+        lines += ["## ❌ Deprecated `factory_id` Key (ADR-083)", ""]
+        lines += [
+            "`factory_id` was removed in ADR-083. Any manifest using it will receive a hard",
+            "`VisualizationError` at runtime. Use explicit `geom_*` layers in `layers:` instead.",
+            "Migration tool: `assets/scripts/migrate_plot_specs.py --apply`",
+            "",
+        ]
+        for r in factory_id_fails:
+            lines += [f"### `{r['path']}`"]
+            for val in r["factory_id_violations"]:
+                lines.append(f"- `factory_id: {val}` — migrate to explicit `geom_*` layer")
+            lines.append("")
+
     # TSV field mismatches
     if not skip_tsv and tsv_fails:
         lines += ["## ⚠️ Input Fields / TSV Column Mismatches", ""]
@@ -416,8 +455,8 @@ def render_report(
     lines += [
         "## Per-Manifest Summary",
         "",
-        "| Manifest | Parse | Actions | Components | Join Keys | TSV Fields |",
-        "|----------|-------|---------|------------|-----------|------------|",
+        "| Manifest | Parse | Actions | Components | Join Keys | TSV Fields | factory_id |",
+        "|----------|-------|---------|------------|-----------|------------|------------|",
     ]
     for r in results:
         def icon(violations: list) -> str:
@@ -425,13 +464,15 @@ def render_report(
         parse_icon = "✅" if not r["parse_error"] else "❌"
         tsv_icon = ("⬜ skip" if skip_tsv else icon(r["tsv_violations"]))
         join_icon = ("⬜ skip" if skip_join else icon(r["join_violations"]))
+        fid_icon = icon(r.get("factory_id_violations", []))
         lines.append(
             f"| `{Path(r['path']).name}` "
             f"| {parse_icon} "
             f"| {icon(r['action_violations'])} "
             f"| {icon(r['component_violations'])} "
             f"| {join_icon} "
-            f"| {tsv_icon} |"
+            f"| {tsv_icon} "
+            f"| {fid_icon} |"
         )
     lines += [""]
 
@@ -449,6 +490,10 @@ def render_report(
         "",
         "**Input field slug mismatch:** Run `head -1 <source.tsv>` to see actual column names.",
         "Update the `input_fields` slug to match exactly (case-sensitive).",
+        "",
+        "**Deprecated `factory_id` key (ADR-083):** Run the migration script:",
+        "`assets/scripts/migrate_plot_specs.py --apply`",
+        "Then verify with `debug_runner.py` that the plot still renders correctly.",
         "",
         "## References",
         "- `rules_manifest_structure.md §7` — Canonical recipe syntax, YAML boolean trap",
@@ -549,6 +594,7 @@ def main() -> int:
 
     has_failures = any(
         r["parse_error"] or r["action_violations"] or r["component_violations"] or
+        r.get("factory_id_violations") or
         (not args.skip_tsv and r["tsv_violations"]) or
         (not args.skip_join and r["join_violations"])
         for r in results

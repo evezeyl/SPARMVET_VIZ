@@ -24,7 +24,7 @@ from blueprint_arch.manifest_navigator import (
     resolve_fields_for_schema, # recursive, cycle-guarded
     build_plot_lineage,        # str, str → list[dict]  backward trace to T1 root (ADR-074)
     get_plot_ids_in_group,     # str, str → list[str]   forward trace for scope resolution (ADR-074)
-    generate_branch_plan,      # str, str → dict  branch plan for a lineage split (ADR-082)
+    generate_branch_plan,      # (master_path, schema_id, role, new_id) -> dict  branch plan for a lineage split (ADR-082)
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 
@@ -146,15 +146,15 @@ In test files, place these imports at module level so all test functions see a p
 ```python
 from blueprint_arch.group_plot_manager import (
     list_groups_plots,  # (manifest_path) -> dict[group_id, list[plot_id]]
-    create_group,       # (manifest_path, group_id, label) -> None
-    delete_group,       # (manifest_path, group_id) -> None
-    create_plot,        # (manifest_path, group_id, plot_id, label) -> None
-    delete_plot,        # (manifest_path, group_id, plot_id) -> None
-    assign_plot,        # (manifest_path, group_id, plot_id, spec_path) -> None
+    create_group,       # (manifest_path, group_id, label) -> tuple[bool, str]
+    delete_group,       # (manifest_path, group_id) -> tuple[bool, str]
+    create_plot,        # (manifest_path, group_id, plot_id, label) -> tuple[bool, str]
+    delete_plot,        # (manifest_path, group_id, plot_id) -> tuple[bool, str]
+    assign_plot,        # (manifest_path, group_id, plot_id, spec_path) -> tuple[bool, str]
 )
 ```
 
-All functions raise `KeyError` when a referenced group or plot does not exist. `create_group` and `create_plot` raise `ValueError` on duplicate IDs.
+All mutation functions return `(success: bool, message: str)`. On duplicate IDs or missing groups/plots, they return `(False, reason)` — they do not raise exceptions.
 
 ---
 
@@ -191,7 +191,7 @@ result = call_tool("get_available_actions", {"context": "t1"})
 from blueprint_arch.agent_tool_parser import (
     extract_tool_calls,      # (text, *, strict_unknown=False) -> ParseResult
     register_tool_schema,    # (tool_name, *, required, properties) -> None
-    get_registered_tools,    # () -> dict[str, dict]
+    get_registered_tools,    # () -> list[str]
     ParsedToolCall,          # dataclass: name, args, raw
     ParseResult,             # dataclass: calls, leftovers, errors
 )
