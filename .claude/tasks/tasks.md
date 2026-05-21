@@ -62,7 +62,7 @@ Items with no blockers — can be started immediately.
 
 - [x] **DOC-LIBREADME-BLUEPRINT-ARCH-1** `[sonnet/medium]`: Write/update `libs/blueprint_arch/README.md` — done 2026-05-21. Added: `generate_branch_plan` to manifest_navigator API; `search_components` to schema_registry API; new sections for `group_plot_manager.py`, `agent_tools.py`, `agent_tool_parser.py`, `join_designer.py`; updated tests table listing all 4 test files.
 
-- [ ] **DOC-LIBREADME-TRANSFORMER-1** `[sonnet/medium]`: Update `libs/transformer/README.md` to reflect current state — action registry (all categories from `rules_persona_bioscientist.md §8`), `ui_schema` annotation on actions (what it is, why), `debug_assembler.py` usage (detection-based manifest loading), tiered wrangling structure. Check what's actually in the file first; update only what is stale or missing.
+- [x] **DOC-LIBREADME-TRANSFORMER-1** `[sonnet/medium]`: Update `libs/transformer/README.md` — done 2026-05-21. Added: full action registry table (all 8 categories, 50+ actions); detection-based manifest loading explanation for `debug_assembler.py`. Existing sections (tiered wrangling, ui_schema, widget vocab, tests) were already current.
 
 - [ ] **DOC-LIBREADME-VIZFACTORY-1** `[sonnet/medium]`: Update `libs/viz_factory/README.md` — canonical plot spec format (ADR-083), `normalise_plot_spec`/`serialise_plot_spec` public API, `plot_config_resolver.py` cascade tiers, why `factory_id` is gone (hard `VisualizationError`), how palette injection works, `migrate_plot_specs.py` migration tool.
 
