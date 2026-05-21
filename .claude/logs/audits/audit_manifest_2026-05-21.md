@@ -1,6 +1,5 @@
-Status: PROCESSED
 # Audit Report: Manifest Structure Integrity
-Generated: 2026-05-21T15:28:28
+Generated: 2026-05-21T16:09:42
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Assembler: libs/transformer/tests/debug_assembler.py
 Scratch output: tmpAI/audit_manifest_integrity

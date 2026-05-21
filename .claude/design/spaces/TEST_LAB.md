@@ -34,18 +34,19 @@ Primary audiences:
 | **Boilerplate manifest from files** | Point TEST_LAB at a set of data files; it reads column names and types and generates a skeleton manifest YAML with correct column references, recognizing data types, ready to edit in BLUEPRINT |
 | **ID reconciliation + primary key selection** | After reconciling IDs across files, user selects which columns are primary keys (ID as join keys, must be unique). ID cleaning recipes are automatically baked into the boilerplate manifest as tier1 wrangling steps |
 
-#TODO here we need to consider secondary keys maybe - see the example manifest config/manifests/pipelines/1_test_data_ST22_dummy.yaml - need to verify the blueprint implementation seems now we have implemented composite key joints  - can this be reused ? 
-#TODO also for the broiler plate - need to allow the !include and pre-split the bolerplate manifest in the main manifest and include fields - there is a file that describe the manifest structure - find and add information for the specifications
+**Composite / secondary keys:** BLUEPRINT's Join Designer already supports composite keys (`"on": ["col1", "col2"]` or asymmetric `left_on` / `right_on`). TEST_LAB's ID Reconciliation Engine handles **single-key matching only** — composite key scenarios are defined directly in BLUEPRINT's Join Designer after boilerplate generation.
+
+**Boilerplate output format:** The boilerplate is a **ZIP archive** following the basename mirroring standard (`rules_manifest_structure.md §1`). Contents: a master YAML with `!include` tags + subdirectory fragments (`input_fields/`, `wrangling/`, `assembly/`). Structure is identical to the reference manifest `config/manifests/pipelines/1_test_data_ST22_dummy.yaml`. Single flat YAML is not used for manifests that include join recipes.
 
 ### Anonymisation (PROCESS 1: Real Data → Reversible Mapping)
 
-Anonymisation takes a data file with an ID column and replaces all ID values with consistent synthetic equivalents. The same original ID always maps to the same anonymised ID. #TODO REVIEW : Mappings are output in tsv file - no specific acess control but plan for it if we can eventually implement later without refactoring. **Anonymisation handles ID/key columns only** — the rest of the data is passed through unchanged.
+Anonymisation takes a data file with an ID column and replaces all ID values with consistent synthetic equivalents. The same original ID always maps to the same anonymised ID. Mappings are output as TSV files (no access control system built in — deferred future enhancement; TSV format chosen to remain compatible when access control is added). **Anonymisation handles ID/key columns only** — the rest of the data is passed through unchanged (except personal info columns, which are stripped from anonymised output and bundled into the mapping TSV).
 
 | Functionality | What the user can do |
 |---|---|
 | **Anonymise ID column** | Take a file with an ID column; replace all ID values with consistent synthetic equivalents. Same original_id always → same anon_id (preserves joins across files). Safe to share, reversible by authorized users |
-| **Access-controlled mapping storage** | Store original_id → anon_id mapping (TSV). #TODO - [Not now : with user role restrictions (admin only, researchers, specific users)]; TSV can be joined with anonymised data to deidentify results |
-#TODO -> maybe we need a "de-annomisation functionality then also
+| **Mapping TSV storage** | Store original_id → anon_id mapping (TSV), including any stripped personal info columns (name, address, etc.). No access control system built in — user keeps this file and shares only the anonymised output |
+| **De-anonymisation via BLUEPRINT** | No dedicated de-anonymisation tool needed — restore original IDs by joining anonymised data with mapping TSV in BLUEPRINT (join on anon_id). Instructions provided in TEST_LAB output summary |
 | **ID pattern for synthetic IDs** | Choose how synthetic IDs are generated: simple sequencing (ANON_0001, ANON_0002, ...), hash-based, or custom pattern |
 | **Ensure ID consistency across files** | When anonymising multiple related files with the same ID column, same original_id maps to same anon_id everywhere (required for joins to remain valid post-anonymisation) |
 
@@ -69,11 +70,11 @@ Synthetic data generation creates independent, fresh data matching a schema. No 
 | **Pairwise ID matching** | For each file pair, view side-by-side table of IDs with match status (exact, pattern-based, unmatched); certainty score per pair (not global) |
 | **Pattern-based matching suggestions** | Engine suggests transformation rules (prefix/suffix removal, delimiter extraction, case normalization, substring extraction, regex); user verifies each match < 100% certainty |
 | **Recode workflow** | If pattern matching insufficient, user can clean problematic IDs (trim, extract, normalize, custom regex); engine re-runs matching after cleaning |
-| **Transformation recipe storage** | Save declarative recipe (YAML format) with audit log for reuse on future imports of same file types | #TODO audit log is more to have it human understandable of the steps that were necessary - easier to read
-| **Progressive processing** | Handle large files via sample-based preview → full-file matching; user verifies preview, then engine processes all rows | #TODO IMPORTANT! this is not what I think we had decided, we had decided we can do bach after baches if necessary so not do all at once but do all if necessary 
-| **Many-to-many detection & suppression** | Flag if one ID maps to multiple others (indicates data error); offer option to suppress and continue if user confirms intentional |
+| **Transformation recipe storage** | Save declarative recipe (YAML format) with human-readable audit log for reuse on future imports of same file types |
+| **Progressive processing** | Process full file using Polars LazyFrame streaming (memory-efficient); display results in manageable chunks sorted by certainty descending; verify button per chunk; user can bulk-accept 100% exact matches or review individually; engine re-runs pattern detection on remaining unmatched after each acceptance round |
+| **Many-to-many detection & suppression** | Flag true many-to-many (one source ID matches multiple distinct target IDs); offer option to suppress and continue — user must provide written reason for bypassing the warning |
 
-#TODO - we need to be able to use this and then create the boilerplate manifest - we need to think how to allow standalone and continuation of workflow ? 
+**Workflow modes:** Standalone tool (user starts from ID reconciliation and downloads recipe + outputs) or **continuation** (engine output feeds directly into Manifest Scaffolding boilerplate generation without re-upload).
 ---
 
 ## ID Reconciliation Engine — Detailed Design
@@ -85,9 +86,9 @@ The ID Reconciliation Engine is the foundational tool for **Manifest Scaffolding
 1. Analyzes ID formats across multiple files
 2. Suggests compatible file pairs and matching order
 3. Performs pairwise matching with per-pair certainty scores
-4. Requires user verification for all matches < 100%> - #TODO 100% certainty is exact string match
+4. Requires user verification for all matches < 100% (100% = exact string match only)
 5. Generates reusable transformation recipes
-6. Flags data quality issues (many-to-many relationships) #TODO think about secondary key possibilities ? 
+6. Flags data quality issues (many-to-many relationships)
 
 **Integration point:** Manifest Scaffolding workflow calls the ID Reconciliation Engine as step 1 before boilerplate generation.
 
@@ -97,10 +98,11 @@ The ID Reconciliation Engine is the foundational tool for **Manifest Scaffolding
 User uploads: metadata.tsv (sample_id column) + amr_results.tsv (S_id column)
               │
               ├─ PRE-CHECK: Analyze formats
+              │   - Detect column types (displayed for info; ID columns always
+              │     processed as categorical/text for matching regardless of type)
               │   - metadata: "sample_S001", "sample_S002", "sample_S999"
               │   - amr_results: "S001", "S002", "S999_QC_pass"
               │   ✓ Formats are compatible (IDs are present in both)
-              #TODO type detection ? or where ? 
               │
               ├─ PHASE 1: Exact Match
               │   Left ID          │ Certainty │ Right ID
@@ -119,7 +121,7 @@ User uploads: metadata.tsv (sample_id column) + amr_results.tsv (S_id column)
               │   Certainty: 87% (pattern-based, not exact)
               │
               ├─ PHASE 3: User Verification
-              │   100% matches → auto-accept (user can override) #TODO defined as exact string match
+              │   100% matches (exact string match) → auto-accept (user can override)
               │   87% match → MUST verify:
               │     "sample_S999 → S999_QC_pass. Is this correct? [Yes/No/Manual Pick]"
               │   Unmatched → User choice:
@@ -133,8 +135,6 @@ User uploads: metadata.tsv (sample_id column) + amr_results.tsv (S_id column)
                  - Recipe saved for reuse on future imports
 ```
 
-#TODO option for review - unmatched ? keep or delete ? 
-
 ### Design Decisions Locked
 
 #### 1. Certainty Scoring (Per Pair, Not Global)
@@ -143,10 +143,10 @@ Each ID pair receives an individual certainty score:
 
 | Score | Meaning | User Action |
 |---|---|---|
-| **100%** | Exact string match | Auto-accept (user can override/reject) |
-| **95%** | Pattern match (e.g., remove prefix, extract from delimiter) | MUST manually verify each pair | #TODO after verify ? update match to 100% ? in case we need a second round ? 
-| **80%** | Fuzzy match (e.g., Levenshtein distance, substring similarity) | MUST manually verify each pair |
-| **0%** | No match found | User decides: leave unmatched, try manual pairing, recode, or remove |
+| **100%** | Exact string match | Auto-accept (user can override/reject). Promoted to "verified" status. Unverify option available if false positive later detected. |
+| **95%** | Pattern match (e.g., remove prefix, extract from delimiter) | MUST manually verify each pair. On confirmation → promoted to "verified" status. Unverify option available. |
+| **80%** | Fuzzy match (e.g., Levenshtein distance, substring similarity) | MUST manually verify each pair. On confirmation → promoted to "verified" status. Unverify option available. |
+| **0%** | No match found | User decides: leave unmatched, discard this ID, try manual pairing, or recode |
 
 **Critical rule:** No false positives allowed. Any match < 100% requires explicit user confirmation.
 
@@ -195,12 +195,11 @@ id_transformation_recipe:
     - "Unmatched target IDs: CONTROL_001, BLANK_001 (expected — not samples)"
     - "User decision: Leave unmatched IDs as-is (data quality note added)"
 ```
-#TODO we need to check that the audit_log: key is supported by ingest, but that is a good idea yes to it - best would be to have the audit log always as !include file - so it can eventually be used separately - new rule in manifest ADRs ? 
-
-
 Recipe is reusable: future imports of the same file types apply these steps automatically.
 
 #### 3. Visualization: Side-by-Side Table
+
+Table is **sorted by certainty descending** (100% first). Results are displayed in chunks (default 50 rows per chunk, configurable).
 
 ```
 ╔════════════════════════╦════════════════════════╦════════════╦══════════════╗
@@ -212,45 +211,57 @@ Recipe is reusable: future imports of the same file types apply these steps auto
 ║ sample_S998            ║ ❌ UNMATCHED          ║    0%      ║ ? Action req ║
 ║ sample_S997            ║ ❌ UNMATCHED          ║    0%      ║ ? Action req ║
 ╚════════════════════════╩════════════════════════╩════════════╩══════════════╝
+  [ Bulk-accept all 100% matches ]    [ Accept chunk ]
 ```
-#TODO Here I think user should first check all those 100% matched and then bulk accept those. Then procede in decreaseing "certainty" accepting match, or manually maching other samples so the review step. I think the app should be smart eg to find eventuall new patterns matching ? solutions ? So basically we fix the easier first and then go to the difficilt cases
+
+**Review strategy:** Accept the easy cases first (100% exact matches), then work down through lower certainty. After each acceptance round, the engine re-runs pattern detection on remaining unmatched — new patterns may emerge as the problem space narrows.
+
 User can:
+- **"Bulk-accept all 100%"** → accept all exact matches at once, promoted to "verified"
+- **"Accept chunk"** → accept all verified decisions in the current chunk and advance to next chunk
 - Click "Review" → see transformation steps that produced the match
-- Click "❌" → choose "Leave unmatched" | "Manual pick" | "Recode"
-- Bulk-accept all 100% matches or review individually
+- Click "❌" → choose "Leave unmatched" | "Discard this ID" | "Manual pick" | "Recode"
+- **Unverify** any previously accepted match if a false positive is detected
 
-#### 4. Progressive Matching (Large Files)
+#### 4. Progressive Matching (Chunked Processing)
 
-For files with > 1000 rows:
-1. Show sample-based preview (first 100 rows, random 100 rows, worst-case sample) #TODO we need a systematic sorting -> by matching decreasing - so we can validate sequentially and fix the most problematic at the end - with manual help
-2. User verifies preview #TODO will need a verify button ? associated with each preview ? how can/will this work - I need proposals
-3. Engine processes full file in background, shows progress #TODO we need to think about load/time - can it be chunked or not ? how to make that as efficiently compute/memory RAM as possible ? options ? 
-4. User reviews final unmatched set #TODO - might also need to be chunked if there are many unmatched
+The engine **always processes the full file** — no sampling. Efficiency is achieved through Polars LazyFrame streaming (not by processing less data).
+
+1. **Full processing via streaming**: Engine runs matching on the complete file using Polars LazyFrame (`scan_parquet` / lazy evaluation). Memory stays bounded regardless of file size — results are streamed as computed.
+2. **Sorted chunk display**: Results presented sorted by certainty descending (100% first) in chunks of 50 rows (configurable in persona config). User sees the easiest cases first.
+3. **Verify button per chunk**: Each displayed chunk has an explicit "Accept chunk" button. User reviews decisions in the chunk, adjusts any individual action, then accepts to advance to the next chunk.
+4. **Iterative re-run**: After each acceptance round, the engine re-runs pattern detection on remaining unmatched IDs. Pattern space narrows with each round, making new patterns detectable.
+5. **Unmatched chunking**: If many unmatched IDs remain after all rounds, they are also presented in chunks of 50 for manageable review rather than one overwhelming list.
 
 #### 5. Many-to-Many Detection & Suppression
 
-**Default:** Flag as data error (suggests duplicate or misaligned data). #TODO Warning - Need to check intent - is it supposed to be unique or is it supposed to allow many -> usually we can have one to many I do not think we will see much cases with many to many We need to think here 
+**Distinction:**
+- **One-to-many** (one source ID matches one target ID, but target has multiple result rows): normal — not flagged. Expected in long-format data (e.g., same sample, multiple genes).
+- **True many-to-many** (one source ID matches multiple *distinct* target IDs at the ID-alignment level): flagged as a data error. This almost always indicates duplicates or misaligned data.
 
 **Example:**
 ```
-sample_S001 matches → S001 AND S001_replicate (many-to-many detected)
+sample_S001 matches → S001 AND S001_replicate (true many-to-many detected)
                       ↓
                       Banner: "⚠️ Many-to-many relationship detected.
                                This usually indicates duplicate or misaligned data.
-                               Review before proceeding. [Suppress & Continue]"
+                               Review before proceeding.
+                               [Suppress & Continue — requires written reason]"
 ```
 
-If user confirms "Suppress & Continue," the engine: #TODO Yes good ! important to show that use decided to buypass a warning - maybe user could have to write a reason for bypassing ? that would help clarify why ? 
-- Logs the warning in audit trail
-- Keeps the many-to-many pair (user's responsibility now)
-- Proceeds with matching
+If user confirms "Suppress & Continue":
+- User **must provide written reason** (free-text field, mandatory — cannot be empty)
+- Reason logged in audit trail alongside the warning
+- Many-to-many pair kept (user's responsibility)
+- Engine proceeds with matching
 
-**Future use case (deferred):** Internal joins based on results (e.g., same gene detected multiple times). Assess at usage time if needed. #TODO - maybe we should not defer afterwards . as this in a way works with the warning above no ? 
+**Warning system covers all use cases** (including future internal join scenarios where the same entity appears multiple times). No deferral needed — the warning + reason requirement is sufficient for all known cases.
 
 #### 6. Recode Workflow (If Pattern Matching Fails)
 
 If pattern detection + user manual pairing insufficient:
-#TODO - we might also have an option to suggest the user to clean the names correctly if there are many different patterns and then start again the process - afterall user should also allow some consistency - this might allow to limit special cases - they are allowed to verify their data before retrying (eg. we do not want to have to treat large amount of manual cases eg max 100 ? or is it even too much ? )
+
+**Threshold rule (C11):** If more than **50 unmatched IDs** remain after all pattern rounds (threshold configurable in persona config), the engine suggests: *"You have [N] unmatched IDs with no consistent pattern detected. Consider standardising your ID format and retrying — this will produce better results than manual case-by-case resolution."* User can accept this advice (download a list of unmatched IDs, clean externally, re-upload) or continue with manual resolution.
 
 
 ```
@@ -294,7 +305,9 @@ SUGGEST SEQUENCE:
 
 RATIONALE: Start easy, build pattern understanding, tackle hardest last.
 ```
-#TODO - Well we have to consider - if exact match its a fast review so yeah ok - but maybe a warning about complex transformation detected between tables osv - extraction in this case as your example is not so complex... but then if seems really complex would a message telling the user maybe to clean the format before could be preferable ? or not ? 
+
+**Complexity warning:** If pre-check detects that the expected transformation between two files is multi-step or involves complex pattern extraction (e.g., regex with capture groups, multiple delimiter operations in sequence), the engine shows: *"Complex transformation detected between [File A] and [File C]. Consider standardising your ID format before matching — this will produce more reliable results."* User can proceed or clean data first. (Exact definition of "complex" is to be specified during implementation based on pattern classifier outputs.)
+
 ---
 
 ## Manifest Scaffolding — Primary Key Selection & Recipe Integration
@@ -304,122 +317,167 @@ RATIONALE: Start easy, build pattern understanding, tackle hardest last.
 After ID reconciliation is complete and user has verified matches, the scaffolding workflow:
 
 ```
-1. User identifies primary keys in input_fields
-   - For each file/schema, which columns are the join keys? #TODO --- the joints will not be defined in the boilerplate but by primary key field at first but its important to ensure that the ones that will be selected and joined in after in the bluerprint
+1. User identifies join keys in input_fields
+   - For each schema, which column is the join key (used to link files)?
    - E.g., metadata_schema → sample_id
    - E.g., amr_schema → sample_id
-   - User confirms these are unique (or will become unique after cleaning)
+   - User confirms these will be unique after cleaning
+   - (Composite keys defined later in BLUEPRINT Join Designer — not in TEST_LAB)
 
-2. System validates primary key uniqueness
-   - Check if columns have duplicate values (before cleaning)
+2. System validates join key uniqueness
+   - Check if columns have duplicate values before cleaning
    - Flag problematic duplicates (data quality warning)
 
-3. System generates boilerplate manifest with ID recipes baked into tier1
-   - Input fields: column names, types, descriptions from actual data
-   - Tier1 wrangling: includes ID reconciliation recipes (transformations)
-   - Tier1 wrangling: includes validation checks (drop duplicates on primary key, filter missing)
-   - Joins: uses verified join keys from ID reconciliation
-   - Output fields: inherited from input after wrangling
+3. System generates boilerplate manifest ZIP (basename mirroring format)
+   - Master YAML: data_schemas, join_manifests stubs with !include tags
+   - Fragment files: input_fields per schema (columns, types from actual data)
+   - Fragment files: wrangling per schema (ID reconciliation recipes in tier1)
+   - Fragment files: join wrangling file pre-filled with verified join keys
+   - Validation checks in tier1: drop_duplicates, null_if + drop_nulls on join keys
 
-4. User downloads boilerplate manifest
-   - Ready to edit in BLUEPRINT
-   - Primary keys already defined in input_fields
-   - ID cleaning (recipes) already configured in tier1 wrangling
-   - Validation checks already in place
-   - Join logic with verified keys already sketched
+4. User downloads ZIP and opens master manifest in BLUEPRINT
+   - Join key alignment already done (from ID reconciliation)
+   - ID cleaning recipes in tier1 — ready to verify/extend
+   - Stub join recipe already wired to the correct key
+   - analysis_groups stub: user adds plots and groups in BLUEPRINT
 ```
 
 ### Example Boilerplate Manifest (with recipes baked in)
-#TODO does this example conform with our way of doing schema ? if so very good, just would like a check, I like it like that
+
+The boilerplate is downloaded as a **ZIP** containing a master manifest + fragment files.
+All paths follow the basename mirroring standard (`rules_manifest_structure.md §1`).
+
 ```yaml
+# ── FILE: sample_amr_pipeline.yaml  (master manifest) ──────────────────────────
+
+id: sample_amr_pipeline
+type: sample
 info:
-  id: sample_amr_pipeline
+  display_name: "Sample AMR Pipeline"
   description: "Sample metadata + AMR results"
 
-input_schemas:
+# ── Data Schemas ────────────────────────────────────────────────────────────────
+data_schemas:
   metadata_schema:
-    # PRIMARY KEY defined in input_fields
-    input_fields:
-      sample_id:
-        type: categorical
-        description: "Sample identifier (PRIMARY KEY — must be unique)"
-      collection_date: {type: string, description: "Collection date"}
-      site: {type: categorical}
-      age: {type: string}
-    
-    wrangling:
-      tier1:
-        # ID Reconciliation recipe (step 1: clean the primary key)
-        - action: remove_prefix
-          columns: [sample_id]
-          pattern: "sample_"
-        
-        # Optional: normalize other fields
-        - action: cast
-          columns: [collection_date]
-          dtype: String
-        
-        # Validation (step 2: ensure primary key uniqueness)
-        - action: drop_duplicates
-          columns: [sample_id]
-        
-        # Filter missing/empty primary key values
-        - action: filter_eq
-          column: sample_id
-          value: ""
-          negate: true
+    source:
+      type: local_tsv
+      path: ./data/metadata.tsv  # placeholder — user updates path
+    input_fields: !include 'sample_amr_pipeline/input_fields/metadata_schema_input_fields.yaml'
+    wrangling: !include 'sample_amr_pipeline/wrangling/metadata_schema_wrangling.yaml'
+    output_fields: {}  # identity passthrough — define in BLUEPRINT if needed
 
   amr_schema:
-    # PRIMARY KEY defined in input_fields
-    input_fields:
-      sample_id:
-        type: categorical
-        description: "Sample ID (PRIMARY KEY — must be unique)"
-      amr_gene: {type: categorical}
-      phenotype: {type: categorical}
-    
-    wrangling:
-      tier1:
-        # ID Reconciliation recipe (normalize to match metadata_schema.sample_id)
-        - action: extract_delimiter
-          column: sample_id
-          delimiter: "_"
-          position: 0
-        
-        # Validation
-        - action: drop_duplicates
-          columns: [sample_id]
-        
-        - action: filter_eq
-          column: sample_id
-          value: ""
-          negate: true
+    source:
+      type: local_tsv
+      path: ./data/amr_results.tsv  # placeholder — user updates path
+    input_fields: !include 'sample_amr_pipeline/input_fields/amr_schema_input_fields.yaml'
+    wrangling: !include 'sample_amr_pipeline/wrangling/amr_schema_wrangling.yaml'
+    output_fields: {}
 
+# ── Join Manifests ──────────────────────────────────────────────────────────────
 join_manifests:
   sample_amr_joint:
-    left_ingredient: metadata_schema
-    recipe:
-      - action: join
-        right_ingredient: amr_schema
-        'on': sample_id  # Both PRIMARY KEYs cleaned, now aligned
-        how: inner
+    description: "Metadata + AMR results — join key: sample_id (verified by TEST_LAB)"
+    ingredients:
+      - dataset_id: metadata_schema
+      - dataset_id: amr_schema
+    recipe: !include 'sample_amr_pipeline/wrangling/sample_amr_joint_wrangling.yaml'
 
-output_fields:
-  # (Generated from input after wrangling)
-  sample_id: {type: categorical}
-  collection_date: {type: string}
-  site: {type: categorical}
-  age: {type: string}
-  amr_gene: {type: categorical}
-  phenotype: {type: categorical}
+# ── Analysis Groups — stub, define in BLUEPRINT ─────────────────────────────────
+analysis_groups: {}
+```
+
+```yaml
+# ── FILE: sample_amr_pipeline/input_fields/metadata_schema_input_fields.yaml ───
+
+sample_id:
+  type: categorical
+  description: "Sample identifier (join key — cleaned in tier1)"
+collection_date:
+  type: string
+  description: "Collection date"
+site:
+  type: categorical
+age:
+  type: string
+```
+
+```yaml
+# ── FILE: sample_amr_pipeline/wrangling/metadata_schema_wrangling.yaml ─────────
+# ID Reconciliation recipe baked in from TEST_LAB matching session
+
+tier1:
+  # Step 1: Remove 'sample_' prefix (reconciliation recipe: remove_prefix)
+  - action: regex_replace
+    column: sample_id
+    pattern: "^sample_"
+    replacement: ""
+
+  # Step 2: Cast other fields
+  - action: cast
+    columns: [collection_date]
+    dtype: String
+
+  # Step 3: Join key integrity — drop duplicates and nulls
+  - action: drop_duplicates
+    columns: [sample_id]
+  - action: null_if
+    column: sample_id
+    value: ""
+  - action: drop_nulls
+    columns: [sample_id]
+```
+
+```yaml
+# ── FILE: sample_amr_pipeline/input_fields/amr_schema_input_fields.yaml ────────
+
+sample_id:
+  type: categorical
+  description: "Sample ID (join key — cleaned in tier1)"
+amr_gene:
+  type: categorical
+phenotype:
+  type: categorical
+```
+
+```yaml
+# ── FILE: sample_amr_pipeline/wrangling/amr_schema_wrangling.yaml ───────────────
+# ID Reconciliation recipe baked in from TEST_LAB matching session
+
+tier1:
+  # Step 1: Extract first field before '_' delimiter (reconciliation recipe: extract_delimiter)
+  - action: mutate
+    column: sample_id
+    expression: "pl.col('sample_id').str.split('_').list.first()"
+
+  # Step 2: Join key integrity — drop duplicates and nulls
+  - action: drop_duplicates
+    columns: [sample_id]
+  - action: null_if
+    column: sample_id
+    value: ""
+  - action: drop_nulls
+    columns: [sample_id]
+```
+
+```yaml
+# ── FILE: sample_amr_pipeline/wrangling/sample_amr_joint_wrangling.yaml ────────
+# Pre-filled with verified join key from ID reconciliation
+
+tier1:
+  - action: join
+    right_ingredient: amr_schema
+    'on': ["sample_id"]   # Both sides cleaned; join key verified in TEST_LAB
+    how: left             # placeholder — choose inner / left / outer in BLUEPRINT
 ```
 
 **Key points:**
-- Primary keys defined in `input_fields` for each schema
-- ID cleaning (from reconciliation) in `tier1` wrangling
-- Duplicate/missing-value checks also in `tier1`
-- Join uses the cleaned, validated primary keys
-- User can edit this boilerplate in BLUEPRINT to add analysis_groups, plots, etc.
+- `data_schemas:` is the correct top-level key (not `input_schemas:`)
+- `source:` block is required per schema (user updates path before loading in BLUEPRINT)
+- Join defined via `ingredients:` list + `recipe: !include` — never inline in the master
+- ID cleaning in `tier1` uses registered transformer actions (`regex_replace`, `mutate`, `drop_duplicates`, `null_if`, `drop_nulls`)
+- `output_fields: {}` = identity passthrough (ADR-014) — user adds contracts in BLUEPRINT
+- `analysis_groups: {}` = stub — user fills in BLUEPRINT with plots and groups
 
 ---
 
@@ -427,16 +485,15 @@ output_fields:
 
 ### Design Decisions Locked
 
-**Q1: ID Mapping & Reversibility** → **Scenario B (Reversible with Access Control)**
-- Store original_id → anon_id mapping (YAML file) #TODO no we decided tsv file
-- Access-controlled: admin/researcher/specific users can deidentify #TODO no this is controled by access or will be dealt afterwards - we have no admin system but we could think of one as enhancements
-- User/role who performs anonymisation decides access level #TODO see above
+**Q1: ID Mapping & Reversibility** → **Reversible with manual access control**
+- Store original_id → anon_id mapping as **TSV file** (joinable, not YAML)
+- No access control system built into TEST_LAB now — one designated person runs the anonymisation, shares the anonymised files, and keeps the mapping TSV for themselves
+- Access control (admin/role system) is a **future enhancement** — deferred
 
-**Q2: Access Control** → **By User Role** #TODO see aboive - right now think about one person choosen to do the anonymization that will share the anonymized data with another and keep the tsv with identities for herself
-- Admin: sees original data + mapping
-- Researcher (if authorized): sees anonymised data + mapping
-- Public/Other: sees anonymised data only, no mapping
-- Access control handled by deployment profile + persona flags (not by TEST_LAB itself)
+**Q2: Access Control** → **Deferred (manual for now)**
+- Current model: person who runs anonymisation holds the mapping TSV; they decide what to share
+- No persona flags or deployment profile controls for this in the current build
+- Plan for access control system in a future enhancement without needing to refactor the output format (TSV is already compatible)
 
 **Q3: ID Pattern for Synthetic IDs** → **Simple Sequencing (with options)**
 - Default: ANON_0001, ANON_0002, ANON_0003, ... (simple sequencing)
@@ -448,45 +505,81 @@ output_fields:
 - Ensures joins remain valid post-anonymisation
 - Use ID Reconciliation Engine to validate join keys before & after anonymisation
 
-### Workflow: Anonymising ID Column Across Files
-#TODO maybe suggest a precheck of IDs matching before anonymistation to ensure everything is in order ! I think we need a suggested workflow for the user - can be a visual - to explain the logic of operation - that would ensure logical good practices (if user do not have that naturally)
-```
-1. User uploads files to anonymise (1+ files with same ID column)
-   - E.g., metadata.tsv (sample_id) + results.tsv (sample_id)
+### Recommended Workflow (visual)
 
-2. System runs ID reconciliation (optional - but recommended, if IDs don't match between files)
-   - Validates that ID columns are correctly aligned
-   - Identifies primary key column name
-#TODO sometimes during annonymisation there are some columns that must go with the anonimized tsv data for reconstitution eg. patient name, adress, phone, email - id would be patient name that would be annonymized but all the other personal column information must be removed from the anonmyised dataset and instead be added to the tsv that will match annonymized ids to real id (and then the personal information . hope its understandable - ask if unsure) 
+```
+BEFORE ANONYMISING:
+  ┌──────────────────────────────────────────────────────┐
+  │ STEP 0 (Recommended): Run ID Reconciliation first    │
+  │  → validate IDs match across all files               │
+  │  → ensures anonymisation preserves join validity     │
+  └──────────────────────────────────────────────────────┘
+                         ↓
+
+ANONYMISATION WORKFLOW:
+  1. Upload files          2. Select columns          3. Configure & run
+  ─────────────────        ──────────────────         ─────────────────────
+  metadata.tsv      →      ID column: sample_id  →    Pattern: ANON_{:04d}
+  results.tsv              Personal columns to         Apply to: all files
+                           strip: name, address,
+                           phone → go to mapping TSV
+                         ↓
+  4. Outputs
+  ────────────────────────────────────────────────────────
+  anonymised_metadata.tsv   (sample_id → ANON_0001, personal cols removed)
+  anonymised_results.tsv    (sample_id → ANON_0001, personal cols removed)
+  mapping_sample_id.tsv     (original_id | anon_id | name | address | phone)
+  anonymisation_config.yaml (audit record — NOT a pipeline manifest)
+                         ↓
+  5. Share
+  ────────────────────────────────────────────────────────
+  Share → anonymised files (safe to distribute)
+  Keep  → mapping_sample_id.tsv (you hold this; no built-in access control)
+                         ↓
+  6. De-anonymise later (via BLUEPRINT)
+  ────────────────────────────────────────────────────────
+  Join anonymised_results.tsv ← mapping_sample_id.tsv (on anon_sample_id)
+  → original IDs + personal columns restored
+  (TEST_LAB output includes copy-paste BLUEPRINT join recipe)
+```
+
+### Workflow Steps Detail
+
+```
+1. Upload files to anonymise (1+ files with same ID column)
+
+2. (Recommended) Run ID reconciliation pre-check
+   - Validates ID columns are aligned across files
+   - Ensures same original_id maps to same anon_id after anonymisation
+
 3. User configures anonymisation
    - Select ID column: sample_id
+   - Select personal info columns to strip (name, address, phone, email, etc.)
+     → these will be REMOVED from anonymised output
+     → and ADDED as extra columns in mapping TSV
    - Choose ID pattern: ANON_0001, ANON_0002, ... (or custom)
    - Confirm: "apply to all selected files"
 
 4. System generates anonymised datasets
    - Same original_id → same anon_id across all files (preserves joins)
-   - All other columns: unchanged, passed through
+   - Personal info columns: stripped from output, bundled into mapping TSV
    - Output:
-     * anonymised_metadata.tsv (with anon_sample_id)
-     * anonymised_results.tsv (with anon_sample_id)
-     * mapping_sample_id.tsv (access-controlled; for deidentification)
+     * anonymised_metadata.tsv
+     * anonymised_results.tsv
+     * mapping_sample_id.tsv (original_id + anon_id + personal columns)
+     * anonymisation_config.yaml (audit/transparency record, not a pipeline manifest)
 
-5. User assigns access level to mapping file #TODO we need to have this "authority as deferred/to dosicss and to be discussed for fesabililty and eventuall further enhancement
-   - Who can access the mapping? (admin / researcher / public)
-   - (Handled by deployment profile, not TEST_LAB)
+5. Access control
+   - No system built in — user keeps mapping TSV, shares anonymised files only
+   - Future enhancement: role-based access control (deferred)
 
-6. Anonymised datasets are safe to share
-   - IDs replaced, other columns unchanged
-   - Authorized users can deidentify via join with mapping_sample_id.tsv:
-     ```
-     anonymised_results.tsv ← JOIN ← mapping_sample_id.tsv
-     (on anon_sample_id)
-     → results with original_sample_id restored
-     ```
+6. Anonymised datasets safe to share
+   - De-anonymise later via BLUEPRINT join (recipe included in TEST_LAB output)
 ```
 
 ### Example Anonymisation Configuration
-#TODO here we need to think carefully the annonymisation will not be registred as yaml that will follow the broiler plate, it can eventually follow the annonymised file - otherwise one can cheat - Discuss here utility of anonymisation yaml -> I think we had said the data correspondance goes into tsv - so why this here ? I do not really understand the purpose 
+
+**Note:** The YAML below is an **audit/transparency record only** — it is NOT a pipeline manifest and is never processed by the SPARMVET engine. It documents what was done, with what settings, on what date. Stored alongside the output files so the run can be understood or repeated months later.
 
 **Input:** Files to anonymise with ID column
 - metadata.tsv (sample_id column)
@@ -512,14 +605,14 @@ anonymisation:
 
 1. **anonymised_metadata.tsv** — Real data with anonymised values, same structure
 2. **anonymised_results.tsv** — Real data with anonymised values, same structure
-3. **mapping_sample_id.tsv** — Joinable TSV: original_sample_id ↔ anon_sample_id (access-controlled) #TODO and other selected "personal information columns - unmodified"
+3. **mapping_sample_id.tsv** — Joinable TSV: original_sample_id ↔ anon_sample_id + any personal info columns stripped from the anonymised output (name, address, phone, etc.)
 
-Example mapping_sample_id.tsv:
+Example mapping_sample_id.tsv (with personal info columns stripped from anonymised data):
 ```
-original_sample_id	anon_sample_id
-S001	ANON_0001
-S002	ANON_0002
-S003	ANON_0003
+original_sample_id	anon_sample_id	patient_name	address	phone
+S001	ANON_0001	Jane Doe	Oslo, Norway	+47 123 45 678
+S002	ANON_0002	John Smith	Bergen, Norway	+47 987 65 432
+S003	ANON_0003	Anna Hansen	Tromsø, Norway	+47 555 12 345
 ```
 
 **Use case:** Authorized user can join this with anonymised_results.tsv to restore original IDs:
@@ -695,7 +788,7 @@ No persistent session state between tool invocations (except named test scenario
 ## Open Questions
 
 - **Pattern helper**: shared component with BLUEPRINT, or separate implementations? Needs a decision before building either (to avoid duplication). #TODO best would be shared component BUT then we need to check where to place that eg in utils ? to avoid cross library imports OR need to be used as script ? 
-- **Anonymisation fidelity**: how closely should synthetic distributions match the real data? Full distributional match (harder, slower) vs. same types + plausible ranges (simpler, sufficient for most cases)? #TODO I think plausible range is enough for now - I guess we can still improve if necessary no ? 
+- **Anonymisation fidelity**: plausible ranges sufficient (same types + realistic value ranges). Full distributional matching deferred — can be improved later without refactoring. 
 - **Test scenario format**: how are named error scenarios stored? A JSON schema + generation params file seems cleanest. Where does it live (session dir? dedicated test_lab dir?)? - #TODO if its only for machine then json is ok - I guess its in the test_lab library 
-- **Boilerplate manifest scope**: should the scaffold include suggested wrangle steps, or only the column references? Starting with column references only keeps scope tight. #TODO key/id cleaning can be added if necessary BUT wrangling is blueprint tasks as previously mentionned. So boilerplate should prepare the structure not the content
+- **Boilerplate manifest scope**: structure only (input_fields, output_fields, primary key definitions, verified join keys). The exception is ID cleaning recipes from ID reconciliation — those are baked in because they are required prerequisites, not analysis logic. All other wrangling belongs in BLUEPRINT.
 - **UI structure**: one tab per tool category, or a single list with a category filter? Start with tabs given the distinct tool types.#TODO should we not leverage the left sidebar to have the different tools in accordeons ? we need to discuss for that what is the best here 

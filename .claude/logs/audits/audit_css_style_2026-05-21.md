@@ -1,6 +1,5 @@
-Status: PROCESSED
 # Audit Report: CSS Design Token Compliance
-Generated: 2026-05-21T15:28:30
+Generated: 2026-05-21T16:09:44
 Scanned: config/ui/theme.css
 Rule: rules_css_style_spec.md | ADR-055
 

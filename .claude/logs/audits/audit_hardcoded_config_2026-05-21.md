@@ -1,6 +1,5 @@
-Status: PROCESSED
 # Audit Report: Hardcoded Configuration & Path Violations
-Generated: 2026-05-21T15:28:31
+Generated: 2026-05-21T16:09:45
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no persona name checks)
 

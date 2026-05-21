@@ -1,6 +1,5 @@
-Status: PROCESSED
 # Audit: Palette Registry Format Validity
-Generated: 2026-05-21T15:28:31
+Generated: 2026-05-21T16:09:45
 File checked: `config/palettes.yaml`
 Rule: `.claude/rules/rules_viz_factory.md §6` | ADR-081
 

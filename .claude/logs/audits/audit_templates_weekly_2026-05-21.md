@@ -1,6 +1,5 @@
-Status: PROCESSED
 # Audit Report: Persona Template Flag Completeness
-Generated: 2026-05-21T15:28:30
+Generated: 2026-05-21T16:09:44
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: rules_persona_feature_flags.md — Authoritative flag matrix, cascade enforcement
 Validator: PersonaValidator + SidebarValidator (strict mode — warnings treated as errors)

@@ -1,6 +1,5 @@
-Status: PROCESSED
 # Audit Report: Manifest Coherence
-Generated: 2026-05-21T15:28:28
+Generated: 2026-05-21T16:09:43
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-013 (Manifest Data Contract), ADR-041 (Unified Manifest Standard), rules_manifest_structure.md §7
 
