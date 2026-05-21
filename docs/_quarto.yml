@@ -46,6 +46,7 @@ book:
       - reference/decorator_testing.qmd # 1:1:1 Test Triplet
       - reference/debugging_pipelines.qmd # Tooling for isolation debugs
       - workflows/transformer_integrity.qmd # Transformer & VizFactory integrity suites
+      - workflows/blueprint_architect.qmd # BLUEPRINT IDE — four-layer model, branching, plot model, Joint Designer, AI agent (ADR-082/083/075/076)
       - workflows/audit_scripts.qmd # Repository audit scripts (hygiene, ADR compliance)
       - reference/developer_how_to.qmd # Repo standard for Issue submission and PRs
       - reference/ui_style_guide.qmd # CSS panel map, element selectors, style constraints
