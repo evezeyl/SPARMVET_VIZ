@@ -829,3 +829,99 @@ the same TSV (identical structure and error patterns) for regression testing acr
 - **Test scenario storage**: YAML format (human-readable for user adjustment). Lives in `libs/test_lab/` under a `scenarios/` subdirectory. Not processed by the data engine.
 - **Boilerplate manifest scope**: structure only (input_fields, output_fields, primary key definitions, verified join keys). The exception is ID cleaning recipes from ID reconciliation — those are baked in because they are required prerequisites, not analysis logic. All other wrangling belongs in BLUEPRINT.
 - **UI structure**: left sidebar accordion with one panel per tool category (ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation). Each panel expands in place. This matches the sidebar pattern used in HOME and BLUEPRINT and avoids a separate tab-switching layer inside the TEST_LAB workspace.
+
+---
+
+## Build Tasks (Phase 34)
+
+Task IDs mirror the tasks.md entries. Dependencies within the phase are noted.
+
+### 34-A — ID Reconciliation Library (`libs/id_reconciliation/`)
+
+New Tier 1 library. Zero imports from other domain libs — only `polars` + `utils`.
+
+- **TL-IDLIB-1** `[haiku/low]`: Scaffold `libs/id_reconciliation/` — `pyproject.toml` (deps: `polars`, `utils`), module structure (`__init__.py`, empty module files), editable install, empty `tests/conftest.py`. Gate: `from id_reconciliation import IDReconciliationEngine` succeeds.
+
+- **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching engine — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe` dataclasses) + `matcher.py` (exact string match → certainty 1.0; fuzzy/substring → certainty scored; unmatched → certainty 0.0). Builds on existing `reconciler.py` logic (do not duplicate — import or port). Gate: `test_exact_match` passes; `test_pattern_match` passes.
+
+- **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; patterns ranked by `(expected_matches DESC, expected_certainty DESC, simplicity ASC)`). Builds on `suggest_regex` in `reconciler.py`. Gate: `test_pattern_suggestion` passes (prefix `"sample_"` detected and ranked first).
+
+- **TL-IDLIB-RECIPE-1** `[sonnet/medium]`: Recode workflow + recipe persistence — `recipe.py` (`apply_recode_step` for actions: `regex_replace`, `mutate` via Polars expression, `drop_duplicates`, `null_if`, `drop_nulls`; `TransformationRecipe.to_yaml` / `from_yaml`). Gate: `test_recipe_persistence` passes (save + load round-trip); `test_recode_workflow` passes (prefix removal + delimiter extraction).
+
+- **TL-IDLIB-CORE-1** `[sonnet/high]`: IDReconciliationEngine orchestrator — `core.py` (`precheck_compatibility`, `match_pair`, `suggest_patterns`, `apply_pattern`, `generate_recipe`, `detect_many_to_many`, `format_match_table`). Progressive matching: full file via Polars LazyFrame, display in sorted chunks (default 50 rows, configurable in persona config). Multi-file sequencing: suggest matching order based on format compatibility. Recode threshold: 50 unmatched IDs triggers "clean first" suggestion (configurable). Gate: `test_many_to_many_detection` passes; progressive chunking unit test passes; `format_match_table` returns parseable string.  
+  Depends: TL-IDLIB-MATCH-1, TL-IDLIB-PATTERN-1, TL-IDLIB-RECIPE-1.
+
+- **TL-IDLIB-TESTS-1** `[sonnet/medium]`: Full test suite for `libs/id_reconciliation/tests/` — unit tests per module + `id_reconciliation_integrity_suite.py` orchestrator. Include: exact match, pattern suggestion, many-to-many detection, recipe round-trip, recode step (all 5 action types), multi-file sequencing suggestion. Gate: `pytest libs/id_reconciliation/tests/ -q` all pass.  
+  Depends: TL-IDLIB-CORE-1.
+
+### 34-B — Pattern Helper in `libs/utils/`
+
+Shared component; both `id_reconciliation` and `blueprint_arch` import from here to avoid duplication.
+
+- **TL-UTILS-PATTERN-1** `[sonnet/low]`: Extract ID pattern matching primitives (prefix/suffix detection, delimiter extraction, regex generalisation) into `libs/utils/src/utils/id_patterns.py`. Update `libs/id_reconciliation/` to import from there. Update `libs/blueprint_arch/` Join Designer (`join_designer.py`) to also use this helper where applicable. Gate: both libs import cleanly; no duplication of pattern logic between the two.  
+  Depends: TL-IDLIB-PATTERN-1 (to know what to extract).
+
+### 34-C — ManifestBootstrapper Fixes (`libs/test_lab/`)
+
+Three known bugs + new capability.
+
+- **TL-BOOTSTRAP-FIX-1** `[sonnet/low]`: Fix `libs/test_lab/src/test_lab/bootstrapper.py`:
+  1. `"plotting"` key → `"analysis_groups"` (wrong key name)
+  2. Remove hardcoded spurious `metadata_schema:` entry in output
+  3. Add `join_manifests: {}` stub (empty placeholder for BLUEPRINT)
+  4. Accept optional `id_cleaning_recipes: dict` param — when provided (from ID reconciliation output), bake valid cleaning actions (`regex_replace`, `mutate`, `drop_duplicates`, `null_if`, `drop_nulls`) into `tier1:` wrangling of the relevant `data_schemas:` entry.
+  Gate: `debug_sdk.py` (or new headless test) generates a valid manifest that matches the boilerplate example in this design doc. Verified by running `debug_assembler.py` on the output.  
+  Depends: TL-IDLIB-RECIPE-1 (to know the recipe format to inject).
+
+### 34-D — Manifest Scaffolding ZIP
+
+End-to-end output from files → verified IDs → boilerplate ZIP.
+
+- **TL-SCAFFOLD-1** `[sonnet/medium]`: Implement manifest scaffolding ZIP output in `libs/test_lab/src/test_lab/bootstrapper.py` (or a new `scaffolder.py`). Input: list of TSV paths + `TransformationRecipe` objects from ID reconciliation. Output: ZIP archive following basename mirroring standard — master YAML with `!include` tags + `input_fields/`, `wrangling/`, `assembly/` fragment files. Master manifest: `data_schemas:` per file + `join_manifests:` with one entry per verified file pair (pre-filled join key from recipe) + `analysis_groups: {}`. Fragment `wrangling/` files include ID cleaning steps from recipe.
+  Gate: unzip output → `debug_assembler.py` runs without error on the generated manifest (no plot specs needed — `analysis_groups: {}` is valid). Verify `data_schemas:` key (not `input_schemas:`), `ingredients:` format (not `left_ingredient:`), quoted `'on':` join key.  
+  Depends: TL-BOOTSTRAP-FIX-1, TL-IDLIB-CORE-1.
+
+### 34-E — Synthetic Data Upgrade
+
+Upgrade `AquaSynthesizer` — do not rewrite; extend.
+
+- **TL-SYNTH-1** `[sonnet/high]`: Upgrade `libs/test_lab/src/test_lab/aqua_synthesizer.py`:
+  - **Two-step flow**: `propose_config(source)` → returns `SynthConfig` dict (inferred from schema or real data); `generate(config)` → produces TSV + `synthetic_data_config.yaml` (archive record, NOT a pipeline manifest — add prominent header comment).
+  - **Two modes**: `mode: demo` (clean output) vs `mode: stress_test` (with error injection block).
+  - **Error injection block** (stress_test only): `missing_values` (per column, rate), `wrong_type` (per column, rate), `duplicate_ids` (column + rate), `pk_mismatches` (rate), `schema_errors` (missing_column / wrong_column_name / extra_column), `malformed_fields` (out-of-range, unparseable dates, rate).
+  - **Named scenarios**: `save_scenario(config, name, description)` → writes to `libs/test_lab/scenarios/<name>.yaml`; `load_scenario(name)` → returns `SynthConfig`; `list_scenarios()` → list of names.
+  - **YAML config output**: saved alongside generated TSV. Add prominent comment header: `# synthetic_data_config.yaml — Archive record. NOT a pipeline manifest. NOT processed by the SPARMVET data engine.`
+  Gate: demo mode generates clean TSV matching schema; stress_test injects stated error rate ±2%; scenario round-trip (save → load → generate produces same schema); `pytest libs/test_lab/tests/test_aqua_synthesizer.py -q` passes.
+
+### 34-F — Anonymisation Tool
+
+- **TL-ANON-1** `[sonnet/medium]`: Implement `libs/test_lab/src/test_lab/anonymiser.py`:
+  - `anonymise(filepath, id_column, personal_columns, pattern)` → writes anonymised TSV + mapping TSV.
+  - `anonymise_batch(filepaths, id_column, ...)` → multi-file consistency (same original_id always maps to same anon_id).
+  - ID patterns: sequential (`ANON_{:05d}`), hash-based (SHA256 truncated), custom prefix.
+  - Mapping TSV columns: `original_id`, `anon_id` + any stripped personal columns.
+  - Output summary: instructions for de-anonymisation via BLUEPRINT join.
+  Gate: round-trip test (anonymise → de-anonymise via join → original IDs restored); multi-file consistency test (same original_id maps identically across two files); personal column stripping verified.
+
+### 34-G — Reformatting Tools
+
+- **TL-REFORMAT-1** `[haiku/low]`: Wire `ExcelHandler` (already exists in `libs/ingestion/`) into a TEST_LAB-accessible function in `libs/test_lab/src/test_lab/reformatter.py`. Add CSV→TSV. Add bulk folder processing. Output: TSV files + summary of sheets/files converted. Gate: multi-sheet XLSX converts to N TSV files; CSV with non-tab delimiter converts correctly.
+
+### 34-H — UI (gates on library tasks)
+
+- **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion with panels for each tool (ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting). View title banner. Gated by `test_lab_enabled` persona flag (ADR-071). Sidebar slot type: `test_lab` — add to sidebar registry. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` shows no TEST_LAB nav.
+
+- **TL-UI-REFORMAT-1** `[haiku/low]`: Reformatting panel — file upload (XLSX/CSV), sheet assignment UI for XLSX (sheet → TSV name), convert button, download TSVs.  
+  Depends: TL-REFORMAT-1, TL-UI-SHELL-1.
+
+- **TL-UI-RECONCILE-1** `[sonnet/high]`: ID Reconciliation panel — multi-file upload (2–6 files), PRE-CHECK result display (compatibility groups, suggested matching order), pairwise match table (side-by-side, sorted by certainty descending, chunked 50 rows, bulk-accept 100% button, per-row verify/reject), pattern suggestion panel (ranked suggestions with expected match count, apply button), recode workflow (action picker, cleaned ID preview, re-run matching), many-to-many flag dialog (mandatory written reason), recipe download (YAML).  
+  Depends: TL-IDLIB-CORE-1, TL-UI-SHELL-1.
+
+- **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload, "Continue from ID Reconciliation" mode (uses session-held reconciliation output), join key selection, boilerplate ZIP download. Displays what was baked in (ID cleaning steps, join keys, file count).  
+  Depends: TL-SCAFFOLD-1, TL-UI-RECONCILE-1.
+
+- **TL-UI-SYNTH-1** `[sonnet/medium]`: Synthetic Data panel — schema/file upload, proposed config review table (per-column editable params), mode toggle (Demo / Stress test), error injection config block (shown only in stress_test mode), n_rows input, generate button, scenario save/load controls, download TSV + YAML config.  
+  Depends: TL-SYNTH-1, TL-UI-SHELL-1.
+
+- **TL-UI-ANON-1** `[sonnet/medium]`: Anonymisation panel — file upload (multi-file), ID column selector, personal column selector (to strip), pattern picker (sequential/hash/custom), generate button, download anonymised TSV(s) + mapping TSV + de-anonymisation instructions.  
+  Depends: TL-ANON-1, TL-UI-SHELL-1.
