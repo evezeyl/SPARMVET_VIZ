@@ -1,0 +1,392 @@
+---
+title: "Building a Pipeline with BLUEPRINT"
+subtitle: "A practical guide for bioscientists — no Python required"
+---
+
+::: {.callout-note}
+This guide is for **bioscientists** who want to define or modify a SPARMVET analysis pipeline.
+If you are a developer looking for the architectural internals, see [Blueprint Architect (developer)](../workflows/blueprint_architect.qmd).
+:::
+
+---
+
+## What is a manifest?
+
+A **pipeline manifest** is a YAML file that tells SPARMVET:
+
+- Where to find your data files (TSVs from your analysis tools)
+- How to clean and join them
+- What plots to produce
+
+You do not write any Python. You describe your intent in YAML, and the dashboard executes it.
+
+Every manifest follows the same three-step structure:
+
+```
+Step 1: data_schema  →  describe each input file
+Step 2: join_manifests  →  combine them into a joined table
+Step 3: analysis_groups  →  define plots from the joined table
+```
+
+---
+
+## Working in BLUEPRINT
+
+The BLUEPRINT workspace is your manifest editor. To open it, click **Wrangle Studio / Blueprint Architect** in the top navigation.
+
+### The main panels
+
+| Panel | What it does |
+|---|---|
+| **TubeMap** | Visual map of your manifest — nodes are data schemas, joins, and plots |
+| **Groups & Plots** | Create/rename/delete analysis groups and plot entries |
+| **Manifest Info** | Edit the manifest title, description, author, and version |
+| **Validate** | Check for errors before testing |
+| **YAML** | Read-only view of the raw manifest fragment for the selected node |
+
+Select any node in the TubeMap to open its editing form in the center panel. Fill the form, click **Apply**, then use **Save** to write back to disk.
+
+---
+
+## Step 1 — Define a data schema
+
+A `data_schema` describes one input file: where to find it, what columns it has, and what cleaning to apply.
+
+### Minimal example
+
+```yaml
+data_schemas:
+  Summary:
+    source:
+      type: local_tsv
+      path: ./assets/test_data/my_project/Summary.tsv
+    input_fields:
+      sample_id:
+        type: categorical
+        label: "Sample ID"
+      year:
+        type: numeric
+        label: "Year collected"
+      predicted_phenotype:
+        type: categorical
+        label: "Predicted resistance phenotype"
+    wrangling:
+      tier1: []
+      tier2: []
+    output_fields: {}
+```
+
+### Key fields
+
+| Field | Required | Purpose |
+|---|---|---|
+| `source.path` | Yes | Path to the TSV (relative to project root) |
+| `input_fields` | Yes | List of columns to ingest — slug must match exact TSV header |
+| `wrangling.tier1` | Yes | Cleaning steps (can be empty `[]`) |
+| `output_fields` | No | Column whitelist for the output — omit to keep all |
+
+::: {.callout-warning}
+**Column names must match exactly.** If your TSV has a header `Sample_ID` but your manifest says `sample_id`, the column will be silently skipped. Use `head -1 yourfile.tsv` to inspect the exact headers before writing `input_fields`.
+:::
+
+### Cleaning with tier1 wrangling
+
+The `tier1` list is a sequence of cleaning actions. Common ones:
+
+**Filter rows by numeric threshold:**
+
+```yaml
+tier1:
+  - action: filter_range
+    columns: [identity]
+    min: 90
+```
+
+**Cast a column to a different type** (required for joining and plotting years as categories):
+
+```yaml
+  - action: cast
+    columns: [Year]
+    dtype: Int64
+  - action: cast
+    columns: [Year]
+    dtype: String
+```
+
+::: {.callout-important}
+**Two-step cast for year columns.** If Year is stored as a number in the TSV, casting directly to String gives `"2022.0"` instead of `"2022"`. Always cast numeric → Int64 → String in two separate steps.
+:::
+
+**Strip whitespace from text columns:**
+
+```yaml
+  - action: strip_whitespace
+    columns: [predicted_phenotype]
+```
+
+**Rename a column:**
+
+```yaml
+  - action: rename_columns
+    mapping:
+      old_name: new_name
+```
+
+The full list of available actions is in `rules_persona_bioscientist.md §8` or visible in the BLUEPRINT action picker.
+
+---
+
+## Step 2 — Join datasets
+
+The `join_manifests` block combines your data schemas into a single table. This is where sample metadata meets analysis results.
+
+### Minimal example
+
+```yaml
+join_manifests:
+  AMR_Profile_Joint:
+    ingredients:
+      - dataset_id: Summary
+      - dataset_id: Metadata
+    recipe:
+      - action: join
+        right_ingredient: Metadata
+        'on': sample_id
+        how: inner
+    output_fields: {}
+```
+
+::: {.callout-warning}
+**`'on'` must be quoted.** In YAML, `on` without quotes is read as `True` (a boolean). Always write it as `'on': sample_id` with single quotes.
+:::
+
+### Join types
+
+| `how` value | Keeps rows where… |
+|---|---|
+| `inner` | sample_id exists in **both** datasets (most common) |
+| `left` | all rows from the left dataset; fills missing right-side values with null |
+| `outer` | all rows from either dataset |
+| `semi` | left rows that have a match in the right (no right columns added) |
+| `anti` | left rows that have **no** match in the right |
+
+### Asymmetric join keys
+
+If the join key has a different name in each dataset:
+
+```yaml
+      - action: join
+        right_ingredient: Metadata
+        left_on: isolate_id
+        right_on: sample_id
+        how: left
+```
+
+### Derived columns after joining
+
+Add computed columns after the join (columns from the right ingredient are available after the join step):
+
+```yaml
+      - action: join
+        right_ingredient: Metadata
+        'on': sample_id
+        how: inner
+      - action: mutate
+        column: Multiresistant
+        expression: "pl.when(pl.col('resistance_count') > 2).then(pl.lit('Yes')).otherwise(pl.lit('No'))"
+```
+
+::: {.callout-important}
+**One column per `mutate` step.** Each `mutate` action defines exactly one new column. Use a separate step for each column you want to create.
+:::
+
+### Using the Joint Designer
+
+In BLUEPRINT, instead of writing the join by hand, select a join node in the TubeMap and click the **Joint Designer** tab. It shows:
+
+- The left and right schema side-by-side
+- Which key columns exist in both (overlap preview)
+- A dtype warning if the key types do not match
+
+Click **Apply** to emit the canonical join step into your manifest.
+
+---
+
+## Step 3 — Define plots
+
+Plots live inside `analysis_groups`. Each plot references the joined table produced in Step 2.
+
+### Minimal example
+
+```yaml
+analysis_groups:
+  AMR_Insight:
+    label: "AMR Profiling"
+    plots:
+      resistance_by_year:
+        label: "Resistance by Year"
+        spec:
+          target_dataset: AMR_Profile_Joint
+          mapping:
+            x: Year
+            fill: Multiresistant
+          layers:
+            - name: geom_bar
+              params: {}
+          theme: theme_light
+```
+
+### Key fields
+
+| Field | Purpose |
+|---|---|
+| `target_dataset` | Must match a `join_manifests` key exactly |
+| `mapping.x` | Column for the X axis |
+| `mapping.y` | Column for the Y axis (required for `geom_col`, optional for `geom_bar`) |
+| `mapping.fill` | Column for bar/area fill color |
+| `mapping.facet_by` | Column to split into faceted panels |
+| `layers[0].name` | Primary plot type — e.g. `geom_bar`, `geom_boxplot`, `geom_point` |
+| `theme` | Visual theme — e.g. `theme_light`, `theme_bw`, `theme_minimal` |
+
+### Common plot types
+
+| `name` in layers | Use when |
+|---|---|
+| `geom_bar` | Count rows per category (no `y` needed) |
+| `geom_col` | Bar height from a column (requires `y`) |
+| `geom_boxplot` | Distribution of a numeric column by group |
+| `geom_violin` | Like boxplot, shows density shape |
+| `geom_point` | Scatter plot of two numeric columns |
+| `geom_tile` | Heatmap (requires `x`, `y`, and `fill`) |
+
+### Adding labels
+
+```yaml
+layers:
+  - name: geom_bar
+    params: {}
+  - name: labs
+    params:
+      title: "Resistance profile by year"
+      x: "Year"
+      fill: "Multi-resistant"
+```
+
+---
+
+## Using the form UI vs YAML escape hatch
+
+In BLUEPRINT you can work two ways:
+
+**Form UI (recommended for most users)**
+
+1. Select a node in the TubeMap
+2. Use the form fields to set parameters
+3. Click **Apply** to preview
+4. Click **Save** to write to disk
+
+**YAML escape hatch**
+
+The **YAML** panel shows the raw YAML fragment for the selected node. Developer and advanced users can edit this directly. For most bioscientists, the form UI is safer — it prevents invalid YAML and catches type errors before writing.
+
+---
+
+## Branching — when to split a dataset
+
+BLUEPRINT lets you **branch** any node to create two independent downstream paths from the same source.
+
+::: {.callout-tip}
+**Branch at the join or plot level for most variations.** If you want to produce a different visualization, a different aggregation, or apply different filters — branch at the `join_manifests` or `analysis_groups` level. Those branches share the already-assembled data at runtime with no extra processing.
+:::
+
+::: {.callout-warning}
+**Only branch a `data_schema` when the raw processing genuinely diverges.** Examples where you should branch at `data_schema` level:
+
+- Two independent QC thresholds on the same raw file (identity > 90% vs identity > 95%)
+- Splitting results by instrument type (Illumina vs Nanopore reads), each needing different wrangling
+- Applying different reference databases to the same raw sequences
+
+When in doubt, branch at the join or plot level — it is faster and simpler.
+:::
+
+To create a branch, select a node in the TubeMap, then click **Branch Node**. Give the new branch a unique ID. The new fragment will be pre-filled with shared source information (same TSV, same `input_fields`) but an empty wrangling block — ready for your new processing logic.
+
+---
+
+## Validation — checking your manifest
+
+After making changes, click the **Validate** button in the BLUEPRINT sidebar. You will see:
+
+- **PASS** — the manifest is structurally sound
+- **FAIL** — specific violations listed with the relevant section
+
+Common validation failures and how to fix them:
+
+| Error | Likely cause | Fix |
+|---|---|---|
+| "Unknown action" | Typo in an `action:` key | Check the action list in the BLUEPRINT picker |
+| "Column not found" | `final_contract` references a column that was never created | Check that the column is produced earlier in the recipe |
+| "Join key mismatch" | Join key dtype differs between datasets | Add a `cast` step before the join |
+| "`on` is not a valid key" | Unquoted `on:` parsed as boolean | Change to `'on':` (quoted single tick) |
+
+---
+
+## When to ask for developer help
+
+File a request with your developer (@dasharch) when:
+
+- You need a wrangling action that does not appear in the picker
+- A script or debug tool has a bug preventing your pipeline from running
+- You want to add a new plot type not currently in the gallery
+- You need to connect a new data source type (not a local TSV)
+
+Do **not** modify any `.py` files yourself — pipeline logic changes go through the developer.
+
+---
+
+## Example: adding a new plot to an existing manifest
+
+Suppose you have a working manifest and want to add a bar chart of resistance counts by country.
+
+1. In BLUEPRINT, open your manifest
+2. In the **Groups & Plots** panel, click **+ Plot** under the relevant analysis group
+3. Enter a unique plot ID (e.g. `resistance_by_country`) and a label
+4. Select the new plot node in the TubeMap
+5. In the form, set:
+   - `target_dataset` → your joined table ID
+   - `mapping.x` → `Country`
+   - `mapping.fill` → `Multiresistant`
+   - Add layer `geom_bar`
+6. Click **Apply**, then **Save**
+7. Click **Validate** to confirm no errors
+8. Switch to HOME and reload the manifest — your new tab appears
+
+---
+
+## Example: adding a data schema from scratch
+
+1. In BLUEPRINT, open your manifest
+2. Click **+ Schema** in the TubeMap toolbar (or use the manifest `data_schemas:` section in the YAML panel)
+3. Set the `source.path` to your TSV file
+4. Add `input_fields` matching your TSV column headers exactly
+5. Add any `tier1` cleaning steps needed
+6. Click **Save**
+7. Go to Step 2 and add this schema as an ingredient in your join recipe
+
+---
+
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| `data_schema` | One source file — describes its columns and cleaning |
+| `input_fields` | The columns you declare for ingestion (must match TSV headers) |
+| `wrangling` | Cleaning and transformation steps (`tier1` shared; `tier2` plot-specific) |
+| `output_fields` | The columns you keep in the output (whitelist — omit to keep all) |
+| `join_manifests` | A named joined table assembled from multiple data schemas |
+| `recipe` | The sequence of join and derivation steps for a joined table |
+| `analysis_groups` | Named groups of plots shown as tabs in HOME |
+| `target_dataset` | The joined table a plot reads from |
+| `mapping` | Column-to-aesthetic assignments (`x`, `y`, `fill`, `facet_by`) |
+| `layers` | Plot components in grammar-of-graphics order (geom first) |
+| `branch` | A divergent downstream copy sharing the same upstream source |

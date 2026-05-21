@@ -57,6 +57,7 @@ book:
     # Absolute user focus: Visual mapping, No Code, Analogies, YAML 101
     chapters:
       - user_guide/yaml_101.qmd # YAML basics and Text Editor recommendations
+      - user_guide/blueprint_manifest_authoring.qmd # Step-by-step manifest authoring guide for bioscientists
       - user_guide/data_literacy.qmd # Tidy Data (1 var/col), Spelling, Case-sensitivity
       - workflows/dashboard_app.qmd # The UI layout and Persona mapping
       - workflows/ui_persona.qmd # Eight personas — feature flags, ADR-076/077, panel slot registry
