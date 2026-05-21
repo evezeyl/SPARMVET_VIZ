@@ -15,20 +15,25 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_fork_ui, output:bp_fork_preview_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_fork_preview, effect:_handle_fork_write
+# provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_fork_ui, output:bp_fork_preview_ui, output:bp_groups_inventory_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_fork_preview, effect:_handle_fork_write
+# provides: effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)
+# provides: helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts manifest rebuild logic so CRUD Effects can call it after mutations)
+# provides: output:bp_meta_form_ui, effect:_handle_meta_save (BP-META-1 — manifest info: block read/edit form)
+# provides: effects:_handle_new_manifest_btn/_handle_new_manifest_submit (BP-NEW-1 — create manifest from scratch)
 # consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
 # consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match, build_join_step, parse_join_step — BP-JOINT-1 Joint Designer pane)
+# consumes: libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots, create_group, delete_group, create_plot, delete_plot, assign_plot — BP-GROUPS-1)
 # provides: outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui, effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)
 # provides: function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit), helper:_bundle_filename (full-manifest zip)
 # consumes: reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_fork_ui"))
-# doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076
+# consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_fork_ui"), ui.output_ui("bp_groups_inventory_ui"), ui.output_ui("bp_meta_form_ui"))
+# doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076, .claude/knowledge/architecture_decisions.md#ADR-082
 # @end_deps
 
 import asyncio
@@ -56,6 +61,11 @@ from blueprint_arch.manifest_navigator import (
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 from blueprint_arch.join_designer import (
     compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
+)
+from blueprint_arch.group_plot_manager import (
+    list_groups_plots, create_group, delete_group,
+    create_plot, delete_plot, assign_plot,
+    _IncludeTag, _IncludeLoader, _IncludeDumper,
 )
 from viz_factory.plot_config_resolver import normalise_plot_spec, serialise_plot_spec
 from blueprint_arch.agent_context import build_system_prompt
@@ -97,6 +107,10 @@ def define_server(input, output, session, *,
     # BP-UNDO-1: 20-step session undo deque (ADR-082 placeholder)
     undo_stack: deque = deque(maxlen=20)
 
+    # BP-GROUPS-1: group/plot CRUD local state
+    _groups_refresh: reactive.Value = reactive.Value(0)   # bumped after every CRUD mutation
+    _grp_modal_ctx: reactive.Value = reactive.Value({})   # transient context for open modals
+
     def _snapshot_state():
         """Capture current logic_stack state for undo history."""
         current = wrangle_studio.logic_stack.get()
@@ -111,6 +125,87 @@ def define_server(input, output, session, *,
             wrangle_studio.logic_stack.set(restored)
             return True
         return False
+
+    def _do_refresh_blueprint(path: str) -> tuple[dict, dict]:
+        """Rebuild includes_map/ctx_map/schema_registry and bump _groups_refresh.
+
+        Called on manifest load and after any group/plot CRUD mutation.
+        Returns (ctx_map, inc_map) for callers that need the data directly.
+        """
+        if not path or not Path(path).exists():
+            return {}, {}
+        try:
+            manifest_path = Path(path)
+            manifest_dir = manifest_path.parent
+            raw_text = manifest_path.read_text(encoding="utf-8")
+
+            rel_paths = re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text)
+            inc_map: dict = {}
+            groups: dict = {}
+            seen: set = set()
+
+            for rel_path in rel_paths:
+                if rel_path in seen:
+                    continue
+                seen.add(rel_path)
+                abs_path = (manifest_dir / rel_path).resolve()
+                if not abs_path.exists():
+                    print(f"[Blueprint] Included file not found: {abs_path}")
+                    continue
+                inc_map[rel_path] = str(abs_path)
+
+            includes_map.set(inc_map)
+            ctx_map = build_sibling_map(path)
+            component_ctx_map.set(ctx_map)
+            schema_registry.set(build_schema_registry(path, inc_map))
+
+            for rel_path in inc_map:
+                abs_path = Path(inc_map[rel_path])
+                ctx_entry = ctx_map.get(rel_path, {})
+                if ctx_entry:
+                    display = (f"{ctx_entry.get('schema_id', abs_path.stem)}"
+                               f" — {ctx_entry.get('role', '?')}")
+                else:
+                    display = abs_path.name
+                parts = Path(rel_path).parts
+                subdir = parts[-2] if len(parts) >= 2 else "root"
+                if subdir not in groups:
+                    groups[subdir] = {}
+                groups[subdir][rel_path] = display
+
+            if groups:
+                ui.update_select("dataset_pipeline_selector", choices=groups)
+            else:
+                cfg_inline = ConfigManager(path)
+                raw = cfg_inline.raw_config
+                inline_groups: dict = {}
+                for sid in raw.get("data_schemas", {}):
+                    inline_groups.setdefault("data_schemas", {})[sid] = f"{sid} — wrangling"
+                for sid in raw.get("additional_datasets_schemas", {}):
+                    inline_groups.setdefault(
+                        "additional_datasets_schemas", {})[sid] = f"{sid} — wrangling"
+                for sid in raw.get("join_manifests", {}):
+                    inline_groups.setdefault("join_manifests", {})[sid] = f"{sid} — join"
+                ag = raw.get("analysis_groups", {})
+                for grp, gspec in ag.items():
+                    if isinstance(gspec, dict):
+                        for pid in gspec.get("plots", {}):
+                            inline_groups.setdefault(
+                                f"plots/{grp}", {})[pid] = f"{pid} — plot_spec"
+                if inline_groups:
+                    ui.update_select("dataset_pipeline_selector", choices=inline_groups)
+                else:
+                    ui.update_select("dataset_pipeline_selector",
+                                     choices=["No components found"])
+
+            with reactive.isolate():
+                _groups_refresh.set(_groups_refresh.get() + 1)
+
+            return ctx_map, inc_map
+
+        except Exception as e:
+            print(f"[_do_refresh_blueprint] Error: {e}")
+            return {}, {}
 
     # ── Local helpers (pure logic, no Shiny decorators) ──────────────────────
 
@@ -697,81 +792,15 @@ def define_server(input, output, session, *,
         path = input.stored_manifest_selector()
         if not path or not Path(path).exists():
             return
-        try:
-            manifest_path = Path(path)
-            manifest_dir = manifest_path.parent
-            raw_text = manifest_path.read_text(encoding="utf-8")
-
-            rel_paths = re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text)
-
-            inc_map: dict = {}
-            groups: dict = {}
-            seen: set = set()
-
-            for rel_path in rel_paths:
-                if rel_path in seen:
-                    continue
-                seen.add(rel_path)
-                abs_path = (manifest_dir / rel_path).resolve()
-                if not abs_path.exists():
-                    print(f"[Blueprint] Included file not found: {abs_path}")
-                    continue
-                inc_map[rel_path] = str(abs_path)
-
-            includes_map.set(inc_map)
-            ctx_map = build_sibling_map(path)
-            component_ctx_map.set(ctx_map)
-            schema_registry.set(build_schema_registry(path, inc_map))
-
-            for rel_path in inc_map:
-                abs_path = Path(inc_map[rel_path])
-                ctx_entry = ctx_map.get(rel_path, {})
-                if ctx_entry:
-                    display = f"{ctx_entry.get('schema_id', abs_path.stem)} — {ctx_entry.get('role', '?')}"
-                else:
-                    display = abs_path.name
-                parts = Path(rel_path).parts
-                subdir = parts[-2] if len(parts) >= 2 else "root"
-                if subdir not in groups:
-                    groups[subdir] = {}
-                groups[subdir][rel_path] = display
-
-            if groups:
-                ui.update_select("dataset_pipeline_selector", choices=groups)
-            else:
-                cfg_inline = ConfigManager(path)
-                raw = cfg_inline.raw_config
-                inline_groups: dict = {}
-                for sid in raw.get("data_schemas", {}):
-                    inline_groups.setdefault("data_schemas", {})[sid] = f"{sid} — wrangling"
-                for sid in raw.get("additional_datasets_schemas", {}):
-                    inline_groups.setdefault("additional_datasets_schemas", {})[sid] = f"{sid} — wrangling"
-                for sid in raw.get("join_manifests", {}):
-                    inline_groups.setdefault("join_manifests", {})[sid] = f"{sid} — join"
-                ag = raw.get("analysis_groups", {})
-                for grp, gspec in ag.items():
-                    if isinstance(gspec, dict):
-                        for pid in gspec.get("plots", {}):
-                            inline_groups.setdefault(f"plots/{grp}", {})[pid] = f"{pid} — plot_spec"
-                if inline_groups:
-                    ui.update_select("dataset_pipeline_selector", choices=inline_groups)
-                else:
-                    ui.update_select("dataset_pipeline_selector",
-                                     choices=["No components found"])
-
-            # UX-NOTIF-3: Project-load notification — surface component count on manifest reload
-            manifest_name = Path(path).name
-            n_components = len(ctx_map) if ctx_map else sum(len(v) for v in groups.values())
-            ui.notification_show(
-                f"Blueprint: {manifest_name} ({n_components} component(s))",
-                type="message",
-                duration=4,
-            )
-
-        except Exception as e:
-            print(f"[_update_dataset_pipelines] Error: {e}")
-            ui.update_select("dataset_pipeline_selector",
-                             choices=["⚠️ Error – see console"])
+        ctx_map, inc_map = _do_refresh_blueprint(path)
+        # UX-NOTIF-3: Project-load notification — surface component count on manifest reload
+        manifest_name = Path(path).name
+        n_components = len(ctx_map) if ctx_map else len(inc_map)
+        ui.notification_show(
+            f"Blueprint: {manifest_name} ({n_components} component(s))",
+            type="message",
+            duration=4,
+        )
 
     @reactive.Effect
     @reactive.event(input.blueprint_node_clicked)
@@ -2039,3 +2068,462 @@ def define_server(input, output, session, *,
         wrangle_studio.logic_stack.set(stack)
         wrangle_studio.joint_edit_idx.set(None)
         ui.notification_show(msg, type="message")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BP-GROUPS-1 — Groups & Plots inventory (ADR-082 Q6)
+    # Sidebar inventory list with create/delete/assign affordances.
+    # Pure CRUD logic lives in group_plot_manager.py (Two-Category Law).
+    # ══════════════════════════════════════════════════════════════════════
+
+    @output
+    @render.ui
+    def bp_groups_inventory_ui():
+        """Inventory of analysis_groups/plots with CRUD affordances."""
+        _groups_refresh.get()   # reactive dependency — re-render after mutations
+        path = safe_input(input, "stored_manifest_selector", None)
+        if not path or not Path(path).exists():
+            return ui.div("Load a manifest first.",
+                          class_="ultra-small text-muted p-2")
+        try:
+            groups = list_groups_plots(path)
+        except Exception as e:
+            return ui.div(f"Error reading manifest: {e}",
+                          style="font-size:0.72rem;color:#d62828;padding:8px;")
+
+        def _btn(label: str, action: str, style: str = "") -> ui.Tag:
+            base = ("height:22px;font-size:0.65rem;padding:0 6px;"
+                    "border:none;cursor:pointer;border-radius:3px;")
+            return ui.tags.button(
+                label,
+                style=base + style,
+                onclick=(
+                    f"Shiny.setInputValue('bp_grp_action',"
+                    f"'{action}',{{priority:'event'}});"
+                ),
+            )
+
+        group_cards = []
+        for grp_id, grp in (groups or {}).items():
+            grp_label = (grp.get("label", grp_id)
+                         if isinstance(grp, dict) else grp_id)
+            plots = grp.get("plots", {}) if isinstance(grp, dict) else {}
+
+            plot_rows = []
+            for pid, pspec in (plots or {}).items():
+                plabel = (pspec.get("label", pid)
+                          if isinstance(pspec, dict) else pid)
+                plot_rows.append(
+                    ui.div(
+                        ui.span(plabel,
+                                style="font-size:0.72rem;flex:1 1 0;overflow:hidden;"
+                                      "text-overflow:ellipsis;white-space:nowrap;"),
+                        _btn("Go", f"goto:{grp_id}/{pid}",
+                             "background:#345beb;color:#fff;margin-left:3px;"),
+                        _btn("Move", f"move:{grp_id}/{pid}",
+                             "background:#345beb;color:#fff;margin-left:3px;"),
+                        _btn("Del", f"del_plt:{grp_id}/{pid}",
+                             "background:#ffc107;color:#000;font-weight:700;"
+                             "margin-left:3px;"),
+                        style="display:flex;align-items:center;padding:2px 0;"
+                              "border-top:1px solid #f0f0f0;",
+                    )
+                )
+
+            group_cards.append(
+                ui.div(
+                    ui.div(
+                        ui.tags.strong(grp_label,
+                                       style="font-size:0.78rem;flex:1 1 0;"),
+                        _btn("+ Plot", f"add_plt:{grp_id}",
+                             "background:#345beb;color:#fff;"),
+                        _btn("Del grp", f"del_grp:{grp_id}",
+                             "background:#ffc107;color:#000;font-weight:700;"
+                             "margin-left:3px;"),
+                        style="display:flex;align-items:center;gap:4px;",
+                    ),
+                    *plot_rows,
+                    style=("padding:6px 8px;margin-bottom:6px;"
+                           "background:#f8f9fa;border-radius:6px;"
+                           "border:1px solid #e9ecef;"),
+                )
+            )
+
+        return ui.div(
+            *group_cards,
+            ui.input_action_button(
+                "btn_bp_create_group", "+ Group",
+                class_="btn btn-primary btn-sm",
+                style="margin-top:4px;width:100%;height:28px;font-size:0.78rem;",
+            ),
+            class_="p-2",
+        )
+
+    # --- BP-GROUPS-1 CRUD dispatcher ---
+
+    @reactive.Effect
+    @reactive.event(input.bp_grp_action)
+    def _handle_grp_action():
+        """Dispatch group/plot CRUD actions from the inventory panel."""
+        raw = safe_input(input, "bp_grp_action", None)
+        if not raw:
+            return
+        path = safe_input(input, "stored_manifest_selector", None)
+        if not path or not Path(path).exists():
+            return
+
+        try:
+            if raw.startswith("del_grp:"):
+                grp_id = raw[len("del_grp:"):]
+                ok, msg = delete_group(path, grp_id)
+                ui.notification_show(msg, type="success" if ok else "warning")
+                if ok:
+                    _do_refresh_blueprint(path)
+
+            elif raw.startswith("del_plt:"):
+                rest = raw[len("del_plt:"):]
+                grp_id, pid = rest.split("/", 1)
+                ok, msg = delete_plot(path, grp_id, pid)
+                ui.notification_show(msg, type="success" if ok else "warning")
+                if ok:
+                    _do_refresh_blueprint(path)
+
+            elif raw.startswith("goto:"):
+                rest = raw[len("goto:"):]
+                grp_id, pid = rest.split("/", 1)
+                ctx_map = component_ctx_map.get()
+                for rel, entry in ctx_map.items():
+                    if (entry.get("schema_id") == pid
+                            and entry.get("role") == "plot_spec"):
+                        if selected_lineage_rel is not None:
+                            selected_lineage_rel.set(rel)
+                        break
+
+            elif raw.startswith("move:"):
+                rest = raw[len("move:"):]
+                from_grp, pid = rest.split("/", 1)
+                groups = list_groups_plots(path)
+                other = {g: (groups[g].get("label", g)
+                             if isinstance(groups[g], dict) else g)
+                         for g in groups if g != from_grp}
+                if not other:
+                    ui.notification_show("No other groups to move to.",
+                                         type="warning")
+                    return
+                _grp_modal_ctx.set({"path": path, "from_grp": from_grp,
+                                    "pid": pid})
+                ui.modal_show(
+                    ui.modal(
+                        ui.p(f"Move plot '{pid}' from '{from_grp}' to:",
+                             class_="ultra-small"),
+                        ui.input_select("bp_move_target_group",
+                                        "Target group", choices=other),
+                        ui.input_action_button(
+                            "btn_bp_move_plt_submit", "Move",
+                            class_="btn btn-primary btn-sm mt-2"),
+                        title="Move Plot",
+                        easy_close=True,
+                        footer=None,
+                    )
+                )
+
+            elif raw.startswith("add_plt:"):
+                grp_id = raw[len("add_plt:"):]
+                _grp_modal_ctx.set({"path": path, "grp_id": grp_id})
+                ui.modal_show(
+                    ui.modal(
+                        ui.input_text("bp_new_plot_id", "Plot ID (snake_case)", ""),
+                        ui.input_text("bp_new_plot_label", "Label (optional)", ""),
+                        ui.input_action_button(
+                            "btn_bp_plt_submit", "Create",
+                            class_="btn btn-primary btn-sm mt-2"),
+                        title=f"Add plot to '{grp_id}'",
+                        easy_close=True,
+                        footer=None,
+                    )
+                )
+
+        except Exception as e:
+            ui.notification_show(f"Action failed: {e}", type="error")
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_create_group)
+    def _handle_create_group_btn():
+        """Open modal to create a new analysis group."""
+        path = safe_input(input, "stored_manifest_selector", None)
+        if not path:
+            return
+        _grp_modal_ctx.set({"path": path})
+        ui.modal_show(
+            ui.modal(
+                ui.input_text("bp_new_group_id", "Group ID (snake_case)", ""),
+                ui.input_text("bp_new_group_label", "Label (optional)", ""),
+                ui.input_action_button(
+                    "btn_bp_grp_submit", "Create",
+                    class_="btn btn-primary btn-sm mt-2"),
+                title="Create analysis group",
+                easy_close=True,
+                footer=None,
+            )
+        )
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_grp_submit)
+    def _handle_grp_submit():
+        """Create group from modal."""
+        ctx = _grp_modal_ctx.get()
+        path = ctx.get("path")
+        if not path:
+            return
+        grp_id = (safe_input(input, "bp_new_group_id", "") or "").strip()
+        label = (safe_input(input, "bp_new_group_label", "") or "").strip()
+        ok, msg = create_group(path, grp_id, label)
+        ui.notification_show(msg, type="success" if ok else "warning")
+        if ok:
+            ui.modal_remove()
+            _do_refresh_blueprint(path)
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_plt_submit)
+    def _handle_plt_submit():
+        """Create plot stub from modal."""
+        ctx = _grp_modal_ctx.get()
+        path = ctx.get("path")
+        grp_id = ctx.get("grp_id")
+        if not path or not grp_id:
+            return
+        pid = (safe_input(input, "bp_new_plot_id", "") or "").strip()
+        label = (safe_input(input, "bp_new_plot_label", "") or "").strip()
+        ok, msg = create_plot(path, grp_id, pid, label)
+        ui.notification_show(msg, type="success" if ok else "warning")
+        if ok:
+            ui.modal_remove()
+            _do_refresh_blueprint(path)
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_move_plt_submit)
+    def _handle_move_plt_submit():
+        """Assign plot to another group from modal."""
+        ctx = _grp_modal_ctx.get()
+        path = ctx.get("path")
+        from_grp = ctx.get("from_grp")
+        pid = ctx.get("pid")
+        if not path or not from_grp or not pid:
+            return
+        to_grp = safe_input(input, "bp_move_target_group", None)
+        if not to_grp:
+            return
+        ok, msg = assign_plot(path, pid, from_grp, to_grp)
+        ui.notification_show(msg, type="success" if ok else "warning")
+        if ok:
+            ui.modal_remove()
+            _do_refresh_blueprint(path)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BP-META-1 — Manifest info: block form (ADR-082 Q7)
+    # Reads/writes the top-level info: dict in the master manifest.
+    # Edit mode requires manifest_edit_enabled; read-only view always shown.
+    # ══════════════════════════════════════════════════════════════════════
+
+    @output
+    @render.ui
+    def bp_meta_form_ui():
+        """Read/edit form for manifest info: block. BP-META-1."""
+        path = safe_input(input, "stored_manifest_selector", None)
+        if not path or not Path(path).exists():
+            return ui.div("Load a manifest first.", class_="ultra-small text-muted p-2")
+        try:
+            with open(path, encoding="utf-8") as f:
+                raw = yaml.load(f, Loader=_IncludeLoader) or {}
+        except Exception as e:
+            return ui.div(f"Error: {e}", style="font-size:0.72rem;color:#d62828;padding:8px;")
+
+        info = raw.get("info") or {}
+        can_edit = bootloader.is_enabled("manifest_edit_enabled")
+
+        name_val    = info.get("name", "")
+        desc_val    = info.get("description", "")
+        author_val  = info.get("author", "")
+        version_val = info.get("version", "")
+        tags_raw    = info.get("tags", [])
+        tags_val    = ", ".join(tags_raw) if isinstance(tags_raw, list) else str(tags_raw)
+
+        if not can_edit:
+            # Read-only display
+            def _row(label: str, val: str):
+                return ui.div(
+                    ui.tags.small(label, class_="text-muted d-block"),
+                    ui.tags.span(val or "—", style="font-size:0.8rem;"),
+                    class_="mb-2",
+                )
+            return ui.div(
+                _row("Name", name_val),
+                _row("Description", desc_val),
+                _row("Author", author_val),
+                _row("Version", version_val),
+                _row("Tags", tags_val),
+                ui.tags.small(
+                    "Read-only. Enable developer mode to edit.",
+                    class_="text-muted d-block mt-1",
+                ),
+                class_="p-2",
+            )
+
+        return ui.div(
+            ui.input_text("bp_meta_name", "Name", value=name_val,
+                          placeholder="Short display name"),
+            ui.input_text_area("bp_meta_desc", "Description", value=desc_val,
+                               rows=3, placeholder="What this pipeline analyses"),
+            ui.input_text("bp_meta_author", "Author", value=author_val,
+                          placeholder="Your name or team"),
+            ui.input_text("bp_meta_version", "Version", value=version_val,
+                          placeholder="e.g. 1.0.0"),
+            ui.input_text("bp_meta_tags", "Tags (comma-separated)", value=tags_val,
+                          placeholder="e.g. amr, salmonella, surveillance"),
+            ui.input_action_button("btn_bp_meta_save", "Save to manifest",
+                                   class_="btn-primary btn-sm w-100 mt-2"),
+            class_="p-2",
+        )
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_meta_save)
+    def _handle_meta_save():
+        """Write info: block back to the manifest file on disk. BP-META-1."""
+        path = safe_input(input, "stored_manifest_selector", None)
+        if not path or not Path(path).exists():
+            ui.notification_show("No manifest loaded.", type="warning")
+            return
+        try:
+            with open(path, encoding="utf-8") as f:
+                raw = yaml.load(f, Loader=_IncludeLoader) or {}
+        except Exception as e:
+            ui.notification_show(f"Load error: {e}", type="error")
+            return
+
+        name    = (safe_input(input, "bp_meta_name", "") or "").strip()
+        desc    = (safe_input(input, "bp_meta_desc", "") or "").strip()
+        author  = (safe_input(input, "bp_meta_author", "") or "").strip()
+        version = (safe_input(input, "bp_meta_version", "") or "").strip()
+        tags_str = (safe_input(input, "bp_meta_tags", "") or "").strip()
+        tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else []
+
+        info: dict = raw.get("info") or {}
+        if name:
+            info["name"] = name
+        if desc:
+            info["description"] = desc
+        if author:
+            info["author"] = author
+        if version:
+            info["version"] = version
+        info["tags"] = tags
+
+        raw["info"] = info
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                yaml.dump(raw, f, Dumper=_IncludeDumper,
+                          default_flow_style=False, sort_keys=False, allow_unicode=True)
+            ui.notification_show("Manifest info saved.", type="message")
+        except Exception as e:
+            ui.notification_show(f"Save error: {e}", type="error")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BP-NEW-1 — Create new manifest from scratch (ADR-082 Q2)
+    # Writes a minimal YAML stub to config/manifests/pipelines/ and
+    # refreshes the manifest selector so the user can start editing.
+    # ══════════════════════════════════════════════════════════════════════
+
+    _SLUG_RE_NEW = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_new_manifest)
+    def _handle_new_manifest_btn():
+        """Open the new-manifest modal. BP-NEW-1."""
+        ui.modal_show(
+            ui.modal(
+                ui.input_text("bp_new_slug", "Manifest ID (snake_case)",
+                              placeholder="e.g. my_analysis_v2"),
+                ui.input_text("bp_new_display_name", "Display name",
+                              placeholder="e.g. My Analysis V2"),
+                ui.input_text_area("bp_new_desc", "Description (optional)",
+                                   rows=2, placeholder="What this manifest analyses"),
+                ui.input_text("bp_new_author", "Author (optional)",
+                              placeholder="Your name or team"),
+                ui.tags.small(
+                    "Creates a minimal manifest stub in config/manifests/pipelines/.",
+                    class_="text-muted d-block mt-1",
+                ),
+                title="Create New Manifest",
+                footer=ui.div(
+                    ui.input_action_button("btn_bp_new_submit", "Create",
+                                           class_="btn-primary btn-sm"),
+                    ui.input_action_button("btn_bp_new_cancel", "Cancel",
+                                           class_="btn-secondary btn-sm ms-2"),
+                ),
+                easy_close=True,
+            )
+        )
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_new_cancel)
+    def _handle_new_manifest_cancel():
+        ui.modal_remove()
+
+    @reactive.Effect
+    @reactive.event(input.btn_bp_new_submit)
+    def _handle_new_manifest_submit():
+        """Write minimal manifest stub and refresh the selector. BP-NEW-1."""
+        slug = (safe_input(input, "bp_new_slug", "") or "").strip()
+        if not slug or not _SLUG_RE_NEW.match(slug):
+            ui.notification_show(
+                "Manifest ID must be snake_case (letters/digits/underscores, "
+                "start with letter or underscore).",
+                type="warning",
+            )
+            return
+
+        config_dir = Path("config/manifests/pipelines")
+        config_dir.mkdir(parents=True, exist_ok=True)
+        dest = config_dir / f"{slug}.yaml"
+        if dest.exists():
+            ui.notification_show(
+                f"Manifest '{slug}.yaml' already exists. Choose a different ID.",
+                type="warning",
+            )
+            return
+
+        display_name = (safe_input(input, "bp_new_display_name", "") or slug).strip()
+        desc    = (safe_input(input, "bp_new_desc", "") or "").strip()
+        author  = (safe_input(input, "bp_new_author", "") or "").strip()
+        today   = datetime.now().strftime("%Y-%m-%d")
+
+        stub: dict = {
+            "info": {
+                "name": display_name,
+                "description": desc or "",
+                "author": author or "",
+                "version": "1.0.0",
+                "created": today,
+                "tags": [],
+            },
+            "data_schemas": {},
+            "join_manifests": {},
+            "analysis_groups": {},
+        }
+
+        try:
+            with open(dest, "w", encoding="utf-8") as f:
+                yaml.dump(stub, f, default_flow_style=False,
+                          sort_keys=False, allow_unicode=True)
+        except Exception as e:
+            ui.notification_show(f"Create error: {e}", type="error")
+            return
+
+        ui.modal_remove()
+
+        # Refresh the selector and select the new manifest
+        all_yamls = sorted(config_dir.glob("*.yaml"))
+        choices = [str(p) for p in all_yamls]
+        ui.update_select("stored_manifest_selector",
+                         choices=choices,
+                         selected=str(dest))
+        ui.notification_show(f"Manifest '{slug}.yaml' created.", type="message")

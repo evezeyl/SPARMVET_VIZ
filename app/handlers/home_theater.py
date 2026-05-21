@@ -1202,10 +1202,24 @@ def define_server(input, output, session, *,
                         "🗂️ Master Manifest",
                         ui.input_select("stored_manifest_selector", None,
                                         choices=["Scanning config/..."]),
+                        ui.input_action_button(
+                            "btn_bp_new_manifest", "+ New",
+                            class_="btn-outline-primary btn-sm w-100 mt-1",
+                        ),
                         ui.tags.small(
                             "Select a project manifest. Click any node in the TubeMap to navigate.",
                             class_="text-muted d-block mt-1"),
                         icon=ui.tags.i(class_="bi bi-diagram-3")
+                    ),
+                    ui.accordion_panel(
+                        "📝 Manifest Info",
+                        ui.output_ui("bp_meta_form_ui"),
+                        icon=ui.tags.i(class_="bi bi-info-square")
+                    ),
+                    ui.accordion_panel(
+                        "📋 Groups & Plots",
+                        ui.output_ui("bp_groups_inventory_ui"),
+                        icon=ui.tags.i(class_="bi bi-collection")
                     ),
                     ui.accordion_panel(
                         "📤 External Exchange",
