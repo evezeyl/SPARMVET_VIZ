@@ -68,9 +68,9 @@ Items with no blockers — can be started immediately.
 
 - [ ] **DOC-LIBREADME-OTHERS-1** `[haiku/low]`: Check READMEs exist and are not stale for `libs/ingestion/`, `libs/utils/`, `libs/connector/`, `libs/test_lab/`. If a README is absent, create a one-page stub with: purpose, public API summary, editable install, how to run tests. If present and recent, skip.
 
-- [ ] **TASK-ARCHIVE-1** `[haiku/low]`: Archive all completed `[x]` items from Phase 32 and Phase 33 sections in `tasks.md` into the appropriate archive file (`.claude/tasks/tasks_archive_phase32.md` + `.claude/tasks/tasks_archive_phase33.md`). Replace sections with skeletal pointer per `rules_verification_testing.md §4`. Update archive table at bottom of tasks.md. Also update `Last Updated` header.
+- [x] **TASK-ARCHIVE-1** `[haiku/low]`: Archive all completed `[x]` items from Phase 32 and Phase 33 sections — done 2026-05-21. Archives: [tasks_archive_phase32.md](archives/tasks_archive_phase32.md), [tasks_archive_phase33.md](archives/tasks_archive_phase33.md).
 
-- [ ] **AUDIT-PASS-1** `[sonnet/low]`: Run the full audit suite + test suites and report findings. Steps: (1) `scripts/run_audits.sh`; (2) `SPARMVET_PERSONA=qa .venv/bin/python -m pytest app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py -v`; (3) `scripts/build_dep_graph.py`. Triage any new audit findings per `.claude/workflows/audit_triage_protocol.md`. Add any actionable findings as tasks in Do Now.
+- [x] **AUDIT-PASS-1** `[sonnet/low]`: Run the full audit suite + test suites. Done 2026-05-21. Results: all 10 scheduled audits PASS; 26/26 Playwright smoke tests pass (3 persona-skipped expected); dep graph regenerated (134 nodes, 259 edges). Task-drift FAIL: 3 items — DOC-BLUEPRINT-USER-1 (pending, expected), task_archive_phase33 (false positive — file exists), `scripts/build_dep_graph.py` (false positive — actual path is `assets/scripts/build_dep_graph.py`). No new actionable tasks.
 
 ---
 

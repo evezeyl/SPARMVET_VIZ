@@ -449,15 +449,15 @@ output_fields:
 - Use ID Reconciliation Engine to validate join keys before & after anonymisation
 
 ### Workflow: Anonymising ID Column Across Files
-
+#TODO maybe suggest a precheck of IDs matching before anonymistation to ensure everything is in order ! I think we need a suggested workflow for the user - can be a visual - to explain the logic of operation - that would ensure logical good practices (if user do not have that naturally)
 ```
 1. User uploads files to anonymise (1+ files with same ID column)
    - E.g., metadata.tsv (sample_id) + results.tsv (sample_id)
 
-2. System runs ID reconciliation (optional, if IDs don't match between files)
+2. System runs ID reconciliation (optional - but recommended, if IDs don't match between files)
    - Validates that ID columns are correctly aligned
    - Identifies primary key column name
-
+#TODO sometimes during annonymisation there are some columns that must go with the anonimized tsv data for reconstitution eg. patient name, adress, phone, email - id would be patient name that would be annonymized but all the other personal column information must be removed from the anonmyised dataset and instead be added to the tsv that will match annonymized ids to real id (and then the personal information . hope its understandable - ask if unsure) 
 3. User configures anonymisation
    - Select ID column: sample_id
    - Choose ID pattern: ANON_0001, ANON_0002, ... (or custom)
@@ -471,7 +471,7 @@ output_fields:
      * anonymised_results.tsv (with anon_sample_id)
      * mapping_sample_id.tsv (access-controlled; for deidentification)
 
-5. User assigns access level to mapping file
+5. User assigns access level to mapping file #TODO we need to have this "authority as deferred/to dosicss and to be discussed for fesabililty and eventuall further enhancement
    - Who can access the mapping? (admin / researcher / public)
    - (Handled by deployment profile, not TEST_LAB)
 
@@ -486,6 +486,7 @@ output_fields:
 ```
 
 ### Example Anonymisation Configuration
+#TODO here we need to think carefully the annonymisation will not be registred as yaml that will follow the broiler plate, it can eventually follow the annonymised file - otherwise one can cheat - Discuss here utility of anonymisation yaml -> I think we had said the data correspondance goes into tsv - so why this here ? I do not really understand the purpose 
 
 **Input:** Files to anonymise with ID column
 - metadata.tsv (sample_id column)
@@ -511,7 +512,7 @@ anonymisation:
 
 1. **anonymised_metadata.tsv** — Real data with anonymised values, same structure
 2. **anonymised_results.tsv** — Real data with anonymised values, same structure
-3. **mapping_sample_id.tsv** — Joinable TSV: original_sample_id ↔ anon_sample_id (access-controlled)
+3. **mapping_sample_id.tsv** — Joinable TSV: original_sample_id ↔ anon_sample_id (access-controlled) #TODO and other selected "personal information columns - unmodified"
 
 Example mapping_sample_id.tsv:
 ```
@@ -551,20 +552,20 @@ Generate fresh, independent data matching a schema. Used for:
    - Categorical: allowed_values
    - ID: pattern (sequencing, hash, custom)
    - String: length, format, freetext variety
-   - Error injection: % missing, % wrong type, % duplicates, etc.
+   - Error injection: % missing, % wrong type, % duplicates, etc. #TODO Think in the context of the app - what kind of errors we would like to introduce for testing, could aslo be eg malformated fields - to ensure eg ingest is failing osv -> you need to think to establish a good way to test both the functionning of the app - and in the otherway to create test data that will allow eg automatic testing of successull information or just demo data creation for example 
 
 3. System generates synthetic dataset
-   - Independent from any original data (no mapping)
+   - Independent from any original data (no mapping) #TODO what do you mean no mappig - scheme and range / levels values should be used - but can be increased ... maybe actually can go into two steps 1 determine and propose and 2 user adjust and then "press run" 
    - Matches schema & distributions
    - Ready for testing
 
 4. User can save error scenario
    - Name: "edge_case_duplicates_10pct"
    - Definition: {columns, error_rates, constraints}
-   - Reusable for regression testing
+   - Reusable for regression testing #TODO yes see comment above
 ```
 
-### Example Synthetic Data Configuration (YAML)
+### Example Synthetic Data Configuration (YAML) #TODO I am not even sure we need to go trough a manifest but that maybe a good thing yes to document how the synthetic data has been generated - however this manifest will be used differently than the analysis manifest in HOME - so the manifest should be for archive and associated to the reconstitution tsv then ok - I like this transparency
 
 ```yaml
 synthetic_data_config:
@@ -657,13 +658,14 @@ TEST_LAB.generate_synthetic_data(scenario_name="edge_case_duplicates_10pct")
 - TEST_LAB does not run the main analysis — that is HOME.
 - TEST_LAB does not build or edit manifests beyond generating a boilerplate scaffold — that is BLUEPRINT.
 - TEST_LAB does not curate or share recipes — that is GALLERY.
-- TEST_LAB does not permanently store anonymised data on behalf of the user — it produces files the user downloads.
+- TEST_LAB does not permanently store anonymised data on behalf of the user — it produces files the user downloads.#TODO though temporary session save should be good - eg if not finish the user could resume ? discuss 
 
 ---
-
+#TODO possibility adding more tools afterwards ? 
 ## Key Design Constraints
 
-- **Stateless tools**: each TEST_LAB utility runs to completion and returns a file or a result. No persistent session state between tool invocations (except named test scenarios, which are saved as files).
+- **Stateless tools**: each TEST_LAB utility runs to completion and returns a file (or several files) or a result. #TODO what would be the result case ? 
+No persistent session state between tool invocations (except named test scenarios, which are saved as files).#TODO discuss ? is it required in case of non finished work ? 
 - **No data leaves the server**: anonymisation and synthetic generation happen server-side; the user downloads the result. Raw data is never sent to an external service.
 - **Pattern helper shared with BLUEPRINT**: the ID/column pattern matching logic should be the same component. Design for reuse from the start.
 - **Positive inclusion** (ADR-071): TEST_LAB panel is only mounted when `test_lab_enabled` is true in persona config.
@@ -676,7 +678,7 @@ TEST_LAB.generate_synthetic_data(scenario_name="edge_case_duplicates_10pct")
 | Code module | Role |
 |---|---|
 | `test_lab_studio.py` | UI and server handlers for all TEST_LAB tools |
-
+#TODO I guess the associated utilities / will require its own library correct? test_lab already existing - need to build modular 
 ---
 
 ## Current State
@@ -692,8 +694,8 @@ TEST_LAB.generate_synthetic_data(scenario_name="edge_case_duplicates_10pct")
 
 ## Open Questions
 
-- **Pattern helper**: shared component with BLUEPRINT, or separate implementations? Needs a decision before building either (to avoid duplication).
-- **Anonymisation fidelity**: how closely should synthetic distributions match the real data? Full distributional match (harder, slower) vs. same types + plausible ranges (simpler, sufficient for most cases)?
-- **Test scenario format**: how are named error scenarios stored? A JSON schema + generation params file seems cleanest. Where does it live (session dir? dedicated test_lab dir?)?
-- **Boilerplate manifest scope**: should the scaffold include suggested wrangle steps, or only the column references? Starting with column references only keeps scope tight.
-- **UI structure**: one tab per tool category, or a single list with a category filter? Start with tabs given the distinct tool types.
+- **Pattern helper**: shared component with BLUEPRINT, or separate implementations? Needs a decision before building either (to avoid duplication). #TODO best would be shared component BUT then we need to check where to place that eg in utils ? to avoid cross library imports OR need to be used as script ? 
+- **Anonymisation fidelity**: how closely should synthetic distributions match the real data? Full distributional match (harder, slower) vs. same types + plausible ranges (simpler, sufficient for most cases)? #TODO I think plausible range is enough for now - I guess we can still improve if necessary no ? 
+- **Test scenario format**: how are named error scenarios stored? A JSON schema + generation params file seems cleanest. Where does it live (session dir? dedicated test_lab dir?)? - #TODO if its only for machine then json is ok - I guess its in the test_lab library 
+- **Boilerplate manifest scope**: should the scaffold include suggested wrangle steps, or only the column references? Starting with column references only keeps scope tight. #TODO key/id cleaning can be added if necessary BUT wrangling is blueprint tasks as previously mentionned. So boilerplate should prepare the structure not the content
+- **UI structure**: one tab per tool category, or a single list with a category filter? Start with tabs given the distinct tool types.#TODO should we not leverage the left sidebar to have the different tools in accordeons ? we need to discuss for that what is the best here 
