@@ -36,6 +36,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 | **App Structure** | Server decomposition, Handler/Module boundary law | [rules_app_structure.md](./.claude/rules/rules_app_structure.md) |
 | **Code Quality** | Emoji ban (active), comment philosophy, pre-deployment doc tiers (deferred) | [rules_code_quality.md](./.claude/rules/rules_code_quality.md) |
 | **Legacy Management** | Deprecation markers, Historical preservation, Tombstone expiry — read when marking anything as deprecated/removed | [rules_legacy_management.md](./.claude/rules/rules_legacy_management.md) |
+| **TEST_LAB** | Stateless tool principle, `libs/id_reconciliation/` boundaries, synthetic config firewall, Bootstrapper scope, single-key boundary, persona gate — read when building any TEST_LAB feature | [rules_test_lab.md](./.claude/rules/rules_test_lab.md) |
 
 ## 2. Primary Technical Bible
 

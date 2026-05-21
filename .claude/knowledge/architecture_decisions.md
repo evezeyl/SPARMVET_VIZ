@@ -3818,3 +3818,77 @@ already exists — it just isn't named, shared, or invertible.
   → **BP-PLOT-LEGACY-REMOVE-1** (remove reader + hard error; gated on COMMIT+MIGRATE+DOCS).
 - **Lasting + extensible:** any new plotnine component is just a new layer; HOME-adds-layer (if ever
   un-gated) already fits the cascade's append-then-dedupe.
+
+## ADR-084: TEST_LAB Toolbox Architecture (2026-05-21)
+
+**Status:** ACCEPTED. Authority: @dasharch. Design authority: `.claude/design/spaces/TEST_LAB.md`.
+**Extends:** ADR-011 (modular monorepo), ADR-016 (Clear Lines), ADR-071 (positive inclusion), ADR-074 (shared provision principle).
+**Agent rules:** `.claude/rules/rules_test_lab.md` (companion document — prescriptive build constraints).
+
+**Context.** TEST_LAB is a collection of focused data preparation utilities: ID reconciliation, manifest
+boilerplate scaffolding, synthetic/test data generation, anonymisation, and file reformatting. Prior to
+this ADR, no architecture decision governed TEST_LAB's library structure, its relationship to the pipeline
+manifest system, or the boundary between what TEST_LAB produces and what BLUEPRINT authors. Six decisions
+below resolve these gaps before build begins.
+
+**Decision.**
+
+**1. Stateless toolbox — not a workspace.**
+Each TEST_LAB tool runs to completion and returns a downloadable artifact (file or set of files), or
+displays a transient result in the UI (e.g. a match table the user downloads as YAML). There is no
+T3-style sandbox, no incremental committed recipe stack, no ghost-save loop. The only exceptions are
+*named files*: ID reconciliation recipes (YAML) and named synthetic data scenarios (YAML). Both are
+user-initiated saves — not automatic session state. This keeps every tool independently testable as a
+headless function and eliminates the session-management complexity that HOME and BLUEPRINT carry.
+
+**2. `libs/id_reconciliation/` is a new independent Tier 1 library.**
+The existing `libs/test_lab/reconciler.py` is a foundation, not the engine. The full ID reconciliation
+engine (certainty scoring, pattern detection, progressive matching, recipe persistence) belongs in its own
+library for two reasons. First, the pattern-matching logic (Decision 3) must be shareable without creating
+a domain-to-domain import. Second, a library callable from headless scripts, test runners, and multiple UI
+contexts cannot be entangled with the `test_lab_studio.py` Shiny handler. `libs/id_reconciliation/` obeys
+the two-tier dependency model (ADR-011): it may only import from `libs/utils/` (declared in `pyproject.toml`
+as `"utils"`) and the Python standard library + `polars`. Zero Shiny imports. Zero imports from any other
+domain library. Install: `pip install -e libs/id_reconciliation/`.
+
+**3. ID/column pattern matching helper lives in `libs/utils/` (shared provision).**
+Both `libs/id_reconciliation/` (ID pattern detection) and `libs/blueprint_arch/` (Join Designer key
+matching) need the same primitives: prefix/suffix detection, delimiter extraction, regex generalisation.
+Neither can import from the other — domain layer peer imports are prohibited (ADR-016). The only valid
+shared location under the Clear Lines policy is `libs/utils/` (Tier 1). This mirrors the principle in
+ADR-074 (lineage infrastructure as shared provision for multiple user spaces). Concretely:
+`libs/utils/src/utils/id_patterns.py`, imported by both `libs/id_reconciliation/` and
+`libs/blueprint_arch/join_designer.py`, declared in each lib's `pyproject.toml` as `"utils"`.
+
+**4. `synthetic_data_config.yaml` is an archive record — NOT a pipeline manifest.**
+A SPARMVET pipeline manifest (read by `ConfigManager`) has a fixed schema: `id:`, `type:`, `data_schemas:`,
+`join_manifests:`, `analysis_groups:`. The synthetic data config has a different root key and purpose:
+`synthetic_data_config:` with `metadata:`, `columns:`, `error_injection:`, `output:`. It documents how
+test data was generated and is never loaded by `ConfigManager`, `DataAssembler`, or any part of the data
+engine. Every generated file carries a mandatory header comment:
+`# NOT a pipeline manifest. NOT processed by the SPARMVET data engine.`
+`AquaSynthesizer.generate()` uses its own schema reader — never `ConfigManager.load()`. Violating this
+boundary produces `ConfigManager` errors that are hard to diagnose and confusing to users.
+
+**5. Single-key reconciliation boundary: TEST_LAB validates keys; BLUEPRINT designs joins.**
+TEST_LAB's ID Reconciliation Engine handles single-key matching only — one source column vs one target
+column per pairwise run. Composite key scenarios (e.g. `on: [sample_id, gene_id]`) require understanding
+data grain and join semantics — that is BLUEPRINT Join Designer territory (ADR-082 Q5, BP-JOINT-1).
+TEST_LAB hands off a boilerplate stub (`join_manifests: {}` + per-schema `input_fields:` + verified
+single-key cleaning recipes baked into `tier1:`). The scientist then opens BLUEPRINT to define join logic.
+
+**6. Manifest boilerplate scope: structure and verified keys only.**
+`ManifestBootstrapper` generates: `data_schemas:` per file (inferred types, PK hints), `join_manifests: {}`
+(empty stub), `analysis_groups: {}` (empty stub), and ID cleaning steps from reconciliation recipes baked
+into `tier1:` wrangling. It does NOT generate analysis wrangling, plot specs, or join recipes beyond
+primary-key cleaning. All analysis logic belongs in BLUEPRINT. Boilerplate output is a ZIP archive
+following the basename mirroring standard (`rules_manifest_structure.md §1`).
+
+**Consequences.**
+- `libs/id_reconciliation/` is a new Tier 1 library (Clear Lines compliant). Tasks: TL-IDLIB-1 through TL-IDLIB-TESTS-1.
+- `libs/utils/src/utils/id_patterns.py` is a new shared primitive. Task: TL-UTILS-PATTERN-1.
+- `ManifestBootstrapper` has three known bugs and a new capability to add. Task: TL-BOOTSTRAP-FIX-1.
+- `AquaSynthesizer` is upgraded (not rewritten) with two modes, error injection, and YAML archive output. Task: TL-SYNTH-1.
+- `test_lab_studio.py` UI is gated by `test_lab_enabled` persona flag (ADR-071). Task: TL-UI-SHELL-1.
+- `UX-DEVINSP-1` (deferred TEST_LAB sidebar redesign) is superseded by Phase 34 tasks.
+- The synthetic data config schema and the pipeline manifest schema are permanently separate firewalls.
