@@ -712,10 +712,10 @@
 
 ## `libs/utils/src/utils/config_loader.py`
 - **Role:** `ref`
-- **provides:** `class:ConfigManager`
+- **provides:** `class:ConfigManager`, `func:_normalise_yaml_boolean_keys`
 - **consumes:** `utils.deployment_error`
 - **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_manifest_structure.md#7`
 
 ## `libs/utils/src/utils/deployment_error.py`
 - **Role:** `ref`

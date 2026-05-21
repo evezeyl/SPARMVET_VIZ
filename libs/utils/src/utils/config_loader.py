@@ -1,8 +1,8 @@
 # @deps
-# provides: class:ConfigManager
+# provides: class:ConfigManager, func:_normalise_yaml_boolean_keys
 # consumes: utils.deployment_error
 # consumed_by: app/modules/orchestrator.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-041, ADR-078
+# doc: .claude/knowledge/architecture_decisions.md#ADR-041, ADR-078, .claude/rules/rules_manifest_structure.md#7
 # @end_deps
 
 import yaml
@@ -12,6 +12,32 @@ from pathlib import Path
 from utils.deployment_error import DeploymentError, exit_if_errors
 
 _REF = "ADR-041 + .claude/rules/rules_manifest_structure.md"
+
+
+def _normalise_yaml_boolean_keys(config, manifest_path: str) -> None:
+    """Recursively convert boolean True dict keys to the string 'on'.
+
+    Unquoted 'on:' in YAML is parsed as Python True by SafeLoader (YAML boolean
+    trap — rules_manifest_structure.md §7). This post-load walk catches the mistake,
+    converts the key in place, and warns the manifest author. The DataAssembler has a
+    step.get(True) fallback, but correcting the loaded dict here means every downstream
+    consumer (assembler, navigator, join_designer) sees a structurally correct config
+    without needing their own guards.
+    """
+    if isinstance(config, dict):
+        if True in config:
+            print(
+                f"  [ConfigManager] WARNING: Unquoted 'on:' key found in manifest "
+                f"(YAML boolean trap — always quote as '\"on\":'). "
+                f"Auto-corrected for this load; fix the YAML source. "
+                f"See rules_manifest_structure.md §7. ({manifest_path})"
+            )
+            config["on"] = config.pop(True)
+        for v in list(config.values()):
+            _normalise_yaml_boolean_keys(v, manifest_path)
+    elif isinstance(config, list):
+        for item in config:
+            _normalise_yaml_boolean_keys(item, manifest_path)
 
 
 class ConfigManager:
@@ -96,6 +122,11 @@ class ConfigManager:
                 reference=_REF,
             )])
             self.raw_config = {}  # unreachable
+
+        # Normalise YAML boolean trap: unquoted 'on:' → Python True key → string 'on' key.
+        # Runs after !include constructors have already merged all fragments into raw_config,
+        # so one pass covers both the main file and every included fragment.
+        _normalise_yaml_boolean_keys(self.raw_config, yaml_path)
 
         # Stage 2: !include failures collected during parsing
         exit_if_errors(_include_errors)

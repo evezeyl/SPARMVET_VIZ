@@ -41,6 +41,22 @@ def _wait_shiny(page: Page, timeout: int = 10_000) -> None:
     )
 
 
+def _wait_for_fb_col_option(page: Page, value: str, timeout: int = 20_000) -> None:
+    """Wait until a specific option appears in #fb_col before selecting it.
+
+    filter_form_ui re-renders after active_home_subtab changes, but the columns
+    come from a LazyFrame scan of the target dataset parquet. On first navigation
+    to a plot, that parquet may not yet exist — the orchestrator materialises it
+    asynchronously, then filter_form_ui re-renders with real columns. This helper
+    waits for the option to be present rather than racing against materialisation.
+    """
+    js = (
+        f"() => Array.from(document.querySelectorAll('#fb_col option'))"
+        f".some(o => o.value === '{value}')"
+    )
+    page.wait_for_function(js, timeout=timeout)
+
+
 def _load_project(page: Page, base_url: str, project_id: str = "1_test_data_ST22_dummy") -> None:
     """Navigate to app, select the test project, and wait for groups to render.
 
@@ -195,6 +211,9 @@ class TestFilterPipeline:
         _load_project(page, shiny_app.url)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
+        # MLST_with_metadata parquet may not be ready on first navigation — wait
+        # for the filter column picker to include "year" before selecting it.
+        _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
         _wait_shiny(page)
         page.locator("#fb_op").select_option("gt")
@@ -222,6 +241,9 @@ class TestFilterPipeline:
         _load_project(page, shiny_app.url)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
+        # MLST_with_metadata parquet may not be ready on first navigation — wait
+        # for the filter column picker to include "year" before selecting it.
+        _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
         _wait_shiny(page)
         page.locator("#fb_op").select_option("gt")
