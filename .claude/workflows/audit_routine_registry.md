@@ -17,7 +17,7 @@
 |---------|-----------|----------|--------|----------|----------|---|---|
 | @deps block verification | Weekly | Sundays 23:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-11 | — | Local (systemd) |
 | ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-11 | — | Local (systemd) |
-| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-14 | — | Local (systemd) |
+| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ❌ (false positive — MANIFEST-INCLUDE-1: !include unsupported by debug_assembler) | 2026-05-27 | — | Local (systemd) |
 | Task-to-code drift check | Weekly | Fridays 20:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-16 | — | Local (systemd) |
 | Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ | — | — | Local (manual) |
 | Phase ordering audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
@@ -29,7 +29,7 @@
 | Library test coverage | On-demand | Manual trigger (or pre-release) | `[x] Active` | 2026-05-09 ❌ | LIB-TESTS-BLUEPRINT-1, LIB-TESTS-VIZ-TIMEOUT-1 | 2026-05-09 | Local (manual) |
 | Package dependency health | On-demand | Manual trigger (or monthly) | `[x] Active` | 2026-05-09 ⚠️ | plotnine PATCH upgrade pending | 2026-05-09 | Local (manual) |
 | Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[x] Active` | 2026-05-09 ✅ | Fixed 2 stale → exclusions | 2026-05-09 | Local (manual) |
-| Manifest coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-14 | — | Local (systemd) |
+| Manifest coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ✅ (6/6 PASS) | 2026-05-27 | — | Local (systemd) |
 | Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | **Semantic doc sync** (Agent §17) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ⚠️ — 3 STALE (ExcelHandler class, Comparison Theater, viz_factory count) | — | — | Agent (on-demand) |
 | **ADR behavioral compliance** (Agent §18) | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ❌ — ADR-078 VIOLATION: 5 actions silent return lf; ADR-045/053 PASS | — | — | Agent (on-demand) |

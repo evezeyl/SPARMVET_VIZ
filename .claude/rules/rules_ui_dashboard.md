@@ -179,7 +179,7 @@ The Blueprint Architect provides a "Flight Deck" for manifest design.
 | Layer | Capability | Owning ADR(s) |
 |---|---|---|
 | L1 — Navigation | TubeMap DAG + Lineage Rail + 3-column contract viewer | ADR-039/040/074 |
-| L2 — Forms | Action/component picker + 8-widget `ui_schema` renderer | ADR-075 |
+| L2 — Forms | Action/component picker + 8-widget `ui_schema` renderer + **Joint Designer pane** (joins) | ADR-075, ADR-082 (BP-JOINT-1) |
 | L3 — Data view | Live Data Glimpse (on-Apply) | ADR-082 |
 | L4 — Helpers | AI agent + YAML escape hatch + undo + branch | ADR-075/076/082 |
 
@@ -189,6 +189,7 @@ The Blueprint Architect provides a "Flight Deck" for manifest design.
   1. **Top Header**: The **Interactive TubeMap** (DAG). Must be collapsible to maximize workspace.
   2. **Central Body**: The **Live Visualization** (Plot).
   3. **Bottom Footer**: The **Live Data Glimpse** (Table).
+- **The Joint Designer pane (BP-JOINT-1, ADR-082 Q5)**: A dedicated center-theater tab for authoring `join` steps — left + right ingredient schemas side-by-side, composite-key pickers, and a **real-data** live key-match preview (materialises each ingredient via the orchestrator; overlap computed on String-cast keys, mirroring the assembler). Apply is audit-gated on a justification and emits a canonical `join` step (`on` symmetric / `left_on`+`right_on` asymmetric). Pure logic: `libs/blueprint_arch/src/blueprint_arch/join_designer.py`. Replaces the former fabricated join modal.
 - **The Right Sidebar (The Logic)**: Focuses exclusively on the internal transformation steps of the component selected in the Map.
 - **Logic Sync**: Any modification in the Right Sidebar MUST trigger a reactive update of the Central Stack (Plot & Table) for immediate verification.
 

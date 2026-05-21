@@ -1,3 +1,4 @@
+Status: PROCESSED 2026-05-21 — 0 tasks created, 1 false positive skipped (duplicate of MANIFEST-INCLUDE-1: debug_assembler.py uses yaml.safe_load, cannot resolve !include; manifests are structurally fine per coherence audit PASS), 0 acceptable debt noted
 # Audit Report: Manifest Structure Integrity
 Generated: 2026-05-20T22:00:40
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ

@@ -128,7 +128,7 @@ cy.tap(node)
 
 ## 3. Zone B Tab 1 — Focus (Logic)
 
-**Left card — Plan & Actions:** Action selector dropdown + parameter fields (column, value, etc.) + Add Node button. Join action shows secondary dataset selector.
+**Left card — Plan & Actions:** Action selector dropdown + parameter fields (column, value, etc.) + Add Node button. Selecting a `join` / `join_filter` action and pressing Add Node opens the dedicated **Joint Designer** tab (Zone B Tab 4, BP-JOINT-1) rather than a parameter form — joins are authored there.
 
 **Right card — Logic Stack:** Scrollable vertical list of wrangling step cards. Each card shows action name, parameters summary, optional comment field, reorder arrows, delete button. Stack can be cleared. Export-to-YAML button at bottom.
 
@@ -201,6 +201,32 @@ plot.spec.target_dataset  →  assembly.final_contract        (if declared)
 ## 5. Zone B Tab 3 — YAML (Raw Source)
 
 Collapsible YAML tree rendered by `_render_yaml_tree`: Bootstrap accordion panels per key, with 🎯 Focus buttons that navigate the Rail to the matching component. Code is also shown as raw `<pre>` block with syntax highlight CSS.
+
+---
+
+## 5b. Zone B Tab 4 — Joint Designer (BP-JOINT-1, ADR-082 Q5)
+
+Dedicated pane for authoring `join` recipe steps. Opened by selecting a `join`/`join_filter`
+action in Tab 1 and pressing Add Node (switches tab via `ui.update_navs`), or by selecting an
+existing join node (edit pre-fill). Replaces the former fabricated join modal.
+
+- **Two ingredient selects** (left/base + right) populated from the manifest's data-source
+  schemas (`schema_registry`, excluding joins/plots).
+- **Side-by-side schema cards** — each shows the chosen ingredient's field slugs.
+- **Per-side key pickers** (`input_selectize` multiple) — composite/multi-key supported. They
+  re-mount only when an ingredient changes (Rule R4: they read the ingredient selects, never
+  their own key values), so selecting keys never wipes the widget.
+- **Live key-match preview** (`btn_joint_preview`) — materialises each ingredient via
+  `orchestrator.materialize_tier1` and computes **real** overlap on String-cast keys (mirrors the
+  assembler): matched / left-only / right-only counts, match-rate, a dtype-family advisory
+  (flags e.g. Float64 vs Int64 `'2022.0'` mismatch), and unmatched samples. Status-tinted box.
+- **Apply** (`btn_joint_apply`) — audit-gated on a non-empty justification (ui_implementation_contract §3);
+  emits a canonical step via `build_join_step` (symmetric `on`; asymmetric `left_on`+`right_on`;
+  scalar vs list) into `logic_stack` (append, or replace when editing).
+
+Pure logic lives in `libs/blueprint_arch/src/blueprint_arch/join_designer.py`
+(`compute_key_match`, `build_join_step`, `parse_join_step`); reactive wiring in
+`app/handlers/blueprint_handlers.py`; UI shell in `app/modules/wrangle_studio.py`.
 
 ---
 

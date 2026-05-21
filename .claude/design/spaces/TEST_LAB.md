@@ -34,7 +34,7 @@ Primary audiences:
 | **Boilerplate manifest from files** | Point TEST_LAB at a set of data files; it reads column names and types and generates a skeleton manifest YAML with correct column references, recognizing data types, ready to edit in BLUEPRINT |
 | **ID reconciliation + primary key selection** | After reconciling IDs across files, user selects which columns are primary keys (ID as join keys, must be unique). ID cleaning recipes are automatically baked into the boilerplate manifest as tier1 wrangling steps |
 
-#TODO here we need to consider secondary keys maybe - see the example manifest config/manifests/pipelines/1_test_data_ST22_dummy.yaml 
+#TODO here we need to consider secondary keys maybe - see the example manifest config/manifests/pipelines/1_test_data_ST22_dummy.yaml - need to verify the blueprint implementation seems now we have implemented composite key joints  - can this be reused ? 
 #TODO also for the broiler plate - need to allow the !include and pre-split the bolerplate manifest in the main manifest and include fields - there is a file that describe the manifest structure - find and add information for the specifications
 
 ### Anonymisation (PROCESS 1: Real Data → Reversible Mapping)
@@ -195,6 +195,8 @@ id_transformation_recipe:
     - "Unmatched target IDs: CONTROL_001, BLANK_001 (expected — not samples)"
     - "User decision: Leave unmatched IDs as-is (data quality note added)"
 ```
+#TODO we need to check that the audit_log: key is supported by ingest, but that is a good idea yes to it - best would be to have the audit log always as !include file - so it can eventually be used separately - new rule in manifest ADRs ? 
+
 
 Recipe is reusable: future imports of the same file types apply these steps automatically.
 
@@ -211,7 +213,7 @@ Recipe is reusable: future imports of the same file types apply these steps auto
 ║ sample_S997            ║ ❌ UNMATCHED          ║    0%      ║ ? Action req ║
 ╚════════════════════════╩════════════════════════╩════════════╩══════════════╝
 ```
-# TODO Here I think user should first check all those 100% matched and then bulk accept those. Then procede in decreaseing "certainty" accepting match, or manually maching other samples so the review step. I think the app should be smart eg to find eventuall new patterns matching ? solutions ? So basically we fix the easier first and then go to the difficilt cases
+#TODO Here I think user should first check all those 100% matched and then bulk accept those. Then procede in decreaseing "certainty" accepting match, or manually maching other samples so the review step. I think the app should be smart eg to find eventuall new patterns matching ? solutions ? So basically we fix the easier first and then go to the difficilt cases
 User can:
 - Click "Review" → see transformation steps that produced the match
 - Click "❌" → choose "Leave unmatched" | "Manual pick" | "Recode"
@@ -220,14 +222,14 @@ User can:
 #### 4. Progressive Matching (Large Files)
 
 For files with > 1000 rows:
-1. Show sample-based preview (first 100 rows, random 100 rows, worst-case sample)
-2. User verifies preview
-3. Engine processes full file in background, shows progress
-4. User reviews final unmatched set
+1. Show sample-based preview (first 100 rows, random 100 rows, worst-case sample) #TODO we need a systematic sorting -> by matching decreasing - so we can validate sequentially and fix the most problematic at the end - with manual help
+2. User verifies preview #TODO will need a verify button ? associated with each preview ? how can/will this work - I need proposals
+3. Engine processes full file in background, shows progress #TODO we need to think about load/time - can it be chunked or not ? how to make that as efficiently compute/memory RAM as possible ? options ? 
+4. User reviews final unmatched set #TODO - might also need to be chunked if there are many unmatched
 
 #### 5. Many-to-Many Detection & Suppression
 
-**Default:** Flag as data error (suggests duplicate or misaligned data).
+**Default:** Flag as data error (suggests duplicate or misaligned data). #TODO Warning - Need to check intent - is it supposed to be unique or is it supposed to allow many -> usually we can have one to many I do not think we will see much cases with many to many We need to think here 
 
 **Example:**
 ```
@@ -238,16 +240,18 @@ sample_S001 matches → S001 AND S001_replicate (many-to-many detected)
                                Review before proceeding. [Suppress & Continue]"
 ```
 
-If user confirms "Suppress & Continue," the engine:
+If user confirms "Suppress & Continue," the engine: #TODO Yes good ! important to show that use decided to buypass a warning - maybe user could have to write a reason for bypassing ? that would help clarify why ? 
 - Logs the warning in audit trail
 - Keeps the many-to-many pair (user's responsibility now)
 - Proceeds with matching
 
-**Future use case (deferred):** Internal joins based on results (e.g., same gene detected multiple times). Assess at usage time if needed.
+**Future use case (deferred):** Internal joins based on results (e.g., same gene detected multiple times). Assess at usage time if needed. #TODO - maybe we should not defer afterwards . as this in a way works with the warning above no ? 
 
 #### 6. Recode Workflow (If Pattern Matching Fails)
 
 If pattern detection + user manual pairing insufficient:
+#TODO - we might also have an option to suggest the user to clean the names correctly if there are many different patterns and then start again the process - afterall user should also allow some consistency - this might allow to limit special cases - they are allowed to verify their data before retrying (eg. we do not want to have to treat large amount of manual cases eg max 100 ? or is it even too much ? )
+
 
 ```
 User selects: "sample_S999 needs cleaning"

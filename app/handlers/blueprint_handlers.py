@@ -20,6 +20,8 @@ from __future__ import annotations
 # consumes: function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
+# consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match, build_join_step, parse_join_step — BP-JOINT-1 Joint Designer pane)
+# provides: outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui, effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)
 # provides: function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit), helper:_bundle_filename (full-manifest zip)
 # consumes: reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
@@ -39,6 +41,7 @@ from collections import deque
 from datetime import datetime
 from pathlib import Path
 
+import polars as pl
 import yaml
 from shiny import reactive, render, ui
 
@@ -51,6 +54,9 @@ from blueprint_arch.manifest_navigator import (
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
+from blueprint_arch.join_designer import (
+    compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
+)
 from viz_factory.plot_config_resolver import normalise_plot_spec, serialise_plot_spec
 from blueprint_arch.agent_context import build_system_prompt
 from blueprint_arch.agent_tools import call_tool, get_tool_definitions
@@ -1654,3 +1660,379 @@ def define_server(input, output, session, *,
             )
         finally:
             _agent_in_flight.set(False)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BP-JOINT-1 (ADR-082 Q5) — Joint Designer pane
+    # Left + right ingredient schemas side-by-side with a live, real-data
+    # key-match preview; emits a canonical `join` recipe step into logic_stack.
+    # ══════════════════════════════════════════════════════════════════════
+
+    # Last computed key-match result (+ meta), rendered by joint_preview_ui.
+    joint_preview = reactive.Value(None)
+    # Desired key pre-selection for the pickers (set on edit; empty on create).
+    joint_prefill = reactive.Value({"left": [], "right": []})
+
+    def _jd_field_names(fields):
+        """Extract an ordered list of field slugs from any field shape.
+
+        Accepts dict {slug: meta}, list[str], or list[{name|field|slug, ...}].
+        """
+        if not fields:
+            return []
+        if isinstance(fields, dict):
+            return list(fields.keys())
+        if isinstance(fields, list):
+            names = []
+            for item in fields:
+                if isinstance(item, str):
+                    names.append(item)
+                elif isinstance(item, dict):
+                    names.append(item.get("name") or item.get("field")
+                                 or item.get("slug") or "")
+            return [n for n in names if n]
+        return []
+
+    def _jd_ingredients():
+        """Return {schema_id: [field_names]} for joinable data-source schemas.
+
+        Excludes join and plot schemas — only raw/metadata/additional data
+        sources can be join ingredients.
+        """
+        reg = schema_registry.get() or {}
+        ctx = component_ctx_map.get() or {}
+        inc = includes_map.get() or {}
+        out = {}
+        for sid, entry in reg.items():
+            stype = (entry.get("schema_type") or "").lower()
+            if stype in ("join_manifests", "join", "plots", "plot_spec"):
+                continue
+            try:
+                fields = resolve_fields_for_schema(sid, ctx, inc)
+            except Exception:
+                fields = []
+            names = _jd_field_names(fields)
+            if names:
+                out[sid] = names
+        return out
+
+    @reactive.Effect
+    def _jd_populate_ingredients():
+        """Populate ingredient selects from the active manifest's schemas.
+
+        Depends only on schema_registry / ctx_map (changes on manifest import) —
+        never on the ingredient inputs, so user picks are not clobbered.
+        """
+        ings = list(_jd_ingredients().keys())
+        choices = {sid: sid for sid in ings}
+        ui.update_select("joint_left_ingredient", choices=choices,
+                         selected=(ings[0] if ings else None))
+        ui.update_select("joint_right_ingredient", choices=choices,
+                         selected=(ings[1] if len(ings) > 1 else
+                                   (ings[0] if ings else None)))
+
+    @output
+    @render.ui
+    def joint_designer_status_ui():
+        edit_idx = wrangle_studio.joint_edit_idx.get()
+        # Re-render when a fresh-join request arrives.
+        wrangle_studio.joint_request.get()
+        if not _jd_ingredients():
+            return ui.div(
+                "Import a manifest with at least one data source to design a join.",
+                class_="ultra-small text-muted fst-italic")
+        if edit_idx is not None:
+            return ui.div(
+                ui.tags.strong("Editing join step "),
+                ui.tags.code(f"#{edit_idx}"),
+                " — adjust keys/strategy and press Apply to update it.",
+                class_="ultra-small",
+                style="background:#eef0fb;padding:6px 10px;border-radius:4px;")
+        return ui.div(
+            "Creating a new join step. Pick the right ingredient, choose join "
+            "key(s) on each side, preview the match, then Apply.",
+            class_="ultra-small text-muted")
+
+    def _jd_schema_card(ingredient_id):
+        ings = _jd_ingredients()
+        if not ingredient_id or ingredient_id not in ings:
+            return ui.p("Select an ingredient.", class_="text-muted small fst-italic")
+        names = ings[ingredient_id]
+        chips = [
+            ui.tags.code(n, style=("font-size:0.72rem;color:#345beb;"
+                                   "background:#f8f9fa;padding:1px 5px;"
+                                   "border-radius:3px;margin:1px;display:inline-block;"))
+            for n in names
+        ]
+        return ui.div(
+            ui.div(ui.tags.strong(ingredient_id),
+                   ui.tags.span(f"  {len(names)} field"
+                                f"{'s' if len(names) != 1 else ''}",
+                                class_="text-muted",
+                                style="font-size:0.7rem;"),
+                   class_="mb-1"),
+            ui.div(*chips),
+        )
+
+    @output
+    @render.ui
+    def joint_left_schema_ui():
+        return _jd_schema_card(safe_input(input, "joint_left_ingredient", None))
+
+    @output
+    @render.ui
+    def joint_right_schema_ui():
+        return _jd_schema_card(safe_input(input, "joint_right_ingredient", None))
+
+    @output
+    @render.ui
+    def joint_key_pickers_ui():
+        """Mount the per-side key multi-selects.
+
+        Rule R4: this output reads only the ingredient selects (+ joint_prefill),
+        never the key values — so selecting keys does not re-mount the widgets.
+        """
+        ings = _jd_ingredients()
+        left_ing = safe_input(input, "joint_left_ingredient", None)
+        right_ing = safe_input(input, "joint_right_ingredient", None)
+        left_fields = ings.get(left_ing, [])
+        right_fields = ings.get(right_ing, [])
+        prefill = joint_prefill.get()
+        left_sel = [k for k in prefill.get("left", []) if k in left_fields]
+        right_sel = [k for k in prefill.get("right", []) if k in right_fields]
+        return ui.layout_columns(
+            ui.input_selectize(
+                "joint_left_keys", "Left join key(s)",
+                choices={c: c for c in left_fields},
+                selected=left_sel, multiple=True),
+            ui.input_selectize(
+                "joint_right_keys", "Right join key(s)",
+                choices={c: c for c in right_fields},
+                selected=right_sel, multiple=True),
+            col_widths=[6, 6],
+        )
+
+    @reactive.Effect
+    @reactive.event(wrangle_studio.joint_request)
+    def _jd_reset_on_new():
+        """A fresh-join request (Add Node: join) clears the draft."""
+        if wrangle_studio.joint_request.get() == 0:
+            return
+        joint_prefill.set({"left": [], "right": []})
+        joint_preview.set(None)
+        ui.update_text_area("joint_comment", value="")
+        ui.update_select("joint_how", selected="inner")
+
+    @reactive.Effect
+    @reactive.event(wrangle_studio.selected_node_idx)
+    def _jd_load_for_edit():
+        """Selecting a join node in the stack opens the Designer pre-filled (edit)."""
+        idx = wrangle_studio.selected_node_idx.get()
+        if idx is None:
+            return
+        stack = wrangle_studio.logic_stack.get()
+        if not (0 <= idx < len(stack)):
+            return
+        node = stack[idx]
+        if node.get("action") not in ("join", "join_filter"):
+            return
+        params = node.get("params", {})
+        parsed = parse_join_step(params)
+        comment = node.get("comment", "")
+
+        ings = _jd_ingredients()
+        ing_ids = list(ings.keys())
+        right_ing = parsed.get("right_ingredient")
+        # Best-effort left = first ingredient that is not the right one.
+        left_ing = next((i for i in ing_ids if i != right_ing),
+                        (ing_ids[0] if ing_ids else None))
+
+        joint_prefill.set({"left": parsed.get("left_keys", []),
+                           "right": parsed.get("right_keys", [])})
+        wrangle_studio.joint_edit_idx.set(idx)
+        if left_ing:
+            ui.update_select("joint_left_ingredient", selected=left_ing)
+        if right_ing:
+            ui.update_select("joint_right_ingredient", selected=right_ing)
+        ui.update_select("joint_how", selected=parsed.get("how", "inner"))
+        ui.update_text_area("joint_comment", value=comment)
+        joint_preview.set(None)
+        ui.update_navs("architect_internal_tabs", selected="joint_designer")
+
+    def _jd_extract_keys(project_id, ingredient_id, keys):
+        """Materialise an ingredient and return (rows, dtypes) for its key columns.
+
+        rows: list of String-cast key tuples (mirrors how the assembler joins).
+        dtypes: original polars dtype names, key-aligned.
+        Raises on materialisation / missing-column errors (caller surfaces them).
+        """
+        anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+        anchor_dir.mkdir(parents=True, exist_ok=True)
+        out_p = anchor_dir / f"_jd_{ingredient_id}.parquet"
+        orchestrator.materialize_tier1(
+            project_id=project_id, collection_id=ingredient_id, output_path=out_p)
+        lf = pl.scan_parquet(out_p)
+        schema = lf.collect_schema()
+        missing = [k for k in keys if k not in schema.names()]
+        if missing:
+            raise ValueError(
+                f"Ingredient '{ingredient_id}' has no column(s): {', '.join(missing)}")
+        dtypes = [str(schema[k]) for k in keys]
+        rows = (lf.select([pl.col(k).cast(pl.String) for k in keys])
+                  .unique().collect().rows())
+        return rows, dtypes
+
+    @reactive.Effect
+    @reactive.event(input.btn_joint_preview)
+    def _jd_run_preview():
+        left_ing = safe_input(input, "joint_left_ingredient", None)
+        right_ing = safe_input(input, "joint_right_ingredient", None)
+        left_keys = list(safe_input(input, "joint_left_keys", []) or [])
+        right_keys = list(safe_input(input, "joint_right_keys", []) or [])
+
+        if not left_ing or not right_ing:
+            joint_preview.set({"error": "Select both a left and right ingredient."})
+            return
+        if not left_keys or not right_keys:
+            joint_preview.set({"error": "Select at least one key on each side."})
+            return
+        if len(left_keys) != len(right_keys):
+            joint_preview.set({"error": (
+                f"Key arity mismatch: {len(left_keys)} left vs "
+                f"{len(right_keys)} right. Pick an equal number on each side.")})
+            return
+
+        manifest_path = wrangle_studio.active_manifest_path.get()
+        if not manifest_path:
+            joint_preview.set({"error": "No active manifest — import one first."})
+            return
+        project_id = Path(manifest_path).stem
+
+        try:
+            with ui.Progress(min=0, max=2) as p:
+                p.set(0, message=f"Materialising {left_ing}…")
+                left_rows, left_dtypes = _jd_extract_keys(
+                    project_id, left_ing, left_keys)
+                p.set(1, message=f"Materialising {right_ing}…")
+                right_rows, right_dtypes = _jd_extract_keys(
+                    project_id, right_ing, right_keys)
+            stats = compute_key_match(
+                left_rows, right_rows, left_dtypes, right_dtypes)
+            stats["error"] = None
+            stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
+                              "left_keys": left_keys, "right_keys": right_keys}
+            joint_preview.set(stats)
+        except Exception as exc:
+            joint_preview.set({"error": f"Preview failed: {exc}"})
+
+    @output
+    @render.ui
+    def joint_preview_ui():
+        r = joint_preview.get()
+        if r is None:
+            return ui.div(
+                "No preview yet — choose keys and press “Preview key match”.",
+                class_="ultra-small text-muted fst-italic")
+        if r.get("error"):
+            return ui.div(r["error"], class_="ultra-small",
+                          style=("background:#ffe0e0;color:#d62828;padding:8px 10px;"
+                                 "border-radius:4px;"))
+        if not r.get("arity_ok"):
+            return ui.div(
+                "Key arity mismatch — select an equal number of keys on each side.",
+                class_="ultra-small",
+                style=("background:#ffe0e0;color:#d62828;padding:8px 10px;"
+                       "border-radius:4px;"))
+
+        rate = r["match_rate"] * 100
+        # Status tint by match quality.
+        if rate >= 99.9:
+            bg, fg = "#d5efec", "#0b6358"
+        elif rate >= 50:
+            bg, fg = "#fff3cd", "#856404"
+        else:
+            bg, fg = "#ffe0e0", "#d62828"
+
+        dtype_rows = [
+            ui.tags.li(
+                f"{p['left_key_dtype']} ↔ {p['right_key_dtype']}: "
+                + ("compatible" if p["family_match"] else "DIFFERENT family — "
+                   "values may not align (e.g. Float64 '2022.0' vs Int64 '2022')"),
+                style="font-size:0.7rem;")
+            for p in r.get("dtype_pairs", [])
+        ]
+        samp_left = r.get("left_only_sample", [])
+        samp_right = r.get("right_only_sample", [])
+
+        def _fmt_sample(rows):
+            return ", ".join("/".join(str(x) for x in t) for t in rows) or "—"
+
+        return ui.div(
+            ui.div(
+                ui.tags.strong(
+                    f"{r['matched']} / {r['left_total']} left keys matched "
+                    f"({rate:.1f}%)"),
+                style=f"font-size:0.85rem;color:{fg};"),
+            ui.tags.ul(
+                ui.tags.li(f"Left distinct keys: {r['left_total']}  ·  "
+                           f"Right distinct keys: {r['right_total']}",
+                           style="font-size:0.72rem;"),
+                ui.tags.li(f"Left-only (dropped by inner join): {r['left_only']}  ·  "
+                           f"Right-only: {r['right_only']}",
+                           style="font-size:0.72rem;"),
+                ui.tags.li([ui.tags.span("dtype compatibility:"), ui.tags.ul(*dtype_rows)]
+                           if dtype_rows else "dtype compatibility: —",
+                           style="font-size:0.72rem;"),
+                ui.tags.li(f"Sample left-only: {_fmt_sample(samp_left)}",
+                           style="font-size:0.7rem;color:#6c757d;"),
+                ui.tags.li(f"Sample right-only: {_fmt_sample(samp_right)}",
+                           style="font-size:0.7rem;color:#6c757d;"),
+                style="margin:4px 0 0 0;padding-left:18px;"),
+            style=(f"background:{bg};padding:10px 12px;border-radius:6px;"
+                   "margin-top:8px;"),
+        )
+
+    @reactive.Effect
+    @reactive.event(input.btn_joint_apply)
+    def _jd_apply():
+        left_ing = safe_input(input, "joint_left_ingredient", None)
+        right_ing = safe_input(input, "joint_right_ingredient", None)
+        left_keys = list(safe_input(input, "joint_left_keys", []) or [])
+        right_keys = list(safe_input(input, "joint_right_keys", []) or [])
+        how = safe_input(input, "joint_how", "inner")
+        comment = (safe_input(input, "joint_comment", "") or "").strip()
+
+        if not right_ing:
+            ui.notification_show("Select a right ingredient.", type="error")
+            return
+        if not left_keys or not right_keys:
+            ui.notification_show("Select at least one key on each side.",
+                                 type="error")
+            return
+        if len(left_keys) != len(right_keys):
+            ui.notification_show(
+                "Key arity mismatch — equal number of keys required.", type="error")
+            return
+        # Audit gate (ui_implementation_contract §3): justification is mandatory.
+        if not comment:
+            ui.notification_show(
+                "Justification is required before applying a join.", type="error")
+            return
+
+        step = build_join_step(right_ing, left_keys, right_keys, how=how,
+                               comment=comment)
+        params = {k: v for k, v in step.items()
+                  if k not in ("action", "comment")}
+        node = {"action": "join", "params": params, "comment": comment}
+
+        _snapshot_state()
+        stack = wrangle_studio.logic_stack.get().copy()
+        edit_idx = wrangle_studio.joint_edit_idx.get()
+        if edit_idx is not None and 0 <= edit_idx < len(stack):
+            stack[edit_idx] = node
+            msg = f"Join step #{edit_idx} updated ({right_ing})."
+        else:
+            stack.append(node)
+            msg = f"Join step added ({right_ing})."
+        wrangle_studio.logic_stack.set(stack)
+        wrangle_studio.joint_edit_idx.set(None)
+        ui.notification_show(msg, type="message")

@@ -35,6 +35,11 @@
 - **documents:** `docs/`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
 
+## `.claude/rules/rules_legacy_management.md`
+- **Role:** `meta`
+- **provides:** `rule:legacy_management`, `rule:deprecation_markers`, `rule:historical_preservation`
+- **consumed_by:** `.claude/rules/workspace_standard.md`
+
 ## `.claude/rules/rules_manifest_structure.md`
 - **Role:** `meta`
 - **provides:** `rule:canonical_recipe_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
@@ -93,8 +98,8 @@
 
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_fork_ui`, `output:bp_fork_preview_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_fork_preview`, `effect:_handle_fork_write`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-manifest zip)`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_fork_ui`, `output:bp_fork_preview_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_fork_preview`, `effect:_handle_fork_write`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-manifest zip)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `function:generate_fork_yaml (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-VISUAL-FORK-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_fork_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`
 
@@ -230,8 +235,8 @@
 
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
-- **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`
-- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`
+- **provides:** `class:WrangleStudio`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`, `reactive.Value:joint_request`, `reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -423,6 +428,13 @@
 - **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`
 - **doc:** `.claude/rules/rules_ui_dashboard.md`
+
+## `libs/blueprint_arch/src/blueprint_arch/join_designer.py`
+- **Role:** `info`
+- **provides:** `join_designer:compute_key_match`, `join_designer:build_join_step`, `join_designer:parse_join_step`
+- **consumes:** `—`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/tests/test_join_designer.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_manifest_structure.md#7`
 
 ## `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`
 - **Role:** `info`
@@ -756,7 +768,7 @@
 ## `libs/viz_factory/src/viz_factory/plot_config_resolver.py`
 - **Role:** `plot`
 - **provides:** `function:resolve_plot_config`, `function:compute_optimisation_layer`
-- **consumes:** `-   (pure functions — no plotnine import`, `no cross-lib imports)`
+- **consumes:** `libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)`
 - **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
 - **doc:** `.claude/design/plot_config_cascade.md`, `.claude/design/plot_authoring_model.md`
 

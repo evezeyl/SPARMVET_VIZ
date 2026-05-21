@@ -97,6 +97,23 @@ recipe:
 
 The key `on` is a **YAML reserved word** that is silently parsed as boolean `True`. **Always quote it**: `'on': sample_id`.
 
+**Engine resilience (defensive fallback — not a license to omit quotes):**
+`DataAssembler` (`data_assembler.py:182-185`) recovers from unquoted `on:` via key-chain fallback:
+
+```python
+join_key = (step.get("on") or          # correct (quoted 'on' → string key)
+            step.get("left_on") or
+            step.get("on_column") or
+            step.get(True))             # fallback: unquoted 'on' → boolean True key
+```
+
+`ConfigManager` uses `yaml.SafeLoader` with **no custom resolver** for the boolean trap — prevention is not handled at load time. The fallback in the assembler catches the most common failure mode, but:
+- `parse_join_step` in `join_designer.py` (Blueprint save path) applies the same guard: `step.get("on", step.get(True))`.
+- The **serialization path** (writing a dict back to YAML via `yaml.dump`) will emit `'on': value` correctly only if the key is already the string `"on"` — `yaml.dump` does NOT automatically quote YAML reserved words when the key comes from a Python string. Safe as long as `build_join_step` is used (it emits the string key `"on"`).
+- **Risk for the join Save path** (`_serialise_component_for_save`, not yet implemented): the serializer MUST explicitly quote the `on` key in the output YAML (e.g., via a custom representer or manual string quoting). Failure to do so will produce a manifest that reloads with `True` as the key; the assembler fallback will recover, but the manifest will be non-human-readable and flagged as malformed.
+
+**Rule:** Always quote in manifest YAML (`'on': sample_id`). The fallback is a safety net, not the intended path.
+
 ---
 
 ## 8. `analysis_groups` Structure (Manifest-Driven Home Theater)

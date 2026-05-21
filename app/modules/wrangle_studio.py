@@ -11,6 +11,8 @@
 # consumes: app/src/bootloader.py (method:get_palettes — via self._bootloader, optional)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, loaded via ui.py head)
+# consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)
+# provides: reactive.Value:joint_request, reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs
 # consumed_by: app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/handlers/audit_stack.py, app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-004, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-082
 # @end_deps
@@ -20,6 +22,7 @@ from shiny import ui, reactive, render
 import polars as pl
 import yaml
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+from blueprint_arch.join_designer import JOIN_HOW_OPTIONS
 
 
 # BP-ENUM-PREVIEW-1: SVG dash patterns for plotnine linetype enum options.
@@ -149,6 +152,12 @@ class WrangleStudio:
         self.selected_node_idx = reactive.Value(None)  # int index of node being edited
         self.invalidated_from = reactive.Value(None)   # nodes >= this idx are schema-stale
 
+        # BP-JOINT-1: Joint Designer coordination (signals shared with blueprint_handlers).
+        # joint_request bumps when "Add Node" picks a join action -> open a blank Designer.
+        # joint_edit_idx is the logic_stack index being edited (None = create/append).
+        self.joint_request = reactive.Value(0)
+        self.joint_edit_idx = reactive.Value(None)
+
     def render_ui(self):
         actions = list(AVAILABLE_WRANGLING_ACTIONS.keys())
 
@@ -245,12 +254,11 @@ class WrangleStudio:
                                             "Select action:", choices=actions),
                             ui.panel_conditional(
                                 "input.action_selector == 'join' || input.action_selector == 'join_filter'",
-                                ui.input_select("column_selector", "Left join key:", choices=[
-                                                "Select a Dataset first"]),
-                                ui.input_select("secondary_dataset_selector", "Secondary dataset:", choices=[
-                                                "Select a source file..."]),
-                                ui.input_select("right_on_selector", "Right join key:", choices=[
-                                                "Select a Dataset first"]),
+                                ui.div(
+                                    "Joins are authored in the dedicated Joint "
+                                    "Designer tab. Click Add Node to open it.",
+                                    class_="ultra-small text-muted fst-italic",
+                                ),
                             ),
                             ui.input_action_button(
                                 "btn_add_node", "➕ Add Node", class_="btn-primary"),
@@ -332,6 +340,66 @@ class WrangleStudio:
                         ui.card_header("Manifest Source Inspector"),
                         ui.output_ui("yaml_source_viewer_ui")
                     )
+                ),
+                # BP-JOINT-1 (ADR-082 Q5): dedicated Joint Designer pane — left + right
+                # ingredient schemas side-by-side with a live, real-data key-match preview.
+                # Replaces the old fabricated join modal.
+                ui.nav_panel(
+                    "4. Joint Designer",
+                    ui.div(
+                        ui.output_ui("joint_designer_status_ui"),
+                        ui.layout_columns(
+                            ui.input_select(
+                                "joint_left_ingredient",
+                                "Left (base) ingredient", choices={}),
+                            ui.input_select(
+                                "joint_right_ingredient",
+                                "Right ingredient", choices={}),
+                            col_widths=[6, 6],
+                        ),
+                        ui.layout_columns(
+                            ui.card(
+                                ui.card_header("Left (base) schema"),
+                                ui.div(
+                                    ui.output_ui("joint_left_schema_ui"),
+                                    style="overflow-y:auto;max-height:240px;"),
+                            ),
+                            ui.card(
+                                ui.card_header("Right schema"),
+                                ui.div(
+                                    ui.output_ui("joint_right_schema_ui"),
+                                    style="overflow-y:auto;max-height:240px;"),
+                            ),
+                            col_widths=[6, 6],
+                        ),
+                        # Key pickers re-mount when either ingredient changes (Rule R4):
+                        # they read only the ingredient selects, never the key values.
+                        ui.output_ui("joint_key_pickers_ui"),
+                        ui.layout_columns(
+                            ui.input_select(
+                                "joint_how", "Join strategy",
+                                choices=JOIN_HOW_OPTIONS, selected="inner"),
+                            ui.input_text_area(
+                                "joint_comment",
+                                "Intent / justification (required)",
+                                placeholder=("Why merge these datasets? "
+                                             "Document intent, not mechanics."),
+                                rows=2, width="100%"),
+                            col_widths=[4, 8],
+                        ),
+                        ui.div(
+                            ui.input_action_button(
+                                "btn_joint_preview", "🔍 Preview key match",
+                                class_="btn-primary"),
+                            ui.input_action_button(
+                                "btn_joint_apply", "✓ Apply join step",
+                                class_="btn-primary ms-2"),
+                            class_="my-2",
+                        ),
+                        ui.output_ui("joint_preview_ui"),
+                        class_="p-1",
+                    ),
+                    value="joint_designer",
                 ),
                 id="architect_internal_tabs",
             ),
@@ -574,26 +642,6 @@ class WrangleStudio:
                 return None
             return df.head(10)
 
-        # Sync column selector with the active dataset
-        @reactive.Effect
-        def update_column_list():
-            cols = available_cols()
-            if cols:
-                ui.update_select("column_selector", choices=cols)
-                ui.update_select("right_on_selector", choices=cols)
-            else:
-                ui.update_select("column_selector", choices=[
-                                 "No Columns Detected"])
-                ui.update_select("right_on_selector", choices=[
-                                 "No Columns Detected"])
-
-        @reactive.Effect
-        def update_secondary_datasets():
-            # In a real app, this would scan the raw_data_dir
-            # For this MVP, we simulate discovery
-            datasets = ["raw_pipeline_output.tsv", "ResFinder_metadata.tsv"]
-            ui.update_select("secondary_dataset_selector", choices=datasets)
-
         @output
         @render.text
         def action_help_text():
@@ -615,8 +663,15 @@ class WrangleStudio:
                 return
 
             if selected in ("join", "join_filter"):
-                # Join keeps its dedicated modal until the Joint Designer (BP-JOINT-1).
-                self.show_join_modal(input, session, available_cols)
+                # BP-JOINT-1: joins are authored in the dedicated Joint Designer pane.
+                # Open a blank Designer (create mode) and switch to its tab.
+                self.joint_edit_idx.set(None)
+                self.joint_request.set(self.joint_request.get() + 1)
+                ui.update_navs("architect_internal_tabs", selected="joint_designer")
+                ui.notification_show(
+                    "Configure the join in the Joint Designer tab, then Apply.",
+                    type="message",
+                )
                 return
 
             # BP-COMPONENT-FORMS-1: decide node kind by catalog membership.
@@ -648,33 +703,6 @@ class WrangleStudio:
                 f"Added '{selected}' — configure it in the form on the right, then Apply.",
                 type="message",
             )
-
-        @reactive.Effect
-        @reactive.event(input.confirm_join)
-        def handle_confirm_join():
-            comment = input.node_comment_join()
-            if not comment:
-                ui.notification_show(
-                    "⚠️ Justification is mandatory for Joins.", type="error")
-                return
-
-            ui.modal_remove()
-            action = input.action_selector()
-            target_col = input.column_selector()
-            secondary = input.secondary_dataset_selector()
-            right_on = input.right_on_selector()
-
-            curr = self.logic_stack.get().copy()
-            params = {
-                "left_on": target_col,
-                "right_on": right_on,
-                "right_ingredient": secondary
-            }
-            curr.append(
-                {"action": action, "params": params, "comment": comment})
-            self.logic_stack.set(curr)
-            ui.notification_show(
-                f"Join Node added: {secondary}", type="message")
 
         @reactive.Effect
         @reactive.event(input.btn_clear_stack)
@@ -1966,52 +1994,6 @@ class WrangleStudio:
 
         tree_id = f"ya_{abs(hash(path)) % 9999999}"
         return ui.accordion(*panels, id=tree_id, multiple=True)
-
-    def show_join_modal(self, input, session, available_cols):
-        # 1. Validation Logic
-        left_col = input.column_selector()
-        right_col = input.right_on_selector()
-        secondary = input.secondary_dataset_selector()
-
-        # Visual Indicators (Green/Red)
-        pk_match = left_col == right_col
-        status_color = "#e8f5e9" if pk_match else "#ffebee"
-        status_text = "✅ Primary Key Contract Met" if pk_match else "❌ Primary Key Mismatch (Column Names)"
-
-        # Preview Data (Simulated for Evidence)
-        m = ui.modal(
-            ui.h3("Join Integrity Preview"),
-            ui.p(f"Attempting to join Anchor with: {secondary}"),
-            ui.hr(),
-            ui.layout_columns(
-                ui.div(
-                    ui.h6("Anchor (Join Key)"),
-                    ui.tags.pre("ID_1\nID_2\nID_3\nID_4\nID_5"),
-                    style="background: #f8f9fa; padding: 10px;"
-                ),
-                ui.div(
-                    ui.h6(f"{secondary} (Join Key)"),
-                    ui.tags.pre("ID_1\nID_2\nID_99\nID_4\nID_100"),
-                    style="background: #f8f9fa; padding: 10px;"
-                )
-            ),
-            ui.div(
-                ui.h5(status_text),
-                ui.p("Overlap Detection: 60% of keys matched (3/5 in preview)."),
-                ui.input_text_area("node_comment_join", "Justification for Join:",
-                                   placeholder="Why are you merging these datasets?", width="100%", rows=2),
-                style=f"background-color: {status_color}; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #ccc;"
-            ),
-            title="ADR-012: Join Integrity Gate",
-            footer=ui.div(
-                ui.modal_button("Cancel"),
-                ui.input_action_button(
-                    "confirm_join", "Proceed with Join", class_="btn-success")
-            ),
-            size="l",
-            easy_close=True
-        )
-        ui.modal_show(m)
 
     def _extract_upstream_cols(self) -> dict:
         """Return {col_name: 'numeric'|'categorical'} from active_upstream.
