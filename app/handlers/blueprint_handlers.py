@@ -187,8 +187,11 @@ def define_server(input, output, session, *,
                 if comp == "__mapping__":
                     mapping = dict(node.get("params", {}))
                 else:
-                    layers.append({"name": comp,
-                                   "params": dict(node.get("params", {}))})
+                    layer = {"name": comp, "params": dict(node.get("params", {}))}
+                    node_comment = node.get("comment", "")
+                    if node_comment:
+                        layer["comment"] = node_comment
+                    layers.append(layer)
             canonical["mapping"] = mapping
             canonical["layers"] = layers
 

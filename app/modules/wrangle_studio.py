@@ -379,12 +379,16 @@ class WrangleStudio:
                             ui.input_select(
                                 "joint_how", "Join strategy",
                                 choices=JOIN_HOW_OPTIONS, selected="inner"),
-                            ui.input_text_area(
-                                "joint_comment",
-                                "Intent / justification (required)",
-                                placeholder=("Why merge these datasets? "
-                                             "Document intent, not mechanics."),
-                                rows=2, width="100%"),
+                            ui.tooltip(
+                                ui.input_text_area(
+                                    "joint_comment",
+                                    "Intent / justification (required)",
+                                    placeholder=("Why merge these datasets? "
+                                                 "Document intent, not mechanics."),
+                                    rows=2, width="100%"),
+                                "Write your intent — why merge these datasets, not how the join works.",
+                                placement="top",
+                            ),
                             col_widths=[4, 8],
                         ),
                         ui.div(
@@ -864,10 +868,14 @@ class WrangleStudio:
                             ),
                             class_="mb-2"
                         ),
-                        ui.input_text(
-                            "bp_form_comment", "Comment",
-                            value=current_comment,
-                            placeholder="Why this mapping?"
+                        ui.tooltip(
+                            ui.input_text(
+                                "bp_form_comment", "Comment",
+                                value=current_comment,
+                                placeholder="Why this mapping?"
+                            ),
+                            "Write your intent — why these aesthetics, not what the columns are.",
+                            placement="top",
                         ),
                         *aes_widgets,
                         ui.div(
@@ -912,10 +920,14 @@ class WrangleStudio:
                         ),
                         class_="mb-2"
                     ),
-                    ui.input_text(
-                        "bp_form_comment", "Comment",
-                        value=current_comment,
-                        placeholder="Why this layer?"
+                    ui.tooltip(
+                        ui.input_text(
+                            "bp_form_comment", "Comment",
+                            value=current_comment,
+                            placeholder="Why this layer?"
+                        ),
+                        "Write your intent — why this layer, not what it renders.",
+                        placement="top",
                     ),
                     *form_widgets,
                     ui.div(
@@ -970,10 +982,14 @@ class WrangleStudio:
                     ui.span(header_label, class_="fw-bold small"),
                     class_="mb-2"
                 ),
-                ui.input_text(
-                    "bp_form_comment", "Comment",
-                    value=current_comment,
-                    placeholder="Why this transformation?"
+                ui.tooltip(
+                    ui.input_text(
+                        "bp_form_comment", "Comment",
+                        value=current_comment,
+                        placeholder="Why this transformation?"
+                    ),
+                    "Write your intent — why this transformation, not what it does.",
+                    placement="top",
                 ),
                 *form_widgets,
                 ui.div(
