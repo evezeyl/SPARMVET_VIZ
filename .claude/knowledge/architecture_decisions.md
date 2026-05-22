@@ -255,7 +255,7 @@ All `wrangling` blocks in YAML manifests MUST use nested tier keys to separate l
 
 - If a manifest is missing `tier2`, it is treated as an **Identity Transformation** for that tier (Tier 1 output is passed through unchanged).
 - The `DataWrangler` uses `_resolve_tier()` to extract the correct sequence, ensuring structural homogeneity.
-- **Mandate:** Flat list wrangling is deprecated; all new manifests must adopt the nested structure.
+- **Enforcement (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** Flat list `wrangling: [...]` is now **rejected** by `_resolve_tier()` with a `ManifestError`. All manifests must use the tiered structure. Two legacy manifests were migrated (`demo_abromics.yaml`, `1_Abromics_general_pipeline.yaml`). Test coverage added: `libs/transformer/tests/test_data_wrangler.py`.
 
 ## ADR 025: The Gallery & Recipe Pattern (Visual Cookbook)
 

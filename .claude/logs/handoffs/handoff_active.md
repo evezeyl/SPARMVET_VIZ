@@ -118,3 +118,34 @@ Exclusions file: `.claude/workflows/audit_exclusions.yaml` — added `theme_lege
 ---
 
 *Appended 2026-05-09 — audit sweep session.*
+
+---
+
+## Session 2026-05-22 — Legacy removals + TEST_LAB scaffold
+
+### Completed this session
+
+**TL-UI-SCAFFOLD-1** — Manifest Scaffolding panel fully wired in `app/handlers/test_lab_handlers.py`. Replaced 3-line stub with full reactive panel: multi-file upload, project ID, join key, optional metadata TSV, reconciliation bake-in controls (conditional on `_recon_results()`), run gate, ZIP download. Stateless tool principle maintained.
+
+**LEGACY-FLAT-WRANGLING-1** — Flat `wrangling: []` lists now raise `ManifestError` in `_resolve_tier()`. Two manifests migrated. 8 tests added in `libs/transformer/tests/test_data_wrangler.py`. Docs swept: `rules_data_engine.md`, `Standards_yaml.qmd`, `transformer/README.md`, `architecture_decisions.md ADR-024`.
+
+**LEGACY-TYPE-ALIASES-1** — Previously completed (carried over from prior session).
+
+### Open legacy tasks remaining
+- `LEGACY-AUDIT-FLAG-1`: `audit_report_enabled` flag removal (marked done earlier this session — verify tasks.md)
+- Next candidate: check tasks.md for any remaining `[ ]` legacy items
+
+### Files modified this session
+- `app/handlers/test_lab_handlers.py` — scaffold panel implementation
+- `libs/transformer/src/transformer/data_wrangler.py` — flat list rejection
+- `libs/transformer/tests/test_data_wrangler.py` — NEW (8 tests)
+- `config/manifests/pipelines/demo_abromics.yaml` — wrangling migration
+- `config/manifests/pipelines/1_Abromics_general_pipeline.yaml` — wrangling migration
+- `.claude/rules/rules_data_engine.md §3` — enforcement mandate
+- `docs/appendix/Standards_yaml.qmd` — REMOVED tombstone
+- `libs/transformer/README.md` — flat-list rejection note
+- `.claude/knowledge/architecture_decisions.md ADR-024` — Phase 34 enforcement note
+- `.claude/knowledge/project_conventions.md` — scaffolder.py added to registry
+- `.claude/tasks/tasks.md` — TL-UI-SCAFFOLD-1 and LEGACY-FLAT-WRANGLING-1 marked `[x]`
+
+*Appended 2026-05-22 — legacy removals + TEST_LAB scaffold session.*

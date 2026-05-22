@@ -68,6 +68,7 @@ wrangling:
 
 - **The Boolean Shield**: To prevent the YAML parser from misinterpreting `on:` as `True`, always use quotes (`"on":`) or ensure the logic engine (DataAssembler) is hardened to resolve both keys.
 - **Relational Strategy**: When joining multiple 'Long' format datasets (e.g., AMR + Virulence), prioritize `join_filter` over `join` to maintain a manageable row count and prevent computational bloat.
+- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is rejected by `_resolve_tier()` with a `ManifestError`. Migrate to the tiered structure above.
 
 ### Identity Logic (ADR-014)
 

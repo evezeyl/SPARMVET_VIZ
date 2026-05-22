@@ -163,14 +163,13 @@ Items with no blockers — can be started immediately.
   - `libs/transformer/tests/test_metadata_validator.py` added — 4 tests (2 error-path, 2 happy-path). All pass.
   - REMOVED tombstone added to `rules_manifest_structure.md §9`. Expires Phase 36.
 
-- [ ] **LEGACY-FLAT-WRANGLING-1** `[sonnet/low]`: Remove engine acceptance of flat `wrangling: []` list.
-  - **Dep sweep:** `grep -rn "wrangling" libs/transformer/src/ libs/utils/src/` — find exactly where flat list is tolerated vs tiered structure enforced.
-  - **Manifest scan:** `grep -rn "^wrangling:" config/manifests/` — any flat (non-tiered) wrangling blocks must be migrated first. Run `debug_assembler.py` to verify after migration.
-  - **Code:** Remove flat-list tolerance. Raise `ConfigurationError`: `"Flat 'wrangling:' list is deprecated — use tiered structure with 'tier1:' / 'tier2:'. See rules_data_engine.md §3."`.
-  - **Tests:** Remove any tests using flat wrangling as valid input; add error-path test.
-  - **Doc sweep:** `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone. `rules_data_engine.md §3` proactive-refactoring note → update to say engine rejects flat lists. `docs/appendix/manifest_structure.yaml`.
-  - **Gate:** `grep -rn "^  wrangling:\s*\[" config/` = zero hits. Engine rejects flat lists. Test suite passes.
-  ensure that if there is flat structure in manifewt that that porduces an error that it indicates this to the user as error to guide
+- [x] **LEGACY-FLAT-WRANGLING-1** `[sonnet/low]`: Remove engine acceptance of flat `wrangling: []` list. ✅ 2026-05-22
+  - Migrated 2 manifests (`demo_abromics.yaml`, `1_Abromics_general_pipeline.yaml`): `wrangling: []` → tiered `tier1: [] / tier2: []`.
+  - `_resolve_tier()` in `data_wrangler.py` now raises `ManifestError` for flat lists with actionable tip (shows tiered migration example + reference to rules_data_engine.md §3).
+  - `libs/transformer/tests/test_data_wrangler.py` added — 8 tests (4 error-path flat-list rejection, 4 happy-path valid structures). All pass.
+  - `rules_data_engine.md §3` proactive-refactoring rule → rejection mandate.
+  - `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone (expires Phase 36).
+  - Gate: zero flat-wrangling hits in `config/`, engine rejects flat lists with actionable error.
 
 ---
 

@@ -802,3 +802,29 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 - Token-by-token streaming — explicit non-decision; all backends buffered
 - Gallery awareness (`gallery_awareness: true`) — reserved flag, Phase 1 = false
 - MCP server exposing tools — Phase 2 upgrade path
+
+---
+
+## Phase 34: Legacy Removal Sprint + TEST_LAB Scaffold (COMPLETE — 2026-05-22)
+
+**Goal:** Remove deprecated engine-level compatibility shims that accumulated from Phases 18–28, and complete the TEST_LAB Manifest Scaffolding panel.
+
+| Step | Task ID | Label | Model | Status |
+|---|---|---|---|---|
+| 34-A | LEGACY-AUDIT-FLAG-1 | Remove `audit_report_enabled` flag from all templates, `PersonaValidator`, `Bootloader` | haiku | ✅ |
+| 34-B | LEGACY-TYPE-ALIASES-1 | Remove `string`/`character` type aliases — engine raises `TransformationError` | sonnet | ✅ |
+| 34-C | LEGACY-FLAT-WRANGLING-1 | Remove flat `wrangling: []` tolerance — engine raises `ManifestError` | sonnet | ✅ |
+| 34-D | TL-UI-SCAFFOLD-1 | Manifest Scaffolding full panel in `test_lab_handlers.py` | sonnet | ✅ |
+
+### Key decisions (Phase 34)
+
+- Flat list rejection uses `ManifestError` (consistent with existing structural errors in `data_wrangler.py`) rather than `ConfigurationError` — keeps the error taxonomy homogeneous within the transformer layer.
+- `_resolve_tier()` tip includes a literal migration snippet so authors can copy-paste the fix directly from the error message.
+- Scaffold panel bakes in reconciliation steps from the ID Reconciliation panel above via `recipes={dataset_key: recipe.steps}` — `TransformationRecipe.steps` is `list[dict]`, directly compatible with the scaffolder API.
+- Shell stability (Rule R4): `tl_scaffold_ui` renders widget shells only; `_scaffold_file_infos` / `_scaffold_meta_info` are `@reactive.Calc` so multiple consumers share the computed value without redundant input reads inside renders.
+
+### Tombstones (expire Phase 36)
+
+- `LEGACY-FLAT-WRANGLING-1` tombstone in `docs/appendix/Standards_yaml.qmd` and `rules_data_engine.md §3`
+- `LEGACY-AUDIT-FLAG-1` tombstone in `ui_implementation_contract.md §7.2/12f` and `rules_persona_feature_flags.md §Group A`
+- `LEGACY-TYPE-ALIASES-1` tombstone in `rules_manifest_structure.md §9`

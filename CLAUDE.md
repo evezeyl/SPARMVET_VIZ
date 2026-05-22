@@ -116,6 +116,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `spaces/TEST_LAB.md` | TEST_LAB user space design |
 | `spaces/GALLERY.md` | GALLERY user space design |
 | `spaces/FUTURE_SPACES.md` | Forward notes on future user spaces |
+| `developer_workflow.md` | End-to-end producer journey across TEST_LAB → BLUEPRINT → GALLERY → HOME; module independence, "Send to" handoff, cross-space seams |
 | `functionality_dependency_map.md` | User functionality → code flag mapping with cascade rules |
 | `persona_capability_matrix.md` | Deployment configuration matrix |
 | `persona_scoping_guide.md` | Deployment configuration guide |
