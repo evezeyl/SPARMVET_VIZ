@@ -260,9 +260,9 @@ class Anonymiser:
         id_column: str,
         personal_columns: list[str],
     ) -> None:
-        missing = [c for c in [id_column] + personal_columns if c not in df.columns]
-        if missing:
-            raise ValueError(f"Column(s) not found in source: {missing}")
+        # Only id_column is required; personal_columns are stripped where present.
+        if id_column not in df.columns:
+            raise ValueError(f"ID column not found in source: {id_column!r}")
 
     def _extend_mapping(
         self,
@@ -301,7 +301,9 @@ class Anonymiser:
     ) -> pl.DataFrame:
         ids_str = df[id_column].cast(pl.Utf8).to_list()
         anon_ids = [mapping[v] for v in ids_str]
-        keep_cols = [c for c in df.columns if c not in personal_columns and c != id_column]
+        # personal_columns are stripped where present; files without them are unaffected
+        strip = set(personal_columns) & set(df.columns)
+        keep_cols = [c for c in df.columns if c not in strip and c != id_column]
         return df.select(keep_cols).with_columns(
             pl.Series(anon_col, anon_ids)
         ).select([anon_col] + keep_cols)

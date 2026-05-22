@@ -109,7 +109,8 @@ Items with no blockers — can be started immediately.
 
 #### 34-F — Anonymisation Tool
 
-- [ ] **TL-ANON-1** `[sonnet/medium]`: `libs/test_lab/src/test_lab/anonymiser.py` — `anonymise(filepath, id_column, personal_columns, pattern)` + `anonymise_batch` (multi-file consistency). Patterns: sequential, hash, custom. Outputs: anonymised TSV + mapping TSV + de-anonymisation instructions. Gate: round-trip test (anonymise → BLUEPRINT join → IDs restored); multi-file consistency test; personal column stripping verified.
+- [x] **TL-ANON-1** `[sonnet/medium]`: `libs/test_lab/src/test_lab/anonymiser.py` — `anonymise(filepath, id_column, personal_columns, pattern)` + `anonymise_batch` (multi-file consistency). Patterns: sequential, hash, custom. Outputs: anonymised TSV + mapping TSV + de-anonymisation instructions. Gate: round-trip test (anonymise → BLUEPRINT join → IDs restored); multi-file consistency test; personal column stripping verified.
+  ✅ 2026-05-22 — 22/22 gate tests pass.
 
 #### 34-G — Reformatting Tools
 
