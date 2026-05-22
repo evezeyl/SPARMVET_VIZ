@@ -63,15 +63,26 @@ class MetadataValidator:
                 transformed = transformed.rename({source: col_name})
 
             # 2. Handle Type Casting
+            # REMOVED (LEGACY-TYPE-ALIASES-1, Phase 34, 2026-05-22): 'string' and 'character'
+            # are no longer accepted. Use 'categorical' (identifiers, repeating values) or
+            # 'utf8' (high-cardinality free text). See rules_manifest_structure.md §9.
+            _REMOVED_TYPE_ALIASES = {"string", "character"}
+            raw_type = props.get("type", "categorical")
+            if raw_type in _REMOVED_TYPE_ALIASES:
+                raise TransformationError(
+                    f"Type alias '{raw_type}' is removed — use 'categorical' (for identifiers "
+                    f"and repeating values) or 'utf8' (for high-cardinality free text). "
+                    f"Column: '{col_name}'. See rules_manifest_structure.md §9.",
+                    tip=f"Replace 'type: {raw_type}' with 'type: categorical' in the manifest "
+                        f"input_fields / output_fields / final_contract for column '{col_name}'."
+                )
             dtype_map = {
                 # canonical manifest vocabulary (input_fields / output_fields)
-                "string": pl.Utf8,
                 "numeric": pl.Float64,
                 "categorical": pl.Categorical,
                 "date": pl.Date,
                 # aliases / legacy names
                 "utf8": pl.Utf8,
-                "character": pl.Utf8,
                 "float": pl.Float64,
                 "int": pl.Int64,
                 "integer": pl.Int64,
@@ -86,7 +97,7 @@ class MetadataValidator:
                 "Categorical": pl.Categorical,
             }
 
-            target_type = props.get("type", "string")
+            target_type = raw_type
             if target_type in dtype_map:
                 try:
                     transformed = transformed.with_columns(

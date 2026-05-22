@@ -65,8 +65,8 @@ input_fields:
 
 All wrangling logic must use the **tiered structure** (ADR-041).
 
-> **DEPRECATED (removal task: LEGACY-FLAT-WRANGLING-1):** A flat `wrangling: []` list at manifest root is a deprecated authoring pattern.
-> New manifests MUST use the tiered structure. Engine acceptance of flat lists will be removed.
+> **REMOVED (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** Flat `wrangling: []` lists are rejected by the engine with a `ManifestError`.
+> Migrate to the tiered structure shown below. Tombstone expires Phase 36.
 
 ```yaml
 wrangling:

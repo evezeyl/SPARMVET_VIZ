@@ -51,7 +51,6 @@ class DataWrangler:
 
         Supported shapes:
           - dict with 'tier1'/'tier2' keys → returns that tier's list.
-          - flat list → treated as tier1 (legacy/simple manifests).
           - empty / None → returns [].
 
         Args:
@@ -83,10 +82,19 @@ class DataWrangler:
                 return wrangling_block.get("tier1", []) + wrangling_block.get("tier2", [])
             return wrangling_block.get(tier, [])
 
-        # Flat list → treat as tier1
-        if tier in ("tier1", "all"):
-            return wrangling_block
-        return []  # tier2 on a flat list → skip gracefully
+        # Flat list is no longer accepted — raise an actionable error.
+        raise ManifestError(
+            "Flat 'wrangling:' list is no longer accepted. Use the tiered structure with 'tier1:' and 'tier2:' keys.",
+            tip=(
+                "Replace 'wrangling: [...]' with:\n"
+                "  wrangling:\n"
+                "    tier1:\n"
+                "      - action: your_action\n"
+                "        ...\n"
+                "    tier2: []\n"
+                "See rules_data_engine.md §3 for the full tiered manifest standard."
+            )
+        )
 
     def run_tier1(self, lf: pl.LazyFrame, wrangling_block: Any) -> pl.LazyFrame:
         """Executes only the tier1 actions from a wrangling block."""

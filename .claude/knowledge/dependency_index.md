@@ -154,7 +154,7 @@
 ## `app/handlers/test_lab_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (test_lab_handlers)`
-- **consumes:** `app/modules/test_lab_studio.py`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`
+- **consumes:** `app/modules/test_lab_studio.py`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/test_lab/scaffolder.py`, `libs/id_reconciliation/`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
 

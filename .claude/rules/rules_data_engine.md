@@ -55,9 +55,9 @@ wrangling:
   tier2: [ ...ordered actions... ] # Optional: skipped via Identity Logic if omitted
 ```
 
-### Proactive Refactoring Rule
+### Flat List Rejection (LEGACY-FLAT-WRANGLING-1, Phase 34)
 
-Agents encountering legacy manifests with a flat `wrangling: []` list MUST proactively suggest refactoring them into the tiered structure.
+The engine rejects flat `wrangling:` lists with a `ManifestError`. All manifests must use the tiered structure. If a legacy manifest is encountered with a flat list, migrate it before running.
 
 ## 4. The Manifest Data Contract (ADR-013 & Identity Logic)
 

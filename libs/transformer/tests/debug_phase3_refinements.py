@@ -65,7 +65,7 @@ def test_malformed_gatekeeping():
     df = pl.DataFrame({"sample_id": ["S1"], "value": [10]}).lazy()
 
     # Manifest with typo 'sample_idd'
-    contract = {"sample_idd": {"type": "string"}}
+    contract = {"sample_idd": {"type": "categorical"}}
 
     validator = MetadataValidator()
     try:

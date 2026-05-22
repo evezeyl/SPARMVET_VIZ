@@ -25,7 +25,9 @@ metadata_schema:
     type: local_tsv
     path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
   input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
-  wrangling: []
+  wrangling:
+    tier1: []
+    tier2: []
   output_fields: []
 additional_datasets_schemas:
   VirulenceFinder:

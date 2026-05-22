@@ -204,7 +204,12 @@ Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_ti
 | Manifest type | Polars load type | Polars output contract | When to use |
 |---|---|---|---|
 | `categorical` | `pl.String` (internal) | `pl.Categorical` | **Default** for identifiers and repeating values (`sample_id`, `taxon`, `country`, `gene`). Ensures discrete-scale correctness in Plotnine. |
-| `string` (or `utf8`) | `pl.String` | `pl.String` | High-cardinality text, descriptions, free-form fields where categorization gives no benefit. |
+| `utf8` | `pl.String` | `pl.String` | High-cardinality text, descriptions, free-form fields where categorization gives no benefit. |
+
+> **REMOVED (LEGACY-TYPE-ALIASES-1, Phase 34, 2026-05-22):** `string` and `character` are no longer accepted type values.
+> The engine raises `TransformationError` when either is encountered in `input_fields`, `output_fields`, or `final_contract`.
+> Migration: replace `type: string` with `type: categorical` (identifiers, repeating values) or `type: utf8` (high-cardinality free text).
+> **Tombstone expires:** Phase 36 (delete this block after two phases)
 
 **Primary key rule:** `sample_id` MUST be `type: categorical`. Using `numeric` for join keys causes type-parity mismatches in `action: join` steps.
 

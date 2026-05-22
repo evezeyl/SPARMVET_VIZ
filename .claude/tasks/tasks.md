@@ -129,8 +129,9 @@ Items with no blockers — can be started immediately.
   Depends: TL-IDLIB-CORE-1, TL-UI-SHELL-1.
   ✅ 2026-05-22 — 2-file upload, column selectors, PRE-CHECK (precheck_compatibility), RECONCILE (reconcile()), match table DataGrid, pattern summary, M2M warning + reason textarea, certainty threshold slider, recipe YAML download; import OK. Per-row verify/reject → threshold slider (principled equivalent).
 
-- [ ] **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload or "Continue from ID Reconciliation", join key selection, boilerplate ZIP download with baked-in steps summary.  
+- [x] **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload or "Continue from ID Reconciliation", join key selection, boilerplate ZIP download with baked-in steps summary.  
   Depends: TL-SCAFFOLD-1, TL-UI-RECONCILE-1.
+  ✅ 2026-05-22 — tl_scaffold_ui shell (project_id, multi-file upload, optional metadata TSV, join key); reactive chain (_scaffold_file_infos, _scaffold_meta_info); tl_scaffold_recon_ui (checkbox + dataset select only shown when _recon_results() available); _scaffold_result gated on scaffold_run event, calls ManifestScaffolder(join_key).scaffold(); bakes in IDReconciliationEngine recipe.steps when checkbox checked; status_ui shows schema count + meta note + recon note; ZIP download; import OK.
 
 - [x] **TL-UI-SYNTH-1** `[sonnet/medium]`: Synthetic Data panel — schema/file upload, proposed config review table (per-column editable), mode toggle (Demo/Stress test), error injection block (stress_test only), n_rows input, generate button, scenario save/load, download TSV + YAML config.  
   Depends: TL-SYNTH-1, TL-UI-SHELL-1.
@@ -151,21 +152,16 @@ Items with no blockers — can be started immediately.
   - Error-path + happy-path tests added to `libs/utils/tests/test_config_loader.py`. 154 tests pass.
   - `rules_manifest_structure.md §8` DEPRECATED marker converted to REMOVED tombstone (expires Phase 36).
 
-- [ ] **LEGACY-AUDIT-FLAG-1** `[haiku/low]`: Full removal of `audit_report_enabled` flag.
-  - **Dep sweep:** Known hits: `persona_validator.py:27,41,124`, `bootloader.py:441`, `test_persona_validator.py`, all 8 `config/ui/templates/*_template.yaml`
-  - **Code:** Remove from `persona_validator.py` known-flags list and cascade check. Remove from `bootloader.py` interactivity cascade. Remove key from all 8 template YAMLs.
-  - **Tests:** Update `test_persona_validator.py` — remove the `audit_report_enabled=True` cascade test (lines 147–152); confirm remaining tests still pass.
-  - **Doc sweep:** `rules_persona_feature_flags.md` flag table, `ui_implementation_contract.md` §7.2 and §12f, `docs/workflows/ui_persona.qmd` if referenced — convert DEPRECATED markers to REMOVED tombstones with expiry Phase 35.
-  - **ADR:** Note removal in ADR or session log.
-  - **Gate:** `grep -rn "audit_report_enabled" app/ config/` = zero hits. Full test suite passes.
+- [x] **LEGACY-AUDIT-FLAG-1** `[haiku/low]`: Full removal of `audit_report_enabled` flag. ✅ 2026-05-22
+  - Removed from `persona_validator.py` _REQUIRED_FLAGS, _CASCADE_GATES, _T3_COMPANIONS. Removed from `bootloader.py` interactivity cascade. Removed from all 8 templates.
+  - `test_persona_validator.py` updated (flag removed from _FULL_FEATURES, test_multiple_children simplified, test_child_false cleaned). 21 tests pass.
+  - Tombstones in `rules_persona_feature_flags.md` and `ui_implementation_contract.md §7.2 / §12f`. Flag removed from feature list.
 
-- [ ] **LEGACY-TYPE-ALIASES-1** `[sonnet/low]`: Remove deprecated type aliases `character` / `string` (→ `categorical`).
-  - **Dep sweep:** `grep -rn "\"character\"\|\"string\"\|'character'\|'string'" libs/ingestion/ libs/transformer/ libs/utils/` — confirm exactly where aliases are accepted (may be ingestion schema validator or config_loader type coercion).
-  - **Manifest scan:** `grep -rn "type: character\|type: string" config/manifests/` — if any hits, migrate them first before removing engine support.
-  - **Code:** Remove alias acceptance. Raise `ConfigurationError`: `"Type 'character' is deprecated — use 'categorical'. See rules_manifest_structure.md §9."`.
-  - **Tests:** Add error-path test for deprecated alias.
-  - **Doc sweep:** `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone. `rules_manifest_structure.md §9`. Any README mentioning type values.
-  - **Gate:** `grep -rn "type: character\|type: string" config/` = zero hits. Engine raises error on alias. Test suite passes.
+- [x] **LEGACY-TYPE-ALIASES-1** `[sonnet/low]`: Remove deprecated type aliases `character` / `string`. ✅ 2026-05-22
+  - Migrated all manifests: `type: string` → `type: categorical` across 6 manifest files. Zero config/ hits remaining.
+  - Engine now raises `TransformationError` for `string` and `character` (with tip pointing to canonical alternatives). Default changed from `"string"` to `"categorical"`.
+  - `libs/transformer/tests/test_metadata_validator.py` added — 4 tests (2 error-path, 2 happy-path). All pass.
+  - REMOVED tombstone added to `rules_manifest_structure.md §9`. Expires Phase 36.
 
 - [ ] **LEGACY-FLAT-WRANGLING-1** `[sonnet/low]`: Remove engine acceptance of flat `wrangling: []` list.
   - **Dep sweep:** `grep -rn "wrangling" libs/transformer/src/ libs/utils/src/` — find exactly where flat list is tolerated vs tiered structure enforced.
