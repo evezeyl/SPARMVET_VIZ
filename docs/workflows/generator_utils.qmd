@@ -31,16 +31,16 @@ To ensure a seamless developer experience, the SDK follows a linear automation p
 - **Process**: Samples the specific categorical pools and numeric ranges from "Ground Truth" data to generate valid synthetic isolates.
 - **The PK Anchor Pool**: Uses an "Anchor Key" strategy to ensure that synthetic hits in analysis tables (MLST, Virulence) correctly reference existing samples in the metadata table, solving the **PK Mismatch** blocker.
 
-### Stage D: Relational Reconciliation (`KeyReconciler`)
+### Stage D: Relational Reconciliation (`IDReconciliationEngine`)
 - **Focus**: Cleaning and Alignment of Primary/Secondary Keys.
-- **Process**: Employs a 'Short-to-Long' logic to match clean "Anchor Keys" (e.g., Metadata IDs) against noisy "Target Keys" (e.g., Fastq filenames).
+- **Library**: `libs/id_reconciliation/` — use `IDReconciliationEngine` directly.
 - **Match Types**:
-    - **EXACT**: 1:1 identical string match.
-    - **FUZZY**: Sub-string match confirmed via regex extraction.
-    - **AMBIGUOUS**: A single anchor key matches multiple target candidates (requires manual resolution).
-    - **ORPHAN**: No match found in the target dataset.
-- **Boundary Protection**: To prevent partial ID collisions (e.g., `x100w2` accidentally matching `x100w20`), the reconciler uses non-alphanumeric boundary guards `(?:^|[^a-zA-Z0-9])` in its generated regex.
-- **Intersection Score**: Calculates the percentage of successful matches found via fuzzy substring vs. exact matching to assess data noise levels.
+    - **exact**: 1:1 identical string match (certainty 1.0).
+    - **pattern**: Prefix/suffix removal, case normalisation, or delimiter swap detected automatically (certainty 0.95).
+    - **fuzzy**: Token-set ratio via rapidfuzz, delimiter-normalised (certainty 0.0–0.99).
+    - **unmatched**: No match found (certainty 0.0).
+- **Boundary Protection**: `suggest_regex` in `libs/utils/src/utils/id_patterns.py` uses non-alphanumeric boundary guards `(?:^|[^a-zA-Z0-9])` to prevent partial ID collisions (e.g., `x100w2` does not match `x100w20`).
+- **Overlap Summary**: `engine.precheck_compatibility(ref_ids, target_ids)` returns overlap count, percentage, and top-3 pattern suggestions before running a full reconciliation.
 
 ## GUI Forward-Compatibility
 

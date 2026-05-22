@@ -21,6 +21,8 @@ from utils.errors import TransformationError
         "target_column": {"widget": "string", "label": "Output column name", "required": True},
         "group": {"widget": "number", "label": "Capture group index (1-based)", "required": False, "default": 1},
     },
+    "description": "Extract a substring from a string column using a capture-group regex; creates a new column with the matched group.",
+    "yaml_example": "- action: regex_extract\n  source: sample_name\n  pattern: '(ST\\d+)'\n  target_column: sequence_type\n  group: 1",
 })
 def action_regex_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -60,6 +62,9 @@ def action_regex_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
         "dtype": {"widget": "dtype_picker", "label": "Target dtype", "required": True,
                   "options": ["Int64", "Float64", "String", "Boolean", "Date", "Categorical"]},
     },
+    "description": "Change the dtype of one or more columns; always cast Float64 to Int64 then to String in two steps to avoid '2022.0' string artifacts.",
+    "yaml_example": "- action: cast\n  columns: [Year]\n  dtype: Int64\n- action: cast\n  columns: [Year]\n  dtype: String",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "cast"]}],
 })
 def action_cast(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -95,6 +100,9 @@ def action_cast(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns (first = target, rest = fallbacks)", "required": True, "min_items": 2},
     },
+    "description": "Return the first non-null value across a list of columns row-wise; the first column is overwritten with the result.",
+    "yaml_example": "- action: coalesce\n  columns: [preferred_id, backup_id, fallback_id]",
+    "wraps": [{"lib": "polars", "attr_path": ["coalesce"]}],
 })
 def action_coalesce(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -125,6 +133,8 @@ def action_coalesce(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "then": {"widget": "column_or_literal", "label": "Value when true", "required": True},
         "otherwise": {"widget": "column_or_literal", "label": "Value when false", "required": False},
     },
+    "description": "Create a binary label column based on a numeric comparison predicate; use `recode_values` for string-based category remapping.",
+    "yaml_example": "- action: label_if\n  column: identity_pct\n  new_column: high_identity\n  predicate: '>='\n  value: 90\n  then: High\n  otherwise: Low",
 })
 def action_label_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -188,6 +198,8 @@ def action_label_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "target_column": {"widget": "string", "label": "Output column name (fallback)", "required": False},
         "expression": {"widget": "expression", "label": "Polars expression (e.g. pl.col('x') * 2)", "required": True},
     },
+    "description": "Evaluate an arbitrary Polars expression and assign it to a column; the most powerful action \u2014 use simpler actions (cast, fill_nulls, label_if) when they suffice.",
+    "yaml_example": "- action: mutate\n  column: phenotype_clean\n  expression: \"pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()\"",
 })
 def action_mutate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -223,6 +235,8 @@ def action_mutate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "pattern": {"widget": "string", "label": "Regex pattern", "required": True},
         "value": {"widget": "string", "label": "Replacement string", "required": False, "default": ""},
     },
+    "description": "Replace all regex pattern matches in string columns with a replacement string; use `strip_whitespace` for the common whitespace case.",
+    "yaml_example": "- action: regex_replace\n  columns: [gene_name]\n  pattern: '_v\\d+$'\n  value: ''",
 })
 def action_regex_replace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Regex-based string replacement."""
@@ -246,6 +260,8 @@ def action_regex_replace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
         "value": {"widget": "column_or_literal", "label": "Value to convert to null", "required": True},
     },
+    "description": "Replace a specific sentinel value (e.g. 'N/A', '-') with null across one or more columns; inverse of fill_nulls.",
+    "yaml_example": "- action: null_if\n  columns: [resistance, virulence]\n  value: 'N/A'",
 })
 def action_null_if(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Converts a specific value to null."""

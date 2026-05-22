@@ -22,6 +22,8 @@ from utils.errors import TransformationError
         "columns": {"widget": "column_selector", "multi": False, "label": "String column to split and explode", "required": True},
         "separator": {"widget": "string", "label": "Separator", "required": False, "default": ","},
     },
+    "description": "Split a delimited string column into a list and explode each element into its own row; increases row count proportionally.",
+    "yaml_example": "- action: split_and_explode\n  columns: gene_list\n  separator: ','",
 })
 def action_split_and_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -59,6 +61,8 @@ def action_split_and_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
         "extract_column": {"widget": "string", "label": "Value column in reference file to extract", "required": True},
         "separator": {"widget": "string", "label": "Multi-value separator", "required": False, "default": ", "},
     },
+    "description": "Map values in a column to categories using an external reference TSV; handles multi-value delimited strings via a lookup join.",
+    "yaml_example": "- action: derive_categories\n  columns: raw_gene\n  target_column: gene_class\n  reference_file: assets/ref/gene_classes.tsv\n  lookup_right: gene_name\n  extract_column: class_label",
 })
 def action_derive_categories(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -115,6 +119,8 @@ def action_derive_categories(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
         "separator": {"widget": "string", "label": "Separator", "required": False, "default": "/"},
         "new_columns": {"widget": "string", "label": "Output column names (YAML list)", "required": True, "hint": "[part_a, part_b]"},
     },
+    "description": "Split a string column by a separator into multiple new columns; each part is assigned to a named output column.",
+    "yaml_example": "- action: split_column_to_parts\n  column: species_type\n  separator: '/'\n  new_columns: [species, biotype]",
 })
 def action_split_column_to_parts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -150,6 +156,8 @@ def action_split_column_to_parts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.L
         "denominator": {"widget": "column_selector", "multi": False, "label": "Denominator column", "required": True, "dtype_filter": ["numeric"]},
         "new_column": {"widget": "string", "label": "Output column name", "required": True},
     },
+    "description": "Compute the ratio of two numeric columns and store the result in a new column.",
+    "yaml_example": "- action: divide_columns\n  numerator: amr_gene_count\n  denominator: total_genes\n  new_column: amr_gene_fraction",
 })
 def action_divide_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """

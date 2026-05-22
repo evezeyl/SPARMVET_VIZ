@@ -20,6 +20,9 @@ from transformer.actions.base import register_action
         "agg": {"widget": "enum", "label": "Aggregation type", "required": False, "default": "count", "options": ["count", "sum", "mean"]},
         "new_name": {"widget": "string", "label": "Output column name (single-column aggregation only)", "required": False},
     },
+    "description": "Group by columns and aggregate target columns (count/sum/mean); collapses the frame \u2014 use `count_by_group` to add counts without collapsing.",
+    "yaml_example": "- action: summarize\n  columns: [sample_id]\n  group_by: [year, country]\n  agg: count\n  new_name: isolate_count",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "group_by"]}],
 })
 def action_summarize(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -66,6 +69,9 @@ def action_summarize(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "group_by": {"widget": "column_selector", "multi": True, "label": "Group by columns", "required": True},
         "new_column": {"widget": "string", "label": "Output count column name", "required": False, "default": "group_count"},
     },
+    "description": "Add a count-per-group column via a window function without collapsing the frame; preserves all rows.",
+    "yaml_example": "- action: count_by_group\n  group_by: [year, species]\n  new_column: group_count",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "over"]}],
 })
 def action_count_by_group(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """

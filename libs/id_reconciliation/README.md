@@ -9,12 +9,14 @@ from id_reconciliation import (
     IDReconciliationEngine,
     IDPair,
     MatchResult,
-    PatternSuggestion,
     TransformationRecipe,
     detect_many_to_many,
     format_match_table,
     apply_recode_step,
 )
+
+# PatternSuggestion and pattern primitives live in utils — canonical import:
+from utils.id_patterns import PatternSuggestion, detect_patterns, apply_pattern, suggest_regex
 ```
 
 ## Usage

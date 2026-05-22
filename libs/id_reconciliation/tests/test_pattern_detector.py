@@ -32,7 +32,7 @@ def test_detect_delimiter_swap():
 
 
 def test_apply_pattern_prefix():
-    from id_reconciliation.data_structures import PatternSuggestion
+    from utils.id_patterns import PatternSuggestion
     suggestion = PatternSuggestion(
         pattern_type="prefix_removal",
         description="Removing first 7 character(s)",

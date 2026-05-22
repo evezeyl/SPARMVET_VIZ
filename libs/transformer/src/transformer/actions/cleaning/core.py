@@ -21,6 +21,9 @@ from ...utils.naming import clean_column_header
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
         "value": {"widget": "column_or_literal", "label": "Fill value", "required": True},
     },
+    "description": "Replace null values in one or more columns with a fixed literal; prefer `coalesce` when the fill source is another column.",
+    "yaml_example": "- action: fill_nulls\n  columns: [sample_id, country]\n  value: Unknown",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "fill_null"]}],
 })
 def action_fill_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -43,6 +46,9 @@ def action_fill_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns (any null → drop row)", "required": False, "hint": "Leave empty to drop rows with any null"},
     },
+    "description": "Drop rows where any of the listed columns are null; leave columns empty to drop rows with any null across all columns.",
+    "yaml_example": "- action: drop_nulls\n  columns: [sample_id, collection_date]",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "drop_nulls"]}],
 })
 def action_drop_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -62,6 +68,9 @@ def action_drop_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "to_replace": {"widget": "string", "label": "Values to replace (YAML list)", "required": True, "hint": "[old_val1, old_val2]"},
         "new_value": {"widget": "column_or_literal", "label": "Replacement value", "required": True},
     },
+    "description": "Replace a specific set of values across one or more columns with a single replacement; use `recode_values` for rule-based conditional remapping.",
+    "yaml_example": "- action: replace_values\n  columns: [species]\n  to_replace: [Calf, calf]\n  new_value: Bovine_calf",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "replace"]}],
 })
 def action_replace_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -92,6 +101,8 @@ def action_replace_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
         "new_name": {"widget": "string", "label": "New name", "required": False},
         "mapping": {"widget": "string", "label": "Rename mapping (YAML dict old: new)", "required": False, "hint": "{old_name: new_name, ...}"},
     },
+    "description": "Rename one or more columns; use `mapping` for bulk renames, or `columns` + `new_name` for a single column.",
+    "yaml_example": "- action: rename\n  mapping: {old_col: new_col, other_col: clean_col}",
 })
 def action_rename(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -134,6 +145,9 @@ def action_rename(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "columns": {"widget": "column_selector", "multi": True, "label": "Subset columns (leave empty for all)", "required": False},
         "maintain_order": {"widget": "enum", "label": "Maintain order", "required": False, "default": False, "options": [True, False]},
     },
+    "description": "Remove duplicate rows based on a column subset; leave columns empty to deduplicate on all columns.",
+    "yaml_example": "- action: drop_duplicates\n  columns: [sample_id]\n  maintain_order: true",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "unique"]}],
 })
 def action_drop_duplicates(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -157,6 +171,9 @@ def action_drop_duplicates(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFra
     "params": {
         "maintain_order": {"widget": "enum", "label": "Maintain order", "required": False, "default": True, "options": [True, False]},
     },
+    "description": "Remove rows that are completely identical across all columns; equivalent to drop_duplicates with no column subset.",
+    "yaml_example": "- action: unique_rows\n  maintain_order: true",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "unique"]}],
 })
 def action_unique_rows(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -177,6 +194,8 @@ def action_unique_rows(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "new_column": {"widget": "string", "label": "Output column name (leave blank to overwrite)", "required": False},
         "rules": {"widget": "string", "label": "Rules (YAML list of {matches/starts_with/…: val, value: out})", "required": True, "hint": "[{matches: 'S', value: 0}, {default: 1}]"},
     },
+    "description": "Remap values in a column via a rule chain (exact match, prefix, suffix, substring, default); more expressive than `replace_values` for categorical cleaning.",
+    "yaml_example": "- action: recode_values\n  column: resistance\n  new_column: resistance_binary\n  rules:\n    - matches: Susceptible\n      value: 0\n    - matches_any: [Resistant, Intermediate]\n      value: 1\n    - default: null",
 })
 def action_recode_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -249,6 +268,8 @@ def action_recode_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns to sanitize (leave empty for all)", "required": False},
     },
+    "description": "Convert column names to snake_case using the project naming utility; run at the start of Tier 1 when ingesting external TSVs with inconsistent headers.",
+    "yaml_example": "- action: sanitize_column_names\n  columns: []",
 })
 def action_sanitize_column_names(lf: pl.LazyFrame, spec: Dict[str, Any] = {}) -> pl.LazyFrame:
     """
@@ -275,6 +296,9 @@ def action_sanitize_column_names(lf: pl.LazyFrame, spec: Dict[str, Any] = {}) ->
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns to keep", "required": True},
     },
+    "description": "Project the frame down to a named set of columns; primary keys are always retained; prefer `drop_columns` to remove individual unwanted columns.",
+    "yaml_example": "- action: keep_columns\n  columns: [sample_id, year, country, resistance_class]",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "select"]}],
 })
 def action_keep_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -309,6 +333,9 @@ def action_keep_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns to drop", "required": True},
     },
+    "description": "Remove specific columns from the frame; primary keys are protected from accidental removal.",
+    "yaml_example": "- action: drop_columns\n  columns: [intermediate_col, temp_flag]",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "drop"]}],
 })
 def action_drop_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -348,6 +375,8 @@ def action_drop_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "String columns", "required": False, "hint": "Leave empty to auto-target all String columns"},
     },
+    "description": "Remove leading/trailing whitespace and quotes from string columns; leave columns empty to auto-target all String columns in the frame.",
+    "yaml_example": "- action: strip_whitespace\n  columns: [species, country]",
 })
 def action_strip_whitespace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -380,6 +409,9 @@ def action_strip_whitespace(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFr
         "columns": {"widget": "column_selector", "multi": True, "label": "Numeric columns", "required": True, "dtype_filter": ["numeric"]},
         "decimals": {"widget": "number", "label": "Decimal places", "required": False, "default": 2},
     },
+    "description": "Round float columns to a fixed number of decimal places; useful before plotting when floating-point noise pollutes axis labels.",
+    "yaml_example": "- action: round_numeric\n  columns: [identity_pct, coverage_pct]\n  decimals: 1",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "round"]}],
 })
 def action_round_numeric(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -406,6 +438,8 @@ def action_round_numeric(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
         "min": {"widget": "number", "label": "Min value (inclusive)", "required": False},
         "max": {"widget": "number", "label": "Max value (inclusive)", "required": False},
     },
+    "description": "Keep rows where a numeric column falls within an inclusive range; use `filter_eq` for exact-value filtering or `is_in` for a discrete set.",
+    "yaml_example": "- action: filter_range\n  columns: identity\n  min: 90\n  max: 100",
 })
 def action_filter_range(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -438,6 +472,9 @@ def action_filter_range(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "new_column": {"widget": "string", "label": "New column name", "required": True},
         "value": {"widget": "column_or_literal", "label": "Constant value", "required": True},
     },
+    "description": "Add a new column with a constant literal value across all rows; useful for tagging rows with a source label or pipeline version.",
+    "yaml_example": "- action: add_constant\n  new_column: data_source\n  value: NORM_2025",
+    "wraps": [{"lib": "polars", "attr_path": ["lit"]}],
 })
 def action_add_constant(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -462,6 +499,9 @@ def action_add_constant(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns (fallback, uses first)", "required": False, "hint": "Alternative to 'column'; uses first element"},
         "value": {"widget": "column_or_literal", "label": "Value", "required": True},
     },
+    "description": "Keep rows where a column equals an exact value; use `is_in` for filtering to a set of allowed values.",
+    "yaml_example": "- action: filter_eq\n  column: country\n  value: Norway",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"]}],
 })
 def action_filter_eq(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Equality filter."""
@@ -482,6 +522,8 @@ def action_filter_eq(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "columns": {"widget": "column_selector", "multi": True, "label": "Source columns (list form)", "required": False},
         "new_names": {"widget": "string", "label": "New names (comma-separated, same order as columns)", "required": False},
     },
+    "description": "Rename columns via a mapping dict or parallel lists; alias for `rename` with explicit list/zip support.",
+    "yaml_example": "- action: rename_columns\n  mapping: {Sample_ID: sample_id, CollectionYear: year}",
 })
 def action_rename_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Alias for rename that supports columns + new_names lists."""
@@ -505,6 +547,9 @@ def action_rename_columns(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
         "columns": {"widget": "column_selector", "multi": True, "label": "Subset columns (leave empty for all)", "required": False},
         "maintain_order": {"widget": "enum", "label": "Maintain order", "required": False, "default": False, "options": [True, False]},
     },
+    "description": "Alias for drop_duplicates; remove duplicate rows based on a column subset or all columns.",
+    "yaml_example": "- action: unique\n  columns: [sample_id, gene]",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "unique"]}],
 })
 def action_unique(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Alias for drop_duplicates."""

@@ -2,7 +2,7 @@
 
 **Authority:** ADR-011
 
-Data utility toolkit. Provides synthetic data generation, manifest scaffolding, format extraction, and primary-key reconciliation. Used by the Test Lab user space and by asset scripts for headless data preparation.
+Data utility toolkit. Provides synthetic data generation, manifest scaffolding, and format extraction. Used by the Test Lab user space and by asset scripts for headless data preparation. Primary-key reconciliation is handled by `libs/id_reconciliation/`.
 
 ## Purpose
 
@@ -13,7 +13,7 @@ Scientists often receive Excel workbooks, need anonymised shareable datasets, or
 - **AquaSynthesizer (aqua_synthesizer.py)**: Reads a real TSV and emits a structurally identical synthetic TSV — same column names, same value distributions and levels, different values. Safe to share. Also generates controlled-error datasets for pipeline testing.
 - **ManifestBootstrapper (bootstrapper.py)**: Infers column types and cardinalities from a TSV and writes a boilerplate `input_fields` YAML fragment — eliminates manual schema typing when onboarding a new data source.
 - **XlsxExtractor (extractor.py)**: Reads multi-sheet XLSX workbooks and writes one normalised TSV per sheet. Entry point for the Excel → TSV conversion flow in the Data Import panel.
-- **KeyReconciler (reconciler.py)**: Boundary-aware primary-key matching with ambiguity detection. Suggests regex patterns for fuzzy PK alignment across datasets; shared with the Blueprint Architect pattern-matching helper.
+- **ID Reconciliation**: Primary-key matching (exact, pattern-based, fuzzy), recipe generation, and recode workflows are now in `libs/id_reconciliation/`. See that library's README for usage.
 
 ## CLI Usage
 
@@ -29,8 +29,8 @@ All components expose `argparse` CLIs:
 # Extract XLSX sheets to TSV
 .venv/bin/python -m test_lab.extractor --xlsx data.xlsx --output_dir tmp/extracted/
 
-# Reconcile primary keys across two TSVs
-.venv/bin/python -m test_lab.reconciler --left metadata.tsv --right results.tsv --key sample_id
+# Reconcile primary keys across two files — use libs/id_reconciliation/ directly
+# from id_reconciliation import IDReconciliationEngine
 ```
 
 ## Design Constraints

@@ -4,43 +4,47 @@ When building complex data pipelines, relational mismatches between datasets are
 
 ## 1. Relational Reconciliation Audit
 
-The `KeyReconciler` engine provides interactive CLI tools to identify cleaning patterns (regex) and detect orphans.
+The `IDReconciliationEngine` in `libs/id_reconciliation/` provides exact, pattern-based, and fuzzy matching between two sets of IDs. Use it from the TEST_LAB user space or directly in Python.
 
-### CLI Tools
+### Python API (primary interface)
 
-| Script | Purpose | When to Use |
-| :--- | :--- | :--- |
-| `debug_reconciler.py` | Basic fuzzy matching audit. | To generate initial regex suggestions and identify orphans. |
-| `debug_ambiguity.py` | High-integrity conflict detection. | When one key (e.g., 'Sample_1') might match multiple files ('Sample_1' and 'Sample_11'). |
+```python
+from id_reconciliation import IDReconciliationEngine, format_match_table
 
-### Mandatory Command (Example)
-
-```bash
-python libs/generator_utils/tests/debug_reconciler.py \
-    --ref data/metadata.tsv \
-    --target data/noisy_fastq_list.tsv \
-    --output_dir tmp/reconciler/
+engine = IDReconciliationEngine()
+results = engine.reconcile(ref_ids=ref_list, target_ids=target_list)
+df = format_match_table(results)
+print(df)
 ```
 
-### Audit Evidence (Materialized TSVs)
+### Integrity Suite (headless verification)
 
-Every execution materializes audit files in the `--output_dir` (default: `tmp/reconciler/`):
+```bash
+.venv/bin/python libs/id_reconciliation/tests/id_reconciliation_integrity_suite.py
+# or target a single module:
+.venv/bin/python libs/id_reconciliation/tests/id_reconciliation_integrity_suite.py --module matcher
+```
 
-- **`full_audit_map.tsv`**: The definitive record of every row, including the `Match_Type` label (`EXACT`, `FUZZY`, `AMBIGUOUS`, or `ORPHAN`).
-- **`conflicts.tsv`**: Specifically filters for **AMBIGUOUS** matches. This file MUST be reviewed if high-priority warnings are printed to the console.
-- **`orphans_reference.tsv`**: IDs present in your metadata but missing in the results table.
-- **`orphans_target.tsv`**: Unrecognized IDs in the results table (often due to typos or improper regex).
+### Output columns
+
+| Column | Meaning |
+| :--- | :--- |
+| `ref_id` | Original reference ID |
+| `target_id` | Best-matching target ID (None if unmatched) |
+| `match_type` | `exact`, `pattern`, `fuzzy`, or `unmatched` |
+| `certainty` | 0.0–1.0 (exact=1.0, unmatched=0.0) |
+| `transform_applied` | Description of pattern applied (if any) |
 
 ## 2. Resolving Ambiguities & Boundaries
 
 ### The Boundary Rule
-To prevent partial ID collisions, the reconciler uses "Boundary Protection" by default. 
+Pattern detection uses boundary-aware regex (`suggest_regex` in `libs/utils/src/utils/id_patterns.py`) to prevent partial ID collisions.
 
 - **Match**: `x100w2` matches `X100W2_L001.fastq`.
 - **Blocked**: `x100w2` will **NOT** match `x100w20` because the `0` violates the word/alphanumeric boundary guard `(?:^|[^a-zA-Z0-9])`.
 
-### Ambiguity Warning
-If a single reference ID maps to multiple target records (e.g., re-run samples or replicates), the system labels them as `AMBIGUOUS`. 
+### Many-to-Many Detection
+If a single reference ID matches multiple targets, `detect_many_to_many(results)` returns those cases for review.
 
 **Action Required**: You must refine your `wrangling` manifest with a more specific `regex_extract` or `filter` to narrow down the target to a 1:1 match.
 

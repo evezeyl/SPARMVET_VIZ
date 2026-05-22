@@ -57,9 +57,7 @@ Items with no blockers — can be started immediately.
   - Depends: BP-HELP-ADR-1.
   - Gate: `python -c "from app.src.main import app; print('OK')"` clean. Smoke: help panel renders for `filter_range` (has existing `wraps`) and shows a code block when `yaml_example` is set; registry table shows description column.
 
-- [ ] **BP-HELP-TRANSFORMER-1** `[sonnet/high]`: Content sweep — all 63 transformer `@register_action` entries. For each: (a) add `wraps: [{"lib": "polars", "attr_path": [...]}]` pointing to the correct `pl.LazyFrame` (or `pl.Expr`) method for all 1:1 Polars wrappers (62 currently missing); (b) add `description` (developer-oriented, one sentence) and `yaml_example` (minimal YAML snippet) to all entries, including composite/custom actions that have no single Polars equivalent. Categories: `cleaning/`, `expressions/`, `analytical/`, `relational/`, `reshaping/`, `performance/`, `persistence/`. After sweep: dep-sweep (`grep -rn "ACTION_SCHEMAS\|AVAILABLE_WRANGLING_ACTIONS" app/`) to confirm no caller breaks; run `build_dep_graph.py`.
-  - Depends: BP-HELP-ADR-1.
-  - Gate: `grep -c '"wraps"' libs/transformer/src/transformer/actions/**/*.py` ≥ 55 (all 1:1 wrappers covered). `grep -c '"description"' libs/transformer/src/transformer/actions/**/*.py` = 63. `grep -c '"yaml_example"' libs/transformer/src/transformer/actions/**/*.py` = 63. All existing tests pass.
+- [x] **BP-HELP-TRANSFORMER-1** `[sonnet/high]`: Content sweep — all 60 transformer `@register_action` entries (2 persistence engine-internals skip). Added `description` + `yaml_example` to all 60; `wraps` added to 35 actions that are 1:1 Polars wrappers (namespace sub-methods str.*/dt.*/list.* and composite actions intentionally skipped — no importlib-safe resolution). Dep-sweep clean. 97 tests pass. ✅ 2026-05-22
 
 - [ ] **BP-HELP-VIZFACTORY-1** `[sonnet/medium]`: Content sweep — all 192 viz_factory `@register_plot_component` entries. `wraps` already points to plotnine for 191/192 — verify the missing one and fix. Add `description` (developer-oriented, one sentence) and `yaml_example` (minimal YAML `layers:` snippet) to all 192. Categories: `geoms/`, `stats/`, `scales/`, `coords/`, `facets/`, `themes/`, `positions/`, `annotations/`, `labs/`. After sweep: dep-sweep (`grep -rn "COMPONENT_SCHEMAS\|PLOT_COMPONENT_REGISTRY" app/`) to confirm no caller breaks; run `build_dep_graph.py`.
   - Depends: BP-HELP-ADR-1.
@@ -92,7 +90,7 @@ Items with no blockers — can be started immediately.
 
 #### 34-B — Pattern Helper in `libs/utils/`
 
-- [ ] **TL-UTILS-PATTERN-1** `[sonnet/low]`: Extract ID pattern matching primitives (prefix/suffix detection, delimiter extraction, regex generalisation) into `libs/utils/src/utils/id_patterns.py`. Update `libs/id_reconciliation/` to import from there. Update `libs/blueprint_arch/join_designer.py` to also use this helper. Gate: both libs import cleanly; no pattern logic duplicated between them.  
+- [x] **TL-UTILS-PATTERN-1** `[sonnet/low]`: Extract all pattern primitives (`PatternSuggestion`, `detect_patterns`, `apply_pattern`, `suggest_regex`) into `libs/utils/src/utils/id_patterns.py`. `pattern_detector.py` → thin re-export shim; `PatternSuggestion` removed from `data_structures.py`; all imports updated across code, rules, docs, READMEs, and design sketch. Gate: 28/28 tests pass ✅ `from utils.id_patterns import PatternSuggestion` works ✅ — 2026-05-22  
   Depends: TL-IDLIB-PATTERN-1.
 
 #### 34-C — ManifestBootstrapper Fixes

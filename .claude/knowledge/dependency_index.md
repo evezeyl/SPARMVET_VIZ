@@ -68,7 +68,7 @@
 ## `.claude/rules/rules_ui_dashboard.md`
 - **Role:** `meta`
 - **provides:** `rule:ui_orchestration`, `rule:theatre_layout`, `rule:sidebar_law`
-- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/utils/src/utils/blueprint_mapper.py`
+- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_verification_testing.md`
@@ -174,7 +174,7 @@
 ## `app/modules/help_registry.py`
 - **Role:** `ref`
 - **provides:** `module:help_registry_ui`, `module:help_registry_server`
-- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `get_component_catalog)`, `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENT_REGISTRY)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_data_engine.md`
 
@@ -518,6 +518,42 @@
 - **consumes:** `class:FilesystemConnector`, `utils.deployment_error`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
 
+## `libs/id_reconciliation/src/id_reconciliation/__init__.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `app/handlers/test_lab_handlers.py (future)`
+
+## `libs/id_reconciliation/src/id_reconciliation/core.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `detect_many_to_many`, `format_match_table`, `apply_recode_step`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`
+
+## `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **Role:** `info`
+- **provides:** `IDPair`, `MatchResult`, `TransformationRecipe`
+- **consumes:** `libs/utils/src/utils/id_patterns.py (PatternSuggestion re-exported for backward compat)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `libs/id_reconciliation/src/id_reconciliation/matcher.py`
+- **Role:** `info`
+- **provides:** `exact_match`, `fuzzy_match_batch`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+- **Role:** `info`
+- **provides:** `detect_patterns`, `apply_pattern`, `suggest_regex (re-exported from utils.id_patterns)`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `libs/id_reconciliation/src/id_reconciliation/recipe.py`
+- **Role:** `info`
+- **provides:** `save_recipe`, `load_recipe`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
 ## `libs/ingestion/src/ingestion/ingestor.py`
 - **Role:** `wrangle`
 - **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
@@ -548,12 +584,6 @@
 - **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/debug_sdk.py`
-
-## `libs/test_lab/src/test_lab/reconciler.py`
-- **Role:** `info`
-- **provides:** `KeyReconciler class (calculate_intersection_score`, `suggest_regex`, `reconcile) — boundary-aware PK matching with ambiguity detection`
-- **consumes:** `polars`, `re`, `pathlib`, `typing`, `collections`, `yaml (stdlib/third-party)`
-- **consumed_by:** `libs/test_lab/tests/debug_reconciler.py`, `libs/test_lab/tests/debug_ambiguity.py`, `libs/test_lab/tests/demo_reconciler.py`
 
 ## `libs/transformer/src/transformer/actions/base.py`
 - **Role:** `wrangle`
@@ -740,6 +770,12 @@
 - **Role:** `ref`
 - **provides:** `function:generate_config_hash`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+
+## `libs/utils/src/utils/id_patterns.py`
+- **Role:** `ref`
+- **provides:** `PatternSuggestion`, `detect_patterns`, `apply_pattern`, `suggest_regex`
+- **consumes:** `—  (stdlib only)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
 
 ## `libs/utils/src/utils/pipeline_error.py`
 - **Role:** `ref`

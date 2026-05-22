@@ -22,6 +22,9 @@ from utils.errors import TransformationError
         "function": {"widget": "enum", "label": "Aggregation function", "required": False, "default": "mean", "options": ["mean", "sum", "min", "max", "count", "median", "std"]},
         "target_column": {"widget": "string", "label": "Output column name", "required": False, "hint": "Defaults to {column}_{function}"},
     },
+    "description": "Compute a grouped aggregation without collapsing the frame; adds the result as a new column alongside the original rows.",
+    "yaml_example": "- action: window_agg\n  column: count\n  partition_by: [species, year]\n  function: mean\n  target_column: mean_count_per_group",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "over"]}],
 })
 def action_window_agg(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -75,6 +78,9 @@ def action_window_agg(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "n": {"widget": "number", "label": "Steps (positive=lag, negative=lead)", "required": False, "default": 1},
         "target_column": {"widget": "string", "label": "Output column name", "required": False, "hint": "Defaults to {column}_shift_{n}"},
     },
+    "description": "Shift values in a column by n positions (positive = lag, negative = lead); useful for computing time-series differences.",
+    "yaml_example": "- action: shift\n  column: isolate_count\n  n: 1\n  target_column: prev_year_count",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "shift"]}],
 })
 def action_shift(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -107,6 +113,9 @@ def action_shift(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
         "direction": {"widget": "enum", "label": "Fill direction", "required": False, "default": "forward", "options": ["forward", "backward"]},
     },
+    "description": "Propagate non-null values forward or backward along a column to fill gaps; use for time-ordered data where nulls represent 'same as last value'.",
+    "yaml_example": "- action: fill_nulls_direction\n  columns: [measurement]\n  direction: forward",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "fill_null"]}],
 })
 def action_fill_nulls_direction(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -138,6 +147,9 @@ def action_fill_nulls_direction(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.La
         "columns": {"widget": "column_selector", "multi": True, "label": "Sort by columns (fallback)", "required": False},
         "descending": {"widget": "bool", "label": "Descending", "required": False, "default": False},
     },
+    "description": "Sort the frame by one or more columns; use in Tier 1 or assembly to establish deterministic row order before window functions.",
+    "yaml_example": "- action: sort\n  by: [Year, Country, species]\n  descending: false",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "sort"]}],
 })
 def action_sort(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -170,6 +182,9 @@ def action_sort(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "fraction": {"widget": "number", "label": "Fraction of rows (0.0–1.0)", "required": False, "default": 0.1},
         "seed": {"widget": "number", "label": "Random seed (optional, for reproducibility)", "required": False},
     },
+    "description": "Return a random fraction of rows; useful for quick exploratory debugging on large datasets \u2014 always set seed for reproducibility.",
+    "yaml_example": "- action: sample\n  fraction: 0.1\n  seed: 42",
+    "wraps": [{"lib": "polars", "attr_path": ["DataFrame", "sample"]}],
 })
 def action_sample(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -194,6 +209,9 @@ def action_sample(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True, "dtype_filter": ["numeric"]},
         "target_column": {"widget": "string", "label": "Output column name", "required": False, "hint": "Defaults to {column}_cumsum"},
     },
+    "description": "Compute a running cumulative sum of a numeric column; result is written to a new column named {col}_cumsum by default.",
+    "yaml_example": "- action: cum_sum\n  column: isolate_count\n  target_column: cumulative_count",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "cum_sum"]}],
 })
 def action_cum_sum(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Calculates cumulative sum."""
@@ -211,6 +229,9 @@ def action_cum_sum(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
         "target_column": {"widget": "string", "label": "Output column name", "required": False, "hint": "Defaults to {column}_cumcount"},
     },
+    "description": "Compute a running cumulative count of non-null values in a column; result is written to a new column named {col}_cumcount by default.",
+    "yaml_example": "- action: cum_count\n  column: sample_id\n  target_column: running_total",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "cum_count"]}],
 })
 def action_cum_count(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Calculates cumulative count."""
@@ -230,6 +251,8 @@ def action_cum_count(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "column": {"widget": "column_selector", "multi": False, "label": "Date/Datetime column", "required": True},
         "parts": {"widget": "enum", "multi": True, "label": "Parts to extract", "required": False, "default": ["year"], "options": ["year", "month", "day", "week", "weekday", "hour"]},
     },
+    "description": "Extract calendar parts (year, month, day, week, weekday, hour) from a Date/Datetime column into separate integer columns.",
+    "yaml_example": "- action: date_extract\n  column: collection_date\n  parts: [year, month]",
 })
 def action_date_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -275,6 +298,8 @@ def action_date_extract(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "column": {"widget": "column_selector", "multi": False, "label": "Date column", "required": True},
         "every": {"widget": "string", "label": "Interval (e.g. 1mo, 1y, 1w, 1d)", "required": False, "default": "1mo"},
     },
+    "description": "Truncate a date column to a coarser interval (month, year, week); useful for grouping time series into calendar periods.",
+    "yaml_example": "- action: date_truncate\n  column: collection_date\n  every: 1mo",
 })
 def action_date_truncate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -309,6 +334,8 @@ def action_date_truncate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
         "length": {"widget": "number", "label": "Max length (leave blank for all)", "required": False},
         "target_column": {"widget": "string", "label": "Output column name (defaults to source)", "required": False},
     },
+    "description": "Slice elements from a List-type column, keeping only the specified range; use after split_to_list when only the first N elements are needed.",
+    "yaml_example": "- action: list_slice\n  column: gene_list\n  offset: 0\n  length: 3\n  target_column: top_genes",
 })
 def action_list_slice(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Slices a list column."""
@@ -336,6 +363,8 @@ def action_list_slice(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "separator": {"widget": "string", "label": "Separator", "required": False, "default": ";"},
         "target_column": {"widget": "string", "label": "Output column name (defaults to source)", "required": False},
     },
+    "description": "Collapse a List-type column into a delimited string column; the inverse of split_to_list.",
+    "yaml_example": "- action: list_join\n  column: gene_list\n  separator: '; '\n  target_column: genes_combined",
 })
 def action_list_join(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Joins a list column into a string."""
@@ -361,6 +390,9 @@ def action_list_join(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
         "values": {"widget": "string", "label": "Allowed values (comma-separated)", "required": True},
     },
+    "description": "Keep rows where a column value is in an allowed set; equivalent to SQL WHERE col IN (...).",
+    "yaml_example": "- action: is_in\n  column: country\n  values: [Norway, Sweden, Denmark]",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "is_in"]}],
 })
 def action_is_in(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Filters rows where column value is in a list."""
@@ -386,6 +418,8 @@ def action_is_in(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Numeric columns", "required": True, "dtype_filter": ["numeric"]},
     },
+    "description": "Standardize numeric columns to z-scores (mean=0, std=1); appends new columns named {col}_zscore \u2014 does not overwrite the originals.",
+    "yaml_example": "- action: z_score\n  columns: [identity_pct, coverage_pct]",
 })
 def action_z_score(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Standardizes columns (z-score)."""
@@ -410,6 +444,9 @@ def action_z_score(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "column": {"widget": "column_selector", "multi": False, "label": "Numeric column", "required": True, "dtype_filter": ["numeric"]},
         "target_column": {"widget": "string", "label": "Output column name", "required": False, "hint": "Defaults to {column}_percentile"},
     },
+    "description": "Compute the percentile rank (0\u20131) of each row in a numeric column; appends a {col}_percentile column.",
+    "yaml_example": "- action: percentile\n  column: isolate_count\n  target_column: count_percentile",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "rank"]}],
 })
 def action_percentile(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Calculates percentile rank."""
@@ -431,6 +468,8 @@ def action_percentile(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
     },
+    "description": "Count occurrences of each unique value and return a two-column summary frame; use in Tier 2 for frequency analysis \u2014 returns a new frame, not the original.",
+    "yaml_example": "- action: value_counts\n  column: resistance_class",
 })
 def action_value_counts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Returns frequency counts of a column."""
@@ -449,6 +488,8 @@ def action_value_counts(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "context": ["t2"],
     "tags": ["describe", "summary", "statistics", "eda"],
     "params": {},
+    "description": "Generate a summary statistics table (count, mean, std, min, max, percentiles); use in Tier 2 for EDA \u2014 returns a new frame, not the original.",
+    "yaml_example": "- action: describe_stats",
 })
 def action_describe_stats(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Generates summary statistics."""
@@ -464,6 +505,8 @@ def action_describe_stats(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
     "params": {
         "pattern": {"widget": "string", "label": "Column name regex pattern", "required": True, "hint": "e.g. gene_.* selects all columns starting with 'gene_'"},
     },
+    "description": "Keep only columns whose names match a regex pattern; useful for selecting all gene-presence columns without listing them individually.",
+    "yaml_example": "- action: select_by_pattern\n  pattern: 'gene_.*'",
 })
 def action_select_by_pattern(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Selects columns by regex pattern."""
@@ -488,6 +531,8 @@ def action_select_by_pattern(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
         "operation": {"widget": "enum", "label": "Operation", "required": False, "default": "sum", "options": ["sum", "min", "max", "mean"]},
         "target_column": {"widget": "string", "label": "Output column name", "required": False, "hint": "Defaults to horizontal_{operation}"},
     },
+    "description": "Compute a row-wise aggregation (sum, min, max, mean) across a set of numeric columns into a new column; e.g. total gene count per isolate.",
+    "yaml_example": "- action: horizontal_stats\n  columns: [blaTEM, blaOXA, blaKPC]\n  operation: sum\n  target_column: beta_lactamase_count",
 })
 def action_horizontal_stats(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Horizontal math across columns."""
@@ -527,6 +572,9 @@ def action_horizontal_stats(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFr
         "columns": {"widget": "column_selector", "multi": True, "label": "Boolean columns", "required": True},
         "target_column": {"widget": "string", "label": "Output column name", "required": True},
     },
+    "description": "Return true if any of the specified boolean columns is true for that row; produces a single boolean column.",
+    "yaml_example": "- action: any_horizontal\n  columns: [is_resistant_amox, is_resistant_cip]\n  target_column: any_resistant",
+    "wraps": [{"lib": "polars", "attr_path": ["any_horizontal"]}],
 })
 def action_any_horizontal(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Checks if any column in row is True."""
@@ -549,6 +597,9 @@ def action_any_horizontal(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
         "columns": {"widget": "column_selector", "multi": True, "label": "Boolean columns", "required": True},
         "target_column": {"widget": "string", "label": "Output column name", "required": True},
     },
+    "description": "Return true if all specified boolean columns are true for that row; produces a single boolean column.",
+    "yaml_example": "- action: all_horizontal\n  columns: [passed_qc, has_metadata, has_amr]\n  target_column: fully_complete",
+    "wraps": [{"lib": "polars", "attr_path": ["all_horizontal"]}],
 })
 def action_all_horizontal(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Checks if all columns in row are True."""
@@ -570,6 +621,9 @@ def action_all_horizontal(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Numeric columns to interpolate", "required": True, "dtype_filter": ["numeric"]},
     },
+    "description": "Linearly interpolate null values in numeric columns using neighboring non-null values; do not use on non-monotonic or categorical series.",
+    "yaml_example": "- action: interpolate\n  columns: [temperature_reading, coverage_depth]",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "interpolate"]}],
 })
 def action_interpolate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """Linearly interpolates missing values."""

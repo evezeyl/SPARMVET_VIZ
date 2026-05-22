@@ -1,7 +1,13 @@
 # ID Reconciliation Library — Module Structure Sketch
 
+> **HISTORICAL (superseded by TL-IDLIB-TESTS-1, 2026-05-22):**
+> This was the pre-build architecture sketch. The library has been built and is in production.
+> Authoritative structure is in `rules_test_lab.md §8` and the actual source files.
+> Key divergence from this sketch: `PatternSuggestion`, `detect_patterns`, `apply_pattern`,
+> and `suggest_regex` live in `libs/utils/src/utils/id_patterns.py`, not in `data_structures.py`.
+
 **File:** `libs/id_reconciliation/`  
-**Status:** Architecture sketch (review before build)  
+**Status:** HISTORICAL — library built 2026-05-22  
 **Purpose:** Pure utility library for validating & transforming ID alignment across multiple data files.
 
 ---

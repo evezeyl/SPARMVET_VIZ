@@ -104,14 +104,17 @@ For full CLI reference and current integrity suite results, see [Transformer & V
 
 ---
 
-### 2. Generator SDK (Reconciliation)
-*Location: `libs/generator_utils/tests/`*
+### 2. ID Reconciliation
+*Library: `libs/id_reconciliation/`*
 
-- **`debug_reconciler.py`**  
-  **Purpose:** Interactively tests fuzzy key matching (e.g. mapping Fastq names to Metadata IDs) and boundary protection. It generates mandatory audit evidence (`full_audit_map.tsv`, `orphans_target.tsv`) into `tmp/reconciler/`.
-  
-- **`debug_ambiguity.py`**  
-  **Purpose:** Specialized CLI tool to specifically identify 1-to-Many fuzzy match collisions. Materializes `conflicts.tsv`.
+- **`IDReconciliationEngine`**
+  **Purpose:** Exact → pattern → fuzzy matching pipeline between two ID lists. Returns `MatchResult` list with `match_type` and `certainty`. Use `format_match_table(results)` for a Polars DataFrame output.
+
+- **`id_reconciliation_integrity_suite.py`**
+  **Purpose:** Orchestrator that runs all module tests and reports pass/fail per module. Run with `--module matcher|pattern_detector|recipe|core` to target one area.
+
+- **Many-to-many detection**
+  `detect_many_to_many(results)` returns a dict of ref_id → [target_ids] for cases where one ref matched multiple targets (requires manual resolution).
   
 - **`test_sdk.py`**  
   **Purpose:** Automated Pytest validation covering the Synthesizer and Extractor logic.

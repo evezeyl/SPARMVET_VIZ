@@ -23,6 +23,9 @@ from transformer.actions.base import register_action
         "how": {"widget": "enum", "label": "Join strategy", "required": False, "default": "left",
                 "options": ["left", "inner", "outer", "semi", "anti", "cross"]},
     },
+    "description": "Join two data schema ingredients on matching key columns; use 'on' for symmetric keys, or 'left_on'/'right_on' for asymmetric ones.",
+    "yaml_example": "- action: join\n  right_ingredient: metadata_schema\n  'on': sample_id\n  how: inner",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "join"]}],
 })
 def join_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -64,6 +67,9 @@ def join_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "left_on": {"widget": "column_selector", "multi": False, "label": "Left join column", "required": False},
         "right_on": {"widget": "string", "label": "Right join column name", "required": False},
     },
+    "description": "Inner join that acts as a whitelist filter; rows without a match in the right ingredient are silently dropped.",
+    "yaml_example": "- action: join_filter\n  right_ingredient: approved_samples\n  'on': sample_id",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "join"]}],
 })
 def join_filter_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """

@@ -59,14 +59,20 @@ Dev only: `pytest`, `pytest-cov`. No other runtime dependencies.
 
 ### 2c. Pattern helper placement
 
-The ID pattern detection helper lives in **`libs/utils/src/utils/id_patterns.py`**, not inside `libs/id_reconciliation/`. This allows `libs/blueprint_arch/` (Join Designer) to use the same helper without a peer import. Any new shared primitive follows this rule: if two domain libs need it, it goes in `libs/utils/`.
+All ID pattern primitives live in **`libs/utils/src/utils/id_patterns.py`**, not inside `libs/id_reconciliation/`. This includes `PatternSuggestion`, `detect_patterns`, `apply_pattern`, and `suggest_regex`. This allows `libs/blueprint_arch/` (Join Designer) to use the same helpers without a peer import. Any new shared primitive follows this rule: if two domain libs need it, it goes in `libs/utils/`.
+
+`libs/id_reconciliation/pattern_detector.py` is a thin re-export shim — it re-exports all four names from `utils.id_patterns` so internal call sites within the library need not change.
 
 ### 2d. Public API surface
 
 Only these names constitute the public API (exported from `__init__.py`):
 
-- Classes: `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe`
+- Classes: `IDReconciliationEngine`, `IDPair`, `MatchResult`, `TransformationRecipe`
+- Classes (from `utils.id_patterns`, re-exported): `PatternSuggestion`
 - Functions: `detect_many_to_many`, `format_match_table`, `apply_recode_step`
+
+**Canonical import for `PatternSuggestion`:** `from utils.id_patterns import PatternSuggestion`
+It is also available via `from id_reconciliation import PatternSuggestion` (re-exported for convenience), but code outside `libs/id_reconciliation/` should prefer the canonical utils path.
 
 Internal sub-modules (`core.py`, `matcher.py`, `pattern_detector.py`, `recipe.py`, `data_structures.py`) are implementation details. External callers MUST import from the public API only.
 
@@ -206,6 +212,10 @@ Code MUST NOT check `persona in ("developer", "qa")`. Standard anti-pattern proh
 ## 8. File Layout
 
 ```
+libs/utils/
+  src/utils/
+    id_patterns.py            # PatternSuggestion, detect_patterns, apply_pattern, suggest_regex
+
 libs/id_reconciliation/
   pyproject.toml              # polars, utils only
   README.md
@@ -213,9 +223,9 @@ libs/id_reconciliation/
     __init__.py               # public API exports
     core.py                   # IDReconciliationEngine orchestrator
     matcher.py                # exact / fuzzy / pattern matching engines
-    pattern_detector.py       # pattern suggestion & application
+    pattern_detector.py       # thin re-export shim → utils.id_patterns
     recipe.py                 # TransformationRecipe YAML persistence
-    data_structures.py        # IDPair, MatchResult, PatternSuggestion
+    data_structures.py        # IDPair, MatchResult, TransformationRecipe
   tests/
     conftest.py
     test_core.py

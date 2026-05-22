@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import polars as pl
-from .data_structures import IDPair, MatchResult, PatternSuggestion, TransformationRecipe
+from utils.id_patterns import PatternSuggestion, apply_pattern, suggest_regex
+from .data_structures import IDPair, MatchResult, TransformationRecipe
 from .matcher import exact_match, fuzzy_match_batch
 from .pattern_detector import detect_patterns
 
 # @deps
 # provides: IDReconciliationEngine, detect_many_to_many, format_match_table, apply_recode_step
-# consumes: libs/id_reconciliation/src/id_reconciliation/matcher.py,
+# consumes: libs/utils/src/utils/id_patterns.py,
+#           libs/id_reconciliation/src/id_reconciliation/matcher.py,
 #           libs/id_reconciliation/src/id_reconciliation/pattern_detector.py,
 #           libs/id_reconciliation/src/id_reconciliation/data_structures.py
 # consumed_by: libs/id_reconciliation/src/id_reconciliation/__init__.py
@@ -50,7 +52,6 @@ class IDReconciliationEngine:
         # Pattern pass — apply best suggestion if any
         suggestions = detect_patterns(unmatched_refs, target_ids)
         if suggestions:
-            from .pattern_detector import apply_pattern
             best = suggestions[0]
             transformed = apply_pattern(unmatched_refs, best)
             target_set = set(target_ids)
@@ -149,8 +150,6 @@ class IDReconciliationEngine:
         Infers cleaning steps from the transform_applied fields on matched results
         and includes an explicit recode map for remaining fuzzy matches.
         """
-        from .pattern_detector import suggest_regex
-
         steps: list[dict] = []
         seen_transforms: set[str] = set()
 

@@ -20,6 +20,9 @@ from transformer.actions.base import register_action
         "variable_name": {"widget": "string", "label": "Variable column name", "required": False, "default": "variable"},
         "value_name": {"widget": "string", "label": "Value column name", "required": False, "default": "value"},
     },
+    "description": "Melt a wide-format frame into long format; specify index columns to keep as-is and value columns to stack into a variable/value pair.",
+    "yaml_example": "- action: unpivot\n  index: [sample_id, year]\n  'on': [blaTEM, blaOXA, blaKPC]\n  variable_name: gene\n  value_name: presence",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "unpivot"]}],
 })
 def action_unpivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -44,6 +47,9 @@ def action_unpivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "List columns to explode", "required": True},
     },
+    "description": "Expand a List-type column so each element becomes its own row; increases row count proportionally to list length.",
+    "yaml_example": "- action: explode\n  columns: [gene_list]",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "explode"]}],
 })
 def action_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -64,6 +70,9 @@ def action_explode(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Struct columns to unnest", "required": True},
     },
+    "description": "Flatten a Struct-type column into individual columns; the inverse of to_struct.",
+    "yaml_example": "- action: unnest\n  columns: [sample_struct]",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "unnest"]}],
 })
 def action_unnest(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -85,6 +94,8 @@ def action_unnest(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "columns": {"widget": "column_selector", "multi": True, "label": "String columns", "required": True},
         "separator": {"widget": "string", "label": "Separator", "required": False, "default": ","},
     },
+    "description": "Split a delimited string column into a List column without exploding; use before list_slice, list_join, or explode.",
+    "yaml_example": "- action: split_to_list\n  columns: [gene_string]\n  separator: ','",
 })
 def action_split_to_list(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -107,6 +118,9 @@ def action_split_to_list(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns to pack into struct", "required": True},
         "target_column": {"widget": "string", "label": "Output struct column name", "required": True},
     },
+    "description": "Pack multiple columns into a single Struct column and drop the originals; useful before unnest or when packing fields for a nested join.",
+    "yaml_example": "- action: to_struct\n  columns: [col_a, col_b, col_c]\n  target_column: packed_fields",
+    "wraps": [{"lib": "polars", "attr_path": ["struct"]}],
 })
 def action_to_struct(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -131,6 +145,9 @@ def action_to_struct(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "values": {"widget": "column_selector", "multi": False, "label": "Values column", "required": True},
         "aggregate_function": {"widget": "enum", "label": "Aggregation function", "required": False, "default": "first", "options": ["first", "last", "min", "max", "mean", "sum", "count"]},
     },
+    "description": "Pivot a long-format frame to wide format; each unique value in the 'on' column becomes a column header. Note: materializes the frame.",
+    "yaml_example": "- action: pivot\n  index: [sample_id]\n  'on': gene\n  values: presence\n  aggregate_function: first",
+    "wraps": [{"lib": "polars", "attr_path": ["DataFrame", "pivot"]}],
 })
 def action_pivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -165,6 +182,8 @@ def action_pivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         "delimiter": {"widget": "string", "label": "Delimiter", "required": False, "default": " "},
         "drop_source": {"widget": "enum", "label": "Drop source column", "required": False, "default": False, "options": [True, False]},
     },
+    "description": "Split a string column by a delimiter into multiple named columns; the last named column captures any remainder after the last delimiter.",
+    "yaml_example": "- action: split_column\n  columns: species_biotype\n  new_columns: [species, biotype]\n  delimiter: '_'\n  drop_source: false",
 })
 def action_split_column(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
