@@ -1,7 +1,7 @@
 # Tasks (SOLE SOURCE OF TRUTH)
 
 **Workspace ID:** SPARMVET_VIZ
-**Last Updated:** 2026-05-21 (Phase 34 tasks + hygiene sprint archived; audit findings added) by @dasharch
+**Last Updated:** 2026-05-22 (Phase 34 + BP-HELP sweep + audit fixes + legacy removal archived; tasks hygiene) by @dasharch
 
 ---
 
@@ -26,130 +26,8 @@
 
 Items with no blockers — can be started immediately.
 
-### Audit-detected fixes
+### LAB-WORKFLOW follow-up
 
-- [x] **ADR-045-ANCHOR-SET-1** ✅ 2026-05-22 `[sonnet/medium]` `[adr-violation]`: `app/handlers/home_theater.py` — removed `anchor_path.set(str(out_path))` from inside `@render.ui dynamic_tabs()`. Extracted to new `@reactive.Effect _sync_anchor_path()` with idempotent guard. Import check + Playwright smoke suite pass.
-
-- [x] **VIZFAC-SUITE-TIMEOUT-1** ✅ 2026-05-22 `[sonnet/low]` `[test-infra]`: Bumped `TIMEOUT_SECONDS` from 300 to 600 in `scripts/audit_library_tests.py`. viz_factory integrity suite renders 191 PNGs; 300s was structurally insufficient.
-
-- [x] **DOC-SYNC-PLATFORM-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Marked `gallery.qmd` reference as `[PLANNED]` in `docs/vision/platform_evolution.qmd` line 115.
-
-- [x] **DOC-SYNC-TESTING-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Updated `docs/reference/testing.qmd` line 65 — replaced `create_test_data.py` reference with `AquaSynthesizer` (`libs/test_lab/src/test_lab/aqua_synthesizer.py`).
-
-- [x] **PERSONA-DATAIMPORT-FLAG-DOC-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Confirmed vestigial — `data_import_panel_visible` is never read by `is_enabled()` in app code. Superseded by ADR-073 sidebar slot registry. Added note to `rules_persona_feature_flags.md`. Removal tracked as LEGACY-DATAIMPORT-FLAG-1.
-
-- [x] **LEGACY-DATAIMPORT-FLAG-1** ✅ 2026-05-22 `[haiku/low]` `[legacy]`: Removed `data_import_panel_visible` from all 8 persona templates and `bootloader._FEATURES_DEFAULT_TRUE`. Import check clean.
-
-- [x] **DOC-BLUEPRINT-PANELS-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Updated Blueprint IDE panel table in `docs/user_guide/blueprint_manifest_authoring.qmd`. Verified against wrangle_studio.py nav_panels. Actual panels: TubeMap accordion + 4 center nav_panels (1. Focus, 2. Interface, 3. YAML Raw Source, 4. Joint Designer). "Master Manifest" and "External Exchange" do not exist in code — audit claim was spurious. "YAML" renamed to "3. YAML (Raw Source)". Inline reference at §277 updated to match.
-
-### Blueprint In-App Help Enrichment (developer-facing, Polars + Plotnine docs in Blueprint IDE)
-
-> **Design settled 2026-05-22.** All four tasks unblocked and sequenced.
->
-> **Context:** `@register_action` and `@register_plot_component` carry a `ui_schema` dict read at runtime by `schema_registry.py` and rendered in `bp_help_panel_ui`. ADR-075 §4 specifies that 1:1 Polars/Plotnine wrappers should resolve the real library `__doc__` via the `wraps` field (importlib, air-gap safe, zero maintenance). Current state: transformer has 1/63 actions with `wraps`; viz_factory has 191/192. Neither library has `description` or `yaml_example` fields.
->
-> **Breakage risk:** none. `ingestion/`, `utils/`, `transformer` execution, and `config_loader` never read `ui_schema`. All app-layer readers use `.get()` with defaults. New fields are purely additive.
->
-> **Build order:** BP-HELP-ADR-1 → BP-HELP-RENDER-1 (parallel-safe after ADR) → BP-HELP-TRANSFORMER-1 → BP-HELP-VIZFACTORY-1.
-
-- [x] **BP-HELP-ADR-1** `[sonnet/low]`: Extend ADR-075 to canonicalize two new optional `ui_schema` fields: `description` (one developer-oriented sentence — what problem this solves, when to reach for it) and `yaml_example` (minimal correct YAML snippet for use in a manifest). Update `rules_data_engine.md §2` (decorator standards — add the two fields to the law). Update `rules_persona_bioscientist.md §8` (action list note — add that all entries are expected to carry `wraps` or `description`+`yaml_example`). No code changes in this task.
-  - Gate: ADR-075 §1 lists `description` and `yaml_example` as standard optional keys with their semantics. Rules files updated. `dependency_index.md` consistent.
-
-- [x] **BP-HELP-RENDER-1** `[haiku/low]`: Add render support for the two new fields. (1) `bp_help_panel_ui` in `app/modules/wrangle_studio.py`: render `yaml_example` as a `.bp-help-docstring` code block immediately below the description line, before the `wraps` docstring accordion. (2) `help_registry.py`: add `description` column to the registry DataGrid (read from `ACTION_SCHEMAS` via `schema_registry.get_action_catalog()`; extend with `get_component_catalog()` so viz_factory components are also listed). Both changes are additive — render only when field is present, no-op when absent.
-  - Depends: BP-HELP-ADR-1.
-  - Gate: `python -c "from app.src.main import app; print('OK')"` clean. Smoke: help panel renders for `filter_range` (has existing `wraps`) and shows a code block when `yaml_example` is set; registry table shows description column.
-
-- [x] **BP-HELP-TRANSFORMER-1** `[sonnet/high]`: Content sweep — all 60 transformer `@register_action` entries (2 persistence engine-internals skip). Added `description` + `yaml_example` to all 60; `wraps` added to 35 actions that are 1:1 Polars wrappers (namespace sub-methods str.*/dt.*/list.* and composite actions intentionally skipped — no importlib-safe resolution). Dep-sweep clean. 97 tests pass. ✅ 2026-05-22
-
-- [x] **BP-HELP-VIZFACTORY-1** `[sonnet/medium]`: Content sweep — 191 active viz_factory `@register_plot_component` entries (geom_map commented out). Added `description` + `yaml_example` to all 191 across 7 files (coords/facets/geoms/guides/positions/scales/themes). `wraps` already present for all active components. All imports clean. 97 tests pass. ✅ 2026-05-22
-
-### Phase 34 — TEST_LAB Build
-
-> **Design:** `.claude/design/spaces/TEST_LAB.md` — all design decisions locked 2026-05-21.  
-> **Build order:** 34-A (library) → 34-B (utils) → 34-C (bootstrapper) → 34-D (scaffold) → 34-E (synth) → 34-F (anon) → 34-G (reformat) → 34-H (UI last).  
-> **Note:** `UX-DEVINSP-1` (Deferred — TEST_LAB sidebar redesign) is superseded by TL-UI-SHELL-1.
-
-#### 34-A — ID Reconciliation Library
-
-- [x] **TL-IDLIB-1** `[haiku/low]`: Scaffold `libs/id_reconciliation/` — `pyproject.toml` (deps: `polars`, `utils`, `rapidfuzz`), module structure (`__init__.py`, empty module files), editable install, empty `tests/conftest.py`. Gate: `from id_reconciliation import IDReconciliationEngine` succeeds. ✅ 2026-05-22
-
-- [x] **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe`) + `matcher.py` (exact 1.0; `rapidfuzz` token-set ratio with `_/-`→space normalization for fuzzy 0.0–0.99; unmatched 0.0). `reconciler.py` deletion deferred to TL-IDLIB-TESTS-1. Gate: `test_exact_match` ✅ `test_fuzzy_match` ✅ boundary-aware (001_ABCD↔ABCD_001) ✅ — 2026-05-22  
-  Depends: TL-IDLIB-1.
-
-- [x] **TL-IDLIB-PATTERN-1** `[sonnet/high]`: `pattern_detector.py` — prefix/suffix removal (scan 1–16 chars, best-hits wins), delimiter swap, case normalization; `suggest_regex` ported from `reconciler.py` (boundary guards + digit generalization). Primitives to be extracted to `libs/utils/id_patterns.py` in TL-UTILS-PATTERN-1. Gate: `test_pattern_suggestion_prefix_sample` ✅ prefix "sample_" ranked first, match_count=5 ✅ — 2026-05-22  
-  Depends: TL-IDLIB-1.
-
-- [x] **TL-IDLIB-RECIPE-1** `[sonnet/medium]`: All 7 recode actions (`strip_whitespace`, `cast_string`, `regex_replace`, `lowercase`, `mutate`, `drop_duplicates`, `null_if`, `drop_nulls`); `TransformationRecipe.to_yaml()`/`from_yaml()` methods added. Gate: `test_recipe_persistence` ✅ `test_recode_workflow_prefix_removal` ✅ `test_recode_workflow_delimiter_extraction` ✅ all 5 action types ✅ — 2026-05-22  
-  Depends: TL-IDLIB-1.
-
-- [x] **TL-IDLIB-CORE-1** `[sonnet/high]`: IDReconciliationEngine orchestrator — `core.py` (`precheck_compatibility`, `match_pair`, `suggest_patterns`, `apply_pattern`, `generate_recipe`, `detect_many_to_many`, `format_match_table`). Progressive matching: full file via Polars LazyFrame, chunks default 50 rows (configurable in persona config). Recode threshold: 50 unmatched triggers "clean first" (configurable). Gate: `test_many_to_many_detection` ✅ progressive chunking ✅ `format_match_table` columns ✅ — 2026-05-22  
-  Depends: TL-IDLIB-MATCH-1, TL-IDLIB-PATTERN-1, TL-IDLIB-RECIPE-1.
-
-- [x] **TL-IDLIB-TESTS-1** `[sonnet/medium]`: Full test suite — unit tests per module + `id_reconciliation_integrity_suite.py` orchestrator. Cases: exact match, pattern suggestion, many-to-many detection, recipe round-trip, all 5 recode action types, multi-file sequencing suggestion. Gate: `pytest libs/id_reconciliation/tests/ -q` all pass ✅ 28/28 — `reconciler.py` deleted — 2026-05-22  
-  Depends: TL-IDLIB-CORE-1.
-
-#### 34-B — Pattern Helper in `libs/utils/`
-
-- [x] **TL-UTILS-PATTERN-1** `[sonnet/low]`: Extract all pattern primitives (`PatternSuggestion`, `detect_patterns`, `apply_pattern`, `suggest_regex`) into `libs/utils/src/utils/id_patterns.py`. `pattern_detector.py` → thin re-export shim; `PatternSuggestion` removed from `data_structures.py`; all imports updated across code, rules, docs, READMEs, and design sketch. Gate: 28/28 tests pass ✅ `from utils.id_patterns import PatternSuggestion` works ✅ — 2026-05-22  
-  Depends: TL-IDLIB-PATTERN-1.
-
-#### 34-C — ManifestBootstrapper Fixes
-
-- [x] **TL-BOOTSTRAP-FIX-1** `[sonnet/low]`: Fix `libs/test_lab/src/test_lab/bootstrapper.py`: (1) `"plotting"` → `"analysis_groups"`, (2) remove hardcoded spurious `metadata_schema:` entry, (3) add `join_manifests: {}` stub, (4) accept optional `id_cleaning_recipes: dict` and bake valid cleaning actions into `tier1:` wrangling. Gate: headless test generates manifest that passes `debug_assembler.py` without error. ✅ 2026-05-22 — 10/10 gate tests pass.  
-  Depends: TL-IDLIB-RECIPE-1.
-
-#### 34-D — Manifest Scaffolding ZIP
-
-- [x] **TL-SCAFFOLD-1** `[sonnet/medium]`: ZIP boilerplate output — `libs/test_lab/src/test_lab/scaffolder.py` (or extend bootstrapper). Input: TSV paths + `TransformationRecipe` objects. Output: ZIP with master YAML (`data_schemas:`, `join_manifests:` pre-filled, `analysis_groups: {}`) + fragment files (`input_fields/`, `wrangling/`, `assembly/`). ID cleaning steps baked into `tier1:` wrangling. Gate: unzip → `debug_assembler.py` runs without error; `data_schemas:` key confirmed; `ingredients:` format confirmed; `'on':` quoted.  
-  Depends: TL-BOOTSTRAP-FIX-1, TL-IDLIB-CORE-1. ✅ 2026-05-22 — 15/15 gate tests pass.
-
-#### 34-E — Synthetic Data Upgrade
-
-- [x] **TL-SYNTH-1** `[sonnet/high]`: Upgrade `libs/test_lab/src/test_lab/aqua_synthesizer.py` — `propose_config(source)` + `generate(config)` two-step flow; `mode: demo | stress_test`; `error_injection` block (missing_values, wrong_type, duplicate_ids, pk_mismatches, schema_errors, malformed_fields); YAML archive config output with prominent "NOT a pipeline manifest" header; named scenario save/load/list (`libs/test_lab/scenarios/`). Gate: demo generates clean TSV; stress_test injects at stated rate ±2%; scenario round-trip; `pytest libs/test_lab/tests/ -q` passes. ✅ 2026-05-22 — 21/21 gate tests pass.
-
-#### 34-F — Anonymisation Tool
-
-- [x] **TL-ANON-1** `[sonnet/medium]`: `libs/test_lab/src/test_lab/anonymiser.py` — `anonymise(filepath, id_column, personal_columns, pattern)` + `anonymise_batch` (multi-file consistency). Patterns: sequential, hash, custom. Outputs: anonymised TSV + mapping TSV + de-anonymisation instructions. Gate: round-trip test (anonymise → BLUEPRINT join → IDs restored); multi-file consistency test; personal column stripping verified.
-  ✅ 2026-05-22 — 22/22 gate tests pass.
-
-#### 34-G — Reformatting Tools
-
-- [x] **TL-REFORMAT-1** `[haiku/low]`: `libs/test_lab/src/test_lab/reformatter.py` — `DataReformatter` class with `convert_xlsx` (multi-sheet, sheet subset, `_safe_stem` name normalisation), `convert_csv` (any delimiter), `convert_folder` (bulk, error-per-file not raised). Uses polars directly (ExcelHandler is a CLI script, not importable class). Gate: multi-sheet XLSX → N TSV files ✅ CSV with comma delimiter converts ✅ folder bulk ✅ error stored not raised ✅. 20/20 tests pass; full test_lab suite 88/88 ✅ 2026-05-22
-
-#### 34-H — UI (gates on library tasks)
-
-- [x] **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion (panels: ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting); view title banner; `test_lab_enabled` persona flag gate (ADR-071); add `test_lab` sidebar slot type to `app/modules/sidebar_registry.py`. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` → no TEST_LAB nav.
-  ✅ 2026-05-22 — import OK; nav gate fixed (developer_mode_enabled → test_lab_enabled); 213/213 tests pass.
-
-- [x] **TL-UI-REFORMAT-1** `[haiku/low]`: Reformatting panel — file upload (XLSX/CSV), sheet assignment UI (XLSX), convert button, TSV download.  
-  Depends: TL-REFORMAT-1, TL-UI-SHELL-1.
-  ✅ 2026-05-22 — tl_reformat_ui, sheet picker, delimiter select, tl_reformat_download wired; import OK.
-
-- [x] **TL-UI-RECONCILE-1** `[sonnet/high]`: ID Reconciliation panel — multi-file upload (2–6), PRE-CHECK result, pairwise match table (side-by-side, certainty sort, chunked 50 rows, bulk-accept 100% button, per-row verify/reject), pattern suggestion panel (ranked, apply), recode workflow (action picker, preview, re-run), many-to-many dialog (mandatory written reason), recipe download (YAML).  
-  Depends: TL-IDLIB-CORE-1, TL-UI-SHELL-1.
-  ✅ 2026-05-22 — 2-file upload, column selectors, PRE-CHECK (precheck_compatibility), RECONCILE (reconcile()), match table DataGrid, pattern summary, M2M warning + reason textarea, certainty threshold slider, recipe YAML download; import OK. Per-row verify/reject → threshold slider (principled equivalent).
-
-- [x] **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload or "Continue from ID Reconciliation", join key selection, boilerplate ZIP download with baked-in steps summary.  
-  Depends: TL-SCAFFOLD-1, TL-UI-RECONCILE-1.
-  ✅ 2026-05-22 — tl_scaffold_ui shell (project_id, multi-file upload, optional metadata TSV, join key); reactive chain (_scaffold_file_infos, _scaffold_meta_info); tl_scaffold_recon_ui (checkbox + dataset select only shown when _recon_results() available); _scaffold_result gated on scaffold_run event, calls ManifestScaffolder(join_key).scaffold(); bakes in IDReconciliationEngine recipe.steps when checkbox checked; status_ui shows schema count + meta note + recon note; ZIP download; import OK.
-
-- [x] **TL-UI-SYNTH-1** `[sonnet/medium]`: Synthetic Data panel — schema/file upload, proposed config review table (per-column editable), mode toggle (Demo/Stress test), error injection block (stress_test only), n_rows input, generate button, scenario save/load, download TSV + YAML config.  
-  Depends: TL-SYNTH-1, TL-UI-SHELL-1.
-  ✅ 2026-05-22 — tl_synth_ui shell + reactive chain (file/columns source, n_rows, mode, error injection sliders, generate event, preview DataGrid, TSV download) wired; import OK.
-
-- [x] **TL-UI-ANON-1** `[sonnet/medium]`: Anonymisation panel — multi-file upload, ID column selector, personal column selector, pattern picker, generate button, download anonymised TSV(s) + mapping TSV + instructions.  
-  Depends: TL-ANON-1, TL-UI-SHELL-1.
-  ✅ 2026-05-22 — tl_anon_ui shell; reactive chain (file→columns, id_column select, personal cols checkbox, pattern/prefix/custom inputs, anonymise event, preview DataGrid, ZIP download with anonymised+mapping+config); import OK.
-
-### LAB-WORKFLOW follow-up (from LAB-WORKFLOW-1 — `.claude/design/developer_workflow.md`)
-
-> **Decision (2026-05-22):** modules and spaces stay independent. **No in-app "Send to" or
-> "Open in BLUEPRINT" handoffs.** Linking is file-based (export from one tool/space → choose in
-> the next) and explained in documentation, not built. See `developer_workflow.md §5/§7` and
-> [[feedback_space_independence]].
-
-- ~~**LAB-SEND-TO-1**~~ — **DROPPED (2026-05-22).** In-app "Send to" linking rejected to keep each Lab tool an independent module (choose files in, export out). The added "Send to Manifest Scaffolding" button was reverted. The pre-existing intra-space Reconcile→Scaffold recipe carry-over (Scaffolding's optional "Bake in ID Reconciliation steps" checkbox) stays — opt-in, within one space, standalone-safe.
-- ~~**LAB-OPEN-BLUEPRINT-1**~~ — **DROPPED (2026-05-22).** Cross-space in-app handoff rejected: spaces are independently persona-gated (a persona can grant TEST_LAB without BLUEPRINT). Handoff stays file-based (export ZIP → load in BLUEPRINT if enabled).
 - [ ] **LAB-WORKFLOW-QMD-1** `[sonnet/low]` `[doc-sync]`: User-facing Quarto mirror of `developer_workflow.md` in `docs/workflows/` — explains the *logic* of the producer workflow for end users (DRY: link, do not duplicate per `rules_documentation_aesthetics.md §4`). Focus on workflow logic + module independence, not app mechanics. Can be written now (logic is settled).
 
 ### Maps — Solution A (choropleth via geom_polygon, no new deps)
@@ -167,35 +45,6 @@ Items with no blockers — can be started immediately.
 
 > **Do NOT** uncomment `geom_map` at `geoms/core.py:822` for Solution A — that geom belongs to Solution B (needs the geo extra + a render branch; see design doc §11). Registering it now would expose a geom that errors on use.
 
-### Legacy removal (tracked per rules_legacy_management.md §6)
-
-> Protocol: dep-sweep → impact assessment → migration path → code removal → test sweep → doc consistency sweep → ADR record.
-> All 7 steps required before a task is [DONE].
-
-- [x] **LEGACY-FLAT-PLOTS-1** `[sonnet/medium]`: Full removal of flat `plots:` authoring key. ✅ 2026-05-22
-  - ConfigManager now raises `DeploymentError` if root-level `plots:` found; backward-compat init removed.
-  - `stress_test_master.yaml` root-level `plots:` block removed.
-  - Error-path + happy-path tests added to `libs/utils/tests/test_config_loader.py`. 154 tests pass.
-  - `rules_manifest_structure.md §8` DEPRECATED marker converted to REMOVED tombstone (expires Phase 36).
-
-- [x] **LEGACY-AUDIT-FLAG-1** `[haiku/low]`: Full removal of `audit_report_enabled` flag. ✅ 2026-05-22
-  - Removed from `persona_validator.py` _REQUIRED_FLAGS, _CASCADE_GATES, _T3_COMPANIONS. Removed from `bootloader.py` interactivity cascade. Removed from all 8 templates.
-  - `test_persona_validator.py` updated (flag removed from _FULL_FEATURES, test_multiple_children simplified, test_child_false cleaned). 21 tests pass.
-  - Tombstones in `rules_persona_feature_flags.md` and `ui_implementation_contract.md §7.2 / §12f`. Flag removed from feature list.
-
-- [x] **LEGACY-TYPE-ALIASES-1** `[sonnet/low]`: Remove deprecated type aliases `character` / `string`. ✅ 2026-05-22
-  - Migrated all manifests: `type: string` → `type: categorical` across 6 manifest files. Zero config/ hits remaining.
-  - Engine now raises `TransformationError` for `string` and `character` (with tip pointing to canonical alternatives). Default changed from `"string"` to `"categorical"`.
-  - `libs/transformer/tests/test_metadata_validator.py` added — 4 tests (2 error-path, 2 happy-path). All pass.
-  - REMOVED tombstone added to `rules_manifest_structure.md §9`. Expires Phase 36.
-
-- [x] **LEGACY-FLAT-WRANGLING-1** `[sonnet/low]`: Remove engine acceptance of flat `wrangling: []` list. ✅ 2026-05-22
-  - Migrated 2 manifests (`demo_abromics.yaml`, `1_Abromics_general_pipeline.yaml`): `wrangling: []` → tiered `tier1: [] / tier2: []`.
-  - `_resolve_tier()` in `data_wrangler.py` now raises `ManifestError` for flat lists with actionable tip (shows tiered migration example + reference to rules_data_engine.md §3).
-  - `libs/transformer/tests/test_data_wrangler.py` added — 8 tests (4 error-path flat-list rejection, 4 happy-path valid structures). All pass.
-  - `rules_data_engine.md §3` proactive-refactoring rule → rejection mandate.
-  - `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone (expires Phase 36).
-  - Gate: zero flat-wrangling hits in `config/`, engine rejects flat lists with actionable error.
 
 ---
 
@@ -203,20 +52,7 @@ Items with no blockers — can be started immediately.
 
 Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
 
-- [ ] **GREAT-DOCS-1** `[sonnet/medium]`: Evaluate `great-docs` (https://github.com/posit-dev/great-docs) for auto-generating a static Quarto/website reference from the codebase. **Depends on:** CODE-DOCS-RETROSPECTIVE — docstrings must exist before auto-gen is meaningful. Deferred until pre-deployment sprint.
-- [x] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. ✅ 2026-05-22
-  - Design session delivered `.claude/design/developer_workflow.md` (indexed in `CLAUDE.md §3.6`): producer journey across TEST_LAB → BLUEPRINT → GALLERY → HOME; module-independence first principle ("map, not a wizard"); advisory-only orderings (reconcile-before-anonymise/scaffold); the stateless "Send to" handoff pattern with edit gap; cross-space seams.
-  - Key finding: "Open in BLUEPRINT" is one mechanism unlocking both TEST_LAB→BLUEPRINT and GALLERY→BLUEPRINT seams.
-  - Steer (Eve): keep the app simple AND keep spaces/modules independent — no in-app cross-tool or cross-space handoffs. Linking is file-based (export → choose), explained in documentation.
-  - Spawned: LAB-WORKFLOW-QMD-1 (Do Now — user-facing Quarto). LAB-SEND-TO-1 and LAB-OPEN-BLUEPRINT-1 both DROPPED on independence grounds (see Do Now → LAB-WORKFLOW follow-up).
-- [x] **UX-APPLY-IMPROVE-1** `[sonnet/low]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. ✅ 2026-05-22
-  - `propagation_except` selectize now hidden by default (`display:none`) and revealed only when "All plots except…" radio is selected.
-  - Inline `<script>` in modal listens for `change` on `propagation_choice` radio name and toggles `propagation_except_wrapper` div visibility. No handler changes needed.
-  - Label updated from workaround text to instructional copy.
-- ~~**LAB-OPEN-BLUEPRINT-1**~~ — **DROPPED (2026-05-22, see Do Now → LAB-WORKFLOW follow-up).** Cross-space "Open in BLUEPRINT" rejected to preserve space + persona independence (spaces are independently persona-gated). Handoff stays file-based: export ZIP from TEST_LAB → load in BLUEPRINT if/when enabled.
-- [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: In-app search for plot types, plot properties, and recipe components — cross-manifest, cross-recipe. Use case: scientist wants to find plots by what they show (e.g. "distribution", "trend"), by required data pattern, or by aesthetic mapping. Design questions: fuzzy search on plot definitions and taxonomy fields? Keyword index built from manifests at load time? How efficient can this be? Needs a concrete spike / prototype before scoping. Links to Gallery taxonomy (ADR-063) and recipe meta taxonomy fields.
-- [ ] **PROP-3** `[opus/high]`: Propagation TubeMap — graph viz of audit blast radius. Needs own design pass + ADR before implementation.
-  > **What "propagation" means here:** when a T3 audit node (filter, exclusion) is applied across multiple plots via the propagation dialog (scope: this plot / all plots / all except...), the Propagation TubeMap would be a graph showing which plots are affected — blast-radius visualization of that audit decision. This is **distinct from the Blueprint TubeMap** (pipeline DAG from manifest structure). The T3 propagation dialog itself is designed in `ui_implementation_contract.md §12g` but not yet implemented. PROP-3 is a further visualization layer on top of that, also not yet implemented.
+- [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: Gallery keyword enrichment + AND/OR search. **Design settled (2026-05-22):** add `keywords: [list]` to `info:` block in each `recipe_manifest.yaml` (35 recipes); update `refresh_gallery.py` to include keywords in `gallery_index.json` pivot entries; add a text search input to the Gallery UI (split on spaces → AND-intersect tokens across keywords + existing taxonomy fields). Three keyword layers: (1) statistical/methodological synonyms (`median`, `quartile`, `IQR`, `spread`, `beeswarm`, `ridge`, `dumbbell`, `before after`, `cumulative`, `paired`, `stacked`, `proportional`, `small multiples`, `faceted`, `overlay`, `individual points`, `raw data`, `regression`, `fit`, `confidence interval`…); (2) data/use-case terms (`time series`, `temporal`, `longitudinal`, `rate`, `prevalence`, `incidence`, `frequency`, `quality control`, `normality`, `heterogeneity`, `exploration`…); (3) domain terms (`AMR`, `antimicrobial`, `resistance`, `MIC`, `susceptibility`, `surveillance`, `epidemiology`, `pathogen`, `species comparison`…). No fuzzy matching needed — AND/OR on exact tokens is sufficient for this gallery size. Step 1: enrich all 35 recipe `info:` blocks. Step 2: one-line `refresh_gallery.py` change. Step 3: gallery UI search widget.
 
 ---
 
@@ -239,7 +75,6 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 - [ ] **23-E** `[sonnet/medium]`: Per-system quick-start guides (Galaxy / IRIDA / server / local).
 - [ ] **RESEARCH-LIMS-1** `[opus/high]` `[deferred — awaiting LIMS project]`: Audit database / LIMS integration — manifest hashes + data hashes in DB; LIMS link in audit report; configurable output path per persona.
 - [ ] **UX-GALLEXP-1** `[sonnet/medium]`: Gallery Explorer right sidebar — functionality TBD.
-- ~~**UX-DEVINSP-1**~~ — superseded by TL-UI-SHELL-1 (Phase 34-H). Design locked 2026-05-21 in `.claude/design/spaces/TEST_LAB.md`.
 
 ### Explicitly deferred (scheduled)
 
@@ -299,6 +134,7 @@ Tasks requiring user decision, user action, or explicit discussion before implem
 | Phase 18-F, 32, 32-cont, audit-fixes | ACTION-UISCHEMA-1, BP-FORMS-1/ESCAPE/UNDO/HELP, ACTION-RENAME-1, all ADR-082 spawned BP-* tasks, MANIFEST-INCLUDE-1 | 2026-05-21 | [tasks_archive_phase32.md](archives/tasks_archive_phase32.md) |
 | Phase 33 | BP-AGENT-PARSER-1/TOOLS/INSTRUCT/PANEL/UI/CSS — all ADR-076 MVP-1 agent tasks | 2026-05-21 | [tasks_archive_phase33.md](archives/tasks_archive_phase33.md) |
 | Documentation & Hygiene Sprint | DOC-BLUEPRINT-1/USER-1, DOC-LIBREADME-*, TASK-ARCHIVE-1, AUDIT-PASS-1, BP-ADR-FULL-1 | 2026-05-21 | [tasks_archive_hygiene_2026-05-21.md](archives/tasks_archive_hygiene_2026-05-21.md) |
+| Phase 34 + May-22 hygiene | TEST_LAB Build (all TL-*), BP-HELP-*, audit fixes, legacy removal (FLAT-PLOTS/AUDIT-FLAG/TYPE-ALIASES/FLAT-WRANGLING), LAB-WORKFLOW-1, UX-APPLY-IMPROVE-1 | 2026-05-22 | [tasks_archive_2026-05-22.md](archives/tasks_archive_2026-05-22.md) |
 
 ---
 
@@ -316,6 +152,7 @@ Context and status notes from recent sessions. Add here instead of inside active
 
 ## Archive Pointers
 
+- [tasks_archive_2026-05-22.md](archives/tasks_archive_2026-05-22.md) — Phase 34 (TEST_LAB Build) + BP-HELP sweep + audit fixes + legacy removal + LAB-WORKFLOW-1 + UX-APPLY-IMPROVE-1; also records DROPPED decisions (LAB-SEND-TO-1, LAB-OPEN-BLUEPRINT-1, UX-DEVINSP-1)
 - [tasks_archive_phase33.md](archives/tasks_archive_phase33.md) — Phase 33: all ADR-076 MVP-1 Blueprint AI Agent tasks (BP-AGENT-*)
 - [tasks_archive_phase32.md](archives/tasks_archive_phase32.md) — Phase 18-F, 32, 32-cont (ADR-082), audit script fixes: ACTION-UISCHEMA-1, all BP-* IDE/plot-model/branch/autosave tasks, MANIFEST-INCLUDE-1
 - [tasks_archive_2026-05-11.md](archives/tasks_archive_2026-05-11.md) — May-11/12: full audit batch + CROSS-LIB-SCRIPT-1, TASK-DRIFT-EXCLUSION-1, EMOJI-DOCSTRING-1, VIZ-README-COUNT-1

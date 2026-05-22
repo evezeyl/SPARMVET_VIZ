@@ -3,7 +3,7 @@
 **Status:** EXPLORATORY — nothing decided. A "possibilities" doc to return to for further discussion, not a proposal.
 **Author:** @dasharch
 **Date:** 2026-05-22
-**Related:** `sankey_flow_geoms.md` (§7 gates Sankey work on this question), `../../maps_advanced_geo.md` (sf maps would come free with an R backend)
+**Related:** [`bioinformatics_viz.md`](bioinformatics_viz.md) (**the strongest motivating use case** — ggtree annotated phylogenies have no Python equal), `sankey_flow_geoms.md` (§7 gates Sankey work on this question), `../../maps_advanced_geo.md` (sf maps would come free with an R backend)
 
 ---
 
@@ -86,7 +86,7 @@ These are not mutually exclusive — A + C is a coherent combination (gap-filler
 
 ## 6. Strategic connection: this gates the custom-geom work
 
-An R backend would deliver **ggalluvial, ggsankey, ggraph, and sf maps natively** — mature and maintained. That makes the custom-plotnine-geom effort in `sankey_flow_geoms.md` (porting ggalluvial's math into a matplotlib `draw_group`) **partly redundant**.
+An R backend would deliver **ggtree/ggtreeExtra (annotated phylogenies — no Python equal; see [`bioinformatics_viz.md`](bioinformatics_viz.md)), ggalluvial, ggsankey, ggraph, and sf maps natively** — mature and maintained. The bioinformatics families are the strongest justification; the flow/network ones make the custom-plotnine-geom effort in `sankey_flow_geoms.md` (porting ggalluvial's math into a matplotlib `draw_group`) **partly redundant**.
 
 The two are **partial substitutes.** Deciding the R-backend direction should therefore come *before* investing opus-level effort in reimplementing flow/network/map geoms in plotnine. This is the main reason the Sankey tasks are gated on this question.
 
