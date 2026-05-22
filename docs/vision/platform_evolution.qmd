@@ -112,7 +112,7 @@ The shift from tool to platform requires a short, focused sprint:
 | :--- | :--- | :--- |
 | **High** | Implement `--gallery` flag in `viz_factory_integrity_suite.py` | `tmp/gallery/gallery_report.md` |
 | **High** | Add gallery entry for Phase 9 plots (manually) | Figshare AMR gallery page |
-| **Medium** | Quarto gallery page: `docs/vision/gallery.qmd` | Browsable cookbook |
+| **Medium** | Quarto gallery page: `docs/vision/gallery.qmd` \[PLANNED\] | Browsable cookbook |
 | **Low** | Interactive manifest editor (future) | Shiny UI YAML text area |
 
 ---

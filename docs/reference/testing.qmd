@@ -62,10 +62,10 @@ Run command: `pytest app/tests/`
 
 ## Using Synthetic Test Data
 
-Because this repository must remain free of real biological data (to protect privacy), you should use the `assets/scripts/create_test_data.py` utility to generate synthetic TSV datasets for your tests.
+Because this repository must remain free of real biological data (to protect privacy), use the `AquaSynthesizer` tool in TEST_LAB (`libs/test_lab/src/test_lab/aqua_synthesizer.py`) to generate synthetic TSV datasets for your tests. The old `assets/scripts/create_test_data.py` script has been superseded by AquaSynthesizer (Phase 34).
 
 **Best Practice:**
-1. Generate a small, synthetic TSV pair (`test_data.tsv` and `test_metadata.tsv`).
+1. Generate a small, synthetic TSV pair (`test_data.tsv` and `test_metadata.tsv`) using `AquaSynthesizer`.
 2. Generate a test deployment configuration (`test_run_auto.yaml`) that points the `file_upload` connector to these synthetic TSVs.
 3. Use this isolated configuration context to run your `pytest` suite without relying on live data.
 

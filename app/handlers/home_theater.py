@@ -651,8 +651,6 @@ def define_server(input, output, session, *,
                 collection_id=coll_id,
                 output_path=out_path
             )
-            if out_path.exists():
-                anchor_path.set(str(out_path))
 
         except Exception as e:
             return ui.div(ui.markdown(f"**Data Assembly Failed**: {e}"), class_="alert alert-danger")
@@ -890,6 +888,21 @@ def define_server(input, output, session, *,
         val = safe_input(input, "tier_toggle", "T2")
         if val:
             tier_toggle.set(val)
+
+    # ADR-045 R1: anchor_path.set() must not live inside dynamic_tabs render.
+    # This effect reacts to the same inputs and writes with an idempotent guard.
+    @reactive.Effect
+    def _sync_anchor_path():
+        try:
+            coll_id = active_collection_id()
+            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            out_path = anchor_dir / f"{coll_id}.parquet"
+            if out_path.exists():
+                new_val = str(out_path)
+                if anchor_path.get() != new_val:
+                    anchor_path.set(new_val)
+        except Exception:
+            pass
 
     # Data change detection — runs as a side-effect separate from dynamic_tabs render.
     # Reads project_id to react when the user switches projects; computes source file

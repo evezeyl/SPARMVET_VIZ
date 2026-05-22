@@ -28,13 +28,13 @@ Items with no blockers — can be started immediately.
 
 ### Audit-detected fixes
 
-- [ ] **ADR-045-ANCHOR-SET-1** `[sonnet/medium]` `[adr-violation]`: `app/handlers/home_theater.py` — `anchor_path.set(str(out_path))` is called inside `@render.ui dynamic_tabs()`, violating ADR-045 Rule R1 (renders must be read-only). Extract to a dedicated `@reactive.Effect` with idempotent guard: `if anchor_path.get() != str(out_path): anchor_path.set(str(out_path))`. Audit report: `.claude/logs/audits/audit_adr_compliance_2026-05-21.md`.
+- [x] **ADR-045-ANCHOR-SET-1** ✅ 2026-05-22 `[sonnet/medium]` `[adr-violation]`: `app/handlers/home_theater.py` — removed `anchor_path.set(str(out_path))` from inside `@render.ui dynamic_tabs()`. Extracted to new `@reactive.Effect _sync_anchor_path()` with idempotent guard. Import check + Playwright smoke suite pass.
 
-- [ ] **VIZFAC-SUITE-TIMEOUT-1** `[sonnet/low]` `[test-infra]`: `viz_factory` integrity suite exceeds 300s audit timeout. The suite runs `debug_runner.py` as a subprocess per registered component (168+), rendering a PNG for each — inherently slow. Options: (1) increase audit script timeout to 600s, (2) add `--fast` flag that skips PNG rendering and only validates registry/manifest parsing, (3) split into fast (registry) + slow (render) suites. Audit report: `.claude/logs/audits/audit_library_tests_2026-05-21.md`.
+- [x] **VIZFAC-SUITE-TIMEOUT-1** ✅ 2026-05-22 `[sonnet/low]` `[test-infra]`: Bumped `TIMEOUT_SECONDS` from 300 to 600 in `scripts/audit_library_tests.py`. viz_factory integrity suite renders 191 PNGs; 300s was structurally insufficient.
 
-- [ ] **DOC-SYNC-PLATFORM-1** `[haiku/low]` `[doc-sync]`: `docs/vision/platform_evolution.qmd` line 115 references `docs/vision/gallery.qmd` as a planned document — file does not exist. Either create a stub or mark the table entry as `[PLANNED]`. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
+- [x] **DOC-SYNC-PLATFORM-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Marked `gallery.qmd` reference as `[PLANNED]` in `docs/vision/platform_evolution.qmd` line 115.
 
-- [ ] **DOC-SYNC-TESTING-1** `[haiku/low]` `[doc-sync]`: `docs/reference/testing.qmd` line 65 references `assets/scripts/create_test_data.py` which does not exist. The synthetic data tool is now AquaSynthesizer (`libs/test_lab/src/test_lab/aqua_synthesizer.py`, Phase 34). Update the doc to reference the correct tool and path. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
+- [x] **DOC-SYNC-TESTING-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Updated `docs/reference/testing.qmd` line 65 — replaced `create_test_data.py` reference with `AquaSynthesizer` (`libs/test_lab/src/test_lab/aqua_synthesizer.py`).
 
 - [ ] **PERSONA-DATAIMPORT-FLAG-DOC-1** `[haiku/low]` `[doc-sync]`: `data_import_panel_visible` is declared in all 8 persona templates but is absent from `rules_persona_feature_flags.md`. Determine: is this superseded by ADR-073 sidebar slot registry (which handles panel visibility declaratively)? If yes, add a note to the rules file and flag it as superseded. If still active, add it to the flag matrix. Audit report: `.claude/logs/audits/audit_persona_consistency_2026-05-21.md`.
 
