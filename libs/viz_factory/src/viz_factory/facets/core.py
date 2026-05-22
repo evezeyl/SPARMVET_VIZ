@@ -28,6 +28,8 @@ from viz_factory.registry import register_plot_component
         "strip_position": {"widget": "enum", "label": "Strip label position", "required": False,
                            "default": "top", "options": ["top", "bottom", "left", "right"]},
     },
+    "description": "Wrap a 1D sequence of panels by a single variable into a 2D grid; the default faceting choice when you have one grouping variable.",
+    "yaml_example": "layers:\n  - name: facet_wrap\n    params:\n      facets: Country\n      ncol: 3",
 })
 def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard individual panel wrapping."""
@@ -52,6 +54,8 @@ def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
         "margins": {"widget": "bool", "label": "Show margin (total) panels", "required": False, "default": False},
     },
+    "description": "Arrange panels in a 2D grid defined by row and column variables; use when cross-tabulating two categorical variables.",
+    "yaml_example": "layers:\n  - name: facet_grid\n    params:\n      rows: Year\n      cols: Country",
 })
 def handle_facet_grid(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -82,6 +86,8 @@ def handle_facet_grid(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
                    "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
+    "description": "Facet into a single column of rows by one variable; shorthand alternative to facet_grid with only a rows variable.",
+    "yaml_example": "layers:\n  - name: facet_rows\n    params:\n      rows: Country",
 })
 def handle_facet_rows(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Shortcut for vertical-only stacking in a grid."""
@@ -101,6 +107,8 @@ def handle_facet_rows(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
                    "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
+    "description": "Facet into a single row of columns by one variable; shorthand alternative to facet_grid with only a cols variable.",
+    "yaml_example": "layers:\n  - name: facet_cols\n    params:\n      cols: Year",
 })
 def handle_facet_cols(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Shortcut for horizontal-only stacking in a grid."""
@@ -116,6 +124,8 @@ def handle_facet_cols(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["facet_null"]}],
     "allow_extra_params": False,
     "params": {},
+    "description": "Explicitly remove faceting; use to clear a default facet in a downstream T3 override without rebuilding the full plot spec.",
+    "yaml_example": "layers:\n  - name: facet_null",
 })
 def handle_facet_null(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -137,6 +147,8 @@ def handle_facet_null(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "scales": {"widget": "enum", "label": "Scale freedom", "required": True,
                    "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
+    "description": "Control whether axis scales are fixed or free across facet panels; use 'free_x' or 'free_y' when panels have very different ranges.",
+    "yaml_example": "layers:\n  - name: facet_scales\n    params:\n      scales: free_y",
 })
 def handle_facet_scales(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to modify facet scales (free, free_x, free_y)."""
@@ -157,6 +169,8 @@ def handle_facet_scales(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "space": {"widget": "enum", "label": "Panel space", "required": True,
                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
+    "description": "Allocate panel space proportionally to data range when scales are free; combine with facet_scales to size panels by their content.",
+    "yaml_example": "layers:\n  - name: facet_space\n    params:\n      space: free_y",
 })
 def handle_facet_space(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to modify facet space (fixed, free)."""
@@ -175,6 +189,8 @@ def handle_facet_space(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "labeller": {"widget": "string", "label": "Labeller function name (e.g. 'label_both')", "required": True},
     },
+    "description": "Set the labeller function for facet strip labels; use label_both to show 'variable: value' format in strips.",
+    "yaml_example": "layers:\n  - name: facet_labeller\n    params:\n      labeller: label_both",
 })
 def handle_facet_labeller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set facet labeller on the current facet object."""
@@ -200,6 +216,8 @@ def handle_facet_labeller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "margins": {"widget": "bool", "label": "Show margin (total) panels", "required": False, "default": True},
     },
+    "description": "Add marginal panels that aggregate across a facet dimension; rarely needed \u2014 use for totals/grand-total rows in grid facets.",
+    "yaml_example": "layers:\n  - name: facet_margins\n    params:\n      margins: true",
 })
 def handle_facet_margins(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set facet margins."""

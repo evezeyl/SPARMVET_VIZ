@@ -575,15 +575,21 @@
 
 ## `libs/test_lab/src/test_lab/bootstrapper.py`
 - **Role:** `info`
-- **provides:** `ManifestBootstrapper class (bootstrap) — infers TSV schemas and writes manifest YAML fragments`
+- **provides:** `ManifestBootstrapper class (bootstrap`, `id_cleaning_recipes) — infers TSV schemas`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
-- **consumed_by:** `libs/test_lab/tests/debug_sdk.py`
+- **consumed_by:** `libs/test_lab/tests/debug_sdk.py`, `libs/test_lab/tests/test_bootstrapper.py`
 
 ## `libs/test_lab/src/test_lab/extractor.py`
 - **Role:** `info`
 - **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/debug_sdk.py`
+
+## `libs/test_lab/src/test_lab/scaffolder.py`
+- **Role:** `info`
+- **provides:** `ManifestScaffolder class (scaffold) — generates a project ZIP with manifest`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`
 
 ## `libs/transformer/src/transformer/actions/base.py`
 - **Role:** `wrangle`

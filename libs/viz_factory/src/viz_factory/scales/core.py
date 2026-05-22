@@ -93,6 +93,8 @@ _SCALE_IDENTITY_PARAMS = {
         "high": {"widget": "color", "label": "High value colour", "required": False, "default": "#56B1F7"},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous variable to a 2-colour gradient; the simplest continuous colour scale \u2014 use scale_color_viridis_c for perceptual uniformity.",
+    "yaml_example": "layers:\n  - name: scale_color_gradient\n    params:\n      low: '#132B43'\n      high: '#56B1F7'",
 })
 def handle_color_gradient(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_gradient(**spec)
@@ -110,6 +112,8 @@ def handle_color_gradient(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "high": {"widget": "color", "label": "High value colour", "required": False, "default": "#56B1F7"},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous fill variable to a 2-colour gradient; use for heatmaps or geom_tile where the fill encodes a numeric value.",
+    "yaml_example": "layers:\n  - name: scale_fill_gradient\n    params:\n      low: white\n      high: '#345beb'",
 })
 def handle_fill_gradient(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_gradient(**spec)
@@ -129,6 +133,8 @@ def handle_fill_gradient(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "midpoint": {"widget": "number", "label": "Data value at midpoint", "required": False, "default": 0},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Diverging 2-stop gradient with a midpoint; use when the variable has a meaningful centre (e.g. z-scores, log fold-change).",
+    "yaml_example": "layers:\n  - name: scale_color_gradient2\n    params:\n      low: blue\n      mid: white\n      high: red\n      midpoint: 0",
 })
 def handle_color_gradient2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_gradient2(**spec)
@@ -148,6 +154,8 @@ def handle_color_gradient2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "midpoint": {"widget": "number", "label": "Data value at midpoint", "required": False, "default": 0},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Diverging 2-stop fill gradient with a midpoint; use for heatmaps where the fill diverges around a central value.",
+    "yaml_example": "layers:\n  - name: scale_fill_gradient2\n    params:\n      low: blue\n      mid: white\n      high: red\n      midpoint: 0",
 })
 def handle_fill_gradient2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_gradient2(**spec)
@@ -164,6 +172,8 @@ def handle_fill_gradient2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "colors": {"widget": "string", "label": "Colour list (e.g. ['#blue','#white','#red'])", "required": True},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous variable to an n-colour gradient; use for custom multi-stop palettes (e.g. temperature maps, clinical risk scores).",
+    "yaml_example": "layers:\n  - name: scale_color_gradientn\n    params:\n      colours: [blue, white, red]",
 })
 def handle_color_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_gradientn(**spec)
@@ -180,6 +190,8 @@ def handle_color_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "colors": {"widget": "string", "label": "Colour list (e.g. ['#blue','#white','#red'])", "required": True},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous fill variable to an n-colour gradient; use for heatmaps requiring more than two colour stops.",
+    "yaml_example": "layers:\n  - name: scale_fill_gradientn\n    params:\n      colours: [blue, white, red]",
 })
 def handle_fill_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_gradientn(**spec)
@@ -202,6 +214,8 @@ def handle_fill_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
                       "default": "1", "options": ["1", "-1"]},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous colour variable using an RColorBrewer palette; use for sequential or diverging continuous data when a named palette name is sufficient.",
+    "yaml_example": "layers:\n  - name: scale_color_distiller\n    params:\n      palette: Blues",
 })
 def handle_color_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_distiller(**spec)
@@ -222,6 +236,8 @@ def handle_color_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
                       "default": "1", "options": ["1", "-1"]},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous fill variable using an RColorBrewer palette; use for heatmaps when an RColorBrewer name is preferred over manual hex colours.",
+    "yaml_example": "layers:\n  - name: scale_fill_distiller\n    params:\n      palette: RdYlBu",
 })
 def handle_fill_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_distiller(**spec)
@@ -240,6 +256,8 @@ def handle_fill_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "cmap_name": {"widget": "string", "label": "Matplotlib colormap name (e.g. viridis, Blues, RdBu)", "required": False, "default": "viridis"},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous colour variable using a matplotlib colormap by name; use when the colourmap name is already known from Python/matplotlib conventions.",
+    "yaml_example": "layers:\n  - name: scale_color_cmap\n    params:\n      cmap_name: viridis",
 })
 def handle_color_cmap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_cmap(**spec)
@@ -256,6 +274,8 @@ def handle_color_cmap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "cmap_name": {"widget": "string", "label": "Matplotlib colormap name (e.g. viridis, Blues, RdBu)", "required": False, "default": "viridis"},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a continuous fill variable using a matplotlib colormap; use for heatmaps when a matplotlib colormap name is preferred.",
+    "yaml_example": "layers:\n  - name: scale_fill_cmap\n    params:\n      cmap_name: plasma",
 })
 def handle_fill_cmap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_cmap(**spec)
@@ -271,6 +291,8 @@ def handle_fill_cmap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_cmap_d"]}],
     "allow_extra_params": False,
     "params": _VIRIDIS_PARAMS,
+    "description": "Map a discrete colour variable to the perceptually-uniform viridis palette; the recommended default for discrete colour scales \u2014 accessible to colour-blind viewers.",
+    "yaml_example": "layers:\n  - name: scale_color_viridis_d\n    params:\n      option: D",
 })
 def handle_color_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     if "cmap_name" not in spec:
@@ -286,6 +308,8 @@ def handle_color_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_cmap_d"]}],
     "allow_extra_params": False,
     "params": _VIRIDIS_PARAMS,
+    "description": "Map a discrete fill variable to the viridis palette; use for grouped bars or heatmap categories where colour-blind accessibility matters.",
+    "yaml_example": "layers:\n  - name: scale_fill_viridis_d\n    params:\n      option: D",
 })
 def handle_fill_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     if "cmap_name" not in spec:
@@ -305,6 +329,8 @@ def handle_fill_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "begin": {"widget": "number", "label": "Start of palette range (0–1)", "required": False, "default": 0},
         "end": {"widget": "number", "label": "End of palette range (0–1)", "required": False, "default": 1},
     },
+    "description": "Map a continuous colour variable to the perceptually-uniform viridis palette; the recommended default for sequential continuous colour scales.",
+    "yaml_example": "layers:\n  - name: scale_color_viridis_c\n    params:\n      option: D",
 })
 def handle_color_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     if "cmap_name" not in spec:
@@ -324,6 +350,8 @@ def handle_color_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "begin": {"widget": "number", "label": "Start of palette range (0–1)", "required": False, "default": 0},
         "end": {"widget": "number", "label": "End of palette range (0–1)", "required": False, "default": 1},
     },
+    "description": "Map a continuous fill variable to the viridis palette; use for tile/raster heatmaps where perceptual uniformity is required.",
+    "yaml_example": "layers:\n  - name: scale_fill_viridis_c\n    params:\n      option: D",
 })
 def handle_fill_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     if "cmap_name" not in spec:
@@ -344,6 +372,8 @@ def handle_fill_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "cmap_name": {"widget": "string", "label": "Matplotlib colormap name", "required": False, "default": "tab10"},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a discrete colour variable to a matplotlib colormap; use when the colormap name is from matplotlib and the variable is categorical.",
+    "yaml_example": "layers:\n  - name: scale_color_cmap_d\n    params:\n      cmap_name: tab10",
 })
 def handle_color_cmap_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_cmap_d(**spec)
@@ -360,6 +390,8 @@ def handle_color_cmap_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "cmap_name": {"widget": "string", "label": "Matplotlib colormap name", "required": False, "default": "tab10"},
         **_SCALE_GUIDE_PARAMS,
     },
+    "description": "Map a discrete fill variable to a matplotlib colormap; use for categorical fill when a matplotlib colormap name is preferred over manual hex values.",
+    "yaml_example": "layers:\n  - name: scale_fill_cmap_d\n    params:\n      cmap_name: Set2",
 })
 def handle_fill_cmap_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_cmap_d(**spec)
@@ -378,6 +410,8 @@ def handle_fill_cmap_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Default discrete colour scale; use when you want plotnine to choose colours automatically for a categorical variable without specifying a palette.",
+    "yaml_example": "layers:\n  - name: scale_color_discrete",
 })
 def handle_color_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_discrete(**spec)
@@ -394,6 +428,8 @@ def handle_color_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Default discrete fill scale; use when you want plotnine to choose fills automatically \u2014 override with scale_fill_manual when specific colours are required.",
+    "yaml_example": "layers:\n  - name: scale_fill_discrete",
 })
 def handle_fill_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_discrete(**spec)
@@ -417,6 +453,8 @@ def handle_fill_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete colour variable to an RColorBrewer palette; a practical choice for categorical data when a named palette name is sufficient.",
+    "yaml_example": "layers:\n  - name: scale_color_brewer\n    params:\n      palette: Set1",
 })
 def handle_color_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_brewer(**spec)
@@ -438,6 +476,8 @@ def handle_color_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete fill variable to an RColorBrewer palette; use for grouped bar charts or box plots when a named palette is preferable to manual hex values.",
+    "yaml_example": "layers:\n  - name: scale_fill_brewer\n    params:\n      palette: Set2",
 })
 def handle_fill_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_brewer(**spec)
@@ -457,6 +497,8 @@ def handle_fill_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete colour variable to exact hex values; use when brand colours or institution-specific palettes must be applied precisely.",
+    "yaml_example": "layers:\n  - name: scale_color_manual\n    params:\n      values: ['#345beb', '#10a395', '#ffc107']",
 })
 def handle_color_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_manual(**spec)
@@ -474,6 +516,8 @@ def handle_color_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete fill variable to exact hex values; use when specific brand colours must be assigned to named categories.",
+    "yaml_example": "layers:\n  - name: scale_fill_manual\n    params:\n      values: ['#345beb', '#10a395', '#ffc107']",
 })
 def handle_fill_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_manual(**spec)
@@ -506,6 +550,8 @@ def _resolve_continuous_spec(spec: Dict[str, Any]) -> Dict[str, Any]:
         "expand": {"widget": "string", "label": "Axis expand (e.g. [0, 0])", "required": False},
         "breaks_integer": {"widget": "bool", "label": "Force integer breaks", "required": False, "default": False},
     },
+    "description": "Control x-axis breaks, labels, limits, and expand for continuous numeric variables; use to customise tick spacing or suppress auto-expansion.",
+    "yaml_example": "layers:\n  - name: scale_x_continuous\n    params:\n      breaks: [0, 25, 50, 75, 100]",
 })
 def handle_x_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_continuous(**_resolve_continuous_spec(spec))
@@ -523,6 +569,8 @@ def handle_x_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "expand": {"widget": "string", "label": "Axis expand (e.g. [0, 0])", "required": False},
         "breaks_integer": {"widget": "bool", "label": "Force integer breaks", "required": False, "default": False},
     },
+    "description": "Control y-axis breaks, labels, limits, and expand for continuous numeric variables; use to set a fixed y range or custom tick marks.",
+    "yaml_example": "layers:\n  - name: scale_y_continuous\n    params:\n      limits: [0, 100]",
 })
 def handle_y_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_continuous(**_resolve_continuous_spec(spec))
@@ -541,6 +589,8 @@ def handle_y_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         **_SCALE_AXIS_PARAMS,
         "expand": {"widget": "string", "label": "Axis expand", "required": False},
     },
+    "description": "Control x-axis order and labels for discrete/categorical variables; use to reorder factor levels or rename axis tick labels.",
+    "yaml_example": "layers:\n  - name: scale_x_discrete\n    params:\n      limits: [cat_a, cat_b, cat_c]",
 })
 def handle_x_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_discrete(**spec)
@@ -557,6 +607,8 @@ def handle_x_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         **_SCALE_AXIS_PARAMS,
         "expand": {"widget": "string", "label": "Axis expand", "required": False},
     },
+    "description": "Control y-axis order and labels for discrete variables; use with coord_flip bar charts to specify the vertical category order.",
+    "yaml_example": "layers:\n  - name: scale_y_discrete\n    params:\n      limits: [low, medium, high]",
 })
 def handle_y_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_discrete(**spec)
@@ -572,6 +624,8 @@ def handle_y_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_log10"]}],
     "allow_extra_params": True,
     "params": _SCALE_AXIS_PARAMS,
+    "description": "Apply a log10 transformation to the x-axis; use for variables spanning orders of magnitude such as bacterial counts or p-values.",
+    "yaml_example": "layers:\n  - name: scale_x_log10",
 })
 def handle_x_log10(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_log10(**spec)
@@ -585,6 +639,8 @@ def handle_x_log10(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_log10"]}],
     "allow_extra_params": True,
     "params": _SCALE_AXIS_PARAMS,
+    "description": "Apply a log10 transformation to the y-axis; use for count data or MIC values where the distribution is heavily right-skewed.",
+    "yaml_example": "layers:\n  - name: scale_y_log10",
 })
 def handle_y_log10(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_log10(**spec)
@@ -604,6 +660,8 @@ def handle_y_log10(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
+    "description": "Reverse the direction of the x-axis; use for dendrograms, forest plots, or year axes where decreasing order is conventional.",
+    "yaml_example": "layers:\n  - name: scale_x_reverse",
 })
 def handle_x_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_reverse(**spec)
@@ -621,6 +679,8 @@ def handle_x_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
+    "description": "Reverse the direction of the y-axis; use when higher values should appear at the bottom (e.g. depth profiles, rank plots).",
+    "yaml_example": "layers:\n  - name: scale_y_reverse",
 })
 def handle_y_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_reverse(**spec)
@@ -641,6 +701,8 @@ def handle_y_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 1 month)", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
     },
+    "description": "Format and control a datetime x-axis; use when the x column is a Python datetime type and you need custom date formatting.",
+    "yaml_example": "layers:\n  - name: scale_x_datetime\n    params:\n      date_labels: '%Y-%m'",
 })
 def handle_x_datetime(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_datetime(**spec)
@@ -659,6 +721,8 @@ def handle_x_datetime(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 1 month)", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
     },
+    "description": "Format and control a datetime y-axis; use for Gantt-style charts or horizontal time plots where the y axis is datetime.",
+    "yaml_example": "layers:\n  - name: scale_y_datetime\n    params:\n      date_labels: '%Y-%m'",
 })
 def handle_y_datetime(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_datetime(**spec)
@@ -677,6 +741,8 @@ def handle_y_datetime(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 3 months)", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
     },
+    "description": "Format and control a date (not datetime) x-axis; use when the x column contains Python date objects.",
+    "yaml_example": "layers:\n  - name: scale_x_date\n    params:\n      date_labels: '%Y'",
 })
 def handle_x_date(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_date(**spec)
@@ -695,6 +761,8 @@ def handle_x_date(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 3 months)", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
     },
+    "description": "Format and control a date y-axis; use when the y column contains Python date objects.",
+    "yaml_example": "layers:\n  - name: scale_y_date\n    params:\n      date_labels: '%Y'",
 })
 def handle_y_date(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_date(**spec)
@@ -714,6 +782,8 @@ def handle_y_date(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
+    "description": "Apply a square-root transformation to the x-axis; intermediate between linear and log \u2014 use for count data with moderate right-skew.",
+    "yaml_example": "layers:\n  - name: scale_x_sqrt",
 })
 def handle_x_sqrt(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_sqrt(**spec)
@@ -731,6 +801,8 @@ def handle_x_sqrt(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
+    "description": "Apply a square-root transformation to the y-axis; use for count histograms where log would exaggerate small values.",
+    "yaml_example": "layers:\n  - name: scale_y_sqrt",
 })
 def handle_y_sqrt(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_sqrt(**spec)
@@ -751,6 +823,8 @@ def handle_y_sqrt(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
+    "description": "Symmetric log transformation for x; handles zero and negative values unlike log10 \u2014 use when the variable includes negative values.",
+    "yaml_example": "layers:\n  - name: scale_x_symlog",
 })
 def handle_x_symlog(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_symlog(**spec)
@@ -769,6 +843,8 @@ def handle_x_symlog(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
+    "description": "Symmetric log transformation for y; use when y spans both positive and negative values (e.g. log fold-change with true zero).",
+    "yaml_example": "layers:\n  - name: scale_y_symlog",
 })
 def handle_y_symlog(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_symlog(**spec)
@@ -788,6 +864,8 @@ def handle_y_symlog(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits", "required": False},
     },
+    "description": "Format a timedelta x-axis; use when x represents a duration (Python timedelta) rather than an absolute date.",
+    "yaml_example": "layers:\n  - name: scale_x_timedelta",
 })
 def handle_x_timedelta(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_x_timedelta(**spec)
@@ -805,6 +883,8 @@ def handle_x_timedelta(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits", "required": False},
     },
+    "description": "Format a timedelta y-axis; use when y represents elapsed time or a duration.",
+    "yaml_example": "layers:\n  - name: scale_y_timedelta",
 })
 def handle_y_timedelta(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_y_timedelta(**spec)
@@ -824,6 +904,8 @@ def handle_y_timedelta(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "range": {"widget": "string", "label": "Output size range as [min, max] (pt)", "required": False, "default": "[1, 6]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a continuous variable to point size; use to encode a third numeric dimension in a scatter plot (bubble chart).",
+    "yaml_example": "layers:\n  - name: scale_size_continuous\n    params:\n      range: [1, 10]",
 })
 def handle_size_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_size_continuous(**spec)
@@ -841,6 +923,8 @@ def handle_size_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "range": {"widget": "string", "label": "Output size range as [min, max] (pt)", "required": False, "default": "[1, 6]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to point size; avoid if possible \u2014 size is harder to discriminate categorically than colour.",
+    "yaml_example": "layers:\n  - name: scale_size_discrete",
 })
 def handle_size_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_size_discrete(**spec)
@@ -859,6 +943,8 @@ def handle_size_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to point shape; use as a secondary encoding alongside colour for accessibility (works in greyscale).",
+    "yaml_example": "layers:\n  - name: scale_shape_discrete",
 })
 def handle_shape_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_shape_discrete(**spec)
@@ -878,6 +964,8 @@ def handle_shape_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)", "required": False, "default": "[0.1, 1]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a continuous variable to point/fill transparency; use sparingly \u2014 alpha is hard to read accurately but can indicate density or confidence.",
+    "yaml_example": "layers:\n  - name: scale_alpha_continuous\n    params:\n      range: [0.2, 1.0]",
 })
 def handle_alpha_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_alpha_continuous(**spec)
@@ -895,6 +983,8 @@ def handle_alpha_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)", "required": False, "default": "[0.1, 1]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to alpha; rarely useful \u2014 prefer colour or shape for categorical distinction.",
+    "yaml_example": "layers:\n  - name: scale_alpha_discrete",
 })
 def handle_alpha_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_alpha_discrete(**spec)
@@ -913,6 +1003,8 @@ def handle_alpha_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to line type; use as a secondary encoding on line plots when colour alone is insufficient.",
+    "yaml_example": "layers:\n  - name: scale_linetype_discrete",
 })
 def handle_linetype_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_linetype_discrete(**spec)
@@ -932,6 +1024,8 @@ def handle_linetype_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "range": {"widget": "string", "label": "Stroke width range as [min, max] (pt)", "required": False, "default": "[0.2, 2]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a continuous variable to point stroke width; use to encode an extra numeric dimension when combined with a filled shape.",
+    "yaml_example": "layers:\n  - name: scale_stroke_continuous\n    params:\n      range: [0.5, 2.0]",
 })
 def handle_stroke_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_stroke_continuous(**spec)
@@ -947,6 +1041,8 @@ def handle_stroke_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_identity"]}],
     "allow_extra_params": False,
     "params": _SCALE_IDENTITY_PARAMS,
+    "description": "Use literal colour values from a data column as colours; the data column must already contain valid colour strings (hex or named).",
+    "yaml_example": "layers:\n  - name: scale_color_identity",
 })
 def handle_color_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_identity(**spec)
@@ -960,6 +1056,8 @@ def handle_color_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_identity"]}],
     "allow_extra_params": False,
     "params": _SCALE_IDENTITY_PARAMS,
+    "description": "Use literal colour strings from a data column as fill values; the column must contain valid hex or named colour strings.",
+    "yaml_example": "layers:\n  - name: scale_fill_identity",
 })
 def handle_fill_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_identity(**spec)
@@ -973,6 +1071,8 @@ def handle_fill_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_size_identity"]}],
     "allow_extra_params": False,
     "params": _SCALE_IDENTITY_PARAMS,
+    "description": "Use literal numeric values from a data column directly as point sizes; bypasses the default size range mapping.",
+    "yaml_example": "layers:\n  - name: scale_size_identity",
 })
 def handle_size_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_size_identity(**spec)
@@ -986,6 +1086,8 @@ def handle_size_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_shape_identity"]}],
     "allow_extra_params": False,
     "params": _SCALE_IDENTITY_PARAMS,
+    "description": "Use literal shape codes from a data column as shapes; the column must contain integer shape codes valid in plotnine.",
+    "yaml_example": "layers:\n  - name: scale_shape_identity",
 })
 def handle_shape_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_shape_identity(**spec)
@@ -999,6 +1101,8 @@ def handle_shape_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_alpha_identity"]}],
     "allow_extra_params": False,
     "params": _SCALE_IDENTITY_PARAMS,
+    "description": "Use literal numeric values from a data column as alpha (transparency); values must be in [0, 1].",
+    "yaml_example": "layers:\n  - name: scale_alpha_identity",
 })
 def handle_alpha_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_alpha_identity(**spec)
@@ -1012,6 +1116,8 @@ def handle_alpha_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_linetype_identity"]}],
     "allow_extra_params": False,
     "params": _SCALE_IDENTITY_PARAMS,
+    "description": "Use literal linetype strings from a data column; the column must contain valid plotnine linetype names ('solid', 'dashed', etc.).",
+    "yaml_example": "layers:\n  - name: scale_linetype_identity",
 })
 def handle_linetype_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_linetype_identity(**spec)
@@ -1025,6 +1131,8 @@ def handle_linetype_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_stroke_identity"]}],
     "allow_extra_params": False,
     "params": _SCALE_IDENTITY_PARAMS,
+    "description": "Use literal numeric stroke widths from a data column; bypasses range mapping.",
+    "yaml_example": "layers:\n  - name: scale_stroke_identity",
 })
 def handle_stroke_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_stroke_identity(**spec)
@@ -1058,6 +1166,8 @@ def _coerce_tuple_kwargs(spec: Dict[str, Any], keys=("h", "c", "l", "range")) ->
         "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)", "required": False, "default": "[0.1, 1]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Shorthand continuous alpha scale; equivalent to scale_alpha_continuous \u2014 maps a numeric variable to transparency.",
+    "yaml_example": "layers:\n  - name: scale_alpha\n    params:\n      range: [0.3, 1.0]",
 })
 def handle_alpha(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_alpha(**_coerce_tuple_kwargs(spec))
@@ -1075,6 +1185,8 @@ def handle_alpha(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to manually specified alpha values; use when each category must have a specific opacity.",
+    "yaml_example": "layers:\n  - name: scale_alpha_manual\n    params:\n      values: [0.3, 0.6, 1.0]",
 })
 def handle_alpha_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_alpha_manual(**spec)
@@ -1092,6 +1204,8 @@ def handle_alpha_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "range": {"widget": "string", "label": "Output size range as [min, max] (pt)", "required": False, "default": "[1, 6]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Shorthand continuous size scale; equivalent to scale_size_continuous \u2014 maps a numeric variable to point size.",
+    "yaml_example": "layers:\n  - name: scale_size\n    params:\n      range: [1, 8]",
 })
 def handle_size(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_size(**_coerce_tuple_kwargs(spec))
@@ -1109,6 +1223,8 @@ def handle_size(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to manually specified point sizes; use when each category must have a specific size.",
+    "yaml_example": "layers:\n  - name: scale_size_manual\n    params:\n      values: [2, 4, 8]",
 })
 def handle_size_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_size_manual(**spec)
@@ -1126,6 +1242,8 @@ def handle_size_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a continuous variable to point area (not radius); use for bubble charts where area proportional to value is the perceptually correct encoding.",
+    "yaml_example": "layers:\n  - name: scale_size_area\n    params:\n      max_size: 10",
 })
 def handle_size_area(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_size_area(**_coerce_tuple_kwargs(spec))
@@ -1142,6 +1260,8 @@ def handle_size_area(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Shorthand discrete shape scale; equivalent to scale_shape_discrete.",
+    "yaml_example": "layers:\n  - name: scale_shape",
 })
 def handle_shape(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_shape(**spec)
@@ -1159,6 +1279,8 @@ def handle_shape(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to manually specified point shapes; use when specific shapes must be assigned to named categories.",
+    "yaml_example": "layers:\n  - name: scale_shape_manual\n    params:\n      values: [16, 17, 15]",
 })
 def handle_shape_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_shape_manual(**spec)
@@ -1175,6 +1297,8 @@ def handle_shape_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Shorthand discrete linetype scale; equivalent to scale_linetype_discrete.",
+    "yaml_example": "layers:\n  - name: scale_linetype",
 })
 def handle_linetype(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_linetype(**spec)
@@ -1192,6 +1316,8 @@ def handle_linetype(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Map a discrete variable to manually specified line types; use when specific dash patterns must be assigned to named line groups.",
+    "yaml_example": "layers:\n  - name: scale_linetype_manual\n    params:\n      values: [solid, dashed, dotted]",
 })
 def handle_linetype_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_linetype_manual(**spec)
@@ -1211,6 +1337,8 @@ def handle_linetype_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Evenly-spaced hues from the HCL colour wheel for discrete colour; the plotnine default discrete colour scale \u2014 use scale_color_viridis_d for accessibility.",
+    "yaml_example": "layers:\n  - name: scale_color_hue\n    params:\n      h: [0, 360]",
 })
 def handle_color_hue(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_hue(**_coerce_tuple_kwargs(spec))
@@ -1230,6 +1358,8 @@ def handle_color_hue(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
+    "description": "Evenly-spaced hues for discrete fill; the plotnine default \u2014 use scale_fill_viridis_d instead when accessibility matters.",
+    "yaml_example": "layers:\n  - name: scale_fill_hue",
 })
 def handle_fill_hue(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_hue(**_coerce_tuple_kwargs(spec))
@@ -1247,6 +1377,8 @@ def handle_fill_hue(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "guide": {"widget": "enum", "label": "Guide type", "required": False,
                   "options": ["legend", "colorbar", "none"]},
     },
+    "description": "Generic continuous colour scale dispatcher; delegates to the default continuous scale \u2014 rarely needed directly unless resetting a previously set scale.",
+    "yaml_example": "layers:\n  - name: scale_color_continuous",
 })
 def handle_color_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_continuous(**spec)
@@ -1264,6 +1396,8 @@ def handle_color_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "guide": {"widget": "enum", "label": "Guide type", "required": False,
                   "options": ["legend", "colorbar", "none"]},
     },
+    "description": "Generic continuous fill scale dispatcher; use to reset fill to plotnine defaults after a manual or palette scale was applied upstream.",
+    "yaml_example": "layers:\n  - name: scale_fill_continuous",
 })
 def handle_fill_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_continuous(**spec)

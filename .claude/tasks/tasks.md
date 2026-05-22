@@ -59,9 +59,7 @@ Items with no blockers — can be started immediately.
 
 - [x] **BP-HELP-TRANSFORMER-1** `[sonnet/high]`: Content sweep — all 60 transformer `@register_action` entries (2 persistence engine-internals skip). Added `description` + `yaml_example` to all 60; `wraps` added to 35 actions that are 1:1 Polars wrappers (namespace sub-methods str.*/dt.*/list.* and composite actions intentionally skipped — no importlib-safe resolution). Dep-sweep clean. 97 tests pass. ✅ 2026-05-22
 
-- [ ] **BP-HELP-VIZFACTORY-1** `[sonnet/medium]`: Content sweep — all 192 viz_factory `@register_plot_component` entries. `wraps` already points to plotnine for 191/192 — verify the missing one and fix. Add `description` (developer-oriented, one sentence) and `yaml_example` (minimal YAML `layers:` snippet) to all 192. Categories: `geoms/`, `stats/`, `scales/`, `coords/`, `facets/`, `themes/`, `positions/`, `annotations/`, `labs/`. After sweep: dep-sweep (`grep -rn "COMPONENT_SCHEMAS\|PLOT_COMPONENT_REGISTRY" app/`) to confirm no caller breaks; run `build_dep_graph.py`.
-  - Depends: BP-HELP-ADR-1.
-  - Gate: `grep -c '"description"' libs/viz_factory/src/viz_factory/**/*.py` = 192. `grep -c '"yaml_example"' libs/viz_factory/src/viz_factory/**/*.py` = 192. `wraps` present for all 192. All existing tests pass.
+- [x] **BP-HELP-VIZFACTORY-1** `[sonnet/medium]`: Content sweep — 191 active viz_factory `@register_plot_component` entries (geom_map commented out). Added `description` + `yaml_example` to all 191 across 7 files (coords/facets/geoms/guides/positions/scales/themes). `wraps` already present for all active components. All imports clean. 97 tests pass. ✅ 2026-05-22
 
 ### Phase 34 — TEST_LAB Build
 
@@ -95,13 +93,13 @@ Items with no blockers — can be started immediately.
 
 #### 34-C — ManifestBootstrapper Fixes
 
-- [ ] **TL-BOOTSTRAP-FIX-1** `[sonnet/low]`: Fix `libs/test_lab/src/test_lab/bootstrapper.py`: (1) `"plotting"` → `"analysis_groups"`, (2) remove hardcoded spurious `metadata_schema:` entry, (3) add `join_manifests: {}` stub, (4) accept optional `id_cleaning_recipes: dict` and bake valid cleaning actions into `tier1:` wrangling. Gate: headless test generates manifest that passes `debug_assembler.py` without error.  
+- [x] **TL-BOOTSTRAP-FIX-1** `[sonnet/low]`: Fix `libs/test_lab/src/test_lab/bootstrapper.py`: (1) `"plotting"` → `"analysis_groups"`, (2) remove hardcoded spurious `metadata_schema:` entry, (3) add `join_manifests: {}` stub, (4) accept optional `id_cleaning_recipes: dict` and bake valid cleaning actions into `tier1:` wrangling. Gate: headless test generates manifest that passes `debug_assembler.py` without error. ✅ 2026-05-22 — 10/10 gate tests pass.  
   Depends: TL-IDLIB-RECIPE-1.
 
 #### 34-D — Manifest Scaffolding ZIP
 
-- [ ] **TL-SCAFFOLD-1** `[sonnet/medium]`: ZIP boilerplate output — `libs/test_lab/src/test_lab/scaffolder.py` (or extend bootstrapper). Input: TSV paths + `TransformationRecipe` objects. Output: ZIP with master YAML (`data_schemas:`, `join_manifests:` pre-filled, `analysis_groups: {}`) + fragment files (`input_fields/`, `wrangling/`, `assembly/`). ID cleaning steps baked into `tier1:` wrangling. Gate: unzip → `debug_assembler.py` runs without error; `data_schemas:` key confirmed; `ingredients:` format confirmed; `'on':` quoted.  
-  Depends: TL-BOOTSTRAP-FIX-1, TL-IDLIB-CORE-1.
+- [x] **TL-SCAFFOLD-1** `[sonnet/medium]`: ZIP boilerplate output — `libs/test_lab/src/test_lab/scaffolder.py` (or extend bootstrapper). Input: TSV paths + `TransformationRecipe` objects. Output: ZIP with master YAML (`data_schemas:`, `join_manifests:` pre-filled, `analysis_groups: {}`) + fragment files (`input_fields/`, `wrangling/`, `assembly/`). ID cleaning steps baked into `tier1:` wrangling. Gate: unzip → `debug_assembler.py` runs without error; `data_schemas:` key confirmed; `ingredients:` format confirmed; `'on':` quoted.  
+  Depends: TL-BOOTSTRAP-FIX-1, TL-IDLIB-CORE-1. ✅ 2026-05-22 — 15/15 gate tests pass.
 
 #### 34-E — Synthetic Data Upgrade
 

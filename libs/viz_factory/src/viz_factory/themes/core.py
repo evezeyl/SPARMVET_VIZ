@@ -47,6 +47,8 @@ _THEME_BASE_PARAMS = {
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_gray"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "ggplot2 default theme with grey panel background and white gridlines; familiar to R users but less clean than theme_bw for publications.",
+    "yaml_example": "layers:\n  - name: theme_gray",
 })
 def handle_theme_gray(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_gray, spec)
@@ -60,6 +62,8 @@ def handle_theme_gray(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_bw"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Black-and-white theme with white background and dark gridlines; a good default for publications and reports.",
+    "yaml_example": "layers:\n  - name: theme_bw",
 })
 def handle_theme_bw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_bw, spec)
@@ -73,6 +77,8 @@ def handle_theme_bw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_linedraw"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Theme with white background and black lines/ticks only; the cleanest monochrome option for print output.",
+    "yaml_example": "layers:\n  - name: theme_linedraw",
 })
 def handle_theme_linedraw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_linedraw, spec)
@@ -86,6 +92,8 @@ def handle_theme_linedraw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_light"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Light grey axes and gridlines on white background; a clean default that is lighter than theme_bw \u2014 use for dashboard or web output.",
+    "yaml_example": "layers:\n  - name: theme_light",
 })
 def handle_theme_light(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_light, spec)
@@ -99,6 +107,8 @@ def handle_theme_light(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_minimal"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Minimal theme with no background annotations; maximises data-ink ratio \u2014 use for clean figures in manuscripts.",
+    "yaml_example": "layers:\n  - name: theme_minimal",
 })
 def handle_theme_minimal(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_minimal, spec)
@@ -112,6 +122,8 @@ def handle_theme_minimal(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_classic"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Classic axes-only theme (no gridlines, no panel border background); the standard for journal figures in many life-science journals.",
+    "yaml_example": "layers:\n  - name: theme_classic",
 })
 def handle_theme_classic(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_classic, spec)
@@ -125,6 +137,8 @@ def handle_theme_classic(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_void"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Empty theme with no axes or background; use for network plots, map layers, or any visualisation that supplies its own spatial context.",
+    "yaml_example": "layers:\n  - name: theme_void",
 })
 def handle_theme_void(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_void, spec)
@@ -138,6 +152,8 @@ def handle_theme_void(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_dark"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Dark grey panel background; use for screen display when a dark UI background makes a dark plot less jarring.",
+    "yaml_example": "layers:\n  - name: theme_dark",
 })
 def handle_theme_dark(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_dark, spec)
@@ -151,6 +167,8 @@ def handle_theme_dark(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_538"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "FiveThirtyEight-style theme with soft gridlines and custom fonts; use for editorial data journalism aesthetics.",
+    "yaml_example": "layers:\n  - name: theme_538",
 })
 def handle_theme_538(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_538, spec)
@@ -164,6 +182,8 @@ def handle_theme_538(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_matplotlib"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Matplotlib default theme; use when visual consistency with Python matplotlib output is needed.",
+    "yaml_example": "layers:\n  - name: theme_matplotlib",
 })
 def handle_theme_matplotlib(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_matplotlib, spec)
@@ -177,6 +197,8 @@ def handle_theme_matplotlib(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_seaborn"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Seaborn-style theme with whitegrid aesthetic; use when visual consistency with seaborn output is needed.",
+    "yaml_example": "layers:\n  - name: theme_seaborn",
 })
 def handle_theme_seaborn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_seaborn, spec)
@@ -190,6 +212,8 @@ def handle_theme_seaborn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_tufte"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "Edward Tufte's minimalist theme with no gridlines and axis spines removed; use for highly data-dense tables-as-charts.",
+    "yaml_example": "layers:\n  - name: theme_tufte",
 })
 def handle_theme_tufte(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_tufte, spec)
@@ -203,6 +227,8 @@ def handle_theme_tufte(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_xkcd"]}],
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
+    "description": "xkcd webcomic-style hand-drawn theme; use for informal or illustrative figures only \u2014 not for scientific publications.",
+    "yaml_example": "layers:\n  - name: theme_xkcd",
 })
 def handle_theme_xkcd(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + _apply_theme_safely(theme_xkcd, spec)
@@ -219,6 +245,8 @@ def handle_theme_xkcd(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 14},
         "base_family": {"widget": "string", "label": "Base font family", "required": False},
     },
+    "description": "SPARMVET custom dashboard theme tuned for app display; the default theme in SPARMVET manifests \u2014 omit for the platform default.",
+    "yaml_example": "layers:\n  - name: theme_dashboard",
 })
 def handle_theme_dashboard(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec.setdefault("base_size", 14)
@@ -236,6 +264,8 @@ def handle_theme_dashboard(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 11},
         "base_family": {"widget": "string", "label": "Base font family", "required": False},
     },
+    "description": "SPARMVET custom publication theme with minimal gridlines and increased font sizes; use when preparing figures for manuscripts.",
+    "yaml_example": "layers:\n  - name: theme_publication",
 })
 def handle_theme_publication(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec.setdefault("base_size", 11)
@@ -253,6 +283,8 @@ def handle_theme_publication(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "position": {"widget": "enum", "label": "Legend position", "required": True,
                      "default": "right", "options": ["top", "bottom", "left", "right", "none"]},
     },
+    "description": "Move the legend to a named position (top, bottom, left, right, none); use as a lightweight alternative to a full theme_custom call.",
+    "yaml_example": "layers:\n  - name: theme_legend_position\n    params:\n      position: bottom",
 })
 def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     pos = spec.get("position", "right")
@@ -267,6 +299,8 @@ def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["theme"]}],
     "allow_extra_params": True,
     "params": {},
+    "description": "Arbitrary theme() override; use to adjust any individual theme element when none of the named themes or element_* layers provide enough control.",
+    "yaml_example": "layers:\n  - name: theme_custom\n    params:\n      axis_text_x: {angle: 45, hjust: 1}",
 })
 def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     theme_kwargs = {}
@@ -306,6 +340,8 @@ def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "hjust": {"widget": "number", "label": "Horizontal justification (0–1)", "required": False},
         "vjust": {"widget": "number", "label": "Vertical justification (0–1)", "required": False},
     },
+    "description": "Customise a specific text element (axis labels, title, strip text); use inside theme_custom or directly to rotate axis text or change font size.",
+    "yaml_example": "layers:\n  - name: element_text\n    params:\n      target: axis_text_x\n      angle: 45\n      hjust: 1",
 })
 def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme text modifier. Requires 'target'."""
@@ -330,6 +366,8 @@ def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "linetype": {"widget": "enum", "label": "Line type", "required": False,
                      "options": ["solid", "dashed", "dotted", "dotdash", "longdash", "twodash"]},
     },
+    "description": "Customise a specific line element (gridlines, axis lines); use to change gridline colour, thickness, or linetype for a particular theme element.",
+    "yaml_example": "layers:\n  - name: element_line\n    params:\n      target: panel_grid_major\n      colour: '#eeeeee'",
 })
 def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme line modifier. Requires 'target'."""
@@ -353,6 +391,8 @@ def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "colour": {"widget": "color", "label": "Border colour", "required": False},
         "size": {"widget": "number", "label": "Border line width", "required": False},
     },
+    "description": "Customise a specific rectangle element (panel background, legend background); use to change background fills or border colours.",
+    "yaml_example": "layers:\n  - name: element_rect\n    params:\n      target: panel_background\n      fill: white",
 })
 def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme rect modifier. Requires 'target'."""
@@ -373,6 +413,8 @@ def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "target": {"widget": "string", "label": "Theme target to remove (e.g. axis_text_x, panel_grid)", "required": True},
     },
+    "description": "Remove a theme element entirely (make it invisible); use to hide axis lines, gridlines, or strip backgrounds.",
+    "yaml_example": "layers:\n  - name: element_blank\n    params:\n      target: panel_grid_minor",
 })
 def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme blank modifier. Requires 'target'."""
@@ -400,6 +442,8 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "label": {"widget": "string", "label": "X-axis label text", "required": True},
     },
+    "description": "Set the x-axis label; a shorthand alternative to using labs with an x= parameter.",
+    "yaml_example": "layers:\n  - name: xlab\n    params:\n      label: Year of isolation",
 })
 def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the x-axis label.
@@ -422,6 +466,8 @@ def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "label": {"widget": "string", "label": "Y-axis label text", "required": True},
     },
+    "description": "Set the y-axis label; a shorthand alternative to using labs with a y= parameter.",
+    "yaml_example": "layers:\n  - name: ylab\n    params:\n      label: Number of isolates",
 })
 def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the y-axis label."""
@@ -441,6 +487,8 @@ def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "title": {"widget": "string", "label": "Plot title text", "required": True},
         "subtitle": {"widget": "string", "label": "Subtitle (below title)", "required": False},
     },
+    "description": "Set the plot title and optional subtitle; a shorthand alternative to labs(title=..., subtitle=...).",
+    "yaml_example": "layers:\n  - name: ggtitle\n    params:\n      label: AMR prevalence by year",
 })
 def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the plot title (and optional subtitle)."""
@@ -473,6 +521,8 @@ def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "size": {"widget": "number", "label": "Size", "required": False},
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False},
     },
+    "description": "Add a single annotation geometry (text, rect, segment) at specified coordinates without a data source; use for static annotations like significance brackets.",
+    "yaml_example": "layers:\n  - name: annotate\n    params:\n      geom: text\n      x: 2020\n      y: 80\n      label: 'n=42'",
 })
 def handle_annotate(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Add a free-form annotation layer (text, segment, rect, etc.).

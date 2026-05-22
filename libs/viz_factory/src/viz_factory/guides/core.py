@@ -34,6 +34,8 @@ from viz_factory.registry import register_plot_component
         "alpha": {"widget": "enum", "label": "Alpha guide", "required": False,
                   "options": ["legend", "none"]},
     },
+    "description": "Control the guide (legend) for multiple aesthetics at once; use instead of individual scale guide= params when you need to configure several guides together.",
+    "yaml_example": "layers:\n  - name: guides\n    params:\n      color: legend\n      fill: colorbar",
 })
 def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -73,6 +75,8 @@ def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "label_position": {"widget": "enum", "label": "Key label position", "required": False,
                            "default": "right", "options": ["top", "bottom", "left", "right"]},
     },
+    "description": "Render a discrete guide as a key-legend; the default for categorical fill/colour \u2014 configure nrow, ncol, or key size here.",
+    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: legend",
 })
 def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -101,6 +105,8 @@ def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "nbin": {"widget": "number", "label": "Number of color bins", "required": False, "default": 300},
         "reverse": {"widget": "bool", "label": "Reverse colorbar direction", "required": False, "default": False},
     },
+    "description": "Render a continuous guide as a gradient colour bar; use with continuous fill/colour scales to show the value range.",
+    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: colorbar",
 })
 def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -127,6 +133,8 @@ def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "barwidth": {"widget": "number", "label": "Bar width (grid units)", "required": False},
         "barheight": {"widget": "number", "label": "Bar height (grid units)", "required": False},
     },
+    "description": "British spelling alias for guide_colorbar; identical behaviour \u2014 use whichever spelling is consistent with the rest of your manifest.",
+    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: colourbar",
 })
 def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Alias for guide_colorbar."""
@@ -143,6 +151,8 @@ def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic to hide guide for (e.g. color, fill)", "required": True},
     },
+    "description": "Suppress a guide entirely; use when the legend adds no information (e.g. fill is redundant with a text label or facet strip).",
+    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: none",
 })
 def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -167,6 +177,8 @@ def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "nrow": {"widget": "number", "label": "Number of rows in legend", "required": True},
     },
+    "description": "Set the number of rows in a legend; use to control legend layout when many categories would produce an overly tall legend.",
+    "yaml_example": "layers:\n  - name: guide_nrow\n    params:\n      nrow: 2",
 })
 def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -192,6 +204,8 @@ def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "ncol": {"widget": "number", "label": "Number of columns in legend", "required": True},
     },
+    "description": "Set the number of columns in a legend; use to arrange legend keys horizontally when legend width is constrained.",
+    "yaml_example": "layers:\n  - name: guide_ncol\n    params:\n      ncol: 3",
 })
 def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -217,6 +231,8 @@ def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "title": {"widget": "string", "label": "Legend title text", "required": True},
     },
+    "description": "Override the title of a specific guide; use when the default column name would be unclear to report readers.",
+    "yaml_example": "layers:\n  - name: guide_title\n    params:\n      title: Resistance class",
 })
 def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set title for a guide."""
@@ -240,6 +256,8 @@ def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "labels": {"widget": "bool", "label": "Show labels", "required": False, "default": True},
     },
+    "description": "Override the labels shown in a guide; use to recode technical column values to human-readable names without modifying source data.",
+    "yaml_example": "layers:\n  - name: guide_label\n    params:\n      labels: [Susceptible, Resistant]",
 })
 def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to toggle/format labels for a guide."""
@@ -263,6 +281,8 @@ def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "direction": {"widget": "enum", "label": "Legend direction", "required": True,
                       "default": "horizontal", "options": ["horizontal", "vertical"]},
     },
+    "description": "Set the guide layout direction to horizontal or vertical; use horizontal for a legend placed below or above the plot.",
+    "yaml_example": "layers:\n  - name: guide_direction\n    params:\n      direction: horizontal",
 })
 def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set direction for a guide."""
@@ -285,6 +305,8 @@ def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "reverse": {"widget": "bool", "label": "Reverse legend key order", "required": False, "default": True},
     },
+    "description": "Reverse the order of legend keys; use when the natural ordering of a factor places the most important category at the bottom of the legend.",
+    "yaml_example": "layers:\n  - name: guide_reverse\n    params:\n      reverse: true",
 })
 def handle_guide_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to reverse a guide."""

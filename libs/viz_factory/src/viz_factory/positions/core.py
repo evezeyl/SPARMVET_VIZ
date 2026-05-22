@@ -34,6 +34,8 @@ def _apply_position(p: ggplot, pos_obj: Any) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["position_identity"]}],
     "allow_extra_params": False,
     "params": {},
+    "description": "Do not adjust point positions (default for most geoms); use explicitly only when overriding a stacked or dodged default.",
+    "yaml_example": "layers:\n  - name: geom_bar\n  - name: position_identity",
 })
 def handle_position_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Default position (no adjustment)."""
@@ -51,6 +53,8 @@ def handle_position_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "vjust": {"widget": "number", "label": "Vertical justification (0–1)", "required": False, "default": 0.5},
         "reverse": {"widget": "bool", "label": "Reverse stacking order", "required": False, "default": False},
     },
+    "description": "Stack bars or areas on top of each other; the default for multi-group geom_bar \u2014 use to show part-to-whole composition.",
+    "yaml_example": "layers:\n  - name: geom_bar\n  - name: position_stack",
 })
 def handle_position_stack(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Stack objects on top of each other."""
@@ -68,6 +72,8 @@ def handle_position_stack(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "vjust": {"widget": "number", "label": "Vertical justification (0–1)", "required": False, "default": 0.5},
         "reverse": {"widget": "bool", "label": "Reverse stacking order", "required": False, "default": False},
     },
+    "description": "Stack and normalise to 100%; use for 100% stacked bar charts comparing proportions across categories.",
+    "yaml_example": "layers:\n  - name: geom_bar\n  - name: position_fill",
 })
 def handle_position_fill(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Stack objects and standardize to 100% height."""
@@ -84,6 +90,8 @@ def handle_position_fill(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "width": {"widget": "number", "label": "Dodging width (default: None = uses geom width)", "required": False},
     },
+    "description": "Place grouped bars side by side; the most common position for grouped bar charts.",
+    "yaml_example": "layers:\n  - name: geom_bar\n  - name: position_dodge",
 })
 def handle_position_dodge(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Place objects side-by-side."""
@@ -104,6 +112,8 @@ def handle_position_dodge(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "padding": {"widget": "number", "label": "Gap between dodged elements (0–1)", "required": False, "default": 0.1},
         "reverse": {"widget": "bool", "label": "Reverse dodge order", "required": False, "default": False},
     },
+    "description": "Like position_dodge but with padding between groups; use when bars from different groups touch and you want visual separation.",
+    "yaml_example": "layers:\n  - name: geom_bar\n  - name: position_dodge2\n    params:\n      padding: 0.1",
 })
 def handle_position_dodge2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Enhanced dodging for varying widths."""
@@ -122,6 +132,8 @@ def handle_position_dodge2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "height": {"widget": "number", "label": "Jitter height (vertical amount)", "required": False, "default": 0.4},
         "random_state": {"widget": "number", "label": "Random seed for reproducibility", "required": False},
     },
+    "description": "Add random noise to point positions to reduce overplotting; use with geom_point for categorical scatter \u2014 prefer geom_sina for publication.",
+    "yaml_example": "layers:\n  - name: geom_point\n  - name: position_jitter\n    params:\n      width: 0.2",
 })
 def handle_position_jitter(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Add random noise to prevent overplotting."""
@@ -141,6 +153,8 @@ def handle_position_jitter(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "dodge_width": {"widget": "number", "label": "Dodging width between groups", "required": False, "default": 0.75},
         "random_state": {"widget": "number", "label": "Random seed for reproducibility", "required": False},
     },
+    "description": "Combine jitter and dodge for grouped scatter plots overlaid on grouped bars or boxes; use when showing individual points alongside group summaries.",
+    "yaml_example": "layers:\n  - name: geom_point\n  - name: position_jitterdodge\n    params:\n      dodge_width: 0.75",
 })
 def handle_position_jitterdodge(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Combine jittering and dodging."""
@@ -158,6 +172,8 @@ def handle_position_jitterdodge(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "x": {"widget": "number", "label": "Horizontal offset", "required": False, "default": 0.0},
         "y": {"widget": "number", "label": "Vertical offset", "required": False, "default": 0.0},
     },
+    "description": "Shift points by a fixed x/y offset; use with geom_text to prevent labels from overlapping the points they annotate.",
+    "yaml_example": "layers:\n  - name: geom_text\n  - name: position_nudge\n    params:\n      y: 0.5",
 })
 def handle_position_nudge(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Shift points by fixed offset."""
