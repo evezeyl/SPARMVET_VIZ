@@ -438,7 +438,7 @@ class Bootloader:
         # Group B: interactivity_enabled=False suppresses all interactive child flags.
         if not features.get("interactivity_enabled", False):
             for child in ("t3_sandbox_enabled", "comparison_mode_enabled",
-                          "session_management_enabled", "audit_report_enabled"):
+                          "session_management_enabled"):
                 if features.get(child, False):
                     print(
                         f"[Bootloader] WARNING: {child}=True ignored — "

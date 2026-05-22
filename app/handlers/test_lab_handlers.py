@@ -1,6 +1,6 @@
 # @deps
 # provides: function:define_server (test_lab_handlers)
-# consumes: app/modules/test_lab_studio.py, shiny, libs/test_lab/reformatter.py, libs/test_lab/aqua_synthesizer.py, libs/test_lab/anonymiser.py
+# consumes: app/modules/test_lab_studio.py, shiny, libs/test_lab/reformatter.py, libs/test_lab/aqua_synthesizer.py, libs/test_lab/anonymiser.py, libs/test_lab/scaffolder.py, libs/id_reconciliation/
 # consumed_by: app/src/server.py
 # doc: .claude/rules/rules_test_lab.md §6, .claude/design/spaces/TEST_LAB.md
 # @end_deps
@@ -35,21 +35,485 @@ def define_server(
 ) -> None:
     """Register all @render.* and @reactive.* for the TEST_LAB workspace."""
 
+    # ── ID Reconciliation (TL-UI-RECONCILE-1) ────────────────────────────
+
+    def _recon_read_cols(info: dict) -> list[str]:
+        try:
+            sep = "\t" if Path(info["name"]).suffix.lower() == ".tsv" else ","
+            return pl.read_csv(info["datapath"], separator=sep, n_rows=0).columns
+        except Exception:
+            return []
+
+    def _recon_read_ids(info: dict, col: str) -> list[str]:
+        sep = "\t" if Path(info["name"]).suffix.lower() == ".tsv" else ","
+        df = pl.read_csv(info["datapath"], separator=sep, infer_schema_length=0)
+        return df[col].drop_nulls().cast(pl.Utf8).unique().to_list()
+
     @output
     @render.ui
     def tl_reconcile_ui():
+        return ui.div(
+            ui.p(
+                "Upload two TSV/CSV files to reconcile their ID columns (pairwise matching).",
+                class_="text-muted small",
+            ),
+            ui.input_file(
+                "tl_recon_file1", "Reference file",
+                accept=[".tsv", ".csv", ".txt"], multiple=False,
+            ),
+            ui.input_file(
+                "tl_recon_file2", "Target file",
+                accept=[".tsv", ".csv", ".txt"], multiple=False,
+            ),
+            ui.output_ui("tl_recon_columns_ui"),
+            ui.input_action_button(
+                "tl_recon_precheck", "PRE-CHECK",
+                class_="btn btn-primary btn-sm mt-2",
+            ),
+            ui.output_ui("tl_recon_precheck_result_ui"),
+            ui.input_action_button(
+                "tl_recon_run", "Reconcile",
+                class_="btn btn-primary btn-sm mt-1",
+            ),
+            ui.output_ui("tl_recon_status_ui"),
+            ui.output_ui("tl_recon_m2m_ui"),
+            ui.output_ui("tl_recon_patterns_ui"),
+            ui.output_ui("tl_recon_threshold_ui"),
+            ui.output_data_frame("tl_recon_table"),
+            ui.download_button(
+                "tl_recon_download", "Download Recipe YAML",
+                class_="btn btn-primary btn-sm mt-2",
+            ),
+            class_="p-2",
+        )
+
+    @reactive.Calc
+    def _recon_file1_info():
+        f = input.tl_recon_file1()
+        return f[0] if f else None
+
+    @reactive.Calc
+    def _recon_file2_info():
+        f = input.tl_recon_file2()
+        return f[0] if f else None
+
+    @reactive.Calc
+    def _recon_cols1():
+        info = _recon_file1_info()
+        return _recon_read_cols(info) if info is not None else []
+
+    @reactive.Calc
+    def _recon_cols2():
+        info = _recon_file2_info()
+        return _recon_read_cols(info) if info is not None else []
+
+    @output
+    @render.ui
+    def tl_recon_columns_ui():
+        cols1 = _recon_cols1()
+        cols2 = _recon_cols2()
+        if not cols1 or not cols2:
+            return ui.p("Upload both files to select ID columns.", class_="text-muted small")
+        return ui.div(
+            ui.input_select(
+                "tl_recon_ref_col", "Reference ID column",
+                choices=cols1, selected=cols1[0],
+            ),
+            ui.input_select(
+                "tl_recon_target_col", "Target ID column",
+                choices=cols2, selected=cols2[0],
+            ),
+        )
+
+    @reactive.Calc
+    @reactive.event(input.tl_recon_precheck)
+    def _recon_precheck():
+        from id_reconciliation import IDReconciliationEngine
+        info1 = _recon_file1_info()
+        info2 = _recon_file2_info()
+        if info1 is None or info2 is None:
+            return None
+        try:
+            ref_col = input.tl_recon_ref_col()
+            target_col = input.tl_recon_target_col()
+        except Exception:
+            return None
+        ref_ids = _recon_read_ids(info1, ref_col)
+        target_ids = _recon_read_ids(info2, target_col)
+        return IDReconciliationEngine().precheck_compatibility(ref_ids, target_ids)
+
+    @output
+    @render.ui
+    def tl_recon_precheck_result_ui():
+        if input.tl_recon_precheck() == 0:
+            return ui.div()
+        chk = _recon_precheck()
+        if chk is None:
+            return ui.p(
+                "Upload both files and select columns first.",
+                class_="text-warning small mt-1",
+            )
+        cleaning = "yes" if chk["needs_cleaning"] else "no"
+        n_sugg = len(chk["top_suggestions"])
+        msg = (
+            f"Pre-check: {chk['overlap_count']} / {chk['total_ref']} IDs overlap "
+            f"({chk['overlap_pct']}%). "
+            f"Unmatched: {chk['unmatched_count']}. "
+            f"Cleaning needed: {cleaning}. "
+            f"Pattern suggestions: {n_sugg}."
+        )
+        return ui.p(msg, class_="text-muted small mt-1")
+
+    @reactive.Calc
+    @reactive.event(input.tl_recon_run)
+    def _recon_results():
+        from id_reconciliation import IDReconciliationEngine
+        info1 = _recon_file1_info()
+        info2 = _recon_file2_info()
+        if info1 is None or info2 is None:
+            return None
+        try:
+            ref_col = input.tl_recon_ref_col()
+            target_col = input.tl_recon_target_col()
+        except Exception:
+            return None
+        ref_ids = _recon_read_ids(info1, ref_col)
+        target_ids = _recon_read_ids(info2, target_col)
+        return IDReconciliationEngine().reconcile(ref_ids, target_ids)
+
+    @output
+    @render.ui
+    def tl_recon_status_ui():
+        if input.tl_recon_run() == 0:
+            return ui.div()
+        results = _recon_results()
+        if results is None:
+            return ui.p(
+                "Upload both files and select columns first.",
+                class_="text-warning small mt-1",
+            )
+        from collections import Counter
+        counts = Counter(r.match_type for r in results)
+        parts = " | ".join(f"{t}: {n}" for t, n in sorted(counts.items()))
         return ui.p(
-            "ID Reconciliation — not yet implemented (TL-UI-RECONCILE-1).",
-            class_="text-muted small p-2",
+            f"Reconciliation complete — {len(results)} ref IDs. {parts}.",
+            class_="text-muted small mt-1",
         )
 
     @output
     @render.ui
-    def tl_scaffold_ui():
-        return ui.p(
-            "Manifest Scaffolding — not yet implemented (TL-UI-SCAFFOLD-1).",
-            class_="text-muted small p-2",
+    def tl_recon_m2m_ui():
+        if input.tl_recon_run() == 0:
+            return ui.div()
+        results = _recon_results()
+        if not results:
+            return ui.div()
+        from id_reconciliation import detect_many_to_many
+        m2m = detect_many_to_many(results)
+        if not m2m:
+            return ui.div()
+        preview = ", ".join(list(m2m.keys())[:5])
+        extra = f" and {len(m2m) - 5} more" if len(m2m) > 5 else ""
+        return ui.div(
+            ui.p(
+                f"Warning: {len(m2m)} ref IDs match multiple targets ({preview}{extra}). "
+                "A written reason is required before downloading the recipe.",
+                class_="text-warning small mt-1",
+            ),
+            ui.input_text_area(
+                "tl_recon_m2m_reason",
+                "Reason for accepting many-to-many matches",
+                placeholder="Explain why these IDs match multiple targets...",
+                rows=3,
+            ),
         )
+
+    @output
+    @render.ui
+    def tl_recon_patterns_ui():
+        if input.tl_recon_run() == 0:
+            return ui.div()
+        results = _recon_results()
+        if not results:
+            return ui.div()
+        applied = list(dict.fromkeys(
+            r.transform_applied for r in results
+            if r.match_type == "pattern" and r.transform_applied
+        ))
+        if not applied:
+            return ui.div()
+        items = [ui.tags.li(t, class_="small") for t in applied]
+        return ui.div(
+            ui.p("Patterns applied during matching:", class_="text-muted small mt-2"),
+            ui.tags.ul(*items, class_="text-muted"),
+        )
+
+    @output
+    @render.ui
+    def tl_recon_threshold_ui():
+        if input.tl_recon_run() == 0:
+            return ui.div()
+        results = _recon_results()
+        if not results:
+            return ui.div()
+        return ui.div(
+            ui.input_slider(
+                "tl_recon_threshold",
+                "Minimum certainty to include in recipe (1.0 = exact matches only)",
+                min=0.5, max=1.0, value=0.7, step=0.05,
+            ),
+            class_="mt-2",
+        )
+
+    @output
+    @render.data_frame
+    def tl_recon_table():
+        if input.tl_recon_run() == 0:
+            return None
+        results = _recon_results()
+        if not results:
+            return None
+        from id_reconciliation import format_match_table
+        return render.DataGrid(format_match_table(results).to_pandas(), width="100%")
+
+    @render.download(filename=lambda: "reconciliation_recipe.yaml")
+    async def tl_recon_download():
+        from id_reconciliation import IDReconciliationEngine, detect_many_to_many
+        results = _recon_results()
+        if not results:
+            yield b""
+            return
+        try:
+            threshold = float(input.tl_recon_threshold())
+        except Exception:
+            threshold = 0.7
+        try:
+            ref_col = input.tl_recon_ref_col()
+            target_col = input.tl_recon_target_col()
+        except Exception:
+            ref_col = "ref_id"
+            target_col = "target_id"
+        filtered = [r for r in results if r.certainty >= threshold]
+        engine = IDReconciliationEngine()
+        recipe = engine.generate_recipe(filtered, ref_col, target_col)
+        m2m = detect_many_to_many(results)
+        if m2m:
+            try:
+                reason = input.tl_recon_m2m_reason()
+                if reason:
+                    recipe.metadata["many_to_many_reason"] = reason
+            except Exception:
+                pass
+        yield recipe.to_yaml().encode()
+
+    # ── end TL-UI-RECONCILE-1 ────────────────────────────────────────────
+
+    # ── Manifest Scaffolding (TL-UI-SCAFFOLD-1) ──────────────────────────
+
+    @output
+    @render.ui
+    def tl_scaffold_ui():
+        return ui.div(
+            ui.input_text(
+                "tl_scaffold_project_id",
+                "Project ID (snake_case)",
+                placeholder="my_project",
+            ),
+            ui.input_file(
+                "tl_scaffold_files",
+                "Data TSV/CSV files (one or more)",
+                accept=[".tsv", ".csv", ".txt"],
+                multiple=True,
+            ),
+            ui.input_file(
+                "tl_scaffold_meta_file",
+                "Metadata TSV (optional — generates metadata_schema stub)",
+                accept=[".tsv", ".csv", ".txt"],
+                multiple=False,
+            ),
+            ui.input_text(
+                "tl_scaffold_join_key",
+                "Join key column",
+                value="sample_id",
+                placeholder="e.g. sample_id",
+            ),
+            ui.output_ui("tl_scaffold_recon_ui"),
+            ui.input_action_button(
+                "tl_scaffold_run", "Scaffold Manifest",
+                class_="btn btn-primary btn-sm mt-2",
+            ),
+            ui.output_ui("tl_scaffold_status_ui"),
+            ui.download_button(
+                "tl_scaffold_download", "Download manifest ZIP",
+                class_="btn btn-primary btn-sm mt-1",
+            ),
+            class_="p-2",
+        )
+
+    @reactive.Calc
+    def _scaffold_file_infos():
+        files = input.tl_scaffold_files()
+        return list(files) if files else []
+
+    @reactive.Calc
+    def _scaffold_meta_info():
+        f = input.tl_scaffold_meta_file()
+        return f[0] if f else None
+
+    @output
+    @render.ui
+    def tl_scaffold_recon_ui():
+        """Show bake-in-reconciliation controls only when reconciliation results exist."""
+        results = _recon_results()
+        if not results:
+            return ui.div()
+        return ui.div(
+            ui.input_checkbox(
+                "tl_scaffold_use_recon",
+                "Bake in ID Reconciliation steps from above",
+                value=False,
+            ),
+            ui.output_ui("tl_scaffold_recon_dataset_ui"),
+            class_="mt-2 border-top pt-2",
+        )
+
+    @output
+    @render.ui
+    def tl_scaffold_recon_dataset_ui():
+        try:
+            use = bool(input.tl_scaffold_use_recon())
+        except Exception:
+            return ui.div()
+        if not use:
+            return ui.div()
+        infos = _scaffold_file_infos()
+        if not infos:
+            return ui.p("Upload files above to select target dataset.", class_="text-muted small")
+        stems = [Path(fi["name"]).stem for fi in infos]
+        return ui.input_select(
+            "tl_scaffold_recon_dataset",
+            "Apply recipe steps to dataset",
+            choices={s: s for s in stems},
+            selected=stems[0],
+        )
+
+    @reactive.Calc
+    @reactive.event(input.tl_scaffold_run)
+    def _scaffold_result():
+        from test_lab.scaffolder import ManifestScaffolder
+
+        try:
+            project_id = (input.tl_scaffold_project_id() or "").strip()
+        except Exception:
+            project_id = ""
+        if not project_id:
+            return {"error": "Enter a project ID before scaffolding."}
+
+        infos = _scaffold_file_infos()
+        if not infos:
+            return {"error": "Upload at least one data file before scaffolding."}
+
+        tsv_paths = [Path(fi["datapath"]) for fi in infos]
+
+        meta_info = _scaffold_meta_info()
+        meta_path = Path(meta_info["datapath"]) if meta_info else None
+
+        try:
+            join_key = (input.tl_scaffold_join_key() or "sample_id").strip()
+        except Exception:
+            join_key = "sample_id"
+
+        # Build recipes dict from reconciliation result if requested
+        recipes = None
+        with_recon_dataset = None
+        try:
+            use_recon = bool(input.tl_scaffold_use_recon())
+        except Exception:
+            use_recon = False
+
+        if use_recon:
+            results = _recon_results()
+            if results:
+                from id_reconciliation import IDReconciliationEngine
+                try:
+                    threshold = float(input.tl_recon_threshold())
+                except Exception:
+                    threshold = 0.7
+                try:
+                    ref_col = input.tl_recon_ref_col()
+                    target_col = input.tl_recon_target_col()
+                except Exception:
+                    ref_col = join_key
+                    target_col = join_key
+                try:
+                    dataset_key = input.tl_scaffold_recon_dataset()
+                except Exception:
+                    dataset_key = Path(infos[0]["name"]).stem
+                filtered = [r for r in results if r.certainty >= threshold]
+                if filtered:
+                    engine = IDReconciliationEngine()
+                    recipe = engine.generate_recipe(filtered, ref_col, target_col)
+                    recipes = {dataset_key: recipe.steps}
+                    with_recon_dataset = dataset_key
+
+        scaffolder = ManifestScaffolder(join_key=join_key)
+        zip_bytes = scaffolder.scaffold(
+            tsv_paths, project_id,
+            recipes=recipes,
+            metadata_path=meta_path,
+        )
+        return {
+            "zip_bytes": zip_bytes,
+            "project_id": project_id,
+            "n_files": len(tsv_paths),
+            "with_meta": meta_path is not None,
+            "with_recon_dataset": with_recon_dataset,
+        }
+
+    @output
+    @render.ui
+    def tl_scaffold_status_ui():
+        if input.tl_scaffold_run() == 0:
+            return ui.p(
+                "Fill in the form and click Scaffold Manifest.",
+                class_="text-muted small mt-1",
+            )
+        result = _scaffold_result()
+        if result is None:
+            return ui.p("No result — check inputs.", class_="text-warning small mt-1")
+        if "error" in result:
+            return ui.p(result["error"], class_="text-warning small mt-1")
+        n = result["n_files"]
+        pid = result["project_id"]
+        meta_note = " + metadata schema stub" if result["with_meta"] else ""
+        recon_note = (
+            f" ID Reconciliation steps baked into '{result['with_recon_dataset']}'."
+            if result["with_recon_dataset"] else ""
+        )
+        return ui.p(
+            f"Scaffolded '{pid}' — {n} data schema(s){meta_note}.{recon_note} "
+            "Download the ZIP and open in BLUEPRINT to continue.",
+            class_="text-muted small mt-1",
+        )
+
+    @render.download(filename=lambda: _scaffold_download_filename())
+    async def tl_scaffold_download():
+        result = _scaffold_result()
+        if result is None or "error" in result:
+            yield b""
+            return
+        yield result["zip_bytes"]
+
+    def _scaffold_download_filename():
+        result = _scaffold_result()
+        if result is None or "error" in result:
+            return "manifest_scaffold.zip"
+        from datetime import datetime
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        pid = result.get("project_id", "scaffold")
+        return f"{ts}_{pid}_manifest.zip"
+
+    # ── end TL-UI-SCAFFOLD-1 ─────────────────────────────────────────────
 
     # ── Synthetic Data (TL-UI-SYNTH-1) ──────────────────────────────────
 

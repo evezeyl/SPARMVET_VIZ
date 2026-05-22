@@ -44,7 +44,6 @@ features:
   # Show/hide sidebar accordion panels
   # Show active persona name in nav header
   show_persona_badge: true
-  audit_report_enabled: true
 
 manifest_selector:
   visible: true

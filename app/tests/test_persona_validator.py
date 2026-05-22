@@ -15,7 +15,6 @@ _FULL_FEATURES = {
     "session_management_enabled": False,
     "import_helper_enabled": False,
     "export_enabled": True,
-    "audit_report_enabled": False,
     "metadata_ingestion_enabled": False,
     "data_ingestion_enabled": False,
 }
@@ -140,16 +139,14 @@ def test_child_true_master_false_warns_interactivity(capsys):
 
 
 def test_multiple_children_warn_when_master_false(capsys):
-    """Multiple child flags True with interactivity_enabled=False → warning for each."""
+    """Child flag True with interactivity_enabled=False → warning."""
     t, path = _tmpl(overrides={
         "interactivity_enabled": False,
         "session_management_enabled": True,
-        "audit_report_enabled": True,
     })
     V.validate(t, path)
     captured = capsys.readouterr()
     assert "session_management_enabled" in captured.out
-    assert "audit_report_enabled" in captured.out
 
 
 def test_data_ingestion_true_import_helper_false_warns(capsys):
@@ -186,7 +183,6 @@ def test_child_false_master_false_no_warning(capsys):
         "interactivity_enabled": False,
         "comparison_mode_enabled": False,
         "session_management_enabled": False,
-        "audit_report_enabled": False,
     })
     V.validate(t, path)
     captured = capsys.readouterr()

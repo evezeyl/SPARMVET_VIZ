@@ -32,7 +32,6 @@ features:
   # Can the user export results (bundle zip + scope toggle)?
   export_enabled: true
   # Can the user export the consolidated audit report (HTML/PDF/DOCX)?
-  audit_report_enabled: true
   # Can the user upload replacement metadata (triggers T1 rebuild)?
   metadata_ingestion_enabled: true
   # Can the user ingest raw data files / Excel uploads?

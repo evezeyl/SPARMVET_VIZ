@@ -23,7 +23,9 @@ These flags are always meaningful regardless of any other flag.
 | Flag | Default (static) | Effect when true |
 |---|---|---|
 | `export_enabled` | `true` | Export accordion panel: bundle zip + 3-way scope toggle. Gates the full panel. (`demo-vetinst`/`web-demo`: `false`) |
-| `audit_report_enabled` | `false` | **DEPRECATED (2026-05-04, removal task: LEGACY-AUDIT-FLAG-1).** UI ignores this flag — T3 audit trail is auto-included in `report.qmd`. Flag retained in validator only for backwards compat with existing templates. Do not add to new templates. |
+
+> **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22):** `audit_report_enabled` flag has been deleted from all persona templates, `PersonaValidator`, and `Bootloader`. The T3 audit trail is auto-included in `report.qmd` with no flag gating. Templates that still declare this key should remove it.
+> **Tombstone expires:** Phase 36 (delete this block after two phases)
 
 No dependencies. Safe to enable in any persona.
 
@@ -117,7 +119,6 @@ Eight personas exist (`config/ui/templates/`):
 | `comparison_mode_enabled` | false | false | true | false | true | true | true | true |
 | `session_management_enabled` | false | false | true | false | true | true | true | true |
 | `export_enabled` | true | false | true | false | true | true | true | true |
-| `audit_report_enabled` | false | false | false | false | true | true | true | true |
 | `metadata_ingestion_enabled` | false | false | false | false | true | true | true | true |
 | `import_helper_enabled` | false | false | false | false | false | true | true | true |
 | `data_ingestion_enabled` | false | false | false | false | false | true | true | true |
@@ -163,7 +164,6 @@ All 8 persona templates declare `data_import_panel_visible: true` (6 personas) o
 1. If `interactivity_enabled == False`:
    - Force `comparison_mode_enabled = False`
    - Force `session_management_enabled = False`
-   - Force `audit_report_enabled = False`
    - Print `[Bootloader] WARNING: <flag>=True ignored — interactivity_enabled=False` for each overridden flag.
    - `export_enabled` is **NOT** forced — export is independent of interactivity (Group A).
 
@@ -187,8 +187,6 @@ All 8 persona templates declare `data_import_panel_visible: true` (6 personas) o
 6. Right sidebar suppression: enforced structurally in `server.py` / `ui.py` based on persona level string comparison — not via a flag.
 
 **Soft cascades vs fatal cascades.** §1–3 above are **soft cascades**: the bootloader silently forces the child flag to false and prints a warning. They cover Group B (interactivity) and Group C (import_helper) where many existing templates have inherited inconsistencies; converting them to fatal would break legacy configurations. §4–5 are **fatal cascades** for Group D (advanced/IDE features added in Phase 31): the principle "if off it's off, if on it's on" is enforced at validation time so the YAML state and runtime state never diverge silently. See ADR-077 for the full rationale and the migration path for converting more cascades to fatal in future.
-
-**Note on `audit_report_enabled`:** It is listed in Group A (no inter-flag dependency) because `pipeline-exploration-simple` has `interactivity_enabled=True` but `audit_report_enabled=False`. The cascade above is a safety net — it prevents a misconfigured template from showing the audit export panel in a static-mode persona. No existing template triggers this warning.
 
 **All effective (resolved) flags are accessible via `bootloader.is_enabled(flag_name: str) -> bool`.**
 

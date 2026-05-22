@@ -32,7 +32,7 @@ join_manifests:
       how: inner
     final_contract:
     - sample_id:
-        type: string
+        type: categorical
     - Sequence Type:
         type: categorical
     - Source:

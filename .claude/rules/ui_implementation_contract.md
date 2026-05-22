@@ -195,7 +195,7 @@ t3_steps:
       committed_at: "..."
 ```
 
-**No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` persona flag is **DEPRECATED (removal task: LEGACY-AUDIT-FLAG-1)** — retained in validator only for backwards compat, unused by the UI.
+**No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` persona flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `PersonaValidator`, and `Bootloader`. Tombstone expires Phase 36.
 
 **Single Graph Export accordion removed.** Superseded by the "Active plot" scope option in the 3-way toggle (see §7.3).
 
@@ -541,7 +541,7 @@ T3 ghost is never written on intermediate filter edits — only on apply or pane
 
 ### 12f. Export Report Spec
 
-**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` persona flag is **DEPRECATED (removal task: LEGACY-AUDIT-FLAG-1)** — retained in validator only for backwards compat, unused by the UI.
+**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` persona flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `PersonaValidator`, and `Bootloader`. Tombstone expires Phase 36.
 
 **Format:** `report.qmd` is a Quarto source file included in the bundle ZIP. Users render it locally with `quarto render report.qmd`. The T3 Audit Trail section is part of this file.
 
@@ -849,7 +849,7 @@ See `config/deployment/local/local_profile.yaml` for the dev template.
 
 Defined in persona templates: `config/ui/templates/<persona_id>_template.yaml`. Persona IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
 
-Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `audit_report_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `developer_mode_enabled`, `gallery_enabled`.
+Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `developer_mode_enabled`, `gallery_enabled`.
 
 See `rules_persona_feature_flags.md` for the authoritative flag matrix and dependency cascade rules.
 

@@ -14,11 +14,11 @@ data_schemas:
       type: "local_tsv"
       path: "./path/to/data.tsv"
     input_fields:
-      sample_id: {type: "string", is_primary_key: true}
+      sample_id: {type: "categorical", is_primary_key: true}
       value_col: {type: "numeric"}
     wrangling: []
     output_fields:
-      sample_id: {type: "string", is_primary_key: true}
+      sample_id: {type: "categorical", is_primary_key: true}
       value_col: {type: "numeric"}
 
 # SECTION 2: OPTIONAL METADATA (ADR-014)

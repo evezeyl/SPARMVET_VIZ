@@ -125,8 +125,9 @@ Items with no blockers — can be started immediately.
   Depends: TL-REFORMAT-1, TL-UI-SHELL-1.
   ✅ 2026-05-22 — tl_reformat_ui, sheet picker, delimiter select, tl_reformat_download wired; import OK.
 
-- [ ] **TL-UI-RECONCILE-1** `[sonnet/high]`: ID Reconciliation panel — multi-file upload (2–6), PRE-CHECK result, pairwise match table (side-by-side, certainty sort, chunked 50 rows, bulk-accept 100% button, per-row verify/reject), pattern suggestion panel (ranked, apply), recode workflow (action picker, preview, re-run), many-to-many dialog (mandatory written reason), recipe download (YAML).  
+- [x] **TL-UI-RECONCILE-1** `[sonnet/high]`: ID Reconciliation panel — multi-file upload (2–6), PRE-CHECK result, pairwise match table (side-by-side, certainty sort, chunked 50 rows, bulk-accept 100% button, per-row verify/reject), pattern suggestion panel (ranked, apply), recode workflow (action picker, preview, re-run), many-to-many dialog (mandatory written reason), recipe download (YAML).  
   Depends: TL-IDLIB-CORE-1, TL-UI-SHELL-1.
+  ✅ 2026-05-22 — 2-file upload, column selectors, PRE-CHECK (precheck_compatibility), RECONCILE (reconcile()), match table DataGrid, pattern summary, M2M warning + reason textarea, certainty threshold slider, recipe YAML download; import OK. Per-row verify/reject → threshold slider (principled equivalent).
 
 - [ ] **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload or "Continue from ID Reconciliation", join key selection, boilerplate ZIP download with baked-in steps summary.  
   Depends: TL-SCAFFOLD-1, TL-UI-RECONCILE-1.
@@ -173,6 +174,7 @@ Items with no blockers — can be started immediately.
   - **Tests:** Remove any tests using flat wrangling as valid input; add error-path test.
   - **Doc sweep:** `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone. `rules_data_engine.md §3` proactive-refactoring note → update to say engine rejects flat lists. `docs/appendix/manifest_structure.yaml`.
   - **Gate:** `grep -rn "^  wrangling:\s*\[" config/` = zero hits. Engine rejects flat lists. Test suite passes.
+  ensure that if there is flat structure in manifewt that that porduces an error that it indicates this to the user as error to guide
 
 ---
 

@@ -40,26 +40,26 @@ join_manifests:
       - dataset_id: metadata_schema
     recipe: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
     final_contract:
-      Year: string
-      Source: string
-      Country: string
-      gene: string
-      predicted_phenotype_clean: string
-      sample_id: string
-      accession: string
-      Multiresistant: string
+      Year: categorical
+      Source: categorical
+      Country: categorical
+      gene: categorical
+      predicted_phenotype_clean: categorical
+      sample_id: categorical
+      accession: categorical
+      Multiresistant: categorical
   Plasmid_Profile_Joint:
     ingredients:
       - dataset_id: plasmid_data
       - dataset_id: metadata_schema
     recipe: !include 2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml
     final_contract:
-      Year: string
-      Source: string
-      Country: string
-      plasmid_name: string
-      sample_id: string
-      accession: string
+      Year: categorical
+      Source: categorical
+      Country: categorical
+      plasmid_name: categorical
+      sample_id: categorical
+      accession: categorical
 
 plot_defaults:
   default_font_family: "Liberation Sans"

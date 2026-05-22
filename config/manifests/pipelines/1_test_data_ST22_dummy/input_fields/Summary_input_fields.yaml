@@ -22,20 +22,20 @@ taxon:
 # keep will require wrangling
 genotype:
   original_name: "Genotype"
-  type: string
+  type: categorical
   # label ommited - I know I will do something with this data, so I will define that when I have my output_fields defined
 # keep will require wrangling
 phenotype:
   original_name: "Predicted Phenotype"
-  type: string
+  type: categorical
 # keep will require wrangling
 cge_phenotype:
   original_name: "CGE Predicted Phenotype"
-  type: string
+  type: categorical
 # keep will require wrangling
 plasmid:
   original_name: "Plasmid"
-  type: string
+  type: categorical
 # NOTE : I want to ignore this column from the output
 # NOTE I will omit it from both input and output output_fields
 # MLST_scheme:

@@ -1,21 +1,21 @@
 id:
   original_name: "id"
-  type: "string"
+  type: "categorical"
   is_primary_key: true
   label: "ID"
 species:
   original_name: "species"
-  type: "string"
+  type: "categorical"
   label: "Species"
 amr_class:
   original_name: "amr_class"
-  type: "string"
+  type: "categorical"
   label: "AMR Class"
 collection_date:
   original_name: "collection_date"
-  type: "string"
+  type: "categorical"
   label: "Collection Date"
 value:
   original_name: "value"
-  type: "string"
+  type: "categorical"
   label: "Value"

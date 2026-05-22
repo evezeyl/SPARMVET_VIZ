@@ -24,7 +24,6 @@ _REQUIRED_FLAGS = [
     "session_management_enabled",
     "import_helper_enabled",
     "export_enabled",
-    "audit_report_enabled",
     "metadata_ingestion_enabled",
     "data_ingestion_enabled",
     "manifest_edit_enabled",
@@ -40,7 +39,6 @@ _CASCADE_GATES: dict[str, list[str]] = {
         "t3_sandbox_enabled",
         "comparison_mode_enabled",
         "session_management_enabled",
-        "audit_report_enabled",
     ],
     "import_helper_enabled": ["data_ingestion_enabled"],
 }
@@ -123,7 +121,6 @@ class PersonaValidator:
         # Rule 6: T3 cascade — if t3_sandbox_enabled then its co-flags must ALL be true.
         _T3_COMPANIONS = [
             "comparison_mode_enabled",
-            "audit_report_enabled",
             "session_management_enabled",
             "export_enabled",
         ]

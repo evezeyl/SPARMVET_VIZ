@@ -25,7 +25,6 @@ features:
   import_helper_enabled: false
   t3_sandbox_enabled: false
   export_enabled: false
-  audit_report_enabled: false
   metadata_ingestion_enabled: false
   data_ingestion_enabled: false
   show_persona_badge: false
