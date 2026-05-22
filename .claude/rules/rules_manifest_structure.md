@@ -118,9 +118,10 @@ join_key = (step.get("on") or          # correct (quoted 'on' → string key)
 
 ## 8. `analysis_groups` Structure (Manifest-Driven Home Theater)
 
-> **DEPRECATED authoring pattern (Phase 21-B, 2026-05-20):** A flat `plots:` key at the manifest root is no longer valid as an authoring format.
-> Use `analysis_groups:` exclusively (see below). ConfigManager still builds an internal flat plots dict from `analysis_groups` at load time — that is an engine implementation detail, not an authoring target.
-> **Removal task:** LEGACY-FLAT-PLOTS-1 (remove backward-compat read path from ConfigManager + viz_factory.py)
+> **REMOVED (LEGACY-FLAT-PLOTS-1, Phase 34, 2026-05-22):** Root-level `plots:` is now a `ConfigurationError`.
+> ConfigManager raises a fatal error if a manifest contains `plots:` at the root. Declare all plots inside `analysis_groups:` exclusively.
+> Migration: move all plot specs from root `plots:` into an `analysis_groups:` block.
+> **Tombstone expires:** Phase 36 (delete this block after two phases)
 
 The `analysis_groups` top-level key defines the groups and plots rendered in the Home Theater (Phase 21-B). **This is the ONLY authoring format for plots.**
 

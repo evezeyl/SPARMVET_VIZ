@@ -205,7 +205,8 @@ def server(input, output, session):
             selected_lineage_rel=_selected_lineage_rel,
         )
     if bootloader.is_enabled("test_lab_enabled"):
-        dev_studio.define_server(input, output, session)
+        from app.handlers.test_lab_handlers import define_server as _define_testlab_server
+        _define_testlab_server(input, output, session, dev_studio=dev_studio, bootloader=bootloader)
 
     # ── Handler Delegations (ADR-045 — Two-Category Law) ──────────────────────
 

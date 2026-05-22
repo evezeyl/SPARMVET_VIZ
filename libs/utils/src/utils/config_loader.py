@@ -134,6 +134,21 @@ class ConfigManager:
         # Stage 3: structural validation
         struct_errors: list[DeploymentError] = []
 
+        # LEGACY-FLAT-PLOTS-1: root-level plots: key is removed (Phase 21-B, ADR-083)
+        if self.raw_config.get('plots'):
+            struct_errors.append(DeploymentError(
+                component="ConfigManager",
+                problem="Root-level 'plots:' key is not a valid authoring format.",
+                location=f"plots: key in {yaml_path}",
+                fix=(
+                    "The flat 'plots:' root key was removed in Phase 21-B (LEGACY-FLAT-PLOTS-1). "
+                    "Declare all plots inside 'analysis_groups:'. "
+                    "See rules_manifest_structure.md §8."
+                ),
+                who="developer",
+                reference=_REF,
+            ))
+
         if not self.raw_config.get("analysis_groups"):
             struct_errors.append(DeploymentError(
                 component="ConfigManager",
@@ -187,8 +202,9 @@ class ConfigManager:
 
         exit_if_errors(struct_errors)
 
-        # ADR-003/029b: Flatten analysis_groups into top-level 'plots' for VizFactory
-        self.raw_config['plots'] = self.raw_config.get('plots', {})
+        # Flatten analysis_groups into top-level 'plots' for VizFactory (engine detail only —
+        # root-level plots: in YAML authoring is a ConfigurationError, see check above).
+        self.raw_config['plots'] = {}
         groups = self.raw_config.get('analysis_groups', {})
         for g_id, g_spec in groups.items():
             g_plots = g_spec.get('plots', {})

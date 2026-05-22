@@ -151,6 +151,13 @@
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`
 
+## `app/handlers/test_lab_handlers.py`
+- **Role:** `ref`
+- **provides:** `function:define_server (test_lab_handlers)`
+- **consumes:** `app/modules/test_lab_studio.py`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
 ## `app/modules/deployment_error.py`
 - **Role:** `ref`
 - **provides:** `(re-exports from utils.deployment_error — see that file for the canonical source)`
@@ -229,9 +236,10 @@
 
 ## `app/modules/test_lab_studio.py`
 - **Role:** `ref`
-- **provides:** `class:TestLabStudio`
-- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-003`
+- **provides:** `class:TestLabStudio (render_ui only)`
+- **consumes:** `shiny.ui`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`, `app/handlers/test_lab_handlers.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
 
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
@@ -567,11 +575,17 @@
 - **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
 - **doc:** `.claude/tasks/tasks.md#INGEST-SANITIZE-1`
 
+## `libs/test_lab/src/test_lab/anonymiser.py`
+- **Role:** `info`
+- **provides:** `Anonymiser class (anonymise`, `anonymise_batch`, `build_deanon_recipe)`
+- **consumes:** `polars`, `hashlib`, `yaml`, `datetime`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_anonymiser.py`
+
 ## `libs/test_lab/src/test_lab/aqua_synthesizer.py`
 - **Role:** `info`
-- **provides:** `AquaSynthesizer class (synthesize)`, `standalone helpers: clean_header`, `generate_fake_column`, `introduce_missing_values`
-- **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse (stdlib)`
-- **consumed_by:** `assets/scripts/generate_demo_data.py`, `libs/test_lab/tests/debug_sdk.py`
+- **provides:** `AquaSynthesizer class (propose_config`, `generate`, `save_config`, `load_config`, `list_scenarios)`
+- **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse`, `yaml`, `typing (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_synthesizer.py`
 
 ## `libs/test_lab/src/test_lab/bootstrapper.py`
 - **Role:** `info`
@@ -584,6 +598,12 @@
 - **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/debug_sdk.py`
+
+## `libs/test_lab/src/test_lab/reformatter.py`
+- **Role:** `info`
+- **provides:** `DataReformatter class (convert_xlsx`, `convert_csv`, `convert_folder)`
+- **consumes:** `polars`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_reformatter.py`
 
 ## `libs/test_lab/src/test_lab/scaffolder.py`
 - **Role:** `info`

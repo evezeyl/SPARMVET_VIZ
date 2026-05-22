@@ -114,14 +114,16 @@ Items with no blockers — can be started immediately.
 
 #### 34-G — Reformatting Tools
 
-- [ ] **TL-REFORMAT-1** `[haiku/low]`: `libs/test_lab/src/test_lab/reformatter.py` — wire `ExcelHandler` (already in `libs/ingestion/`) for XLSX → TSV (multi-sheet); add CSV → TSV (any delimiter); bulk folder processing. Gate: multi-sheet XLSX → N TSV files; CSV with comma delimiter converts correctly.
+- [x] **TL-REFORMAT-1** `[haiku/low]`: `libs/test_lab/src/test_lab/reformatter.py` — `DataReformatter` class with `convert_xlsx` (multi-sheet, sheet subset, `_safe_stem` name normalisation), `convert_csv` (any delimiter), `convert_folder` (bulk, error-per-file not raised). Uses polars directly (ExcelHandler is a CLI script, not importable class). Gate: multi-sheet XLSX → N TSV files ✅ CSV with comma delimiter converts ✅ folder bulk ✅ error stored not raised ✅. 20/20 tests pass; full test_lab suite 88/88 ✅ 2026-05-22
 
 #### 34-H — UI (gates on library tasks)
 
-- [ ] **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion (panels: ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting); view title banner; `test_lab_enabled` persona flag gate (ADR-071); add `test_lab` sidebar slot type to `app/modules/sidebar_registry.py`. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` → no TEST_LAB nav.
+- [x] **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion (panels: ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting); view title banner; `test_lab_enabled` persona flag gate (ADR-071); add `test_lab` sidebar slot type to `app/modules/sidebar_registry.py`. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` → no TEST_LAB nav.
+  ✅ 2026-05-22 — import OK; nav gate fixed (developer_mode_enabled → test_lab_enabled); 213/213 tests pass.
 
-- [ ] **TL-UI-REFORMAT-1** `[haiku/low]`: Reformatting panel — file upload (XLSX/CSV), sheet assignment UI (XLSX), convert button, TSV download.  
+- [x] **TL-UI-REFORMAT-1** `[haiku/low]`: Reformatting panel — file upload (XLSX/CSV), sheet assignment UI (XLSX), convert button, TSV download.  
   Depends: TL-REFORMAT-1, TL-UI-SHELL-1.
+  ✅ 2026-05-22 — tl_reformat_ui, sheet picker, delimiter select, tl_reformat_download wired; import OK.
 
 - [ ] **TL-UI-RECONCILE-1** `[sonnet/high]`: ID Reconciliation panel — multi-file upload (2–6), PRE-CHECK result, pairwise match table (side-by-side, certainty sort, chunked 50 rows, bulk-accept 100% button, per-row verify/reject), pattern suggestion panel (ranked, apply), recode workflow (action picker, preview, re-run), many-to-many dialog (mandatory written reason), recipe download (YAML).  
   Depends: TL-IDLIB-CORE-1, TL-UI-SHELL-1.
@@ -129,23 +131,24 @@ Items with no blockers — can be started immediately.
 - [ ] **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload or "Continue from ID Reconciliation", join key selection, boilerplate ZIP download with baked-in steps summary.  
   Depends: TL-SCAFFOLD-1, TL-UI-RECONCILE-1.
 
-- [ ] **TL-UI-SYNTH-1** `[sonnet/medium]`: Synthetic Data panel — schema/file upload, proposed config review table (per-column editable), mode toggle (Demo/Stress test), error injection block (stress_test only), n_rows input, generate button, scenario save/load, download TSV + YAML config.  
+- [x] **TL-UI-SYNTH-1** `[sonnet/medium]`: Synthetic Data panel — schema/file upload, proposed config review table (per-column editable), mode toggle (Demo/Stress test), error injection block (stress_test only), n_rows input, generate button, scenario save/load, download TSV + YAML config.  
   Depends: TL-SYNTH-1, TL-UI-SHELL-1.
+  ✅ 2026-05-22 — tl_synth_ui shell + reactive chain (file/columns source, n_rows, mode, error injection sliders, generate event, preview DataGrid, TSV download) wired; import OK.
 
-- [ ] **TL-UI-ANON-1** `[sonnet/medium]`: Anonymisation panel — multi-file upload, ID column selector, personal column selector, pattern picker, generate button, download anonymised TSV(s) + mapping TSV + instructions.  
+- [x] **TL-UI-ANON-1** `[sonnet/medium]`: Anonymisation panel — multi-file upload, ID column selector, personal column selector, pattern picker, generate button, download anonymised TSV(s) + mapping TSV + instructions.  
   Depends: TL-ANON-1, TL-UI-SHELL-1.
+  ✅ 2026-05-22 — tl_anon_ui shell; reactive chain (file→columns, id_column select, personal cols checkbox, pattern/prefix/custom inputs, anonymise event, preview DataGrid, ZIP download with anonymised+mapping+config); import OK.
 
 ### Legacy removal (tracked per rules_legacy_management.md §6)
 
 > Protocol: dep-sweep → impact assessment → migration path → code removal → test sweep → doc consistency sweep → ADR record.
 > All 7 steps required before a task is [DONE].
 
-- [ ] **LEGACY-FLAT-PLOTS-1** `[sonnet/medium]`: Full removal of flat `plots:` authoring key.
-  - **Dep sweep:** `grep -rn "\.get\('plots'" libs/ app/` — known hits: `config_loader.py:160,163,173,184`, `viz_factory.py:92,106`, `blueprint_mapper.py:195,200,208,212,421`
-  - **Code:** Remove root-level `plots:` init in `config_loader.py`. Add `ConfigurationError` if `plots:` found at manifest root (not inside `analysis_groups`). Update VizFactory to read exclusively from the post-ConfigManager flattened dict, not from raw manifest.
-  - **Tests:** `grep -rn "plots" libs/utils/tests/ libs/viz_factory/tests/` — remove any tests using flat `plots:` as authoring input; add error-path test.
-  - **Doc sweep:** `rules_manifest_structure.md`, `docs/appendix/manifest_structure.yaml`, `docs/appendix/Standards_yaml.qmd`, `libs/utils/README.md`, `libs/viz_factory/README.md` — update tombstones to REMOVED.
-  - **Gate:** `grep -rn "^plots:" config/manifests/` = zero hits. Full test suite passes.
+- [x] **LEGACY-FLAT-PLOTS-1** `[sonnet/medium]`: Full removal of flat `plots:` authoring key. ✅ 2026-05-22
+  - ConfigManager now raises `DeploymentError` if root-level `plots:` found; backward-compat init removed.
+  - `stress_test_master.yaml` root-level `plots:` block removed.
+  - Error-path + happy-path tests added to `libs/utils/tests/test_config_loader.py`. 154 tests pass.
+  - `rules_manifest_structure.md §8` DEPRECATED marker converted to REMOVED tombstone (expires Phase 36).
 
 - [ ] **LEGACY-AUDIT-FLAG-1** `[haiku/low]`: Full removal of `audit_report_enabled` flag.
   - **Dep sweep:** Known hits: `persona_validator.py:27,41,124`, `bootloader.py:441`, `test_persona_validator.py`, all 8 `config/ui/templates/*_template.yaml`

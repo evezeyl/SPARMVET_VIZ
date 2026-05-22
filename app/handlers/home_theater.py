@@ -1137,7 +1137,7 @@ def define_server(input, output, session, *,
         if bootloader.is_enabled("wrangle_studio_enabled"):
             nav_items.append(ui.nav_panel("Blueprint Architect", value="Wrangle Studio"))
 
-        if bootloader.is_enabled("developer_mode_enabled"):
+        if bootloader.is_enabled("test_lab_enabled"):
             nav_items.append(ui.nav_panel("Test Lab", value="Test Lab"))
 
         if bootloader.is_enabled("gallery_enabled"):
@@ -1554,15 +1554,54 @@ def define_server(input, output, session, *,
         # --- Test Lab ---
         if active_sidebar == "Test Lab":
             return ui.div(
-                ui.card(
-                    ui.card_header(ui.h5("Dev Inspector", class_="mb-0 text-center")),
-                    ui.div(
-                        ui.p("🔧 Developer diagnostic tools.", class_="text-muted small p-2"),
-                        class_="p-1"
+                ui.accordion(
+                    ui.accordion_panel(
+                        "ID Reconciliation",
+                        ui.tags.small(
+                            "Match and align ID columns across related files before "
+                            "assembling a pipeline.",
+                            class_="text-muted d-block p-1",
+                        ),
+                        icon=ui.tags.i(class_="bi bi-link-45deg"),
                     ),
-                    class_="mb-2 shadow-sm border-0"
+                    ui.accordion_panel(
+                        "Manifest Scaffolding",
+                        ui.tags.small(
+                            "Generate boilerplate pipeline manifest from uploaded files.",
+                            class_="text-muted d-block p-1",
+                        ),
+                        icon=ui.tags.i(class_="bi bi-file-earmark-code"),
+                    ),
+                    ui.accordion_panel(
+                        "Synthetic Data",
+                        ui.tags.small(
+                            "Generate demo or stress-test datasets from a schema or "
+                            "example file.",
+                            class_="text-muted d-block p-1",
+                        ),
+                        icon=ui.tags.i(class_="bi bi-table"),
+                    ),
+                    ui.accordion_panel(
+                        "Anonymisation",
+                        ui.tags.small(
+                            "Replace real IDs with consistent synthetic equivalents. "
+                            "Reversible via BLUEPRINT join.",
+                            class_="text-muted d-block p-1",
+                        ),
+                        icon=ui.tags.i(class_="bi bi-person-lock"),
+                    ),
+                    ui.accordion_panel(
+                        "File Reformatting",
+                        ui.tags.small(
+                            "Convert XLSX (multi-sheet) and CSV files to TSV.",
+                            class_="text-muted d-block p-1",
+                        ),
+                        icon=ui.tags.i(class_="bi bi-arrow-left-right"),
+                    ),
+                    id="test_lab_sidebar_accordion",
+                    open=False,
                 ),
-                class_="sidebar-content p-0"
+                class_="sidebar-content p-0",
             )
 
         # --- Default fallback ---

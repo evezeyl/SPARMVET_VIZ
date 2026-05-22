@@ -1,6 +1,0 @@
-# Viz Factory Audit Manifest for STRESS_FINAL
-data_path: "../../../../../assets/test_data/STRESS/STRESS_data.tsv"
-input_fields: !include '../input_fields/Stress_Source_input_fields.yaml'
-wrangling: !include '../wrangling/Stress_Source_wrangling.yaml'
-plots:
-  final_plot: !include 'final_plot.yaml'

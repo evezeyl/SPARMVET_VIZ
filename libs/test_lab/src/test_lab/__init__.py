@@ -1,4 +1,5 @@
 from test_lab.anonymiser import Anonymiser
 from test_lab.aqua_synthesizer import AquaSynthesizer
 from test_lab.bootstrapper import ManifestBootstrapper
+from test_lab.reformatter import DataReformatter
 from test_lab.scaffolder import ManifestScaffolder
