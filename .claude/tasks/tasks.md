@@ -141,16 +141,16 @@ Items with no blockers — can be started immediately.
   Depends: TL-ANON-1, TL-UI-SHELL-1.
   ✅ 2026-05-22 — tl_anon_ui shell; reactive chain (file→columns, id_column select, personal cols checkbox, pattern/prefix/custom inputs, anonymise event, preview DataGrid, ZIP download with anonymised+mapping+config); import OK.
 
-### LAB-WORKFLOW seams (from LAB-WORKFLOW-1 — `.claude/design/developer_workflow.md §9`)
+### LAB-WORKFLOW follow-up (from LAB-WORKFLOW-1 — `.claude/design/developer_workflow.md`)
 
-> Keep these minimal and optional (Eve's steer: don't make the app too complicated). Every tool
-> stays independently usable via download → upload; the handoff is a convenience shortcut only.
+> **Decision (2026-05-22):** modules and spaces stay independent. **No in-app "Send to" or
+> "Open in BLUEPRINT" handoffs.** Linking is file-based (export from one tool/space → choose in
+> the next) and explained in documentation, not built. See `developer_workflow.md §5/§7` and
+> [[feedback_space_independence]].
 
-- [ ] **LAB-SEND-TO-1** `[sonnet/medium]`: Intra-Lab "Send to" handoff. After a TEST_LAB tool finishes, its result area offers a contextual "Send to [target tool]" control that loads the produced artifact into a valid target tool as its input (editable, never auto-runs — the "edit gap"). Stateless invariant: the baton is a single transient handoff value consumed once, NOT an accumulating `reactive.Value` store (`rules_test_lab.md §1`).
-  - **Discovery (2026-05-22):** the Reconcile→Scaffold *data* handoff already works — `tl_scaffold` reads `_recon_results()` via a shared `@reactive.Calc` and offers a "Bake in ID Reconciliation steps" checkbox. Compliant (calc, not accumulating Value). Only discoverability was missing.
-  - **Shipped (partial):** `tl_recon_sendto_ui` + `_recon_sendto_scaffold` effect in `test_lab_handlers.py` — a "Send to Manifest Scaffolding" button on the reconcile result that opens the Scaffolding panel (`ui.update_accordion(show=...)`). Import check clean. **Live UI click behaviour not yet verified (no TEST_LAB Playwright infra) — needs user smoke or a Playwright test.**
-  - **Remaining:** file-based hops (Reformat→Reconcile/Anon/Synth; Reconcile→Anon). These need a "Use output from [Tool]" alternative input source in each target because Shiny `input_file` cannot be set programmatically. Decide with Eve whether these are worth building (simplicity steer: download→upload already works).
-- [ ] **LAB-WORKFLOW-QMD-1** `[sonnet/low]` `[doc-sync]`: User-facing Quarto mirror of `developer_workflow.md` in `docs/workflows/` — explains the *logic* of the producer workflow for end users (DRY: link, do not duplicate the design doc per `rules_documentation_aesthetics.md §4`). Focus on the workflow logic and module independence, not app mechanics. Can be written now (logic is settled); refine handoff section after LAB-SEND-TO-1 ships.
+- ~~**LAB-SEND-TO-1**~~ — **DROPPED (2026-05-22).** In-app "Send to" linking rejected to keep each Lab tool an independent module (choose files in, export out). The added "Send to Manifest Scaffolding" button was reverted. The pre-existing intra-space Reconcile→Scaffold recipe carry-over (Scaffolding's optional "Bake in ID Reconciliation steps" checkbox) stays — opt-in, within one space, standalone-safe.
+- ~~**LAB-OPEN-BLUEPRINT-1**~~ — **DROPPED (2026-05-22).** Cross-space in-app handoff rejected: spaces are independently persona-gated (a persona can grant TEST_LAB without BLUEPRINT). Handoff stays file-based (export ZIP → load in BLUEPRINT if enabled).
+- [ ] **LAB-WORKFLOW-QMD-1** `[sonnet/low]` `[doc-sync]`: User-facing Quarto mirror of `developer_workflow.md` in `docs/workflows/` — explains the *logic* of the producer workflow for end users (DRY: link, do not duplicate per `rules_documentation_aesthetics.md §4`). Focus on workflow logic + module independence, not app mechanics. Can be written now (logic is settled).
 
 ### Maps — Solution A (choropleth via geom_polygon, no new deps)
 
@@ -207,13 +207,13 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 - [x] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. ✅ 2026-05-22
   - Design session delivered `.claude/design/developer_workflow.md` (indexed in `CLAUDE.md §3.6`): producer journey across TEST_LAB → BLUEPRINT → GALLERY → HOME; module-independence first principle ("map, not a wizard"); advisory-only orderings (reconcile-before-anonymise/scaffold); the stateless "Send to" handoff pattern with edit gap; cross-space seams.
   - Key finding: "Open in BLUEPRINT" is one mechanism unlocking both TEST_LAB→BLUEPRINT and GALLERY→BLUEPRINT seams.
-  - Steer (Eve): keep the app simple — user-facing doc explains workflow *logic*, handoff plumbing stays minimal/optional/stateless.
-  - Spawned: LAB-SEND-TO-1 (Do Now), LAB-WORKFLOW-QMD-1 (Do Now), LAB-OPEN-BLUEPRINT-1 (Needs Discussion).
+  - Steer (Eve): keep the app simple AND keep spaces/modules independent — no in-app cross-tool or cross-space handoffs. Linking is file-based (export → choose), explained in documentation.
+  - Spawned: LAB-WORKFLOW-QMD-1 (Do Now — user-facing Quarto). LAB-SEND-TO-1 and LAB-OPEN-BLUEPRINT-1 both DROPPED on independence grounds (see Do Now → LAB-WORKFLOW follow-up).
 - [x] **UX-APPLY-IMPROVE-1** `[sonnet/low]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. ✅ 2026-05-22
   - `propagation_except` selectize now hidden by default (`display:none`) and revealed only when "All plots except…" radio is selected.
   - Inline `<script>` in modal listens for `change` on `propagation_choice` radio name and toggles `propagation_except_wrapper` div visibility. No handler changes needed.
   - Label updated from workaround text to instructional copy.
-- [ ] **LAB-OPEN-BLUEPRINT-1** `[opus/high]`: "Open in BLUEPRINT" inbound-manifest path — BLUEPRINT accepts an inbound manifest (ZIP from TEST_LAB Manifest Scaffolding, or YAML fragment from GALLERY) and opens it in a fresh editing session. One mechanism unlocks both the TEST_LAB→BLUEPRINT and GALLERY→BLUEPRINT seams (`developer_workflow.md §7`). **Open question (design §10):** does BLUEPRINT open the inbound manifest into a *new* session unconditionally, or warn/merge if a manifest is already open? Resolve before building. Boundary: loads an artifact *into* BLUEPRINT — no cross-space reactive coupling (keeps GALLERY's "no direct state coupling" constraint). Eve's steer: keep it simple — download→upload already works, so this is a convenience layer, not a blocker.
+- ~~**LAB-OPEN-BLUEPRINT-1**~~ — **DROPPED (2026-05-22, see Do Now → LAB-WORKFLOW follow-up).** Cross-space "Open in BLUEPRINT" rejected to preserve space + persona independence (spaces are independently persona-gated). Handoff stays file-based: export ZIP from TEST_LAB → load in BLUEPRINT if/when enabled.
 - [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: In-app search for plot types, plot properties, and recipe components — cross-manifest, cross-recipe. Use case: scientist wants to find plots by what they show (e.g. "distribution", "trend"), by required data pattern, or by aesthetic mapping. Design questions: fuzzy search on plot definitions and taxonomy fields? Keyword index built from manifests at load time? How efficient can this be? Needs a concrete spike / prototype before scoping. Links to Gallery taxonomy (ADR-063) and recipe meta taxonomy fields.
 - [ ] **PROP-3** `[opus/high]`: Propagation TubeMap — graph viz of audit blast radius. Needs own design pass + ADR before implementation.
   > **What "propagation" means here:** when a T3 audit node (filter, exclusion) is applied across multiple plots via the propagation dialog (scope: this plot / all plots / all except...), the Propagation TubeMap would be a graph showing which plots are affected — blast-radius visualization of that audit decision. This is **distinct from the Blueprint TubeMap** (pipeline DAG from manifest structure). The T3 propagation dialog itself is designed in `ui_implementation_contract.md §12g` but not yet implemented. PROP-3 is a further visualization layer on top of that, also not yet implemented.

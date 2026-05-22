@@ -217,30 +217,24 @@ Each row is just "export here, choose there." No control reaches across a space 
 
 ---
 
-## 9. Implementation Seams Identified (feeds tasks.md)
+## 9. What This Means for Implementation
 
-This design surfaces the following buildable seams. They are **not started** — listed here so
-the workflow doc and the task backlog stay in sync. Author as tasks when prioritised.
+There is **no in-app integration to build.** Linking is file-based (export → choose) and is
+covered by documentation, not code. The producer tools already each support file choice +
+export, which is the entire mechanism. The earlier "Send to" and "Open in BLUEPRINT" ideas were
+**rejected** to preserve module and space independence (§5, §7).
 
-1. **Intra-Lab "Send to" handoff** — contextual result-area buttons on each TEST_LAB tool that
-   load the produced artifact into a valid target tool's input (editable, no auto-run). Builds
-   on the already-designed Reconcile→Scaffold "continuation mode."
-2. **"Open in BLUEPRINT" inbound-manifest path** — BLUEPRINT accepts an inbound manifest (ZIP
-   from Scaffolding, or YAML fragment from GALLERY) and opens it in a fresh editing session.
-   One mechanism unlocks both the TEST_LAB→BLUEPRINT and GALLERY→BLUEPRINT seams.
-3. **User-facing Quarto version** — once the workflow is built, mirror this doc into
-   `docs/workflows/` as a user-facing `.qmd` (DRY: link, do not duplicate, per
-   `rules_documentation_aesthetics.md §4`).
+The only follow-up is documentation:
+
+1. **User-facing Quarto version** — mirror this doc into `docs/workflows/` as a user-facing
+   `.qmd` that explains the workflow *logic* for end users (DRY: link, do not duplicate, per
+   `rules_documentation_aesthetics.md §4`). Task: **LAB-WORKFLOW-QMD-1**.
 
 ---
 
 ## 10. Open Questions
 
-- **"Open in BLUEPRINT" inbound contract** — does BLUEPRINT open the inbound manifest into a
-  *new* session unconditionally, or warn/merge if a manifest is already open? (Resolve before
-  building seam #2.)
-- **"Send to" target discovery** — is the valid-target list per tool hard-coded in the handler,
-  or derived from artifact type? Start hard-coded (few tools); revisit if the toolbox grows.
-- **Anonymiser ↔ Reconcile ordering UX** — should the Anonymiser surface a non-blocking hint
-  ("Reconcile IDs first for multi-file consistency") when more than one file is loaded? Advisory
-  only, never blocking (matches the BLUEPRINT AI-assistant "advise, never block" stance).
+- **Anonymiser ↔ Reconcile ordering hint** — should the Anonymiser surface a non-blocking,
+  doc-style note ("for multi-file consistency, reconcile IDs first") when more than one file is
+  loaded? Advisory only, never blocking; a small in-tool hint, not cross-tool wiring. Decide
+  when polishing the Anonymiser panel.
