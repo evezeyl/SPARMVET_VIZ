@@ -150,6 +150,10 @@ Eight personas exist (`config/ui/templates/`):
 
 The full `blueprint_agent:` block (`backend`, `model`, `api_key_env`, `endpoint`, `instructions_file`, `gallery_awareness`) is present in `developer_template.yaml` and `qa_template.yaml` only. Other templates omit the block entirely; the bootloader treats this as `backend: disabled`.
 
+**Vestigial template field — `data_import_panel_visible` (superseded by ADR-073):**
+
+All 8 persona templates declare `data_import_panel_visible: true` (6 personas) or `false` (demo-vetinst, web-demo). The bootloader lists it in `_FEATURES_DEFAULT_TRUE` so `is_enabled("data_import_panel_visible")` does not raise. However, **no app code calls `is_enabled("data_import_panel_visible")`** — panel visibility for the Data Import panel is controlled entirely by the ADR-073 sidebar slot registry (`workspaces.home.left_sidebar.panels` in each persona template). The flag is vestigial. Do not add new code that reads it; the slot registry is the authoritative gate. Removal is tracked in task **LEGACY-DATAIMPORT-FLAG-1** (file when ready to prune all 8 templates + bootloader `_FEATURES_DEFAULT_TRUE`).
+
 ---
 
 ## Cascade Enforcement (implemented in Phase 25-L)

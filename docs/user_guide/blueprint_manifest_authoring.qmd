@@ -39,10 +39,10 @@ The BLUEPRINT workspace is your manifest editor. To open it, click **Wrangle Stu
 | Panel | What it does |
 |---|---|
 | **TubeMap** | Visual map of your manifest — nodes are data schemas, joins, and plots |
-| **Groups & Plots** | Create/rename/delete analysis groups and plot entries |
-| **Manifest Info** | Edit the manifest title, description, author, and version |
-| **Validate** | Check for errors before testing |
-| **YAML** | Read-only view of the raw manifest fragment for the selected node |
+| **1. Focus (Logic)** | Logic stack for the selected node — add, reorder, and edit wrangling steps |
+| **2. Interface (Fields)** | Input/output field definitions for the selected schema |
+| **3. YAML (Raw Source)** | Raw YAML fragment for the selected node. Editable only when `manifest_edit_enabled` is true (developer persona) |
+| **4. Joint Designer** | Side-by-side key-match preview for authoring `join` steps |
 
 Select any node in the TubeMap to open its editing form in the center panel. Fill the form, click **Apply**, then use **Save** to write back to disk.
 
@@ -287,7 +287,7 @@ In BLUEPRINT you can work two ways:
 
 **YAML escape hatch**
 
-The **YAML** panel shows the raw YAML fragment for the selected node. Developer and advanced users can edit this directly. For most bioscientists, the form UI is safer — it prevents invalid YAML and catches type errors before writing.
+The **3. YAML (Raw Source)** panel shows the raw YAML fragment for the selected node. Developer personas can edit this directly (YAML escape hatch, `manifest_edit_enabled`). For most bioscientists, the form UI is safer — it prevents invalid YAML and catches type errors before writing.
 
 ---
 

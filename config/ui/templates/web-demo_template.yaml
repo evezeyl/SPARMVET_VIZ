@@ -28,7 +28,6 @@ features:
   audit_report_enabled: false
   metadata_ingestion_enabled: false
   data_ingestion_enabled: false
-  data_import_panel_visible: false
   show_persona_badge: false
 
 manifest_selector:

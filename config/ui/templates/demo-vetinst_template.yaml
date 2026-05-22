@@ -29,7 +29,6 @@ features:
   metadata_ingestion_enabled: false
   data_ingestion_enabled: false
   # Hide panels not relevant for a demo audience
-  data_import_panel_visible: false
   # Hide "Active: demo-vetinst" badge — clean for presentation
   show_persona_badge: false
 

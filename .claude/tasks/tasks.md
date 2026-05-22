@@ -36,9 +36,11 @@ Items with no blockers — can be started immediately.
 
 - [x] **DOC-SYNC-TESTING-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Updated `docs/reference/testing.qmd` line 65 — replaced `create_test_data.py` reference with `AquaSynthesizer` (`libs/test_lab/src/test_lab/aqua_synthesizer.py`).
 
-- [ ] **PERSONA-DATAIMPORT-FLAG-DOC-1** `[haiku/low]` `[doc-sync]`: `data_import_panel_visible` is declared in all 8 persona templates but is absent from `rules_persona_feature_flags.md`. Determine: is this superseded by ADR-073 sidebar slot registry (which handles panel visibility declaratively)? If yes, add a note to the rules file and flag it as superseded. If still active, add it to the flag matrix. Audit report: `.claude/logs/audits/audit_persona_consistency_2026-05-21.md`.
+- [x] **PERSONA-DATAIMPORT-FLAG-DOC-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Confirmed vestigial — `data_import_panel_visible` is never read by `is_enabled()` in app code. Superseded by ADR-073 sidebar slot registry. Added note to `rules_persona_feature_flags.md`. Removal tracked as LEGACY-DATAIMPORT-FLAG-1.
 
-- [ ] **DOC-BLUEPRINT-PANELS-1** `[haiku/low]` `[doc-sync]`: `docs/user_guide/blueprint_manifest_authoring.qmd` — Blueprint IDE panel table is missing "Master Manifest" and "External Exchange" panels; "YAML" should be "YAML Escape Hatch". Verify against `app/handlers/blueprint_handlers.py` blueprint panel construction code before fixing. Audit report: `.claude/logs/audits/audit_doc_sync_2026-05-21.md`.
+- [x] **LEGACY-DATAIMPORT-FLAG-1** ✅ 2026-05-22 `[haiku/low]` `[legacy]`: Removed `data_import_panel_visible` from all 8 persona templates and `bootloader._FEATURES_DEFAULT_TRUE`. Import check clean.
+
+- [x] **DOC-BLUEPRINT-PANELS-1** ✅ 2026-05-22 `[haiku/low]` `[doc-sync]`: Updated Blueprint IDE panel table in `docs/user_guide/blueprint_manifest_authoring.qmd`. Verified against wrangle_studio.py nav_panels. Actual panels: TubeMap accordion + 4 center nav_panels (1. Focus, 2. Interface, 3. YAML Raw Source, 4. Joint Designer). "Master Manifest" and "External Exchange" do not exist in code — audit claim was spurious. "YAML" renamed to "3. YAML (Raw Source)". Inline reference at §277 updated to match.
 
 ### Blueprint In-App Help Enrichment (developer-facing, Polars + Plotnine docs in Blueprint IDE)
 
@@ -103,7 +105,7 @@ Items with no blockers — can be started immediately.
 
 #### 34-E — Synthetic Data Upgrade
 
-- [ ] **TL-SYNTH-1** `[sonnet/high]`: Upgrade `libs/test_lab/src/test_lab/aqua_synthesizer.py` — `propose_config(source)` + `generate(config)` two-step flow; `mode: demo | stress_test`; `error_injection` block (missing_values, wrong_type, duplicate_ids, pk_mismatches, schema_errors, malformed_fields); YAML archive config output with prominent "NOT a pipeline manifest" header; named scenario save/load/list (`libs/test_lab/scenarios/`). Gate: demo generates clean TSV; stress_test injects at stated rate ±2%; scenario round-trip; `pytest libs/test_lab/tests/ -q` passes.
+- [x] **TL-SYNTH-1** `[sonnet/high]`: Upgrade `libs/test_lab/src/test_lab/aqua_synthesizer.py` — `propose_config(source)` + `generate(config)` two-step flow; `mode: demo | stress_test`; `error_injection` block (missing_values, wrong_type, duplicate_ids, pk_mismatches, schema_errors, malformed_fields); YAML archive config output with prominent "NOT a pipeline manifest" header; named scenario save/load/list (`libs/test_lab/scenarios/`). Gate: demo generates clean TSV; stress_test injects at stated rate ±2%; scenario round-trip; `pytest libs/test_lab/tests/ -q` passes. ✅ 2026-05-22 — 21/21 gate tests pass.
 
 #### 34-F — Anonymisation Tool
 

@@ -481,7 +481,7 @@ class Bootloader:
 
     # Features that default TRUE when not declared in a persona template.
     # Everything else defaults False (opt-in).
-    _FEATURES_DEFAULT_TRUE = {"show_persona_badge", "data_import_panel_visible"}
+    _FEATURES_DEFAULT_TRUE = {"show_persona_badge"}
 
     def is_enabled(self, feature: str) -> bool:
         """Checks if a UI feature is enabled."""
