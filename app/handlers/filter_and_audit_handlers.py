@@ -668,17 +668,45 @@ def define_filter_audit_server(input, output, session, *,
                 selected="this",
                 inline=False,
             ),
-            ui.input_selectize(
-                "propagation_except",
-                label=ui.tags.small(
-                    "(only used with 'All plots except…')",
-                    class_="text-muted",
+            ui.div(
+                ui.input_selectize(
+                    "propagation_except",
+                    label=ui.tags.small(
+                        "Select plots to exclude — the rest will receive the filter.",
+                        class_="text-muted",
+                    ),
+                    choices={s: _plot_label(s) for s in others} or {},
+                    selected=[],
+                    multiple=True,
+                    options={"placeholder": "Pick plots to skip…",
+                             "plugins": ["remove_button"]},
                 ),
-                choices={s: _plot_label(s) for s in others} or {},
-                selected=[],
-                multiple=True,
-                options={"placeholder": "Plots to exclude…",
-                         "plugins": ["remove_button"]},
+                id="propagation_except_wrapper",
+                style="display:none;",
+            ),
+            ui.tags.script(
+                """
+                (function () {
+                    function syncExcept() {
+                        var checked = document.querySelector(
+                            'input[name="propagation_choice"]:checked'
+                        );
+                        var wrapper = document.getElementById(
+                            'propagation_except_wrapper'
+                        );
+                        if (wrapper) {
+                            wrapper.style.display =
+                                (checked && checked.value === 'except') ? '' : 'none';
+                        }
+                    }
+                    document.addEventListener('change', function (e) {
+                        if (e.target && e.target.name === 'propagation_choice') {
+                            syncExcept();
+                        }
+                    });
+                    syncExcept();
+                })();
+                """
             ),
             ui.input_action_button(
                 "propagation_confirm", "Add to audit pipeline",

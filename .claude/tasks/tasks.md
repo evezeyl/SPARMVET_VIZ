@@ -141,6 +141,32 @@ Items with no blockers — can be started immediately.
   Depends: TL-ANON-1, TL-UI-SHELL-1.
   ✅ 2026-05-22 — tl_anon_ui shell; reactive chain (file→columns, id_column select, personal cols checkbox, pattern/prefix/custom inputs, anonymise event, preview DataGrid, ZIP download with anonymised+mapping+config); import OK.
 
+### LAB-WORKFLOW seams (from LAB-WORKFLOW-1 — `.claude/design/developer_workflow.md §9`)
+
+> Keep these minimal and optional (Eve's steer: don't make the app too complicated). Every tool
+> stays independently usable via download → upload; the handoff is a convenience shortcut only.
+
+- [ ] **LAB-SEND-TO-1** `[sonnet/medium]`: Intra-Lab "Send to" handoff. After a TEST_LAB tool finishes, its result area offers a contextual "Send to [target tool]" control that loads the produced artifact into a valid target tool as its input (editable, never auto-runs — the "edit gap"). Stateless invariant: the baton is a single transient handoff value consumed once, NOT an accumulating `reactive.Value` store (`rules_test_lab.md §1`).
+  - **Discovery (2026-05-22):** the Reconcile→Scaffold *data* handoff already works — `tl_scaffold` reads `_recon_results()` via a shared `@reactive.Calc` and offers a "Bake in ID Reconciliation steps" checkbox. Compliant (calc, not accumulating Value). Only discoverability was missing.
+  - **Shipped (partial):** `tl_recon_sendto_ui` + `_recon_sendto_scaffold` effect in `test_lab_handlers.py` — a "Send to Manifest Scaffolding" button on the reconcile result that opens the Scaffolding panel (`ui.update_accordion(show=...)`). Import check clean. **Live UI click behaviour not yet verified (no TEST_LAB Playwright infra) — needs user smoke or a Playwright test.**
+  - **Remaining:** file-based hops (Reformat→Reconcile/Anon/Synth; Reconcile→Anon). These need a "Use output from [Tool]" alternative input source in each target because Shiny `input_file` cannot be set programmatically. Decide with Eve whether these are worth building (simplicity steer: download→upload already works).
+- [ ] **LAB-WORKFLOW-QMD-1** `[sonnet/low]` `[doc-sync]`: User-facing Quarto mirror of `developer_workflow.md` in `docs/workflows/` — explains the *logic* of the producer workflow for end users (DRY: link, do not duplicate the design doc per `rules_documentation_aesthetics.md §4`). Focus on the workflow logic and module independence, not app mechanics. Can be written now (logic is settled); refine handoff section after LAB-SEND-TO-1 ships.
+
+### Maps — Solution A (choropleth via geom_polygon, no new deps)
+
+> Design context: `.claude/design/maps_advanced_geo.md` (Solution B is the deferred geopandas path; A is this).
+> Key fact (verified 2026-05-22): `geom_polygon`, `coord_equal`, `coord_fixed` are **already registered** in VizFactory. Solution A needs **no new viz component and no new dependency** — geometry is plain x/y/group numeric columns flowing through the existing tabular pipeline. ggplot2 analogue: `geom_polygon(aes(long, lat, group)) + map_data()`.
+
+- [ ] **MAP-A-BOUNDARY-ASSET-1** `[sonnet/medium]`: Boundary-fortification asset script `assets/scripts/fortify_boundaries.py`. Pure-Python (json module only — **no geopandas/shapely**) GeoJSON → long-format Parquet with columns `region_id, region_name, poly_group, vertex_order, long, lat` (one row per polygon vertex; `poly_group` disambiguates multi-part regions and holes). `argparse` CLI per `rules_asset_scripts.md §2` (input GeoJSON path, output Parquet path, region-name property key — no hardcoded paths). Output to `assets/geo_boundaries/`.
+  - Sub-step: source first boundary sets (Norway counties + Europe countries) from a public-domain provider (Natural Earth — public domain; **avoid GADM**, non-redistributable). Record provenance + licence in `assets/geo_boundaries/PROVENANCE.md`.
+  - Verify: fortified Parquet round-trips to a plottable frame; vertex counts plausible; multi-part regions keep distinct `poly_group`.
+- [ ] **MAP-A-MANIFEST-PATTERN-1** `[sonnet/medium]`: Author one end-to-end choropleth manifest as the canonical pattern. Tier 1 join: analytical data (rate/count per region) → boundary Parquet on region key. Plot spec: `geom_polygon` with `mapping: {x: long, y: lat, group: poly_group, fill: <metric>}` + `coord_equal` + a continuous fill scale. Verify via `debug_assembler.py` then `debug_gallery.py`; route evidence to `tmp/<date>/<lineage_id>/` per `rules_persona_bioscientist.md §7`. Halt for `@verify`.
+  - Watch: `group` must be the vertex `poly_group` (not region) or polygons cross-link; fill is per-region so the join must broadcast the metric to every vertex row.
+- [ ] **MAP-A-GALLERY-1** `[sonnet/medium]`: Gallery bundle for the choropleth (Scientific Triplet + preview PNG per `rules_gallery_standards.md`). **Blocked on a taxonomy decision** (shared with Solution B open-question #3): choropleth `family` — extend `TAXONOMY_CHEATSHEET.md` with a spatial value, or fold into `Comparison`/`Distribution`? Resolve with Eve before authoring the `info:` block.
+- [ ] **MAP-A-DOCS-1** `[haiku/low]` `[doc-sync]`: Document the choropleth pattern — `libs/viz_factory/README.md` (geom_polygon-as-map recipe) + `docs/appendix/manifest_structure.yaml` (boundary-join + geom_polygon spec). DRY: link the design doc, do not duplicate.
+
+> **Do NOT** uncomment `geom_map` at `geoms/core.py:822` for Solution A — that geom belongs to Solution B (needs the geo extra + a render branch; see design doc §11). Registering it now would expose a geom that errors on use.
+
 ### Legacy removal (tracked per rules_legacy_management.md §6)
 
 > Protocol: dep-sweep → impact assessment → migration path → code removal → test sweep → doc consistency sweep → ADR record.
@@ -178,8 +204,16 @@ Items with no blockers — can be started immediately.
 Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
 
 - [ ] **GREAT-DOCS-1** `[sonnet/medium]`: Evaluate `great-docs` (https://github.com/posit-dev/great-docs) for auto-generating a static Quarto/website reference from the codebase. **Depends on:** CODE-DOCS-RETROSPECTIVE — docstrings must exist before auto-gen is meaningful. Deferred until pre-deployment sprint.
-- [ ] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. Needs dedicated design session before implementation. **Note (2026-05-21):** TEST_LAB design (`.claude/design/spaces/TEST_LAB.md`) is almost finished — schedule this after Phase 34 is complete.
-- [ ] **UX-APPLY-IMPROVE-1** `[sonnet/medium]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. Needs design pass before scoping.
+- [x] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. ✅ 2026-05-22
+  - Design session delivered `.claude/design/developer_workflow.md` (indexed in `CLAUDE.md §3.6`): producer journey across TEST_LAB → BLUEPRINT → GALLERY → HOME; module-independence first principle ("map, not a wizard"); advisory-only orderings (reconcile-before-anonymise/scaffold); the stateless "Send to" handoff pattern with edit gap; cross-space seams.
+  - Key finding: "Open in BLUEPRINT" is one mechanism unlocking both TEST_LAB→BLUEPRINT and GALLERY→BLUEPRINT seams.
+  - Steer (Eve): keep the app simple — user-facing doc explains workflow *logic*, handoff plumbing stays minimal/optional/stateless.
+  - Spawned: LAB-SEND-TO-1 (Do Now), LAB-WORKFLOW-QMD-1 (Do Now), LAB-OPEN-BLUEPRINT-1 (Needs Discussion).
+- [x] **UX-APPLY-IMPROVE-1** `[sonnet/low]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. ✅ 2026-05-22
+  - `propagation_except` selectize now hidden by default (`display:none`) and revealed only when "All plots except…" radio is selected.
+  - Inline `<script>` in modal listens for `change` on `propagation_choice` radio name and toggles `propagation_except_wrapper` div visibility. No handler changes needed.
+  - Label updated from workaround text to instructional copy.
+- [ ] **LAB-OPEN-BLUEPRINT-1** `[opus/high]`: "Open in BLUEPRINT" inbound-manifest path — BLUEPRINT accepts an inbound manifest (ZIP from TEST_LAB Manifest Scaffolding, or YAML fragment from GALLERY) and opens it in a fresh editing session. One mechanism unlocks both the TEST_LAB→BLUEPRINT and GALLERY→BLUEPRINT seams (`developer_workflow.md §7`). **Open question (design §10):** does BLUEPRINT open the inbound manifest into a *new* session unconditionally, or warn/merge if a manifest is already open? Resolve before building. Boundary: loads an artifact *into* BLUEPRINT — no cross-space reactive coupling (keeps GALLERY's "no direct state coupling" constraint). Eve's steer: keep it simple — download→upload already works, so this is a convenience layer, not a blocker.
 - [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: In-app search for plot types, plot properties, and recipe components — cross-manifest, cross-recipe. Use case: scientist wants to find plots by what they show (e.g. "distribution", "trend"), by required data pattern, or by aesthetic mapping. Design questions: fuzzy search on plot definitions and taxonomy fields? Keyword index built from manifests at load time? How efficient can this be? Needs a concrete spike / prototype before scoping. Links to Gallery taxonomy (ADR-063) and recipe meta taxonomy fields.
 - [ ] **PROP-3** `[opus/high]`: Propagation TubeMap — graph viz of audit blast radius. Needs own design pass + ADR before implementation.
   > **What "propagation" means here:** when a T3 audit node (filter, exclusion) is applied across multiple plots via the propagation dialog (scope: this plot / all plots / all except...), the Propagation TubeMap would be a graph showing which plots are affected — blast-radius visualization of that audit decision. This is **distinct from the Blueprint TubeMap** (pipeline DAG from manifest structure). The T3 propagation dialog itself is designed in `ui_implementation_contract.md §12g` but not yet implemented. PROP-3 is a further visualization layer on top of that, also not yet implemented.
@@ -188,11 +222,11 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
 
 ## ⏳ Deferred / Blocked
 
-### Blocked by library limitations
+### Deferred by architecture choice (NOT hard library blocks — premises corrected 2026-05-22)
 
-- [ ] **VIZ-GEOM-MAP-1** `[opus/high]` `[deferred — library limitation]`: Register `geom_map` component in VizFactory. Blocked: plotnine has no native GeoDataFrame/spatial support; requires geopandas integration and a spatial manifest format design. Unblocks: GALLERY-MAP.
-- [ ] **GALLERY-MAP** `[opus/high]` `[deferred — library limitation]`: Map chart types in Gallery. Blocked by VIZ-GEOM-MAP-1.
-- [ ] **GALLERY-FLOW** `[sonnet/medium]` `[deferred — library limitation]`: Flow / network chart types. Blocked: plotnine has no native network/Sankey/flow support. Requires feasibility study — candidate libs: `networkx` + custom geom, or external renderer.
+- [ ] **VIZ-GEOM-MAP-1** `[opus/high]` `[deferred — architecture choice, NOT a library block]`: Register `geom_map` (Solution B — real geo). Premise corrected 2026-05-22: plotnine 0.15.4 **does** ship `geom_map` (`REQUIRED_AES={'geometry'}`); not blocked by the library. Deferred because it needs geopandas/shapely + a geometry-aware data path. Full design: `.claude/design/maps_advanced_geo.md` (recommended sub-option B1 = sidecar GeoDataFrame merged at render time). Choropleths ship sooner via Solution A (`MAP-A-*`, Do Now) with zero new deps. Do not uncomment `geoms/core.py:822` until this is scheduled.
+- [ ] **GALLERY-MAP** `[opus/high]` `[deferred]`: Map chart types in Gallery. Solution A choropleths arrive via `MAP-A-GALLERY-1`; advanced (projected/CRS) maps wait on VIZ-GEOM-MAP-1 / Solution B.
+- [ ] **GALLERY-FLOW** `[opus/high]` `[deferred — needs layout-precompute helper, NOT a hard library block]`: Flow / network chart types. Premise corrected 2026-05-22: same pattern as maps — plotnine has no high-level `geom_sankey`/`geom_net`, but the **primitives exist and are registered** (`geom_segment`, `geom_path`, `geom_polygon`, `geom_rect`, `geom_ribbon`). Feasible by precomputing layout/flow coordinates into a tabular form, then drawing with existing geoms. Needs: (1) a layout/coordinate-precompute helper (network: node x/y + edge endpoints; Sankey: stage rects + ribbon polygon vertices via pure-Python sigmoid interpolation), (2) a decision on whether to add `networkx` (NOT installed) for graph layout or hand-roll with `scipy` (installed). Note: `geom_curve` is **absent** in plotnine 0.15.4 (use `geom_segment`/`geom_path`); `matplotlib.sankey.Sankey` exists but draws its own figure and breaks the grammar-of-graphics model (escape-hatch only, not preferred). Needs own design pass + ADR before scheduling.
 
 ### Blocked by other tasks
 

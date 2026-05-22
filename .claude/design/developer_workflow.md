@@ -119,71 +119,62 @@ and a developer with already-clean, already-aligned data skips it entirely.
 
 ---
 
-## 5. How the User Picks a Handoff — The "Send to" Pattern
+## 5. How Modules Link — Export and Choose
 
-The question "how can they pick that?" is answered by a single, consistent UX pattern.
+There is **no in-app "Send to" handoff and no automated injection between tools.** Modules link
+the simple, independent way:
 
-After any tool **finishes a run**, its results area offers a contextual **"Send to […]"**
-control. The control:
+1. A tool runs and **exports** its result (download — TSV, recipe YAML, manifest ZIP, etc.).
+2. The user **chooses** that file as the input to the next tool, exactly as any standalone
+   module accepts a file.
 
-- **Only offers valid targets** for the artifact just produced. Examples:
-  - Reformatter result → *Send to ID Reconciliation* · *Send to Anonymisation* · *Send to Synthetic (learn from example)*
-  - ID Reconciliation result → *Send to Manifest Scaffolding* · *Send to Anonymisation*
-  - Manifest Scaffolding result → *Send to BLUEPRINT* (cross-space seam — see §7)
-- **Loads the artifact into the target tool as if freshly uploaded.** The target opens
-  pre-filled with that input. It does not "remember" anything — it received an input, exactly
-  as an upload would deliver one.
-- **Never auto-runs.** The user lands on the target tool with the input loaded and is free to
-  edit it before running. This is the **edit gap** — handoffs always drop the user at an
-  editable artifact, never a silently-executed next step.
+This is deliberate. It keeps every tool a true independent module: each chooses its own input
+files and produces its own exports, and works identically whether or not any other tool was
+used. The "edit gap" is automatic — the exported file is a concrete artifact the user can
+inspect or edit before feeding it onward; nothing auto-runs.
 
-**The "Send to" button is a convenience, not the only path.** Because every tool is fully
-independent, the user can always instead **download** an artifact and **re-upload** it into any
-other tool (or into BLUEPRINT). The handoff button just skips the download/upload round-trip.
+**One in-space convenience exists (optional, within TEST_LAB only):** if ID Reconciliation has
+been run in the current session, the Manifest Scaffolding tool offers a checkbox to bake those
+reconciliation steps into the generated `tier1:` wrangling. Scaffolding still works fully
+standalone — you choose its data files yourself — so the reconciliation carry-over is pure
+opt-in. This is the *only* cross-tool wiring, it lives entirely within one space (one
+`test_lab_enabled` gate, so persona independence is unaffected), and it accumulates no state: it
+reads a reactive calc that recomputes from inputs.
 
 ---
 
-## 6. Why This Does Not Break the Stateless Principle
+## 6. Stateless & Independent — the Invariant
 
-A "Send to" handoff is a **one-shot baton pass of a concrete artifact**, not accumulating
-session state:
+- Each tool runs to completion and returns a downloadable artifact. Between runs it holds no
+  state; closing a panel resets it (`rules_test_lab.md §1`).
+- The only persistence is **named files** the user saves explicitly (reconciliation recipes,
+  named synthetic scenarios).
+- No `reactive.Value` store accumulates state across tools. Linking is via exported files the
+  user re-chooses — not an in-memory pipeline engine.
 
-| Stateless rule | How the handoff respects it |
+---
+
+## 7. Cross-Space Handoffs Stay File-Based (Independence Rule)
+
+Handoffs **between** spaces are always file-based, and intentionally so: one space exports a
+file; the user loads it in the other space *if and when* that space is enabled. There is **no
+in-app "Open in BLUEPRINT"** and no cross-space state coupling.
+
+**Why (decisive):** the spaces are **independently persona-gated** — `test_lab_enabled`,
+`blueprint_enabled`, and `gallery_enabled` are independent flags (`rules_persona_feature_flags.md`).
+A persona may grant TEST_LAB without BLUEPRINT, or GALLERY without BLUEPRINT. An in-app
+cross-space handoff would break the instant the target space is disabled, and would violate
+ADR-071 positive-inclusion (each space must stand alone). A file on disk works under *any*
+persona combination.
+
+| Handoff | How it works |
 |---|---|
-| Tools hold no state between invocations | The target tool holds nothing — it is handed an input value, then behaves identically to an upload. Close it and it resets. |
-| No `reactive.Value` stores that accumulate across tools | The baton is a passed artifact (a file path + optional recipe object), consumed once by the target's normal input path. It is not a growing cross-tool store. |
-| Named files are the only persistence | Unchanged. Reconciliation recipes and named synthetic scenarios still persist as YAML; nothing else does. |
+| TEST_LAB Scaffolding → BLUEPRINT | Export the boilerplate manifest ZIP; open it in BLUEPRINT (if enabled) via BLUEPRINT's normal manifest load. |
+| GALLERY → BLUEPRINT | Copy the recipe YAML; paste/open it in BLUEPRINT (if enabled). |
+| BLUEPRINT → HOME | Save the manifest to disk; HOME's manifest selector picks it up. |
+| TEST_LAB Anonymiser → BLUEPRINT (de-anonymise) | Join the anonymised data with the mapping TSV in BLUEPRINT (recipe printed in the Anonymiser output). |
 
-The mental model: the handoff is **plumbing between independent tools**, not a stateful pipeline
-engine. If the plumbing were removed, every tool would still work exactly as before via
-download/upload.
-
----
-
-## 7. Cross-Space Seams
-
-The same baton-pass pattern extends across space boundaries. These are the integration points
-between the producer spaces — most are **manual today**, and the recurring unbuilt one is
-**"Open in BLUEPRINT."**
-
-| Seam | Direction | State today | Target |
-|---|---|---|---|
-| Reconcile → Scaffold | within TEST_LAB | Designed — "continuation mode", session-held output, no re-upload | "Send to Manifest Scaffolding" button |
-| Reformat / Anon / Synth → other Lab tools | within TEST_LAB | Manual download → upload | "Send to […]" buttons (§5) |
-| **Scaffold → BLUEPRINT** | TEST_LAB → BLUEPRINT | Manual: download ZIP, then open master YAML in BLUEPRINT | **"Open in BLUEPRINT"** — load scaffold ZIP straight into a BLUEPRINT session |
-| **GALLERY → BLUEPRINT** | GALLERY → BLUEPRINT | Manual: copy recipe YAML, paste/open in BLUEPRINT (transplant removed; no state coupling) | **"Open in BLUEPRINT"** — same inbound-manifest path |
-| BLUEPRINT → HOME | BLUEPRINT → HOME | Save manifest YAML to disk → HOME's manifest selector picks it up | (works today via the file system — no new seam needed) |
-| Anonymised data → BLUEPRINT (de-anonymise) | TEST_LAB → BLUEPRINT | Manual: join anonymised data with mapping TSV in BLUEPRINT (recipe printed in TEST_LAB output) | (works today; documentation is the deliverable) |
-
-**Key observation:** "Open in BLUEPRINT" is the *single* integration that, if built, unlocks
-both the TEST_LAB→BLUEPRINT and GALLERY→BLUEPRINT seams — they share one mechanism: *BLUEPRINT
-accepts an inbound manifest (or fragment) and opens it in a fresh session.* GALLERY.md and
-TEST_LAB.md both list this as "not yet built."
-
-**Boundary respected:** an inbound handoff loads a manifest *into* BLUEPRINT for editing — it
-does not create cross-space *reactive* coupling. BLUEPRINT receives an artifact and opens it,
-exactly as it would a file the user selected. This keeps GALLERY's "no direct state coupling"
-constraint intact.
+Each row is just "export here, choose there." No control reaches across a space boundary.
 
 ---
 
@@ -219,9 +210,9 @@ constraint intact.
                                                                           │  run / export    │
                                                                           └──────────────────┘
 
-   Solid arrows = artifact flows. Every arrow is OPTIONAL and the producing tool is usable
-   standalone. "Send to" buttons (§5) and "Open in BLUEPRINT" (§7) automate the arrows that
-   are otherwise download → upload / copy → paste.
+   Solid arrows = artifact flows, every one OPTIONAL. Each producing tool is usable standalone.
+   Every arrow is a file the user EXPORTS from one tool/space and CHOOSES in the next — there are
+   no in-app handoff buttons and no cross-space coupling (§5, §7).
 ```
 
 ---
