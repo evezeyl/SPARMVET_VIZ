@@ -406,6 +406,8 @@ Outputs:
 
 **Use only these verified action names** in wrangling and assembly steps. Verify against `libs/transformer/src/transformer/actions/` if in doubt.
 
+**Documentation standard (ADR-075 §1):** Every entry in this list is expected to carry `description` + `yaml_example` in its `ui_schema`, and `wraps` for all 1:1 Polars wrappers. The Blueprint IDE help panel and `help_registry.py` surface these fields. If you notice an action is missing `description` or `yaml_example`, file a task (BP-HELP-TRANSFORMER-1 scope).
+
 **Cleaning:** `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `rename_columns`, `unique`
 
 **Expressions:** `regex_extract`, `cast`, `coalesce`, `label_if`, `mutate`, `regex_replace`, `null_if`

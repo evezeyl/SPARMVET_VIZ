@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import re
 import polars as pl
 from .data_structures import MatchResult
+
+_DELIM_RE = re.compile(r"[_\-]")
 
 # @deps
 # provides: exact_match, fuzzy_match_batch
@@ -29,21 +32,28 @@ def fuzzy_match_batch(
 ) -> list[MatchResult]:
     """Fuzzy-match unmatched ref IDs against target_ids using rapidfuzz token_set_ratio.
 
-    token_set_ratio handles rearranged ID segments (e.g. ABCD_001 vs 001_ABCD).
+    Underscores and hyphens are normalized to spaces before scoring so that
+    rearranged segments (e.g. ABCD_001 vs 001_ABCD) are scored correctly.
     Score cutoff is on the 0–100 scale; certainty stored as 0.0–0.99.
     """
     from rapidfuzz import process, fuzz
 
+    def _norm(s: str) -> str:
+        return _DELIM_RE.sub(" ", s)
+
+    normalized_targets = [_norm(t) for t in target_ids]
+
     results = []
     for ref in unmatched_refs:
         match = process.extractOne(
-            ref,
-            target_ids,
+            _norm(ref),
+            normalized_targets,
             scorer=fuzz.token_set_ratio,
             score_cutoff=score_cutoff,
         )
         if match is not None:
-            best_target, score, _ = match
+            _, score, idx = match
+            best_target = target_ids[idx]
             results.append(
                 MatchResult(
                     ref_id=ref,

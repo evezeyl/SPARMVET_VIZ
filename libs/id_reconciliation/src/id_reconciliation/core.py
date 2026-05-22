@@ -83,6 +83,113 @@ class IDReconciliationEngine:
         """Return pattern suggestions without running the full reconciliation."""
         return detect_patterns(ref_ids, target_ids)
 
+    def precheck_compatibility(
+        self,
+        ref_ids: list[str],
+        target_ids: list[str],
+        recode_threshold: int = 50,
+    ) -> dict:
+        """Quick compatibility summary before running full reconciliation.
+
+        Returns a dict with: overlap_count, overlap_pct, unmatched_count,
+        needs_cleaning (True if unmatched > recode_threshold), suggestions (top 3).
+        """
+        ref_set = set(ref_ids)
+        target_set = set(target_ids)
+        overlap = ref_set & target_set
+        unmatched_count = len(ref_set) - len(overlap)
+        suggestions = detect_patterns(
+            [r for r in ref_ids if r not in target_set],
+            target_ids,
+        )
+        return {
+            "total_ref": len(ref_ids),
+            "total_target": len(target_ids),
+            "overlap_count": len(overlap),
+            "overlap_pct": round(len(overlap) / max(len(ref_ids), 1) * 100, 1),
+            "unmatched_count": unmatched_count,
+            "needs_cleaning": unmatched_count > recode_threshold,
+            "top_suggestions": suggestions[:3],
+        }
+
+    def match_pair(
+        self,
+        ref_lf: pl.LazyFrame,
+        target_lf: pl.LazyFrame,
+        ref_column: str,
+        target_column: str,
+    ) -> list[MatchResult]:
+        """Reconcile two LazyFrames by key column; reads full columns into memory for matching.
+
+        Progressive display is handled by the caller slicing `format_match_table` output
+        in chunks of `self.chunk_size` rows.
+        """
+        ref_ids = (
+            ref_lf.select(pl.col(ref_column).cast(pl.String).drop_nulls())
+            .unique()
+            .collect()[ref_column]
+            .to_list()
+        )
+        target_ids = (
+            target_lf.select(pl.col(target_column).cast(pl.String).drop_nulls())
+            .unique()
+            .collect()[target_column]
+            .to_list()
+        )
+        return self.reconcile(ref_ids, target_ids)
+
+    def generate_recipe(
+        self,
+        results: list[MatchResult],
+        ref_column: str,
+        target_column: str,
+    ) -> TransformationRecipe:
+        """Build a TransformationRecipe from reconciliation results.
+
+        Infers cleaning steps from the transform_applied fields on matched results
+        and includes an explicit recode map for remaining fuzzy matches.
+        """
+        from .pattern_detector import suggest_regex
+
+        steps: list[dict] = []
+        seen_transforms: set[str] = set()
+
+        for r in results:
+            if r.transform_applied and r.transform_applied not in seen_transforms:
+                seen_transforms.add(r.transform_applied)
+                desc = r.transform_applied.lower()
+                if "lowercase" in desc or "case" in desc:
+                    steps.append({"action": "lowercase"})
+                elif "whitespace" in desc or "strip" in desc:
+                    steps.append({"action": "strip_whitespace"})
+                elif "delimiter" in desc or "swap" in desc:
+                    steps.append({"action": "regex_replace", "pattern": "_", "replacement": "-"})
+                elif "prefix" in desc or "removing first" in desc:
+                    # Extract prefix length from description "Removing first N character(s)"
+                    import re
+                    m = re.search(r"(\d+) character", desc)
+                    n = int(m.group(1)) if m else 0
+                    if n:
+                        steps.append({"action": "regex_replace", "pattern": f"^.{{{n}}}", "replacement": ""})
+                elif "suffix" in desc or "removing last" in desc:
+                    import re
+                    m = re.search(r"(\d+) character", desc)
+                    n = int(m.group(1)) if m else 0
+                    if n:
+                        steps.append({"action": "regex_replace", "pattern": f".{{{n}}}$", "replacement": ""})
+
+        fuzzy_pairs = [(r.ref_id, r.target_id) for r in results if r.match_type == "fuzzy" and r.target_id]
+        metadata: dict = {}
+        if fuzzy_pairs:
+            metadata["fuzzy_recode_map"] = {orig: target for orig, target in fuzzy_pairs}
+
+        return TransformationRecipe(
+            ref_column=ref_column,
+            target_column=target_column,
+            steps=steps,
+            metadata=metadata,
+        )
+
 
 def detect_many_to_many(results: list[MatchResult]) -> dict[str, list[str]]:
     """Return dict of ref_id → [target_ids] for cases with multiple matches (many-to-many warning)."""
@@ -110,7 +217,11 @@ def apply_recode_step(
     column: str,
     recipe: TransformationRecipe,
 ) -> pl.DataFrame:
-    """Apply recode steps from a TransformationRecipe to a DataFrame column."""
+    """Apply recode steps from a TransformationRecipe to a DataFrame column.
+
+    Supported actions: strip_whitespace, cast_string, regex_replace, lowercase,
+    mutate (Polars expression string), drop_duplicates, null_if, drop_nulls.
+    """
     for step in recipe.steps:
         action = step.get("action")
         if action == "strip_whitespace":
@@ -123,4 +234,18 @@ def apply_recode_step(
             df = df.with_columns(pl.col(column).str.replace_all(pattern, replacement))
         elif action == "lowercase":
             df = df.with_columns(pl.col(column).str.to_lowercase())
+        elif action == "mutate":
+            # expression is a Polars expression string; pl and column name are in scope
+            expression = step.get("expression", "")
+            expr = eval(expression, {"pl": pl, "col": column})  # noqa: S307
+            df = df.with_columns(expr.alias(column))
+        elif action == "drop_duplicates":
+            df = df.unique(subset=[column], keep="first")
+        elif action == "null_if":
+            value = step.get("value", "")
+            df = df.with_columns(
+                pl.when(pl.col(column) == value).then(None).otherwise(pl.col(column)).alias(column)
+            )
+        elif action == "drop_nulls":
+            df = df.drop_nulls(subset=[column])
     return df

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
 from .data_structures import MatchResult, PatternSuggestion
 
 # @deps
-# provides: detect_patterns, apply_pattern
+# provides: detect_patterns, apply_pattern, suggest_regex
 # consumes: libs/id_reconciliation/src/id_reconciliation/data_structures.py
 # consumed_by: libs/id_reconciliation/src/id_reconciliation/core.py
+# note: pattern primitives will be extracted to libs/utils/id_patterns.py in TL-UTILS-PATTERN-1
 # @end_deps
 
 
@@ -43,37 +45,45 @@ def detect_patterns(
             match_count=delim_hits,
         ))
 
-    # Common prefix removal — find longest common prefix length that yields matches
+    # Common prefix removal — scan up to 16 chars (covers common bio prefixes like "sample_")
     if unmatched_refs:
         sample = unmatched_refs[:50]
-        for prefix_len in range(1, 8):
+        best_prefix: tuple[int, int] | None = None  # (hits, prefix_len)
+        for prefix_len in range(1, 17):
             stripped = [r[prefix_len:] for r in sample if len(r) > prefix_len]
             hits = sum(1 for s in stripped if s in target_set)
             if hits >= 2:
-                example = sample[0]
-                suggestions.append(PatternSuggestion(
-                    pattern_type="prefix_removal",
-                    description=f"Removing first {prefix_len} character(s) from ref IDs",
-                    example_before=example,
-                    example_after=example[prefix_len:],
-                    match_count=hits,
-                ))
-                break
+                if best_prefix is None or hits > best_prefix[0]:
+                    best_prefix = (hits, prefix_len)
+        if best_prefix is not None:
+            hits, prefix_len = best_prefix
+            example = sample[0]
+            suggestions.append(PatternSuggestion(
+                pattern_type="prefix_removal",
+                description=f"Removing first {prefix_len} character(s) from ref IDs",
+                example_before=example,
+                example_after=example[prefix_len:] if len(example) > prefix_len else "",
+                match_count=hits,
+            ))
 
-        # Common suffix removal
-        for suffix_len in range(1, 8):
+        # Common suffix removal — scan up to 16 chars
+        best_suffix: tuple[int, int] | None = None
+        for suffix_len in range(1, 17):
             stripped = [r[:-suffix_len] for r in sample if len(r) > suffix_len]
             hits = sum(1 for s in stripped if s in target_set)
             if hits >= 2:
-                example = sample[0]
-                suggestions.append(PatternSuggestion(
-                    pattern_type="suffix_removal",
-                    description=f"Removing last {suffix_len} character(s) from ref IDs",
-                    example_before=example,
-                    example_after=example[:-suffix_len],
-                    match_count=hits,
-                ))
-                break
+                if best_suffix is None or hits > best_suffix[0]:
+                    best_suffix = (hits, suffix_len)
+        if best_suffix is not None:
+            hits, suffix_len = best_suffix
+            example = sample[0]
+            suggestions.append(PatternSuggestion(
+                pattern_type="suffix_removal",
+                description=f"Removing last {suffix_len} character(s) from ref IDs",
+                example_before=example,
+                example_after=example[:-suffix_len] if len(example) > suffix_len else "",
+                match_count=hits,
+            ))
 
     suggestions.sort(key=lambda s: s.match_count, reverse=True)
     return suggestions
@@ -94,3 +104,20 @@ def apply_pattern(ids: list[str], suggestion: PatternSuggestion) -> list[str]:
         n = len(suggestion.example_before or "") - len(suggestion.example_after or "")
         return [s[:-n] if len(s) > n else s for s in ids]
     return ids
+
+
+def suggest_regex(original: str, anchor: str) -> str:
+    """Suggest a boundary-aware regex pattern that extracts anchor from original.
+
+    Generalizes digit runs (e.g. SAM001 → SAM\\d+) and adds non-alphanumeric
+    boundary guards so patterns don't over-match (e.g. Sample_1 ≠ Sample_11).
+    Ported from KeyReconciler.suggest_regex in reconciler.py.
+    """
+    if anchor not in original:
+        return r".*"
+
+    escaped = re.escape(anchor)
+    # Generalize digit runs so the pattern covers the whole ID series
+    generalized = re.sub(r"\\d+|\d+", r"\\d+", escaped)
+    # Boundary guards: non-alphanumeric (or start/end of string) around capture group
+    return rf"(?:^|[^a-zA-Z0-9])({generalized})(?:$|[^a-zA-Z0-9])"

@@ -2591,8 +2591,10 @@ Action UI schemas are declared as a `ui_schema` keyword argument on the existing
     "category": "filtering",
     "context": ["t1", "t2"],
     "tags": ["numeric", "cleaning"],
+    "description": "Keep rows where a numeric column falls within [min, max]. Use in tier1 to exclude out-of-range values before joining.",
     "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"],
                "doc_url": "https://docs.pola.rs/..."}],
+    "yaml_example": "- action: filter_range\n  columns: [identity]\n  min: 90\n  max: 100",
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "dtype_filter": ["numeric"]},
         "min":     {"widget": "number", "label": "Min value", "required": False},
@@ -2602,6 +2604,21 @@ Action UI schemas are declared as a `ui_schema` keyword argument on the existing
 def action_filter_range(lf: pl.LazyFrame, spec: dict) -> pl.LazyFrame:
     ...
 ```
+
+**Standard optional `ui_schema` fields (all keys are optional — absence is valid):**
+
+| Key | Type | Purpose |
+|---|---|---|
+| `label` | `str` | Human-readable name shown in the action picker |
+| `category` | `str` | Groups actions in the picker (e.g. `"cleaning"`, `"analytical"`) |
+| `context` | `list[str]` | Valid DAG positions: `"t1"`, `"t2"`, `"assembly"`, `"plot"` |
+| `tags` | `list[str]` | Searchable keywords in the picker |
+| `description` | `str` | **One developer-oriented sentence.** What problem this solves; when to reach for it vs. alternatives. Written for manifest authors who know data science but may not know SPARMVET internals. |
+| `wraps` | `list[dict]` | Points to the real Polars/Plotnine symbol. Each entry: `{"lib": str, "attr_path": list[str], "doc_url": str (optional)}`. BLUEPRINT resolves the installed library `__doc__` at runtime via `importlib` (see §4). |
+| `yaml_example` | `str` | **Minimal correct YAML snippet** showing the action used in a manifest `tier1:`/`tier2:`/`layers:` block. Rendered verbatim as a code block in the help panel and in `help_registry.py`. No imports, no surrounding context — just the step(s). |
+| `params` | `dict` | Widget definitions per parameter (see §2) |
+
+**`description` vs function `__doc__`:** The function `__doc__` describes what the code does; `description` explains *when* to reach for it from a manifest design perspective. Both are shown in the help panel — `description` first (context), then the library `__doc__` (technical detail). For pure 1:1 wrappers, `description` is a one-liner pointing to the Polars/Plotnine analogue. For composite/custom actions (e.g. `split_and_explode`), `description` is the primary user-facing explanation.
 
 `blueprint_arch` reads the registry at startup and extracts all `ui_schema` dicts to build the form catalog. No Shiny imports in the action files — Two-Category Law compliant.
 
@@ -2641,9 +2658,13 @@ color field
 
 ---
 
-### 4. Documentation Strategy — Python `__doc__`
+### 4. Documentation Strategy — `description`, `wraps`, and `yaml_example`
 
-For each action's help panel, BLUEPRINT resolves documentation from the installed library at runtime:
+The help panel for each action/component resolves documentation from three sources, rendered in order:
+
+**1. `description` (author-written, in `ui_schema`)** — one developer-oriented sentence explaining *when* to use this action. Rendered first — gives manifest authors immediate context before they read technical details.
+
+**2. `wraps` → runtime `__doc__` resolution** — for 1:1 library wrappers, BLUEPRINT resolves the installed library `__doc__` at runtime:
 
 ```python
 def _resolve_doc(wraps_entry: dict) -> str:
@@ -2656,9 +2677,20 @@ def _resolve_doc(wraps_entry: dict) -> str:
 
 **Benefits:** air-gap safe; always matches the installed version; zero maintenance.
 
-**External URL** (`doc_url`) is optional — rendered as an "Open in browser →" button, disabled in isolated deployments.
+For composite/custom actions without a single Polars/Plotnine equivalent, `wraps` may list multiple entries. BLUEPRINT renders each `__doc__` in a collapsible accordion: *"This action combines `[fn1]` and `[fn2]`. See component documentation:"*.
 
-**Action naming alignment:** `@register_action` names should match Polars/Plotnine names for 1:1 wrappers (e.g. `sort`, `cast`, `rename`, `filter`). For composite/custom actions (`split_and_explode`, `label_if`), a custom one-line description is written in the decorator, and BLUEPRINT auto-generates: *"This action combines `[fn1]` and `[fn2]`. See component documentation:"* with each `__doc__` in a collapsible section.
+**`doc_url`** inside a `wraps` entry is optional — rendered as an "Open in browser →" button, disabled in isolated deployments.
+
+**3. `yaml_example` (author-written, in `ui_schema`)** — a minimal correct YAML snippet shown in a code block below `description` and above the `wraps` accordion. Lets manifest authors copy-paste a working step without needing to know the full parameter schema. Required for all actions; for composite actions it is the primary usage guide.
+
+**Resolution fallback chain (help panel):**
+```
+description (if present) → yaml_example code block (if present) → wraps __doc__ accordion (if present) → function __doc__ → "No documentation available."
+```
+
+All three fields are additive to the existing `__doc__` fallback — absence of any field is valid and the panel degrades gracefully.
+
+**Action naming alignment:** `@register_action` names should match Polars/Plotnine names for 1:1 wrappers (e.g. `sort`, `cast`, `rename`, `filter`). For composite/custom actions (`split_and_explode`, `label_if`), `description` and `yaml_example` are the primary documentation — `wraps` may list the component Polars functions for completeness.
 
 Action renames are tracked and migrated via **ACTION-RENAME-1** (compatibility shims + manifest scanner).
 

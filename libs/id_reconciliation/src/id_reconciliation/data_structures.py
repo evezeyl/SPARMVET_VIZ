@@ -42,3 +42,23 @@ class TransformationRecipe:
     target_column: str
     steps: list[dict] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
+
+    def to_yaml(self) -> str:
+        import yaml
+        return yaml.dump({
+            "ref_column": self.ref_column,
+            "target_column": self.target_column,
+            "steps": self.steps,
+            "metadata": self.metadata,
+        }, default_flow_style=False, allow_unicode=True)
+
+    @classmethod
+    def from_yaml(cls, text: str) -> "TransformationRecipe":
+        import yaml
+        data = yaml.safe_load(text)
+        return cls(
+            ref_column=data["ref_column"],
+            target_column=data["target_column"],
+            steps=data.get("steps", []),
+            metadata=data.get("metadata", {}),
+        )

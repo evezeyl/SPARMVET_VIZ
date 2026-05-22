@@ -1041,12 +1041,19 @@ class WrangleStudio:
             wraps = ui_schema.get("wraps", [])
             label = ui_schema.get("label", action_name)
             description = ui_schema.get("description", "")
+            yaml_example = ui_schema.get("yaml_example", "")
 
             parts = []
 
             # Description line from ui_schema
             if description:
                 parts.append(ui.p(description, class_="bp-help-description"))
+
+            # YAML example code block (copy-paste snippet for manifest authors)
+            if yaml_example:
+                parts.append(
+                    ui.tags.pre(yaml_example, class_="bp-help-docstring bp-help-yaml-example")
+                )
 
             if wraps:
                 # Resolve __doc__ for each wrapped symbol
