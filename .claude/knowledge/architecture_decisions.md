@@ -3892,3 +3892,9 @@ following the basename mirroring standard (`rules_manifest_structure.md §1`).
 - `test_lab_studio.py` UI is gated by `test_lab_enabled` persona flag (ADR-071). Task: TL-UI-SHELL-1.
 - `UX-DEVINSP-1` (deferred TEST_LAB sidebar redesign) is superseded by Phase 34 tasks.
 - The synthetic data config schema and the pipeline manifest schema are permanently separate firewalls.
+
+**Implementation decisions locked 2026-05-22.**
+
+- **Fuzzy matching algorithm:** `rapidfuzz` token-set ratio. Chosen over plain Levenshtein because biological sample IDs frequently have rearranged segments (e.g. `ABCD_001` vs `001_ABCD`). `rapidfuzz` is the maintained successor to `fuzzywuzzy`, requires no system libs, and handles boundary-aware substring matching in the same pass. Added as a runtime dep in `libs/id_reconciliation/pyproject.toml`.
+- **Recipe reuse caching:** none — always fresh matching. User loads a saved recipe manually if they want to reapply it. Keeps the tool stateless and the UI predictable. Auto-suggestion deferred as a future enhancement.
+- **`reconciler.py` migration:** all logic from `KeyReconciler` (`calculate_intersection_score`, `suggest_regex`, `reconcile`) migrates to `libs/id_reconciliation/`. `libs/test_lab/src/test_lab/reconciler.py` is deleted after TL-IDLIB-TESTS-1 passes. No parallel maintenance of both.

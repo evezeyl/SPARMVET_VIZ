@@ -13,7 +13,7 @@
 2. **NEVER load `synthetic_data_config.yaml` via `ConfigManager.load()`.** Synthetic configs use `AquaSynthesizer` reader only. Root key `synthetic_data_config:` is NOT a pipeline manifest.
 3. **NEVER generate composite-key join logic from TEST_LAB.** Single-key only (`on: sample_id`). Composite keys (`on: [col1, col2]`) belong in BLUEPRINT Join Designer.
 4. **NEVER generate `analysis_groups:`, plot specs, or analysis wrangling from ManifestBootstrapper.** Boilerplate scope only: structure + inferred types + PK hints + single-key cleaning recipes.
-5. **NEVER import a peer domain lib inside `libs/id_reconciliation/`.** Only stdlib + polars + utils (Tier 1). No transformer, blueprint_arch, viz_factory, ingestion, connector.
+5. **NEVER import a peer domain lib inside `libs/id_reconciliation/`.** Only stdlib + polars + utils (Tier 1) + rapidfuzz. No transformer, blueprint_arch, viz_factory, ingestion, connector.
 6. **NEVER persist T3-style ghost state in TEST_LAB.** Tools are stateless. Only named YAML files (recipes, scenarios) explicitly saved by the user persist. No ghost saves, no `_autosave_*.json`.
 7. **NEVER mount TEST_LAB UI without `test_lab_enabled: true`.** Positive inclusion (ADR-071) — TEST_LAB panel must not exist in the DOM unless the flag is active.
 8. **NEVER use `sys.path.append/insert` in `libs/test_lab/` or `libs/id_reconciliation/` tests.** All imports resolve via `pip install -e` (ADR-011/016). Path hacking is unconditionally PROHIBITED.
@@ -42,7 +42,8 @@ A Tier 1 domain library — independently installable, headless, Shiny-free.
 ```toml
 [project.dependencies]
 polars = ">=1.0"
-utils = "*"   # Tier 1 base — package name, not path form
+utils = "*"      # Tier 1 base — package name, not path form
+rapidfuzz = "*"  # fuzzy matching — token-set ratio for rearranged ID segments
 ```
 
 Dev only: `pytest`, `pytest-cov`. No other runtime dependencies.

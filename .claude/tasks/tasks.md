@@ -26,29 +26,44 @@
 
 Items with no blockers — can be started immediately.
 
-### Phase 18-F — Action Registry ui_schema Parity
+### Audit-detected fixes
 
-> Status: COMPLETED. Detailed history moved to: [tasks_archive_phase32.md](archives/tasks_archive_phase32.md)
+- [ ] **ADR-045-ANCHOR-SET-1** `[sonnet/medium]` `[adr-violation]`: `app/handlers/home_theater.py` — `anchor_path.set(str(out_path))` is called inside `@render.ui dynamic_tabs()`, violating ADR-045 Rule R1 (renders must be read-only). Extract to a dedicated `@reactive.Effect` with idempotent guard: `if anchor_path.get() != str(out_path): anchor_path.set(str(out_path))`. Audit report: `.claude/logs/audits/audit_adr_compliance_2026-05-21.md`.
 
-### Phase 32 — Blueprint IDE Build Mode (ADR-075 / ADR-082)
+- [ ] **VIZFAC-SUITE-TIMEOUT-1** `[sonnet/low]` `[test-infra]`: `viz_factory` integrity suite exceeds 300s audit timeout. The suite runs `debug_runner.py` as a subprocess per registered component (168+), rendering a PNG for each — inherently slow. Options: (1) increase audit script timeout to 600s, (2) add `--fast` flag that skips PNG rendering and only validates registry/manifest parsing, (3) split into fast (registry) + slow (render) suites. Audit report: `.claude/logs/audits/audit_library_tests_2026-05-21.md`.
 
-> Status: COMPLETED. Detailed history moved to: [tasks_archive_phase32.md](archives/tasks_archive_phase32.md)
+- [ ] **DOC-SYNC-PLATFORM-1** `[haiku/low]` `[doc-sync]`: `docs/vision/platform_evolution.qmd` line 115 references `docs/vision/gallery.qmd` as a planned document — file does not exist. Either create a stub or mark the table entry as `[PLANNED]`. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
 
-### Phase 32 (cont.) — ADR-082 Spawned Tasks (BLUEPRINT Feature Set)
+- [ ] **DOC-SYNC-TESTING-1** `[haiku/low]` `[doc-sync]`: `docs/reference/testing.qmd` line 65 references `assets/scripts/create_test_data.py` which does not exist. The synthetic data tool is now AquaSynthesizer (`libs/test_lab/src/test_lab/aqua_synthesizer.py`, Phase 34). Update the doc to reference the correct tool and path. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
 
-> Status: COMPLETED. Detailed history moved to: [tasks_archive_phase32.md](archives/tasks_archive_phase32.md)
+- [ ] **PERSONA-DATAIMPORT-FLAG-DOC-1** `[haiku/low]` `[doc-sync]`: `data_import_panel_visible` is declared in all 8 persona templates but is absent from `rules_persona_feature_flags.md`. Determine: is this superseded by ADR-073 sidebar slot registry (which handles panel visibility declaratively)? If yes, add a note to the rules file and flag it as superseded. If still active, add it to the flag matrix. Audit report: `.claude/logs/audits/audit_persona_consistency_2026-05-21.md`.
 
-### Phase 33 — Blueprint AI Agent MVP-1 (ADR-076)
+- [ ] **DOC-BLUEPRINT-PANELS-1** `[haiku/low]` `[doc-sync]`: `docs/user_guide/blueprint_manifest_authoring.qmd` — Blueprint IDE panel table is missing "Master Manifest" and "External Exchange" panels; "YAML" should be "YAML Escape Hatch". Verify against `app/handlers/blueprint_handlers.py` blueprint panel construction code before fixing. Audit report: `.claude/logs/audits/audit_doc_sync_2026-05-21.md`.
 
-> Status: COMPLETED. Detailed history moved to: [tasks_archive_phase33.md](archives/tasks_archive_phase33.md)
+### Blueprint In-App Help Enrichment (developer-facing, Polars + Plotnine docs in Blueprint IDE)
 
-### Audit script fixes
+> **Design settled 2026-05-22.** All four tasks unblocked and sequenced.
+>
+> **Context:** `@register_action` and `@register_plot_component` carry a `ui_schema` dict read at runtime by `schema_registry.py` and rendered in `bp_help_panel_ui`. ADR-075 §4 specifies that 1:1 Polars/Plotnine wrappers should resolve the real library `__doc__` via the `wraps` field (importlib, air-gap safe, zero maintenance). Current state: transformer has 1/63 actions with `wraps`; viz_factory has 191/192. Neither library has `description` or `yaml_example` fields.
+>
+> **Breakage risk:** none. `ingestion/`, `utils/`, `transformer` execution, and `config_loader` never read `ui_schema`. All app-layer readers use `.get()` with defaults. New fields are purely additive.
+>
+> **Build order:** BP-HELP-ADR-1 → BP-HELP-RENDER-1 (parallel-safe after ADR) → BP-HELP-TRANSFORMER-1 → BP-HELP-VIZFACTORY-1.
 
-> Status: COMPLETED. Detailed history moved to: [tasks_archive_phase32.md](archives/tasks_archive_phase32.md)
+- [ ] **BP-HELP-ADR-1** `[sonnet/low]`: Extend ADR-075 to canonicalize two new optional `ui_schema` fields: `description` (one developer-oriented sentence — what problem this solves, when to reach for it) and `yaml_example` (minimal correct YAML snippet for use in a manifest). Update `rules_data_engine.md §2` (decorator standards — add the two fields to the law). Update `rules_persona_bioscientist.md §8` (action list note — add that all entries are expected to carry `wraps` or `description`+`yaml_example`). No code changes in this task.
+  - Gate: ADR-075 §1 lists `description` and `yaml_example` as standard optional keys with their semantics. Rules files updated. `dependency_index.md` consistent.
 
-### Documentation & Hygiene Sprint (pre-build-continuation gate)
+- [ ] **BP-HELP-RENDER-1** `[haiku/low]`: Add render support for the two new fields. (1) `bp_help_panel_ui` in `app/modules/wrangle_studio.py`: render `yaml_example` as a `.bp-help-docstring` code block immediately below the description line, before the `wraps` docstring accordion. (2) `help_registry.py`: add `description` column to the registry DataGrid (read from `ACTION_SCHEMAS` via `schema_registry.get_action_catalog()`; extend with `get_component_catalog()` so viz_factory components are also listed). Both changes are additive — render only when field is present, no-op when absent.
+  - Depends: BP-HELP-ADR-1.
+  - Gate: `python -c "from app.src.main import app; print('OK')"` clean. Smoke: help panel renders for `filter_range` (has existing `wraps`) and shows a code block when `yaml_example` is set; registry table shows description column.
 
-> Status: COMPLETED. Detailed history moved to: [tasks_archive_hygiene_2026-05-21.md](archives/tasks_archive_hygiene_2026-05-21.md)
+- [ ] **BP-HELP-TRANSFORMER-1** `[sonnet/high]`: Content sweep — all 63 transformer `@register_action` entries. For each: (a) add `wraps: [{"lib": "polars", "attr_path": [...]}]` pointing to the correct `pl.LazyFrame` (or `pl.Expr`) method for all 1:1 Polars wrappers (62 currently missing); (b) add `description` (developer-oriented, one sentence) and `yaml_example` (minimal YAML snippet) to all entries, including composite/custom actions that have no single Polars equivalent. Categories: `cleaning/`, `expressions/`, `analytical/`, `relational/`, `reshaping/`, `performance/`, `persistence/`. After sweep: dep-sweep (`grep -rn "ACTION_SCHEMAS\|AVAILABLE_WRANGLING_ACTIONS" app/`) to confirm no caller breaks; run `build_dep_graph.py`.
+  - Depends: BP-HELP-ADR-1.
+  - Gate: `grep -c '"wraps"' libs/transformer/src/transformer/actions/**/*.py` ≥ 55 (all 1:1 wrappers covered). `grep -c '"description"' libs/transformer/src/transformer/actions/**/*.py` = 63. `grep -c '"yaml_example"' libs/transformer/src/transformer/actions/**/*.py` = 63. All existing tests pass.
+
+- [ ] **BP-HELP-VIZFACTORY-1** `[sonnet/medium]`: Content sweep — all 192 viz_factory `@register_plot_component` entries. `wraps` already points to plotnine for 191/192 — verify the missing one and fix. Add `description` (developer-oriented, one sentence) and `yaml_example` (minimal YAML `layers:` snippet) to all 192. Categories: `geoms/`, `stats/`, `scales/`, `coords/`, `facets/`, `themes/`, `positions/`, `annotations/`, `labs/`. After sweep: dep-sweep (`grep -rn "COMPONENT_SCHEMAS\|PLOT_COMPONENT_REGISTRY" app/`) to confirm no caller breaks; run `build_dep_graph.py`.
+  - Depends: BP-HELP-ADR-1.
+  - Gate: `grep -c '"description"' libs/viz_factory/src/viz_factory/**/*.py` = 192. `grep -c '"yaml_example"' libs/viz_factory/src/viz_factory/**/*.py` = 192. `wraps` present for all 192. All existing tests pass.
 
 ### Phase 34 — TEST_LAB Build
 
@@ -58,12 +73,12 @@ Items with no blockers — can be started immediately.
 
 #### 34-A — ID Reconciliation Library
 
-- [ ] **TL-IDLIB-1** `[haiku/low]`: Scaffold `libs/id_reconciliation/` — `pyproject.toml` (deps: `polars`, `utils`), module structure (`__init__.py`, empty module files), editable install, empty `tests/conftest.py`. Gate: `from id_reconciliation import IDReconciliationEngine` succeeds.
+- [ ] **TL-IDLIB-1** `[haiku/low]`: Scaffold `libs/id_reconciliation/` — `pyproject.toml` (deps: `polars`, `utils`, `rapidfuzz`), module structure (`__init__.py`, empty module files), editable install, empty `tests/conftest.py`. Gate: `from id_reconciliation import IDReconciliationEngine` succeeds.
 
-- [ ] **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe`) + `matcher.py` (exact 1.0; fuzzy scored; unmatched 0.0). Port logic from `libs/test_lab/src/test_lab/reconciler.py` — do not duplicate. Gate: `test_exact_match` + `test_pattern_match` pass.  
+- [ ] **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe`) + `matcher.py` (exact 1.0; `rapidfuzz` token-set ratio for fuzzy 0.0–0.99; unmatched 0.0). Port all logic from `libs/test_lab/src/test_lab/reconciler.py` (`KeyReconciler`). Add `rapidfuzz` to `libs/id_reconciliation/pyproject.toml`. Delete `reconciler.py` after TL-IDLIB-TESTS-1 passes. Gate: `test_exact_match` + `test_fuzzy_match` pass; boundary-aware matching confirmed.  
   Depends: TL-IDLIB-1.
 
-- [ ] **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; ranked by `expected_matches DESC, expected_certainty DESC, simplicity ASC`). Builds on `suggest_regex` in `reconciler.py`. Gate: `test_pattern_suggestion` passes — prefix `"sample_"` detected and ranked first.  
+- [ ] **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; ranked by `expected_matches DESC, expected_certainty DESC, simplicity ASC`). Port `suggest_regex` from `reconciler.py`; underlying primitive extracted to `libs/utils/id_patterns.py` in TL-UTILS-PATTERN-1. Gate: `test_pattern_suggestion` passes — prefix `"sample_"` detected and ranked first.  
   Depends: TL-IDLIB-1.
 
 - [ ] **TL-IDLIB-RECIPE-1** `[sonnet/medium]`: Recode workflow + recipe persistence — `recipe.py` (`apply_recode_step` for: `regex_replace`, `mutate` via Polars expression, `drop_duplicates`, `null_if`, `drop_nulls`; `TransformationRecipe.to_yaml` / `from_yaml`). Gate: `test_recipe_persistence` (save+load round-trip) + `test_recode_workflow` (prefix removal + delimiter extraction) pass.  
@@ -121,45 +136,8 @@ Items with no blockers — can be started immediately.
 - [ ] **TL-UI-ANON-1** `[sonnet/medium]`: Anonymisation panel — multi-file upload, ID column selector, personal column selector, pattern picker, generate button, download anonymised TSV(s) + mapping TSV + instructions.  
   Depends: TL-ANON-1, TL-UI-SHELL-1.
 
----
-
-## 🤔 Needs Discussion / Decision
-
-Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
-
-- [ ] **GREAT-DOCS-1** `[sonnet/medium]`: Evaluate `great-docs` (https://github.com/posit-dev/great-docs) for auto-generating developer and UI documentation from the existing codebase. Needs discussion: which audiences/surfaces benefit most, how it fits the Quarto DRY workflow, and how it complements CODE-DOCS-RETROSPECTIVE docstrings. **Depends on:** CODE-DOCS-RETROSPECTIVE (docstrings must exist before auto-gen is meaningful). Start with a proof-of-concept on one library before scoping full adoption.
-
-
-- [ ] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. Needs dedicated design session before implementation. **Note (2026-05-21):** TEST_LAB design (`.claude/design/spaces/TEST_LAB.md`) is almost finished — schedule this after Phase 34 is complete.
-- [ ] **UX-APPLY-IMPROVE-1** `[sonnet/medium]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. Needs design pass before scoping.
-- [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: In-app search for plot types, plot properties, and recipe components — cross-manifest, cross-recipe. Use case: scientist wants to find plots by what they show (e.g. "distribution", "trend"), by required data pattern, or by aesthetic mapping. Design questions: fuzzy search on plot definitions and taxonomy fields? Keyword index built from manifests at load time? How efficient can this be? Needs a concrete spike / prototype before scoping. Links to Gallery taxonomy (ADR-063) and recipe meta taxonomy fields.
-- [ ] **PROP-3** `[opus/high]`: Propagation TubeMap — graph viz of audit blast radius. Needs own design pass + ADR before implementation.
-  > **What "propagation" means here:** when a T3 audit node (filter, exclusion) is applied across multiple plots via the propagation dialog (scope: this plot / all plots / all except...), the Propagation TubeMap would be a graph showing which plots are affected — blast-radius visualization of that audit decision. This is **distinct from the Blueprint TubeMap** (pipeline DAG from manifest structure). The T3 propagation dialog itself is designed in `ui_implementation_contract.md §12g` but not yet implemented. PROP-3 is a further visualization layer on top of that, also not yet implemented.
-
----
-
-## ⏳ Deferred / Blocked
-
-### Blocked by library limitations
-
-- [ ] **VIZ-GEOM-MAP-1** `[opus/high]` `[deferred — library limitation]`: Register `geom_map` component in VizFactory. Blocked: plotnine has no native GeoDataFrame/spatial support; requires geopandas integration and a spatial manifest format design. Unblocks: GALLERY-MAP.
-- [ ] **GALLERY-MAP** `[opus/high]` `[deferred — library limitation]`: Map chart types in Gallery. Blocked by VIZ-GEOM-MAP-1.
-- [ ] **GALLERY-FLOW** `[sonnet/medium]` `[deferred — library limitation]`: Flow / network chart types. Blocked: plotnine has no native network/Sankey/flow support. Requires feasibility study — candidate libs: `networkx` + custom geom, or external renderer.
-
-### Blocked by other tasks
-
-- [ ] **EXPORT-TUBEMAP** `[sonnet/high]`: Embed static tube map SVG in global export Quarto report. Requires headless render path for `BlueprintMapper.generate_cy_elements()`. Blocked by Blueprint Architect stability + headless Cytoscape.js SVG capability.
-
-### Planned / Large-scale backlog
-
-- [ ] **23-C** `[sonnet/high]`: Galaxy XML wrapper templates; bundle profile YAMLs in Docker; Galaxy admin docs.
-- [ ] **23-D** `[opus/high]`: IRIDA plugin/iframe launch + `IridaConnector.fetch_data()`; IRIDA admin docs.
-- [ ] **23-E** `[sonnet/medium]`: Per-system quick-start guides (Galaxy / IRIDA / server / local).
-- [ ] **RESEARCH-LIMS-1** `[opus/high]` `[deferred — awaiting LIMS project]`: Audit database / LIMS integration — manifest hashes + data hashes in DB; LIMS link in audit report; configurable output path per persona.
-- [ ] **UX-GALLEXP-1** `[sonnet/medium]`: Gallery Explorer right sidebar — functionality TBD.
-- ~~**UX-DEVINSP-1**~~ — superseded by TL-UI-SHELL-1 (Phase 34-H). Design locked 2026-05-21 in `.claude/design/spaces/TEST_LAB.md`.
-
 ### Legacy removal (tracked per rules_legacy_management.md §6)
+
 > Protocol: dep-sweep → impact assessment → migration path → code removal → test sweep → doc consistency sweep → ADR record.
 > All 7 steps required before a task is [DONE].
 
@@ -194,19 +172,43 @@ Items where a design pass, ADR authoring, or explicit scoping is needed before c
   - **Doc sweep:** `docs/appendix/Standards_yaml.qmd` DEPRECATED banner → REMOVED tombstone. `rules_data_engine.md §3` proactive-refactoring note → update to say engine rejects flat lists. `docs/appendix/manifest_structure.yaml`.
   - **Gate:** `grep -rn "^  wrangling:\s*\[" config/` = zero hits. Engine rejects flat lists. Test suite passes.
 
-### Repo hygiene / tech debt
+---
 
-- [ ] **ADR-045-ANCHOR-SET-1** `[sonnet/medium]` `[adr-violation]`: `app/handlers/home_theater.py` — `anchor_path.set(str(out_path))` is called inside `@render.ui dynamic_tabs()`, violating ADR-045 Rule R1 (renders must be read-only). Extract to a dedicated `@reactive.Effect` with idempotent guard: `if anchor_path.get() != str(out_path): anchor_path.set(str(out_path))`. Audit report: `.claude/logs/audits/audit_adr_compliance_2026-05-21.md`.
+## 🤔 Needs Discussion / Decision
 
-- [ ] **VIZFAC-SUITE-TIMEOUT-1** `[sonnet/low]` `[test-infra]`: `viz_factory` integrity suite exceeds 300s audit timeout. The suite runs `debug_runner.py` as a subprocess per registered component (168+), rendering a PNG for each — inherently slow. Options: (1) increase audit script timeout to 600s, (2) add `--fast` flag that skips PNG rendering and only validates registry/manifest parsing, (3) split into fast (registry) + slow (render) suites. Audit report: `.claude/logs/audits/audit_library_tests_2026-05-21.md`.
+Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
 
-- [ ] **DOC-SYNC-PLATFORM-1** `[haiku/low]` `[doc-sync]`: `docs/vision/platform_evolution.qmd` line 115 references `docs/vision/gallery.qmd` as a planned document — file does not exist. Either create a stub or mark the table entry as `[PLANNED]`. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
+- [ ] **GREAT-DOCS-1** `[sonnet/medium]`: Evaluate `great-docs` (https://github.com/posit-dev/great-docs) for auto-generating a static Quarto/website reference from the codebase. **Depends on:** CODE-DOCS-RETROSPECTIVE — docstrings must exist before auto-gen is meaningful. Deferred until pre-deployment sprint.
+- [ ] **LAB-WORKFLOW-1** `[opus/high]`: Collect all developer workflow info from Test Lab, Blueprint, and Gallery into a coherent end-to-end developer workflow. Needs dedicated design session before implementation. **Note (2026-05-21):** TEST_LAB design (`.claude/design/spaces/TEST_LAB.md`) is almost finished — schedule this after Phase 34 is complete.
+- [ ] **UX-APPLY-IMPROVE-1** `[sonnet/medium]`: Audit Apply improvement — "apply to all except…" selection-by-exclusion mode. Needs design pass before scoping.
+- [ ] **RESEARCH-HELP-1** `[sonnet/medium]`: In-app search for plot types, plot properties, and recipe components — cross-manifest, cross-recipe. Use case: scientist wants to find plots by what they show (e.g. "distribution", "trend"), by required data pattern, or by aesthetic mapping. Design questions: fuzzy search on plot definitions and taxonomy fields? Keyword index built from manifests at load time? How efficient can this be? Needs a concrete spike / prototype before scoping. Links to Gallery taxonomy (ADR-063) and recipe meta taxonomy fields.
+- [ ] **PROP-3** `[opus/high]`: Propagation TubeMap — graph viz of audit blast radius. Needs own design pass + ADR before implementation.
+  > **What "propagation" means here:** when a T3 audit node (filter, exclusion) is applied across multiple plots via the propagation dialog (scope: this plot / all plots / all except...), the Propagation TubeMap would be a graph showing which plots are affected — blast-radius visualization of that audit decision. This is **distinct from the Blueprint TubeMap** (pipeline DAG from manifest structure). The T3 propagation dialog itself is designed in `ui_implementation_contract.md §12g` but not yet implemented. PROP-3 is a further visualization layer on top of that, also not yet implemented.
 
-- [ ] **DOC-SYNC-TESTING-1** `[haiku/low]` `[doc-sync]`: `docs/reference/testing.qmd` line 65 references `assets/scripts/create_test_data.py` which does not exist. The synthetic data tool is now AquaSynthesizer (`libs/test_lab/src/test_lab/aqua_synthesizer.py`, Phase 34). Update the doc to reference the correct tool and path. Audit report: `.claude/logs/audits/audit_docs_sync_2026-05-21.md`.
+---
 
-- [ ] **PERSONA-DATAIMPORT-FLAG-DOC-1** `[haiku/low]` `[doc-sync]`: `data_import_panel_visible` is declared in all 8 persona templates but is absent from `rules_persona_feature_flags.md`. Determine: is this superseded by ADR-073 sidebar slot registry (which handles panel visibility declaratively)? If yes, add a note to the rules file and flag it as superseded. If still active, add it to the flag matrix. Audit report: `.claude/logs/audits/audit_persona_consistency_2026-05-21.md`.
+## ⏳ Deferred / Blocked
 
-- [ ] **DOC-BLUEPRINT-PANELS-1** `[haiku/low]` `[doc-sync]`: `docs/user_guide/blueprint_manifest_authoring.qmd` — Blueprint IDE panel table is missing "Master Manifest" and "External Exchange" panels; "YAML" should be "YAML Escape Hatch". Verify against `app/handlers/blueprint_handlers.py` blueprint panel construction code before fixing. Audit report: `.claude/logs/audits/audit_doc_sync_2026-05-21.md`.
+### Blocked by library limitations
+
+- [ ] **VIZ-GEOM-MAP-1** `[opus/high]` `[deferred — library limitation]`: Register `geom_map` component in VizFactory. Blocked: plotnine has no native GeoDataFrame/spatial support; requires geopandas integration and a spatial manifest format design. Unblocks: GALLERY-MAP.
+- [ ] **GALLERY-MAP** `[opus/high]` `[deferred — library limitation]`: Map chart types in Gallery. Blocked by VIZ-GEOM-MAP-1.
+- [ ] **GALLERY-FLOW** `[sonnet/medium]` `[deferred — library limitation]`: Flow / network chart types. Blocked: plotnine has no native network/Sankey/flow support. Requires feasibility study — candidate libs: `networkx` + custom geom, or external renderer.
+
+### Blocked by other tasks
+
+- [ ] **EXPORT-TUBEMAP** `[sonnet/high]`: Embed static tube map SVG in global export Quarto report. Requires headless render path for `BlueprintMapper.generate_cy_elements()`. Blocked by Blueprint Architect stability + headless Cytoscape.js SVG capability.
+
+### Planned / Large-scale backlog
+
+- [ ] **23-C** `[sonnet/high]`: Galaxy XML wrapper templates; bundle profile YAMLs in Docker; Galaxy admin docs.
+- [ ] **23-D** `[opus/high]`: IRIDA plugin/iframe launch + `IridaConnector.fetch_data()`; IRIDA admin docs.
+- [ ] **23-E** `[sonnet/medium]`: Per-system quick-start guides (Galaxy / IRIDA / server / local).
+- [ ] **RESEARCH-LIMS-1** `[opus/high]` `[deferred — awaiting LIMS project]`: Audit database / LIMS integration — manifest hashes + data hashes in DB; LIMS link in audit report; configurable output path per persona.
+- [ ] **UX-GALLEXP-1** `[sonnet/medium]`: Gallery Explorer right sidebar — functionality TBD.
+- ~~**UX-DEVINSP-1**~~ — superseded by TL-UI-SHELL-1 (Phase 34-H). Design locked 2026-05-21 in `.claude/design/spaces/TEST_LAB.md`.
+
+### Explicitly deferred (scheduled)
 
 - [ ] **REPO-CLEAN-1** `[haiku/low]` `[repo-hygiene]`: Full git history purge — remove EVE_WORK/, session logs, .vscode user files from ALL past commits. Prerequisite: backup to external disc + gdrive sync.
   ```bash

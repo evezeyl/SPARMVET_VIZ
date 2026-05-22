@@ -145,7 +145,7 @@ Each ID pair receives an individual certainty score:
 |---|---|---|
 | **100%** | Exact string match | Auto-accept (user can override/reject). Promoted to "verified" status. Unverify option available if false positive later detected. |
 | **95%** | Pattern match (e.g., remove prefix, extract from delimiter) | MUST manually verify each pair. On confirmation → promoted to "verified" status. Unverify option available. |
-| **80%** | Fuzzy match (e.g., Levenshtein distance, substring similarity) | MUST manually verify each pair. On confirmation → promoted to "verified" status. Unverify option available. |
+| **80%** | Fuzzy match (`rapidfuzz` token-set ratio — handles rearranged ID segments; certainty = normalised score 0.0–0.99) | MUST manually verify each pair. On confirmation → promoted to "verified" status. Unverify option available. |
 | **0%** | No match found | User decides: leave unmatched, discard this ID, try manual pairing, or recode |
 
 **Critical rule:** No false positives allowed. Any match < 100% requires explicit user confirmation.
@@ -806,7 +806,7 @@ the same TSV (identical structure and error patterns) for regression testing acr
 | Code module | Role |
 |---|---|
 | `test_lab_studio.py` | UI and server handlers for all TEST_LAB tools |
-| `libs/test_lab/` | Existing library — `aqua_synthesizer.py`, `reconciler.py`, `bootstrapper.py` are the foundations to build on |
+| `libs/test_lab/` | Existing library — `aqua_synthesizer.py`, `bootstrapper.py` are the foundations to build on. `reconciler.py` (`KeyReconciler`) is migrated wholesale into `libs/id_reconciliation/` and deleted after TL-IDLIB-TESTS-1 passes. |
 | `libs/id_reconciliation/` | New library (to be created) — pure ID matching logic, pattern detection, recipe generation. Tier 1 only (utils + polars). See `id_reconciliation_module_sketch.md`. |
 
 ---
@@ -824,11 +824,18 @@ the same TSV (identical structure and error patterns) for regression testing acr
 
 ## Open Questions
 
-- **Pattern helper placement**: shared component with BLUEPRINT to avoid duplication. Placed in `libs/utils/` (Tier 1) — the only cross-lib import allowed by the Clear Lines policy. Both `libs/id_reconciliation/` and `libs/blueprint_arch/` can then import it without violating peer-import rules.
-- **Anonymisation fidelity**: plausible ranges sufficient (same types + realistic value ranges). Full distributional matching deferred — can be improved later without refactoring.
-- **Test scenario storage**: YAML format (human-readable for user adjustment). Lives in `libs/test_lab/` under a `scenarios/` subdirectory. Not processed by the data engine.
-- **Boilerplate manifest scope**: structure only (input_fields, output_fields, primary key definitions, verified join keys). The exception is ID cleaning recipes from ID reconciliation — those are baked in because they are required prerequisites, not analysis logic. All other wrangling belongs in BLUEPRINT.
-- **UI structure**: left sidebar accordion with one panel per tool category (ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation). Each panel expands in place. This matches the sidebar pattern used in HOME and BLUEPRINT and avoids a separate tab-switching layer inside the TEST_LAB workspace.
+All design questions resolved 2026-05-22. No open items.
+
+| Question | Decision |
+|---|---|
+| Pattern helper placement | `libs/utils/src/utils/id_patterns.py` — shared by `libs/id_reconciliation/` and `libs/blueprint_arch/` without peer import (TL-UTILS-PATTERN-1) |
+| Fuzzy matching algorithm | `rapidfuzz` token-set ratio (handles rearranged ID segments); dep added to `libs/id_reconciliation/pyproject.toml` |
+| Recipe reuse caching | No auto-detection — always fresh. Manual recipe load if user wants to reapply a saved recipe. Keeps the tool stateless and predictable. |
+| `reconciler.py` fate | All logic (`KeyReconciler.calculate_intersection_score`, `.suggest_regex`, `.reconcile`) migrates to `libs/id_reconciliation/`. `reconciler.py` deleted after TL-IDLIB-TESTS-1 passes. |
+| Anonymisation fidelity | Plausible ranges sufficient (same types + realistic value ranges). Full distributional matching deferred. |
+| Test scenario storage | YAML in `libs/test_lab/scenarios/`. Root key `synthetic_data_config:` — not processed by the data engine. |
+| Boilerplate scope | Structure + inferred types + PK hints + ID cleaning recipes only. All analysis wrangling belongs in BLUEPRINT. |
+| UI structure | Left sidebar accordion, one panel per tool category. Matches HOME and BLUEPRINT sidebar pattern. |
 
 ---
 
@@ -842,9 +849,9 @@ New Tier 1 library. Zero imports from other domain libs — only `polars` + `uti
 
 - **TL-IDLIB-1** `[haiku/low]`: Scaffold `libs/id_reconciliation/` — `pyproject.toml` (deps: `polars`, `utils`), module structure (`__init__.py`, empty module files), editable install, empty `tests/conftest.py`. Gate: `from id_reconciliation import IDReconciliationEngine` succeeds.
 
-- **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching engine — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe` dataclasses) + `matcher.py` (exact string match → certainty 1.0; fuzzy/substring → certainty scored; unmatched → certainty 0.0). Builds on existing `reconciler.py` logic (do not duplicate — import or port). Gate: `test_exact_match` passes; `test_pattern_match` passes.
+- **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching engine — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `TransformationRecipe` dataclasses) + `matcher.py` (exact string match → certainty 1.0; `rapidfuzz` token-set ratio fuzzy → certainty 0.0–0.99; unmatched → certainty 0.0). Port all logic from `reconciler.py` (`KeyReconciler.calculate_intersection_score`, `.reconcile`) — do not duplicate, delete `reconciler.py` after TL-IDLIB-TESTS-1 passes. Add `rapidfuzz` to `libs/id_reconciliation/pyproject.toml`. Gate: `test_exact_match` passes; `test_fuzzy_match` passes (rapidfuzz scoring); boundary-aware match confirmed.
 
-- **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; patterns ranked by `(expected_matches DESC, expected_certainty DESC, simplicity ASC)`). Builds on `suggest_regex` in `reconciler.py`. Gate: `test_pattern_suggestion` passes (prefix `"sample_"` detected and ranked first).
+- **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; patterns ranked by `(expected_matches DESC, expected_certainty DESC, simplicity ASC)`). Port `suggest_regex` from `reconciler.py`; the underlying primitive will be extracted to `libs/utils/id_patterns.py` in TL-UTILS-PATTERN-1. Gate: `test_pattern_suggestion` passes (prefix `"sample_"` detected and ranked first).
 
 - **TL-IDLIB-RECIPE-1** `[sonnet/medium]`: Recode workflow + recipe persistence — `recipe.py` (`apply_recode_step` for actions: `regex_replace`, `mutate` via Polars expression, `drop_duplicates`, `null_if`, `drop_nulls`; `TransformationRecipe.to_yaml` / `from_yaml`). Gate: `test_recipe_persistence` passes (save + load round-trip); `test_recode_workflow` passes (prefix removal + delimiter extraction).
 
