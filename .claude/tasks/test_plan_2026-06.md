@@ -276,14 +276,20 @@ PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/qa_template.yaml              
 
 > Config file: `developer_template.yaml`, `qa_template.yaml`, `project-independent_template.yaml`, or `pipeline-exploration-advanced_template.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
 > Most of this passed at Phase 26 but on a stale baseline — re-verify the core, then test the genuinely-new palette/cascade/apply-UX items (marked **NEW**).
+> EVE: user facing template for testing is `developer_template.yaml`, manifest choice is 1_test_data_ST22_dummy
 
 ### 5a. Tabs, plots, preview (core)
-- [ ] HOM-01 — Group tabs = manifest `analysis_groups` (Quality Control · Curiosity · Results · Cat 🐱). No hardcoded tabs.
-- [ ] HOM-02 — Each tab's plots render as static images; multi-plot groups expose plot **sub-tabs**.
-- [ ] HOM-03 — **Data Preview** accordion below the plot shows ~100 rows of the active plot's dataset; updates on sub-tab switch.
-- [ ] HOM-04 — Header strip shows dataset label (left) + tier-toggle radios (right).
+- [x] HOM-01 — Group tabs = manifest `analysis_groups` (Quality Control · Curiosity · Results · Cat 🐱). No hardcoded tabs.
+  > EVE: ok - tested by changing manifest and observing changes in analyses groups
+- [x] HOM-02 — Each tab's plots render as static images; multi-plot groups expose plot **sub-tabs**.
+  > EVE: ok
+- [x] HOM-03 — **Data Preview** accordion below the plot shows ~100 rows of the active plot's dataset; updates on sub-tab switch.
+  > EVE: ok
+- [~] HOM-04 — Header strip shows dataset label (left) + tier-toggle radios (right).
+  > EVE: Yes but data set shown are not totally correct ! 
 - [!] HOM-37 — "All rows" toggle in Data Preview blanks the table entirely, no error shown. → [20260810_testing_part1.md#hom-37](20260810_testing_part1.md#hom-37--all-rows-toggle-blanks-the-data-preview-table-bug) — needs a terminal traceback to root-cause, see note.
 - [ ] HOM-38 `[?]` — "Plot" accordion title above each plot reads as redundant next to the plot's own title. By design (ADR-043) — your call on whether to change it. → [20260810_testing_part1.md#hom-38](20260810_testing_part1.md#hom-38--redundant-plot-accordion-title-above-each-plot)
+- [ ] HOM-39 `[~]` — Data Preview doesn't make the 100-row cap clear to the user; the total row count of the underlying table isn't shown anywhere. → [20260810_testing_part1.md#hom-39](20260810_testing_part1.md#hom-39--data-preview-100-row-cap-not-communicated)
 
 ### 5b. Tier toggle
 - [ ] HOM-05 — T1 → T2 on the `year_distribution` plot (Results tab): T1 shows all years, T2 filters to 2023–2025 (missing bars prove the toggle). No flicker / duplicate renders in terminal.

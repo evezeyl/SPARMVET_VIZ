@@ -1,6 +1,8 @@
 Notes while claude is busy (to organize after)
 
-Testing full mode still  - actually the all rows toogle works (at least with figshare - was a bit slow) - Buy what is confusing in the data preview with toogle of it shows 100 (eg. Viewing rows 1 through 4 of 100) - we should make it clear that its a sample/preview of the dataset NOT the full dataset (maybe change the text Viewing rows 1 through 4 of 100 out of TOTAL?)f
+Testing full mode still  - actually the all rows toogle works (at least with figshare - was a bit slow) - Buy what is confusing in the data preview with toogle of it shows 100 (eg. Viewing rows 1 through 4 of 100) - we should make it clear that its a sample/preview of the dataset NOT the full dataset (maybe change the text Viewing rows 1 through 4 of 100 out of TOTAL?)
+
+- Plots easthetics remove the "bold that happears into each plot
 
 # Testing notes — 2026-08-10 (part 1)
 
@@ -143,3 +145,22 @@ The following IDs were used for more than one input/output:
 > Low priority, batched with the rest of the CSS backlog (`app/handlers/home_theater.py:751-762`,
 > the `d-flex align-items-center` row holding both the label and the switch). Will
 > fix in the CSS homogenisation pass along with CSS-01..05.
+
+---
+
+## HOM-39 `[~]` — Data Preview 100-row cap not communicated
+
+> EVE: screenshot, "Data Preview" accordion — need to make clear that the table is
+> capped at 100 rows. Either show "Viewing rows 1 through 100 of XX" where XX is
+> the real total row count of the underlying table (not the 100 cap), or simpler:
+> relabel the header "Data Preview (first 100 rows)".
+
+> Not fixed yet — registering only, per your request. Implementation note for later:
+> `home_data_preview` (`app/handlers/home_theater.py:1015-1042`) already computes
+> `df = lf.head(100).collect()` when `show_all=False` — the total row count isn't
+> currently fetched at all, so either option needs one extra cheap call
+> (`lf.select(pl.len()).collect().item()`) to get the real total without
+> materialising the whole frame. Your simpler option (static "(first 100 rows)"
+> label) avoids that extra query entirely — worth considering purely on cost, not
+> just simplicity. Your call which one; note it here or on the checklist line when
+> you decide.
