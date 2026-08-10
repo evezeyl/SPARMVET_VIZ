@@ -167,4 +167,5 @@ Context and status notes from recent sessions. Add here instead of inside active
 - [tasks_archive_infrastructure.md](archives/tasks_archive_infrastructure.md)
 - [tasks_archive_integration_qa.md](archives/tasks_archive_integration_qa.md)
 - [tasks_archive_viz_factory.md](archives/tasks_archive_viz_factory.md)
-- [tasks_test_ui_current.md](tasks_test_ui_current.md) — current UI test checklist
+- [test_plan_2026-06.md](test_plan_2026-06.md) — **current** live app test plan (Phase 34 baseline; all 4 spaces + personas)
+- [tasks_test_ui_current.md](tasks_test_ui_current.md) — superseded Phase-26 UI checklist (items folded into the plan above)

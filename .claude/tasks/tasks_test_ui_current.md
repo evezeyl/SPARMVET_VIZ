@@ -1,5 +1,12 @@
 # Live-UI Test Checklist — Current Dashboard
 
+> **SUPERSEDED (2026-06-19):** Pinned to the **Phase 26** baseline — predates TEST_LAB,
+> the BLUEPRINT full feature set, the 8-persona set, and the Phase-34 legacy removals.
+> The current live test plan is **[`test_plan_2026-06.md`](test_plan_2026-06.md)** (Phase 34
+> baseline). Still-open items from this file were folded into the new plan (look for `(carried)`).
+> Kept for history — do not test against this; it will be archived once the new plan's first
+> round completes.
+
 **Owner:** @evezeyl
 **Branch baseline:** `dev` (Phase 26 + session fixes + T3 data / compare / flicker fixes — 2026-05-02)
 **Replaces:** `tasks_test_22J.md` (Phase 22-J scoped, stale after Phase 24–25 refactors)
