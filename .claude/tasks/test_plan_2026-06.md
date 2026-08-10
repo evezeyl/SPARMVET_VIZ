@@ -285,7 +285,7 @@ PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/qa_template.yaml              
   > EVE: ok
 - [x] HOM-03 — **Data Preview** accordion below the plot shows ~100 rows of the active plot's dataset; updates on sub-tab switch.
   > EVE: ok
-- [~] HOM-04 — Header strip shows dataset label (left) + tier-toggle radios (right).
+- [!] HOM-04 — Header strip shows dataset label (left) + tier-toggle radios (right).
   > EVE: Yes but data set shown are not totally correct ! 
 - [!] HOM-37 — "All rows" toggle in Data Preview blanks the table entirely, no error shown. → [20260810_testing_part1.md#hom-37](20260810_testing_part1.md#hom-37--all-rows-toggle-blanks-the-data-preview-table-bug) — needs a terminal traceback to root-cause, see note.
 - [ ] HOM-38 `[?]` — "Plot" accordion title above each plot reads as redundant next to the plot's own title. By design (ADR-043) — your call on whether to change it. → [20260810_testing_part1.md#hom-38](20260810_testing_part1.md#hom-38--redundant-plot-accordion-title-above-each-plot)
