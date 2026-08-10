@@ -4,7 +4,7 @@
 **Created:** 2026-06-19
 **Baseline:** `dev` branch @ Phase 34 (TEST_LAB built, BLUEPRINT full feature set, legacy removals, 8 personas)
 **Supersedes:** [`tasks_test_ui_current.md`](tasks_test_ui_current.md) (pinned to Phase 26 — stale; its still-open items are folded in here, see each `(carried)` tag)
-**Scope:** All four user spaces (HOME · BLUEPRINT · GALLERY · TEST_LAB) + persona gating + cross-space workflow + regressions. Comprehensive, but **prioritised** — see §0.4.
+**Scope:** All four user spaces (HOME · BLUEPRINT · GALLERY · TEST_LAB) + configuration-file gating + cross-space workflow + regressions. Comprehensive, but **prioritised** — see §0.4.
 
 ---
 
@@ -44,6 +44,8 @@ You can attach a screenshot path or terminal snippet the same way. Don't fix any
 
 **Backtick hint tags:** some items carry a small tag after the ID like `` `[?]` ``, `` `[~]` `` or `` `[b]` `` — that is *my pre-flag* of the likely disposition (decision / polish / not-built), to save you guessing. The **checkbox is still the real status you set** — leave it `[ ]` until you've actually looked, then flip it.
 
+**Keep this file thin (added 2026-08-10):** the checklist line stays **one line** — ID, marker, short symptom, and a link if there's evidence. Raw material (console pastes, screenshots, my root-cause writeups, retest steps) goes in a dated findings file — `.claude/tasks/YYYYMMDD_testing_partN.md` — under a `## <ID>` heading matching the checklist ID, e.g. [`20260810_testing_part1.md`](20260810_testing_part1.md). Link the checklist line to `filename.md#anchor`. Anything you jot in the raw file that isn't a checklist line yet, I fold into a one-liner here with a link back.
+
 ### 0.3 The round-trip (what each side does)
 
 1. **Eve tests** a section, flips boxes, writes `> EVE:` notes on any `[!]/[~]/[?]`.
@@ -68,7 +70,7 @@ You don't have to do it all at once. Recommended path:
 3. **§4 BLUEPRINT** — mostly new since Phase 26 (forms, joint designer, escape hatch, undo, branch, AI agent)
 4. **§5 HOME** — mature but on a stale baseline; re-verify core + new palette/cascade/apply UX
 5. **§6 GALLERY** — mature; lighter re-verify
-6. **§2 Persona gating** — quick, can be done any time
+6. **§2 Configuration-file gating** — quick, can be done any time
 7. **§7 Cross-space**, **§8 Regression**, **§9 CSS backlog** — last
 
 ### 0.5 Grep commands (self-serve at any time)
@@ -96,32 +98,57 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 
 ## 1. Launch & environment (PRE)
 
+> **Architecture note (2026-08-10 — read this before §2):** "Persona" is not a fixed
+> enum the app understands — it's just a naming convention for a config file. The
+> `SPARMVET_PERSONA` env var is passed straight to `Bootloader.set_persona()`, which
+> either resolves a shortname to `config/ui/templates/<name>_template.yaml` **or**
+> accepts a direct path to any YAML file (`app/src/bootloader.py:260-276`). What
+> actually drives app behaviour is the **flags inside that file** — nothing else.
+> So we test **configuration files**, not "personas": §2 below launches each file
+> directly and confirms what its flags actually produce, exactly as
+> `rules_persona_feature_flags.md`'s own anti-pattern rule says the *app code* must
+> do (`bootloader.is_enabled(flag)`, never a persona-name check) — the test process
+> should mirror that, not contradict it.
+
 > **Verified working launch command** (boots to HTTP 200; checked 2026-06-19):
 >
 > ```bash
 > cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
-> PYTHONPATH=. SPARMVET_PERSONA=developer ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+> PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/developer_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 > ```
 > Then open <http://127.0.0.1:8000>. `--reload` auto-restarts on code edits (useful during fix rounds).
 > **Note:** `python app/src/main.py` does **not** start a server (that file only prints banners) — the old checklist's launch line was wrong. Use `shiny run`.
 
-> **Switching persona = relaunch** with a different `SPARMVET_PERSONA=<id>`. There is **no** in-app persona selector. The 8 ids: `pipeline-static`, `demo-vetinst`, `pipeline-exploration-simple`, `web-demo`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`.
+> **Switching config file = relaunch** pointing `SPARMVET_PERSONA` at a different file. There is **no** in-app selector. All 8 files live in `config/ui/templates/` — full launch command per file in §2.
 
-- [ ] PRE-01 — App boots with the command above; terminal shows `Application startup complete` and `Persona: developer`; no Python traceback.
+- [~] PRE-01 — App boots clean (no Python traceback); browser console had 1 real bug + 2 noise items, 1 fixed. → [20260810_testing_part1.md#pre-01](20260810_testing_part1.md#pre-01-console-errors-on-first-launch) — RETEST ↻
 - [ ] PRE-02 — Browser loads at :8000 with no red error banner on first paint.
 - [ ] PRE-03 — Default manifest **ST22 Dummy Dataset** loads; center theater shows analysis-group tabs (Quality Control · Curiosity · Results · Cat 🐱).
-- [ ] PRE-04 — Relaunch with `SPARMVET_PERSONA=qa` → terminal shows `Persona: qa`; app still boots clean. (qa = all flags on, ghost-save off.)
+- [ ] PRE-04 — Relaunch pointing at `config/ui/templates/qa_template.yaml` → terminal shows `Persona: config/ui/templates/qa_template.yaml`; app still boots clean. (qa's flags: everything on, `ghost_save: false`.)
 - [ ] PRE-05 — Switch manifest in the **Manifest Choice** sidebar dropdown to `2_test_data_ST22_dummy` → tabs change to AMR Profiling Insight · Plasmid Dynamics; plots reload, no traceback.
 
 ---
 
-## 2. Persona gating (PER) — what appears for whom
+## 2. Configuration-file gating (CFG) — what each file's flags actually produce
 
-Relaunch once per persona and confirm the surfaces below. This is fast (just "is it there or not") and catches positive-inclusion (ADR-071) regressions. Authoritative matrix: `rules_persona_feature_flags.md`.
+Relaunch once per file below and confirm the surfaces it produces. This is fast (just "is it there or not") and catches positive-inclusion (ADR-071) regressions. Authoritative flag matrix: `rules_persona_feature_flags.md`. This section replaced the old persona-framed "PER" checklist on 2026-08-10 — same content, reframed around the actual driver (the file), see the note in §1.
 
-**Compact expectation grid** — confirm each cell. Mark the row's checkbox `[x]` if the whole row matches, `[!]` if any cell is wrong (note which).
+**Launch commands** (paste directly, only the file path changes):
 
-| | static | expl-simple | expl-advanced | project-indep | developer | qa |
+```bash
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/pipeline-static_template.yaml               ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/demo-vetinst_template.yaml                  ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/pipeline-exploration-simple_template.yaml   ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/web-demo_template.yaml                      ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/pipeline-exploration-advanced_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/project-independent_template.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/developer_template.yaml                     ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/qa_template.yaml                            ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+```
+
+**Compact expectation grid** — confirm each cell against the file's actual flags (`rules_persona_feature_flags.md` full matrix). Mark the row's checkbox `[x]` if the whole row matches, `[!]` if any cell is wrong (note which).
+
+| | pipeline-static | pipeline-exploration-simple | pipeline-exploration-advanced | project-independent | developer | qa |
 |---|:--:|:--:|:--:|:--:|:--:|:--:|
 | Filters panel (left) | absent | yes | yes | yes | yes | yes |
 | Tier toggle T3 | no | no | yes | yes | yes | yes |
@@ -133,21 +160,22 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 | **Blueprint** nav | no | no | no | yes | yes | yes |
 | **Test Lab** nav | no | no | no | no | yes | yes |
 
-- [ ] PER-01 `pipeline-static` — read-only: no Filters, no T3, no right sidebar, no Gallery/Blueprint/Test Lab nav. Export present. *(carried: old §1a passed at Phase 26 — confirm still true.)*
-- [ ] PER-02 `pipeline-exploration-simple` — Filters present, no T3, no right sidebar, no Gallery/Blueprint/Test Lab.
-- [ ] PER-03 `pipeline-exploration-advanced` — Filters + T3 + right Audit sidebar; **no** Gallery/Blueprint/Test Lab nav.
-- [ ] PER-04 `project-independent` — adds **Gallery** + **Blueprint** nav; still **no** Test Lab.
-- [ ] PER-05 `developer` — everything incl. **Test Lab** nav.
-- [ ] PER-06 `qa` — same surfaces as developer (used for deterministic testing).
-- [ ] PER-07 `demo-vetinst` — boots; intentionally minimal (most flags off, export off). Confirm no crash and that it looks like a locked-down reference deployment.
-- [ ] PER-08 `web-demo` — boots; minimal-interaction demo. Confirm no crash.
-- [ ] PER-09 — Persona display name under the nav pills reflects the persona template's configured name (not hardcoded). *(carried: old §2 — name now comes from persona config.)*
+- [ ] CFG-01 `pipeline-static_template.yaml` — read-only: no Filters, no T3, no right sidebar, no Gallery/Blueprint/Test Lab nav. Export present. *(carried: old PER-01, passed at Phase 26 — confirm still true.)*
+- [ ] CFG-02 `pipeline-exploration-simple_template.yaml` — Filters present, no T3, no right sidebar, no Gallery/Blueprint/Test Lab.
+- [ ] CFG-03 `pipeline-exploration-advanced_template.yaml` — Filters + T3 + right Audit sidebar; **no** Gallery/Blueprint/Test Lab nav.
+- [ ] CFG-04 `project-independent_template.yaml` — adds **Gallery** + **Blueprint** nav; still **no** Test Lab.
+- [ ] CFG-05 `developer_template.yaml` — everything incl. **Test Lab** nav.
+- [ ] CFG-06 `qa_template.yaml` — same surfaces as `developer_template.yaml` (used for deterministic testing; `automation.ghost_save: false`).
+- [ ] CFG-07 `demo-vetinst_template.yaml` — boots; intentionally minimal (most flags off, export off). Confirm no crash and that it looks like a locked-down reference deployment.
+- [ ] CFG-08 `web-demo_template.yaml` — boots; minimal-interaction demo. Confirm no crash.
+- [ ] CFG-09 — Display name under the nav pills reflects each file's own `display_name` field (not hardcoded, not derived from the filename). *(carried: old PER-09.)*
+- [ ] CFG-10 `[?]` **NEW** — Point `SPARMVET_PERSONA` at a **custom** YAML (copy `developer_template.yaml`, flip one flag, e.g. `gallery_enabled: false`, save under a new name) and confirm the app respects it correctly with no code changes. This is the actual proof that behaviour is config-driven, not persona-enum-driven — worth doing once.
 
 ---
 
 ## 3. TEST_LAB (LAB) — **new in Phase 34, highest priority**
 
-> Persona: **developer** or **qa** (only these have `test_lab_enabled`). Click the **Test Lab** nav pill.
+> Config file: `developer_template.yaml` or `qa_template.yaml` (only these two set `test_lab_enabled: true`). Click the **Test Lab** nav pill.
 > Design: `.claude/design/spaces/TEST_LAB.md`. Rules: `rules_test_lab.md`.
 > **Principle to keep in mind while testing:** every tool is **stateless** — it runs, hands you a downloadable file, and resets when you close its panel. Nothing persists except files you explicitly save. If you find state leaking between tools/panels, that's a `[!]`.
 
@@ -197,7 +225,7 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 
 ## 4. BLUEPRINT (BLU) — visual manifest IDE (mostly new since Phase 26)
 
-> Persona: **developer** or **qa** (or `project-independent` for the non-edit subset). Click **Blueprint Architect** nav pill.
+> Config file: `developer_template.yaml` or `qa_template.yaml` (full edit mode); `project-independent_template.yaml` gives the non-edit subset (`manifest_edit_enabled: false`). Click **Blueprint Architect** nav pill.
 > Design: `.claude/design/spaces/BLUEPRINT.md`. Feature lock: ADR-082. Rules: `rules_ui_dashboard.md §7`.
 > **Reality-check note:** BLUEPRINT had known build-gaps as of 2026-05-20 (add-node primitive UI, component/plot forms, group/meta/new-manifest/validate were YAML-only); several closed in Phase 32–33. Where a feature is simply **absent**, mark `[b]` and note it — discovering the doc/reality gap is itself a useful result, not a failure.
 
@@ -230,7 +258,7 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 - [ ] BLU-20 — Preview uses real orchestrator execution (values are real, not placeholder).
 
 ### 4e. Helpers layer (escape hatch · undo · branch · AI agent)
-- [ ] BLU-21 — **YAML escape hatch** visible. For developer/qa it's an **editable** textarea; for non-edit personas it's **read-only**. Confirm the right mode for the persona you're on.
+- [ ] BLU-21 — **YAML escape hatch** visible. For `developer_template.yaml`/`qa_template.yaml` it's an **editable** textarea (`manifest_edit_enabled: true`); for other config files it's **read-only**. Confirm the right mode for the file you launched.
 - [ ] BLU-22 — Editing YAML in the escape hatch and saving emits a change the rest of the IDE reflects (and, per design, a `developer_raw_yaml` node).
 - [ ] BLU-23 — **Undo**: make several node changes → undo steps back through them (up to 20). Redo if present.
 - [ ] BLU-24 — **Branch** (lineage bifurcation at a node): split a lineage so upstream stays shared and the child diverges as a new `!include` fragment. Confirm it does **not** duplicate the whole manifest. *(Canonical example: Summary vs Summary_quality.)*
@@ -246,7 +274,7 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 
 ## 5. HOME (HOM) — analysis space (re-verify + new)
 
-> Persona: **developer**, **qa**, **project-independent**, or **pipeline-exploration-advanced** for full surface.
+> Config file: `developer_template.yaml`, `qa_template.yaml`, `project-independent_template.yaml`, or `pipeline-exploration-advanced_template.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
 > Most of this passed at Phase 26 but on a stale baseline — re-verify the core, then test the genuinely-new palette/cascade/apply-UX items (marked **NEW**).
 
 ### 5a. Tabs, plots, preview (core)
@@ -254,6 +282,8 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 - [ ] HOM-02 — Each tab's plots render as static images; multi-plot groups expose plot **sub-tabs**.
 - [ ] HOM-03 — **Data Preview** accordion below the plot shows ~100 rows of the active plot's dataset; updates on sub-tab switch.
 - [ ] HOM-04 — Header strip shows dataset label (left) + tier-toggle radios (right).
+- [!] HOM-37 — "All rows" toggle in Data Preview blanks the table entirely, no error shown. → [20260810_testing_part1.md#hom-37](20260810_testing_part1.md#hom-37--all-rows-toggle-blanks-the-data-preview-table-bug) — needs a terminal traceback to root-cause, see note.
+- [ ] HOM-38 `[?]` — "Plot" accordion title above each plot reads as redundant next to the plot's own title. By design (ADR-043) — your call on whether to change it. → [20260810_testing_part1.md#hom-38](20260810_testing_part1.md#hom-38--redundant-plot-accordion-title-above-each-plot)
 
 ### 5b. Tier toggle
 - [ ] HOM-05 — T1 → T2 on the `year_distribution` plot (Results tab): T1 shows all years, T2 filters to 2023–2025 (missing bars prove the toggle). No flicker / duplicate renders in terminal.
@@ -305,7 +335,7 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 
 ## 6. GALLERY (GAL) — recipe browser (re-verify)
 
-> Persona: **project-independent**, **developer**, or **qa**. Click **Gallery** nav pill. Mature space — lighter pass.
+> Config file: `project-independent_template.yaml`, `developer_template.yaml`, or `qa_template.yaml` (all set `gallery_enabled: true`). Click **Gallery** nav pill. Mature space — lighter pass.
 
 - [ ] GAL-01 — Gallery loads: recipe browser in center; left sidebar shows Recipe selector + collapsible taxonomy filters (Family / Data Pattern / Difficulty).
 - [ ] GAL-02 — Taxonomy filter choices come from `gallery_index.json` (not hardcoded); "Select all" toggles a group's checkboxes; "Apply" filters the recipe list.
@@ -345,6 +375,7 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 - [ ] REG-07 — Sidebar collapse: hide left sidebar → content fills width → re-show works after several cycles. *(carried: old §12 sidebar — left untested at Phase 26.)*
 - [ ] REG-08 — **Critical (carried)**: hide **both** sidebars (advanced+) → both toggles remain clickable → each sidebar can be re-expanded independently.
 - [ ] REG-09 — Legacy-removal smoke: the default manifests load and render without `ConfigurationError`/`TransformationError` (Phase 34 removed flat `plots:`, `string`/`character` type aliases, flat `wrangling:` lists — none of the shipped manifests should trip these).
+- [~] REG-10 — Duplicate Shiny IDs (`notification_log_accordion`/`notification_log_panel_ui`) at launch. → [20260810_testing_part1.md#reg-10](20260810_testing_part1.md#reg-10--duplicate-shiny-ids-notification_log_accordion--notification_log_panel_ui) — root-caused + fixed, RETEST ↻
 
 ---
 
@@ -357,6 +388,7 @@ Relaunch once per persona and confirm the surfaces below. This is fast (just "is
 - [ ] CSS-03 `[~]` — **(carried, old §12)** Gallery recipe-title icons ↔ taxonomy tag-strip icons consistency (= GAL-06).
 - [ ] CSS-04 `[~]` — **(carried, old §11)** "Blueprint Surgeon" right-sidebar styling homogenised with the "Pipeline Audit" right sidebar (= BLU-03).
 - [ ] CSS-05 — Free-find: while testing, note any colour/spacing/font that looks off-palette (Bootstrap blue `#0d6efd`, success green, etc.) with the panel name — I'll reconcile against the style spec.
+- [ ] CSS-06 `[~]` — "All rows" switch not aligned with "Data Preview" label in the Data Preview accordion header. → [20260810_testing_part1.md#css-06](20260810_testing_part1.md#css-06--all-rows-switch-not-aligned-with-data-preview-label)
 
 ---
 

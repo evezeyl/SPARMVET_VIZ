@@ -79,7 +79,8 @@
     "peacock.color": "#1857a4",
     "favorites.dataLocation": "${workspaceFolder}/.vscode/favorites",
     "workbench.editor.openSideBySideDirection": "right",
-    "workbench.editor.closeEmptyGroups": false
+    "workbench.editor.closeEmptyGroups": false,
+    "workbench.colorTheme": "Theme Name Here"
   },
   "extensions": {
     "recommendations": [

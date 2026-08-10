@@ -135,5 +135,7 @@
             });
         });
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    // Observe documentElement, not body: this script loads in <head> with no
+    // `defer`, so document.body is still null when this line runs.
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 }());

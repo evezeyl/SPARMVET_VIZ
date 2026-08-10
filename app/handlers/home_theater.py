@@ -1201,10 +1201,12 @@ def define_server(input, output, session, *,
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
         # Gallery (ADR-057: filter + recipe selector moved here from internal sidebar)
+        # notification_log lives in the RIGHT sidebar only (ADR-073 slot registry) —
+        # do not also mount it here, it duplicates the id and races with the right
+        # sidebar's copy (REG-10).
         if active_sidebar == "Gallery":
             return ui.div(
                 gallery_viewer.build_sidebar_ui(),
-                ui.output_ui("notification_log_panel_ui"),
             )
 
         # Manifest Workbench (Wrangle Studio)
@@ -1272,7 +1274,7 @@ def define_server(input, output, session, *,
                     style="display:none;",
                     id="blueprint_hidden_controls"
                 ),
-                ui.output_ui("notification_log_panel_ui"),
+                # notification_log lives in the RIGHT sidebar only (ADR-073) — see REG-10.
             )
 
         # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
@@ -1494,6 +1496,12 @@ def define_server(input, output, session, *,
                         class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto"
                     )
                 )
+            # REG-10 fix: notification_log sourced from the slot registry here
+            # (blueprint_standard_right.yaml) — no longer hardcoded in the left sidebar.
+            blueprint_right_cfg = bootloader.get_sidebar_config("blueprint", "right")
+            blueprint_right_types = {s.get("type", "") for s in blueprint_right_cfg.panels}
+            if "notification_log" in blueprint_right_types:
+                parts.append(ui.output_ui("notification_log_panel_ui"))
             return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")
 
         # --- Home Theater (ADR-043 / ADR-044 / ADR-073) ---
@@ -1537,7 +1545,7 @@ def define_server(input, output, session, *,
 
         # --- Gallery ---
         if active_sidebar == "Gallery":
-            return ui.div(
+            gallery_parts = [
                 ui.card(
                     ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
                     ui.div(
@@ -1548,8 +1556,14 @@ def define_server(input, output, session, *,
                     ),
                     class_="mb-2 shadow-sm border-0"
                 ),
-                class_="sidebar-content p-0"
-            )
+            ]
+            # REG-10 fix: notification_log sourced from the slot registry here
+            # (gallery_focus_right.yaml) — no longer hardcoded in the left sidebar.
+            gallery_right_cfg = bootloader.get_sidebar_config("gallery", "right")
+            gallery_right_types = {s.get("type", "") for s in gallery_right_cfg.panels}
+            if "notification_log" in gallery_right_types:
+                gallery_parts.append(ui.output_ui("notification_log_panel_ui"))
+            return ui.div(*gallery_parts, class_="sidebar-content p-0")
 
         # --- Test Lab ---
         if active_sidebar == "Test Lab":
