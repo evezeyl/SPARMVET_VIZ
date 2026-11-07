@@ -17,6 +17,7 @@ Checked on Fedora 43 on 2026-11-07. Versions are the ones that were used; the mi
 | Quarto 1.8 | Render `docs/` and the export report (`report.qmd`) | `quarto render docs --no-execute` (executing cells needs jupyter and nbformat in the venv, which are not installed) | documentation, export |
 | `git` 2.5x, `gh` 2.8x | History, branches, pull requests, issues on GitHub | `git ...`, `gh pr ...`, `gh issue ...` | all |
 | `podman` 5 (or `docker`) | Build and test the container image | `podman build -f assets/containers/Dockerfile .`; Posit Connect bundle: `assets/scripts/bundle_connect.sh` | deployment |
+| StarUML 7 | Edit the model `docs/UML/app.mdj` (UML, SysML, C4). Not needed to run or test the app | Open the file in StarUML. Plan: `.claude/design/uml_model_plan.md` | modelling |
 | Audit scripts | Scheduled hygiene checks | `./scripts/run_audits.sh all`; single ones: `./.venv/bin/python scripts/audit_<name>.py --project-root .` | before a merge |
 | `assets/scripts/audit_old_words.py` | Retired configuration words (ADR-091, ADR-092) | `./.venv/bin/python assets/scripts/audit_old_words.py --check` | before a merge |
 | `assets/scripts/check_launch_commands.py`, `check_doc_links.py` | Documented launch commands start; documented paths exist | `./.venv/bin/python assets/scripts/check_launch_commands.py README.md ...` | documentation changes |
@@ -26,7 +27,6 @@ Checked on Fedora 43 on 2026-11-07. Versions are the ones that were used; the mi
 | Tool | Why it would be needed | Task |
 |---|---|---|
 | Mermaid CLI (`mmdc`) | Render diagrams outside Quarto; Quarto renders Mermaid itself for the docs | none yet |
-| StarUML | UML, SysML and C4 diagrams | pending TOOLS-UML-1 |
 | `ruff` | Lint and format; the configuration in `pyproject.toml` is commented out | none yet |
 
 ## Rules

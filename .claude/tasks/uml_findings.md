@@ -1,0 +1,20 @@
+# UML model: findings register
+
+Differences between model, code and documents (plan: `.claude/design/uml_model_plan.md` section 6). A finding is closed when the decision is carried out. Findings that need real work become issues.
+
+Status 2026-11-07: found while preparing the plan, before any diagram. "Verified" means I read both sides.
+
+| ID | What differs | Where | Verified | Proposed decision | State |
+|---|---|---|---|---|---|
+| F-01 | The Test Lab shows "Data analysis recipe Choice", but its sidebar file lists only `data_analysis_recipe_info`, so the slot registry is not what decides there. Issue #33 says the file lists both: that text is wrong | `config/ui/sidebars/testlab_standard_left.yaml`; browser sweep | yes | Investigate under #33, correct the issue text | open |
+| F-02 | Three descriptions of where sessions are saved. As built: `_sessions/{session_key}/assembly.json` and `t3_{timestamp}.json` | `session_manager.py:16-19`; `rules_ui_dashboard.md` section 1 (`_autosave_assembly.json`, `_autosave_t3.json`); contract 7.1 (`user_data/sessions/_autosave.json`) and 13 | yes | Documents follow the code. The contract is locked, so Eve confirms | open |
+| F-03 | The rules contradict themselves on peer imports: "no peer-to-peer imports" against "`libs/test_lab/` may depend on `libs/id_reconciliation/` and `libs/ingestion/`". The listed dependencies of `test_lab` also differ from its real `pyproject.toml` (polars, numpy, openpyxl, pyyaml) | `rules_runtime_environment.md` section 4; `rules_test_lab.md` section 8; `libs/test_lab/pyproject.toml` | yes | Decide the rule; settle in PKG-TIERS | open |
+| F-04 | Same file says both "suppressed (silently set to false)" and "fatal, no silent suppression" for `data_analysis_recipe_edit_enabled` and `blueprint_agent_enabled` | `rules_app_features_flags.md` group D against cascade 4 and 5 | yes | Keep fatal (ADR-077), correct group D | open |
+| F-05 | Cascade 6 says the right sidebar is decided by a name comparison; section B and ADR-073 say by the slot registry | `rules_app_features_flags.md` | yes | Correct cascade 6 | open |
+| F-06 | "Locked to four node types" above a table with five | contract 12a | yes | Decide whether `developer_raw_yaml` counts | open |
+| F-07 | Deleting an audit node: "marks `active: false`" against "deleting removes it". The code reads `active`; whether anything sets it to false is not checked yet | contract 12c, 12g.10; `audit_stack.py:403`, `export_handlers.py:648` | partly | Settle in STM-NODE | open |
+| F-08 | Directory map and ownership matrix are out of date: five handlers listed, ten exist; export is said to be in `home_theater.py`, it is in `export_handlers.py` | `rules_app_structure.md` sections 2 and 6 | yes | Correct from C4-COMP-HOME | open |
+| F-09 | `workspace_standard.md` tells agents to read `./AGENT_GUIDE.md` first; the file does not exist | `workspace_standard.md` section 0 | yes | Point to `CLAUDE.md` | open |
+| F-10 | The "official structural standard" `assets/template_data_analysis_recipes/1_test_data_ST22_dummy.yaml` does not exist | `rules_data_analysis_recipe_structure.md` section 3 | yes | Point to the real file | open |
+| F-11 | `libs/ingestion` has no `test_*.py`, so `pytest libs` runs nothing there; only debug scripts exist | `libs/ingestion/tests/` | yes | Decide when REQ-DATA is written | open |
+| F-12 | Possibly dead code: `app/src/old_app_entry_legacy.py`; `libs/connector/.../adapter_A..D.py`, `adapter_metadata.py`. No importer found with grep | as named | partly | Confirm, then remove | open |

@@ -124,6 +124,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `export_specification.md` | Export redesign spec (2026-05-04) |
 | `design_t3_export_threading.md` | T3 node threading + export lineage design |
 | `ui_panel_map_current.md` | CSS selector reference + panel name mapping |
+| `uml_model_plan.md` | UML model of the app: diagram catalogue, conventions, discrepancy checks |
 
 ---
 
