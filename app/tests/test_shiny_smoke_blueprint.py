@@ -162,6 +162,29 @@ class TestBlueprintDataAnalysisRecipeLoad:
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa app features",
     )
+    def test_data_analysis_recipe_selector_shows_id_not_path(self, page: Page, shiny_app: ShinyAppProc):
+        """Option text is the data analysis recipe id (file name), not the full path —
+        CONFIG-BLUEPRINT-ID-DISPLAY-1 (issue #34). The option value stays the path
+        (needed downstream); only the visible label changed."""
+        _navigate_to_blueprint(page, shiny_app.url)
+        labels_js = (
+            "() => {"
+            "  var sel = document.querySelector('#stored_data_analysis_recipe_selector');"
+            "  return sel ? Array.from(sel.options)"
+            "      .filter(o => o.value.endsWith('.yaml'))"
+            "      .map(o => o.textContent) : [];"
+            "}"
+        )
+        labels = page.evaluate(labels_js)
+        assert labels, "No .yaml options found"
+        for label in labels:
+            assert "/" not in label, f"Option label still shows a path: {label!r}"
+            assert not label.endswith(".yaml"), f"Option label still shows the .yaml suffix: {label!r}"
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
     def test_groups_plots_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
         """After data analysis recipe load, Groups & Plots panel renders without error."""
         _navigate_to_blueprint(page, shiny_app.url)

@@ -859,12 +859,12 @@ def define_server(input, output, session, *,
         if not config_dir.exists():
             config_dir = Path("config")
 
-        all_yamls = list(config_dir.glob("*.yaml"))
-        master_data_analysis_recipes = [str(p) for p in all_yamls if p.is_file()]
-        master_data_analysis_recipes.sort()
+        all_yamls = sorted(p for p in config_dir.glob("*.yaml") if p.is_file())
+        # Label by data analysis recipe id (= file name, ADR-092); value stays the path.
+        choices = {str(p): p.stem for p in all_yamls}
         ui.update_select("stored_data_analysis_recipe_selector",
-                         choices=master_data_analysis_recipes,
-                         selected=master_data_analysis_recipes[0] if master_data_analysis_recipes else None)
+                         choices=choices,
+                         selected=str(all_yamls[0]) if all_yamls else None)
 
     @reactive.Effect
     @reactive.event(input.stored_data_analysis_recipe_selector)
@@ -2670,7 +2670,7 @@ def define_server(input, output, session, *,
 
         # Refresh the selector and select the new data analysis recipe
         all_yamls = sorted(config_dir.glob("*.yaml"))
-        choices = [str(p) for p in all_yamls]
+        choices = {str(p): p.stem for p in all_yamls}
         ui.update_select("stored_data_analysis_recipe_selector",
                          choices=choices,
                          selected=str(dest))
