@@ -1,6 +1,6 @@
-The Manifest should be the "Master." Any The Adapter should be "dumb."
+The data analysis recipe should be the "Master." Any The Adapter should be "dumb."
 
 
-The Manifest says: "I need columns X, Y, and Z."
+The data analysis recipe says: "I need columns X, Y, and Z."
 
 The Adapter says: "I don't know what X, Y, and Z are, but I will go to Galaxy and get whatever you ask for."

@@ -32,7 +32,7 @@ from pathlib import Path
 WORDS = {
     "persona": r"persona(?!l)",
     "manifest": r"manifest",
-    "recipe": r"(?<!data_analysis_)recipe",
+    "recipe": r"(?<!data_analysis_)(?<!data analysis )(?<!data-analysis-)(?<!DataAnalysis)recipe",
     "profile": r"profile",
     "connector (deployment file)": r"connector_(?:config|path|template|cache)|sparmvet_connector|local_connector",
 }

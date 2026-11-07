@@ -12,7 +12,7 @@ All agent intelligence lives under `.claude/`. This file is the entry point.
 |---|---|
 | **User space** | HOME, BLUEPRINT, TEST_LAB, GALLERY — user-facing areas of the app |
 | **Code module** | A Python file that implements part of a user space (e.g. `wrangle_studio.py`) |
-| **Manifest** | A YAML recipe that defines an analysis pipeline |
+| **Data analysis recipe** | A YAML file that defines how data becomes plots: the inputs, the tier steps, the joins and the plots |
 | **App features** | A named set of feature flags that decides what the user may do (a file in `config/app_features/`) |
 
 Never mix user-space and code-module vocabulary. Design discussions lead with user spaces; implementation discussions lead with code modules.
@@ -60,7 +60,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 |---|---|
 | `rules_runtime_environment.md` | Environment / dependency issues |
 | `rules_data_engine.md` | 3-Tier lifecycle, Anchor/Branch/Leaf, decorator law |
-| `rules_manifest_structure.md` | YAML standards, `!include` structure, basename mirroring |
+| `rules_data_analysis_recipe_structure.md` | YAML standards, `!include` structure, basename mirroring |
 | `rules_verification_testing.md` | `@verify` protocol, `tmpAI/` vs `tmp/` governance |
 | `rules_ui_dashboard.md` | UI contract: app features masking, sidebar, `btn_apply` gatekeeper |
 | `rules_documentation_aesthetics.md` | Quarto DRY rules, naming standards for human-facing docs |
@@ -81,7 +81,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `audit_triage_protocol.md` | How to read audit reports and convert findings to tasks |
 | `implementation_workflow_transformer.md` | Implementing new wrangling decorators / T1 logic |
 | `viz_factory_implementation.md` | Registering geoms, scales, themes |
-| `ui_manifest_integration_testing.md` | UI testing gate — read before any UI test run |
+| `ui_data_analysis_recipe_integration_testing.md` | UI testing gate — read before any UI test run |
 | `transformer_testing.md` | Using `debug_assembler.py` / `debug_wrangler.py` |
 | `verification_protocol.md` | Manual `@verify` gate steps |
 | `ingestion_testing.md` | Ingestion pipeline testing |
@@ -96,8 +96,8 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `app_features_traceability_matrix.md` | Which UI elements are visible with which app features |
 | `changelog.md` | Breaking changes and notable renames — check if something breaks after refactor |
 | `blueprint_architect_ux_spec.md` | UX spec for Blueprint Architect (TubeMap, lineage navigation) |
-| `dependency_index.md` | Forward/backward dependency map between modules, rules, manifests |
-| `manifest_data_contract_rules.md` | `input_fields` / `output_fields` validation rules |
+| `dependency_index.md` | Forward/backward dependency map between modules, rules, data analysis recipes |
+| `data_analysis_recipe_data_contract_rules.md` | `input_fields` / `output_fields` validation rules |
 | `protocol_tiered_data.md` | 3-Tier data lifecycle spec |
 
 ### 3.5 Plans & Tasks (`.claude/plans/` & `.claude/tasks/`)
@@ -137,9 +137,9 @@ The **@dasharch** agent role is the Lead System Architect. Active by default. Mu
 
 ### 4.2 @bioscientist Agent Role
 
-Activate when: manifest design, scientist-first interview, data grain decisions. Must:
+Activate when: data analysis recipe design, scientist-first interview, data grain decisions. Must:
 - Follow the Scientist-First Interview Protocol (Data Grain, Metric Logic, Visual Mapping)
-- Adhere strictly to ADR-041 (Unified Manifest Standard)
+- Adhere strictly to ADR-041 (unified data analysis recipe standard)
 - Scan-Only Mode for `libs/` — never modify `.py` files
 - Formalise missing features as `[ENHANCEMENT REQUEST]` entries in `tasks.md`
 
