@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 from utils.deployment_error import DeploymentError, exit_if_errors
+from utils.legacy_keys import renamed_recipe_file_key_errors
 
 _REF = "ADR-041 + .claude/rules/rules_data_analysis_recipe_structure.md"
 
@@ -139,6 +140,7 @@ class ConfigManager:
 
         # Stage 3: structural validation
         struct_errors: list[DeploymentError] = []
+        struct_errors.extend(renamed_recipe_file_key_errors(self.raw_config, str(yaml_path)))
 
         # LEGACY-FLAT-PLOTS-1: root-level plots: key is removed (Phase 21-B, ADR-083)
         if self.raw_config.get('plots'):

@@ -136,6 +136,10 @@ def node_blocks_apply(node: AuditStep) -> bool:
 # SessionManager
 # ---------------------------------------------------------------------------
 
+class LegacySessionError(ValueError):
+    """A stored session uses keys from before the configuration rename (ADR-091)."""
+
+
 class SessionManager:
     """Manages session identity, T1/T2 ghost, and T3 ghost files.
 
@@ -236,11 +240,21 @@ class SessionManager:
     # 22-A-7: Read T1/T2 assembly ghost
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _read_current_json(path: Path, label: str) -> dict:
+        """Read a stored session file; refuse one written before the rename, naming the fix."""
+        from app.modules.renamed_keys import legacy_session_problem
+        data = json.loads(path.read_text())
+        problem = legacy_session_problem(data, f"{label} ({path.name})")
+        if problem:
+            raise LegacySessionError(problem)
+        return data
+
     def read_assembly_ghost(self, session_key: str) -> dict | None:
         path = self.session_dir(session_key) / "assembly.json"
         if not path.exists():
             return None
-        return json.loads(path.read_text())
+        return self._read_current_json(path, f"Session {session_key}")
 
     # ------------------------------------------------------------------
     # 22-A-8: T1/T2 restore — 6-step Prepped Chef check
@@ -366,7 +380,9 @@ class SessionManager:
         ghosts = []
         for f in sorted(d.glob("t3_*.json"), reverse=True):
             try:
-                data = json.loads(f.read_text())
+                data = self._read_current_json(f, f"Session {session_key}")
+            except LegacySessionError:
+                raise
             except Exception:
                 continue
             by_plot = data.get("t3_audit_steps_by_plot")
@@ -397,7 +413,7 @@ class SessionManager:
         sessions = []
         for assembly_file in self.root.glob("*/assembly.json"):
             try:
-                ghost = json.loads(assembly_file.read_text())
+                ghost = self._read_current_json(assembly_file, f"Session {assembly_file.parent.name}")
                 session_key = ghost.get("session_key", assembly_file.parent.name)
                 t3_ghosts = self.list_t3_ghosts(session_key)
                 latest_t3 = t3_ghosts[0].get("saved_at", "") if t3_ghosts else ""
@@ -410,6 +426,12 @@ class SessionManager:
                     "latest_t3_saved_at": latest_t3,
                     "t3_count": len(t3_ghosts),
                 })
+            except LegacySessionError as exc:
+                # shown in the session panel with the fix, never skipped silently
+                sessions.append({"session_key": assembly_file.parent.name, "legacy_problem": str(exc),
+                                 "data_analysis_recipe_id": "", "data_analysis_recipe_sha256": "",
+                                 "data_batch_hash": "", "assembled_at": "", "latest_t3_saved_at": "",
+                                 "t3_count": 0})
             except Exception:
                 continue
         sessions.sort(key=lambda s: s["latest_t3_saved_at"] or s["assembled_at"], reverse=True)
@@ -444,6 +466,11 @@ class SessionManager:
             t3_files = [n for n in names if "/t3_" in n and n.endswith(".json")]
             if not assembly_files and not t3_files:
                 raise ValueError("ZIP does not contain a valid session (no assembly.json or t3_*.json found).")
+            from app.modules.renamed_keys import legacy_session_problem
+            for name in assembly_files + t3_files:
+                problem = legacy_session_problem(json.loads(zf.read(name)), f"Imported session file {name}")
+                if problem:
+                    raise LegacySessionError(problem)
             zf.extractall(self.root)
             # Derive session_key from assembly.json if present, otherwise from T3 ghost.
             anchor = assembly_files[0] if assembly_files else t3_files[0]

@@ -113,6 +113,10 @@ def define_session_server(input, output, session, *,
             group_panels = []
             for s in grp_sessions:
                 sk = s["session_key"]
+                if s.get("legacy_problem"):
+                    group_panels.append(ui.div(ui.tags.small(s["legacy_problem"], class_="text-danger d-block"),
+                                               class_="session-card legacy mb-1"))
+                    continue
                 batch_short = s.get("data_batch_hash", "")[:8] or "?"
                 t3_count = s.get("t3_count", 0)
                 last_saved = s.get("latest_t3_saved_at") or s.get("assembled_at", "")
@@ -259,7 +263,12 @@ def define_session_server(input, output, session, *,
         if session_manager is None or home_state is None:
             return
 
-        ghost = session_manager.read_assembly_ghost(session_key)
+        from app.modules.session_manager import LegacySessionError
+        try:
+            ghost = session_manager.read_assembly_ghost(session_key)
+        except LegacySessionError as exc:
+            _notify(f"❌ {exc}", type="error", duration=12)
+            return
         if ghost is None:
             _notify("❌ Session assembly record not found.", type="error", duration=6)
             return
@@ -276,7 +285,11 @@ def define_session_server(input, output, session, *,
             )
 
         # Load T3 ghosts list for this session
-        t3_ghosts = session_manager.list_t3_ghosts(session_key)
+        try:
+            t3_ghosts = session_manager.list_t3_ghosts(session_key)
+        except LegacySessionError as exc:
+            _notify(f"❌ {exc}", type="error", duration=12)
+            return
         if t3_ghosts:
             # Restore most-recent T3 ghost into home_state.
             # Phase 22-J: list_t3_ghosts emits both flat t3_audit_steps (legacy) and

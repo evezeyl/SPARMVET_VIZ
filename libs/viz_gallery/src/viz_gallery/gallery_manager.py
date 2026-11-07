@@ -99,10 +99,16 @@ class GalleryManager:
             "by_sample_size": {},
         }
 
+        legacy_bundles: list = []
         folders = [d for d in self.gallery_dir.iterdir() if d.is_dir()]
         for d in folders:
             data_analysis_recipe_path = d / "data_analysis_recipe.yaml"
             if not data_analysis_recipe_path.exists():
+                if (d / "recipe_manifest.yaml").exists():
+                    # a bundle from before the configuration rename (ADR-091): say so, never skip silently
+                    print(f"Skipping {d.name}: it uses the old file names (recipe_manifest.yaml, recipe_meta.md). "
+                          f"Convert with: python assets/scripts/migrate_config_vocabulary.py --gallery <folder> --apply")
+                    legacy_bundles.append(d.name)
                 continue
 
             # Integrity Check (ADR-037): data analysis recipe + data + meta required;
@@ -167,7 +173,8 @@ class GalleryManager:
         full_index = {
             "metadata": {
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "count": len(registry)
+                "count": len(registry),
+                "legacy_bundles": legacy_bundles,
             },
             "registry": registry,
             "pivot": pivot

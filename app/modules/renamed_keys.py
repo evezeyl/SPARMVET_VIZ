@@ -41,6 +41,17 @@ RENAMED_FLAG_KEYS = {
     "manifest_edit_enabled": "data_analysis_recipe_edit_enabled",
 }
 
+# keys written into saved sessions (assembly.json, t3_*.json): old -> new
+RENAMED_SESSION_KEYS = {
+    "manifest_id": "data_analysis_recipe_id",
+    "manifest_sha256": "data_analysis_recipe_sha256",
+    "t3_recipe": "t3_audit_steps",
+    "t3_recipe_by_plot": "t3_audit_steps_by_plot",
+    "t3_recipe_sha256": "t3_audit_steps_sha256",
+}
+
+MIGRATION_HINT = "python assets/scripts/migrate_config_vocabulary.py"
+
 _REF = "ADR-091 (configuration rename), issue evezeyl/SPARMVET_VIZ#27"
 
 
@@ -114,3 +125,13 @@ def renamed_app_features_key_errors(config: dict, where: str) -> list[Deployment
                 reference=_REF,
             ))
     return errors
+
+
+def legacy_session_problem(raw: dict, where: str) -> str | None:
+    """A message naming the fix when a stored session uses keys from before the rename, else None."""
+    old = [k for k in RENAMED_SESSION_KEYS if k in raw]
+    if not old:
+        return None
+    pairs = ", ".join(f"'{k}' is now '{RENAMED_SESSION_KEYS[k]}'" for k in old)
+    return (f"{where} was saved before the configuration rename ({pairs}). "
+            f"Convert it with: {MIGRATION_HINT} --sessions <sessions folder> --apply, or delete it.")
