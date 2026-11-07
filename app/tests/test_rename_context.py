@@ -128,3 +128,21 @@ def test_yaml_embedded_in_a_python_string_keeps_its_keys(tmp_path):
     out = _recipe_rewrite(tmp_path, "emb.py", src)
     assert "    steps: !include 'x.yaml'" in out
     assert "# the step list note" in out
+
+
+def test_compound_with_bare_recipe_takes_the_noun_of_the_file(tmp_path):
+    src = "filtered_recipe = []\nclass MyRecipeBuilder: pass\nkeep_recipes = 1\n"
+    steps = _recipe_rewrite(tmp_path, "t.py", src)
+    assert "filtered_steps = []" in steps and "class MyStepsBuilder" in steps and "keep_steps = 1" in steps
+    audit = _recipe_rewrite(tmp_path, "t2.py", src, "audit")
+    assert "filtered_audit_steps = []" in audit
+
+
+def test_phrase_keeps_the_leading_word(tmp_path):
+    out = _recipe_rewrite(tmp_path, "a.md", "Write the assembly recipe and the join recipes.\n")
+    assert out == "Write the assembly steps and the join steps.\n"
+
+
+def test_single_line_embedded_yaml_keeps_its_key(tmp_path):
+    out = _recipe_rewrite(tmp_path, "e.py", "lines.append(f\"    recipe: !include '{rel}'\")\n")
+    assert "    steps: !include '{rel}'" in out

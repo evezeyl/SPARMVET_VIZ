@@ -42,12 +42,32 @@ def camel(snake: str) -> str:
     return "".join(p[:1].upper() + p[1:] for p in snake.split("_") if p)
 
 
+def _marker(plural: bool, case: str) -> str:
+    return f"\x02{'rp' if plural else 'rs'}_{case}\x03"
+
+
 def forms(old: str, new: str):
     """The pair in snake, Camel and UPPER spelling."""
+    if new == CONTEXT:
+        plural = old.endswith("s")
+        yield old, _marker(plural, "l")
+        yield camel(old), _marker(plural, "c")
+        yield old.upper(), _marker(plural, "u")
+        return
     yield old, new
-    if "_" in old or True:
-        yield camel(old), camel(new) if new != CONTEXT else CONTEXT
-    yield old.upper(), new.upper() if new != CONTEXT else CONTEXT
+    yield camel(old), camel(new)
+    yield old.upper(), new.upper()
+
+
+def resolve_ctx(text: str, noun: dict) -> str:
+    """Replace the case/number markers of the bare word recipe by the noun of the file."""
+    snake, snake_pl = noun["snake"], noun.get("snake_pl", noun["snake"] + "s")
+    for plural, base in ((False, snake), (True, snake_pl)):
+        tag = "rp" if plural else "rs"
+        text = text.replace(f"\x02{tag}_l\x03", base)
+        text = text.replace(f"\x02{tag}_c\x03", "".join(p.capitalize() for p in base.split("_")))
+        text = text.replace(f"\x02{tag}_u\x03", base.upper())
+    return text
 
 
 def load_pairs():
@@ -82,7 +102,7 @@ def transform(token: str, pairs, keep):
         return out, "keep"
     if "REMOVE_" in out:
         return out, "REMOVE"
-    if CONTEXT in out:
+    if "\x02" in out:
         return out, "CONTEXT"
     leftover = out
     for val in marks.values():
@@ -258,6 +278,8 @@ def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool =
         # ids with underscore, dot, slash or CamelCase: the pairs decide, in every context
         if any(c in core for c in "_./") or _CAMEL.search(core):
             new, status = transform(core, pairs, keep)
+            if status == "CONTEXT" and "recipe" in forms:
+                new, status = resolve_ctx(new, forms["recipe"]), "auto"
             return ("--" if flag else "") + (new if status == "auto" else core)
         if "-" in core:
             as_snake, status0 = transform(core.replace("-", "_"), pairs, keep)
@@ -414,10 +436,15 @@ def _rewrite_py(src: str, fix) -> str:
                 # embedded YAML or a docstring: key lines are code, sentences are prose
                 new = "\n".join(_yaml_like_line(l, fix) for l in text.split("\n"))
             else:
-                ctx = "prose" if re.search(r"\s", inner.strip()) else "code"
-                new = fix(text, ctx, whole=(ctx == "code"))
+                km = re.match(r"^([rbfuRBFU]*[\"']{1,3})(\s*-?\s*)([A-Za-z0-9_\-]+)(\s*:)(\s.*|$)", text)
+                if km:  # an embedded YAML line such as f"    recipe: !include ..."
+                    pre, ind, key, colon, rest = km.groups()
+                    new = pre + ind + fix(key, "code", True) + colon + _yaml_like_line("x:" + rest, fix)[2:]
+                else:
+                    ctx = "prose" if re.search(r"\s", inner.strip()) else "code"
+                    new = fix(text, ctx, whole=(ctx == "code"))
         elif tok.type == getattr(tokenize, "FSTRING_MIDDLE", -1):
-            if "\n" in text:
+            if "\n" in text or re.match(r"^\s*-?\s*[A-Za-z0-9_\-]+:(\s|$)", text):
                 new = "\n".join(_yaml_like_line(l, fix) for l in text.split("\n"))
             else:
                 new = fix(text, "prose" if re.search(r"\s", text.strip()) else "code")
