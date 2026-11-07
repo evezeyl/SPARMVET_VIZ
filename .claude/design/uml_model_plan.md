@@ -1,17 +1,17 @@
 # UML model of SPARMVET_VIZ: plan (TOOLS-UML-3)
 
-**Status:** in use (Eve, 2026-11-07). Scope is cut to what helps the demo: 10 work days for fixes, testing and the demo.
+**Status:** in use (Eve, 2026-11-07). Scope is limited by time: 10 work days for fixes, testing and a demo.
 **Model file:** `docs/UML/app.mdj` (StarUML). **Tool:** `OBSWORK/_bin/staruml/` (usage: `OBSWORK/_HELP/7_StarUML_Modeling_Workflow.md`).
 **Findings:** `.claude/tasks/uml_findings.md`.
 
-## 1. The demo (Eve, 2026-11-07)
+## 1. Scope (Eve, 2026-11-07)
 
-The demo runs on Eve's laptop. No Galaxy or IRIDA for now. It explains to the people of the research project what the app can do for them, and aims to recruit interest for further development and cooperation, reviewers of code and documentation before official deployment, and developers for new modules and data analysis recipes. HOME must be polished first. Then GALLERY, BLUEPRINT and TEST_LAB, if they can be included.
+The model describes the app, not a demo. It describes the app as it runs today, on one machine; Galaxy and IRIDA are not implemented for now. HOME is the priority because it must be polished first; then GALLERY, BLUEPRINT and TEST_LAB.
 
 ## 1b. Goals, for now
 
 1. Understand the key points: how the app is built and what a user does on HOME.
-2. Find discrepancies between code, rules and documents, so the fixes before the demo are the right ones.
+2. Find discrepancies between code, rules and documents, so the fixes are the right ones.
 
 Documentation is a side effect, not the aim. A diagram exists only if it answers a question in section 3. No diagram of every function, no code generation. Eve does not review each diagram: she sees the findings that need a decision.
 
@@ -22,7 +22,7 @@ Documentation is a side effect, not the aim. A diagram exists only if it answers
 - **D3. Elements carry tags that a script can check:** `code` (file and symbol), `adr` (only the ADR that governs it today), `rule`, `test`, `flag`. Names are the code's names. Views hide the tags, so diagrams stay readable. Vocabulary follows `CLAUDE.md` section 1.
 - **D4. Requirements only where they prevent a wrong result.** Drafted from current ADRs and rules, each naming its source. Eve is asked only when sources conflict or none exists.
 
-## 3. Diagrams for the demo
+## 3. Diagrams, first set
 
 Order follows the common practice: context and containers first, then the key runtime flows, components only where needed, code level left out.
 
@@ -32,7 +32,7 @@ Order follows the common practice: context and containers first, then the key ru
 | CTX-1 | Who and what does the app talk to? | C4 context | scenarios, logical |
 | C4-CONT | What runs, and which files and folders does it use? | C4 container | logical, physical |
 | PKG-TIERS | Which library may import which? | Package | development |
-| DEP-DEMO | How does the demo run on the laptop: process, folders, launch variables? | Deployment | physical |
+| DEP-APP | How does the app run on one machine: process, folders, launch variables? | Deployment | physical |
 | **HOME** | | | |
 | UC-HOME | What can a user do, under which flag? | Use case | scenarios |
 | UI-HOME | What is on the screen, what is each panel called in the code, and which flag shows it? | Wireframe | scenarios, for users and developers |
@@ -49,7 +49,7 @@ Order follows the common practice: context and containers first, then the key ru
 
 Three text pages go with them, because no diagram shows them well: **quality goals** (correct science and reproducibility first), **cross-cutting concepts** (configuration, error handling, provenance, security) and **risks and technical debt**. They live next to the model in `docs/UML/`.
 
-**Next, in this order, if the demo includes them:** GALLERY, BLUEPRINT, TEST_LAB (use case, wireframe, components). **Later:** class diagrams of the core, data analysis recipe data model, other platforms.
+**Next, in this order:** GALLERY, BLUEPRINT, TEST_LAB (use case, wireframe, components). **Later:** class diagrams of the core, data analysis recipe data model, other platforms.
 
 UI-HOME uses StarUML's wireframe diagrams (panels, buttons, tabs as model elements). Each widget carries its Shiny id in `code` and its gate in `flag`, so the script can check it. It replaces the hand-drawn picture in `ui_panel_map_current.md`, which is already out of date (it still shows a T1/T2/T3 toggle).
 
