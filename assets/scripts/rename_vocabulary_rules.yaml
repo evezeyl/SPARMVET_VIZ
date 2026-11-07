@@ -1,0 +1,125 @@
+# Rename rules for the configuration vocabulary (ADR-091, issue evezeyl/SPARMVET_VIZ#27).
+# Read by assets/scripts/rename_vocabulary.py. Eve approves this file (and the table made
+# from it, .claude/tasks/config_rename_mapping.md) before any file is changed.
+#
+# pairs: [old, new] in snake_case. Each pair is applied to snake_case, CamelCase and
+# UPPER_CASE spellings of a token, longest old string first. So the pair
+# [transformation_recipe, id_transformation] also renames TransformationRecipe to
+# IdTransformation and TRANSFORMATION_RECIPE to ID_TRANSFORMATION.
+
+pairs:
+  # --- persona: retired for the application (ADR-091 point 5) ---
+  - [personas, app_features]
+  - [persona, app_features]
+
+  # --- profile (deployment): retired for configuration ---
+  - [profiles, deployments]
+  - [profile, deployment]
+
+  # --- manifest: becomes data analysis recipe ---
+  - [join_manifests, joins]
+  - [assembly_manifests, joins]
+  - [recipe_manifest, data_analysis_recipe]
+  - [manifests, data_analysis_recipes]
+  - [manifest, data_analysis_recipe]
+
+  # --- recipe, by old meaning ---
+  # (a) saved set of ID transformations in libs/id_reconciliation
+  - [transformation_recipe, id_transformation]
+  - [reconciliation_recipe, id_transformation]
+  - [id_cleaning_recipes, id_cleaning_steps]
+  - [build_deanon_recipe, build_deanon_steps]
+  - [deanon_recipe, deanon_steps]
+  - [generate_recipe, generate_transformation]
+  - [save_recipe, save_transformation]
+  - [load_recipe, load_transformation]
+  - [test_recipe_persistence, test_transformation_persistence]
+  - [test_recipe, test_transformation]
+  # (b) T3 audit steps of the user (audit stack, ghosts, export)
+  - [t3_recipe_by_plot, t3_audit_steps_by_plot]
+  - [t3_recipe_engine, t3_audit_engine]
+  - [t3_recipe_sha256, t3_audit_steps_sha256]
+  - [t3_recipe, t3_audit_steps]
+  - [make_recipe_node, make_audit_step]
+  - [recipe_nodes, audit_steps]
+  - [recipe_node, audit_step]
+  - [recipe_pending_badge_ui, audit_pending_badge_ui]
+  - [recipe_pending_badge, audit_pending_badge]
+  - [recipe_pending, audit_pending]
+  - [snapshot_recipe, snapshot_audit_steps]
+  - [active_recipe, active_audit_steps]
+  - [filtered_recipe, filtered_audit_steps]
+  - [recipe_sha256, audit_steps_sha256]
+  - [track_recipe_changes, track_audit_step_changes]
+  - [recipe_entry, audit_step_entry]
+  - [recipe_raw, steps_raw]
+  - [_recipe_blocks, _step_blocks]
+  # (c) list of wrangling or assembly steps in a data analysis recipe
+  - [canonical_recipe_syntax, canonical_steps_syntax]
+  - [figshare_triple_join_recipe, figshare_triple_join_steps]
+  - [master_collection_recipe, master_collection_steps]
+  - [master_recipe, master_steps]
+  - [join_recipe, join_steps]
+  - [clean_recipe, clean_steps]
+  - [recipe_tier1, steps_tier1]
+  - [recipe_tier2, steps_tier2]
+  - [_normalize_recipe, _normalize_steps]
+  - [_build_join_recipes, _build_join_steps]
+  - [recipe_new, steps_new]
+  - [recipe_text, steps_text]
+  - [recipe_yaml, steps_yaml]
+  - [recipe_file, steps_file]
+  - [full_recipe, full_steps]
+  - [bad_recipe, bad_steps]
+  - [good_recipe, good_steps]
+  - [c_recipe, c_steps]
+  # (d) gallery bundle (an example with data, text and preview)
+  - [gallery_recipe_select, gallery_example_select]
+  - [gallery_recipe_panel, gallery_example_panel]
+  - [gallery_recipe_, gallery_example_]
+  - [submit_recipe, submit_example]
+  - [render_recipe, render_example]
+  - [recipe_template, example_template]
+  - [recipe_meta, example_meta]
+  - [recipe_dir, example_dir]
+  - [recipe_id, example_id]
+  # (e) filter builder
+  - [filter_recipe, filter_builder]
+  - [find_saved_recipes, find_saved_id_transformations]
+  # (f) remaining plural and singular: decided by context, see "context" below
+  - [recipes, STEPS_OR_RECIPE_BY_CONTEXT]
+  - [recipe, STEPS_OR_RECIPE_BY_CONTEXT]
+
+# Tokens that keep their word because it is a domain term or another meaning (matched
+# case-insensitively as substrings of a token).
+keep_substrings:
+  - amr_profile        # antimicrobial resistance profile (biology)
+  - plasmid_profile    # same
+  - profiler           # data profiling
+  - profiling
+  - personal           # the word personal, not persona
+  - null-profile
+  - data_analysis_recipe   # the new term itself
+  - DataAnalysisRecipe
+
+# Whole files and folders with an explicit new path.
+paths:
+  config/ui/templates: config/app_features
+  config/manifests: config/data_analysis_recipes
+  assets/template_manifests: assets/template_data_analysis_recipes
+  # the suffix _template is dropped from the app features files
+  drop_suffix: _template
+
+# Phrases in prose, applied in the documentation phase, longest first.
+phrases:
+  - ["deployment profile", "deployment"]
+  - ["Deployment Profile", "Deployment"]
+  - ["connector profile", "deployment"]
+  - ["profile YAML", "deployment file"]
+  - ["UI persona", "app features"]
+  - ["persona template", "app features file"]
+  - ["app features template", "app features file"]
+  - ["persona name", "app features name"]
+  - ["manifest author", "recipe author"]
+  - ["pipeline manifest", "data analysis recipe"]
+  - ["master manifest", "master data analysis recipe"]

@@ -49,6 +49,11 @@ EXCLUDED_PREFIXES = (
     ".claude/rules/dasharch.md",
     ".claude/rules/rules_persona_bioscientist.md",
     "assets/scripts/audit_old_words.py",
+    "assets/scripts/rename_vocabulary.py",
+    "assets/scripts/rename_vocabulary_rules.yaml",
+    "assets/scripts/inventory_config_keys.py",
+    ".claude/tasks/config_rename_mapping.md",
+    ".claude/tasks/config_rename_inventory.md",
 )
 # Words allowed only in specific files (the AI agent role files may say persona).
 MAX_FILE_BYTES = 2_000_000
