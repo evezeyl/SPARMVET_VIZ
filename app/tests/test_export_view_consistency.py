@@ -30,7 +30,7 @@ def world(tmp_path):
 
 
 def keys(w):
-    return w.orch.compute_recipe_keys("tiny")
+    return w.orch.compute_data_analysis_recipe_keys("tiny")
 
 
 def base(w):

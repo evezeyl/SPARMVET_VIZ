@@ -160,7 +160,7 @@
 
 ## `app/modules/cache_keys.py`
 - **Role:** `ref`
-- **provides:** `function:load_data_analysis_recipe`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:project_keys`, `class:LoadedDataAnalysisRecipe`, `class:ProjectKeys`
+- **provides:** `function:load_data_analysis_recipe`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:data_analysis_recipe_keys`, `class:LoadedDataAnalysisRecipe`, `class:DataAnalysisRecipeKeys`
 - **consumes:** `libs/utils/src/utils/config_loader.py`
 - **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/tests/test_cache_keys.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-089`, `docs/foundations/reproducibility_hash_schema.qmd`
@@ -207,7 +207,7 @@
 
 ## `app/modules/orchestrator.py`
 - **Role:** `ref`
-- **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `function:compute_project_keys`
+- **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `function:compute_data_analysis_recipe_keys`
 - **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `app/modules/cache_keys.py`
 - **mirrors:** `libs/transformer/tests/debug_assembler.py`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
@@ -628,7 +628,7 @@
 
 ## `libs/test_lab/src/test_lab/scaffolder.py`
 - **Role:** `info`
-- **provides:** `DataAnalysisRecipeScaffolder class (scaffold) — generates a project ZIP with data analysis recipe`
+- **provides:** `DataAnalysisRecipeScaffolder class (scaffold) — generates a data analysis recipe ZIP with data analysis recipe`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`
 

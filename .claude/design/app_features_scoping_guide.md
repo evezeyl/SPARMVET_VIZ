@@ -34,7 +34,7 @@ See `functionality_dependency_map.md` for the complete dependency rules before c
 | `FILTER` | Passive filter | Ephemeral row filter + column drop — no audit, no data change |
 | `T3` | T3-Audit / active filter | Justified edits, T3 branch, audit trail, comparison |
 | `SESS` | Session | Save/restore work-in-progress; ghost save |
-| `EXP` | Export | Bundle ZIP + scope toggle (project / group / plot) |
+| `EXP` | Export | Bundle ZIP + scope toggle (all plots / group / plot) |
 | `ING` | Ingest | Metadata upload, full data import |
 | `DEV` | Developer tools | Gallery, Blueprint Architect, Test Lab |
 | `UI` | UI layout | Navigation (derived), sidebar branding, data analysis recipe selector |
@@ -96,9 +96,9 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `EXP` | `export_enabled` | Single flag — enables export bundle + scope toggle (project / group / plot) |
+| `EXP` | `export_enabled` | Single flag — enables export bundle + scope toggle (all plots / group / plot) |
 
-**Scope** (project / group / plot) is determined by the active context and scope toggle — not by separate flags. The old `EXP_BNDL` / `EXP_GROUP` / `EXP_GRF` flags are collapsed into `export_enabled`.
+**Scope** (all plots / group / plot) is determined by the active context and scope toggle — not by separate flags. The old `EXP_BNDL` / `EXP_GROUP` / `EXP_GRF` flags are collapsed into `export_enabled`.
 
 **ADR-069 rule — hashes always on:** Every export always includes the full provenance set (data_batch_hash, data_analysis_recipe_sha256, decision_hash, git_commit, release_version, created_at, data_analysis_recipe_name, app_features_id, active_tier, software_versions, data_source_paths). No flag, no opt-out. Image files embed an 8-field subset in file metadata (PNG iTXt / SVG `<metadata>` / PDF XMP).
 
@@ -174,10 +174,10 @@ Startup validation raises `AppFeaturesConfigError` if any cascade rule is violat
 | `web-demo` | Public web display | `web-demo.yaml` |
 | `pipeline-exploration-simple` | Pipeline users who filter but do not modify | `pipeline-exploration-simple.yaml` |
 | `pipeline-exploration-advanced` | Pipeline users with full T3 audit capability | `pipeline-exploration-advanced.yaml` |
-| `project-independent` | Research project — full data import + T3 | `project-independent.yaml` |
+| `standalone` | Researcher with their own data — full data import + T3 | `standalone.yaml` |
 | `developer` | Full access including Blueprint + Test Lab | `developer.yaml` |
 | `qa` | Automated testing — all flags on | `qa.yaml` |
-| `[P] web-project-showcase` | Public website with branded static display | *(not yet created)* |
+| `[P] web-showcase` | Public website with branded static display | *(not yet created)* |
 | `[P] lightweight-exploration` | Passive filter only, minimal UI | *(not yet created)* |
 
 ---

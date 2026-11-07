@@ -1,10 +1,9 @@
-# Complex Project Template
-# Use this for large-scale projects requiring modularity and shared fragments.
+# Complex Template
+# Use this for large-scale data analysis recipes requiring modularity and shared fragments.
 
-id: complex_project_demo
-type: project
+id: complex_demo
 info:
-  display_name: "Complex Enterprise Project"
+  display_name: "Complex Enterprise Demo"
   description: "Modular data analysis recipe using !include for relational integrity and reuse."
   version: "1.0"
 

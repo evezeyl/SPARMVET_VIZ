@@ -28,7 +28,7 @@ class TestUIScenarios(unittest.TestCase):
     def test_app_features_sweep(self):
         """Objective 1: Full Simulation Run for app features files."""
         app_features = {
-            "project-independent": {"developer_mode_enabled": False, "gallery_enabled": True},
+            "standalone": {"developer_mode_enabled": False, "gallery_enabled": True},
             "developer": {"developer_mode_enabled": True, "gallery_enabled": True},
             "qa": {"developer_mode_enabled": True, "comparison_mode_enabled": True},
         }

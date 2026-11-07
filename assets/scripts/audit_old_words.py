@@ -34,6 +34,7 @@ WORDS = {
     "manifest": r"manifest",
     "recipe": r"(?<!data_analysis_)(?<!data analysis )(?<!data-analysis-)(?<!DataAnalysis)recipe",
     "profile": r"profile",
+    "project": r"(?<![a-z])projects?(?![a-z])|project_(?:id|info|dir|keys)\b",
     "app features template": r"ui/templates|(?:developer|qa|pipeline-[a-z-]+|project-independent|demo-vetinst|web-demo)_template",
     "connector (deployment file)": r"connector_(?:config|path|template|cache)|sparmvet_connector|local_connector",
 }
@@ -47,6 +48,11 @@ EXCLUDED_PREFIXES = (
     ".claude/logs/",
     ".claude/tasks/archives/",
     ".claude/baselines/",
+    ".claude/prompts/",
+    "docs/presentations/",
+    ".claude/knowledge/archive/",
+    ".claude/knowledge/changelog.md",
+    ".claude/tasks/project_word_mapping.md",
     ".claude/conversations/",
     ".claude/knowledge/architecture_decisions.md",
     ".claude/tasks/config_rename_strategy.md",
@@ -74,11 +80,23 @@ MAX_FILE_BYTES = 2_000_000
 # They are removed from a line before it is counted. A line can also carry the marker
 # audit:allow-old-word (for a tombstone that names a removed setting).
 ALLOWED_PHRASES = {
+    # "project" stays for the repository itself, the Python packaging table and IRIDA's own projects.
+    "project": [r"project[_ ]root\w*", r"find_project_root", r"\[project[.\]]\w*", r"this project", r"the project\b(?! data| \w+ data)",
+                r"IRIDA(?:'s)? project\w*", r"irida_project\w*", r"get_irida_project_id", r"project_id: 42",
+                r"project[_ ]conventions", r"project venv",
+                r"SPARMVET(?:_VIZ)? project", r"project hygiene", r"project knowledge", r"at project end", r"PROJECT STATE",
+                r"Project Rules", r"project scope", r"short-term project", r"LIMS project", r"scan_project", r"--project-root",
+                r"project-manager", r"FULL PROJECT", r"^project:", r"execute-dir: project", r"metadata_research_project",
+                r"Metadata Research Project", r"Hatch Project", r"Project FAQ", r"Major project", r"project managers",
+                r"\.claude/projects", r"project authority", r"project scaffolding", r"project[ -]code", r"project tmp",
+                r"which project library", r"/path/to/project", r"project[- ]relative", r"project directory", r"project logs", r"project assets", r"Project the frame", r"\$\{?PROJECT\}?", r"\"PROJECT\"", r"project structure", r"project paths", r"Project History", r"project stability", r"project library", r"project files", r"across the project", r"project-wide"],
     "manifest": [r"vendor[ _-]manifest", r"manifest\.json"],
     "profile": [r"(?:AMR|Plasmid|amr|plasmid)[ _]?[Pp]rofile\w*", r"Flavor Profile", r"[Rr]esistance profile",
                 r"profiler", r"null-profile", r"distribution profiles", r"EVE_\w*Profile\w*"],
 }
 ALLOW_MARKER = "audit:allow-old-word"
+# Files where one word keeps its meaning: the IRIDA connector speaks of IRIDA's own projects.
+WORD_ALLOWED_PATHS = {"project": ("libs/connector/", "docs/workflows/connector.qmd")}
 
 
 def git_files(include_untracked: bool, include_ignored: bool) -> list[str]:
@@ -123,6 +141,8 @@ def scan(files: list[str], words: dict[str, re.Pattern], show_excluded: bool):
         if is_excluded(path) and not show_excluded:
             continue
         for word, rx in words.items():
+            if path.startswith(WORD_ALLOWED_PATHS.get(word, ("\0",))):
+                continue
             n = len(rx.findall(_masked(word, path)))
             if n:
                 counts[(word, "path", area_of(path))] += n
@@ -140,6 +160,8 @@ def scan(files: list[str], words: dict[str, re.Pattern], show_excluded: bool):
             if ALLOW_MARKER in line:
                 continue
             for word, rx in words.items():
+                if path.startswith(WORD_ALLOWED_PATHS.get(word, ("\0",))):
+                    continue
                 n = len(rx.findall(_masked(word, line)))
                 if n:
                     counts[(word, "content", area_of(path))] += n

@@ -1,5 +1,4 @@
 id: audit_01
-type: audit
 info:
   display_name: Lab Submission Audit
   category: Quality Control

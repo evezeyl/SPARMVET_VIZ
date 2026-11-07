@@ -876,7 +876,7 @@ def define_server(input, output, session, *,
         if not path or not Path(path).exists():
             return
         ctx_map, inc_map = _do_refresh_blueprint(path)
-        # UX-NOTIF-3: Project-load notification — surface component count on data analysis recipe reload
+        # UX-NOTIF-3: Data analysis recipe load notification — surface component count on data analysis recipe reload
         data_analysis_recipe_name = Path(path).name
         n_components = len(ctx_map) if ctx_map else len(inc_map)
 
@@ -1214,7 +1214,7 @@ def define_server(input, output, session, *,
                     new_params[param_key] = val
 
             elif widget_type == "color":
-                # BP-COLOR-1/2: read composite color widget (includes project palette source)
+                # BP-COLOR-1/2: read composite color widget (includes deployment palette source)
                 mode_id = f"bp_form_{param_key}_mode"
                 top_mode = safe_input(input, mode_id, "literal")
                 if top_mode == "column":
@@ -1223,14 +1223,14 @@ def define_server(input, output, session, *,
                         new_params[param_key] = {"mode": "column", "column": col_val}
                 else:
                     lit_mode = safe_input(input, f"bp_form_{param_key}_lmode", "palette")
-                    if lit_mode == "project":
+                    if lit_mode == "deployment":
                         proj_val = safe_input(
-                            input, f"bp_form_{param_key}_project_palette", ""
+                            input, f"bp_form_{param_key}_deployment_palette", ""
                         )
                         new_params[param_key] = {
                             "mode": "literal",
-                            "literal_mode": "project",
-                            "project_palette": proj_val or "",
+                            "literal_mode": "deployment",
+                            "deployment_palette": proj_val or "",
                         }
                     elif lit_mode == "palette":
                         palette_val = safe_input(input, f"bp_form_{param_key}_palette", "")

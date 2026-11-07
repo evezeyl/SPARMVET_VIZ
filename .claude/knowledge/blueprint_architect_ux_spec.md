@@ -237,7 +237,7 @@ Always visible, 50/50 horizontal split:
 **Left — Plot Preview (`architect_active_plot`):**
 - Renders the active plot spec using `ConfigManager(active_data_analysis_recipe_path).raw_config` + `active_viz_id`
 - Data source: `processed_data_surgical` (surgical parquet from `active_anchor_path`)
-- Falls back to `processed_data()` (base project anchor) if surgical data unavailable
+- Falls back to `processed_data()` (base anchor) if surgical data unavailable
 - Shows spinner / "Select a plot component to preview" when `active_viz_id` is None
 
 **Right — Live Data Glimpse (`architect_data_status_ui` + data table):**

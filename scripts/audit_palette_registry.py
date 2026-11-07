@@ -75,17 +75,17 @@ def audit_palette_file(palette_path: Path) -> tuple[list[str], list[str], list[s
         )
         return violations, warnings, infos
 
-    project_palettes = raw["palettes"]
-    if not isinstance(project_palettes, dict):
+    deployment_palettes = raw["palettes"]
+    if not isinstance(deployment_palettes, dict):
         violations.append(
             f"FORMAT_ERROR — 'palettes:' value must be a mapping of name → list[hex], "
-            f"got {type(project_palettes).__name__}."
+            f"got {type(deployment_palettes).__name__}."
         )
         return violations, warnings, infos
 
-    infos.append(f"Loaded {len(project_palettes)} palette(s) from config/palettes.yaml.")
+    infos.append(f"Loaded {len(deployment_palettes)} palette(s) from config/palettes.yaml.")
 
-    for name, colors in project_palettes.items():
+    for name, colors in deployment_palettes.items():
         # Name validation
         if not isinstance(name, str) or not name.strip():
             violations.append(f"INVALID_NAME — palette key is not a non-empty string: {name!r}")

@@ -108,7 +108,7 @@ class TestIdCleaningSteps:
 class TestOutputStructure:
     """Verify the generated file tree and master data analysis recipe keys."""
 
-    def test_master_data_analysis_recipe_id_matches_project(self, minimal_tsv, tmp_path):
+    def test_master_data_analysis_recipe_id_matches_data_analysis_recipe(self, minimal_tsv, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
         bs = DataAnalysisRecipeBootstrapper()
         master = bs.bootstrap([minimal_tsv], "my_pipeline", tmp_path)

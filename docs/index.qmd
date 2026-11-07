@@ -19,7 +19,7 @@ As prototyping option we chose:
 - **Shiny (Express) for Python** for UI and Interactivity.
 - **Polars LazyFrames** for high-performance, out-of-core data handling.
 - **Plotnine** for publication-quality, grammar-of-graphics visualizations.
-- **Project/Collection Paradigm (ADR-003)**: Decouples domain logic from software architecture using universal terminology.
+- **Data analysis recipe and collection paradigm (ADR-003)**: Decouples domain logic from software architecture using universal terminology.
 
 ### Integrity & Trust {.unnumbered}
 As of **April 2026**, the system has achieved **100% Test Integrity**:

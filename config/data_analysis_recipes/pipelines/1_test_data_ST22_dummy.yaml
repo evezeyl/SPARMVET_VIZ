@@ -1,5 +1,4 @@
 id: ST22_dummy_data_analysis_recipe
-type: species
 info:
   display_name: ST22 Dummy Dataset
   subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home

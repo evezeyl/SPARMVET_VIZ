@@ -1,5 +1,5 @@
 # @deps
-# provides: DataAnalysisRecipeScaffolder class (scaffold) — generates a project ZIP with data analysis recipe
+# provides: DataAnalysisRecipeScaffolder class (scaffold) — generates a data analysis recipe ZIP with data analysis recipe
 #           fragments (input_fields, wrangling, output_fields, assembly) and a master YAML.
 #           joins pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
 # consumes: polars, pathlib, typing, yaml, re, io, zipfile (stdlib/third-party)
@@ -29,7 +29,7 @@ yaml.add_representer(IncludeRef, represent_include)
 
 class DataAnalysisRecipeScaffolder:
     """
-    Generates a scaffolded project ZIP from TSVs and optional IdTransformation objects.
+    Generates a scaffolded data analysis recipe ZIP from TSVs and optional IdTransformation objects.
 
     Builds on DataAnalysisRecipeBootstrapper schema inference and adds:
     - joins pre-filled with ingredients: format
@@ -49,7 +49,7 @@ class DataAnalysisRecipeScaffolder:
         metadata_path: Optional[Path] = None,
     ) -> bytes:
         """
-        Scaffold a project data analysis recipe ZIP from TSV paths.
+        Scaffold a data analysis recipe ZIP from TSV paths.
 
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
@@ -183,7 +183,6 @@ class DataAnalysisRecipeScaffolder:
 
         master: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
-            "type": "pipeline",
             "info": {
                 "display_name": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",

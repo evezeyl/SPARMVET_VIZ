@@ -95,7 +95,7 @@ Transition from "Scaffolding" to "Functional Prototype" by implementing missing 
 ### Phase 8: Frontend Scaffolding (UI Heartbeat) (DONE)
 
 - [x] **Asset Integration:** Materialized via `Bootloader` (ADR-031).
-- [x] **UI Implementation (`app/src/ui.py`):** Sidebar for project/data_analysis_recipe discovery.
+- [x] **UI Implementation (`app/src/ui.py`):** Sidebar for data analysis recipe discovery.
 - [x] **Server Implementation (`app/src/server.py`):** Orchestrator materialization.
 
 ### Phase 9: Triple-Source AMR Integration (DONE)
@@ -487,7 +487,7 @@ Ten ordered substeps (A→J, risk-ascending):
 
 | Step | Label | Model | Risk |
 |---|---|---|---|
-| 25-A | Config + renames (Test Lab, Gallery for project-independent) | Sonnet | Low |
+| 25-A | Config + renames (Test Lab, Gallery for standalone) | Sonnet | Low |
 | 25-B | App features file new fields + AppFeaturesValidator | Sonnet | Low-Med |
 | 25-C | App features gating + bug fixes (APP_FEATURES-1, Gallery, comparison flag) | Sonnet | Med |
 | 25-D | Right sidebar layout fix (exclude container for pipeline app features files) | Sonnet | Med |
@@ -503,7 +503,7 @@ Ten ordered substeps (A→J, risk-ascending):
 - **Right sidebar layout:** excluded at `ui.py` build time for pipeline app features files (Option A — reads `SPARMVET_APP_FEATURES` env var)
 - **New app features file fields:** `data_analysis_recipe_selector.visible` + `testing_mode` (the data analysis recipe name moved to the deployment, ADR-091)
 - **Pipeline app features files always production:** `testing_mode=false` for static + simple — testing uses developer/advanced app features files
-- **Gallery for project-independent:** `gallery_enabled=true` added to template
+- **Gallery for standalone:** `gallery_enabled=true` added to template
 - **Test Lab:** renamed from Dev Studio
 - **Quarto:** replaces Pandoc for server-side report rendering (HTML + PDF + DOCX)
 - **passive_exploration / t3_audit:** two new capability columns formalise existing but undocumented behaviour
@@ -590,8 +590,8 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 ### Delivered
 
 - **Export redesign (EXPORT-REDESIGN-1, EXPORT-REDESIGN-2):**
-  - Single "Export" accordion panel replaces "Global Project Export" + "Single Graph Export".
-  - 3-way scope toggle `[Global project | Active group | Active plot]` gated on `export_enabled`.
+  - Single "Export" accordion panel replaces "Global Export" + "Single Graph Export".
+  - 3-way scope toggle `[All plots | Active group | Active plot]` gated on `export_enabled`.
   - `t3_steps.yaml` auto-included in bundle when T3 has committed nodes.
   - T3 Audit Trail auto-generated section in `report.qmd`.
   - Separate "Export Audit Report" button removed — audit trail is now part of the bundle.
@@ -734,8 +734,8 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 | 32-E | BP-ESCAPE-1 | YAML escape hatch: read-only (`blueprint_enabled`); editable (`data_analysis_recipe_edit_enabled`) | sonnet | Med |
 | 32-F | BP-UNDO-1 | 20-step session undo deque for BLUEPRINT node edits | sonnet | Med |
 | 32-G | BP-HELP-1 | Python `__doc__` resolved at runtime via `importlib`; optional `doc_url` ("Open in browser", disabled in air-gapped deployments) | sonnet | Med |
-| 32-H | BP-COLOR-1 | Color widget: column mapping \| set literal (palette library \| project palette \| custom hex) | sonnet | ✅ |
-| 32-H2 | BP-COLOR-2 | Deployment palette registry `config/palettes.yaml`; `bootloader.get_palettes()`; color widget "Project palette" source | haiku | ✅ |
+| 32-H | BP-COLOR-1 | Color widget: column mapping \| set literal (palette library \| deployment palette \| custom hex) | sonnet | ✅ |
+| 32-H2 | BP-COLOR-2 | Deployment palette registry `config/palettes.yaml`; `bootloader.get_palettes()`; color widget "Deployment palette" source | haiku | ✅ |
 | 32-H3 | BP-COLOR-3 | `plot_defaults.palette` in data analysis recipe → VizFactory scale injection at render time | sonnet | ✅ |
 | 32-I | BP-FLAG-1 | `data_analysis_recipe_edit_enabled` flag: add to all 6 app features files (false/false/false/false/true/true); cascade in bootloader | haiku | Low |
 | 32-J | ACTION-RENAME-1 | `scripts/migrate_data_analysis_recipes.py` — scan all YAML for renamed action names; report + `--apply` flag | haiku | Low |
@@ -744,7 +744,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - `ui_schema` dict embedded directly in `@register_action` / `@register_plot_component` kwargs — no separate schema files
 - `schema_registry.py` in `blueprint_arch`: reads `ui_schema` dicts at startup; headless-safe; zero Shiny imports
 - 8 widget types: `column_selector`, `expression`, `enum`, `dtype_picker`, `number`, `string`, `color`, `column_or_literal`
-- Color widget nested model: column mapping | set literal (palette library | project palette | custom hex)
+- Color widget nested model: column mapping | set literal (palette library | deployment palette | custom hex)
 - Help: Python `__doc__` at runtime via `importlib` — air-gap safe, version-matched. External `doc_url` optional
 - Action naming: align `@register_action` names with Polars for 1:1 wrappers; composite actions keep descriptive names
 - Position rules enforced via `context` tag in `ui_schema`: `t1` / `t2` / `assembly` / `plot`
@@ -753,11 +753,11 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - `data_analysis_recipe_edit_enabled`: default false all app features files; true for developer and qa only
 
 **Key decisions (ADR-081 — Palette Registry):**
-- Project palettes live in `config/palettes.yaml` — operator config, not library code
+- Deployment palettes live in `config/palettes.yaml` — operator config, not library code
 - `bootloader.get_palettes()` is the sole reader; never empty (`sparmvet_brand` built-in always present)
 - `libs/viz_factory/` does NOT read config files — palette registry injected at construction (ADR-011)
 - `app/src/server.py`: `VizFactory(palette_registry=bootloader.get_palettes())`
-- VizFactory `_apply_palette()`: project → manual scale; viridis family → viridis_d; other → brewer; guards: no double-inject, only for mapped aesthetics
+- VizFactory `_apply_palette()`: deployment palette → manual scale; viridis family → viridis_d; other → brewer; guards: no double-inject, only for mapped aesthetics
 
 ---
 
@@ -790,7 +790,7 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 - Auth probe (`--version` + trivial `-p "ok"`) at bootloader init; any failure → `DisabledAdapter` fallback, startup never blocked
 - `--output-format text` used (not `json`) — simpler content extraction; spec said `json` but implementation deviation is harmless
 - `--system` flag injects the Layer 1 system prompt on the first turn; `--continue` used for all subsequent turns
-- `build_system_prompt()` assembles: instructions file + compressed action registry + project context + fenced-block protocol spec
+- `build_system_prompt()` assembles: instructions file + compressed action registry + data analysis recipe context + fenced-block protocol spec
 - `build_turn_context()` emits Layer 3 context dict: workspace, active plot, data analysis recipe section, row counts, data visibility
 - `bootloader.get_agent_adapter()` is the sole entry point — cached per Bootloader instance
 - `bootloader.get_agent_config()` returns the `blueprint_agent:` block from the app features file

@@ -8,7 +8,7 @@ deps:
 
 # Data analysis recipe Structural Standard (rules_data_analysis_recipe_structure.md)
 
-**Authority:** Defines the structural organization and explicit layout requirements for all project data and plotting data analysis recipes.
+**Authority:** Defines the structural organization and explicit layout requirements for all data and plotting data analysis recipes.
 
 ## 1. Basename Mirroring Mandate (Keyword & Complexity Trigger)
 
@@ -136,7 +136,7 @@ analysis_groups:
 ```
 
 **Rules:**
-- `plot_id` must be snake_case (ASCII identifier — letters, digits, underscore) and **globally unique across all project data analysis recipes** (the app registers `@render.plot` by ID at startup).
+- `plot_id` must be snake_case (ASCII identifier — letters, digits, underscore) and **globally unique across all data analysis recipes** (the app registers `@render.plot` by ID at startup).
 - `group_id` (the dict key) is auto-sanitised to a Shiny-safe internal ID via `_safe_id()`. **Spaces, emoji, and punctuation are allowed** — they're stripped from the internal ID but preserved verbatim in the visible label. (Updates ADR-036: previously hardcoded sanitisation; now general regex sanitisation.)
 - Each `spec: !include` points to a file in `plots/` subdirectory.
 - The included plot file must contain a single `spec:` root key. `ConfigManager` auto-unnests it.
@@ -224,7 +224,7 @@ The optional `plot_defaults:` top-level key in a data analysis recipe sets defau
 ```yaml
 plot_defaults:
   # Visual style
-  palette:             nvi_official       # project palette name or matplotlib name (see §10b)
+  palette:             nvi_official       # deployment palette name or matplotlib name (see §10b)
   theme:               theme_light        # registered theme component name (e.g. theme_bw)
   default_font_family: "Liberation Sans"  # plotnine default font family
 
@@ -244,7 +244,7 @@ plot_defaults:
 
 ### 10b. `palette` key
 
-- Value must be either a project palette name (defined in `config/palettes.yaml`) or a matplotlib palette name (`Blues`, `viridis`, `Set1`, etc.).
+- Value must be either a deployment palette name (defined in `config/palettes.yaml`) or a matplotlib palette name (`Blues`, `viridis`, `Set1`, etc.).
 - VizFactory resolves the palette at render time via the cascade resolver.
 - Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none**.
 - Scale injection is skipped when the plot mapping has no `fill` / `color` aesthetic, or when the data analysis recipe already declares a `scale_fill_*` / `scale_color_*` layer.
@@ -260,7 +260,7 @@ plot_defaults:
 |---|---|
 | `sparmvet_brand` | `#345beb`, `#10a395`, `#ffc107`, `#d62828`, `#6c757d`, `#6a4c93` |
 
-Project palettes are defined in `config/palettes.yaml` and loaded by `bootloader.get_palettes()` at startup. See that file's header for the format. Agents MUST NOT assume a project palette name exists unless `config/palettes.yaml` has been inspected.
+Deployment palettes are defined in `config/palettes.yaml` and loaded by `bootloader.get_palettes()` at startup. See that file's header for the format. Agents MUST NOT assume a deployment palette name exists unless `config/palettes.yaml` has been inspected.
 
 ---
 

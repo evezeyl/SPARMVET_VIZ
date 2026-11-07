@@ -175,7 +175,7 @@ class WrangleStudio:
             ui.div(
                 ui.accordion(
                     ui.accordion_panel(
-                        "🗺️ Project Lineage (TubeMap)",
+                        "🗺️ Data analysis recipe lineage (TubeMap)",
                         ui.div(
                             # ── Toolbar ──────────────────────────────────────────
                             ui.div(
@@ -557,7 +557,7 @@ class WrangleStudio:
             # Prioritize surgical data (materialized anchor for this component)
             df = processed_data_surgical()
             if df is None or df.height == 0:
-                df = processed_data()  # Fallback to base project anchor
+                df = processed_data()  # Fallback to base anchor
 
             if df is None or df.height == 0:
                 return None, f"No data loaded for '{viz_id}' — select a plot node to materialise its dataset."
@@ -1161,7 +1161,7 @@ class WrangleStudio:
             if not cy_json:
                 return ui.div(
                     ui.p("No Blueprint Lineage Loaded.", class_="text-muted fst-italic"),
-                    ui.p("Select a project to view its TubeMap.", class_="small text-muted"),
+                    ui.p("Select a data analysis recipe to view its TubeMap.", class_="small text-muted"),
                     class_="d-flex flex-column align-items-center justify-content-center h-100"
                 )
 
@@ -2212,13 +2212,13 @@ class WrangleStudio:
                 )
 
             elif widget_type == "color":
-                # BP-COLOR-1/2: composite color widget with project palette support
+                # BP-COLOR-1/2: composite color widget with deployment palette support
                 # Sub-IDs follow the pattern bp_form_{param_key}_*
                 mode_id = f"bp_form_{param_key}_mode"      # column | literal
                 col_id = f"bp_form_{param_key}_col"        # column selector
-                lit_mode_id = f"bp_form_{param_key}_lmode" # palette | project | custom
+                lit_mode_id = f"bp_form_{param_key}_lmode" # palette | deployment | custom
                 palette_id = f"bp_form_{param_key}_palette"
-                project_palette_id = f"bp_form_{param_key}_project_palette"
+                deployment_palette_id = f"bp_form_{param_key}_deployment_palette"
                 hex_id = f"bp_form_{param_key}_hex"
 
                 # Runtime matplotlib palette names (authoritative)
@@ -2230,11 +2230,11 @@ class WrangleStudio:
                     "Set1", "Set2", "Set3", "Paired", "Dark2", "Accent",
                 ]
 
-                # Project palettes from deployment registry (BP-COLOR-2)
-                _project_palettes = {}
+                # Deployment palettes from deployment registry (BP-COLOR-2)
+                _deployment_palettes = {}
                 if self._bootloader is not None:
-                    _project_palettes = self._bootloader.get_palettes()
-                _has_project_palettes = bool(_project_palettes)
+                    _deployment_palettes = self._bootloader.get_palettes()
+                _has_deployment_palettes = bool(_deployment_palettes)
 
                 cat_cols = [k for k, v in upstream_cols.items()
                             if v == "categorical"]
@@ -2246,9 +2246,9 @@ class WrangleStudio:
                     cur_col = current_val.get("column", cat_cols[0])
                     cur_lmode = current_val.get("literal_mode", "palette")
                     cur_palette = current_val.get("palette", _LIB_PALETTES[0])
-                    cur_project_palette = current_val.get(
-                        "project_palette",
-                        next(iter(_project_palettes), "")
+                    cur_deployment_palette = current_val.get(
+                        "deployment_palette",
+                        next(iter(_deployment_palettes), "")
                     )
                     cur_hex = current_val.get("hex", "#345beb")
                 elif isinstance(current_val, str) and current_val in upstream_cols:
@@ -2256,38 +2256,38 @@ class WrangleStudio:
                     cur_col = current_val
                     cur_lmode = "palette"
                     cur_palette = _LIB_PALETTES[0]
-                    cur_project_palette = next(iter(_project_palettes), "")
+                    cur_deployment_palette = next(iter(_deployment_palettes), "")
                     cur_hex = "#345beb"
                 else:
                     top_mode = "literal"
                     cur_col = cat_cols[0]
                     cur_lmode = "palette"
                     cur_palette = _LIB_PALETTES[0]
-                    cur_project_palette = next(iter(_project_palettes), "")
+                    cur_deployment_palette = next(iter(_deployment_palettes), "")
                     cur_hex = str(current_val or "#345beb")
 
-                # Build source radio choices: "project" only when palettes are defined
+                # Build source radio choices: "deployment" only when palettes are defined
                 _lmode_choices = {"palette": "Palette library"}
-                if _has_project_palettes:
-                    _lmode_choices["project"] = "Project palette"
+                if _has_deployment_palettes:
+                    _lmode_choices["deployment"] = "Deployment palette"
                 _lmode_choices["custom"] = "Custom hex"
 
-                # Project palette selector (inside literal mode conditional)
-                if _has_project_palettes:
-                    _project_palette_names = list(_project_palettes.keys())
-                    _project_palette_widget = ui.panel_conditional(
-                        f"input['{lit_mode_id}'] === 'project'",
+                # Deployment palette selector (inside literal mode conditional)
+                if _has_deployment_palettes:
+                    _deployment_palette_names = list(_deployment_palettes.keys())
+                    _deployment_palette_widget = ui.panel_conditional(
+                        f"input['{lit_mode_id}'] === 'deployment'",
                         ui.input_select(
-                            project_palette_id, "Project palette",
-                            choices={p: p for p in _project_palette_names},
-                            selected=(cur_project_palette
-                                      if cur_project_palette in _project_palettes
-                                      else _project_palette_names[0])
+                            deployment_palette_id, "Deployment palette",
+                            choices={p: p for p in _deployment_palette_names},
+                            selected=(cur_deployment_palette
+                                      if cur_deployment_palette in _deployment_palettes
+                                      else _deployment_palette_names[0])
                         )
                     )
                 else:
-                    # No project palettes — placeholder slot kept for layout stability
-                    _project_palette_widget = ui.span("")
+                    # No deployment palettes — placeholder slot kept for layout stability
+                    _deployment_palette_widget = ui.span("")
 
                 elem = ui.div(
                     ui.p(label, class_="fw-bold small mb-1"),
@@ -2315,7 +2315,7 @@ class WrangleStudio:
                                 choices=_lmode_choices,
                                 selected=cur_lmode, inline=True
                             ),
-                            _project_palette_widget,
+                            _deployment_palette_widget,
                             ui.panel_conditional(
                                 f"input['{lit_mode_id}'] === 'palette'",
                                 ui.input_select(

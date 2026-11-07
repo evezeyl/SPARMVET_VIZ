@@ -192,7 +192,7 @@ Adding composite-key support to `IDReconciliationEngine` or the TEST_LAB UI is a
 
 TEST_LAB is a developer-app features feature gated by `test_lab_enabled`.
 
-**Flag values:** pipeline-static=false, pipeline-exploration-simple=false, pipeline-exploration-advanced=false, project-independent=false, **developer=true**, **qa=true**.
+**Flag values:** pipeline-static=false, pipeline-exploration-simple=false, pipeline-exploration-advanced=false, standalone=false, **developer=true**, **qa=true**.
 
 The TEST_LAB nav pill and all panel DOM nodes MUST be conditionally created:
 

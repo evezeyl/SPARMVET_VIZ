@@ -33,7 +33,7 @@ default_data_analysis_recipe: "pipeline_name"   # file name without .yaml in the
 
 # default_app_features: which UI app features to activate at startup.
 #   Options: pipeline-static | pipeline-exploration-simple |
-#            pipeline-exploration-advanced | project-independent | developer
+#            pipeline-exploration-advanced | standalone | developer
 #   If absent: app features selector is shown (or defaults to pipeline-static).
 default_app_features: pipeline-static
 
@@ -68,7 +68,7 @@ locations:
 # NEVER put the OAuth2 token here — inject it via SPARMVET_IRIDA_TOKEN env var.
 # irida:
 #   base_url: "https://irida.myinstitution.ca"
-#   project_id: 42
+#   data_analysis_recipe_id: 42
 #   auth: oauth2         # token read from SPARMVET_IRIDA_TOKEN at runtime
 #   local_cache: "/tmp/sparmvet_cache/inputs/"   # where API files land before app reads them
 

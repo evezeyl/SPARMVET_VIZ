@@ -1,10 +1,10 @@
 # User preferences
 
-User preferences can be used to overwrite some plotting defaults. Based on priority settings, user preferences have higher priority than **Project/Schema** configurations.
+User preferences can be used to overwrite some plotting defaults. Based on priority settings, user preferences have higher priority than **data analysis recipe and schema** configurations.
 
 User preferences are defined by the user during their session (e.g., "I want the bars to be Blue instead of Red"). This is handled via **Dependency Injection**, passing a `Style configuration` object as an optional argument to the **VizFactory (viz_factory.py)**. 
 
-The configuration loader handles User Preferences by performing a **deep merge/update** against the default Project Configuration. However, **it explicitly blocks any overrides applied to the `input_fields` or `output_fields`**, ensuring the core Data Contract remains immutable via visual preferences.
+The configuration loader handles User Preferences by performing a **deep merge/update** against the default data analysis recipe Configuration. However, **it explicitly blocks any overrides applied to the `input_fields` or `output_fields`**, ensuring the core Data Contract remains immutable via visual preferences.
 
 ### Ghost Save (autosave of the working state)
 Per **ADR-031**, the working state is saved by events, not by a timer (corrected 2026-11-07: an earlier version of this page described a debounced save every two minutes that was never built).

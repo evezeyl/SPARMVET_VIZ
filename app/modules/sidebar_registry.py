@@ -20,9 +20,9 @@ Each entry in PANEL_REGISTRY:
 
 # None gate_flag = always visible; string = bootloader.is_enabled(flag) must be True
 PANEL_REGISTRY: dict[str, dict] = {
-    "project_info": {
+    "data_analysis_recipe_info": {
         "gate_flag": None,
-        "label": "Project Info",
+        "label": "Info",
     },
     "deployment_info": {
         "gate_flag": None,

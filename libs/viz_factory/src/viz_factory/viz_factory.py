@@ -68,7 +68,7 @@ class VizFactory:
 
     Palette registry (BP-COLOR-3):
     - Built-in SPARMVET palettes are always present (no external file required).
-    - Project palettes are injected at construction via palette_registry kwarg — the app layer
+    - Deployment palettes are injected at construction via palette_registry kwarg — the app layer
       resolves config/palettes.yaml via bootloader.get_palettes() and passes the dict here.
     - Library is fully independent: works with only built-ins when no registry is passed.
     - Data analysis recipes may declare plot_defaults: palette: <name> to set a default scale for all plots.
@@ -92,8 +92,8 @@ class VizFactory:
     def __init__(self, palette_registry: dict | None = None, random_state=DEFAULT_RANDOM_STATE):
         # Seed used by every random component that does not set its own (see DEFAULT_RANDOM_STATE).
         self._random_state = random_state   # an int, or None / "random" for no seed
-        # Merge built-ins with project palettes injected by the app layer.
-        # Project palettes override built-ins when names collide (intentional branding).
+        # Merge built-ins with deployment palettes injected by the app layer.
+        # Deployment palettes override built-ins when names collide (intentional branding).
         self._palette_registry: dict = {**self._BUILTIN_PALETTES, **(palette_registry or {})}
 
     def render(self, df: Any, data_analysis_recipe: Dict[str, Any], plot_id: str,
@@ -425,17 +425,17 @@ class VizFactory:
         if not uses_fill and not uses_color:
             return p
 
-        project_colors = self._palette_registry.get(palette_name)
-        if project_colors:
-            # Project palette — inject scale_*_manual
+        deployment_colors = self._palette_registry.get(palette_name)
+        if deployment_colors:
+            # Deployment palette — inject scale_*_manual
             if uses_fill:
                 from plotnine import scale_fill_manual
-                p = p + scale_fill_manual(values=project_colors)
-                print(f"[VizFactory] Applied project palette '{palette_name}' → scale_fill_manual")
+                p = p + scale_fill_manual(values=deployment_colors)
+                print(f"[VizFactory] Applied deployment palette '{palette_name}' → scale_fill_manual")
             if uses_color:
                 from plotnine import scale_color_manual
-                p = p + scale_color_manual(values=project_colors)
-                print(f"[VizFactory] Applied project palette '{palette_name}' → scale_color_manual")
+                p = p + scale_color_manual(values=deployment_colors)
+                print(f"[VizFactory] Applied deployment palette '{palette_name}' → scale_color_manual")
         else:
             # Matplotlib palette name — use brewer or distiller
             # Viridis family and continuous palettes go through distiller
@@ -478,11 +478,11 @@ class VizFactory:
                 except Exception as exc:
                     pe = PipelineError(
                         component="VizFactory",
-                        problem=f"Palette '{palette_name}' not found in project registry or plotnine/RColorBrewer.",
+                        problem=f"Palette '{palette_name}' not found in the deployment palette registry or plotnine/RColorBrewer.",
                         location="_apply_palette",
                         fix=(
                             f"Check the palette name in the data analysis recipe. "
-                            f"Valid project palettes: {list(self._palette_registry.keys()) or ['(none registered)']}. "
+                            f"Valid deployment palettes: {list(self._palette_registry.keys()) or ['(none registered)']}. "
                             "Or use a matplotlib/RColorBrewer name such as 'Blues', 'Set1', 'viridis'."
                         ),
                         who="data_analysis_recipe_author",

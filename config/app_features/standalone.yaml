@@ -1,6 +1,6 @@
-# UI App features: Project Independent
-name: "project-independent"
-display_name: "Project Independent User"
+# UI App features: Standalone
+name: "standalone"
+display_name: "Standalone User"
 
 flags:
   # Can the user interact with the Tier 3 View?

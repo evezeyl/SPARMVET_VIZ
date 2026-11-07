@@ -1,7 +1,6 @@
-id: simple_project_demo
-type: project
+id: simple_demo
 info:
-  display_name: Simple Demo Project
+  display_name: Simple Demo
   description: 'Minimal self-contained data analysis recipe: 1 dataset, 1 metadata, 1 assembly,
     1 plot.'
   version: '1.0'

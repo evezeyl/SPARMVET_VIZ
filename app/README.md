@@ -2,7 +2,7 @@
 
 The SPARMVET App is a **Thin Shiny Shell** (ADR-003) that orchestrates four distinct layers:
 
-1. **Navigation (Left)**: App features gated controls — Project selection, context-reactive Filter builder, System Tools (Export Bundle). Dark grey (#c0c0c0).
+1. **Navigation (Left)**: App features gated controls — Data analysis recipe selection, context-reactive Filter builder, System Tools (Export Bundle). Dark grey (#c0c0c0).
 2. **Home Theater (Center)**: Unified results mode (ADR-043). Data analysis recipe-driven groups (`navset_pill`) → plots (`navset_card_tab`) → collapsible Data Preview. Neutral grey (#d1d1d1).
 3. **Pipeline Audit (Right)**: App features gated (hidden for `pipeline_static`/`pipeline_exploration_simple`; full T2+T3 audit stack for ≥ advanced).
 4. **Specialist Modes**: Blueprint Architect (Wrangle Studio), Gallery, Test Lab — each routed via `sidebar_nav`.

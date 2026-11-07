@@ -144,14 +144,14 @@ PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/demo/demo-vetinst.yaml ./.ven
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-exploration-simple.yaml SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/demo/web-demo.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-exploration-advanced.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/project-independent.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/standalone.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml                     ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/qa.yaml                            ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 ```
 
 **Compact expectation grid** — confirm each cell against the file's actual flags (`rules_app_features_flags.md` full matrix). Mark the row's checkbox `[x]` if the whole row matches, `[!]` if any cell is wrong (note which).
 
-| | pipeline-static | pipeline-exploration-simple | pipeline-exploration-advanced | project-independent | developer | qa |
+| | pipeline-static | pipeline-exploration-simple | pipeline-exploration-advanced | standalone | developer | qa |
 |---|:--:|:--:|:--:|:--:|:--:|:--:|
 | Filters panel (left) | absent | yes | yes | yes | yes | yes |
 | Tier toggle "My view" (ADR-085: gated on Filters existing, not audit) | no | **yes** | yes | yes | yes | yes |
@@ -166,7 +166,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/qa.yaml                  
 - [ ] CFG-01 `pipeline-static.yaml` — read-only: no Filters, no T3, no right sidebar, no Gallery/Blueprint/Test Lab nav. Export present. *(carried: old PER-01, passed at Phase 26 — confirm still true.)*
 - [ ] CFG-02 `pipeline-exploration-simple.yaml` — Filters present; tier toggle now includes **"My view"** as a scratchpad (ADR-085, 2026-08-10) — filters apply there, but no "Send to Audit" button and no right sidebar appear. No Gallery/Blueprint/Test Lab.
 - [ ] CFG-03 `pipeline-exploration-advanced.yaml` — Filters + T3 + right Audit sidebar; **no** Gallery/Blueprint/Test Lab nav.
-- [ ] CFG-04 `project-independent.yaml` — adds **Gallery** + **Blueprint** nav; still **no** Test Lab.
+- [ ] CFG-04 `standalone.yaml` — adds **Gallery** + **Blueprint** nav; still **no** Test Lab.
 - [ ] CFG-05 `developer.yaml` — everything incl. **Test Lab** nav.
 - [ ] CFG-06 `qa.yaml` — same surfaces as `developer.yaml` (used for deterministic testing; `automation.ghost_save: false`).
 - [ ] CFG-07 `demo-vetinst.yaml` — boots; intentionally minimal (most flags off, export off). Confirm no crash and that it looks like a locked-down reference deployment.
@@ -241,7 +241,7 @@ Most of this is already checked by automatic tests (`app/tests/test_bootloader_l
 
 ## 4. BLUEPRINT (BLU) — visual data analysis recipe IDE (mostly new since Phase 26)
 
-> Config file: `developer.yaml` or `qa.yaml` (full edit mode); `project-independent.yaml` gives the non-edit subset (`data_analysis_recipe_edit_enabled: false`). Click **Blueprint Architect** nav pill.
+> Config file: `developer.yaml` or `qa.yaml` (full edit mode); `standalone.yaml` gives the non-edit subset (`data_analysis_recipe_edit_enabled: false`). Click **Blueprint Architect** nav pill.
 > Design: `.claude/design/spaces/BLUEPRINT.md`. Feature lock: ADR-082. Rules: `rules_ui_dashboard.md §7`.
 > **Reality-check note:** BLUEPRINT had known build-gaps as of 2026-05-20 (add-node primitive UI, component/plot forms, group/meta/new-data_analysis_recipe/validate were YAML-only); several closed in Phase 32–33. Where a feature is simply **absent**, mark `[b]` and note it — discovering the doc/reality gap is itself a useful result, not a failure.
 
@@ -291,7 +291,7 @@ Most of this is already checked by automatic tests (`app/tests/test_bootloader_l
 
 ## 5. HOME (HOM) — analysis space (re-verify + new)
 
-> Config file: `developer.yaml`, `qa.yaml`, `project-independent.yaml`, or `pipeline-exploration-advanced.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
+> Config file: `developer.yaml`, `qa.yaml`, `standalone.yaml`, or `pipeline-exploration-advanced.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
 > Most of this passed at Phase 26 but on a stale baseline — re-verify the core, then test the genuinely-new palette/cascade/apply-UX items (marked **NEW**).
 > EVE: user facing template for testing is `developer.yaml`, data analysis recipe choice is 1_test_data_ST22_dummy
 
@@ -319,7 +319,7 @@ Most of this is already checked by automatic tests (`app/tests/test_bootloader_l
 - [x] HOM-06 — My view (advanced+): Apply always explores; **"Send to Audit" appears when either "Plot to show" or "Data to show" is on My view** (and `t3_sandbox_enabled`); right sidebar Pipeline Audit shows Tier 2 (inherited) + Tier 3 (my adjustments) once something is committed. See HOM-43, ADR-085/086. [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
 - [ ] HOM-07 — Changing **Data to show** (T1→My view→T1) keeps the active plot sub-tab. *(carried: old §4c.)*
 - [ ] HOM-08 — Home→Gallery→Home **restores** the previously active group tab + sub-tab + tier. *(carried: old §4c had two boxes left unchecked — verify on current build.)*
-- [ ] HOM-44 `[!]` — On `year_distribution` (project "1_test_data_ST22_dummy", AMR and Virulence group), the Year axis renders discrete on T2 but continuous on T3/My view — same data, should look the same. → [20260810_testing_part1.md#hom-44](20260810_testing_part1.md#hom-44--year-axis-discrete-on-t2-but-continuous-on-t3my-view) — low urgency per EVE. Reproduced 2026-11-05: the axis turns continuous when the filter is on the year column itself (draft `issue-drafts/003_year-axis-continuous-in-my-view.md`).
+- [ ] HOM-44 `[!]` — On `year_distribution` (data analysis recipe "1_test_data_ST22_dummy", AMR and Virulence group), the Year axis renders discrete on T2 but continuous on T3/My view — same data, should look the same. → [20260810_testing_part1.md#hom-44](20260810_testing_part1.md#hom-44--year-axis-discrete-on-t2-but-continuous-on-t3my-view) — low urgency per EVE. Reproduced 2026-11-05: the axis turns continuous when the filter is on the year column itself (draft `issue-drafts/003_year-axis-continuous-in-my-view.md`).
 - [x] HOM-45 **NEW** — Header strip (ADR-086): two labelled rows "Plot to show" (Result / My view / Compare) and "Data to show" (Raw / Result / My view), defaults both Result. Plot choice affects only plots, data choice only the data preview/table. Compare absent when `comparison_mode_enabled` is false. Strip absent when `interactivity_enabled` is false. [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
 
 ### 5c. Filters (T1/T2)
@@ -371,7 +371,7 @@ Most of this is already checked by automatic tests (`app/tests/test_bootloader_l
 
 ## 6. GALLERY (GAL) — example browser (re-verify)
 
-> Config file: `project-independent.yaml`, `developer.yaml`, or `qa.yaml` (all set `gallery_enabled: true`). Click **Gallery** nav pill. Mature space — lighter pass.
+> Config file: `standalone.yaml`, `developer.yaml`, or `qa.yaml` (all set `gallery_enabled: true`). Click **Gallery** nav pill. Mature space — lighter pass.
 
 - [ ] GAL-01 — Gallery loads: example browser in center; left sidebar shows Example selector + collapsible taxonomy filters (Family / Data Pattern / Difficulty).
 - [ ] GAL-02 — Taxonomy filter choices come from `gallery_index.json` (not hardcoded); "Select all" toggles a group's checkboxes; "Apply" filters the example list.

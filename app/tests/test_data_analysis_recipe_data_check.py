@@ -42,9 +42,9 @@ analysis_groups:
 """
 
 
-def _make_recipe(tmp_path: Path, *, reads_header="sample_id\treads", reads_rows=("s1\t10", "s2\t20"),
+def _make_data_analysis_recipe(tmp_path: Path, *, reads_header="sample_id\treads", reads_rows=("s1\t10", "s2\t20"),
              output_slug="reads", reads_type="numeric") -> Path:
-    """A project with two datasets (A, B) and a collection J joining B onto A."""
+    """A data analysis recipe with two datasets (A, B) and a collection J joining B onto A."""
     (tmp_path / "a.tsv").write_text("sample_id\tcountry\ns1\tNO\ns2\tSE\n")
     (tmp_path / "b.tsv").write_text(reads_header + "\n" + "\n".join(reads_rows) + "\n")
     data_analysis_recipe = tmp_path / "proj.yaml"
@@ -85,12 +85,12 @@ def _make_recipe(tmp_path: Path, *, reads_header="sample_id\treads", reads_rows=
 
 
 def test_a_consistent_data_analysis_recipe_has_no_problems(tmp_path):
-    data_analysis_recipe = _make_recipe(tmp_path)
+    data_analysis_recipe = _make_data_analysis_recipe(tmp_path)
     assert validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path) == []
 
 
 def test_a_declared_output_field_with_no_column_is_reported_with_a_hint(tmp_path):
-    data_analysis_recipe = _make_recipe(tmp_path, output_slug="read")
+    data_analysis_recipe = _make_data_analysis_recipe(tmp_path, output_slug="read")
     [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
     assert problem.location == "data_schemas.B.output_fields.read"
     assert "matches no column" in problem.problem
@@ -98,7 +98,7 @@ def test_a_declared_output_field_with_no_column_is_reported_with_a_hint(tmp_path
 
 
 def test_a_missing_input_column_is_reported_as_a_dataset_that_cannot_be_loaded(tmp_path):
-    data_analysis_recipe = _make_recipe(tmp_path, reads_header="sample_id\tread_count")
+    data_analysis_recipe = _make_data_analysis_recipe(tmp_path, reads_header="sample_id\tread_count")
     [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
     assert problem.location == "data_schemas.B"
     assert "cannot be loaded" in problem.problem and "Missing columns" in problem.problem
@@ -107,12 +107,12 @@ def test_a_missing_input_column_is_reported_as_a_dataset_that_cannot_be_loaded(t
 
 def test_the_data_check_looks_at_column_names_not_at_values(tmp_path):
     """Values are checked when a file is imported (issue #11); this check is about the data analysis recipe."""
-    data_analysis_recipe = _make_recipe(tmp_path, reads_rows=("s1\tabc", "s2\t20"))
+    data_analysis_recipe = _make_data_analysis_recipe(tmp_path, reads_rows=("s1\tabc", "s2\t20"))
     assert validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path) == []
 
 
 def test_a_missing_data_file_is_reported(tmp_path):
-    data_analysis_recipe = _make_recipe(tmp_path)
+    data_analysis_recipe = _make_data_analysis_recipe(tmp_path)
     (tmp_path / "b.tsv").unlink()
     [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
     assert problem.location == "data_schemas.B" and "cannot be loaded" in problem.problem
@@ -124,21 +124,21 @@ def _build(tmp_path: Path, collection: str):
     clear_data_analysis_recipe_cache()
     orchestrator = DataOrchestrator(tmp_path, tmp_path)
     return orchestrator.materialize_tier1("proj", collection, tmp_path / f"{collection}.parquet",
-                                          keys=orchestrator.compute_recipe_keys("proj"))
+                                          keys=orchestrator.compute_data_analysis_recipe_keys("proj"))
 
 
 def test_the_build_works_when_every_dataset_loads(tmp_path):
-    _make_recipe(tmp_path)
+    _make_data_analysis_recipe(tmp_path)
     assert _build(tmp_path, "J").collect().columns == ["sample_id", "country", "reads"]
 
 
 def test_the_build_fails_loudly_when_a_dataset_it_needs_cannot_be_loaded(tmp_path):
-    _make_recipe(tmp_path, reads_header="sample_id\tread_count")
+    _make_data_analysis_recipe(tmp_path, reads_header="sample_id\tread_count")
     with pytest.raises(IngestionError) as err:
         _build(tmp_path, "J")
     assert "'B'" in str(err.value) and "'J'" in str(err.value) and "Missing columns" in str(err.value)
 
 
 def test_a_broken_dataset_that_the_collection_does_not_use_does_not_stop_the_build(tmp_path):
-    _make_recipe(tmp_path, reads_header="sample_id\tread_count")
+    _make_data_analysis_recipe(tmp_path, reads_header="sample_id\tread_count")
     assert _build(tmp_path, "OnlyA").collect().columns == ["sample_id", "country"]

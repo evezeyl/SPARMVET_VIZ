@@ -316,8 +316,8 @@ def define_server(
         return ui.div(
             ui.input_text(
                 "tl_scaffold_data_analysis_recipe_id",
-                "Project ID (snake_case)",
-                placeholder="my_recipe",
+                "Data analysis recipe ID (snake_case)",
+                placeholder="my_data_analysis_recipe",
             ),
             ui.input_file(
                 "tl_scaffold_files",
@@ -407,7 +407,7 @@ def define_server(
         except Exception:
             data_analysis_recipe_id = ""
         if not data_analysis_recipe_id:
-            return {"error": "Enter a project ID before scaffolding."}
+            return {"error": "Enter a data analysis recipe ID before scaffolding."}
 
         infos = _scaffold_file_infos()
         if not infos:

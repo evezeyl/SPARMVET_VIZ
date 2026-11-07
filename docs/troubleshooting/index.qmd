@@ -99,7 +99,7 @@ This error fires from `_load_deployment_config()` after a deployment path has be
 resolved. It means the file existed when the path was resolved (or was provided
 explicitly) but is no longer present when the loader tries to open it — usually a
 race condition or a relative-path ambiguity when the app is started from a
-non-project-root directory.
+non-repository-root directory.
 
 **Fix:** Ensure the deployment file exists at the resolved path.
 For local dev: copy `config/deployment/local/local.yaml.example` to
@@ -187,7 +187,7 @@ echo "default_app_features: developer" >> config/deployment/local/local.yaml
 ```
 
 Valid app features IDs: `pipeline-static`, `pipeline-exploration-simple`,
-`pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`.
+`pipeline-exploration-advanced`, `standalone`, `developer`, `qa`.
 
 **Source:** `app/src/bootloader.py → __init__()`.
 
@@ -203,7 +203,7 @@ If using a custom template: verify `SPARMVET_APP_FEATURES` is set to an absolute
 path, not a shortname that doesn't match any template file.
 
 **Valid built-in IDs:** `pipeline-static`, `pipeline-exploration-simple`,
-`pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`.
+`pipeline-exploration-advanced`, `standalone`, `developer`, `qa`.
 
 **Source:** `app/src/bootloader.py → _load_app_features_config()` — ADR-026.
 
@@ -373,7 +373,7 @@ Sidebar configs follow this minimal structure:
 ```yaml
 visible: true
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
   - type: filters
 ```
 
@@ -405,7 +405,7 @@ resolved to a scalar string because the target file doesn't exist or is empty).
 ```yaml
 visible: true
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
   - type: filters
 ```
 
@@ -422,11 +422,11 @@ panels:
 ```yaml
 # Wrong
 panels:
-  - project_info
+  - data_analysis_recipe_info
 
 # Correct
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
 ```
 
 **Source:** `app/modules/sidebar_validator.py → validate()`.
@@ -441,11 +441,11 @@ panels:
 
 ```yaml
 panels:
-  - type: project_info    # required
+  - type: data_analysis_recipe_info    # required
     params: {}            # optional
 ```
 
-Known panel types (from `sidebar_registry.py`): `project_info`, `deployment_info`,
+Known panel types (from `sidebar_registry.py`): `data_analysis_recipe_info`, `deployment_info`,
 `data_analysis_recipe_choice`, `filters`, `data_import`, `export`, `session_management`,
 `audit_stack`, `blueprint_nav`, `blueprint_logic`, `gallery_search`,
 `notification_log`.
@@ -503,14 +503,14 @@ Never add the token to `local.yaml` or any version-controlled file.
 ### `connector-irida-block-missing` {#connector-irida-block-missing}
 
 **Problem:** Deployment is missing the required `irida:` block
-(`base_url`, `project_id`, `local_cache`).
+(`base_url`, `data_analysis_recipe_id`, `local_cache`).
 
 **Fix:** Add the `irida:` block to your deployment file:
 
 ```yaml
 irida:
   base_url: https://irida.example.org/api
-  project_id: 42
+  data_analysis_recipe_id: 42
   local_cache: /tmp/irida_cache
 ```
 

@@ -27,7 +27,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 REPO = Path(__file__).resolve().parents[2]
-RECIPE = REPO / "config/data_analysis_recipes/retest/retest_tier2.yaml"
+RETEST_TIER2 = REPO / "config/data_analysis_recipes/retest/retest_tier2.yaml"
 BROKEN = REPO / "config/data_analysis_recipes/retest/retest_broken_header.yaml"
 SAMPLES = REPO / "assets/test_data/retest/samples.tsv"
 ANCHORS = REPO / "tmp/RETEST/user/anchors"
@@ -56,10 +56,10 @@ def wait_idle(page, timeout=20000):
     page.wait_for_function("() => !document.documentElement.classList.contains('shiny-busy')", timeout=timeout)
 
 
-def open_project(page, url, project):
+def open_data_analysis_recipe(page, url, data_analysis_recipe):
     page.goto(url)
     page.wait_for_selector("#data_analysis_recipe_id", timeout=30000)
-    page.locator("#data_analysis_recipe_id").select_option(project)
+    page.locator("#data_analysis_recipe_id").select_option(data_analysis_recipe)
     wait_idle(page)
     time.sleep(2)
     wait_idle(page)
@@ -77,7 +77,7 @@ def main() -> int:
     ap.add_argument("--headed", action="store_true", help="show the browser")
     args = ap.parse_args()
 
-    originals = {p: p.read_text(encoding="utf-8") for p in (RECIPE, BROKEN, SAMPLES)}
+    originals = {p: p.read_text(encoding="utf-8") for p in (RETEST_TIER2, BROKEN, SAMPLES)}
     shutil.rmtree(REPO / "tmp/RETEST", ignore_errors=True)
     port = free_port()
     url = f"http://127.0.0.1:{port}/"
@@ -97,7 +97,7 @@ def main() -> int:
             page = browser.new_page(viewport={"width": 1700, "height": 950}, accept_downloads=True)
 
             # RT-01
-            open_project(page, url, "retest_tier2")
+            open_data_analysis_recipe(page, url, "retest_tier2")
             raw, result = rows(page, "T1"), rows(page, "T2")
             check("RT-01 Raw shows 12 rows, Result 8", (raw, result) == (12, 8), f"raw={raw} result={result}")
             check("RT-01 audit panel lists the tier 2 step", "filter_range" in page.inner_text("body"))
@@ -108,41 +108,41 @@ def main() -> int:
                   and not any(n.endswith("__T2.parquet") and not n.startswith("Result") for n in names), str(names))
             # RT-03
             t2_0, t1_0 = mtime("Result__T2.parquet"), mtime("Result.parquet")
-            rows(page, "T1"); rows(page, "T2"); open_project(page, url, "retest_tier2")
+            rows(page, "T1"); rows(page, "T2"); open_data_analysis_recipe(page, url, "retest_tier2")
             check("RT-03 nothing is rewritten when nothing changed",
                   (mtime("Result__T2.parquet"), mtime("Result.parquet")) == (t2_0, t1_0))
 
             # RT-04
-            RECIPE.write_text(originals[RECIPE].replace("min: 10", "min: 20"), encoding="utf-8")
-            open_project(page, url, "retest_tier2")
+            RETEST_TIER2.write_text(originals[RETEST_TIER2].replace("min: 10", "min: 20"), encoding="utf-8")
+            open_data_analysis_recipe(page, url, "retest_tier2")
             res = rows(page, "T2")
             check("RT-04 changing only the tier 2 step: Result shows 3 rows", res == 3, f"rows={res}")
             check("RT-04 tier 2 file rewritten, tier 1 file kept",
                   mtime("Result__T2.parquet") > t2_0 and mtime("Result.parquet") == t1_0)
 
             # RT-05
-            text = originals[RECIPE]
+            text = originals[RETEST_TIER2]
             text = text.replace("tier1: []            # EDIT HERE (test 3): move the tier2 step below up to this list",
                                 "tier1:\n        - action: filter_range\n          columns: [value]\n          min: 10")
             i = text.index("tier2:", text.index("\njoins:"))
             j = text.index("min: 10", text.index("- action", i)) + len("min: 10")
             text = text[:i] + "tier2: []" + text[j:]
-            RECIPE.write_text(text, encoding="utf-8")
-            open_project(page, url, "retest_tier2")
+            RETEST_TIER2.write_text(text, encoding="utf-8")
+            open_data_analysis_recipe(page, url, "retest_tier2")
             raw5 = rows(page, "T1")
             check("RT-05 step moved to tier 1: Raw shows 8 rows", raw5 == 8, f"raw={raw5}")
             check("RT-05 the stored tier 2 file is gone", not (ANCHORS / "Result__T2.parquet").exists())
 
             # RT-06
-            RECIPE.write_text(originals[RECIPE], encoding="utf-8")
+            RETEST_TIER2.write_text(originals[RETEST_TIER2], encoding="utf-8")
             SAMPLES.write_text(originals[SAMPLES].rstrip("\n") + "\ns13\tA\t40\t2024\n", encoding="utf-8")
-            open_project(page, url, "retest_tier2")
+            open_data_analysis_recipe(page, url, "retest_tier2")
             raw6, res6 = rows(page, "T1"), rows(page, "T2")
             check("RT-06 new data row: Raw 13, Result 9", (raw6, res6) == (13, 9), f"raw={raw6} result={res6}")
             SAMPLES.write_text(originals[SAMPLES], encoding="utf-8")
 
             # RT-07
-            open_project(page, url, "retest_tier2")
+            open_data_analysis_recipe(page, url, "retest_tier2")
             rows(page, "T2")
             if not page.locator("#export_bundle_download").is_visible():
                 page.locator("#nav_accordion").get_by_text("Export").first.click()
@@ -158,12 +158,12 @@ def main() -> int:
             SAMPLES.write_text(originals[SAMPLES], encoding="utf-8")
 
             # RT-30
-            open_project(page, url, "retest_broken_header")
+            open_data_analysis_recipe(page, url, "retest_broken_header")
             body = page.inner_text("body")
             check("RT-30 broken header: banner names the dataset and the missing column",
                   "Data Assembly Failed" in body and "Genes" in body and "predicted_phenotype" in body)
             BROKEN.write_text(originals[BROKEN].replace("genes_renamed_header.tsv", "genes.tsv"), encoding="utf-8")
-            open_project(page, url, "retest_broken_header")
+            open_data_analysis_recipe(page, url, "retest_broken_header")
             check("RT-30 after the fix the banner is gone", "Data Assembly Failed" not in page.inner_text("body"))
             browser.close()
     except Exception:

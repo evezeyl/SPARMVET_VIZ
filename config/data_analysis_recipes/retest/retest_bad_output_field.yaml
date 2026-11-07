@@ -2,7 +2,6 @@
 # output_fields declares "phenotype". The app still runs (output_fields of a data schema is not applied
 # yet); the check is the function validate_data_analysis_recipe_data (see the procedure, test 3).
 id: retest_bad_output_field
-type: species
 info:
   display_name: RETEST bad output field
   description: output_fields names a column that does not exist.

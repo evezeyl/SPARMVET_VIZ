@@ -1,5 +1,4 @@
 id: demo_abromics
-type: pipeline
 info:
   display_name: 'Demo: Abromics Pipeline (High Integrity)'
   description: Synchronized test data for Phase 4/5 demonstration.

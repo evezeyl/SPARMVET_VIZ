@@ -509,7 +509,7 @@ Once manual test passes:
 - **Schedule:** Thursdays 21:00 (with existing Thursday group)
 - **Command:** `.venv/bin/python scripts/audit_palette_registry.py --output .claude/logs/audits/audit_palette_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_palette_YYYY-MM-DD.md`
-- **Purpose:** Verify that `config/palettes.yaml` (if present) is valid YAML and follows the expected format: a top-level `palettes:` key containing named palettes as lists of hex color strings. Catches malformed files that `bootloader.get_palettes()` would silently fall back to built-ins for, giving a confusing "no project palettes" symptom at runtime.
+- **Purpose:** Verify that `config/palettes.yaml` (if present) is valid YAML and follows the expected format: a top-level `palettes:` key containing named palettes as lists of hex color strings. Catches malformed files that `bootloader.get_palettes()` would silently fall back to built-ins for, giving a confusing "no deployment palette" symptom at runtime.
 - **Rule source:** `.claude/rules/rules_viz_factory.md §6` | ADR-081
 - **Checks:**
   - File absent → INFO (normal; built-ins only)

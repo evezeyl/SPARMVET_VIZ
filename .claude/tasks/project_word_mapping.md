@@ -12,10 +12,10 @@ means the identifier, it says "recipe id".
 | Dropdown input | `project_id`, label "Project Selection" | `data_analysis_recipe_id`, label "Data analysis recipe" |
 | Bootloader | `get_default_project()`, `project_dir`, "No projects found" | `get_default_data_analysis_recipe()`, `data_analysis_recipes_dir` |
 | Orchestrator, exporter, ingestion, export, data import, sessions, test_lab | `project_id`, `proj_id` | `data_analysis_recipe_id` |
-| Cache keys | `compute_project_keys`, `ProjectKeys`, `_project_keys` | `compute_recipe_keys`, `RecipeKeys` |
+| Cache keys | `compute_project_keys`, `ProjectKeys`, `_project_keys` | `compute_data_analysis_recipe_keys`, `DataAnalysisRecipeKeys` |
 | Asset cache | `_asset_cache[project_id]` | `_asset_cache[data_analysis_recipe_id]` |
 | Messages | "Project 'x' loaded", "Project data analysis recipe not found", "active project", "Project: x" | "Data analysis recipe ..." |
-| test_lab field | "Project ID (snake_case)", `my_project` | "Data analysis recipe ID", `my_recipe` |
+| test_lab field | "Project ID (snake_case)", `my_project` | "Data analysis recipe ID", `my_data_analysis_recipe` |
 | Export folder | `data_analysis_recipes/<proj>/` | `data_analysis_recipes/<data_analysis_recipe_id>/` |
 | Export scope | "Global project" | "All plots" |
 | Blueprint text | "Select a project to view its TubeMap" | "Select a data analysis recipe ..." |

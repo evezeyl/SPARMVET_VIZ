@@ -39,7 +39,7 @@ def action_sink_parquet(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         # Written by Polars itself, with the metadata in the file: a table converted to Arrow and
         # written with pyarrow can hold categorical columns that Polars cannot read back
         # ("Decoding ByteArray Plain-encoded optional parquet pages not yet supported"), found
-        # on the real Tier 2 of the ST22 dummy project (issue #10, 2026-11-06).
+        # on the real Tier 2 of the ST22 dummy data analysis recipe (issue #10, 2026-11-06).
         meta = {
             "sparmvet_decision_hash": str(decision_hash),
             **{str(k): str(v) for k, v in extra_metadata.items()},

@@ -3,10 +3,9 @@
 # Join "All_samples" has no tier2 step, so its T2 equals its T1 (12 rows).
 # Edit the two files marked "EDIT HERE" as described in .claude/tasks/retest_procedure_2026-11-06.md.
 id: retest_tier2
-type: species
 info:
   display_name: RETEST Tier 2 and export
-  description: Small project to check that Tier 2 is stored, reused and exported correctly.
+  description: Small data analysis recipe to check that Tier 2 is stored, reused and exported correctly.
   version: '1.0'
 
 data_schemas:

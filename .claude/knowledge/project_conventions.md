@@ -32,7 +32,7 @@
 | `libs/transformer/src/transformer/data_assembler.py` | Layer 2 orchestration (Relational) | Multiple LFs → LazyFrame | `DataAssembler`, `sink_parquet` |
 | `libs/utils/src/utils/config_loader.py` | Recursive YAML & Include Resolver | YAML → Python Dict | `ConfigManager`, `!include` |
 | `libs/test_lab/src/test_lab/aqua_synthesizer.py` | [ADR-032/ADR-068] Relational Data Synthesis (SDK Core) | Schema → TSV | `clean_header`, `generate_fake_column`, `--generate_only` |
-| `libs/test_lab/src/test_lab/scaffolder.py` | [ADR-084] Data analysis recipe Scaffolding — generates project ZIP from uploaded TSVs | TSV paths + project_id → bytes (ZIP) | `DataAnalysisRecipeScaffolder.scaffold(tsv_paths, project_id, steps, metadata_path)`. Wired in TEST_LAB handler `tl_scaffold_ui` / `tl_scaffold_download`. |
+| `libs/test_lab/src/test_lab/scaffolder.py` | [ADR-084] Data analysis recipe Scaffolding — generates data analysis recipe ZIP from uploaded TSVs | TSV paths + data_analysis_recipe_id → bytes (ZIP) | `DataAnalysisRecipeScaffolder.scaffold(tsv_paths, data_analysis_recipe_id, steps, metadata_path)`. Wired in TEST_LAB handler `tl_scaffold_ui` / `tl_scaffold_download`. |
 | `libs/viz_factory/src/viz_factory.py` | Artist Pillar: Plot Composition | Data + Data analysis recipe → ggplot | `VizFactory`, `Plot Layers` |
 | `libs/viz_factory/src/viz_factory/plot_config_resolver.py` | **Plot config cascade resolver** (VIZFAC-RESOLVER-1, to be created) | Tiered config dicts → flat resolved dict | Pure function `resolve_plot_config()` resolves L5(T3 override) > L4(spec) > L3(optimisation) > L2(plot_defaults) > L1(built-ins). See `.claude/design/plot_config_cascade.md`. |
 | `libs/utils/src/utils/pipeline_error.py` | **Runtime error dataclass** (ADR-079, DIAG-RUNTIME-BASE-1, to be created) | Library exceptions → structured runtime error | `PipelineError` dataclass; sits alongside `DeploymentError` (ADR-078); audience model adds `analyst`/`data_provider`/`data_analysis_recipe_author`; per-category render surfaces. |
@@ -247,7 +247,7 @@ Do NOT call `reactive.invalidate()` directly or attempt to re-trigger individual
 
 **Cache bust sequence (on import):**
 1. Delete `{anchors_dir}/{ds_id}.parquet` if it exists.
-2. `bootloader.set_cached_asset(project_id, ds_id, "anchor", "lf", None)` — clears the LF cache entry.
+2. `bootloader.set_cached_asset(data_analysis_recipe_id, ds_id, "anchor", "lf", None)` — clears the LF cache entry.
 3. `data_refresh_trigger.set(data_refresh_trigger.get() + 1)` — triggers reactive invalidation of all plot renders.
 
 ---
@@ -525,9 +525,9 @@ plots:
 
 | Palette source | Scale injected |
 |---|---|
-| Project registry hit | `scale_fill_manual` / `scale_color_manual` (hex list) |
+| Deployment palette registry hit | `scale_fill_manual` / `scale_color_manual` (hex list) |
 | Viridis family name | `scale_fill_viridis_d` / `scale_color_viridis_d` |
 | Other matplotlib name | `scale_fill_brewer` / `scale_color_brewer` |
-| Unknown name | WARNING listing valid project palette names |
+| Unknown name | WARNING listing valid deployment palette names |
 
 Guards: only injects for aesthetics in mapping; never overwrites existing `scale_fill_*`/`scale_color_*` layers.

@@ -84,7 +84,7 @@ Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none (matp
 | `palette_name` in `self._palette_registry` | `scale_fill_manual` / `scale_color_manual` with hex list |
 | `palette_name` in viridis family (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) | `scale_fill_viridis_d` / `scale_color_viridis_d` |
 | Other string | `scale_fill_brewer` / `scale_color_brewer` (plotnine wraps RColorBrewer) |
-| `palette_name` unknown to all three | WARNING with list of valid project palette names |
+| `palette_name` unknown to all three | WARNING with list of valid deployment palette names |
 
 **Guard rules (no injection when):**
 - Aesthetic (`fill`, `color`) not present in the plot mapping.

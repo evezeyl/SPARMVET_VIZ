@@ -5,7 +5,7 @@ title: "The Audit Pipeline: Making Your Adjustments Defensible"
 When you run your data through SPARMVET, three "tiers" are presented:
 
 - **T1 — Assembled**: the raw data joined per your data analysis recipe. No analytical decisions made yet.
-- **T2 — Analysis-ready**: the standard transformations that every plot in your project shares.
+- **T2 — Analysis-ready**: the standard transformations that every plot in your data analysis recipe shares.
 - **T3 — My adjustments**: *your* decisions on top of T2. This is where you remove bad samples, drop unused columns, filter to the rows you want to publish.
 
 The audit pipeline is what records every T3 decision so your final figures are reproducible and defensible. Every change you make in T3 mode is captured as an **audit node** — a small record that says *what* you changed, *which plots* it applies to, and (mandatory) *why* you made the change. Together, the audit nodes form your audit trail.

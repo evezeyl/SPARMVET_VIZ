@@ -83,7 +83,7 @@ Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mi
 # Override data source
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
     --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml \
-    --data assets/test_data/my_project/
+    --data assets/test_data/my_data_analysis_recipe/
 
 # Write output TSV
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
@@ -117,7 +117,7 @@ Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, 
 # Override data directory
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
     --data-analysis-recipe my_pipeline.yaml \
-    --data assets/test_data/my_project/
+    --data assets/test_data/my_data_analysis_recipe/
 
 # Write output to a specific directory
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
@@ -239,7 +239,7 @@ Tests the `PipelineExecutor` abstraction directly.
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_pipeline.py \
     --data-analysis-recipe my_data_analysis_recipe.yaml \
-    --data-dir assets/test_data/my_project/
+    --data-dir assets/test_data/my_data_analysis_recipe/
 ```
 
 ---

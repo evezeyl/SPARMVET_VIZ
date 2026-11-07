@@ -84,7 +84,7 @@ from viz_factory.plot_config_resolver import (
 
 | Palette name | Scale injected |
 |---|---|
-| Project palette name (in registry) | `scale_fill_manual` / `scale_color_manual` with hex list |
+| Deployment palette name (in registry) | `scale_fill_manual` / `scale_color_manual` with hex list |
 | Viridis family (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) | `scale_fill_viridis_d` / `scale_color_viridis_d` |
 | Any other string | `scale_fill_brewer` / `scale_color_brewer` |
 | Unknown name | Warning with list of valid palette names; no scale injected |

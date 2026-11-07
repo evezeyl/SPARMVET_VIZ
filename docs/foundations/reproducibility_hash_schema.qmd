@@ -45,7 +45,7 @@ Each question requires a separate hash. No single hash can answer all three.
 
 **What it hashes:** the **file set** of the data analysis recipe: the entry file and every file it includes (the mirrored folder and any other `!include` target). Each file is hashed, the lines `relative_path:sha256` are sorted by path and joined, and the result is hashed again.
 
-**Where it lives:** Computed at project-load time, stored in `home_state["data_analysis_recipe_sha256"]`.
+**Where it lives:** Computed at data analysis recipe load time, stored in `home_state["data_analysis_recipe_sha256"]`.
 
 **Purpose:** Session identity and export provenance. Allows verification that the session (and any export from it) was produced from a specific, unchanged set of data analysis recipe files. It can be verified independently with `sha256sum` (see below).
 
@@ -73,7 +73,7 @@ combined = "\n".join(parts).encode()
 data_batch_hash = SHA256(combined)
 ```
 
-**Where it lives:** Computed at project-load time, stored in `home_state["data_batch_hash"]`.
+**Where it lives:** Computed at data analysis recipe load time, stored in `home_state["data_batch_hash"]`.
 
 **Purpose:** Data identity. Ensures that a T3 session (audit trail, filter choices) is not silently applied to a different batch of raw data — for example, when a Galaxy pipeline reruns and produces updated TSV files. If the raw data changes, the session key changes and the system treats it as a new session.
 

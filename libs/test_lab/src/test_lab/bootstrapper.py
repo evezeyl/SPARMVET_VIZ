@@ -64,7 +64,7 @@ class DataAnalysisRecipeBootstrapper:
         id_cleaning_steps: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
         """
-        Creates a project folder and populates it with data analysis recipe fragments.
+        Creates a data analysis recipe folder and populates it with data analysis recipe fragments.
 
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
@@ -77,10 +77,10 @@ class DataAnalysisRecipeBootstrapper:
                 actions: ``strip_whitespace``, ``cast`` (String only),
                 ``regex_replace``.
         """
-        recipe_dir = out_dir / data_analysis_recipe_id
-        recipe_dir.mkdir(parents=True, exist_ok=True)
+        data_analysis_recipe_dir = out_dir / data_analysis_recipe_id
+        data_analysis_recipe_dir.mkdir(parents=True, exist_ok=True)
 
-        fragments_dir = recipe_dir / data_analysis_recipe_id  # Subfolder for fragments
+        fragments_dir = data_analysis_recipe_dir / data_analysis_recipe_id  # Subfolder for fragments
         fragments_dir.mkdir(parents=True, exist_ok=True)
 
         id_cleaning_steps = id_cleaning_steps or {}
@@ -150,7 +150,6 @@ class DataAnalysisRecipeBootstrapper:
         # Write Master Data Analysis Recipe
         master_data_analysis_recipe: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
-            "type": "pipeline",
             "info": {
                 "display_name": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
@@ -172,7 +171,7 @@ class DataAnalysisRecipeBootstrapper:
         master_data_analysis_recipe["joins"] = {}
         master_data_analysis_recipe["analysis_groups"] = {}
 
-        master_file = recipe_dir / f"{data_analysis_recipe_id}.yaml"
+        master_file = data_analysis_recipe_dir / f"{data_analysis_recipe_id}.yaml"
         with open(master_file, 'w') as f:
             yaml.dump(master_data_analysis_recipe, f, sort_keys=False)
 

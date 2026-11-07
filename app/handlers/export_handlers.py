@@ -408,7 +408,7 @@ def define_export_server(input, output, session, *,
       active_home_subtab : reactive.Value[str] | None  — current plot subtab id
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
       t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
-      view_keys          : reactive.Calc[RecipeKeys]  the keys the open view was built on
+      view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -449,8 +449,8 @@ def define_export_server(input, output, session, *,
 
             scope_choices: dict = {
                 "global": ui.span(
-                    "Global project",
-                    title="Export everything in the active project",
+                    "All plots",
+                    title="Export everything in the active data analysis recipe",
                 )
             }
             # Active group: only shown when data analysis recipe has groups AND active plot has a group
@@ -552,9 +552,9 @@ def define_export_server(input, output, session, *,
         Produces a zip file containing:
         - plots/          SVG (web preset) or high-DPI PNG (publication preset) per plot
         - data/           T1 TSV for each dataset referenced by active plots
-        - data_analysis_recipes/   YAML files of the data analysis recipe for the active project (and t3_steps.yaml)
+        - data_analysis_recipes/   YAML files of the data analysis recipe for the active data analysis recipe (and t3_steps.yaml)
         - report.qmd      Quarto source report embedding all plots and datasets
-        - README.txt      Bundle data analysis recipe (timestamp, project, app features, preset)
+        - README.txt      Bundle data analysis recipe (timestamp, data analysis recipe, app features, preset)
         """
         import io
         import zipfile
@@ -580,7 +580,7 @@ def define_export_server(input, output, session, *,
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         # ADR-089: one set of chained keys for the whole export; every stored stage is checked
         # against it instead of being reused by file name.
-        export_keys = orchestrator.compute_recipe_keys(data_analysis_recipe_id)
+        export_keys = orchestrator.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
 
         # EXPORT-KEYCHECK-1: the keys of the open view must equal the keys now. If a data analysis recipe or
         # data file changed after the view was opened, refuse: what is exported must be what the
@@ -944,12 +944,12 @@ def define_export_server(input, output, session, *,
                                     f"T3 data export failed:\n{e}"
                                 )
 
-                # ── Copy the YAML files of the data analysis recipe (active project ONLY) ──────────────
+                # ── Copy the YAML files of the data analysis recipe (active data analysis recipe ONLY) ──────────────
                 # EXPORT-BUG-2 (2026-04-30): the previous code did
                 # proj_dir.rglob("*.yaml") on the parent directory, which
-                # scooped up EVERY other project's data analysis recipe + their include
-                # fragments into the bundle (cross-project leak). Now we copy:
-                #   1. The active project's data analysis recipe itself
+                # scooped up EVERY other data analysis recipe's data analysis recipe + their include
+                # fragments into the bundle (cross-data-analysis-recipe leak). Now we copy:
+                #   1. The active data analysis recipe's data analysis recipe itself
                 #   2. Its `!include` subdirectory if one exists (named
                 #      `{data_analysis_recipe_id}/`) — that's where fragment files live per
                 #      the basename-mirroring convention.
@@ -1151,7 +1151,7 @@ def define_export_server(input, output, session, *,
                 "",
                 "## Overview",
                 "",
-                f"Project: **{data_analysis_recipe_id}**  ",
+                f"Data analysis recipe: **{data_analysis_recipe_id}**  ",
                 f"App features: **{app_features}**  ",
                 f"Export preset: **{preset}**  ",
                 f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}  ",
@@ -1488,7 +1488,7 @@ def define_export_server(input, output, session, *,
                 "SPARMVET-VIZ Export Bundle",
                 "=" * 40,
                 f"Timestamp        : {prov['created_at']}",
-                f"Project          : {prov['data_analysis_recipe_id']}",
+                f"Data analysis recipe: {prov['data_analysis_recipe_id']}",
                 f"Data analysis recipe name    : {prov['data_analysis_recipe_name']}",
                 f"Data analysis recipe path    : {prov['data_analysis_recipe_path']}",
                 f"User             : {prov['bundle_label']}",

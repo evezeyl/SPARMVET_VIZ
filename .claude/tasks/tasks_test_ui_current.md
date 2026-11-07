@@ -41,7 +41,7 @@ Test each app features by changing the `app_features_id` in the active config YA
 - [x] No developer-only panels (Test Lab, Blueprint Architect).
 - [x] Gallery NOT visible.
 
-### 1c. `project-independent`
+### 1c. `standalone`
 - [x] Data analysis recipe selector accordion **visible**.
 - [x] Gallery nav item visible.
 - [x] Blueprint Architect (Wrangle Studio) nav item Not visible (app features updated).
@@ -59,18 +59,18 @@ Test each app features by changing the `app_features_id` in the active config YA
 
 ## 2. Left sidebar — accordion panels
 
-Using `project-independent` or `developer` app features throughout the following sections.
+Using `standalone` or `developer` app features throughout the following sections.
 
-- [x] **Data analysis recipe Choice** accordion opens/collapses cleanly. Project selection dropdown shows available projects.
-- [x] Changing project selection reloads plots in the center theater (may take a moment).
-- [x] Switching to Gallery and back to Home preserves the selected project (does not reset to first on list). *(BUG fixed 2026-05-03: _last_project_id reactive.Value tracks selection; sidebar_tools_ui uses isolated read on re-render)*
+- [x] **Data analysis recipe Choice** accordion opens/collapses cleanly. Data analysis recipe dropdown shows the available data analysis recipes.
+- [x] Changing the data analysis recipe reloads plots in the center theater (may take a moment).
+- [x] Switching to Gallery and back to Home preserves the selected data analysis recipe (does not reset to first on list). *(BUG fixed 2026-05-03: _last_data_analysis_recipe_id reactive.Value tracks selection; sidebar_tools_ui uses isolated read on re-render)*
 - [x] **Data Import** accordion shows the import UI (file upload or path selector depending on app features).
 - [x] **Filters** accordion opens cleanly with the filter builder form.
-- [x] **Global Project Export** accordion visible and contains export button.
+- [x] **Global Export** accordion visible and contains export button.
 - [x] **Single Graph Export** accordion visible (if enabled for app features).
 - [x] **Session Management** accordion visible (if enabled).
 - [x] Accordion open/close state is independent — opening one does not close others.
-- [x] App features name shown below nav pills: "Active: Project Independent User" (or equivalent). Ok - now defined by the app features config, we can have any App features name. 
+- [x] App features name shown below nav pills: "Active: Standalone User" (or equivalent). Ok - now defined by the app features config, we can have any App features name. 
 
 ---
 
@@ -236,7 +236,7 @@ a primary key is for - so simple term, explaining potential consequences ... and
 
 ## 12. Gallery nav
 
-- [x] Click **Gallery** in nav pills (project-independent or developer app features).
+- [x] Click **Gallery** in nav pills (standalone or developer app features).
 - [x] Center panel shows the gallery examples browser.
 - [x] Left sidebar shows Example selector + collapsible taxonomy filters (not "Discovery Mode Active").
 
@@ -273,7 +273,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the example title ren
 
 ---
 
-## 13. Comparison mode (project-independent / developer)
+## 13. Comparison mode (standalone / developer)
 
 - [x] In T3 mode, look for the **comparison mode toggle** below the tier toggle strip. *(Only appears for app features files with `comparison_mode_enabled: true` in T3 mode.)*
 - [x] Toggle it on. Center panel shows two columns (reference vs. adjusted view), or the layout changes to show comparison.
@@ -286,7 +286,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the example title ren
 
 - [x] Open **Session Management** accordion in left sidebar.
 - [x] Commit at least 2 T3 nodes across different plots.
-- [ ] Wait 2 minutes (ghost auto-save interval for developer/project-independent app features files) OR use a manual save button if present.
+- [ ] Wait 2 minutes (ghost auto-save interval for developer/standalone app features files) OR use a manual save button if present.
 [Can we have the information about the latest ghost save in the Session Management panel ? eg. "Last auto-save: 2026-05-02 14:35:22" - would be nice for the user to know when the last save was, and if the auto-save is working as expected. 
 
 Should the save take as much as 2 minutes - it should not be possible to export the session during that time OR export active session should first trigger the save and then export. ]
@@ -298,9 +298,9 @@ Should the save take as much as 2 minutes - it should not be possible to export 
 
 ---
 
-## 15. Global Project Export
+## 15. Global Export
 
-- [ ] Open **Global Project Export** accordion.
+- [ ] Open **Global Export** accordion.
 - [ ] Click the export button.
 - [ ] A `.zip` bundle downloads (or a path is reported in the terminal).
 - [ ] Bundle contains at minimum: the assembled data, the data analysis recipe files, and a plot export.
@@ -339,7 +339,7 @@ These are known open bugs — record whether they reproduce or seem fixed.
 
 ## 19. Data Import (IMPORT-1)
 
-Using `project-independent` or `developer` app features (the **Data Import** accordion must be visible).
+Using `standalone` or `developer` app features (the **Data Import** accordion must be visible).
 
 ### 19a. Single file upload
 
@@ -411,7 +411,7 @@ Test with the `year_distribution` plot (uses `scale_x_continuous` with `breaks_i
 
 ## 22. Notification log panel (UX-NOTIF-1)
 
-Using `project-independent` or `developer` app features (right sidebar must be visible).
+Using `standalone` or `developer` app features (right sidebar must be visible).
 
 - [ ] Perform any user-facing action that triggers a notification (e.g. apply a filter, commit a T3 node, import data, export a graph).
 - [ ] Right sidebar bottom shows a `🔔 Alerts (N)` accordion — N reflects the number of logged entries.

@@ -68,8 +68,8 @@ Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Ins
 
 ```bash
 ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \
-    --data-dir assets/test_data/my_project/ \
-    --output config/data_analysis_recipes/pipelines/my_project.yaml
+    --data-dir assets/test_data/my_data_analysis_recipe/ \
+    --output config/data_analysis_recipes/pipelines/my_data_analysis_recipe.yaml
 ```
 
 ---

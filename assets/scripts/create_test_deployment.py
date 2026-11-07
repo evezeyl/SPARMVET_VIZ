@@ -50,7 +50,7 @@ def main():
     parser.add_argument("--app-features", required=False, default="developer",
                         choices=["pipeline-static", "pipeline-exploration-simple",
                                  "pipeline-exploration-advanced",
-                                 "project-independent", "developer"],
+                                 "standalone", "developer"],
                         help="Default app features for this deployment (default: developer).")
     args = parser.parse_args()
 
@@ -87,7 +87,7 @@ def main():
     print(f"Deployment written: {out_path}")
     print(f"  data analysis recipe  : {args.data_analysis_recipe_id}")
     print(f"  app features   : {args.app_features}")
-    print(f"  project   : {args.project_root}")
+    print(f"  project root: {args.project_root}")
     print()
     print("To use: set SPARMVET_DEPLOYMENT env var, or place at ~/.sparmvet/deployment.yaml.")
     print("See docs/workflows/connector.qmd for the full deployment schema (ADR-048).")

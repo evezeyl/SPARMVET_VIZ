@@ -23,7 +23,7 @@ deps:
 
 - **Left Sidebar**: Content is workspace-dependent. Switching workspaces physically replaces the left sidebar DOM (not CSS-hide). Panel content per workspace is declared in `workspaces.<ws>.left_sidebar.panels`. Panels are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`).
 
-  **Available Home panel types** (gate flags in parentheses): `project_info` (none), `deployment_info` (none), `data_analysis_recipe_choice` (`data_analysis_recipe_selector.visible`), `filters` (`interactivity_enabled`), `data_import` (`metadata_ingestion_enabled`), `export` (`export_enabled`), `session_management` (`session_management_enabled`). See `ui_implementation_contract.md §11d` for complete table.
+  **Available Home panel types** (gate flags in parentheses): `data_analysis_recipe_info` (none), `deployment_info` (none), `data_analysis_recipe_choice` (`data_analysis_recipe_selector.visible`), `filters` (`interactivity_enabled`), `data_import` (`metadata_ingestion_enabled`), `export` (`export_enabled`), `session_management` (`session_management_enabled`). See `ui_implementation_contract.md §11d` for complete table.
 
   **Filter behavior unchanged:** `_pending_filters` / `applied_filters` state is preserved across workspace switches; filter widgets are only mounted when `workspaces.home.left_sidebar.panels` contains `filters` and the gate flag is on.
 
@@ -44,7 +44,7 @@ The UI dynamically alters component availability based on the templates in `conf
 | **1. pipeline-static** | ❌ | ❌ | Hidden (static msg) | **Excluded from layout** | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **2. pipeline-exploration-simple** | ✅ | ❌ | Exploration disclaimer | **Excluded from layout** | ❌ | ❌ | ✅ | ✅ | ❌ |
 | **3. pipeline-exploration-advanced** | ✅ | ✅ | Full + T3 audit | **Visible** | ❌ | ❌ | ✅ | ✅ | ✅ |
-| **4. project-independent** | ✅ | ✅ | Full + T3 audit | **Visible** | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **4. standalone** | ✅ | ✅ | Full + T3 audit | **Visible** | ✅ | ❌ | ✅ | ✅ | ✅ |
 | **5. developer** | ✅ | ✅ | Full + T3 audit | **Visible** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **6. qa** | ✅ | ✅ | Full + T3 audit | **Visible** | ✅ | ✅ | ✅ | ✅ | ✅ |
 
@@ -87,7 +87,7 @@ The UI dynamically alters component availability based on the templates in `conf
   - The Gallery MUST serve pre-rendered `.png` assets, YAML data analysis recipes, and JSON metadata exclusively from `assets/gallery_data/`.
   - The ONLY permitted interactive functionality is the transplantation (cloning) of a pure YAML string into the Tier 3 active sandbox.
 - **Hierarchical Asset Caching (TBD-02)**: The Bootloader MUST implement a single source of truth static dict for all materialized/parsed assets natively at runtime to prevent repetitive file-IO overhead.
-  - Cache Hierarchy Contract: `_asset_cache[project_id][dataset_id][plot_id][asset_type]`
+  - Cache Hierarchy Contract: `_asset_cache[data_analysis_recipe_id][dataset_id][plot_id][asset_type]`
 - **Gallery Taxonomy & Indexing (ADR-037)**: The Gallery UI MUST NOT perform direct filesystem scans or YAML parsing for filtering.
   - Filtering logic MUST rely exclusively on the pre-computed `gallery_index.json` (Pivot-Index).
   - The UI is responsible for performing set-intersections against the pivot IDs to provide zero-latency responses.
@@ -123,10 +123,10 @@ passed as kwargs to the sub-handlers. They are NEVER module-level globals.
 
 ### Test tiers
 
-- **T1 Startup**: app loads, no startup errors, project load renders group nav tabs
+- **T1 Startup**: app loads, no startup errors, data analysis recipe load renders group nav tabs
 - **T2 App features masking**: sidebar visibility for launch app features (2 tests skip unless non-developer app features)
 - **T3 Filter pipeline**: filter form renders, add row, apply no-crash, reset clears rows — highest-risk refactor surface
-- **T4 Data preview**: `#home_data_preview` visible after project load
+- **T4 Data preview**: `#home_data_preview` visible after data analysis recipe load
 
 ### Commands
 

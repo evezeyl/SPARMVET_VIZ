@@ -14,7 +14,7 @@ Chrome: developer console, Network tab, "Disable cache" on (as in the test plan)
 
 ## 0. Launch
 
-**A. Your normal project data** (issues #21 and the export on the real dummy project):
+**A. Your normal data analysis recipe** (issues #21 and the export on the real dummy data analysis recipe):
 
 ```
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
@@ -28,7 +28,7 @@ PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml SPARMVET_AP
 ```
 
 The qa app features has every feature on (filters, My view, T3, export). In the left panel "Data analysis recipe Choice" you
-see four projects: `retest_tier2`, `retest_top_n_other`, `retest_broken_header`, `retest_bad_output_field`.
+see four data analysis recipes: `retest_tier2`, `retest_top_n_other`, `retest_broken_header`, `retest_bad_output_field`.
 
 **After you edit a config or data file you do NOT restart the server: save the file and reload the page (F5).**
 (The app compares the files with what it loaded, ADR-089.) Restart only if you changed Python code.
@@ -57,7 +57,7 @@ Tier 1 is `<join>.parquet`, Tier 2 is `<join>__T2.parquet`. A changed modificati
 
 ---
 
-## 1. Tier 2 stored as a parquet with a chained key (issue #10) — project `retest_tier2`
+## 1. Tier 2 stored as a parquet with a chained key (issue #10) — data analysis recipe `retest_tier2`
 
 The data: 12 samples (`s01`..`s12`), columns `group` (A, B, C), `value`, `year`. The join **Result** has one
 tier2 step: keep `value >= 10`. The join **All_samples** has no tier2 step.
@@ -95,9 +95,9 @@ tier2 step: keep `value >= 10`. The join **All_samples** has no tier2 step.
   Then F5, export again: it works. Restore the file with `git checkout`.
   > Check that the text is understandable to you. This is the part that must be clear.
 
-## 2. Export (EXPORT-CHECK-1) — project `retest_tier2`, original files
+## 2. Export (EXPORT-CHECK-1) — data analysis recipe `retest_tier2`, original files
 
-Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Export Bundle". Unzip it.
+Left panel Export: bundle label `retest`, scope "All plots", PNG, click "Export Bundle". Unzip it.
 
 - [ ] **RT-10 Content.** `Result/plots/value_by_group.png`, `All_samples/plots/samples_per_year.png`,
   `Result/T1_data.tsv` (**12** rows), `Result/T2_data.tsv` (**8** rows), `All_samples/T1_data.tsv`
@@ -135,7 +135,7 @@ Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Ex
 - [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static.yaml` instead (deployment B) and `SPARMVET_DATA_ANALYSIS_RECIPE=retest_tier2` (a static page must name its data analysis recipe): export still works
   and holds the Result.
 
-## 3. Issue #23: `top_n_other` — project `retest_top_n_other`
+## 3. Issue #23: `top_n_other` — data analysis recipe `retest_top_n_other`
 
 Data: 21 rows, 18 samples, 8 variants `V1..V8` and 1 missing value. Sample `s07` has 4 rows of `V2`. The data analysis recipe keeps the
 top **3** variants, counting the number of different samples (`count_distinct: sample_id`).
@@ -165,9 +165,9 @@ top **3** variants, counting the number of different samples (`count_distinct: s
   Change `phenotype:` to `predicted_phenotype:` in the file: the command prints nothing.
   > Decided 2026-11-06: a BLUEPRINT button is needed before the demo (issue #26). The command is only for now.
 
-## 5. Issue #21 and other changes of today — deployment A (normal project)
+## 5. Issue #21 and other changes of today — deployment A (normal data analysis recipe)
 
-- [ ] **RT-40 #21 MLST.** Project `1_test_data_ST22_dummy`, plot `MLST_counts_bar`: many bars with real sequence types (19 kinds)
+- [ ] **RT-40 #21 MLST.** Data analysis recipe `1_test_data_ST22_dummy`, plot `MLST_counts_bar`: many bars with real sequence types (19 kinds)
   and one bar **"Non Determined"** with 2 samples. No bar called "keep". Same in the facets of `integration_plot`.
 - [ ] **RT-41 BLUEPRINT plot error banner** (ADR-045 fix: the render no longer writes state). In BLUEPRINT select a node of a
   plot that has no data yet: a yellow banner above the plot explains it ("No data loaded for ..."). Select a node with data:
@@ -176,12 +176,12 @@ top **3** variants, counting the number of different samples (`count_distinct: s
 - [ ] **RT-43 Gallery submission debug script.** `PYTHONPATH=. ./.venv/bin/python libs/viz_gallery/tests/debug_gallery_submission.py --data-analysis-data analysis recipe config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml --data-dir assets/test_data/1_test_data_ST22_dummy`
   prints "Gallery Bundle materialized" and three PASSED lines (it was broken: a syntax error and an old API).
 
-- [ ] **RT-50 Switching project: lag or blank plot?** Switch between `retest_tier2` and `retest_top_n_other` several times. Note
+- [ ] **RT-50 Switching data analysis recipe: lag or blank plot?** Switch between `retest_tier2` and `retest_top_n_other` several times. Note
   (1) how long until the first plot is drawn, (2) whether it is drawn **without** clicking its tab, (3) whether the right panel
   "Pipeline Audit" names the plot you are looking at. In my automated browser the plot stayed empty for 10 seconds until the tab was
   clicked and the audit panel kept the old plot name (same on this morning's code, so not caused by today's changes). You see only a
   short lag, so this may depend on the browser or on a click. Mark `[~]` if only a lag, `[!]` if the plot needs a click.
-  (Draft kept in `issue-drafts/switching-project-leaves-first-plot-blank.md`, not created.)
+  (Draft kept in `issue-drafts/switching-data-analysis-recipe-leaves-first-plot-blank.md`, not created.)
 
 ### Known problems found while preparing this
 

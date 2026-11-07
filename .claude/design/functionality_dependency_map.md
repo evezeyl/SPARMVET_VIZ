@@ -76,7 +76,7 @@ Validation error at startup if any co-flag is missing.**
 | `export_enabled` | ✅ | Single flag — covers bundle, group, and plot scope |
 | `hashes_export` | ✅ Always on | ADR-069 — no opt-out |
 
-**Scope** (project / group / plot) is determined by the active context and the scope toggle — NOT by separate flags. `EXP_BNDL`, `EXP_GROUP`, `EXP_GRF` are collapsed into `export_enabled`.
+**Scope** (all plots / group / plot) is determined by the active context and the scope toggle — NOT by separate flags. `EXP_BNDL`, `EXP_GROUP`, `EXP_GRF` are collapsed into `export_enabled`.
 
 **Cascade:** If T3 on and `export_enabled: false` → startup validation error.
 

@@ -3,7 +3,6 @@
 # With count_distinct: sample_id the 3 kept variants are V1 (6 samples), V3 (3), V4 (2, wins the tie with V5
 # alphabetically). Remove the count_distinct line (EDIT HERE) and the kept ones become V1 (6 rows), V2 (4), V3 (3).
 id: retest_top_n_other
-type: species
 info:
   display_name: RETEST top_n_other
   description: Keep the N most frequent variants, label the rest Other.

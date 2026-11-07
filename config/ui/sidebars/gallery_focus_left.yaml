@@ -1,4 +1,4 @@
 visible: true
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
   - type: gallery_search

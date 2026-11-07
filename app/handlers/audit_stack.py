@@ -276,7 +276,7 @@ def define_server(input, output, session, *,
         return active_collection_id()
 
     # ------------------------------------------------------------------
-    # audit_nodes_header_ui — Project + Collection context line
+    # audit_nodes_header_ui — Data analysis recipe + Collection context line
     # ------------------------------------------------------------------
 
     @output
@@ -285,7 +285,7 @@ def define_server(input, output, session, *,
         cfg = active_cfg()
         collection_id = _active_target_ds()
         return ui.div(
-            ui.div(f"Project: {cfg.raw_config.get('id')}", class_="audit-node-tier2"),
+            ui.div(f"Data analysis recipe: {cfg.raw_config.get('id')}", class_="audit-node-tier2"),
             ui.div(f"Collection: {collection_id}", class_="audit-node-tier2"),
             class_="mb-1",
         )

@@ -7,7 +7,7 @@ Run (developer app features — tests Gallery visibility):
     PYTHONPATH=. SPARMVET_APP_FEATURES=developer .venv/bin/python -m pytest app/tests/test_shiny_smoke.py::TestAppFeaturesMasking -v
 
 Tests are grouped into four tiers:
-  T1 — App startup and project load (always fast, always run)
+  T1 — App startup and data analysis recipe load (always fast, always run)
   T2 — App features masking (sidebar nav visibility for the active launch app features)
   T3 — Filter pipeline + T3 audit promotion (highest-risk refactor surface)
   T4 — Data preview grid
@@ -58,9 +58,9 @@ def _wait_for_fb_col_option(page: Page, value: str, timeout: int = 20_000) -> No
 
 
 def _load_data_analysis_recipe(page: Page, base_url: str, data_analysis_recipe_id: str = "1_test_data_ST22_dummy") -> None:
-    """Navigate to app, select the test project, and wait for groups to render.
+    """Navigate to app, select the test data analysis recipe, and wait for groups to render.
 
-    If the project is already loaded (Quality Control nav visible), skips navigation
+    If the data analysis recipe is already loaded (Quality Control nav visible), skips navigation
     so tests sharing a module-scoped page don't each trigger a fresh Shiny session
     and re-run T1 materialization.
     """
@@ -89,7 +89,7 @@ def _navigate_to_mlst_plot(page: Page) -> None:
     # Use :has-text for emoji-containing labels (role matching can fail on emoji)
     amr_tab = page.locator(".nav-link:has-text('AMR')")
     if amr_tab.count() == 0:
-        pytest.skip("AMR group tab not found in active project")
+        pytest.skip("AMR group tab not found in active data analysis recipe")
     amr_tab.first.click()
     _wait_shiny(page)
     # Plot tab label = p_id.replace("_"," ").title() when no explicit label
@@ -137,12 +137,12 @@ class TestStartup:
         page.wait_for_load_state("networkidle", timeout=15_000)
         _no_render_error(page)
 
-    def test_project_load(self, page: Page, shiny_app: ShinyAppProc):
-        """Loading the test project renders at least one navigation link."""
+    def test_data_analysis_recipe_load(self, page: Page, shiny_app: ShinyAppProc):
+        """Loading the data analysis recipe renders at least one navigation link."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _no_render_error(page)
         tabs = page.locator(".nav-link").all()
-        assert len(tabs) > 0, "No navigation tabs found after project load"
+        assert len(tabs) > 0, "No navigation tabs found after data analysis recipe load"
 
 
 # ---------------------------------------------------------------------------
@@ -196,7 +196,7 @@ class TestAppFeaturesMasking:
 
 class TestFilterPipeline:
     def test_filter_form_renders(self, page: Page, shiny_app: ShinyAppProc):
-        """Filter sidebar renders with Add Row button after project load and panel open."""
+        """Filter sidebar renders with Add Row button after data analysis recipe load and panel open."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         expect(page.locator("#filter_add_row")).to_be_visible()
@@ -263,7 +263,7 @@ class TestFilterPipeline:
 # ---------------------------------------------------------------------------
 
 _PIPELINE_APP_FEATURES = {"pipeline-static", "pipeline-exploration-simple"}
-_INTERACTIVE_APP_FEATURES = {"pipeline-exploration-advanced", "project-independent",
+_INTERACTIVE_APP_FEATURES = {"pipeline-exploration-advanced", "standalone",
                          "developer", "qa"}
 
 
@@ -291,7 +291,7 @@ class TestPhase25Panels:
         expect(accordion.get_by_text("Data Import")).to_be_visible()
 
     def test_global_export_panel_visible(self, page: Page, shiny_app: ShinyAppProc):
-        """Export accordion panel is always present (renamed from 'Global Project Export' in export redesign 2026-05-04)."""
+        """Export accordion panel is always present (renamed from 'Global Export' in export redesign 2026-05-04)."""
         page.goto(shiny_app.url)
         page.wait_for_selector("#nav_accordion", timeout=15_000)
         accordion = page.locator("#nav_accordion")
@@ -333,7 +333,7 @@ class TestPhase25Panels:
 
 class TestDataPreview:
     def test_data_preview_renders(self, page: Page, shiny_app: ShinyAppProc):
-        """Data preview grid renders without errors after project load."""
+        """Data preview grid renders without errors after data analysis recipe load."""
         _load_data_analysis_recipe(page, shiny_app.url)
         page.wait_for_selector("#home_data_preview", timeout=15_000)
         _no_render_error(page)
@@ -352,7 +352,7 @@ class TestViewBadges:
     DATA_BADGE = "#home_data_preview_badge .spv-view-badge"
 
     def _open_plot(self, page: Page) -> None:
-        """After a project switch no plot tab is selected (own finding), so click the first one."""
+        """After a data analysis recipe switch no plot tab is selected (own finding), so click the first one."""
         page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
         _wait_shiny(page)
 

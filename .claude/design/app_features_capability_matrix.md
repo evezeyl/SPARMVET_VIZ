@@ -17,7 +17,7 @@
 
 ## GROUP: VIEW
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `default_tier` = T2 | T2 | T2 | T2 | T2 | T2 | T2 | T2 | T2 |
 | `tier_toggle_t1t2_enabled` | N | N | N | Y | Y | Y | Y | Y |
@@ -29,7 +29,7 @@
 
 ## GROUP: FILTER — Passive (ephemeral, no audit)
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `passive_filter_enabled` | N | N | N | Y | Y | Y | Y | Y |
 
@@ -39,7 +39,7 @@
 
 ## GROUP: T3-AUDIT (active — changes data branch, requires justification)
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `t3_sandbox_enabled` | N | N | N | N | Y | Y | Y | Y |
 | `comparison_mode_enabled` | N | N | N | N | Y | Y | Y | Y |
@@ -51,7 +51,7 @@
 
 ## GROUP: SESSION
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `session_management_enabled` | N | N | N | N | Y | Y | Y | Y |
 | `ghost_save.enabled` | N | N | N | N | Y | Y | Y | N |
@@ -62,18 +62,18 @@
 
 ## GROUP: EXPORT
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `export_enabled` | Y | N | N | Y | Y | Y | Y | Y |
 
-> Single flag — scope (project / group / plot) determined by active context + toggle, not separate flags.
+> Single flag — scope (all plots / group / plot) determined by active context + toggle, not separate flags.
 > Hashes and full audit trail always included in exports (ADR-069 — no opt-out).
 
 ---
 
 ## GROUP: INGEST
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `metadata_ingestion_enabled` | N | N | N | N | Y | Y | Y | Y |
 | `import_helper_enabled` | N | N | N | N | N | Y | Y | Y |
@@ -85,7 +85,7 @@
 
 ## GROUP: DEV — Developer tools
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `gallery_enabled` | N | N | N | N | N | Y | Y | Y |
 | `blueprint_enabled` | N | N | N | N | N | Y | Y | Y |
@@ -97,7 +97,7 @@
 
 ## GROUP: UI-LAYOUT
 
-| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
+| Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `show_app_features_badge` | Y | N | N | Y | Y | Y | Y | Y |
 | `data_analysis_recipe_selector_visible` | N | N | N | N | Y | Y | Y | Y |
@@ -114,7 +114,7 @@
 
 ## Proposed new configurations
 
-| Flag | `[P]` web-project-showcase | `[P]` lightweight-exploration |
+| Flag | `[P]` web-showcase | `[P]` lightweight-exploration |
 |---|:---:|:---:|
 | `default_tier` | T2 | T2 |
 | `tier_toggle_t1t2_enabled` | N | N |

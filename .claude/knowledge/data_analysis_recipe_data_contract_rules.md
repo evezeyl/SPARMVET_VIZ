@@ -25,7 +25,7 @@ Without a clear resolution protocol, the app resolves to empty and the user sees
 
 ```yaml
 id: <data_analysis_recipe_id>
-type: species | project
+(no top-level type: key; see info:)
 
 data_schemas:        # Raw source datasets (Tier 0)
   <schema_id>: ...
@@ -210,15 +210,15 @@ Result: UNION of {MLST.input_fields} ∪ {metadata_schema.output_fields}
 | > ~80 lines OR > 2 schemas OR > 3 plots | **Modular** — use `!include` to keep the master data analysis recipe readable at a glance |
 
 Canonical examples:
-- **Inline showcase:** `config/data_analysis_recipes/templates/simple_project_template.yaml` — 1 schema, 1 plot, all inline
+- **Inline showcase:** `config/data_analysis_recipes/templates/simple_template.yaml` — 1 schema, 1 plot, all inline
 - **Modular showcase:** `config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml` — 9 schemas, 9 assemblies, 9 plots (290 lines via `!include`)
 
 ### 6.1 Inline (monolithic)
 
-Everything in one YAML file. Typical for prototypes, small projects, or auto-generated data analysis recipes.
+Everything in one YAML file. Typical for prototypes, small data analysis recipes, or auto-generated data analysis recipes.
 
 ```
-config/data_analysis_recipes/templates/simple_project_template.yaml   (~80 lines, self-contained)
+config/data_analysis_recipes/templates/simple_template.yaml   (~80 lines, self-contained)
 ```
 
 - ctx_map stores schema_ids as keys: `ctx_map["MLST"] = {role: "wrangling", siblings: ...}`
@@ -413,7 +413,7 @@ When implementing any feature that reads or displays field contracts:
 
 ## 11. Orchestrator Materialization — Three Resolution Paths
 
-`DataOrchestrator.materialize_tier1(project_id, collection_id, output_path)` in `app/modules/orchestrator.py` resolves `collection_id` via three mutually exclusive paths:
+`DataOrchestrator.materialize_tier1(data_analysis_recipe_id, collection_id, output_path)` in `app/modules/orchestrator.py` resolves `collection_id` via three mutually exclusive paths:
 
 ### Path A — Bare data_schema / additional_dataset / metadata_schema
 
@@ -462,7 +462,7 @@ assembly_ingredients = {
 }
 ```
 
-**Anti-pattern:** Passing all project-level ingredients in data analysis recipe iteration order to `DataAssembler`. The alphabetically-first or YAML-first schema becomes the base, which is almost certainly wrong.
+**Anti-pattern:** Passing all ingredients of the data analysis recipe in data analysis recipe iteration order to `DataAssembler`. The alphabetically-first or YAML-first schema becomes the base, which is almost certainly wrong.
 
 ---
 

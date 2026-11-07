@@ -21,14 +21,14 @@
 | Groups pill nav | `#home_groups_nav` | "plot group nav" |
 | Session Management accordion | accordion inside `#nav_sidebar` | "session panel" |
 | Filters accordion | accordion inside `#nav_sidebar` | "filter panel" |
-| Global Project Export accordion | accordion inside `#nav_sidebar` | "export panel" |
+| Global Export accordion | accordion inside `#nav_sidebar` | "export panel" |
 | Data Import accordion | accordion inside `#nav_sidebar` | "data import panel" |
 
 **Proposed elements (not yet implemented — see app_features_scoping_guide.md):**
 
 | Proposed element | Controlled by | Notes |
 |---|---|---|
-| Sidebar project title | `[P] ui_branding.title` | Title shown in sidebar instead of (or above) data analysis recipe selector |
+| Sidebar title | `[P] ui_branding.title` | Title shown in sidebar instead of (or above) data analysis recipe selector |
 | Hide nav pills entirely | `[P] show_navigation: false` | Hides Home · Blueprint · etc. pill strip |
 | T1/T2 toggle visibility | `[P] tier_toggle_enabled` | Theater header strip — hide the radio buttons |
 | Default tier on load | `[P] default_tier` | T1 or T2 shown without user action |
@@ -91,7 +91,7 @@
 │ └───────────────────────┘ │ ┌───────────────────────────────────────┐ │ │                   │ │
 │                           │ │  Data Preview                         │ │ │  ── bottom ────── │ │
 │ ┌───────────────────────┐ │ │  div.spv-panel (overflow: visible)    │ │ │  [  Apply  ]      │ │
-│ │  Global Project       │ │ │    ui.accordion  #acc_home_data       │ │ │  #btn_apply       │ │
+│ │  All plots       │ │ │    ui.accordion  #acc_home_data       │ │ │  #btn_apply       │ │
 │ │  Export               │ │ │    header: ui.tags.span               │ │ └───────────────────┘ │
 │ │  accordion panel      │ │ │      "Data Preview"                   │ │                       │
 │ └───────────────────────┘ │ │      (0.8em / #6c757d / fw-600)     │ │                       │
@@ -152,7 +152,7 @@
 │ │  #wrangle_sidebar_    │ │ │  div.spv-panel.mb-3 (outer wrapper)   │ │ │  🔬 Focused node  │ │
 │ │  accordion            │ │ │    #blueprint_tubemap_accordion       │ │ │  info             │ │
 │ └───────────────────────┘ │ │    (bslib accordion)                  │ │ │                   │ │
-│ ┌───────────────────────┐ │ │    header: "🗺️ Project Lineage"       │ │ │  ── hr ────────── │ │
+│ ┌───────────────────────┐ │ │    header: "🗺️ Data analysis recipe lineage"       │ │ │  ── hr ────────── │ │
 │ │  External Exchange    │ │ │    bg: #f8f9fa / text: #1a1a1a    │ │ │                   │ │
 │ │  accordion panel      │ │ │    viewport: #tubemap_viewport 320px  │ │ │  Active Logic     │ │
 │ └───────────────────────┘ │ └───────────────────────────────────────┘ │ │  Stack  h6        │ │

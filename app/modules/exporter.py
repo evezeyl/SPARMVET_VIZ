@@ -68,7 +68,7 @@ class SubmissionExporter:
     def bundle_global_export(self, data_analysis_recipe_id: str, plot_path: str, tiers: dict, data_analysis_recipe: dict, audit_trail: list) -> str:
         """
         Bundles the full session state (Phase 14-C).
-        Format: SPARMVET_EXPORT_{ISO_DATE}_{PROJECT_ID}.zip
+        Format: SPARMVET_EXPORT_{ISO_DATE}_{DATA_ANALYSIS_RECIPE_ID}.zip
         """
         iso_date = datetime.now().strftime("%Y-%m-%d")
         zip_name = f"SPARMVET_EXPORT_{iso_date}_{data_analysis_recipe_id}.zip"

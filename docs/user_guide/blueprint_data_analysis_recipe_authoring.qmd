@@ -59,7 +59,7 @@ data_schemas:
   Summary:
     source:
       type: local_tsv
-      path: ./assets/test_data/my_project/Summary.tsv
+      path: ./assets/test_data/my_data_analysis_recipe/Summary.tsv
     input_fields:
       sample_id:
         type: categorical

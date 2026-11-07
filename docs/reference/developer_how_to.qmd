@@ -99,7 +99,7 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   Tests the `PipelineExecutor` abstraction.
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_pipeline.py \
-      --data-analysis-recipe my_data_analysis_recipe.yaml --data-dir assets/test_data/my_project/
+      --data-analysis-recipe my_data_analysis_recipe.yaml --data-dir assets/test_data/my_data_analysis_recipe/
   ```
 
 ---

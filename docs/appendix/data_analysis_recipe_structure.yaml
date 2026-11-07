@@ -58,7 +58,7 @@ analysis_groups_structure:
     #
     # palette: (BP-COLOR-3) — named palette applied as fill/colour scale to every plot.
     #   Resolution order: plot-level palette > plot_defaults.palette > matplotlib default.
-    #   Value: a) project palette from config/palettes.yaml → scale_*_manual (hex list)
+    #   Value: a) deployment palette from config/palettes.yaml → scale_*_manual (hex list)
     #          b) matplotlib name (e.g. "Blues", "viridis") → scale_*_brewer / scale_*_viridis_d
     #   Only injected for aesthetics in the plot mapping (fill / color).
     #   Never injected when data analysis recipe already declares scale_fill_* or scale_color_* layer.
@@ -113,7 +113,7 @@ palette_registry:
     - "data analysis recipe 'plot_defaults.palette:' key (applies to all plots in the data analysis recipe)"
     - "matplotlib default (no palette injection)"
   scale_injection_rules:
-    - "Injects scale_fill_manual / scale_color_manual for project palettes (hex list from registry)"
+    - "Injects scale_fill_manual / scale_color_manual for deployment palette (hex list from registry)"
     - "Injects scale_fill_brewer / scale_color_brewer for matplotlib categorical palettes"
     - "Injects scale_fill_viridis_d / scale_color_viridis_d for viridis family names"
     - "Never injected when the data analysis recipe already declares a scale_fill_* or scale_color_* layer"
@@ -129,8 +129,8 @@ palette_registry:
 
 example_structure: |
   config/data_analysis_recipes/pipelines/
-  ├── my_project.yaml
-  └── my_project/
+  ├── my_data_analysis_recipe.yaml
+  └── my_data_analysis_recipe/
       ├── input_fields/
       │   ├── source_a_input_fields.yaml
       │   └── metadata_schema.yaml

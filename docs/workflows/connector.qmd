@@ -103,7 +103,7 @@ runtime:
 ```yaml
 irida:
   base_url: "https://irida.myinstitution.ca"
-  project_id: 42
+  data_analysis_recipe_id: 42
   auth: oauth2        # token ALWAYS passed via SPARMVET_IRIDA_TOKEN env var — never here
   local_cache: "/tmp/sparmvet_cache/inputs/"   # where fetched files land before app reads them
 ```
@@ -221,7 +221,7 @@ app_features_override:
   data_ingestion_enabled: false
 ```
 
-When `false`: the Data Ingestion section in System Tools is suppressed entirely, regardless of the active app features. This allows deploying a `project-independent` app features for a scientist who can do everything *except* upload new data (because the pipeline handles that).
+When `false`: the Data Ingestion section in System Tools is suppressed entirely, regardless of the active app features. This allows deploying a `standalone` app features for a scientist who can do everything *except* upload new data (because the pipeline handles that).
 
 ---
 

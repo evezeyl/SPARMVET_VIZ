@@ -106,7 +106,7 @@ blueprint_enabled: true/false        ← GATE for Blueprint Architect
   └─ blueprint_agent_enabled         ← BLUEPRINT AI Agent helper (ADR-076)
 ```
 
-`gallery_enabled` can be set independently — a `project-independent` app features has Gallery access without full developer mode (Phase 25-A flipped this to `true` for project-independent). It remains a policy choice rather than a technical constraint, so other app features files can enable Gallery without enabling `developer_mode_enabled`.
+`gallery_enabled` can be set independently — a `standalone` app features has Gallery access without full developer mode (Phase 25-A flipped this to `true` for standalone). It remains a policy choice rather than a technical constraint, so other app features files can enable Gallery without enabling `developer_mode_enabled`.
 
 `data_analysis_recipe_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer app features files), the escape hatch is **read-only** (visible but not editable, so the user can inspect the data analysis recipe fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §4 below.
 
@@ -215,7 +215,7 @@ if bootloader.is_enabled("t3_sandbox_enabled"):
     tier_choices["T3"] = "My adjustments"
 
 # ✗ name-driven — breaks for any custom app features
-if app features in ("pipeline-exploration-advanced", "project-independent", "developer"):
+if app features in ("pipeline-exploration-advanced", "standalone", "developer"):
     tier_choices["T3"] = "My adjustments"
 ```
 
@@ -241,7 +241,7 @@ Should return zero hits (only docstrings/comments allowed).
 | `blueprint_agent.backend: claude_cli` with `claude` not installed / not logged in | Adapter init fails; bootloader falls back to `DisabledAdapter` and logs the cause. | Install Claude Code CLI and run `claude --status` to verify auth. |
 | `blueprint_agent.backend: claude_api` with `ANTHROPIC_API_KEY` env var unset | Adapter init fails; fall back to `DisabledAdapter`. | Set the env var, or switch backend to `claude_cli`. |
 | `default_data_analysis_recipe` absent in deployment AND app features hides selector | App fails to start with ConfigurationError: "No data analysis recipe source available." | Add `default_data_analysis_recipe` to deployment, or use an app features that shows the selector. |
-| `app_features_override: {data_ingestion_enabled: false}` in deployment with `project-independent` app features | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
+| `app_features_override: {data_ingestion_enabled: false}` in deployment with `standalone` app features | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
 | `SPARMVET_IRIDA_TOKEN` not set with `deployment_type: irida` | IridaConnector raises AuthenticationError at startup. | Ensure IRIDA injects the token at container launch. |
 
 ---

@@ -30,20 +30,20 @@ def orch():
     return DataOrchestrator(DATA_ANALYSIS_RECIPES, RAW)
 
 
-def t1(project, join, tmp_path):
+def t1(data_analysis_recipe, join, tmp_path):
     o = orch()
-    return o.materialize_tier1(project, join, tmp_path / f"{join}.parquet", keys=o.compute_recipe_keys(project))
+    return o.materialize_tier1(data_analysis_recipe, join, tmp_path / f"{join}.parquet", keys=o.compute_data_analysis_recipe_keys(data_analysis_recipe))
 
 
-def t2(project, join, tmp_path):
+def t2(data_analysis_recipe, join, tmp_path):
     o = orch()
-    return o.materialize_tier2(project, join, tmp_path / f"{join}.parquet", keys=o.compute_recipe_keys(project))
+    return o.materialize_tier2(data_analysis_recipe, join, tmp_path / f"{join}.parquet", keys=o.compute_data_analysis_recipe_keys(data_analysis_recipe))
 
 
-@pytest.mark.parametrize("project", ["retest_tier2", "retest_top_n_other", "retest_broken_header",
+@pytest.mark.parametrize("data_analysis_recipe", ["retest_tier2", "retest_top_n_other", "retest_broken_header",
                                      "retest_bad_output_field"])
-def test_every_retest_data_analysis_recipe_is_a_valid_data_analysis_recipe(project):
-    assert validate_data_analysis_recipe(DATA_ANALYSIS_RECIPES / f"{project}.yaml") == []
+def test_every_retest_data_analysis_recipe_is_a_valid_data_analysis_recipe(data_analysis_recipe):
+    assert validate_data_analysis_recipe(DATA_ANALYSIS_RECIPES / f"{data_analysis_recipe}.yaml") == []
 
 
 # -- retest_tier2 ---------------------------------------------------------------------------

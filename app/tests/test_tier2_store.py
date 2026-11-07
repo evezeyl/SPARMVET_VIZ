@@ -1,6 +1,6 @@
 """Tier 2 is stored as a parquet with a chained key (ADR-089 point 6, fork issue evezeyl/SPARMVET_VIZ#10).
 
-Same tiny project as test_cache_chain.py. Rewrite detection: after the first build both parquet
+Same tiny data analysis recipe as test_cache_chain.py. Rewrite detection: after the first build both parquet
 files get an old modification time; a rewrite shows as a different one.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_tier2_store.py -q
@@ -22,7 +22,7 @@ class Tier2World(World):
 
     def read_t2(self):
         """One session reads T2: keys first, then the stored file. Returns the rows."""
-        keys = self.orch.compute_recipe_keys("tiny")
+        keys = self.orch.compute_data_analysis_recipe_keys("tiny")
         lf = self.orch.materialize_tier2("tiny", "C", self.anchor, keys=keys)
         return sorted(lf.collect().to_dicts(), key=lambda r: r["sample_id"])
 
@@ -45,7 +45,7 @@ def _fresh_cache():
 
 @pytest.fixture
 def world(tmp_path):
-    """A project whose join has one tier2 step (keep group A), already built once."""
+    """A data analysis recipe whose join has one tier2 step (keep group A), already built once."""
     w = Tier2World(tmp_path)
     w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
     rows = w.read_t2()
@@ -55,7 +55,7 @@ def world(tmp_path):
 
 
 def test_tier2_is_written_next_to_tier1_with_its_chained_key(world):
-    keys = world.orch.compute_recipe_keys("tiny")
+    keys = world.orch.compute_data_analysis_recipe_keys("tiny")
     assert world.t2.name == "C__T2.parquet" and world.t2.parent == world.anchor.parent
     assert get_parquet_metadata_hash(str(world.t2), TIER2_KEY_META) == tier2_key(keys.tier1_key, [FILTER_A])
 
@@ -106,7 +106,7 @@ def test_a_stale_tier2_file_is_removed_when_the_steps_are_dropped(world):
 def test_moving_the_tier2_steps_to_tier1_removes_the_tier2_file_without_reading_t2(world):
     """Only Tier 1 is read afterwards: the old T2 must still go, it would be a false T2."""
     world.write_data_analysis_recipe(steps_tier1=[FILTER_A], steps_tier2=[])
-    keys = world.orch.compute_recipe_keys("tiny")
+    keys = world.orch.compute_data_analysis_recipe_keys("tiny")
     rows = world.orch.materialize_tier1("tiny", "C", world.anchor, keys=keys).collect().to_dicts()
     assert sorted(r["sample_id"] for r in rows) == ["s1", "s2"]
     assert not world.t2.exists()
@@ -114,13 +114,13 @@ def test_moving_the_tier2_steps_to_tier1_removes_the_tier2_file_without_reading_
 
 def test_a_rebuilt_tier1_removes_the_old_tier2_even_when_tier2_is_not_read(world):
     world.write_data("sample_id\tgroup\ns1\tA\ns2\tA\ns3\tB\ns4\tA\n")
-    keys = world.orch.compute_recipe_keys("tiny")
+    keys = world.orch.compute_data_analysis_recipe_keys("tiny")
     world.orch.materialize_tier1("tiny", "C", world.anchor, keys=keys)
     assert not world.t2.exists()
 
 
 def test_a_valid_tier1_with_tier2_steps_keeps_the_tier2_file(world):
-    keys = world.orch.compute_recipe_keys("tiny")
+    keys = world.orch.compute_data_analysis_recipe_keys("tiny")
     world.orch.materialize_tier1("tiny", "C", world.anchor, keys=keys)
     assert world.t2.exists() and not world.rewritten(world.t2)
 

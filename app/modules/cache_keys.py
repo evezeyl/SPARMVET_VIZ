@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:load_data_analysis_recipe, function:tier1_key, function:tier2_key, function:data_analysis_recipe_fileset_hash, function:recipe_keys, class:LoadedDataAnalysisRecipe, class:RecipeKeys
+provides: function:load_data_analysis_recipe, function:tier1_key, function:tier2_key, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys
 consumes: libs/utils/src/utils/config_loader.py
 consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/tests/test_cache_keys.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, docs/foundations/reproducibility_hash_schema.qmd
@@ -160,16 +160,16 @@ class LoadedDataAnalysisRecipe:
 
 
 @dataclass(frozen=True)
-class RecipeKeys:
-    """Everything the stored stages of one project depend on, computed once per session."""
+class DataAnalysisRecipeKeys:
+    """Everything the stored stages of one data analysis recipe depend on, computed once per session."""
 
     data_analysis_recipe_sha256: str   # file-set hash (provenance, session key)
     data_batch_hash: str   # content hash of the source data files
     tier1_key: str         # chained key of the Tier 1 parquet
 
 
-def recipe_keys(loaded: "LoadedDataAnalysisRecipe", data_batch_hash: str) -> RecipeKeys:
-    return RecipeKeys(
+def data_analysis_recipe_keys(loaded: "LoadedDataAnalysisRecipe", data_batch_hash: str) -> DataAnalysisRecipeKeys:
+    return DataAnalysisRecipeKeys(
         data_analysis_recipe_sha256=loaded.data_analysis_recipe_sha256,
         data_batch_hash=data_batch_hash,
         tier1_key=tier1_key(loaded.material_hash, data_batch_hash),

@@ -30,6 +30,7 @@
 │   │   ├── notification_utils.py
 │   │   ├── orchestrator_helpers.py
 │   │   ├── orchestrator.py
+│   │   ├── data_analysis_recipe_info.py
 │   │   ├── renamed_keys.py
 │   │   ├── session_manager.py
 │   │   ├── sidebar_registry.py
@@ -84,6 +85,7 @@
 │       ├── test_legacy_formats.py
 │       ├── test_mlst_sequence_type.py
 │       ├── test_rename_context.py
+│       ├── test_data_analysis_recipe_info.py
 │       ├── test_render_every_plot.py
 │       ├── test_render_purity.py
 │       ├── test_retest_data_analysis_recipes.py
@@ -343,7 +345,7 @@
 │   │   ├── pipeline-exploration-advanced.yaml
 │   │   ├── pipeline-exploration-simple.yaml
 │   │   ├── pipeline-static.yaml
-│   │   ├── project-independent.yaml
+│   │   ├── standalone.yaml
 │   │   ├── qa.yaml
 │   │   └── web-demo.yaml
 │   ├── data_analysis_recipes
@@ -477,10 +479,10 @@
 │   │   │   │   ├── genomics_wrangling.yaml
 │   │   │   │   ├── master_steps.yaml
 │   │   │   │   └── metadata_input.yaml
-│   │   │   ├── complex_project_template.yaml
+│   │   │   ├── complex_template.yaml
 │   │   │   ├── e_coli.yaml
-│   │   │   ├── example_species_config.yaml
-│   │   │   └── simple_project_template.yaml
+│   │   │   ├── universal_template.yaml
+│   │   │   └── simple_template.yaml
 │   │   └── VIGAS-P
 │   │       ├── VIGAS_VirulenceFinder
 │   │       │   ├── input_fields

@@ -14,12 +14,12 @@ Display rules
     the active data analysis recipe's data_schemas. The user cannot override paths;
     they are fixed by the deployment configuration.
 - testing_mode == True   (developer, qa, pipeline-exploration-advanced,
-    project-independent):
+    standalone):
     Same listing but framed as the *current default* and accompanied by
     the data analysis recipe replacement upload (gated by metadata_ingestion_enabled)
     and the multi-file ingestion slot (gated by data_ingestion_enabled).
 
-Reactive value passed in: active_cfg (so the listing refreshes on project
+Reactive value passed in: active_cfg (so the listing refreshes on switch of the data analysis recipe
 switch).
 """
 
@@ -74,12 +74,12 @@ def define_data_import_server(input, output, session, *,
     # Pending upload state: list of {name, tmp_path, ds_id, error}
     _import_pending: reactive.Value[list] = reactive.Value([])
 
-    # ── Main panel UI (stable — refreshes only on project switch) ────────────
+    # ── Main panel UI (stable — refreshes only on data analysis recipe switch) ────────────
 
     @output
     @render.ui
     def data_import_ui():
-        cfg = active_cfg()  # subscribe to project switches
+        cfg = active_cfg()  # subscribe to data analysis recipe switches
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         testing_mode = bootloader.get_testing_mode()
         by_dataset_id = bootloader.data_lookup == "by_dataset_id"

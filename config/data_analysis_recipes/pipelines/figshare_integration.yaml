@@ -1,5 +1,4 @@
 id: figshare_amr
-type: pipeline
 info:
   display_name: Figshare AMR Triple-Source Integration
   category: Integration Demo

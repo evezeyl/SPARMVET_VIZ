@@ -83,7 +83,7 @@ deps:
 | **BP-FORMS-1** `[opus/high]` | Form renderer for all 8 widget types. Edit-in-place + Apply gate. Schema invalidation markers on downstream nodes. | HIGH | Everything — without forms, the only edit path is YAML. |
 | **BP-ESCAPE-1** `[sonnet/medium]` | YAML escape hatch: read-only (blueprint_enabled) + editable (data_analysis_recipe_edit_enabled). Re-parse on save. | MEDIUM | Power-user workflow. |
 | **BP-HELP-1** `[sonnet/medium]` | Help panel: Python `__doc__` resolution via `importlib`; optional `doc_url` (air-gap safe). | LOW | Discoverability for first-time users. |
-| **BP-COLOR-1** `[sonnet/medium]` | Color widget: column mapping toggle / palette picker / hex picker. `from_project_colors` reserved for v2. | LOW | Plot aesthetics. |
+| **BP-COLOR-1** `[sonnet/medium]` | Color widget: column mapping toggle / palette picker / hex picker. `from_deployment_colors` reserved for v2. | LOW | Plot aesthetics. |
 | **ACTION-RENAME-1** `[haiku/low]` | `scripts/migrate_data_analysis_recipes.py` — scan YAML for renamed actions. | LOW | Future-proofing. |
 
 **Critical observation:** BP-FORMS-1 is the gate. Until it ships, "build without code" is aspirational — users still need to read YAML or trust the AI agent.

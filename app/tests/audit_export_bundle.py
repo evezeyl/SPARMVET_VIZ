@@ -17,7 +17,7 @@ def audit_export():
     }
 
     data_analysis_recipe = {
-        "project": "AUDIT_TEST",
+        "data_analysis_recipe": "AUDIT_TEST",
         "plots": {"test_plot": {"mapping": {"x": "id"}, "layers": [{"name": "geom_point"}]}}
     }
 
@@ -56,7 +56,7 @@ def audit_export():
         # Check data analysis recipe format
         with zipf.open("session_data_analysis_recipe.yaml") as f:
             man_content = yaml.safe_load(f)
-            print(f"\nDataAnalysisRecipe Project: {man_content.get('project')}")
+            print(f"\nDataAnalysisRecipe: {man_content.get("data_analysis_recipe")}")
 
 
 if __name__ == "__main__":

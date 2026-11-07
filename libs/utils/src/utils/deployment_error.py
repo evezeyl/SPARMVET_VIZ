@@ -44,7 +44,7 @@ class DeploymentError:
     'invalid configuration'."""
 
     location: str
-    """Where the problem was detected. File path (preferably relative to project
+    """Where the problem was detected. File path (preferably relative to the repository
     root) plus key/line if available. e.g. 'config/app_features/foo.yaml:23' or
     'features.blueprint_agent_enabled in config/app_features/foo.yaml'."""
 

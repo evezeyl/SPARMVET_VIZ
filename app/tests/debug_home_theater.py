@@ -42,17 +42,17 @@ ALL_APP_FEATURES = [
     "pipeline-static",
     "pipeline-exploration-simple",
     "pipeline-exploration-advanced",
-    "project-independent",
+    "standalone",
     "developer",
 ]
 
 # App features files that should see T3 tier option and right sidebar
-ADVANCED_APP_FEATURES = {"pipeline-exploration-advanced", "project-independent", "developer"}
+ADVANCED_APP_FEATURES = {"pipeline-exploration-advanced", "standalone", "developer"}
 # App features files where right sidebar should be suppressed
 HIDDEN_SIDEBAR_APP_FEATURES = {"pipeline-static", "pipeline-exploration-simple"}
 
-TEST_PROJECT_ID = "1_test_data_ST22_dummy"
-DATA_ANALYSIS_RECIPE_REL = f"config/data_analysis_recipes/pipelines/{TEST_PROJECT_ID}.yaml"
+TEST_DATA_ANALYSIS_RECIPE_ID = "1_test_data_ST22_dummy"
+DATA_ANALYSIS_RECIPE_REL = f"config/data_analysis_recipes/pipelines/{TEST_DATA_ANALYSIS_RECIPE_ID}.yaml"
 
 results: list[dict] = []
 
@@ -99,7 +99,7 @@ from app.src.bootloader import Bootloader
             "session_management_enabled": True,
             "comparison_mode_enabled": True,
         },
-        "project-independent": {
+        "standalone": {
             "interactivity_enabled": True,
             "data_ingestion_enabled": True,
             "session_management_enabled": True,
@@ -329,7 +329,7 @@ def test_ghost_roundtrip():
 
             path = sm.write_t3_ghost(
                 session_key=session_key,
-                data_analysis_recipe_id=TEST_PROJECT_ID,
+                data_analysis_recipe_id=TEST_DATA_ANALYSIS_RECIPE_ID,
                 data_analysis_recipe_sha256="abc123",
                 data_batch_hash="def456",
                 tier_toggle="T3",
@@ -413,8 +413,8 @@ def test_bootloader_locations(project_root: Path):
             except Exception as e:
                 record(f"location_{loc_key}", False, str(e))
 
-        default_recipe = bl.get_default_data_analysis_recipe()
-        record("default_project_discoverable", bool(default_recipe), default_recipe)
+        default_data_analysis_recipe = bl.get_default_data_analysis_recipe()
+        record("default_data_analysis_recipe_discoverable", bool(default_data_analysis_recipe), default_data_analysis_recipe)
 
     except Exception as e:
         record("bootloader_location_error", False, str(e))

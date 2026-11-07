@@ -159,17 +159,17 @@ def define_server(input, output, session, *,
     # @render.plot slot. Handlers read active_cfg() at render time, not init time.
     _all_group_plot_ids = _collect_all_group_plot_ids(bootloader)
 
-    # ── Project load notification — fires on startup and on every project switch ─
+    # ── Data analysis recipe load notification: fires on startup and on every switch of data analysis recipe ─
     @reactive.Effect
     @reactive.event(input.data_analysis_recipe_id)
-    def _notify_project_loaded():
+    def _notify_data_analysis_recipe_loaded():
         proj = safe_input(input, "data_analysis_recipe_id", "")
         if proj:
-            _notify(f"📂 Project '{proj}' loaded — plots are ready.", type="message", duration=5)
+            _notify(f"📂 Data analysis recipe '{proj}' loaded — plots are ready.", type="message", duration=5)
 
-    # Track selected project across sidebar nav switches (data_analysis_recipe_id input is
+    # Track selected data analysis recipe across sidebar nav switches (data_analysis_recipe_id input is
     # absent from DOM while Gallery/Blueprint is active; without this, returning
-    # to Home re-renders sidebar_tools_ui with the default project selected).
+    # to Home re-renders sidebar_tools_ui with the default data analysis recipe selected).
     _last_data_analysis_recipe_id = reactive.Value(bootloader.get_default_data_analysis_recipe())
 
     @reactive.Effect
@@ -215,8 +215,8 @@ def define_server(input, output, session, *,
         return spec
 
     @reactive.Calc
-    def _recipe_keys():
-        """Chained cache keys of the active project (ADR-089), computed once per session.
+    def _data_analysis_recipe_keys():
+        """Chained cache keys of the active data analysis recipe (ADR-089), computed once per session.
 
         Hashes the data files by content, so it re-runs only when the project or the
         imported data changes (data_refresh_trigger), not on every plot render.
@@ -224,7 +224,7 @@ def define_server(input, output, session, *,
         if data_refresh_trigger is not None:
             data_refresh_trigger.get()
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
-        return orchestrator.compute_recipe_keys(data_analysis_recipe_id)
+        return orchestrator.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
 
     def _resolve_t1_lf(spec: dict | None):
         """Return the T1 LazyFrame for spec, always ignoring tier_toggle."""
@@ -244,7 +244,7 @@ def define_server(input, output, session, *,
                 data_analysis_recipe_id=data_analysis_recipe_id,
                 collection_id=target_ds,
                 output_path=out_path,
-                keys=_recipe_keys(),
+                keys=_data_analysis_recipe_keys(),
             )
         return tier1_anchor()
 
@@ -268,7 +268,7 @@ def define_server(input, output, session, *,
             # not caught here: showing Tier 1 in place of a failed Tier 2 would be a false result.
             return orchestrator.materialize_tier2(
                 data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target_ds,
-                tier1_path=out_path, keys=_recipe_keys())
+                tier1_path=out_path, keys=_data_analysis_recipe_keys())
         return _resolve_t1_lf(spec)
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
@@ -716,7 +716,7 @@ def define_server(input, output, session, *,
                 data_analysis_recipe_id=data_analysis_recipe_id,
                 collection_id=coll_id,
                 output_path=out_path,
-                keys=_recipe_keys(),
+                keys=_data_analysis_recipe_keys(),
             )
 
         except Exception as e:
@@ -765,7 +765,7 @@ def define_server(input, output, session, *,
                 "Raw",
                 "T1 — As assembled",
                 "T1: Raw assembled data. No processing steps applied. "
-                "In most projects T1 = T2. Use this to compare against the processed result.",
+                "In most data analysis recipes T1 = T2. Use this to compare against the processed result.",
             ),
             "T2": _tier_label(
                 "Result",
@@ -842,8 +842,8 @@ def define_server(input, output, session, *,
                         "tier_toggle",
                         label=None,
                         choices=tier_choices,
-                        # Default T2: in most projects T2 = T1 so there is no cost,
-                        # and projects with processing steps show the intended result.
+                        # Default T2: in most data analysis recipes T2 = T1 so there is no cost,
+                        # and data analysis recipes with processing steps show the intended result.
                         # Use static default — tier_toggle reactive value is NOT read here
                         # so that tier changes do NOT invalidate/re-render dynamic_tabs DOM.
                         # The _track_tier_toggle effect keeps tier_toggle reactive in sync.
@@ -1017,7 +1017,7 @@ def define_server(input, output, session, *,
             pass
 
     # Data change detection — runs as a side-effect separate from dynamic_tabs render.
-    # Reads data_analysis_recipe_id to react when the user switches projects; computes source file
+    # Reads data_analysis_recipe_id to react when the user switches data analysis recipes; computes source file
     # hashes, compares to stored data_batch_hash, warns if changed, and always writes
     # data_analysis_recipe_sha256 + data_batch_hash into home_state for session_manager.
     @reactive.Effect
@@ -1040,7 +1040,7 @@ def define_server(input, output, session, *,
             prev_dbh = cur.get("data_batch_hash") or ""
             prev_msig = cur.get("data_analysis_recipe_sha256") or ""
             # Only warn if the SAME data analysis recipe's source files changed.
-            # A project switch (different data_analysis_recipe_sha256) naturally has a
+            # A data analysis recipe switch (different data_analysis_recipe_sha256) naturally has a
             # different data_batch_hash — that's expected, not an alert.
             same_data_analysis_recipe = prev_msig and prev_msig == new_msig
             if same_data_analysis_recipe and prev_dbh and prev_dbh != new_dbh:
@@ -1369,7 +1369,7 @@ def define_server(input, output, session, *,
                             class_="btn-outline-primary btn-sm w-100 mt-1",
                         ),
                         ui.tags.small(
-                            "Select a project data analysis recipe. Click any node in the TubeMap to navigate.",
+                            "Select a data analysis recipe. Click any node in the TubeMap to navigate.",
                             class_="text-muted d-block mt-1"),
                         ui.output_ui("bp_draft_status_ui"),
                         icon=ui.tags.i(class_="bi bi-diagram-3")
@@ -1425,29 +1425,41 @@ def define_server(input, output, session, *,
             )
 
         # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
-        # Build project state needed by some panel renderers.
+        # Build data analysis recipe state needed by some panel renderers.
         try:
-            recipe_choices = list(bootloader.available_data_analysis_recipes.keys())
-            default_recipe = bootloader.get_default_data_analysis_recipe()
+            data_analysis_recipe_choices = list(bootloader.available_data_analysis_recipes.keys())
+            default_data_analysis_recipe = bootloader.get_default_data_analysis_recipe()
         except Exception:
-            recipe_choices = []
-            default_recipe = None
+            data_analysis_recipe_choices = []
+            default_data_analysis_recipe = None
 
         with reactive.isolate():
-            _current_recipe = _last_data_analysis_recipe_id.get() or default_recipe
+            _current_data_analysis_recipe = _last_data_analysis_recipe_id.get() or default_data_analysis_recipe
 
         # Panel renderer map: type → callable() → accordion_panel | None
         # None means the panel type was handled (e.g. notification_log goes outside accordion).
-        def _render_project_info():
+        def _render_data_analysis_recipe_info():
+            """Info panel: shows the info: mapping of the open data analysis recipe as the author wrote it."""
+            from app.modules.data_analysis_recipe_info import info_lines
+            try:
+                lines = info_lines((active_cfg().raw_config or {}).get("info"))
+            except Exception:
+                lines = []
+            if lines:
+                body = [
+                    ui.div(
+                        ui.tags.small(label, class_="text-muted"),
+                        *([ui.tags.small(": " + value)] if value is not None else []),
+                        style=f"margin-left:{depth * 12}px;",
+                        class_="data-analysis-recipe-info-line",
+                    )
+                    for depth, label, value in lines
+                ]
+            else:
+                body = [ui.tags.small("No info in this data analysis recipe.", class_="text-muted")]
             return ui.accordion_panel(
-                "Project",
-                ui.div(
-                    ui.tags.small(
-                        bootloader.deployment_name,
-                        class_="text-muted d-block"
-                    ),
-                    class_="p-1"
-                ),
+                "Info",
+                ui.div(*body, class_="p-1"),
                 icon=ui.tags.i(class_="bi bi-info-circle-fill")
             )
 
@@ -1469,9 +1481,9 @@ def define_server(input, output, session, *,
             return ui.accordion_panel(
                 "Data analysis recipe Choice",
                 ui.div(
-                    ui.input_select("data_analysis_recipe_id", "Project Selection",
-                                    choices=recipe_choices,
-                                    selected=_current_recipe),
+                    ui.input_select("data_analysis_recipe_id", "Data analysis recipe",
+                                    choices=data_analysis_recipe_choices,
+                                    selected=_current_data_analysis_recipe),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")
@@ -1518,7 +1530,7 @@ def define_server(input, output, session, *,
             )
 
         _home_panel_renderers = {
-            "project_info":       _render_project_info,
+            "data_analysis_recipe_info":       _render_data_analysis_recipe_info,
             "deployment_info":    _render_deployment_info,
             "data_analysis_recipe_choice":    _render_data_analysis_recipe_choice,
             "filters":            _render_filters,
@@ -1931,7 +1943,7 @@ def define_server(input, output, session, *,
         session_pipeline_errors=session_pipeline_errors,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
-        view_keys=_recipe_keys,
+        view_keys=_data_analysis_recipe_keys,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

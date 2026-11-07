@@ -8,7 +8,7 @@ When interacting with massive biological or economical datasets, certain operati
 **You cannot permanently break this application.**
 SPARMVET operates entirely on "copies" of your audit trails and data during your session. The worst-case scenario if you make a massive mistake in the T3 sandbox is that the page freezes. If that happens:
 1. Reload your browser page.
-2. Select your project again from the sidebar.
+2. Select your data analysis recipe again from the sidebar.
 You will never delete or corrupt the system's baseline data.
 
 ---
@@ -50,7 +50,7 @@ Understanding these mechanics ensures you spend less time panicking, and more ti
 
 ## 4. The Unified Home Theater (v2.0 — Phase 21)
 
-SPARMVET's main results area — the **Home** view — is organized entirely by your project's data analysis recipe. There is no separate "Analysis Theater" mode; all analytical navigation happens in one place.
+SPARMVET's main results area — the **Home** view — is organized entirely by your data analysis recipe's data analysis recipe. There is no separate "Analysis Theater" mode; all analytical navigation happens in one place.
 
 ### How tabs are built
 
@@ -115,7 +115,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 |----------|-----------------|
 | `plots/` | All plots as SVG (web) or PNG ≥600 DPI (publication) |
 | `data/` | T1 as TSV; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view |
-| `data_analysis_recipes/` | The YAML wrangling/assembly files for your project |
+| `data_analysis_recipes/` | The YAML wrangling/assembly files for your data analysis recipe |
 | `report.qmd` | A Quarto source file — run `quarto render report.qmd` to produce an HTML or PDF report |
 | `T3_data_<plot>.tsv` | The data of a plot with the steps you sent to audit (only for plots that have such steps) |
 | `README.txt` | Summary of what is in the bundle |

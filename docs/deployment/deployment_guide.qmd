@@ -76,7 +76,7 @@ locations:
 
 irida:
   base_url: "https://irida.myinstitution.ca"
-  project_id: 42
+  data_analysis_recipe_id: 42
   auth: oauth2          # token is read from SPARMVET_IRIDA_TOKEN env var — never put it in this file
   local_cache: "/tmp/sparmvet_irida_cache/inputs/"
 ```
@@ -175,13 +175,13 @@ services:
       - ./deployments:/deployments:ro
 ```
 
-**One deployment, multiple pipelines** (single entry point, data analysis recipe selector shown): Set `default_data_analysis_recipe` absent from the deployment, point `locations.data_analysis_recipes` at a directory containing multiple pipeline data analysis recipes, and assign an app features that allows data analysis recipe selection (≥ `project-independent`). Scientists pick their pipeline from a dropdown in the UI.
+**One deployment, multiple pipelines** (single entry point, data analysis recipe selector shown): Set `default_data_analysis_recipe` absent from the deployment, point `locations.data_analysis_recipes` at a directory containing multiple pipeline data analysis recipes, and assign an app features that allows data analysis recipe selection (≥ `standalone`). Scientists pick their pipeline from a dropdown in the UI.
 
 ## 3.4 Local Machine
 
 For a developer or a scientist running the app locally with admin privileges:
 
-**Option A — project fallback (developer):**
+**Option A — data analysis recipe fallback (developer):**
 No setup needed. The app uses `config/deployment/local/local.yaml` from the repository. This is the current development mode.
 
 **Option B — app features:**
@@ -229,7 +229,7 @@ Two settings in the deployment control what the user sees:
 | `pipeline-static` | End-user, fixed pipeline | View plots, export bundle. No wrangling. |
 | `pipeline-exploration-simple` | Scientist exploring results | Add filters, view tiers. No T3 sandbox. |
 | `pipeline-exploration-advanced` | Power user | Full T3 sandbox, comparison mode, audit trail. |
-| `project-independent` | Researcher managing their own data | Can select data analysis recipes, import data. |
+| `standalone` | Researcher managing their own data | Can select data analysis recipes, import data. |
 | `developer` | Admin / developer | All features, gallery browser, dev studio. |
 
 **`default_data_analysis_recipe`** — controls *which pipeline/dataset* is loaded:

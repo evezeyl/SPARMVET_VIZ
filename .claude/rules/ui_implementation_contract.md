@@ -183,20 +183,20 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 
 ### 7.2 Export Results Bundle (Export Panel — Left Sidebar, ADR-047, updated 2026-05-04)
 
-**Panel:** `Export` accordion panel (renamed from "Global Project Export" in export redesign 2026-05-04). Gate: `export_enabled`.
+**Panel:** `Export` accordion panel (renamed from "Global Export" in export redesign 2026-05-04). Gate: `export_enabled`.
 
 **Implementation:** `@render.download export_bundle_download` in `app/handlers/export_handlers.py`.
 
 **UI Controls:**
 - `export_bundle_label` (text, sanitized — label is "Bundle label / name", not "Your name"). Sanitized: `re.sub(r"[^A-Za-z0-9_-]", "_", raw)[:40]`.
 - `plot_format` selector: **PNG** / **SVG** / **PDF**.
-- **3-way scope toggle** `export_scope`: `global` (all plots in project) / `group` (all plots in active group tab) / `plot` (active plot sub-tab only). "Active group" and "Active plot" options are shown with reduced opacity when no plot tab is active.
+- **3-way scope toggle** `export_scope`: `global` (all plots of the data analysis recipe) / `group` (all plots in active group tab) / `plot` (active plot sub-tab only). "Active group" and "Active plot" options are shown with reduced opacity when no plot tab is active.
 - Filter warning shown when `applied_filters` non-empty.
 - Download button: `📦 Export Bundle`.
 
 **Export rules (2026-11-06, issue #10, EXPORT-KEYCHECK-1, EXPORT-T3-1) — science must be correct. The export holds the Result plus what the user validated with an audit step; exploration is never exported.**
 
-1. **Key check.** The export compares the keys the open view was built on (`_project_keys`) with the keys computed now. If the data analysis recipe file set or the data changed, nothing is exported: an error notification explains it and the download holds only `EXPORT_NOT_CREATED.txt` (what changed, what it means, reload with F5, check, export again, both sets of keys). Never export silently from different files than the user looked at.
+1. **Key check.** The export compares the keys the open view was built on (`_data_analysis_recipe_keys`) with the keys computed now. If the data analysis recipe file set or the data changed, nothing is exported: an error notification explains it and the download holds only `EXPORT_NOT_CREATED.txt` (what changed, what it means, reload with F5, check, export again, both sets of keys). Never export silently from different files than the user looked at.
 2. **Data source.** T1, T2 and the plots are read through `DataOrchestrator.materialize_tier1/2` with the session keys (key-checked). Plots are rendered from T2 (plots never show T1, ADR-086), the same base as HOME. Reusing an anchor by file name is forbidden (ADR-089 point 7).
 3. **Build rule T3 > T2 > T1.** My view data is the stored T2 (T1 when the join has no tier2 steps) plus the plot's filter rows and column drops, built by `export_handlers.audited_frame`, the same steps and order as the HOME data preview.
 4. **The export is the Result plus the audited steps; exploration is never exported** (issue #25, Eve 2026-11-06). Audited T3 steps (`filter_row`, `exclusion_row`, `drop_column`, `aesthetic_override`, committed with a reason, for example to remove poor quality data) are the user's decision for the publication: they are ALWAYS applied to the exported plot of that plot and to its `T3_data_<plot>.tsv`, from any view, and recorded (T3 trail in the report, `data_analysis_recipes/t3_steps.yaml`). Exploration filters (`applied_filters`: what the user tries in T1, T2 or My view to understand the data, not sent to audit) are a sandbox and are NEVER exported, from any view; there is no checkbox to include them and no `FILTERS.txt`. A reminder tells the user so: under the Filters buttons in My view ("Sandbox: only steps sent to audit are exported.") and in the Export panel. The pure rule is `export_handlers.plot_content_rules(audited_rows, audited_drops)`: exploration is not even an argument.
@@ -215,11 +215,11 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 | `data/<ds>_T1.tsv` | T1 (Assembled) — always |
 | `data/<ds>_T2.tsv` | T2 (Analysis-ready) — only when the join has tier2 steps; read from the stored Tier 2 parquet (issue #10) |
 | `<ds>/T3_data_<plot>.tsv` | Audited data of a plot (T3): stored T2 (T1 without tier2 steps) plus that plot's AUDITED filters and drops. Written for every plot with audited steps, never for others; no checkbox (EXPORT-T3-1, issue #25, 2026-11-06) |
-| `data_analysis_recipes/<proj>/` | All YAML wrangling/join/plot files for the active project |
+| `data_analysis_recipes/<proj>/` | All YAML wrangling/join/plot files for the active data analysis recipe |
 | ~~`FILTERS.txt`~~ | Removed 2026-11-06: exploration filters are never exported, so there is no filter trace to write; the audit trail is `data_analysis_recipes/t3_steps.yaml` and the T3 Audit Trail of `report.qmd` |
 | `data_analysis_recipes/t3_steps.yaml` | T3 committed nodes (active only) — auto-included when T3 has committed nodes and `t3_sandbox_enabled` |
 | `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section, **T3 Audit Trail** section (per-plot table of Step/Action/Details/Justification when T3 has active nodes) |
-| `README.txt` | Bundle data analysis recipe: timestamp, project, app features, scope, tiers, metadata source filename, counts |
+| `README.txt` | Bundle data analysis recipe: timestamp, data analysis recipe, app features, scope, tiers, metadata source filename, counts |
 
 **T3 Audit Trail in report.qmd:** Auto-generated `## T3 Audit Trail` section with one table per plot (Step / Action / Details / Justification). Deactivated nodes excluded. Only present when `t3_sandbox_enabled` and committed active nodes exist.
 
@@ -314,7 +314,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **Panel:** `Data Import` accordion panel in the left sidebar. Multi-file ingestion section is nested inside when `import_helper_enabled: true`.
 
-**App features gate:** `import_helper_enabled: true` in app features file. Available to ≥ `project-independent` and `developer`. Hidden for lower app features files. Also deactivatable at the deployment level (the deployment's `app_features_override` sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
+**App features gate:** `import_helper_enabled: true` in app features file. Available to ≥ `standalone` and `developer`. Hidden for lower app features files. Also deactivatable at the deployment level (the deployment's `app_features_override` sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
 
 **Supported ingestion types:**
 - **Raw data** — TSV/CSV instrument output
@@ -360,7 +360,7 @@ workspaces:
     left_sidebar:
       visible: true
       panels:
-        - type: project_info
+        - type: data_analysis_recipe_info
         - type: data_analysis_recipe_choice
         - type: filters
         - type: data_import
@@ -382,7 +382,7 @@ workspaces:
     left_sidebar:
       visible: true
       panels:
-        - type: project_info
+        - type: data_analysis_recipe_info
     right_sidebar:
       visible: false
       panels: []
@@ -393,7 +393,7 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 ### 11c. Visibility and structural exclusion
 
 - `visible: false` — excludes the sidebar container from the DOM (not CSS-hidden).
-- `visible: true` with no active panels — renders an empty sidebar container (acceptable for `project_info`-only configs).
+- `visible: true` with no active panels — renders an empty sidebar container (acceptable for `data_analysis_recipe_info`-only configs).
 - Auto-hide: if `visible` is unset and all panels are skipped after flag-gating, sidebar is treated as hidden.
 - **Right sidebar structural exclusion** (previously an app features name string comparison in `ui.py` — ADR-053 violation, task 25-O) is now driven by `bootloader.get_sidebar_config("home", "right").visible`. No app features name checks.
 
@@ -401,7 +401,7 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 
 | Type | Gate flag | Workspace | Description |
 |---|---|---|---|
-| `project_info` | — | any | Data analysis recipe title, description, dataset summary |
+| `data_analysis_recipe_info` | — | any | Data analysis recipe title, description, dataset summary |
 | `deployment_info` | — | any | Branding: logo, contact, institution (params in template) |
 | `data_analysis_recipe_choice` | `data_analysis_recipe_selector.visible` | home | Data analysis recipe selector dropdown |
 | `filters` | `interactivity_enabled` | home | Row filter builder (§8) |

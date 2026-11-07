@@ -75,12 +75,12 @@ Every export — regardless of configuration — includes a complete provenance 
 SPARMVET_APP_FEATURES=pipeline-exploration-simple SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy .venv/bin/python -m shiny run app/src/main.py
 ```
 
-Available app features: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom app features files can be created in `config/app_features/`. A static page (`pipeline-static`, `pipeline-exploration-simple`) hides the data analysis recipe selector, so it must name its data analysis recipe: `SPARMVET_DATA_ANALYSIS_RECIPE=<name>` or `default_data_analysis_recipe` in the deployment.
+Available app features: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `standalone`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom app features files can be created in `config/app_features/`. A static page (`pipeline-static`, `pipeline-exploration-simple`) hides the data analysis recipe selector, so it must name its data analysis recipe: `SPARMVET_DATA_ANALYSIS_RECIPE=<name>` or `default_data_analysis_recipe` in the deployment.
 
 **Sidebar layout is configurable per app features and per workspace** (Home, Blueprint, Gallery, Test Lab). Each app features file declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_app_features.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
 
-**Institutional / project color palettes** can be defined in `config/palettes.yaml` (optional). Named palettes defined there are available in:
-- The BLUEPRINT IDE color widget ("Project palette" source), and
+**institutional (deployment) color palettes** can be defined in `config/palettes.yaml` (optional). Named palettes defined there are available in:
+- The BLUEPRINT IDE color widget ("Deployment palette" source), and
 - Data analysis recipe `plot_defaults: palette: <name>` for automatic fill/colour scale injection at render time.
 
 The built-in `sparmvet_brand` palette is always available even without this file. See [Data analysis recipe Structure Appendix](./docs/appendix/data_analysis_recipe_structure.yaml) for the format and resolution rules (ADR-081).

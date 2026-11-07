@@ -1,10 +1,9 @@
-# PROJECT DATA ANALYSIS RECIPE TEMPLATE (ADR-003 / ADR-014)
-id: "example_project_id"
-type: "project"
+# UNIVERSAL DATA ANALYSIS RECIPE TEMPLATE (ADR-003 / ADR-014)
+id: "example_data_analysis_recipe_id"
 info:
-  display_name: "Universal Project Template"
+  display_name: "Universal Template"
   category: "Template"
-  description: "A data-agnostic project data analysis recipe with optional metadata."
+  description: "A data-agnostic data analysis recipe with optional metadata."
   version: "1.0"
 
 # SECTION 1: DATA SCHEMAS
@@ -34,7 +33,7 @@ additional_datasets_schemas: {}
 # SECTION 4: COLLECTIONS (ASSEMBLY)
 joins:
   Main_Collection:
-    description: "Default assembly for the project."
+    description: "Default assembly for the data analysis recipe."
     ingredients:
       - dataset_id: "Primary_Dataset"
     steps: [] # Identity fallback (Identity Mode)

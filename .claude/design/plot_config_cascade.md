@@ -22,7 +22,7 @@ This document defines a single five-tier priority cascade resolved at one merge 
 |---|---|---|---|
 | `viz_factory.py:79–80` | `_standardize_config(raw_plot_config, data_analysis_recipe_defaults)` | `plot_defaults` keys not present in spec | spec wins; defaults fill gaps |
 | `viz_factory.py:282–287` | `_auto_adjust_axis_labels(p, ...)` | Auto-rotation + auto-size for axis text | runs unless an `element_text` layer for that axis is in the data analysis recipe |
-| `viz_factory.py:289–302` | Palette injection | `plot_config["palette"]` resolved against built-in + project palette registry | only if the corresponding scale layer is absent |
+| `viz_factory.py:289–302` | Palette injection | `plot_config["palette"]` resolved against built-in + deployment palette registry | only if the corresponding scale layer is absent |
 
 There is **no separate optimisation layer**; `_auto_adjust_axis_labels` is the sole optimisation, baked into the render flow.
 
@@ -38,7 +38,7 @@ This is the load-bearing gap that motivates this design — without the cascade,
 
 ### 1c. `plot_defaults` schema today
 
-Sole use across project + gallery data analysis recipes (grep confirmed):
+Sole use across data analysis recipes and gallery data analysis recipes (grep confirmed):
 
 ```yaml
 plot_defaults:

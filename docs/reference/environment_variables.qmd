@@ -82,7 +82,7 @@ The app features config file can be placed **anywhere** — there is no filename
 
 ```bash
 # 1. Copy any existing template as a starting point
-cp config/app_features/project-independent.yaml /my/configs/amr_pipeline_app_features.yaml
+cp config/app_features/standalone.yaml /my/configs/amr_pipeline_app_features.yaml
 
 # 2. Edit display_name, app_features_id, and feature flags in the new file
 # 3. Launch with the path
@@ -118,7 +118,7 @@ export PYTHONPATH=$PYTHONPATH:.
 
 # Using short names (a file name in config/app_features/, without .yaml)
 SPARMVET_APP_FEATURES=developer            ./.venv/bin/python -m shiny run app/src/main.py --port 8001
-SPARMVET_APP_FEATURES=project-independent  ./.venv/bin/python -m shiny run app/src/main.py --port 8001
+SPARMVET_APP_FEATURES=standalone  ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 SPARMVET_APP_FEATURES=pipeline-static SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 
 # Using a file path (recommended for custom/production app features files)

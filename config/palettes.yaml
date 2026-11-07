@@ -7,7 +7,7 @@
 #   plot_defaults:
 #     palette: nvi_official
 #
-# Usage in the BLUEPRINT color widget: select "Project palette" → choose name.
+# Usage in the BLUEPRINT color widget: select "Deployment palette" → choose name.
 #
 # To add a palette: append a new key below. Names must be unique.
 # Palettes are loaded at startup by Bootloader.get_palettes().

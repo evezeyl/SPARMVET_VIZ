@@ -1,5 +1,4 @@
 id: VIGAS_VirulenceFinder
-type: pipeline
 info:
   display_name: Virulence Finder
   category: Edited

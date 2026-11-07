@@ -1,7 +1,7 @@
 # App features Traceability Matrix (Component Masking)
 
 **Objective**: Systematic verification of UI stability, functional parity, and app features masking, superseding the UI Contract traceability.
-**Last updated:** 2026-05-04 (export redesign: Export panel replaces Global Project Export + Single Graph Export; scope toggle added; T3 audit trail auto-included in bundle)
+**Last updated:** 2026-05-04 (export redesign: Export panel replaces Global Export + Single Graph Export; scope toggle added; T3 audit trail auto-included in bundle)
 
 ## App features Capability Matrix
 
@@ -10,7 +10,7 @@
 | `pipeline-static` | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | false | false |
 | `pipeline-exploration-simple` | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | false | false |
 | `pipeline-exploration-advanced` | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | true | true |
-| `project-independent` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | true | true |
+| `standalone` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | true | true |
 | `developer` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | true | true |
 | `qa` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | true | true |
 | `demo-vetinst` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | false | false |
@@ -28,7 +28,7 @@ Single Graph Export accordion removed in 2026-05-04 export redesign — supersed
 
 ## Left Sidebar — Accordion Panel Visibility
 
-| Accordion Panel | pipeline-static | pipeline-exploration-simple | pipeline-exploration-advanced | project-independent | developer | Gate Flag |
+| Accordion Panel | pipeline-static | pipeline-exploration-simple | pipeline-exploration-advanced | standalone | developer | Gate Flag |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Data analysis recipe Choice** | HIDE (fixed by config) | HIDE (fixed by config) | SHOW | SHOW | SHOW | `data_analysis_recipe_selector.visible` |
 | **Data Import** | SHOW (read-only path display) | SHOW (read-only path display) | SHOW (active selector) | SHOW (active selector) | SHOW (active selector) | always_on; selector gated by testing_mode |
@@ -49,7 +49,7 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 | `pipeline-static` | **Excluded from layout** | Full width |
 | `pipeline-exploration-simple` | **Excluded from layout** | Full width |
 | `pipeline-exploration-advanced` | Visible | Standard (minus 340px) |
-| `project-independent` | Visible | Standard |
+| `standalone` | Visible | Standard |
 | `developer` | Visible | Standard |
 | `qa` | Visible | Standard |
 | `demo-vetinst` | **Excluded from layout** | Full width |
@@ -62,7 +62,7 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 | `pipeline-static` | ❌ | Static message: 'Filters are set by the pipeline configuration' | — |
 | `pipeline-exploration-simple` | ✅ | T1/T2 only — plot updates temporarily, nothing saved | 'Exploration only — filters are not saved and do not modify data permanently' |
 | `pipeline-exploration-advanced` | ✅ | T1/T2 passive exploration + T3 audit | No disclaimer |
-| `project-independent` | ✅ | T1/T2 passive exploration + T3 audit | No disclaimer |
+| `standalone` | ✅ | T1/T2 passive exploration + T3 audit | No disclaimer |
 | `developer` | ✅ | T1/T2 passive exploration + T3 audit | No disclaimer |
 | `demo-vetinst` | ❌ | Read-only view — no filters | — |
 | `web-demo` | ✅ | T1/T2 only — plot updates temporarily, nothing saved | 'Exploration only — filters are not saved and do not modify data permanently' |
@@ -75,7 +75,7 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 
 | UI Category | Element ID | Functionality / Rule |
 | :--- | :--- | :--- |
-| **Navigation** | `project_id` (→ Data analysis recipe Choice) | Data analysis recipe discovery and loading. Hidden for pipeline app features files — data analysis recipe fixed by config. |
+| **Navigation** | `data_analysis_recipe_id` (→ Data analysis recipe Choice) | Data analysis recipe discovery and loading. Hidden for pipeline app features files — data analysis recipe fixed by config. |
 | **Tier Toggle** | `tier_toggle` | T1 / T2 / T3. T3 hidden for `pipeline-static` (no interactivity) and `pipeline-exploration-simple` (passive exploration only — no T3 audit). |
 | **Comparison Mode** | `comparison_mode` | Toggle visible for t3_audit app features files only, AND only when tier == T3. Gate on `comparison_mode_enabled` flag. |
 | **Filters** | `sidebar_filters` | Step list-builder row filter UI. In T3: `➜ Audit (N)` promotes rows to per-plot T3 audit stack. In T1/T2: `Apply (N)` commits transient `applied_filters` (passive exploration — plot updates, nothing saved). |

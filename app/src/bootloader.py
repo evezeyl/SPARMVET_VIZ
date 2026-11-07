@@ -168,7 +168,7 @@ class Bootloader:
             )])
         self.set_app_features(self.app_features)
 
-        # 3. Project Authority (Agnostic Discovery)
+        # 3. Data analysis recipes folder (agnostic discovery)
         self.data_analysis_recipes_dir = self.get_location("data_analysis_recipes")
         self.available_data_analysis_recipes = self._discover_data_analysis_recipes()
         self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
@@ -364,7 +364,7 @@ class Bootloader:
         if self.default_data_analysis_recipe_name:
             return self.default_data_analysis_recipe_name
         if not self.available_data_analysis_recipes:
-            raise FileNotFoundError("No projects found in Location 2.")
+            raise FileNotFoundError("No data analysis recipes found in Location 2.")
         return list(self.available_data_analysis_recipes.keys())[0]
 
     def _load_deployment_config(self) -> Dict[str, Any]:
@@ -425,15 +425,19 @@ class Bootloader:
         """
         path = self.app_features_path
         if not path.exists():
+            from app.modules.renamed_keys import RENAMED_APP_FEATURES_NAMES
+            renamed = RENAMED_APP_FEATURES_NAMES.get(path.stem)
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"App features file not found: {path}",
+                problem=(f"App features file not found: {path}"
+                         + (f" ('{path.stem}' was renamed to '{renamed}')" if renamed else "")),
                 location=str(path),
                 fix=(
+                    (f"Use '{renamed}' in SPARMVET_APP_FEATURES or default_app_features. " if renamed else "") +
                     f"Ensure the app features file exists at {path}. "
                     f"Valid names (files in config/app_features/): "
                     f"pipeline-static, pipeline-exploration-simple, pipeline-exploration-advanced, "
-                    f"project-independent, developer, qa. "
+                    f"standalone, developer, qa. "
                     f"Check SPARMVET_APP_FEATURES env var or default_app_features in the deployment."
                 ),
                 who="operator",
@@ -608,7 +612,7 @@ class Bootloader:
         """Load deployment palette registry from config/palettes.yaml (BP-COLOR-2).
 
         Returns {name: [hex, ...]} merged dict: built-in SPARMVET palettes plus any
-        project-defined palettes from config/palettes.yaml. Project palettes override
+        deployment-defined palettes from config/palettes.yaml. Deployment palettes override
         built-ins when names collide (intentional — institutions can rebrand defaults).
 
         Never returns an empty dict — the built-in 'sparmvet_brand' palette is always
@@ -620,7 +624,7 @@ class Bootloader:
         if hasattr(self, "_palettes_cache"):
             return self._palettes_cache
 
-        # Always start from built-ins — project palettes are merged on top
+        # Always start from built-ins — deployment palettes are merged on top
         result = dict(self._BUILTIN_PALETTES)
 
         palette_path = Path("config/palettes.yaml")
@@ -629,7 +633,7 @@ class Bootloader:
             print(
                 f"[Bootloader] INFO: no deployment palette file at "
                 f"'{palette_path}'. Using built-in palettes only "
-                f"({list(result.keys())}). To add project palettes, create "
+                f"({list(result.keys())}). To add deployment palettes, create "
                 f"config/palettes.yaml — see the file header for the required format."
             )
         else:
@@ -641,8 +645,8 @@ class Bootloader:
                         f"Expected a YAML mapping at the top level, got {type(raw).__name__}. "
                         f"The file must start with 'palettes:' and contain named palette entries."
                     )
-                project_palettes = raw.get("palettes")
-                if not isinstance(project_palettes, dict):
+                deployment_palettes = raw.get("palettes")
+                if not isinstance(deployment_palettes, dict):
                     raise ValueError(
                         f"'palettes:' key is missing or not a mapping. "
                         f"Each palette must be a named list of hex strings, e.g.:\n"
@@ -653,7 +657,7 @@ class Bootloader:
                     )
                 # Validate individual entries and warn on bad ones (don't discard the whole file)
                 loaded_count = 0
-                for name, colors in project_palettes.items():
+                for name, colors in deployment_palettes.items():
                     if not isinstance(colors, list) or not colors:
                         print(
                             f"[Bootloader] WARNING: palette '{name}' in "
@@ -664,15 +668,15 @@ class Bootloader:
                     result[name] = [str(c) for c in colors]
                     loaded_count += 1
                 print(
-                    f"[Bootloader] Loaded {loaded_count} project palette(s) from "
-                    f"'{palette_path}': {[k for k in project_palettes if k in result]}"
+                    f"[Bootloader] Loaded {loaded_count} deployment palette(s) from "
+                    f"'{palette_path}': {[k for k in deployment_palettes if k in result]}"
                 )
             except Exception as exc:
                 print(
                     f"[Bootloader] WARNING: could not load palette registry from "
                     f"'{palette_path.resolve()}': {exc}. "
                     f"Falling back to built-in palettes. Fix the file and restart to "
-                    f"activate project palettes."
+                    f"activate deployment palettes."
                 )
                 # result already contains built-ins — no data loss
 

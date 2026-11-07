@@ -23,7 +23,7 @@ Before you submit, your Data analysis recipe must contain specific metadata to e
 
 ### Submission Process
 1. Use the SPARMVET Dashboard's **Upload Data/DataAnalysisRecipes** section.
-2. Upload your finished project.
+2. Upload your finished data analysis recipe.
 3. An administrator or backend automation will validate that the metadata rules are followed, and append your visualization to the global `VizFactory (viz_factory.py)` library, making it permanently accessible to the entire organization in the gallery tab!
 
 ---

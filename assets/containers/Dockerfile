@@ -17,7 +17,7 @@
 #
 # --- Run (filesystem connector, developer app features) ---
 #   docker run --rm -p 8001:8001 \
-#     -v /data/my_project:/data \
+#     -v /data/my_data_analysis_recipe:/data \
 #     -e SPARMVET_DEPLOYMENT=/data/deployment.yaml \
 #     sparmvet-viz:latest
 #

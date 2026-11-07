@@ -13,7 +13,7 @@ When a **transformation node** is selected, the Surgeon panel shows the node's w
 
 ### Right Sidebar — Plot Defaults
 When the **data analysis recipe root** is selected (no sub-node active), the Plot Defaults form lets you set global style defaults for all plots in this data analysis recipe:
-- **Palette** — named color palette (project or matplotlib)
+- **Palette** — named color palette (deployment or matplotlib)
 - **Theme** — plotnine theme (theme_light, theme_bw, etc.)
 - **Font family** — default axis/label font
 - **Facet spacing** — space between facet panels (0–1)

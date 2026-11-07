@@ -50,7 +50,7 @@ Subset of the 9 tasks listed in ADR-076 §Consequences. Order matters — each g
 | Order | Task ID | Effort | Done when |
 |---|---|---|---|
 | 1 | `BP-AGENT-FLAG-1` | `[haiku/low]` | Flag in 8 templates, `developer`+`qa` only true. AppFeaturesValidator Rule 7 fatal cascade verified. |
-| 2 | `BP-AGENT-1` (scoped) | `[sonnet/high]` | `AgentAdapter` protocol + `ClaudeCliAdapter` (with §11 isolation + auth probe) + `DisabledAdapter`. No `ClaudeApiAdapter`/`LocalModelAdapter` stubs. Headless test: drive a session via Python script with a fake project dir. |
+| 2 | `BP-AGENT-1` (scoped) | `[sonnet/high]` | `AgentAdapter` protocol + `ClaudeCliAdapter` (with §11 isolation + auth probe) + `DisabledAdapter`. No `ClaudeApiAdapter`/`LocalModelAdapter` stubs. Headless test: drive a session via Python script with a fake data analysis recipe dir. |
 | 3 | `BP-AGENT-PARSER-1` | `[sonnet/medium]` | Fenced-block extractor, JSON validator, dispatch table for the three MVP tools. Unit tests for happy path + malformed marker + invalid JSON. |
 | 4 | `BP-AGENT-TOOLS-1` (scoped) | `[sonnet/medium]` | `get_available_actions`, `get_available_components`, `get_field_contract` only. Each wraps an existing `data_analysis_recipe_navigator` / registry call. Unit tests against the live ST22 data analysis recipe. |
 | 5 | `BP-AGENT-INSTRUCT-1` (scoped) | `[sonnet/medium]` | `blueprint_default.md` — registry summary + structure rules + tool-call format + explicit *no propose_data_analysis_recipe_diff* instruction. Read by adapter at session start. |

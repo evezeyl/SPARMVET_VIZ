@@ -203,7 +203,7 @@ class ClaudeCliAdapter:
         session_dir = self.sessions_root / session_id
         session_dir.mkdir(parents=True, exist_ok=True)
 
-        # .cwd-marker anchors a separate Claude Code project context (ADR-076 §11)
+        # .cwd-marker anchors a separate Claude Code conversation context (ADR-076 §11)
         (session_dir / ".cwd-marker").touch()
 
         meta = {

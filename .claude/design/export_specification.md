@@ -8,17 +8,17 @@
 ## 1. Export UI — Single accordion panel
 
 One accordion panel labelled **"Export"** replaces the previous two-panel layout
-(`Global Project Export` + `Single Graph Export`).
+(`Global Export` + `Single Graph Export`).
 
 ### 1.1 Scope toggle (3-way)
 
 ```
-[ Global project ●  |  Active group ○  |  Active plot ○ ]
+[ All plots ●  |  Active group ○  |  Active plot ○ ]
 ```
 
 | Option | Scope | Tooltip shown on hover |
 |---|---|---|
-| **Global project** | All plots, all data, full step lists | "Export everything in the active project" |
+| **All plots** | All plots, all data, full step lists | "Export everything in the active data analysis recipe" |
 | **Active group** | All plots in the group the current tab belongs to; lineage backtraced per plot | "Export all plots in the current group (e.g., all Quality Control plots)" |
 | **Active plot** | The single plot currently displayed; its lineage backtraced | "Export only the plot you are currently viewing" |
 
@@ -44,7 +44,7 @@ or the data analysis recipe has no `analysis_groups` (only a top-level `plots:` 
 **App features gate:**
 - Toggle only rendered when app features has **both** `export_enabled`.
 - When only `export_enabled`: no toggle; button always operates in Global mode.
-- Default: **Global project**.
+- Default: **All plots**.
 
 ### 1.2 Presentation controls (not content choices)
 
@@ -68,7 +68,7 @@ section 3 are met.
 
 ---
 
-## 2. Global project export — bundle contents
+## 2. All-plots export — bundle contents
 
 ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 
@@ -81,7 +81,7 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 | `data_analysis_recipes/<data_analysis_recipe_files>` | Always | All YAML files from active data analysis recipe directory |
 | `data_analysis_recipes/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
 | `report.<fmt>` | Always | Quarto-rendered report; includes T3 audit section when applicable (see §3) |
-| `README.txt` | Always | Timestamp, project, app features, preset, tiers, hash values (all 3 hashes) |
+| `README.txt` | Always | Timestamp, data analysis recipe, app features, preset, tiers, hash values (all 3 hashes) |
 | `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`data_analysis_recipes/t3_steps.yaml`, T3 Audit Trail in `report.qmd`) is the trace |
 
 ---

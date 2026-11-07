@@ -1,6 +1,6 @@
 """A real export download from the running app (EXPORT-CHECK-1, partly automated).
 
-Opens the app (qa app features), loads the dummy project, clicks the export button, unzips the bundle
+Opens the app (qa app features), loads the dummy data analysis recipe, clicks the export button, unzips the bundle
 and checks what the user is promised: the keys are recorded, the data files exist, and nothing
 is refused. The refusal path (a file changed after the view was opened) is tested here too, by
 changing a data file on disk after the view is open and restoring it afterwards.
