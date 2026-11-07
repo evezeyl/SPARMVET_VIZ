@@ -1,6 +1,6 @@
-Status: PROCESSED 2026-11-07 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (clean run)
+Status: PROCESSED 2026-11-07 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (clean re-run after end-of-session changes)
 # Audit Report: Data Analysis Recipe Structure Integrity
-Generated: 2026-11-07T22:10:15
+Generated: 2026-11-07T22:29:58
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Assembler: libs/transformer/tests/debug_assembler.py
 Scratch output: tmpAI/audit_data_analysis_recipe_integrity

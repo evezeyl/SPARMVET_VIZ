@@ -1,6 +1,6 @@
-Status: PROCESSED 2026-11-07 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (clean run)
+Status: PROCESSED 2026-11-07 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (clean re-run after end-of-session changes)
 # Audit Report: Data Analysis Recipe Coherence
-Generated: 2026-11-07T22:10:16
+Generated: 2026-11-07T22:29:58
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-013 (Data analysis recipe Data Contract), ADR-041 (Unified Data analysis recipe Standard), rules_data_analysis_recipe_structure.md §7
 

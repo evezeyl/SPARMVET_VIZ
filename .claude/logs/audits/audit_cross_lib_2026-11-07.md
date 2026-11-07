@@ -1,6 +1,6 @@
-Status: PROCESSED 2026-11-07 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (clean run)
+Status: PROCESSED 2026-11-07 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (clean re-run after end-of-session changes)
 # Audit Report: ADR-011 Cross-Lib Violation Scan
-Generated: 2026-11-07T22:10:12
+Generated: 2026-11-07T22:29:54
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-011 / ADR-016 — Two-Tier Dependency Model
 
