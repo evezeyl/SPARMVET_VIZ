@@ -290,6 +290,15 @@ class TestPhase25Panels:
         accordion = page.locator("#nav_accordion")
         expect(accordion.get_by_text("Data Import")).to_be_visible()
 
+    def test_info_panel_shows_the_info_block_of_the_open_data_analysis_recipe(self, page: Page, shiny_app: ShinyAppProc):
+        """The Info panel lists what is written under info: of the open data analysis recipe, and opening
+        a data analysis recipe does not rebuild the sidebar (the Filters and Export panels keep working)."""
+        _load_data_analysis_recipe(page, shiny_app.url)
+        accordion = page.locator("#nav_accordion")
+        accordion.get_by_text("Info", exact=True).first.click()
+        expect(page.locator("#data_analysis_recipe_info_ui")).to_contain_text("ST22 Dummy Dataset")
+        expect(page.locator("#data_analysis_recipe_info_ui")).to_contain_text("version")
+
     def test_global_export_panel_visible(self, page: Page, shiny_app: ShinyAppProc):
         """Export accordion panel is always present (renamed from 'Global Export' in export redesign 2026-05-04)."""
         page.goto(shiny_app.url)

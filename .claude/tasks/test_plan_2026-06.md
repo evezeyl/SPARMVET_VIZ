@@ -188,6 +188,8 @@ Most of this is already checked by automatic tests (`app/tests/test_bootloader_l
 - [ ] CFG-16 — `~` in a deployment folder: copy `config/deployment/local/local.yaml`, set `cache: "~/sparmvet_test/cache"`, start with `SPARMVET_DEPLOYMENT=<copy>`: the folder is created under your home. Then write `${NOT_SET}/x` instead: the app stops and names `NOT_SET`.
 - [ ] CFG-17 — Session panel with an old session (one written before the rename; your `tmp/UI_TEST` has some): it is listed with a red message and the conversion command, not hidden. After `python assets/scripts/migrate_config_vocabulary.py --sessions tmp/UI_TEST/user --apply` it restores normally.
 - [ ] CFG-18 — Labels in the user interface read well: the left panel says "Data analysis recipe" (not "Manifest"), the gallery says "Example" (not "Recipe"), the audit panel says audit steps. Note any awkward wording (`[~]`). <!-- audit:allow-old-word -->
+- [ ] CFG-19 — The "Info" panel (top of the left panel) shows what is written under `info:` of the open data analysis recipe (title, subtitle, description, version). Open `1_test_data_ST22_dummy`, then `retest_tier2`: the panel changes with the recipe, and the Filters and Export panels keep working after the switch. Add a line such as `contact: x` under `info:` of a copy: it shows without any code change. <!-- audit:allow-old-word -->
+- [ ] CFG-20 — The dropdown is labelled "Data analysis recipe"; no screen says "Project" for it. The app features name is `standalone` (not `project-independent`). The colour widget in BLUEPRINT says "Deployment palette". <!-- audit:allow-old-word -->
 
 ## 3. TEST_LAB (LAB) — **new in Phase 34, highest priority**
 

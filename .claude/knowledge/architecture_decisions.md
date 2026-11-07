@@ -4327,3 +4327,17 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 - Kept on purpose, with a phrase in the audit: the vendored assets list (`VENDOR_MANIFEST.md`), Posit Connect's `manifest.json`, `AMR_Profile_Joint` and other biology words.
 - Not done here (own tasks): the launcher (open point 2), CONFIG-RECIPES-WRITE-1, CONFIG-APP-RESOURCES-1, CONFIG-CACHE-LOCATION-1, CONFIG-AGENT-BACKENDS-1, CONFIG-IRIDA-CHECK-1.
 
+
+
+### ADR-091 follow-up: the word "project" (2026-11-07, issue evezeyl/SPARMVET_VIZ#29)
+
+"Project" was the generic word that replaced "species" (Terminology, ADR-003/ADR-029b). Today it was a second name for the data analysis recipe, and IRIDA and Galaxy have their own project, so it is retired for the recipe.
+
+1. `project_id` and related names become `data_analysis_recipe_id`; the text says "data analysis recipe" or "recipe id" where the identifier is meant.
+2. The sidebar panel `project_info` (it showed only the deployment name) becomes `data_analysis_recipe_info` ("Info"). It shows the `info:` mapping of the open recipe as written: any keys, nested mappings indented, no fixed field list. `info:` is outside the cache keys.
+3. The top-level recipe key `type:` (species, project, pipeline, audit) was read by no code and is removed; `legacy_keys.py` refuses it and the migration script drops it.
+4. "Project palette" becomes "Deployment palette"; the app features name `project-independent` becomes `standalone`.
+5. Kept: IRIDA's project (`irida.project_id`), `pyproject`, `project_root`, "this project" for the repository.
+6. Old names are refused with a "renamed to" message (`renamed_keys.py`); the old-words audit counts "project". Mapping: `.claude/tasks/project_word_mapping.md`.
+
+Lesson: a panel renderer that reads `active_cfg()` re-renders the whole sidebar (shell stability pattern, ADR-045 R4): the Info content is its own output slot.

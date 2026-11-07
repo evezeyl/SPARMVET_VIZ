@@ -1238,6 +1238,32 @@ def define_server(input, output, session, *,
         except Exception:
             return ui.div()
 
+
+    @output
+    @render.ui
+    def data_analysis_recipe_info_ui():
+        """Info of the open data analysis recipe: its info: block as written, nested keys indented.
+        Reads active_cfg only, so a switch of data analysis recipe refreshes this slot and not the sidebar."""
+        from app.modules.data_analysis_recipe_info import info_lines
+        try:
+            lines = info_lines((active_cfg().raw_config or {}).get("info"))
+        except Exception:
+            lines = []
+        if not lines:
+            return ui.div(ui.tags.small("No info in this data analysis recipe.", class_="text-muted"), class_="p-1")
+        return ui.div(
+            *[
+                ui.div(
+                    ui.tags.small(label, class_="text-muted"),
+                    *([ui.tags.small(": " + value)] if value is not None else []),
+                    style=f"margin-left:{depth * 12}px;",
+                    class_="data-analysis-recipe-info-line",
+                )
+                for depth, label, value in lines
+            ],
+            class_="p-1",
+        )
+
     @output
     @render.ui
     def col_drop_audit_btn_ui():
@@ -1439,27 +1465,11 @@ def define_server(input, output, session, *,
         # Panel renderer map: type → callable() → accordion_panel | None
         # None means the panel type was handled (e.g. notification_log goes outside accordion).
         def _render_data_analysis_recipe_info():
-            """Info panel: shows the info: mapping of the open data analysis recipe as the author wrote it."""
-            from app.modules.data_analysis_recipe_info import info_lines
-            try:
-                lines = info_lines((active_cfg().raw_config or {}).get("info"))
-            except Exception:
-                lines = []
-            if lines:
-                body = [
-                    ui.div(
-                        ui.tags.small(label, class_="text-muted"),
-                        *([ui.tags.small(": " + value)] if value is not None else []),
-                        style=f"margin-left:{depth * 12}px;",
-                        class_="data-analysis-recipe-info-line",
-                    )
-                    for depth, label, value in lines
-                ]
-            else:
-                body = [ui.tags.small("No info in this data analysis recipe.", class_="text-muted")]
+            """Info panel shell. Only mounts a slot: the content is its own output so that reading the
+            the data analysis recipe here would not re-render (and destroy) the whole sidebar (shell stability pattern)."""
             return ui.accordion_panel(
                 "Info",
-                ui.div(*body, class_="p-1"),
+                ui.output_ui("data_analysis_recipe_info_ui"),
                 icon=ui.tags.i(class_="bi bi-info-circle-fill")
             )
 
