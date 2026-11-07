@@ -34,6 +34,7 @@ WORDS = {
     "manifest": r"manifest",
     "recipe": r"(?<!data_analysis_)recipe",
     "profile": r"profile",
+    "connector (deployment file)": r"connector_(?:config|path|template|cache)|sparmvet_connector|local_connector",
 }
 
 # History and the two AI agent files keep the old words on purpose (ADR-091 point 7).
@@ -44,6 +45,8 @@ EXCLUDED_PREFIXES = (
     "docs/_freeze/",
     ".claude/logs/",
     ".claude/tasks/archives/",
+    ".claude/baselines/",
+    ".claude/conversations/",
     ".claude/knowledge/architecture_decisions.md",
     ".claude/tasks/config_rename_strategy.md",
     ".claude/rules/dasharch.md",

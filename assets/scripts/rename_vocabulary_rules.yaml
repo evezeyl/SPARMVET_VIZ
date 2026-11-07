@@ -16,6 +16,17 @@ pairs:
   - [profiles, deployments]
   - [profile, deployment]
 
+  # --- connector: the word names two things. Only the deployment-file sense is renamed;
+  #     the adapter library libs/connector (get_connector, FilesystemConnector, IridaConnector,
+  #     GalaxyConnector) keeps its name. ---
+  - [sparmvet_connector, REMOVE_SPARMVET_CONNECTOR]
+  - [load_connector_config, load_deployment_config]
+  - [connector_cache, deployment_cache]
+  - [connector_config, deployment_config]
+  - [connector_path, deployment_path]
+  - [connector_template, deployment_template]
+  - [local_connector, local]
+
   # --- manifest: becomes data analysis recipe ---
   - [join_manifests, joins]
   - [assembly_manifests, joins]
@@ -99,6 +110,7 @@ keep_substrings:
   - profiling
   - personal           # the word personal, not persona
   - null-profile
+  - manifest.json      # Posit Connect (rsconnect) bundle file, an external tool
   - data_analysis_recipe   # the new term itself
   - DataAnalysisRecipe
 

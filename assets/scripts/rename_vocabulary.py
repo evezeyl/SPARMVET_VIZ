@@ -31,8 +31,8 @@ _spec = importlib.util.spec_from_file_location("audit_old_words", HERE / "audit_
 audit = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(audit)
 
-TOKEN = re.compile(r"[A-Za-z0-9_\-]*(?:persona|manifest|recipe|profile)[A-Za-z0-9_\-]*", re.I)
-RETIRED = re.compile(r"persona|manifest|recipe|profile", re.I)
+TOKEN = re.compile(r"[A-Za-z0-9_\-]*(?:persona|manifest|recipe|profile|connector_(?:config|path|template|cache)|sparmvet_connector|local_connector)[A-Za-z0-9_\-]*", re.I)
+RETIRED = re.compile(r"persona|manifest|recipe|profile|connector_(?:config|path|template|cache)|sparmvet_connector", re.I)
 CONTEXT = "STEPS_OR_RECIPE_BY_CONTEXT"
 
 
@@ -78,6 +78,8 @@ def transform(token: str, pairs, keep):
         out = out.replace(tag, val)
     if out == token:
         return out, "keep"
+    if "REMOVE_" in out:
+        return out, "REMOVE"
     if CONTEXT in out:
         return out, "CONTEXT"
     leftover = out
