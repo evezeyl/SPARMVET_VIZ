@@ -83,7 +83,7 @@ ALLOWED_PHRASES = {
     # "project" stays for the repository itself, the Python packaging table and IRIDA's own projects.
     "project": [r"project[_ ]root\w*", r"find_project_root", r"\[project[.\]]\w*", r"this project", r"the project\b(?! data| \w+ data)",
                 r"IRIDA(?:'s)? project\w*", r"irida_project\w*", r"get_irida_project_id", r"project_id: 42",
-                r"project[_ ]conventions", r"project venv",
+                r"project[_ ]conventions", r"project venv", r"research project",
                 r"SPARMVET(?:_VIZ)? project", r"project hygiene", r"project knowledge", r"at project end", r"PROJECT STATE",
                 r"Project Rules", r"project scope", r"short-term project", r"LIMS project", r"scan_project", r"--project-root",
                 r"project-manager", r"FULL PROJECT", r"^project:", r"execute-dir: project", r"metadata_research_project",
