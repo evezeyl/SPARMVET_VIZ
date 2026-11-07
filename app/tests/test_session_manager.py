@@ -369,3 +369,33 @@ def test_set_get_label(sm):
     sm.write_t3_ghost(key, "pid", "a" * 64, "c" * 64, "T3", [], {}, label="original")
     sm.set_session_label(key, "updated")
     assert sm.get_session_label(key) == "updated"
+
+
+# ---------------------------------------------------------------------------
+# Stored formats on disk (characterization for the configuration rename, ADR-091)
+# The key names below are written into saved sessions. The rename changes them and
+# ships a migration; these tests pin today's names so the change is deliberate.
+# ---------------------------------------------------------------------------
+
+def test_stored_assembly_ghost_key_names(sm, manifest_file, source_files):
+    import json
+    msig = SessionManager.compute_manifest_sha256(manifest_file)
+    dbh = SessionManager.compute_data_batch_hash(source_files)
+    key = SessionManager.compute_session_key(msig, dbh)
+    sm.write_assembly_ghost(
+        session_key=key, manifest_id="my_pipeline", manifest_sha256=msig, data_batch_hash=dbh,
+        source_files={k: str(v) for k, v in source_files.items()},
+        parquet_paths={"assembly": "tmp/a.parquet", "contracted": "tmp/c.parquet"},
+    )
+    raw = json.loads(next((sm.session_dir(key)).glob("assembly.json")).read_text())
+    assert {"session_key", "manifest_id", "manifest_sha256", "data_batch_hash", "source_files"} <= set(raw)
+
+
+def test_stored_t3_ghost_key_names(sm):
+    import json
+    key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
+    node = make_recipe_node("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")
+    path = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", [node], {}, label="x")
+    raw = json.loads(Path(path).read_text())
+    assert {"session_key", "manifest_id", "manifest_sha256", "data_batch_hash", "saved_at",
+            "tier_toggle", "t3_recipe", "t3_plot_overrides"} <= set(raw)
