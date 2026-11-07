@@ -1,7 +1,7 @@
 """Convert files written before the configuration rename (ADR-091) to the new names.
 
 What it converts, each only when you ask for it and only with --apply:
-  --recipes DIR    data analysis recipe YAML files: join_manifests: -> joins:, recipe: -> steps:
+  --recipes DIR    data analysis recipe YAML files: join_manifests: -> joins:, recipe: -> steps:, top-level type: removed
   --sessions DIR   saved sessions (assembly.json, t3_*.json): manifest_id, manifest_sha256,
                    t3_recipe, t3_recipe_by_plot, t3_recipe_sha256 -> their new names
   --gallery DIR    gallery bundles: recipe_manifest.yaml -> data_analysis_recipe.yaml,
@@ -32,9 +32,15 @@ _KEY_LINE = re.compile(r"^(?P<ind>\s*-?\s*)(?P<key>join_manifests|recipe)(?P<res
 _RENAME = {"join_manifests": "joins", "recipe": "steps"}
 
 
+_TOP_LEVEL_TYPE = re.compile(r"^type\s*:.*$")
+
+
 def convert_recipe_text(text: str) -> str:
+    """Rename the old keys; drop the top-level `type:` line (removed with ADR-091 follow-up, issue #29)."""
     out = []
     for line in text.split("\n"):
+        if _TOP_LEVEL_TYPE.match(line):
+            continue
         m = _KEY_LINE.match(line)
         out.append(f"{m['ind']}{_RENAME[m['key']]}{m['rest']}" if m else line)
     return "\n".join(out)

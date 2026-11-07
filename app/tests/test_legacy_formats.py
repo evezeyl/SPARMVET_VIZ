@@ -56,6 +56,26 @@ def test_old_recipe_key_in_a_join_names_steps(tmp_path, capsys):
     assert "'recipe'" in err and "'steps'" in err
 
 
+def test_old_top_level_type_key_is_refused_and_the_fix_is_named(tmp_path, capsys):
+    p = _recipe(tmp_path, """
+        id: r
+        type: species
+        data_schemas: {}
+        joins: {}
+        analysis_groups: {g: {plots: {}}}
+        """)
+    with pytest.raises(SystemExit):
+        ConfigManager(str(p))
+    err = capsys.readouterr().err
+    assert "'type'" in err and "removed" in err and "info:" in err
+
+
+def test_conversion_drops_the_top_level_type_but_not_nested_type_keys():
+    old = "id: r\ntype: species\ndata_schemas:\n  A:\n    input_fields:\n      x: {type: categorical}\n"
+    new = migrate.convert_recipe_text(old)
+    assert "type: species" not in new and "type: categorical" in new
+
+
 # --- saved sessions ---
 
 @pytest.fixture

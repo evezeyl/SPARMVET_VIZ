@@ -43,6 +43,16 @@ RENAMED_FLAG_KEYS = {
     "manifest_edit_enabled": "data_analysis_recipe_edit_enabled",
 }
 
+# names of shipped app features files: old -> new
+RENAMED_APP_FEATURES_NAMES = {
+    "project-independent": "standalone",
+}
+
+# panel types in the sidebar slot lists of an app features file: old -> new
+RENAMED_PANEL_TYPES = {
+    "project_info": "data_analysis_recipe_info",
+}
+
 # keys written into saved sessions (assembly.json, t3_*.json): old -> new
 RENAMED_SESSION_KEYS = {
     "manifest_id": "data_analysis_recipe_id",

@@ -254,6 +254,15 @@ def test_old_launch_variable_stops_the_app_and_names_the_new_one(tmp_path, monke
     assert old in err and new in err
 
 
+def test_old_app_features_name_stops_the_app_and_names_the_new_one(tmp_path, monkeypatch, capsys):
+    dep, _ = _deployment(tmp_path, **{"default_app_features": "project-independent"})
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    with pytest.raises(SystemExit):
+        Bootloader()
+    err = capsys.readouterr().err
+    assert "project-independent" in err and "standalone" in err
+
+
 def test_removed_connector_variable_stops_the_app_and_says_it_was_removed(tmp_path, monkeypatch, capsys):
     dep, _ = _deployment(tmp_path, **{"default_app_features": "qa"})
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))

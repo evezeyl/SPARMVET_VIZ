@@ -15,6 +15,7 @@ from pathlib import Path
 import yaml
 
 from app.modules.sidebar_registry import PANEL_REGISTRY
+from app.modules.renamed_keys import RENAMED_PANEL_TYPES
 from app.modules.deployment_error import DeploymentError
 
 _WORKSPACES = ("home", "blueprint", "gallery", "test_lab")
@@ -102,7 +103,7 @@ class SidebarValidator:
                             f"  {loc_key}:\n"
                             f"    visible: true\n"
                             f"    panels:\n"
-                            f"      - type: project_info"
+                            f"      - type: data_analysis_recipe_info"
                         ),
                         who="operator",
                         reference=_REF,
@@ -138,6 +139,23 @@ class SidebarValidator:
                                 f"Edit {template_path}: add 'type: <panel_type>' to the "
                                 f"panel entry under {loc_key}.panels. "
                                 f"Known panel types: {list(PANEL_REGISTRY.keys())}."
+                            ),
+                            who="operator",
+                            reference=_REF,
+                        ))
+                        continue
+
+                    if ptype in RENAMED_PANEL_TYPES:
+                        errors.append(DeploymentError(
+                            component="SidebarValidator",
+                            problem=(
+                                f"[{app_features_id}] {loc_key}: panel type '{ptype}' was renamed to "
+                                f"'{RENAMED_PANEL_TYPES[ptype]}'."
+                            ),
+                            location=f"{loc_key}.panels[] in {template_path}",
+                            fix=(
+                                f"Edit {template_path}: write '- type: {RENAMED_PANEL_TYPES[ptype]}' instead "
+                                f"of '- type: {ptype}'. The panel now shows the info: block of the data analysis recipe."
                             ),
                             who="operator",
                             reference=_REF,
