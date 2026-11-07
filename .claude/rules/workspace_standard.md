@@ -12,7 +12,7 @@ trigger: always_on
 
 To prevent AI Drift and Quota Waste, the Agent MUST follow this sequence upon initialization:
 
-1. **./AGENT_GUIDE.md**: Adopt the high-level App features and Onboarding Context.
+1. **./CLAUDE.md**: Adopt the high-level App features and Onboarding Context (entry point, see `CLAUDE.md` section 3).
 2. **./tree.txt**: Locate the physical file map.
 3. **./.claude/knowledge/project_conventions.md**: Identify the "Who/Where/How" for every component.
 4. **./.claude/rules/rules_runtime_environment.md**: Lock the `./.venv/bin/python` path.

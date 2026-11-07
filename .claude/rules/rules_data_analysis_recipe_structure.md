@@ -29,7 +29,7 @@ When decomposition is triggered, components must be strictly categorized into su
 
 ## 3. Structural Authority Reference
 
-The file `assets/template_data_analysis_recipes/1_test_data_ST22_dummy.yaml` serves as the official structural standard.
+The file `config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml` serves as the official structural standard.
 
 - Any adaptations made to the `1_test_data_ST22_dummy.yaml` template logic or subdirectory groupings MUST be immediately reflected back into this rulebook to remain the authoritative requirement for the entire system.
 

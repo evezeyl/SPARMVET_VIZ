@@ -36,27 +36,47 @@ All code in `app/` falls into exactly one of two categories. **Mixing them is a 
 ```
 app/
 ├── src/
-│   ├── server.py          # Thin orchestrator only (~120 lines). See §3.
+│   ├── server.py          # Thin orchestrator only (242 lines; hard limit ~250, see §3).
 │   ├── ui.py              # Static Shiny UI shell. CSS. No reactive logic.
 │   └── bootloader.py      # Path authority & app features bootstrap (ADR-031).
 │
 ├── modules/               # App-layer modules: importable and testable. May import Shiny for UI-helper classes (by design — app layer only).
-│   ├── orchestrator.py         # DataOrchestrator — Tier 1 assembly bridge.
-│   ├── wrangle_studio.py       # WrangleStudio — Blueprint Architect UI class.
+│   ├── orchestrator.py         # DataOrchestrator — Tier 1/Tier 2 assembly bridge, cache keys.
+│   ├── orchestrator_helpers.py # Pure helpers for server.py (safe_input, DEFAULT_HOME_STATE).
+│   ├── cache_keys.py           # DataAnalysisRecipeKeys, chained content keys (ADR-089).
+│   ├── wrangle_studio.py       # WrangleStudio — Blueprint Architect UI class (~2360 lines, the largest module).
 │   ├── gallery_viewer.py       # GalleryViewer — static gallery browser.
 │   ├── test_lab_studio.py      # TestLabStudio — TEST_LAB tools (renamed from dev_studio.py).
-│   └── exporter.py             # SubmissionExporter — gallery submission.
+│   ├── exporter.py             # SubmissionExporter — gallery submission (imported only by tests today, F-20).
+│   ├── session_manager.py      # SessionManager — session ghost files, legacy format refusal.
+│   ├── sidebar_registry.py     # PANEL_REGISTRY — panel type → gate flag → label (ADR-073).
+│   ├── sidebar_validator.py    # SidebarValidator — startup check of the slot registry.
+│   ├── app_features_validator.py # AppFeaturesValidator — startup check of the flags.
+│   ├── data_analysis_recipe_info.py # info_lines() — renders a data analysis recipe's info: block.
+│   ├── data_analysis_recipe_validator.py # validate_data_analysis_recipe[_data]() — headless checks.
+│   ├── t3_audit_engine.py      # Pure helpers for T3 (filter/drop application). No Shiny.
+│   ├── view_badge.py           # What a data/plot panel shows (e.g. "T2 identical to T1").
+│   ├── notification_utils.py   # make_notifier() — shared notification/alert helper.
+│   ├── renamed_keys.py         # Old configuration key/flag/name refusal (ADR-091/092).
+│   ├── deployment_error.py     # DeploymentError, exit_if_errors — fail-fast error records.
+│   └── help_registry.py        # Help content registry (not wired into the running app, F-20).
 │
 ├── handlers/              # Shiny wiring only. One concern per file.
 │   ├── __init__.py
-│   ├── home_theater.py         # Home mode: tabs, sidebar, filters, plots, tables.
+│   ├── home_theater.py         # Home mode: tabs, sidebar, plots, tables, panel dispatch.
 │   ├── audit_stack.py          # Pipeline Audit: T2/T3 nodes, Apply gate, Revert.
-│   ├── blueprint_handlers.py   # Blueprint Architect: data analysis recipe import, lineage, TubeMap.
+│   ├── filter_and_audit_handlers.py # Filter builder, Send to Audit, propagation dialog.
+│   ├── session_handlers.py     # Session panel: import, restore, delete.
+│   ├── export_handlers.py      # Export panel and bundle; the key check (ADR-089).
+│   ├── data_import_handlers.py # Data Import panel: upload, assign, replace metadata.
+│   ├── blueprint_handlers.py   # Blueprint Architect: data analysis recipe import, lineage, TubeMap (~2800 lines).
 │   ├── gallery_handlers.py     # Gallery: filtering, preview, clone, submission.
-│   └── ingestion_handlers.py   # Data analysis recipe file ingestion (btn_ingest).
+│   ├── ingestion_handlers.py   # Data analysis recipe file ingestion (btn_ingest).
+│   └── test_lab_handlers.py    # Test Lab tools: scaffolding, ID reconciliation, synthetic data.
 │
 └── assets/                # Static/utility scripts (no Shiny).
-    └── normalize_data_analysis_recipe_fields.py
+    ├── normalize_data_analysis_recipe_fields.py
+    └── report_template.qmd    # Quarto template for the export bundle's report.qmd.
 ```
 
 ---
@@ -134,20 +154,25 @@ def define_server(input, output, session, *,
 
 | I need to change... | Edit this file |
 |---|---|
-| How the Home tabs are built / left sidebar shows | `app/handlers/home_theater.py` |
-| Filter builder (add row / apply / reset) | `app/handlers/home_theater.py` |
+| How the Home tabs are built / dynamic tabs / plots / data preview | `app/handlers/home_theater.py` |
+| Left sidebar panel dispatch (which panel renders for which workspace) | `app/handlers/home_theater.py` (`sidebar_tools_ui`, `_build_left_sidebar`) |
+| Filter builder (add row / apply / Send to Audit / reset) | `app/handlers/filter_and_audit_handlers.py` |
 | Data preview column selector | `app/handlers/home_theater.py` |
-| Export results bundle (zip / plots / data / Quarto) | `app/handlers/home_theater.py` |
+| Export results bundle (zip / plots / data / Quarto) | `app/handlers/export_handlers.py` |
+| Session save / restore / import / delete | `app/handlers/session_handlers.py` |
+| Data Import panel (upload, assign, replace metadata) | `app/handlers/data_import_handlers.py` |
 | The Pipeline Audit stack (Violet/Yellow nodes, Apply gate) | `app/handlers/audit_stack.py` |
 | Blueprint Architect data analysis recipe import / TubeMap / Lineage Rail | `app/handlers/blueprint_handlers.py` |
 | Gallery filtering, preview, clone, submission | `app/handlers/gallery_handlers.py` |
 | Data ingestion (btn_ingest) | `app/handlers/ingestion_handlers.py` |
+| Test Lab tools (scaffolding, ID reconciliation, synthetic data) | `app/handlers/test_lab_handlers.py` |
+| Which panel types exist, their gate flag, their label | `app/modules/sidebar_registry.py` (ADR-073) |
 | How data analysis recipes are parsed structurally (sibling map, registry, lineage) | `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` |
 | BLUEPRINT form catalog + `ui_schema` registry at startup | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` (ADR-075) |
 | The static Shiny HTML shell / CSS | `app/src/ui.py` |
 | Path authority / app features bootstrap | `app/src/bootloader.py` |
 | Shared reactive state or tier calcs | `app/src/server.py` (§3 only) |
-| Tier 1 assembly / Parquet materialization | `app/modules/orchestrator.py` |
+| Tier 1/Tier 2 assembly / Parquet materialization / cache keys | `app/modules/orchestrator.py`, `app/modules/cache_keys.py` |
 | Visual plot composition / predicate pushdown ops | `libs/viz_factory/` |
 | Data wrangling actions | `libs/transformer/` |
 
