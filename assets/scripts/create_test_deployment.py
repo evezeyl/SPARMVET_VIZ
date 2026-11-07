@@ -24,7 +24,7 @@ Usage:
       --deployment_file custom.yaml \\
       --description "Custom test" \\
       --project_root /data/my_pipeline \\
-      --app features pipeline-exploration-simple
+      --app-features pipeline-exploration-simple
 
 See docs/workflows/connector.qmd for the full deployment schema (ADR-048).
 """
@@ -47,7 +47,7 @@ def main():
                         help="Human-readable description of this test deployment.")
     parser.add_argument("--project_root", required=False, default=".",
                         help="Project root path (default: '.' — repository root).")
-    parser.add_argument("--app features", required=False, default="developer",
+    parser.add_argument("--app-features", required=False, default="developer",
                         choices=["pipeline-static", "pipeline-exploration-simple",
                                  "pipeline-exploration-advanced",
                                  "project-independent", "developer"],

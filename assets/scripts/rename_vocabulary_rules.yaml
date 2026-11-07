@@ -189,3 +189,13 @@ prose:
 prose_skip_paths:
   profile:
     - assets/gallery_data/
+
+# Spellings of a plain retired word by context, used by rename_vocabulary.py --apply context.
+#   snake: identifiers, keys, string ids, dict keys (and the hyphenated flag form --data-analysis-recipe)
+#   prose: sentences in comments, docstrings, messages, documents (sentence case or lower case)
+#   title: prose in Title Case phrases (labels such as "Import Manifest")
+forms:
+  manifest:
+    snake: data_analysis_recipe
+    prose: data analysis recipe
+    title: Data Analysis Recipe

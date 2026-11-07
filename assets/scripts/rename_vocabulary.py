@@ -217,6 +217,164 @@ def rewrite_text(path: str, words, pairs, keep, prose, dry_run: bool):
     return changed
 
 
+# ---- context-aware rewriting (code versus prose) -------------------------------------------
+_SEP_ID = re.compile(r"(?<![A-Za-z0-9_])(--)?[A-Za-z0-9_]+(?:[-./][A-Za-z0-9_]+)*")
+_CAMEL = re.compile(r"[a-z][A-Z]")
+
+
+def _plain_case(part: str):
+    """lower, Title or UPPER of a plain word part, or None for mixed case."""
+    if part.islower():
+        return "lower"
+    if part.isupper():
+        return "upper"
+    if part[:1].isupper() and part[1:].islower():
+        return "title"
+    return None
+
+
+def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool = False) -> str:
+    """Rename retired words inside one span. ctx is 'code' or 'prose'."""
+    word_rx = re.compile("|".join(map(re.escape, words)), re.I)
+
+    def repl(m):
+        tok = m.group(0)
+        if not word_rx.search(tok):
+            return tok
+        core = tok[2:] if tok.startswith("--") else tok
+        flag = tok.startswith("--")
+        # ids with underscore, dot, slash or CamelCase: the pairs decide, in every context
+        if any(c in core for c in "_./") or _CAMEL.search(core):
+            new, status = transform(core, pairs, keep)
+            return ("--" if flag else "") + (new if status == "auto" else core)
+        parts = core.split("-")
+        out = []
+        for i, part in enumerate(parts):
+            base = part[:-1] if part.lower().endswith("s") and part[:-1].lower() in words else part
+            plural = base != part
+            if base.lower() not in words:
+                out.append(part)
+                continue
+            case = _plain_case(base)
+            f = forms[base.lower()]
+            if case is None:
+                out.append(part)
+                continue
+            if ctx == "code" or flag or (whole_string and case == "lower"):
+                snake = f["snake"] + ("s" if plural else "")
+                if case == "upper":
+                    snake = snake.upper()
+                elif case == "title":
+                    snake = "".join(p.capitalize() for p in snake.split("_"))
+                out.append(snake.replace("_", "-") if (flag or len(parts) > 1) else snake)
+            else:
+                if case == "upper":
+                    word = f["prose"].upper()
+                elif case == "title":
+                    prev = seg[max(0, m.start() - 40):m.start()].rstrip().split(" ")[-1:]
+                    word = f["title"] if prev and prev[0][:1].isupper() and prev[0] not in ("The", "A", "An") else f["prose"].capitalize()
+                else:
+                    word = f["prose"]
+                out.append(word + ("s" if plural else ""))
+        return ("--" if flag else "") + "-".join(out) if ctx == "code" or flag else "-".join(out)
+
+    return _SEP_ID.sub(repl, seg)
+
+
+def _split_backticks(text: str):
+    """Yield (segment, in_code_span) for inline code spans in a prose text."""
+    pos = 0
+    for m in re.finditer(r"`[^`\n]+`", text):
+        if m.start() > pos:
+            yield text[pos:m.start()], False
+        yield m.group(0), True
+        pos = m.end()
+    if pos < len(text):
+        yield text[pos:], False
+
+
+def _yaml_like_line(line: str, fix):
+    """Comment part is prose; the code part is code unless a value holds several words."""
+    code, hash_, comment = line, "", ""
+    m = re.search(r"(^|\s)#", line)
+    if m:
+        code, comment = line[:m.start() + len(m.group(1))], line[m.start() + len(m.group(1)):]
+    km = re.match(r"^(\s*-?\s*[\"']?)([A-Za-z0-9_.\-/]+)([\"']?\s*:)(.*)$", code)
+    if km:
+        pre, key, post, val = km.groups()
+        val_ctx = "prose" if re.search(r"[A-Za-z]+\s+[A-Za-z]+", val.strip().strip("\"'")) else "code"
+        code = pre + fix(key, "code") + post + fix(val, val_ctx)
+    else:
+        ctx = "prose" if re.search(r"[A-Za-z]+\s+[A-Za-z]+", code.strip()) else "code"
+        code = fix(code, ctx)
+    return code + (fix(comment, "prose") if comment else "")
+
+
+def rewrite_context(path: str, words, pairs, keep, forms, dry_run: bool) -> bool:
+    src = Path(path).read_text(encoding="utf-8")
+    suffix = Path(path).suffix
+    words = [w.lower() for w in words]
+    fix = lambda seg, ctx, whole=False: fix_span(seg, ctx, words, pairs, keep, forms, whole)
+    if suffix == ".py":
+        out = _rewrite_py(src, fix)
+    elif suffix in (".md", ".qmd", ".txt", ".mmd"):
+        out = _rewrite_markdown(src, fix)
+    else:
+        out = "\n".join(_yaml_like_line(l, fix) for l in src.split("\n"))
+    if out != src and not dry_run:
+        Path(path).write_text(out, encoding="utf-8")
+    return out != src
+
+
+def _rewrite_markdown(src: str, fix) -> str:
+    out, fenced = [], False
+    for line in src.split("\n"):
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            out.append(line)
+            continue
+        if fenced:
+            out.append(_yaml_like_line(line, fix))
+            continue
+        pieces = []
+        for seg, is_code in _split_backticks(line):
+            pieces.append(fix(seg, "code") if is_code else fix(seg, "prose"))
+        out.append("".join(pieces))
+    return "\n".join(out)
+
+
+def _rewrite_py(src: str, fix) -> str:
+    lines = src.split("\n")
+    edits = []
+    fstring_depth = 0
+    for tok in tokenize.generate_tokens(io.StringIO(src).readline):
+        text = tok.string
+        if tok.type == tokenize.COMMENT:
+            new = fix(text, "prose")
+        elif tok.type == tokenize.STRING:
+            body = text.lstrip("rbfuRBFU")
+            inner = body.strip("\"'")
+            multiline = "\n" in text
+            ctx = "prose" if (re.search(r"\s", inner.strip()) or multiline) else "code"
+            new = fix(text, ctx, whole=(ctx == "code"))
+        elif tok.type == getattr(tokenize, "FSTRING_MIDDLE", -1):
+            new = fix(text, "prose" if re.search(r"\s", text.strip()) else "code")
+        elif tok.type == tokenize.NAME:
+            new = fix(text, "code")
+        else:
+            continue
+        if new != text:
+            edits.append((tok.start, tok.end, new))
+    for (sr, sc), (er, ec), new in sorted(edits, reverse=True):
+        if sr == er:
+            lines[sr - 1] = lines[sr - 1][:sc] + new + lines[sr - 1][ec:]
+        else:  # multi-line token: rewrite the covered range as one text
+            first, last = lines[sr - 1], lines[er - 1]
+            joined = first[:sc] + new + last[ec:]
+            lines[sr - 1:er] = joined.split("\n")
+    return "\n".join(lines)
+
+
 def cmd_apply(args) -> int:
     pairs_all, rules = load_pairs()
     keep = [k.lower() for k in rules["keep_substrings"]]
@@ -239,6 +397,19 @@ def cmd_apply(args) -> int:
                 total += n
                 print(f"{n:>4}  {f}")
         print(f"identifier tokens {'to rename' if args.dry_run else 'renamed'}: {total}")
+    if args.what == "context":
+        forms = rules.get("forms", {})
+        n_files = 0
+        for f in tracked_files():
+            if f in TEXT_SKIP or Path(f).suffix not in TEXT_EXT:
+                continue
+            try:
+                if rewrite_context(f, args.words, pairs, keep, forms, args.dry_run):
+                    n_files += 1
+                    print(f"context  {f}")
+            except (UnicodeDecodeError, tokenize.TokenError, IndentationError) as exc:
+                print(f"skip {f}: {exc}")
+        print(f"context files {'to change' if args.dry_run else 'changed'}: {n_files}")
     if args.what == "text":
         rules_prose = _prose_rules(rules, args.words)
         n_files = 0
@@ -261,7 +432,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", metavar="PATH", help="write the Markdown mapping table here")
     ap.add_argument("--unmapped", action="store_true", help="print only the UNMAPPED tokens and exit 1 if any")
-    ap.add_argument("--apply", choices=["identifiers", "moves", "text", "all"],
+    ap.add_argument("--apply", choices=["identifiers", "moves", "text", "context", "all"],
                     help="change files: rename Python identifiers and/or git mv Python files")
     ap.add_argument("--words", nargs="+", default=[], help="with --apply: retired words to rename, e.g. persona")
     ap.add_argument("--ext", choices=["py", "all"], default="py", help="with --apply moves: which files to move")
