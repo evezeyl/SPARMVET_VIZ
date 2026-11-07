@@ -303,7 +303,7 @@ This is the most common source of confusion. The rule is simple:
 | Question | Answered by |
 |---|---|
 | What can this user do? | App features file (`config/app_features/`) |
-| Which pipeline/data is loaded? | Deployment (`config/connectors/` or `SPARMVET_DEPLOYMENT`) |
+| Which pipeline/data is loaded? | Deployment (`config/deployment/` or `SPARMVET_DEPLOYMENT`) |
 | Where is data stored on disk? | Deployment (`locations` block) |
 | Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment (`app_features_override: {data_ingestion_enabled: false}` overrides app features) |
 | What data analysis recipe is loaded at startup? | Deployment (`default_data_analysis_recipe`) |

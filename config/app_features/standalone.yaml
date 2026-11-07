@@ -1,6 +1,8 @@
 # UI App features: Standalone
+# A researcher who manages their own data and data analysis recipes: not fed by a pipeline,
+# so data import, filters, the audit panel and the gallery are on.
 name: "standalone"
-display_name: "Standalone User"
+display_name: "Standalone User (own data)"
 
 flags:
   # Can the user interact with the Tier 3 View?

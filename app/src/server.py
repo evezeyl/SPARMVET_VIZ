@@ -29,6 +29,9 @@ from app.modules.orchestrator_helpers import (
     DEFAULT_HOME_STATE,
 )
 
+# Flags that need the WrangleStudio state object (see server()).
+_WRANGLE_STUDIO_FLAGS = ("developer_mode_enabled", "blueprint_enabled", "t3_sandbox_enabled")
+
 # Inject action + component catalogs into blueprint_arch schema_registry (ADR-011).
 # server.py is Tier 3 (orchestration) — the only layer allowed to import from multiple libs.
 try:
@@ -84,11 +87,13 @@ def server(input, output, session):
     viz_factory = VizFactory(palette_registry=bootloader.get_palettes())
 
     # Module Initialization (Phase 11-F / ADR-039 / ADR-071 positive inclusion)
-    # WrangleStudio is created only when developer_mode_enabled — same flag gate used in
-    # home_theater. All handler delegations that receive wrangle_studio are already gated
-    # on developer_mode_enabled, blueprint_enabled, or t3_sandbox_enabled, all of which
-    # require developer_mode_enabled to be true in every current app features file.
-    wrangle_studio = WrangleStudio(session.id) if bootloader.is_enabled("developer_mode_enabled") else None
+    # WrangleStudio holds the Blueprint Architect state (logic stack, active component) that the
+    # BLUEPRINT handlers and the Pipeline Audit panel read. It is created when any of them is on:
+    # developer_mode_enabled, blueprint_enabled or t3_sandbox_enabled. (Until 2026-11-07 only
+    # developer_mode_enabled created it, so every app features with the audit panel but without
+    # developer mode, standalone and pipeline-exploration-advanced, ended on a blank page.)
+    wrangle_studio = (WrangleStudio(session.id)
+                      if any(bootloader.is_enabled(f) for f in _WRANGLE_STUDIO_FLAGS) else None)
     dev_studio = TestLabStudio() if bootloader.is_enabled("test_lab_enabled") else None
 
     # State Management
@@ -143,7 +148,7 @@ def server(input, output, session):
 
 
     # Module Server Definitions
-    if bootloader.is_enabled("developer_mode_enabled"):
+    if wrangle_studio is not None and any(bootloader.is_enabled(f) for f in ("developer_mode_enabled", "blueprint_enabled")):
         wrangle_studio.define_server(
             input, output, session, lambda: tier1_anchor().collect_schema().names(), tier1_anchor, viz_factory,
             get_schema_registry=lambda: _schema_registry.get(),

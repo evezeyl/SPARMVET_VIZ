@@ -172,10 +172,9 @@ def main():
     # 1. Base Headers
     source_name = f"directory '{Path(args.data_dir).name}'" if args.data_dir else f"{len(valid_data_files)} files"
     data_analysis_recipe: dict[str, Any] = {
-        "id": "example_species_template",
-        "type": "species",
+        "id": "example_data_analysis_recipe",
         "info": {
-            "display_name": "Example Species",
+            "display_name": "Example data analysis recipe",
             "category": "Auto-generated",
             "tags": ["template", "draft"],
             "description": f"Template data analysis recipe generated from {source_name}.",
@@ -292,7 +291,7 @@ def main():
         yaml.dump(data_analysis_recipe, f, sort_keys=False, default_flow_style=False)
 
     print(f"Successfully generated scaffold data analysis recipe: {out_file}")
-    print("Please review and manually align plotting logic keys before moving to config/data_analysis_recipes/species/")
+    print("Please review and manually align plotting logic keys before moving to config/data_analysis_recipes/")
 
 
 if __name__ == "__main__":

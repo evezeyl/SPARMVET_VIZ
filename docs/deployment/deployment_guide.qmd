@@ -312,4 +312,4 @@ The API is fully headless and carries no UI dependencies — suitable for automa
 
 ---
 
-> **Note for developers:** The `config/deployment/local/local.yaml` file (current: `config/connectors/local/local.yaml`) is the developer fallback and is committed to the repository. It uses relative paths under `tmp/` and `assets/` that exist in the repo. Do not use it for production deployments.
+> **Note for developers:** The `config/deployment/local/local.yaml` file is the developer fallback and is committed to the repository. It uses relative paths under `tmp/` and `assets/` that exist in the repo. Do not use it for production deployments.

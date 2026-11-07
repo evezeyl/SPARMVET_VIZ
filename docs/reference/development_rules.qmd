@@ -19,7 +19,7 @@ The runner MUST programmatically parse the `@register...` component registry dic
 ### 3. The Path Authority & Connector Mandate (ADR-031)
 **Scope:** `config/` and `libs/connector`.
 **Mandate:** Hardware and system-level paths (Locations 1-5) MUST be strictly decoupled from UI App features files.
-- **Rule:** System connection paths must be defined exclusively in `config/connectors/`.
+- **Rule:** System connection paths must be defined exclusively in the deployment file (`config/deployment/`).
 - **Rule:** UI App features configurations (`config/ui/`) MUST ONLY control visual/functional masking (feature toggling, auto-save frequency, layout constraints).
 - **Enforcement:** Under no circumstances should a system path be hardcoded in a UI template YAML.
 
@@ -92,12 +92,12 @@ For production: (when prototype advanced enough)
 
 All data must pass through `libs/ingestion/` validation rules before hitting the rest of the app.
 
-- If a new species is added, you **must** update the YAML data analysis recipe.   
-- The Ingestion Adapter `libs/ingestion/adapters_?.py` is responsible for catching "Dirty Data" before it reaches `libs/wrangling` (aka. it checks compliance to the data contract of the species defined in `config/data_analysis_recipes/species/species_X.yaml`).
+- If a new organism or dataset is added, you **must** update the YAML data analysis recipe.   
+- The Ingestion Adapter `libs/ingestion/adapters_?.py` is responsible for catching "Dirty Data" before it reaches `libs/wrangling` (aka. it checks compliance to the data contract of the data analysis recipe, for example `config/data_analysis_recipes/pipelines/<data_analysis_recipe_id>.yaml`).
 
-- [ ] What we here by dirty data : not conforming by the data contract defined in `config/data_analysis_recipes/species/`
+- [ ] What we here by dirty data : not conforming by the data contract defined in the data analysis recipe (`config/data_analysis_recipes/`)
 
-> in case of manual upload: the user is responsible of ensuring that the uploaded data conforms to the data contract of the species. 
+> in case of manual upload: the user is responsible of ensuring that the uploaded data conforms to the data contract of the data analysis recipe. 
 
 ### No real data / infrastructure details in the repo
 

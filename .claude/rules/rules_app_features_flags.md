@@ -125,9 +125,9 @@ Eight app features files exist (`config/app_features/`):
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `interactivity_enabled` | false | false | true | true | true | true | true | true |
 | `t3_sandbox_enabled` | false | false | false | false | true | true | true | true |
-| `wrangle_studio_enabled` | false | false | true | false | true | true | true | true |
+| `wrangle_studio_enabled` | false | false | false | false | false | false | true | true |
 | `comparison_mode_enabled` | false | false | true | false | true | true | true | true |
-| `session_management_enabled` | false | false | true | false | true | true | true | true |
+| `session_management_enabled` | false | false | false | false | true | true | true | true |
 | `export_enabled` | true | false | true | false | true | true | true | true |
 | `metadata_ingestion_enabled` | false | false | false | false | true | true | true | true |
 | `import_helper_enabled` | false | false | false | false | false | true | true | true |

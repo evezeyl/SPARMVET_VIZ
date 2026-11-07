@@ -79,7 +79,9 @@
 │       ├── test_export_download.py
 │       ├── test_export_provenance.py
 │       ├── test_export_view_consistency.py
+│       ├── test_every_app_features_starts.py
 │       ├── test_filter_operators.py
+│       ├── test_flag_matrix_doc.py
 │       ├── test_import_error_block.py
 │       ├── test_import_test_files.py
 │       ├── test_legacy_formats.py

@@ -592,7 +592,7 @@ class Bootloader:
         path = runtime.get("python_interpreter")
         if not path:
             raise KeyError(
-                "Connector config missing 'runtime.python_interpreter' definition.")
+                "Deployment file missing 'runtime.python_interpreter' definition.")
         return str(path)
 
     # Built-in SPARMVET brand palette — always present so the system has a safe default.

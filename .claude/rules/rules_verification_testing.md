@@ -138,14 +138,15 @@ Headless baseline (fast, about 25 s for everything but the browser tests):
 ```bash
 PYTHONPATH=. ./.venv/bin/python -m pytest libs app/tests \
   --ignore=app/tests/test_shiny_smoke.py --ignore=app/tests/test_shiny_smoke_blueprint.py \
-  --ignore=app/tests/test_export_download.py -q
+  --ignore=app/tests/test_export_download.py --ignore=app/tests/test_every_app_features_starts.py -q
 ```
 
-Browser tests (about 3 minutes, `qa` app features):
+Browser tests (about 4 minutes; the first three run under the `qa` app features, `test_every_app_features_starts.py` launches each shipped app features by itself):
 
 ```bash
 PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest \
-  app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py app/tests/test_export_download.py -q
+  app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py app/tests/test_export_download.py \
+  app/tests/test_every_app_features_starts.py -q
 ```
 
 ## 9. Edge Cases and Clean-up (added 2026-11-06, Eve)
