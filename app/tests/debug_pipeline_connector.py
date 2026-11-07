@@ -104,7 +104,7 @@ try:
     from ingestion.ingestor import DataIngestor
     from utils.config_loader import ConfigManager
 
-    data_analysis_recipe_id = bootloader.get_default_project()
+    data_analysis_recipe_id = bootloader.get_default_data_analysis_recipe()
     data_analysis_recipe_path = data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
     record("Data analysis recipe path", PASS if data_analysis_recipe_path.exists() else FAIL, str(data_analysis_recipe_path))
 
@@ -153,7 +153,7 @@ try:
         )
 
         lf = orchestrator.materialize_tier1(
-            project_id=data_analysis_recipe_id,
+            data_analysis_recipe_id=data_analysis_recipe_id,
             collection_id=list(data_analysis_recipe.get("joins", {}).keys())[0],
             output_path=out_path,
         )
@@ -179,7 +179,7 @@ try:
 
     ms = bl2.get_data_analysis_recipe_selector()
     record("App features loaded", PASS, bl2.app_features_display_name)
-    record("default data analysis recipe", INFO, bl2.get_default_project())
+    record("default data analysis recipe", INFO, bl2.get_default_data_analysis_recipe())
     record("data_lookup", INFO, bl2.data_lookup)
     record("testing_mode", INFO, str(bl2.get_testing_mode()))
 except Exception as e:

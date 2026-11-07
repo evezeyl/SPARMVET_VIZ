@@ -15,19 +15,19 @@ class XlsxExtractor:
     Supports a 'Project Basename' approach for organized output.
     """
 
-    def __init__(self, project_basename: Optional[str] = None):
-        self.project_basename = project_basename
+    def __init__(self, recipe_basename: Optional[str] = None):
+        self.recipe_basename = recipe_basename
 
     def extract(self, excel_path: str, config_path: str, out_dir: str, standardized_id: str = "id") -> Dict[str, Path]:
         """
         Extracts sheets defined in config_path from excel_path into out_dir.
-        If project_basename is set, creates a subfolder within out_dir.
+        If recipe_basename is set, creates a subfolder within out_dir.
         """
         excel_p = Path(excel_path)
         config_p = Path(config_path)
 
         # Determine effective output directory
-        base_name = self.project_basename or excel_p.stem
+        base_name = self.recipe_basename or excel_p.stem
         effective_out_dir = Path(out_dir) / base_name
         effective_out_dir.mkdir(parents=True, exist_ok=True)
 

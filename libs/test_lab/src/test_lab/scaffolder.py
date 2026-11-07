@@ -44,7 +44,7 @@ class DataAnalysisRecipeScaffolder:
     def scaffold(
         self,
         tsv_paths: List[Path],
-        project_id: str,
+        data_analysis_recipe_id: str,
         steps: Optional[Dict[str, Any]] = None,
         metadata_path: Optional[Path] = None,
     ) -> bytes:
@@ -53,7 +53,7 @@ class DataAnalysisRecipeScaffolder:
 
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
-            project_id: Data analysis recipe ID and top-level folder name in the ZIP.
+            data_analysis_recipe_id: Data analysis recipe ID and top-level folder name in the ZIP.
             steps: Optional mapping of sanitized dataset_id → IdTransformation.
                      Steps are injected into that dataset's tier1: wrangling block.
             metadata_path: Optional dedicated metadata TSV. When provided, a
@@ -61,12 +61,12 @@ class DataAnalysisRecipeScaffolder:
 
         Returns:
             ZIP bytes. Extract to a directory; the master YAML is at
-            ``<project_id>/<project_id>.yaml``.
+            ``<data_analysis_recipe_id>/<data_analysis_recipe_id>.yaml``.
         """
         steps = steps or {}
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
-            self._write_zip(zf, tsv_paths, project_id, steps, metadata_path)
+            self._write_zip(zf, tsv_paths, data_analysis_recipe_id, steps, metadata_path)
         buf.seek(0)
         return buf.read()
 
@@ -74,8 +74,8 @@ class DataAnalysisRecipeScaffolder:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _write_zip(self, zf, tsv_paths, project_id, steps, metadata_path):
-        fragments_prefix = f"{project_id}/{project_id}"
+    def _write_zip(self, zf, tsv_paths, data_analysis_recipe_id, steps, metadata_path):
+        fragments_prefix = f"{data_analysis_recipe_id}/{data_analysis_recipe_id}"
         dataset_ids = []
 
         for tsv_p in tsv_paths:
@@ -105,23 +105,23 @@ class DataAnalysisRecipeScaffolder:
             all_ingredient_ids.append(self._bs._sanitize_name(Path(metadata_path).stem))
 
         if len(all_ingredient_ids) >= 2:
-            join_id = f"{project_id}_joint"
+            join_id = f"{data_analysis_recipe_id}_joint"
             ingredients = [{"dataset_id": ds} for ds in all_ingredient_ids]
             assembly_path = f"{fragments_prefix}/assembly/{join_id}.yaml"
             self._write_assembly_stub(zf, assembly_path, all_ingredient_ids[1:])
             joins_config[join_id] = {
                 "ingredients": ingredients,
-                "steps": IncludeRef(f"{project_id}/assembly/{join_id}.yaml"),
+                "steps": IncludeRef(f"{data_analysis_recipe_id}/assembly/{join_id}.yaml"),
                 "final_contract": {},
             }
         else:
             joins_config = {}
 
         master = self._build_master(
-            project_id, tsv_paths, dataset_ids, metadata_path, joins_config
+            data_analysis_recipe_id, tsv_paths, dataset_ids, metadata_path, joins_config
         )
         master_yaml = yaml.dump(master, sort_keys=False, allow_unicode=True)
-        zf.writestr(f"{project_id}/{project_id}.yaml", master_yaml)
+        zf.writestr(f"{data_analysis_recipe_id}/{data_analysis_recipe_id}.yaml", master_yaml)
 
     def _infer_fields(self, df: pl.DataFrame):
         fields = {}
@@ -165,7 +165,7 @@ class DataAnalysisRecipeScaffolder:
         steps = {"steps": {"tier1": join_steps, "tier2": []}}
         zf.writestr(arcname, yaml.dump(steps, sort_keys=False, allow_unicode=True))
 
-    def _build_master(self, project_id, tsv_paths, dataset_ids, metadata_path, joins_config):
+    def _build_master(self, data_analysis_recipe_id, tsv_paths, dataset_ids, metadata_path, joins_config):
         data_schemas = {}
         for tsv_p, dataset_id in zip(tsv_paths, dataset_ids):
             resolved = Path(tsv_p).resolve()
@@ -176,18 +176,18 @@ class DataAnalysisRecipeScaffolder:
 
             data_schemas[dataset_id] = {
                 "source": {"type": "local_tsv", "path": source_path},
-                "input_fields": IncludeRef(f"{project_id}/{dataset_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{project_id}/{dataset_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{project_id}/{dataset_id}_output_fields.yaml"),
+                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_input_fields.yaml"),
+                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_wrangling.yaml"),
+                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_output_fields.yaml"),
             }
 
         master: Dict[str, Any] = {
-            "id": project_id,
+            "id": data_analysis_recipe_id,
             "type": "pipeline",
             "info": {
-                "display_name": project_id.replace('_', ' ').title(),
+                "display_name": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
-                "description": f"Auto-scaffolded pipeline for {project_id}",
+                "description": f"Auto-scaffolded pipeline for {data_analysis_recipe_id}",
             },
             "data_schemas": data_schemas,
         }
@@ -196,9 +196,9 @@ class DataAnalysisRecipeScaffolder:
             meta_id = self._bs._sanitize_name(Path(metadata_path).stem)
             master["metadata_schema"] = {
                 "source": {"type": "local_tsv", "path": str(Path(metadata_path).resolve())},
-                "input_fields": IncludeRef(f"{project_id}/{meta_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{project_id}/{meta_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{project_id}/{meta_id}_output_fields.yaml"),
+                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_input_fields.yaml"),
+                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_wrangling.yaml"),
+                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_output_fields.yaml"),
             }
 
         master["joins"] = joins_config

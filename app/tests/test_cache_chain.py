@@ -86,7 +86,7 @@ joins:
     # -- what a session does ---------------------------------------------------------------
     def build(self):
         """One session start: compute the keys, then materialize. Returns the rows as dicts."""
-        keys = self.orch.compute_project_keys("tiny")
+        keys = self.orch.compute_recipe_keys("tiny")
         lf = self.orch.materialize_tier1("tiny", "C", self.anchor, keys=keys)
         return sorted(lf.collect().to_dicts(), key=lambda r: r["sample_id"])
 
@@ -122,7 +122,7 @@ def world(tmp_path):
 
 
 def test_first_build_stores_the_chained_key(world):
-    assert world.stored_key() == world.orch.compute_project_keys("tiny").tier1_key
+    assert world.stored_key() == world.orch.compute_recipe_keys("tiny").tier1_key
 
 
 def test_nothing_changed_keeps_the_anchor(world):
@@ -187,7 +187,7 @@ def test_an_anchor_without_a_key_is_rebuilt(world):
     assert world.stored_key() is None
     world.build()
     assert world.was_rewritten()
-    assert world.stored_key() == world.orch.compute_project_keys("tiny").tier1_key
+    assert world.stored_key() == world.orch.compute_recipe_keys("tiny").tier1_key
 
 
 def test_final_contract_is_applied_the_same_on_a_fresh_and_a_reused_anchor(tmp_path):
@@ -210,11 +210,11 @@ def test_with_data_lookup_by_dataset_id_the_data_hash_follows_the_delivered_data
     default_data.write_text("sample_id\tgroup\nx1\tA\n")
     w = World(tmp_path / "w", data_lookup="by_dataset_id")
     w.write_data_analysis_recipe(source_path=default_data)
-    before = w.orch.compute_project_keys("tiny").data_batch_hash
+    before = w.orch.compute_recipe_keys("tiny").data_batch_hash
 
     default_data.write_text("sample_id\tgroup\nx1\tA\nx2\tB\n")   # the default data changes
-    assert w.orch.compute_project_keys("tiny").data_batch_hash == before
+    assert w.orch.compute_recipe_keys("tiny").data_batch_hash == before
 
     w.write_data("sample_id\tgroup\ns1\tA\n")                        # the delivered data changes
-    assert w.orch.compute_project_keys("tiny").data_batch_hash != before
+    assert w.orch.compute_recipe_keys("tiny").data_batch_hash != before
     assert [r["sample_id"] for r in w.build()] == ["s1"]

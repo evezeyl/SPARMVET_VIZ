@@ -45,7 +45,7 @@ def test_plot_renders(anchors, project, plot_id, target):
     # The data HOME and the export show: the stored Tier 2 (equal to Tier 1 without tier2 steps).
     # Read twice: the first call writes the file, the second reads it back, so a stored file that
     # cannot be read again fails here (found by the export download test, 2026-11-06).
-    keys = orchestrator.compute_project_keys(project)
+    keys = orchestrator.compute_recipe_keys(project)
     tier1_path = anchors / f"{project}_{target}.parquet"
     orchestrator.materialize_tier2(project, target, tier1_path, keys=keys).collect()
     lf = orchestrator.materialize_tier2(project, target, tier1_path, keys=keys)

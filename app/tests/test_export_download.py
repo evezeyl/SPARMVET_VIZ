@@ -19,7 +19,7 @@ from playwright.sync_api import Page
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401
-from app.tests.test_shiny_smoke import _load_project, _navigate_to_mlst_plot, _open_filters_panel, _wait_shiny
+from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _wait_shiny
 
 DATA_DIR = Path("assets/test_data/1_test_data_ST22_dummy")
 
@@ -40,7 +40,7 @@ def _open_export_panel(page: Page) -> None:
 
 @pytest.fixture(scope="module")
 def loaded(page: Page, shiny_app: ShinyAppProc):
-    _load_project(page, shiny_app.url)
+    _load_data_analysis_recipe(page, shiny_app.url)
     _open_export_panel(page)
     return page
 

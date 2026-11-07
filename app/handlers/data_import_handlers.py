@@ -80,7 +80,7 @@ def define_data_import_server(input, output, session, *,
     @render.ui
     def data_import_ui():
         cfg = active_cfg()  # subscribe to project switches
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         testing_mode = bootloader.get_testing_mode()
         by_dataset_id = bootloader.data_lookup == "by_dataset_id"
 
@@ -100,7 +100,7 @@ def define_data_import_server(input, output, session, *,
             )
         else:
             try:
-                source_files = orchestrator.get_source_files(proj_id) if proj_id else {}
+                source_files = orchestrator.get_source_files(data_analysis_recipe_id) if data_analysis_recipe_id else {}
             except Exception:
                 source_files = {}
 
@@ -266,7 +266,7 @@ def define_data_import_server(input, output, session, *,
 
         cfg = active_cfg()
         raw = cfg.raw_config
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         anchor_dir = bootloader.get_location("user_data") / "anchors"
 
         from transformer.metadata_validator import MetadataValidator
@@ -342,7 +342,7 @@ def define_data_import_server(input, output, session, *,
             parquet_cache = anchor_dir / f"{ds_id}.parquet"
             if parquet_cache.exists():
                 parquet_cache.unlink()
-            bootloader.set_cached_asset(proj_id, ds_id, "anchor", "lf", None)
+            bootloader.set_cached_asset(data_analysis_recipe_id, ds_id, "anchor", "lf", None)
 
             entry["error"] = ""
             updated.append(entry)

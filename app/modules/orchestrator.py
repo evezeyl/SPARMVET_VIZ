@@ -1,5 +1,5 @@
 # @deps
-# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, function:compute_project_keys
+# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, function:compute_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, libs/transformer/src/transformer/actions/persistence/anchor.py, app/modules/cache_keys.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
@@ -15,7 +15,7 @@ from ingestion.ingestor import DataIngestor
 from transformer.data_wrangler import DataWrangler
 from transformer.data_assembler import DataAssembler
 from transformer.actions.persistence.anchor import action_sink_parquet
-from app.modules.cache_keys import ProjectKeys, load_data_analysis_recipe, project_keys, tier2_key, tier2_steps
+from app.modules.cache_keys import RecipeKeys, load_data_analysis_recipe, recipe_keys, tier2_key, tier2_steps
 
 # Parquet metadata key holding the chained Tier 1 key (ADR-089).
 TIER1_KEY_META = "sparmvet_tier1_key"
@@ -69,20 +69,20 @@ class DataOrchestrator:
                 lf = lf.select(keep)
         return lf
 
-    def compute_project_keys(self, project_id: str) -> ProjectKeys:
+    def compute_recipe_keys(self, data_analysis_recipe_id: str) -> RecipeKeys:
         """The keys every stored stage of this project depends on (ADR-089).
 
         Reads the data files to hash their content, so callers compute it once per session
         and pass it to materialize_tier1().
         """
         from app.modules.session_manager import SessionManager
-        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{project_id}.yaml"
+        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if not data_analysis_recipe_path.exists():
             raise FileNotFoundError(f"Project data analysis recipe not found: {data_analysis_recipe_path}")
         loaded = load_data_analysis_recipe(data_analysis_recipe_path)
-        source_files = self.get_source_files(project_id)
+        source_files = self.get_source_files(data_analysis_recipe_id)
         data_hash = SessionManager.compute_data_batch_hash(source_files) if source_files else ""
-        return project_keys(loaded, data_hash)
+        return recipe_keys(loaded, data_hash)
 
     def prepare_ingredient(self, ds_id: str, ds_schema: dict) -> pl.LazyFrame:
         """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling.
@@ -107,8 +107,8 @@ class DataOrchestrator:
         rules = DataWrangler._resolve_tier(ds_schema.get("wrangling", []), "tier1")
         return DataWrangler(data_schema=input_contract).run(lf, rules)
 
-    def materialize_tier1(self, project_id: str, collection_id: str, output_path: Path,
-                          keys: ProjectKeys | None = None) -> pl.LazyFrame:
+    def materialize_tier1(self, data_analysis_recipe_id: str, collection_id: str, output_path: Path,
+                          keys: RecipeKeys | None = None) -> pl.LazyFrame:
         """
         Executes the full project ingestion and assembly to create a Tier 1 Anchor.
 
@@ -117,9 +117,9 @@ class DataOrchestrator:
         """
         import time
         _t_start = time.perf_counter()
-        print(f"[Orchestrator] ▶ materialize_tier1 START — project='{project_id}', collection='{collection_id}'")
+        print(f"[Orchestrator] ▶ materialize_tier1 START — project='{data_analysis_recipe_id}', collection='{collection_id}'")
 
-        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{project_id}.yaml"
+        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if not data_analysis_recipe_path.exists():
             raise FileNotFoundError(
                 f"Project data analysis recipe not found: {data_analysis_recipe_path}")
@@ -127,7 +127,7 @@ class DataOrchestrator:
         # 1. Load Data Analysis Recipe (kept in memory while none of its files changed on disk)
         loaded = load_data_analysis_recipe(data_analysis_recipe_path)
         data_analysis_recipe = loaded.raw
-        keys = keys or self.compute_project_keys(project_id)
+        keys = keys or self.compute_recipe_keys(data_analysis_recipe_id)
 
         # No tier2 steps: T2 equals T1, so a Tier 2 file left from an earlier data analysis recipe would be a
         # false T2. It could never be served (its key would not match), but it must not stay.
@@ -203,7 +203,7 @@ class DataOrchestrator:
                 collection_spec = collections[collection_id]
             else:
                 raise ValueError(
-                    f"No assembly or data_schema '{collection_id}' found in project '{project_id}'.")
+                    f"No assembly or data_schema '{collection_id}' found in project '{data_analysis_recipe_id}'.")
 
         # Path C: assembly — ordered ingredient dict so DataAssembler starts
         # from the correct base (first declared ingredient, not first dict key)
@@ -304,8 +304,8 @@ class DataOrchestrator:
         print(f"[Orchestrator] ✅ materialize_tier1 DONE — assembly '{collection_id}' in {time.perf_counter()-_t_start:.2f}s → {output_path}")
         return lf
 
-    def materialize_tier2(self, project_id: str, collection_id: str, tier1_path: Path,
-                          keys: ProjectKeys | None = None) -> pl.LazyFrame:
+    def materialize_tier2(self, data_analysis_recipe_id: str, collection_id: str, tier1_path: Path,
+                          keys: RecipeKeys | None = None) -> pl.LazyFrame:
         """The Tier 2 data of one join, read from its stored parquet (ADR-089 point 6, issue #10).
 
         - no tier2 steps: T2 equals T1, nothing is stored, the Tier 1 frame is returned;
@@ -315,21 +315,21 @@ class DataOrchestrator:
         The key chains the Tier 1 key, so a change in a Tier 1 part invalidates Tier 2 as well,
         while a change in a Tier 2 step recomputes only Tier 2 (the Tier 1 file is only checked).
         """
-        keys = keys or self.compute_project_keys(project_id)
-        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{project_id}.yaml"
+        keys = keys or self.compute_recipe_keys(data_analysis_recipe_id)
+        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         steps = tier2_steps(load_data_analysis_recipe(data_analysis_recipe_path).raw, collection_id)
         t2_path = tier2_path_for(tier1_path)
 
         if not steps:
             # materialize_tier1 also removes a Tier 2 file left from an earlier data analysis recipe.
-            return self.materialize_tier1(project_id, collection_id, tier1_path, keys=keys)
+            return self.materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys=keys)
 
         key = tier2_key(keys.tier1_key, steps)
         if t2_path.exists() and get_parquet_metadata_hash(str(t2_path), TIER2_KEY_META) == key:
             print(f"[Orchestrator] ✅ Tier 2 '{collection_id}' is valid (key match) → {t2_path}")
             return pl.scan_parquet(t2_path)
 
-        lf_t1 = self.materialize_tier1(project_id, collection_id, tier1_path, keys=keys)
+        lf_t1 = self.materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys=keys)
         # A copy: DataWrangler.run adds keys to the step dicts in place, and these dicts belong to
         # the data analysis recipe kept in memory, so the next key would no longer match the stored one.
         lf_t2 = DataWrangler(data_schema={}).run(lf_t1, copy.deepcopy(steps))
@@ -340,13 +340,13 @@ class DataOrchestrator:
             "metadata": {TIER2_KEY_META: key},
         })
 
-    def get_source_files(self, project_id: str) -> dict[str, Path]:
+    def get_source_files(self, data_analysis_recipe_id: str) -> dict[str, Path]:
         """Return {dataset_id: resolved_path} for all source files in a project data analysis recipe.
 
         Used by SessionManager.compute_data_batch_hash to detect input file changes.
         Only returns paths that exist on disk; missing files are silently skipped.
         """
-        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{project_id}.yaml"
+        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if not data_analysis_recipe_path.exists():
             return {}
         data_analysis_recipe = load_data_analysis_recipe(data_analysis_recipe_path).raw

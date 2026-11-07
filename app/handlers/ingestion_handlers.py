@@ -49,7 +49,7 @@ def define_server(input, output, session, *, bootloader, current_app_features, s
             if name.endswith(".yaml"):
                 shutil.copy(path, data_analysis_recipe_dir / name)
         bootloader.__init__(app_features=current_app_features.get())
-        ui.update_select("project_id", choices=list(
-            bootloader.available_projects.keys()))
+        ui.update_select("data_analysis_recipe_id", choices=list(
+            bootloader.available_data_analysis_recipes.keys()))
         ui.notification_show("✅ Ingestion complete.", type="success")
 

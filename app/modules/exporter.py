@@ -19,7 +19,7 @@ class SubmissionExporter:
         self.export_dir = Path(export_dir)
         self.export_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_audit_log(self, narrative: list, project_id: str = "ABROMICS_DEMO") -> str:
+    def create_audit_log(self, narrative: list, data_analysis_recipe_id: str = "ABROMICS_DEMO") -> str:
         """Converts the narrative log into a human-readable audit trace via Pandoc."""
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         md_path = self.export_dir / "audit_log.md"
@@ -27,7 +27,7 @@ class SubmissionExporter:
 
         # 1. Draft the Markdown trace
         with open(md_path, "w") as f:
-            f.write(f"# SPARMVET AUDIT LOG: {project_id}\n")
+            f.write(f"# SPARMVET AUDIT LOG: {data_analysis_recipe_id}\n")
             f.write(f"Generated: {ts}\n\n")
             f.write("## 📜 Narrative Trace (ADR-026)\n")
             for entry in narrative:
@@ -65,17 +65,17 @@ class SubmissionExporter:
 
         return str(zip_path)
 
-    def bundle_global_export(self, project_id: str, plot_path: str, tiers: dict, data_analysis_recipe: dict, audit_trail: list) -> str:
+    def bundle_global_export(self, data_analysis_recipe_id: str, plot_path: str, tiers: dict, data_analysis_recipe: dict, audit_trail: list) -> str:
         """
         Bundles the full session state (Phase 14-C).
         Format: SPARMVET_EXPORT_{ISO_DATE}_{PROJECT_ID}.zip
         """
         iso_date = datetime.now().strftime("%Y-%m-%d")
-        zip_name = f"SPARMVET_EXPORT_{iso_date}_{project_id}.zip"
+        zip_name = f"SPARMVET_EXPORT_{iso_date}_{data_analysis_recipe_id}.zip"
         zip_path = self.export_dir / zip_name
 
         # 1. Prep individual files
-        audit_path = self.create_audit_log(audit_trail, project_id)
+        audit_path = self.create_audit_log(audit_trail, data_analysis_recipe_id)
 
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(audit_path, arcname="audit_log.txt")
@@ -98,7 +98,7 @@ class SubmissionExporter:
                 zipf.write(plot_path, arcname="preview_plot.png")
 
             # Educational Metadata Template (ADR-033/Phase 14-C)
-            meta_template = f"""# Example Metadata: {project_id}
+            meta_template = f"""# Example Metadata: {data_analysis_recipe_id}
 ## Family (Purpose): [Distribution | Correlation | Comparison | Ranking]
 ## Data Pattern: [1 Numeric | 2 Numeric | 1 Numeric, 1 Categorical]
 ## Difficulty: [Simple | Intermediate | Advanced]

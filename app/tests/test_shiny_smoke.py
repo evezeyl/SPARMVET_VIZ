@@ -57,7 +57,7 @@ def _wait_for_fb_col_option(page: Page, value: str, timeout: int = 20_000) -> No
     page.wait_for_function(js, timeout=timeout)
 
 
-def _load_project(page: Page, base_url: str, project_id: str = "1_test_data_ST22_dummy") -> None:
+def _load_data_analysis_recipe(page: Page, base_url: str, data_analysis_recipe_id: str = "1_test_data_ST22_dummy") -> None:
     """Navigate to app, select the test project, and wait for groups to render.
 
     If the project is already loaded (Quality Control nav visible), skips navigation
@@ -69,8 +69,8 @@ def _load_project(page: Page, base_url: str, project_id: str = "1_test_data_ST22
         _wait_shiny(page)
         return
     page.goto(base_url)
-    page.wait_for_selector("#project_id", timeout=20_000)
-    page.locator("#project_id").select_option(project_id)
+    page.wait_for_selector("#data_analysis_recipe_id", timeout=20_000)
+    page.locator("#data_analysis_recipe_id").select_option(data_analysis_recipe_id)
     # Wait for dynamic_tabs group nav pills — the first group in 1_test_data_ST22_dummy
     # is "Quality Control". This is the slowest step
     # (tier1 materialization + dynamic_tabs render). 60s covers cold-start scenarios.
@@ -129,7 +129,7 @@ class TestStartup:
     def test_app_loads(self, page: Page, shiny_app: ShinyAppProc):
         """App responds and shows the project selector."""
         page.goto(shiny_app.url)
-        expect(page.locator("#project_id")).to_be_visible(timeout=15_000)
+        expect(page.locator("#data_analysis_recipe_id")).to_be_visible(timeout=15_000)
 
     def test_no_startup_errors(self, page: Page, shiny_app: ShinyAppProc):
         """No Python traceback or render errors at startup."""
@@ -139,7 +139,7 @@ class TestStartup:
 
     def test_project_load(self, page: Page, shiny_app: ShinyAppProc):
         """Loading the test project renders at least one navigation link."""
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         _no_render_error(page)
         tabs = page.locator(".nav-link").all()
         assert len(tabs) > 0, "No navigation tabs found after project load"
@@ -197,7 +197,7 @@ class TestAppFeaturesMasking:
 class TestFilterPipeline:
     def test_filter_form_renders(self, page: Page, shiny_app: ShinyAppProc):
         """Filter sidebar renders with Add Row button after project load and panel open."""
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         expect(page.locator("#filter_add_row")).to_be_visible()
 
@@ -208,7 +208,7 @@ class TestFilterPipeline:
         Note: filter contract correctness is in test_filter_operators.py (21 cases).
         This smoke test verifies the reactive wiring survives the refactor.
         """
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
         # MLST_with_metadata parquet may not be ready on first navigation — wait
@@ -226,7 +226,7 @@ class TestFilterPipeline:
 
     def test_apply_filter_no_crash(self, page: Page, shiny_app: ShinyAppProc):
         """Applying a pending filter does not produce a render error."""
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         page.locator("#fb_col").select_option(index=1)
         page.wait_for_timeout(300)
@@ -238,7 +238,7 @@ class TestFilterPipeline:
 
     def test_filter_reset_clears_rows(self, page: Page, shiny_app: ShinyAppProc):
         """Resetting filters clears pending rows (filter_remove_0 disappears)."""
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
         # MLST_with_metadata parquet may not be ready on first navigation — wait
@@ -334,7 +334,7 @@ class TestPhase25Panels:
 class TestDataPreview:
     def test_data_preview_renders(self, page: Page, shiny_app: ShinyAppProc):
         """Data preview grid renders without errors after project load."""
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         page.wait_for_selector("#home_data_preview", timeout=15_000)
         _no_render_error(page)
         expect(page.locator("#home_data_preview")).to_be_visible()
@@ -361,14 +361,14 @@ class TestViewBadges:
         _wait_shiny(page)
 
     def test_both_badges_say_result_by_default(self, page: Page, shiny_app: ShinyAppProc):
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         self._open_plot(page)
         expect(page.locator(self.PLOT_BADGE).first).to_have_text("Viewing: Result", timeout=15_000)
         expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: Result", timeout=15_000)
 
     def test_plot_badge_follows_plot_to_show_and_says_when_my_view_is_the_result(
             self, page: Page, shiny_app: ShinyAppProc):
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         self._open_plot(page)
         self._choose(page, "plot_view", "T3")
         try:
@@ -381,7 +381,7 @@ class TestViewBadges:
 
     def test_data_badge_follows_data_to_show_and_is_independent_of_the_plot(
             self, page: Page, shiny_app: ShinyAppProc):
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         self._open_plot(page)
         self._choose(page, "tier_toggle", "T1")
         try:
@@ -392,7 +392,7 @@ class TestViewBadges:
         expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: Result", timeout=15_000)
 
     def test_the_badge_is_html_and_not_part_of_the_plot_image(self, page: Page, shiny_app: ShinyAppProc):
-        _load_project(page, shiny_app.url)
+        _load_data_analysis_recipe(page, shiny_app.url)
         self._open_plot(page)
         badge = page.locator(self.PLOT_BADGE).first
         expect(badge).to_be_visible(timeout=15_000)

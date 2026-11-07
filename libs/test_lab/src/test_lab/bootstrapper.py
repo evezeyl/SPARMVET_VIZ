@@ -58,7 +58,7 @@ class DataAnalysisRecipeBootstrapper:
     def bootstrap(
         self,
         tsv_paths: List[Path],
-        project_id: str,
+        data_analysis_recipe_id: str,
         out_dir: Path,
         metadata_path: Optional[Path] = None,
         id_cleaning_steps: Optional[Dict[str, List[Dict[str, Any]]]] = None,
@@ -68,7 +68,7 @@ class DataAnalysisRecipeBootstrapper:
 
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
-            project_id: Data analysis recipe ID and output folder name.
+            data_analysis_recipe_id: Data analysis recipe ID and output folder name.
             out_dir: Root directory for output.
             metadata_path: Optional dedicated metadata TSV. When provided, a
                 ``metadata_schema`` block is added to the master data analysis recipe.
@@ -77,10 +77,10 @@ class DataAnalysisRecipeBootstrapper:
                 actions: ``strip_whitespace``, ``cast`` (String only),
                 ``regex_replace``.
         """
-        project_dir = out_dir / project_id
-        project_dir.mkdir(parents=True, exist_ok=True)
+        recipe_dir = out_dir / data_analysis_recipe_id
+        recipe_dir.mkdir(parents=True, exist_ok=True)
 
-        fragments_dir = project_dir / project_id  # Subfolder for fragments
+        fragments_dir = recipe_dir / data_analysis_recipe_id  # Subfolder for fragments
         fragments_dir.mkdir(parents=True, exist_ok=True)
 
         id_cleaning_steps = id_cleaning_steps or {}
@@ -142,19 +142,19 @@ class DataAnalysisRecipeBootstrapper:
                     "type": "local_tsv",
                     "path": source_path,
                 },
-                "input_fields": IncludeRef(f"{project_id}/{dataset_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{project_id}/{dataset_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{project_id}/{dataset_id}_output_fields.yaml")
+                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_input_fields.yaml"),
+                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_wrangling.yaml"),
+                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_output_fields.yaml")
             }
 
         # Write Master Data Analysis Recipe
         master_data_analysis_recipe: Dict[str, Any] = {
-            "id": project_id,
+            "id": data_analysis_recipe_id,
             "type": "pipeline",
             "info": {
-                "display_name": project_id.replace('_', ' ').title(),
+                "display_name": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
-                "description": f"Auto-bootstrapped pipeline for {project_id}"
+                "description": f"Auto-bootstrapped pipeline for {data_analysis_recipe_id}"
             },
             "data_schemas": datasets_config,
         }
@@ -164,15 +164,15 @@ class DataAnalysisRecipeBootstrapper:
             meta_id = self._sanitize_name(metadata_path.stem)
             master_data_analysis_recipe["metadata_schema"] = {
                 "source": {"type": "local_tsv", "path": str(metadata_path)},
-                "input_fields": IncludeRef(f"{project_id}/{meta_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{project_id}/{meta_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{project_id}/{meta_id}_output_fields.yaml"),
+                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_input_fields.yaml"),
+                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_wrangling.yaml"),
+                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_output_fields.yaml"),
             }
 
         master_data_analysis_recipe["joins"] = {}
         master_data_analysis_recipe["analysis_groups"] = {}
 
-        master_file = project_dir / f"{project_id}.yaml"
+        master_file = recipe_dir / f"{data_analysis_recipe_id}.yaml"
         with open(master_file, 'w') as f:
             yaml.dump(master_data_analysis_recipe, f, sort_keys=False)
 

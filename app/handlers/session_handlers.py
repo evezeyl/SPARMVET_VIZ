@@ -38,7 +38,7 @@ def define_session_server(input, output, session, *,
         Shared home dashboard state (data_analysis_recipe_sha256, t3_audit_steps_by_plot, etc.).
     safe_input : callable | None
         safe_input(input, key, default) — used by the active-session export
-        download to read project_id for the filename. Optional for back-compat.
+        download to read data_analysis_recipe_id for the filename. Optional for back-compat.
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -218,10 +218,10 @@ def define_session_server(input, output, session, *,
     def _active_session_export_filename() -> str:
         import datetime
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        proj_id = ""
+        data_analysis_recipe_id = ""
         if safe_input is not None:
-            proj_id = safe_input(input, "project_id", "") or ""
-        proj_tag = f"_{proj_id}" if proj_id else ""
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", "") or ""
+        proj_tag = f"_{data_analysis_recipe_id}" if data_analysis_recipe_id else ""
         return f"{ts}{proj_tag}_session.zip"
 
     # Session restore + delete handlers are registered dynamically per session.

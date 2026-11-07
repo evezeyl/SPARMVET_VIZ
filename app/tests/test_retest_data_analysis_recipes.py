@@ -32,12 +32,12 @@ def orch():
 
 def t1(project, join, tmp_path):
     o = orch()
-    return o.materialize_tier1(project, join, tmp_path / f"{join}.parquet", keys=o.compute_project_keys(project))
+    return o.materialize_tier1(project, join, tmp_path / f"{join}.parquet", keys=o.compute_recipe_keys(project))
 
 
 def t2(project, join, tmp_path):
     o = orch()
-    return o.materialize_tier2(project, join, tmp_path / f"{join}.parquet", keys=o.compute_project_keys(project))
+    return o.materialize_tier2(project, join, tmp_path / f"{join}.parquet", keys=o.compute_recipe_keys(project))
 
 
 @pytest.mark.parametrize("project", ["retest_tier2", "retest_top_n_other", "retest_broken_header",

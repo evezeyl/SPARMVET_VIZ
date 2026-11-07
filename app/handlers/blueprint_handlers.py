@@ -531,10 +531,10 @@ def define_server(input, output, session, *,
                         anchor_dir = bootloader.get_location("user_data") / "anchors"
                         anchor_dir.mkdir(parents=True, exist_ok=True)
                         out_p = anchor_dir / f"{schema_id}.parquet"
-                        bp_project_id = Path(master_path).stem
+                        bp_data_analysis_recipe_id = Path(master_path).stem
                         print(f"[Architect] Materializing join '{schema_id}'")
                         orchestrator.materialize_tier1(
-                            project_id=bp_project_id,
+                            data_analysis_recipe_id=bp_data_analysis_recipe_id,
                             collection_id=schema_id,
                             output_path=out_p
                         )
@@ -584,10 +584,10 @@ def define_server(input, output, session, *,
                             anchor_dir = bootloader.get_location("user_data") / "anchors"
                             anchor_dir.mkdir(parents=True, exist_ok=True)
                             out_p = anchor_dir / f"{target_ds}.parquet"
-                            bp_project_id = Path(master_path).stem
-                            print(f"[Architect] Materializing '{target_ds}' from '{bp_project_id}'")
+                            bp_data_analysis_recipe_id = Path(master_path).stem
+                            print(f"[Architect] Materializing '{target_ds}' from '{bp_data_analysis_recipe_id}'")
                             orchestrator.materialize_tier1(
-                                project_id=bp_project_id,
+                                data_analysis_recipe_id=bp_data_analysis_recipe_id,
                                 collection_id=target_ds,
                                 output_path=out_p
                             )
@@ -611,9 +611,9 @@ def define_server(input, output, session, *,
                             anchor_dir = bootloader.get_location("user_data") / "anchors"
                             anchor_dir.mkdir(parents=True, exist_ok=True)
                             out_p = anchor_dir / f"{target_ds}.parquet"
-                            bp_project_id = Path(master_path).stem
+                            bp_data_analysis_recipe_id = Path(master_path).stem
                             orchestrator.materialize_tier1(
-                                project_id=bp_project_id,
+                                data_analysis_recipe_id=bp_data_analysis_recipe_id,
                                 collection_id=target_ds,
                                 output_path=out_p
                             )
@@ -741,10 +741,10 @@ def define_server(input, output, session, *,
                     anchor_dir = bootloader.get_location("user_data") / "anchors"
                     anchor_dir.mkdir(parents=True, exist_ok=True)
                     out_p = anchor_dir / f"{selected}.parquet"
-                    bp_project_id = Path(master_path).stem
+                    bp_data_analysis_recipe_id = Path(master_path).stem
                     print(f"[Architect Mode B] Materializing join '{selected}'")
                     orchestrator.materialize_tier1(
-                        project_id=bp_project_id,
+                        data_analysis_recipe_id=bp_data_analysis_recipe_id,
                         collection_id=selected,
                         output_path=out_p
                     )
@@ -769,9 +769,9 @@ def define_server(input, output, session, *,
                         anchor_dir = bootloader.get_location("user_data") / "anchors"
                         anchor_dir.mkdir(parents=True, exist_ok=True)
                         out_p = anchor_dir / f"{plot_target_ds}.parquet"
-                        bp_project_id = Path(master_path).stem
+                        bp_data_analysis_recipe_id = Path(master_path).stem
                         orchestrator.materialize_tier1(
-                            project_id=bp_project_id,
+                            data_analysis_recipe_id=bp_data_analysis_recipe_id,
                             collection_id=plot_target_ds,
                             output_path=out_p
                         )
@@ -2038,7 +2038,7 @@ def define_server(input, output, session, *,
         joint_preview.set(None)
         ui.update_navs("architect_internal_tabs", selected="joint_designer")
 
-    def _jd_extract_keys(project_id, ingredient_id, keys):
+    def _jd_extract_keys(data_analysis_recipe_id, ingredient_id, keys):
         """Materialise an ingredient and return (rows, dtypes) for its key columns.
 
         rows: list of String-cast key tuples (mirrors how the assembler joins).
@@ -2049,7 +2049,7 @@ def define_server(input, output, session, *,
         anchor_dir.mkdir(parents=True, exist_ok=True)
         out_p = anchor_dir / f"_jd_{ingredient_id}.parquet"
         orchestrator.materialize_tier1(
-            project_id=project_id, collection_id=ingredient_id, output_path=out_p)
+            data_analysis_recipe_id=data_analysis_recipe_id, collection_id=ingredient_id, output_path=out_p)
         lf = pl.scan_parquet(out_p)
         schema = lf.collect_schema()
         missing = [k for k in keys if k not in schema.names()]
@@ -2085,16 +2085,16 @@ def define_server(input, output, session, *,
         if not data_analysis_recipe_path:
             joint_preview.set({"error": "No active data analysis recipe — import one first."})
             return
-        project_id = Path(data_analysis_recipe_path).stem
+        data_analysis_recipe_id = Path(data_analysis_recipe_path).stem
 
         try:
             with ui.Progress(min=0, max=2) as p:
                 p.set(0, message=f"Materialising {left_ing}…")
                 left_rows, left_dtypes = _jd_extract_keys(
-                    project_id, left_ing, left_keys)
+                    data_analysis_recipe_id, left_ing, left_keys)
                 p.set(1, message=f"Materialising {right_ing}…")
                 right_rows, right_dtypes = _jd_extract_keys(
-                    project_id, right_ing, right_keys)
+                    data_analysis_recipe_id, right_ing, right_keys)
             stats = compute_key_match(
                 left_rows, right_rows, left_dtypes, right_dtypes)
             stats["error"] = None

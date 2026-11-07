@@ -75,7 +75,7 @@ class TestUIScenarios(unittest.TestCase):
         }
 
         zip_path = self.exporter.bundle_global_export(
-            project_id="INTEGRITY_TEST",
+            data_analysis_recipe_id="INTEGRITY_TEST",
             plot_path=None,
             tiers=tiers,
             data_analysis_recipe={"info": {"name": "Test"}},

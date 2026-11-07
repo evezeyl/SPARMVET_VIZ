@@ -32,7 +32,7 @@ from app.modules.t3_audit_engine import _apply_filter_rows, _op_label
 def build_export_provenance(
     *,
     now,
-    proj_id: str,
+    data_analysis_recipe_id: str,
     safe_name: str,
     app_features: str,
     preset: str,
@@ -89,7 +89,7 @@ def build_export_provenance(
     data_analysis_recipe_path_str = "n/a"
     data_analysis_recipe_name = "n/a"
     try:
-        _mp = bootloader.available_projects.get(proj_id)
+        _mp = bootloader.available_data_analysis_recipes.get(data_analysis_recipe_id)
         if _mp:
             data_analysis_recipe_path_str = str(_mp)
             data_analysis_recipe_name = Path(str(_mp)).stem
@@ -100,7 +100,7 @@ def build_export_provenance(
     data_source_paths: dict[str, str] = {}
     if orchestrator is not None:
         try:
-            _src = orchestrator.get_source_files(proj_id)
+            _src = orchestrator.get_source_files(data_analysis_recipe_id)
             data_source_paths = {k: str(v) for k, v in (_src or {}).items()}
         except Exception:
             pass
@@ -129,7 +129,7 @@ def build_export_provenance(
 
     return {
         "created_at": now.isoformat(),
-        "project_id": proj_id,
+        "data_analysis_recipe_id": data_analysis_recipe_id,
         "data_analysis_recipe_name": data_analysis_recipe_name,
         "data_analysis_recipe_path": data_analysis_recipe_path_str,
         "app_features": app_features,
@@ -237,7 +237,7 @@ def _embed_png_provenance(
         info = PngImagePlugin.PngInfo()
         fields = {
             "sparmvet:plot_id": plot_id,
-            "sparmvet:project_id": prov.get("project_id", ""),
+            "sparmvet:data_analysis_recipe_id": prov.get("data_analysis_recipe_id", ""),
             "sparmvet:app_features": prov.get("app_features", ""),
             "sparmvet:data_analysis_recipe_sha256": prov.get("data_analysis_recipe_sha256", ""),
             "sparmvet:data_batch_hash": prov.get("data_batch_hash", ""),
@@ -268,7 +268,7 @@ def _embed_svg_provenance(
         meta_el = _ET.SubElement(root, "metadata")
         meta_el.text = "\n".join([
             f"sparmvet:plot_id={plot_id}",
-            f"sparmvet:project_id={prov.get('project_id', '')}",
+            f"sparmvet:data_analysis_recipe_id={prov.get('data_analysis_recipe_id', '')}",
             f"sparmvet:app_features={prov.get('app_features', '')}",
             f"sparmvet:data_analysis_recipe_sha256={prov.get('data_analysis_recipe_sha256', '')}",
             f"sparmvet:data_batch_hash={prov.get('data_batch_hash', '')}",
@@ -408,7 +408,7 @@ def define_export_server(input, output, session, *,
       active_home_subtab : reactive.Value[str] | None  — current plot subtab id
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
       t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
-      view_keys          : reactive.Calc[ProjectKeys]  the keys the open view was built on
+      view_keys          : reactive.Calc[RecipeKeys]  the keys the open view was built on
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -577,10 +577,10 @@ def define_export_server(input, output, session, *,
         dpi = 300 if preset == "web" else 600
 
         cfg = active_cfg()
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         # ADR-089: one set of chained keys for the whole export; every stored stage is checked
         # against it instead of being reused by file name.
-        export_keys = orchestrator.compute_project_keys(proj_id)
+        export_keys = orchestrator.compute_recipe_keys(data_analysis_recipe_id)
 
         # EXPORT-KEYCHECK-1: the keys of the open view must equal the keys now. If a data analysis recipe or
         # data file changed after the view was opened, refuse: what is exported must be what the
@@ -714,7 +714,7 @@ def define_export_server(input, output, session, *,
 
             prov = build_export_provenance(
                 now=now,
-                proj_id=proj_id,
+                data_analysis_recipe_id=data_analysis_recipe_id,
                 safe_name=safe_name,
                 app_features=app_features,
                 preset=preset,
@@ -794,7 +794,7 @@ def define_export_server(input, output, session, *,
                             # Plots never show T1 (ADR-086): same base as HOME, the stored
                             # Tier 2 (equal to T1 when the join has no tier2 steps).
                             lf = orchestrator.materialize_tier2(
-                                project_id=proj_id,
+                                data_analysis_recipe_id=data_analysis_recipe_id,
                                 collection_id=target_ds,
                                 tier1_path=out_path,
                                 keys=export_keys,
@@ -871,7 +871,7 @@ def define_export_server(input, output, session, *,
                             anchor_dir = bootloader.get_location("user_data") / "anchors"
                             out_path = anchor_dir / f"{target_ds}.parquet"
                             lf_t1 = orchestrator.materialize_tier1(
-                                project_id=proj_id,
+                                data_analysis_recipe_id=data_analysis_recipe_id,
                                 collection_id=target_ds,
                                 output_path=out_path,
                                 keys=export_keys,
@@ -895,7 +895,7 @@ def define_export_server(input, output, session, *,
                         from app.modules.cache_keys import tier2_steps
                         if target_ds and tier2_steps(active_cfg().raw_config, target_ds):
                             lf_t2 = orchestrator.materialize_tier2(
-                                project_id=proj_id,
+                                data_analysis_recipe_id=data_analysis_recipe_id,
                                 collection_id=target_ds,
                                 tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet",
                                 keys=export_keys,
@@ -926,7 +926,7 @@ def define_export_server(input, output, session, *,
                             try:
                                 if target_ds:
                                     lf_t3 = orchestrator.materialize_tier2(
-                                        project_id=proj_id,
+                                        data_analysis_recipe_id=data_analysis_recipe_id,
                                         collection_id=target_ds,
                                         tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet",
                                         keys=export_keys,
@@ -951,10 +951,10 @@ def define_export_server(input, output, session, *,
                 # fragments into the bundle (cross-project leak). Now we copy:
                 #   1. The active project's data analysis recipe itself
                 #   2. Its `!include` subdirectory if one exists (named
-                #      `{proj_id}/`) — that's where fragment files live per
+                #      `{data_analysis_recipe_id}/`) — that's where fragment files live per
                 #      the basename-mirroring convention.
                 try:
-                    proj_data_analysis_recipe_path = bootloader.available_projects.get(proj_id)
+                    proj_data_analysis_recipe_path = bootloader.available_data_analysis_recipes.get(data_analysis_recipe_id)
                     if proj_data_analysis_recipe_path:
                         data_analysis_recipe_p = Path(str(proj_data_analysis_recipe_path))
                         proj_dir = data_analysis_recipe_p.parent
@@ -965,7 +965,7 @@ def define_export_server(input, output, session, *,
                                 f.read()
                             )
                         # 2. Includes subdirectory (if it exists for this project)
-                        includes_dir = proj_dir / proj_id
+                        includes_dir = proj_dir / data_analysis_recipe_id
                         if includes_dir.is_dir():
                             for yaml_file in includes_dir.rglob("*.yaml"):
                                 rel = yaml_file.relative_to(proj_dir)
@@ -1021,7 +1021,7 @@ def define_export_server(input, output, session, *,
                 from blueprint_arch.data_analysis_recipe_navigator import (
                     build_plot_lineage as _bpl,
                 )
-                _mnf_path_obj = bootloader.available_projects.get(proj_id)
+                _mnf_path_obj = bootloader.available_data_analysis_recipes.get(data_analysis_recipe_id)
                 if _mnf_path_obj:
                     _mnf_str = str(_mnf_path_obj)
                     for _pid, _pspec in all_plots:
@@ -1127,7 +1127,7 @@ def define_export_server(input, output, session, *,
 
             qmd_lines = [
                 "---",
-                f'title: "Results Report — {proj_id}"',
+                f'title: "Results Report — {data_analysis_recipe_id}"',
                 f'date: "{now.strftime("%Y-%m-%d")}"',
                 f'author: "{safe_name}"',
                 'format:',
@@ -1151,7 +1151,7 @@ def define_export_server(input, output, session, *,
                 "",
                 "## Overview",
                 "",
-                f"Project: **{proj_id}**  ",
+                f"Project: **{data_analysis_recipe_id}**  ",
                 f"App features: **{app_features}**  ",
                 f"Export preset: **{preset}**  ",
                 f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}  ",
@@ -1488,7 +1488,7 @@ def define_export_server(input, output, session, *,
                 "SPARMVET-VIZ Export Bundle",
                 "=" * 40,
                 f"Timestamp        : {prov['created_at']}",
-                f"Project          : {prov['project_id']}",
+                f"Project          : {prov['data_analysis_recipe_id']}",
                 f"Data analysis recipe name    : {prov['data_analysis_recipe_name']}",
                 f"Data analysis recipe path    : {prov['data_analysis_recipe_path']}",
                 f"User             : {prov['bundle_label']}",

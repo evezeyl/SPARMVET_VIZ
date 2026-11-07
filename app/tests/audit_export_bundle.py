@@ -28,7 +28,7 @@ def audit_export():
 
     # 2. Bundle
     zip_path = exporter.bundle_global_export(
-        project_id="AUDIT_PROJ",
+        data_analysis_recipe_id="AUDIT_PROJ",
         plot_path="tmp/audit_plot.png",  # Simulated
         tiers={k: v.collect().to_pandas() if hasattr(v, "collect")
                else v.to_pandas() for k, v in tiers.items()},

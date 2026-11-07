@@ -67,11 +67,11 @@ def server(input, output, session):
     @reactive.Calc
     def active_cfg():
         # When the selector is hidden the deployment (or SPARMVET_DATA_ANALYSIS_RECIPE) names the data analysis recipe;
-        # fall back to the project_id widget only when the selector is visible.
-        project_id = _safe_input(input, "project_id", bootloader.get_default_project())
+        # fall back to the data_analysis_recipe_id widget only when the selector is visible.
+        data_analysis_recipe_id = _safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         # ADR-089: the parsed data analysis recipe stays in memory only while none of its files changed on
         # disk (size and modification time are checked each time a session evaluates this).
-        path = bootloader.get_location("data_analysis_recipes") / f"{project_id}.yaml"
+        path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"
         return load_data_analysis_recipe(path).config
 
     orchestrator = DataOrchestrator(
@@ -128,17 +128,17 @@ def server(input, output, session):
     @reactive.Calc
     def tier1_anchor():
         """Scans the physical Parquet anchor (Predicate Pushdown ready)."""
-        project_id = _safe_input(input, "project_id", "default")
+        data_analysis_recipe_id = _safe_input(input, "data_analysis_recipe_id", "default")
         coll_id = active_collection_id()
         cached_lf = bootloader.get_cached_asset(
-            project_id, coll_id, "anchor", "lf")
+            data_analysis_recipe_id, coll_id, "anchor", "lf")
         if cached_lf is not None:
             return cached_lf
         path = anchor_path.get()
         if not path:
             return pl.DataFrame().lazy()
         lf = pl.scan_parquet(path)
-        bootloader.set_cached_asset(project_id, coll_id, "anchor", "lf", lf)
+        bootloader.set_cached_asset(data_analysis_recipe_id, coll_id, "anchor", "lf", lf)
         return lf
 
 

@@ -58,8 +58,8 @@ def wait_idle(page, timeout=20000):
 
 def open_project(page, url, project):
     page.goto(url)
-    page.wait_for_selector("#project_id", timeout=30000)
-    page.locator("#project_id").select_option(project)
+    page.wait_for_selector("#data_analysis_recipe_id", timeout=30000)
+    page.locator("#data_analysis_recipe_id").select_option(project)
     wait_idle(page)
     time.sleep(2)
     wait_idle(page)

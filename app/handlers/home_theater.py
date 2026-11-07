@@ -76,7 +76,7 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
     """
     seen = set()
     results = []
-    for proj_id, data_analysis_recipe_path in bootloader.available_projects.items():
+    for data_analysis_recipe_id, data_analysis_recipe_path in bootloader.available_data_analysis_recipes.items():
         try:
             cfg = load_data_analysis_recipe(data_analysis_recipe_path).config
             # Collect from analysis_groups
@@ -161,22 +161,22 @@ def define_server(input, output, session, *,
 
     # ── Project load notification — fires on startup and on every project switch ─
     @reactive.Effect
-    @reactive.event(input.project_id)
+    @reactive.event(input.data_analysis_recipe_id)
     def _notify_project_loaded():
-        proj = safe_input(input, "project_id", "")
+        proj = safe_input(input, "data_analysis_recipe_id", "")
         if proj:
             _notify(f"📂 Project '{proj}' loaded — plots are ready.", type="message", duration=5)
 
-    # Track selected project across sidebar nav switches (project_id input is
+    # Track selected project across sidebar nav switches (data_analysis_recipe_id input is
     # absent from DOM while Gallery/Blueprint is active; without this, returning
     # to Home re-renders sidebar_tools_ui with the default project selected).
-    _last_project_id = reactive.Value(bootloader.get_default_project())
+    _last_data_analysis_recipe_id = reactive.Value(bootloader.get_default_data_analysis_recipe())
 
     @reactive.Effect
-    def _track_project_id():
-        v = safe_input(input, "project_id", None)
+    def _track_data_analysis_recipe_id():
+        v = safe_input(input, "data_analysis_recipe_id", None)
         if v is not None:
-            _last_project_id.set(v)
+            _last_data_analysis_recipe_id.set(v)
 
     # ── Phase 21-F: Filter builder state ────────────────────────────────
     # List of dicts: {column, op, value, dtype}  — consumed by plot handlers and data preview.
@@ -215,7 +215,7 @@ def define_server(input, output, session, *,
         return spec
 
     @reactive.Calc
-    def _project_keys():
+    def _recipe_keys():
         """Chained cache keys of the active project (ADR-089), computed once per session.
 
         Hashes the data files by content, so it re-runs only when the project or the
@@ -223,8 +223,8 @@ def define_server(input, output, session, *,
         """
         if data_refresh_trigger is not None:
             data_refresh_trigger.get()
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
-        return orchestrator.compute_project_keys(proj_id)
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        return orchestrator.compute_recipe_keys(data_analysis_recipe_id)
 
     def _resolve_t1_lf(spec: dict | None):
         """Return the T1 LazyFrame for spec, always ignoring tier_toggle."""
@@ -237,14 +237,14 @@ def define_server(input, output, session, *,
         if target_ds:
             anchor_dir = bootloader.get_location("user_data") / "anchors"
             out_path = anchor_dir / f"{target_ds}.parquet"
-            proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
             # ADR-089: never reuse an anchor by file name. The orchestrator checks the chained
             # key stored in the file (a cheap metadata read) and rebuilds only when it differs.
             return orchestrator.materialize_tier1(
-                project_id=proj_id,
+                data_analysis_recipe_id=data_analysis_recipe_id,
                 collection_id=target_ds,
                 output_path=out_path,
-                keys=_project_keys(),
+                keys=_recipe_keys(),
             )
         return tier1_anchor()
 
@@ -263,12 +263,12 @@ def define_server(input, output, session, *,
             if data_refresh_trigger is not None:
                 data_refresh_trigger.get()
             out_path = bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet"
-            proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
             # Issue #10 / ADR-089: T2 is read from its stored parquet (key-checked). An error is
             # not caught here: showing Tier 1 in place of a failed Tier 2 would be a false result.
             return orchestrator.materialize_tier2(
-                project_id=proj_id, collection_id=target_ds,
-                tier1_path=out_path, keys=_project_keys())
+                data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target_ds,
+                tier1_path=out_path, keys=_recipe_keys())
         return _resolve_t1_lf(spec)
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
@@ -704,7 +704,7 @@ def define_server(input, output, session, *,
 
         # 2. Results Theater (Home) Logic — ADR-043 Unified Home Theater
         try:
-            proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
             coll_id = active_collection_id()
             # ADR-024: Materialize to persistent session location
             anchor_dir = bootloader.get_location("user_data") / "anchors"
@@ -713,10 +713,10 @@ def define_server(input, output, session, *,
             out_path = anchor_dir / f"{coll_id}.parquet"
 
             lf_full = orchestrator.materialize_tier1(
-                project_id=proj_id,
+                data_analysis_recipe_id=data_analysis_recipe_id,
                 collection_id=coll_id,
                 output_path=out_path,
-                keys=_project_keys(),
+                keys=_recipe_keys(),
             )
 
         except Exception as e:
@@ -1017,22 +1017,22 @@ def define_server(input, output, session, *,
             pass
 
     # Data change detection — runs as a side-effect separate from dynamic_tabs render.
-    # Reads project_id to react when the user switches projects; computes source file
+    # Reads data_analysis_recipe_id to react when the user switches projects; computes source file
     # hashes, compares to stored data_batch_hash, warns if changed, and always writes
     # data_analysis_recipe_sha256 + data_batch_hash into home_state for session_manager.
     @reactive.Effect
     def _sync_session_provenance():
         if home_state is None:
             return
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
-        if not proj_id:
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        if not data_analysis_recipe_id:
             return
         try:
             from app.modules.session_manager import SessionManager as _SM
             from app.modules.session_manager import extract_primary_keys
-            source_files = orchestrator.get_source_files(proj_id)
+            source_files = orchestrator.get_source_files(data_analysis_recipe_id)
             new_dbh = _SM.compute_data_batch_hash(source_files) if source_files else ""
-            data_analysis_recipe_path = bootloader.get_location("data_analysis_recipes") / f"{proj_id}.yaml"
+            data_analysis_recipe_path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"
             new_msig = _SM.compute_data_analysis_recipe_sha256(data_analysis_recipe_path) if data_analysis_recipe_path.exists() else ""
             new_pks = extract_primary_keys(active_cfg().raw_config)
 
@@ -1069,7 +1069,7 @@ def define_server(input, output, session, *,
                     session_key = _SM.compute_session_key(new_msig, new_dbh)
                     session_manager.write_assembly_ghost(
                         session_key=session_key,
-                        data_analysis_recipe_id=proj_id,
+                        data_analysis_recipe_id=data_analysis_recipe_id,
                         data_analysis_recipe_sha256=new_msig,
                         data_batch_hash=new_dbh,
                         source_files={k: str(v) for k, v in source_files.items()},
@@ -1427,14 +1427,14 @@ def define_server(input, output, session, *,
         # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
         # Build project state needed by some panel renderers.
         try:
-            proj_choices = list(bootloader.available_projects.keys())
-            def_proj = bootloader.get_default_project()
+            recipe_choices = list(bootloader.available_data_analysis_recipes.keys())
+            default_recipe = bootloader.get_default_data_analysis_recipe()
         except Exception:
-            proj_choices = []
-            def_proj = None
+            recipe_choices = []
+            default_recipe = None
 
         with reactive.isolate():
-            _current_proj = _last_project_id.get() or def_proj
+            _current_recipe = _last_data_analysis_recipe_id.get() or default_recipe
 
         # Panel renderer map: type → callable() → accordion_panel | None
         # None means the panel type was handled (e.g. notification_log goes outside accordion).
@@ -1469,9 +1469,9 @@ def define_server(input, output, session, *,
             return ui.accordion_panel(
                 "Data analysis recipe Choice",
                 ui.div(
-                    ui.input_select("project_id", "Project Selection",
-                                    choices=proj_choices,
-                                    selected=_current_proj),
+                    ui.input_select("data_analysis_recipe_id", "Project Selection",
+                                    choices=recipe_choices,
+                                    selected=_current_recipe),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")
@@ -1931,7 +1931,7 @@ def define_server(input, output, session, *,
         session_pipeline_errors=session_pipeline_errors,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
-        view_keys=_project_keys,
+        view_keys=_recipe_keys,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

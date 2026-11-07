@@ -34,7 +34,7 @@ def build_all(project: str, workdir: Path) -> dict[str, list[pl.DataFrame]]:
         anchors.mkdir(parents=True)
         # source.path of the data analysis recipes is relative to the project root
         orchestrator = DataOrchestrator(DATA_ANALYSIS_RECIPES_DIR, ROOT / "assets" / "test_data")
-        keys = orchestrator.compute_project_keys(project)
+        keys = orchestrator.compute_recipe_keys(project)
         for collection in collections:
             lf = orchestrator.materialize_tier1(project, collection, anchors / f"{collection}.parquet", keys=keys)
             builds[collection].append(lf.collect())

@@ -58,7 +58,7 @@ def build_system_prompt(
 
     # 3. Current project context
     if data_analysis_recipe_path:
-        sections.append(_build_project_context(Path(data_analysis_recipe_path)))
+        sections.append(_build_recipe_context(Path(data_analysis_recipe_path)))
 
     # 4. Tool-call protocol instructions (fenced-block format, ADR-076 §10.1)
     sections.append(_TOOL_CALL_PROTOCOL)
@@ -120,7 +120,7 @@ def _build_action_summary() -> str:
     return "\n".join(lines)
 
 
-def _build_project_context(data_analysis_recipe_path: Path) -> str:
+def _build_recipe_context(data_analysis_recipe_path: Path) -> str:
     """Build a concise project context block from the active data analysis recipe."""
     if not data_analysis_recipe_path.exists():
         return f"## Active Data Analysis Recipe\nPath: {data_analysis_recipe_path}\n(file not found)"

@@ -413,8 +413,8 @@ def test_bootloader_locations(project_root: Path):
             except Exception as e:
                 record(f"location_{loc_key}", False, str(e))
 
-        default_project = bl.get_default_project()
-        record("default_project_discoverable", bool(default_project), default_project)
+        default_recipe = bl.get_default_data_analysis_recipe()
+        record("default_project_discoverable", bool(default_recipe), default_recipe)
 
     except Exception as e:
         record("bootloader_location_error", False, str(e))

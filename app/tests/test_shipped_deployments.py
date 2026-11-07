@@ -34,7 +34,7 @@ def test_shipped_deployment_starts_with_no_other_setting(path, monkeypatch):
         monkeypatch.setenv("SPARMVET_APP_FEATURES", "pipeline-static")
     b = Bootloader()
     assert b.app_features_path.exists()
-    assert b.get_default_project() in b.available_projects
+    assert b.get_default_data_analysis_recipe() in b.available_data_analysis_recipes
     branding = yaml.safe_load(path.read_text()).get("branding") or {}
     if branding.get("theme_css"):
         assert Path(branding["theme_css"]).exists()

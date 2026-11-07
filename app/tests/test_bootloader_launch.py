@@ -142,14 +142,14 @@ def test_recipes_are_listed_from_the_data_analysis_recipes_folder(tmp_path, monk
     (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\n")
     (root / "data_analysis_recipes" / "notes.txt").write_text("not a manifest\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
-    assert sorted(Bootloader().available_projects) == ["alpha", "beta"]
+    assert sorted(Bootloader().available_data_analysis_recipes) == ["alpha", "beta"]
 
 
 def test_deployment_default_recipe_opens_first(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path, recipe="beta", **{"default_app_features": "qa"})
     (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
-    assert Bootloader().get_default_project() == "beta"
+    assert Bootloader().get_default_data_analysis_recipe() == "beta"
 
 
 def test_launch_variable_beats_the_deployment_default_recipe(tmp_path, monkeypatch):
@@ -157,7 +157,7 @@ def test_launch_variable_beats_the_deployment_default_recipe(tmp_path, monkeypat
     (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     monkeypatch.setenv("SPARMVET_DATA_ANALYSIS_RECIPE", "alpha")
-    assert Bootloader().get_default_project() == "alpha"
+    assert Bootloader().get_default_data_analysis_recipe() == "alpha"
 
 
 def test_a_named_recipe_that_does_not_exist_stops_the_app(tmp_path, monkeypatch, capsys):
@@ -184,7 +184,7 @@ def test_visible_selector_without_a_named_recipe_opens_the_first_one(tmp_path, m
     (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     b = Bootloader()
-    assert b.get_default_project() == "alpha"
+    assert b.get_default_data_analysis_recipe() == "alpha"
 
 
 def test_a_preset_naming_a_recipe_stops_the_app(tmp_path, monkeypatch, capsys):

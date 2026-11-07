@@ -37,10 +37,10 @@ _IncludeIgnoringLoader.add_constructor(
 )
 
 
-def _load_master(zip_bytes: bytes, project_id: str) -> dict:
+def _load_master(zip_bytes: bytes, data_analysis_recipe_id: str) -> dict:
     """Extract and parse the master YAML from a ZIP without resolving !include."""
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-        raw = zf.read(f"{project_id}/{project_id}.yaml").decode()
+        raw = zf.read(f"{data_analysis_recipe_id}/{data_analysis_recipe_id}.yaml").decode()
     return yaml.load(raw, Loader=_IncludeIgnoringLoader)
 
 

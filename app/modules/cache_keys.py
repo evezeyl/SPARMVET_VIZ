@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:load_data_analysis_recipe, function:tier1_key, function:tier2_key, function:data_analysis_recipe_fileset_hash, function:project_keys, class:LoadedDataAnalysisRecipe, class:ProjectKeys
+provides: function:load_data_analysis_recipe, function:tier1_key, function:tier2_key, function:data_analysis_recipe_fileset_hash, function:recipe_keys, class:LoadedDataAnalysisRecipe, class:RecipeKeys
 consumes: libs/utils/src/utils/config_loader.py
 consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/tests/test_cache_keys.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, docs/foundations/reproducibility_hash_schema.qmd
@@ -160,7 +160,7 @@ class LoadedDataAnalysisRecipe:
 
 
 @dataclass(frozen=True)
-class ProjectKeys:
+class RecipeKeys:
     """Everything the stored stages of one project depend on, computed once per session."""
 
     data_analysis_recipe_sha256: str   # file-set hash (provenance, session key)
@@ -168,8 +168,8 @@ class ProjectKeys:
     tier1_key: str         # chained key of the Tier 1 parquet
 
 
-def project_keys(loaded: "LoadedDataAnalysisRecipe", data_batch_hash: str) -> ProjectKeys:
-    return ProjectKeys(
+def recipe_keys(loaded: "LoadedDataAnalysisRecipe", data_batch_hash: str) -> RecipeKeys:
+    return RecipeKeys(
         data_analysis_recipe_sha256=loaded.data_analysis_recipe_sha256,
         data_batch_hash=data_batch_hash,
         tier1_key=tier1_key(loaded.material_hash, data_batch_hash),

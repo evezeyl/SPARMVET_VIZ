@@ -315,9 +315,9 @@ def define_server(
     def tl_scaffold_ui():
         return ui.div(
             ui.input_text(
-                "tl_scaffold_project_id",
+                "tl_scaffold_data_analysis_recipe_id",
                 "Project ID (snake_case)",
-                placeholder="my_project",
+                placeholder="my_recipe",
             ),
             ui.input_file(
                 "tl_scaffold_files",
@@ -403,10 +403,10 @@ def define_server(
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder
 
         try:
-            project_id = (input.tl_scaffold_project_id() or "").strip()
+            data_analysis_recipe_id = (input.tl_scaffold_data_analysis_recipe_id() or "").strip()
         except Exception:
-            project_id = ""
-        if not project_id:
+            data_analysis_recipe_id = ""
+        if not data_analysis_recipe_id:
             return {"error": "Enter a project ID before scaffolding."}
 
         infos = _scaffold_file_infos()
@@ -458,13 +458,13 @@ def define_server(
 
         scaffolder = DataAnalysisRecipeScaffolder(join_key=join_key)
         zip_bytes = scaffolder.scaffold(
-            tsv_paths, project_id,
+            tsv_paths, data_analysis_recipe_id,
             id_transformations=id_transformations,
             metadata_path=meta_path,
         )
         return {
             "zip_bytes": zip_bytes,
-            "project_id": project_id,
+            "data_analysis_recipe_id": data_analysis_recipe_id,
             "n_files": len(tsv_paths),
             "with_meta": meta_path is not None,
             "with_recon_dataset": with_recon_dataset,
@@ -484,7 +484,7 @@ def define_server(
         if "error" in result:
             return ui.p(result["error"], class_="text-warning small mt-1")
         n = result["n_files"]
-        pid = result["project_id"]
+        pid = result["data_analysis_recipe_id"]
         meta_note = " + metadata schema stub" if result["with_meta"] else ""
         recon_note = (
             f" ID Reconciliation steps baked into '{result['with_recon_dataset']}'."
@@ -510,7 +510,7 @@ def define_server(
             return "data_analysis_recipe_scaffold.zip"
         from datetime import datetime
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        pid = result.get("project_id", "scaffold")
+        pid = result.get("data_analysis_recipe_id", "scaffold")
         return f"{ts}_{pid}_data_analysis_recipe.zip"
 
     # ── end TL-UI-SCAFFOLD-1 ─────────────────────────────────────────────

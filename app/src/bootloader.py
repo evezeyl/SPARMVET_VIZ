@@ -66,23 +66,23 @@ class Bootloader:
     _deployment_cache: Dict[str, Dict[str, Any]] = {}          # keyed by resolved deployment path string
     _resolved_locations_cache: Dict[str, Dict[str, Path]] = {}  # keyed by resolved deployment path string
 
-    # Hierarchical Asset Cache: project_id -> dataset_id -> plot_id -> asset_type -> asset
+    # Hierarchical Asset Cache: data_analysis_recipe_id -> dataset_id -> plot_id -> asset_type -> asset
     _asset_cache: Dict[str, Dict[str, Dict[str, Dict[str, Any]]]] = {}
 
-    def get_cached_asset(self, project_id: str, dataset_id: str, plot_id: str, asset_type: str) -> Any:
+    def get_cached_asset(self, data_analysis_recipe_id: str, dataset_id: str, plot_id: str, asset_type: str) -> Any:
         try:
-            return self._asset_cache[project_id][dataset_id][plot_id][asset_type]
+            return self._asset_cache[data_analysis_recipe_id][dataset_id][plot_id][asset_type]
         except KeyError:
             return None
 
-    def set_cached_asset(self, project_id: str, dataset_id: str, plot_id: str, asset_type: str, asset: Any):
-        if project_id not in self._asset_cache:
-            self._asset_cache[project_id] = {}
-        if dataset_id not in self._asset_cache[project_id]:
-            self._asset_cache[project_id][dataset_id] = {}
-        if plot_id not in self._asset_cache[project_id][dataset_id]:
-            self._asset_cache[project_id][dataset_id][plot_id] = {}
-        self._asset_cache[project_id][dataset_id][plot_id][asset_type] = asset
+    def set_cached_asset(self, data_analysis_recipe_id: str, dataset_id: str, plot_id: str, asset_type: str, asset: Any):
+        if data_analysis_recipe_id not in self._asset_cache:
+            self._asset_cache[data_analysis_recipe_id] = {}
+        if dataset_id not in self._asset_cache[data_analysis_recipe_id]:
+            self._asset_cache[data_analysis_recipe_id][dataset_id] = {}
+        if plot_id not in self._asset_cache[data_analysis_recipe_id][dataset_id]:
+            self._asset_cache[data_analysis_recipe_id][dataset_id][plot_id] = {}
+        self._asset_cache[data_analysis_recipe_id][dataset_id][plot_id][asset_type] = asset
 
     def __init__(self, app_features: str | None = None):
         exit_if_errors(renamed_env_var_errors(os.environ))
@@ -169,8 +169,8 @@ class Bootloader:
         self.set_app_features(self.app_features)
 
         # 3. Project Authority (Agnostic Discovery)
-        self.project_dir = self.get_location("data_analysis_recipes")
-        self.available_projects = self._discover_projects()
+        self.data_analysis_recipes_dir = self.get_location("data_analysis_recipes")
+        self.available_data_analysis_recipes = self._discover_data_analysis_recipes()
         self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
 
     def _resolve_deployment_path(self) -> tuple[Path, int]:
@@ -320,9 +320,9 @@ class Bootloader:
             or self.app_features
         )
 
-    def _discover_projects(self) -> Dict[str, str]:
+    def _discover_data_analysis_recipes(self) -> Dict[str, str]:
         """Scans the project directory for YAML data analysis recipes."""
-        mf_files = list(self.project_dir.glob("*.yaml"))
+        mf_files = list(self.data_analysis_recipes_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
     def _resolve_default_data_analysis_recipe(self) -> str | None:
@@ -336,13 +336,13 @@ class Bootloader:
         elif self.default_data_analysis_recipe:
             source, name = "default_data_analysis_recipe", str(self.default_data_analysis_recipe)
         if name:
-            if name not in self.available_projects:
+            if name not in self.available_data_analysis_recipes:
                 exit_if_errors([DeploymentError(
                     component="Bootloader",
                     problem=f"The data analysis recipe '{name}' named by {source} was not found.",
-                    location=f"{source} (data analysis recipes folder: {self.project_dir})",
+                    location=f"{source} (data analysis recipes folder: {self.data_analysis_recipes_dir})",
                     fix=("Use the file name without .yaml of a data analysis recipe in the data analysis recipes folder. "
-                         f"Found: {sorted(self.available_projects) or 'none'}."),
+                         f"Found: {sorted(self.available_data_analysis_recipes) or 'none'}."),
                     who="operator", reference=_BOOT_REF,
                 )])
             return name
@@ -357,15 +357,15 @@ class Bootloader:
             )])
         return None
 
-    def get_default_project(self) -> str:
+    def get_default_data_analysis_recipe(self) -> str:
         """The data analysis recipe that opens at startup (ADR-091): the launch variable, then the
         deployment default, otherwise the first available one (the user chooses when the
         selector is shown)."""
         if self.default_data_analysis_recipe_name:
             return self.default_data_analysis_recipe_name
-        if not self.available_projects:
+        if not self.available_data_analysis_recipes:
             raise FileNotFoundError("No projects found in Location 2.")
-        return list(self.available_projects.keys())[0]
+        return list(self.available_data_analysis_recipes.keys())[0]
 
     def _load_deployment_config(self) -> Dict[str, Any]:
         """Loads the deployment file."""

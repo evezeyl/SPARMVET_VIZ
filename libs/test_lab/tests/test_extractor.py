@@ -51,9 +51,9 @@ def test_each_configured_sheet_becomes_a_tsv_with_the_standard_key_name(workbook
 
 def test_output_goes_into_a_subfolder_named_after_the_project_or_the_workbook(workbook, tmp_path):
     cfg = config(tmp_path, {"Metadata": {"primary_key": "Sample_ID"}})
-    by_project = XlsxExtractor(project_basename="Proj").extract(str(workbook), cfg, str(tmp_path / "a"))
+    by_recipe_name = XlsxExtractor(recipe_basename="Proj").extract(str(workbook), cfg, str(tmp_path / "a"))
     by_workbook = XlsxExtractor().extract(str(workbook), cfg, str(tmp_path / "b"))
-    assert by_project["metadata"].parent.name == "Proj"
+    assert by_recipe_name["metadata"].parent.name == "Proj"
     assert by_workbook["metadata"].parent.name == "raw"
 
 

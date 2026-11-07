@@ -24,13 +24,13 @@ class TestUIRefactoringAudit(unittest.TestCase):
 
     def test_st22_curiosity_logic(self):
         """Audit: Can the UI load and assemble the Phenotype Curiosity pipeline?"""
-        project_id = "1_test_data_ST22_dummy"
+        data_analysis_recipe_id = "1_test_data_ST22_dummy"
         collection_id = "Summary_phenotype_length_fragmentation"
         output_path = self.output_dir / "st22_curiosity.parquet"
 
         # Execute Tier 1 Materialization (UI Logic Path)
         lf = self.orchestrator.materialize_tier1(
-            project_id, collection_id, output_path)
+            data_analysis_recipe_id, collection_id, output_path)
         df = lf.collect()
 
         self.assertGreater(
@@ -43,12 +43,12 @@ class TestUIRefactoringAudit(unittest.TestCase):
 
     def test_st22_anchor_logic(self):
         """Audit: Can the UI handle the primary ST22 Anchor integration?"""
-        project_id = "1_test_data_ST22_dummy"
+        data_analysis_recipe_id = "1_test_data_ST22_dummy"
         collection_id = "ST22_Anchor"  # The heavy join
         output_path = self.output_dir / "st22_anchor.parquet"
 
         lf = self.orchestrator.materialize_tier1(
-            project_id, collection_id, output_path)
+            data_analysis_recipe_id, collection_id, output_path)
         df = lf.collect()
 
         self.assertGreater(len(df), 0, "Anchor should contain joined data")
