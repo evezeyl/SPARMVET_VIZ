@@ -42,6 +42,7 @@ pairs:
   - [local_connector, local]
 
   # --- manifest: becomes data analysis recipe ---
+  - [Manifest_test, data_analysis_recipe_test]
   - [join_manifests, joins]
   - [assembly_manifests, joins]
   - [recipe_manifest, data_analysis_recipe]
@@ -124,6 +125,7 @@ keep_substrings:
   - profiling
   - personal           # the word personal, not persona
   - null-profile
+  - vendor_manifest    # app/src/www/vendor/VENDOR_MANIFEST.md, the list of vendored assets (ADR-071)
   - manifest.json      # Posit Connect (rsconnect) bundle file, an external tool
   - data_analysis_recipe   # the new term itself
   - DataAnalysisRecipe
@@ -199,3 +201,8 @@ forms:
     snake: data_analysis_recipe
     prose: data analysis recipe
     title: Data Analysis Recipe
+
+# Phrases that keep their word in prose (matched case-insensitively before rewriting).
+protect_phrases:
+  - vendor manifest
+  - vendor-manifest

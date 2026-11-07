@@ -222,6 +222,10 @@ _SEP_ID = re.compile(r"(?<![A-Za-z0-9_])(--)?[A-Za-z0-9_]+(?:[-./][A-Za-z0-9_]+)
 _CAMEL = re.compile(r"[a-z][A-Z]")
 
 
+PROTECT_PHRASES = []
+RULES_PROTECT = [str(p) for p in (yaml.safe_load(RULES.read_text()).get("protect_phrases") or [])]
+
+
 def _plain_case(part: str):
     """lower, Title or UPPER of a plain word part, or None for mixed case."""
     if part.islower():
@@ -236,6 +240,12 @@ def _plain_case(part: str):
 def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool = False) -> str:
     """Rename retired words inside one span. ctx is 'code' or 'prose'."""
     word_rx = re.compile("|".join(map(re.escape, words)), re.I)
+    protected = {}
+    for i, phrase in enumerate(PROTECT_PHRASES):
+        for m0 in list(re.finditer(re.escape(phrase), seg, re.I)):
+            tag = f"\x01{i}_{len(protected)}\x01"
+            protected[tag] = m0.group(0)
+            seg = seg.replace(m0.group(0), tag, 1)
 
     def repl(m):
         tok = m.group(0)
@@ -248,6 +258,7 @@ def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool =
             new, status = transform(core, pairs, keep)
             return ("--" if flag else "") + (new if status == "auto" else core)
         parts = core.split("-")
+        eff = "code" if len(parts) >= 3 else ctx  # error codes and ids such as manifest-file-missing
         out = []
         for i, part in enumerate(parts):
             base = part[:-1] if part.lower().endswith("s") and part[:-1].lower() in words else part
@@ -260,7 +271,7 @@ def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool =
             if case is None:
                 out.append(part)
                 continue
-            if ctx == "code" or flag or (whole_string and case == "lower"):
+            if eff == "code" or flag or (whole_string and case == "lower"):
                 snake = f["snake"] + ("s" if plural else "")
                 if case == "upper":
                     snake = snake.upper()
@@ -276,9 +287,12 @@ def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool =
                 else:
                     word = f["prose"]
                 out.append(word + ("s" if plural else ""))
-        return ("--" if flag else "") + "-".join(out) if ctx == "code" or flag else "-".join(out)
+        return ("--" if flag else "") + "-".join(out) if eff == "code" or flag else "-".join(out)
 
-    return _SEP_ID.sub(repl, seg)
+    out = _SEP_ID.sub(repl, seg)
+    for tag, val in protected.items():
+        out = out.replace(tag, val)
+    return out
 
 
 def _split_backticks(text: str):
@@ -314,6 +328,7 @@ def rewrite_context(path: str, words, pairs, keep, forms, dry_run: bool) -> bool
     src = Path(path).read_text(encoding="utf-8")
     suffix = Path(path).suffix
     words = [w.lower() for w in words]
+    PROTECT_PHRASES[:] = RULES_PROTECT
     fix = lambda seg, ctx, whole=False: fix_span(seg, ctx, words, pairs, keep, forms, whole)
     if suffix == ".py":
         out = _rewrite_py(src, fix)
