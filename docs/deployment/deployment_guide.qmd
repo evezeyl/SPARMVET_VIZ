@@ -136,16 +136,22 @@ The same Docker image is used for all pipelines. Only the `SPARMVET_DEPLOYMENT` 
 
 ## 3.2 IRIDA
 
+> **Not implemented yet (2026-11-07).** `IridaConnector.fetch_data()` raises
+> `NotImplementedError` — Phase 23-D, not started. The interface, path resolution, and
+> token validation below exist and are tested; the actual IRIDA REST API fetch does not.
+> Today, IRIDA is not a working deployment target. The section below describes the
+> intended design once Phase 23-D lands.
+
 IRIDA integrates external tools via its plugin interface. The app is launched with:
 
 - `SPARMVET_DEPLOYMENT` pointing at an IRIDA-specific deployment.
 - `SPARMVET_IRIDA_TOKEN` containing the OAuth2 bearer token for the user's IRIDA session (injected by IRIDA at launch — **never stored in the deployment file**).
 
-At startup, the IRIDA connector:
+At startup, the IRIDA connector is designed to:
 
-1. Authenticates with the IRIDA REST API using the token.
-2. Downloads the project's samples, metadata, and analysis result files into `local_cache`.
-3. Hands the cached paths to the rest of the app — which then runs identically to a filesystem deployment.
+1. Authenticate with the IRIDA REST API using the token.
+2. Download the project's samples, metadata, and analysis result files into `local_cache`.
+3. Hand the cached paths to the rest of the app — which then runs identically to a filesystem deployment.
 
 Optionally (Phase 23+), the app will be able to POST results back to the IRIDA project via the same token.
 
