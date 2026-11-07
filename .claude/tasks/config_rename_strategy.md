@@ -54,3 +54,15 @@ The project table (`CLAUDE.md` section 2) puts mechanical edits and scripting at
 - **Stored formats**: old sessions and ghosts. Mitigated by the migration script and a hand check on one real session.
 - **Cache keys that include old names**: caches rebuild once; the determinism tests must stay green (ADR-089, ADR-090).
 - **Size of the diff**: reviewed per commit, never as one block.
+
+## Baseline (phase 0, recorded 2026-11-07 on `dev` at tag `pre-config-rename`)
+
+| Measure | Value |
+|---|---|
+| Headless suite | 1213 passed (37 s) |
+| Browser suite (qa) | 34 passed, 3 skipped (200 s) |
+| Old-words audit, tracked files (1576 scanned) | persona 9 in paths / 1730 in content; manifest 234 / 4560; recipe 76 / 1424; profile 6 / 674 |
+| Old-words audit, with untracked and ignored files (23233 scanned) | persona 15 / 2566; manifest 337 / 6978; recipe 85 / 2207; profile 26 / 1314 |
+
+The word "profile" is counted to be reviewed by meaning: only the deployment profile is retired; other uses (for example profiling, user profile) stay and go on the exclusion list in the mapping table.
+Run the audit: `./.venv/bin/python assets/scripts/audit_old_words.py [--include-untracked] [--include-ignored] [--list] [--check]`. Test: `app/tests/test_audit_old_words.py`.
