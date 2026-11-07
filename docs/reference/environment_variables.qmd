@@ -6,10 +6,10 @@ title: "Environment Variables Reference"
 
 SPARMVET_VIZ uses four environment variables to configure the deployment context at launch. They are the only supported mechanism for injecting deployment-specific configuration into the app without modifying files.
 
-All four are read by `app/src/bootloader.py` at startup. The app prints which profile and app features it loaded — check the terminal output to verify:
+All four are read by `app/src/bootloader.py` at startup. The app prints which deployment and app features it loaded — check the terminal output to verify:
 
 ```
-[Bootloader] Profile resolved at level N (<source>): /absolute/path/to/profile.yaml
+[Bootloader] Deployment resolved at level N (<source>): /absolute/path/to/deployment.yaml
 [Bootloader] App features: <id> → /absolute/path/to/config/ui/templates/<id>_template.yaml
 ```
 
@@ -19,31 +19,31 @@ All four are read by `app/src/bootloader.py` at startup. The app prints which pr
 
 | Variable | Required? | Default | Set by | What it does |
 |---|---|---|---|---|
-| `SPARMVET_PROFILE` | No | Falls through 4-level chain | Galaxy XML, IRIDA container, Docker Compose, systemd | **Absolute path** to a deployment profile YAML. When set, skips all other resolution levels. Raises `FileNotFoundError` immediately if the path does not exist. |
-| `SPARMVET_APP_FEATURES` | Conditionally | `default_app_features` in profile | Developer, Galaxy XML, Docker Compose | **Path to an app features config YAML file**, or legacy shortname. Controls which UI features are visible and enabled. See [App features path resolution](#app features coupling) below. |
-| `SPARMVET_CONNECTOR` | No | `"local"` | Legacy / backward compat | Connector type; used only as a fallback key for the level-4 dev profile path (`config/deployment/<connector>/local_profile.yaml`). In practice always `"local"` — the profile's `deployment_type` field is the canonical place to declare the connector now. |
+| `SPARMVET_DEPLOYMENT` | No | Falls through 4-level chain | Galaxy XML, IRIDA container, Docker Compose, systemd | **Absolute path** to a deployment file. When set, skips all other resolution levels. Raises `FileNotFoundError` immediately if the path does not exist. |
+| `SPARMVET_APP_FEATURES` | Conditionally | `default_app_features` in deployment | Developer, Galaxy XML, Docker Compose | **Path to an app features config YAML file**, or legacy shortname. Controls which UI features are visible and enabled. See [App features path resolution](#app features coupling) below. |
+| `SPARMVET_CONNECTOR` | removed | none | none | **Removed** by ADR-091. The app stops at startup if it is set. The development fallback is `config/deployment/local/local.yaml`; use `SPARMVET_DEPLOYMENT` for another deployment file. |
 | `SPARMVET_IRIDA_TOKEN` | Only for IRIDA deployments | none — raises `AuthenticationError` if unset | IRIDA platform at container launch | OAuth2 bearer token for `IridaConnector`. **Never store in any file** — IRIDA injects this at runtime only. |
 
 ---
 
-## Deployment profile resolution chain
+## Deployment resolution chain
 
-`SPARMVET_PROFILE` participates in a 4-level priority chain. The first match wins:
+`SPARMVET_DEPLOYMENT` participates in a 4-level priority chain. The first match wins:
 
 ```
-1. SPARMVET_PROFILE env var        → /path/to/profile.yaml   (Galaxy, IRIDA, Docker, systemd)
-2. ~/.sparmvet/profile.yaml         → user-level, local PC
-3. /etc/sparmvet/profile.yaml       → system-level, institutional server
-4. config/deployment/local/local_profile.yaml  → developer repo fallback
+1. SPARMVET_DEPLOYMENT env var        → /path/to/deployment.yaml   (Galaxy, IRIDA, Docker, systemd)
+2. ~/.sparmvet/deployment.yaml         → user-level, local PC
+3. /etc/sparmvet/deployment.yaml       → system-level, institutional server
+4. config/deployment/local/local.yaml  → developer repo fallback
 ```
 
 In practice:
 
 - **Local developer**: level 4 (repo fallback) — no setup needed.
-- **Scientist on their own machine**: place `~/.sparmvet/profile.yaml` once — level 2, no env var needed.
-- **Galaxy tool**: Galaxy XML wrapper sets `SPARMVET_PROFILE` in `<environment_variables>` — level 1.
-- **IRIDA**: IRIDA plugin sets `SPARMVET_PROFILE` + `SPARMVET_IRIDA_TOKEN` — level 1.
-- **Docker Compose / server**: `SPARMVET_PROFILE` set in the service definition — level 1.
+- **Scientist on their own machine**: place `~/.sparmvet/deployment.yaml` once — level 2, no env var needed.
+- **Galaxy tool**: Galaxy XML wrapper sets `SPARMVET_DEPLOYMENT` in `<environment_variables>` — level 1.
+- **IRIDA**: IRIDA plugin sets `SPARMVET_DEPLOYMENT` + `SPARMVET_IRIDA_TOKEN` — level 1.
+- **Docker Compose / server**: `SPARMVET_DEPLOYMENT` set in the service definition — level 1.
 
 ---
 
@@ -54,12 +54,12 @@ In practice:
 ```
 1. app features= kwarg to Bootloader()      → programmatic (used in tests only)
 2. SPARMVET_APP_FEATURES env var            → developer launch / CI
-3. default_app_features in deployment profile → production deployments (Galaxy, IRIDA)
+3. default_app_features in deployment → production deployments (Galaxy, IRIDA)
 ```
 
 If none of the three is set, the app raises `ValueError` at startup and refuses to start.
 
-**Production deployments** (Galaxy, IRIDA) should set `default_app_features` in the profile rather than using the env var — that way the app features is bundled with the profile and no additional configuration is needed at launch.
+**Production deployments** (Galaxy, IRIDA) should set `default_app_features` in the deployment rather than using the env var — that way the app features is bundled with the deployment and no additional configuration is needed at launch.
 
 **CI / Playwright tests** must set `SPARMVET_APP_FEATURES=qa` — the `qa` app features has all flags `true` and `ghost_save: false` for determinism.
 
@@ -93,19 +93,19 @@ SPARMVET_APP_FEATURES=/my/configs/amr_pipeline_app_features.yaml \
 
 ```xml
 <!-- Galaxy XML wrapper — AMR pipeline -->
-<environment_variable name="SPARMVET_PROFILE">/profiles/amr_profile.yaml</environment_variable>
-<environment_variable name="SPARMVET_APP_FEATURES">/profiles/amr_persona.yaml</environment_variable>
+<environment_variable name="SPARMVET_DEPLOYMENT">/deployments/amr_profile.yaml</environment_variable>
+<environment_variable name="SPARMVET_APP_FEATURES">/deployments/amr_persona.yaml</environment_variable>
 
 <!-- Galaxy XML wrapper — Plasmid pipeline -->
-<environment_variable name="SPARMVET_PROFILE">/profiles/plasmid_profile.yaml</environment_variable>
-<environment_variable name="SPARMVET_APP_FEATURES">/profiles/plasmid_persona.yaml</environment_variable>
+<environment_variable name="SPARMVET_DEPLOYMENT">/deployments/plasmid_profile.yaml</environment_variable>
+<environment_variable name="SPARMVET_APP_FEATURES">/deployments/plasmid_persona.yaml</environment_variable>
 ```
 
-Alternatively, embed `default_app_features` in each deployment profile (pointing to a path) so that only `SPARMVET_PROFILE` needs to be set at launch:
+Alternatively, embed `default_app_features` in each deployment (pointing to a path) so that only `SPARMVET_DEPLOYMENT` needs to be set at launch:
 
 ```yaml
-# /profiles/amr_profile.yaml
-default_app_features: /profiles/amr_persona.yaml
+# /deployments/amr_profile.yaml
+default_app_features: /deployments/amr_persona.yaml
 ```
 
 ---
@@ -127,8 +127,8 @@ SPARMVET_APP_FEATURES=/my/configs/amr_app_features.yaml \
 # CI / Playwright smoke tests: all flags on, ghost_save off
 SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 
-# Explicit profile + app features (both as paths — fully portable)
-SPARMVET_PROFILE=/path/to/my_profile.yaml \
+# Explicit deployment + app features (both as paths — fully portable)
+SPARMVET_DEPLOYMENT=/path/to/my_deployment.yaml \
 SPARMVET_APP_FEATURES=/path/to/my_app_features.yaml \
   ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 ```
@@ -137,30 +137,30 @@ SPARMVET_APP_FEATURES=/path/to/my_app_features.yaml \
 
 ---
 
-## Deployment profile fields (not env vars)
+## Deployment fields (not env vars)
 
-The following fields are set inside the deployment profile YAML, not as environment variables. They are documented here for discoverability.
+The following fields are set inside the deployment file, not as environment variables. They are documented here for discoverability.
 
-### `prefer_discovery`
+### `data_lookup`
 
 ```yaml
-prefer_discovery: true    # default: false (absent)
+data_lookup: by_dataset_id    # manifest_paths (default, when absent) | by_dataset_id
 ```
 
-When `true`, the orchestrator strips `source` blocks from manifest schema entries before ingest. The ingestor discovers data files in `raw_data_dir` by schema ID name (`*{schema_id}*.tsv`) instead of reading an explicit path.
+With `by_dataset_id`, the orchestrator strips `source` blocks from manifest schema entries before ingest. The ingestor discovers data files in `raw_data_dir` by schema ID name (`*{schema_id}*.tsv`) instead of reading an explicit path.
 
-Use this on any deployment profile that simulates or implements production connector delivery (pipeline delivers data to `raw_data_dir`). Do NOT set on the local dev fallback profile — developers rely on `source.path` to run manifests against arbitrary test data.
+Use this on any deployment that simulates or implements production connector delivery (pipeline delivers data to `raw_data_dir`). Do NOT set on the local dev fallback deployment — developers rely on `source.path` to run manifests against arbitrary test data.
 
-The `source.path` field in manifest schema entries is a development shortcut only. It is never used when `prefer_discovery: true`, and is never used in production (Galaxy, IRIDA) regardless of this flag.
+The `source.path` field in manifest schema entries is a development shortcut only. It is never used when `data_lookup: by_dataset_id`, and is never used in production (Galaxy, IRIDA) with that setting.
 
-See `docs/workflows/connector.qmd` for the full connector lifecycle and per-profile guidance.
+See `docs/workflows/connector.qmd` for the full connector lifecycle and per-deployment guidance.
 
 ---
 
 ## Related documentation
 
 - `docs/workflows/ui_app_features.qmd` — app features files and feature flag reference
-- `docs/workflows/connector.qmd` — deployment profiles and connector types
+- `docs/workflows/connector.qmd` — deployments and connector types
 - `docs/deployment/deployment_guide.qmd` — Galaxy, IRIDA, Docker, server deployment
-- `.claude/knowledge/architecture_decisions.md` — ADR-048 (deployment profile resolution), ADR-053 (flag-only gating), ADR-054 (bootloader component)
+- `.claude/knowledge/architecture_decisions.md` — ADR-048 (deployment resolution), ADR-053 (flag-only gating), ADR-054 (bootloader component)
 - `.claude/rules/rules_app_features_flags.md` — flag dependency cascade rules

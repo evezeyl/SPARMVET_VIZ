@@ -1032,11 +1032,11 @@ class WrangleStudio:
             except Exception:
                 ui_schema = {}
 
-            # Resolve allow_external_links from deployment profile
+            # Resolve allow_external_links from deployment
             allow_external = True
             if bootloader is not None:
                 try:
-                    allow_external = bootloader.profile.get("allow_external_links", True)
+                    allow_external = bootloader.deployment_config.get("allow_external_links", True)
                 except Exception:
                     pass
 

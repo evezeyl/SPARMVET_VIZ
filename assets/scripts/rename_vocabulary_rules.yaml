@@ -16,8 +16,19 @@ pairs:
   - [persona, app_features]
 
   # --- profile (deployment): retired for configuration ---
+  - [connect_profile_template, connect_template]
+  - [pipeline_test_profile, pipeline_test]
+  - [local_profile, local]
+  - [retest_profile, retest]
+  - [connect_profile, connect]
+  - [deployment_profiles, deployments]
+  - [deployment_profile, deployment]
   - [profiles, deployments]
   - [profile, deployment]
+
+  # --- locations of the deployment file ---
+  - [curated_data, cache]
+  - [user_sessions, user_data]
 
   # --- connector: the word names two things. Only the deployment-file sense is renamed;
   #     the adapter library libs/connector (get_connector, FilesystemConnector, IridaConnector,
@@ -159,3 +170,22 @@ prose:
     - ['\bPersona\b', 'App features']
     - ['\bpersona\b', 'app features']
     - ['\bPERSONA\b', 'APP_FEATURES']
+  profile:
+    - ['\bDeployment [Pp]rofiles\b', 'Deployments']
+    - ['\bdeployment profiles\b', 'deployments']
+    - ['\bDeployment [Pp]rofile\b', 'Deployment']
+    - ['\bdeployment profile\b', 'deployment']
+    - ['\bconnector profiles\b', 'deployments']
+    - ['\bconnector profile\b', 'deployment']
+    - ['\bprofile YAML\b', 'deployment file']
+    - ['\bprofile file\b', 'deployment file']
+    - ['\buser profile\b', 'app features']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bProfiles\b', 'Deployments']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bProfile\b', 'Deployment']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bprofiles\b', 'deployments']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bprofile\b', 'deployment']
+
+# Paths where a word is domain text, not configuration (never rewritten for that word).
+prose_skip_paths:
+  profile:
+    - assets/gallery_data/

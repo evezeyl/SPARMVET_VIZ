@@ -45,12 +45,12 @@ Each library is independently installable and usable without the UI layer. If yo
 - [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, recipe governance.
 - [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, manifest bootstrapping, and reconciliation.
 - [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities. **Base layer** — may be imported by any domain lib.
-- [**connector**](./libs/connector/): Deployment profile resolution and data-source adapters (ADR-048, Phase 23).
+- [**connector**](./libs/connector/): Deployment resolution and data-source adapters (ADR-048, Phase 23).
 - [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, manifest navigator). Headless-safe — usable in CLI tools and export handlers without Shiny.
 
 ## 🚀 Deployment Configuration
 
-SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. Deployment is controlled by a **configuration profile** (called an app features) that defines which user functionalities are available.
+SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. Deployment is controlled by a **configuration deployment** (called an app features) that defines which user functionalities are available.
 
 ### User functionalities
 
@@ -75,7 +75,7 @@ Every export — regardless of configuration — includes a complete provenance 
 SPARMVET_APP_FEATURES=pipeline-exploration-simple .venv/bin/python -m shiny run app/src/main.py
 ```
 
-Available profiles: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom profiles can be created in `config/ui/templates/`.
+Available deployments: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom deployments can be created in `config/ui/templates/`.
 
 **Sidebar layout is configurable per app features and per workspace** (Home, Blueprint, Gallery, Test Lab). Each app features file declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_app_features.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
 
@@ -90,7 +90,7 @@ The built-in `sparmvet_brand` palette is always available even without this file
 .venv/bin/python scripts/validate_app_features_config.py --all --strict
 ```
 
-See [Deployment Configuration](./docs/user_guide/deployment_app_features.qmd) for the full guide, dependency rules, and how to create a custom profile.
+See [Deployment Configuration](./docs/user_guide/deployment_app_features.qmd) for the full guide, dependency rules, and how to create a custom deployment.
 
 ### Posit Connect deployment
 
@@ -100,7 +100,7 @@ Posit Connect cannot install editable source packages (`-e ./libs/...`). Use the
 # 1. Build wheels for all local libs into pkgs/
 bash assets/scripts/bundle_connect.sh
 
-# 2. Fill in config/deployment/connect/connect_profile_template.yaml
+# 2. Fill in config/deployment/connect/connect_template.yaml
 
 # 3. Deploy (requires CONNECT_SERVER + CONNECT_API_KEY env vars)
 bash assets/scripts/bundle_connect.sh --deploy
@@ -116,9 +116,9 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 
 - [Developer Preface & Architecture](./docs/index.qmd): Vision, integrity status, and filter message flow.
 - [Wrangling Guide](./docs/reference/wrangling_guide.qmd): Tier 1/2/3 lifecycle and assembly logic.
-- [Deployment Configuration](./docs/user_guide/deployment_app_features.qmd): User functionalities, dependency rules, and available profiles.
+- [Deployment Configuration](./docs/user_guide/deployment_app_features.qmd): User functionalities, dependency rules, and available deployments.
 - [Deployment Guide](./docs/deployment/deployment_guide.qmd): Galaxy, IRIDA, server, and local deployment (ADR-048).
-- [Connector / Profile Schema](./docs/workflows/connector.qmd): Deployment profile YAML schema reference.
+- [Connector / Deployment Schema](./docs/workflows/connector.qmd): Deployment deployment file schema reference.
 
 ## 🔧 Developer Scripts
 
@@ -134,7 +134,7 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 |---|---|
 | `normalize_manifest_fields.py` | Sanitize manifests to ADR-041 Rich Dict standard |
 | `create_manifest.py` | Scaffold a new pipeline manifest from a dataset |
-| `create_test_deployment.py` | Generate a dev deployment profile (ADR-048) |
+| `create_test_deployment.py` | Generate a dev deployment (ADR-048) |
 | `build_dep_graph.py` | Rebuild the `@deps` dependency graph |
 | `generate_demo_data.py` | Generate synthetic demo data via AquaSynthesizer |
 | `bundle_connect.sh` | Build wheels for all local libs and optionally deploy to Posit Connect (DEPLOY-CONNECT-1) |

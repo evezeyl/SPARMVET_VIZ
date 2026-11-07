@@ -164,16 +164,16 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 - If metadata was replaced (see §9): reference to the uploaded metadata filename
 
 **Session model:**
-- Each session is a named `.json` file stored in a subdirectory of Location 4 (`user_sessions/sessions/<session_id>.json`).
+- Each session is a named `.json` file stored in a subdirectory of Location 4 (`user_data/sessions/<session_id>.json`).
 - Multiple sessions are allowed per user — users can switch between sessions (different pipeline runs, different dates).
 - Sessions are **named at save time** — the UI prompts for a session label (e.g., "AMR_run_Jan2025").
 
 **Ghost save:**
 - Automatic background save on every `btn_apply` press and on every filter commit.
-- Stored as `user_sessions/sessions/_autosave.json` — single slot, always overwritten.
+- Stored as `user_data/sessions/_autosave.json` — single slot, always overwritten.
 - Restored automatically if the app detects an autosave newer than the last explicit session save.
 
-**Save location:** `user_sessions` (Location 4) from the active deployment profile. This path is deployment-specific — on Galaxy it maps to a Galaxy-accessible path; on a local machine it is a local directory. Users only have write access to Location 4 — they cannot choose an arbitrary path.
+**Save location:** `user_data` (Location 4) from the active deployment. This path is deployment-specific — on Galaxy it maps to a Galaxy-accessible path; on a local machine it is a local directory. Users only have write access to Location 4 — they cannot choose an arbitrary path.
 
 **UI controls (Session Management accordion panel):**
 - **Export Active Session (.zip)** — panel header button; downloads the full `_sessions/{session_key}/` directory as a `.zip` for archiving or sharing.
@@ -314,7 +314,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **Panel:** `Data Import` accordion panel in the left sidebar. Multi-file ingestion section is nested inside when `import_helper_enabled: true`.
 
-**App features gate:** `import_helper_enabled: true` in app features file. Available to ≥ `project-independent` and `developer`. Hidden for lower app features files. Also deactivatable at the deployment level (profile sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
+**App features gate:** `import_helper_enabled: true` in app features file. Available to ≥ `project-independent` and `developer`. Hidden for lower app features files. Also deactivatable at the deployment level (deployment sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
 
 **Supported ingestion types:**
 - **Raw data** — TSV/CSV instrument output
@@ -614,7 +614,7 @@ t3_recipe_sha256: "b7c1..."  # SHA256 of the serialized T3 recipe
 
 **Report sections:**
 
-1. **Study Context** — manifest `id`, `name`, deployment profile name, export timestamp.
+1. **Study Context** — manifest `id`, `name`, deployment name, export timestamp.
 2. **Data Summary** — dataset IDs, source paths, row counts post-assembly.
 3. **Methods** — auto-generated plain English from **active** T3 nodes only:
    - `filter_row`: *"Rows were filtered to include only [column] [op] [value]. Reason: [reason]."*
@@ -890,18 +890,18 @@ Without the guard, the effect re-fires every tick and produces an infinite react
 
 # UI Configuration Dependencies
 
-## Deployment Profile (ADR-048)
+## Deployment (ADR-048)
 
-Defined in deployment profile YAML. Resolution chain:
-1. `SPARMVET_PROFILE` env var → path to profile
-2. `~/.sparmvet/profile.yaml`
-3. `/etc/sparmvet/profile.yaml`
-4. `config/deployment/local/local_profile.yaml` (dev fallback)
+Defined in deployment file. Resolution chain:
+1. `SPARMVET_DEPLOYMENT` env var → path to deployment
+2. `~/.sparmvet/deployment.yaml`
+3. `/etc/sparmvet/deployment.yaml`
+4. `config/deployment/local/local.yaml` (dev fallback)
 
-Profile declares `default_manifest`, `default_app_features`, `project_root`, and the five `locations` keys.
-See `config/deployment/local/local_profile.yaml` for the dev template.
+Deployment declares `default_manifest`, `default_app_features`, `project_root`, and the five `locations` keys.
+See `config/deployment/local/local.yaml` for the dev template.
 
-**Path resolution (2026-05-02, ADR-048 §11):** `bootloader.get_location(key)` returns paths from `connector.resolve_paths()` output (`self._resolved_locations`), not from the raw profile dict. UI code must always call `bootloader.get_location(key)` — never read `locations` from the profile YAML directly.
+**Path resolution (2026-05-02, ADR-048 §11):** `bootloader.get_location(key)` returns paths from `connector.resolve_paths()` output (`self._resolved_locations`), not from the raw deployment dict. UI code must always call `bootloader.get_location(key)` — never read `locations` from the deployment file directly.
 
 ## App features
 
@@ -913,6 +913,6 @@ See `rules_app_features_flags.md` for the authoritative flag matrix and dependen
 
 ## User Preferences [Implementation Deferred]
 
-Saving location: Location 4 (`user_sessions`) from deployment profile, filename `user-preferences.yaml`.
+Saving location: Location 4 (`user_data`) from deployment, filename `user-preferences.yaml`.
 Overrides app features file settings where permitted (priority rule).
 Not implemented yet.

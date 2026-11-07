@@ -1,22 +1,22 @@
-# SPARMVET Pipeline Test Profile
+# SPARMVET Pipeline Test Deployment
 # Simulates production connector behaviour: data is injected by the pipeline,
 # not read from manifest source.path entries.
 #
-# prefer_discovery: true — orchestrator ignores manifest source.path and discovers
+# data_lookup: by_dataset_id — orchestrator ignores manifest source.path and discovers
 # files by schema ID name in raw_data. This exercises the same code path a real
 # Galaxy/IRIDA connector would use.
 #
 # Use with pipeline-static or pipeline-exploration-simple app features:
-#   SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
+#   SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
 #   SPARMVET_APP_FEATURES=$ROOT/config/app_features/pipeline-static.yaml \
 #     $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
 deployment_type: filesystem
 deployment_name: "SPARMVET_VIZ (Pipeline Test)"
 
-# prefer_discovery: true — ignore manifest source.path, discover files by schema
+# data_lookup: by_dataset_id — ignore manifest source.path, discover files by schema
 # ID name in raw_data. Mirrors production connector behaviour.
-prefer_discovery: true
+data_lookup: by_dataset_id
 
 locations:
   # Raw data dir — points at ST22 duplicate with clean names, simulating pipeline output
@@ -24,8 +24,8 @@ locations:
 
   # Standard locations — same as local dev
   manifests: "config/manifests/pipelines/"
-  curated_data: "tmp/pipeline_test/parquet_data/"
-  user_sessions: "tmp/pipeline_test/user/"
+  cache: "tmp/pipeline_test/parquet_data/"
+  user_data: "tmp/pipeline_test/user/"
   gallery: "assets/gallery_data/"
 
 runtime:

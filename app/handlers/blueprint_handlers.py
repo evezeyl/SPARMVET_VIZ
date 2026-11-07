@@ -175,7 +175,7 @@ def define_server(input, output, session, *,
 
     # BP-AUTOSAVE-1: manifest-draft ghost save
     _ghost_enabled = bootloader.get_automation_setting("ghost_save", "enabled") is not False
-    _draft_dir = bootloader.get_location("user_sessions") / "_blueprint_drafts"
+    _draft_dir = bootloader.get_location("user_data") / "_blueprint_drafts"
     _draft_save_time: reactive.Value[str] = reactive.Value("")
 
     @reactive.Effect
@@ -528,7 +528,7 @@ def define_server(input, output, session, *,
                     wrangle_studio.active_downstream.set(out_fields)
 
                     try:
-                        anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+                        anchor_dir = bootloader.get_location("user_data") / "anchors"
                         anchor_dir.mkdir(parents=True, exist_ok=True)
                         out_p = anchor_dir / f"{schema_id}.parquet"
                         bp_project_id = Path(master_path).stem
@@ -581,7 +581,7 @@ def define_server(input, output, session, *,
 
                     if target_ds:
                         try:
-                            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+                            anchor_dir = bootloader.get_location("user_data") / "anchors"
                             anchor_dir.mkdir(parents=True, exist_ok=True)
                             out_p = anchor_dir / f"{target_ds}.parquet"
                             bp_project_id = Path(master_path).stem
@@ -608,7 +608,7 @@ def define_server(input, output, session, *,
 
                     if target_ds:
                         try:
-                            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+                            anchor_dir = bootloader.get_location("user_data") / "anchors"
                             anchor_dir.mkdir(parents=True, exist_ok=True)
                             out_p = anchor_dir / f"{target_ds}.parquet"
                             bp_project_id = Path(master_path).stem
@@ -738,7 +738,7 @@ def define_server(input, output, session, *,
                 wrangle_studio.active_downstream.set(out_f)
                 wrangle_studio.active_fields.set({"input": {}, "output": out_f})
                 try:
-                    anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+                    anchor_dir = bootloader.get_location("user_data") / "anchors"
                     anchor_dir.mkdir(parents=True, exist_ok=True)
                     out_p = anchor_dir / f"{selected}.parquet"
                     bp_project_id = Path(master_path).stem
@@ -766,7 +766,7 @@ def define_server(input, output, session, *,
                 wrangle_studio.active_viz_id.set(schema_id)
                 if plot_target_ds:
                     try:
-                        anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+                        anchor_dir = bootloader.get_location("user_data") / "anchors"
                         anchor_dir.mkdir(parents=True, exist_ok=True)
                         out_p = anchor_dir / f"{plot_target_ds}.parquet"
                         bp_project_id = Path(master_path).stem
@@ -2045,7 +2045,7 @@ def define_server(input, output, session, *,
         dtypes: original polars dtype names, key-aligned.
         Raises on materialisation / missing-column errors (caller surfaces them).
         """
-        anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+        anchor_dir = bootloader.get_location("user_data") / "anchors"
         anchor_dir.mkdir(parents=True, exist_ok=True)
         out_p = anchor_dir / f"_jd_{ingredient_id}.parquet"
         orchestrator.materialize_tier1(

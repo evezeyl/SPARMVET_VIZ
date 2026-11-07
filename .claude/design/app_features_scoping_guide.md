@@ -15,7 +15,7 @@
 
 ## Core concept
 
-SPARMVET is deployed with a **configuration profile** that defines which user functionalities are available. The term "app features" is used for named example profiles (e.g. `pipeline-static`, `developer`), but an app features is just a label for a specific combination of flags.
+SPARMVET is deployed with a **configuration deployment** that defines which user functionalities are available. The term "app features" is used for named example deployments (e.g. `pipeline-static`, `developer`), but an app features is just a label for a specific combination of flags.
 
 **The right way to think about deployment:**
 > "What do I want my users to be able to do?" → pick the functionalities → validate dependencies → name it.
@@ -139,7 +139,7 @@ Each is a single on/off flag. Sub-flags (e.g. TUBE_MAP, WRNG_STU for Blueprint; 
 | `UI_TITLE` | `ui_title` (app features) / `info.display_name` (manifest) | configurable | Resolution: app features config override > manifest field > nothing. |
 | `UI_SUBT` | `ui_subtitle` (app features) / `info.subtitle` (manifest) | configurable | Same resolution as UI_TITLE. Hidden if UI_TITLE is off. `info.description` is long free-form text — NOT shown in header. |
 | `SHOW_NAV` | *(derived)* | **derived** | Auto-shown when any of `gallery_enabled` / `blueprint_enabled` / `test_lab_enabled` is true. No config field needed. |
-| `SDB_PROF` | `sidebar_profile` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
+| `SDB_PROF` | `sidebar_deployment` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
 
 ---
 

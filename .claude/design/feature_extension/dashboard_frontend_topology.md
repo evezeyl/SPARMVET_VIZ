@@ -60,7 +60,7 @@ The current app's whole architecture (app features masking, T3 audit gatekeeper,
 | Reuses app1 wiring (bootloader, app features files, sidebar registry) | yes | no (re-implements the slim parts it needs) |
 | Fights existing producer machinery | yes (app features masking, reactive shell, T3) | no — clean slate |
 | Framework freedom (pick best for interactive dashboards) | constrained to app1's Shiny shell | free to choose |
-| Deployment independence (different audience/target) | one artifact, shared deploy | independent deploy, own profile |
+| Deployment independence (different audience/target) | one artifact, shared deploy | independent deploy, own deployment |
 | Maintenance | one app | two apps (shared-lib contract must stay stable) |
 | Best when… | dashboard is a producer convenience inside the workbench | dashboard is a distinct product for a distinct audience |
 
@@ -77,7 +77,7 @@ These are not exclusive: HOME2 could be a thin producer-side preview; app2 the p
 | Ingestion, Tier 1/2/3 assembly, contracts | ✅ all | — |
 | VizFactory (render backends: plotnine / R / geom_polygon) | ✅ all | render-backend dispatch reuse |
 | Manifest grammar + `dashboard:` block | ✅ | dashboard layout consumer |
-| Path authority / deployment profiles | pattern reusable (`connector`) | own profile set |
+| Path authority / deployments | pattern reusable (`connector`) | own deployment set |
 | **Frontend shell** | — | **the new app — layout, panel grid, interactivity** |
 | App features / T3 audit / authoring | — | mostly **not needed** (simpler gating) |
 
@@ -94,7 +94,7 @@ The engine and render layers are 100% reused. Only the **frontend** is new — e
 | Quarto / Observable dashboards | limited L2 | report-style static-ish dashboards | good for export-quality, weak for live linking |
 | Panel / Dash / Streamlit | L2 | quick dashboards | new framework to maintain |
 
-**Lean for a first app2:** Shiny for Python + JS widgets — keeps one framework and reuses bootloader/profile patterns, while getting client-side interactivity (Leaflet maps, Plotly charts, Cytoscape/phylo trees). Move to a JS+FastAPI frontend only if a polished public surveillance viewer is the actual requirement.
+**Lean for a first app2:** Shiny for Python + JS widgets — keeps one framework and reuses bootloader/deployment patterns, while getting client-side interactivity (Leaflet maps, Plotly charts, Cytoscape/phylo trees). Move to a JS+FastAPI frontend only if a polished public surveillance viewer is the actual requirement.
 
 ---
 
@@ -103,7 +103,7 @@ The engine and render layers are 100% reused. Only the **frontend** is new — e
 Producer and consumer apps deploy differently:
 
 - **app1 (workbench):** Galaxy/IRIDA interactive tool, developer/scientist app features files, behind institutional auth.
-- **app2 (viewer):** could be a standalone web deployment — institutional or public-facing surveillance dashboard, read-mostly, simpler/no app features system, its own deployment profile.
+- **app2 (viewer):** could be a standalone web deployment — institutional or public-facing surveillance dashboard, read-mostly, simpler/no app features system, its own deployment.
 
 Different audiences, different security postures, different uptime needs. One monolith serving both is awkward; two frontends on a shared engine is clean.
 
@@ -112,7 +112,7 @@ Different audiences, different security postures, different uptime needs. One mo
 ## 8. Risks / constraints
 
 - **Two apps to maintain.** The shared-lib contract (manifest grammar, VizFactory API) must stay stable — version the libraries and treat their public APIs as contracts. (The `@deps` system already tracks cross-lib coupling.)
-- **Duplicated app-level concerns** (config, deployment profiles, gating). Mitigate by extracting genuinely shared app-level helpers into a small lib (e.g. `connector` already holds path authority) rather than copy-paste.
+- **Duplicated app-level concerns** (config, deployments, gating). Mitigate by extracting genuinely shared app-level helpers into a small lib (e.g. `connector` already holds path authority) rather than copy-paste.
 - **The interactive (L2/JS) render path is new regardless** — app2 doesn't avoid it, it's the natural home for it (see `composite_dashboard_home2.md` §10). app2 decouples that JS investment from the producer app's stable server-reactive model.
 - **Scope creep** — app2 must stay a *viewer*; the moment it grows authoring/wrangling it is duplicating app1. Keep the producer/consumer line crisp.
 
@@ -150,6 +150,6 @@ All three honor the two-tier dependency model. The current state is **monorepo +
 3. Framework: Shiny+widgets (continuity) vs JS+FastAPI (polished public viewer)?
 4. Deployment target(s) for app2 — institutional intranet, public, Galaxy/IRIDA embed?
 5. Gating — does app2 need any app features system, or just per-dashboard access control?
-6. Do app1 and app2 share a deployment profile mechanism, or fully separate?
+6. Do app1 and app2 share a deployment mechanism, or fully separate?
 
 **Nothing scheduled.** Decision waits on Eve's organizational needs survey — the producer-vs-consumer audience split is the pivot.

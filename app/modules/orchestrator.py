@@ -29,16 +29,24 @@ def tier2_path_for(tier1_path: Path) -> Path:
     return tier1_path.with_name(f"{tier1_path.stem}__T2{tier1_path.suffix}")
 
 
+# data_lookup (deployment file): where the data of a dataset is found.
+#   manifest_paths: the source.path written in the data analysis recipe (development default)
+#   by_dataset_id:  a file named after the dataset id in the raw_data location (a pipeline delivers it)
+DATA_LOOKUP_CHOICES = ("manifest_paths", "by_dataset_id")
+
 class DataOrchestrator:
     """
     Handles the ingestion and assembly logic (Tier 1 Materialization).
     Ensures the UI remains 'Thin' by delegating heavy processing to libraries.
     """
 
-    def __init__(self, manifests_dir: Path, raw_data_dir: Path, prefer_discovery: bool = False):
+    def __init__(self, manifests_dir: Path, raw_data_dir: Path, data_lookup: str = "manifest_paths"):
         self.manifests_dir = manifests_dir
         self.raw_data_dir = raw_data_dir
-        self.prefer_discovery = prefer_discovery
+        if data_lookup not in DATA_LOOKUP_CHOICES:
+            raise ValueError(f"data_lookup must be one of {DATA_LOOKUP_CHOICES}, got {data_lookup!r}")
+        self.data_lookup = data_lookup
+        self.discover_by_dataset_id = data_lookup == "by_dataset_id"
         self.ingestor = DataIngestor(data_dir=str(raw_data_dir))
 
     @staticmethod
@@ -85,7 +93,7 @@ class DataOrchestrator:
         """
         from transformer.metadata_validator import MetadataValidator
         validator = MetadataValidator()
-        if self.prefer_discovery:
+        if self.discover_by_dataset_id:
             # Production path: ignore manifest source.path, discover by schema ID name in
             # raw_data_dir (mirrors Galaxy/IRIDA connector).
             ds_schema = {k: v for k, v in ds_schema.items() if k != "source"}
@@ -354,9 +362,9 @@ class DataOrchestrator:
             source = ds_schema.get("source", {})
             source_type = source.get("type")
             source_path = source.get("path")
-            # prefer_discovery (production): the manifest's source.path is only default data,
+            # data_lookup by_dataset_id (production): the manifest's source.path is only default data,
             # the data that counts is what the deployment delivered into raw_data_dir.
-            if not self.prefer_discovery and source_type in ("local_tsv", "local_parquet") and source_path:
+            if not self.discover_by_dataset_id and source_type in ("local_tsv", "local_parquet") and source_path:
                 p = Path(source_path)
                 if p.exists():
                     result[ds_id] = p

@@ -107,7 +107,7 @@ class ConfigManager:
                 problem=f"Manifest file not found: '{yaml_path}'",
                 location=yaml_path,
                 fix=(
-                    "Verify the manifest path set in the deployment profile "
+                    "Verify the manifest path set in the deployment "
                     "('default_manifest' key) or the manifest selector dropdown."
                 ),
                 who="operator",

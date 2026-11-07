@@ -1,16 +1,16 @@
-# SPARMVET Deployment Profile Template
+# SPARMVET Deployment Template
 #
 # Authority: ADR-048 — Multi-System Deployment Architecture
 # Purpose: Describes how SPARMVET is deployed into a specific environment.
-#          Copy this template, fill in your values, and point SPARMVET_PROFILE
-#          at the resulting file (or place it at ~/.sparmvet/profile.yaml or
-#          /etc/sparmvet/profile.yaml for auto-discovery).
+#          Copy this template, fill in your values, and point SPARMVET_DEPLOYMENT
+#          at the resulting file (or place it at ~/.sparmvet/deployment.yaml or
+#          /etc/sparmvet/deployment.yaml for auto-discovery).
 #
 # Resolution chain (first match wins):
-#   1. SPARMVET_PROFILE env var → path to this file
-#   2. ~/.sparmvet/profile.yaml
-#   3. /etc/sparmvet/profile.yaml
-#   4. config/deployment/local/local_profile.yaml (dev fallback)
+#   1. SPARMVET_DEPLOYMENT env var → path to this file
+#   2. ~/.sparmvet/deployment.yaml
+#   3. /etc/sparmvet/deployment.yaml
+#   4. config/deployment/local/local.yaml (dev fallback)
 
 # ─── Identity ─────────────────────────────────────────────────────────────────
 # deployment_type: what kind of system is this?
@@ -51,12 +51,12 @@ locations:
 
   # Location 3: Tier 1 & 2 Parquet caches.
   #   Written by the DataOrchestrator at first run; read on subsequent runs.
-  curated_data: "parquet/"
+  cache: "parquet/"
 
   # Location 4: User-writable space.
   #   Contains export bundles (zip), session saves, Tier 3 artifacts.
   #   Must be writable by the app process.
-  user_sessions: "sessions/"
+  user_data: "sessions/"
 
   # Location 5: Gallery assets (pre-rendered examples, recipe clones).
   #   Read-only from app perspective unless gallery indexing is run.
@@ -81,7 +81,7 @@ runtime:
 #   - This file may be version-controlled when correctly configured (no secrets).
 #
 # Multiple pipelines:
-#   Deploy one instance per pipeline (recommended), each with its own profile
+#   Deploy one instance per pipeline (recommended), each with its own deployment
 #   pointing at different project_root + default_manifest values.
 #   Alternatively, omit default_manifest and point manifests/ at a directory
 #   containing multiple pipeline manifests — users pick from a dropdown.
@@ -89,9 +89,9 @@ runtime:
 # Galaxy:
 #   Bundle this file inside the Docker image (or mount from a data library).
 #   Reference it in the tool XML wrapper:
-#     <environment_variable name="SPARMVET_PROFILE">/profiles/amr.yaml</environment_variable>
+#     <environment_variable name="SPARMVET_DEPLOYMENT">/deployments/amr.yaml</environment_variable>
 #
 # IRIDA:
-#   IRIDA injects SPARMVET_PROFILE and SPARMVET_IRIDA_TOKEN at container launch.
+#   IRIDA injects SPARMVET_DEPLOYMENT and SPARMVET_IRIDA_TOKEN at container launch.
 #   The app downloads IRIDA data to local_cache before starting — subsequent
 #   behaviour is identical to a filesystem deployment.

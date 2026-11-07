@@ -84,7 +84,7 @@ metadata_ingestion_enabled: true/false   ← SEMI-INDEPENDENT (see below)
 - When `import_helper_enabled: true` AND `metadata_ingestion_enabled: true`: metadata upload is nested above the multi-file ingestion control inside the Data Import panel.
 - When both are `false`: no ingestion controls shown.
 
-**Deployment override:** The deployment profile can set `data_ingestion_enabled: false` to suppress the entire data ingestion section regardless of app features flags. This is for automated-pipeline deployments where data is always pushed by the pipeline. `metadata_ingestion_enabled` is **not** overridden by the deployment profile — correcting metadata is always a legitimate user action.
+**Deployment override:** The deployment can set `data_ingestion_enabled: false` to suppress the entire data ingestion section regardless of app features flags. This is for automated-pipeline deployments where data is always pushed by the pipeline. `metadata_ingestion_enabled` is **not** overridden by the deployment — correcting metadata is always a legitimate user action.
 
 ---
 
@@ -181,7 +181,7 @@ All 8 app features files declare `data_import_panel_visible: true` (6 app featur
    - Force `data_ingestion_enabled = False`
    - Print `[Bootloader] WARNING: data_ingestion_enabled=True ignored — import_helper_enabled=False`.
 
-3. If deployment profile sets `data_ingestion_enabled: false` (explicit `False`, not absent):
+3. If deployment sets `data_ingestion_enabled: false` (explicit `False`, not absent):
    - Override app features `data_ingestion_enabled` to `False` unconditionally.
    - Do NOT override `metadata_ingestion_enabled`.
 
@@ -240,8 +240,8 @@ Should return zero hits (only docstrings/comments allowed).
 | `blueprint_agent_enabled: true` but `blueprint_agent.backend` absent or `disabled` | Chat panel renders an "agent unavailable" banner (or hides entirely). | Add a `blueprint_agent:` block to the template, or accept that the app features is intentionally agent-free. |
 | `blueprint_agent.backend: claude_cli` with `claude` not installed / not logged in | Adapter init fails; bootloader falls back to `DisabledAdapter` and logs the cause. | Install Claude Code CLI and run `claude --status` to verify auth. |
 | `blueprint_agent.backend: claude_api` with `ANTHROPIC_API_KEY` env var unset | Adapter init fails; fall back to `DisabledAdapter`. | Set the env var, or switch backend to `claude_cli`. |
-| `default_manifest` absent in profile AND app features hides selector | App fails to start with ConfigurationError: "No manifest source available." | Add `default_manifest` to profile, or use an app features that shows the selector. |
-| `data_ingestion_enabled: false` in profile with `project-independent` app features | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
+| `default_manifest` absent in deployment AND app features hides selector | App fails to start with ConfigurationError: "No manifest source available." | Add `default_manifest` to deployment, or use an app features that shows the selector. |
+| `data_ingestion_enabled: false` in deployment with `project-independent` app features | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
 | `SPARMVET_IRIDA_TOKEN` not set with `deployment_type: irida` | IridaConnector raises AuthenticationError at startup. | Ensure IRIDA injects the token at container launch. |
 
 ---
@@ -252,7 +252,7 @@ Should return zero hits (only docstrings/comments allowed).
 |---|---|
 | `config/ui/templates/*_template.yaml` | Flag values per app features |
 | `app/src/bootloader.py` | Flag resolution logic (dependency enforcement, cascade, `is_enabled()`) |
-| `app/src/bootloader.py` | App features loading, deployment profile resolution |
+| `app/src/bootloader.py` | App features loading, deployment resolution |
 | `app/handlers/home_theater.py` | Must use `bootloader.is_enabled()` — app features name checks are prohibited |
 | `app/handlers/gallery_handlers.py` | Must use `bootloader.is_enabled()` for feature gating |
 | `app/handlers/export_handlers.py` | Must use `bootloader.is_enabled()` for feature gating |

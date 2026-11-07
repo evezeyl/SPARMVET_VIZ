@@ -18,7 +18,7 @@ A **app features** defines what a user can see and do in the SPARMVET interface.
 
 App features files answer the question: **who is this user, and what level of access do they need?**
 
-They do **not** control which data or pipeline is loaded — that is the job of the [Deployment Profile](../deployment/deployment_guide.qmd). App features and deployment are fully independent: the same app features can be used with any pipeline, and the same pipeline can be deployed for different app features levels.
+They do **not** control which data or pipeline is loaded — that is the job of the [Deployment](../deployment/deployment_guide.qmd). App features and deployment are fully independent: the same app features can be used with any pipeline, and the same pipeline can be deployed for different app features levels.
 
 ---
 
@@ -287,30 +287,30 @@ The base theme (`config/ui/theme.css`) is always available as a reference and fa
 
 The app features is resolved at startup in this order (first match wins):
 
-1. `default_app_features` in the active deployment profile YAML
+1. `default_app_features` in the active deployment file
 2. App features selector in the UI (if visible — `developer` app features only by default)
 3. Fallback: `pipeline-static`
 
-In production deployments (Galaxy, IRIDA, server), the deployment profile always sets `default_app_features`, so the selector is never shown. In development, the developer template allows switching app features files from the UI for testing.
+In production deployments (Galaxy, IRIDA, server), the deployment always sets `default_app_features`, so the selector is never shown. In development, the developer template allows switching app features files from the UI for testing.
 
 The active app features is loaded by `Bootloader` (`app/src/bootloader.py`) at bootload time and cached for the session. The resolved template path is printed to the terminal at startup: `[Bootloader] App features: <id> → <absolute/path/to/_template.yaml>`. Changing app features requires a page reload.
 
 ---
 
-# App features vs. Deployment Profile — What Goes Where
+# App features vs. Deployment — What Goes Where
 
 This is the most common source of confusion. The rule is simple:
 
 | Question | Answered by |
 |---|---|
 | What can this user do? | App features file (`config/ui/templates/`) |
-| Which pipeline/data is loaded? | Deployment profile (`config/connectors/` or `SPARMVET_PROFILE`) |
-| Where is data stored on disk? | Deployment profile (`locations` block) |
-| Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment profile (`data_ingestion_enabled: false` overrides app features) |
-| What manifest is loaded at startup? | Deployment profile (`default_manifest`) |
+| Which pipeline/data is loaded? | Deployment (`config/connectors/` or `SPARMVET_DEPLOYMENT`) |
+| Where is data stored on disk? | Deployment (`locations` block) |
+| Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment (`data_ingestion_enabled: false` overrides app features) |
+| What manifest is loaded at startup? | Deployment (`default_manifest`) |
 | Can the user switch manifests? | App features (`import_helper_enabled` + `developer_mode_enabled`) |
 
-The only feature that is jointly controlled is **data ingestion** — the deployment profile can disable it regardless of app features (e.g., for automated pipeline deployments where data is always pushed automatically).
+The only feature that is jointly controlled is **data ingestion** — the deployment can disable it regardless of app features (e.g., for automated pipeline deployments where data is always pushed automatically).
 
 ---
 

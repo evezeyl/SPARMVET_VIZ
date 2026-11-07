@@ -77,7 +77,7 @@ def server(input, output, session):
     orchestrator = DataOrchestrator(
         manifests_dir=bootloader.get_location("manifests"),
         raw_data_dir=bootloader.get_location("raw_data"),
-        prefer_discovery=bootloader.connector_config.get("prefer_discovery", False),
+        data_lookup=bootloader.data_lookup,
     )
     # BP-COLOR-3: inject project palettes from deployment registry.
     # VizFactory works with built-ins alone when no registry is passed (library independence).
@@ -109,7 +109,7 @@ def server(input, output, session):
     tier_toggle = reactive.Value("T1")
 
     # Session manager — Location 4 from connector
-    session_manager = SessionManager(bootloader.get_location("user_sessions"))
+    session_manager = SessionManager(bootloader.get_location("user_data"))
 
     # Per-session Blueprint Architect state (declared here so wrangle_studio.define_server
     # can reference them via lambda before blueprint_handlers registers them)

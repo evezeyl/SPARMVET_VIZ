@@ -5,7 +5,7 @@
 """
 BaseConnector — abstract interface for all deployment connector types (ADR-048 §5).
 
-All connectors receive the already-loaded profile dict from the Bootloader.
+All connectors receive the already-loaded deployment dict from the Bootloader.
 They are responsible for two things only:
   1. resolve_paths()  — produce the five location Paths for this deployment.
   2. fetch_data()     — pull remote data to local storage (no-op for filesystem types).
@@ -25,24 +25,24 @@ class BaseConnector(ABC):
 
     Subclasses must implement resolve_paths() and fetch_data().
     get_manifest_path() and get_default_app_features() have default implementations
-    that read directly from the profile dict.
+    that read directly from the deployment dict.
     """
 
-    def __init__(self, profile: Dict) -> None:
+    def __init__(self, deployment: Dict) -> None:
         """
         Parameters
         ----------
-        profile : dict
-            Fully loaded deployment profile YAML (as returned by yaml.safe_load).
+        deployment : dict
+            Fully loaded deployment file (as returned by yaml.safe_load).
         """
-        self._profile = profile
+        self._deployment = deployment
 
     @abstractmethod
     def resolve_paths(self) -> Dict[str, Path]:
         """
         Return the five canonical location paths for this deployment.
 
-        Keys (all required): raw_data, manifests, curated_data, user_sessions, gallery.
+        Keys (all required): raw_data, manifests, cache, user_data, gallery.
         Values are absolute or CWD-relative Path objects — never raw strings.
         """
 
@@ -59,30 +59,30 @@ class BaseConnector(ABC):
 
     def get_manifest_path(self) -> Path | None:
         """
-        Return the default manifest Path, or None if not set in the profile.
+        Return the default manifest Path, or None if not set in the deployment.
 
-        default_manifest in the profile is relative to project_root (or CWD if
+        default_manifest in the deployment is relative to project_root (or CWD if
         project_root is absent). Returns an absolute or CWD-relative Path.
         """
-        dm = self._profile.get("default_manifest")
+        dm = self._deployment.get("default_manifest")
         if not dm:
             return None
         p = Path(dm)
         if p.is_absolute():
             return p
-        project_root_str = self._profile.get("project_root")
+        project_root_str = self._deployment.get("project_root")
         if project_root_str:
             return Path(project_root_str) / p
         return p
 
     def get_default_app_features(self) -> str | None:
-        """Return the default app features ID from the profile, or None if not set."""
-        return self._profile.get("default_app_features")
+        """Return the default app features ID from the deployment, or None if not set."""
+        return self._deployment.get("default_app_features")
 
     def get_deployment_name(self) -> str:
         """Return the human-readable deployment label."""
-        return self._profile.get("deployment_name", "SPARMVET_VIZ")
+        return self._deployment.get("deployment_name", "SPARMVET_VIZ")
 
     def get_deployment_type(self) -> str:
         """Return the deployment_type string (filesystem / irida / galaxy)."""
-        return self._profile.get("deployment_type", "filesystem")
+        return self._deployment.get("deployment_type", "filesystem")

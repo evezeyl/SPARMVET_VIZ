@@ -404,7 +404,7 @@ def test_bootloader_locations(project_root: Path):
         from app.src.bootloader import Bootloader
         bl = Bootloader(app_features="developer")
 
-        for loc_key in ("manifests", "user_sessions"):
+        for loc_key in ("manifests", "user_data"):
             try:
                 loc = bl.get_location(loc_key)
                 record(f"location_{loc_key}", True, str(loc))

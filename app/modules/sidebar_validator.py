@@ -180,7 +180,7 @@ class SidebarValidator:
                 location=template_path,
                 fix=(
                     f"Ensure the template file exists at {template_path}. "
-                    f"Check SPARMVET_APP_FEATURES env var and the deployment profile "
+                    f"Check SPARMVET_APP_FEATURES env var and the deployment "
                     f"'default_app_features' key."
                 ),
                 who="operator",

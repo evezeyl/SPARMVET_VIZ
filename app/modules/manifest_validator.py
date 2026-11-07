@@ -125,7 +125,7 @@ def _declared_columns(fields) -> list[str]:
 
 
 def validate_manifest_data(path: Union[str, Path], raw_data_dir: Union[str, Path],
-                           prefer_discovery: bool = False) -> list[ManifestProblem]:
+                           data_lookup: str = "manifest_paths") -> list[ManifestProblem]:
     """Read every dataset of the manifest and check its declared fields against the real columns.
 
     Unlike validate_manifest this reads the data files (issue #18). For each data schema it
@@ -147,7 +147,7 @@ def validate_manifest_data(path: Union[str, Path], raw_data_dir: Union[str, Path
     except (Exception, SystemExit) as exc:
         return [ManifestProblem(name, "load", _load_error_text(captured.getvalue(), exc))]
 
-    orchestrator = DataOrchestrator(path.parent, Path(raw_data_dir), prefer_discovery=prefer_discovery)
+    orchestrator = DataOrchestrator(path.parent, Path(raw_data_dir), data_lookup=data_lookup)
     schemas: list[tuple[str, str, dict]] = []
     for section in _SCHEMA_SECTIONS:
         entries = raw.get(section)

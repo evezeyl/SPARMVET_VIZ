@@ -219,7 +219,7 @@ def render_audit_report(
     session_key: str,
     output_dir,
     manifest_id: str = "",
-    deployment_profile: str = "local",
+    deployment: str = "local",
     figure_paths=None,
     dataset_summaries=None,
     fmt: str = "html",
@@ -295,7 +295,7 @@ def render_audit_report(
         "{{manifest_id}}": manifest_id or "—",
         "{{manifest_sha256}}": (manifest_sha256[:16] + "…") if manifest_sha256 else "—",
         "{{t3_recipe_sha256}}": t3_recipe_sha256[:16] + "…",
-        "{{deployment_profile}}": deployment_profile,
+        "{{deployment}}": deployment,
         "{{export_timestamp}}": export_ts,
     }.items():
         filled = filled.replace(key, val)

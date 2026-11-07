@@ -105,11 +105,11 @@
 | `ui_title` (app features override) | - | - | set | - | - | - | - | - |
 | `ui_subtitle` (app features override) | - | - | set | - | - | - | - | - |
 | `show_navigation` *(derived)* | N | N | N | N | N | Y | Y | Y |
-| `sidebar_profile` | default | default | default | default | default | default | default | default |
+| `sidebar_deployment` | default | default | default | default | default | default | default | default |
 
 > `show_navigation` is derived — auto-shown when any of gallery / blueprint / test_lab enabled.
 > `ui_title` / `ui_subtitle`: app features override > manifest `info.display_name` / `info.subtitle` > nothing.
-> `sidebar_profile`: placeholder string field. Only `"default"` exists currently. Future: named layout modules.
+> `sidebar_deployment`: placeholder string field. Only `"default"` exists currently. Future: named layout modules.
 
 ---
 
@@ -138,4 +138,4 @@
 | `ui_title` (app features override) | set | - |
 | `ui_subtitle` (app features override) | set | - |
 | `show_navigation` *(derived)* | N | N |
-| `sidebar_profile` | default | default |
+| `sidebar_deployment` | default | default |

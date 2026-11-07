@@ -139,7 +139,7 @@ No cascade dependencies currently. Sub-flags (DATA_PREP, CREATE_TEST_DATA, CREAT
 | `show_app_features_badge` | configurable | Display preference only. No functional dependency. |
 | `ui_title` | configurable | Resolution: app features config override > manifest `info.display_name` > nothing shown. |
 | `ui_subtitle` | configurable | Resolution: app features config override > manifest `info.subtitle` > nothing shown. Hidden if `ui_title` is off. `info.description` is free-form long text — NOT shown in UI header. |
-| `sidebar_profile` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
+| `sidebar_deployment` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
 
 ---
 

@@ -235,7 +235,7 @@ def define_server(input, output, session, *,
             return tier1_anchor()
         target_ds = spec.get("target_dataset")
         if target_ds:
-            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
             out_path = anchor_dir / f"{target_ds}.parquet"
             proj_id = safe_input(input, "project_id", bootloader.get_default_project())
             # ADR-089: never reuse an anchor by file name. The orchestrator checks the chained
@@ -262,7 +262,7 @@ def define_server(input, output, session, *,
             target_ds = spec["target_dataset"]
             if data_refresh_trigger is not None:
                 data_refresh_trigger.get()
-            out_path = bootloader.get_location("user_sessions") / "anchors" / f"{target_ds}.parquet"
+            out_path = bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet"
             proj_id = safe_input(input, "project_id", bootloader.get_default_project())
             # Issue #10 / ADR-089: T2 is read from its stored parquet (key-checked). An error is
             # not caught here: showing Tier 1 in place of a failed Tier 2 would be a false result.
@@ -707,7 +707,7 @@ def define_server(input, output, session, *,
             proj_id = safe_input(input, "project_id", bootloader.get_default_project())
             coll_id = active_collection_id()
             # ADR-024: Materialize to persistent session location
-            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
             if not anchor_dir.exists():
                 anchor_dir.mkdir(parents=True, exist_ok=True)
             out_path = anchor_dir / f"{coll_id}.parquet"
@@ -1007,7 +1007,7 @@ def define_server(input, output, session, *,
     def _sync_anchor_path():
         try:
             coll_id = active_collection_id()
-            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
             out_path = anchor_dir / f"{coll_id}.parquet"
             if out_path.exists():
                 new_val = str(out_path)

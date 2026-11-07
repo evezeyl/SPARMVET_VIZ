@@ -1,16 +1,16 @@
-# SPARMVET_VIZ — Posit Connect Deployment Profile Template (ADR-048)
+# SPARMVET_VIZ — Posit Connect Deployment Template (ADR-048)
 #
-# Copy this file, fill in the path values, and point SPARMVET_PROFILE at
-# the result on the Connect server, or commit it as the production profile.
+# Copy this file, fill in the path values, and point SPARMVET_DEPLOYMENT at
+# the result on the Connect server, or commit it as the production deployment.
 #
-# Profile resolution order (first match wins):
-#   1. SPARMVET_PROFILE env var  ← recommended for Connect
-#   2. ~/.sparmvet/profile.yaml
-#   3. /etc/sparmvet/profile.yaml
-#   4. config/deployment/local/local_profile.yaml  (dev fallback only)
+# Deployment resolution order (first match wins):
+#   1. SPARMVET_DEPLOYMENT env var  ← recommended for Connect
+#   2. ~/.sparmvet/deployment.yaml
+#   3. /etc/sparmvet/deployment.yaml
+#   4. config/deployment/local/local.yaml  (dev fallback only)
 #
 # On Connect set:
-#   SPARMVET_PROFILE=/connect/content/<app-guid>/connect_profile.yaml
+#   SPARMVET_DEPLOYMENT=/connect/content/<app-guid>/connect.yaml
 #   SPARMVET_APP_FEATURES=pipeline-static   (or whichever app features this deployment shows)
 #
 # If the pipeline produces data via an automated script (not user upload):
@@ -45,12 +45,12 @@ locations:
   # Location 3 — Tier 1 & 2 Parquet caches.
   # App writes here on first run; reads on subsequent runs.
   # Must be writable by the Connect app process.
-  curated_data: "parquet/"
+  cache: "parquet/"
 
   # Location 4 — User-writable space.
   # Export bundles, session saves, T3 artifacts.
   # Must be writable. On Connect this is typically the app's persistent storage.
-  user_sessions: "sessions/"
+  user_data: "sessions/"
 
   # Location 5 — Gallery assets (read-only).
   gallery: "gallery/"

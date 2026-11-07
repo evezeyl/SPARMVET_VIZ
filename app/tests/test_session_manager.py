@@ -33,7 +33,7 @@ from app.modules.session_manager import (
 
 @pytest.fixture()
 def tmp_location(tmp_path):
-    return tmp_path / "user_sessions"
+    return tmp_path / "user_data"
 
 
 @pytest.fixture()

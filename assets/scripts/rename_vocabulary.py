@@ -165,7 +165,10 @@ def move_files(paths, pairs, keep, rules, dry_run: bool):
 
 def new_path_subset(path: str, pairs, keep, rules):
     parts = path.split("/")
-    return "/".join(transform(seg, pairs, keep)[0] if RETIRED.search(seg) else seg for seg in parts)
+    out = "/".join(transform(seg, pairs, keep)[0] if RETIRED.search(seg) else seg for seg in parts)
+    if out.startswith("config/deployment/"):
+        out = out.replace("_deployment_template.yaml", "_template.yaml").replace("_deployment.yaml", ".yaml")
+    return out
 
 
 TEXT_EXT = {".py", ".yaml", ".yml", ".sh", ".toml", ".css", ".md", ".qmd", ".mmd", ".txt",
@@ -241,6 +244,8 @@ def cmd_apply(args) -> int:
         n_files = 0
         for f in tracked_files():
             if f in TEXT_SKIP or Path(f).suffix not in TEXT_EXT:
+                continue
+            if any(f.startswith(p) for w in args.words for p in rules.get("prose_skip_paths", {}).get(w, [])):
                 continue
             try:
                 if rewrite_text(f, args.words, pairs, keep, rules_prose, args.dry_run):

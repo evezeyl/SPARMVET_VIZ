@@ -89,22 +89,22 @@ Critical pattern discovered during Phase 21-F implementation. Violating this cau
 
 ## 4. Path Authority Strategy (ADR-031 / ADR-048)
 
-System storage and hardware endpoints are strictly decoupled from UI code via a deployment profile YAML. The active profile is resolved by `app/src/bootloader.py` via a **4-level priority chain** (ADR-048 §4):
+System storage and hardware endpoints are strictly decoupled from UI code via a deployment file. The active deployment is resolved by `app/src/bootloader.py` via a **4-level priority chain** (ADR-048 §4):
 
 | Level | Source | Used by |
 |---|---|---|
-| 1 | `SPARMVET_PROFILE` env var → explicit path | Galaxy XML wrapper, IRIDA container, Docker Compose, systemd |
-| 2 | `~/.sparmvet/profile.yaml` | Local PC (scientist or admin places this once at setup) |
-| 3 | `/etc/sparmvet/profile.yaml` | Institutional server (sysadmin places at deploy time) |
-| 4 | `config/deployment/local/local_profile.yaml` | Developer running from repo root (current dev fallback) |
+| 1 | `SPARMVET_DEPLOYMENT` env var → explicit path | Galaxy XML wrapper, IRIDA container, Docker Compose, systemd |
+| 2 | `~/.sparmvet/deployment.yaml` | Local PC (scientist or admin places this once at setup) |
+| 3 | `/etc/sparmvet/deployment.yaml` | Institutional server (sysadmin places at deploy time) |
+| 4 | `config/deployment/local/local.yaml` | Developer running from repo root (current dev fallback) |
 
-The first level that exists wins. If `SPARMVET_PROFILE` is set but the path doesn't exist, the Bootloader raises `FileNotFoundError` immediately (hard misconfiguration). Startup log line: `[Bootloader] Profile resolved at level N (...)`.
+The first level that exists wins. If `SPARMVET_DEPLOYMENT` is set but the path doesn't exist, the Bootloader raises `FileNotFoundError` immediately (hard misconfiguration). Startup log line: `[Bootloader] Deployment resolved at level N (...)`.
 
-**Connector lifecycle (ADR-048 §11, 2026-05-02):** After profile resolution, the bootloader immediately calls `get_connector(profile)` → `connector.fetch_data()` → `connector.resolve_paths()`. The resolved paths from `resolve_paths()` are stored in `self._resolved_locations` and become the **authoritative source for all location paths**. `bootloader.get_location(key)` reads from `_resolved_locations` — never from the raw profile dict. The connector result is cached per profile path (`_resolved_locations_cache`); `fetch_data()` runs at most once per process.
+**Connector lifecycle (ADR-048 §11, 2026-05-02):** After deployment resolution, the bootloader immediately calls `get_connector(deployment)` → `connector.fetch_data()` → `connector.resolve_paths()`. The resolved paths from `resolve_paths()` are stored in `self._resolved_locations` and become the **authoritative source for all location paths**. `bootloader.get_location(key)` reads from `_resolved_locations` — never from the raw deployment dict. The connector result is cached per deployment path (`_resolved_locations_cache`); `fetch_data()` runs at most once per process.
 
-Profile schema and full documentation: `config/deployment/templates/connector_template.yaml` and ADR-048.
+Deployment schema and full documentation: `config/deployment/templates/deployment_template.yaml` and ADR-048.
 
-**App features resolution order (Phase 25-M fix):** `app features=` kwarg > `SPARMVET_APP_FEATURES` env var > `default_app_features` in deployment profile > `ValueError`. No hardcoded fallback in code — the local dev profile (`config/deployment/local/local_profile.yaml`) sets `default_app_features: "developer"`.
+**App features resolution order (Phase 25-M fix):** `app features=` kwarg > `SPARMVET_APP_FEATURES` env var > `default_app_features` in deployment > `ValueError`. No hardcoded fallback in code — the local dev deployment (`config/deployment/local/local.yaml`) sets `default_app_features: "developer"`.
 
 **Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all flag-gated decisions. Comparing `bootloader.app features` against name strings is prohibited — app features files are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_enabled`, `audit_report_enabled`. See `rules_app_features_flags.md` §Anti-Pattern.
 

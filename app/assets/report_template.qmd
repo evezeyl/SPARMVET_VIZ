@@ -12,7 +12,7 @@ params:
   manifest_id: "{{manifest_id}}"
   manifest_sha256: "{{manifest_sha256}}"
   t3_recipe_sha256: "{{t3_recipe_sha256}}"
-  deployment_profile: "{{deployment_profile}}"
+  deployment: "{{deployment}}"
   export_timestamp: "{{export_timestamp}}"
 ---
 
@@ -29,7 +29,7 @@ report_data = json.loads(pathlib.Path("report_data.json").read_text())
 | **Manifest** | `{{manifest_id}}` |
 | **Manifest SHA256** | `{{manifest_sha256}}` |
 | **T3 Recipe SHA256** | `{{t3_recipe_sha256}}` |
-| **Deployment Profile** | `{{deployment_profile}}` |
+| **Deployment** | `{{deployment}}` |
 | **Exported** | `{{export_timestamp}}` |
 
 ## Data Summary

@@ -53,7 +53,7 @@ def run(output_dir: Path) -> bool:
         data_b.write_text("sample_id\tgene\nS1\tblaZ\nS2\tblaZ\n")
         source_files = {"metadata": data_a, "amr": data_b}
 
-        sm = SessionManager(tmp / "user_sessions")
+        sm = SessionManager(tmp / "user_data")
 
         # ── Step 1: Compute hashes ───────────────────────────────────────
         msig = SessionManager.compute_manifest_sha256(manifest_file)
@@ -154,7 +154,7 @@ def run(output_dir: Path) -> bool:
         zip_out.write_bytes(zip_bytes)
 
         # ── Step 13: Import zip into fresh SessionManager ────────────────
-        sm2 = SessionManager(tmp / "user_sessions_import")
+        sm2 = SessionManager(tmp / "user_data_import")
         restored_key = sm2.import_session_zip(zip_bytes)
         ok = restored_key == key and sm2.read_assembly_ghost(key) is not None
         results.append(("import_session_zip roundtrip", PASS if ok else FAIL))

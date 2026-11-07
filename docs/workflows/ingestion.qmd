@@ -14,7 +14,7 @@ The Ingestion Layer (The Border Control)
 ### Security and Input Sanitization 
 Because the app accepts user-uploaded files, the Ingestion Layer acts as a security checkpoint:
 1. **File Type Verification:** Verifies extensions before passing to the engine.
-2. **Path Authority:** All ingestion occurs via paths resolved from the **Connector (local_connector.yaml)**, ensuring no unauthorized directory access.
+2. **Path Authority:** All ingestion occurs via paths resolved from the **Connector (local.yaml)**, ensuring no unauthorized directory access.
 3. **Segregation (ADR-031):** The UI-driven ingestion pipeline automatically segregates uploads:
     - `.yaml` files are routed to `manifests/`.
     - `.tsv`, `.csv`, `.xlsx` files are routed to `raw_data/`.

@@ -28,7 +28,7 @@ FILTER_B = {"action": "filter_eq", "column": "group", "value": "B"}
 class World:
     """A tiny project: data file, manifest with two included files, and an orchestrator."""
 
-    def __init__(self, root: Path, prefer_discovery: bool = False):
+    def __init__(self, root: Path, data_lookup: str = "manifest_paths"):
         self.root = root
         self.data_dir = root / "data"
         self.manifests_dir = root / "manifests"
@@ -38,7 +38,7 @@ class World:
         self.data_file = self.data_dir / "T.tsv"
         self.write_data("sample_id\tgroup\ns1\tA\ns2\tA\ns3\tB\n")
         self.write_manifest()
-        self.orch = DataOrchestrator(self.manifests_dir, self.data_dir, prefer_discovery=prefer_discovery)
+        self.orch = DataOrchestrator(self.manifests_dir, self.data_dir, data_lookup=data_lookup)
 
     # -- things a test can change ------------------------------------------------------------
     def write_data(self, text: str) -> None:
@@ -201,14 +201,14 @@ def test_final_contract_is_applied_the_same_on_a_fresh_and_a_reused_anchor(tmp_p
     assert set(fresh[0].keys()) == {"sample_id"}
 
 
-# --- data location: prefer_discovery (ADR-088 point 5) -----------------------------------------
+# --- data location: data_lookup by_dataset_id (ADR-088 point 5) -----------------------------------------
 
 
-def test_with_prefer_discovery_the_data_hash_follows_the_delivered_data(tmp_path):
+def test_with_data_lookup_by_dataset_id_the_data_hash_follows_the_delivered_data(tmp_path):
     """Production: the manifest's source.path is only default data; raw_data/T.tsv is what counts."""
     default_data = tmp_path / "default_data.tsv"
     default_data.write_text("sample_id\tgroup\nx1\tA\n")
-    w = World(tmp_path / "w", prefer_discovery=True)
+    w = World(tmp_path / "w", data_lookup="by_dataset_id")
     w.write_manifest(source_path=default_data)
     before = w.orch.compute_project_keys("tiny").data_batch_hash
 

@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The connector library is the **Bridge layer** (ADR-048 §5) between the Bootloader's deployment profile YAML and the rest of the app. It provides type-specific adapters that:
+The connector library is the **Bridge layer** (ADR-048 §5) between the Bootloader's deployment file and the rest of the app. It provides type-specific adapters that:
 
 1. **Resolve** the five named locations to absolute filesystem paths.
 2. **Fetch** remote data to a local cache when needed (IRIDA only; filesystem/Galaxy are no-ops).
@@ -13,7 +13,7 @@ After `fetch_data()` returns, every deployment type looks identical to the rest 
 
 ## Architecture
 
-One Docker image + one deployment profile YAML = one running SPARMVET instance. The connector is selected automatically from `deployment_type` in the profile.
+One Docker image + one deployment file = one running SPARMVET instance. The connector is selected automatically from `deployment_type` in the deployment.
 
 ```
 BaseConnector (ABC)
@@ -30,45 +30,45 @@ BaseConnector (ABC)
 | `filesystem.py` | `FilesystemConnector` | Resolves locations under `project_root`; no-op `fetch_data()` |
 | `galaxy.py` | `GalaxyConnector` | Extends Filesystem; falls back to `_GALAXY_JOB_HOME_DIR` env var when `project_root` absent |
 | `irida.py` | `IridaConnector` | Resolves paths via `irida.local_cache`; validates `SPARMVET_IRIDA_TOKEN` + irida block; `fetch_data()` stub (Phase 23-D) |
-| `__init__.py` | `get_connector(profile)` | Factory — routes `deployment_type` → class; defaults to `FilesystemConnector` |
+| `__init__.py` | `get_connector(deployment)` | Factory — routes `deployment_type` → class; defaults to `FilesystemConnector` |
 
 ## Usage
 
 ```python
 from connector import get_connector
 
-profile = {
+deployment = {
     "deployment_type": "filesystem",
     "project_root": "/data/pipeline/amr/",
     "locations": {
         "raw_data": "inputs/",
         "manifests": "manifests/",
-        "curated_data": "parquet/",
-        "user_sessions": "sessions/",
+        "cache": "parquet/",
+        "user_data": "sessions/",
         "gallery": "gallery/",
     },
 }
 
-connector = get_connector(profile)
+connector = get_connector(deployment)
 paths = connector.resolve_paths()
 # paths["raw_data"] == Path("/data/pipeline/amr/inputs")
 ```
 
 The `Bootloader (app/src/bootloader.py)` calls `get_connector()` automatically — app code does not instantiate connectors directly.
 
-## Deployment Profile Integration
+## Deployment Integration
 
-The active dev profile is at `config/deployment/local/local_profile.yaml`. See `docs/workflows/connector.qmd` for the full ADR-048 schema reference.
+The active dev deployment is at `config/deployment/local/local.yaml`. See `docs/workflows/connector.qmd` for the full ADR-048 schema reference.
 
-Profile resolution order (first match wins):
-1. `SPARMVET_PROFILE` env var
-2. `~/.sparmvet/profile.yaml`
-3. `/etc/sparmvet/profile.yaml`
-4. `config/deployment/local/local_profile.yaml` ← dev fallback
+Deployment resolution order (first match wins):
+1. `SPARMVET_DEPLOYMENT` env var
+2. `~/.sparmvet/deployment.yaml`
+3. `/etc/sparmvet/deployment.yaml`
+4. `config/deployment/local/local.yaml` ← dev fallback
 
 ## IRIDA Token
 
-For `deployment_type: irida`, the OAuth2 bearer token must be injected via `SPARMVET_IRIDA_TOKEN` environment variable at container launch. It must never appear in the deployment profile YAML. Full IRIDA fetch implementation is Phase 23-D.
+For `deployment_type: irida`, the OAuth2 bearer token must be injected via `SPARMVET_IRIDA_TOKEN` environment variable at container launch. It must never appear in the deployment file. Full IRIDA fetch implementation is Phase 23-D.
 
 ## Installation
 
@@ -80,5 +80,5 @@ pip install -e ./libs/connector
 
 ```bash
 pytest libs/connector/tests/ -v
-# 31 tests, all passing. In-memory profiles only — no filesystem access required.
+# 31 tests, all passing. In-memory deployments only — no filesystem access required.
 ```

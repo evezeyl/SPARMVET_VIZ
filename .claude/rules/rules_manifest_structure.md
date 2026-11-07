@@ -271,8 +271,8 @@ Project palettes are defined in `config/palettes.yaml` and loaded by `bootloader
 - A problem in a manifest (missing `analysis_groups:`, missing `!include` file, bad recipe shape) raises `DeploymentFailure` carrying the same `DeploymentError` records and operator-readable block as before (ADR-078). It never calls `sys.exit`.
 - Code that loads a manifest catches it, shows the manifest name, location and fix to the user (notification/alerts panel), leaves that manifest out of the project list, and keeps running.
 - Command-line scripts and audits catch it, print the block and exit non-zero themselves.
-- Zero valid manifests is a valid state: the app starts with an empty state, and `default_manifest` in the deployment profile is optional.
-- Deployment configuration errors (profile, connector, app features file) stay fatal at startup (ADR-077).
+- Zero valid manifests is a valid state: the app starts with an empty state, and `default_manifest` in the deployment is optional.
+- Deployment configuration errors (deployment, connector, app features file) stay fatal at startup (ADR-077).
 - To check a manifest without loading it into the app, use `validate_manifest()` (`app/modules/manifest_validator.py`).
 - `validate_manifest_data(path, raw_data_dir)` (same module) also reads the data files and reports a dataset that cannot be loaded and an `output_fields` entry that matches no column after tier-1 wrangling, with a "did you mean" hint (issue #18). The engine does not apply `output_fields` of a data schema, so a wrong name there is otherwise silent. `app/tests/test_manifest_data_check.py` runs it on every shipped manifest.
 - A dataset that the requested collection needs and that cannot be loaded makes `materialize_tier1` raise `IngestionError` naming the dataset and the reason. Before issue #18 it was dropped and the join steps that used it were skipped with a console line.

@@ -1,8 +1,8 @@
-# SPARMVET Local Development Profile (ADR-048)
-# Profile Resolution Level 4 — dev repo fallback.
-# Used when SPARMVET_PROFILE env var is unset and no user/system profile exists.
+# SPARMVET RETEST Deployment: small manifests for retesting (see .claude/tasks/retest_procedure_2026-11-06.md)
+# Launch with: SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml
+# Its cache and sessions live in tmp/RETEST/, apart from your normal tmp/UI_TEST/.
 deployment_type: filesystem
-deployment_name: "SPARMVET_VIZ (Local Dev)"
+deployment_name: "SPARMVET RETEST"
 default_app_features: "developer"
 
 locations:
@@ -10,13 +10,13 @@ locations:
   raw_data: "assets/test_data/"
   
   # Location 2: Pipeline Manifest definitions
-  manifests: "config/manifests/pipelines/"
+  manifests: "config/manifests/retest/"
   
   # Location 3: Curated Anchors & Views (Tiers 1 & 2 Parquet)
-  curated_data: "tmp/UI_TEST/parquet_data/"
+  cache: "tmp/RETEST/parquet_data/"
   
   # Location 4: User specific artifacts, sessions, and Tier 3 outputs
-  user_sessions: "tmp/UI_TEST/user/"
+  user_data: "tmp/RETEST/user/"
   
   # Location 5: Gallery examples and recipes
   gallery: "assets/gallery_data/"

@@ -35,7 +35,7 @@ book:
     # Core technical architecture, protocols, and IDE execution constraints
     chapters:
       - reference/development_rules.qmd # Mandatory SPARMVET Laws (Violet Law, etc.)
-      - reference/environment_variables.qmd # SPARMVET_APP_FEATURES, SPARMVET_PROFILE, SPARMVET_IRIDA_TOKEN
+      - reference/environment_variables.qmd # SPARMVET_APP_FEATURES, SPARMVET_DEPLOYMENT, SPARMVET_IRIDA_TOKEN
       - foundations/core_architecture.qmd # The top-level decoupled logic
       - foundations/core_architecture_code.qmd # Deep dive into the physical codebase layout 
       - foundations/data_contracts_adr.qmd # ADR-013 explaining YAML dict manifests
@@ -52,7 +52,7 @@ book:
       - reference/developer_how_to.qmd # Repo standard for Issue submission and PRs
       - reference/ui_style_guide.qmd # CSS panel map, element selectors, style constraints
       - troubleshooting/index.qmd # Startup error catalog — one entry per DeploymentError slug (ADR-078)
-      - deployment/deployment_guide.qmd # Deployment guide — profile YAML, location keys, connector setup (ADR-048, ADR-074)
+      - deployment/deployment_guide.qmd # Deployment guide — deployment file, location keys, connector setup (ADR-048, ADR-074)
 
   - part: "Chapter 2: Non-Coder User Guide"
     # Absolute user focus: Visual mapping, No Code, Analogies, YAML 101

@@ -20,47 +20,47 @@ code:not(.sourceCode) {
 
 The active directory is `config/deployment/`. It was renamed from `config/connectors/` in Phase 23-A (2026-04-30). The new name better reflects the purpose of these files: they describe *how SPARMVET is deployed into a specific environment*, not merely how it connects to a data source.
 
-The dev fallback profile is at `config/deployment/local/local_profile.yaml`. The schema template is at `config/deployment/templates/connector_template.yaml`.
+The dev fallback deployment is at `config/deployment/local/local.yaml`. The schema template is at `config/deployment/templates/deployment_template.yaml`.
 
 ---
 
-# What Is a Deployment Profile?
+# What Is a Deployment?
 
-A deployment profile is a single YAML file that describes one running instance of SPARMVET. It answers:
+A deployment is a single YAML file that describes one running instance of SPARMVET. It answers:
 
 - **Where** is data stored? (filesystem paths or API endpoint)
 - **Which** pipeline manifest loads at startup?
 - **Who** is the default user type (app features)?
 - **What kind** of system is this? (filesystem / Galaxy / IRIDA)
 
-One Docker image + one deployment profile = one running SPARMVET instance. To run SPARMVET for three different pipelines, use three profiles pointing to three different data directories — same image each time.
+One Docker image + one deployment = one running SPARMVET instance. To run SPARMVET for three different pipelines, use three deployments pointing to three different data directories — same image each time.
 
 ---
 
-# Profile Resolution Chain
+# Deployment Resolution Chain
 
-The Bootloader finds the active profile through four levels (first match wins):
+The Bootloader finds the active deployment through four levels (first match wins):
 
 ```
-1.  SPARMVET_PROFILE env var   → /path/to/profile.yaml
+1.  SPARMVET_DEPLOYMENT env var   → /path/to/deployment.yaml
     Used by: Galaxy (XML wrapper), IRIDA (container launch),
              Docker Compose, systemd unit.
 
-2.  ~/.sparmvet/profile.yaml
+2.  ~/.sparmvet/deployment.yaml
     Used by: local PC (scientist or admin places once at setup).
 
-3.  /etc/sparmvet/profile.yaml
+3.  /etc/sparmvet/deployment.yaml
     Used by: institutional server (sysadmin places at deploy time).
 
-4.  config/deployment/local/local_profile.yaml   ← dev fallback
+4.  config/deployment/local/local.yaml   ← dev fallback
     Used by: developer running directly from the repository.
 ```
 
-The active level is logged at startup (INFO). If no profile is found, startup fails with a clear error.
+The active level is logged at startup (INFO). If no deployment is found, startup fails with a clear error.
 
 ---
 
-# Full Profile Schema
+# Full Deployment Schema
 
 ## Required fields
 
@@ -72,8 +72,8 @@ project_root: "/data/pipeline/amr/"    # absolute base; all locations resolve un
 locations:
   raw_data:      "inputs/"       # Location 1 — raw files (TSV, Excel, VCF); read-only
   manifests:     "manifests/"    # Location 2 — YAML manifests and recipes; read-only
-  curated_data:  "parquet/"      # Location 3 — Tier 1/2 Parquet caches; written by engine
-  user_sessions: "sessions/"     # Location 4 — exports, session saves, T3 artifacts; user-writable
+  cache:  "parquet/"      # Location 3 — Tier 1/2 Parquet caches; written by engine
+  user_data: "sessions/"     # Location 4 — exports, session saves, T3 artifacts; user-writable
   gallery:       "gallery/"      # Location 5 — gallery assets; read-only
 ```
 
@@ -108,14 +108,14 @@ irida:
   local_cache: "/tmp/sparmvet_cache/inputs/"   # where fetched files land before app reads them
 ```
 
-## What does NOT belong in the deployment profile
+## What does NOT belong in the deployment
 
 | Do not put here | Why | Where it goes instead |
 |---|---|---|
 | API tokens / passwords | Security — never in files that may be committed | Env vars (`SPARMVET_IRIDA_TOKEN`) |
 | Feature flags (filter, export, T3…) | App features controls features, not deployment | App features file (`config/ui/templates/`) |
 | Wrangling logic / manifests | Manifest content belongs in `locations.manifests/` | Pipeline manifest YAML |
-| User preferences | Future: `user_sessions/user-preferences.yaml` | Deferred |
+| User preferences | Future: `user_data/user-preferences.yaml` | Deferred |
 | Absolute paths inside `locations` | All sub-paths must be relative to `project_root` | Use relative paths only |
 
 ---
@@ -128,8 +128,8 @@ Every deployment defines the same five named locations. All are relative to `pro
 |---|---|---|---|---|
 | `raw_data` | Location 1 | Pipeline / admin / user upload | DataIngestor | Never modified by the app except via Data Ingestion feature |
 | `manifests` | Location 2 | Admin / developer | DataOrchestrator, ManifestNavigator | Contains master YAML and all `!include` fragments |
-| `curated_data` | Location 3 | DataOrchestrator (engine) | VizFactory, all tier reads | Created automatically on first run; deleted on manifest change (cache invalidation) |
-| `user_sessions` | Location 4 | App (exports, saves) + user | Session restore, bundle download | Must be writable by app process; user has access to this location in Galaxy/IRIDA |
+| `cache` | Location 3 | DataOrchestrator (engine) | VizFactory, all tier reads | Created automatically on first run; deleted on manifest change (cache invalidation) |
+| `user_data` | Location 4 | App (exports, saves) + user | Session restore, bundle download | Must be writable by app process; user has access to this location in Galaxy/IRIDA |
 | `gallery` | Location 5 | Admin / `refresh_gallery.py` | GalleryViewer | Read-only from app; indexed by `gallery_index.json` |
 
 **Permission model:**
@@ -154,44 +154,44 @@ No special startup behaviour. `fetch_data()` is a no-op.
 As of 2026-05-02 (ADR-048 §11), the bootloader wires the full connector lifecycle at startup. The sequence is:
 
 ```
-get_connector(profile)
+get_connector(deployment)
   └─► connector.fetch_data()        # no-op for filesystem; OAuth2 download for IRIDA
         └─► connector.resolve_paths()   # returns the five authoritative location paths
 ```
 
-`bootloader.get_location(key)` reads from the output of `resolve_paths()` — **not** from the raw profile YAML dict. This means all path resolution goes through the connector, regardless of deployment type.
+`bootloader.get_location(key)` reads from the output of `resolve_paths()` — **not** from the raw deployment file dict. This means all path resolution goes through the connector, regardless of deployment type.
 
-The connector result is cached class-level (`_resolved_locations_cache`, keyed by profile path). `fetch_data()` runs at most once per process.
+The connector result is cached class-level (`_resolved_locations_cache`, keyed by deployment path). `fetch_data()` runs at most once per process.
 
 Startup print: `[Bootloader] Connector: FilesystemConnector — fetch_data()`
 
 ---
 
-# `prefer_discovery` — Profile Field
+# `data_lookup` — Deployment Field
 
-**New optional field** (2026-05-02, ADR-048 §12):
+**Optional field** (2026-05-02, ADR-048 §12; renamed from `prefer_discovery` by ADR-091):
 
 ```yaml
-prefer_discovery: true    # default: false (absent)
+data_lookup: by_dataset_id    # manifest_paths (default, when absent) | by_dataset_id
 ```
 
-When `true`, the orchestrator (`materialize_tier1`) strips the `source` block from each manifest schema entry before passing it to the ingestor. The ingestor then falls back to filename discovery in `raw_data_dir`, finding `*{schema_id}*.tsv` files.
+With `by_dataset_id`, the orchestrator (`materialize_tier1`) strips the `source` block from each manifest schema entry before passing it to the ingestor. The ingestor then falls back to filename discovery in `raw_data_dir`, finding `*{schema_id}*.tsv` files.
 
 This mirrors production connector behaviour: in Galaxy and IRIDA, pipeline output is delivered to `raw_data_dir` by the pipeline. The ingestor discovers files by schema ID name.
 
-**`source.path` in manifests is a development shortcut only.** It provides a concrete example data path so developers can run the manifest locally. In production, `source.path` is never used — data is always discovered in `raw_data_dir`. The field is ignored when `prefer_discovery: true`.
+**`source.path` in manifests is a development shortcut only.** It provides a concrete example data path so developers can run the manifest locally. In production, `source.path` is never used — data is always discovered in `raw_data_dir`. The field is ignored when `data_lookup: by_dataset_id`.
 
-**When to set `prefer_discovery: true`:**
+**When to set `data_lookup: by_dataset_id`:**
 
-| Profile | Set? | Reason |
+| Deployment | Set? | Reason |
 |---|---|---|
-| `config/deployment/pipeline_test/pipeline_test_profile.yaml` | Yes | Simulates production connector delivery for pipeline app features testing |
-| Galaxy / IRIDA production profiles | Yes | Pipeline delivers data to `raw_data_dir` |
-| `config/deployment/local/local_profile.yaml` (dev fallback) | No | Developers use `source.path` to point at arbitrary test data locations |
+| `config/deployment/pipeline_test/pipeline_test.yaml` | Yes | Simulates production connector delivery for pipeline app features testing |
+| Galaxy / IRIDA production deployments | Yes | Pipeline delivers data to `raw_data_dir` |
+| `config/deployment/local/local.yaml` (dev fallback) | No | Developers use `source.path` to point at arbitrary test data locations |
 
 ## `deployment_type: galaxy`
 
-Thin wrapper over filesystem. Galaxy mounts the job directory at a specific path; the profile's `project_root` points to that mount. `SPARMVET_PROFILE` is set by the Galaxy XML tool wrapper at launch time.
+Thin wrapper over filesystem. Galaxy mounts the job directory at a specific path; the deployment's `project_root` points to that mount. `SPARMVET_DEPLOYMENT` is set by the Galaxy XML tool wrapper at launch time.
 
 Galaxy-specific env vars (e.g., `GALAXY_URL`, `HISTORY_ID`, `API_KEY`) are available if needed for future Galaxy API integration but are not consumed by the current app.
 
@@ -199,7 +199,7 @@ Galaxy-specific env vars (e.g., `GALAXY_URL`, `HISTORY_ID`, `API_KEY`) are avail
 
 IRIDA provides data via REST API only — no mounted volumes. At startup:
 
-1. `IridaConnector` reads `SPARMVET_IRIDA_TOKEN` from the environment (injected by IRIDA at launch — **never** stored in the profile).
+1. `IridaConnector` reads `SPARMVET_IRIDA_TOKEN` from the environment (injected by IRIDA at launch — **never** stored in the deployment).
 2. Authenticates with the IRIDA REST API at `irida.base_url`.
 3. Downloads project samples, metadata, and analysis results to `irida.local_cache`.
 4. The rest of the app reads from `local_cache` — identical to filesystem mode.
@@ -212,7 +212,7 @@ From the perspective of DataOrchestrator and VizFactory, IRIDA and filesystem de
 
 The data ingestion feature (System Tools) can be **disabled at the deployment level**, independently of app features. This is for deployments where data is always pushed automatically by a pipeline — the ingestion UI would be misleading.
 
-Add to the deployment profile:
+Add to the deployment:
 
 ```yaml
 # Overrides app features level data_ingestion_enabled for this deployment
@@ -230,32 +230,32 @@ When `false`: the Data Ingestion section in System Tools is suppressed entirely,
 
 | Component | Role | File |
 |---|---|---|
-| `Bootloader (bootloader.py)` | Profile resolution chain, path authority, app features loading | `app/src/bootloader.py` |
+| `Bootloader (bootloader.py)` | Deployment resolution chain, path authority, app features loading | `app/src/bootloader.py` |
 | `Bootloader` | Reads app features file, exposes feature flags via `bootloader.is_enabled()` | `app/src/bootloader.py` |
-| `FilesystemConnector` | Resolves filesystem profile paths | `libs/connector/src/connector/filesystem.py` |
+| `FilesystemConnector` | Resolves filesystem deployment paths | `libs/connector/src/connector/filesystem.py` |
 | `IridaConnector` | OAuth2 fetch → local cache (Phase 23-D) | `libs/connector/src/connector/irida.py` |
 | `GalaxyConnector` | Galaxy job dir env var mapping | `libs/connector/src/connector/galaxy.py` |
-| `get_connector(profile)` | Factory — routes `deployment_type` to class | `libs/connector/src/connector/__init__.py` |
+| `get_connector(deployment)` | Factory — routes `deployment_type` to class | `libs/connector/src/connector/__init__.py` |
 
 ## Relationship to ADRs
 
 | ADR | Topic |
 |---|---|
 | ADR-031 | Path Authority — original five-location contract |
-| ADR-048 | Multi-System Deployment Architecture — profile schema, resolution chain, connector library |
+| ADR-048 | Multi-System Deployment Architecture — deployment schema, resolution chain, connector library |
 
-## Dev fallback (`local_profile.yaml`)
+## Dev fallback (`local.yaml`)
 
-The dev fallback is at `config/deployment/local/local_profile.yaml`. It uses the full schema with `deployment_type: filesystem` and no `project_root` (paths resolve relative to CWD — the repository root when running locally).
+The dev fallback is at `config/deployment/local/local.yaml`. It uses the full schema with `deployment_type: filesystem` and no `project_root` (paths resolve relative to CWD — the repository root when running locally).
 
 ```yaml
-# config/deployment/local/local_profile.yaml — dev fallback (level 4)
+# config/deployment/local/local.yaml — dev fallback (level 4)
 deployment_type: filesystem
 deployment_name: "SPARMVET_VIZ (Local Dev)"
 locations:
   raw_data: "assets/test_data/"
   manifests: "config/manifests/pipelines/"
-  curated_data: "tmp/UI_TEST/parquet_data/"
-  user_sessions: "tmp/UI_TEST/user/"
+  cache: "tmp/UI_TEST/parquet_data/"
+  user_data: "tmp/UI_TEST/user/"
   gallery: "assets/gallery_data/"
 ```

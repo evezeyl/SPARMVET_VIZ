@@ -255,7 +255,7 @@ Always visible, 50/50 horizontal split:
 | `plot_spec` | Parent assembly output | NO — parquet IS the input to plot |
 | `output_fields` / `input_fields` | Not materialised | N/A |
 
-Parquets are cached in `user_sessions/anchors/{schema_id}.parquet`. If the file already exists, it is not recomputed. To force refresh: delete the file.
+Parquets are cached in `user_data/anchors/{schema_id}.parquet`. If the file already exists, it is not recomputed. To force refresh: delete the file.
 
 ---
 

@@ -88,11 +88,11 @@ Variant of `create_manifest.py` tailored for Figshare and other external dataset
 
 ---
 
-## 4. Create a Test Deployment Profile
+## 4. Create a Test Deployment
 
 **Script:** `assets/scripts/create_test_deployment.py`
 
-Generates an **ADR-048 compliant** deployment profile YAML for local testing. The profile is written to `config/connectors/local/`.
+Generates an **ADR-048 compliant** deployment file for local testing. The deployment is written to `config/connectors/local/`.
 
 ```bash
 ./.venv/bin/python assets/scripts/create_test_deployment.py \
@@ -106,7 +106,7 @@ Generates an **ADR-048 compliant** deployment profile YAML for local testing. Th
     --project-root /mnt/data/sparmvet
 ```
 
-The profile defines `deployment_type`, `locations` (raw data, manifests, curated data, gallery), `default_manifest`, and `default_app_features`.
+The deployment defines `deployment_type`, `locations` (raw data, manifests, curated data, gallery), `default_manifest`, and `default_app_features`.
 
 ---
 

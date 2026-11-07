@@ -489,15 +489,15 @@ Once manual test passes:
 - **Command:** `.venv/bin/python scripts/audit_hardcoded_config.py --output .claude/logs/audits/audit_hardcoded_config_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_hardcoded_config_YYYY-MM-DD.md`
 - **Purpose:** Detect hardcoded deployment-specific values in `app/` and `libs/` Python source that would break the app in Galaxy, IRIDA, or other deployment environments. Five violation categories.
-- **Rule source:** ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no app features name checks)
+- **Rule source:** ADR-048 (deployment), ADR-031 (bootloader), ADR-053 (no app features name checks)
 - **Checks:**
   1. **Absolute path strings** — `/home/`, `/etc/`, `/usr/`, `/var/`, `/mnt/`, `/opt/`, `/data/`, `/srv/`, `/galaxy/` literals in non-connector Python
-  2. **Direct location dict reads** — `profile["locations"]`, `locations["raw_data"]`, `profile.get("locations")` bypassing bootloader
+  2. **Direct location dict reads** — `deployment["locations"]`, `locations["raw_data"]`, `deployment.get("locations")` bypassing bootloader
   3. **App features name comparisons** — `app features == "..."`, `app features in (...)`, `app features in [...]` (use `bootloader.is_enabled()` instead)
   4. **Direct env-var reads** — `os.environ.get("SPARMVET_APP_FEATURES/DEPLOYMENT")` outside bootloader
   5. **Hardcoded Python interpreter** — `subprocess` calls with `"python3"`, `/usr/bin/python`, `/usr/bin/env python`
 - **Scan scope:** `app/`, `libs/` — excludes `tests/`, `tmpAI/`, `tmp/`, `scripts/`, `assets/scripts/`, `config/`
-- **Skip files:** `bootloader.py`, `connector.py`, `local_connector.py`, `filesystem.py`, `galaxy.py`, `galaxy_connector.py`, `irida.py`, `base.py` (connector implementations legitimately access raw profile)
+- **Skip files:** `bootloader.py`, `connector.py`, `local.py`, `filesystem.py`, `galaxy.py`, `galaxy_connector.py`, `irida.py`, `base.py` (connector implementations legitimately access raw deployment)
 - **Owner:** Local (cron/manual)
 - **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS)
 

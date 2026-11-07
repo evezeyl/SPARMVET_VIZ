@@ -1,7 +1,7 @@
 Purpose
 -------
 This directory is a duplicate of 1_test_data_ST22_dummy, used exclusively to test
-the production connector path (prefer_discovery mode).
+the production connector path (data_lookup: by_dataset_id).
 
 In production, a pipeline (Galaxy, IRIDA) writes output files to a known location
 and the connector provides that location as raw_data_dir. The ingestor discovers
@@ -35,15 +35,15 @@ produced by the local pipeline.
 
 Launch commands (see EVE_WORK/notes/cheatsheat.md)
 ---------------------------------------------------
-Used with pipeline_test_profile.yaml (prefer_discovery: true, raw_data → this dir):
+Used with pipeline_test.yaml (data_lookup: by_dataset_id, raw_data → this dir):
 
   pipeline-static app features:
-    SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
+    SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
     SPARMVET_APP_FEATURES=$ROOT/config/ui/templates/pipeline-static_template.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
   pipeline-exploration-simple app features:
-    SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
+    SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
     SPARMVET_APP_FEATURES=$ROOT/config/ui/templates/pipeline-exploration-simple_template.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 

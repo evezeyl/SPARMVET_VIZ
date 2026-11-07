@@ -57,7 +57,7 @@ For analysts and non-developers navigating the platform:
 ### 🚀 Admin & Deployment Resources {.unnumbered}
 
 For system administrators deploying SPARMVET in production:
-- [**Deployment Guide**](./deployment/deployment_guide.qmd): How to configure the app for Galaxy, IRIDA, institutional servers, and local machines using a deployment profile YAML.
-- [**UI App features files**](./workflows/ui_app_features.qmd): What each app features can do, the full feature flag matrix, and how app features files interact with deployment profiles.
+- [**Deployment Guide**](./deployment/deployment_guide.qmd): How to configure the app for Galaxy, IRIDA, institutional servers, and local machines using a deployment file.
+- [**UI App features files**](./workflows/ui_app_features.qmd): What each app features can do, the full feature flag matrix, and how app features files interact with deployments.
 
 

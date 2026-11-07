@@ -17,13 +17,13 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 
 | Slug | Component | Who | Trigger |
 |---|---|---|---|
-| [boot-profile-env-missing](#boot-profile-env-missing) | Bootloader | operator | `SPARMVET_PROFILE` set but file absent |
-| [boot-profile-not-found](#boot-profile-not-found) | Bootloader | operator | No profile at any of 4 resolution levels |
-| [boot-profile-file-missing](#boot-profile-file-missing) | Bootloader | operator | Profile file absent at resolved path |
-| [boot-profile-parse-error](#boot-profile-parse-error) | Bootloader | operator | Profile YAML is syntactically invalid |
-| [boot-profile-missing-locations](#boot-profile-missing-locations) | Bootloader | operator | One or more of 5 required `locations:` keys absent |
+| [boot-deployment-env-missing](#boot-deployment-env-missing) | Bootloader | operator | `SPARMVET_DEPLOYMENT` set but file absent |
+| [boot-deployment-not-found](#boot-deployment-not-found) | Bootloader | operator | No deployment at any of 4 resolution levels |
+| [boot-deployment-file-missing](#boot-deployment-file-missing) | Bootloader | operator | Deployment file absent at resolved path |
+| [boot-deployment-parse-error](#boot-deployment-parse-error) | Bootloader | operator | Deployment YAML is syntactically invalid |
+| [boot-deployment-missing-locations](#boot-deployment-missing-locations) | Bootloader | operator | One or more of 5 required `locations:` keys absent |
 | [boot-connector-init-failed](#boot-connector-init-failed) | Bootloader | operator | Connector `fetch_data()` or `resolve_paths()` crashed |
-| [boot-app features not-configured](#boot-app features not-configured) | Bootloader | operator | No app features from kwarg, env var, or profile |
+| [boot-app features not-configured](#boot-app features not-configured) | Bootloader | operator | No app features from kwarg, env var, or deployment |
 | [boot-app features template-missing](#boot-app features template-missing) | Bootloader | operator | App features file file not found |
 | [boot-app features template-parse-error](#boot-app features template-parse-error) | Bootloader | operator | App features file YAML invalid |
 | [app features id-underscore](#app features id-underscore) | AppFeaturesValidator | operator | `app_features_id` uses `_` instead of `-` |
@@ -40,7 +40,7 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 | [sidebar-panel-missing-type](#sidebar-panel-missing-type) | SidebarValidator | operator | Panel entry has no `type:` key |
 | [connector-filesystem-path-missing](#connector-filesystem-path-missing) | FilesystemConnector | operator | A required location directory is absent on disk |
 | [connector-irida-token-missing](#connector-irida-token-missing) | IridaConnector | operator | `SPARMVET_IRIDA_TOKEN` env var not set |
-| [connector-irida-block-missing](#connector-irida-block-missing) | IridaConnector | operator | `irida:` block absent from deployment profile |
+| [connector-irida-block-missing](#connector-irida-block-missing) | IridaConnector | operator | `irida:` block absent from deployment |
 | [manifest-file-missing](#manifest-file-missing) | ConfigManager | operator | Manifest YAML file not found |
 | [manifest-yaml-parse-error](#manifest-yaml-parse-error) | ConfigManager | developer | Master manifest is syntactically invalid YAML |
 | [manifest-include-missing](#manifest-include-missing) | ConfigManager | developer | `!include` target in manifest not found on disk |
@@ -53,9 +53,9 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 
 ## A — Bootloader Errors
 
-### `boot-profile-env-missing` {#boot-profile-env-missing}
+### `boot-deployment-env-missing` {#boot-deployment-env-missing}
 
-**Problem:** `SPARMVET_PROFILE` env var is set to `'<path>'` but the file does not exist.
+**Problem:** `SPARMVET_DEPLOYMENT` env var is set to `'<path>'` but the file does not exist.
 
 **When it appears:** The env var takes priority in the 4-level resolution chain.
 When it is set but the file is absent the app fails immediately rather than silently
@@ -64,54 +64,54 @@ a deliberate configuration, not a typo to ignore).
 
 **Fix:**
 
-- Create the profile file at the path the env var points to, **or**
-- Correct `SPARMVET_PROFILE` to the actual profile path, **or**
-- Unset `SPARMVET_PROFILE` to fall through to levels 2–4.
+- Create the deployment file at the path the env var points to, **or**
+- Correct `SPARMVET_DEPLOYMENT` to the actual deployment path, **or**
+- Unset `SPARMVET_DEPLOYMENT` to fall through to levels 2–4.
 
-**Source:** `app/src/bootloader.py → _resolve_profile_path()` — ADR-048 §4.
+**Source:** `app/src/bootloader.py → _resolve_deployment_path()` — ADR-048 §4.
 
 ---
 
-### `boot-profile-not-found` {#boot-profile-not-found}
+### `boot-deployment-not-found` {#boot-deployment-not-found}
 
-**Problem:** No deployment profile found at any of the 4 resolution levels.
+**Problem:** No deployment found at any of the 4 resolution levels.
 
 **Resolution chain checked (first match wins):**
 
-1. `SPARMVET_PROFILE` env var — not set
-2. `~/.sparmvet/profile.yaml` — not found
-3. `/etc/sparmvet/profile.yaml` — not found
-4. `config/deployment/local/local_profile.yaml` — not found
+1. `SPARMVET_DEPLOYMENT` env var — not set
+2. `~/.sparmvet/deployment.yaml` — not found
+3. `/etc/sparmvet/deployment.yaml` — not found
+4. `config/deployment/local/local.yaml` — not found
 
-**Fix:** Create a profile at `config/deployment/local/local_profile.yaml`
-(copy `local_profile.yaml.example` if available), or set `SPARMVET_PROFILE` to an
-absolute path to your deployment profile YAML.
+**Fix:** Create a deployment at `config/deployment/local/local.yaml`
+(copy `local.yaml.example` if available), or set `SPARMVET_DEPLOYMENT` to an
+absolute path to your deployment file.
 
-**Source:** `app/src/bootloader.py → _resolve_profile_path()` — ADR-048 §4.
+**Source:** `app/src/bootloader.py → _resolve_deployment_path()` — ADR-048 §4.
 
 ---
 
-### `boot-profile-file-missing` {#boot-profile-file-missing}
+### `boot-deployment-file-missing` {#boot-deployment-file-missing}
 
-**Problem:** Deployment profile file not found at `<path>`.
+**Problem:** Deployment deployment file not found at `<path>`.
 
-This error fires from `_load_connector_config()` after a profile path has been
+This error fires from `_load_deployment_config()` after a deployment path has been
 resolved. It means the file existed when the path was resolved (or was provided
 explicitly) but is no longer present when the loader tries to open it — usually a
 race condition or a relative-path ambiguity when the app is started from a
 non-project-root directory.
 
-**Fix:** Ensure the profile file exists at the resolved path.
-For local dev: copy `config/deployment/local/local_profile.yaml.example` to
-`config/deployment/local/local_profile.yaml` and fill in the `locations:` paths.
+**Fix:** Ensure the deployment file exists at the resolved path.
+For local dev: copy `config/deployment/local/local.yaml.example` to
+`config/deployment/local/local.yaml` and fill in the `locations:` paths.
 
-**Source:** `app/src/bootloader.py → _load_connector_config()`.
+**Source:** `app/src/bootloader.py → _load_deployment_config()`.
 
 ---
 
-### `boot-profile-parse-error` {#boot-profile-parse-error}
+### `boot-deployment-parse-error` {#boot-deployment-parse-error}
 
-**Problem:** Failed to parse deployment profile `'<path>'`.
+**Problem:** Failed to parse deployment `'<path>'`.
 
 **Fix:** Run the following to surface the line number of the YAML syntax error:
 
@@ -122,31 +122,31 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 Common causes: tab characters instead of spaces, unquoted colons inside values,
 missing quotes around keys that look like YAML booleans (`on`, `yes`, `true`).
 
-**Source:** `app/src/bootloader.py → _load_connector_config()`.
+**Source:** `app/src/bootloader.py → _load_deployment_config()`.
 
 ---
 
-### `boot-profile-missing-locations` {#boot-profile-missing-locations}
+### `boot-deployment-missing-locations` {#boot-deployment-missing-locations}
 
-**Problem:** Deployment profile is missing required location keys: `[<keys>]`.
+**Problem:** Deployment is missing required location keys: `[<keys>]`.
 
-The five required keys are: `raw_data`, `manifests`, `curated_data`,
-`user_sessions`, `gallery`.
+The five required keys are: `raw_data`, `manifests`, `cache`,
+`user_data`, `gallery`.
 
-**Fix:** Add the missing keys to the `locations:` block in your deployment profile.
+**Fix:** Add the missing keys to the `locations:` block in your deployment.
 Paths may be absolute or relative to `project_root` (if set).
-Reference: `config/deployment/local/local_profile.yaml`.
+Reference: `config/deployment/local/local.yaml`.
 
 ```yaml
 locations:
   raw_data: data/raw
   manifests: config/manifests/pipelines
-  curated_data: data/curated
-  user_sessions: data/sessions
+  cache: data/curated
+  user_data: data/sessions
   gallery: assets/gallery_data
 ```
 
-**Source:** `app/src/bootloader.py → _validate_profile()` — ADR-048.
+**Source:** `app/src/bootloader.py → _validate_deployment()` — ADR-048.
 
 ---
 
@@ -174,7 +174,7 @@ This wraps any exception raised during `connector.fetch_data()` or
 **Problem:** No app features configured — cannot determine which feature flags to load.
 
 **Resolution chain checked:** `app features=` kwarg → `SPARMVET_APP_FEATURES` env var →
-`default_app_features` in deployment profile — all absent.
+`default_app_features` in deployment — all absent.
 
 **Fix (choose one):**
 
@@ -182,8 +182,8 @@ This wraps any exception raised during `connector.fetch_data()` or
 # Option A — env var (Galaxy XML, Docker Compose, systemd)
 export SPARMVET_APP_FEATURES=developer
 
-# Option B — deployment profile
-echo "default_app_features: developer" >> config/deployment/local/local_profile.yaml
+# Option B — deployment
+echo "default_app_features: developer" >> config/deployment/local/local.yaml
 ```
 
 Valid app features IDs: `pipeline-static`, `pipeline-exploration-simple`,
@@ -461,11 +461,11 @@ Known panel types (from `sidebar_registry.py`): `project_info`, `deployment_info
 **Problem:** Required location `'<key>'` does not exist on disk: `<path>`.
 
 The three locations that must pre-exist on disk: `raw_data`, `manifests`, `gallery`.
-(`curated_data` and `user_sessions` are created at runtime by the assembler and
+(`cache` and `user_data` are created at runtime by the assembler and
 session manager respectively — they are not checked here.)
 
 **Fix:** Create the missing directory at the reported path, or update
-`locations.<key>` in the deployment profile to point at an existing directory.
+`locations.<key>` in the deployment to point at an existing directory.
 
 ```bash
 mkdir -p <reported_path>
@@ -480,7 +480,7 @@ mkdir -p <reported_path>
 **Problem:** `SPARMVET_IRIDA_TOKEN` environment variable is required for IRIDA
 deployment but is not set.
 
-The OAuth2 bearer token is **never** stored in the deployment profile YAML (ADR-048
+The OAuth2 bearer token is **never** stored in the deployment file (ADR-048
 §8). It must be injected at container launch.
 
 **Fix:**
@@ -494,7 +494,7 @@ environment:
 export SPARMVET_IRIDA_TOKEN="<token>"
 ```
 
-Never add the token to `local_profile.yaml` or any version-controlled file.
+Never add the token to `local.yaml` or any version-controlled file.
 
 **Source:** `libs/connector/src/connector/irida.py → _validate_irida_config()` — ADR-048 §8.
 
@@ -502,10 +502,10 @@ Never add the token to `local_profile.yaml` or any version-controlled file.
 
 ### `connector-irida-block-missing` {#connector-irida-block-missing}
 
-**Problem:** Deployment profile is missing the required `irida:` block
+**Problem:** Deployment is missing the required `irida:` block
 (`base_url`, `project_id`, `local_cache`).
 
-**Fix:** Add the `irida:` block to your deployment profile YAML:
+**Fix:** Add the `irida:` block to your deployment file:
 
 ```yaml
 irida:
@@ -524,7 +524,7 @@ irida:
 
 **Problem:** Manifest file not found: `'<path>'`.
 
-**Fix:** Verify the manifest path set in the deployment profile (`default_manifest`
+**Fix:** Verify the manifest path set in the deployment (`default_manifest`
 key) or the manifest selector dropdown. Manifests live under
 `config/manifests/pipelines/`.
 

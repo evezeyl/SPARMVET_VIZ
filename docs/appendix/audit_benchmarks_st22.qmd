@@ -36,7 +36,7 @@ The relational pipeline is **stable**. No 1:Many cross-joins were detected that 
 
 ## ⚡ 2. UI Performance & App features Reactivity
 
-> **HISTORICAL (2026-11-06):** this section measured switching between app features files at runtime. Runtime app features switching was removed (ADR-053): an app features is chosen at launch (`SPARMVET_APP_FEATURES` or the deployment profile). The benchmark scripts were removed with it. The `Bootloader` still keeps the parsed app features files in memory (`_app_features_cache`), so a template is read from disk once.
+> **HISTORICAL (2026-11-06):** this section measured switching between app features files at runtime. Runtime app features switching was removed (ADR-053): an app features is chosen at launch (`SPARMVET_APP_FEATURES` or the deployment). The benchmark scripts were removed with it. The `Bootloader` still keeps the parsed app features files in memory (`_app_features_cache`), so a template is read from disk once.
 
 ### Latency Comparison (measured when switching existed)
 - **Baseline (Disk IO):** ~2.67 ms per app features switch.

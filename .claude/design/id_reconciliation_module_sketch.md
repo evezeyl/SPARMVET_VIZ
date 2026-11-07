@@ -294,7 +294,7 @@ class TestLabStudio:
             source_file, target_file, "id", "id",
             final_match_result, verified_by="eve"
         )
-        recipe.to_yaml(f"user_sessions/{session_id}/recipe_{source_file}_{target_file}.yaml")
+        recipe.to_yaml(f"user_data/{session_id}/recipe_{source_file}_{target_file}.yaml")
 ```
 
 ### BLUEPRINT (Manifest Scaffolding)

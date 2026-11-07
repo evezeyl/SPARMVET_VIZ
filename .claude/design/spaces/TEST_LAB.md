@@ -492,7 +492,7 @@ tier1:
 
 **Q2: Access Control** → **Deferred (manual for now)**
 - Current model: person who runs anonymisation holds the mapping TSV; they decide what to share
-- No app features flags or deployment profile controls for this in the current build
+- No app features flags or deployment controls for this in the current build
 - Plan for access control system in a future enhancement without needing to refactor the output format (TSV is already compatible)
 
 **Q3: ID Pattern for Synthetic IDs** → **Simple Sequencing (with options)**

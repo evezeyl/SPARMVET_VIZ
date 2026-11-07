@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # @deps
 # provides: script:create_test_deployment
-# consumes: config/deployment/local/ (writes deployment profile YAML)
+# consumes: config/deployment/local/ (writes deployment file)
 # doc: docs/workflows/connector.qmd, .claude/knowledge/architecture_decisions.md#ADR-048
 # @end_deps
 """
 create_test_deployment.py
 -------------------------
-Scaffolds a SPARMVET deployment profile YAML for local development and testing.
+Scaffolds a SPARMVET deployment file for local development and testing.
 
-The generated file follows the ADR-048 deployment profile schema and is placed in
-config/deployment/local/ for use as a dev fallback (Profile Resolution Level 4).
+The generated file follows the ADR-048 deployment schema and is placed in
+config/deployment/local/ for use as a dev fallback (Deployment Resolution Level 4).
 
 Usage:
   ./.venv/bin/python assets/scripts/create_test_deployment.py \\
@@ -26,7 +26,7 @@ Usage:
       --project_root /data/my_pipeline \\
       --app features pipeline-exploration-simple
 
-See docs/workflows/connector.qmd for the full deployment profile schema (ADR-048).
+See docs/workflows/connector.qmd for the full deployment schema (ADR-048).
 """
 import argparse
 import yaml
@@ -62,16 +62,16 @@ def main():
         out_name += ".yaml"
     out_path = out_dir / out_name
 
-    # ADR-048 deployment profile schema
-    profile = {
+    # ADR-048 deployment schema
+    deployment = {
         "deployment_type": "filesystem",
         "deployment_name": args.description,
         "project_root": args.project_root,
         "locations": {
             "raw_data":     "assets/test_data/",
             "manifests":    "config/manifests/pipelines/",
-            "curated_data": "tmp/UI_TEST/parquet_data/",
-            "user_sessions": "tmp/UI_TEST/user/",
+            "cache": "tmp/UI_TEST/parquet_data/",
+            "user_data": "tmp/UI_TEST/user/",
             "gallery":      "assets/gallery_data/",
         },
         "default_manifest": f"{args.manifest_id}.yaml",
@@ -82,15 +82,15 @@ def main():
     }
 
     with open(out_path, "w") as f:
-        yaml.dump(profile, f, sort_keys=False, default_flow_style=False)
+        yaml.dump(deployment, f, sort_keys=False, default_flow_style=False)
 
-    print(f"Deployment profile written: {out_path}")
+    print(f"Deployment written: {out_path}")
     print(f"  manifest  : {args.manifest_id}")
     print(f"  app features   : {args.app_features}")
     print(f"  project   : {args.project_root}")
     print()
-    print("To use: set SPARMVET_PROFILE env var, or place at ~/.sparmvet/profile.yaml.")
-    print("See docs/workflows/connector.qmd for the full profile schema (ADR-048).")
+    print("To use: set SPARMVET_DEPLOYMENT env var, or place at ~/.sparmvet/deployment.yaml.")
+    print("See docs/workflows/connector.qmd for the full deployment schema (ADR-048).")
 
 
 if __name__ == "__main__":

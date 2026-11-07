@@ -8,7 +8,7 @@ Detects three classes of hardcoding that make the app fragile or deployment-spec
      inside a Galaxy/IRIDA container.
 
   2. DIRECT LOCATION READS bypassing the bootloader — code reading locations directly
-     from a profile dict (e.g. `profile["locations"]["raw_data"]`) instead of calling
+     from a deployment dict (e.g. `deployment["locations"]["raw_data"]`) instead of calling
      `bootloader.get_location("raw_data")`. The bootloader runs connector.resolve_paths()
      which normalises and validates locations; bypassing it silently uses unvalidated paths.
 
@@ -23,7 +23,7 @@ Detects three classes of hardcoding that make the app fragile or deployment-spec
      call in app/ or libs/ code instead of the `.venv` Python. (rules_runtime_environment.md)
 
 Scan scope: app/ and libs/ Python source files. Excludes: scripts/, assets/scripts/,
-tests/, tmpAI/, tmp/, config/ (profiles are allowed to have relative paths).
+tests/, tmpAI/, tmp/, config/ (deployments are allowed to have relative paths).
 
 Usage:
   .venv/bin/python scripts/audit_hardcoded_config.py
@@ -45,14 +45,14 @@ SCAN_DIRS = ["app", "libs"]
 SKIP_DIRS = {"tests", "tmpAI", "tmp", "__pycache__", ".venv", "archives"}
 # Files to skip entirely
 SKIP_FILES = {
-    "bootloader.py",       # owns profile/app features/env-var reads — intentional
+    "bootloader.py",       # owns deployment/app features/env-var reads — intentional
     "connector.py",        # owns location resolution — intentional
-    "local_connector.py",  # filesystem connector — reads raw_data etc by design
-    "filesystem.py",       # filesystem connector implementation — reads profile locations by design
-    "galaxy.py",           # Galaxy connector implementation — reads profile locations by design
+    "local.py",  # filesystem connector — reads raw_data etc by design
+    "filesystem.py",       # filesystem connector implementation — reads deployment locations by design
+    "galaxy.py",           # Galaxy connector implementation — reads deployment locations by design
     "galaxy_connector.py", # Galaxy connector variant
     "irida.py",            # IRIDA connector implementation
-    "base.py",             # connector base class — may read profile dict
+    "base.py",             # connector base class — may read deployment dict
 }
 
 # ── Detection patterns ────────────────────────────────────────────────────────
@@ -73,12 +73,12 @@ ABSOLUTE_PATH_PATTERNS = [
 
 # 2. Direct location reads — accessing locations dict without bootloader
 DIRECT_LOCATION_PATTERNS = [
-    (re.compile(r'profile\s*\[\s*["\']locations["\']'),
-     "Direct profile['locations'] read — use bootloader.get_location(key) instead"),
-    (re.compile(r'locations\s*\[\s*["\'](?:raw_data|manifests|curated_data|user_sessions|gallery)["\']'),
+    (re.compile(r'deployment\s*\[\s*["\']locations["\']'),
+     "Direct deployment['locations'] read — use bootloader.get_location(key) instead"),
+    (re.compile(r'locations\s*\[\s*["\'](?:raw_data|manifests|cache|user_data|gallery)["\']'),
      "Direct locations[key] read — use bootloader.get_location(key) instead"),
     (re.compile(r'\.get\s*\(\s*["\']locations["\']'),
-     "profile.get('locations') read — use bootloader.get_location(key) instead"),
+     "deployment.get('locations') read — use bootloader.get_location(key) instead"),
 ]
 
 # 3. App features name string comparisons in runtime code (ADR-053)
@@ -97,14 +97,14 @@ APP_FEATURES_NAME_PATTERNS = [
 ENV_VAR_PATTERNS = [
     (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_APP_FEATURES["\']'),
      "Direct SPARMVET_APP_FEATURES env-var read — bootloader owns app features resolution"),
-    (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_PROFILE["\']'),
-     "Direct SPARMVET_PROFILE env-var read — bootloader owns profile resolution"),
+    (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_DEPLOYMENT["\']'),
+     "Direct SPARMVET_DEPLOYMENT env-var read — bootloader owns deployment resolution"),
 ]
 
 # 5. Hardcoded Python interpreter in subprocess calls
 INTERPRETER_PATTERNS = [
     (re.compile(r'subprocess.*["\']python3["\']'),
-     "Hardcoded 'python3' in subprocess — use bootloader.get_python_path() or profile runtime.python_interpreter"),
+     "Hardcoded 'python3' in subprocess — use bootloader.get_python_path() or deployment runtime.python_interpreter"),
     (re.compile(r'subprocess.*["\']\/usr\/bin\/python'),
      "Hardcoded /usr/bin/python in subprocess — use venv interpreter path"),
     (re.compile(r'subprocess.*["\']\/usr\/bin\/env python'),
@@ -115,12 +115,12 @@ INTERPRETER_PATTERNS = [
 # File+line fragments that are known acceptable hardcodings or pre-existing debt.
 # Format: (file_substring, pattern_description_substring)
 KNOWN_DEBT: list[tuple[str, str]] = [
-    # Bootloader intentionally reads SPARMVET_APP_FEATURES and SPARMVET_PROFILE
+    # Bootloader intentionally reads SPARMVET_APP_FEATURES and SPARMVET_DEPLOYMENT
     ("bootloader.py", "SPARMVET_"),
-    # Connector legitimately accesses profile['locations']
+    # Connector legitimately accesses deployment['locations']
     ("connector.py", "locations"),
-    # local_connector resolves raw_data etc. by design
-    ("local_connector.py", "locations"),
+    # local resolves raw_data etc. by design
+    ("local.py", "locations"),
 ]
 
 
@@ -213,7 +213,7 @@ def render_report(violations: list[dict], project_root: Path) -> str:
         "# Audit Report: Hardcoded Configuration & Path Violations",
         f"Generated: {now}",
         f"Project root: {project_root}",
-        "Rule: ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no app features name checks)",
+        "Rule: ADR-048 (deployment), ADR-031 (bootloader), ADR-053 (no app features name checks)",
         "",
     ]
 
@@ -229,9 +229,9 @@ def render_report(violations: list[dict], project_root: Path) -> str:
         # Group by category for readability
         categories = {
             "absolute_path":   ("❌ Absolute Path Strings", "Replace with bootloader.get_location(key) or a relative path resolved at runtime."),
-            "direct_location": ("❌ Direct Location Dict Reads", "Call bootloader.get_location(key) — never read locations from the profile dict directly."),
+            "direct_location": ("❌ Direct Location Dict Reads", "Call bootloader.get_location(key) — never read locations from the deployment dict directly."),
             "app_features_name":    ("❌ App features Name String Comparisons", "Replace with bootloader.is_enabled('flag_name'). See ADR-053 and rules_app_features_flags.md §Anti-Pattern."),
-            "env_var":         ("❌ Direct Env-Var Reads for Deployment Config", "Bootloader owns SPARMVET_APP_FEATURES and SPARMVET_PROFILE resolution. Never read these in handler code."),
+            "env_var":         ("❌ Direct Env-Var Reads for Deployment Config", "Bootloader owns SPARMVET_APP_FEATURES and SPARMVET_DEPLOYMENT resolution. Never read these in handler code."),
             "interpreter":     ("❌ Hardcoded Python Interpreter", "Use the venv Python path from bootloader or subprocess with sys.executable from the active venv."),
         }
         for cat, (heading, fix_advice) in categories.items():
@@ -262,12 +262,12 @@ def render_report(violations: list[dict], project_root: Path) -> str:
         f"- Skipped files: {', '.join(sorted(SKIP_FILES))}",
         "",
         "## References",
-        "- `ADR-048` — Deployment Profile & Connector Abstraction",
+        "- `ADR-048` — Deployment & Connector Abstraction",
         "- `ADR-031` — Bootloader owns path and app features resolution",
         "- `ADR-053` — No app features name string comparisons in runtime code",
         "- `.claude/rules/rules_runtime_environment.md §1` — venv enforcement",
         "- `.claude/rules/rules_app_features_flags.md §Anti-Pattern` — is_enabled() pattern",
-        "- `config/deployment/local/local_profile.yaml` — reference for allowed location keys",
+        "- `config/deployment/local/local.yaml` — reference for allowed location keys",
     ]
 
     return "\n".join(lines)

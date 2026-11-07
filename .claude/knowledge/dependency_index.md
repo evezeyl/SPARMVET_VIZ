@@ -274,7 +274,7 @@
 - **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`
 - **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`
 - **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
-- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `project_conventions.md §"Deployment Profile Resolution`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `project_conventions.md §"Deployment Resolution`
 
 ## `app/src/main.py`
 - **Role:** `ref`
@@ -359,7 +359,7 @@
 ## `assets/scripts/create_test_deployment.py`
 - **Role:** `info`
 - **provides:** `script:create_test_deployment`
-- **consumes:** `config/deployment/local/ (writes deployment profile YAML)`
+- **consumes:** `config/deployment/local/ (writes deployment file)`
 - **doc:** `docs/workflows/connector.qmd`, `.claude/knowledge/architecture_decisions.md#ADR-048`
 
 ## `assets/scripts/debug_apply_manifest_standards.py`

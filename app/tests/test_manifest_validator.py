@@ -1,7 +1,7 @@
 """Contract test for manifests: every manifest in the active deployment's manifests location
 must have recipes in a shape the engine accepts (issue evezeyl/SPARMVET_VIZ#8).
 
-The manifests folder is read from the deployment profile (Location 2) through the bootloader, so
+The manifests folder is read from the deployment (Location 2) through the bootloader, so
 a new manifest added there is tested without changing this file.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_manifest_validator.py -q

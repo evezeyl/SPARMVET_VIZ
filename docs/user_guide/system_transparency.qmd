@@ -76,7 +76,7 @@ Two small choices above the plot area control which layer you look at. They are 
 | **My view** | The plot with your filters, drops and (advanced) audited steps applied. |
 | **Compare Result vs My view** | Both side by side. |
 
-Each panel states what it shows and when two views are identical (for example "T2 identical to T1"). My view is only available if your profile allows filters.
+Each panel states what it shows and when two views are identical (for example "T2 identical to T1"). My view is only available if your deployment allows filters.
 
 ### Filters adapt to what you are looking at
 
@@ -84,7 +84,7 @@ When you switch between sub-tabs (e.g., from "QC Reads Barplot" to "Assembly Qua
 
 ### Comparison Mode *(advanced app features files)*
 
-If your user profile allows it, a **Comparison Mode** toggle splits the theater into two columns: the T2 blueprint reference on the left and your T3 sandbox on the right — both plots and data tables side by side — so you can see exactly what effect your wrangling steps have had.
+If your app features allows it, a **Comparison Mode** toggle splits the theater into two columns: the T2 blueprint reference on the left and your T3 sandbox on the right — both plots and data tables side by side — so you can see exactly what effect your wrangling steps have had.
 
 ### Collapsing sections
 
@@ -130,12 +130,12 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 
 ### The Audit Stack (advanced app features files only)
 
-If your user profile grants sandbox access, a **Pipeline Audit** panel appears on the right side of the screen. It shows:
+If your app features grants sandbox access, a **Pipeline Audit** panel appears on the right side of the screen. It shows:
 
 - **Violet nodes** — the T2 blueprint steps (inherited from the manifest, read-only reference).
 - **Yellow nodes** — your personal T3 additions (filters, column selections, etc.).
 
-For simpler user profiles, this panel is hidden entirely and the plot area expands to fill the full screen width.
+For simpler user deployments, this panel is hidden entirely and the plot area expands to fill the full screen width.
 
 ### The Alert Log (🔔 Alerts)
 

@@ -2,18 +2,18 @@
 # provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import)
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
-# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, project_conventions.md §"Deployment Profile Resolution"
+# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, project_conventions.md §"Deployment Resolution"
 # @end_deps
 # app/src/bootloader.py
 #
-# Deployment profile resolution chain (ADR-048 §4) — first match wins:
-#   Level 1: SPARMVET_PROFILE env var       — Galaxy XML, IRIDA, Docker Compose, systemd
-#   Level 2: ~/.sparmvet/profile.yaml        — local PC (scientist/admin places once)
-#   Level 3: /etc/sparmvet/profile.yaml      — institutional server (sysadmin places at deploy)
-#   Level 4: config/deployment/local/local_profile.yaml — developer repo fallback
+# Deployment resolution chain (ADR-048 §4) — first match wins:
+#   Level 1: SPARMVET_DEPLOYMENT env var       — Galaxy XML, IRIDA, Docker Compose, systemd
+#   Level 2: ~/.sparmvet/deployment.yaml        — local PC (scientist/admin places once)
+#   Level 3: /etc/sparmvet/deployment.yaml      — institutional server (sysadmin places at deploy)
+#   Level 4: config/deployment/local/local.yaml — developer repo fallback
 #
 # Connector lifecycle (ADR-048 §5, Option B):
-#   After profile load, the appropriate connector is instantiated via get_connector().
+#   After deployment load, the appropriate connector is instantiated via get_connector().
 #   connector.fetch_data() runs first (no-op for filesystem/Galaxy; downloads for IRIDA).
 #   connector.resolve_paths() is then the authoritative source for all location paths.
 #   get_location() reads from those resolved paths directly.
@@ -40,30 +40,30 @@ class SidebarConfig:
     panels: list = field(default_factory=list)
 
 _RESOLUTION_LEVEL_LABELS = {
-    1: "SPARMVET_PROFILE env var",
-    2: "~/.sparmvet/profile.yaml (user-level)",
-    3: "/etc/sparmvet/profile.yaml (system-level)",
-    4: "config/deployment/local/local_profile.yaml (dev fallback)",
+    1: "SPARMVET_DEPLOYMENT env var",
+    2: "~/.sparmvet/deployment.yaml (user-level)",
+    3: "/etc/sparmvet/deployment.yaml (system-level)",
+    4: "config/deployment/local/local.yaml (dev fallback)",
 }
 
 
 class Bootloader:
     """
     System Bootloader (ADR-031, ADR-026, ADR-048).
-    Handles path authority, UI app features feature toggling, and deployment profile resolution.
+    Handles path authority, UI app features feature toggling, and deployment resolution.
 
-    Profile resolution chain (ADR-048 §4):
-        1. SPARMVET_PROFILE env var  — explicit path; used by Galaxy/IRIDA/Docker
-        2. ~/.sparmvet/profile.yaml  — user-level; local PC without env var
-        3. /etc/sparmvet/profile.yaml — system-level; admin-placed on server
-        4. config/deployment/local/local_profile.yaml — repo dev fallback
+    Deployment resolution chain (ADR-048 §4):
+        1. SPARMVET_DEPLOYMENT env var  — explicit path; used by Galaxy/IRIDA/Docker
+        2. ~/.sparmvet/deployment.yaml  — user-level; local PC without env var
+        3. /etc/sparmvet/deployment.yaml — system-level; admin-placed on server
+        4. config/deployment/local/local.yaml — repo dev fallback
 
-    See project_conventions.md §"Deployment Profile Resolution" for full details.
+    See project_conventions.md §"Deployment Resolution" for full details.
     """
     # ADR-031: Static Cache Layer
     _app_features_cache: Dict[str, Dict[str, Any]] = {}
-    _connector_cache: Dict[str, Dict[str, Any]] = {}          # keyed by resolved profile path string
-    _resolved_locations_cache: Dict[str, Dict[str, Path]] = {}  # keyed by resolved profile path string
+    _deployment_cache: Dict[str, Dict[str, Any]] = {}          # keyed by resolved deployment path string
+    _resolved_locations_cache: Dict[str, Dict[str, Path]] = {}  # keyed by resolved deployment path string
 
     # Hierarchical Asset Cache: project_id -> dataset_id -> plot_id -> asset_type -> asset
     _asset_cache: Dict[str, Dict[str, Dict[str, Dict[str, Any]]]] = {}
@@ -83,34 +83,33 @@ class Bootloader:
             self._asset_cache[project_id][dataset_id][plot_id] = {}
         self._asset_cache[project_id][dataset_id][plot_id][asset_type] = asset
 
-    def __init__(self, app_features: str | None = None, connector: str | None = None):
+    def __init__(self, app_features: str | None = None):
         exit_if_errors(renamed_env_var_errors(os.environ))
         # App features resolved after deployment load — see step 2 below
         self._app_features_kwarg = app_features
-        # connector kwarg kept for backward compatibility; used only in level-4 fallback path
-        self.connector = connector or os.environ.get("SPARMVET_CONNECTOR", "local")
 
-        # 1. Path Authority — 4-level profile resolution (ADR-048 §4)
-        self.connector_path, self.deployment_level = self._resolve_profile_path()
+        # 1. Path Authority — 4-level deployment resolution (ADR-048 §4)
+        self.deployment_path, self.deployment_level = self._resolve_deployment_path()
         print(
-            f"[Bootloader] Profile resolved at level {self.deployment_level} "
-            f"({_RESOLUTION_LEVEL_LABELS[self.deployment_level]}): {self.connector_path}"
+            f"[Bootloader] Deployment resolved at level {self.deployment_level} "
+            f"({_RESOLUTION_LEVEL_LABELS[self.deployment_level]}): {self.deployment_path}"
         )
 
-        # Load profile (cached by resolved absolute path)
-        _cache_key = str(self.connector_path.resolve())
-        if _cache_key not in self._connector_cache:
-            self._connector_cache[_cache_key] = self._load_connector_config()
-        self.connector_config = self._connector_cache[_cache_key]
-        exit_if_errors(renamed_deployment_key_errors(self.connector_config, str(self.connector_path)))
+        # Load deployment (cached by resolved absolute path)
+        _cache_key = str(self.deployment_path.resolve())
+        if _cache_key not in self._deployment_cache:
+            self._deployment_cache[_cache_key] = self._load_deployment_config()
+        self.deployment_config = self._deployment_cache[_cache_key]
+        exit_if_errors(renamed_deployment_key_errors(self.deployment_config, str(self.deployment_path)))
 
-        # ADR-048 deployment fields (all optional in local dev profile)
-        project_root_str = self.connector_config.get("project_root")
+        # ADR-048 deployment fields (all optional in local dev deployment)
+        project_root_str = self.deployment_config.get("project_root")
         self.project_root: Path | None = Path(project_root_str) if project_root_str else None
-        self.default_manifest: str | None = self.connector_config.get("default_manifest")
-        self.default_app_features: str | None = self.connector_config.get("default_app_features")
-        self.deployment_name: str = self.connector_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
-        self.deployment_type: str = self.connector_config.get("deployment_type", "filesystem")
+        self.default_manifest: str | None = self.deployment_config.get("default_manifest")
+        self.default_app_features: str | None = self.deployment_config.get("default_app_features")
+        self.data_lookup: str = self.deployment_config.get("data_lookup", "manifest_paths")
+        self.deployment_name: str = self.deployment_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
+        self.deployment_type: str = self.deployment_config.get("deployment_type", "filesystem")
 
         # Connector lifecycle (ADR-048 §5, Option B):
         # fetch_data() runs once at startup — no-op for filesystem/Galaxy, downloads for IRIDA.
@@ -118,7 +117,7 @@ class Bootloader:
         if _cache_key not in self._resolved_locations_cache:
             try:
                 from connector import get_connector
-                _conn = get_connector(self.connector_config)
+                _conn = get_connector(self.deployment_config)
                 print(f"[Bootloader] Connector: {_conn.__class__.__name__} — fetch_data()")
                 _conn.fetch_data()
                 self._resolved_locations_cache[_cache_key] = _conn.resolve_paths()
@@ -126,10 +125,10 @@ class Bootloader:
                 exit_if_errors([DeploymentError(
                     component="Bootloader",
                     problem=f"Connector initialisation failed: {_exc}",
-                    location=str(self.connector_path),
+                    location=str(self.deployment_path),
                     fix=(
                         "Check that all credentials and endpoints declared in the deployment "
-                        "profile are reachable. For IridaConnector: verify SPARMVET_IRIDA_TOKEN "
+                        "deployment are reachable. For IridaConnector: verify SPARMVET_IRIDA_TOKEN "
                         "is set and the IRIDA server is accessible. For BioBlendConnector: verify "
                         "GALAXY_URL and GALAXY_API_KEY. For FilesystemConnector: verify path "
                         "entries under 'locations:' exist on disk."
@@ -140,12 +139,12 @@ class Bootloader:
         self._resolved_locations: Dict[str, Path] = self._resolved_locations_cache[_cache_key]
 
         # Keep raw locations dict for backward compat (key validation only)
-        self.locations = self.connector_config.get("locations", {})
+        self.locations = self.deployment_config.get("locations", {})
 
         # Validate required location keys
-        self._validate_profile()
+        self._validate_deployment()
 
-        # 2. App features logic — resolution order: kwarg > env var > profile default_app_features > error
+        # 2. App features logic — resolution order: kwarg > env var > deployment default_app_features > error
         self.app_features = (
             self._app_features_kwarg
             or os.environ.get("SPARMVET_APP_FEATURES")
@@ -157,11 +156,11 @@ class Bootloader:
                 problem="No app features configured — cannot determine which feature flags to load.",
                 location=(
                     "Resolution order checked: app_features= kwarg, SPARMVET_APP_FEATURES env var, "
-                    f"default_app_features in {self.connector_path} — all absent."
+                    f"default_app_features in {self.deployment_path} — all absent."
                 ),
                 fix=(
                     "Set the SPARMVET_APP_FEATURES environment variable (e.g. SPARMVET_APP_FEATURES=developer), "
-                    f"or add 'default_app_features: developer' to {self.connector_path}."
+                    f"or add 'default_app_features: developer' to {self.deployment_path}."
                 ),
                 who="operator",
                 reference=_BOOT_REF,
@@ -172,38 +171,38 @@ class Bootloader:
         self.project_dir = self.get_location("manifests")
         self.available_projects = self._discover_projects()
 
-    def _resolve_profile_path(self) -> tuple[Path, int]:
+    def _resolve_deployment_path(self) -> tuple[Path, int]:
         """
-        Resolve the deployment profile path via the 4-level priority chain (ADR-048 §4).
+        Resolve the deployment path via the 4-level priority chain (ADR-048 §4).
 
         Returns (resolved_path, level) where level ∈ {1, 2, 3, 4}.
 
         Raises FileNotFoundError if:
-        - SPARMVET_PROFILE is set but points to a non-existent file (hard error — misconfiguration).
-        - No profile is found at any level (shows all checked paths in the message).
+        - SPARMVET_DEPLOYMENT is set but points to a non-existent file (hard error — misconfiguration).
+        - No deployment is found at any level (shows all checked paths in the message).
 
         Resolution order (first match wins):
-            1. SPARMVET_PROFILE env var  — Galaxy XML, IRIDA container launch, Docker Compose, systemd
-            2. ~/.sparmvet/profile.yaml  — local PC (scientist or admin places this once at setup)
-            3. /etc/sparmvet/profile.yaml — institutional server (sysadmin places at deploy time)
-            4. config/deployment/local/local_profile.yaml — developer running from repo root
+            1. SPARMVET_DEPLOYMENT env var  — Galaxy XML, IRIDA container launch, Docker Compose, systemd
+            2. ~/.sparmvet/deployment.yaml  — local PC (scientist or admin places this once at setup)
+            3. /etc/sparmvet/deployment.yaml — institutional server (sysadmin places at deploy time)
+            4. config/deployment/local/local.yaml — developer running from repo root
         """
         # Level 1: explicit env var — fail hard if set but missing (misconfiguration, not "not found")
-        env_profile = os.environ.get("SPARMVET_PROFILE")
-        if env_profile:
-            p = Path(env_profile)
+        env_deployment = os.environ.get("SPARMVET_DEPLOYMENT")
+        if env_deployment:
+            p = Path(env_deployment)
             if not p.exists():
                 exit_if_errors([DeploymentError(
                     component="Bootloader",
                     problem=(
-                        f"SPARMVET_PROFILE env var is set to '{env_profile}' "
+                        f"SPARMVET_DEPLOYMENT env var is set to '{env_deployment}' "
                         f"but the file does not exist."
                     ),
-                    location=f"SPARMVET_PROFILE={env_profile}",
+                    location=f"SPARMVET_DEPLOYMENT={env_deployment}",
                     fix=(
-                        f"Either create the profile file at '{env_profile}', "
-                        f"correct the path in SPARMVET_PROFILE, or unset the variable "
-                        f"to fall through to lower-priority profile locations."
+                        f"Either create the deployment file at '{env_deployment}', "
+                        f"correct the path in SPARMVET_DEPLOYMENT, or unset the variable "
+                        f"to fall through to lower-priority deployment locations."
                     ),
                     who="operator",
                     reference=_BOOT_REF,
@@ -211,55 +210,66 @@ class Bootloader:
             return p, 1
 
         # Level 2: user-level config
-        user_profile = Path.home() / ".sparmvet" / "profile.yaml"
-        if user_profile.exists():
-            return user_profile, 2
+        user_deployment = Path.home() / ".sparmvet" / "deployment.yaml"
+        if user_deployment.exists():
+            return user_deployment, 2
 
         # Level 3: system-level config
-        system_profile = Path("/etc/sparmvet/profile.yaml")
-        if system_profile.exists():
-            return system_profile, 3
+        system_deployment = Path("/etc/sparmvet/deployment.yaml")
+        if system_deployment.exists():
+            return system_deployment, 3
 
         # Level 4: dev repo fallback
-        dev_fallback = Path(f"config/deployment/{self.connector}/local_profile.yaml")
+        dev_fallback = Path("config/deployment/local/local.yaml")
         if dev_fallback.exists():
             return dev_fallback, 4
 
         exit_if_errors([DeploymentError(
             component="Bootloader",
-            problem="No deployment profile found at any resolution level.",
+            problem="No deployment found at any resolution level.",
             location=(
-                f"Checked: (1) SPARMVET_PROFILE env var (not set), "
-                f"(2) {Path.home() / '.sparmvet' / 'profile.yaml'} (not found), "
-                f"(3) /etc/sparmvet/profile.yaml (not found), "
+                f"Checked: (1) SPARMVET_DEPLOYMENT env var (not set), "
+                f"(2) {Path.home() / '.sparmvet' / 'deployment.yaml'} (not found), "
+                f"(3) /etc/sparmvet/deployment.yaml (not found), "
                 f"(4) {dev_fallback} (not found)"
             ),
             fix=(
-                "Create a profile at config/deployment/local/local_profile.yaml "
-                "(copy from config/deployment/local/local_profile.yaml.example if available), "
-                "or set SPARMVET_PROFILE to an absolute path to your deployment profile YAML."
+                "Create a deployment at config/deployment/local/local.yaml "
+                "(copy from config/deployment/local/local.yaml.example if available), "
+                "or set SPARMVET_DEPLOYMENT to an absolute path to your deployment file."
             ),
             who="operator",
             reference=_BOOT_REF,
         )])
         raise FileNotFoundError("unreachable")  # satisfies type checker
 
-    def _validate_profile(self) -> None:
+    def _validate_deployment(self) -> None:
         """Exit with DeploymentError if required location keys are missing from resolved paths."""
-        required = {"raw_data", "manifests", "curated_data", "user_sessions", "gallery"}
+        errors = []
+        if self.data_lookup not in ("manifest_paths", "by_dataset_id"):
+            errors.append(DeploymentError(
+                component="Bootloader",
+                problem=f"data_lookup '{self.data_lookup}' is not a valid choice",
+                location=f"data_lookup in {self.deployment_path}",
+                fix="Use manifest_paths (data from the source.path of the data analysis recipe) or by_dataset_id (data delivered into raw_data as <dataset id>.tsv).",
+                who="operator",
+                reference=_BOOT_REF,
+            ))
+        exit_if_errors(errors)
+        required = {"raw_data", "manifests", "cache", "user_data", "gallery"}
         missing = required - set(self._resolved_locations.keys())
         if missing:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
                 problem=(
-                    f"Deployment profile is missing required location keys: "
+                    f"Deployment is missing required location keys: "
                     f"{sorted(missing)}"
                 ),
-                location=str(self.connector_path),
+                location=str(self.deployment_path),
                 fix=(
-                    f"Add the missing keys to the 'locations:' block in {self.connector_path}. "
-                    f"Required keys: raw_data, manifests, curated_data, user_sessions, gallery. "
-                    f"See config/deployment/local/local_profile.yaml for reference values."
+                    f"Add the missing keys to the 'locations:' block in {self.deployment_path}. "
+                    f"Required keys: raw_data, manifests, cache, user_data, gallery. "
+                    f"See config/deployment/local/local.yaml for reference values."
                 ),
                 who="operator",
                 reference=_BOOT_REF,
@@ -288,7 +298,11 @@ class Bootloader:
 
         self.config = self._app_features_cache[cache_key]
         print(f"[Bootloader] App features: {self.app_features} → {self.app_features_path}")
-        self.flags = self.config.get("flags", {})
+        # Operator lock: app_features_override in the deployment file is absolute, for example
+        # data_ingestion_enabled: false when a pipeline always pushes the data. Applied per
+        # instance, never into the cache shared by the class (it is keyed by file only).
+        self.flags = {**self.config.get("flags", {}),
+                      **(self.deployment_config.get("app_features_override") or {})}
         self.automation = self.config.get("automation", {})
 
     @property
@@ -318,17 +332,17 @@ class Bootloader:
             raise FileNotFoundError("No projects found in Location 2.")
         return list(self.available_projects.keys())[0]
 
-    def _load_connector_config(self) -> Dict[str, Any]:
-        """Loads the deployment profile YAML."""
-        if not self.connector_path.exists():
+    def _load_deployment_config(self) -> Dict[str, Any]:
+        """Loads the deployment file."""
+        if not self.deployment_path.exists():
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Deployment profile file not found: {self.connector_path}",
-                location=str(self.connector_path),
+                problem=f"Deployment deployment file not found: {self.deployment_path}",
+                location=str(self.deployment_path),
                 fix=(
-                    "Ensure the profile file exists at the resolved path. "
-                    "For local dev: copy config/deployment/local/local_profile.yaml.example "
-                    "to config/deployment/local/local_profile.yaml and fill in the location paths."
+                    "Ensure the deployment file exists at the resolved path. "
+                    "For local dev: copy config/deployment/local/local.yaml.example "
+                    "to config/deployment/local/local.yaml and fill in the location paths."
                 ),
                 who="operator",
                 reference=_BOOT_REF,
@@ -336,16 +350,16 @@ class Bootloader:
             return {}  # unreachable
 
         try:
-            with open(self.connector_path, "r") as f:
+            with open(self.deployment_path, "r") as f:
                 return yaml.safe_load(f) or {}
         except Exception as e:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Failed to parse deployment profile '{self.connector_path}': {e}",
-                location=str(self.connector_path),
+                problem=f"Failed to parse deployment '{self.deployment_path}': {e}",
+                location=str(self.deployment_path),
                 fix=(
-                    f"Check {self.connector_path} for YAML syntax errors. "
-                    f"Run: python -c \"import yaml; yaml.safe_load(open('{self.connector_path}'))\" "
+                    f"Check {self.deployment_path} for YAML syntax errors. "
+                    f"Run: python -c \"import yaml; yaml.safe_load(open('{self.deployment_path}'))\" "
                     f"to surface the parse error line."
                 ),
                 who="operator",
@@ -359,7 +373,7 @@ class Bootloader:
         Cascade rules (rules_app_features_flags.md §107–127):
           - interactivity_enabled=False suppresses t3_sandbox/comparison/session/export_graph/audit_report
           - import_helper_enabled=False suppresses data_ingestion_enabled
-          - Deployment-profile data_ingestion_enabled:false is an absolute override
+          - Deployment data_ingestion_enabled:false is an absolute override
 
         Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are NOT
         silently suppressed here — they are fatal validator errors raised by
@@ -382,7 +396,7 @@ class Bootloader:
                     f"Valid names (files in config/app_features/): "
                     f"pipeline-static, pipeline-exploration-simple, pipeline-exploration-advanced, "
                     f"project-independent, developer, qa. "
-                    f"Check SPARMVET_APP_FEATURES env var or default_app_features in the deployment profile."
+                    f"Check SPARMVET_APP_FEATURES env var or default_app_features in the deployment."
                 ),
                 who="operator",
                 reference="ADR-026 + config/app_features/",
@@ -469,11 +483,6 @@ class Bootloader:
         # The flag value passes through this loader unchanged so the validator sees the
         # user's actual intent (rather than a silently-rewritten "safe" version).
 
-        # Deployment-profile override: data_ingestion_enabled:false in profile is absolute
-        # (automated-pipeline deployments push data; user cannot upload).
-        if self.connector_config.get("data_ingestion_enabled") is False:
-            features["data_ingestion_enabled"] = False
-
         config["flags"] = features
         return config
 
@@ -537,7 +546,7 @@ class Bootloader:
 
     def get_python_path(self) -> str:
         """Retrieves the configured Python interpreter path (ADR-031)."""
-        runtime = self.connector_config.get("runtime", {})
+        runtime = self.deployment_config.get("runtime", {})
         path = runtime.get("python_interpreter")
         if not path:
             raise KeyError(

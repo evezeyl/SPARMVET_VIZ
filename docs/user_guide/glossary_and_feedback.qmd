@@ -14,7 +14,7 @@ Here are the core terms you will encounter. If you ever see these words highligh
 *   **Tier 1**: The initial stage. It takes your raw Excel/CSV data and converts it into a super-fast Parquet file.
 *   **Tier 2**: The blueprint stage (Pre-computation). It applies the basic rules written in your Manifest to combine your Anchor and Leaf data together into one unified table *before* you view it in the app.
 *   **Tier 3**: An in-session audit and aesthetic layer applied on top of T2 results. Scoped strictly to row filters and aesthetic overrides (color, shape, fill). Does not modify the manifest. App features gated — not all users see it.
-*   **App features**: A user profile that changes how the Dashboard looks. Some app features files lock down all editing features, while other app features files (like *Developer*) give you access to the advanced Test Lab and Wrangle Studio.
+*   **App features**: An app features that changes how the Dashboard looks. Some app features files lock down all editing features, while other app features files (like *Developer*) give you access to the advanced Test Lab and Wrangle Studio.
 
 ## Submitting Feedback and Feature Requests
 

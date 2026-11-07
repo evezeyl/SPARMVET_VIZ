@@ -62,7 +62,7 @@ To prevent AI Drift and ensure ADR compliance, you MUST read the following files
 - VIOLET LAW: Documentation must follow the `ComponentName (file_name.py)` standard.
 
 3. IDENTITY & DATA:
-- Data paths and system locations MUST be resolved via `config/connectors/local/local_connector.yaml`.
+- Data paths and system locations MUST be resolved via `config/connectors/local/local.yaml`.
 - Metadata and Additional Data are OPTIONAL. Default to Identity Logic if missing.
 
 4. TASK INITIALIZATION:

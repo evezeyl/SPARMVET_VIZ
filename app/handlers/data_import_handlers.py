@@ -82,10 +82,10 @@ def define_data_import_server(input, output, session, *,
         cfg = active_cfg()  # subscribe to project switches
         proj_id = safe_input(input, "project_id", bootloader.get_default_project())
         testing_mode = bootloader.get_testing_mode()
-        prefer_discovery = bootloader.connector_config.get("prefer_discovery", False)
+        by_dataset_id = bootloader.data_lookup == "by_dataset_id"
 
         # ── Source-file listing ─────────────────────────────────────────────
-        if prefer_discovery:
+        if by_dataset_id:
             raw_data_dir = bootloader.get_location("raw_data")
             files_block = ui.div(
                 ui.tags.small(
@@ -267,7 +267,7 @@ def define_data_import_server(input, output, session, *,
         cfg = active_cfg()
         raw = cfg.raw_config
         proj_id = safe_input(input, "project_id", bootloader.get_default_project())
-        anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+        anchor_dir = bootloader.get_location("user_data") / "anchors"
 
         from transformer.metadata_validator import MetadataValidator
         validator = MetadataValidator()

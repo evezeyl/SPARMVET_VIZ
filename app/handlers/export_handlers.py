@@ -710,7 +710,7 @@ def define_export_server(input, output, session, *,
                     }
 
             tiers_exported = ["T1"] + (["T3"] if audited_plots else [])
-            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
 
             prov = build_export_provenance(
                 now=now,
@@ -789,7 +789,7 @@ def define_export_server(input, output, session, *,
                         # Resolve dataset
                         target_ds = spec.get("target_dataset")
                         if target_ds:
-                            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+                            anchor_dir = bootloader.get_location("user_data") / "anchors"
                             out_path = anchor_dir / f"{target_ds}.parquet"
                             # Plots never show T1 (ADR-086): same base as HOME, the stored
                             # Tier 2 (equal to T1 when the join has no tier2 steps).
@@ -868,7 +868,7 @@ def define_export_server(input, output, session, *,
                     # ── T1 ────────────────────────────────────────────────
                     try:
                         if target_ds:
-                            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+                            anchor_dir = bootloader.get_location("user_data") / "anchors"
                             out_path = anchor_dir / f"{target_ds}.parquet"
                             lf_t1 = orchestrator.materialize_tier1(
                                 project_id=proj_id,
@@ -897,7 +897,7 @@ def define_export_server(input, output, session, *,
                             lf_t2 = orchestrator.materialize_tier2(
                                 project_id=proj_id,
                                 collection_id=target_ds,
-                                tier1_path=bootloader.get_location("user_sessions") / "anchors" / f"{target_ds}.parquet",
+                                tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet",
                                 keys=export_keys,
                             )
                             df_t2 = lf_t2.collect()
@@ -928,7 +928,7 @@ def define_export_server(input, output, session, *,
                                     lf_t3 = orchestrator.materialize_tier2(
                                         project_id=proj_id,
                                         collection_id=target_ds,
-                                        tier1_path=bootloader.get_location("user_sessions") / "anchors" / f"{target_ds}.parquet",
+                                        tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet",
                                         keys=export_keys,
                                     )
                                 else:

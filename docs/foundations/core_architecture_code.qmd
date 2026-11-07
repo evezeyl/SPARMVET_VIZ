@@ -2,9 +2,9 @@
 
 | path/name | Role component | Responsibility | Technology |
 | --- | --- | --- | --- |
-| config | [**Configuration Layer**](./data_contracts_adr.qmd) | **Contains the data contract** for data AND metadata, app features files, deployment profiles, plotting defaults. | YAML |
+| config | [**Configuration Layer**](./data_contracts_adr.qmd) | **Contains the data contract** for data AND metadata, app features files, deployments, plotting defaults. | YAML |
 | libs/utils | [**Utilities — Base Layer**](#library-dependency-model) | Shared utilities (config loading, hashing, error types). The only library that other domain libraries may import from. Must be declared as an explicit dependency. | Python |
-| libs/connector | [**Data Connector**](../workflows/connector.qmd) | Deployment profile resolution and data-source adapters. Handles authentication and fetches raw data for different deployment contexts (local, Galaxy, IRIDA). | BioBlend/API |
+| libs/connector | [**Data Connector**](../workflows/connector.qmd) | Deployment resolution and data-source adapters. Handles authentication and fetches raw data for different deployment contexts (local, Galaxy, IRIDA). | BioBlend/API |
 | libs/ingestion | [**Data Ingestion**](../workflows/ingestion.qmd) | The "Gatekeeper." Reads TSV/Excel/YAML, validates against the data contract, runs defensive checks. | Polars |
 | libs/transformer | [**Data Wrangling**](../workflows/wrangling.qmd) | The "Cleaner". Applies the 3-Tier lifecycle, contains the **Action Registry** for declarative YAML rules, merges data into tidy Polars DataFrames. | Polars |
 | libs/viz_factory | [**Visualization Factory**](../workflows/visualisation_factory.qmd) | Plotnine plot composition from manifest specs. Data-agnostic: receives a DataFrame and a plot spec, returns a figure. | Plotnine |

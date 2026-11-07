@@ -24,7 +24,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/developer_template.yaml .
 normal `tmp/UI_TEST/`):
 
 ```
-PYTHONPATH=. SPARMVET_PROFILE=config/deployment/local/retest_profile.yaml SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
+PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
 ```
 
 The qa app features has every feature on (filters, My view, T3, export). In the left panel "Manifest Choice" you
@@ -132,7 +132,7 @@ Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Ex
   (**5** rows), `recipes/t3_steps.yaml` with your reason, the plot `value_by_group.png` filtered (values below 20), the README
   section "Audited T3 steps (always applied...)" naming `value_by_group: 1 step(s)`, and the T3 Audit Trail with your reason in
   `report.html`. No `FILTERS.txt`. (Checked in a real browser run on 2026-11-06, except the picture.)
-- [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static_template.yaml` instead (profile B): export still works
+- [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static_template.yaml` instead (deployment B): export still works
   and holds the Result.
 
 ## 3. Issue #23: `top_n_other` — project `retest_top_n_other`
@@ -165,7 +165,7 @@ top **3** variants, counting the number of different samples (`count_distinct: s
   Change `phenotype:` to `predicted_phenotype:` in the file: the command prints nothing.
   > Decided 2026-11-06: a BLUEPRINT button is needed before the demo (issue #26). The command is only for now.
 
-## 5. Issue #21 and other changes of today — profile A (normal project)
+## 5. Issue #21 and other changes of today — deployment A (normal project)
 
 - [ ] **RT-40 #21 MLST.** Project `1_test_data_ST22_dummy`, plot `MLST_counts_bar`: many bars with real sequence types (19 kinds)
   and one bar **"Non Determined"** with 2 samples. No bar called "keep". Same in the facets of `integration_plot`.

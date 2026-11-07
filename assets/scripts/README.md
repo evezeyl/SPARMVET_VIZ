@@ -29,7 +29,7 @@ python assets/scripts/<script>.py --help
 
 | Script | Purpose |
 |---|---|
-| `create_test_deployment.py` | Create or validate a local deployment profile under `config/deployment/local/`. Useful for setting up a fresh dev environment. |
+| `create_test_deployment.py` | Create or validate a local deployment under `config/deployment/local/`. Useful for setting up a fresh dev environment. |
 
 ### Dev Diagnostics & Dependency Graph
 

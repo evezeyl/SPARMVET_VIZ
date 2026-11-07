@@ -340,7 +340,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] `system_tools_ui`: user-name field, preset radio (web/publication), filter warning, download button.
 - [x] `@render.download export_bundle_download`: async generator yielding zip bytes.
 - [x] Bundle: `plots/` (SVG/PNG), `data/` (T1+T2 always; T3 for advanced+T3), `recipes/`, `FILTERS.txt` (No Trace No Export), `report.qmd` (Quarto source), `README.txt`.
-- [ ] Ghost save to `user_sessions` — deferred.
+- [ ] Ghost save to `user_data` — deferred.
 - [ ] Per-plot checkbox selection — deferred (all plots always exported).
 
 ---
@@ -673,7 +673,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 | 31-F | EXPORT-VERSION-1 | `git_commit` + `release_version` in all export surfaces | haiku | Low |
 | 31-G | EXPORT-HASH-2 | `decision_hash` from Parquet metadata at export time | sonnet | Med |
 | 31-H | EXPORT-IMG-META-1 | Provenance embedded in PNG/SVG/PDF file metadata | sonnet | Med |
-| 31-I | DEPLOY-CONNECT-1 | Posit Connect editable lib install handling, entry point doc, Connect profile template, clean env smoke test | sonnet | Med |
+| 31-I | DEPLOY-CONNECT-1 | Posit Connect editable lib install handling, entry point doc, Connect deployment template, clean env smoke test | sonnet | Med |
 
 ### Key decisions (ADR-073)
 

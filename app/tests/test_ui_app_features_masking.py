@@ -7,7 +7,7 @@ from app.src.bootloader import Bootloader
 test_ui_app_features_masking.py
 -------------------------
 Forensic Audit of the App features Reactivity Matrix. 
-Ensures feature gating logic correctly masks restricted components for each profile.
+Ensures feature gating logic correctly masks restricted components for each deployment.
 """
 
 

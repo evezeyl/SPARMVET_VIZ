@@ -679,7 +679,7 @@ def handle_x_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
-    "description": "Reverse the direction of the y-axis; use when higher values should appear at the bottom (e.g. depth profiles, rank plots).",
+    "description": "Reverse the direction of the y-axis; use when higher values should appear at the bottom (e.g. depth deployments, rank plots).",
     "yaml_example": "layers:\n  - name: scale_y_reverse",
 })
 def handle_y_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:

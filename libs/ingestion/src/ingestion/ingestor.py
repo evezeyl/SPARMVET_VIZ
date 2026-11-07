@@ -29,7 +29,7 @@ class DataIngestor:
                 problem=f"Data directory not found: {self.data_dir}",
                 location="DataIngestor.__init__",
                 fix=(
-                    "Verify that the 'data_dir' path in your deployment profile or manifest "
+                    "Verify that the 'data_dir' path in your deployment or manifest "
                     "source block points to an existing directory containing the source TSV/Parquet files."
                 ),
                 who="operator",

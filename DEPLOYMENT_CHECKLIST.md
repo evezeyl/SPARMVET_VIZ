@@ -65,7 +65,7 @@ Verify the full app starts without errors:
 
 **Expected output:**
 ```
-[Bootloader] Profile resolved...
+[Bootloader] Deployment resolved...
 [Bootloader] App features: ...
 --- LOADING UI VERSION V5.1 ...
 ✅ App imports cleanly
@@ -95,7 +95,7 @@ Run the baseline unit test suite to catch regressions:
 ### Galaxy / IRIDA
 
 1. Run all steps above.
-2. Ensure `SPARMVET_PROFILE` env var points to the correct profile YAML for your deployment (e.g., `config/deployment/galaxy/galaxy_profile.yaml`).
+2. Ensure `SPARMVET_DEPLOYMENT` env var points to the correct deployment file for your deployment (e.g., `config/deployment/galaxy/galaxy_deployment.yaml`).
 3. Bundle and push via appropriate platform tool.
 
 ### Posit Connect
@@ -110,7 +110,7 @@ Run the baseline unit test suite to catch regressions:
 ### Local Server
 
 1. Run all steps above.
-2. Set `SPARMVET_PROFILE` to your local profile path.
+2. Set `SPARMVET_DEPLOYMENT` to your local deployment path.
 3. Start the server:
    ```bash
    .venv/bin/python -m shiny run app/src/main.py --host 0.0.0.0 --port 8000

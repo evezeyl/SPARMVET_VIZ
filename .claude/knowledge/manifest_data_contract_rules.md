@@ -535,8 +535,8 @@ This optimization causes stale data bugs:
 
 **Correct approach:** Always call the orchestrator. `DataAssembler` internally uses an ADR-024 hash check on the logic stack and sinks to parquet only when the logic has changed. The check is fast (reads only the stored hash, not the full parquet). The file-existence check is therefore redundant and harmful.
 
-**Cache invalidation when debugging:** Delete all `.parquet` files in `user_sessions/anchors/` to force full recompute.
+**Cache invalidation when debugging:** Delete all `.parquet` files in `user_data/anchors/` to force full recompute.
 
 ```bash
-find user_sessions/anchors/ -name "*.parquet" -delete
+find user_data/anchors/ -name "*.parquet" -delete
 ```
