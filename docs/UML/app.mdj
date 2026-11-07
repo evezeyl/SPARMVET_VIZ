@@ -8493,6 +8493,16 @@
 									"name": "status",
 									"kind": "string",
 									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGht4m/UYB3U6Q=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4rcFOJkY="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-037"
 								}
 							],
 							"technology": "YAML, PNG, JSON index",

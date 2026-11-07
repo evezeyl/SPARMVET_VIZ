@@ -456,6 +456,26 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 - **Rule**: The ID of the primary `navset_card_tab` MUST be derived from the active sidebar selection (e.g., `id=f"central_theater_tabs_{sidebar_name}"`).
 - **Effect**: This forces Shiny to treat each module's theater as a distinct DOM entity, ensuring all previous module artifacts are flushed upon context switch.
 
+## ADR-037: Gallery Taxonomy & Indexing — Pivot-Index Strategy (April 19, 2026)
+
+**Status:** IMPLEMENTED (April 19, 2026). Written 2026-11-07 (issue evezeyl/SPARMVET_VIZ#29 follow-up,
+finding F-21 of `.claude/tasks/uml_findings.md`): the decision was made and cited by number across 4
+files on 2026-04-19, but no `## ADR-037` heading was ever added here — this entry reconstructs it
+from the rule text, the task log and the code it has governed since, which all agree.
+
+**Context:** As the Gallery grows, scanning the filesystem or parsing YAML on every filter change does
+not scale, and the Gallery is required to be a static reference browser with no runtime computation
+(`rules_ui_dashboard.md` section 5, Gallery Isolation Boundary TBD-03).
+
+**Decision:** The Gallery UI MUST NOT perform direct filesystem scans or YAML parsing for filtering.
+
+- Filtering relies exclusively on a pre-computed `gallery_index.json` (the Pivot-Index).
+- The UI performs set-intersections against the pivot IDs for zero-latency responses.
+- The index is maintained by `libs/viz_gallery/assets/refresh_gallery.py` (`GalleryIndexer`,
+  integrated in `GalleryManager`), which also runs the Scientific Triplet integrity audit.
+- Taxonomy fields (Family, Pattern, Difficulty, and the rest of the 6-axis taxonomy of ADR-063)
+  live in each bundle's `info:` block and are what the index is built from.
+
 ## ADR-038: Contextual Sidebar Masking (Focus Mode)
 
 **Status:** PROPOSED (April 19, 2026)
