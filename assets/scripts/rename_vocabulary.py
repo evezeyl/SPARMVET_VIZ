@@ -279,7 +279,8 @@ def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool =
         if any(c in core for c in "_./") or _CAMEL.search(core):
             new, status = transform(core, pairs, keep)
             if status == "CONTEXT" and "recipe" in forms:
-                new, status = resolve_ctx(new, forms["recipe"]), "auto"
+                noun = forms.get("recipe_tokens", {}).get(core) or forms["recipe"]
+                new, status = resolve_ctx(new, noun), "auto"
             return ("--" if flag else "") + (new if status == "auto" else core)
         if "-" in core:
             as_snake, status0 = transform(core.replace("-", "_"), pairs, keep)
@@ -354,6 +355,38 @@ def _yaml_like_line(line: str, fix):
     return code + (fix(comment, "prose") if comment else "")
 
 
+_COMPOUND_CACHE: dict = {}
+
+
+def _noun_for_path(path: str, rules: dict) -> str:
+    for entry in rules.get("recipe_nouns", []):
+        if path.startswith(entry["prefix"]):
+            return entry["noun"]
+    return "steps"
+
+
+def compound_choices(rules: dict) -> dict:
+    """For every compound id with the bare word recipe, the noun used by most files (one meaning
+    everywhere, so that a name shared between two files stays the same in both)."""
+    if "choices" in _COMPOUND_CACHE:
+        return _COMPOUND_CACHE["choices"]
+    counts: dict = defaultdict(Counter)
+    rx = re.compile(r"[A-Za-z0-9_]*[Rr]ecipes?[A-Za-z0-9_]*")
+    for f in tracked_files():
+        if Path(f).suffix not in TEXT_EXT or f in TEXT_SKIP:
+            continue
+        try:
+            text = Path(f).read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        noun = _noun_for_path(f, rules)
+        for tok in rx.findall(text):
+            if ("_" in tok or _CAMEL.search(tok)) and "ata_analysis" not in tok and "ataAnalysis" not in tok:
+                counts[tok][noun] += 1
+    _COMPOUND_CACHE["choices"] = {tok: c.most_common(1)[0][0] for tok, c in counts.items()}
+    return _COMPOUND_CACHE["choices"]
+
+
 def _recipe_forms(path: str, forms: dict, rules: dict):
     """Forms for the bare word recipe in this file: the noun of its area, steps for keys."""
     nouns = rules["nouns"]
@@ -362,7 +395,8 @@ def _recipe_forms(path: str, forms: dict, rules: dict):
         if path.startswith(entry["prefix"]):
             chosen = entry["noun"]
             break
-    return {**forms, "recipe": nouns[chosen]}, nouns["steps"]
+    token_forms = {tok: nouns[n] for tok, n in compound_choices(rules).items()}
+    return {**forms, "recipe": nouns[chosen], "recipe_tokens": token_forms}, nouns["steps"]
 
 
 def _apply_phrases(text: str, rules: dict) -> str:

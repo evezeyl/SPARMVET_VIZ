@@ -131,11 +131,11 @@ def test_yaml_embedded_in_a_python_string_keeps_its_keys(tmp_path):
 
 
 def test_compound_with_bare_recipe_takes_the_noun_of_the_file(tmp_path):
-    src = "filtered_recipe = []\nclass MyRecipeBuilder: pass\nkeep_recipes = 1\n"
+    src = "zz_filtered_recipe = []\nclass ZzMyRecipeBuilder: pass\nzz_keep_recipes = 1\n"
     steps = _recipe_rewrite(tmp_path, "t.py", src)
-    assert "filtered_steps = []" in steps and "class MyStepsBuilder" in steps and "keep_steps = 1" in steps
+    assert "zz_filtered_steps = []" in steps and "class ZzMyStepsBuilder" in steps and "zz_keep_steps = 1" in steps
     audit = _recipe_rewrite(tmp_path, "t2.py", src, "audit")
-    assert "filtered_audit_steps = []" in audit
+    assert "zz_filtered_audit_steps = []" in audit
 
 
 def test_phrase_keeps_the_leading_word(tmp_path):
@@ -146,3 +146,19 @@ def test_phrase_keeps_the_leading_word(tmp_path):
 def test_single_line_embedded_yaml_keeps_its_key(tmp_path):
     out = _recipe_rewrite(tmp_path, "e.py", "lines.append(f\"    recipe: !include '{rel}'\")\n")
     assert "    steps: !include '{rel}'" in out
+
+
+def test_a_name_shared_between_files_gets_one_meaning(tmp_path, monkeypatch):
+    """snapshot_recipe is used in an audit file and in another file: both must end the same."""
+    import subprocess
+    monkeypatch.chdir(tmp_path)
+    subprocess.run(["git", "init", "-q"], check=True)
+    (tmp_path / "audit.py").write_text("snapshot_recipe = 1\nsnapshot_recipe = 2\n")
+    (tmp_path / "other.py").write_text("snapshot_recipe = 3\n")
+    subprocess.run(["git", "add", "."], check=True)
+    rules = {**RULES, "recipe_nouns": [{"prefix": "audit.py", "noun": "audit"}]}
+    rv._COMPOUND_CACHE.clear()
+    assert rv.compound_choices(rules)["snapshot_recipe"] == "audit"
+    forms, _ = rv._recipe_forms("other.py", FORMS, rules)
+    assert forms["recipe_tokens"]["snapshot_recipe"]["snake"] == "audit_steps"
+    rv._COMPOUND_CACHE.clear()
