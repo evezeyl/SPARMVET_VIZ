@@ -9,7 +9,7 @@ The configuration loader handles User Preferences by performing a **deep merge/u
 ### Ghost Save (autosave of the working state)
 Per **ADR-031**, the working state is saved by events, not by a timer (corrected 2026-11-07: an earlier version of this page described a debounced save every two minutes that was never built).
 
-1. **When**: the T3 audit state is written on every **Apply** and when you **leave Home**; the T1/T2 assembly record is written when the data analysis recipe is assembled and again when the recipe or the data changes. Nothing is written on an intermediate edit that was not applied.
+1. **When**: the T3 audit state is written on every **Apply** and when you **leave Home**; the T1/T2 assembly record is written when the data analysis recipe is assembled and again when the data analysis recipe or the data changes. Nothing is written on an intermediate edit that was not applied.
 2. **Whether**: the app features file switches it on or off (`automation.ghost_save.enabled`; off for the `qa` file so that tests are deterministic).
 3. **Where**: the **user data** location of the deployment (`user_data`, under `_sessions/<session key>/`).
 4. **Recovery**: the session panel lists the saved sessions; **Restore** loads the assembly and offers the saved audit states. A session written before the configuration rename is listed with the command that converts it.
