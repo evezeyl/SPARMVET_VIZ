@@ -83,10 +83,10 @@ locations:
 # Human-readable label — shown in app footer for identification
 deployment_name: "AMR Pipeline — Galaxy EU"
 
-# Data analysis recipe to load at startup (relative to project_root/locations.data_analysis_recipes)
-# If ABSENT → data analysis recipe selector appears in UI (flag-gated)
-# If PRESENT → data analysis recipe is locked; lower app features files never see the selector
-default_data_analysis_recipe: "data_analysis_recipes/amr/master.yaml"
+# Data analysis recipe to load at startup, by file name without .yaml (found in locations.data_analysis_recipes)
+# If ABSENT → the selector appears when the app features show it; if they hide it the app stops with a message
+# If PRESENT → it opens first; with the selector hidden the user cannot change it
+default_data_analysis_recipe: amr   # file name without .yaml in the data analysis recipes location (SPARMVET_DATA_ANALYSIS_RECIPE overrides it)
 
 # App features to activate at startup
 # If ABSENT → app features selector shown (developer app features only) or falls back to pipeline-static
@@ -113,7 +113,7 @@ irida:
 | Do not put here | Why | Where it goes instead |
 |---|---|---|
 | API tokens / passwords | Security — never in files that may be committed | Env vars (`SPARMVET_IRIDA_TOKEN`) |
-| Feature flags (filter, export, T3…) | App features controls features, not deployment | App features file (`config/ui/templates/`) |
+| Feature flags (filter, export, T3…) | App features controls features, not deployment | App features file (`config/app_features/`) |
 | Wrangling logic / data analysis recipes | Data analysis recipe content belongs in `locations.data_analysis_recipes/` | Pipeline data analysis recipe YAML |
 | User preferences | Future: `user_data/user-preferences.yaml` | Deferred |
 | Absolute paths inside `locations` | All sub-paths must be relative to `project_root` | Use relative paths only |

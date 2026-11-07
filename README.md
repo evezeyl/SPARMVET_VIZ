@@ -75,7 +75,7 @@ Every export — regardless of configuration — includes a complete provenance 
 SPARMVET_APP_FEATURES=pipeline-exploration-simple .venv/bin/python -m shiny run app/src/main.py
 ```
 
-Available deployments: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom deployments can be created in `config/ui/templates/`.
+Available deployments: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom deployments can be created in `config/app_features/`.
 
 **Sidebar layout is configurable per app features and per workspace** (Home, Blueprint, Gallery, Test Lab). Each app features file declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_app_features.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
 

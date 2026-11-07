@@ -884,7 +884,7 @@ Without the guard, the effect re-fires every tick and produces an infinite react
 
 - **CSS lives in `config/ui/theme.css`** — not inline in Python code. This is the authoritative base stylesheet, loaded at startup by `app/src/ui.py` via `bootloader.get_theme_css_path()` and injected via `ui.tags.style()`.
 - **New UI styling MUST go in `config/ui/theme.css`** (or an app features specific override CSS file). Do not add `style=` attributes on individual components unless the value is truly one-off and cannot be expressed as a reusable CSS rule.
-- **per app features file/deployment branding**: Each app features file declares `theme_css: "config/ui/theme.css"`. A deployment overrides this key to point at a custom CSS file — no Python changes needed. `bootloader.get_theme_css_path()` resolves the active path.
+- **Branding belongs to the deployment** (ADR-091): the `branding:` block of the deployment file declares `theme_css: "config/ui/theme.css"`. A deployment overrides this key to point at a custom CSS file — no Python changes needed. `bootloader.get_theme_css_path()` resolves the active path.
 
 ---
 
@@ -905,7 +905,7 @@ See `config/deployment/local/local.yaml` for the dev template.
 
 ## App features
 
-Defined in app features files: `config/ui/templates/<app_features_id>_template.yaml`. App features IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
+Defined in app features files: `config/app_features/<app_features_id>_template.yaml`. App features IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
 
 Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `developer_mode_enabled`, `gallery_enabled`.
 

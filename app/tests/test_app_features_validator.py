@@ -75,7 +75,7 @@ def test_missing_flag_no_error(capsys):
     assert "WARNING" in captured.out
 
 
-# --- Rule 4 (removed, ADR-091): a hidden selector needs no recipe name in the app features file ---
+# --- Rule 4 (removed, ADR-091): a hidden selector needs no data analysis recipe name in the app features file ---
 
 def test_hidden_selector_is_fine_in_the_app_features_file():
     t, path = _tmpl(path="pipeline-static", app_features_id="pipeline-static", ms_visible=False)
@@ -85,18 +85,18 @@ def test_hidden_selector_is_fine_in_the_app_features_file():
 
 # --- validate_file: real template files ---
 
-def test_validate_real_developer_template():
+def test_validate_real_developer_app_features_file():
     errors = V.validate_file("config/app_features/developer.yaml")
     assert errors == [], f"developer errors: {errors}"
 
 
-def test_validate_real_pipeline_static_template():
-    # the app features file names no recipe (the deployment does) expected
+def test_validate_real_pipeline_static_app_features_file():
+    # the app features file names no data analysis recipe (the deployment does) expected
     errors = V.validate_file("config/app_features/pipeline-static.yaml")
     assert errors == [], f"pipeline-static errors: {errors}"
 
 
-def test_validate_real_qa_template():
+def test_validate_real_qa_app_features_file():
     errors = V.validate_file("config/app_features/qa.yaml")
     assert errors == [], f"qa errors: {errors}"
 

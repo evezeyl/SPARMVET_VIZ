@@ -104,7 +104,7 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 > **Architecture note (2026-08-10 — read this before §2):** "App features" is not a fixed
 > enum the app understands — it's just a naming convention for a config file. The
 > `SPARMVET_APP_FEATURES` env var is passed straight to `Bootloader.set_app_features()`, which
-> either resolves a shortname to `config/ui/templates/<name>_template.yaml` **or**
+> either resolves a shortname to `config/app_features/<name>_template.yaml` **or**
 > accepts a direct path to any YAML file (`app/src/bootloader.py:260-276`). What
 > actually drives app behaviour is the **flags inside that file** — nothing else.
 > So we test **configuration files**, not "app features files": §2 below launches each file
@@ -117,17 +117,17 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 >
 > ```bash
 > cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
-> PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/developer_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+> PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 > ```
 > Then open <http://127.0.0.1:8000>. `--reload` auto-restarts on code edits (useful during fix rounds).
 > **Note:** `python app/src/main.py` does **not** start a server (that file only prints banners) — the old checklist's launch line was wrong. Use `shiny run`.
 
-> **Switching config file = relaunch** pointing `SPARMVET_APP_FEATURES` at a different file. There is **no** in-app selector. All 8 files live in `config/ui/templates/` — full launch command per file in §2.
+> **Switching config file = relaunch** pointing `SPARMVET_APP_FEATURES` at a different file. There is **no** in-app selector. All 8 files live in `config/app_features/` — full launch command per file in §2.
 
 - [~] PRE-01 — App boots clean (no Python traceback); browser console had 1 real bug + 2 noise items, 1 fixed. → [20260810_testing_part1.md#pre-01](20260810_testing_part1.md#pre-01-console-errors-on-first-launch) — RETEST ↻
 - [ ] PRE-02 — Browser loads at :8000 with no red error banner on first paint.
 - [ ] PRE-03 — Default data analysis recipe **ST22 Dummy Dataset** loads; center theater shows analysis-group tabs (Quality Control · Curiosity · Results · Cat 🐱).
-- [ ] PRE-04 — Relaunch pointing at `config/ui/templates/qa_template.yaml` → terminal shows `App features: config/ui/templates/qa_template.yaml`; app still boots clean. (qa's flags: everything on, `ghost_save: false`.)
+- [ ] PRE-04 — Relaunch pointing at `config/app_features/qa.yaml` → terminal shows `App features: config/app_features/qa.yaml`; app still boots clean. (qa's flags: everything on, `ghost_save: false`.)
 - [ ] PRE-05 — Switch data analysis recipe in the **Data analysis recipe Choice** sidebar dropdown to `2_test_data_ST22_dummy` → tabs change to AMR Profiling Insight · Plasmid Dynamics; plots reload, no traceback.
 
 ---
@@ -139,14 +139,14 @@ Relaunch once per file below and confirm the surfaces it produces. This is fast 
 **Launch commands** (paste directly, only the file path changes):
 
 ```bash
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/pipeline-static_template.yaml               ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/demo-vetinst_template.yaml                  ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/pipeline-exploration-simple_template.yaml   ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/web-demo_template.yaml                      ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/pipeline-exploration-advanced_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/project-independent_template.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/developer_template.yaml                     ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml                            ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-static.yaml               ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/demo-vetinst.yaml                  ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-exploration-simple.yaml   ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/web-demo.yaml                      ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-exploration-advanced.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/project-independent.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml                     ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/qa.yaml                            ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 ```
 
 **Compact expectation grid** — confirm each cell against the file's actual flags (`rules_app_features_flags.md` full matrix). Mark the row's checkbox `[x]` if the whole row matches, `[!]` if any cell is wrong (note which).
@@ -163,22 +163,22 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 | **Blueprint** nav | no | no | no | yes | yes | yes |
 | **Test Lab** nav | no | no | no | no | yes | yes |
 
-- [ ] CFG-01 `pipeline-static_template.yaml` — read-only: no Filters, no T3, no right sidebar, no Gallery/Blueprint/Test Lab nav. Export present. *(carried: old PER-01, passed at Phase 26 — confirm still true.)*
-- [ ] CFG-02 `pipeline-exploration-simple_template.yaml` — Filters present; tier toggle now includes **"My view"** as a scratchpad (ADR-085, 2026-08-10) — filters apply there, but no "Send to Audit" button and no right sidebar appear. No Gallery/Blueprint/Test Lab.
-- [ ] CFG-03 `pipeline-exploration-advanced_template.yaml` — Filters + T3 + right Audit sidebar; **no** Gallery/Blueprint/Test Lab nav.
-- [ ] CFG-04 `project-independent_template.yaml` — adds **Gallery** + **Blueprint** nav; still **no** Test Lab.
-- [ ] CFG-05 `developer_template.yaml` — everything incl. **Test Lab** nav.
-- [ ] CFG-06 `qa_template.yaml` — same surfaces as `developer_template.yaml` (used for deterministic testing; `automation.ghost_save: false`).
-- [ ] CFG-07 `demo-vetinst_template.yaml` — boots; intentionally minimal (most flags off, export off). Confirm no crash and that it looks like a locked-down reference deployment.
-- [ ] CFG-08 `web-demo_template.yaml` — boots; minimal-interaction demo. Confirm no crash.
+- [ ] CFG-01 `pipeline-static.yaml` — read-only: no Filters, no T3, no right sidebar, no Gallery/Blueprint/Test Lab nav. Export present. *(carried: old PER-01, passed at Phase 26 — confirm still true.)*
+- [ ] CFG-02 `pipeline-exploration-simple.yaml` — Filters present; tier toggle now includes **"My view"** as a scratchpad (ADR-085, 2026-08-10) — filters apply there, but no "Send to Audit" button and no right sidebar appear. No Gallery/Blueprint/Test Lab.
+- [ ] CFG-03 `pipeline-exploration-advanced.yaml` — Filters + T3 + right Audit sidebar; **no** Gallery/Blueprint/Test Lab nav.
+- [ ] CFG-04 `project-independent.yaml` — adds **Gallery** + **Blueprint** nav; still **no** Test Lab.
+- [ ] CFG-05 `developer.yaml` — everything incl. **Test Lab** nav.
+- [ ] CFG-06 `qa.yaml` — same surfaces as `developer.yaml` (used for deterministic testing; `automation.ghost_save: false`).
+- [ ] CFG-07 `demo-vetinst.yaml` — boots; intentionally minimal (most flags off, export off). Confirm no crash and that it looks like a locked-down reference deployment.
+- [ ] CFG-08 `web-demo.yaml` — boots; minimal-interaction demo. Confirm no crash.
 - [ ] CFG-09 — Display name under the nav pills reflects each file's own `display_name` field (not hardcoded, not derived from the filename). *(carried: old PER-09.)*
-- [ ] CFG-10 `[?]` **NEW** — Point `SPARMVET_APP_FEATURES` at a **custom** YAML (copy `developer_template.yaml`, flip one flag, e.g. `gallery_enabled: false`, save under a new name) and confirm the app respects it correctly with no code changes. This is the actual proof that behaviour is config-driven, not app features enum-driven — worth doing once.
+- [ ] CFG-10 `[?]` **NEW** — Point `SPARMVET_APP_FEATURES` at a **custom** YAML (copy `developer.yaml`, flip one flag, e.g. `gallery_enabled: false`, save under a new name) and confirm the app respects it correctly with no code changes. This is the actual proof that behaviour is config-driven, not app features enum-driven — worth doing once.
 
 ---
 
 ## 3. TEST_LAB (LAB) — **new in Phase 34, highest priority**
 
-> Config file: `developer_template.yaml` or `qa_template.yaml` (only these two set `test_lab_enabled: true`). Click the **Test Lab** nav pill.
+> Config file: `developer.yaml` or `qa.yaml` (only these two set `test_lab_enabled: true`). Click the **Test Lab** nav pill.
 > Design: `.claude/design/spaces/TEST_LAB.md`. Rules: `rules_test_lab.md`.
 > **Principle to keep in mind while testing:** every tool is **stateless** — it runs, hands you a downloadable file, and resets when you close its panel. Nothing persists except files you explicitly save. If you find state leaking between tools/panels, that's a `[!]`.
 
@@ -228,7 +228,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ## 4. BLUEPRINT (BLU) — visual data analysis recipe IDE (mostly new since Phase 26)
 
-> Config file: `developer_template.yaml` or `qa_template.yaml` (full edit mode); `project-independent_template.yaml` gives the non-edit subset (`data_analysis_recipe_edit_enabled: false`). Click **Blueprint Architect** nav pill.
+> Config file: `developer.yaml` or `qa.yaml` (full edit mode); `project-independent.yaml` gives the non-edit subset (`data_analysis_recipe_edit_enabled: false`). Click **Blueprint Architect** nav pill.
 > Design: `.claude/design/spaces/BLUEPRINT.md`. Feature lock: ADR-082. Rules: `rules_ui_dashboard.md §7`.
 > **Reality-check note:** BLUEPRINT had known build-gaps as of 2026-05-20 (add-node primitive UI, component/plot forms, group/meta/new-data_analysis_recipe/validate were YAML-only); several closed in Phase 32–33. Where a feature is simply **absent**, mark `[b]` and note it — discovering the doc/reality gap is itself a useful result, not a failure.
 
@@ -261,7 +261,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 - [ ] BLU-20 — Preview uses real orchestrator execution (values are real, not placeholder).
 
 ### 4e. Helpers layer (escape hatch · undo · branch · AI agent)
-- [ ] BLU-21 — **YAML escape hatch** visible. For `developer_template.yaml`/`qa_template.yaml` it's an **editable** textarea (`data_analysis_recipe_edit_enabled: true`); for other config files it's **read-only**. Confirm the right mode for the file you launched.
+- [ ] BLU-21 — **YAML escape hatch** visible. For `developer.yaml`/`qa.yaml` it's an **editable** textarea (`data_analysis_recipe_edit_enabled: true`); for other config files it's **read-only**. Confirm the right mode for the file you launched.
 - [ ] BLU-22 — Editing YAML in the escape hatch and saving emits a change the rest of the IDE reflects (and, per design, a `developer_raw_yaml` node).
 - [ ] BLU-23 — **Undo**: make several node changes → undo steps back through them (up to 20). Redo if present.
 - [ ] BLU-24 — **Branch** (lineage bifurcation at a node): split a lineage so upstream stays shared and the child diverges as a new `!include` fragment. Confirm it does **not** duplicate the whole data analysis recipe. *(Canonical example: Summary vs Summary_quality.)*
@@ -278,9 +278,9 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ## 5. HOME (HOM) — analysis space (re-verify + new)
 
-> Config file: `developer_template.yaml`, `qa_template.yaml`, `project-independent_template.yaml`, or `pipeline-exploration-advanced_template.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
+> Config file: `developer.yaml`, `qa.yaml`, `project-independent.yaml`, or `pipeline-exploration-advanced.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
 > Most of this passed at Phase 26 but on a stale baseline — re-verify the core, then test the genuinely-new palette/cascade/apply-UX items (marked **NEW**).
-> EVE: user facing template for testing is `developer_template.yaml`, data analysis recipe choice is 1_test_data_ST22_dummy
+> EVE: user facing template for testing is `developer.yaml`, data analysis recipe choice is 1_test_data_ST22_dummy
 
 ### 5a. Tabs, plots, preview (core)
 - [x] HOM-01 — Group tabs = data analysis recipe `analysis_groups` (Quality Control · Curiosity · Results · Cat 🐱). No hardcoded tabs.
@@ -358,7 +358,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ## 6. GALLERY (GAL) — example browser (re-verify)
 
-> Config file: `project-independent_template.yaml`, `developer_template.yaml`, or `qa_template.yaml` (all set `gallery_enabled: true`). Click **Gallery** nav pill. Mature space — lighter pass.
+> Config file: `project-independent.yaml`, `developer.yaml`, or `qa.yaml` (all set `gallery_enabled: true`). Click **Gallery** nav pill. Mature space — lighter pass.
 
 - [ ] GAL-01 — Gallery loads: example browser in center; left sidebar shows Example selector + collapsible taxonomy filters (Family / Data Pattern / Difficulty).
 - [ ] GAL-02 — Taxonomy filter choices come from `gallery_index.json` (not hardcoded); "Select all" toggles a group's checkboxes; "Apply" filters the example list.

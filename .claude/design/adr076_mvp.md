@@ -54,7 +54,7 @@ Subset of the 9 tasks listed in ADR-076 §Consequences. Order matters — each g
 | 3 | `BP-AGENT-PARSER-1` | `[sonnet/medium]` | Fenced-block extractor, JSON validator, dispatch table for the three MVP tools. Unit tests for happy path + malformed marker + invalid JSON. |
 | 4 | `BP-AGENT-TOOLS-1` (scoped) | `[sonnet/medium]` | `get_available_actions`, `get_available_components`, `get_field_contract` only. Each wraps an existing `data_analysis_recipe_navigator` / registry call. Unit tests against the live ST22 data analysis recipe. |
 | 5 | `BP-AGENT-INSTRUCT-1` (scoped) | `[sonnet/medium]` | `blueprint_default.md` — registry summary + structure rules + tool-call format + explicit *no propose_data_analysis_recipe_diff* instruction. Read by adapter at session start. |
-| 6 | `BP-AGENT-PANEL-1` | `[haiku/low]` | `blueprint_agent_chat` registered in `sidebar_registry.py`; added to BLUEPRINT `right_sidebar.panels` of `developer_template.yaml` + `qa_template.yaml`. |
+| 6 | `BP-AGENT-PANEL-1` | `[haiku/low]` | `blueprint_agent_chat` registered in `sidebar_registry.py`; added to BLUEPRINT `right_sidebar.panels` of `developer.yaml` + `qa.yaml`. |
 | 7 | `BP-AGENT-UI-1` (scoped) | `[sonnet/medium]` | Conversation log + submit input + cold-start greeting + adapter-status banner + single-flight gate. **No** decision accordion, **no** Apply gate, **no** data toggle. Reduces this task from `high` to `medium`. |
 | 8 | `BP-AGENT-CSS-1` | `[haiku/low]` | `.bp-agent-*` block — conversation bubbles, input row, status banner. |
 

@@ -23,10 +23,10 @@ deployment_name: "SPARMVET — Production (Posit Connect)"
 # The data analysis recipe to load at startup.
 # Relative to project_root below.
 # If absent, the data analysis recipe selector appears in the UI (flag-gated).
-default_data_analysis_recipe: "my_pipeline"   # file name without .yaml in the recipes folder
+default_data_analysis_recipe: "my_pipeline"   # file name without .yaml in the data analysis recipes folder
 
 # App features to activate. For a locked pipeline deployment use pipeline-static.
-# See config/ui/templates/ for the full list.
+# See config/app_features/ for the full list.
 default_app_features: pipeline-static
 
 # Absolute base path on the Connect server.

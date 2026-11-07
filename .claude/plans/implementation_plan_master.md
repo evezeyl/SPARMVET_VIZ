@@ -82,7 +82,7 @@ Transition from "Scaffolding" to "Functional Prototype" by implementing missing 
 - [x] Initialize library and `@register_plot_component` registry.
 - [x] Implement core `geoms/`, `facets/`, `coords/`, `positions/` subdirectories.
 - [x] Fully implement and verify `scales/` and `themes/` components with verification PNGs (35 components/86% verified).
-- [x] Create `bulk_test_runner.py` for automated data-analysis-recipe-to-PNG generation/verification.
+- [x] Create `bulk_test_runner.py` for automated data-analysis-data analysis recipe-to-PNG generation/verification.
 - [x] Resolve failed verifications (scale_color_cmap, facet_labeller, stat_ecdf, stat_function).
 - [x] Implement "Filter vs. Anchor" reactivity logic (ADR-024).
 
@@ -161,7 +161,7 @@ This implementation plan is governed by the authoritative rulebooks and architec
 
 ### Phase 11-D: Dynamic Discovery & Interaction (DONE)
 
-- [x] **Discovery Engine:** Implement data-analysis-recipe-to-tab and Polars-schema-to-filter logic.
+- [x] **Discovery Engine:** Implement data-analysis-data analysis recipe-to-tab and Polars-schema-to-filter logic.
 - [x] **Interactivity:** Build the column-picker and collapsible sidebars.
 
 ### Phase 11-E: Ingestion, Persistence & Gallery (ACTIVE)
@@ -268,7 +268,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 - [x] Clickable Cytoscape DAG nodes driving the Lineage Rail — **DONE** (implemented with Cytoscape + dagre, not Mermaid/SVG; `cy_tubemap` canvas, `initCyTubeMap` JS, node tap → lineage rail update).
 - [ ] Action Registry parity in IDE forms — form UI infrastructure is done (`schema_registry.py`, `_render_action_form`, `bp_action_form_ui`); only ~20 of 65 registered actions have `ui_schema` metadata. Remaining ~45 actions need `ui_schema` added to their `@register_action` decorator before they appear in the Blueprint form picker.
-- [x] Branch (node-level lineage bifurcation): select node → split lineage, shared upstream by `!include`, divergent downstream as new fragments. **DONE** (BP-BRANCH-NODE-1, 2026-05-21, ADR-082 Q3 — `generate_branch_plan()` in `data_analysis_recipe_navigator.py`; Branch UI in `blueprint_handlers.py`; "Branch Node" card; gated on `data_analysis_recipe_edit_enabled`; works WITH `!include` data analysis recipes). Supersedes the 2026-05-11 Visual Fork (`generate_fork_yaml`, append-into-data-analysis-recipe, refused `!include` data analysis recipes).
+- [x] Branch (node-level lineage bifurcation): select node → split lineage, shared upstream by `!include`, divergent downstream as new fragments. **DONE** (BP-BRANCH-NODE-1, 2026-05-21, ADR-082 Q3 — `generate_branch_plan()` in `data_analysis_recipe_navigator.py`; Branch UI in `blueprint_handlers.py`; "Branch Node" card; gated on `data_analysis_recipe_edit_enabled`; works WITH `!include` data analysis recipes). Supersedes the 2026-05-11 Visual Fork (`generate_fork_yaml`, append-into-data-analysis-data analysis recipe, refused `!include` data analysis recipes).
 
 ---
 
@@ -501,7 +501,7 @@ Ten ordered substeps (A→J, risk-ascending):
 ### Key decisions (ADR-052)
 
 - **Right sidebar layout:** excluded at `ui.py` build time for pipeline app features files (Option A — reads `SPARMVET_APP_FEATURES` env var)
-- **New app features file fields:** `data_analysis_recipe_selector.visible/fixed_data_analysis_recipe` + `testing_mode`
+- **New app features file fields:** `data_analysis_recipe_selector.visible` + `testing_mode` (the data analysis recipe name moved to the deployment, ADR-091)
 - **Pipeline app features files always production:** `testing_mode=false` for static + simple — testing uses developer/advanced app features files
 - **Gallery for project-independent:** `gallery_enabled=true` added to template
 - **Test Lab:** renamed from Dev Studio

@@ -17,14 +17,14 @@ Chrome: developer console, Network tab, "Disable cache" on (as in the test plan)
 **A. Your normal project data** (issues #21 and the export on the real dummy project):
 
 ```
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/developer_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 ```
 
 **B. The retest set** (small data analysis recipes with known numbers; its own cache, `tmp/RETEST/`, apart from your
 normal `tmp/UI_TEST/`):
 
 ```
-PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
+PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml SPARMVET_APP_FEATURES=config/app_features/qa.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
 ```
 
 The qa app features has every feature on (filters, My view, T3, export). In the left panel "Data analysis recipe Choice" you
@@ -132,7 +132,7 @@ Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Ex
   (**5** rows), `steps/t3_steps.yaml` with your reason, the plot `value_by_group.png` filtered (values below 20), the README
   section "Audited T3 steps (always applied...)" naming `value_by_group: 1 step(s)`, and the T3 Audit Trail with your reason in
   `report.html`. No `FILTERS.txt`. (Checked in a real browser run on 2026-11-06, except the picture.)
-- [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static.yaml` instead (deployment B) and `SPARMVET_DATA_ANALYSIS_RECIPE=retest_tier2` (a static page must name its recipe): export still works
+- [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static.yaml` instead (deployment B) and `SPARMVET_DATA_ANALYSIS_RECIPE=retest_tier2` (a static page must name its data analysis recipe): export still works
   and holds the Result.
 
 ## 3. Issue #23: `top_n_other` — project `retest_top_n_other`
@@ -173,7 +173,7 @@ top **3** variants, counting the number of different samples (`count_distinct: s
   plot that has no data yet: a yellow banner above the plot explains it ("No data loaded for ..."). Select a node with data:
   the plot shows and the banner is gone. (Not covered by an automated test.)
 - [ ] **RT-42 App features switching.** There is no runtime app features switch (removed earlier, ADR-053). Confirm you do not expect one.
-- [ ] **RT-43 Gallery submission debug script.** `PYTHONPATH=. ./.venv/bin/python libs/viz_gallery/tests/debug_gallery_submission.py --data-analysis-recipe config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml --data-dir assets/test_data/1_test_data_ST22_dummy`
+- [ ] **RT-43 Gallery submission debug script.** `PYTHONPATH=. ./.venv/bin/python libs/viz_gallery/tests/debug_gallery_submission.py --data-analysis-data analysis recipe config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml --data-dir assets/test_data/1_test_data_ST22_dummy`
   prints "Gallery Bundle materialized" and three PASSED lines (it was broken: a syntax error and an old API).
 
 - [ ] **RT-50 Switching project: lag or blank plot?** Switch between `retest_tier2` and `retest_top_n_other` several times. Note

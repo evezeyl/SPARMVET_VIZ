@@ -4,7 +4,7 @@
 #
 # data_lookup: by_dataset_id
 
-# pipeline-static hides the recipe selector, so the deployment names the recipe that opens
+# pipeline-static hides the data analysis recipe selector, so the deployment names the data analysis recipe that opens
 default_data_analysis_recipe: 1_test_data_ST22_dummy — orchestrator ignores data analysis recipe source.path and discovers
 # files by schema ID name in raw_data. This exercises the same code path a real
 # Galaxy/IRIDA connector would use.

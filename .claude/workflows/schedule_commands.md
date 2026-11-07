@@ -317,7 +317,7 @@ Create an on-demand audit routine for the SPARMVET_VIZ project.
 Name: "SPARMVET: App features Template Consistency"
 
 Purpose: Run AppFeaturesValidator + SidebarValidator in strict mode against all 8 app features
-templates in config/ui/templates/. Warnings are treated as errors in strict mode.
+templates in config/app_features/. Warnings are treated as errors in strict mode.
 Ensures all templates declare every required flag from rules_app_features_flags.md
 and that cascade enforcement rules (ADR-052, ADR-077) are satisfied.
 
@@ -327,7 +327,7 @@ Command to run (from project root):
 After running:
 1. Read the generated report at .claude/logs/audits/audit_templates_YYYY-MM-DD.md
 2. For each failing template:
-   - Open config/ui/templates/<app features>_template.yaml
+   - Open config/app_features/<app features>_template.yaml
    - Fix the flagged issue (missing flag, wrong cascade, forbidden dependency)
    - Re-run validate_app_features_config.py --app-features <name> --strict to verify the fix
 3. Fatal cascade errors (ADR-077: data_analysis_recipe_edit_enabled or blueprint_agent_enabled without

@@ -34,6 +34,7 @@ WORDS = {
     "manifest": r"manifest",
     "recipe": r"(?<!data_analysis_)(?<!data analysis )(?<!data-analysis-)(?<!DataAnalysis)recipe",
     "profile": r"profile",
+    "app features template": r"ui/templates|(?:developer|qa|pipeline-[a-z-]+|project-independent|demo-vetinst|web-demo)_template",
     "connector (deployment file)": r"connector_(?:config|path|template|cache)|sparmvet_connector|local_connector",
 }
 
@@ -63,9 +64,20 @@ EXCLUDED_PREFIXES = (
     "assets/scripts/inventory_config_keys.py",
     ".claude/tasks/config_rename_mapping.md",
     ".claude/tasks/config_rename_inventory.md",
+    ".claude/tasks/config_rename_review.md",
 )
 # Words allowed only in specific files (the AI agent role files may say persona).
 MAX_FILE_BYTES = 2_000_000
+
+# Phrases that keep a retired word on purpose (ADR-091): another meaning, or another tool's term.
+# They are removed from a line before it is counted. A line can also carry the marker
+# audit:allow-old-word (for a tombstone that names a removed setting).
+ALLOWED_PHRASES = {
+    "manifest": [r"vendor[ _-]manifest", r"manifest\.json"],
+    "profile": [r"(?:AMR|Plasmid|amr|plasmid)[ _]?[Pp]rofile\w*", r"Flavor Profile", r"[Rr]esistance profile",
+                r"profiler", r"null-profile", r"distribution profiles", r"EVE_\w*Profile\w*"],
+}
+ALLOW_MARKER = "audit:allow-old-word"
 
 
 def git_files(include_untracked: bool, include_ignored: bool) -> list[str]:
@@ -95,6 +107,12 @@ def area_of(path: str) -> str:
     return parts[0]
 
 
+def _masked(word: str, text: str) -> str:
+    for rx in ALLOWED_PHRASES.get(word, []):
+        text = re.sub(rx, " ", text, flags=re.I)
+    return text
+
+
 def scan(files: list[str], words: dict[str, re.Pattern], show_excluded: bool):
     """Return counters keyed by (word, where, area) plus line hits for --list."""
     counts: Counter = Counter()
@@ -104,7 +122,7 @@ def scan(files: list[str], words: dict[str, re.Pattern], show_excluded: bool):
         if is_excluded(path) and not show_excluded:
             continue
         for word, rx in words.items():
-            n = len(rx.findall(path))
+            n = len(rx.findall(_masked(word, path)))
             if n:
                 counts[(word, "path", area_of(path))] += n
                 hits.append((word, "path", path, 0, path))
@@ -118,8 +136,10 @@ def scan(files: list[str], words: dict[str, re.Pattern], show_excluded: bool):
             skipped_binary += 1
             continue
         for lineno, line in enumerate(text.split("\n"), 1):
+            if ALLOW_MARKER in line:
+                continue
             for word, rx in words.items():
-                n = len(rx.findall(line))
+                n = len(rx.findall(_masked(word, line)))
                 if n:
                     counts[(word, "content", area_of(path))] += n
                     hits.append((word, "content", path, lineno, line.strip()[:140]))

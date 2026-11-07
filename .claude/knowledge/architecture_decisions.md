@@ -2,6 +2,8 @@
 
 > **Vocabulary note (ADR-088, 2026-11-05):** in older entries below, "persona" means what is now called the **app features template** (the file in `config/ui/templates/` that switches features on or off), and "connector" or "profile" means the **deployment profile**. These entries are history and keep their original wording. "Persona" for an AI agent role (`@dasharch`, `@bioscientist`) is unchanged and is called "AI agent persona" where it could be confused.
 
+> **Vocabulary note (ADR-091, 2026-11-07):** the final names replace those of ADR-088. Old word -> new word: persona / app features template / `SPARMVET_PERSONA` -> **app features** / `SPARMVET_APP_FEATURES` (files in `config/app_features/`, switches called flags); deployment profile / connector config / `SPARMVET_PROFILE` -> **deployment** / `SPARMVET_DEPLOYMENT`; manifest -> **data analysis recipe** / `SPARMVET_DATA_ANALYSIS_RECIPE` (folder `config/data_analysis_recipes/`, `join_manifests` -> `joins`, `recipe:` step list -> `steps:`); recipe in its other meanings -> audit steps (T3), example (gallery), id transformation (id reconciliation). Entries below keep the words of their time.
+
 # Last Updated: 2026-04-23 (Session 3) by @dasharch
 >
 > all paths must be provided relative to the project root. Absolute paths or symlinks are not allowed.

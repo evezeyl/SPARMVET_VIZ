@@ -356,8 +356,8 @@ def test_transformation_sha256_active_only():
     assert isinstance(h, str) and len(h) == 64
 
     # Removing inactive node should not change the hash
-    recipe2 = [audit_steps[0]]
-    assert audit_steps_sha256(audit_steps) == audit_steps_sha256(recipe2)
+    audit_steps2 = [audit_steps[0]]
+    assert audit_steps_sha256(audit_steps) == audit_steps_sha256(audit_steps2)
 
 
 # ---------------------------------------------------------------------------

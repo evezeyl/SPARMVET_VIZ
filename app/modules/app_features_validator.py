@@ -97,8 +97,8 @@ class AppFeaturesValidator:
                     f"Feature flag '{flag}' missing from template '{template_path}' — defaulting to False"
                 )
 
-        # Rule 4 (removed, ADR-091): an app features file names no recipe; the deployment does,
-        # and the bootloader stops the app if the selector is hidden and no recipe is named.
+        # Rule 4 (removed, ADR-091): an app features file names no data analysis recipe; the deployment does,
+        # and the bootloader stops the app if the selector is hidden and no data analysis recipe is named.
 
         # Rule 5: child flags must not be True when their master gate is False
         # (Soft cascade — bootloader will silently suppress at runtime; warn so operator knows.)

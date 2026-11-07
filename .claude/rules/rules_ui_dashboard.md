@@ -37,7 +37,7 @@ deps:
 
 ## 3. App features Reactivity Matrix (Component Masking)
 
-The UI dynamically alters component availability based on the templates in `config/ui/templates/`. Below is the authoritative component mapping (updated ADR-052, 2026-05-01):
+The UI dynamically alters component availability based on the templates in `config/app_features/`. Below is the authoritative component mapping (updated ADR-052, 2026-05-01):
 
 | App features | passive_exploration | t3_audit | Filters | Right Sidebar | Gallery | Test Lab | Sessions | Export Bundle | Export Graph |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -51,13 +51,13 @@ The UI dynamically alters component availability based on the templates in `conf
 **passive_exploration**: T1/T2 filter + column-drop scratchpad — plot updates temporarily, nothing saved, no audit trail.
 **t3_audit**: promotes filters/drops to T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, audit trail export).
 
-**App features file flags** (in `config/ui/templates/<app features>_template.yaml`):
+**App features file flags** (in `config/app_features/<app features>_template.yaml`):
 `interactivity_enabled`, `developer_mode_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
 
 **`qa` app features:** Mirrors `developer` flags but sets `automation.ghost_save: false` for deterministic Playwright runs (no background ghost writes during smoke tests). It is the recommended `SPARMVET_APP_FEATURES` for CI.
 
 **New flags (Phase 25 / ADR-052):**
-`data_analysis_recipe_selector.visible` — hides Data analysis recipe Choice dropdown for pipeline app features files (fixed_data_analysis_recipe path required when false).
+`data_analysis_recipe_selector.visible` — hides Data analysis recipe Choice dropdown for pipeline app features files (when false, the deployment must name the data analysis recipe with `default_data_analysis_recipe`, or `SPARMVET_DATA_ANALYSIS_RECIPE` for one run; otherwise the app stops, ADR-091).
 `testing_mode` — true = pre-fill data selector from data analysis recipe default paths; false = data injected by pipeline or chosen by user.
 
 **Pipeline app features files are always production-mode**: `pipeline-static` and `pipeline-exploration-simple` always have `testing_mode=false` and `data_analysis_recipe_selector.visible=false`. Testing of pipeline integrations uses a more capable app features.
@@ -145,7 +145,7 @@ python -c "from app.src.main import app; print('OK')"
 
 Use `SPARMVET_APP_FEATURES=qa` for all automated runs. The `qa` app features has all flags ON and
 `ghost_save.enabled: false` — deterministic behaviour without auto-saves interfering with
-DOM state. See `config/ui/templates/qa_template.yaml`.
+DOM state. See `config/app_features/qa.yaml`.
 
 ### Critical patterns
 

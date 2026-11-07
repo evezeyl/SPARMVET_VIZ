@@ -2,13 +2,13 @@
 trigger: always_on
 deps:
   provides: [rule:app_features_flags, rule:feature_dependencies]
-  documents: [config/ui/templates/, app/src/bootloader.py]
+  documents: [config/app_features/, app/src/bootloader.py]
   consumed_by: [.claude/knowledge/dependency_index.md]
 ---
 
 # App features Feature Flags — Authoritative Reference
 
-This document is the single source of truth for all app features feature flags, their groupings, dependency chains, and the consequences of misconfiguration. It governs `config/ui/templates/*.yaml` and `app/src/bootloader.py`.
+This document is the single source of truth for all app features feature flags, their groupings, dependency chains, and the consequences of misconfiguration. It governs `config/app_features/*.yaml` and `app/src/bootloader.py`.
 
 ---
 
@@ -116,7 +116,7 @@ blueprint_enabled: true/false        ← GATE for Blueprint Architect
 
 ## Full Flag Matrix (Authoritative Values)
 
-Eight app features files exist (`config/ui/templates/`):
+Eight app features files exist (`config/app_features/`):
 - **Six standard app features files:** static, simple, advanced, independent, developer, qa.
 - **Two demo app features files:** demo-vetinst (disabled reference), web-demo (minimal interaction).
 - **Note:** `qa` is a CI/headless-test app features with the same gates as `developer` plus `automation.ghost_save: false` for deterministic Playwright runs.
@@ -159,7 +159,7 @@ Eight app features files exist (`config/ui/templates/`):
 | `blueprint_agent_enabled` | false | false | false | false | false | false | true | true |
 | `blueprint_agent.backend` | — | — | — | — | — | — | `claude_cli` | `disabled` |
 
-The full `blueprint_agent:` block (`backend`, `model`, `api_key_env`, `endpoint`, `instructions_file`, `gallery_awareness`) is present in `developer_template.yaml` and `qa_template.yaml` only. Other templates omit the block entirely; the bootloader treats this as `backend: disabled`.
+The full `blueprint_agent:` block (`backend`, `model`, `api_key_env`, `endpoint`, `instructions_file`, `gallery_awareness`) is present in `developer.yaml` and `qa.yaml` only. Other templates omit the block entirely; the bootloader treats this as `backend: disabled`.
 
 **Vestigial template field — `data_import_panel_visible` (superseded by ADR-073):**
 
@@ -250,7 +250,7 @@ Should return zero hits (only docstrings/comments allowed).
 
 | File | Governed aspect |
 |---|---|
-| `config/ui/templates/*_template.yaml` | Flag values per app features |
+| `config/app_features/*_template.yaml` | Flag values per app features |
 | `app/src/bootloader.py` | Flag resolution logic (dependency enforcement, cascade, `is_enabled()`) |
 | `app/src/bootloader.py` | App features loading, deployment resolution |
 | `app/handlers/home_theater.py` | Must use `bootloader.is_enabled()` — app features name checks are prohibited |

@@ -5,6 +5,7 @@
 # @end_deps
 # libs/viz_gallery/src/viz_gallery/gallery_manager.py
 import yaml
+from utils.legacy_keys import LEGACY_GALLERY_FILES
 import shutil
 from pathlib import Path
 from datetime import datetime
@@ -104,9 +105,9 @@ class GalleryManager:
         for d in folders:
             data_analysis_recipe_path = d / "data_analysis_recipe.yaml"
             if not data_analysis_recipe_path.exists():
-                if (d / "recipe_manifest.yaml").exists():
+                if (d / LEGACY_GALLERY_FILES[0]).exists():
                     # a bundle from before the configuration rename (ADR-091): say so, never skip silently
-                    print(f"Skipping {d.name}: it uses the old file names (recipe_manifest.yaml, recipe_meta.md). "
+                    print(f"Skipping {d.name}: it uses the old file names ({', '.join(LEGACY_GALLERY_FILES)}). "
                           f"Convert with: python assets/scripts/migrate_config_vocabulary.py --gallery <folder> --apply")
                     legacy_bundles.append(d.name)
                 continue

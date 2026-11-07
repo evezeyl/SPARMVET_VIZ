@@ -23,7 +23,7 @@ def test_data_analysis_recipes_are_found():
 
 
 @pytest.mark.parametrize("path", DATA_ANALYSIS_RECIPES, ids=lambda p: p.name)
-def test_manifest_has_no_steps_problems(path):
+def test_data_analysis_recipe_has_no_step_problems(path):
     problems = validate_data_analysis_recipe(path)
     assert problems == [], "\n".join(str(p) for p in problems)
 

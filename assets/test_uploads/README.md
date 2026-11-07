@@ -15,7 +15,7 @@ tracked file in `assets/test_data/1_test_data_ST22_dummy/`. After testing, resto
 git restore assets/test_data/
 ```
 
-Use the `developer_template.yaml` configuration and the data analysis recipe `1_test_data_ST22_dummy`.
+Use the `developer.yaml` configuration and the data analysis recipe `1_test_data_ST22_dummy`.
 
 ## The files
 

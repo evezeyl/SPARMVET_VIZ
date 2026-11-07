@@ -198,7 +198,7 @@ Valid app features IDs: `pipeline-static`, `pipeline-exploration-simple`,
 **Problem:** App features file not found: `<path>`.
 
 **Fix:** Ensure the template file exists at the reported path.
-Built-in templates live under `config/ui/templates/`.
+Built-in templates live under `config/app_features/`.
 If using a custom template: verify `SPARMVET_APP_FEATURES` is set to an absolute file
 path, not a shortname that doesn't match any template file.
 

@@ -9,11 +9,14 @@ from utils.deployment_error import DeploymentError
 RENAMED_RECIPE_FILE_KEYS = {"join_manifests": "joins"}
 RENAMED_JOIN_KEYS = {"recipe": "steps"}
 
+# file names of a gallery bundle before the rename: recipe file and text file
+LEGACY_GALLERY_FILES = ("recipe_manifest.yaml", "recipe_meta.md")
+
 MIGRATION_HINT = "python assets/scripts/migrate_config_vocabulary.py"
 _REF = "ADR-091 (configuration rename), issue evezeyl/SPARMVET_VIZ#27"
 
 
-def renamed_recipe_file_key_errors(raw: dict, where: str) -> list[DeploymentError]:
+def renamed_data_analysis_recipe_file_key_errors(raw: dict, where: str) -> list[DeploymentError]:
     errors = []
     for old, new in RENAMED_RECIPE_FILE_KEYS.items():
         if old in raw:

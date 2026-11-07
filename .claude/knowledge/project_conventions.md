@@ -415,7 +415,7 @@ exit_if_errors(errors, header="My component failed validation")
 - `developer` — code change required. Module bug, broken contract, missing implementation.
 - `both` — config issue that also reveals an underlying design problem worth raising.
 
-**`fix` field discipline:** "Invalid configuration" is a diagnostic failure. "Set `blueprint_agent_enabled: false` in `developer_template.yaml`" is a diagnostic success. Always name the file, the key, and the new value.
+**`fix` field discipline:** "Invalid configuration" is a diagnostic failure. "Set `blueprint_agent_enabled: false` in `developer.yaml`" is a diagnostic success. Always name the file, the key, and the new value.
 
 **Roadmap:** Phase B (DIAG-CORE-1, ✅) covers AppFeaturesValidator. Phase C (committed work, see `tasks.md` "Diagnostic Error Discipline" block) retrofits SidebarValidator, Bootloader, Connectors, data analysis recipe preflight, plus a `docs/troubleshooting/` reference catalog. Runtime errors (ingestion / assembler / wrangler / viz_factory / T3 apply / Blueprint) are deferred to ADR-079 because their audience and render path differ.
 

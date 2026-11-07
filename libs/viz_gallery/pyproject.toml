@@ -10,6 +10,7 @@ authors = [{"name" = "SPARMVET Team"}]
 dependencies = [
     "polars>=1.0.0",
     "pyyaml>=6.0.0",
+    "utils",
 ]
 
 [tool.setuptools.packages.find]

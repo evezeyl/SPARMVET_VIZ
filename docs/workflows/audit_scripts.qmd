@@ -162,7 +162,7 @@ Only open tasks (`- [ ]` lines) are scanned. Paths starting with `libs/`, `app/`
 
 ### `audit_template_flags.py` — App features Template Flag Completeness
 
-Runs `AppFeaturesValidator` and `SidebarValidator` in `--strict` mode (warnings treated as errors) against all 8 app features files in `config/ui/templates/`. Wraps `scripts/validate_app_features_config.py` and consolidates results into a single report.
+Runs `AppFeaturesValidator` and `SidebarValidator` in `--strict` mode (warnings treated as errors) against all 8 app features files in `config/app_features/`. Wraps `scripts/validate_app_features_config.py` and consolidates results into a single report.
 
 ```bash
 .venv/bin/python scripts/audit_template_flags.py

@@ -315,7 +315,7 @@ report) surfaced two more things the first pass didn't cover — both folded int
    (now double-gated: `tier_toggle == "T3"` AND `t3_sandbox_enabled`, both in
    `filter_controls_ui` and defensively re-checked in `_filter_send_to_audit`).
 
-**No config file changes needed** — `pipeline-exploration-simple_template.yaml`
+**No config file changes needed** — `pipeline-exploration-simple.yaml`
 already has exactly `interactivity_enabled: true` + `t3_sandbox_enabled: false`,
 which is precisely the combination that now produces "My view without audit."
 The fix changed what the flags *mean* in code, not their values per app features.
@@ -329,7 +329,7 @@ regenerated (144 nodes, 278 edges).
 Verified: import clean, `test_filter_operators.py` 24/24, Playwright smoke suite
 14 passed / 3 skipped (unchanged baseline — `qa` app features has `t3_sandbox_enabled:
 true`, so the automated suite doesn't exercise the new scratchpad-only path;
-that needs a live check under `pipeline-exploration-simple_template.yaml`,
+that needs a live check under `pipeline-exploration-simple.yaml`,
 tracked as CFG-02).
 
 ---

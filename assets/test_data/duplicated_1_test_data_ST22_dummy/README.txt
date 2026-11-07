@@ -39,12 +39,12 @@ Used with pipeline_test.yaml (data_lookup: by_dataset_id, raw_data → this dir)
 
   pipeline-static app features:
     SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
-    SPARMVET_APP_FEATURES=$ROOT/config/ui/templates/pipeline-static_template.yaml \
+    SPARMVET_APP_FEATURES=$ROOT/config/app_features/pipeline-static.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
   pipeline-exploration-simple app features:
     SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
-    SPARMVET_APP_FEATURES=$ROOT/config/ui/templates/pipeline-exploration-simple_template.yaml \
+    SPARMVET_APP_FEATURES=$ROOT/config/app_features/pipeline-exploration-simple.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
 Origin

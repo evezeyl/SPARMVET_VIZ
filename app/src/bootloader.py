@@ -171,7 +171,7 @@ class Bootloader:
         # 3. Project Authority (Agnostic Discovery)
         self.project_dir = self.get_location("data_analysis_recipes")
         self.available_projects = self._discover_projects()
-        self.default_data_analysis_recipe_name = self._resolve_default_recipe()
+        self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
 
     def _resolve_deployment_path(self) -> tuple[Path, int]:
         """
@@ -325,10 +325,10 @@ class Bootloader:
         mf_files = list(self.project_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
-    def _resolve_default_recipe(self) -> str | None:
+    def _resolve_default_data_analysis_recipe(self) -> str | None:
         """SPARMVET_DATA_ANALYSIS_RECIPE, then default_data_analysis_recipe of the deployment.
 
-        A named recipe that is not in the recipes folder, or a hidden selector with nothing
+        A named data analysis recipe that is not in the data analysis recipes folder, or a hidden selector with nothing
         named, is an operator mistake and stops the app (ADR-077, ADR-091)."""
         source, name = None, None
         if os.environ.get("SPARMVET_DATA_ANALYSIS_RECIPE"):
@@ -340,8 +340,8 @@ class Bootloader:
                 exit_if_errors([DeploymentError(
                     component="Bootloader",
                     problem=f"The data analysis recipe '{name}' named by {source} was not found.",
-                    location=f"{source} (recipes folder: {self.project_dir})",
-                    fix=("Use the file name without .yaml of a recipe in the recipes folder. "
+                    location=f"{source} (data analysis recipes folder: {self.project_dir})",
+                    fix=("Use the file name without .yaml of a data analysis recipe in the data analysis recipes folder. "
                          f"Found: {sorted(self.available_projects) or 'none'}."),
                     who="operator", reference=_BOOT_REF,
                 )])
@@ -349,9 +349,9 @@ class Bootloader:
         if not self.get_data_analysis_recipe_selector().get("visible", True):
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem="The app features hide the data analysis recipe selector but no recipe is named.",
+                problem="The app features hide the data analysis recipe selector but no data analysis recipe is named.",
                 location="default_data_analysis_recipe in the deployment file and SPARMVET_DATA_ANALYSIS_RECIPE",
-                fix="Name the recipe that opens: set default_data_analysis_recipe in the deployment file "
+                fix="Name the data analysis recipe that opens: set default_data_analysis_recipe in the deployment file "
                     "(or SPARMVET_DATA_ANALYSIS_RECIPE for one run).",
                 who="operator", reference=_BOOT_REF,
             )])

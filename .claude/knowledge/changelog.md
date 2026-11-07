@@ -220,7 +220,7 @@ All 8 `libs/` packages now follow the two-tier dependency model:
 - `app/modules/deployment_error.py` — `DeploymentError` dataclass + `format_errors_block` / `exit_if_errors` / `raise_if_errors` / `DeploymentFailure`.
 
 ### Files modified
-- All 8 `config/ui/templates/*.yaml` — `blueprint_agent_enabled` flag + (developer/qa) `blueprint_agent:` config block.
+- All 8 `config/app_features/*.yaml` — `blueprint_agent_enabled` flag + (developer/qa) `blueprint_agent:` config block.
 - `app/modules/app_features_validator.py` — `_FATAL_CASCADE_GATES` + Rule 7; returns `list[DeploymentError]`.
 - `app/src/server.py` — `exit_if_errors()` startup gate replaces `raise ValueError(...)`.
 - `app/src/bootloader.py` — Group D cascade explicitly NOT applied (per ADR-077). Docstring points at AppFeaturesValidator.

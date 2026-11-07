@@ -179,7 +179,7 @@ try:
 
     ms = bl2.get_data_analysis_recipe_selector()
     record("App features loaded", PASS, bl2.app_features_display_name)
-    record("default recipe", INFO, bl2.get_default_project())
+    record("default data analysis recipe", INFO, bl2.get_default_project())
     record("data_lookup", INFO, bl2.data_lookup)
     record("testing_mode", INFO, str(bl2.get_testing_mode()))
 except Exception as e:

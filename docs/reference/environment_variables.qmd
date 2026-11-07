@@ -4,13 +4,13 @@ title: "Environment Variables Reference"
 
 # Environment Variables
 
-SPARMVET_VIZ uses four environment variables to configure the deployment context at launch. They are the only supported mechanism for injecting deployment-specific configuration into the app without modifying files.
+SPARMVET_VIZ uses these environment variables to configure the deployment context at launch. They are the only supported mechanism for injecting deployment-specific configuration into the app without modifying files.
 
-All four are read by `app/src/bootloader.py` at startup. The app prints which deployment and app features it loaded — check the terminal output to verify:
+All are read by `app/src/bootloader.py` at startup. The app prints which deployment and app features it loaded — check the terminal output to verify:
 
 ```
 [Bootloader] Deployment resolved at level N (<source>): /absolute/path/to/deployment.yaml
-[Bootloader] App features: <id> → /absolute/path/to/config/ui/templates/<id>_template.yaml
+[Bootloader] App features: <id> → /absolute/path/to/config/app_features/<id>.yaml
 ```
 
 ---
@@ -21,7 +21,8 @@ All four are read by `app/src/bootloader.py` at startup. The app prints which de
 |---|---|---|---|---|
 | `SPARMVET_DEPLOYMENT` | No | Falls through 4-level chain | Galaxy XML, IRIDA container, Docker Compose, systemd | **Absolute path** to a deployment file. When set, skips all other resolution levels. Raises `FileNotFoundError` immediately if the path does not exist. |
 | `SPARMVET_APP_FEATURES` | Conditionally | `default_app_features` in deployment | Developer, Galaxy XML, Docker Compose | **Path to an app features config YAML file**, or legacy shortname. Controls which UI features are visible and enabled. See [App features path resolution](#app features coupling) below. |
-| `SPARMVET_CONNECTOR` | removed | none | none | **Removed** by ADR-091. The app stops at startup if it is set. The development fallback is `config/deployment/local/local.yaml`; use `SPARMVET_DEPLOYMENT` for another deployment file. |
+| `SPARMVET_DATA_ANALYSIS_RECIPE` | No | `default_data_analysis_recipe` in the deployment | Developer, tester, a launcher | The data analysis recipe that opens at startup, by **file name without `.yaml`** in the data analysis recipes location. Overrides the deployment default for one run. The app stops if the name is not found, and also if the app features hide the data analysis recipe selector and no data analysis recipe is named anywhere. |
+| `SPARMVET_CONNECTOR` | removed | none | none | **Removed** by ADR-091. The app stops at startup if it is set. The development fallback is `config/deployment/local/local.yaml`; use `SPARMVET_DEPLOYMENT` for another deployment file. | <!-- audit:allow-old-word -->
 | `SPARMVET_IRIDA_TOKEN` | Only for IRIDA deployments | none — raises `AuthenticationError` if unset | IRIDA platform at container launch | OAuth2 bearer token for `IridaConnector`. **Never store in any file** — IRIDA injects this at runtime only. |
 
 ---
@@ -72,8 +73,8 @@ If none of the three is set, the app raises `ValueError` at startup and refuses 
 | Value | How resolved |
 |---|---|
 | `/absolute/path/to/my_app_features.yaml` | Loaded directly from that path |
-| `config/ui/templates/developer_template.yaml` | Loaded from that relative path |
-| `developer` | Shortname → `config/ui/templates/developer_template.yaml` (backward compat) |
+| `config/app_features/developer.yaml` | Loaded from that relative path |
+| `developer` | Shortname → `config/app_features/developer.yaml` (backward compat) |
 
 The app features config file can be placed **anywhere** — there is no filename convention requirement. The file's `display_name` field is used in the UI header; the `app_features_id` field is an internal identifier within the file. Neither needs to match the filename.
 
@@ -81,7 +82,7 @@ The app features config file can be placed **anywhere** — there is no filename
 
 ```bash
 # 1. Copy any existing template as a starting point
-cp config/ui/templates/project-independent_template.yaml /my/configs/amr_pipeline_app_features.yaml
+cp config/app_features/project-independent.yaml /my/configs/amr_pipeline_app_features.yaml
 
 # 2. Edit display_name, app_features_id, and feature flags in the new file
 # 3. Launch with the path
@@ -94,18 +95,18 @@ SPARMVET_APP_FEATURES=/my/configs/amr_pipeline_app_features.yaml \
 ```xml
 <!-- Galaxy XML wrapper — AMR pipeline -->
 <environment_variable name="SPARMVET_DEPLOYMENT">/deployments/amr_profile.yaml</environment_variable>
-<environment_variable name="SPARMVET_APP_FEATURES">/deployments/amr_persona.yaml</environment_variable>
+<environment_variable name="SPARMVET_APP_FEATURES">/deployments/amr_app_features.yaml</environment_variable>
 
 <!-- Galaxy XML wrapper — Plasmid pipeline -->
 <environment_variable name="SPARMVET_DEPLOYMENT">/deployments/plasmid_profile.yaml</environment_variable>
-<environment_variable name="SPARMVET_APP_FEATURES">/deployments/plasmid_persona.yaml</environment_variable>
+<environment_variable name="SPARMVET_APP_FEATURES">/deployments/plasmid_app_features.yaml</environment_variable>
 ```
 
 Alternatively, embed `default_app_features` in each deployment (pointing to a path) so that only `SPARMVET_DEPLOYMENT` needs to be set at launch:
 
 ```yaml
 # /deployments/amr_profile.yaml
-default_app_features: /deployments/amr_persona.yaml
+default_app_features: /deployments/amr_app_features.yaml
 ```
 
 ---
@@ -115,7 +116,7 @@ default_app_features: /deployments/amr_persona.yaml
 ```bash
 export PYTHONPATH=$PYTHONPATH:.
 
-# Using shortnames (backward compat — resolves to config/ui/templates/<id>_template.yaml)
+# Using shortnames (backward compat — resolves to config/app_features/<id>_template.yaml)
 SPARMVET_APP_FEATURES=developer            ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 SPARMVET_APP_FEATURES=project-independent  ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 SPARMVET_APP_FEATURES=pipeline-static      ./.venv/bin/python -m shiny run app/src/main.py --port 8001
@@ -140,6 +141,35 @@ SPARMVET_APP_FEATURES=/path/to/my_app_features.yaml \
 ## Deployment fields (not env vars)
 
 The following fields are set inside the deployment file, not as environment variables. They are documented here for discoverability.
+
+### `default_app_features`, `default_data_analysis_recipe`
+
+```yaml
+default_app_features: pipeline-static          # the app features file to use (SPARMVET_APP_FEATURES overrides)
+default_data_analysis_recipe: amr_overview     # file name without .yaml in the data analysis recipes location
+                                               # (SPARMVET_DATA_ANALYSIS_RECIPE overrides)
+```
+
+Each of the three choices (deployment, app features, data analysis recipe) can be overridden on its own at launch; the order is always: launch variable, then the deployment default. A static page hides the data analysis recipe selector, so it must name its data analysis recipe here.
+
+### `app_features_override`
+
+```yaml
+app_features_override:
+  data_ingestion_enabled: false     # an operator lock: this flag is set whatever the app features file says
+```
+
+### `branding`
+
+```yaml
+branding:
+  theme_css: assets/demo/web_demo.css     # layered over the default stylesheet config/ui/theme.css; holds only the differences
+  banner: {logo_url: assets/demo/logo-no.svg, title: "AMR overview", subtitle: "Institute"}
+```
+
+### Paths with `~` and `${VAR}`
+
+Every folder of the deployment (`project_root`, `locations`, `irida.local_cache`, `runtime.python_interpreter`, `branding.theme_css`) accepts `~` and `${VAR}`. A variable that is not set stops the app and the message names it. This gives each person their own folders from one shared deployment file; it does not give each web user of a shared server a folder of their own.
 
 ### `data_lookup`
 

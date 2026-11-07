@@ -200,27 +200,26 @@ If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloade
 
 # App features Configuration Files
 
-App features files live in `config/ui/templates/`. Each file is a YAML document:
+App features files live in `config/app_features/`. Each file is a YAML document:
 
 ```
-config/ui/templates/
-  pipeline-static_template.yaml
-  pipeline-exploration-simple_template.yaml
-  pipeline-exploration-advanced_template.yaml
-  project-independent_template.yaml
-  developer_template.yaml
+config/app_features/
+  pipeline-static.yaml
+  pipeline-exploration-simple.yaml
+  pipeline-exploration-advanced.yaml
+  project-independent.yaml
+  developer.yaml
 ```
 
 ## Full flag reference
 
 ```yaml
-# config/ui/templates/<app features>_template.yaml
+# config/app_features/<app features>_template.yaml
 
 app_features_name: "pipeline-static"      # internal ID — must match filename prefix
 app_features_id: "pipeline-static"        # used by Bootloader — must match filename prefix
 display_name: "Automated Pipeline — Static"   # shown in UI
 logic_access: "None"                 # informational: None / Basic / Advanced / Full
-theme_css: "config/ui/theme.css"     # Optional — CSS file for this app features's styling
 
 features:
   # ── Group A: Viewing ──────────────────────────────────────────────────────
@@ -303,7 +302,7 @@ This is the most common source of confusion. The rule is simple:
 
 | Question | Answered by |
 |---|---|
-| What can this user do? | App features file (`config/ui/templates/`) |
+| What can this user do? | App features file (`config/app_features/`) |
 | Which pipeline/data is loaded? | Deployment (`config/connectors/` or `SPARMVET_DEPLOYMENT`) |
 | Where is data stored on disk? | Deployment (`locations` block) |
 | Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment (`data_ingestion_enabled: false` overrides app features) |

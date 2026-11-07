@@ -5,7 +5,7 @@
 **Last updated:** 2026-05-05 (Session 18)
 **Companion guide:** `app_features_scoping_guide.md` (flag reference, dependency rules)
 **Dependency map:** `functionality_dependency_map.md` (user functionality → code flags)
-**App features files:** `config/ui/templates/`
+**App features files:** `config/app_features/`
 
 > **Framing note:** The rows below are named example configurations ("app features files"), not the primary concept.
 > The primary concept is the **user functionality** each configuration enables.
@@ -101,7 +101,6 @@
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `show_app_features_badge` | Y | N | N | Y | Y | Y | Y | Y |
 | `data_analysis_recipe_selector_visible` | N | N | N | N | Y | Y | Y | Y |
-| `data_analysis_recipe_selector.fixed_data_analysis_recipe` | set | set | set | set | set | null | null | null |
 | `ui_title` (app features override) | - | - | set | - | - | - | - | - |
 | `ui_subtitle` (app features override) | - | - | set | - | - | - | - | - |
 | `show_navigation` *(derived)* | N | N | N | N | N | Y | Y | Y |
@@ -134,7 +133,6 @@
 | `test_lab_enabled` | N | N |
 | `show_app_features_badge` | N | N |
 | `data_analysis_recipe_selector_visible` | N | N |
-| `data_analysis_recipe_selector.fixed_data_analysis_recipe` | set | set |
 | `ui_title` (app features override) | set | - |
 | `ui_subtitle` (app features override) | set | - |
 | `show_navigation` *(derived)* | N | N |

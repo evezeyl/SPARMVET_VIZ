@@ -38,7 +38,7 @@ The deployment is a YAML file that fully describes one deployment instance. It r
 deployment_type: filesystem
 deployment_name: "AMR Surveillance — Institute Server"
 
-default_data_analysis_recipe: "data_analysis_recipes/amr/master.yaml"
+default_data_analysis_recipe: amr          # file name without .yaml in the data analysis recipes location
 default_app_features: pipeline-static
 
 project_root: "/data/sparmvet/amr_pipeline/"
@@ -62,7 +62,7 @@ All paths under `locations` are **relative to `project_root`**. The app never us
 deployment_type: irida
 deployment_name: "AMR Pipeline — IRIDA"
 
-default_data_analysis_recipe: "data_analysis_recipes/amr/master.yaml"
+default_data_analysis_recipe: amr          # file name without .yaml in the data analysis recipes location
 default_app_features: pipeline-static
 
 project_root: "/tmp/sparmvet_irida_cache/"
@@ -87,7 +87,7 @@ For IRIDA, the app downloads files from the IRIDA REST API into `local_cache` be
 
 | Field | Default if absent | Effect |
 |---|---|---|
-| `default_data_analysis_recipe` | None | Data analysis recipe selector is shown (flag-gated) |
+| `default_data_analysis_recipe` | None | The data analysis recipe selector is shown if the app features show it; if they hide it, the app stops with a message (a static page must name its data analysis recipe) |
 | `default_app_features` | From app features file selection | App features selector shown in UI |
 | `deployment_name` | — | Not shown; purely informational |
 | `irida` block | — | Required only when `deployment_type: irida` |
@@ -233,11 +233,15 @@ Two settings in the deployment control what the user sees:
 | `developer` | Admin / developer | All features, gallery browser, dev studio. |
 
 **`default_data_analysis_recipe`** — controls *which pipeline/dataset* is loaded:
-This is the path to the YAML data analysis recipe that defines the analysis groups, plots, and data wrangling steps for a specific pipeline. Changing this (via a different deployment) switches the app to a completely different pipeline without any code change.
+This is the file name (without `.yaml`) of the data analysis recipe in the data analysis recipes location. It defines the analysis groups, plots, and data wrangling steps for a specific pipeline. Changing this (via a different deployment) switches the app to a completely different pipeline without any code change.
 
 These two settings are **orthogonal**: a `pipeline-static` app features can point at an AMR data analysis recipe or a Plasmid data analysis recipe. The app features controls access; the data analysis recipe controls content.
 
 ---
+
+**Launch overrides.** Each choice can be overridden for one run without editing a file: `SPARMVET_DEPLOYMENT` (the deployment file), `SPARMVET_APP_FEATURES` (the app features file) and `SPARMVET_DATA_ANALYSIS_RECIPE` (the data analysis recipe). The order is always the launch variable, then the deployment default. A static page (selector hidden) must name its data analysis recipe in one of the two places; otherwise the app stops and the message names both.
+
+**Branding and operator locks** also belong to the deployment: `branding:` (a stylesheet layered over the default one, and a banner) and `app_features_override:` (flags that are set whatever the app features file says). **Folders** accept `~` and `${VAR}`.
 
 # 7. What Admins Need to Set Up
 

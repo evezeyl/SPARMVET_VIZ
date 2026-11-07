@@ -9,7 +9,7 @@
 - `ui_panel_map_current.md` — CSS selectors and panel names for each UI element
 - ADR-069 — Complete Export Audit Trail Standard
 
-**App features files:** `config/ui/templates/`
+**App features files:** `config/app_features/`
 
 ---
 
@@ -169,14 +169,14 @@ Startup validation raises `AppFeaturesConfigError` if any cascade rule is violat
 
 | App features ID | Intended use case | Template file |
 |---|---|---|
-| `pipeline-static` | Read-only display of pre-processed results | `pipeline-static_template.yaml` |
-| `demo-vetinst` | Branded demo / presentation | `demo-vetinst_template.yaml` |
-| `web-demo` | Public web display | `web-demo_template.yaml` |
-| `pipeline-exploration-simple` | Pipeline users who filter but do not modify | `pipeline-exploration-simple_template.yaml` |
-| `pipeline-exploration-advanced` | Pipeline users with full T3 audit capability | `pipeline-exploration-advanced_template.yaml` |
-| `project-independent` | Research project — full data import + T3 | `project-independent_template.yaml` |
-| `developer` | Full access including Blueprint + Test Lab | `developer_template.yaml` |
-| `qa` | Automated testing — all flags on | `qa_template.yaml` |
+| `pipeline-static` | Read-only display of pre-processed results | `pipeline-static.yaml` |
+| `demo-vetinst` | Branded demo / presentation | `demo-vetinst.yaml` |
+| `web-demo` | Public web display | `web-demo.yaml` |
+| `pipeline-exploration-simple` | Pipeline users who filter but do not modify | `pipeline-exploration-simple.yaml` |
+| `pipeline-exploration-advanced` | Pipeline users with full T3 audit capability | `pipeline-exploration-advanced.yaml` |
+| `project-independent` | Research project — full data import + T3 | `project-independent.yaml` |
+| `developer` | Full access including Blueprint + Test Lab | `developer.yaml` |
+| `qa` | Automated testing — all flags on | `qa.yaml` |
 | `[P] web-project-showcase` | Public website with branded static display | *(not yet created)* |
 | `[P] lightweight-exploration` | Passive filter only, minimal UI | *(not yet created)* |
 

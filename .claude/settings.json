@@ -221,7 +221,6 @@
       "Bash(git show *)",
       "Bash(echo \"---EXIT $?\")",
       "Bash(.venv/bin/python -c \"from test_lab.aqua_synthesizer import AquaSynthesizer; from test_lab.reconciler import KeyReconciler; print\\('OK'\\)\")",
-      "Bash(.venv/bin/python -c \"from test_lab.aqua_synthesizer import clean_header, generate_fake_column, introduce_missing_values; from test_lab.reconciler import KeyReconciler; from test_lab.bootstrapper import ManifestBootstrapper; from test_lab.extractor import XlsxExtractor; print\\('OK'\\)\")",
       "Bash(.venv/bin/pip uninstall *)",
       "Bash(/home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ/.venv/bin/python -c \"import shiny; print\\(shiny.__version__\\)\")",
       "Bash(curl -fsSL \"https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js\" -o cytoscape.min.js)",

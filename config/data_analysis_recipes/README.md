@@ -19,7 +19,7 @@ To ensure high performance in the backend engine and a cohesive development expe
 
 ### 2. Logic Blocks (Sequential List Format)
 
-**Used for:** `wrangling` (tier1, tier2), `join_manifests.steps`.
+**Used for:** `wrangling` (tier1, tier2), `joins.*.steps`.
 
 - **Structure**: A tiered dictionary containing ordered lists of actions.
 - **Mandatory Wrapper**: All wrangling logic must be nested under `tier1` (mandatory) or `tier2` (optional).
@@ -53,7 +53,7 @@ Data analysis recipes follow the **Basename Mirroring Mandate**:
 
 ## 🧩 App features Masking
 
-Visibility of specific datasets and plots is controlled via app features files in `config/ui/templates/`. These templates do not change the data logic, only the exposure level in the UI.
+Visibility of specific datasets and plots is controlled via app features files in `config/app_features/`. These templates do not change the data logic, only the exposure level in the UI.
 
 ---
 **Last Updated**: 2026-04-20

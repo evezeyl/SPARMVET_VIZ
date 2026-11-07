@@ -75,7 +75,7 @@ Every plot spec can render through either backend; deployment or app features ch
 
 ### Option C — ggplot2-snippet escape hatch (ingestion, not a backend)
 
-Accept a raw ggplot2 code block in a manifest/steps (analogous to the T3 `developer_raw_yaml` escape hatch), rendered via `Rscript`. Serves motivation (a) directly.
+Accept a raw ggplot2 code block in a data analysis recipe (analogous to the T3 `developer_raw_yaml` escape hatch), rendered via `Rscript`. Serves motivation (a) directly.
 
 - **Pros:** lowest architectural commitment; meets "I wrote this in R, just run it"; no transpiler.
 - **Cons:** breaks the declarative-spec model (arbitrary R code, not introspectable by Blueprint); a security/sandbox concern (executing user R); not portable to the form-driven IDE.
