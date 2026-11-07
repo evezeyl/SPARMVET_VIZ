@@ -73,22 +73,30 @@ same session, Data analysis recipe Scaffolding offers a checkbox to bake those r
 steps straight into the generated data analysis recipe. You can still ignore it and choose your
 own files — the checkbox is pure opt-in, and it never reaches across a user-space boundary.
 
-## 5. Why handoffs between spaces are always a file, never a button
+## 5. Why most handoffs between spaces are a file, never a button
 
 TEST_LAB, BLUEPRINT, and GALLERY are each turned on or off independently by their own feature
 flag. A deployment can offer TEST_LAB without BLUEPRINT, or GALLERY without BLUEPRINT. An
 in-app "Open in BLUEPRINT" button would break the moment BLUEPRINT is disabled for that
-deployment — a file on disk works regardless of which spaces happen to be switched on.
+deployment — a file on disk works regardless of which spaces happen to be switched on. There
+is no such button anywhere in the app.
 
 | Handoff | How it works |
 |---|---|
 | TEST_LAB Scaffolding → BLUEPRINT | Export the boilerplate ZIP; open it in BLUEPRINT like any data analysis recipe, if BLUEPRINT is enabled. |
-| GALLERY → BLUEPRINT | Copy the example's YAML; paste or open it in BLUEPRINT, if enabled. |
 | BLUEPRINT → HOME | Save the data analysis recipe to disk; HOME's selector picks it up. |
 | TEST_LAB Anonymiser → BLUEPRINT (de-anonymise later) | Join the anonymised data with the mapping TSV in BLUEPRINT, using the step printed in the Anonymiser's own output. |
 
-Every row reads the same way: export here, choose there. Nothing reaches across the boundary
-on its own.
+Every row above reads the same way: export here, choose there. Nothing reaches across the
+boundary on its own — except one case.
+
+**The one real in-app handoff: GALLERY → HOME.** The "Clone to Sandbox" button in GALLERY sends
+the example straight into HOME's "My view" (T3) sandbox as an audit node — no export, no file
+to choose. It still respects the gating principle: it's only available when "My view" audit
+capability is on (`t3_sandbox_enabled`) and the app features allows it, and the cloned node
+starts with an empty, mandatory reason that blocks Apply until you fill it in — so nothing
+reaches your results silently. There is no equivalent GALLERY → BLUEPRINT button; if you want
+an example as a BLUEPRINT starting point, you copy its YAML text by hand, same as any file.
 
 ## 6. See also
 

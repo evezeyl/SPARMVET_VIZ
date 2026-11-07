@@ -4,6 +4,18 @@
 **Status:** Partial build (`gallery_viewer.py` exists; community/contribution features not yet built)  
 **Last updated:** 2026-05-05
 
+> **Correction (2026-11-07):** this page said the Gallery→T3 transplant was "removed (dead code
+> cleaned up 2026-05-05)" and that the handoff path is "copy YAML → open in BLUEPRINT". Checked
+> against the live code (`gallery_handlers.py::handle_gallery_clone`, the "Clone to Sandbox"
+> button) and `ui_implementation_contract.md §12e` ("Gallery → T3 Transplant Rules", described
+> there as current and detailed): the transplant is alive today — clicking "Clone to Sandbox"
+> inserts a `developer_raw_yaml` T3 node (empty `reason`, blocking apply) directly into HOME,
+> gated on `t3_sandbox_enabled` and the app features (`pipeline-exploration-advanced` and
+> `developer`). There is no "Open in BLUEPRINT" button and no copy-to-BLUEPRINT path anywhere
+> in the code. The sections below (Non-Goals, Key Design Constraints, Current State, Open
+> Questions) are corrected to match; `developer_workflow.md`/`developer_workflow.qmd` were also
+> fixed (both repeated this page's stale claim).
+
 ---
 
 ## Purpose
@@ -43,7 +55,6 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 
 - GALLERY does not run the analysis — that is HOME.
 - GALLERY does not build or edit data analysis recipes — that is BLUEPRINT.
-- GALLERY does not send examples directly to T3 or pre-fill HOME sessions (the gallery→T3 transplant feature was removed; the replacement approach is: copy YAML → open in BLUEPRINT).
 - GALLERY does not store user data.
 
 ---
@@ -53,7 +64,7 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 - **Read-only data path**: GALLERY never modifies session state or data analysis recipes. It only provides YAML to copy.
 - **Local-first**: the bundled gallery (shipped with the app) works fully offline. Community features (search GitHub, submit issues/PRs) require network access and are gracefully degraded when unavailable.
 - **Positive inclusion** (ADR-071): GALLERY panel is only mounted when `gallery_enabled` is true in app features config.
-- **Gallery→BLUEPRINT is the handoff path**: the integration point between GALLERY and BLUEPRINT is YAML copy-paste (or a future "open in BLUEPRINT" button). No direct state coupling between the two spaces.
+- **Gallery→HOME (T3) is the implemented handoff path**: "Clone to Sandbox" sends the example's `wrangling` block straight into HOME's T3 sandbox as a `developer_raw_yaml` audit node (empty `reason`, blocking apply until filled in), gated on `t3_sandbox_enabled` and app features (`ui_implementation_contract.md §12e`). There is no GALLERY→BLUEPRINT handoff of any kind — copying a data analysis recipe fragment into BLUEPRINT (e.g. as a starting point) would be a manual copy-paste of the YAML text, same as any other file.
 
 ---
 
@@ -69,10 +80,9 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 ## Current State
 
 - Example browsing and preview: built and working.
-- Search: not yet built.
-- Community contribution / request workflow: not yet built (requires GitHub integration).
-- "Open in BLUEPRINT" button: not yet built.
-- Gallery→T3 transplant: removed (dead code cleaned up 2026-05-05).
+- Search: not yet built (`RESEARCH-HELP-1` in `.claude/tasks/tasks.md`).
+- Community contribution / request workflow: not yet built — `GalleryViewer.submission_modal_ui()` is defined but called from nowhere (no wired button).
+- Gallery→T3 transplant ("Clone to Sandbox"): built and working (`gallery_handlers.py::handle_gallery_clone`, `ui_implementation_contract.md §12e`).
 
 ---
 
@@ -82,4 +92,3 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 - **Contribution workflow**: full PR via GitHub API (complex) vs. "copy this YAML template and open an issue with it" (simple, manual merge). Start simple.
 - **Gallery index format**: current `gallery_index.json` registry — sufficient for local browsing; will need tags and search fields added.
 - **Sample data for previews**: each example needs bundled sample data to render a preview. How is this managed? Stored per-example in the gallery dir, or a shared synthetic sample dataset?
-- **"Open in BLUEPRINT" handoff**: should clicking "open in BLUEPRINT" pre-populate a new data analysis recipe in BLUEPRINT, or just copy the YAML to clipboard? The former is cleaner UX but requires BLUEPRINT to be enabled and accept an inbound data analysis recipe.

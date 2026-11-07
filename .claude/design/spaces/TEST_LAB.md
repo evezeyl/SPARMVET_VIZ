@@ -1,7 +1,10 @@
 # TEST_LAB — Data Utility & Testing Suite
 
 **Type:** User space  
-**Status:** Partial build (`test_lab_studio.py` exists; most utilities not yet implemented)  
+**Status:** Built (checked 2026-11-07) — all six tools are implemented and wired: Reformatter,
+ID Reconciliation (`libs/id_reconciliation/`), Anonymiser, AquaSynthesizer, Data analysis recipe
+Scaffolding, and the Excel/XLSX Extractor (`libs/test_lab/src/test_lab/*.py`,
+`app/handlers/test_lab_handlers.py`, 990 lines; 94 passing tests in `libs/test_lab/tests/`).  
 **Last updated:** 2026-05-05
 
 ---
@@ -811,7 +814,14 @@ the same TSV (identical structure and error patterns) for regression testing acr
 
 ---
 
-## Current State
+> **HISTORICAL (checked 2026-11-07):** everything from here to the end of this file —
+> "Current State" and "Build Tasks (Phase 34)" — describes TEST_LAB as it was *before* Phase
+> 34 was executed. None of the `TL-*` task IDs below remain in `.claude/tasks/tasks.md`; all
+> six tools they describe are now built, wired, and tested (see the corrected Status line at
+> the top of this file). Kept here as the design record of how the library was planned and
+> built, not as a current task list.
+
+## Current State (historical — see banner above)
 
 - `test_lab_studio.py` exists as a module stub.
 - Synthetic data generation: early experiment exists (referenced in recent commits as "test lab for synthetic data generation").
