@@ -58,8 +58,15 @@ flag-driven gating, the Two-Category Law, tier isolation, security deferred) and
 **Done (2026-11-07):** GALLERY, BLUEPRINT, TEST_LAB use case diagrams (UC-GALLERY, UC-BLUEPRINT,
 UC-TESTLAB) and C4 component diagrams (C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB),
 same level of detail as C4-COMP-HOME. **Still open:** wireframes (UI-GALLERY, UI-BLUEPRINT,
-UI-TESTLAB) — not started. **Later:** class diagrams of the core, data analysis recipe data
-model, other platforms.
+UI-TESTLAB) — tried for UI-GALLERY, blocked: `app.factory.createViewOf` for a `WFWebFrame`
+throws (`Cannot read properties of null (reading 'getViewType')`,
+`wireframe-factory.js:58` inside `defaultViewOnDiagramFn`) when called headlessly through the
+bridge's `staruml_run_script` — the wireframe factory functions appear to need an active
+StarUML editor/canvas context that scripted creation doesn't have, unlike the C4/UseCase
+factories which worked fine the same way. UI-HOME (the one existing wireframe) was built in an
+earlier session, possibly through the StarUML GUI directly rather than the bridge script API —
+worth checking how, before trying again. **Later:** class diagrams of the core, data analysis
+recipe data model, other platforms.
 
 **Diagram export:** all 23 diagrams exported to `docs/UML/diagrams/*.png` via
 `staruml_export_diagrams` (re-run after any diagram change; PNGs are not auto-synced).
