@@ -66,13 +66,13 @@ Done 2026-11-06 (issue #10): export reads T1 and T2 through the key-checked orch
 
 ### Configuration vocabulary and launch variables (ADR-091, proposed 2026-11-07, revised: one pass, no hybrid)
 
-Names agreed: `deployment` (`SPARMVET_DEPLOYMENT`), `app features` (`SPARMVET_APP_FEATURES`), `data analysis recipe` (`SPARMVET_DATA_ANALYSIS_RECIPE`, today still called manifest). "Persona" is retired for the application; it stays only for the two AI agent files. Everything with an old word (folders, files, classes, keys, labels, docs, tests) is renamed in ONE scripted run; a hybrid state must not reach a shared branch. Draft: `issue-drafts/config-vocabulary-and-launch-variables.md`. Nothing is created on GitHub until Eve says so.
+Names agreed: `deployment` (`SPARMVET_DEPLOYMENT`), `app features` (`SPARMVET_APP_FEATURES`), `data analysis recipe` (`SPARMVET_DATA_ANALYSIS_RECIPE`, today still called manifest). "Persona" is retired for the application; it stays only for the two AI agent files. Everything with an old word (folders, files, classes, keys, labels, docs, tests) is renamed in ONE scripted run; a hybrid state must not reach a shared branch. Issue: evezeyl/SPARMVET_VIZ#27 (IRIDA check: #28). Implementation plan: `.claude/tasks/config_rename_strategy.md`.
 
-- [ ] **CONFIG-VOCAB-REVIEW-1** `[opus/high]`: Eve reviews ADR-091 and the issue draft and decides open points 1 to 5 of the ADR (key renames, launcher, operator lock, "agent role" wording, IRIDA check). Then the issue is created on the fork.
+- [ ] **CONFIG-VOCAB-REVIEW-1** `[opus/high]`: Eve reviews ADR-091 and the issue draft and decides open points 1 to 5 of the ADR (key renames, launcher, operator lock, "agent role" wording, IRIDA check). Issue #27 is created.
 - [ ] **CONFIG-INVENTORY-1** `[sonnet/medium]`: read-only inventory of every key in `config/deployment/*` and `config/ui/templates/*` (used / unused / wrong home, with the line that reads it), output in `.claude/logs/`; Eve reviews. Depends: CONFIG-VOCAB-REVIEW-1.
 - [ ] **CONFIG-MAPPING-1** `[sonnet/high]`: script output of every word, path and key containing persona, manifest or recipe, with meaning and new name; Eve approves. Depends: CONFIG-INVENTORY-1.
 - [ ] **CONFIG-RENAME-1** `[sonnet/high]`: dry run, real run with `git mv`, startup errors for old variables and keys, `default_data_analysis_recipe` takes effect, `~` and `${VAR}` expansion, delete `logic_access`, `persona_name`, `data_import_panel_visible` (absorbs LEGACY-DATAIMPORT-FLAG-1), migration script for files and sessions, old-words audit added to the audit registry, docs and launch commands updated. Depends: CONFIG-MAPPING-1.
-- [ ] **CONFIG-IRIDA-CHECK-1** `[opus/medium]`: check ADR-048's IRIDA token assumption with someone who knows IRIDA before the IRIDA connector is built.
+- [ ] **CONFIG-IRIDA-CHECK-1** (evezeyl/SPARMVET_VIZ#28) `[opus/medium]`: check ADR-048's IRIDA token assumption with someone who knows IRIDA before the IRIDA connector is built.
 
 ### LAB-WORKFLOW follow-up
 
