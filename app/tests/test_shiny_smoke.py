@@ -299,6 +299,24 @@ class TestPhase25Panels:
         expect(page.locator("#data_analysis_recipe_info_ui")).to_contain_text("ST22 Dummy Dataset")
         expect(page.locator("#data_analysis_recipe_info_ui")).to_contain_text("version")
 
+    def test_test_lab_left_sidebar_shows_only_its_own_panels(self, page: Page, shiny_app: ShinyAppProc):
+        """Test Lab's left sidebar comes from testlab_standard_left.yaml (Info only), not from
+        Home's slot list. Before the fix (finding F-01, .claude/tasks/uml_findings.md), switching
+        to Test Lab fell through to bootloader.get_sidebar_config("home", "left") and showed the
+        full Home panel set — Filters, Export, Session Management — which have no meaning there."""
+        if _LAUNCH_APP_FEATURES not in {"developer", "qa"}:
+            pytest.skip("Test Lab is only enabled for developer and qa app features")
+        page.goto(shiny_app.url)
+        page.wait_for_selector("#sidebar_nav", timeout=15_000)
+        page.locator("#sidebar_nav").get_by_text("Test Lab").first.click()
+        page.wait_for_selector("#nav_accordion", timeout=15_000)
+        accordion = page.locator("#nav_accordion")
+        expect(accordion.get_by_text("Info", exact=True)).to_be_visible()
+        expect(accordion.get_by_text("Filters", exact=True)).not_to_be_visible()
+        expect(accordion.get_by_text("Export", exact=True)).not_to_be_visible()
+        expect(accordion.get_by_text("Session Management", exact=True)).not_to_be_visible()
+        expect(accordion.get_by_text("Data analysis recipe Choice", exact=True)).not_to_be_visible()
+
     def test_global_export_panel_visible(self, page: Page, shiny_app: ShinyAppProc):
         """Export accordion panel is always present (renamed from 'Global Export' in export redesign 2026-05-04)."""
         page.goto(shiny_app.url)

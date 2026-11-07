@@ -1539,7 +1539,7 @@ def define_server(input, output, session, *,
                 icon=ui.tags.i(class_="bi bi-clock-history")
             )
 
-        _home_panel_renderers = {
+        _left_panel_renderers = {
             "data_analysis_recipe_info":       _render_data_analysis_recipe_info,
             "deployment_info":    _render_deployment_info,
             "data_analysis_recipe_choice":    _render_data_analysis_recipe_choice,
@@ -1549,36 +1549,46 @@ def define_server(input, output, session, *,
             "session_management": _render_session_management,
         }
 
-        # Iterate slot list from app features file (ADR-073).
-        sidebar_cfg = bootloader.get_sidebar_config("home", "left")
-        panels = []
-        include_notification_log = False
-        for slot in sidebar_cfg.panels:
-            ptype = slot.get("type", "")
-            if ptype == "notification_log":
-                include_notification_log = True
-                continue
-            if not is_panel_active(ptype, bootloader):
-                continue
-            renderer = _home_panel_renderers.get(ptype)
-            if renderer is None:
-                print(f"[home_theater] No renderer for panel type '{ptype}' — skipping.")
-                continue
-            panel = renderer()
-            if panel is not None:
-                panels.append(panel)
+        def _build_left_sidebar(workspace_key: str, open_panels: list[str]):
+            """Build the left sidebar accordion from a workspace's slot list (ADR-073).
+
+            Shared by Home and Test Lab. Blueprint and Gallery still build their own
+            sidebar directly (above) rather than going through the slot registry — see
+            finding F-01 in .claude/tasks/uml_findings.md: that split is not yet settled.
+            """
+            sidebar_cfg = bootloader.get_sidebar_config(workspace_key, "left")
+            panels = []
+            include_notification_log = False
+            for slot in sidebar_cfg.panels:
+                ptype = slot.get("type", "")
+                if ptype == "notification_log":
+                    include_notification_log = True
+                    continue
+                if not is_panel_active(ptype, bootloader):
+                    continue
+                renderer = _left_panel_renderers.get(ptype)
+                if renderer is None:
+                    print(f"[home_theater] No renderer for panel type '{ptype}' — skipping.")
+                    continue
+                panel = renderer()
+                if panel is not None:
+                    panels.append(panel)
+            return ui.div(
+                ui.accordion(
+                    *panels,
+                    id="nav_accordion",
+                    multiple=True,
+                    open=open_panels,
+                ),
+                ui.output_ui("notification_log_panel_ui") if include_notification_log else ui.div(),
+            )
+
+        if active_sidebar == "Test Lab":
+            return _build_left_sidebar("test_lab", open_panels=[])
 
         _has_data_analysis_recipe = bootloader.get_data_analysis_recipe_selector().get("visible", True)
         open_panels = ["Data analysis recipe Choice"] if _has_data_analysis_recipe else []
-        return ui.div(
-            ui.accordion(
-                *panels,
-                id="nav_accordion",
-                multiple=True,
-                open=open_panels,
-            ),
-            ui.output_ui("notification_log_panel_ui") if include_notification_log else ui.div(),
-        )
+        return _build_left_sidebar("home", open_panels=open_panels)
 
     # --- Right Sidebar Context Matrix (ADR-039 / ADR-044) ---
     @output
