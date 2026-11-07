@@ -64,7 +64,7 @@ else:
 section("2. Bootloader")
 
 os.environ["SPARMVET_PROFILE"] = str(PIPELINE_TEST_PROFILE)
-os.environ["SPARMVET_PERSONA"] = str(APP_FEATURES["pipeline-static"])
+os.environ["SPARMVET_APP_FEATURES"] = str(APP_FEATURES["pipeline-static"])
 
 try:
     # Re-import fresh (clear module-level singleton)
@@ -171,7 +171,7 @@ except Exception as e:
 # ── 6. Repeat for pipeline-exploration-simple ─────────────────────────────
 section("6. Persona: pipeline-exploration-simple (same profile)")
 
-os.environ["SPARMVET_PERSONA"] = str(APP_FEATURES["pipeline-exploration-simple"])
+os.environ["SPARMVET_APP_FEATURES"] = str(APP_FEATURES["pipeline-exploration-simple"])
 try:
     if "app.src.bootloader" in sys.modules:
         del sys.modules["app.src.bootloader"]

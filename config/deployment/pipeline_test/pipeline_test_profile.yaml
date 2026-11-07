@@ -8,7 +8,7 @@
 #
 # Use with pipeline-static or pipeline-exploration-simple persona:
 #   SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
-#   SPARMVET_PERSONA=$ROOT/config/ui/templates/pipeline-static_template.yaml \
+#   SPARMVET_APP_FEATURES=$ROOT/config/app_features/pipeline-static.yaml \
 #     $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
 deployment_type: filesystem

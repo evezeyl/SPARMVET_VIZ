@@ -1,9 +1,9 @@
 # UI Persona: Pipeline Static
-persona_id: "pipeline-static"
+name: "pipeline-static"
 display_name: "Automated Pipeline - Static"
 theme_css: "config/ui/theme.css"
 
-features:
+flags:
   # Can the user interact with the Tier 3 View?
   interactivity_enabled: false
   # Does the user have access to the Developer Studio / Wrangle Studio tools?
@@ -37,7 +37,7 @@ features:
   data_ingestion_enabled: false
   # Show/hide sidebar accordion panels
   # Show active persona name in nav header
-  show_persona_badge: true
+  show_app_features_badge: true
 
 # Manifest selection — false: manifest fixed by deployment config (operator must set fixed_manifest)
 manifest_selector:

@@ -104,7 +104,7 @@ if [ "$DEPLOY" -eq 1 ]; then
         --entrypoint "app/src/main:app" \
         --requirements requirements-connect.txt \
         --environment "SPARMVET_PROFILE=$SPARMVET_PROFILE_PATH" \
-        --environment "SPARMVET_PERSONA=pipeline-static" \
+        --environment "SPARMVET_APP_FEATURES=pipeline-static" \
         --title "SPARMVET_VIZ"
 
     echo "  Deployment complete."

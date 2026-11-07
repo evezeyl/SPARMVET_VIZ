@@ -49,8 +49,8 @@ class SidebarValidator:
             )
             return errors
 
-        features = template.get("features", {})
-        app_features_id = template.get("persona_id", template_path)
+        features = template.get("flags", {})
+        app_features_id = template.get("name", template_path)
 
         if "manifest_selector_visible" not in features:
             ms = template.get("manifest_selector", {})
@@ -180,8 +180,8 @@ class SidebarValidator:
                 location=template_path,
                 fix=(
                     f"Ensure the template file exists at {template_path}. "
-                    f"Check SPARMVET_PERSONA env var and the deployment profile "
-                    f"'default_persona' key."
+                    f"Check SPARMVET_APP_FEATURES env var and the deployment profile "
+                    f"'default_app_features' key."
                 ),
                 who="operator",
                 reference=_REF,

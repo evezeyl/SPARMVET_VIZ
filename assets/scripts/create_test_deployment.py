@@ -75,7 +75,7 @@ def main():
             "gallery":      "assets/gallery_data/",
         },
         "default_manifest": f"{args.manifest_id}.yaml",
-        "default_persona": args.app_features,
+        "default_app_features": args.app_features,
         "runtime": {
             "python_interpreter": "./.venv/bin/python",
         },

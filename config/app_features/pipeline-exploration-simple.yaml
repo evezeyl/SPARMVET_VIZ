@@ -1,9 +1,9 @@
 # UI Persona: Pipeline Exploration Simple
-persona_id: "pipeline-exploration-simple"
+name: "pipeline-exploration-simple"
 display_name: "Pipeline Exploration - Simple"
 theme_css: "config/ui/theme.css"
 
-features:
+flags:
   # Can the user interact with the Tier 3 View? (Toggleable/Collapsible)
   interactivity_enabled: true
   # Does the user have access to the Developer Studio / Wrangle Studio tools?
@@ -36,7 +36,7 @@ features:
   data_ingestion_enabled: false
   # Show/hide sidebar accordion panels
   # Show active persona name in nav header
-  show_persona_badge: true
+  show_app_features_badge: true
 
 # Manifest selection — false: manifest fixed by deployment config (operator must set fixed_manifest)
 manifest_selector:

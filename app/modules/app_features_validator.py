@@ -73,22 +73,22 @@ class AppFeaturesValidator:
         errors: list[DeploymentError] = []
         warnings: list[str] = []
 
-        app_features_id = template.get("persona_id", "")
+        app_features_id = template.get("name", "")
 
-        # Rule 1 (removed 2026-05-02, ADR-054): persona_id must match filename.
+        # Rule 1 (removed 2026-05-02, ADR-054): name must match filename.
 
-        # Rule 2: persona_id must use hyphens, never underscores
+        # Rule 2: name must use hyphens, never underscores
         if "_" in app_features_id and app_features_id not in (""):
             errors.append(DeploymentError(
                 component="PersonaValidator",
-                problem=f"persona_id '{app_features_id}' contains underscores",
-                location=f"persona_id in {template_path}",
+                problem=f"name '{app_features_id}' contains underscores",
+                location=f"name in {template_path}",
                 fix="Replace underscores with hyphens. e.g. 'pipeline_static' → 'pipeline-static'.",
                 who="operator",
                 reference=".claude/rules/rules_persona_feature_flags.md (persona naming)",
             ))
 
-        features = template.get("features", {})
+        features = template.get("flags", {})
 
         # Rule 3: all required feature flags must be present (warn if missing, use defaults)
         for flag in _REQUIRED_FLAGS:
@@ -187,7 +187,7 @@ class AppFeaturesValidator:
                 problem="Persona template file not found",
                 location=template_path,
                 fix=(
-                    "Set SPARMVET_PERSONA to an existing template id "
+                    "Set SPARMVET_APP_FEATURES to an existing template id "
                     "(e.g. 'developer', 'pipeline-static') OR provide an absolute "
                     "path to your custom template file. Available built-in templates "
                     "live under config/app_features/."

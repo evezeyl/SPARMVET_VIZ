@@ -22,15 +22,15 @@ _FULL_FEATURES = {
 
 def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, app_features_id=None, path="developer"):
     t = {
-        "persona_id": app_features_id or path,
-        "features": {**_FULL_FEATURES, **(overrides or {})},
+        "name": app_features_id or path,
+        "flags": {**_FULL_FEATURES, **(overrides or {})},
         "manifest_selector": {"visible": ms_visible, "fixed_manifest": ms_fixed},
         "testing_mode": testing_mode,
     }
     return t, path
 
 
-# --- Rule 1: persona_id must match filename ---
+# --- Rule 1: name must match filename ---
 
 def test_app_features_id_matches_filename_valid():
     t, path = _tmpl(path="developer", app_features_id="developer")
@@ -38,14 +38,14 @@ def test_app_features_id_matches_filename_valid():
 
 
 def test_app_features_id_mismatch_no_longer_raises_error():
-    # ADR-054 (2026-05-02) removed Rule 1: persona_id/filename coupling dropped
+    # ADR-054 (2026-05-02) removed Rule 1: name/filename coupling dropped
     # so persona configs can live anywhere and be referenced by absolute path.
     t, path = _tmpl(path="developer", app_features_id="qa")
     errors = V.validate(t, path)
     assert not any("does not match filename" in e for e in errors)
 
 
-# --- Rule 2: persona_id must use hyphens ---
+# --- Rule 2: name must use hyphens ---
 
 def test_app_features_id_underscore_raises_error():
     t, path = _tmpl(path="pipeline_exploration_advanced",
@@ -64,8 +64,8 @@ def test_app_features_id_hyphen_is_valid():
 
 def test_missing_flag_no_error(capsys):
     t = {
-        "persona_id": "developer",
-        "features": {},  # all missing
+        "name": "developer",
+        "flags": {},  # all missing
         "manifest_selector": {"visible": True, "fixed_manifest": None},
         "testing_mode": True,
     }

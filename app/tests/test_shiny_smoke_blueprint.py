@@ -3,7 +3,7 @@
 New test infrastructure for BP-SMOKE-1 (existing suite covers HOME only).
 
 Run:
-    PYTHONPATH=. SPARMVET_PERSONA=qa .venv/bin/python -m pytest \
+    PYTHONPATH=. SPARMVET_APP_FEATURES=qa .venv/bin/python -m pytest \
         app/tests/test_shiny_smoke_blueprint.py -v
 
 Tests are grouped into four tiers:
@@ -26,7 +26,7 @@ from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 
-_LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_PERSONA", "developer")
+_LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
 _BLUEPRINT_APP_FEATURES_REQUIRED = {"developer", "qa"}
 
 

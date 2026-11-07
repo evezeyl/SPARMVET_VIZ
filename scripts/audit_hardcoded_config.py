@@ -17,7 +17,7 @@ Detects three classes of hardcoding that make the app fragile or deployment-spec
      All gating must use `bootloader.is_enabled(flag)`. (ADR-053)
 
   4. HARDCODED ENV VAR READS for deployment config outside bootloader — e.g.
-     `os.environ.get("SPARMVET_PERSONA")` in handler files. Bootloader owns this.
+     `os.environ.get("SPARMVET_APP_FEATURES")` in handler files. Bootloader owns this.
 
   5. HARDCODED INTERPRETER PATH — `python3` or `/usr/bin/python` used as a subprocess
      call in app/ or libs/ code instead of the `.venv` Python. (rules_runtime_environment.md)
@@ -89,14 +89,14 @@ APP_FEATURES_NAME_PATTERNS = [
      "Persona name in-tuple comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
     (re.compile(r'\bpersona\s+in\s*\['),
      "Persona name in-list comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
-    (re.compile(r'SPARMVET_PERSONA.*=='),
-     "SPARMVET_PERSONA env-var string comparison — bootloader owns persona resolution"),
+    (re.compile(r'SPARMVET_APP_FEATURES.*=='),
+     "SPARMVET_APP_FEATURES env-var string comparison — bootloader owns persona resolution"),
 ]
 
 # 4. Env var reads for deployment config outside bootloader
 ENV_VAR_PATTERNS = [
-    (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_PERSONA["\']'),
-     "Direct SPARMVET_PERSONA env-var read — bootloader owns persona resolution"),
+    (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_APP_FEATURES["\']'),
+     "Direct SPARMVET_APP_FEATURES env-var read — bootloader owns persona resolution"),
     (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_PROFILE["\']'),
      "Direct SPARMVET_PROFILE env-var read — bootloader owns profile resolution"),
 ]
@@ -115,7 +115,7 @@ INTERPRETER_PATTERNS = [
 # File+line fragments that are known acceptable hardcodings or pre-existing debt.
 # Format: (file_substring, pattern_description_substring)
 KNOWN_DEBT: list[tuple[str, str]] = [
-    # Bootloader intentionally reads SPARMVET_PERSONA and SPARMVET_PROFILE
+    # Bootloader intentionally reads SPARMVET_APP_FEATURES and SPARMVET_PROFILE
     ("bootloader.py", "SPARMVET_"),
     # Connector legitimately accesses profile['locations']
     ("connector.py", "locations"),
@@ -231,7 +231,7 @@ def render_report(violations: list[dict], project_root: Path) -> str:
             "absolute_path":   ("❌ Absolute Path Strings", "Replace with bootloader.get_location(key) or a relative path resolved at runtime."),
             "direct_location": ("❌ Direct Location Dict Reads", "Call bootloader.get_location(key) — never read locations from the profile dict directly."),
             "persona_name":    ("❌ Persona Name String Comparisons", "Replace with bootloader.is_enabled('flag_name'). See ADR-053 and rules_persona_feature_flags.md §Anti-Pattern."),
-            "env_var":         ("❌ Direct Env-Var Reads for Deployment Config", "Bootloader owns SPARMVET_PERSONA and SPARMVET_PROFILE resolution. Never read these in handler code."),
+            "env_var":         ("❌ Direct Env-Var Reads for Deployment Config", "Bootloader owns SPARMVET_APP_FEATURES and SPARMVET_PROFILE resolution. Never read these in handler code."),
             "interpreter":     ("❌ Hardcoded Python Interpreter", "Use the venv Python path from bootloader or subprocess with sys.executable from the active venv."),
         }
         for cat, (heading, fix_advice) in categories.items():

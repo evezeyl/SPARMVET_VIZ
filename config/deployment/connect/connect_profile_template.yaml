@@ -11,7 +11,7 @@
 #
 # On Connect set:
 #   SPARMVET_PROFILE=/connect/content/<app-guid>/connect_profile.yaml
-#   SPARMVET_PERSONA=pipeline-static   (or whichever persona this deployment shows)
+#   SPARMVET_APP_FEATURES=pipeline-static   (or whichever persona this deployment shows)
 #
 # If the pipeline produces data via an automated script (not user upload):
 #   Set data_ingestion_enabled: false  in the persona template
@@ -27,7 +27,7 @@ default_manifest: "manifests/my_pipeline/master.yaml"
 
 # Persona to activate. For a locked pipeline deployment use pipeline-static.
 # See config/ui/templates/ for the full list.
-default_persona: pipeline-static
+default_app_features: pipeline-static
 
 # Absolute base path on the Connect server.
 # All locations below are relative to this.

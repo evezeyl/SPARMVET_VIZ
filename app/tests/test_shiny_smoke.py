@@ -1,10 +1,10 @@
 """test_shiny_smoke.py — headless Playwright smoke tests for SPARMVET_VIZ.
 
 Run (full suite, qa persona):
-    PYTHONPATH=. SPARMVET_PERSONA=qa .venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+    PYTHONPATH=. SPARMVET_APP_FEATURES=qa .venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 
 Run (developer persona — tests Gallery visibility):
-    PYTHONPATH=. SPARMVET_PERSONA=developer .venv/bin/python -m pytest app/tests/test_shiny_smoke.py::TestPersonaMasking -v
+    PYTHONPATH=. SPARMVET_APP_FEATURES=developer .venv/bin/python -m pytest app/tests/test_shiny_smoke.py::TestPersonaMasking -v
 
 Tests are grouped into four tiers:
   T1 — App startup and project load (always fast, always run)
@@ -12,7 +12,7 @@ Tests are grouped into four tiers:
   T3 — Filter pipeline + T3 audit promotion (highest-risk refactor surface)
   T4 — Data preview grid
 
-Note on persona switching: the app persona is set at launch via SPARMVET_PERSONA env var.
+Note on persona switching: the app persona is set at launch via SPARMVET_APP_FEATURES env var.
 There is no runtime `#persona_selector` dropdown; runtime switching is not currently wired
 to a rendered input. T2 tests reflect the LAUNCH persona only.
 
@@ -26,7 +26,7 @@ from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 
-_LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_PERSONA", "developer")
+_LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
 
 
 # ---------------------------------------------------------------------------

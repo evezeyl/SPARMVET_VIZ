@@ -5,7 +5,7 @@ and checks what the user is promised: the keys are recorded, the data files exis
 is refused. The refusal path (a file changed after the view was opened) is tested here too, by
 changing a data file on disk after the view is open and restoring it afterwards.
 
-Run: PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_export_download.py -v
+Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_export_download.py -v
 """
 import io
 import re

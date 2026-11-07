@@ -1,11 +1,11 @@
 # UI Persona: Web Demo
 # Pure exploration view — filters only, no export, no gallery, no ingestion.
 # Persona badge hidden. Suitable for demos and public-facing presentations.
-persona_id: "web-demo"
+name: "web-demo"
 display_name: "Web Demo"
 theme_css: "assets/demo/web_demo.css"
 
-features:
+flags:
   interactivity_enabled: true
   developer_mode_enabled: false
   wrangle_studio_enabled: false
@@ -25,7 +25,7 @@ features:
   export_enabled: false
   metadata_ingestion_enabled: false
   data_ingestion_enabled: false
-  show_persona_badge: false
+  show_app_features_badge: false
 
 manifest_selector:
   visible: false

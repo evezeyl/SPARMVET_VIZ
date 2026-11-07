@@ -40,7 +40,7 @@ FS_PROFILE_WITH_ROOT = {
     "deployment_type": "filesystem",
     "project_root": "/data/pipeline/",
     "default_manifest": "manifests/amr/master.yaml",
-    "default_persona": "pipeline-static",
+    "default_app_features": "pipeline-static",
     "deployment_name": "AMR Pipeline",
     "locations": MINIMAL_LOCATIONS,
 }
@@ -107,7 +107,7 @@ class TestFilesystemConnector:
             "deployment_type": "filesystem",
             "project_root": str(tmp_path),
             "default_manifest": "manifests/amr/master.yaml",
-            "default_persona": "pipeline-static",
+            "default_app_features": "pipeline-static",
             "deployment_name": "AMR Pipeline",
             "locations": MINIMAL_LOCATIONS,
         }

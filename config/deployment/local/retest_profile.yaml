@@ -3,7 +3,7 @@
 # Its cache and sessions live in tmp/RETEST/, apart from your normal tmp/UI_TEST/.
 deployment_type: filesystem
 deployment_name: "SPARMVET RETEST"
-default_persona: "developer"
+default_app_features: "developer"
 
 locations:
   # Location 1: Raw ingestion data

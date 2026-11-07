@@ -24,6 +24,11 @@ from pathlib import Path
 from typing import Dict, Any
 
 from app.modules.deployment_error import DeploymentError, exit_if_errors
+from app.modules.renamed_keys import (
+    renamed_app_features_key_errors,
+    renamed_deployment_key_errors,
+    renamed_env_var_errors,
+)
 
 _BOOT_REF = "ADR-048 — .claude/rules/rules_runtime_environment.md §1"
 
@@ -79,7 +84,8 @@ class Bootloader:
         self._asset_cache[project_id][dataset_id][plot_id][asset_type] = asset
 
     def __init__(self, app_features: str | None = None, connector: str | None = None):
-        # Persona resolved after profile load — see step 2 below
+        exit_if_errors(renamed_env_var_errors(os.environ))
+        # App features resolved after deployment load — see step 2 below
         self._app_features_kwarg = app_features
         # connector kwarg kept for backward compatibility; used only in level-4 fallback path
         self.connector = connector or os.environ.get("SPARMVET_CONNECTOR", "local")
@@ -96,12 +102,13 @@ class Bootloader:
         if _cache_key not in self._connector_cache:
             self._connector_cache[_cache_key] = self._load_connector_config()
         self.connector_config = self._connector_cache[_cache_key]
+        exit_if_errors(renamed_deployment_key_errors(self.connector_config, str(self.connector_path)))
 
         # ADR-048 deployment fields (all optional in local dev profile)
         project_root_str = self.connector_config.get("project_root")
         self.project_root: Path | None = Path(project_root_str) if project_root_str else None
         self.default_manifest: str | None = self.connector_config.get("default_manifest")
-        self.default_app_features: str | None = self.connector_config.get("default_persona")
+        self.default_app_features: str | None = self.connector_config.get("default_app_features")
         self.deployment_name: str = self.connector_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
         self.deployment_type: str = self.connector_config.get("deployment_type", "filesystem")
 
@@ -138,10 +145,10 @@ class Bootloader:
         # Validate required location keys
         self._validate_profile()
 
-        # 2. Persona Logic — resolution order: kwarg > env var > profile default_persona > error
+        # 2. App features logic — resolution order: kwarg > env var > profile default_app_features > error
         self.app_features = (
             self._app_features_kwarg
-            or os.environ.get("SPARMVET_PERSONA")
+            or os.environ.get("SPARMVET_APP_FEATURES")
             or self.default_app_features
         )
         if not self.app_features:
@@ -149,12 +156,12 @@ class Bootloader:
                 component="Bootloader",
                 problem="No persona configured — cannot determine which feature flags to load.",
                 location=(
-                    "Resolution order checked: persona= kwarg, SPARMVET_PERSONA env var, "
-                    f"default_persona in {self.connector_path} — all absent."
+                    "Resolution order checked: app_features= kwarg, SPARMVET_APP_FEATURES env var, "
+                    f"default_app_features in {self.connector_path} — all absent."
                 ),
                 fix=(
-                    "Set the SPARMVET_PERSONA environment variable (e.g. SPARMVET_PERSONA=developer), "
-                    f"or add 'default_persona: developer' to {self.connector_path}."
+                    "Set the SPARMVET_APP_FEATURES environment variable (e.g. SPARMVET_APP_FEATURES=developer), "
+                    f"or add 'default_app_features: developer' to {self.connector_path}."
                 ),
                 who="operator",
                 reference=_BOOT_REF,
@@ -281,19 +288,19 @@ class Bootloader:
 
         self.config = self._app_features_cache[cache_key]
         print(f"[Bootloader] Persona: {self.app_features} → {self.app_features_path}")
-        self.features = self.config.get("features", {})
+        self.flags = self.config.get("flags", {})
         self.automation = self.config.get("automation", {})
 
     @property
     def app_features_display_name(self) -> str:
         """Human-readable persona name from the template's display_name field.
 
-        Falls back to persona_id, then to the raw persona value (path or shortname).
+        Falls back to name, then to the raw persona value (path or shortname).
         Used for UI display only — never for behavioral gating.
         """
         return (
             self.config.get("display_name")
-            or self.config.get("persona_id")
+            or self.config.get("name")
             or self.app_features
         )
 
@@ -375,7 +382,7 @@ class Bootloader:
                     f"Valid names (files in config/app_features/): "
                     f"pipeline-static, pipeline-exploration-simple, pipeline-exploration-advanced, "
                     f"project-independent, developer, qa. "
-                    f"Check SPARMVET_PERSONA env var or default_persona in the deployment profile."
+                    f"Check SPARMVET_APP_FEATURES env var or default_app_features in the deployment profile."
                 ),
                 who="operator",
                 reference="ADR-026 + config/app_features/",
@@ -400,6 +407,7 @@ class Bootloader:
 
             with open(path, "r") as f:
                 config = yaml.load(f, Loader=_TemplateLoader) or {}
+            exit_if_errors(renamed_app_features_key_errors(config, str(path)))
         except Exception as e:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
@@ -417,7 +425,7 @@ class Bootloader:
             )])
             return {}  # unreachable
 
-        features = config.get("features", {})
+        features = config.get("flags", {})
 
         # Backward compat: old templates may still have export_bundle_enabled /
         # export_graph_enabled. Map them to export_enabled (either old flag true → true).
@@ -466,7 +474,7 @@ class Bootloader:
         if self.connector_config.get("data_ingestion_enabled") is False:
             features["data_ingestion_enabled"] = False
 
-        config["features"] = features
+        config["flags"] = features
         return config
 
     def get_location(self, key: str) -> Path:
@@ -481,12 +489,12 @@ class Bootloader:
 
     # Features that default TRUE when not declared in a persona template.
     # Everything else defaults False (opt-in).
-    _FEATURES_DEFAULT_TRUE = {"show_persona_badge"}
+    _FEATURES_DEFAULT_TRUE = {"show_app_features_badge"}
 
     def is_enabled(self, feature: str) -> bool:
         """Checks if a UI feature is enabled."""
         default = feature in self._FEATURES_DEFAULT_TRUE
-        return self.features.get(feature, default)
+        return self.flags.get(feature, default)
 
     def get_theme_css_path(self) -> Path:
         """Returns the CSS theme file for this persona (theme_css key, defaults to config/ui/theme.css)."""

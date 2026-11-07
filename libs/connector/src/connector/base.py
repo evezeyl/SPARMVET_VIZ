@@ -24,7 +24,7 @@ class BaseConnector(ABC):
     Abstract base for SPARMVET deployment connectors (ADR-048 §5).
 
     Subclasses must implement resolve_paths() and fetch_data().
-    get_manifest_path() and get_default_persona() have default implementations
+    get_manifest_path() and get_default_app_features() have default implementations
     that read directly from the profile dict.
     """
 
@@ -77,7 +77,7 @@ class BaseConnector(ABC):
 
     def get_default_app_features(self) -> str | None:
         """Return the default persona ID from the profile, or None if not set."""
-        return self._profile.get("default_persona")
+        return self._profile.get("default_app_features")
 
     def get_deployment_name(self) -> str:
         """Return the human-readable deployment label."""

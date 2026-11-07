@@ -29,11 +29,11 @@ deployment_name: "My Pipeline — Institution Name"
 #   - If PRESENT: manifest is locked; lower personas never see the selector.
 default_manifest: "manifests/pipeline_name/master.yaml"
 
-# default_persona: which UI persona to activate at startup.
+# default_app_features: which UI persona to activate at startup.
 #   Options: pipeline-static | pipeline-exploration-simple |
 #            pipeline-exploration-advanced | project-independent | developer
 #   If absent: persona selector is shown (or defaults to pipeline-static).
-default_persona: pipeline-static
+default_app_features: pipeline-static
 
 # ─── Filesystem locations ─────────────────────────────────────────────────────
 # project_root: absolute base path for this deployment.

@@ -1,9 +1,9 @@
 # UI Persona: Project Independent
-persona_id: "project-independent"
+name: "project-independent"
 display_name: "Project Independent User"
 theme_css: "config/ui/theme.css"
 
-features:
+flags:
   # Can the user interact with the Tier 3 View?
   interactivity_enabled: true
   # Does the user have access to the Developer Studio / Wrangle Studio tools?
@@ -36,7 +36,7 @@ features:
   data_ingestion_enabled: true
   # Show/hide sidebar accordion panels
   # Show active persona name in nav header
-  show_persona_badge: true
+  show_app_features_badge: true
 
 manifest_selector:
   visible: true

@@ -1293,7 +1293,7 @@ def define_server(input, output, session, *,
         badge = (
             ui.h6(f"Active: {perm.replace('_', ' ').title()}",
                   class_="text-muted px-2 py-1 mb-1 border-bottom spv-text-meta")
-            if bootloader.is_enabled("show_persona_badge")
+            if bootloader.is_enabled("show_app_features_badge")
             else None
         )
         help_btn = ui.input_action_button(

@@ -13,12 +13,12 @@
 #   - Future automated UI test runner (Phase 26+) that needs a stable
 #     reference persona
 #
-# Launch: `SPARMVET_PERSONA=qa ./.venv/bin/python -m shiny run app/src/main.py`
-persona_id: "qa"
+# Launch: `SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m shiny run app/src/main.py`
+name: "qa"
 display_name: "QA / Test Harness"
 theme_css: "config/ui/theme.css"
 
-features:
+flags:
   # All feature flags ON — tests need access to every UI surface
   interactivity_enabled: true
   developer_mode_enabled: true
@@ -41,7 +41,7 @@ features:
   data_ingestion_enabled: true
   # Show/hide sidebar accordion panels
   # Show active persona name in nav header
-  show_persona_badge: true
+  show_app_features_badge: true
 
 manifest_selector:
   visible: true

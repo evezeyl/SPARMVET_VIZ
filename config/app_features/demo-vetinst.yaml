@@ -1,11 +1,11 @@
 # UI Persona: VetInst Demo
 # Minimal read-only exploration view for demonstrations.
 # No data import, no export panel, no persona badge — clean presentation layer.
-persona_id: "demo-vetinst"
+name: "demo-vetinst"
 display_name: "VetInst Demo"
 theme_css: "assets/demo/demo_vetinst.css"
 
-features:
+flags:
   interactivity_enabled: false
   developer_mode_enabled: false
   wrangle_studio_enabled: false
@@ -27,7 +27,7 @@ features:
   data_ingestion_enabled: false
   # Hide panels not relevant for a demo audience
   # Hide "Active: demo-vetinst" badge — clean for presentation
-  show_persona_badge: false
+  show_app_features_badge: false
 
 manifest_selector:
   visible: false

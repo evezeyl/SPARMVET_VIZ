@@ -3,7 +3,7 @@
 # Used when SPARMVET_PROFILE env var is unset and no user/system profile exists.
 deployment_type: filesystem
 deployment_name: "SPARMVET_VIZ (Local Dev)"
-default_persona: "developer"
+default_app_features: "developer"
 
 locations:
   # Location 1: Raw ingestion data
