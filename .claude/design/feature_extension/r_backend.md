@@ -64,11 +64,11 @@ R renders **only** the chart families plotnine genuinely can't do well — Sanke
 
 - **Pros:** R's mature geoms for free; no dual-renderer-of-the-same-plot provenance problem (R only renders what Python can't); R dependency only where opted in.
 - **Cons:** two renderers coexist (but for disjoint plot sets); a manifest may need both R and Python available if it mixes families.
-- **Gated behind:** a persona/deployment flag (e.g. `r_backend_enabled`) so R is present only where wanted.
+- **Gated behind:** an app features/deployment flag (e.g. `r_backend_enabled`) so R is present only where wanted.
 
 ### Option B — Full alternate `RVizFactory` backend (transpile everything)
 
-Every plot spec can render through either backend; deployment or persona chooses.
+Every plot spec can render through either backend; deployment or app features chooses.
 
 - **Pros:** maximal flexibility; R-native output for those who prefer ggplot2 fidelity throughout.
 - **Cons:** **dual-renderer provenance hazard** — two renderers of the *same* plot can diverge; export must record which backend produced each figure; you maintain and test two full paths (parity bugs). Heaviest option.

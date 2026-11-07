@@ -52,7 +52,7 @@ The other user spaces exist to serve HOME: BLUEPRINT builds the manifests HOME r
 - **Filter/drop requires justification**: any data exclusion must carry a reason field. Empty reason = blocked. This is a UX constraint, not just a data constraint.
 - **Palette override is session-scoped**: the user can override the manifest's colour palette for their session only. It does not write back to the manifest. Structural colour changes (new palettes, per-group colours) belong in BLUEPRINT.
 - **Auto-legible labels**: label rendering adapts automatically to plot size and label count. Manual label override is a last resort, not a primary control.
-- **Positive inclusion** (ADR-071): Only modules enabled in the persona config are registered and mounted. Disabled modules produce no DOM output.
+- **Positive inclusion** (ADR-071): Only modules enabled in the app features config are registered and mounted. Disabled modules produce no DOM output.
 - **T3 cascade rule**: T3 sandbox requires CMP_MODE + AUD_RPT + SESS_MGT + AUTOSAVE + export_enabled + both TIER_TOGs.
 - **Export single flag**: `export_enabled` gates all export surfaces; format-level control is within that flag.
 
@@ -79,7 +79,7 @@ The other user spaces exist to serve HOME: BLUEPRINT builds the manifests HOME r
 - T3 sandbox built; pending DEPLOY-MODULES-1 gating.
 - Filter/audit panel built.
 - Export: basic CSV/plot export works; audit-complete metadata (EXPORT-AUDIT-COMPLETE-1), image metadata embedding (EXPORT-IMG-META-1), and version stamping (EXPORT-VERSION-1) pending.
-- Session autosave: ghost_save pending SESSION-PERSONA-1 gating.
+- Session autosave: ghost_save pending SESSION-APP_FEATURES-1 gating.
 - Import unified panel: IMPORT-UI-1 pending.
 
 ---

@@ -30,7 +30,7 @@ from pathlib import Path
 # "recipe" is counted as a whole and reviewed by meaning in the mapping table; only the
 # bare word is retired, the full name data_analysis_recipe is the new term and is not counted.
 WORDS = {
-    "persona": r"persona",
+    "persona": r"persona(?!l)",
     "manifest": r"manifest",
     "recipe": r"(?<!data_analysis_)recipe",
     "profile": r"profile",
@@ -49,9 +49,11 @@ EXCLUDED_PREFIXES = (
     ".claude/conversations/",
     ".claude/knowledge/architecture_decisions.md",
     ".claude/tasks/config_rename_strategy.md",
-    ".claude/rules/dasharch.md",
-    ".claude/rules/rules_persona_bioscientist.md",
     "assets/scripts/audit_old_words.py",
+    "app/modules/renamed_keys.py",
+    "app/tests/test_audit_old_words.py",
+    "app/tests/test_dead_config_keys.py",
+    "app/tests/test_bootloader_launch.py",
     "assets/scripts/rename_vocabulary.py",
     "assets/scripts/rename_vocabulary_rules.yaml",
     "assets/scripts/inventory_config_keys.py",

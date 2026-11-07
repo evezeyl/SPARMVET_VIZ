@@ -1,7 +1,7 @@
 """app/handlers/ingestion_handlers.py
 Ingestion Shiny wiring (ADR-045).
 
-Entry point: define_server(input, output, session, *, bootloader, current_persona, safe_input)
+Entry point: define_server(input, output, session, *, bootloader, current_app_features, safe_input)
 
 Concern: manifest file ingestion (btn_ingest).
 Two-Category Law (ADR-045): This file contains @reactive.* decorators only.
@@ -23,14 +23,14 @@ from shiny import reactive, ui
 
 
 def define_server(input, output, session, *, bootloader, current_app_features, safe_input):
-    """Register ingestion and persona reactive handlers.
+    """Register ingestion and app features reactive handlers.
 
     Parameters
     ----------
     bootloader : Bootloader
-        Path Authority instance (ADR-031). Reinitialised on ingest/persona change.
-    current_persona : reactive.Value[str]
-        Shared persona reactive value (read/written here and by home_theater).
+        Path Authority instance (ADR-031). Reinitialised on ingest/app features change.
+    current_app_features : reactive.Value[str]
+        Shared app features reactive value (read/written here and by home_theater).
     safe_input : callable
         Shared utility: safe_input(input_obj, key, default) → value.
     """

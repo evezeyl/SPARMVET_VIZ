@@ -80,7 +80,7 @@ PANEL_REGISTRY: dict[str, dict] = {
 
 
 def is_panel_active(panel_type: str, bootloader) -> bool:
-    """Return True if the panel should be rendered for the current persona.
+    """Return True if the panel should be rendered for the current app features.
 
     Checks the gate_flag from PANEL_REGISTRY against bootloader.is_enabled().
     Unknown panel types log a warning and return False.

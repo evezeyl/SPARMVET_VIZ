@@ -27,7 +27,7 @@
 - **Role:** `meta`
 - **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
 - **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`
-- **consumed_by:** `.claude/rules/rules_persona_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_documentation_aesthetics.md`
 - **Role:** `meta`
@@ -44,18 +44,18 @@
 - **Role:** `meta`
 - **provides:** `rule:canonical_recipe_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
 - **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
-- **consumed_by:** `.claude/rules/rules_persona_bioscientist.md`, `docs/appendix/manifest_structure.yaml`, `.claude/knowledge/dependency_index.md`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/manifest_structure.yaml`, `.claude/knowledge/dependency_index.md`
 
-## `.claude/rules/rules_persona_bioscientist.md`
+## `.claude/rules/rules_agent_role_bioscientist.md`
 - **Role:** `meta`
 - **provides:** `rule:manifest_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
 - **consumes:** `rule:canonical_recipe_syntax`, `rule:analysis_groups_structure`
 - **documents:** `libs/transformer/src/transformer/actions/`, `libs/viz_factory/src/viz_factory/`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
 
-## `.claude/rules/rules_persona_feature_flags.md`
+## `.claude/rules/rules_app_features_flags.md`
 - **Role:** `meta`
-- **provides:** `rule:persona_flags`, `rule:feature_dependencies`
+- **provides:** `rule:app_features_flags`, `rule:feature_dependencies`
 - **documents:** `config/ui/templates/`, `app/src/bootloader.py`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
 
@@ -81,7 +81,7 @@
 - **Role:** `meta`
 - **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
 - **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
-- **consumed_by:** `.claude/rules/rules_persona_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
 
 ## `app/handlers/__init__.py`
 - **Role:** `ref`
@@ -169,7 +169,7 @@
 - **Role:** `ref`
 - **provides:** `(re-exports from utils.deployment_error — see that file for the canonical source)`
 - **consumes:** `utils.deployment_error`
-- **consumed_by:** `app/modules/persona_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_persona_config.py`
+- **consumed_by:** `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
 
 ## `app/modules/exporter.py`
@@ -238,7 +238,7 @@
 - **Role:** `ref`
 - **provides:** `class:SidebarValidator`
 - **consumes:** `app/modules/sidebar_registry.py`, `app/modules/deployment_error.py`, `config/ui/templates/*.yaml`, `config/ui/sidebars/*.yaml`
-- **consumed_by:** `app/src/server.py`, `scripts/validate_persona_config.py`
+- **consumed_by:** `app/src/server.py`, `scripts/validate_app_features_config.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
 
 ## `app/modules/t3_recipe_engine.py`
@@ -292,7 +292,7 @@
 ## `app/src/server.py`
 - **Role:** `ref`
 - **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
-- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: developer_mode_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.persona_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: developer_mode_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-045`, `ADR-003`
 
@@ -642,34 +642,34 @@
 - **Role:** `wrangle`
 - **provides:** `action:split_and_explode`, `action:derive_categories`, `action:split_column_to_parts`, `action:divide_columns`
 - **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-078)`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-078)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/analytical.py`
 - **Role:** `wrangle`
 - **provides:** `action:top_n_other`, `action:window_agg`, `action:shift`, `action:fill_nulls_direction`, `action:sort`, `action:sample`, `action:cum_sum`, `action:cum_count`, `action:date_extract`, `action:date_truncate`, `action:list_slice`, `action:list_join`, `action:is_in`, `action:z_score`, `action:percentile`, `action:value_counts`, `action:describe_stats`, `action:select_by_pattern`, `action:horizontal_stats`, `action:any_horizontal`, `action:all_horizontal`, `action:interpolate`
 - **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/core.py`
 - **Role:** `wrangle`
 - **provides:** `action:fill_nulls`, `action:drop_nulls`, `action:replace_values`, `action:rename`, `action:drop_duplicates`, `action:unique_rows`, `action:recode_values`, `action:sanitize_column_names`, `action:keep_columns`, `action:drop_columns`, `action:strip_whitespace`, `action:round_numeric`, `action:filter_range`, `action:add_constant`, `action:filter_eq`, `action:rename_columns`, `action:unique`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/expressions.py`
 - **Role:** `wrangle`
 - **provides:** `action:regex_extract`, `action:cast`, `action:coalesce`, `action:label_if`, `action:mutate`, `action:regex_replace`, `action:null_if`
 - **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
 
 ## `libs/transformer/src/transformer/actions/performance/aggregation.py`
 - **Role:** `wrangle`
 - **provides:** `action:summarize`, `action:sort`, `action:count_by_group`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`
 
 ## `libs/transformer/src/transformer/actions/persistence/anchor.py`
 - **Role:** `wrangle`
@@ -680,14 +680,14 @@
 ## `libs/transformer/src/transformer/actions/relational/joins.py`
 - **Role:** `wrangle`
 - **provides:** `action:join`, `action:join_filter`
-- **consumed_by:** `any YAML manifest using join steps`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+- **consumed_by:** `any YAML manifest using join steps`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/reshaping/core.py`
 - **Role:** `wrangle`
 - **provides:** `action:unpivot`, `action:explode`, `action:unnest`, `action:split_to_list`, `action:to_struct`, `action:pivot`, `action:split_column`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_persona_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/data_assembler.py`
 - **Role:** `wrangle`
@@ -729,7 +729,7 @@
 - **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/utils/src/utils/config_loader.py (full-pipeline manifests only)`
 - **mirrors:** `app/modules/orchestrator.py`
 - **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/transformer_integrity_suite.py`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#7`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
 
 ## `libs/transformer/tests/debug_decorator_suite.py`
 - **Role:** `wrangle`
@@ -799,7 +799,7 @@
 - **Role:** `ref`
 - **provides:** `class:DeploymentError`, `function:format_errors_block`, `function:exit_if_errors`, `function:raise_if_errors`, `class:DeploymentFailure`
 - **consumes:** `-`
-- **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/persona_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_persona_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
+- **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
 
 ## `libs/utils/src/utils/errors.py`
@@ -906,7 +906,7 @@
 - **provides:** `script:debug_gallery`
 - **consumes:** `libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
 - **consumed_by:** `config/manifests/pipelines/*/README.md`, `assets/scripts/materialize_manifest_plots.py`
-- **doc:** `.claude/rules/rules_persona_bioscientist.md#7`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
 
 ## `libs/viz_factory/tests/debug_runner.py`
 - **Role:** `plot`

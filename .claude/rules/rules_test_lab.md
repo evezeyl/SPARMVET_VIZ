@@ -188,9 +188,9 @@ Adding composite-key support to `IDReconciliationEngine` or the TEST_LAB UI is a
 
 ---
 
-## 7. Persona Gate: `test_lab_enabled` (ADR-071, ADR-084 §7)
+## 7. App features Gate: `test_lab_enabled` (ADR-071, ADR-084 §7)
 
-TEST_LAB is a developer-persona feature gated by `test_lab_enabled`.
+TEST_LAB is a developer-app features feature gated by `test_lab_enabled`.
 
 **Flag values:** pipeline-static=false, pipeline-exploration-simple=false, pipeline-exploration-advanced=false, project-independent=false, **developer=true**, **qa=true**.
 
@@ -205,7 +205,7 @@ if bootloader.is_enabled("test_lab_enabled"):
 yield ui.nav_panel("Test Lab", ..., style="display:none")
 ```
 
-Code MUST NOT check `persona in ("developer", "qa")`. Standard anti-pattern prohibition from `rules_persona_feature_flags.md`.
+Code MUST NOT check `app features in ("developer", "qa")`. Standard anti-pattern prohibition from `rules_app_features_flags.md`.
 
 ---
 
@@ -282,8 +282,8 @@ grep -rn "ConfigManager" libs/test_lab/src/ --include="*.py"
 # All synthetic config files have mandatory header
 grep -rL "NOT a pipeline manifest" libs/test_lab/scenarios/ 2>/dev/null
 
-# No persona name checks in test_lab_handlers
-grep -rn "persona.*developer\|persona.*qa" app/handlers/test_lab_handlers.py 2>/dev/null
+# No app features name checks in test_lab_handlers
+grep -rn "app features.*developer\|app features.*qa" app/handlers/test_lab_handlers.py 2>/dev/null
 
 # No sys.path in test files
 grep -rn "sys\.path" libs/test_lab/tests/ libs/id_reconciliation/tests/ 2>/dev/null

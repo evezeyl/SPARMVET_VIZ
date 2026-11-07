@@ -399,7 +399,7 @@ def define_export_server(input, output, session, *,
       bootloader         : Path Authority (ADR-031)
       orchestrator       : tier1/tier2 materialiser
       viz_factory        : plot renderer
-      current_persona    : reactive.Value[str]
+      current_app_features    : reactive.Value[str]
       active_cfg         : reactive.Calc[ConfigManager]
       tier1_anchor       : reactive.Calc[LazyFrame]
       tier_toggle        : reactive.Value[str]   ("T1"|"T2"|"T3")
@@ -429,7 +429,7 @@ def define_export_server(input, output, session, *,
                 style="font-size:0.7em;",
             )
 
-        # 3-way scope toggle — only when persona has BOTH export_bundle + export_graph
+        # 3-way scope toggle — only when app features has BOTH export_bundle + export_graph
         scope_toggle = ui.div()
         if bootloader.is_enabled("export_enabled") and active_home_subtab is not None:
             cfg = active_cfg()
@@ -554,7 +554,7 @@ def define_export_server(input, output, session, *,
         - data/           T1 TSV for each dataset referenced by active plots
         - recipes/        YAML wrangling recipe(s) for the active project
         - report.qmd      Quarto source report embedding all plots and datasets
-        - README.txt      Bundle manifest (timestamp, project, persona, preset)
+        - README.txt      Bundle manifest (timestamp, project, app features, preset)
         """
         import io
         import zipfile
@@ -851,7 +851,7 @@ def define_export_server(input, output, session, *,
                 # T1: always exported.
                 # T2: exported when the join has tier2 steps, read from the stored Tier 2
                 #     parquet (issue #10). Without tier2 steps T2 equals T1: no duplicate TSV.
-                # T3: only for advanced+ personas, and only when tier_toggle == "T3".
+                # T3: only for advanced+ app features files, and only when tier_toggle == "T3".
 
                 exported_datasets: set[str] = set()
                 exported_t2: set[str] = set()
@@ -1152,7 +1152,7 @@ def define_export_server(input, output, session, *,
                 "## Overview",
                 "",
                 f"Project: **{proj_id}**  ",
-                f"Persona: **{app_features}**  ",
+                f"App features: **{app_features}**  ",
                 f"Export preset: **{preset}**  ",
                 f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}  ",
                 "",

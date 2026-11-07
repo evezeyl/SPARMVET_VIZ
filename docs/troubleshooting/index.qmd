@@ -23,14 +23,14 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 | [boot-profile-parse-error](#boot-profile-parse-error) | Bootloader | operator | Profile YAML is syntactically invalid |
 | [boot-profile-missing-locations](#boot-profile-missing-locations) | Bootloader | operator | One or more of 5 required `locations:` keys absent |
 | [boot-connector-init-failed](#boot-connector-init-failed) | Bootloader | operator | Connector `fetch_data()` or `resolve_paths()` crashed |
-| [boot-persona-not-configured](#boot-persona-not-configured) | Bootloader | operator | No persona from kwarg, env var, or profile |
-| [boot-persona-template-missing](#boot-persona-template-missing) | Bootloader | operator | Persona template file not found |
-| [boot-persona-template-parse-error](#boot-persona-template-parse-error) | Bootloader | operator | Persona template YAML invalid |
-| [persona-id-underscore](#persona-id-underscore) | PersonaValidator | operator | `persona_id` uses `_` instead of `-` |
-| [persona-t3-companions-missing](#persona-t3-companions-missing) | PersonaValidator | operator | `t3_sandbox_enabled` without required companion flags |
-| [persona-cascade-d-fatal](#persona-cascade-d-fatal) | PersonaValidator | operator | Group D child flag enabled, parent flag disabled |
-| [persona-template-not-found](#persona-template-not-found) | PersonaValidator | operator | Template file absent (via `validate_file`) |
-| [persona-template-parse-error](#persona-template-parse-error) | PersonaValidator | operator | Template YAML parse failure |
+| [boot-app features not-configured](#boot-app features not-configured) | Bootloader | operator | No app features from kwarg, env var, or profile |
+| [boot-app features template-missing](#boot-app features template-missing) | Bootloader | operator | App features file file not found |
+| [boot-app features template-parse-error](#boot-app features template-parse-error) | Bootloader | operator | App features file YAML invalid |
+| [app features id-underscore](#app features id-underscore) | AppFeaturesValidator | operator | `app_features_id` uses `_` instead of `-` |
+| [app features t3-companions-missing](#app features t3-companions-missing) | AppFeaturesValidator | operator | `t3_sandbox_enabled` without required companion flags |
+| [app features cascade-d-fatal](#app features cascade-d-fatal) | AppFeaturesValidator | operator | Group D child flag enabled, parent flag disabled |
+| [app features template-not-found](#app features template-not-found) | AppFeaturesValidator | operator | Template file absent (via `validate_file`) |
+| [app features template-parse-error](#app features template-parse-error) | AppFeaturesValidator | operator | Template YAML parse failure |
 | [sidebar-template-not-found](#sidebar-template-not-found) | SidebarValidator | operator | Template file absent (via `validate_file`) |
 | [sidebar-template-parse-error](#sidebar-template-parse-error) | SidebarValidator | operator | Template YAML parse failure |
 | [sidebar-include-missing](#sidebar-include-missing) | SidebarValidator | operator | `!include` target for a sidebar block not found |
@@ -169,49 +169,49 @@ This wraps any exception raised during `connector.fetch_data()` or
 
 ---
 
-### `boot-persona-not-configured` {#boot-persona-not-configured}
+### `boot-app features not-configured` {#boot-app features not-configured}
 
-**Problem:** No persona configured — cannot determine which feature flags to load.
+**Problem:** No app features configured — cannot determine which feature flags to load.
 
-**Resolution chain checked:** `persona=` kwarg → `SPARMVET_PERSONA` env var →
-`default_persona` in deployment profile — all absent.
+**Resolution chain checked:** `app features=` kwarg → `SPARMVET_APP_FEATURES` env var →
+`default_app_features` in deployment profile — all absent.
 
 **Fix (choose one):**
 
 ```bash
 # Option A — env var (Galaxy XML, Docker Compose, systemd)
-export SPARMVET_PERSONA=developer
+export SPARMVET_APP_FEATURES=developer
 
 # Option B — deployment profile
-echo "default_persona: developer" >> config/deployment/local/local_profile.yaml
+echo "default_app_features: developer" >> config/deployment/local/local_profile.yaml
 ```
 
-Valid persona IDs: `pipeline-static`, `pipeline-exploration-simple`,
+Valid app features IDs: `pipeline-static`, `pipeline-exploration-simple`,
 `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`.
 
 **Source:** `app/src/bootloader.py → __init__()`.
 
 ---
 
-### `boot-persona-template-missing` {#boot-persona-template-missing}
+### `boot-app features template-missing` {#boot-app features template-missing}
 
-**Problem:** Persona template not found: `<path>`.
+**Problem:** App features file not found: `<path>`.
 
 **Fix:** Ensure the template file exists at the reported path.
 Built-in templates live under `config/ui/templates/`.
-If using a custom template: verify `SPARMVET_PERSONA` is set to an absolute file
+If using a custom template: verify `SPARMVET_APP_FEATURES` is set to an absolute file
 path, not a shortname that doesn't match any template file.
 
 **Valid built-in IDs:** `pipeline-static`, `pipeline-exploration-simple`,
 `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`.
 
-**Source:** `app/src/bootloader.py → _load_persona_config()` — ADR-026.
+**Source:** `app/src/bootloader.py → _load_app_features_config()` — ADR-026.
 
 ---
 
-### `boot-persona-template-parse-error` {#boot-persona-template-parse-error}
+### `boot-app features template-parse-error` {#boot-app features template-parse-error}
 
-**Problem:** Failed to parse persona template `'<path>'`.
+**Problem:** Failed to parse app features file `'<path>'`.
 
 **Fix:**
 
@@ -222,34 +222,34 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 Also verify that all `!include` paths under `workspaces:` exist in
 `config/ui/sidebars/`.
 
-**Source:** `app/src/bootloader.py → _load_persona_config()`.
+**Source:** `app/src/bootloader.py → _load_app_features_config()`.
 
 ---
 
-## B — PersonaValidator Errors
+## B — AppFeaturesValidator Errors
 
-### `persona-id-underscore` {#persona-id-underscore}
+### `app features id-underscore` {#app features id-underscore}
 
-**Problem:** `persona_id '<id>'` contains underscores.
+**Problem:** `app_features_id '<id>'` contains underscores.
 
-SPARMVET persona IDs use **hyphens only** — never underscores. An underscore-based
+SPARMVET app features IDs use **hyphens only** — never underscores. An underscore-based
 ID silently fails UI gating because the feature-flag lookup uses the hyphenated form.
 
-**Fix:** Open the template YAML and change `persona_id`:
+**Fix:** Open the template YAML and change `app_features_id`:
 
 ```yaml
 # Wrong
-persona_id: pipeline_static
+app_features_id: pipeline_static
 
 # Correct
-persona_id: pipeline-static
+app_features_id: pipeline-static
 ```
 
-**Source:** `app/modules/persona_validator.py` Rule 2 — ADR-026.
+**Source:** `app/modules/app_features_validator.py` Rule 2 — ADR-026.
 
 ---
 
-### `persona-t3-companions-missing` {#persona-t3-companions-missing}
+### `app features t3-companions-missing` {#app features t3-companions-missing}
 
 **Problem:** `t3_sandbox_enabled=True` but required companion flags are False:
 `<list of flags>`.
@@ -258,7 +258,7 @@ The T3 sandbox requires all three companions active simultaneously:
 `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`.
 (`audit_report_enabled` was removed in 2026-05: the audit trail is part of every export.)
 
-**Fix:** In the persona template `features:` block, either:
+**Fix:** In the app features file `features:` block, either:
 
 - Set all three companions to `true`, **or**
 - Set `t3_sandbox_enabled: false` (disabling T3 entirely).
@@ -271,11 +271,11 @@ features:
   export_enabled: true
 ```
 
-**Source:** `app/modules/persona_validator.py` Rule 6 — `rules_persona_feature_flags.md §Cascade-T3`.
+**Source:** `app/modules/app_features_validator.py` Rule 6 — `rules_app_features_flags.md §Cascade-T3`.
 
 ---
 
-### `persona-cascade-d-fatal` {#persona-cascade-d-fatal}
+### `app features cascade-d-fatal` {#app features cascade-d-fatal}
 
 **Problem:** `'<child>=True'` requires `'<parent>=True'`.
 
@@ -297,26 +297,26 @@ features:
   manifest_edit_enabled: true
 ```
 
-**Source:** `app/modules/persona_validator.py` Rule 7 — ADR-075, ADR-076, ADR-077.
+**Source:** `app/modules/app_features_validator.py` Rule 7 — ADR-075, ADR-076, ADR-077.
 
 ---
 
-### `persona-template-not-found` {#persona-template-not-found}
+### `app features template-not-found` {#app features template-not-found}
 
-**Problem:** Persona template file not found: `<path>`.
+**Problem:** App features file file not found: `<path>`.
 
-Raised by `PersonaValidator.validate_file()` when the file is absent before
+Raised by `AppFeaturesValidator.validate_file()` when the file is absent before
 validation even begins.
 
-**Fix:** Same as [`boot-persona-template-missing`](#boot-persona-template-missing).
+**Fix:** Same as [`boot-app features template-missing`](#boot-app features template-missing).
 
-**Source:** `app/modules/persona_validator.py → validate_file()`.
+**Source:** `app/modules/app_features_validator.py → validate_file()`.
 
 ---
 
-### `persona-template-parse-error` {#persona-template-parse-error}
+### `app features template-parse-error` {#app features template-parse-error}
 
-**Problem:** Failed to parse persona template YAML.
+**Problem:** Failed to parse app features file YAML.
 
 **Fix:**
 
@@ -326,7 +326,7 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 
 Common causes: tab indentation, unquoted `@` or `#` characters, mismatched brackets.
 
-**Source:** `app/modules/persona_validator.py → validate_file()`.
+**Source:** `app/modules/app_features_validator.py → validate_file()`.
 
 ---
 
@@ -334,9 +334,9 @@ Common causes: tab indentation, unquoted `@` or `#` characters, mismatched brack
 
 ### `sidebar-template-not-found` {#sidebar-template-not-found}
 
-**Problem:** Persona template file not found: `<path>`.
+**Problem:** App features file file not found: `<path>`.
 
-**Fix:** Same as [`boot-persona-template-missing`](#boot-persona-template-missing).
+**Fix:** Same as [`boot-app features template-missing`](#boot-app features template-missing).
 
 **Source:** `app/modules/sidebar_validator.py → validate_file()`.
 
@@ -361,12 +361,12 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 **Problem:** `!include` target not found for `workspaces.<ws>.<side>_sidebar` in
 `<template_path>`.
 
-A persona template references a sidebar config via `!include` (e.g.
+An app features file references a sidebar config via `!include` (e.g.
 `left_sidebar: !include sidebars/blueprint_standard_left.yaml`) but the target
 file is absent.
 
 **Fix:** Create the missing file under `config/ui/sidebars/`, or correct the
-`!include` path in the persona template.
+`!include` path in the app features file.
 
 Sidebar configs follow this minimal structure:
 

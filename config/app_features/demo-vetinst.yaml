@@ -1,6 +1,6 @@
-# UI Persona: VetInst Demo
+# UI App features: VetInst Demo
 # Minimal read-only exploration view for demonstrations.
-# No data import, no export panel, no persona badge — clean presentation layer.
+# No data import, no export panel, no app features badge — clean presentation layer.
 name: "demo-vetinst"
 display_name: "VetInst Demo"
 theme_css: "assets/demo/demo_vetinst.css"

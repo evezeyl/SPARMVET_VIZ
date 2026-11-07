@@ -479,7 +479,7 @@ def render_report(
     lines += [
         "## Fix Guidance",
         "",
-        "**Invalid action name:** Check `rules_persona_bioscientist.md §8` for the authoritative list.",
+        "**Invalid action name:** Check `rules_agent_role_bioscientist.md §8` for the authoritative list.",
         "If the action genuinely does not exist, file an `[ENHANCEMENT REQUEST]` in `tasks.md`.",
         "",
         "**Invalid component name:** Scan `libs/viz_factory/src/viz_factory/` for `@register_plot_component`.",
@@ -497,8 +497,8 @@ def render_report(
         "",
         "## References",
         "- `rules_manifest_structure.md §7` — Canonical recipe syntax, YAML boolean trap",
-        "- `rules_persona_bioscientist.md §8` — Registered action names (authoritative list)",
-        "- `rules_persona_bioscientist.md §3-A/B` — Wrangling and assembly canon",
+        "- `rules_agent_role_bioscientist.md §8` — Registered action names (authoritative list)",
+        "- `rules_agent_role_bioscientist.md §3-A/B` — Wrangling and assembly canon",
         "- Routine 13 (Manifest coherence) in `.claude/workflows/audit_routine_registry.md`",
     ]
 

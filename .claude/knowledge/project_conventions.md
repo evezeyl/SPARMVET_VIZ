@@ -8,24 +8,24 @@
 | :--- | :--- | :--- | :--- |
 | `./.claude/` | DIRECTIVES (Rules & Workflows) | Folder | `workspace_standard`, `rules_app_structure`, `verification_protocol` |
 | `./.claude/` | PROJECT STATE (Knowledge, Plans, Tasks) | Folder | `architecture_decisions`, `tasks.md`, `audit_*.md` |
-| `app/src/bootloader.py` | Path Authority & Persona Bootstrapper | Config → Paths/Toggles | `Bootloader`, `persona`, ADR-031 |
+| `app/src/bootloader.py` | Path Authority & App features Bootstrapper | Config → Paths/Toggles | `Bootloader`, `app features`, ADR-031 |
 | `app/src/ui.py` | 3-Zone Dashboard Shell (static HTML/CSS only) | UI Spec → Layout | `Navigation`, `Theater`, `Audit Stack` |
-| `config/ui/theme.css` | Base stylesheet — injected at startup via `bootloader.get_theme_css_path()` | CSS → `ui.tags.style()` | ADR-055; personas declare `theme_css:` key to override for branding. **Full design token spec in `.claude/rules/rules_css_style_spec.md` — read before writing any CSS.** Canonical colours: primary blue `#345beb`, export teal `#10a395`, reset amber `#ffc107`. View title banners use `.view-title-banner` / `.banner-title` / `.banner-subtitle`. |
-| `config/ui/sidebars/` | Shared sidebar panel-list YAML files (ADR-073) | YAML → persona template `!include` | One file per workspace×tier combination. Referenced via `!include sidebars/<name>.yaml` in persona template `workspaces:` section. |
+| `config/ui/theme.css` | Base stylesheet — injected at startup via `bootloader.get_theme_css_path()` | CSS → `ui.tags.style()` | ADR-055; app features files declare `theme_css:` key to override for branding. **Full design token spec in `.claude/rules/rules_css_style_spec.md` — read before writing any CSS.** Canonical colours: primary blue `#345beb`, export teal `#10a395`, reset amber `#ffc107`. View title banners use `.view-title-banner` / `.banner-title` / `.banner-subtitle`. |
+| `config/ui/sidebars/` | Shared sidebar panel-list YAML files (ADR-073) | YAML → app features file `!include` | One file per workspace×tier combination. Referenced via `!include sidebars/<name>.yaml` in app features file `workspaces:` section. |
 | `app/modules/sidebar_registry.py` | Panel type registry (ADR-073) — headless-safe, Two-Category Law | `PANEL_REGISTRY` dict → type name → renderer ref + gate flag | Used by `home_theater.py` slot iteration and `SidebarValidator`. Never import Shiny here. |
-| `scripts/validate_persona_config.py` | Persona + sidebar compatibility validator CLI (ADR-073) | `--persona <id>` / `--all` / `--strict` | Runs `PersonaValidator` + `SidebarValidator`. Use `--strict` in CI. Also runs at app startup (warnings logged, errors block). |
+| `scripts/validate_app_features_config.py` | App features + sidebar compatibility validator CLI (ADR-073) | `--app features <id>` / `--all` / `--strict` | Runs `AppFeaturesValidator` + `SidebarValidator`. Use `--strict` in CI. Also runs at app startup (warnings logged, errors block). |
 | `scripts/audit_*.py` | 13 audit scripts for automated codebase hygiene (ADR-080) | `--output .claude/logs/audits/audit_NAME_YYYY-MM-DD.md` | See `.claude/workflows/audit_routine_registry.md` for full list and `.claude/workflows/schedule_commands.md` for execution guide. |
 | `scripts/run_audits.sh` | Audit wrapper — groups scripts by day slot; enforces `dev` branch (ADR-080) | `./scripts/run_audits.sh <sunday\|wednesday\|thursday\|friday\|all\|ondemand>` | Auto-switches to `dev` branch; prints unprocessed report summary at end. Session-end quick run: pass `sunday` for the four highest-value scripts. |
 | `scripts/systemd/` | Systemd user timer units for persistent audit scheduling (ADR-080) | `./scripts/systemd/install.sh` (one-time setup) | `sparmvet-audit@.service` + 4 `.timer` files with `Persistent=true` — fires missed runs on next boot. See `schedule_commands.md §D`. |
 | `app/src/server.py` | **Thin Orchestrator only** (ADR-045, 237 lines, limit ~250) | Shared state/calcs → Handler delegation | `active_cfg`, `tier1_anchor`, 5× `define_server()` calls |
 | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067/ADR-074) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group`, `generate_branch_plan` — importable anywhere, zero Shiny dependency |
 | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` | **BLUEPRINT form catalog** (ADR-075, to be created) | `@register_action` + `@register_plot_component` `ui_schema` dicts → widget catalog | Reads `ui_schema` kwarg from registries at startup; builds action/component picker for BLUEPRINT IDE. Headless-safe — zero Shiny imports. |
-| `scripts/migrate_manifests.py` | **Action name migration scanner** (ACTION-RENAME-1, to be created) | Project-wide YAML scan → rename report + apply | Scans `config/manifests/`, persona templates, `assets/gallery_data/` for deprecated action names; reports discrepancies; applies renames with `--apply` flag. |
+| `scripts/migrate_manifests.py` | **Action name migration scanner** (ACTION-RENAME-1, to be created) | Project-wide YAML scan → rename report + apply | Scans `config/manifests/`, app features files, `assets/gallery_data/` for deprecated action names; reports discrepancies; applies renames with `--apply` flag. |
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
 | `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_recipe_changes` |
 | `app/handlers/blueprint_handlers.py` | Blueprint Architect Shiny wiring (ADR-039/045) | Reactive hooks → Architect UI | `_handle_manifest_import`, `_do_load_component`, `sync_blueprint_mapper`, `_handle_upload_*` |
 | `app/handlers/gallery_handlers.py` | Gallery Shiny wiring (ADR-037/045) | Reactive hooks → Gallery UI | `_update_gallery_options`, `handle_gallery_clone`, `gallery_preview_img`, `gallery_md_content` |
-| `app/handlers/ingestion_handlers.py` | Ingestion & persona Shiny wiring (ADR-045) | Reactive hooks → Ingest/Persona | `handle_ingest`, `update_persona_context` |
+| `app/handlers/ingestion_handlers.py` | Ingestion & app features Shiny wiring (ADR-045) | Reactive hooks → Ingest/App features | `handle_ingest`, `update_app_features_context` |
 | `app/modules/orchestrator.py` | Tier 1 Ingestion & Assembly Bridge | Manifest + Data → Parquet | `DataOrchestrator (orchestrator.py)` |
 | `libs/ingestion/src/ingestion/ingestor.py` | Reads sources, early validation | File → LazyFrame | `DataIngestor (ingestor.py)`, `scan_csv` |
 | `libs/transformer/src/transformer/data_wrangler.py` | Layer 1 execution (Atomic) | Dataset → LazyFrame | `DataWrangler`, `@register_action` |
@@ -64,7 +64,7 @@ Critical pattern discovered during Phase 21-F implementation. Violating this cau
 **Law:** A `@render.ui` output that reads a frequently-changing `reactive.Value` (e.g., `_pending_filters`) will re-render its entire DOM subtree on every change, destroying any child `output_ui` nodes. Shiny cannot re-bind destroyed output IDs — child outputs become invisible permanently until page refresh.
 
 **Correct pattern — split into independent outputs:**
-1. **Shell** (`sidebar_filters`): reads only slowly-changing reactives (persona only). Mounts stable `output_ui()` slot IDs. Never re-renders unless persona changes.
+1. **Shell** (`sidebar_filters`): reads only slowly-changing reactives (app features only). Mounts stable `output_ui()` slot IDs. Never re-renders unless app features changes.
 2. **Sub-outputs** (`filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, etc.): each is an independent `@output @render.ui` function reading only the reactive values it needs. Re-renders in isolation without touching sibling outputs.
 
 **`selected=` must be explicit:** When a `@render.ui` re-renders a `ui.input_select(...)`, Shiny resets the selection to the first option unless `selected=current_value` is passed explicitly at render time. Use `safe_input(input, "fb_col", default)` to read the current selection before rendering.
@@ -73,18 +73,18 @@ Critical pattern discovered during Phase 21-F implementation. Violating this cau
 
 ## 3. UI Shell Architecture (ADR-043/ADR-044/ADR-073)
 
-- **Sidebars are declarative (ADR-073):** Left and right sidebar layouts are declared per persona template under `workspaces.<ws>.left_sidebar` / `workspaces.<ws>.right_sidebar`. Panel types are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`). Persona template `!include` targets in `config/ui/sidebars/` enable shared configs across personas. `bootloader.get_sidebar_config(workspace, side)` is the runtime API. **Never hardcode sidebar panel sequences in Python** — add to the registry and declare in template.
-- **Two-layer resolution:** Slot list (persona template) controls presence/order; feature flags control capability. Fully independent. A panel in the slot list with a disabled flag is silently skipped.
+- **Sidebars are declarative (ADR-073):** Left and right sidebar layouts are declared per app features file under `workspaces.<ws>.left_sidebar` / `workspaces.<ws>.right_sidebar`. Panel types are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`). App features file `!include` targets in `config/ui/sidebars/` enable shared configs across app features files. `bootloader.get_sidebar_config(workspace, side)` is the runtime API. **Never hardcode sidebar panel sequences in Python** — add to the registry and declare in template.
+- **Two-layer resolution:** Slot list (app features file) controls presence/order; feature flags control capability. Fully independent. A panel in the slot list with a disabled flag is silently skipped.
 - **Navigation (Left, #c0c0c0)**: Workspace-dependent. Filter widgets are **context-reactive to the active plot sub-tab** — regenerated on sub-tab change, scoped to that plot's `plot_spec` aesthetics. Switching workspaces physically replaces the left sidebar DOM.
 - **Theater (Center, #d1d1d1)**:
-  - **Home Mode (Unified)**: Tabs driven exclusively by manifest `analysis_groups`. Each group tab contains `navset_underline` plot sub-tabs wrapped in a **collapsible accordion**. Data preview in a **separate collapsible accordion below**. No hardcoded tabs. Controlled by the **Tier Toggle** (T1/T2 always; T3-Wrangle/T3-Plot persona-gated). **Comparison Mode** (persona-gated separate toggle) splits the theater into T2-reference (left) and T3-active (right).
+  - **Home Mode (Unified)**: Tabs driven exclusively by manifest `analysis_groups`. Each group tab contains `navset_underline` plot sub-tabs wrapped in a **collapsible accordion**. Data preview in a **separate collapsible accordion below**. No hardcoded tabs. Controlled by the **Tier Toggle** (T1/T2 always; T3-Wrangle/T3-Plot flag-gated). **Comparison Mode** (flag-gated separate toggle) splits the theater into T2-reference (left) and T3-active (right).
   - **Architect Mode (Flight Deck)**: Tri-pane vertical stack (Collapsible TubeMap → Live Plot → Live Table). Unchanged.
 - **Audit/Logic Stack (Right, #c0c0c0)**:
-  - **Home Mode**: Controlled by `workspaces.home.right_sidebar.visible` in persona template (ADR-073). `false` = layout element excluded (theater expands full width). `true` with `audit_stack` panel = shows T2 Violet blueprint nodes + T3 Yellow sandbox nodes (requires `t3_sandbox_enabled=true`).
+  - **Home Mode**: Controlled by `workspaces.home.right_sidebar.visible` in app features file (ADR-073). `false` = layout element excluded (theater expands full width). `true` with `audit_stack` panel = shows T2 Violet blueprint nodes + T3 Yellow sandbox nodes (requires `t3_sandbox_enabled=true`).
   - **Architect Mode**: Active Blueprint Component Logic Stack. Controlled by `workspaces.blueprint.right_sidebar`.
 - **Focus Mode (ADR-038)**: Gallery workspace left sidebar slot list contains only `gallery_search` — operation panels absent by design, not by flag suppression.
 - **Thin UI (ADR-003)**: UI modules MUST NOT implement wrangling or plotting logic. Authoritative GUI specifications rely on `ui_implementation_contract.md`.
-- **CSS convention (ADR-055):** All dashboard styling lives in `config/ui/theme.css` — not inline in Python code. New UI styling goes in that file (or a persona-specific override file declared via `theme_css:` in the persona template). Inline `style=` attributes are allowed only for truly one-off values that cannot be expressed as a CSS rule. `bootloader.get_theme_css_path()` resolves the active CSS path at startup.
+- **CSS convention (ADR-055):** All dashboard styling lives in `config/ui/theme.css` — not inline in Python code. New UI styling goes in that file (or an app features specific override file declared via `theme_css:` in the app features file). Inline `style=` attributes are allowed only for truly one-off values that cannot be expressed as a CSS rule. `bootloader.get_theme_css_path()` resolves the active CSS path at startup.
 - **Removed**: The "Analysis Theater / Viz" nav item is eliminated (ADR-043). The `theater_grid` toggle, `btn_max_plot`, `btn_max_table`, `btn_reset_theater` controls are superseded by the Tier Toggle + Comparison Mode model. The hardcoded "Inspector" tab is removed.
 
 ## 4. Path Authority Strategy (ADR-031 / ADR-048)
@@ -104,9 +104,9 @@ The first level that exists wins. If `SPARMVET_PROFILE` is set but the path does
 
 Profile schema and full documentation: `config/deployment/templates/connector_template.yaml` and ADR-048.
 
-**Persona resolution order (Phase 25-M fix):** `persona=` kwarg > `SPARMVET_PERSONA` env var > `default_persona` in deployment profile > `ValueError`. No hardcoded fallback in code — the local dev profile (`config/deployment/local/local_profile.yaml`) sets `default_persona: "developer"`.
+**App features resolution order (Phase 25-M fix):** `app features=` kwarg > `SPARMVET_APP_FEATURES` env var > `default_app_features` in deployment profile > `ValueError`. No hardcoded fallback in code — the local dev profile (`config/deployment/local/local_profile.yaml`) sets `default_app_features: "developer"`.
 
-**Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all persona-gated decisions. Comparing `bootloader.persona` against name strings is prohibited — personas are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_enabled`, `audit_report_enabled`. See `rules_persona_feature_flags.md` §Anti-Pattern.
+**Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all flag-gated decisions. Comparing `bootloader.app features` against name strings is prohibited — app features files are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_enabled`, `audit_report_enabled`. See `rules_app_features_flags.md` §Anti-Pattern.
 
 - **Location 1 (Raw/Ingestion)**: Path to raw external data assets.
 - **Location 2 (Manifests)**: Path to pipeline definitions and wrangling recipes.
@@ -211,10 +211,10 @@ Eight pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigat
 
 ## 11. @bioscientist Protocol (Manifest Design)
 
-- **Mandatory Knowledge**: `config/manifests/README.md`, `rules_persona_bioscientist.md`.
+- **Mandatory Knowledge**: `config/manifests/README.md`, `rules_agent_role_bioscientist.md`.
 - **Registry Check**: Before generating YAML, the agent MUST verify action existence in `libs/transformer/src/transformer/registry.py` and `libs/viz_factory/src/viz_factory/registry.py`.
 - **Logic Breakdown**: Every manifest proposal must include the scientific rationale for joins and transformation steps.
-- **Gap Detection**: If an action is missing, it becomes a `[ENHANCEMENT REQUEST]` for the **@dasharch** persona, recorded in `tasks.md`.
+- **Gap Detection**: If an action is missing, it becomes a `[ENHANCEMENT REQUEST]` for the **@dasharch** app features, recorded in `tasks.md`.
 ---
 
 ## 10. Pipeline Stability & YAML Resilience (ADR-042)
@@ -371,10 +371,10 @@ Every `assets/gallery_data/<recipe>/recipe_meta.md` must follow this structure:
 
 | Cascade type | Where enforced | When to use |
 |---|---|---|
-| **Fatal** | `PersonaValidator._FATAL_CASCADE_GATES` + Rule 7 — startup error blocks app | Default for any new flag-dependency. Examples: ADR-075 `manifest_edit_enabled`, ADR-076 `blueprint_agent_enabled`. |
-| **Soft** | `bootloader._load_persona_config()` — silently sets child to false + warning | Legacy compatibility only (Group B `interactivity_enabled`, Group C `import_helper_enabled`). Do NOT use for new flags without explicit ADR justification. |
+| **Fatal** | `AppFeaturesValidator._FATAL_CASCADE_GATES` + Rule 7 — startup error blocks app | Default for any new flag-dependency. Examples: ADR-075 `manifest_edit_enabled`, ADR-076 `blueprint_agent_enabled`. |
+| **Soft** | `bootloader._load_app_features_config()` — silently sets child to false + warning | Legacy compatibility only (Group B `interactivity_enabled`, Group C `import_helper_enabled`). Do NOT use for new flags without explicit ADR justification. |
 
-**ADR authoring rule:** every ADR introducing a new flag MUST declare cascade type explicitly with rationale. The cascade type is documented in `rules_persona_feature_flags.md` Cascade Enforcement § when the rule is added.
+**ADR authoring rule:** every ADR introducing a new flag MUST declare cascade type explicitly with rationale. The cascade type is documented in `rules_app_features_flags.md` Cascade Enforcement § when the rule is added.
 
 ---
 
@@ -417,7 +417,7 @@ exit_if_errors(errors, header="My component failed validation")
 
 **`fix` field discipline:** "Invalid configuration" is a diagnostic failure. "Set `blueprint_agent_enabled: false` in `developer_template.yaml`" is a diagnostic success. Always name the file, the key, and the new value.
 
-**Roadmap:** Phase B (DIAG-CORE-1, ✅) covers PersonaValidator. Phase C (committed work, see `tasks.md` "Diagnostic Error Discipline" block) retrofits SidebarValidator, Bootloader, Connectors, manifest preflight, plus a `docs/troubleshooting/` reference catalog. Runtime errors (ingestion / assembler / wrangler / viz_factory / T3 apply / Blueprint) are deferred to ADR-079 because their audience and render path differ.
+**Roadmap:** Phase B (DIAG-CORE-1, ✅) covers AppFeaturesValidator. Phase C (committed work, see `tasks.md` "Diagnostic Error Discipline" block) retrofits SidebarValidator, Bootloader, Connectors, manifest preflight, plus a `docs/troubleshooting/` reference catalog. Runtime errors (ingestion / assembler / wrangler / viz_factory / T3 apply / Blueprint) are deferred to ADR-079 because their audience and render path differ.
 
 **Forbidden patterns:**
 - `raise ValueError(f"validation failed: {'; '.join(strs)}")` at startup boundaries

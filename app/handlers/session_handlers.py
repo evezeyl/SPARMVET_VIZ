@@ -32,8 +32,8 @@ def define_session_server(input, output, session, *,
     ----------
     session_manager : SessionManager | None
         Session persistence facade. May be None when launched without persistence.
-    current_persona : reactive.Value[str]
-        Active launch persona (hyphen form, e.g. "pipeline-exploration-advanced").
+    current_app_features : reactive.Value[str]
+        Active launch app features (hyphen form, e.g. "pipeline-exploration-advanced").
     home_state : reactive.Value[dict] | None
         Shared home dashboard state (manifest_sha256, t3_recipe_by_plot, etc.).
     safe_input : callable | None
@@ -50,7 +50,7 @@ def define_session_server(input, output, session, *,
     def session_management_ui():
         """Session Management panel — gated by session_management_enabled flag.
 
-        Fix PERSONA-1: replaced hardcoded advanced_personas set with
+        Fix APP_FEATURES-1: replaced hardcoded advanced_app_features set with
         bootloader.is_enabled('session_management_enabled'). pipeline-exploration-simple
         has session_management_enabled=true in its template and now correctly sees
         this panel.

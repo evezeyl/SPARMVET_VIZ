@@ -19,7 +19,7 @@ Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Bl
 
 ## 2. Shell Architecture (The 3-Zone Navigator) — Updated ADR-043/ADR-044 (2026-04-23)
 
-The UI implements a high-density **3-column nested shell** to maximize screen real estate. The right column (Pipeline Audit) is **persona-gated** and suppressed entirely for lower personas (see ADR-044):
+The UI implements a high-density **3-column nested shell** to maximize screen real estate. The right column (Pipeline Audit) is **flag-gated** and suppressed entirely for lower app features files (see ADR-044):
 
 - **Left Sidebar**: Accordion of named panels: Manifest Choice, Data Import, Filters, Export (gated — scope toggle), Session Management (gated). Panels are context-reactive — filter widgets are scoped to the active plot sub-tab's `plot_spec` aesthetics. Uses a Dark Grey (#c0c0c0) background.
 - **Home Theater (Center)**: The primary workspace. Structure (post-ADR-043):
@@ -52,7 +52,7 @@ The UI implements a high-density **3-column nested shell** to maximize screen re
 Defaults: both choices start on Result. "Send to Audit" is offered when either choice is My view and `t3_sandbox_enabled` is on.
 Each panel title carries a badge stating what it shows, with "identical to" lines (e.g. "T2 identical to T1" when the dataset has no tier-2 steps). The badge is never part of an exported plot image.
 
-**Comparison Mode** is the third value of "Plot to show" (ADR-086), persona-gated by `comparison_mode_enabled`:
+**Comparison Mode** is the third value of "Plot to show" (ADR-086), flag-gated by `comparison_mode_enabled`:
 
 - The theater splits into 2 plot columns: left = T2 reference (always, it does not follow "Data to show"), right = My view.
 - It replaces the former separate "Compare T2 vs T3" switch (which kept a hidden state) and the previous `is_comparison` + `is_triple` flag system.
@@ -201,7 +201,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 3. **Build rule T3 > T2 > T1.** My view data is the stored T2 (T1 when the join has no tier2 steps) plus the plot's filter rows and column drops, built by `export_handlers.audited_frame`, the same steps and order as the HOME data preview.
 4. **The export is the Result plus the audited steps; exploration is never exported** (issue #25, Eve 2026-11-06). Audited T3 steps (`filter_row`, `exclusion_row`, `drop_column`, `aesthetic_override`, committed with a reason, for example to remove poor quality data) are the user's decision for the publication: they are ALWAYS applied to the exported plot of that plot and to its `T3_data_<plot>.tsv`, from any view, and recorded (T3 trail in the report, `recipes/t3_steps.yaml`). Exploration filters (`applied_filters`: what the user tries in T1, T2 or My view to understand the data, not sent to audit) are a sandbox and are NEVER exported, from any view; there is no checkbox to include them and no `FILTERS.txt`. A reminder tells the user so: under the Filters buttons in My view ("Sandbox: only steps sent to audit are exported.") and in the Export panel. The pure rule is `export_handlers.plot_content_rules(audited_rows, audited_drops)`: exploration is not even an argument.
 5. **Traceability.** README, `report.qmd` and PNG/SVG metadata record `manifest_sha256` (file set), `data_batch_hash`, and per dataset `tier1_key` and `tier2_key` (empty when T2 equals T1).
-6. **Tests.** `app/tests/test_export_provenance.py`, `test_export_view_consistency.py` (headless) and `test_export_download.py` (real download, qa persona).
+6. **Tests.** `app/tests/test_export_provenance.py`, `test_export_view_consistency.py` (headless) and `test_export_download.py` (real download, qa app features).
 
 **Scope detection at download time:** reads `safe_input(input, "export_scope", "global")` and `active_home_subtab.get()` to filter which plots are included. Scope label recorded in `t3_steps.yaml` and `README.txt`.
 
@@ -219,7 +219,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 | ~~`FILTERS.txt`~~ | Removed 2026-11-06: exploration filters are never exported, so there is no filter trace to write; the audit trail is `recipes/t3_steps.yaml` and the T3 Audit Trail of `report.qmd` |
 | `recipes/t3_steps.yaml` | T3 committed nodes (active only) — auto-included when T3 has committed nodes and `t3_sandbox_enabled` |
 | `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section, **T3 Audit Trail** section (per-plot table of Step/Action/Details/Justification when T3 has active nodes) |
-| `README.txt` | Bundle manifest: timestamp, project, persona, scope, tiers, metadata source filename, counts |
+| `README.txt` | Bundle manifest: timestamp, project, app features, scope, tiers, metadata source filename, counts |
 
 **T3 Audit Trail in report.qmd:** Auto-generated `## T3 Audit Trail` section with one table per plot (Step / Action / Details / Justification). Deactivated nodes excluded. Only present when `t3_sandbox_enabled` and committed active nodes exist.
 
@@ -235,7 +235,7 @@ t3_steps:
       committed_at: "..."
 ```
 
-**No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` persona flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `PersonaValidator`, and `Bootloader`. Tombstone expires Phase 36.
+**No separate Export Audit Report button.** The audit trail is auto-included in `report.qmd` inside the bundle. The `audit_report_enabled` app features flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `AppFeaturesValidator`, and `Bootloader`. Tombstone expires Phase 36.
 
 **Single Graph Export accordion removed.** Superseded by the "Active plot" scope option in the 3-way toggle (see §7.3).
 
@@ -291,7 +291,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **Panel:** `Data Import` accordion panel in the left sidebar. When `import_helper_enabled: true`, metadata upload is nested above the multi-file ingestion control. When `import_helper_enabled: false` and `metadata_ingestion_enabled: true`, it appears as a standalone control in the Data Import panel.
 
-**Persona gate:** Gate: `metadata_ingestion_enabled`. Available from `pipeline-exploration-advanced` and above. Hidden for `pipeline-static` and `pipeline-exploration-simple`.
+**App features gate:** Gate: `metadata_ingestion_enabled`. Available from `pipeline-exploration-advanced` and above. Hidden for `pipeline-static` and `pipeline-exploration-simple`.
 
 **Flow:**
 1. User uploads a TSV/CSV metadata file via file input in the Data Import panel.
@@ -304,7 +304,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **What is NOT replaced:** Raw instrument data (sequencing results, VCF files, etc.) — only the metadata source. The manifest's `input_fields` contract determines which file is considered "metadata" for validation purposes.
 
-**Status:** Deferred to Phase 22+. UI stub (greyed file input + label) present in Data Import panel when persona allows. Validation and rebuild flow designed here; implementation pending.
+**Status:** Deferred to Phase 22+. UI stub (greyed file input + label) present in Data Import panel when app features allows. Validation and rebuild flow designed here; implementation pending.
 
 ---
 
@@ -314,7 +314,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **Panel:** `Data Import` accordion panel in the left sidebar. Multi-file ingestion section is nested inside when `import_helper_enabled: true`.
 
-**Persona gate:** `import_helper_enabled: true` in persona template. Available to ≥ `project-independent` and `developer`. Hidden for lower personas. Also deactivatable at the deployment level (profile sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
+**App features gate:** `import_helper_enabled: true` in app features file. Available to ≥ `project-independent` and `developer`. Hidden for lower app features files. Also deactivatable at the deployment level (profile sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
 
 **Supported ingestion types:**
 - **Raw data** — TSV/CSV instrument output
@@ -331,7 +331,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 - User assigns each sheet to a role: **raw data**, **metadata**, or **extra data**, and selects the target schema from the manifest dropdown.
 - Converter writes TSVs to Location 1 (`raw_data`) in the user-accessible directory.
 - After conversion, the resulting TSVs are queued for ingestion as normal.
-- **Why here and not Test Lab:** Scientists receive Excel files from collaborators and pipelines — this is a practical data preparation step, not a developer concern. Test Lab (developer persona only) is for synthetic data generation (AquaSynthesizer).
+- **Why here and not Test Lab:** Scientists receive Excel files from collaborators and pipelines — this is a practical data preparation step, not a developer concern. Test Lab (developer app features only) is for synthetic data generation (AquaSynthesizer).
 
 **Status:** Deferred to Phase 22+. Design finalized here. `ExcelHandler` backend already exists.
 
@@ -339,20 +339,20 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 ## 11. Sidebar Configuration — Slot Registry (ADR-073, 2026-05-09)
 
-**This section supersedes the Phase 25-E hardcoded accordion spec.** Sidebar layout is now declarative and configurable per persona template and per workspace.
+**This section supersedes the Phase 25-E hardcoded accordion spec.** Sidebar layout is now declarative and configurable per app features file and per workspace.
 
 ### 11a. Core rule — two-layer resolution
 
 | Layer | Controls | Source |
 |---|---|---|
-| **Slot list** | Which panels appear and in what order | Persona template `workspaces.<ws>.<side>_sidebar.panels` |
+| **Slot list** | Which panels appear and in what order | App features file `workspaces.<ws>.<side>_sidebar.panels` |
 | **Feature flag** | Whether panel functionality is active | `bootloader.is_enabled(flag)` — unchanged |
 
-A panel in the slot list with a disabled gate flag is silently skipped. Flags and cascade rules (ADR-052, PersonaValidator) operate independently of the slot list.
+A panel in the slot list with a disabled gate flag is silently skipped. Flags and cascade rules (ADR-052, AppFeaturesValidator) operate independently of the slot list.
 
 ### 11b. Per-workspace independence
 
-Left and right sidebar configs are declared per workspace in the persona template:
+Left and right sidebar configs are declared per workspace in the app features file:
 
 ```yaml
 workspaces:
@@ -388,14 +388,14 @@ workspaces:
       panels: []
 ```
 
-Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. Multiple personas sharing the same layout reference the same file. See `docs/workflows/ui_persona.qmd` for the full panel type reference table.
+Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. Multiple app features files sharing the same layout reference the same file. See `docs/workflows/ui_app_features.qmd` for the full panel type reference table.
 
 ### 11c. Visibility and structural exclusion
 
 - `visible: false` — excludes the sidebar container from the DOM (not CSS-hidden).
 - `visible: true` with no active panels — renders an empty sidebar container (acceptable for `project_info`-only configs).
 - Auto-hide: if `visible` is unset and all panels are skipped after flag-gating, sidebar is treated as hidden.
-- **Right sidebar structural exclusion** (previously a persona name string comparison in `ui.py` — ADR-053 violation, task 25-O) is now driven by `bootloader.get_sidebar_config("home", "right").visible`. No persona name checks.
+- **Right sidebar structural exclusion** (previously an app features name string comparison in `ui.py` — ADR-053 violation, task 25-O) is now driven by `bootloader.get_sidebar_config("home", "right").visible`. No app features name checks.
 
 ### 11d. Built-in panel types (current)
 
@@ -420,7 +420,7 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 - Bootloader: `get_sidebar_config(workspace, side)` reads `workspaces.<ws>.<side>_sidebar`.
 - `home_theater.py`: iterates Home workspace slot list instead of hardcoded accordion sequence.
 - `ui.py`: reads `bootloader.get_sidebar_config("home", "right").visible` for right sidebar structural exclusion.
-- Validation: `SidebarValidator` runs at startup alongside `PersonaValidator`; CLI gate: `scripts/validate_persona_config.py --all --strict`.
+- Validation: `SidebarValidator` runs at startup alongside `AppFeaturesValidator`; CLI gate: `scripts/validate_app_features_config.py --all --strict`.
 
 **Implementation tasks:** SIDEBAR-CONFIGS-1, SIDEBAR-REGISTRY-1, SIDEBAR-VALIDATE-1 (see `tasks.md`).
 
@@ -443,7 +443,7 @@ T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanen
 | `exclusion_row` | Explicit row exclusion (named sample / value) | **Mandatory** |
 | `drop_column` | Permanently drop a column from the exported data (not just hidden in preview) | **Mandatory** |
 | `aesthetic_override` | Plot colour / fill / alpha / shape changes (per plot sub-tab) | Optional — included in report |
-| `developer_raw_yaml` | Escape hatch: arbitrary manifest fragment (≥ `pipeline-exploration-advanced` / `developer` persona only) | **Mandatory** |
+| `developer_raw_yaml` | Escape hatch: arbitrary manifest fragment (≥ `pipeline-exploration-advanced` / `developer` app features only) | **Mandatory** |
 
 > **Plot Style panel not mounted (2026-11-05, fork issue #15).** The UI that authors `aesthetic_override` nodes (the "Plot Style" panel) is not shown in HOME for now: letting users change in HOME what the manifest defines is too much at this stage, and using it broke the plot (test plan HOM-47). The node type stays in this schema and the panel's code is kept, unused, in `audit_stack.py`. This does not change the T3 scope of ADR-082.
 
@@ -589,7 +589,7 @@ T3 ghost is never written on intermediate filter edits — only on apply or pane
 
 ### 12e. Gallery → T3 Transplant Rules
 
-**Persona gate:** Gallery transplant into the T3 sandbox is available to **`pipeline-exploration-advanced` and `developer` personas only**. Lower personas (static, simple) can browse the gallery but the "Send to T3" button is hidden.
+**App features gate:** Gallery transplant into the T3 sandbox is available to **`pipeline-exploration-advanced` and `developer` app features files only**. Lower app features files (static, simple) can browse the gallery but the "Send to T3" button is hidden.
 
 - Gallery transplant always targets the **last-active plot sub-tab** in Home.
 - A transplanted gallery node is inserted as a Yellow `developer_raw_yaml` node with `reason: ""` (empty, blocking apply).
@@ -599,7 +599,7 @@ T3 ghost is never written on intermediate filter edits — only on apply or pane
 
 ### 12f. Export Report Spec
 
-**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` persona flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `PersonaValidator`, and `Bootloader`. Tombstone expires Phase 36.
+**Location:** Auto-included as `## T3 Audit Trail` section in `report.qmd` inside every Export Bundle (2026-05-04 redesign). No separate "Export Audit Report" button. The `audit_report_enabled` app features flag has been **REMOVED (LEGACY-AUDIT-FLAG-1, Phase 34, 2026-05-22)** — deleted from all templates, `AppFeaturesValidator`, and `Bootloader`. Tombstone expires Phase 36.
 
 **Format:** `report.qmd` is a Quarto source file included in the bundle ZIP. Users render it locally with `quarto render report.qmd`. The T3 Audit Trail section is part of this file.
 
@@ -883,8 +883,8 @@ Without the guard, the effect re-fires every tick and produces an infinite react
 # CSS & Styling Rules (ADR-055, 2026-05-02)
 
 - **CSS lives in `config/ui/theme.css`** — not inline in Python code. This is the authoritative base stylesheet, loaded at startup by `app/src/ui.py` via `bootloader.get_theme_css_path()` and injected via `ui.tags.style()`.
-- **New UI styling MUST go in `config/ui/theme.css`** (or a persona-specific override CSS file). Do not add `style=` attributes on individual components unless the value is truly one-off and cannot be expressed as a reusable CSS rule.
-- **Per-persona/deployment branding**: Each persona template declares `theme_css: "config/ui/theme.css"`. A deployment overrides this key to point at a custom CSS file — no Python changes needed. `bootloader.get_theme_css_path()` resolves the active path.
+- **New UI styling MUST go in `config/ui/theme.css`** (or an app features specific override CSS file). Do not add `style=` attributes on individual components unless the value is truly one-off and cannot be expressed as a reusable CSS rule.
+- **per app features file/deployment branding**: Each app features file declares `theme_css: "config/ui/theme.css"`. A deployment overrides this key to point at a custom CSS file — no Python changes needed. `bootloader.get_theme_css_path()` resolves the active path.
 
 ---
 
@@ -898,21 +898,21 @@ Defined in deployment profile YAML. Resolution chain:
 3. `/etc/sparmvet/profile.yaml`
 4. `config/deployment/local/local_profile.yaml` (dev fallback)
 
-Profile declares `default_manifest`, `default_persona`, `project_root`, and the five `locations` keys.
+Profile declares `default_manifest`, `default_app_features`, `project_root`, and the five `locations` keys.
 See `config/deployment/local/local_profile.yaml` for the dev template.
 
 **Path resolution (2026-05-02, ADR-048 §11):** `bootloader.get_location(key)` returns paths from `connector.resolve_paths()` output (`self._resolved_locations`), not from the raw profile dict. UI code must always call `bootloader.get_location(key)` — never read `locations` from the profile YAML directly.
 
-## Persona
+## App features
 
-Defined in persona templates: `config/ui/templates/<persona_id>_template.yaml`. Persona IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
+Defined in app features files: `config/ui/templates/<app_features_id>_template.yaml`. App features IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
 
 Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `developer_mode_enabled`, `gallery_enabled`.
 
-See `rules_persona_feature_flags.md` for the authoritative flag matrix and dependency cascade rules.
+See `rules_app_features_flags.md` for the authoritative flag matrix and dependency cascade rules.
 
 ## User Preferences [Implementation Deferred]
 
 Saving location: Location 4 (`user_sessions`) from deployment profile, filename `user-preferences.yaml`.
-Overrides persona template settings where permitted (priority rule).
+Overrides app features file settings where permitted (priority rule).
 Not implemented yet.

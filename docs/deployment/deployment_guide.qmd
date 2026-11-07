@@ -23,7 +23,7 @@ SPARMVET_VIZ is packaged as a single Docker image that can run in any of four de
 | **Institutional server** | Shared server for a research group or institute; multiple pipelines available |
 | **Local machine** | Developer or admin running the app directly from the repository |
 
-In every case the same image runs. What changes is a single configuration file — the **deployment profile** — that tells the app where to find data, which manifest to load by default, and which user persona to activate.
+In every case the same image runs. What changes is a single configuration file — the **deployment profile** — that tells the app where to find data, which manifest to load by default, and which user app features to activate.
 
 ---
 
@@ -39,7 +39,7 @@ deployment_type: filesystem
 deployment_name: "AMR Surveillance — Institute Server"
 
 default_manifest: "manifests/amr/master.yaml"
-default_persona: pipeline-static
+default_app_features: pipeline-static
 
 project_root: "/data/sparmvet/amr_pipeline/"
 
@@ -63,7 +63,7 @@ deployment_type: irida
 deployment_name: "AMR Pipeline — IRIDA"
 
 default_manifest: "manifests/amr/master.yaml"
-default_persona: pipeline-static
+default_app_features: pipeline-static
 
 project_root: "/tmp/sparmvet_irida_cache/"
 
@@ -87,8 +87,8 @@ For IRIDA, the app downloads files from the IRIDA REST API into `local_cache` be
 
 | Field | Default if absent | Effect |
 |---|---|---|
-| `default_manifest` | None | Manifest selector is shown (persona-gated) |
-| `default_persona` | From persona template selection | Persona selector shown in UI |
+| `default_manifest` | None | Manifest selector is shown (flag-gated) |
+| `default_app_features` | From app features file selection | App features selector shown in UI |
 | `deployment_name` | — | Not shown; purely informational |
 | `irida` block | — | Required only when `deployment_type: irida` |
 
@@ -175,7 +175,7 @@ services:
       - ./profiles:/profiles:ro
 ```
 
-**One deployment, multiple pipelines** (single entry point, manifest selector shown): Set `default_manifest` absent from the profile, point `locations.manifests` at a directory containing multiple pipeline manifests, and assign a persona that allows manifest selection (≥ `project-independent`). Scientists pick their pipeline from a dropdown in the UI.
+**One deployment, multiple pipelines** (single entry point, manifest selector shown): Set `default_manifest` absent from the profile, point `locations.manifests` at a directory containing multiple pipeline manifests, and assign an app features that allows manifest selection (≥ `project-independent`). Scientists pick their pipeline from a dropdown in the UI.
 
 ## 3.4 Local Machine
 
@@ -195,7 +195,7 @@ SPARMVET is designed to be deployed multiple times — once per pipeline — rat
 
 - Its own `project_root` (separate data directories).
 - Its own `default_manifest` (the YAML recipe for that pipeline).
-- Its own persona (which features are available to end users).
+- Its own app features (which features are available to end users).
 - Its own `user_sessions` path (user exports and session saves are isolated).
 
 This isolation means that a bug in one pipeline's data or manifest cannot affect another pipeline's deployment. It also means that each pipeline can be updated (new manifest version, new data) without touching the others.
@@ -218,13 +218,13 @@ Every deployment profile defines the same five locations. All paths are relative
 
 ---
 
-# 6. Persona and Manifest — Two Independent Settings
+# 6. App features and Manifest — Two Independent Settings
 
 Two settings in the profile control what the user sees:
 
-**`default_persona`** — controls *who the user is* (what features they can access):
+**`default_app_features`** — controls *who the user is* (what features they can access):
 
-| Persona | Who uses it | Key features |
+| App features | Who uses it | Key features |
 |---|---|---|
 | `pipeline-static` | End-user, fixed pipeline | View plots, export bundle. No wrangling. |
 | `pipeline-exploration-simple` | Scientist exploring results | Add filters, view tiers. No T3 sandbox. |
@@ -235,7 +235,7 @@ Two settings in the profile control what the user sees:
 **`default_manifest`** — controls *which pipeline/dataset* is loaded:
 This is the path to the YAML manifest that defines the analysis groups, plots, and data wrangling steps for a specific pipeline. Changing this (via a different profile) switches the app to a completely different pipeline without any code change.
 
-These two settings are **orthogonal**: a `pipeline-static` persona can point at an AMR manifest or a Plasmid manifest. The persona controls access; the manifest controls content.
+These two settings are **orthogonal**: a `pipeline-static` app features can point at an AMR manifest or a Plasmid manifest. The app features controls access; the manifest controls content.
 
 ---
 
@@ -243,7 +243,7 @@ These two settings are **orthogonal**: a `pipeline-static` persona can point at 
 
 For any deployment context, an admin must:
 
-1. **Write the profile YAML** — copy the template, fill in paths, set `deployment_type`, `default_manifest`, and `default_persona`.
+1. **Write the profile YAML** — copy the template, fill in paths, set `deployment_type`, `default_manifest`, and `default_app_features`.
 2. **Ensure data directories exist** — create the five location paths under `project_root` and set appropriate permissions.
 3. **Place the initial manifest** — put the pipeline YAML manifest(s) in `locations.manifests`.
 4. **For IRIDA**: ensure `SPARMVET_IRIDA_TOKEN` is injected at container launch by IRIDA; do not put tokens in the profile file.

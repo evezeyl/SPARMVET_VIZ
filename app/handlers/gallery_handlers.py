@@ -4,7 +4,7 @@ Gallery Shiny wiring (ADR-037 / ADR-045, Phase 22-F).
 Entry point:
     define_server(input, output, session, *,
                   bootloader, safe_input,
-                  current_persona=None, home_state=None)
+                  current_app_features=None, home_state=None)
 
 Concern: Gallery filtering, preview rendering, recipe clone, gallery_browser_anchor.
          Clone transplants a developer_raw_yaml RecipeNode into home_state._pending_t3_nodes
@@ -45,8 +45,8 @@ def define_server(input, output, session, *,
         Path Authority instance (ADR-031).
     safe_input : callable
         Shared utility: safe_input(input_obj, key, default) → value.
-    current_persona : reactive.Value[str] | None
-        Active persona — used to gate "Send to T3" (§12e).
+    current_app_features : reactive.Value[str] | None
+        Active app features — used to gate "Send to T3" (§12e).
     home_state : reactive.Value[dict] | None
         §13 Home Module State Object — receives transplanted RecipeNodes.
     """
@@ -154,10 +154,10 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_clone_gallery)
     def handle_gallery_clone():
-        # Gate: only personas with T3 sandbox can receive transplants (§12e).
+        # Gate: only app features files with T3 sandbox can receive transplants (§12e).
         if not bootloader.is_enabled("t3_sandbox_enabled"):
             ui.notification_show(
-                "Send to T3 is not available for this persona.",
+                "Send to T3 is not available for this app features.",
                 type="warning", duration=5,
             )
             return

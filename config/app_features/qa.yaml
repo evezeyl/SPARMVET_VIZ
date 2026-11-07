@@ -1,6 +1,6 @@
-# UI Persona: QA / Test Harness Mode (PERSONA-2, 2026-04-30)
+# UI App features: QA / Test Harness Mode (APP_FEATURES-2, 2026-04-30)
 #
-# Purpose: a deterministic persona for automated UI testing and headless
+# Purpose: a deterministic app features for automated UI testing and headless
 # regression checks. Mirrors `developer` (all features enabled) but with:
 #   - Predictable defaults (no auto-saves that mutate session state mid-test)
 #   - Clear naming so logs/screenshots from CI runs are unambiguous
@@ -11,7 +11,7 @@
 #   - Manual smoke tests where the tester wants to exercise the full feature
 #     set without flipping individual flags
 #   - Future automated UI test runner (Phase 26+) that needs a stable
-#     reference persona
+#     reference app features
 #
 # Launch: `SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m shiny run app/src/main.py`
 name: "qa"
@@ -40,7 +40,7 @@ flags:
   metadata_ingestion_enabled: true
   data_ingestion_enabled: true
   # Show/hide sidebar accordion panels
-  # Show active persona name in nav header
+  # Show active app features name in nav header
   show_app_features_badge: true
 
 manifest_selector:

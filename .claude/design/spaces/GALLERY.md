@@ -52,7 +52,7 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 
 - **Read-only data path**: GALLERY never modifies session state or manifests. It only provides YAML to copy.
 - **Local-first**: the bundled gallery (shipped with the app) works fully offline. Community features (search GitHub, submit issues/PRs) require network access and are gracefully degraded when unavailable.
-- **Positive inclusion** (ADR-071): GALLERY panel is only mounted when `gallery_enabled` is true in persona config.
+- **Positive inclusion** (ADR-071): GALLERY panel is only mounted when `gallery_enabled` is true in app features config.
 - **Gallery→BLUEPRINT is the handoff path**: the integration point between GALLERY and BLUEPRINT is YAML copy-paste (or a future "open in BLUEPRINT" button). No direct state coupling between the two spaces.
 
 ---

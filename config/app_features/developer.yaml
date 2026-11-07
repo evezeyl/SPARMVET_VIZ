@@ -1,4 +1,4 @@
-# UI Persona: Developer Mode
+# UI App features: Developer Mode
 name: "developer"
 display_name: "Workflow Developer"
 theme_css: "config/ui/theme.css"
@@ -35,7 +35,7 @@ flags:
   # Can the user ingest raw data files / Excel uploads?
   data_ingestion_enabled: true
   # Show/hide sidebar accordion panels
-  # Show active persona name in nav header
+  # Show active app features name in nav header
   show_app_features_badge: true
 
 manifest_selector:

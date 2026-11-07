@@ -73,7 +73,7 @@ PYTHONPATH=. ./.venv/bin/python -c "import <pkg>" # for the affected package
 PYTHONPATH=. ./.venv/bin/python -m pytest <area>/tests/ -q
 
 # 4. Smoke (only re-run for app/* changes — full smoke is heavy)
-PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 ```
 
 If any gate fails:
@@ -143,7 +143,7 @@ PYTHONPATH=. ./.venv/bin/python libs/transformer/tests/debug_wrangler.py 2>&1 | 
 ./.venv/bin/python -c "from app.src.main import app; print('OK')"
 
 # 5. Smoke tests
-PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 
 # 6. Full test gate (compare to baseline)
 PYTHONPATH=. ./.venv/bin/python -m pytest libs/connector/tests/ libs/viz_factory/tests/test_deco2_components.py app/tests/test_filter_operators.py -q
@@ -169,7 +169,7 @@ mkdir -p .antigravity/baselines
   ./.venv/bin/python -c "from app.src.main import app; print('import OK')" 2>&1
   echo ""
   echo "=== shiny smoke ==="
-  PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v 2>&1
+  PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v 2>&1
 } | tee .antigravity/baselines/audit_2026-05-03_pre.txt
 
 # 3. Snapshot pre-existing failures explicitly

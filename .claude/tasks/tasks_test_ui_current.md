@@ -1,7 +1,7 @@
 # Live-UI Test Checklist — Current Dashboard
 
 > **SUPERSEDED (2026-06-19):** Pinned to the **Phase 26** baseline — predates TEST_LAB,
-> the BLUEPRINT full feature set, the 8-persona set, and the Phase-34 legacy removals.
+> the BLUEPRINT full feature set, the 8-app features set, and the Phase-34 legacy removals.
 > The current live test plan is **[`test_plan_2026-06.md`](test_plan_2026-06.md)** (Phase 34
 > baseline). Still-open items from this file were folded into the new plan (look for `(carried)`).
 > Kept for history — do not test against this; it will be archived once the new plan's first
@@ -20,13 +20,13 @@
 - [x] `git log --oneline -1` shows a Phase 25 commit at HEAD.
 - [x] App starts: `./.venv/bin/python app/src/main.py` — UI loads without Python traceback in terminal.
 - [x] No red error banners in the browser on first load.
-- [x] Check terminal for `DEBUG: Rendering sidebar_nav_ui for Persona: <name>` — confirm the expected persona loaded.
+- [x] Check terminal for `DEBUG: Rendering sidebar_nav_ui for App features: <name>` — confirm the expected app features loaded.
 
 ---
 
-## 1. Persona gating — what appears per persona
+## 1. App features gating — what appears per app features
 
-Test each persona by changing the `persona_id` in the active config YAML (or selecting in the UI if manifest selector is visible).
+Test each app features by changing the `app_features_id` in the active config YAML (or selecting in the UI if manifest selector is visible).
 
 ### 1a. `pipeline-static`
 - [x] Left sidebar: **no** manifest selector, **no** T3 mode toggle, no right sidebar audit panel.
@@ -44,7 +44,7 @@ Test each persona by changing the `persona_id` in the active config YAML (or sel
 ### 1c. `project-independent`
 - [x] Manifest selector accordion **visible**.
 - [x] Gallery nav item visible.
-- [x] Blueprint Architect (Wrangle Studio) nav item Not visible (persona updated).
+- [x] Blueprint Architect (Wrangle Studio) nav item Not visible (app features updated).
 - [x] T3 tier present in tier toggle.
 - [x] Right sidebar aqudit panel visible with "Pipeline Audit" header.
 - [x] Session Management accordion visible.
@@ -59,18 +59,18 @@ Test each persona by changing the `persona_id` in the active config YAML (or sel
 
 ## 2. Left sidebar — accordion panels
 
-Using `project-independent` or `developer` persona throughout the following sections.
+Using `project-independent` or `developer` app features throughout the following sections.
 
 - [x] **Manifest Choice** accordion opens/collapses cleanly. Project selection dropdown shows available projects.
 - [x] Changing project selection reloads plots in the center theater (may take a moment).
 - [x] Switching to Gallery and back to Home preserves the selected project (does not reset to first on list). *(BUG fixed 2026-05-03: _last_project_id reactive.Value tracks selection; sidebar_tools_ui uses isolated read on re-render)*
-- [x] **Data Import** accordion shows the import UI (file upload or path selector depending on persona).
+- [x] **Data Import** accordion shows the import UI (file upload or path selector depending on app features).
 - [x] **Filters** accordion opens cleanly with the filter builder form.
 - [x] **Global Project Export** accordion visible and contains export button.
-- [x] **Single Graph Export** accordion visible (if enabled for persona).
+- [x] **Single Graph Export** accordion visible (if enabled for app features).
 - [x] **Session Management** accordion visible (if enabled).
 - [x] Accordion open/close state is independent — opening one does not close others.
-- [x] Persona name shown below nav pills: "Active: Project Independent User" (or equivalent). Ok - now defined by the persona config, we can have any Persona name. 
+- [x] App features name shown below nav pills: "Active: Project Independent User" (or equivalent). Ok - now defined by the app features config, we can have any App features name. 
 
 ---
 
@@ -84,7 +84,7 @@ Using `project-independent` or `developer` persona throughout the following sect
 - [x] Data preview updates when you switch plot sub-tabs.
 - [x] **Column selector absent for pipeline-static / pipeline-exploration-simple**: no "Visible columns (preview only)" or "Columns (drop unselected via audit)" control shown (`interactivity_enabled: false` — `home_col_selector_ui` returns empty div).
 - [x] **Thin header strip** at top of center panel shows: dataset label (left) + tier toggle radio buttons (right).
-- [x] Tier toggle shows T1 / T2 for pipeline personas; T1 / T2 / T3 for advanced personas.
+- [x] Tier toggle shows T1 / T2 for pipeline app features files; T1 / T2 / T3 for advanced app features files.
 
 ---
 
@@ -236,7 +236,7 @@ a primary key is for - so simple term, explaining potential consequences ... and
 
 ## 12. Gallery nav
 
-- [x] Click **Gallery** in nav pills (project-independent or developer persona).
+- [x] Click **Gallery** in nav pills (project-independent or developer app features).
 - [x] Center panel shows the gallery recipe browser.
 - [x] Left sidebar shows Recipe selector + collapsible taxonomy filters (not "Discovery Mode Active").
 
@@ -264,7 +264,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the recipe title rend
 ### Sidebar toggle (2026-05-03 fix — ADR-062)
 - [ ] Left sidebar toggle: collapse → shows main content full width.
 - [ ] Left sidebar toggle: expand → sidebar reappears. Works after any number of hide/show cycles.
-- [ ] Right sidebar toggle (t3_sandbox persona only): collapse and expand both work.
+- [ ] Right sidebar toggle (t3_sandbox app features only): collapse and expand both work.
 - [ ] **Critical**: hide BOTH sidebars → both toggles remain clickable → can expand either sidebar independently.
 
 - [x] Clicking a gallery card loads the recipe preview on the center pane.
@@ -275,7 +275,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the recipe title rend
 
 ## 13. Comparison mode (project-independent / developer)
 
-- [x] In T3 mode, look for the **comparison mode toggle** below the tier toggle strip. *(Only appears for personas with `comparison_mode_enabled: true` in T3 mode.)*
+- [x] In T3 mode, look for the **comparison mode toggle** below the tier toggle strip. *(Only appears for app features files with `comparison_mode_enabled: true` in T3 mode.)*
 - [x] Toggle it on. Center panel shows two columns (reference vs. adjusted view), or the layout changes to show comparison.
 - [x] Toggle it off. Returns to single-panel view.
 - [x] FIXED *(Known issue AUDIT-4: Compare T2/T3 toggle may lose state on plot switch — note if that occurs.)*
@@ -286,7 +286,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the recipe title rend
 
 - [x] Open **Session Management** accordion in left sidebar.
 - [x] Commit at least 2 T3 nodes across different plots.
-- [ ] Wait 2 minutes (ghost auto-save interval for developer/project-independent personas) OR use a manual save button if present.
+- [ ] Wait 2 minutes (ghost auto-save interval for developer/project-independent app features files) OR use a manual save button if present.
 [Can we have the information about the latest ghost save in the Session Management panel ? eg. "Last auto-save: 2026-05-02 14:35:22" - would be nice for the user to know when the last save was, and if the auto-save is working as expected. 
 
 Should the save take as much as 2 minutes - it should not be possible to export the session during that time OR export active session should first trigger the save and then export. ]
@@ -339,7 +339,7 @@ These are known open bugs — record whether they reproduce or seem fixed.
 
 ## 19. Data Import (IMPORT-1)
 
-Using `project-independent` or `developer` persona (the **Data Import** accordion must be visible).
+Using `project-independent` or `developer` app features (the **Data Import** accordion must be visible).
 
 ### 19a. Single file upload
 
@@ -411,14 +411,14 @@ Test with the `year_distribution` plot (uses `scale_x_continuous` with `breaks_i
 
 ## 22. Notification log panel (UX-NOTIF-1)
 
-Using `project-independent` or `developer` persona (right sidebar must be visible).
+Using `project-independent` or `developer` app features (right sidebar must be visible).
 
 - [ ] Perform any user-facing action that triggers a notification (e.g. apply a filter, commit a T3 node, import data, export a graph).
 - [ ] Right sidebar bottom shows a `🔔 Alerts (N)` accordion — N reflects the number of logged entries.
 - [ ] Click to expand the accordion — entries appear newest-first with a timestamp (`HH:MM:SS`) and colored message (green = success, amber = warning, red = error, blue = message/info).
 - [ ] Trigger 3–4 different notifications (apply T3, reset, export). All appear in the log.
 - [ ] Max 20 entries kept — older ones are dropped silently when the limit is reached.
-- [ ] **Log does NOT appear** for `pipeline-static` persona (right sidebar is absent for non-t3_sandbox personas).
+- [ ] **Log does NOT appear** for `pipeline-static` app features (right sidebar is absent for non-t3_sandbox app features files).
 - [ ] Switching nav tabs (Home → Gallery → Home) does not clear the log — it persists in-memory for the session.
 - [ ] **DEFERRED (UX-NOTIF-2)**: Log clears on page refresh — T3 ghost persistence not yet implemented.
 
@@ -446,6 +446,6 @@ Using `project-independent` or `developer` persona (right sidebar must be visibl
 
 **Reference docs:**
 - `docs/user_guide/audit_pipeline.qmd` — user-facing audit walkthrough
-- `.claude/knowledge/architecture_decisions.md` — ADR-049 (per-plot scoping), ADR-052 (right sidebar gating), ADR-053 (flag-only persona gating)
+- `.claude/knowledge/architecture_decisions.md` — ADR-049 (per-plot scoping), ADR-052 (right sidebar gating), ADR-053 (flag-only app features gating)
 - `.claude/tasks/tasks.md` — open bug list
 - `.claude/tasks/archives/tasks_archive_phase25.md` — Phase 25 completed items

@@ -1,13 +1,13 @@
 # Deployment Configuration Matrix
 
-> **HISTORICAL NOTE (2026-11-06):** the `audit_report_enabled` flag was removed (LEGACY-AUDIT-FLAG-1, 2026-05-22): the T3 audit trail is part of every export. Rows and text below that mention it describe the earlier design. Current flags: `.claude/rules/rules_persona_feature_flags.md`.
+> **HISTORICAL NOTE (2026-11-06):** the `audit_report_enabled` flag was removed (LEGACY-AUDIT-FLAG-1, 2026-05-22): the T3 audit trail is part of every export. Rows and text below that mention it describe the earlier design. Current flags: `.claude/rules/rules_app_features_flags.md`.
 
 **Last updated:** 2026-05-05 (Session 18)
-**Companion guide:** `persona_scoping_guide.md` (flag reference, dependency rules)
+**Companion guide:** `app_features_scoping_guide.md` (flag reference, dependency rules)
 **Dependency map:** `functionality_dependency_map.md` (user functionality → code flags)
-**Persona templates:** `config/ui/templates/`
+**App features files:** `config/ui/templates/`
 
-> **Framing note:** The rows below are named example configurations ("personas"), not the primary concept.
+> **Framing note:** The rows below are named example configurations ("app features files"), not the primary concept.
 > The primary concept is the **user functionality** each configuration enables.
 > See `functionality_dependency_map.md` to understand what each flag does and which combinations are valid.
 
@@ -56,7 +56,7 @@
 | `session_management_enabled` | N | N | N | N | Y | Y | Y | Y |
 | `ghost_save.enabled` | N | N | N | N | Y | Y | Y | N |
 
-> `ghost_save` required when T3 active. Off for passive personas (nothing to persist). Off for `qa` (automated testing).
+> `ghost_save` required when T3 active. Off for passive app features files (nothing to persist). Off for `qa` (automated testing).
 
 ---
 
@@ -99,16 +99,16 @@
 
 | Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `show_persona_badge` | Y | N | N | Y | Y | Y | Y | Y |
+| `show_app_features_badge` | Y | N | N | Y | Y | Y | Y | Y |
 | `manifest_selector_visible` | N | N | N | N | Y | Y | Y | Y |
 | `manifest_selector.fixed_manifest` | set | set | set | set | set | null | null | null |
-| `ui_title` (persona override) | - | - | set | - | - | - | - | - |
-| `ui_subtitle` (persona override) | - | - | set | - | - | - | - | - |
+| `ui_title` (app features override) | - | - | set | - | - | - | - | - |
+| `ui_subtitle` (app features override) | - | - | set | - | - | - | - | - |
 | `show_navigation` *(derived)* | N | N | N | N | N | Y | Y | Y |
 | `sidebar_profile` | default | default | default | default | default | default | default | default |
 
 > `show_navigation` is derived — auto-shown when any of gallery / blueprint / test_lab enabled.
-> `ui_title` / `ui_subtitle`: persona override > manifest `info.display_name` / `info.subtitle` > nothing.
+> `ui_title` / `ui_subtitle`: app features override > manifest `info.display_name` / `info.subtitle` > nothing.
 > `sidebar_profile`: placeholder string field. Only `"default"` exists currently. Future: named layout modules.
 
 ---
@@ -132,10 +132,10 @@
 | `gallery_enabled` | N | N |
 | `blueprint_enabled` | N | N |
 | `test_lab_enabled` | N | N |
-| `show_persona_badge` | N | N |
+| `show_app_features_badge` | N | N |
 | `manifest_selector_visible` | N | N |
 | `manifest_selector.fixed_manifest` | set | set |
-| `ui_title` (persona override) | set | - |
-| `ui_subtitle` (persona override) | set | - |
+| `ui_title` (app features override) | set | - |
+| `ui_subtitle` (app features override) | set | - |
 | `show_navigation` *(derived)* | N | N |
 | `sidebar_profile` | default | default |

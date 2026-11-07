@@ -169,7 +169,7 @@ except Exception as e:
     traceback.print_exc()
 
 # ── 6. Repeat for pipeline-exploration-simple ─────────────────────────────
-section("6. Persona: pipeline-exploration-simple (same profile)")
+section("6. App features: pipeline-exploration-simple (same profile)")
 
 os.environ["SPARMVET_APP_FEATURES"] = str(APP_FEATURES["pipeline-exploration-simple"])
 try:
@@ -178,12 +178,12 @@ try:
     from app.src.bootloader import bootloader as bl2  # noqa: E402
 
     ms = bl2.get_manifest_selector()
-    record("Persona loaded", PASS, bl2.app_features_display_name)
+    record("App features loaded", PASS, bl2.app_features_display_name)
     record("manifest_selector.fixed_manifest", INFO, str(ms.get("fixed_manifest")))
     record("prefer_discovery", INFO, str(bl2.connector_config.get("prefer_discovery", False)))
     record("testing_mode", INFO, str(bl2.get_testing_mode()))
 except Exception as e:
-    record("Persona loaded", FAIL, str(e))
+    record("App features loaded", FAIL, str(e))
     traceback.print_exc()
 
 # ── Summary ────────────────────────────────────────────────────────────────

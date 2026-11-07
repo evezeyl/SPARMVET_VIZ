@@ -38,7 +38,7 @@ app/
 ├── src/
 │   ├── server.py          # Thin orchestrator only (~120 lines). See §3.
 │   ├── ui.py              # Static Shiny UI shell. CSS. No reactive logic.
-│   └── bootloader.py      # Path authority & persona bootstrap (ADR-031).
+│   └── bootloader.py      # Path authority & app features bootstrap (ADR-031).
 │
 ├── modules/               # App-layer modules: importable and testable. May import Shiny for UI-helper classes (by design — app layer only).
 │   ├── orchestrator.py         # DataOrchestrator — Tier 1 assembly bridge.
@@ -67,7 +67,7 @@ app/
 
 1. **Imports** of modules, handlers, and libraries.
 2. **Module initialisation**: `WrangleStudio(session.id)`, `TestLabStudio()`, `DataOrchestrator(...)`, `VizFactory(...)`.
-3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `recipe_pending`, `snapshot_recipe`, `gallery_refresh_trigger`, `current_persona`.
+3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `recipe_pending`, `snapshot_recipe`, `gallery_refresh_trigger`, `current_app_features`.
 4. **Shared reactive calcs** (`@reactive.Calc`): `active_collection_id`, `active_cfg`, `tier1_anchor`. These are shared because multiple handlers depend on them. (`tier_reference` and `tier3_leaf` were removed 2026-11-06: they fed outputs that no UI mounted; Tier 2 and My view data are resolved in `home_theater.py` and the orchestrator.)
 5. **Shared utility functions**: `_safe_input`, `_apply_tier2_transforms`. These are pure helpers used by multiple handlers.
 6. **Five `define_server(...)` delegation calls** — one per handler module, in dependency order.
@@ -124,7 +124,7 @@ def define_server(input, output, session, *, <explicit_dependencies>):
 # app/handlers/home_theater.py
 def define_server(input, output, session, *,
                   active_cfg, tier1_anchor,
-                  current_persona, anchor_path, recipe_pending, snapshot_recipe,
+                  current_app_features, anchor_path, recipe_pending, snapshot_recipe,
                   wrangle_studio, orchestrator, viz_factory, bootloader):
 ```
 
@@ -145,7 +145,7 @@ def define_server(input, output, session, *,
 | How manifests are parsed structurally (sibling map, registry, lineage) | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` |
 | BLUEPRINT form catalog + `ui_schema` registry at startup | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` (ADR-075) |
 | The static Shiny HTML shell / CSS | `app/src/ui.py` |
-| Path authority / persona bootstrap | `app/src/bootloader.py` |
+| Path authority / app features bootstrap | `app/src/bootloader.py` |
 | Shared reactive state or tier calcs | `app/src/server.py` (§3 only) |
 | Tier 1 assembly / Parquet materialization | `app/modules/orchestrator.py` |
 | Visual plot composition / predicate pushdown ops | `libs/viz_factory/` |
@@ -167,7 +167,7 @@ def define_server(input, output, session, *,
 Each filter row: `{column: str, op: str, value: str|list, dtype: str}`.
 
 **Shell stability pattern** (mandatory — see `project_conventions.md §3a`):
-- `sidebar_filters` (shell): reads only `current_persona.get()`. Mounts `output_ui` slots for sub-outputs.
+- `sidebar_filters` (shell): reads only `current_app_features.get()`. Mounts `output_ui` slots for sub-outputs.
 - `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, `filter_t3_btn_ui`: independent `@output @render.ui` functions reading only what they need.
 - Reason: re-rendering the shell destroys child `output_ui` DOM nodes — Shiny cannot rebind destroyed IDs.
 

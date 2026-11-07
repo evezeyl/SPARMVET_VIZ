@@ -29,11 +29,11 @@ the value of naming them together is that a new contributor can read one model e
 | **L3 — Data view** | Live Data Glimpse (recomputed on Apply) | ADR-082 |
 | **L4 — Helpers** | AI agent + YAML escape hatch + 20-step undo + node-level branching | ADR-075, ADR-076 |
 
-The capability set is gated by the `blueprint_enabled` persona flag. Two advanced helpers
+The capability set is gated by the `blueprint_enabled` app features flag. Two advanced helpers
 carry their own flags: the **editable** YAML escape hatch and any manifest-mutating action
 require `manifest_edit_enabled`; the AI agent requires `blueprint_agent_enabled`. Both child
 flags are *fatal-cascade* gated — if `blueprint_enabled` is false but a child flag is true, the
-app refuses to start rather than silently disabling the child (ADR-077). See the persona
+app refuses to start rather than silently disabling the child (ADR-077). See the app features
 chapter for the full flag matrix.
 
 ---
@@ -364,8 +364,8 @@ fallback (`rules_manifest_structure.md §7`). Always quote `on` in hand-authored
 
 The BLUEPRINT right sidebar can host a conversational AI helper to lower the expertise floor for
 first-time manifest authors (ADR-076). It is gated by `blueprint_agent_enabled` and currently
-enabled for the `developer` and `qa` personas only — a deliberate first rollout before exposing
-it to scientist personas.
+enabled for the `developer` and `qa` app features files only — a deliberate first rollout before exposing
+it to scientist app features files.
 
 ::: {.callout-important}
 ### MVP-1 is read-only and advises only
@@ -404,10 +404,10 @@ What MVP-1 actually ships:
 | Surface | What it does | Task |
 |---|---|---|
 | **Groups & Plots inventory** | Sidebar list with create / delete / assign for `analysis_groups` and their plots. CRUD lives in `GroupPlotManager (group_plot_manager.py)`, decoupled from the sidebar so a future TubeMap context menu is purely additive. | BP-GROUPS-1 |
-| **Manifest Info** | Form for the manifest `info:` block (description / author / version / tags) — read-only for non-developer personas, editable when `manifest_edit_enabled`. Writes back preserving `!include` directives. | BP-META-1 |
+| **Manifest Info** | Form for the manifest `info:` block (description / author / version / tags) — read-only for non-developer app features files, editable when `manifest_edit_enabled`. Writes back preserving `!include` directives. | BP-META-1 |
 | **Validate** | Runs `audit_manifest_coherence.py` as a subprocess and surfaces a PASS/FAIL badge with per-check rows — clean architectural separation, no `sys.path` hacking. | BP-VALIDATE-1 |
 | **Intent comments** | Every node / step / group / plot carries a free-text `comment:` field with a hover tooltip nudging "write your intent — *why*, not what." Stored as a data key, preserved through the form round-trip. | BP-COMMENTS-1 |
-| **YAML escape hatch** | Raw YAML view of the loaded fragment. Read-only for any `blueprint_enabled` persona; editable only when `manifest_edit_enabled`. | BP-ESCAPE-1 |
+| **YAML escape hatch** | Raw YAML view of the loaded fragment. Read-only for any `blueprint_enabled` app features; editable only when `manifest_edit_enabled`. | BP-ESCAPE-1 |
 | **Undo** | 20-step session undo deque for the DAG/logic-stack state. Session-only. | BP-UNDO-1 |
 | **Help** | Resolves an action's documentation from the installed library at runtime via Python `__doc__` (air-gap safe, always matches the installed version). | BP-HELP-1 |
 | **Draft autosave** | Persists the in-progress manifest draft + undo history to disk and restores it on reload/crash, modelled on HOME's ghost-save. SHA256-guarded — a draft is discarded if the manifest changed underneath it. Gated on `automation.ghost_save.enabled`. | BP-AUTOSAVE-1 |

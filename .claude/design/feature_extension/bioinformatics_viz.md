@@ -75,7 +75,7 @@ spec:
 
 **Render path:** `Rscript render_tree.R --tree isolates.treefile --data amr.feather --spec spec.json --out tree.svg`, image bytes returned to the gallery/home theater. Same subprocess+Arrow mechanism as `r_backend.md` §4.
 
-**Gating:** persona/deployment flag (`r_backend_enabled` or a finer `bioinformatics_viz_enabled`) so the R + Bioconductor footprint is only present where opted in.
+**Gating:** app features/deployment flag (`r_backend_enabled` or a finer `bioinformatics_viz_enabled`) so the R + Bioconductor footprint is only present where opted in.
 
 ---
 

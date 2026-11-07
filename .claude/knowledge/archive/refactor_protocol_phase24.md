@@ -92,8 +92,8 @@ PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_filter_operators.py -v
 # 3. App import must stay clean
 python -c "from app.src.main import app; print('OK')"
 
-# 4. Headless Playwright smoke tests — 10 pass, 2 persona-skipped (~35s)
-PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+# 4. Headless Playwright smoke tests — 10 pass, 2 app features skipped (~35s)
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 ```
 
 Smoke tests use headless Chromium (playwright + shiny.pytest.create_app_fixture).
@@ -102,7 +102,7 @@ filter add/apply/reset, data preview.
 
 **Note:** `libs/generator_utils/` and `libs/utils/` have pre-existing import errors — always
 exclude them. `app/tests/test_reactive_shell.py` and `test_ui_scenarios.py` have 3 pre-existing
-failures unrelated to Phase 24 (persona_selector not rendered in UI). Don't regress them further.
+failures unrelated to Phase 24 (app_features_selector not rendered in UI). Don't regress them further.
 
 If any gate fails:
 1. `git reset --hard HEAD~1`
@@ -117,7 +117,7 @@ If any gate fails:
 1. **Never mix refactor + bug fix or feature in the same commit.**
 2. **Never delete code in the same commit it's moved.** Move first (commit N), delete second (commit N+1).
 3. **Never edit `_apply_filter_rows` semantics** without running the 21-case filter regression (`test_filter_operators.py`) before AND after.
-4. **Never change `bootloader.is_enabled()` call sites.** Persona gating uses hyphens (`pipeline-exploration-advanced`), never underscores.
+4. **Never change `bootloader.is_enabled()` call sites.** App features gating uses hyphens (`pipeline-exploration-advanced`), never underscores.
 5. **Never strip `upstream_provenance` from sink_parquet step** in `app/modules/orchestrator.py` — that's BUG-CACHE-1's keystone.
 6. **Never import a handler module from a non-Shiny context** (ADR-045 Two-Category Law). `app/modules/` = pure; `app/handlers/` = Shiny-only.
 7. **Shared reactive.Values stay in `home_theater.define_server()`**: `applied_filters`, `_pending_filters`, `_propagation_scratch` must be created there and passed as kwargs to sub-handlers. They must NOT be module-level globals.
@@ -159,7 +159,7 @@ from app.handlers.home_theater import define_server
 define_server(input, output, session, *,
               bootloader, wrangle_studio, dev_studio,
               orchestrator, viz_factory, gallery_viewer,
-              current_persona, anchor_path, tier1_anchor,
+              current_app_features, anchor_path, tier1_anchor,
               tier_reference, tier3_leaf, active_cfg,
               active_collection_id, safe_input,
               active_home_subtab, tier_toggle,

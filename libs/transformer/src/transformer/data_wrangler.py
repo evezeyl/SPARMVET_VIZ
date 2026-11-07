@@ -205,13 +205,13 @@ class DataWrangler:
                     location=f"wrangling step {step_idx}",
                     fix=(
                         f"'{action_name}' is not a registered wrangling action. "
-                        "See rules_persona_bioscientist.md §8 for the authoritative action list."
+                        "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
                     ),
                     who="manifest_author",
                     category="wrangling",
                     surface="plot_overlay",
                     severity="error",
-                    reference="rules_persona_bioscientist.md §8",
+                    reference="rules_agent_role_bioscientist.md §8",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc

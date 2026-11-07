@@ -35,11 +35,11 @@ except for **three classes of inline style that must never be moved to CSS**:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│  BANNER  (optional, persona-driven)          .sparmvet-banner          │
+│  BANNER  (optional, app features driven)          .sparmvet-banner          │
 ├─────────────────┬──────────────────────────────┬───────────────────────┤
 │  LEFT SIDEBAR   │  CENTRAL THEATER             │  RIGHT SIDEBAR        │
 │  #nav_sidebar   │  .central-theater            │  #audit_sidebar       │
-│  (aside.sidebar)│  output_ui("dynamic_tabs")   │  (persona-gated)      │
+│  (aside.sidebar)│  output_ui("dynamic_tabs")   │  (flag-gated)      │
 │  ~340 px fixed  │  → per-view HTML rendered    │  ~340 px fixed        │
 └─────────────────┴──────────────────────────────┴───────────────────────┘
 ```
@@ -64,7 +64,7 @@ The CSS variables that control column widths are set at §12 (`--bslib-sidebar-w
 |---|---|
 | Sidebar widths | Set via Python `width=` argument in `layout_sidebar()`; CSS variable only adjusts padding |
 | Nav-pill order (Home / Blueprint / Test Lab / Gallery) | Python list in `home_theater.py` |
-| Which accordion panels are shown per persona | Controlled by `bootloader.is_enabled()` flags in persona templates |
+| Which accordion panels are shown per app features | Controlled by `bootloader.is_enabled()` flags in app features files |
 
 ---
 

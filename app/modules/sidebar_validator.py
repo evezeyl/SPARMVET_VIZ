@@ -1,13 +1,13 @@
 # @deps
 # provides: class:SidebarValidator
 # consumes: app/modules/sidebar_registry.py, app/modules/deployment_error.py, config/app_features/*.yaml, config/ui/sidebars/*.yaml
-# consumed_by: app/src/server.py, scripts/validate_persona_config.py
+# consumed_by: app/src/server.py, scripts/validate_app_features_config.py
 # doc: .claude/rules/ui_implementation_contract.md §11, .claude/rules/rules_ui_dashboard.md §2
 # @end_deps
 """
-SidebarValidator — checks workspaces sidebar configs in persona templates (ADR-073).
+SidebarValidator — checks workspaces sidebar configs in app features files (ADR-073).
 
-Runs alongside PersonaValidator at app startup. Returns list[DeploymentError] (ADR-078
+Runs alongside AppFeaturesValidator at app startup. Returns list[DeploymentError] (ADR-078
 Phase C, DIAG-VALIDATE-SIDEBAR-1). Errors block startup; informational notes are printed.
 """
 
@@ -31,7 +31,7 @@ _REF = "ADR-073 + .claude/rules/ui_implementation_contract.md §11"
 
 
 class SidebarValidator:
-    """Validates workspaces sidebar configs in a persona template (ADR-073).
+    """Validates workspaces sidebar configs in an app features file (ADR-073).
 
     Call validate() with the already-parsed template dict and its file path.
     Returns list[DeploymentError] (empty = valid). Informational notes are printed.
@@ -167,7 +167,7 @@ class SidebarValidator:
         return errors
 
     def validate_file(self, template_path: str) -> list[DeploymentError]:
-        """Load a persona template YAML and validate its workspaces section.
+        """Load an app features file YAML and validate its workspaces section.
 
         Supports !include via a local SafeLoader subclass that resolves paths
         relative to the template file.
@@ -176,7 +176,7 @@ class SidebarValidator:
         if not path.exists():
             return [DeploymentError(
                 component="SidebarValidator",
-                problem=f"Persona template file not found: {template_path}",
+                problem=f"App features file file not found: {template_path}",
                 location=template_path,
                 fix=(
                     f"Ensure the template file exists at {template_path}. "

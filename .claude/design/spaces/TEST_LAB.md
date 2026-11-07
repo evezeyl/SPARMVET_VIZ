@@ -228,7 +228,7 @@ User can:
 The engine **always processes the full file** — no sampling. Efficiency is achieved through Polars LazyFrame streaming (not by processing less data).
 
 1. **Full processing via streaming**: Engine runs matching on the complete file using Polars LazyFrame (`scan_parquet` / lazy evaluation). Memory stays bounded regardless of file size — results are streamed as computed.
-2. **Sorted chunk display**: Results presented sorted by certainty descending (100% first) in chunks of 50 rows (configurable in persona config). User sees the easiest cases first.
+2. **Sorted chunk display**: Results presented sorted by certainty descending (100% first) in chunks of 50 rows (configurable in app features config). User sees the easiest cases first.
 3. **Verify button per chunk**: Each displayed chunk has an explicit "Accept chunk" button. User reviews decisions in the chunk, adjusts any individual action, then accepts to advance to the next chunk.
 4. **Iterative re-run**: After each acceptance round, the engine re-runs pattern detection on remaining unmatched IDs. Pattern space narrows with each round, making new patterns detectable.
 5. **Unmatched chunking**: If many unmatched IDs remain after all rounds, they are also presented in chunks of 50 for manageable review rather than one overwhelming list.
@@ -261,7 +261,7 @@ If user confirms "Suppress & Continue":
 
 If pattern detection + user manual pairing insufficient:
 
-**Threshold rule (C11):** If more than **50 unmatched IDs** remain after all pattern rounds (threshold configurable in persona config), the engine suggests: *"You have [N] unmatched IDs with no consistent pattern detected. Consider standardising your ID format and retrying — this will produce better results than manual case-by-case resolution."* User can accept this advice (download a list of unmatched IDs, clean externally, re-upload) or continue with manual resolution.
+**Threshold rule (C11):** If more than **50 unmatched IDs** remain after all pattern rounds (threshold configurable in app features config), the engine suggests: *"You have [N] unmatched IDs with no consistent pattern detected. Consider standardising your ID format and retrying — this will produce better results than manual case-by-case resolution."* User can accept this advice (download a list of unmatched IDs, clean externally, re-upload) or continue with manual resolution.
 
 
 ```
@@ -492,7 +492,7 @@ tier1:
 
 **Q2: Access Control** → **Deferred (manual for now)**
 - Current model: person who runs anonymisation holds the mapping TSV; they decide what to share
-- No persona flags or deployment profile controls for this in the current build
+- No app features flags or deployment profile controls for this in the current build
 - Plan for access control system in a future enhancement without needing to refactor the output format (TSV is already compatible)
 
 **Q3: ID Pattern for Synthetic IDs** → **Simple Sequencing (with options)**
@@ -796,7 +796,7 @@ the same TSV (identical structure and error patterns) for regression testing acr
 
 - **No data leaves the server**: anonymisation and synthetic generation happen server-side; the user downloads the result. Raw data is never sent to an external service.
 - **Pattern helper shared with BLUEPRINT**: the ID/column pattern matching logic should be the same component. Design for reuse from the start.
-- **Positive inclusion** (ADR-071): TEST_LAB panel is only mounted when `test_lab_enabled` is true in persona config.
+- **Positive inclusion** (ADR-071): TEST_LAB panel is only mounted when `test_lab_enabled` is true in app features config.
 - **Audit trail**: file-generation operations should log what was produced (filename, schema, row count, generation parameters) to the session audit log.
 
 ---
@@ -855,7 +855,7 @@ New Tier 1 library. Zero imports from other domain libs — only `polars` + `uti
 
 - **TL-IDLIB-RECIPE-1** `[sonnet/medium]`: Recode workflow + recipe persistence — `recipe.py` (`apply_recode_step` for actions: `regex_replace`, `mutate` via Polars expression, `drop_duplicates`, `null_if`, `drop_nulls`; `TransformationRecipe.to_yaml` / `from_yaml`). Gate: `test_recipe_persistence` passes (save + load round-trip); `test_recode_workflow` passes (prefix removal + delimiter extraction).
 
-- **TL-IDLIB-CORE-1** `[sonnet/high]`: IDReconciliationEngine orchestrator — `core.py` (`precheck_compatibility`, `match_pair`, `suggest_patterns`, `apply_pattern`, `generate_recipe`, `detect_many_to_many`, `format_match_table`). Progressive matching: full file via Polars LazyFrame, display in sorted chunks (default 50 rows, configurable in persona config). Multi-file sequencing: suggest matching order based on format compatibility. Recode threshold: 50 unmatched IDs triggers "clean first" suggestion (configurable). Gate: `test_many_to_many_detection` passes; progressive chunking unit test passes; `format_match_table` returns parseable string.  
+- **TL-IDLIB-CORE-1** `[sonnet/high]`: IDReconciliationEngine orchestrator — `core.py` (`precheck_compatibility`, `match_pair`, `suggest_patterns`, `apply_pattern`, `generate_recipe`, `detect_many_to_many`, `format_match_table`). Progressive matching: full file via Polars LazyFrame, display in sorted chunks (default 50 rows, configurable in app features config). Multi-file sequencing: suggest matching order based on format compatibility. Recode threshold: 50 unmatched IDs triggers "clean first" suggestion (configurable). Gate: `test_many_to_many_detection` passes; progressive chunking unit test passes; `format_match_table` returns parseable string.  
   Depends: TL-IDLIB-MATCH-1, TL-IDLIB-PATTERN-1, TL-IDLIB-RECIPE-1.
 
 - **TL-IDLIB-TESTS-1** `[sonnet/medium]`: Full test suite for `libs/id_reconciliation/tests/` — unit tests per module + `id_reconciliation_integrity_suite.py` orchestrator. Include: exact match, pattern suggestion, many-to-many detection, recipe round-trip, recode step (all 5 action types), multi-file sequencing suggestion. Gate: `pytest libs/id_reconciliation/tests/ -q` all pass.  
@@ -916,7 +916,7 @@ Upgrade `AquaSynthesizer` — do not rewrite; extend.
 
 ### 34-H — UI (gates on library tasks)
 
-- **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion with panels for each tool (ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting). View title banner. Gated by `test_lab_enabled` persona flag (ADR-071). Sidebar slot type: `test_lab` — add to sidebar registry. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` shows no TEST_LAB nav.
+- **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion with panels for each tool (ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting). View title banner. Gated by `test_lab_enabled` app features flag (ADR-071). Sidebar slot type: `test_lab` — add to sidebar registry. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` shows no TEST_LAB nav.
 
 - **TL-UI-REFORMAT-1** `[haiku/low]`: Reformatting panel — file upload (XLSX/CSV), sheet assignment UI for XLSX (sheet → TSV name), convert button, download TSVs.  
   Depends: TL-REFORMAT-1, TL-UI-SHELL-1.

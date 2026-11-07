@@ -5,7 +5,7 @@ Entry point:
     define_server(input, output, session, *,
                   bootloader, wrangle_studio, dev_studio,
                   orchestrator, viz_factory, gallery_viewer,
-                  current_persona, anchor_path, tier1_anchor,
+                  current_app_features, anchor_path, tier1_anchor,
                   active_cfg,
                   active_collection_id, safe_input, active_home_subtab, tier_toggle,
                   home_state=None, session_manager=None)
@@ -126,8 +126,8 @@ def define_server(input, output, session, *,
         Plotting engine.
     gallery_viewer : GalleryViewer
         Gallery explorer module.
-    current_persona : reactive.Value[str]
-        Active persona (ADR-030).
+    current_app_features : reactive.Value[str]
+        Active app features (ADR-030).
     anchor_path : reactive.Value[str | None]
         Path to active Parquet anchor.
     tier1_anchor : reactive.Calc
@@ -729,8 +729,8 @@ def define_server(input, output, session, *,
         groups = cfg.raw_config.get("analysis_groups", {})
 
         # --- UI-TITLE-1: manifest title banner ---
-        # Resolution: persona ui_title.text override > manifest info.display_name > nothing.
-        # If resolved title is empty or persona sets ui_title.visible=false: no banner.
+        # Resolution: app features ui_title.text override > manifest info.display_name > nothing.
+        # If resolved title is empty or app features sets ui_title.visible=false: no banner.
         _ui_title_cfg = bootloader.config.get("ui_title", {})
         _title_visible = _ui_title_cfg.get("visible", True)
         _title_text = (
@@ -793,7 +793,7 @@ def define_server(input, output, session, *,
         )
         tier_choices["T3"] = _tier_label("My view", "T3 — Filtered / Dropped", _my_view_desc)
 
-        # STATIC-VIEW-1a: static personas (interactivity_enabled=false) have no tier
+        # STATIC-VIEW-1a: static app features files (interactivity_enabled=false) have no tier
         # switching — hide the strip entirely. T2 is the implicit default via the
         # _track_tier_toggle fallback (safe_input returns "T2" when input absent).
         if bootloader.is_enabled("interactivity_enabled"):
@@ -1272,13 +1272,13 @@ def define_server(input, output, session, *,
     @render.ui
     def sidebar_nav_ui():
         perm = current_app_features.get()
-        print(f"DEBUG: Rendering sidebar_nav_ui for Persona: {perm}")
+        print(f"DEBUG: Rendering sidebar_nav_ui for App features: {perm}")
 
         nav_items = [ui.nav_panel("Home", value="Home")]
 
-        # PERSONA-1 (2026-04-30): gates consult the persona feature-flag system
-        # via bootloader.is_enabled(...) instead of hardcoded persona names. This
-        # matches the design intent of .claude/rules/rules_persona_feature_flags.md
+        # APP_FEATURES-1 (2026-04-30): gates consult the app features feature-flag system
+        # via bootloader.is_enabled(...) instead of hardcoded app features names. This
+        # matches the design intent of .claude/rules/rules_app_features_flags.md
         # — flags like gallery_enabled are documented as INDEPENDENT and can be
         # flipped per app features file in config/app_features/ without touching code here.
         if bootloader.is_enabled("wrangle_studio_enabled"):
@@ -1343,7 +1343,7 @@ def define_server(input, output, session, *,
     def sidebar_tools_ui():
         """
         Relocated Sidebar Management (ADR-038).
-        Enforces dedicated Persona-based control clusters.
+        Enforces dedicated App features based control clusters.
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
@@ -1527,7 +1527,7 @@ def define_server(input, output, session, *,
             "session_management": _render_session_management,
         }
 
-        # Iterate slot list from persona template (ADR-073).
+        # Iterate slot list from app features file (ADR-073).
         sidebar_cfg = bootloader.get_sidebar_config("home", "left")
         panels = []
         include_notification_log = False

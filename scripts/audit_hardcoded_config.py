@@ -12,8 +12,8 @@ Detects three classes of hardcoding that make the app fragile or deployment-spec
      `bootloader.get_location("raw_data")`. The bootloader runs connector.resolve_paths()
      which normalises and validates locations; bypassing it silently uses unvalidated paths.
 
-  3. PERSONA NAME STRING COMPARISONS in runtime UI code — if/elif chains like
-     `if persona == "developer"` break silently when a custom persona template is deployed.
+  3. APP_FEATURES NAME STRING COMPARISONS in runtime UI code — if/elif chains like
+     `if app features == "developer"` break silently when a custom app features file is deployed.
      All gating must use `bootloader.is_enabled(flag)`. (ADR-053)
 
   4. HARDCODED ENV VAR READS for deployment config outside bootloader — e.g.
@@ -45,7 +45,7 @@ SCAN_DIRS = ["app", "libs"]
 SKIP_DIRS = {"tests", "tmpAI", "tmp", "__pycache__", ".venv", "archives"}
 # Files to skip entirely
 SKIP_FILES = {
-    "bootloader.py",       # owns profile/persona/env-var reads — intentional
+    "bootloader.py",       # owns profile/app features/env-var reads — intentional
     "connector.py",        # owns location resolution — intentional
     "local_connector.py",  # filesystem connector — reads raw_data etc by design
     "filesystem.py",       # filesystem connector implementation — reads profile locations by design
@@ -81,22 +81,22 @@ DIRECT_LOCATION_PATTERNS = [
      "profile.get('locations') read — use bootloader.get_location(key) instead"),
 ]
 
-# 3. Persona name string comparisons in runtime code (ADR-053)
+# 3. App features name string comparisons in runtime code (ADR-053)
 APP_FEATURES_NAME_PATTERNS = [
-    (re.compile(r'\bpersona\s*==\s*["\']'),
-     "Persona name string comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
-    (re.compile(r'\bpersona\s+in\s*\('),
-     "Persona name in-tuple comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
-    (re.compile(r'\bpersona\s+in\s*\['),
-     "Persona name in-list comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
+    (re.compile(r'\bapp_features\s*==\s*["\']'),
+     "App features name string comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
+    (re.compile(r'\bapp_features\s+in\s*\('),
+     "App features name in-tuple comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
+    (re.compile(r'\bapp_features\s+in\s*\['),
+     "App features name in-list comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
     (re.compile(r'SPARMVET_APP_FEATURES.*=='),
-     "SPARMVET_APP_FEATURES env-var string comparison — bootloader owns persona resolution"),
+     "SPARMVET_APP_FEATURES env-var string comparison — bootloader owns app features resolution"),
 ]
 
 # 4. Env var reads for deployment config outside bootloader
 ENV_VAR_PATTERNS = [
     (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_APP_FEATURES["\']'),
-     "Direct SPARMVET_APP_FEATURES env-var read — bootloader owns persona resolution"),
+     "Direct SPARMVET_APP_FEATURES env-var read — bootloader owns app features resolution"),
     (re.compile(r'os\.environ(?:\.get)?\s*\(\s*["\']SPARMVET_PROFILE["\']'),
      "Direct SPARMVET_PROFILE env-var read — bootloader owns profile resolution"),
 ]
@@ -160,7 +160,7 @@ def scan_file(path: Path, project_root: Path) -> list[dict]:
     all_pattern_groups = [
         ("absolute_path",   ABSOLUTE_PATH_PATTERNS,   "BLOCKER"),
         ("direct_location", DIRECT_LOCATION_PATTERNS, "BLOCKER"),
-        ("persona_name",    APP_FEATURES_NAME_PATTERNS,     "BLOCKER"),
+        ("app_features_name",    APP_FEATURES_NAME_PATTERNS,     "BLOCKER"),
         ("env_var",         ENV_VAR_PATTERNS,          "BLOCKER"),
         ("interpreter",     INTERPRETER_PATTERNS,      "BLOCKER"),
     ]
@@ -213,7 +213,7 @@ def render_report(violations: list[dict], project_root: Path) -> str:
         "# Audit Report: Hardcoded Configuration & Path Violations",
         f"Generated: {now}",
         f"Project root: {project_root}",
-        "Rule: ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no persona name checks)",
+        "Rule: ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no app features name checks)",
         "",
     ]
 
@@ -230,7 +230,7 @@ def render_report(violations: list[dict], project_root: Path) -> str:
         categories = {
             "absolute_path":   ("❌ Absolute Path Strings", "Replace with bootloader.get_location(key) or a relative path resolved at runtime."),
             "direct_location": ("❌ Direct Location Dict Reads", "Call bootloader.get_location(key) — never read locations from the profile dict directly."),
-            "persona_name":    ("❌ Persona Name String Comparisons", "Replace with bootloader.is_enabled('flag_name'). See ADR-053 and rules_persona_feature_flags.md §Anti-Pattern."),
+            "app_features_name":    ("❌ App features Name String Comparisons", "Replace with bootloader.is_enabled('flag_name'). See ADR-053 and rules_app_features_flags.md §Anti-Pattern."),
             "env_var":         ("❌ Direct Env-Var Reads for Deployment Config", "Bootloader owns SPARMVET_APP_FEATURES and SPARMVET_PROFILE resolution. Never read these in handler code."),
             "interpreter":     ("❌ Hardcoded Python Interpreter", "Use the venv Python path from bootloader or subprocess with sys.executable from the active venv."),
         }
@@ -263,10 +263,10 @@ def render_report(violations: list[dict], project_root: Path) -> str:
         "",
         "## References",
         "- `ADR-048` — Deployment Profile & Connector Abstraction",
-        "- `ADR-031` — Bootloader owns path and persona resolution",
-        "- `ADR-053` — No persona name string comparisons in runtime code",
+        "- `ADR-031` — Bootloader owns path and app features resolution",
+        "- `ADR-053` — No app features name string comparisons in runtime code",
         "- `.claude/rules/rules_runtime_environment.md §1` — venv enforcement",
-        "- `.claude/rules/rules_persona_feature_flags.md §Anti-Pattern` — is_enabled() pattern",
+        "- `.claude/rules/rules_app_features_flags.md §Anti-Pattern` — is_enabled() pattern",
         "- `config/deployment/local/local_profile.yaml` — reference for allowed location keys",
     ]
 

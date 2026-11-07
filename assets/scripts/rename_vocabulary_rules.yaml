@@ -138,3 +138,24 @@ phrases:
   - ["manifest author", "recipe author"]
   - ["pipeline manifest", "data analysis recipe"]
   - ["master manifest", "master data analysis recipe"]
+
+# Prose rules for plain words in comments, strings and documents, applied by
+# rename_vocabulary.py --apply text. Regex, case-sensitive, ordered, first match wins at a
+# position. Words that carry an underscore, slash, dot or hyphen-joined id are handled by the
+# pairs above, not here.
+prose:
+  persona:
+    - ['(?i)@dasharch persona', '@dasharch agent role']
+    - ['(?i)@bioscientist persona', '@bioscientist agent role']
+    - ['\\bAI agent personas?\\b', 'agent role']
+    - ['(?i)\bper-persona\b', 'per app features file']
+    - ['\bpersona-gated\b', 'flag-gated']
+    - ['\bPersona templates\b', 'App features files']
+    - ['\bpersona templates\b', 'app features files']
+    - ['\bPersona template\b', 'App features file']
+    - ['\bpersona template\b', 'app features file']
+    - ['\bPersonas\b', 'App features files']
+    - ['\bpersonas\b', 'app features files']
+    - ['\bPersona\b', 'App features']
+    - ['\bpersona\b', 'app features']
+    - ['\bPERSONA\b', 'APP_FEATURES']

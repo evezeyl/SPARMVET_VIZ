@@ -30,7 +30,7 @@ from pathlib import Path
 import yaml
 
 # ---------------------------------------------------------------------------
-# !include passthrough — local Loader/Dumper subclass (mirrors persona_validator.py)
+# !include passthrough — local Loader/Dumper subclass (mirrors app_features_validator.py)
 # ---------------------------------------------------------------------------
 
 class _IncludeTag:

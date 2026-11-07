@@ -24,7 +24,7 @@ Usage:
       --deployment_file custom.yaml \\
       --description "Custom test" \\
       --project_root /data/my_pipeline \\
-      --persona pipeline-exploration-simple
+      --app features pipeline-exploration-simple
 
 See docs/workflows/connector.qmd for the full deployment profile schema (ADR-048).
 """
@@ -47,11 +47,11 @@ def main():
                         help="Human-readable description of this test deployment.")
     parser.add_argument("--project_root", required=False, default=".",
                         help="Project root path (default: '.' — repository root).")
-    parser.add_argument("--persona", required=False, default="developer",
+    parser.add_argument("--app features", required=False, default="developer",
                         choices=["pipeline-static", "pipeline-exploration-simple",
                                  "pipeline-exploration-advanced",
                                  "project-independent", "developer"],
-                        help="Default persona for this deployment (default: developer).")
+                        help="Default app features for this deployment (default: developer).")
     args = parser.parse_args()
 
     out_dir = Path("config/deployment/local")
@@ -86,7 +86,7 @@ def main():
 
     print(f"Deployment profile written: {out_path}")
     print(f"  manifest  : {args.manifest_id}")
-    print(f"  persona   : {args.app_features}")
+    print(f"  app features   : {args.app_features}")
     print(f"  project   : {args.project_root}")
     print()
     print("To use: set SPARMVET_PROFILE env var, or place at ~/.sparmvet/profile.yaml.")

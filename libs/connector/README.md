@@ -26,7 +26,7 @@ BaseConnector (ABC)
 
 | File | Class | Role |
 |---|---|---|
-| `base.py` | `BaseConnector` | Abstract interface — `resolve_paths()`, `fetch_data()`, `get_manifest_path()`, `get_default_persona()` |
+| `base.py` | `BaseConnector` | Abstract interface — `resolve_paths()`, `fetch_data()`, `get_manifest_path()`, `get_default_app_features()` |
 | `filesystem.py` | `FilesystemConnector` | Resolves locations under `project_root`; no-op `fetch_data()` |
 | `galaxy.py` | `GalaxyConnector` | Extends Filesystem; falls back to `_GALAXY_JOB_HOME_DIR` env var when `project_root` absent |
 | `irida.py` | `IridaConnector` | Resolves paths via `irida.local_cache`; validates `SPARMVET_IRIDA_TOKEN` + irida block; `fetch_data()` stub (Phase 23-D) |

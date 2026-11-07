@@ -34,7 +34,7 @@ audit = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(audit)
 
 TOKEN = re.compile(r"[A-Za-z0-9_\-]*(?:persona|manifest|recipe|profile|connector_(?:config|path|template|cache)|sparmvet_connector|local_connector)[A-Za-z0-9_\-]*", re.I)
-RETIRED = re.compile(r"persona|manifest|recipe|profile|connector_(?:config|path|template|cache)|sparmvet_connector", re.I)
+RETIRED = re.compile(r"persona(?!l)|manifest|recipe|profile|connector_(?:config|path|template|cache)|sparmvet_connector", re.I)
 CONTEXT = "STEPS_OR_RECIPE_BY_CONTEXT"
 
 
@@ -168,6 +168,52 @@ def new_path_subset(path: str, pairs, keep, rules):
     return "/".join(transform(seg, pairs, keep)[0] if RETIRED.search(seg) else seg for seg in parts)
 
 
+TEXT_EXT = {".py", ".yaml", ".yml", ".sh", ".toml", ".css", ".md", ".qmd", ".mmd", ".txt",
+            ".json", ".timer", ".service", ".scss"}
+# generated or handled elsewhere: the file map is regenerated, settings.json has its own cleanup task
+TEXT_SKIP = {"tree.txt", ".claude/settings.json", "CLAUDE.md",
+             "app/modules/renamed_keys.py"}
+ID_TOKEN = re.compile(r"[A-Za-z0-9_]+(?:[-./][A-Za-z0-9_]+)*")
+
+
+def _prose_rules(rules, words):
+    out = []
+    for w in words:
+        for rx, new in rules.get("prose", {}).get(w, []):
+            out.append((re.compile(rx), new))
+    return out
+
+
+def rewrite_text(path: str, words, pairs, keep, prose, dry_run: bool):
+    """Rename ids by the pairs (snake, Camel, UPPER, paths) and plain words by the prose rules."""
+    src = Path(path).read_text(encoding="utf-8")
+    word_rx = re.compile("|".join(words), re.I) if words else RETIRED
+    multi = [(rx, n) for rx, n in prose if " " in n or "-" in rx.pattern]
+    single = [(rx, n) for rx, n in prose if (rx, n) not in multi]
+    out = src
+    for rx, new in multi:
+        out = rx.sub(new, out)
+
+    def fix_token(m):
+        tok = m.group(0)
+        if not word_rx.search(tok):
+            return tok
+        has_sep = any(c in tok for c in "_-./") or (tok != tok.lower() and tok != tok.upper() and tok[1:] != tok[1:].lower())
+        if not has_sep and tok.lower() in {w.lower() for w in words} | {w.lower() + "s" for w in words}:
+            return tok  # a plain word: prose rules decide
+        new, status = transform(tok, pairs, keep)
+        return new if status in ("auto",) else tok
+
+    out = ID_TOKEN.sub(fix_token, out)
+    for rx, new in single:
+        out = rx.sub(new, out)
+    out = re.sub(r"\b([Aa]) (app features|App features)", lambda m: ("An" if m.group(1) == "A" else "an") + " " + m.group(2), out)
+    changed = out != src
+    if changed and not dry_run:
+        Path(path).write_text(out, encoding="utf-8")
+    return changed
+
+
 def cmd_apply(args) -> int:
     pairs_all, rules = load_pairs()
     keep = [k.lower() for k in rules["keep_substrings"]]
@@ -175,7 +221,8 @@ def cmd_apply(args) -> int:
     files = [f for f in tracked_files() if f.endswith(".py")]
     total = 0
     if args.what in ("moves", "all"):
-        py_with_word = [f for f in files if any(w in f.lower() for w in args.words)]
+        all_files = tracked_files() if args.ext == "all" else files
+        py_with_word = [f for f in all_files if any(w in f.lower() for w in args.words)]
         for old, new in move_files(py_with_word, pairs, keep, rules, args.dry_run):
             print(f"move  {old} -> {new}")
         if not args.dry_run:
@@ -189,6 +236,19 @@ def cmd_apply(args) -> int:
                 total += n
                 print(f"{n:>4}  {f}")
         print(f"identifier tokens {'to rename' if args.dry_run else 'renamed'}: {total}")
+    if args.what == "text":
+        rules_prose = _prose_rules(rules, args.words)
+        n_files = 0
+        for f in tracked_files():
+            if f in TEXT_SKIP or Path(f).suffix not in TEXT_EXT:
+                continue
+            try:
+                if rewrite_text(f, args.words, pairs, keep, rules_prose, args.dry_run):
+                    n_files += 1
+                    print(f"text  {f}")
+            except UnicodeDecodeError:
+                continue
+        print(f"text files {'to change' if args.dry_run else 'changed'}: {n_files}")
     return 0
 
 
@@ -196,9 +256,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", metavar="PATH", help="write the Markdown mapping table here")
     ap.add_argument("--unmapped", action="store_true", help="print only the UNMAPPED tokens and exit 1 if any")
-    ap.add_argument("--apply", choices=["identifiers", "moves", "all"],
+    ap.add_argument("--apply", choices=["identifiers", "moves", "text", "all"],
                     help="change files: rename Python identifiers and/or git mv Python files")
     ap.add_argument("--words", nargs="+", default=[], help="with --apply: retired words to rename, e.g. persona")
+    ap.add_argument("--ext", choices=["py", "all"], default="py", help="with --apply moves: which files to move")
     ap.add_argument("--dry-run", action="store_true", help="with --apply: only print what would change")
     args = ap.parse_args()
 

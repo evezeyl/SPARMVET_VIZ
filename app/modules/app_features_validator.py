@@ -1,6 +1,6 @@
 """
 @deps
-provides: class:PersonaValidator
+provides: class:AppFeaturesValidator
 consumes: config/app_features/*.yaml, app/modules/deployment_error.py
 consumed_by: app/src/server.py
 doc: .claude/knowledge/architecture_decisions.md#adr-077, #adr-078
@@ -58,7 +58,7 @@ _FATAL_CASCADE_GATES: dict[str, list[str]] = {
 
 
 class AppFeaturesValidator:
-    """Validates persona template completeness at startup.
+    """Validates app features file completeness at startup.
 
     Call validate() before define_server(). Errors are fatal; warnings are logged.
     """
@@ -80,12 +80,12 @@ class AppFeaturesValidator:
         # Rule 2: name must use hyphens, never underscores
         if "_" in app_features_id and app_features_id not in (""):
             errors.append(DeploymentError(
-                component="PersonaValidator",
+                component="AppFeaturesValidator",
                 problem=f"name '{app_features_id}' contains underscores",
                 location=f"name in {template_path}",
                 fix="Replace underscores with hyphens. e.g. 'pipeline_static' → 'pipeline-static'.",
                 who="operator",
-                reference=".claude/rules/rules_persona_feature_flags.md (persona naming)",
+                reference=".claude/rules/rules_app_features_flags.md (app features naming)",
             ))
 
         features = template.get("flags", {})
@@ -128,7 +128,7 @@ class AppFeaturesValidator:
             missing = [f for f in _T3_COMPANIONS if not features.get(f, False)]
             if missing:
                 errors.append(DeploymentError(
-                    component="PersonaValidator",
+                    component="AppFeaturesValidator",
                     problem=(
                         "t3_sandbox_enabled=True but required companion flags are False: "
                         + ", ".join(missing)
@@ -140,7 +140,7 @@ class AppFeaturesValidator:
                         "The T3 sandbox cannot function without comparison/audit/session/export."
                     ),
                     who="operator",
-                    reference=".claude/rules/rules_persona_feature_flags.md §Cascade-T3 (Rule 6)",
+                    reference=".claude/rules/rules_app_features_flags.md §Cascade-T3 (Rule 6)",
                     related=tuple(missing),
                 ))
 
@@ -151,18 +151,18 @@ class AppFeaturesValidator:
                 for child in children:
                     if features.get(child, False):
                         errors.append(DeploymentError(
-                            component="PersonaValidator",
+                            component="AppFeaturesValidator",
                             problem=f"'{child}=True' requires '{master}=True'",
                             location=f"features.{child} in {template_path}",
                             fix=(
                                 f"Edit the template — either set '{child}: false' "
                                 f"(simplest), or set '{master}: true' if you intend to "
-                                f"give this persona access to the parent feature. "
+                                f"give this app features access to the parent feature. "
                                 f"Both flags must agree."
                             ),
                             who="operator",
                             reference=(
-                                ".claude/rules/rules_persona_feature_flags.md "
+                                ".claude/rules/rules_app_features_flags.md "
                                 "§Cascade-D (Rules 4–5) + ADR-076 §6 + ADR-077"
                             ),
                             related=(master,),
@@ -170,21 +170,21 @@ class AppFeaturesValidator:
 
         # Print warnings (non-fatal)
         for w in warnings:
-            print(f"[PersonaValidator] WARNING: {w}")
+            print(f"[AppFeaturesValidator] WARNING: {w}")
 
         return errors
 
     def validate_file(self, template_path: str) -> list[DeploymentError]:
         """Load YAML file and validate. Returns DeploymentError list.
 
-        Supports !include in persona templates (paths relative to the template file).
+        Supports !include in app features files (paths relative to the template file).
         Uses a SafeLoader subclass to avoid polluting the global constructor registry.
         """
         path = Path(template_path)
         if not path.exists():
             return [DeploymentError(
-                component="PersonaValidator",
-                problem="Persona template file not found",
+                component="AppFeaturesValidator",
+                problem="App features file file not found",
                 location=template_path,
                 fix=(
                     "Set SPARMVET_APP_FEATURES to an existing template id "
@@ -193,7 +193,7 @@ class AppFeaturesValidator:
                     "live under config/app_features/."
                 ),
                 who="operator",
-                reference=".claude/rules/rules_persona_feature_flags.md (persona resolution)",
+                reference=".claude/rules/rules_app_features_flags.md (app features resolution)",
             )]
         try:
             class _Loader(yaml.SafeLoader):
@@ -213,8 +213,8 @@ class AppFeaturesValidator:
                 template = yaml.load(f, Loader=_Loader) or {}
         except Exception as e:
             return [DeploymentError(
-                component="PersonaValidator",
-                problem=f"Failed to parse persona template YAML: {type(e).__name__}",
+                component="AppFeaturesValidator",
+                problem=f"Failed to parse app features file YAML: {type(e).__name__}",
                 location=template_path,
                 fix=(
                     "The file is not valid YAML. Check for: tab vs space indentation, "
@@ -224,6 +224,6 @@ class AppFeaturesValidator:
                     f"Original error: {e}"
                 ),
                 who="operator",
-                reference=".claude/rules/rules_persona_feature_flags.md",
+                reference=".claude/rules/rules_app_features_flags.md",
             )]
         return self.validate(template, template_path)

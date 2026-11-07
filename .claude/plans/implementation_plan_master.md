@@ -142,20 +142,20 @@ This implementation plan is governed by the authoritative rulebooks and architec
 
 ---
 
-### Phase 11: UI Persona & Reactive Integration (ADR-026/ADR-024)
+### Phase 11: UI App features & Reactive Integration (ADR-026/ADR-024)
 
 > **Numbering note (2026-04-30):** Phase 11-B and Phases 13–15 are absent from this plan. These are historical gaps — the work was done but tracked directly in git commits and ADRs rather than this document. The plan numbering is non-sequential by design at those points, not missing work.
 
 ### Phase 11-A: Pipeline Demo Implementation (DONE)
 
-- [x] **UI Bootloader**: Implement `ui_config.yaml` for Persona masking. [DONE]
+- [x] **UI Bootloader**: Implement `ui_config.yaml` for App features masking. [DONE]
 - [x] **Dual-View Scaffolding**: Create `ui.navset_tab` with Tab A (Tier 2 Reference) and Tab B (Tier 3 Active). [DONE]
 - [x] **Tier 3 Sidebar Connector**: Link Shiny inputs to `VizFactory` filters. [DONE]
 - [ ] **Annotation Modal**: Implement mandatory 'User Note' popup. (ACTIVE)
 
 ### Phase 11-C: UI Shell & Module Integration (DONE)
 
-- [x] **Persona Bootloader**: Implement `app/src/bootloader.py`.
+- [x] **App features Bootloader**: Implement `app/src/bootloader.py`.
 - [x] **Library Hook-up**: Absolute imports of `libs/` packages into `app/modules/`.
 - [x] **Shell Layout**: Build the 3-zone layout (Navigation, Theater, Audit Stack).
 
@@ -181,15 +181,15 @@ This implementation plan is governed by the authoritative rulebooks and architec
 
 ## Phase 12: UI Orchestration & Aesthetics (ADR-027)
 
-*IMPORTANT: The specific layout configurations, sandbox gating logic, and persona mappings are defined authoritatively in `[ui_implementation_contract.md](../../.claude/rules/ui_implementation_contract.md)`. This section serves only as an implementation tracker.*
+*IMPORTANT: The specific layout configurations, sandbox gating logic, and app features mappings are defined authoritatively in `[ui_implementation_contract.md](../../.claude/rules/ui_implementation_contract.md)`. This section serves only as an implementation tracker.*
 
-### Phase 12-A: Comparison Theater & Persona Scaffolding (DONE)
+### Phase 12-A: Comparison Theater & App features Scaffolding (DONE)
 
 - [x] **Comparison Theater Base**: Dual-column layout setup. [DONE]
 - [x] **True 3-Column Navigation Shell (ADR-029a)**: Nested `layout_sidebar` structure with Left (Navigator), Center (Theater), and Right (Audit). [DONE]
 - [x] **Dynamic Layout Grid**: Implement logic to shift between grid modes and handle maximized panes. [DONE]
 - [x] **Analysis Theater Tabs**: Materialize manifest groups into dynamic tabsets with integrated controls. [DONE]
-- [x] **Persona Reactivity Matrix Enforcement**: Link `app/src/ui.py` strictly to persona-based masking. [DONE]
+- [x] **App features Reactivity Matrix Enforcement**: Link `app/src/ui.py` strictly to app features based masking. [DONE]
 - [x] **Visual vs Functional Pickers**: Connected schema pickers and column visibility controls. [DONE]
 
 ### Phase 12-B: Position-Aware Sandbox & Controls
@@ -201,7 +201,7 @@ This implementation plan is governed by the authoritative rulebooks and architec
 
 ### Phase 12-C: Headless UI Manifest Verification
 
-- [ ] **Persona Gating Tests**: Implement headless test strategies (e.g., Shiny testing addons like `pytest-playwright`) to verify each persona's UI masking element by element, locking to one persona at a time per test suite.
+- [ ] **App features Gating Tests**: Implement headless test strategies (e.g., Shiny testing addons like `pytest-playwright`) to verify each app features's UI masking element by element, locking to one app features at a time per test suite.
 
 ### Phase 16: Gallery Taxonomy & Scaling (DONE 2026-04-19)
 
@@ -274,9 +274,9 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ## Phase 21: Unified Home Theater (ADR-043 / ADR-044) ✅ COMPLETED 2026-04-30
 
-**Objective:** Eliminate the redundant "Analysis Theater / Viz" nav mode, merge all results functionality into a single unified **Home** mode, implement persona-gated tier controls, context-reactive left sidebar filters, and right sidebar suppression for lower personas.
+**Objective:** Eliminate the redundant "Analysis Theater / Viz" nav mode, merge all results functionality into a single unified **Home** mode, implement flag-gated tier controls, context-reactive left sidebar filters, and right sidebar suppression for lower app features files.
 
-**Governing ADRs:** ADR-043 (Unified Home Theater), ADR-044 (Persona-Gated Audit Stack & Right Sidebar Visibility), ADR-047 (Export Bundle).
+**Governing ADRs:** ADR-043 (Unified Home Theater), ADR-044 (App features Gated Audit Stack & Right Sidebar Visibility), ADR-047 (Export Bundle).
 
 ### Phase 21-A: Nav & Routing Simplification ✅ COMPLETED 2026-04-23
 
@@ -291,7 +291,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ### Phase 21-C: Tier Toggle ✅ COMPLETED 2026-04-23
 
-- [x] `tier_toggle` radio (T1/T2 always; T3 persona-gated advanced+).
+- [x] `tier_toggle` radio (T1/T2 always; T3 flag-gated advanced+).
 - [x] `_track_tier_toggle` effect syncs input → `tier_toggle` reactive.Value.
 - [x] `ref_tier_switch` and `view_toggle` removed.
 
@@ -305,7 +305,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ### Phase 21-E: Comparison Mode ✅ COMPLETED 2026-04-30
 
-- [x] `comparison_mode_toggle_ui` fixed: persona IDs use hyphens; tier gate (`tier_toggle != "T3"` early return); label "⚖ Compare T2 vs T3".
+- [x] `comparison_mode_toggle_ui` fixed: app features IDs use hyphens; tier gate (`tier_toggle != "T3"` early return); label "⚖ Compare T2 vs T3".
 - [x] `ui.output_ui("comparison_mode_toggle_ui")` placed in `theater_header` inside `dynamic_tabs` (was defined but never mounted).
 - [x] `_make_cmp_baseline_handler(p_id)` factory registered for all plot IDs — renders `plot_group_{p_id}_cmp_base` with T1 data, no T3 audit nodes.
 - [x] `dynamic_tabs` reads `comparison_mode` input: 2-column layout (T2 baseline left / T3 adjusted right) when ON in T3 tier.
@@ -313,7 +313,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 ### Phase 21-F: Context-Reactive Filters + Column Selection ✅ COMPLETED 2026-04-23
 
 - [x] Filter recipe builder UI: `_pending_filters` + `applied_filters` reactive.Values.
-- [x] Shell stability pattern: `sidebar_filters` reads only `current_persona`; child outputs (`filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, `filter_t3_btn_ui`) independent.
+- [x] Shell stability pattern: `sidebar_filters` reads only `current_app_features`; child outputs (`filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, `filter_t3_btn_ui`) independent.
 - [x] `_apply_filter_rows` helper: auto-promotes eq/ne→in/not_in for list values; casts column to Utf8 for set ops; coerces scalar to numeric dtype.
 - [x] `applied_filters` → plot handlers and `home_data_preview` (predicate pushdown).
 - [x] `not_in` op added to VizFactory predicate pushdown.
@@ -321,16 +321,16 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [ ] 21-F-5 (T3 Apply to recipe) — UI stub present; serialization deferred.
 - [ ] 21-F-7 (add `scale_x_discrete` to manifests) — deferred to user.
 
-### Phase 21-G: Persona-Gated Right Sidebar Suppression ✅ COMPLETED 2026-04-30
+### Phase 21-G: App features Gated Right Sidebar Suppression ✅ COMPLETED 2026-04-30
 
-- [x] `hidden_personas = {"pipeline-static", "pipeline-exploration-simple"}` in `right_sidebar_content_ui`.
-- [x] Returns `ui.div()` for suppressed personas — sidebar slot empty, theater expands to full width.
+- [x] `hidden_app_features = {"pipeline-static", "pipeline-exploration-simple"}` in `right_sidebar_content_ui`.
+- [x] Returns `ui.div()` for suppressed app features files — sidebar slot empty, theater expands to full width.
 - [x] Full audit stack visible for ≥ `pipeline-exploration-advanced`.
 
 ### Phase 21-H: Headless Verification & @verify Gate ✅ COMPLETED 2026-04-30
 
 - [x] `app/tests/debug_home_theater.py` created — 10 sections, 76/76 checks PASS.
-- [x] Covers: persona feature flags, manifest tab structure, tier choices, sidebar suppression, comparison mode gating, PK extraction, session provenance SHA256, ghost round-trip, filter recipe schema, bootloader locations.
+- [x] Covers: app features feature flags, manifest tab structure, tier choices, sidebar suppression, comparison mode gating, PK extraction, session provenance SHA256, ghost round-trip, filter recipe schema, bootloader locations.
 - [x] Output artifact: `tmpAI/home_theater_verify/results.json`.
 
 ### Phase 21-I: Export Results Bundle ✅ COMPLETED 2026-04-23
@@ -371,8 +371,8 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ### Phase 22-D: Extract `app/handlers/ingestion_handlers.py`
 
-- [x] Created with `define_server(input, output, session, *, bootloader, current_persona, safe_input)`.
-- [x] Handlers moved: `handle_ingest`, `update_persona_context`.
+- [x] Created with `define_server(input, output, session, *, bootloader, current_app_features, safe_input)`.
+- [x] Handlers moved: `handle_ingest`, `update_app_features_context`.
 
 ### Phase 22-E: Extract `app/handlers/audit_stack.py`
 
@@ -387,7 +387,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ### Phase 22-G: Extract `app/handlers/home_theater.py`
 
-- [x] Created with `define_server(input, output, session, *, bootloader, wrangle_studio, dev_studio, orchestrator, viz_factory, gallery_viewer, current_persona, anchor_path, tier1_anchor, tier_reference, tier3_leaf, active_cfg, active_collection_id, safe_input)`.
+- [x] Created with `define_server(input, output, session, *, bootloader, wrangle_studio, dev_studio, orchestrator, viz_factory, gallery_viewer, current_app_features, anchor_path, tier1_anchor, tier_reference, tier3_leaf, active_cfg, active_collection_id, safe_input)`.
 - [x] All Home Theater handlers moved: `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `right_sidebar_content_ui`, `system_tools_ui`, `sidebar_filters`, `plot_reference`, `table_reference`, `plot_leaf`, `table_leaf`, `handle_plot_brush`, `comparison_mode_toggle_ui`.
 
 ### Phase 22-H: Slim `server.py` to orchestrator only
@@ -453,7 +453,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 5. **`_op_label` lifted to `t3_recipe_engine.py` in 24-D.** During 24-C it was inlined in `export_handlers.py` (mechanical move). 24-D folded a prep step that lifted it to the canonical pure-helper module so both `export_handlers` and `filter_and_audit_handlers` import from one place.
 
-6. **24-B kwarg surface narrower than planned.** Plan listed 7 reactive kwargs; actual session block reads only 3 (`session_manager`, `current_persona`, `home_state`). Final signature reflects the truth.
+6. **24-B kwarg surface narrower than planned.** Plan listed 7 reactive kwargs; actual session block reads only 3 (`session_manager`, `current_app_features`, `home_state`). Final signature reflects the truth.
 
 7. **24-D kwarg surface broader than planned.** 14 kwargs (4 reactive.Values, 6 closure callables from `define_server`, plus `input/output/session/tier_toggle/active_home_subtab/safe_input`). Recorded as a smell to revisit in a future cleanup pass.
 
@@ -461,7 +461,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 - **Unit:** `pytest app/tests/test_filter_operators.py libs/connector/tests/ libs/viz_factory/tests/test_deco2_components.py -q` → 90/90 in ~1.2s. The 21-case filter regression is the single highest-signal gate for this refactor.
 - **Import:** `python -c "from app.src.main import app; print('OK')"`.
-- **Smoke (Playwright headless):** `SPARMVET_PERSONA=qa pytest app/tests/test_shiny_smoke.py -q` → 10 pass + 2 persona-skip in ~20s. Includes all 4 filter pipeline tests.
+- **Smoke (Playwright headless):** `SPARMVET_APP_FEATURES=qa pytest app/tests/test_shiny_smoke.py -q` → 10 pass + 2 app features skip in ~20s. Includes all 4 filter pipeline tests.
 
 ### Post-Phase 24 deliverables (all complete)
 
@@ -478,7 +478,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 **ADR:** ADR-052
 **Status:** COMPLETE. All 10 substeps (A–J) delivered. See `tasks_archive_phase25.md` and `audit_2026-05-01_phase25_complete.md`.
-**Design doc:** `EVE_WORK/daily/2026-05-01/persona_functionality_side_bars_v3_clean.csv`
+**Design doc:** `EVE_WORK/daily/2026-05-01/app_features_functionality_side_bars_v3_clean.csv`
 **Change manifests:** `.claude/tasks/tasks_phase25.md`
 
 ### Scope
@@ -488,9 +488,9 @@ Ten ordered substeps (A→J, risk-ascending):
 | Step | Label | Model | Risk |
 |---|---|---|---|
 | 25-A | Config + renames (Test Lab, Gallery for project-independent) | Sonnet | Low |
-| 25-B | Persona template new fields + PersonaValidator | Sonnet | Low-Med |
-| 25-C | Persona gating + bug fixes (PERSONA-1, Gallery, comparison flag) | Sonnet | Med |
-| 25-D | Right sidebar layout fix (exclude container for pipeline personas) | Sonnet | Med |
+| 25-B | App features file new fields + AppFeaturesValidator | Sonnet | Low-Med |
+| 25-C | App features gating + bug fixes (APP_FEATURES-1, Gallery, comparison flag) | Sonnet | Med |
+| 25-D | Right sidebar layout fix (exclude container for pipeline app features files) | Sonnet | Med |
 | 25-E | Accordion restructure (rename + move panels) | Sonnet | Med |
 | 25-F | Data Import panel (new build, testing_mode-aware) | Opus | High |
 | 25-G | Export: audit report format selector + Quarto render + session export .zip | Opus | Med-High |
@@ -500,9 +500,9 @@ Ten ordered substeps (A→J, risk-ascending):
 
 ### Key decisions (ADR-052)
 
-- **Right sidebar layout:** excluded at `ui.py` build time for pipeline personas (Option A — reads `SPARMVET_PERSONA` env var)
-- **New persona template fields:** `manifest_selector.visible/fixed_manifest` + `testing_mode`
-- **Pipeline personas always production:** `testing_mode=false` for static + simple — testing uses developer/advanced personas
+- **Right sidebar layout:** excluded at `ui.py` build time for pipeline app features files (Option A — reads `SPARMVET_APP_FEATURES` env var)
+- **New app features file fields:** `manifest_selector.visible/fixed_manifest` + `testing_mode`
+- **Pipeline app features files always production:** `testing_mode=false` for static + simple — testing uses developer/advanced app features files
 - **Gallery for project-independent:** `gallery_enabled=true` added to template
 - **Test Lab:** renamed from Dev Studio
 - **Quarto:** replaces Pandoc for server-side report rendering (HTML + PDF + DOCX)
@@ -522,7 +522,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 ### Delivered
 
-- CSS theme externalised to `config/ui/theme.css`; per-persona override via `theme_css:` in persona template (ADR-055).
+- CSS theme externalised to `config/ui/theme.css`; per app features file override via `theme_css:` in app features file (ADR-055).
 - View title banners (`.view-title-banner`) across Blueprint Architect, Test Lab, Gallery (ADR-056).
 - Gallery internal sidebar → persistent left `#nav_sidebar` accordion (ADR-057).
 - Sidebar collapse toggle cross-wiring fix; T3 modal radio spacing fix.
@@ -612,7 +612,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 - `single_graph_export_handlers.py` still exists and is imported by `home_theater.py` but has no UI mount point (dead code after accordion removal). Decision needed: remove or keep.
 - EXPORT-HASH-2: read `decision_hash` from Parquet metadata at export time.
-- SESSION-PERSONA-1: gate ghost_save on `t3_sandbox_enabled`.
+- SESSION-APP_FEATURES-1: gate ghost_save on `t3_sandbox_enabled`.
 
 ---
 
@@ -659,15 +659,15 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 ### Objective
 
-Replace the hardcoded left/right sidebar accordion sequence with a declarative slot registry configurable per-persona and per-workspace via persona template `workspaces:` section and `!include` shared sidebar config files. Also complete the ADR-069 export provenance cluster.
+Replace the hardcoded left/right sidebar accordion sequence with a declarative slot registry configurable per app features file and per-workspace via app features file `workspaces:` section and `!include` shared sidebar config files. Also complete the ADR-069 export provenance cluster.
 
 ### Substeps (ordered)
 
 | Step | Task ID | Label | Model | Risk |
 |---|---|---|---|---|
-| 31-A | SIDEBAR-CONFIGS-1 | `config/ui/sidebars/` shared YAML files + persona template `workspaces:` sections | haiku | Low |
+| 31-A | SIDEBAR-CONFIGS-1 | `config/ui/sidebars/` shared YAML files + app features file `workspaces:` sections | haiku | Low |
 | 31-B | SIDEBAR-REGISTRY-1 | Panel registry, bootloader `get_sidebar_config()`, `home_theater.py` slot iteration, `ui.py` ADR-053 fix | sonnet | Med-High |
-| 31-C | SIDEBAR-VALIDATE-1 | `SidebarValidator` + `scripts/validate_persona_config.py --all --strict` | sonnet | Med |
+| 31-C | SIDEBAR-VALIDATE-1 | `SidebarValidator` + `scripts/validate_app_features_config.py --all --strict` | sonnet | Med |
 | 31-D | UTILS-RELOC-2 | `gallery_manager.py` deduplicate → canonical copy in `libs/viz_gallery/` | haiku | Low |
 | 31-E | EXPORT-AUDIT-COMPLETE-1 | `build_export_provenance()` helper + per-source-file hash table in README+report | sonnet | Med |
 | 31-F | EXPORT-VERSION-1 | `git_commit` + `release_version` in all export surfaces | haiku | Low |
@@ -679,10 +679,10 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 
 - **Slot list controls layout; flags control capability** — fully independent layers
 - **Per-workspace** — Home, Blueprint, Gallery, Test Lab each declare their own sidebar config
-- **`!include` shared configs** in `config/ui/sidebars/` — personas share files, reduce duplication
+- **`!include` shared configs** in `config/ui/sidebars/` — app features files share files, reduce duplication
 - **`visible: false`** excludes the sidebar container from DOM (not CSS-hidden)
-- **Right sidebar structural exclusion** moves from persona-name check in `ui.py` → `workspaces.home.right_sidebar.visible` in persona template (fixes ADR-053 violation, task 25-O)
-- **`SidebarValidator`** runs alongside `PersonaValidator` at startup and in CI (`--strict` mode)
+- **Right sidebar structural exclusion** moves from app features name check in `ui.py` → `workspaces.home.right_sidebar.visible` in app features file (fixes ADR-053 violation, task 25-O)
+- **`SidebarValidator`** runs alongside `AppFeaturesValidator` at startup and in CI (`--strict` mode)
 
 ### Delivered
 
@@ -737,7 +737,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 | 32-H | BP-COLOR-1 | Color widget: column mapping \| set literal (palette library \| project palette \| custom hex) | sonnet | ✅ |
 | 32-H2 | BP-COLOR-2 | Deployment palette registry `config/palettes.yaml`; `bootloader.get_palettes()`; color widget "Project palette" source | haiku | ✅ |
 | 32-H3 | BP-COLOR-3 | `plot_defaults.palette` in manifest → VizFactory scale injection at render time | sonnet | ✅ |
-| 32-I | BP-FLAG-1 | `manifest_edit_enabled` flag: add to all 6 persona templates (false/false/false/false/true/true); cascade in bootloader | haiku | Low |
+| 32-I | BP-FLAG-1 | `manifest_edit_enabled` flag: add to all 6 app features files (false/false/false/false/true/true); cascade in bootloader | haiku | Low |
 | 32-J | ACTION-RENAME-1 | `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag | haiku | Low |
 
 **Key decisions (ADR-075):**
@@ -750,7 +750,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - Position rules enforced via `context` tag in `ui_schema`: `t1` / `t2` / `assembly` / `plot`
 - Apply gate: upstream schema propagates on Apply only (not continuously)
 - Edit/remove: (1) edit in-place + re-Apply, (2) 20-step undo deque, (3) YAML escape hatch
-- `manifest_edit_enabled`: default false all personas; true for developer and qa only
+- `manifest_edit_enabled`: default false all app features files; true for developer and qa only
 
 **Key decisions (ADR-081 — Palette Registry):**
 - Project palettes live in `config/palettes.yaml` — operator config, not library code
@@ -775,12 +775,12 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 
 | Step | Task ID | Label | Model | Status |
 |---|---|---|---|---|
-| 33-A | BP-AGENT-FLAG-1 | `blueprint_agent_enabled` flag + `blueprint_agent:` config block in persona templates | haiku | ✅ (Phase 31) |
+| 33-A | BP-AGENT-FLAG-1 | `blueprint_agent_enabled` flag + `blueprint_agent:` config block in app features files | haiku | ✅ (Phase 31) |
 | 33-B | BP-AGENT-1 | `AgentAdapter` protocol + `ClaudeCliAdapter` + `DisabledAdapter` + `agent_context.py` | sonnet | ✅ |
 | 33-C | BP-AGENT-PARSER-1 | Fenced-block extractor (`agent_tool_parser.py`) | sonnet | ✅ |
 | 33-D | BP-AGENT-TOOLS-1 | 3 MVP tools (`get_available_actions`, `get_available_components`, `get_field_contract`) | sonnet | ✅ |
 | 33-E | BP-AGENT-INSTRUCT-1 | System prompt file `config/ui/agents/blueprint_default.md` | sonnet | ✅ |
-| 33-F | BP-AGENT-PANEL-1 | Register `blueprint_agent_chat` panel in sidebar registry + persona templates | haiku | ✅ |
+| 33-F | BP-AGENT-PANEL-1 | Register `blueprint_agent_chat` panel in sidebar registry + app features files | haiku | ✅ |
 | 33-G | BP-AGENT-UI-1 | Chat panel render outputs in `blueprint_handlers.py` | sonnet | ✅ |
 | 33-H | BP-AGENT-CSS-1 | `.bp-agent-*` rule block in `config/ui/theme.css` | haiku | ✅ |
 
@@ -793,7 +793,7 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 - `build_system_prompt()` assembles: instructions file + compressed action registry + project context + fenced-block protocol spec
 - `build_turn_context()` emits Layer 3 context dict: workspace, active plot, manifest section, row counts, data visibility
 - `bootloader.get_agent_adapter()` is the sole entry point — cached per Bootloader instance
-- `bootloader.get_agent_config()` returns the `blueprint_agent:` block from the persona template
+- `bootloader.get_agent_config()` returns the `blueprint_agent:` block from the app features file
 - `flock` single-flight on `lock` file in session dir — prevents concurrent subprocess calls
 
 ### Deferred (Phase 33 non-scope)
@@ -811,7 +811,7 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 
 | Step | Task ID | Label | Model | Status |
 |---|---|---|---|---|
-| 34-A | LEGACY-AUDIT-FLAG-1 | Remove `audit_report_enabled` flag from all templates, `PersonaValidator`, `Bootloader` | haiku | ✅ |
+| 34-A | LEGACY-AUDIT-FLAG-1 | Remove `audit_report_enabled` flag from all templates, `AppFeaturesValidator`, `Bootloader` | haiku | ✅ |
 | 34-B | LEGACY-TYPE-ALIASES-1 | Remove `string`/`character` type aliases — engine raises `TransformationError` | sonnet | ✅ |
 | 34-C | LEGACY-FLAT-WRANGLING-1 | Remove flat `wrangling: []` tolerance — engine raises `ManifestError` | sonnet | ✅ |
 | 34-D | TL-UI-SCAFFOLD-1 | Manifest Scaffolding full panel in `test_lab_handlers.py` | sonnet | ✅ |
@@ -826,5 +826,5 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 ### Tombstones (expire Phase 36)
 
 - `LEGACY-FLAT-WRANGLING-1` tombstone in `docs/appendix/Standards_yaml.qmd` and `rules_data_engine.md §3`
-- `LEGACY-AUDIT-FLAG-1` tombstone in `ui_implementation_contract.md §7.2/12f` and `rules_persona_feature_flags.md §Group A`
+- `LEGACY-AUDIT-FLAG-1` tombstone in `ui_implementation_contract.md §7.2/12f` and `rules_app_features_flags.md §Group A`
 - `LEGACY-TYPE-ALIASES-1` tombstone in `rules_manifest_structure.md §9`

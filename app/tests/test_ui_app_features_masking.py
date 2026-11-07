@@ -4,9 +4,9 @@ from pathlib import Path
 from app.src.bootloader import Bootloader
 
 """
-test_ui_persona_masking.py
+test_ui_app_features_masking.py
 -------------------------
-Forensic Audit of the Persona Reactivity Matrix. 
+Forensic Audit of the App features Reactivity Matrix. 
 Ensures feature gating logic correctly masks restricted components for each profile.
 """
 
@@ -30,7 +30,7 @@ class TestUIAppFeaturesMasking(unittest.TestCase):
             self.assertFalse(self.bootloader.is_enabled(feature),
                              f"Feature {feature} should be MASKED for pipeline-static.")
 
-        print("  [PASS] Persona-Static Masking Verified (4/4 Restricted Items).")
+        print("  [PASS] App features Static Masking Verified (4/4 Restricted Items).")
 
     def test_developer_access(self):
         """Audit: Does 'developer' have full-spectrum access?"""

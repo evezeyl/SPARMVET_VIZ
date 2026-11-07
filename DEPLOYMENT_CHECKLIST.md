@@ -43,12 +43,12 @@ scripts/install_libs.sh
 
 ---
 
-### 3. Persona Validation
+### 3. App features Validation
 
-Validate all persona templates:
+Validate all app features files:
 
 ```bash
-.venv/bin/python scripts/validate_persona_config.py --all
+.venv/bin/python scripts/validate_app_features_config.py --all
 ```
 
 **Expected output:** `Total: 8 template(s) errors=0 RESULT: PASS`
@@ -66,7 +66,7 @@ Verify the full app starts without errors:
 **Expected output:**
 ```
 [Bootloader] Profile resolved...
-[Bootloader] Persona: ...
+[Bootloader] App features: ...
 --- LOADING UI VERSION V5.1 ...
 ✅ App imports cleanly
 ✅ Documentation available at /docs/    [if docs were rendered]
@@ -123,7 +123,7 @@ Run the baseline unit test suite to catch regressions:
 | Issue | Solution |
 |---|---|
 | `docs/_site` not found | Run `quarto render docs/` from repo root |
-| Persona validation fails | Check `scripts/validate_persona_config.py --all` output for specific errors |
+| App features validation fails | Check `scripts/validate_app_features_config.py --all` output for specific errors |
 | App import fails | Run `.venv/bin/python scripts/install_libs.sh` to refresh editable installs |
 | Tests fail | Run `pytest` with `--tb=short` to see full traceback |
 

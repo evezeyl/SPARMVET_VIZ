@@ -18,9 +18,9 @@ The runner MUST programmatically parse the `@register...` component registry dic
 
 ### 3. The Path Authority & Connector Mandate (ADR-031)
 **Scope:** `config/` and `libs/connector`.
-**Mandate:** Hardware and system-level paths (Locations 1-5) MUST be strictly decoupled from UI Persona templates.
+**Mandate:** Hardware and system-level paths (Locations 1-5) MUST be strictly decoupled from UI App features files.
 - **Rule:** System connection paths must be defined exclusively in `config/connectors/`.
-- **Rule:** UI Persona configurations (`config/ui/`) MUST ONLY control visual/functional masking (feature toggling, auto-save frequency, layout constraints).
+- **Rule:** UI App features configurations (`config/ui/`) MUST ONLY control visual/functional masking (feature toggling, auto-save frequency, layout constraints).
 - **Enforcement:** Under no circumstances should a system path be hardcoded in a UI template YAML.
 
 ### Contact with developers (lead)

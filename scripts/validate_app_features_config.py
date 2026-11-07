@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-validate_persona_config.py — CLI runner for PersonaValidator + SidebarValidator (ADR-073).
+validate_app_features_config.py — CLI runner for AppFeaturesValidator + SidebarValidator (ADR-073).
 
-Validates one or all persona templates for feature-flag consistency and sidebar slot
+Validates one or all app features files for feature-flag consistency and sidebar slot
 registry correctness. Intended for CI use (--strict) and developer diagnostics.
 
 Usage:
-    ./.venv/bin/python scripts/validate_persona_config.py --persona developer
-    ./.venv/bin/python scripts/validate_persona_config.py --all
-    ./.venv/bin/python scripts/validate_persona_config.py --all --strict
+    ./.venv/bin/python scripts/validate_app_features_config.py --app features developer
+    ./.venv/bin/python scripts/validate_app_features_config.py --all
+    ./.venv/bin/python scripts/validate_app_features_config.py --all --strict
 
 Exit codes:
     0  — all templates valid (no errors; warnings may be present)
@@ -99,7 +99,7 @@ def main():
     group.add_argument(
         "--app-features", "-p",
         metavar="ID",
-        help="Validate a single persona by ID (e.g. developer) or path to a template YAML.",
+        help="Validate a single app features by ID (e.g. developer) or path to a template YAML.",
     )
     group.add_argument(
         "--all", "-a",

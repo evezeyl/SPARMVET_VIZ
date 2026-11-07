@@ -2,9 +2,9 @@
 
 The SPARMVET App is a **Thin Shiny Shell** (ADR-003) that orchestrates four distinct layers:
 
-1. **Navigation (Left)**: Persona-gated controls — Project selection, context-reactive Filter Recipe Builder, System Tools (Export Bundle). Dark grey (#c0c0c0).
+1. **Navigation (Left)**: App features gated controls — Project selection, context-reactive Filter Recipe Builder, System Tools (Export Bundle). Dark grey (#c0c0c0).
 2. **Home Theater (Center)**: Unified results mode (ADR-043). Manifest-driven groups (`navset_pill`) → plots (`navset_card_tab`) → collapsible Data Preview. Neutral grey (#d1d1d1).
-3. **Pipeline Audit (Right)**: Persona-gated (hidden for `pipeline_static`/`pipeline_exploration_simple`; full T2+T3 audit stack for ≥ advanced).
+3. **Pipeline Audit (Right)**: App features gated (hidden for `pipeline_static`/`pipeline_exploration_simple`; full T2+T3 audit stack for ≥ advanced).
 4. **Specialist Modes**: Blueprint Architect (Wrangle Studio), Gallery, Test Lab — each routed via `sidebar_nav`.
 
 ### Directory Structure
@@ -13,12 +13,12 @@ The SPARMVET App is a **Thin Shiny Shell** (ADR-003) that orchestrates four dist
 app/
 ├── app.py                      ← Bootstrap / entry point
 ├── src/
-│   ├── bootloader.py           ← Path authority & persona bootstrap (ADR-031)
+│   ├── bootloader.py           ← Path authority & app features bootstrap (ADR-031)
 │   ├── ui.py                   ← Static HTML/CSS shell — no reactive logic
 │   └── server.py               ← Thin orchestrator (~228 lines, ADR-045)
 │                                  Shared state: anchor_path, tier_toggle,
 │                                  applied_filters, active_home_subtab,
-│                                  current_persona, recipe_pending
+│                                  current_app_features, recipe_pending
 │                                  Shared calcs: active_cfg, tier1_anchor
 │
 ├── modules/                    ← Importable, testable, Shiny-free
@@ -43,7 +43,7 @@ app/
 - **Two-Category Law (ADR-045):** `app/modules/` = pure Python (zero Shiny). `app/handlers/` = Shiny wiring only (never imported by headless scripts).
 - **Thin Orchestrator:** `server.py` ≤ 250 lines. No reactive outputs there — all in handlers.
 - **Manifest-Driven:** Home tabs, filter widgets, and data previews derive exclusively from manifest `analysis_groups` at runtime (ADR-004/ADR-043). No hardcoded tab names.
-- **Shiny Shell Stability (project_conventions.md §3a):** `@render.ui` shells that mount child `output_ui` slots MUST read only slowly-changing reactives (persona). Child sub-outputs are independent `@output @render.ui` functions.
+- **Shiny Shell Stability (project_conventions.md §3a):** `@render.ui` shells that mount child `output_ui` slots MUST read only slowly-changing reactives (app features). Child sub-outputs are independent `@output @render.ui` functions.
 
 ### Home Theater — Phase 21 Feature Map
 

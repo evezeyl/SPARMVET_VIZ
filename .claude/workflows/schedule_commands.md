@@ -38,7 +38,7 @@ grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md 2>/dev/null
 - `audit_cross_lib` — catches new ADR-011 blockers (peer lib imports)
 - `audit_deps_verify` — catches missing `@deps` blocks from the session
 - `audit_task_drift` — catches tasks referencing files you renamed or deleted
-- `audit_template_flags` — catches fatal cascade misconfigs in persona templates
+- `audit_template_flags` — catches fatal cascade misconfigs in app features files
 
 ---
 
@@ -307,18 +307,18 @@ Exit codes: 0 = no drift, 1 = drift violations found, 2 = tasks file not found.
 
 ---
 
-## Routine 5 — Persona Template Consistency
+## Routine 5 — App features Template Consistency
 
 **Schedule:** On-demand (run manually or before any release)
 
 ```
 Create an on-demand audit routine for the SPARMVET_VIZ project.
 
-Name: "SPARMVET: Persona Template Consistency"
+Name: "SPARMVET: App features Template Consistency"
 
-Purpose: Run PersonaValidator + SidebarValidator in strict mode against all 8 persona
+Purpose: Run AppFeaturesValidator + SidebarValidator in strict mode against all 8 app features
 templates in config/ui/templates/. Warnings are treated as errors in strict mode.
-Ensures all templates declare every required flag from rules_persona_feature_flags.md
+Ensures all templates declare every required flag from rules_app_features_flags.md
 and that cascade enforcement rules (ADR-052, ADR-077) are satisfied.
 
 Command to run (from project root):
@@ -327,9 +327,9 @@ Command to run (from project root):
 After running:
 1. Read the generated report at .claude/logs/audits/audit_templates_YYYY-MM-DD.md
 2. For each failing template:
-   - Open config/ui/templates/<persona>_template.yaml
+   - Open config/ui/templates/<app features>_template.yaml
    - Fix the flagged issue (missing flag, wrong cascade, forbidden dependency)
-   - Re-run validate_persona_config.py --persona <name> --strict to verify the fix
+   - Re-run validate_app_features_config.py --app features <name> --strict to verify the fix
 3. Fatal cascade errors (ADR-077: manifest_edit_enabled or blueprint_agent_enabled without
    blueprint_enabled) MUST be fixed before the app can start — treat as P0
 4. Update the status matrix in .claude/workflows/audit_routine_registry.md
@@ -419,7 +419,7 @@ Create a weekly audit routine for the SPARMVET_VIZ project that runs every Thurs
 
 Name: "SPARMVET: Template Flag Completeness (weekly)"
 
-Purpose: Weekly strict validation of all 8 persona templates. Detects missing flags,
+Purpose: Weekly strict validation of all 8 app features files. Detects missing flags,
 incorrect cascade dependencies (ADR-052/ADR-077), and sidebar slot misconfigurations
 added since the last manual validation. Complements Routine 5 (on-demand) by providing
 a regular automated gate.
@@ -433,8 +433,8 @@ After running:
    - FATAL (ADR-077 cascade): must fix before next app start — P0 priority
    - WARNING promoted to error (strict mode): fix before next release
    - All others: create tasks in .claude/tasks/tasks.md [haiku/low]
-3. Reference the authoritative flag matrix in rules_persona_feature_flags.md for correct values
-4. After fixing: re-run scripts/validate_persona_config.py --all --strict to verify
+3. Reference the authoritative flag matrix in rules_app_features_flags.md for correct values
+4. After fixing: re-run scripts/validate_app_features_config.py --all --strict to verify
 5. Update the status matrix in .claude/workflows/audit_routine_registry.md
 6. Commit with message: "audit: template flag completeness YYYY-MM-DD [PASS|FAIL N]"
 
@@ -714,7 +714,7 @@ For a single manifest:
 After running:
 1. Read the generated report at .claude/logs/audits/audit_manifest_coherence_YYYY-MM-DD.md
 2. For each ❌ Invalid Action Name:
-   - Check rules_persona_bioscientist.md §8 for the correct action name
+   - Check rules_agent_role_bioscientist.md §8 for the correct action name
    - Update the manifest YAML — fix the typo or rename
    - Task: - [ ] [AUDIT] Fix invalid action `<name>` in `<manifest>` [haiku/low]
 3. For each ❌ Invalid Component Name:

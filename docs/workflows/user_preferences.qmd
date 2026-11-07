@@ -9,6 +9,6 @@ The configuration loader handles User Preferences by performing a **deep merge/u
 ### Ghost Manifest Persistence (Autosave)
 Per **ADR-031**, the system implements a debounced "Ghost Save" mechanism (`ghost_save_trigger` in `app/src/server.py`). 
 
-1. **Frequency**: Every 2 minutes (derived from the Persona configuration in `config/ui/`).
+1. **Frequency**: Every 2 minutes (derived from the App features configuration in `config/ui/`).
 2. **Location**: Saves the active manifest to **Location 4 (Autosave)**.
 3. **Recovery**: On initialization, the **Bootloader (bootloader.py)** detects the last saved state and offers a session restoration prompt.

@@ -88,7 +88,7 @@ def define_filter_audit_server(input, output, session, *,
                 )
             )
         # pipeline-exploration-simple: interactivity on but no T3 audit — show disclaimer
-        # Proxy: metadata_ingestion_enabled=false identifies simple/passive-only personas
+        # Proxy: metadata_ingestion_enabled=false identifies simple/passive-only app features files
         disclaimer = None
         if not bootloader.is_enabled("metadata_ingestion_enabled"):
             disclaimer = ui.div(

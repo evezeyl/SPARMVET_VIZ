@@ -41,8 +41,8 @@ the toggle silently falls back to Global and the button exports globally.
 or the manifest has no `analysis_groups` (only a top-level `plots:` key), the
 "Active group" option is hidden entirely, not just disabled.
 
-**Persona gate:**
-- Toggle only rendered when persona has **both** `export_enabled`.
+**App features gate:**
+- Toggle only rendered when app features has **both** `export_enabled`.
 - When only `export_enabled`: no toggle; button always operates in Global mode.
 - Default: **Global project**.
 
@@ -77,11 +77,11 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 | `plots/<plot_id>.<fmt>` | Always | All plots defined in active manifest |
 | `data/<dataset>_T1.tsv` | Always | All datasets referenced by active plots |
 | `data/<dataset>_T2.tsv` | Always | |
-| `data/<dataset>_T3.tsv` | T3 active at export time | Advanced+ persona + T3 tier active |
+| `data/<dataset>_T3.tsv` | T3 active at export time | Advanced+ app features + T3 tier active |
 | `recipes/<manifest_files>` | Always | All YAML files from active manifest directory |
 | `recipes/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
 | `report.<fmt>` | Always | Quarto-rendered report; includes T3 audit section when applicable (see §3) |
-| `README.txt` | Always | Timestamp, project, persona, preset, tiers, hash values (all 3 hashes) |
+| `README.txt` | Always | Timestamp, project, app features, preset, tiers, hash values (all 3 hashes) |
 | `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`recipes/t3_steps.yaml`, T3 Audit Trail in `report.qmd`) is the trace |
 
 ---
@@ -89,7 +89,7 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 ## 3. T3 audit section in report.qmd
 
 The report includes a **"T3 Audit Trail"** section at the end **when**:
-- `t3_sandbox_enabled: true` for the active persona, **AND**
+- `t3_sandbox_enabled: true` for the active app features, **AND**
 - `t3_recipe_by_plot` contains at least one committed, active node
 
 When the condition is not met, the section is absent (no empty placeholder).
@@ -159,7 +159,7 @@ Recursive if an ingredient is itself an assembly. Already implemented in
 
 ---
 
-## 6. Persona gate summary
+## 6. App features gate summary
 
 | `export_enabled` | UI |
 |---|---|---|
@@ -176,7 +176,7 @@ Recursive if an ingredient is itself an assembly. Already implemented in
 - TubeMap SVG embed in report (EXPORT-TUBEMAP)
 - Selective per-tier checkboxes (EXPORT-2) — explicitly NOT implemented; content is
   auto-determined by T3 state
-- Configurable export content per persona — deferred pending funding / new use cases;
+- Configurable export content per app features — deferred pending funding / new use cases;
   this spec defines the current fixed content policy
 
 ---
@@ -189,4 +189,4 @@ Recursive if an ingredient is itself an assembly. Already implemented in
 | Audit report UI | `app/handlers/export_handlers.py` → `export_audit_report_ui()` | **Delete** — replaced by auto-inclusion logic in bundle |
 | Bundle builder | `app/handlers/export_handlers.py` → `export_bundle_download()` | Add T3 audit section to report.qmd; add t3_steps.yaml; 3-way scope logic (global / group / plot) |
 | Single graph export | `app/handlers/single_graph_export_handlers.py` | Merge into bundle builder via scope flag — same download handler, scope parameter drives content |
-| Persona flags | No change needed | `export_enabled` already exist |
+| App features flags | No change needed | `export_enabled` already exist |

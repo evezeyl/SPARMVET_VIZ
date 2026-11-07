@@ -1,7 +1,7 @@
 # @deps
 # provides: (re-exports from utils.deployment_error — see that file for the canonical source)
 # consumes: utils.deployment_error
-# consumed_by: app/modules/persona_validator.py, app/modules/sidebar_validator.py, app/src/bootloader.py, app/src/server.py, scripts/validate_persona_config.py
+# consumed_by: app/modules/app_features_validator.py, app/modules/sidebar_validator.py, app/src/bootloader.py, app/src/server.py, scripts/validate_app_features_config.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-078
 # @end_deps
 """

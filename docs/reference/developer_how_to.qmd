@@ -8,7 +8,7 @@ When contributing to SPARMVET or reporting a bug, follow these strict rules to e
 
 ### How to Submit an Issue or Bug Report
 If you encounter a systemic failure, please open an Issue on GitHub matching this formatting template:
-1. **The Context:** What persona were you in? What UI tab were you using?
+1. **The Context:** What app features were you in? What UI tab were you using?
 2. **The Manifest/Data:** Provide a minimalist YAML manifest and a tiny dummy dataset (10 rows max) that reliably triggers the error. *Never provide raw production data.*
 3. **The Expected vs. Actual Behavior:** State explicitly what you wanted the system to do, and copy the exact error log (or `SPARMVET_Error`) the system generated instead.
 

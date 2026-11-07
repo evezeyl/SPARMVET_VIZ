@@ -82,7 +82,7 @@ Each panel states what it shows and when two views are identical (for example "T
 
 When you switch between sub-tabs (e.g., from "QC Reads Barplot" to "Assembly Quality Dotplot"), the filter controls on the left automatically update to show **only the columns relevant to that plot**. You will never be presented with a filter for a column that does not appear in the current visualization.
 
-### Comparison Mode *(advanced personas)*
+### Comparison Mode *(advanced app features files)*
 
 If your user profile allows it, a **Comparison Mode** toggle splits the theater into two columns: the T2 blueprint reference on the left and your T3 sandbox on the right — both plots and data tables side by side — so you can see exactly what effect your wrangling steps have had.
 
@@ -128,7 +128,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 
 > **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `recipes/t3_steps.yaml`. Your results are always traceable.
 
-### The Audit Stack (advanced personas only)
+### The Audit Stack (advanced app features files only)
 
 If your user profile grants sandbox access, a **Pipeline Audit** panel appears on the right side of the screen. It shows:
 

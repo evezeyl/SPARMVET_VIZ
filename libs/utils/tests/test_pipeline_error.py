@@ -76,7 +76,7 @@ class TestConstruction:
         with pytest.raises(ValueError, match="who must be one of"):
             PipelineError(
                 component="X", problem="p", location="l", fix="f",
-                who="unknown_persona", category="wrangling", surface="notification",
+                who="unknown_app_features", category="wrangling", surface="notification",
             )
 
     def test_invalid_category(self):

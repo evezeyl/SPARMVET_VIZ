@@ -17,9 +17,9 @@ deps:
 
 ## 2. Left vs Right Panel Behaviors (ADR-073)
 
-**Sidebars are configured via the persona template, not hardcoded in Python.** Each persona template declares a `workspaces:` section with independent left/right sidebar configs per workspace (Home, Blueprint, Gallery, Test Lab). See `ui_implementation_contract.md §11` and `docs/workflows/ui_persona.qmd` for the full slot registry spec and panel type reference.
+**Sidebars are configured via the app features file, not hardcoded in Python.** Each app features file declares a `workspaces:` section with independent left/right sidebar configs per workspace (Home, Blueprint, Gallery, Test Lab). See `ui_implementation_contract.md §11` and `docs/workflows/ui_app_features.qmd` for the full slot registry spec and panel type reference.
 
-**Two-layer resolution:** (1) The persona template **slot list** controls which panel types appear and in what order. (2) Each panel type has a **gate flag** — if the flag is disabled, the panel is silently skipped. Flags and cascade rules are completely independent of the slot list.
+**Two-layer resolution:** (1) The app features file **slot list** controls which panel types appear and in what order. (2) Each panel type has a **gate flag** — if the flag is disabled, the panel is silently skipped. Flags and cascade rules are completely independent of the slot list.
 
 - **Left Sidebar**: Content is workspace-dependent. Switching workspaces physically replaces the left sidebar DOM (not CSS-hide). Panel content per workspace is declared in `workspaces.<ws>.left_sidebar.panels`. Panels are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`).
 
@@ -27,7 +27,7 @@ deps:
 
   **Filter behavior unchanged:** `_pending_filters` / `applied_filters` state is preserved across workspace switches; filter widgets are only mounted when `workspaces.home.left_sidebar.panels` contains `filters` and the gate flag is on.
 
-- **Right Sidebar**: Same slot registry pattern. Current built-in types: `audit_stack` (gate: `t3_sandbox_enabled`), `notification_log` (none), `blueprint_logic` (gate: `blueprint_enabled`). Visibility is driven by `workspaces.<ws>.right_sidebar.visible` in the persona template — **not** by persona name comparison in `ui.py` (that was an ADR-053 violation, now fixed by ADR-073/task 25-O).
+- **Right Sidebar**: Same slot registry pattern. Current built-in types: `audit_stack` (gate: `t3_sandbox_enabled`), `notification_log` (none), `blueprint_logic` (gate: `blueprint_enabled`). Visibility is driven by `workspaces.<ws>.right_sidebar.visible` in the app features file — **not** by app features name comparison in `ui.py` (that was an ADR-053 violation, now fixed by ADR-073/task 25-O).
 
 - **Sidebar visibility**: `visible: false` excludes the container from the DOM. Auto-hide: if all panels skip (all gate flags off) and `visible` is unset, sidebar is excluded. `visible: true` with no active panels renders an empty container (allowed for branding/info-only configs).
 
@@ -35,11 +35,11 @@ deps:
 
 - **The Gatekeeper**: `btn_apply` is locked unless all T3 audit nodes have non-empty `reason` fields. Rendered only when the right sidebar `audit_stack` panel is active.
 
-## 3. Persona Reactivity Matrix (Component Masking)
+## 3. App features Reactivity Matrix (Component Masking)
 
 The UI dynamically alters component availability based on the templates in `config/ui/templates/`. Below is the authoritative component mapping (updated ADR-052, 2026-05-01):
 
-| Persona | passive_exploration | t3_audit | Filters | Right Sidebar | Gallery | Test Lab | Sessions | Export Bundle | Export Graph |
+| App features | passive_exploration | t3_audit | Filters | Right Sidebar | Gallery | Test Lab | Sessions | Export Bundle | Export Graph |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1. pipeline-static** | ❌ | ❌ | Hidden (static msg) | **Excluded from layout** | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **2. pipeline-exploration-simple** | ✅ | ❌ | Exploration disclaimer | **Excluded from layout** | ❌ | ❌ | ✅ | ✅ | ❌ |
@@ -51,23 +51,23 @@ The UI dynamically alters component availability based on the templates in `conf
 **passive_exploration**: T1/T2 filter + column-drop scratchpad — plot updates temporarily, nothing saved, no audit trail.
 **t3_audit**: promotes filters/drops to T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, recipe export).
 
-**Persona template flags** (in `config/ui/templates/<persona>_template.yaml`):
+**App features file flags** (in `config/ui/templates/<app features>_template.yaml`):
 `interactivity_enabled`, `developer_mode_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
 
-**`qa` persona:** Mirrors `developer` flags but sets `automation.ghost_save: false` for deterministic Playwright runs (no background ghost writes during smoke tests). It is the recommended `SPARMVET_PERSONA` for CI.
+**`qa` app features:** Mirrors `developer` flags but sets `automation.ghost_save: false` for deterministic Playwright runs (no background ghost writes during smoke tests). It is the recommended `SPARMVET_APP_FEATURES` for CI.
 
 **New flags (Phase 25 / ADR-052):**
-`manifest_selector.visible` — hides Manifest Choice dropdown for pipeline personas (fixed_manifest path required when false).
+`manifest_selector.visible` — hides Manifest Choice dropdown for pipeline app features files (fixed_manifest path required when false).
 `testing_mode` — true = pre-fill data selector from manifest default paths; false = data injected by pipeline or chosen by user.
 
-**Pipeline personas are always production-mode**: `pipeline-static` and `pipeline-exploration-simple` always have `testing_mode=false` and `manifest_selector.visible=false`. Testing of pipeline integrations uses a more capable persona.
+**Pipeline app features files are always production-mode**: `pipeline-static` and `pipeline-exploration-simple` always have `testing_mode=false` and `manifest_selector.visible=false`. Testing of pipeline integrations uses a more capable app features.
 
-**Right sidebar layout (ADR-073):** Structural exclusion is now driven by `bootloader.get_sidebar_config("home", "right").visible` — set to `false` in `pipeline-static` and `pipeline-exploration-simple` persona templates. This replaces the previous `SPARMVET_PERSONA` env-var comparison in `ui.py` (ADR-053 violation, task 25-O, fixed in SIDEBAR-REGISTRY-1). The center column fills full width when the right sidebar is excluded.
+**Right sidebar layout (ADR-073):** Structural exclusion is now driven by `bootloader.get_sidebar_config("home", "right").visible` — set to `false` in `pipeline-static` and `pipeline-exploration-simple` app features files. This replaces the previous `SPARMVET_APP_FEATURES` env-var comparison in `ui.py` (ADR-053 violation, task 25-O, fixed in SIDEBAR-REGISTRY-1). The center column fills full width when the right sidebar is excluded.
 
 ## 4. Coding Standards & Execution
 
 - **Home Module State Object** (`home_state`): A single `reactive.Value` dict holding navigation state, filter state, T3 recipe, pending T3 nodes, and plot overrides. Full schema in `ui_implementation_contract.md §13`. Survives all panel switches. `t3_recipe` (wrangling audit nodes) and `t3_plot_overrides` (aesthetic changes per plot sub-tab) are **separate fields** within it. Changes only apply upon `btn_apply`.
-- **The Pipeline Builder Scope**: `build_polars_pipeline(df, recipe)` must dynamically translate nodes. In simpler personas, this relies on basic filter mappings. In **Developer/Advanced** personas, this must proxy directly out to the unified `@register_action` registry defined in the Transformer layer to support any arbitrary Python execution payload.
+- **The Pipeline Builder Scope**: `build_polars_pipeline(df, recipe)` must dynamically translate nodes. In simpler app features files, this relies on basic filter mappings. In **Developer/Advanced** app features files, this must proxy directly out to the unified `@register_action` registry defined in the Transformer layer to support any arbitrary Python execution payload.
 - **Unified Home Theater (ADR-043)**: The "Analysis Theater / Viz" nav mode is **eliminated**. Home is the sole results mode. Manifest-defined `analysis_groups` are the primary tab structure of Home. Plot sub-tabs (`navset_underline`) are wrapped in a **collapsible accordion panel**; data preview panes are in a **separate collapsible accordion panel below**. Both default to expanded. Collapse state is user-driven and must not reset on sub-tab navigation.
 - **Plot vs data view (ADR-086)**: the Home header strip has two independent choices. "Data to show" (Raw / Result / My view) drives the data preview only; "Plot to show" (Result / My view / Compare Result vs My view) drives the plots only. Plots never show T1. Comparison Mode is always T2 (left) vs My view (right). Implemented 2026-11-05; see `ui_implementation_contract.md §2/§5`.
 - **Hierarchical Visualization**: Home MUST organize manifest-defined plots into **Sub-Tabs** (navset_underline) within their respective category tabs to prevent vertical scrolling clutter. These sub-tabs are wrapped in a collapsible accordion as per ADR-043.
@@ -124,7 +124,7 @@ passed as kwargs to the sub-handlers. They are NEVER module-level globals.
 ### Test tiers
 
 - **T1 Startup**: app loads, no startup errors, project load renders group nav tabs
-- **T2 Persona masking**: sidebar visibility for launch persona (2 tests skip unless non-developer persona)
+- **T2 App features masking**: sidebar visibility for launch app features (2 tests skip unless non-developer app features)
 - **T3 Filter pipeline**: filter form renders, add row, apply no-crash, reset clears rows — highest-risk refactor surface
 - **T4 Data preview**: `#home_data_preview` visible after project load
 
@@ -134,16 +134,16 @@ passed as kwargs to the sub-handlers. They are NEVER module-level globals.
 # Core unit tests (fast, ~2 s) — run first
 PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_filter_operators.py libs/connector/tests/ libs/viz_factory/tests/test_deco2_components.py -q
 
-# Playwright smoke tests (qa persona — deterministic, ~35 s)
-PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+# Playwright smoke tests (qa app features — deterministic, ~35 s)
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 
 # App import must stay clean
 python -c "from app.src.main import app; print('OK')"
 ```
 
-### Persona for automated testing
+### App features for automated testing
 
-Use `SPARMVET_PERSONA=qa` for all automated runs. The `qa` persona has all flags ON and
+Use `SPARMVET_APP_FEATURES=qa` for all automated runs. The `qa` app features has all flags ON and
 `ghost_save.enabled: false` — deterministic behaviour without auto-saves interfering with
 DOM state. See `config/ui/templates/qa_template.yaml`.
 
@@ -155,8 +155,8 @@ DOM state. See `config/ui/templates/qa_template.yaml`.
   Role-based selectors (`get_by_role("tab")`) fail on emoji-containing labels.
 - **`fb_op` select**: `filter_form_ui` re-renders when `fb_col` changes, detaching `fb_op` from DOM.
   Always call `_wait_shiny()` after column selection before touching operator or value fields.
-- **No runtime persona selector**: `#persona_selector` does not exist; persona is launch-time
-  config (`SPARMVET_PERSONA`). The old `test_reactive_shell.py` (persona switch, Apply gate label)
+- **No runtime app features selector**: `#app_features_selector` does not exist; app features is launch-time
+  config (`SPARMVET_APP_FEATURES`). The old `test_reactive_shell.py` (app features switch, Apply gate label)
   was removed 2026-11-06; its Apply-gate logic is covered by `test_session_manager.py` and a UI-level
   test is open as AUDIT-GATE-UI-1.
 - **Libs**: all of `libs/` collects and passes under `pytest libs` (2026-11-06); no lib needs to be
@@ -167,7 +167,7 @@ DOM state. See `config/ui/templates/qa_template.yaml`.
 | Test scope | Command |
 |---|---|
 | Fast regression only | `pytest app/tests/test_filter_operators.py libs/connector/tests/ libs/viz_factory/tests/test_deco2_components.py -q` |
-| Full gate (required before merge) | Add `SPARMVET_PERSONA=qa pytest app/tests/test_shiny_smoke.py -v` |
+| Full gate (required before merge) | Add `SPARMVET_APP_FEATURES=qa pytest app/tests/test_shiny_smoke.py -v` |
 | Home Theater change (Phase 24+) | Both above + `python -c "from app.src.main import app; print('OK')"` |
 
 ---
@@ -200,5 +200,5 @@ The Blueprint Architect provides a "Flight Deck" for manifest design.
 - **Action picker**: searchable by `tags`, filtered by `context` (`t1` / `t2` / `assembly` / `plot`) and `category`. Position rules are enforced by the `context` tag — the picker only shows actions valid for the current node position.
 - **Apply gate**: upstream schema propagates on Apply only (not continuously). The form reflects the last-applied schema state between Apply presses.
 - **Edit/remove after Apply**: three layers — (1) edit in place + re-Apply, (2) 20-step session undo deque (`BP-UNDO-1`), (3) YAML escape hatch.
-- **YAML escape hatch**: always visible for any persona with `blueprint_enabled: true` (read-only view). Becomes an editable textarea only when `manifest_edit_enabled: true` (developer and qa personas). An editable escape hatch emits a `developer_raw_yaml` T3 node on save. Gate: `bootloader.is_enabled("manifest_edit_enabled")` — never a persona name check. See `rules_persona_feature_flags.md §Group D`.
+- **YAML escape hatch**: always visible for any app features with `blueprint_enabled: true` (read-only view). Becomes an editable textarea only when `manifest_edit_enabled: true` (developer and qa app features files). An editable escape hatch emits a `developer_raw_yaml` T3 node on save. Gate: `bootloader.is_enabled("manifest_edit_enabled")` — never an app features name check. See `rules_app_features_flags.md §Group D`.
 - Full ADR-075 spec (widget types, color widget model, help system, action naming) lives in `architecture_decisions.md`.

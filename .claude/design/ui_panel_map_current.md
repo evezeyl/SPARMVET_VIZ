@@ -1,15 +1,15 @@
 # SPARMVET_VIZ — UI Panel Map & CSS Selector Reference (CURRENT STATE)
 # Updated 2026-05-04 — moved to .claude/design/; added session delete buttons, inactive nav-pill color, fixed audit card header color
 
-> Use this file to identify panels precisely when reporting visual issues and when filling in the persona capability matrix.
+> Use this file to identify panels precisely when reporting visual issues and when filling in the app features capability matrix.
 > **Companion files:**
-> - `persona_capability_matrix.md` — which features are enabled per persona (use panel names below when adding comments)
-> - `persona_scoping_guide.md` — flag definitions and group descriptions
+> - `app_features_capability_matrix.md` — which features are enabled per app features (use panel names below when adding comments)
+> - `app_features_scoping_guide.md` — flag definitions and group descriptions
 > - `ui_panel_map.md` — original design-reference (superseded by this file)
 
-## Vocabulary — panel names used in persona scoping
+## Vocabulary — panel names used in app features scoping
 
-| Panel map term | CSS selector / ID | Used in persona scoping as |
+| Panel map term | CSS selector / ID | Used in app features scoping as |
 |---|---|---|
 | Banner | `.sparmvet-banner` | "top banner" |
 | View title banner | `.view-title-banner` | "view-title banner" — Blueprint/Gallery/TestLab header strip |
@@ -24,7 +24,7 @@
 | Global Project Export accordion | accordion inside `#nav_sidebar` | "export panel" |
 | Data Import accordion | accordion inside `#nav_sidebar` | "data import panel" |
 
-**Proposed elements (not yet implemented — see persona_scoping_guide.md):**
+**Proposed elements (not yet implemented — see app_features_scoping_guide.md):**
 
 | Proposed element | Controlled by | Notes |
 |---|---|---|
@@ -45,11 +45,11 @@
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────┐
-│  BANNER (optional, persona-driven)                          .sparmvet-banner       │
+│  BANNER (optional, app features driven)                          .sparmvet-banner       │
 ├──────────────────────┬────────────────────────────────┬───────────────────────────┤
 │  LEFT SIDEBAR        │  CENTRAL THEATER               │  RIGHT SIDEBAR            │
 │  #nav_sidebar        │  .central-theater              │  #audit_sidebar           │
-│  (aside.sidebar)     │  output_ui("dynamic_tabs")     │  (persona-gated)          │
+│  (aside.sidebar)     │  output_ui("dynamic_tabs")     │  (flag-gated)          │
 │  width: ~340px       │  → renders view-specific HTML  │  width: ~340px            │
 └──────────────────────┴────────────────────────────────┴───────────────────────────┘
 ```

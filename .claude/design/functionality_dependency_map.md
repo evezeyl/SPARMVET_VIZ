@@ -1,14 +1,14 @@
 # Functionality Dependency Map
 
-> **HISTORICAL NOTE (2026-11-06):** the `audit_report_enabled` flag was removed (LEGACY-AUDIT-FLAG-1, 2026-05-22): the T3 audit trail is part of every export. Rows and text below that mention it describe the earlier design. Current flags: `.claude/rules/rules_persona_feature_flags.md`.
+> **HISTORICAL NOTE (2026-11-06):** the `audit_report_enabled` flag was removed (LEGACY-AUDIT-FLAG-1, 2026-05-22): the T3 audit trail is part of every export. Rows and text below that mention it describe the earlier design. Current flags: `.claude/rules/rules_app_features_flags.md`.
 
 **Last updated:** 2026-05-05 (Session 18 — full mapping decided)
 **Companion files:**
-- `persona_scoping_guide.md` — flag abbreviations and group definitions
-- `persona_capability_matrix.md` — personas × flags matrix
+- `app_features_scoping_guide.md` — flag abbreviations and group definitions
+- `app_features_capability_matrix.md` — app features files × flags matrix
 - ADR-069 — Complete Export Audit Trail Standard
 
-This document maps **user-facing functionalities** (what the end user can do) to **code-level flags** (what must be activated in a persona config). It defines non-negotiable cascade rules, optional/configurable flags, and derived flags that are computed automatically.
+This document maps **user-facing functionalities** (what the end user can do) to **code-level flags** (what must be activated in an app features config). It defines non-negotiable cascade rules, optional/configurable flags, and derived flags that are computed automatically.
 
 ---
 
@@ -16,7 +16,7 @@ This document maps **user-facing functionalities** (what the end user can do) to
 
 **User functionality** = a coherent capability the end user perceives (e.g. "I can filter data", "I can export my results").
 
-**Code flag** = a persona config field that gates a specific system behaviour (e.g. `t3_sandbox_enabled`, `export_enabled`).
+**Code flag** = an app features config field that gates a specific system behaviour (e.g. `t3_sandbox_enabled`, `export_enabled`).
 
 **The key principle:** Some user functionalities have non-negotiable dependencies — activating one without the other creates a broken or misleading experience. These are encoded as cascade rules validated at startup. Other flags are independent choices left to the deployer.
 
@@ -28,10 +28,10 @@ This document maps **user-facing functionalities** (what the end user can do) to
 
 | Code flag | Value | Notes |
 |---|---|---|
-| `default_tier` | `T2` | **Always T2.** T2 is the manifest result; T1 is raw input. No persona should default to T1. |
-| `tier_toggle_t1t2_enabled` | configurable | Can be turned off (e.g. static display personas — show T2 only) |
+| `default_tier` | `T2` | **Always T2.** T2 is the manifest result; T1 is raw input. No app features should default to T1. |
+| `tier_toggle_t1t2_enabled` | configurable | Can be turned off (e.g. static display app features files — show T2 only) |
 
-**Derived:** No toggle needed if persona shows only one tier.
+**Derived:** No toggle needed if app features shows only one tier.
 
 ---
 
@@ -81,7 +81,7 @@ Validation error at startup if any co-flag is missing.**
 **Cascade:** If T3 on and `export_enabled: false` → startup validation error.
 
 **ADR-069 audit trail** — every export always includes:
-`data_batch_hash` + `manifest_sha256` + `decision_hash` + `git_commit` + `release_version` + `created_at` + `manifest_name` + `persona_id` + `active_tier` + `software_versions` + `data_source_paths` + `t3_recipe` (when T3 active)
+`data_batch_hash` + `manifest_sha256` + `decision_hash` + `git_commit` + `release_version` + `created_at` + `manifest_name` + `app_features_id` + `active_tier` + `software_versions` + `data_source_paths` + `t3_recipe` (when T3 active)
 
 Image files (PNG/SVG/PDF) additionally embed an 8-field provenance subset in file metadata (Pillow iTXt / SVG `<metadata>` / XMP). See ADR-069.
 
@@ -136,9 +136,9 @@ No cascade dependencies currently. Sub-flags (DATA_PREP, CREATE_TEST_DATA, CREAT
 |---|---|---|
 | `show_navigation` | **Derived** | Auto-shown when any of `gallery_enabled` / `blueprint_enabled` / `test_lab_enabled` is true. No config needed. |
 | `manifest_selector_visible` | configurable | `true` = user can switch manifests; `false` = manifest locked. These are opposites — never both. |
-| `show_persona_badge` | configurable | Display preference only. No functional dependency. |
-| `ui_title` | configurable | Resolution: persona config override > manifest `info.display_name` > nothing shown. |
-| `ui_subtitle` | configurable | Resolution: persona config override > manifest `info.subtitle` > nothing shown. Hidden if `ui_title` is off. `info.description` is free-form long text — NOT shown in UI header. |
+| `show_app_features_badge` | configurable | Display preference only. No functional dependency. |
+| `ui_title` | configurable | Resolution: app features config override > manifest `info.display_name` > nothing shown. |
+| `ui_subtitle` | configurable | Resolution: app features config override > manifest `info.subtitle` > nothing shown. Hidden if `ui_title` is off. `info.description` is free-form long text — NOT shown in UI header. |
 | `sidebar_profile` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
 
 ---
@@ -165,7 +165,7 @@ ui_subtitle visible
   → requires ui_title to be shown
 ```
 
-Validation: `PersonaConfigError` raised at startup if any cascade rule is violated.
+Validation: `AppFeaturesConfigError` raised at startup if any cascade rule is violated.
 
 ---
 
@@ -175,7 +175,7 @@ Validation: `PersonaConfigError` raised at startup if any cascade rule is violat
 - Whether export is available
 - Whether import is available, and at what level (metadata only vs full)
 - Whether Gallery / Blueprint / Test Lab are accessible
-- UI branding (title, subtitle, persona badge, manifest selector lock)
+- UI branding (title, subtitle, app features badge, manifest selector lock)
 - Default tier display (always T2; toggle can be hidden)
 - Ghost save on/off (only meaningful when T3 active)
 

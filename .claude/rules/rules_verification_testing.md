@@ -103,18 +103,18 @@ Playwright tests are slower (~35 s for the full smoke suite) and require a runni
    from .conftest import app  # re-export or use pytest plugin auto-discovery
    ```
 2. Always call `_wait_shiny(page)` after any navigation or reactive trigger before asserting on rendered output. It waits for `document.documentElement.classList.contains('shiny-busy')` to clear.
-3. Set persona via env var at test-collection time, NOT via a UI selector — no `#persona_selector` element exists in the rendered app. Use `SPARMVET_PERSONA=qa` (see below).
+3. Set app features via env var at test-collection time, NOT via a UI selector — no `#app_features_selector` element exists in the rendered app. Use `SPARMVET_APP_FEATURES=qa` (see below).
 4. After changing `fb_col` (filter column selector), call `_wait_shiny(page)` before interacting with `fb_op` or `fb_value` — `filter_form_ui` re-renders reactively after every column change.
 
-### Persona requirement for deterministic tests
+### App features requirement for deterministic tests
 
-All Playwright smoke tests MUST run under `SPARMVET_PERSONA=qa`.
+All Playwright smoke tests MUST run under `SPARMVET_APP_FEATURES=qa`.
 
-- `qa` persona: all feature flags ON, `ghost_save` OFF — prevents session persistence side-effects between test runs.
-- Tests that require Gallery (`developer` or `qa` only) are automatically skipped for other personas; this is expected and tracked as 2 persona-skipped in the baseline.
+- `qa` app features: all feature flags ON, `ghost_save` OFF — prevents session persistence side-effects between test runs.
+- Tests that require Gallery (`developer` or `qa` only) are automatically skipped for other app features files; this is expected and tracked as 2 app features skipped in the baseline.
 
 ```bash
-PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 ```
 
 ### Common pitfalls
@@ -122,13 +122,13 @@ PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shi
 - **Emoji tab labels**: use `.nav-link:has-text('AMR')` style selectors, not role-based Playwright selectors. The tab text contains emoji (e.g., "💊 AMR and ☠️ Virulence") so partial text matching is more robust.
 - **Dynamic tabs signal**: wait for `.nav-link:has-text('Quality Control')` as the sentinel that `dynamic_tabs` has fully rendered before navigating to a specific tab.
 - **fb_op reset**: if `fb_op` shows the wrong operator after changing `fb_col`, it means `_wait_shiny()` was not called after the column change. Always wait before inspecting operator or value widgets.
-- **No runtime persona selector**: `#persona_selector` does not exist as a rendered UI element. Setting `SPARMVET_PERSONA` at launch is the only mechanism.
+- **No runtime app features selector**: `#app_features_selector` does not exist as a rendered UI element. Setting `SPARMVET_APP_FEATURES` at launch is the only mechanism.
 
 ### Test baseline (checked 2026-11-06)
 
 There are no known broken tests or libs. Removed on 2026-11-06 because they were broken and superseded:
-`app/tests/test_reactive_shell.py` (persona switching is gone, ADR-053; the Apply gate logic is covered by
-`test_session_manager.py::test_gatekeeper_blocked`; a UI-level test is open as AUDIT-GATE-UI-1), the persona
+`app/tests/test_reactive_shell.py` (app features switching is gone, ADR-053; the Apply gate logic is covered by
+`test_session_manager.py::test_gatekeeper_blocked`; a UI-level test is open as AUDIT-GATE-UI-1), the app features
 benchmark scripts, and the `libs/test_lab/tests` demos that imported the old `test_lab.reconciler` and the
 old `AquaSynthesizer` API (covered by `libs/id_reconciliation/tests`, `test_synthesizer.py`,
 `test_bootstrapper.py` and the new `test_extractor.py`).
@@ -141,10 +141,10 @@ PYTHONPATH=. ./.venv/bin/python -m pytest libs app/tests \
   --ignore=app/tests/test_export_download.py -q
 ```
 
-Browser tests (about 3 minutes, `qa` persona):
+Browser tests (about 3 minutes, `qa` app features):
 
 ```bash
-PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest \
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest \
   app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py app/tests/test_export_download.py -q
 ```
 

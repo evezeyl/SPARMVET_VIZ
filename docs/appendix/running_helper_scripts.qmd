@@ -98,7 +98,7 @@ Generates an **ADR-048 compliant** deployment profile YAML for local testing. Th
 ./.venv/bin/python assets/scripts/create_test_deployment.py \
     --manifest-id 1_test_data_ST22_dummy \
     --description "ST22 AMR local test" \
-    --persona developer
+    --app features developer
 
 # Custom project root (e.g. for a mounted path)
 ./.venv/bin/python assets/scripts/create_test_deployment.py \
@@ -106,7 +106,7 @@ Generates an **ADR-048 compliant** deployment profile YAML for local testing. Th
     --project-root /mnt/data/sparmvet
 ```
 
-The profile defines `deployment_type`, `locations` (raw data, manifests, curated data, gallery), `default_manifest`, and `default_persona`.
+The profile defines `deployment_type`, `locations` (raw data, manifests, curated data, gallery), `default_manifest`, and `default_app_features`.
 
 ---
 

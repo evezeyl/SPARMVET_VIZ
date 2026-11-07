@@ -114,7 +114,7 @@ Two levels of ambition:
 | **UI** | sidebars, theater shell patterns | **HOME2 space: panel grid layout, panel registry** |
 | **Render backends** | — | R (ggplot2 / ggtree) opt-in, geom_polygon maps |
 
-So the spirit of your instinct is right: **add/rewrite UI for this part only, leverage all existing libraries.** HOME2 is a new user space (joining HOME / BLUEPRINT / TEST_LAB / GALLERY), persona-gated like the others, that composes existing render outputs into a grid.
+So the spirit of your instinct is right: **add/rewrite UI for this part only, leverage all existing libraries.** HOME2 is a new user space (joining HOME / BLUEPRINT / TEST_LAB / GALLERY), flag-gated like the others, that composes existing render outputs into a grid.
 
 ---
 

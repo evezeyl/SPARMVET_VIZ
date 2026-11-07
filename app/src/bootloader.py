@@ -50,7 +50,7 @@ _RESOLUTION_LEVEL_LABELS = {
 class Bootloader:
     """
     System Bootloader (ADR-031, ADR-026, ADR-048).
-    Handles path authority, UI persona feature toggling, and deployment profile resolution.
+    Handles path authority, UI app features feature toggling, and deployment profile resolution.
 
     Profile resolution chain (ADR-048 §4):
         1. SPARMVET_PROFILE env var  — explicit path; used by Galaxy/IRIDA/Docker
@@ -154,7 +154,7 @@ class Bootloader:
         if not self.app_features:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem="No persona configured — cannot determine which feature flags to load.",
+                problem="No app features configured — cannot determine which feature flags to load.",
                 location=(
                     "Resolution order checked: app_features= kwarg, SPARMVET_APP_FEATURES env var, "
                     f"default_app_features in {self.connector_path} — all absent."
@@ -287,15 +287,15 @@ class Bootloader:
             self._app_features_cache[cache_key] = self._load_app_features_config()
 
         self.config = self._app_features_cache[cache_key]
-        print(f"[Bootloader] Persona: {self.app_features} → {self.app_features_path}")
+        print(f"[Bootloader] App features: {self.app_features} → {self.app_features_path}")
         self.flags = self.config.get("flags", {})
         self.automation = self.config.get("automation", {})
 
     @property
     def app_features_display_name(self) -> str:
-        """Human-readable persona name from the template's display_name field.
+        """Human-readable app features name from the template's display_name field.
 
-        Falls back to name, then to the raw persona value (path or shortname).
+        Falls back to name, then to the raw app features value (path or shortname).
         Used for UI display only — never for behavioral gating.
         """
         return (
@@ -354,21 +354,21 @@ class Bootloader:
             return {}  # unreachable
 
     def _load_app_features_config(self) -> Dict[str, Any]:
-        """Loads UI feature toggles from the persona template and applies dependency cascade.
+        """Loads UI feature toggles from the app features file and applies dependency cascade.
 
-        Cascade rules (rules_persona_feature_flags.md §107–127):
+        Cascade rules (rules_app_features_flags.md §107–127):
           - interactivity_enabled=False suppresses t3_sandbox/comparison/session/export_graph/audit_report
           - import_helper_enabled=False suppresses data_ingestion_enabled
           - Deployment-profile data_ingestion_enabled:false is an absolute override
 
         Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are NOT
         silently suppressed here — they are fatal validator errors raised by
-        PersonaValidator at startup (Rule 7). If you wrote them on while
+        AppFeaturesValidator at startup (Rule 7). If you wrote them on while
         blueprint_enabled=False, the app refuses to start. See
-        rules_persona_feature_flags.md Cascade Enforcement §4–5.
+        rules_app_features_flags.md Cascade Enforcement §4–5.
         A WARNING is printed for each flag that was True in the template and forced False.
 
-        Supports !include in persona templates (paths relative to the template file).
+        Supports !include in app features files (paths relative to the template file).
         Uses a subclass of SafeLoader to avoid polluting the global constructor registry.
         """
         path = self.app_features_path
@@ -411,7 +411,7 @@ class Bootloader:
         except Exception as e:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Failed to parse persona template '{path}': {e}",
+                problem=f"Failed to parse app features file '{path}': {e}",
                 location=str(path),
                 fix=(
                     f"Check {path} for YAML syntax errors. "
@@ -464,7 +464,7 @@ class Bootloader:
                 features["data_ingestion_enabled"] = False
 
         # NOTE: Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are
-        # intentionally NOT silently suppressed here. PersonaValidator Rule 7 raises a
+        # intentionally NOT silently suppressed here. AppFeaturesValidator Rule 7 raises a
         # fatal error at startup if a template declares them on while blueprint_enabled=False.
         # The flag value passes through this loader unchanged so the validator sees the
         # user's actual intent (rather than a silently-rewritten "safe" version).
@@ -487,7 +487,7 @@ class Bootloader:
             raise KeyError(f"Location key '{key}' not defined in connector.")
         return self._resolved_locations[key]
 
-    # Features that default TRUE when not declared in a persona template.
+    # Features that default TRUE when not declared in an app features file.
     # Everything else defaults False (opt-in).
     _FEATURES_DEFAULT_TRUE = {"show_app_features_badge"}
 
@@ -497,7 +497,7 @@ class Bootloader:
         return self.flags.get(feature, default)
 
     def get_theme_css_path(self) -> Path:
-        """Returns the CSS theme file for this persona (theme_css key, defaults to config/ui/theme.css)."""
+        """Returns the CSS theme file for this app features (theme_css key, defaults to config/ui/theme.css)."""
         css_rel = self.config.get("theme_css", "config/ui/theme.css")
         return Path(css_rel)
 
@@ -512,8 +512,8 @@ class Bootloader:
     def get_sidebar_config(self, workspace: str, side: str) -> "SidebarConfig":
         """Returns the resolved sidebar configuration for the given workspace and side.
 
-        Reads workspaces.<workspace>.<side>_sidebar from the active persona template.
-        !include references in the template are resolved at load time by _load_persona_config().
+        Reads workspaces.<workspace>.<side>_sidebar from the active app features file.
+        !include references in the template are resolved at load time by _load_app_features_config().
 
         Default when not defined: left=visible with no panels, right=not visible.
         """
@@ -633,9 +633,9 @@ class Bootloader:
         return self._palettes_cache
 
     def get_agent_config(self) -> dict:
-        """Return the blueprint_agent: block from the active persona template.
+        """Return the blueprint_agent: block from the active app features file.
 
-        Returns an empty dict if the block is absent (e.g. non-developer personas).
+        Returns an empty dict if the block is absent (e.g. non-developer app features files).
         Callers should gate on is_enabled('blueprint_agent_enabled') before using.
         """
         return self.config.get("blueprint_agent", {})
@@ -655,7 +655,7 @@ class Bootloader:
         if not self.is_enabled("blueprint_agent_enabled"):
             from blueprint_arch.agent_adapter import DisabledAdapter
             self._agent_adapter_cache = DisabledAdapter(
-                "blueprint_agent_enabled is false for this persona."
+                "blueprint_agent_enabled is false for this app features."
             )
             return self._agent_adapter_cache
 

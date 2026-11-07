@@ -11,10 +11,10 @@
 #
 # On Connect set:
 #   SPARMVET_PROFILE=/connect/content/<app-guid>/connect_profile.yaml
-#   SPARMVET_APP_FEATURES=pipeline-static   (or whichever persona this deployment shows)
+#   SPARMVET_APP_FEATURES=pipeline-static   (or whichever app features this deployment shows)
 #
 # If the pipeline produces data via an automated script (not user upload):
-#   Set data_ingestion_enabled: false  in the persona template
+#   Set data_ingestion_enabled: false  in the app features file
 #   so the Data Import panel is suppressed and data is always pipeline-provided.
 
 deployment_type: filesystem
@@ -22,10 +22,10 @@ deployment_name: "SPARMVET — Production (Posit Connect)"
 
 # The manifest to load at startup.
 # Relative to project_root below.
-# If absent, the manifest selector appears in the UI (persona-gated).
+# If absent, the manifest selector appears in the UI (flag-gated).
 default_manifest: "manifests/my_pipeline/master.yaml"
 
-# Persona to activate. For a locked pipeline deployment use pipeline-static.
+# App features to activate. For a locked pipeline deployment use pipeline-static.
 # See config/ui/templates/ for the full list.
 default_app_features: pipeline-static
 
@@ -60,7 +60,7 @@ runtime:
   # On Connect the interpreter is resolved by rsconnect. Do not change.
   python_interpreter: "python"
 
-# Deployment-level feature overrides (applied on top of persona template flags).
+# Deployment-level feature overrides (applied on top of app features file flags).
 # Set data_ingestion_enabled: false when data is always pushed by the pipeline.
 # metadata_ingestion_enabled remains user-controllable and is NOT overridden here.
 # data_ingestion_enabled: false

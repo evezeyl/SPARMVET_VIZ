@@ -14,7 +14,7 @@ append a `> FIX:` line under the same heading, not in the checklist.
 
 ## PRE-01 — Console errors on first launch
 
-Manifest opened by default: `figshare_integration`. Persona: developer ("Active:
+Manifest opened by default: `figshare_integration`. App features: developer ("Active:
 Workflow Developer"). Terminal: only `ConfigManager` auto-unnesting info lines, no
 traceback. Chrome console showed:
 
@@ -318,16 +318,16 @@ report) surfaced two more things the first pass didn't cover — both folded int
 **No config file changes needed** — `pipeline-exploration-simple_template.yaml`
 already has exactly `interactivity_enabled: true` + `t3_sandbox_enabled: false`,
 which is precisely the combination that now produces "My view without audit."
-The fix changed what the flags *mean* in code, not their values per persona.
+The fix changed what the flags *mean* in code, not their values per app features.
 
 **Documented in:** `architecture_decisions.md` ADR-085 (rewritten to the final
 form, not left as a superseded stub), `ui_implementation_contract.md` §4/§5/§8/§12a,
-`rules_persona_feature_flags.md` Group B, `test_plan_2026-06.md` CFG-02 + the CFG
+`rules_app_features_flags.md` Group B, `test_plan_2026-06.md` CFG-02 + the CFG
 matrix row. `@deps` blocks updated in both modified files; dependency graph
 regenerated (144 nodes, 278 edges).
 
 Verified: import clean, `test_filter_operators.py` 24/24, Playwright smoke suite
-14 passed / 3 skipped (unchanged baseline — `qa` persona has `t3_sandbox_enabled:
+14 passed / 3 skipped (unchanged baseline — `qa` app features has `t3_sandbox_enabled:
 true`, so the automated suite doesn't exercise the new scratchpad-only path;
 that needs a live check under `pipeline-exploration-simple_template.yaml`,
 tracked as CFG-02).

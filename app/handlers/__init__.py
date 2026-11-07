@@ -22,5 +22,5 @@ home_theater.py    — Home Theater: dynamic_tabs, sidebar_nav_ui, filters, plot
 audit_stack.py     — Pipeline Audit: T2/T3 nodes, btn_apply, track_recipe_changes
 blueprint_handlers.py — Blueprint Architect: manifest import, TubeMap, Lineage Rail
 gallery_handlers.py — Gallery: filtering, preview, clone, submission
-ingestion_handlers.py — Ingestion & persona switching
+ingestion_handlers.py — Ingestion & app features switching
 """

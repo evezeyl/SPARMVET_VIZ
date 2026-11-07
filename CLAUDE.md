@@ -13,7 +13,7 @@ All agent intelligence lives under `.claude/`. This file is the entry point.
 | **User space** | HOME, BLUEPRINT, TEST_LAB, GALLERY — user-facing areas of the app |
 | **Code module** | A Python file that implements part of a user space (e.g. `wrangle_studio.py`) |
 | **Manifest** | A YAML recipe that defines an analysis pipeline |
-| **Persona** | A named deployment configuration (bundle of feature flags) |
+| **App features** | A named set of feature flags that decides what the user may do (a file in `config/app_features/`) |
 
 Never mix user-space and code-module vocabulary. Design discussions lead with user spaces; implementation discussions lead with code modules.
 
@@ -62,17 +62,17 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `rules_data_engine.md` | 3-Tier lifecycle, Anchor/Branch/Leaf, decorator law |
 | `rules_manifest_structure.md` | YAML standards, `!include` structure, basename mirroring |
 | `rules_verification_testing.md` | `@verify` protocol, `tmpAI/` vs `tmp/` governance |
-| `rules_ui_dashboard.md` | UI contract: persona masking, sidebar, `btn_apply` gatekeeper |
+| `rules_ui_dashboard.md` | UI contract: app features masking, sidebar, `btn_apply` gatekeeper |
 | `rules_documentation_aesthetics.md` | Quarto DRY rules, naming standards for human-facing docs |
 | `rules_asset_scripts.md` | Bootstrappers and synthetic data generators in `assets/` |
-| `rules_persona_feature_flags.md` | Flag matrix, cascade rules, anti-patterns (Phase 25+) |
+| `rules_app_features_flags.md` | Flag matrix, cascade rules, anti-patterns (Phase 25+) |
 | `ui_implementation_contract.md` | Section-by-section UI surface spec (Phase 25+) |
 | `rules_code_quality.md` | Emoji ban (active), comment philosophy, pre-deployment documentation tiers |
 | `rules_gallery_standards.md` | Gallery recipe standards |
 | `rules_viz_factory.md` | VizFactory registration rules |
 | `rules_app_structure.md` | App directory and module structure |
-| `dasharch.md` | @dasharch persona definition |
-| `rules_persona_bioscientist.md` | @bioscientist persona definition |
+| `dasharch.md` | @dasharch agent role definition |
+| `rules_agent_role_bioscientist.md` | @bioscientist agent role definition |
 
 ### 3.3 Workflows (`.claude/workflows/`) — read only when that task is active
 
@@ -93,7 +93,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 |---|---|
 | `architecture_decisions.md` | **ADR Log** — definitive record of all architectural decisions |
 | `project_conventions.md` | Class names, key terms, path authority, hard-won patterns |
-| `persona_traceability_matrix.md` | Which UI elements are visible to which persona |
+| `app_features_traceability_matrix.md` | Which UI elements are visible with which app features |
 | `changelog.md` | Breaking changes and notable renames — check if something breaks after refactor |
 | `blueprint_architect_ux_spec.md` | UX spec for Blueprint Architect (TubeMap, lineage navigation) |
 | `dependency_index.md` | Forward/backward dependency map between modules, rules, manifests |
@@ -118,24 +118,24 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `spaces/FUTURE_SPACES.md` | Forward notes on future user spaces |
 | `developer_workflow.md` | End-to-end producer journey across TEST_LAB → BLUEPRINT → GALLERY → HOME; module independence, "Send to" handoff, cross-space seams |
 | `functionality_dependency_map.md` | User functionality → code flag mapping with cascade rules |
-| `persona_capability_matrix.md` | Deployment configuration matrix |
-| `persona_scoping_guide.md` | Deployment configuration guide |
+| `app_features_capability_matrix.md` | Deployment configuration matrix |
+| `app_features_scoping_guide.md` | Deployment configuration guide |
 | `export_specification.md` | Export redesign spec (2026-05-04) |
 | `design_t3_export_threading.md` | T3 node threading + export lineage design |
 | `ui_panel_map_current.md` | CSS selector reference + panel name mapping |
 
 ---
 
-## 4. Persona & Prompt Triggers
+## 4. Agent Roles & Prompt Triggers
 
-### 4.1 Default Persona: @dasharch
+### 4.1 Default Agent Role: @dasharch
 
-The **@dasharch** persona is the Lead System Architect. Active by default. Must:
+The **@dasharch** agent role is the Lead System Architect. Active by default. Must:
 - Prioritize architectural integrity and long-term project hygiene
 - Follow established ADRs without exception
 - Proactively update the documentation ecosystem after any significant change
 
-### 4.2 @bioscientist Persona
+### 4.2 @bioscientist Agent Role
 
 Activate when: manifest design, scientist-first interview, data grain decisions. Must:
 - Follow the Scientist-First Interview Protocol (Data Grain, Metric Logic, Visual Mapping)
@@ -179,7 +179,7 @@ Contract → CLI Execution → Materialize to `tmpAI/` → Validate → Copy to 
 ## 8. Deployment Rules (ADR-071)
 
 1. **No CDN links anywhere** — all frontend assets must be vendored locally in `app/src/www/vendor/`
-2. **Positive inclusion** — only register/initialise modules explicitly enabled in persona config
+2. **Positive inclusion** — only register/initialise modules explicitly enabled in the app features file
 3. **No secrets in source** — credentials via environment variables or KDE Wallet only
 4. **Cross-panel prohibition** — a module's UI outputs must be mounted inside that module's own gated panel
 5. **Vendor manifest** — update `app/src/www/vendor/VENDOR_MANIFEST.md` when adding/upgrading any vendored asset

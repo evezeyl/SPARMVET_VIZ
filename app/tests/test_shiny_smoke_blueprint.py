@@ -13,7 +13,7 @@ Tests are grouped into four tiers:
   T4-BP — Groups & Plots + Manifest Info panels (BP-GROUPS-1, BP-META-1)
 
 Notes:
-  - qa persona: blueprint_enabled=true, manifest_edit_enabled=true, ghost_save=false.
+  - qa app features: blueprint_enabled=true, manifest_edit_enabled=true, ghost_save=false.
   - All tests require the app to render the Blueprint sidebar after loading a manifest.
   - `_wait_shiny` must follow every Shiny-reactive interaction to avoid DOM race conditions.
   - Emoji in accordion headers require :has-text selectors (role-based matching fails).
@@ -116,7 +116,7 @@ class TestBlueprintNavigation:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_navigate_to_blueprint_renders_sidebar(
         self, page: Page, shiny_app: ShinyAppProc
@@ -128,7 +128,7 @@ class TestBlueprintNavigation:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_no_startup_errors_in_blueprint(self, page: Page, shiny_app: ShinyAppProc):
         """No render errors or tracebacks after navigating to Blueprint."""
@@ -143,7 +143,7 @@ class TestBlueprintNavigation:
 class TestBlueprintManifestLoad:
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_manifest_selector_has_options(self, page: Page, shiny_app: ShinyAppProc):
         """The manifest selector populates with at least one YAML option."""
@@ -160,7 +160,7 @@ class TestBlueprintManifestLoad:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_groups_plots_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
         """After manifest load, Groups & Plots panel renders without error."""
@@ -172,7 +172,7 @@ class TestBlueprintManifestLoad:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_manifest_info_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
         """After manifest load, Manifest Info panel renders without error."""
@@ -190,7 +190,7 @@ class TestBlueprintManifestLoad:
 class TestBlueprintEscapeAndValidate:
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_escape_hatch_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
         """YAML Escape Hatch panel renders with content after manifest load."""
@@ -202,7 +202,7 @@ class TestBlueprintEscapeAndValidate:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_escape_hatch_shows_yaml_content(self, page: Page, shiny_app: ShinyAppProc):
         """The escape hatch textarea/pre contains YAML text (not empty).
@@ -249,7 +249,7 @@ class TestBlueprintEscapeAndValidate:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_validate_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
         """Validate panel renders the 'Run validation' button after manifest load."""
@@ -260,7 +260,7 @@ class TestBlueprintEscapeAndValidate:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_validate_runs_and_shows_result(self, page: Page, shiny_app: ShinyAppProc):
         """Clicking 'Run validation' shows PASS or FAIL result within 30 s.
@@ -288,7 +288,7 @@ class TestBlueprintEscapeAndValidate:
 class TestBlueprintRoundTrip:
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_save_internal_does_not_crash(self, page: Page, shiny_app: ShinyAppProc):
         """Clicking the hidden Save button (btn_save_internal) does not raise an error.
@@ -310,7 +310,7 @@ class TestBlueprintRoundTrip:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
-        reason="Blueprint requires developer or qa persona",
+        reason="Blueprint requires developer or qa app features",
     )
     def test_blueprint_switch_back_to_home_no_error(
         self, page: Page, shiny_app: ShinyAppProc

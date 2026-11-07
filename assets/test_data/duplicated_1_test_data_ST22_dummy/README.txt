@@ -37,14 +37,14 @@ Launch commands (see EVE_WORK/notes/cheatsheat.md)
 ---------------------------------------------------
 Used with pipeline_test_profile.yaml (prefer_discovery: true, raw_data → this dir):
 
-  pipeline-static persona:
+  pipeline-static app features:
     SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
-    SPARMVET_PERSONA=$ROOT/config/ui/templates/pipeline-static_template.yaml \
+    SPARMVET_APP_FEATURES=$ROOT/config/ui/templates/pipeline-static_template.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
-  pipeline-exploration-simple persona:
+  pipeline-exploration-simple app features:
     SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
-    SPARMVET_PERSONA=$ROOT/config/ui/templates/pipeline-exploration-simple_template.yaml \
+    SPARMVET_APP_FEATURES=$ROOT/config/ui/templates/pipeline-exploration-simple_template.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
 Origin

@@ -41,7 +41,7 @@ The BLUEPRINT workspace is your manifest editor. To open it, click **Wrangle Stu
 | **TubeMap** | Visual map of your manifest — nodes are data schemas, joins, and plots |
 | **1. Focus (Logic)** | Logic stack for the selected node — add, reorder, and edit wrangling steps |
 | **2. Interface (Fields)** | Input/output field definitions for the selected schema |
-| **3. YAML (Raw Source)** | Raw YAML fragment for the selected node. Editable only when `manifest_edit_enabled` is true (developer persona) |
+| **3. YAML (Raw Source)** | Raw YAML fragment for the selected node. Editable only when `manifest_edit_enabled` is true (developer app features) |
 | **4. Joint Designer** | Side-by-side key-match preview for authoring `join` steps |
 
 Select any node in the TubeMap to open its editing form in the center panel. Fill the form, click **Apply**, then use **Save** to write back to disk.
@@ -132,7 +132,7 @@ tier1:
       old_name: new_name
 ```
 
-The full list of available actions is in `rules_persona_bioscientist.md §8` or visible in the BLUEPRINT action picker.
+The full list of available actions is in `rules_agent_role_bioscientist.md §8` or visible in the BLUEPRINT action picker.
 
 ---
 
@@ -287,7 +287,7 @@ In BLUEPRINT you can work two ways:
 
 **YAML escape hatch**
 
-The **3. YAML (Raw Source)** panel shows the raw YAML fragment for the selected node. Developer personas can edit this directly (YAML escape hatch, `manifest_edit_enabled`). For most bioscientists, the form UI is safer — it prevents invalid YAML and catches type errors before writing.
+The **3. YAML (Raw Source)** panel shows the raw YAML fragment for the selected node. Developer app features files can edit this directly (YAML escape hatch, `manifest_edit_enabled`). For most bioscientists, the form UI is safer — it prevents invalid YAML and catches type errors before writing.
 
 ---
 

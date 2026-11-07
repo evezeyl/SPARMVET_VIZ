@@ -330,7 +330,7 @@ The truth table prevents regressions; it is the contract document of the cascade
 
 - **Two-pass render** — designed for compatibility (§5d) but not implemented.
 - **New optimisation heuristics** — designed-for hooks (§5c) but not implemented.
-- **Per-persona plot defaults** — a `persona_plot_defaults` template field could layer between L2 and L1 in the future. Not in this design.
+- **per app features file plot defaults** — a `app_features_plot_defaults` template field could layer between L2 and L1 in the future. Not in this design.
 - **Manifest-level theme inheritance from a parent manifest** — `!include` resolution is structural, not config-cascading. Out of scope.
 - **Aesthetic propagation across plots** — handled by §12g of `ui_implementation_contract.md` via per-plot node duplication. The cascade resolver sees only the per-plot override slice; cross-plot propagation is upstream of the resolver.
 

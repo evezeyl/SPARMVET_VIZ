@@ -1,5 +1,5 @@
 ---
-title: "UI Personas — Access Levels & Feature Control"
+title: "UI App features files — Access Levels & Feature Control"
 subtitle: "How SPARMVET adapts its interface to different users and deployment contexts"
 ---
 
@@ -12,21 +12,21 @@ code:not(.sourceCode) {
 }
 ```
 
-# What is a Persona?
+# What is an App features?
 
-A **persona** defines what a user can see and do in the SPARMVET interface. It controls which panels are visible, which tools are accessible, and how much of the analytical pipeline is exposed.
+A **app features** defines what a user can see and do in the SPARMVET interface. It controls which panels are visible, which tools are accessible, and how much of the analytical pipeline is exposed.
 
-Personas answer the question: **who is this user, and what level of access do they need?**
+App features files answer the question: **who is this user, and what level of access do they need?**
 
-They do **not** control which data or pipeline is loaded — that is the job of the [Deployment Profile](../deployment/deployment_guide.qmd). Persona and deployment are fully independent: the same persona can be used with any pipeline, and the same pipeline can be deployed for different persona levels.
+They do **not** control which data or pipeline is loaded — that is the job of the [Deployment Profile](../deployment/deployment_guide.qmd). App features and deployment are fully independent: the same app features can be used with any pipeline, and the same pipeline can be deployed for different app features levels.
 
 ---
 
-# The Eight Personas
+# The Eight App features files
 
-SPARMVET defines eight personas. Five are production personas (ordered by capability), two are demo variants, and one is reserved for CI automation:
+SPARMVET defines eight app features files. Five are production app features files (ordered by capability), two are demo variants, and one is reserved for CI automation:
 
-| # | Persona ID | Display name | Intended user |
+| # | App features ID | Display name | Intended user |
 |---|---|---|---|
 | 1 | `pipeline-static` | Automated Pipeline — Static | End-user receiving fixed pipeline results; no interaction needed |
 | 2 | `demo-vetinst` | Demo — Vetinst Reference | Read-only reference demo for NVI/Vetinst presentations; export disabled |
@@ -37,11 +37,11 @@ SPARMVET defines eight personas. Five are production personas (ordered by capabi
 | 7 | `developer` | Workflow Developer | Admin or developer building and testing pipelines |
 | 8 | `qa` | QA / CI Automation | Mirrors `developer` flags but disables ghost-save for deterministic Playwright test runs |
 
-The five **production personas** (1, 3, 5, 6, 7) are ordered — higher personas have all the capabilities of lower ones plus additional features. The two **demo personas** (2, 4) are independent variants that disable export and advanced features for safe demonstrations. The **qa persona** (8) is not intended for human users.
+The five **production app features files** (1, 3, 5, 6, 7) are ordered — higher app features files have all the capabilities of lower ones plus additional features. The two **demo app features files** (2, 4) are independent variants that disable export and advanced features for safe demonstrations. The **qa app features** (8) is not intended for human users.
 
 ---
 
-# Feature Map by Persona
+# Feature Map by App features
 
 ## Core UI Access
 
@@ -63,9 +63,9 @@ The five **production personas** (1, 3, 5, 6, 7) are ordered — higher personas
 
 ## Right Sidebar Visibility
 
-The right sidebar (Pipeline Audit) is **completely absent** for the two lowest personas — its layout column is excluded from the DOM so the theater expands to full width. For higher personas it shows the T2 blueprint (Violet nodes) and the user's T3 additions (Yellow nodes).
+The right sidebar (Pipeline Audit) is **completely absent** for the two lowest app features files — its layout column is excluded from the DOM so the theater expands to full width. For higher app features files it shows the T2 blueprint (Violet nodes) and the user's T3 additions (Yellow nodes).
 
-| Persona | Right sidebar |
+| App features | Right sidebar |
 |---|---|
 | `pipeline-static` | Hidden — theater full width |
 | `pipeline-exploration-simple` | Hidden — theater full width |
@@ -75,7 +75,7 @@ The right sidebar (Pipeline Audit) is **completely absent** for the two lowest p
 
 ## Left Sidebar Content
 
-The left sidebar content changes depending on which top-level panel is active. Within the **Home** panel, the Export section shows different tools per persona:
+The left sidebar content changes depending on which top-level panel is active. Within the **Home** panel, the Export section shows different tools per app features:
 
 | Tool | pipeline-static | pipeline-simple | pipeline-advanced | project-independent | developer |
 |---|:---:|:---:|:---:|:---:|:---:|
@@ -93,7 +93,7 @@ Some features depend on others being enabled. Enabling a flag without its depend
 
 ## Group A — Viewing (no dependencies)
 
-These features are always available regardless of persona. They require only that data has been ingested and a manifest is loaded.
+These features are always available regardless of app features. They require only that data has been ingested and a manifest is loaded.
 
 - View plots at T1 and T2 tiers
 - Row filter builder (left sidebar, Home mode)
@@ -116,7 +116,7 @@ interactivity_enabled: true
 
 ## Group C — Right Sidebar (requires `interactivity_enabled: true`)
 
-The right sidebar (Pipeline Audit) is only meaningful when T3 is accessible. It is always suppressed for the two lowest personas — the layout column is excluded from the DOM.
+The right sidebar (Pipeline Audit) is only meaningful when T3 is accessible. It is always suppressed for the two lowest app features files — the layout column is excluded from the DOM.
 
 ```
 interactivity_enabled: true
@@ -135,7 +135,7 @@ import_helper_enabled: true
   └─ metadata_ingestion_enabled: true → Metadata replacement upload (also standalone — see below)
 ```
 
-**`metadata_ingestion_enabled` is semi-independent:** It can be `true` even when `import_helper_enabled: false` — for example, a `pipeline-exploration-advanced` persona can upload corrected metadata but cannot perform general data ingestion. When `import_helper_enabled: false`, the metadata upload appears as a standalone control in Export (not nested under the full ingestion panel).
+**`metadata_ingestion_enabled` is semi-independent:** It can be `true` even when `import_helper_enabled: false` — for example, a `pipeline-exploration-advanced` app features can upload corrected metadata but cannot perform general data ingestion. When `import_helper_enabled: false`, the metadata upload appears as a standalone control in Export (not nested under the full ingestion panel).
 
 ## Group E — Developer Features (requires `developer_mode_enabled: true`)
 
@@ -156,7 +156,7 @@ blueprint_enabled: true/false   ← independent gate for Blueprint Architect
 
 ### `blueprint_agent:` config block
 
-When `blueprint_agent_enabled: true`, the persona template must also declare a `blueprint_agent:` block specifying the backend and connection details:
+When `blueprint_agent_enabled: true`, the app features file must also declare a `blueprint_agent:` block specifying the backend and connection details:
 
 ```yaml
 blueprint_agent:
@@ -174,11 +174,11 @@ blueprint_agent:
 | `claude_api` | Direct Anthropic API call | `ANTHROPIC_API_KEY` (or the value of `api_key_env`) |
 | `disabled` | Chat panel shows "agent unavailable" banner | None |
 
-If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloader falls back to `DisabledAdapter` and logs the cause. The `qa` persona always uses `backend: disabled` to prevent live API calls during automated test runs.
+If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloader falls back to `DisabledAdapter` and logs the cause. The `qa` app features always uses `backend: disabled` to prevent live API calls during automated test runs.
 
 ## Dependency Summary Table
 
-**Cascade type** — *Soft*: bootloader silently forces child to false and logs a warning. *Fatal (ADR-077)*: `PersonaValidator` raises a startup error; app refuses to boot until the template is corrected.
+**Cascade type** — *Soft*: bootloader silently forces child to false and logs a warning. *Fatal (ADR-077)*: `AppFeaturesValidator` raises a startup error; app refuses to boot until the template is corrected.
 
 | Flag | Depends on | Independent? | Cascade type |
 |---|---|---|---|
@@ -198,9 +198,9 @@ If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloade
 
 ---
 
-# Persona Configuration Files
+# App features Configuration Files
 
-Persona templates live in `config/ui/templates/`. Each file is a YAML document:
+App features files live in `config/ui/templates/`. Each file is a YAML document:
 
 ```
 config/ui/templates/
@@ -214,13 +214,13 @@ config/ui/templates/
 ## Full flag reference
 
 ```yaml
-# config/ui/templates/<persona>_template.yaml
+# config/ui/templates/<app features>_template.yaml
 
-persona_name: "pipeline-static"      # internal ID — must match filename prefix
-persona_id: "pipeline-static"        # used by Bootloader — must match filename prefix
+app_features_name: "pipeline-static"      # internal ID — must match filename prefix
+app_features_id: "pipeline-static"        # used by Bootloader — must match filename prefix
 display_name: "Automated Pipeline — Static"   # shown in UI
 logic_access: "None"                 # informational: None / Basic / Advanced / Full
-theme_css: "config/ui/theme.css"     # Optional — CSS file for this persona's styling
+theme_css: "config/ui/theme.css"     # Optional — CSS file for this app features's styling
 
 features:
   # ── Group A: Viewing ──────────────────────────────────────────────────────
@@ -235,7 +235,7 @@ features:
   export_enabled: false        # Export Active Graph (requires interactivity)
 
   # ── Group C: Right Sidebar ────────────────────────────────────────────────
-  # Controlled by interactivity_enabled + persona level (advanced+)
+  # Controlled by interactivity_enabled + app features level (advanced+)
   # No separate flag — suppression is structural (layout element excluded)
 
   # ── Group D: Data Ingestion ───────────────────────────────────────────────
@@ -268,9 +268,9 @@ automation:
     frequency_minutes: 1             # Interval if periodic save is implemented
 ```
 
-## `theme_css` — Per-Persona Stylesheet (Optional)
+## `theme_css` — per app features file Stylesheet (Optional)
 
-The `theme_css` field is an optional path to a CSS file that controls the visual styling of the dashboard for this persona. It defaults to `config/ui/theme.css` (the base stylesheet bundled with the app) if not set.
+The `theme_css` field is an optional path to a CSS file that controls the visual styling of the dashboard for this app features. It defaults to `config/ui/theme.css` (the base stylesheet bundled with the app) if not set.
 
 The file is loaded at startup by `Bootloader.get_theme_css_path()` and injected into the page head via `ui.tags.style()`. To customise styling for a specific deployment or branding requirement, create a new CSS file and point `theme_css:` at it — no Python changes are needed.
 
@@ -279,42 +279,42 @@ The file is loaded at startup by `Bootloader.get_theme_css_path()` and injected 
 theme_css: "config/ui/acme_org_theme.css"
 ```
 
-The base theme (`config/ui/theme.css`) is always available as a reference and fallback. Editing it affects all personas that do not declare an override.
+The base theme (`config/ui/theme.css`) is always available as a reference and fallback. Editing it affects all app features files that do not declare an override.
 
 ---
 
-# How the Active Persona is Selected
+# How the Active App features is Selected
 
-The persona is resolved at startup in this order (first match wins):
+The app features is resolved at startup in this order (first match wins):
 
-1. `default_persona` in the active deployment profile YAML
-2. Persona selector in the UI (if visible — `developer` persona only by default)
+1. `default_app_features` in the active deployment profile YAML
+2. App features selector in the UI (if visible — `developer` app features only by default)
 3. Fallback: `pipeline-static`
 
-In production deployments (Galaxy, IRIDA, server), the deployment profile always sets `default_persona`, so the selector is never shown. In development, the developer template allows switching personas from the UI for testing.
+In production deployments (Galaxy, IRIDA, server), the deployment profile always sets `default_app_features`, so the selector is never shown. In development, the developer template allows switching app features files from the UI for testing.
 
-The active persona is loaded by `Bootloader` (`app/src/bootloader.py`) at bootload time and cached for the session. The resolved template path is printed to the terminal at startup: `[Bootloader] Persona: <id> → <absolute/path/to/_template.yaml>`. Changing persona requires a page reload.
+The active app features is loaded by `Bootloader` (`app/src/bootloader.py`) at bootload time and cached for the session. The resolved template path is printed to the terminal at startup: `[Bootloader] App features: <id> → <absolute/path/to/_template.yaml>`. Changing app features requires a page reload.
 
 ---
 
-# Persona vs. Deployment Profile — What Goes Where
+# App features vs. Deployment Profile — What Goes Where
 
 This is the most common source of confusion. The rule is simple:
 
 | Question | Answered by |
 |---|---|
-| What can this user do? | Persona template (`config/ui/templates/`) |
+| What can this user do? | App features file (`config/ui/templates/`) |
 | Which pipeline/data is loaded? | Deployment profile (`config/connectors/` or `SPARMVET_PROFILE`) |
 | Where is data stored on disk? | Deployment profile (`locations` block) |
-| Is data ingestion available at all? | **Both** — persona flag (`data_ingestion_enabled`) AND deployment profile (`data_ingestion_enabled: false` overrides persona) |
+| Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment profile (`data_ingestion_enabled: false` overrides app features) |
 | What manifest is loaded at startup? | Deployment profile (`default_manifest`) |
-| Can the user switch manifests? | Persona (`import_helper_enabled` + `developer_mode_enabled`) |
+| Can the user switch manifests? | App features (`import_helper_enabled` + `developer_mode_enabled`) |
 
-The only feature that is jointly controlled is **data ingestion** — the deployment profile can disable it regardless of persona (e.g., for automated pipeline deployments where data is always pushed automatically).
+The only feature that is jointly controlled is **data ingestion** — the deployment profile can disable it regardless of app features (e.g., for automated pipeline deployments where data is always pushed automatically).
 
 ---
 
-# For Users: What Each Persona Means in Practice
+# For Users: What Each App features Means in Practice
 
 ## pipeline-static
 You see the results. You can filter what is displayed and export a bundle. You cannot change how data is processed. This is the default for automated pipeline integrations (Galaxy, IRIDA).
@@ -338,15 +338,15 @@ Read-only view of plots and data. Export is disabled so the demo environment sta
 Filters are enabled so a presenter can show interactive exploration, but export, sessions, and ingestion are all disabled. Intended for web-accessible demos where anonymous visitors should not be able to download data.
 
 ## qa *(CI automation only)*
-Identical capabilities to `developer`, but `automation.ghost_save: false` disables background session writes for deterministic Playwright test runs. This persona is set via `SPARMVET_PERSONA=qa` in CI pipelines — it is not intended for human use.
+Identical capabilities to `developer`, but `automation.ghost_save: false` disables background session writes for deterministic Playwright test runs. This app features is set via `SPARMVET_APP_FEATURES=qa` in CI pipelines — it is not intended for human use.
 
 ---
 
 # Sidebar Configuration (ADR-073)
 
-Each persona template declares its sidebar layout per user workspace (Home, Blueprint, Gallery, Test Lab). This replaces the previous hardcoded accordion sequence and adds full configurability without touching Python.
+Each app features file declares its sidebar layout per user workspace (Home, Blueprint, Gallery, Test Lab). This replaces the previous hardcoded accordion sequence and adds full configurability without touching Python.
 
-## Structure in the persona template
+## Structure in the app features file
 
 ```yaml
 workspaces:
@@ -393,20 +393,20 @@ A panel in the slot list whose feature flag is disabled is silently skipped at r
 
 ## Shared sidebar configs via `!include`
 
-Panel lists that are shared across several personas live in `config/ui/sidebars/` as reusable YAML files:
+Panel lists that are shared across several app features files live in `config/ui/sidebars/` as reusable YAML files:
 
 ```
 config/ui/sidebars/
   home_static_left.yaml
   home_advanced_left.yaml      ← shared by advanced, independent, developer, qa
-  home_advanced_right.yaml     ← shared by all T3-capable personas
+  home_advanced_right.yaml     ← shared by all T3-capable app features files
   blueprint_standard_left.yaml
   blueprint_standard_right.yaml
   gallery_focus_left.yaml
   testlab_standard_left.yaml
 ```
 
-Reference them in the persona template with `!include`:
+Reference them in the app features file with `!include`:
 
 ```yaml
 workspaces:
@@ -415,7 +415,7 @@ workspaces:
     right_sidebar: !include sidebars/home_advanced_right.yaml
 ```
 
-Changing a shared sidebar file propagates to all personas that `!include` it. Custom deployments override only the file they need — no Python changes required.
+Changing a shared sidebar file propagates to all app features files that `!include` it. Custom deployments override only the file they need — no Python changes required.
 
 ## Built-in panel types
 
@@ -439,20 +439,20 @@ Changing a shared sidebar file propagates to all personas that `!include` it. Cu
 
 `left_sidebar.visible: false` — excludes the sidebar container from the DOM entirely (not CSS-hidden).
 
-`right_sidebar.visible: false` — excludes the right sidebar from layout at build time. For lower personas (`pipeline-static`, `pipeline-exploration-simple`) this is set in their templates, replacing the previous persona name string check.
+`right_sidebar.visible: false` — excludes the right sidebar from layout at build time. For lower app features files (`pipeline-static`, `pipeline-exploration-simple`) this is set in their templates, replacing the previous app features name string check.
 
 **Auto-hide:** If `visible` is not explicitly set and all panels are skipped (all gate flags off), the sidebar is treated as hidden.
 
 ## Validation
 
-Before deploying any persona template change, run:
+Before deploying any app features file change, run:
 
 ```bash
-# Validate one persona
-.venv/bin/python scripts/validate_persona_config.py --persona pipeline-exploration-advanced
+# Validate one app features
+.venv/bin/python scripts/validate_app_features_config.py --app features pipeline-exploration-advanced
 
-# Validate all personas — CI gate
-.venv/bin/python scripts/validate_persona_config.py --all --strict
+# Validate all app features files — CI gate
+.venv/bin/python scripts/validate_app_features_config.py --all --strict
 ```
 
 The script checks: panel types against the registry, `!include` targets exist, gate-flag / slot-list consistency. `--strict` upgrades warnings to errors. The script is also run at app startup (warnings logged, errors block startup).
@@ -461,7 +461,7 @@ The script checks: panel types against the registry, `!include` targets exist, g
 
 1. Register it in `app/modules/sidebar_registry.py`: add an entry to `PANEL_REGISTRY` with the renderer function reference and optional gate flag.
 2. Implement the renderer as a function in the relevant handler (Shiny-aware code stays in handlers per ADR-045 Two-Category Law).
-3. Add the panel type to the `!include` sidebar YAML files for any persona/workspace that should show it.
-4. Run `scripts/validate_persona_config.py --all` to verify no existing templates are broken.
+3. Add the panel type to the `!include` sidebar YAML files for any app features/workspace that should show it.
+4. Run `scripts/validate_app_features_config.py --all` to verify no existing templates are broken.
 
 No changes to `home_theater.py` or `ui.py` are needed for new panel types — the slot iteration is generic.

@@ -1,26 +1,26 @@
 # Deployment Configuration Guide
 
-> **HISTORICAL NOTE (2026-11-06):** the `audit_report_enabled` flag was removed (LEGACY-AUDIT-FLAG-1, 2026-05-22): the T3 audit trail is part of every export. Rows and text below that mention it describe the earlier design. Current flags: `.claude/rules/rules_persona_feature_flags.md`.
+> **HISTORICAL NOTE (2026-11-06):** the `audit_report_enabled` flag was removed (LEGACY-AUDIT-FLAG-1, 2026-05-22): the T3 audit trail is part of every export. Rows and text below that mention it describe the earlier design. Current flags: `.claude/rules/rules_app_features_flags.md`.
 
 **Last updated:** 2026-05-05 (Session 18 — full functionality mapping decided)
 **Companion files:**
 - `functionality_dependency_map.md` — **start here** — user functionality → code flag dependencies
-- `persona_capability_matrix.md` — example deployment configurations (named personas) × flags
+- `app_features_capability_matrix.md` — example deployment configurations (named app features files) × flags
 - `ui_panel_map_current.md` — CSS selectors and panel names for each UI element
 - ADR-069 — Complete Export Audit Trail Standard
 
-**Persona templates:** `config/ui/templates/`
+**App features files:** `config/ui/templates/`
 
 ---
 
 ## Core concept
 
-SPARMVET is deployed with a **configuration profile** that defines which user functionalities are available. The term "persona" is used for named example profiles (e.g. `pipeline-static`, `developer`), but a persona is just a label for a specific combination of flags.
+SPARMVET is deployed with a **configuration profile** that defines which user functionalities are available. The term "app features" is used for named example profiles (e.g. `pipeline-static`, `developer`), but an app features is just a label for a specific combination of flags.
 
 **The right way to think about deployment:**
 > "What do I want my users to be able to do?" → pick the functionalities → validate dependencies → name it.
 
-The personas shipped with SPARMVET are reusable starting points. Deployers can create their own by composing functionalities within the cascade rules.
+The app features files shipped with SPARMVET are reusable starting points. Deployers can create their own by composing functionalities within the cascade rules.
 
 See `functionality_dependency_map.md` for the complete dependency rules before creating a custom configuration.
 
@@ -47,7 +47,7 @@ See `functionality_dependency_map.md` for the complete dependency rules before c
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `DEF_TIER` | `default_tier` | **Always `T2`.** T2 is the manifest result. No persona defaults to T1. |
+| `DEF_TIER` | `default_tier` | **Always `T2`.** T2 is the manifest result. No app features defaults to T1. |
 | `TIER_T12` | `tier_toggle_t1t2_enabled` | Show T1↔T2 toggle. Configurable on/off. Required if T3 active. |
 | `TIER_T3` | `tier_toggle_t3_enabled` | Show T2↔T3 comparison toggle. Required if T3 active. Off otherwise. |
 
@@ -77,7 +77,7 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 | `CMP_MODE` | `comparison_mode_enabled` | Compare T2 vs T3; required when T3 active |
 | `AUD_RPT` | `audit_report_enabled` | Consolidated audit report; required when T3 active |
 
-**Cascade:** `T3_SAND: true` requires `CMP_MODE: true` + `AUD_RPT: true` + `SESS_MGT: true` + `AUTOSAVE: true` + `export_enabled: true` + both tier toggles. `PersonaConfigError` raised at startup if violated.
+**Cascade:** `T3_SAND: true` requires `CMP_MODE: true` + `AUD_RPT: true` + `SESS_MGT: true` + `AUTOSAVE: true` + `export_enabled: true` + both tier toggles. `AppFeaturesConfigError` raised at startup if violated.
 
 ---
 
@@ -86,7 +86,7 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 | Abbrev | Full flag | Notes |
 |---|---|---|
 | `SESS_MGT` | `session_management_enabled` | Session accordion UI visibility |
-| `AUTOSAVE` | `ghost_save.enabled` | Ghost save timer. Only meaningful when `T3_SAND: true`. Off for passive personas. |
+| `AUTOSAVE` | `ghost_save.enabled` | Ghost save timer. Only meaningful when `T3_SAND: true`. Off for passive app features files. |
 
 **Rule:** Parquet cache (T1 materialisation) is always written for performance, independent of this flag. `AUTOSAVE` only controls the session JSON (ghost save).
 
@@ -100,7 +100,7 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 
 **Scope** (project / group / plot) is determined by the active context and scope toggle — not by separate flags. The old `EXP_BNDL` / `EXP_GROUP` / `EXP_GRF` flags are collapsed into `export_enabled`.
 
-**ADR-069 rule — hashes always on:** Every export always includes the full provenance set (data_batch_hash, manifest_sha256, decision_hash, git_commit, release_version, created_at, manifest_name, persona_id, active_tier, software_versions, data_source_paths). No flag, no opt-out. Image files embed an 8-field subset in file metadata (PNG iTXt / SVG `<metadata>` / PDF XMP).
+**ADR-069 rule — hashes always on:** Every export always includes the full provenance set (data_batch_hash, manifest_sha256, decision_hash, git_commit, release_version, created_at, manifest_name, app_features_id, active_tier, software_versions, data_source_paths). No flag, no opt-out. Image files embed an 8-field subset in file metadata (PNG iTXt / SVG `<metadata>` / PDF XMP).
 
 ---
 
@@ -133,11 +133,11 @@ Each is a single on/off flag. Sub-flags (e.g. TUBE_MAP, WRNG_STU for Blueprint; 
 
 | Abbrev | Full flag | Type | Notes |
 |---|---|---|---|
-| `PRS_BADGE` | `show_persona_badge` | configurable | "Active: persona-name" in nav header. Display preference, no functional dependency. |
+| `PRS_BADGE` | `show_app_features_badge` | configurable | "Active: app features name" in nav header. Display preference, no functional dependency. |
 | `MAN_SEL` | `manifest_selector_visible: true` | configurable | User can switch manifests in sidebar. |
 | `MAN_FIX` | `manifest_selector_visible: false` | configurable | Manifest locked — selector hidden. Opposite of MAN_SEL; never both. |
-| `UI_TITLE` | `ui_title` (persona) / `info.display_name` (manifest) | configurable | Resolution: persona config override > manifest field > nothing. |
-| `UI_SUBT` | `ui_subtitle` (persona) / `info.subtitle` (manifest) | configurable | Same resolution as UI_TITLE. Hidden if UI_TITLE is off. `info.description` is long free-form text — NOT shown in header. |
+| `UI_TITLE` | `ui_title` (app features) / `info.display_name` (manifest) | configurable | Resolution: app features config override > manifest field > nothing. |
+| `UI_SUBT` | `ui_subtitle` (app features) / `info.subtitle` (manifest) | configurable | Same resolution as UI_TITLE. Hidden if UI_TITLE is off. `info.description` is long free-form text — NOT shown in header. |
 | `SHOW_NAV` | *(derived)* | **derived** | Auto-shown when any of `gallery_enabled` / `blueprint_enabled` / `test_lab_enabled` is true. No config field needed. |
 | `SDB_PROF` | `sidebar_profile` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
 
@@ -161,13 +161,13 @@ show_navigation  →  derived: any(gallery_enabled, blueprint_enabled, test_lab_
 ui_subtitle      →  only shown when ui_title is shown
 ```
 
-Startup validation raises `PersonaConfigError` if any cascade rule is violated.
+Startup validation raises `AppFeaturesConfigError` if any cascade rule is violated.
 
 ---
 
-## Example deployment configurations (personas)
+## Example deployment configurations (app features files)
 
-| Persona ID | Intended use case | Template file |
+| App features ID | Intended use case | Template file |
 |---|---|---|
 | `pipeline-static` | Read-only display of pre-processed results | `pipeline-static_template.yaml` |
 | `demo-vetinst` | Branded demo / presentation | `demo-vetinst_template.yaml` |

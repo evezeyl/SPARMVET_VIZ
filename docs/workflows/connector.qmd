@@ -30,7 +30,7 @@ A deployment profile is a single YAML file that describes one running instance o
 
 - **Where** is data stored? (filesystem paths or API endpoint)
 - **Which** pipeline manifest loads at startup?
-- **Who** is the default user type (persona)?
+- **Who** is the default user type (app features)?
 - **What kind** of system is this? (filesystem / Galaxy / IRIDA)
 
 One Docker image + one deployment profile = one running SPARMVET instance. To run SPARMVET for three different pipelines, use three profiles pointing to three different data directories — same image each time.
@@ -84,14 +84,14 @@ locations:
 deployment_name: "AMR Pipeline — Galaxy EU"
 
 # Manifest to load at startup (relative to project_root/locations.manifests)
-# If ABSENT → manifest selector appears in UI (persona-gated)
-# If PRESENT → manifest is locked; lower personas never see the selector
+# If ABSENT → manifest selector appears in UI (flag-gated)
+# If PRESENT → manifest is locked; lower app features files never see the selector
 default_manifest: "manifests/amr/master.yaml"
 
-# Persona to activate at startup
-# If ABSENT → persona selector shown (developer persona only) or falls back to pipeline-static
-# If PRESENT → persona is locked for this deployment
-default_persona: pipeline-static
+# App features to activate at startup
+# If ABSENT → app features selector shown (developer app features only) or falls back to pipeline-static
+# If PRESENT → app features is locked for this deployment
+default_app_features: pipeline-static
 
 # Runtime
 runtime:
@@ -113,7 +113,7 @@ irida:
 | Do not put here | Why | Where it goes instead |
 |---|---|---|
 | API tokens / passwords | Security — never in files that may be committed | Env vars (`SPARMVET_IRIDA_TOKEN`) |
-| Feature flags (filter, export, T3…) | Persona controls features, not deployment | Persona template (`config/ui/templates/`) |
+| Feature flags (filter, export, T3…) | App features controls features, not deployment | App features file (`config/ui/templates/`) |
 | Wrangling logic / manifests | Manifest content belongs in `locations.manifests/` | Pipeline manifest YAML |
 | User preferences | Future: `user_sessions/user-preferences.yaml` | Deferred |
 | Absolute paths inside `locations` | All sub-paths must be relative to `project_root` | Use relative paths only |
@@ -185,7 +185,7 @@ This mirrors production connector behaviour: in Galaxy and IRIDA, pipeline outpu
 
 | Profile | Set? | Reason |
 |---|---|---|
-| `config/deployment/pipeline_test/pipeline_test_profile.yaml` | Yes | Simulates production connector delivery for pipeline persona testing |
+| `config/deployment/pipeline_test/pipeline_test_profile.yaml` | Yes | Simulates production connector delivery for pipeline app features testing |
 | Galaxy / IRIDA production profiles | Yes | Pipeline delivers data to `raw_data_dir` |
 | `config/deployment/local/local_profile.yaml` (dev fallback) | No | Developers use `source.path` to point at arbitrary test data locations |
 
@@ -210,17 +210,17 @@ From the perspective of DataOrchestrator and VizFactory, IRIDA and filesystem de
 
 # Data Ingestion Feature — Deployment-Level Control
 
-The data ingestion feature (System Tools) can be **disabled at the deployment level**, independently of persona. This is for deployments where data is always pushed automatically by a pipeline — the ingestion UI would be misleading.
+The data ingestion feature (System Tools) can be **disabled at the deployment level**, independently of app features. This is for deployments where data is always pushed automatically by a pipeline — the ingestion UI would be misleading.
 
 Add to the deployment profile:
 
 ```yaml
-# Overrides persona-level data_ingestion_enabled for this deployment
-# Default: true (persona controls it)
+# Overrides app features level data_ingestion_enabled for this deployment
+# Default: true (app features controls it)
 data_ingestion_enabled: false
 ```
 
-When `false`: the Data Ingestion section in System Tools is suppressed entirely, regardless of the active persona. This allows deploying a `project-independent` persona for a scientist who can do everything *except* upload new data (because the pipeline handles that).
+When `false`: the Data Ingestion section in System Tools is suppressed entirely, regardless of the active app features. This allows deploying a `project-independent` app features for a scientist who can do everything *except* upload new data (because the pipeline handles that).
 
 ---
 
@@ -230,8 +230,8 @@ When `false`: the Data Ingestion section in System Tools is suppressed entirely,
 
 | Component | Role | File |
 |---|---|---|
-| `Bootloader (bootloader.py)` | Profile resolution chain, path authority, persona loading | `app/src/bootloader.py` |
-| `Bootloader` | Reads persona template, exposes feature flags via `bootloader.is_enabled()` | `app/src/bootloader.py` |
+| `Bootloader (bootloader.py)` | Profile resolution chain, path authority, app features loading | `app/src/bootloader.py` |
+| `Bootloader` | Reads app features file, exposes feature flags via `bootloader.is_enabled()` | `app/src/bootloader.py` |
 | `FilesystemConnector` | Resolves filesystem profile paths | `libs/connector/src/connector/filesystem.py` |
 | `IridaConnector` | OAuth2 fetch → local cache (Phase 23-D) | `libs/connector/src/connector/irida.py` |
 | `GalaxyConnector` | Galaxy job dir env var mapping | `libs/connector/src/connector/galaxy.py` |

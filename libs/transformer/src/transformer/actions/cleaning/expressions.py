@@ -1,8 +1,8 @@
 # @deps
 # provides: action:regex_extract, action:cast, action:coalesce, action:label_if, action:mutate, action:regex_replace, action:null_if
 # consumes: libs/utils/src/utils/errors.py (TransformationError)
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
-# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075, ADR-078)
+# consumed_by: any YAML manifest using these action names, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075, ADR-078)
 # @end_deps
 import polars as pl
 from typing import Dict, Any

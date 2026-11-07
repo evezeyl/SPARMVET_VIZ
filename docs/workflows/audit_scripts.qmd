@@ -160,9 +160,9 @@ Only open tasks (`- [ ]` lines) are scanned. Paths starting with `libs/`, `app/`
 
 ---
 
-### `audit_template_flags.py` — Persona Template Flag Completeness
+### `audit_template_flags.py` — App features Template Flag Completeness
 
-Runs `PersonaValidator` and `SidebarValidator` in `--strict` mode (warnings treated as errors) against all 8 persona templates in `config/ui/templates/`. Wraps `scripts/validate_persona_config.py` and consolidates results into a single report.
+Runs `AppFeaturesValidator` and `SidebarValidator` in `--strict` mode (warnings treated as errors) against all 8 app features files in `config/ui/templates/`. Wraps `scripts/validate_app_features_config.py` and consolidates results into a single report.
 
 ```bash
 .venv/bin/python scripts/audit_template_flags.py
@@ -177,13 +177,13 @@ Runs `PersonaValidator` and `SidebarValidator` in `--strict` mode (warnings trea
 
 **Fatal vs soft violations:**
 
-Fatal cascade errors (ADR-077) block the app from starting entirely. Fix them before the next deployment. See `rules_persona_feature_flags.md §Cascade Enforcement` for the full table.
+Fatal cascade errors (ADR-077) block the app from starting entirely. Fix them before the next deployment. See `rules_app_features_flags.md §Cascade Enforcement` for the full table.
 
 For individual template debugging:
 
 ```bash
-.venv/bin/python scripts/validate_persona_config.py --persona developer --strict
-.venv/bin/python scripts/validate_persona_config.py --all
+.venv/bin/python scripts/validate_app_features_config.py --app features developer --strict
+.venv/bin/python scripts/validate_app_features_config.py --all
 ```
 
 ---
@@ -352,21 +352,21 @@ Checks the installed package ecosystem for outdated packages, conflicts, and par
 
 # Verify after any upgrade
 python -c "from app.src.main import app; print('OK')"
-PYTHONPATH=. SPARMVET_PERSONA=qa .venv/bin/python -m pytest app/tests/test_filter_operators.py -q
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa .venv/bin/python -m pytest app/tests/test_filter_operators.py -q
 ```
 
 ---
 
 ## For Contributors
 
-If you are adding a new domain library, wrangling action, manifest, or persona template, run the relevant subset of audits before opening a PR:
+If you are adding a new domain library, wrangling action, manifest, or app features file, run the relevant subset of audits before opening a PR:
 
 | Change | Recommended audits |
 |---|---|
 | New `libs/<name>/` | `audit_cross_lib.py`, `audit_deps_verify.py` |
 | New `@register_action` | `audit_deps_verify.py`, `audit_manifest_integrity.py` |
 | New pipeline manifest | `audit_manifest_integrity.py` |
-| New / modified persona template | `audit_template_flags.py` |
+| New / modified app features file | `audit_template_flags.py` |
 | New phase in the roadmap | `audit_phase_order.py` |
 | Closing a major phase | `audit_changelog_sync.py` |
 | Renaming / deleting a file | `audit_task_drift.py`, `audit_docs_sync.py` |

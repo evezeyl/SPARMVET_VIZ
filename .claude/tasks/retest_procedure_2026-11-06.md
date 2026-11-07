@@ -17,17 +17,17 @@ Chrome: developer console, Network tab, "Disable cache" on (as in the test plan)
 **A. Your normal project data** (issues #21 and the export on the real dummy project):
 
 ```
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/developer_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/developer_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 ```
 
 **B. The retest set** (small manifests with known numbers; its own cache, `tmp/RETEST/`, apart from your
 normal `tmp/UI_TEST/`):
 
 ```
-PYTHONPATH=. SPARMVET_PROFILE=config/deployment/local/retest_profile.yaml SPARMVET_PERSONA=config/ui/templates/qa_template.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
+PYTHONPATH=. SPARMVET_PROFILE=config/deployment/local/retest_profile.yaml SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
 ```
 
-The qa persona has every feature on (filters, My view, T3, export). In the left panel "Manifest Choice" you
+The qa app features has every feature on (filters, My view, T3, export). In the left panel "Manifest Choice" you
 see four projects: `retest_tier2`, `retest_top_n_other`, `retest_broken_header`, `retest_bad_output_field`.
 
 **After you edit a config or data file you do NOT restart the server: save the file and reload the page (F5).**
@@ -132,7 +132,7 @@ Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Ex
   (**5** rows), `recipes/t3_steps.yaml` with your reason, the plot `value_by_group.png` filtered (values below 20), the README
   section "Audited T3 steps (always applied...)" naming `value_by_group: 1 step(s)`, and the T3 Audit Trail with your reason in
   `report.html`. No `FILTERS.txt`. (Checked in a real browser run on 2026-11-06, except the picture.)
-- [ ] **RT-18 Pure Result persona.** Launch with `pipeline-static_template.yaml` instead (profile B): export still works
+- [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static_template.yaml` instead (profile B): export still works
   and holds the Result.
 
 ## 3. Issue #23: `top_n_other` — project `retest_top_n_other`
@@ -172,7 +172,7 @@ top **3** variants, counting the number of different samples (`count_distinct: s
 - [ ] **RT-41 BLUEPRINT plot error banner** (ADR-045 fix: the render no longer writes state). In BLUEPRINT select a node of a
   plot that has no data yet: a yellow banner above the plot explains it ("No data loaded for ..."). Select a node with data:
   the plot shows and the banner is gone. (Not covered by an automated test.)
-- [ ] **RT-42 Persona switching.** There is no runtime persona switch (removed earlier, ADR-053). Confirm you do not expect one.
+- [ ] **RT-42 App features switching.** There is no runtime app features switch (removed earlier, ADR-053). Confirm you do not expect one.
 - [ ] **RT-43 Gallery submission debug script.** `PYTHONPATH=. ./.venv/bin/python libs/viz_gallery/tests/debug_gallery_submission.py --manifest config/manifests/pipelines/1_test_data_ST22_dummy.yaml --data-dir assets/test_data/1_test_data_ST22_dummy`
   prints "Gallery Bundle materialized" and three PASSED lines (it was broken: a syntax error and an old API).
 
@@ -193,7 +193,7 @@ top **3** variants, counting the number of different samples (`count_distinct: s
 ## 6. What the automated tests already cover (do not repeat by hand)
 
 Headless (about 50 s): `PYTHONPATH=. ./.venv/bin/python -m pytest libs app/tests --ignore=app/tests/test_shiny_smoke.py --ignore=app/tests/test_shiny_smoke_blueprint.py --ignore=app/tests/test_export_download.py -q` → 1209 passed on 2026-11-06.
-Browser (about 3 min): `PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py app/tests/test_export_download.py -q` → 33 passed, 3 skipped.
+Browser (about 3 min): `PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py app/tests/test_shiny_smoke_blueprint.py app/tests/test_export_download.py -q` → 33 passed, 3 skipped.
 
 | Covered | Test |
 |---|---|

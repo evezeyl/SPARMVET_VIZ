@@ -1,6 +1,6 @@
-# UI Persona: Web Demo
+# UI App features: Web Demo
 # Pure exploration view — filters only, no export, no gallery, no ingestion.
-# Persona badge hidden. Suitable for demos and public-facing presentations.
+# App features badge hidden. Suitable for demos and public-facing presentations.
 name: "web-demo"
 display_name: "Web Demo"
 theme_css: "assets/demo/web_demo.css"

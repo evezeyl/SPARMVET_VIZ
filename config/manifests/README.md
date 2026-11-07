@@ -51,9 +51,9 @@ Manifests follow the **Basename Mirroring Mandate**:
   - `output_fields/`: Published data contracts.
   - `plots/`: Visualization specifications.
 
-## 🧩 Persona Masking
+## 🧩 App features Masking
 
-Visibility of specific datasets and plots is controlled via persona templates in `config/ui/templates/`. These templates do not change the data logic, only the exposure level in the UI.
+Visibility of specific datasets and plots is controlled via app features files in `config/ui/templates/`. These templates do not change the data logic, only the exposure level in the UI.
 
 ---
 **Last Updated**: 2026-04-20

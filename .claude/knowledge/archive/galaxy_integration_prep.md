@@ -24,8 +24,8 @@
 
 Tools wrappers
 
-- Static wrapper (batch persona) - for pipeline visualisation
-- Interactive persona -> Galaxy interactive tools (GxIT) - allows the dashboard to run as live container (Docker) Inside galaxy - Where user can interact with a persistent URL
+- Static wrapper (batch app features) - for pipeline visualisation
+- Interactive app features -> Galaxy interactive tools (GxIT) - allows the dashboard to run as live container (Docker) Inside galaxy - Where user can interact with a persistent URL
 
 Insteractive Tools (GxIT) - for real-time dashboard experience
 
@@ -81,9 +81,9 @@ The "Mock History" strategy:
 
 Testing the "History Access" logic:
 Since the dashboard needs to be a "connector" to the Galaxy API, you need to test if it can find the right files.
-You can simulate the "Persona" scenarios like this:
+You can simulate the "App features" scenarios like this:
 
-| Persona | Simulation Strategy |
+| App features | Simulation Strategy |
 | --- | --- |
 | Batch/Visualizer | Run the tool with a fixed dataset input. Verify the dashboard displays the static results correctly. |
 | Interactive/Explorer | Use the Docker Galaxy to launch the app. Manually use the app's UI to ""browse"" the current history via the API. |
@@ -101,7 +101,7 @@ You can test this by creating a mock collection in your local Galaxy instance be
 | Container | Must be published to a public registry like Quay.io or DockerHub.|
 | Wrapper | Must be linted with planemo lint and include valid <tests>.|
 | Submission | Open a Pull Request (PR) to the usegalaxy-eu/operations repository.|
-| Persona Setup | You can define different entry points or environment variables in your PR to handle the "Visualization" vs. "Interactive" personas.|
+| App features Setup | You can define different entry points or environment variables in your PR to handle the "Visualization" vs. "Interactive" app features files.|
 
 ### Comparison of Test Environments
 
@@ -110,7 +110,7 @@ You can test this by creating a mock collection in your local Galaxy instance be
 | Setup Speed | Instant (ephemeral) | Slower (persistent) |
 | API Testing | Basic | Complete (Full API support) |
 | GxIT Support | Yes (recent versions) | Yes (Best for Interactive Tools) |
-| Persona Testing | Harder to swap configs | Easier via multiple wrappers |
+| App features Testing | Harder to swap configs | Easier via multiple wrappers |
 
 [The best way to run integration tests in your CI/CD pipeline](https://www.youtube.com/watch?v=YtF0rzIYgEk)
 
@@ -218,12 +218,12 @@ sudo firewall-cmd --permanent --add-masquerade
 sudo firewall-cmd --reload
 ```
 
-- **Strategy for "Persona" Testing**
-Because you have full LAN access, you can test your different personas simultaneously:
+- **Strategy for "App features" Testing**
+Because you have full LAN access, you can test your different app features files simultaneously:
 
-- **Persona A (Pipeline Visualizer):** Open the Galaxy UI on your velocifero browser, run a tool, and view the output.
+- **App features A (Pipeline Visualizer):** Open the Galaxy UI on your velocifero browser, run a tool, and view the output.
 
-- **Persona B (Interactive Explorer):** Launch your Antigravity dashboard as an Interactive Tool. Since you are on the same network, the browser will be able to resolve the container's internal IP/port much easier than over a public tunnel.
+- **App features B (Interactive Explorer):** Launch your Antigravity dashboard as an Interactive Tool. Since you are on the same network, the browser will be able to resolve the container's internal IP/port much easier than over a public tunnel.
 
 Use static IP/ hostname
 
@@ -233,7 +233,7 @@ To avoid interaction between services—running a production database and a Gala
 On Fedora 43, you can solve this by leveraging Docker Network Isolation and Firewalld Service Definitions.
 
 1. The Strategy: Isolate by IP and Network
-Instead of mapping everything to the host's 0.0.0.0 (which causes port collisions), you can bind your Galaxy services to a specific internal network or use a "Reverse Proxy persona" to manage traffic.
+Instead of mapping everything to the host's 0.0.0.0 (which causes port collisions), you can bind your Galaxy services to a specific internal network or use a "Reverse Proxy app features" to manage traffic.
 
 | Scenario | Collision Risk | Fix / Recommendation |
 | --- | --- | --- |
@@ -289,7 +289,7 @@ networks:
     internal: true # Prevents this network from talking to other Docker networks
 ```
 
-- Port Conflict "Persona" Checklist
+- Port Conflict "App features" Checklist
 If you have a port conflict on 8080, you can swap the host port without breaking the container logic:
 
 ```bash

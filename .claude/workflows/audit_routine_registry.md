@@ -19,7 +19,7 @@
 | ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-11 | — | Local (systemd) |
 | Manifest structure integrity | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ❌ (false positive — MANIFEST-INCLUDE-1: !include unsupported by debug_assembler) | 2026-05-27 | — | Local (systemd) |
 | Task-to-code drift check | Weekly | Fridays 20:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-16 | — | Local (systemd) |
-| Persona template consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ | — | — | Local (manual) |
+| App features file consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ | — | — | Local (manual) |
 | Phase ordering audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | Changelog completeness audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | Template flag completeness | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
@@ -33,7 +33,7 @@
 | Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | **Semantic doc sync** (Agent §17) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ⚠️ — 4 STALE (generate_branch_plan sig, group_plot_manager returns, get_registered_tools return, Blueprint panel table). 3 fixed this session; DOC-BLUEPRINT-PANELS-1 deferred. | — | — | Agent (on-demand) |
 | **ADR behavioral compliance** (Agent §18) | On-demand | Manual trigger | `[x] Active` | 2026-11-06 ❌ then fixed the same day: ADR-045 render write in wrangle_studio.py (ADR-045-PLOTERR-1, guarded now by app/tests/test_render_purity.py); server.py 287 lines (ADR-045-SERVER-SIZE-1, dead code removed, 237 lines). ADR-053, ADR-011, ADR-071 PASS. | — | — | Agent (on-demand) |
-| **Three-source persona consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ✅ — all 8 personas PASS runtime. 4 doc-gap warnings (wrangle_studio_enabled already in matrix; audit script updated for manifest_edit_enabled + blueprint_agent_enabled). | — | — | Agent (on-demand) |
+| **Three-source app features consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ✅ — all 8 app features files PASS runtime. 4 doc-gap warnings (wrangle_studio_enabled already in matrix; audit script updated for manifest_edit_enabled + blueprint_agent_enabled). | — | — | Agent (on-demand) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
@@ -273,17 +273,17 @@ Once manual test passes:
 
 ---
 
-### 5. Persona Template Consistency
+### 5. App features Template Consistency
 
-- **Purpose:** Verify all 8 persona templates (`config/ui/templates/*_template.yaml`) have the same structure, matching the authoritative flag matrix in `rules_persona_feature_flags.md`.
+- **Purpose:** Verify all 8 app features files (`config/ui/templates/*_template.yaml`) have the same structure, matching the authoritative flag matrix in `rules_app_features_flags.md`.
 - **Frequency:** On-demand (or can be scheduled daily)
 - **Schedule:** Manual trigger via CLI
-- **Command:** `.venv/bin/python scripts/validate_persona_config.py --all`
+- **Command:** `.venv/bin/python scripts/validate_app_features_config.py --all`
 - **Output:** stdout + stderr (errors only); can redirect to file
 - **Violations checked:**
   - Missing flags (template missing a flag that the matrix declares)
   - Stale flags (template has a flag that no longer exists)
-  - Incorrect flag values (flag value doesn't match the matrix for that persona)
+  - Incorrect flag values (flag value doesn't match the matrix for that app features)
   - Cascade violations (soft: warning; fatal: error blocking startup)
   - Sidebar config mismatches (missing workspaces, invalid panel types)
 - **Owner:** Manual (CLI) — but can be wrapped by scheduled agent
@@ -341,15 +341,15 @@ Once manual test passes:
 
 ### 8. Template Flag Completeness Audit
 
-- **Purpose:** Strict version of Routine 5. Verify all 8 persona templates declare all flags in the authoritative flag matrix (`rules_persona_feature_flags.md`). Detects missing flags before they become deployment issues.
+- **Purpose:** Strict version of Routine 5. Verify all 8 app features files declare all flags in the authoritative flag matrix (`rules_app_features_flags.md`). Detects missing flags before they become deployment issues.
 - **Frequency:** Weekly
 - **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
 - **Command:** `.venv/bin/python scripts/audit_template_flags.py --output tmp/audit_template_flags_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_template_flags_YYYY-MM-DD.md`
 - **Violations checked:**
-  - Template missing a flag that matrix declares (per-persona)
+  - Template missing a flag that matrix declares (per app features file)
   - Template has a flag not in the matrix (stale or incorrect)
-  - Flag value incorrect for that persona (e.g., `true` when matrix expects `false`)
+  - Flag value incorrect for that app features (e.g., `true` when matrix expects `false`)
   - Cascade violations (soft: parent false, child true silently suppressed; fatal: parent false, child true not suppressed)
   - Missing `blueprint_agent:` config block when `blueprint_agent_enabled: true`
 - **Owner:** Cloud (scheduled)
@@ -357,10 +357,10 @@ Once manual test passes:
 - **Next Run:** 2026-05-15
 
 **Implementation notes:**
-- Load the flag matrix from `rules_persona_feature_flags.md`
+- Load the flag matrix from `rules_app_features_flags.md`
 - For each of 8 templates, verify every flag matches matrix expectations
-- Wrap with PersonaValidator to catch cascade violations
-- Report as a table: Persona × Flag × Expected × Actual × Status
+- Wrap with AppFeaturesValidator to catch cascade violations
+- Report as a table: App features × Flag × Expected × Actual × Status
 
 ---
 
@@ -489,12 +489,12 @@ Once manual test passes:
 - **Command:** `.venv/bin/python scripts/audit_hardcoded_config.py --output .claude/logs/audits/audit_hardcoded_config_$(date +%Y-%m-%d).md`
 - **Output:** `.claude/logs/audits/audit_hardcoded_config_YYYY-MM-DD.md`
 - **Purpose:** Detect hardcoded deployment-specific values in `app/` and `libs/` Python source that would break the app in Galaxy, IRIDA, or other deployment environments. Five violation categories.
-- **Rule source:** ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no persona name checks)
+- **Rule source:** ADR-048 (deployment profile), ADR-031 (bootloader), ADR-053 (no app features name checks)
 - **Checks:**
   1. **Absolute path strings** — `/home/`, `/etc/`, `/usr/`, `/var/`, `/mnt/`, `/opt/`, `/data/`, `/srv/`, `/galaxy/` literals in non-connector Python
   2. **Direct location dict reads** — `profile["locations"]`, `locations["raw_data"]`, `profile.get("locations")` bypassing bootloader
-  3. **Persona name comparisons** — `persona == "..."`, `persona in (...)`, `persona in [...]` (use `bootloader.is_enabled()` instead)
-  4. **Direct env-var reads** — `os.environ.get("SPARMVET_PERSONA/PROFILE")` outside bootloader
+  3. **App features name comparisons** — `app features == "..."`, `app features in (...)`, `app features in [...]` (use `bootloader.is_enabled()` instead)
+  4. **Direct env-var reads** — `os.environ.get("SPARMVET_APP_FEATURES/DEPLOYMENT")` outside bootloader
   5. **Hardcoded Python interpreter** — `subprocess` calls with `"python3"`, `/usr/bin/python`, `/usr/bin/env python`
 - **Scan scope:** `app/`, `libs/` — excludes `tests/`, `tmpAI/`, `tmp/`, `scripts/`, `assets/scripts/`, `config/`
 - **Skip files:** `bootloader.py`, `connector.py`, `local_connector.py`, `filesystem.py`, `galaxy.py`, `galaxy_connector.py`, `irida.py`, `base.py` (connector implementations legitimately access raw profile)
@@ -573,8 +573,8 @@ from what the code or docs actually do. No regex can replace this judgment.
   - **ADR-045 Two-Category Law:** Do any `@render.*` functions call `reactive.Value.set()`
     directly or transitively? Does any handler file contain business logic that belongs in
     a module?
-  - **ADR-053 No persona name comparisons:** Are there any `if persona == "..."` or
-    `persona in (...)` control-flow checks outside bootloader that escaped the structural scan?
+  - **ADR-053 No app features name comparisons:** Are there any `if app features == "..."` or
+    `app features in (...)` control-flow checks outside bootloader that escaped the structural scan?
   - **ADR-075 Blueprint IDE escape hatch gate:** Is `manifest_edit_enabled` gating done via
     `bootloader.is_enabled()` or is there a residual name check?
   - **ADR-078 Diagnostic Error Discipline:** Do new actions in `libs/transformer/` raise
@@ -588,7 +588,7 @@ from what the code or docs actually do. No regex can replace this judgment.
   ```
   claude --prompt "Run Routine 18: ADR Behavioral Compliance for SPARMVET_VIZ.
   Check the following ADRs (read from .claude/knowledge/architecture_decisions.md):
-  ADR-045 (Two-Category Law), ADR-053 (no persona name checks), ADR-078 (diagnostic errors).
+  ADR-045 (Two-Category Law), ADR-053 (no app features name checks), ADR-078 (diagnostic errors).
   For each ADR, scan the relevant files and report any violations with file:line references.
   Write a triage report to .claude/logs/audits/audit_adr_compliance_YYYY-MM-DD.md."
   ```
@@ -598,34 +598,34 @@ from what the code or docs actually do. No regex can replace this judgment.
 
 ---
 
-### Routine 19: Three-Source Persona Consistency (Agent)
+### Routine 19: Three-Source App features Consistency (Agent)
 
 - **Type:** Agent (Claude Code session)
-- **Purpose:** Verify that the persona capability design document, the persona template YAML
+- **Purpose:** Verify that the app features capability design document, the app features file YAML
   files, and the bootloader cascade rules are semantically consistent. Catch divergences that
   no single script can find because the truth lives across three sources:
-  1. `design/persona_capability_matrix.md` — design intent (what personas should be able to do)
-  2. `config/ui/templates/*_template.yaml` — declared flag values per persona
-  3. `.claude/rules/rules_persona_feature_flags.md` — cascade rules and bootloader behavior
-  If a persona is documented as having Gallery access but its template has `gallery_enabled: false`,
+  1. `design/app_features_capability_matrix.md` — design intent (what app features files should be able to do)
+  2. `config/ui/templates/*_template.yaml` — declared flag values per app features
+  3. `.claude/rules/rules_app_features_flags.md` — cascade rules and bootloader behavior
+  If an app features is documented as having Gallery access but its template has `gallery_enabled: false`,
   or if the cascade doc says flag X depends on Y but the template has X enabled and Y disabled —
   that's a three-source inconsistency no grep can catch.
 - **Why agent:** Three-source comparison requires holding all three views in mind simultaneously
   and reasoning about what "equivalent" means across different representations.
-- **Frequency:** On-demand — after any persona addition, flag matrix change, or ADR that adds
+- **Frequency:** On-demand — after any app features addition, flag matrix change, or ADR that adds
   a new flag dependency.
 - **Invocation (CLI):**
   ```
-  claude --prompt "Run Routine 19: Three-Source Persona Consistency for SPARMVET_VIZ.
-  Read: (1) design/persona_capability_matrix.md, (2) all config/ui/templates/*.yaml,
-  (3) .claude/rules/rules_persona_feature_flags.md §Flag Matrix and §Cascade Enforcement.
-  For each persona, compare what the design doc says it can do vs what the template enables
+  claude --prompt "Run Routine 19: Three-Source App features Consistency for SPARMVET_VIZ.
+  Read: (1) design/app_features_capability_matrix.md, (2) all config/ui/templates/*.yaml,
+  (3) .claude/rules/rules_app_features_flags.md §Flag Matrix and §Cascade Enforcement.
+  For each app features, compare what the design doc says it can do vs what the template enables
   vs what the cascade rules would produce. Report any inconsistency.
-  Write a triage report to .claude/logs/audits/audit_persona_consistency_YYYY-MM-DD.md."
+  Write a triage report to .claude/logs/audits/audit_app_features_consistency_YYYY-MM-DD.md."
   ```
-- **Output:** `.claude/logs/audits/audit_persona_consistency_YYYY-MM-DD.md`
+- **Output:** `.claude/logs/audits/audit_app_features_consistency_YYYY-MM-DD.md`
 - **Owner:** Agent (on-demand)
-- **Status:** `[x] Active (first run: 2026-05-09 — ✅ PASS: all 8 personas fully consistent across all three sources. 0 cascade violations. Informational: persona_capability_matrix.md uses longer legacy names vs canonical short names in templates/rules — cosmetic only.)`
+- **Status:** `[x] Active (first run: 2026-05-09 — ✅ PASS: all 8 app features files fully consistent across all three sources. 0 cascade violations. Informational: app_features_capability_matrix.md uses longer legacy names vs canonical short names in templates/rules — cosmetic only.)`
 
 ---
 
@@ -730,7 +730,7 @@ Each run is a full Claude Code session — you can watch it live, review what ch
 Run commands directly in any Claude Code session (independent of routines):
 ```bash
 # Run routine 5 (on-demand)
-.venv/bin/python scripts/validate_persona_config.py --all
+.venv/bin/python scripts/validate_app_features_config.py --all
 
 # Run routine 1 manually
 .venv/bin/python scripts/audit_deps_verify.py --output tmp/audit_deps_manual_$(date +%Y-%m-%d).md
@@ -769,10 +769,10 @@ Follow these patterns for consistency:
 | Catch cross-lib violations early | ADR-011 scan | Low | Agent (scheduled) |
 | Catch manifest errors before runtime | Manifest integrity | Medium | Agent (scheduled) |
 | Detect orphaned tasks | Task drift check | Medium | Agent (scheduled) |
-| Verify persona consistency | Persona template check | Low | Manual (CLI) or Agent |
+| Verify app features consistency | App features file check | Low | Manual (CLI) or Agent |
 | Verify phase order in roadmap | Phase ordering audit | Medium | Agent (scheduled) |
 | Verify changelog has all phases | Changelog completeness | Low | Agent (scheduled) |
-| Strict persona template validation | Template flag completeness | Medium | Agent (scheduled) |
+| Strict app features file validation | Template flag completeness | Medium | Agent (scheduled) |
 | —— | —— | —— | —— |
 | Check SQL injection / XSS vectors | Security linter (SAST) | High | Not yet planned |
 | Verify test coverage > threshold | Coverage report | Medium | Not yet planned |
@@ -832,5 +832,5 @@ chore: add audit routine for ADR-011 cross-lib violations
 
 **Status:** 19 routines designed and documented. All 10 weekly script routines `[x] Active` via systemd user timers. On-demand script routines §10–12 now `[x] Active` (first run 2026-05-09). Agent routines §17–19 `[ ] Planned` — run on-demand via Claude Code CLI.  
 **Last Updated:** 2026-05-09  
-**Note:** §10 (library tests) found real failures: blueprint_arch 188 pytest failures and viz_factory integrity timeout. §11 (package deps) flagged importlib_metadata MAJOR. §12 (parity) fixed 2 stale → exclusions. §17–19 are agent-superior routines — semantic drift, ADR behavioral compliance, three-source persona consistency. Script §9 (doc sync) remains Planned; structural path checks only.
+**Note:** §10 (library tests) found real failures: blueprint_arch 188 pytest failures and viz_factory integrity timeout. §11 (package deps) flagged importlib_metadata MAJOR. §12 (parity) fixed 2 stale → exclusions. §17–19 are agent-superior routines — semantic drift, ADR behavioral compliance, three-source app features consistency. Script §9 (doc sync) remains Planned; structural path checks only.
 **Next Review:** After first automated run (Sunday 2026-05-11 for cross-lib; Thursday 2026-05-15 for full Thursday group)

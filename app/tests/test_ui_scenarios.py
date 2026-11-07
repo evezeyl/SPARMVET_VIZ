@@ -16,8 +16,8 @@ class TestUIScenarios(unittest.TestCase):
         self.exporter = SubmissionExporter(str(self.export_dir))
 
     def run_app_features_check(self, app_features_name, expected_features):
-        """Helper to verify feature gating for a persona."""
-        print(f"Checking Persona: {app_features_name}...")
+        """Helper to verify feature gating for an app features."""
+        print(f"Checking App features: {app_features_name}...")
         loader = Bootloader(app_features=app_features_name)
         for feature, expected in expected_features.items():
             actual = loader.is_enabled(feature)
@@ -26,7 +26,7 @@ class TestUIScenarios(unittest.TestCase):
         print(f"  [PASS] {app_features_name} gating verified.")
 
     def test_app_features_sweep(self):
-        """Objective 1: Full Simulation Run for personas."""
+        """Objective 1: Full Simulation Run for app features files."""
         app_features = {
             "project-independent": {"developer_mode_enabled": False, "gallery_enabled": True},
             "developer": {"developer_mode_enabled": True, "gallery_enabled": True},

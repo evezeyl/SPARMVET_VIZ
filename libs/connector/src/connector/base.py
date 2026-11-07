@@ -76,7 +76,7 @@ class BaseConnector(ABC):
         return p
 
     def get_default_app_features(self) -> str | None:
-        """Return the default persona ID from the profile, or None if not set."""
+        """Return the default app features ID from the profile, or None if not set."""
         return self._profile.get("default_app_features")
 
     def get_deployment_name(self) -> str:

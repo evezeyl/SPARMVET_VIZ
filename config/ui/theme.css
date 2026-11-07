@@ -1,9 +1,9 @@
 /*
  * SPARMVET_VIZ — Default UI Theme
  *
- * This is the authoritative base stylesheet. All personas load this file by default
+ * This is the authoritative base stylesheet. All app features files load this file by default
  * via the theme_css key in their template. To customise the appearance for a
- * deployment or persona, point theme_css at a different CSS file (or create one
+ * deployment or app features, point theme_css at a different CSS file (or create one
  * that @import this file and adds overrides on top).
  *
  * Sections
@@ -490,7 +490,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 }
 
 /* ── 14. Banner base ─────────────────────────────────────────────────────── */
-/* Structural defaults — colour/sizing overridden by persona theme CSS files. */
+/* Structural defaults — colour/sizing overridden by app features theme CSS files. */
 .sparmvet-banner {
     display: flex;
     align-items: center;
@@ -589,7 +589,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
  *
  * To customise per-deployment without touching this file, create a CSS file that
  * @imports theme.css and overrides these rules — exactly like assets/demo/demo_vetinst.css
- * does for the banner/persona.  Point the persona template's theme_css key at your file.
+ * does for the banner/app features.  Point the app features file's theme_css key at your file.
  *
  * Selectors
  *   #gallery_guidance_accordion  — the collapsible wrapper (header + body)

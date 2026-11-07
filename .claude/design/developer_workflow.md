@@ -138,7 +138,7 @@ been run in the current session, the Manifest Scaffolding tool offers a checkbox
 reconciliation steps into the generated `tier1:` wrangling. Scaffolding still works fully
 standalone — you choose its data files yourself — so the reconciliation carry-over is pure
 opt-in. This is the *only* cross-tool wiring, it lives entirely within one space (one
-`test_lab_enabled` gate, so persona independence is unaffected), and it accumulates no state: it
+`test_lab_enabled` gate, so app features independence is unaffected), and it accumulates no state: it
 reads a reactive calc that recomputes from inputs.
 
 ---
@@ -160,12 +160,12 @@ Handoffs **between** spaces are always file-based, and intentionally so: one spa
 file; the user loads it in the other space *if and when* that space is enabled. There is **no
 in-app "Open in BLUEPRINT"** and no cross-space state coupling.
 
-**Why (decisive):** the spaces are **independently persona-gated** — `test_lab_enabled`,
-`blueprint_enabled`, and `gallery_enabled` are independent flags (`rules_persona_feature_flags.md`).
-A persona may grant TEST_LAB without BLUEPRINT, or GALLERY without BLUEPRINT. An in-app
+**Why (decisive):** the spaces are **independently flag-gated** — `test_lab_enabled`,
+`blueprint_enabled`, and `gallery_enabled` are independent flags (`rules_app_features_flags.md`).
+An app features may grant TEST_LAB without BLUEPRINT, or GALLERY without BLUEPRINT. An in-app
 cross-space handoff would break the instant the target space is disabled, and would violate
 ADR-071 positive-inclusion (each space must stand alone). A file on disk works under *any*
-persona combination.
+app features combination.
 
 | Handoff | How it works |
 |---|---|

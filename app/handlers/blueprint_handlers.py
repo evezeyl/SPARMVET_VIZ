@@ -182,7 +182,7 @@ def define_server(input, output, session, *,
     def _autosave_blueprint_draft():
         """Write active logic_stack to a draft ghost on every stack change. BP-AUTOSAVE-1.
 
-        Gated on automation.ghost_save.enabled (False in qa persona for deterministic tests).
+        Gated on automation.ghost_save.enabled (False in qa app features for deterministic tests).
         """
         stack = wrangle_studio.logic_stack.get()
         if not _ghost_enabled:
@@ -1784,7 +1784,7 @@ def define_server(input, output, session, *,
             instructions_file = agent_cfg.get("instructions_file")
             if not instructions_file:
                 raise ValueError(
-                    "blueprint_agent.instructions_file is required in the persona template "
+                    "blueprint_agent.instructions_file is required in the app features file "
                     "when blueprint_agent_enabled=True."
                 )
             system_prompt = build_system_prompt(instructions_file)

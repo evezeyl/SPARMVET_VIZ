@@ -1,6 +1,6 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio (gated: developer_mode_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.persona_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio (gated: developer_mode_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.app_features_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # provides: reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003
@@ -52,7 +52,7 @@ def server(input, output, session):
 
     _all_errors.extend(SidebarValidator().validate_file(str(bootloader.app_features_path)))
 
-    exit_if_errors(_all_errors, header="SPARMVET startup blocked — persona configuration is invalid")
+    exit_if_errors(_all_errors, header="SPARMVET startup blocked — app features configuration is invalid")
 
     @reactive.Calc
     def active_collection_id():
@@ -66,7 +66,7 @@ def server(input, output, session):
     # 1. Reactive Manifest Authority (Universal Architecture)
     @reactive.Calc
     def active_cfg():
-        # Use fixed_manifest when manifest selector is hidden (pipeline personas);
+        # Use fixed_manifest when manifest selector is hidden (pipeline app features files);
         # fall back to the project_id widget only when the selector is visible.
         project_id = _safe_input(input, "project_id", bootloader.get_default_project())
         # ADR-089: the parsed manifest stays in memory only while none of its files changed on
@@ -87,7 +87,7 @@ def server(input, output, session):
     # WrangleStudio is created only when developer_mode_enabled — same flag gate used in
     # home_theater. All handler delegations that receive wrangle_studio are already gated
     # on developer_mode_enabled, blueprint_enabled, or t3_sandbox_enabled, all of which
-    # require developer_mode_enabled to be true in every current persona template.
+    # require developer_mode_enabled to be true in every current app features file.
     wrangle_studio = WrangleStudio(session.id) if bootloader.is_enabled("developer_mode_enabled") else None
     dev_studio = TestLabStudio() if bootloader.is_enabled("test_lab_enabled") else None
 
@@ -121,7 +121,7 @@ def server(input, output, session):
     # eliminating the js_eval → DOM click → input race condition.
     _selected_lineage_rel: reactive.Value = reactive.Value(None)
 
-    print(f"DEBUG: Initializing Server with Persona: {bootloader.app_features_display_name}")
+    print(f"DEBUG: Initializing Server with App features: {bootloader.app_features_display_name}")
     current_app_features = reactive.Value(bootloader.app_features_display_name)
 
     # Dependency Resolution: Data Tiers
@@ -226,7 +226,7 @@ def server(input, output, session):
             home_state=home_state,
         )
 
-    # Ingestion & persona switching
+    # Ingestion & app features switching
     from app.handlers.ingestion_handlers import define_server as _define_ingestion_server
     _define_ingestion_server(
         input, output, session,

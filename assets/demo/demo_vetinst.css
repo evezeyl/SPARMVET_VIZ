@@ -3,7 +3,7 @@
  *
  * Override-only stylesheet — the base theme (config/ui/theme.css) is always
  * injected first by ui.py; this file only declares deltas.
- * Point theme_css in the persona template at this file.
+ * Point theme_css in the app features file at this file.
  *
  * Sections
  *   1. Banner

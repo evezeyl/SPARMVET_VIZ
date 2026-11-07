@@ -122,8 +122,8 @@ layers:
       subtitle: "Focus on ST22 isolates"
 ```
 
-### Can I switch persona while the app is running?
-**Answer**: No. A persona is chosen when the app starts (the `SPARMVET_PERSONA` environment variable, or `default_persona` in the deployment profile). Runtime switching was removed (ADR-053). To see the app as another persona, restart it with another value. The `Bootloader (bootloader.py)` keeps the parsed persona templates in memory (`_persona_cache`), so a template is read from disk once.
+### Can I switch app features while the app is running?
+**Answer**: No. An app features is chosen when the app starts (the `SPARMVET_APP_FEATURES` environment variable, or `default_app_features` in the deployment profile). Runtime switching was removed (ADR-053). To see the app as another app features, restart it with another value. The `Bootloader (bootloader.py)` keeps the parsed app features files in memory (`_app_features_cache`), so a template is read from disk once.
 
 ## 📜 4. Manifest Logic (The Chain of Command)
 

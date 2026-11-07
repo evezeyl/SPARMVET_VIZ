@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """app/tests/debug_home_theater.py
-Phase 21-H headless verification of Home Theater logic for all 5 personas.
+Phase 21-H headless verification of Home Theater logic for all 5 app features files.
 
 Tests (no Shiny server required):
-  1. Persona feature flags — correct gating per persona
+  1. App features feature flags — correct gating per app features
   2. Manifest analysis_groups → tab structure
-  3. Tier choices — T3 gated to advanced+ personas only
-  4. Right sidebar suppression — correct hidden_personas set
+  3. Tier choices — T3 gated to advanced+ app features files only
+  4. Right sidebar suppression — correct hidden_app_features set
   5. Comparison mode — advanced+ only, reads comparison_mode_enabled flag
   6. Primary key extraction — extract_primary_keys from manifest
   7. Plot ID discovery — all expected plot IDs present in manifest
@@ -46,9 +46,9 @@ ALL_APP_FEATURES = [
     "developer",
 ]
 
-# Personas that should see T3 tier option and right sidebar
+# App features files that should see T3 tier option and right sidebar
 ADVANCED_APP_FEATURES = {"pipeline-exploration-advanced", "project-independent", "developer"}
-# Personas where right sidebar should be suppressed
+# App features files where right sidebar should be suppressed
 HIDDEN_SIDEBAR_APP_FEATURES = {"pipeline-static", "pipeline-exploration-simple"}
 
 TEST_PROJECT_ID = "1_test_data_ST22_dummy"
@@ -70,10 +70,10 @@ def section(title: str):
 
 
 # ---------------------------------------------------------------------------
-# 1. Persona feature flags
+# 1. App features feature flags
 # ---------------------------------------------------------------------------
 def test_app_features_feature_flags():
-    section("1. Persona feature flags")
+    section("1. App features feature flags")
     from app.src.bootloader import Bootloader
 
     expected = {
@@ -170,7 +170,7 @@ def test_tab_structure(project_root: Path):
 # 3. Tier choices gating
 # ---------------------------------------------------------------------------
 def test_tier_choices():
-    section("3. Tier choices per persona")
+    section("3. Tier choices per app features")
     for app_features in ALL_APP_FEATURES:
         tier_choices = {"T1": "Assembled", "T2": "Analysis-ready"}
         if app_features in ADVANCED_APP_FEATURES:
@@ -199,25 +199,25 @@ def test_sidebar_suppression():
             f"suppressed={suppressed}",
         )
 
-    # Verify the actual hidden_personas set in home_theater.py matches expectation
+    # Verify the actual hidden_app_features set in home_theater.py matches expectation
     try:
         import ast, re
         ht_path = Path(__file__).parents[1] / "handlers" / "home_theater.py"
         src = ht_path.read_text()
-        # Find hidden_personas assignment near right_sidebar_content_ui
-        m = re.search(r'hidden_personas\s*=\s*(\{[^}]+\})', src)
+        # Find hidden_app_features assignment near right_sidebar_content_ui
+        m = re.search(r'hidden_app_features\s*=\s*(\{[^}]+\})', src)
         if m:
             literal = m.group(1)
             found_set = ast.literal_eval(literal)
             record(
-                "hidden_personas_set_in_code",
+                "hidden_app_features_set_in_code",
                 found_set == HIDDEN_SIDEBAR_APP_FEATURES,
                 f"found={found_set}",
             )
         else:
-            record("hidden_personas_set_in_code", False, "pattern not found in source")
+            record("hidden_app_features_set_in_code", False, "pattern not found in source")
     except Exception as e:
-        record("hidden_personas_set_in_code", False, str(e))
+        record("hidden_app_features_set_in_code", False, str(e))
 
 
 # ---------------------------------------------------------------------------

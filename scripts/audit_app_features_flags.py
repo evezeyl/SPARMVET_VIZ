@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Audit: Persona template flag completeness (strict validation).
+"""Audit: App features file flag completeness (strict validation).
 
-Runs the existing PersonaValidator + SidebarValidator against all 8 persona
+Runs the existing AppFeaturesValidator + SidebarValidator against all 8 app features
 templates in --strict mode, treating warnings as errors. Produces a structured
 markdown report suitable for the audit log.
 
@@ -56,11 +56,11 @@ def render_report(
     passes = [(name, code, out) for name, code, out in results if code == 0]
 
     lines = [
-        "# Audit Report: Persona Template Flag Completeness",
+        "# Audit Report: App features Template Flag Completeness",
         f"Generated: {now}",
         f"Project root: {project_root}",
-        f"Rule: rules_persona_feature_flags.md — Authoritative flag matrix, cascade enforcement",
-        f"Validator: PersonaValidator + SidebarValidator (strict mode — warnings treated as errors)",
+        f"Rule: rules_app_features_flags.md — Authoritative flag matrix, cascade enforcement",
+        f"Validator: AppFeaturesValidator + SidebarValidator (strict mode — warnings treated as errors)",
         "",
         f"- Templates validated: {len(results)}",
         f"- Passed: {len(passes)}",
@@ -69,7 +69,7 @@ def render_report(
     ]
 
     if not failures:
-        lines += ["## Result: ✅ PASS", "", "All persona templates pass strict validation.", ""]
+        lines += ["## Result: ✅ PASS", "", "All app features files pass strict validation.", ""]
     else:
         lines += ["## Result: ❌ FAIL", ""]
 
@@ -92,7 +92,7 @@ def render_report(
 
     lines += [
         "## References",
-        "- `.claude/rules/rules_persona_feature_flags.md` — authoritative flag matrix",
+        "- `.claude/rules/rules_app_features_flags.md` — authoritative flag matrix",
         "- `scripts/validate_app_features_config.py` — validator CLI",
         "- `config/app_features/` — all app features files",
         "- Routine 8 (Template flag completeness) in `.claude/workflows/audit_routine_registry.md`",

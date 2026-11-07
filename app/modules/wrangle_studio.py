@@ -1799,7 +1799,7 @@ class WrangleStudio:
         def bp_yaml_escape_ui():
             """YAML escape hatch (BP-ESCAPE-1).
 
-            Read-only pre block for all blueprint_enabled personas.
+            Read-only pre block for all blueprint_enabled app features files.
             Editable textarea + Save when manifest_edit_enabled is true.
             """
             raw = self.active_raw_yaml.get()

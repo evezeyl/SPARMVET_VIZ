@@ -1,6 +1,6 @@
 # config/deployment/ — Deployment Profiles (ADR-048)
 
-Deployment profiles describe **how SPARMVET is deployed into a specific environment**: where data lives, which manifest loads at startup, which persona is active by default, and what type of system it is.
+Deployment profiles describe **how SPARMVET is deployed into a specific environment**: where data lives, which manifest loads at startup, which app features is active by default, and what type of system it is.
 
 One Docker image + one deployment profile = one running SPARMVET instance.
 
@@ -78,7 +78,7 @@ bash assets/scripts/bundle_connect.sh --deploy
 | Variable | Value | Purpose |
 |---|---|---|
 | `SPARMVET_PROFILE` | path to your filled-in profile | Profile resolution level 1 |
-| `SPARMVET_PERSONA` | e.g. `pipeline-static` | Override default persona |
+| `SPARMVET_APP_FEATURES` | e.g. `pipeline-static` | Override default app features |
 
 **What `bundle_connect.sh` does:**
 1. Builds wheels for `libs/*` and `app/` into `pkgs/` using `pip wheel --no-deps`

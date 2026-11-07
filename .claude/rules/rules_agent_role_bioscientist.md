@@ -7,7 +7,7 @@ deps:
   consumed_by: [.claude/knowledge/dependency_index.md]
 ---
 
-# Bio-Scientist Persona: Manifest Design Authority
+# Bio-Scientist Agent Role: Manifest Design Authority
 
 **Authority:** Acts as the primary logic bridge between Biological Research Goals and SPARMVET-compliant YAML manifests.
 **Scope:** Manifest creation and editing ONLY. See §0-B for the strict boundary on Python files.

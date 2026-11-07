@@ -1,4 +1,4 @@
-"""Unit tests for PersonaValidator (25-B)."""
+"""Unit tests for AppFeaturesValidator (25-B)."""
 import pytest
 from app.modules.app_features_validator import AppFeaturesValidator
 
@@ -39,7 +39,7 @@ def test_app_features_id_matches_filename_valid():
 
 def test_app_features_id_mismatch_no_longer_raises_error():
     # ADR-054 (2026-05-02) removed Rule 1: name/filename coupling dropped
-    # so persona configs can live anywhere and be referenced by absolute path.
+    # so app features configs can live anywhere and be referenced by absolute path.
     t, path = _tmpl(path="developer", app_features_id="qa")
     errors = V.validate(t, path)
     assert not any("does not match filename" in e for e in errors)

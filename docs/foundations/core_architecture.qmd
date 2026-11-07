@@ -19,7 +19,7 @@ The application is split into distinct layers:
 | **Configuration Layer** | Configuration YAMLs | The "Brain." A file that tells the dashboard: "For this data/species, look at column X." **Contains the data contract**, data wrangling rules, and plotting defaults. |
 | Orchestrator Logic | _The Controller_ (app server)| This is the shiny server logic that **reacts** to user input and calls the right functions. |
 | **Visualization Factory** | Plotting Library (Data Agnostic) | The "Artist." Functions that take a dataframe and return a Plotnine plot object. Plotting defaults are passed via configuration files. |
-| Display & Interaction | _Presentation Layer (UI)_ (app ui) | The "Face." The HTML/CSS layout and the sliders/dropdowns. **UI Personas** (`config/ui/`) strictly control functional masking (Developer Mode, Gallery, etc.) and MUST NOT store system paths. |
+| Display & Interaction | _Presentation Layer (UI)_ (app ui) | The "Face." The HTML/CSS layout and the sliders/dropdowns. **UI App features files** (`config/ui/`) strictly control functional masking (Developer Mode, Gallery, etc.) and MUST NOT store system paths. |
 
 <br/>
 
@@ -37,7 +37,7 @@ The `app/` package is split into three tiers with a hard boundary between them:
 |---|---|
 | `server.py` | Thin orchestrator (228 lines). Owns shared reactive state, shared calcs, and delegates to handlers via `define_server(...)`. No business logic. |
 | `ui.py` | Static Shiny HTML/CSS shell. No reactive logic. |
-| `bootloader.py` | Path Authority & Persona bootstrap (ADR-031). |
+| `bootloader.py` | Path Authority & App features bootstrap (ADR-031). |
 
 **Tier 2 — Importable Modules** (`app/modules/` and `libs/blueprint_arch/`)
 

@@ -69,9 +69,9 @@ deps:
 ### AI Agent MVP-1 — DONE 2026-05-09
 - All 8 BP-AGENT-* tasks complete. Chat panel renders. Adapter status banner. Single-flight gate. Tool-call loop.
 
-### Undo & persona gating — DONE
+### Undo & app features gating — DONE
 - 20-step session undo deque (`BP-UNDO-1`).
-- `manifest_edit_enabled` flag in all 6 persona templates (developer + qa: true; others: false).
+- `manifest_edit_enabled` flag in all 6 app features files (developer + qa: true; others: false).
 - Cascade rule: if `blueprint_enabled: false`, `manifest_edit_enabled` silently suppressed.
 
 ---
@@ -95,7 +95,7 @@ deps:
 | Source | Says |
 |---|---|
 | `rules_ui_dashboard.md §7` | TubeMap (collapsible) → Plot → Data Glimpse central stack. Right sidebar = Logic. Reactive sync on edit. Apply gate. Three edit layers (in-place, undo, YAML). |
-| `rules_persona_feature_flags.md §Group D` | `blueprint_enabled` gates the workspace. `manifest_edit_enabled` gates editable YAML. `blueprint_agent_enabled` gates the agent. Soft cascade: child off when parent off. |
+| `rules_app_features_flags.md §Group D` | `blueprint_enabled` gates the workspace. `manifest_edit_enabled` gates editable YAML. `blueprint_agent_enabled` gates the agent. Soft cascade: child off when parent off. |
 | `BLUEPRINT.md` design doc | 18 user functionalities listed (open/create, add nodes, configure, branch, AI assistant, etc.). 4 non-goals. **Not all 18 functionalities map to existing ADRs or implementation.** |
 | `blueprint_architect_ux_spec.md` (Phase 26) | UX spec for 3-zone layout. Status: core layout DONE. Several refinements deferred. |
 
@@ -129,7 +129,7 @@ These are the concrete questions to settle in the new ADR. Each has 2–3 option
 |---|---|---|
 | **A. Live (every keystroke)** | IDE-like; cell shows result instantly | Expensive on large data; burns Polars LazyFrame collection budget |
 | **B. On-Apply only** | User commits → frame recomputes → glimpse updates | Predictable, cheap, matches HOME T3 Apply pattern |
-| **C. Configurable per-persona** | Default Apply; developer/qa can opt into live | Adds a flag; complex |
+| **C. Configurable per app features file** | Default Apply; developer/qa can opt into live | Adds a flag; complex |
 
 **Recommendation:** B (matches HOME mental model). User input needed.
 
@@ -231,7 +231,7 @@ ADR-082: BLUEPRINT Full Feature Set & Build-Mode Contract
 §8. Consequences:
     - Documentation impact (rules, design specs, knowledge index)
     - Test impact (what smoke tests need to be added)
-    - Persona impact (which flags gate which layer)
+    - App features impact (which flags gate which layer)
 §9. Implementation order: which Phase 32 tasks unblock which features
 ```
 

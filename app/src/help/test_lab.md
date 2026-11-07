@@ -20,4 +20,4 @@ Render all plots from a manifest into PNG files. Requires the Assembler to have 
 3. Inspect the TSV output in `tmp/` before proceeding to the next stage
 4. Use `@verify` in your agent session to confirm the output matches expectations
 
-This is the `[DEVELOPMENT ONLY]` persona area — not visible to scientist or pipeline personas.
+This is the `[DEVELOPMENT ONLY]` app features area — not visible to scientist or pipeline app features files.

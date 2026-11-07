@@ -95,7 +95,7 @@ Every module gets a module-level docstring in plain English describing:
 - What user space / workflow does this file serve?
 - What are its inputs and what does it produce?
 - What would break if this file were deleted?
-- Which persona flag(s) gate this module (for app/ handlers)
+- Which app features flag(s) gate this module (for app/ handlers)
 
 ```python
 """
@@ -106,7 +106,7 @@ transformations: window aggregations, cumulative counts, date extraction,
 z-scores, percentiles, and interpolation.
 
 Consumed by: DataAssembler (data_assembler.py) via the action registry.
-Persona gate: none — all personas can trigger these via manifests.
+App features gate: none — all app features files can trigger these via manifests.
 If deleted: manifests using any of these action names will silently skip those steps.
 """
 ```
@@ -157,7 +157,7 @@ one-liner explaining its reactive dependencies and what it produces or side-effe
 @output
 @render.ui
 def sidebar_filters():
-    """Mounts the filter accordion shell. Reads only current_persona — stable shell pattern (ADR-045 §R4)."""
+    """Mounts the filter accordion shell. Reads only current_app_features — stable shell pattern (ADR-045 §R4)."""
 ```
 
 ---

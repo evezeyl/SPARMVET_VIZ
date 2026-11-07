@@ -2,7 +2,7 @@
 
 **Owner:** @evezeyl (tester) · @dasharch (fixer)
 **Created:** 2026-06-19
-**Baseline:** `dev` branch @ Phase 34 (TEST_LAB built, BLUEPRINT full feature set, legacy removals, 8 personas)
+**Baseline:** `dev` branch @ Phase 34 (TEST_LAB built, BLUEPRINT full feature set, legacy removals, 8 app features files)
 **Supersedes:** [`tasks_test_ui_current.md`](tasks_test_ui_current.md) (pinned to Phase 26 — stale; its still-open items are folded in here, see each `(carried)` tag)
 **Scope:** All four user spaces (HOME · BLUEPRINT · GALLERY · TEST_LAB) + configuration-file gating + cross-space workflow + regressions. Comprehensive, but **prioritised** — see §0.4.
 
@@ -30,7 +30,7 @@ Change the checkbox. That's the whole protocol. I grep the three "needs-me" mark
 | `[~]` | **POLISH** — works but needs a tweak (styling, wording, UX) | Eve | **yes** |
 | `[?]` | **DECISION** — needs a design choice before code | Eve | **yes (discuss)** |
 | `[b]` | BLOCKED / not built yet — can't test (note why) | Eve | maybe |
-| `[-]` | N/A for this persona/config | Eve | no |
+| `[-]` | N/A for this app features/config | Eve | no |
 
 ### 0.2 How to write a finding (only on `[!]` `[~]` `[?]`)
 
@@ -101,55 +101,55 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 
 ## 1. Launch & environment (PRE)
 
-> **Architecture note (2026-08-10 — read this before §2):** "Persona" is not a fixed
+> **Architecture note (2026-08-10 — read this before §2):** "App features" is not a fixed
 > enum the app understands — it's just a naming convention for a config file. The
-> `SPARMVET_PERSONA` env var is passed straight to `Bootloader.set_persona()`, which
+> `SPARMVET_APP_FEATURES` env var is passed straight to `Bootloader.set_app_features()`, which
 > either resolves a shortname to `config/ui/templates/<name>_template.yaml` **or**
 > accepts a direct path to any YAML file (`app/src/bootloader.py:260-276`). What
 > actually drives app behaviour is the **flags inside that file** — nothing else.
-> So we test **configuration files**, not "personas": §2 below launches each file
+> So we test **configuration files**, not "app features files": §2 below launches each file
 > directly and confirms what its flags actually produce, exactly as
-> `rules_persona_feature_flags.md`'s own anti-pattern rule says the *app code* must
-> do (`bootloader.is_enabled(flag)`, never a persona-name check) — the test process
+> `rules_app_features_flags.md`'s own anti-pattern rule says the *app code* must
+> do (`bootloader.is_enabled(flag)`, never an app features name check) — the test process
 > should mirror that, not contradict it.
 
 > **Verified working launch command** (boots to HTTP 200; checked 2026-06-19):
 >
 > ```bash
 > cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
-> PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/developer_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+> PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/developer_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 > ```
 > Then open <http://127.0.0.1:8000>. `--reload` auto-restarts on code edits (useful during fix rounds).
 > **Note:** `python app/src/main.py` does **not** start a server (that file only prints banners) — the old checklist's launch line was wrong. Use `shiny run`.
 
-> **Switching config file = relaunch** pointing `SPARMVET_PERSONA` at a different file. There is **no** in-app selector. All 8 files live in `config/ui/templates/` — full launch command per file in §2.
+> **Switching config file = relaunch** pointing `SPARMVET_APP_FEATURES` at a different file. There is **no** in-app selector. All 8 files live in `config/ui/templates/` — full launch command per file in §2.
 
 - [~] PRE-01 — App boots clean (no Python traceback); browser console had 1 real bug + 2 noise items, 1 fixed. → [20260810_testing_part1.md#pre-01](20260810_testing_part1.md#pre-01-console-errors-on-first-launch) — RETEST ↻
 - [ ] PRE-02 — Browser loads at :8000 with no red error banner on first paint.
 - [ ] PRE-03 — Default manifest **ST22 Dummy Dataset** loads; center theater shows analysis-group tabs (Quality Control · Curiosity · Results · Cat 🐱).
-- [ ] PRE-04 — Relaunch pointing at `config/ui/templates/qa_template.yaml` → terminal shows `Persona: config/ui/templates/qa_template.yaml`; app still boots clean. (qa's flags: everything on, `ghost_save: false`.)
+- [ ] PRE-04 — Relaunch pointing at `config/ui/templates/qa_template.yaml` → terminal shows `App features: config/ui/templates/qa_template.yaml`; app still boots clean. (qa's flags: everything on, `ghost_save: false`.)
 - [ ] PRE-05 — Switch manifest in the **Manifest Choice** sidebar dropdown to `2_test_data_ST22_dummy` → tabs change to AMR Profiling Insight · Plasmid Dynamics; plots reload, no traceback.
 
 ---
 
 ## 2. Configuration-file gating (CFG) — what each file's flags actually produce
 
-Relaunch once per file below and confirm the surfaces it produces. This is fast (just "is it there or not") and catches positive-inclusion (ADR-071) regressions. Authoritative flag matrix: `rules_persona_feature_flags.md`. This section replaced the old persona-framed "PER" checklist on 2026-08-10 — same content, reframed around the actual driver (the file), see the note in §1.
+Relaunch once per file below and confirm the surfaces it produces. This is fast (just "is it there or not") and catches positive-inclusion (ADR-071) regressions. Authoritative flag matrix: `rules_app_features_flags.md`. This section replaced the old app features framed "PER" checklist on 2026-08-10 — same content, reframed around the actual driver (the file), see the note in §1.
 
 **Launch commands** (paste directly, only the file path changes):
 
 ```bash
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/pipeline-static_template.yaml               ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/demo-vetinst_template.yaml                  ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/pipeline-exploration-simple_template.yaml   ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/web-demo_template.yaml                      ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/pipeline-exploration-advanced_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/project-independent_template.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/developer_template.yaml                     ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/qa_template.yaml                            ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/pipeline-static_template.yaml               ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/demo-vetinst_template.yaml                  ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/pipeline-exploration-simple_template.yaml   ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/web-demo_template.yaml                      ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/pipeline-exploration-advanced_template.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/project-independent_template.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/developer_template.yaml                     ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml                            ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 ```
 
-**Compact expectation grid** — confirm each cell against the file's actual flags (`rules_persona_feature_flags.md` full matrix). Mark the row's checkbox `[x]` if the whole row matches, `[!]` if any cell is wrong (note which).
+**Compact expectation grid** — confirm each cell against the file's actual flags (`rules_app_features_flags.md` full matrix). Mark the row's checkbox `[x]` if the whole row matches, `[!]` if any cell is wrong (note which).
 
 | | pipeline-static | pipeline-exploration-simple | pipeline-exploration-advanced | project-independent | developer | qa |
 |---|:--:|:--:|:--:|:--:|:--:|:--:|
@@ -172,7 +172,7 @@ PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/qa_template.yaml              
 - [ ] CFG-07 `demo-vetinst_template.yaml` — boots; intentionally minimal (most flags off, export off). Confirm no crash and that it looks like a locked-down reference deployment.
 - [ ] CFG-08 `web-demo_template.yaml` — boots; minimal-interaction demo. Confirm no crash.
 - [ ] CFG-09 — Display name under the nav pills reflects each file's own `display_name` field (not hardcoded, not derived from the filename). *(carried: old PER-09.)*
-- [ ] CFG-10 `[?]` **NEW** — Point `SPARMVET_PERSONA` at a **custom** YAML (copy `developer_template.yaml`, flip one flag, e.g. `gallery_enabled: false`, save under a new name) and confirm the app respects it correctly with no code changes. This is the actual proof that behaviour is config-driven, not persona-enum-driven — worth doing once.
+- [ ] CFG-10 `[?]` **NEW** — Point `SPARMVET_APP_FEATURES` at a **custom** YAML (copy `developer_template.yaml`, flip one flag, e.g. `gallery_enabled: false`, save under a new name) and confirm the app respects it correctly with no code changes. This is the actual proof that behaviour is config-driven, not app features enum-driven — worth doing once.
 
 ---
 
@@ -374,7 +374,7 @@ PYTHONPATH=. SPARMVET_PERSONA=config/ui/templates/qa_template.yaml              
 
 ## 7. Cross-space workflow (XSP) — the producer arc
 
-> Tests the file-based handoffs (export here → choose there). There are **no in-app "send to" buttons** by design — handoffs are deliberately file-based so spaces stay independently persona-gated. Use **developer/qa**.
+> Tests the file-based handoffs (export here → choose there). There are **no in-app "send to" buttons** by design — handoffs are deliberately file-based so spaces stay independently flag-gated. Use **developer/qa**.
 
 - [ ] XSP-01 — TEST_LAB Scaffolding ZIP → load that manifest in BLUEPRINT → it opens and is editable.
 - [ ] XSP-02 — TEST_LAB Reformatter TSV → use it as input to ID Reconciliation (choose the file) → works as any standalone input.
@@ -444,7 +444,7 @@ These are designed-but-unbuilt or deferred; mark `[b]` if you wander into them:
 
 - `.claude/design/spaces/{HOME,BLUEPRINT,GALLERY,TEST_LAB}.md` — space specs
 - `.claude/design/developer_workflow.md` — the cross-space producer arc (§7 here)
-- `.claude/rules/rules_persona_feature_flags.md` — authoritative persona matrix (§2 here)
+- `.claude/rules/rules_app_features_flags.md` — authoritative app features matrix (§2 here)
 - `.claude/rules/rules_ui_dashboard.md`, `ui_implementation_contract.md` — UI contract
 - `.claude/rules/rules_css_style_spec.md` — palette/typography (§9 here)
 - `.claude/knowledge/architecture_decisions.md` — ADRs (082 BLUEPRINT lock, 084 TEST_LAB, 073 sidebar, 071 positive inclusion)

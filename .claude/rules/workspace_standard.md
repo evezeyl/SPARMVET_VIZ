@@ -12,7 +12,7 @@ trigger: always_on
 
 To prevent AI Drift and Quota Waste, the Agent MUST follow this sequence upon initialization:
 
-1. **./AGENT_GUIDE.md**: Adopt the high-level Persona and Onboarding Context.
+1. **./AGENT_GUIDE.md**: Adopt the high-level App features and Onboarding Context.
 2. **./tree.txt**: Locate the physical file map.
 3. **./.claude/knowledge/project_conventions.md**: Identify the "Who/Where/How" for every component.
 4. **./.claude/rules/rules_runtime_environment.md**: Lock the `./.venv/bin/python` path.
@@ -32,11 +32,11 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 | **Asset Scripts** | Bootstrappers, Synthetic Data, Governance | [rules_asset_scripts.md](./.claude/rules/rules_asset_scripts.md) |
 | **UI Rules** | UI Orchestration & Aesthetics | [rules_ui_dashboard.md](./.claude/rules/rules_ui_dashboard.md) |
 | **Viz Factory** | Artist Pillar, Plotnine Parity, Core Geoms | [rules_viz_factory.md](./.claude/rules/rules_viz_factory.md) |
-| **UI Contract** | Theater Layout, Tier Toggle, Persona Masking, Audit Stack | [ui_implementation_contract.md](./.claude/rules/ui_implementation_contract.md) |
+| **UI Contract** | Theater Layout, Tier Toggle, App features Masking, Audit Stack | [ui_implementation_contract.md](./.claude/rules/ui_implementation_contract.md) |
 | **App Structure** | Server decomposition, Handler/Module boundary law | [rules_app_structure.md](./.claude/rules/rules_app_structure.md) |
 | **Code Quality** | Emoji ban (active), comment philosophy, pre-deployment doc tiers (deferred) | [rules_code_quality.md](./.claude/rules/rules_code_quality.md) |
 | **Legacy Management** | Deprecation markers, Historical preservation, Tombstone expiry — read when marking anything as deprecated/removed | [rules_legacy_management.md](./.claude/rules/rules_legacy_management.md) |
-| **TEST_LAB** | Stateless tool principle, `libs/id_reconciliation/` boundaries, synthetic config firewall, Bootstrapper scope, single-key boundary, persona gate — read when building any TEST_LAB feature | [rules_test_lab.md](./.claude/rules/rules_test_lab.md) |
+| **TEST_LAB** | Stateless tool principle, `libs/id_reconciliation/` boundaries, synthetic config firewall, Bootstrapper scope, single-key boundary, app features gate — read when building any TEST_LAB feature | [rules_test_lab.md](./.claude/rules/rules_test_lab.md) |
 
 ## 2. Primary Technical Bible
 
@@ -95,7 +95,7 @@ grep -r "mirrors:.*orchestrator.py" . --include="*.py" --include="*.yaml" --incl
 # documents: —
 # consumes: libs/transformer/src/transformer/actions/base.py
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
-# doc: .claude/rules/rules_persona_bioscientist.md#8
+# doc: .claude/rules/rules_agent_role_bioscientist.md#8
 # @end_deps
 ```
 
@@ -116,7 +116,7 @@ trigger: always_on
 deps:
   provides: [rule:canonical_recipe_syntax, rule:analysis_groups_structure]
   documents: [libs/transformer/src/transformer/data_assembler.py]
-  consumed_by: [.claude/rules/rules_persona_bioscientist.md, docs/appendix/manifest_structure.yaml]
+  consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/manifest_structure.yaml]
 ---
 ```
 

@@ -22,7 +22,7 @@ When the **manifest root** is selected (no sub-node active), the Plot Defaults f
 Changes apply immediately in-session (not saved to YAML — use the YAML escape hatch to persist).
 
 ### YAML Escape Hatch
-The YAML panel shows the raw manifest fragment for the selected node. In developer persona it is editable — changes are staged as a T3 `developer_raw_yaml` node.
+The YAML panel shows the raw manifest fragment for the selected node. In developer app features it is editable — changes are staged as a T3 `developer_raw_yaml` node.
 
 ### Import / Save
 **Import** loads a manifest YAML from disk. **Save** writes the current manifest back to disk (requires appropriate permissions).

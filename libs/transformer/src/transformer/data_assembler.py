@@ -227,13 +227,13 @@ class DataAssembler:
                     location=f"assembly step {i}",
                     fix=(
                         f"'{action_name}' is not registered. Check the action name in the manifest recipe. "
-                        "See rules_persona_bioscientist.md §8 for the authoritative action list."
+                        "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
                     ),
                     who="manifest_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
-                    reference="rules_persona_bioscientist.md §8",
+                    reference="rules_agent_role_bioscientist.md §8",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc
@@ -254,7 +254,7 @@ class DataAssembler:
                     surface="plot_overlay",
                     severity="error",
                     evidence={"polars_error": str(exc)},
-                    reference="rules_persona_bioscientist.md §3-B",
+                    reference="rules_agent_role_bioscientist.md §3-B",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc
@@ -272,7 +272,7 @@ class DataAssembler:
                     surface="plot_overlay",
                     severity="error",
                     evidence={"polars_error": str(exc)},
-                    reference="rules_persona_bioscientist.md §3-B",
+                    reference="rules_agent_role_bioscientist.md §3-B",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc
