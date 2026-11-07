@@ -1,7 +1,7 @@
 """The flag matrix in .claude/rules/rules_app_features_flags.md says what the app features files say.
 
 The table is the reference people read before changing a flag; it had drifted from the files
-(wrangle_studio_enabled, session_management_enabled) without any test noticing.
+(two flags had drifted: wrangle_studio_enabled and session_management_enabled) without any test noticing.
 """
 from pathlib import Path
 

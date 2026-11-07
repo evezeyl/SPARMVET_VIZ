@@ -24,7 +24,7 @@ class TestUIAppFeaturesMasking(unittest.TestCase):
         self.bootloader.__init__(app_features="pipeline-static")
 
         restricted = [
-            "developer_mode_enabled",      # Tabs Gated?
+            "blueprint_enabled",           # Blueprint tab gated?
             "comparison_mode_enabled",     # Comparison Gate?
             "gallery_enabled",             # Gallery Gate?
             "interactivity_enabled"        # Tier 3 Wrangle Studio?
@@ -41,7 +41,7 @@ class TestUIAppFeaturesMasking(unittest.TestCase):
         self.bootloader.__init__(app_features="developer")
 
         enabled_items = [
-            "developer_mode_enabled",
+            "blueprint_enabled",
             "comparison_mode_enabled",
             "gallery_enabled"
         ]
@@ -56,8 +56,8 @@ class TestUIAppFeaturesMasking(unittest.TestCase):
 
         self.assertTrue(self.bootloader.is_enabled("comparison_mode_enabled"),
                         "Advanced Exploration MUST include comparison mode.")
-        self.assertFalse(self.bootloader.is_enabled("developer_mode_enabled"),
-                         "Advanced Exploration must NOT include dev studio tabs.")
+        self.assertFalse(self.bootloader.is_enabled("blueprint_enabled"),
+                         "Advanced Exploration must NOT include the Blueprint Architect.")
         print("  [PASS] Advanced Exploration Subset verified.")
 
 

@@ -43,6 +43,12 @@ RENAMED_FLAG_KEYS = {
     "manifest_edit_enabled": "data_analysis_recipe_edit_enabled",
 }
 
+# flags that were retired: old -> what to use now (no silent alias, ADR-077)
+RETIRED_FLAG_KEYS = {
+    "wrangle_studio_enabled": "blueprint_enabled (it now controls the Blueprint Architect tab, its panels and its state)",
+    "developer_mode_enabled": "blueprint_enabled for the Blueprint Architect and test_lab_enabled for the Test Lab",
+}
+
 # names of shipped app features files: old -> new
 RENAMED_APP_FEATURES_NAMES = {
     "project-independent": "standalone",
@@ -144,6 +150,16 @@ def renamed_app_features_key_errors(config: dict, where: str) -> list[Deployment
                 problem=f"The flag '{old}' was renamed to '{new}'.",
                 location=f"{old} in {where}",
                 fix=f"Rename the flag '{old}' to '{new}' in {where}.",
+                who="operator",
+                reference=_REF,
+            ))
+    for old, use in RETIRED_FLAG_KEYS.items():
+        if old in flags:
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=f"The flag '{old}' was retired; it is read by nothing any more.",
+                location=f"{old} in {where}",
+                fix=f"Delete '{old}' from {where}. Use {use}.",
                 who="operator",
                 reference=_REF,
             ))

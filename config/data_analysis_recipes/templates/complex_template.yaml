@@ -1,7 +1,7 @@
 # Complex Template
 # Use this for large-scale data analysis recipes requiring modularity and shared fragments.
 
-id: complex_demo
+id: complex_template
 info:
   display_name: "Complex Enterprise Demo"
   description: "Modular data analysis recipe using !include for relational integrity and reuse."
@@ -12,15 +12,15 @@ data_schemas:
     source:
       type: "local_tsv"
       path: "./assets/test_data/genomics_data.tsv"
-    input_fields: !include 'complex_demo/genomics_input.yaml'
-    wrangling: !include 'complex_demo/genomics_wrangling.yaml'
+    input_fields: !include 'complex_template/genomics_input.yaml'
+    wrangling: !include 'complex_template/genomics_wrangling.yaml'
     output_fields: ["sample_id", "gene_presence"]
 
 metadata:
   source:
     type: "local_tsv"
     path: "./assets/test_data/metadata.tsv"
-  input_fields: !include 'complex_demo/metadata_input.yaml'
+  input_fields: !include 'complex_template/metadata_input.yaml'
 
 joins:
   master_assembly:
@@ -28,5 +28,5 @@ joins:
     ingredients:
       - dataset_id: "genomics"
       - dataset_id: "metadata"
-    steps: !include 'complex_demo/master_steps.yaml'
-    final_contract: !include 'complex_demo/final_contract.yaml'
+    steps: !include 'complex_template/master_steps.yaml'
+    final_contract: !include 'complex_template/final_contract.yaml'

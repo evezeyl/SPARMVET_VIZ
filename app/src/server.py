@@ -1,6 +1,6 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio (gated: developer_mode_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.app_features_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.app_features_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # provides: reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003
@@ -30,7 +30,7 @@ from app.modules.orchestrator_helpers import (
 )
 
 # Flags that need the WrangleStudio state object (see server()).
-_WRANGLE_STUDIO_FLAGS = ("developer_mode_enabled", "blueprint_enabled", "t3_sandbox_enabled")
+_WRANGLE_STUDIO_FLAGS = ("blueprint_enabled", "t3_sandbox_enabled")
 
 # Inject action + component catalogs into blueprint_arch schema_registry (ADR-011).
 # server.py is Tier 3 (orchestration) — the only layer allowed to import from multiple libs.
@@ -89,9 +89,10 @@ def server(input, output, session):
     # Module Initialization (Phase 11-F / ADR-039 / ADR-071 positive inclusion)
     # WrangleStudio holds the Blueprint Architect state (logic stack, active component) that the
     # BLUEPRINT handlers and the Pipeline Audit panel read. It is created when any of them is on:
-    # developer_mode_enabled, blueprint_enabled or t3_sandbox_enabled. (Until 2026-11-07 only
-    # developer_mode_enabled created it, so every app features with the audit panel but without
-    # developer mode, standalone and pipeline-exploration-advanced, ended on a blank page.)
+    # blueprint_enabled or t3_sandbox_enabled. (Until 2026-11-07 a separate developer_mode_enabled flag
+    # created it, so app features with the audit panel but without it, standalone and
+    # pipeline-exploration-advanced, ended on a blank page. That flag and wrangle_studio_enabled are retired:
+    # blueprint_enabled alone controls the Blueprint Architect.)
     wrangle_studio = (WrangleStudio(session.id)
                       if any(bootloader.is_enabled(f) for f in _WRANGLE_STUDIO_FLAGS) else None)
     dev_studio = TestLabStudio() if bootloader.is_enabled("test_lab_enabled") else None
@@ -148,7 +149,7 @@ def server(input, output, session):
 
 
     # Module Server Definitions
-    if wrangle_studio is not None and any(bootloader.is_enabled(f) for f in ("developer_mode_enabled", "blueprint_enabled")):
+    if wrangle_studio is not None and bootloader.is_enabled("blueprint_enabled"):
         wrangle_studio.define_server(
             input, output, session, lambda: tier1_anchor().collect_schema().names(), tier1_anchor, viz_factory,
             get_schema_registry=lambda: _schema_registry.get(),

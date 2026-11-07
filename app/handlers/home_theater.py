@@ -1307,7 +1307,7 @@ def define_server(input, output, session, *,
         # matches the design intent of .claude/rules/rules_app_features_flags.md
         # — flags like gallery_enabled are documented as INDEPENDENT and can be
         # flipped per app features file in config/app_features/ without touching code here.
-        if bootloader.is_enabled("wrangle_studio_enabled"):
+        if bootloader.is_enabled("blueprint_enabled"):
             nav_items.append(ui.nav_panel("Blueprint Architect", value="Wrangle Studio"))
 
         if bootloader.is_enabled("test_lab_enabled"):

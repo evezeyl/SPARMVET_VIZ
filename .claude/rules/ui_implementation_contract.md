@@ -907,7 +907,7 @@ See `config/deployment/local/local.yaml` for the dev template.
 
 Defined in app features files: `config/app_features/<app_features_id>_template.yaml`. App features IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
 
-Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `developer_mode_enabled`, `gallery_enabled`.
+Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `blueprint_enabled`, `test_lab_enabled`, `gallery_enabled`.
 
 See `rules_app_features_flags.md` for the authoritative flag matrix and dependency cascade rules.
 

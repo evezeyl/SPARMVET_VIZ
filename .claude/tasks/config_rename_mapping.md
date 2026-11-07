@@ -763,11 +763,11 @@ none
 | `config/manifests/retest/retest_tier2.yaml` | `config/data_analysis_recipes/retest/retest_tier2.yaml` | auto |
 | `config/manifests/retest/retest_top_n_other.yaml` | `config/data_analysis_recipes/retest/retest_top_n_other.yaml` | auto |
 | `config/manifests/templates/audit.yaml` | `config/data_analysis_recipes/templates/audit.yaml` | auto |
-| `config/manifests/templates/complex_demo/final_contract.yaml` | `config/data_analysis_recipes/templates/complex_demo/final_contract.yaml` | auto |
-| `config/manifests/templates/complex_demo/genomics_input.yaml` | `config/data_analysis_recipes/templates/complex_demo/genomics_input.yaml` | auto |
-| `config/manifests/templates/complex_demo/genomics_wrangling.yaml` | `config/data_analysis_recipes/templates/complex_demo/genomics_wrangling.yaml` | auto |
-| `config/manifests/templates/complex_demo/master_recipe.yaml` | `config/data_analysis_recipes/templates/complex_demo/master_steps.yaml` | auto |
-| `config/manifests/templates/complex_demo/metadata_input.yaml` | `config/data_analysis_recipes/templates/complex_demo/metadata_input.yaml` | auto |
+| `config/manifests/templates/complex_demo/final_contract.yaml` | `config/data_analysis_recipes/templates/complex_template/final_contract.yaml` | auto |
+| `config/manifests/templates/complex_demo/genomics_input.yaml` | `config/data_analysis_recipes/templates/complex_template/genomics_input.yaml` | auto |
+| `config/manifests/templates/complex_demo/genomics_wrangling.yaml` | `config/data_analysis_recipes/templates/complex_template/genomics_wrangling.yaml` | auto |
+| `config/manifests/templates/complex_demo/master_recipe.yaml` | `config/data_analysis_recipes/templates/complex_template/master_steps.yaml` | auto |
+| `config/manifests/templates/complex_demo/metadata_input.yaml` | `config/data_analysis_recipes/templates/complex_template/metadata_input.yaml` | auto |
 | `config/manifests/templates/complex_project_template.yaml` | `config/data_analysis_recipes/templates/complex_project_template.yaml` | auto |
 | `config/manifests/templates/e_coli.yaml` | `config/data_analysis_recipes/templates/e_coli.yaml` | auto |
 | `config/manifests/templates/example_species_config.yaml` | `config/data_analysis_recipes/templates/example_species_config.yaml` | auto |

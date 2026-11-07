@@ -1,4 +1,4 @@
-id: simple_demo
+id: simple_template
 info:
   display_name: Simple Demo
   description: 'Minimal self-contained data analysis recipe: 1 dataset, 1 metadata, 1 assembly,

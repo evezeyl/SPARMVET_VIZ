@@ -81,21 +81,21 @@ from app.src.bootloader import Bootloader
     expected = {
         "pipeline-static": {
             "interactivity_enabled": False,
-            "developer_mode_enabled": False,
+            "blueprint_enabled": False,
             "gallery_enabled": False,
             "session_management_enabled": False,
             "comparison_mode_enabled": False,
         },
         "pipeline-exploration-simple": {
             "interactivity_enabled": True,
-            "developer_mode_enabled": False,
+            "blueprint_enabled": False,
             "gallery_enabled": False,
             "session_management_enabled": True,
             "comparison_mode_enabled": True,
         },
         "pipeline-exploration-advanced": {
             "interactivity_enabled": True,
-            "developer_mode_enabled": False,
+            "blueprint_enabled": False,
             "session_management_enabled": True,
             "comparison_mode_enabled": True,
         },
@@ -106,7 +106,7 @@ from app.src.bootloader import Bootloader
         },
         "developer": {
             "interactivity_enabled": True,
-            "developer_mode_enabled": True,
+            "blueprint_enabled": True,
             "gallery_enabled": True,
             "session_management_enabled": True,
             "comparison_mode_enabled": True,

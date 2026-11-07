@@ -104,6 +104,13 @@ def validate_data_analysis_recipe(path: Union[str, Path]) -> list[DataAnalysisRe
         return [DataAnalysisRecipeProblem(name, "load", "data analysis recipe root is not a mapping")]
 
     problems: list[DataAnalysisRecipeProblem] = []
+    # The file name is the data analysis recipe id (selector, cache, sessions, export). The id: key of the
+    # file is the root-key marker of a data analysis recipe and is shown in the audit panel, so it must say the same.
+    file_id = raw.get("id")
+    if file_id is not None and str(file_id) != path.stem:
+        problems.append(DataAnalysisRecipeProblem(
+            name, "id", f"id '{file_id}' differs from the file name '{path.stem}'.",
+            f"Set 'id: {path.stem}', or rename the file to '{file_id}.yaml'; the file name without .yaml is the data analysis recipe id."))
     for location, block in _step_blocks(raw):
         seen: set[str] = set()
         for tier in ("tier1", "tier2"):

@@ -28,6 +28,8 @@ CASES = [
     ("demo-vetinst", "config/deployment/demo/demo-vetinst.yaml"),
     ("web-demo", "config/deployment/demo/web-demo.yaml"),
 ]
+# app features whose blueprint_enabled flag is on: the Blueprint Architect tab must exist and open
+WITH_BLUEPRINT = {"developer", "qa", "standalone"}
 SERVER_ERRORS = ("Unhandled error", "Traceback", "ReactiveWarning")
 
 
@@ -62,6 +64,13 @@ def test_app_features_renders_home_without_server_error(page: Page, tmp_path, ap
             # the data analysis recipe title banner or a plot group tab proves that Home was built
             expect(page.locator(".view-title-banner, .nav-link").first).to_be_visible(timeout=40_000)
             time.sleep(4)
+            tab = page.get_by_text("Blueprint Architect", exact=True)
+            if app_features in WITH_BLUEPRINT:
+                tab.first.click()
+                expect(page.get_by_text("Blueprint Architect Flight Deck")).to_be_visible(timeout=20_000)
+                time.sleep(3)
+            else:
+                assert tab.count() == 0, "the Blueprint Architect tab is shown although blueprint_enabled is off"
         finally:
             proc.terminate()
             proc.wait(timeout=20)

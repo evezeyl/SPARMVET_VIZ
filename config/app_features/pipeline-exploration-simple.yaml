@@ -5,9 +5,6 @@ display_name: "Pipeline Exploration - Simple"
 flags:
   # Can the user interact with the Tier 3 View? (Toggleable/Collapsible)
   interactivity_enabled: true
-  # Does the user have access to the Developer Studio / Wrangle Studio tools?
-  developer_mode_enabled: false
-  wrangle_studio_enabled: false
   # Does the user have access to the Gallery Browser?
   gallery_enabled: false
   # Can the user access the Blueprint Architect (data analysis recipe IDE)?

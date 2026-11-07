@@ -185,5 +185,5 @@ Startup validation raises `AppFeaturesConfigError` if any cascade rule is violat
 ## Open design questions (remaining)
 
 - **`INTERACT` decomposition:** `interactivity_enabled` is a legacy coarse-grained flag. Decision pending: retire and replace with `PAS_FILT` + `TIER_T12`, or keep as alias?
-- **`TEST_LAB` separate flag:** currently derived from `developer_mode_enabled`. Separate flag needed if a use case requires Test Lab without Blueprint (or vice versa).
+- **`TEST_LAB` separate flag:** done: `test_lab_enabled` is its own flag, independent of `blueprint_enabled` (`developer_mode_enabled` is retired).
 - **`SDB_PROF` modularization:** implement only when >2 distinct sidebar layouts emerge from real deployments.

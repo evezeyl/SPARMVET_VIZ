@@ -90,15 +90,15 @@ metadata_ingestion_enabled: true/false   ← SEMI-INDEPENDENT (see below)
 
 ### Group D — Developer Features
 
-`developer_mode_enabled` is the gate for **Test Lab** (renamed from "Dev Studio" in Phase 25-A) and the full registry.
+`test_lab_enabled` is the gate for the **Test Lab** (renamed from "Dev Studio" in Phase 25-A).
+
+> **REMOVED (issue evezeyl/SPARMVET_VIZ#29, 2026-11-07):** the flags `developer_mode_enabled` and `wrangle_studio_enabled` are retired. They duplicated `blueprint_enabled` (the Blueprint Architect tab, panels and state) or were read by nothing. The loader refuses them with a message that names the replacement.
+> **Tombstone expires:** Phase 38 (delete this block after two phases)
 
 ```
-developer_mode_enabled: true/false   ← GATE for Test Lab
-  │
-  └─ Test Lab access (Wrangle Studio, AquaSynthesizer)
-  └─ Full @register_action registry in right sidebar
+test_lab_enabled: true/false         ← GATE for Test Lab
 
-gallery_enabled: true/false          ← INDEPENDENT (can enable without developer mode)
+gallery_enabled: true/false          ← INDEPENDENT (can enable without the Test Lab)
 
 blueprint_enabled: true/false        ← GATE for Blueprint Architect
   │
@@ -106,7 +106,7 @@ blueprint_enabled: true/false        ← GATE for Blueprint Architect
   └─ blueprint_agent_enabled         ← BLUEPRINT AI Agent helper (ADR-076)
 ```
 
-`gallery_enabled` can be set independently — a `standalone` app features has Gallery access without full developer mode (Phase 25-A flipped this to `true` for standalone). It remains a policy choice rather than a technical constraint, so other app features files can enable Gallery without enabling `developer_mode_enabled`.
+`gallery_enabled` can be set independently — a `standalone` app features has Gallery access without the Test Lab (Phase 25-A flipped this to `true` for standalone). It remains a policy choice rather than a technical constraint, so other app features files can enable Gallery without enabling `test_lab_enabled`.
 
 `data_analysis_recipe_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer app features files), the escape hatch is **read-only** (visible but not editable, so the user can inspect the data analysis recipe fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §4 below.
 
@@ -125,14 +125,12 @@ Eight app features files exist (`config/app_features/`):
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `interactivity_enabled` | false | false | true | true | true | true | true | true |
 | `t3_sandbox_enabled` | false | false | false | false | true | true | true | true |
-| `wrangle_studio_enabled` | false | false | false | false | false | false | true | true |
 | `comparison_mode_enabled` | false | false | true | false | true | true | true | true |
 | `session_management_enabled` | false | false | false | false | true | true | true | true |
 | `export_enabled` | true | false | true | false | true | true | true | true |
 | `metadata_ingestion_enabled` | false | false | false | false | true | true | true | true |
 | `import_helper_enabled` | false | false | false | false | false | true | true | true |
 | `data_ingestion_enabled` | false | false | false | false | false | true | true | true |
-| `developer_mode_enabled` | false | false | false | false | false | false | true | true |
 | `gallery_enabled` | false | false | false | false | false | **true** | true | true |
 | `blueprint_enabled` | false | false | false | false | false | true | true | true |
 | `test_lab_enabled` | false | false | false | false | false | false | true | true |

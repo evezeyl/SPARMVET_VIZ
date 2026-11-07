@@ -4341,3 +4341,22 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 6. Old names are refused with a "renamed to" message (`renamed_keys.py`); the old-words audit counts "project". Mapping: `.claude/tasks/project_word_mapping.md`.
 
 Lesson: a panel renderer that reads `active_cfg()` re-renders the whole sidebar (shell stability pattern, ADR-045 R4): the Info content is its own output slot.
+
+## ADR-092: One flag for the Blueprint Architect, one identifier for a data analysis recipe (2026-11-07)
+
+**Status:** ACCEPTED (Eve, 2026-11-07), implemented on branch `rename/config-vocabulary`. Drafts: `issue-drafts/one-flag-for-the-blueprint-architect.md`, `issue-drafts/one-identifier-per-data-analysis-recipe.md`.
+
+**Context 1 (flags).** Three flags covered the same Blueprint Architect: `developer_mode_enabled`, `wrangle_studio_enabled` (the tab) and `blueprint_enabled` (the panels and handlers). In seven of the eight shipped app features they were equal. In `standalone` the tab was off while the panels were on, so the Blueprint Architect was set up and unreachable. `developer_mode_enabled` was read by nothing except the creation of the `WrangleStudio` state object, and `standalone` and `pipeline-exploration-advanced` (Pipeline Audit on, developer mode off) opened a blank page, because the audit panel reads that object (found 2026-11-07; the old code behaved the same).
+
+**Decision 1.**
+1. `blueprint_enabled` alone controls the Blueprint Architect: the tab, the panels, the handlers and the Blueprint state. `test_lab_enabled` controls the Test Lab, `t3_sandbox_enabled` the audit panel.
+2. `WrangleStudio` (the state object) exists when `blueprint_enabled` or `t3_sandbox_enabled` is on.
+3. `developer_mode_enabled` and `wrangle_studio_enabled` are retired. An app features file that still carries them stops the app with a message that names the replacement (`renamed_keys.RETIRED_FLAG_KEYS`, ADR-077: no silent alias).
+4. `standalone` now has the Blueprint Architect tab (its `blueprint_enabled` was already true).
+5. Tests: `test_every_app_features_starts.py` starts every shipped app features (and opens the Blueprint tab where the flag is on); `test_flag_matrix_doc.py` keeps the flag table in the rules equal to the files.
+
+**Context 2 (identifier).** The file name is the identifier of a data analysis recipe everywhere (selector, cache keys, sessions, export, `data_analysis_recipe_id`). The `id:` key inside the file was read only for the audit panel header and differed from the file name in two shipped recipes (and in all templates). Two identifiers for one thing.
+
+**Decision 2.** The `id:` key stays (it marks the root of a recipe, `rules_test_lab.md` §3a) and must equal the file name. `validate_data_analysis_recipe` reports a difference with a tip; a test checks every shipped recipe and template; the shipped ones are corrected (`1_test_data_ST22_dummy`, `figshare_integration`, `audit`, `e_coli`, `simple_template`, `universal_template`, `complex_template`). The include folder of `complex_template` is renamed to match the file (basename mirroring).
+
+**Not done (tracked in tasks.md):** the Blueprint selector still lists file paths instead of ids (CONFIG-BLUEPRINT-ID-DISPLAY-1); `complex_template` lacks `analysis_groups:` and does not load; the templates are not covered by a load test.

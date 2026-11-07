@@ -276,3 +276,9 @@ Deployment palettes are defined in `config/palettes.yaml` and loaded by `bootloa
 - To check a data analysis recipe without loading it into the app, use `validate_data_analysis_recipe()` (`app/modules/data_analysis_recipe_validator.py`).
 - `validate_data_analysis_recipe_data(path, raw_data_dir)` (same module) also reads the data files and reports a dataset that cannot be loaded and an `output_fields` entry that matches no column after tier-1 wrangling, with a "did you mean" hint (issue #18). The engine does not apply `output_fields` of a data schema, so a wrong name there is otherwise silent. `app/tests/test_data_analysis_recipe_data_check.py` runs it on every shipped data analysis recipe.
 - A dataset that the requested collection needs and that cannot be loaded makes `materialize_tier1` raise `IngestionError` naming the dataset and the reason. Before issue #18 it was dropped and the join steps that used it were skipped with a console line.
+
+---
+
+## 12. The `id:` key equals the file name (ADR-092)
+
+The file name without `.yaml` is the data analysis recipe id (selector, cache keys, sessions, export). The top-level `id:` key of the file marks the root of a data analysis recipe and is shown in the Pipeline Audit panel, so it MUST equal the file name. `validate_data_analysis_recipe()` reports a difference; `app/tests/test_data_analysis_recipe_validator.py` checks every shipped data analysis recipe and template. There is no top-level `type:` key (removed, issue evezeyl/SPARMVET_VIZ#29); describe the data analysis recipe under `info:`.

@@ -137,15 +137,14 @@ import_helper_enabled: true
 
 **`metadata_ingestion_enabled` is semi-independent:** It can be `true` even when `import_helper_enabled: false` — for example, a `pipeline-exploration-advanced` app features can upload corrected metadata but cannot perform general data ingestion. When `import_helper_enabled: false`, the metadata upload appears as a standalone control in Export (not nested under the full ingestion panel).
 
-## Group E — Developer Features (requires `developer_mode_enabled: true`)
+## Group E — Developer Features
 
 ```
-developer_mode_enabled: true
-  └─ Test Lab access (Wrangle Studio, AquaSynthesizer)
-  └─ gallery_enabled: true   → Gallery browser (can also be enabled independently)
-  └─ Full @register_action registry in right sidebar
+test_lab_enabled: true/false    ← gate for the Test Lab (AquaSynthesizer, ID reconciliation, scaffolding)
+gallery_enabled: true/false     ← Gallery browser (independent)
 
-blueprint_enabled: true/false   ← independent gate for Blueprint Architect
+blueprint_enabled: true/false   ← the one gate for the Blueprint Architect: its tab, its panels and its state
+                                  (the flags developer_mode_enabled and wrangle_studio_enabled were retired, issue evezeyl/SPARMVET_VIZ#29)
   ├─ data_analysis_recipe_edit_enabled      → YAML escape hatch in Blueprint IDE (editable mode)
   │                                When false: YAML panel is read-only; always visible.
   │                                FATAL cascade (ADR-077): true requires blueprint_enabled: true.
@@ -190,8 +189,8 @@ If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloade
 | `metadata_ingestion_enabled` | Nothing (semi-standalone) | ✅ | — |
 | `import_helper_enabled` | Nothing | ✅ | — |
 | `data_ingestion_enabled` | `import_helper_enabled` | — | Soft |
-| `developer_mode_enabled` | Nothing | ✅ | — |
-| `gallery_enabled` | Nothing (can enable without developer mode) | ✅ | — |
+| `test_lab_enabled` | Nothing | ✅ | — |
+| `gallery_enabled` | Nothing | ✅ | — |
 | `blueprint_enabled` | Nothing | ✅ | — |
 | `data_analysis_recipe_edit_enabled` | `blueprint_enabled` | — | **Fatal (ADR-077)** |
 | `blueprint_agent_enabled` | `blueprint_enabled` | — | **Fatal (ADR-077)** |
@@ -228,7 +227,6 @@ features:
 
   # ── Group B: T3 Sandbox ───────────────────────────────────────────────────
   interactivity_enabled: false       # Master gate for all T3 features
-  wrangle_studio_enabled: false      # Wrangle Studio tab in center theater
   comparison_mode_enabled: false     # Comparison Mode toggle (requires interactivity)
   session_management_enabled: false  # Session Save/Import + ghost save (requires interactivity)
   export_enabled: false        # Export Active Graph (requires interactivity)
@@ -243,7 +241,7 @@ features:
   data_ingestion_enabled: false      # Multi-file ingest + Excel converter (requires import_helper)
 
   # ── Group E: Developer Features ───────────────────────────────────────────
-  developer_mode_enabled: false      # Test Lab + full registry access
+  test_lab_enabled: false            # Test Lab
   gallery_enabled: false             # Gallery browser
   blueprint_enabled: false           # Blueprint Architect (data analysis recipe design IDE)
   data_analysis_recipe_edit_enabled: false       # Enables direct YAML editing in BLUEPRINT escape hatch
@@ -307,7 +305,7 @@ This is the most common source of confusion. The rule is simple:
 | Where is data stored on disk? | Deployment (`locations` block) |
 | Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment (`app_features_override: {data_ingestion_enabled: false}` overrides app features) |
 | What data analysis recipe is loaded at startup? | Deployment (`default_data_analysis_recipe`) |
-| Can the user switch data analysis recipes? | App features (`import_helper_enabled` + `developer_mode_enabled`) |
+| Can the user switch data analysis recipes? | App features (`data_analysis_recipe_selector.visible`) |
 
 The only feature that is jointly controlled is **data ingestion** — the deployment can disable it regardless of app features (e.g., for automated pipeline deployments where data is always pushed automatically).
 

@@ -52,7 +52,7 @@ The UI dynamically alters component availability based on the templates in `conf
 **t3_audit**: promotes filters/drops to T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, audit trail export).
 
 **App features file flags** (in `config/app_features/<app features>_template.yaml`):
-`interactivity_enabled`, `developer_mode_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
+`interactivity_enabled`, `blueprint_enabled`, `test_lab_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
 
 **`qa` app features:** Mirrors `developer` flags but sets `automation.ghost_save: false` for deterministic Playwright runs (no background ghost writes during smoke tests). It is the recommended `SPARMVET_APP_FEATURES` for CI.
 

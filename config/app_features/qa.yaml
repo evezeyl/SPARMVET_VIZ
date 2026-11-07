@@ -20,8 +20,6 @@ display_name: "QA / Test Harness"
 flags:
   # All feature flags ON — tests need access to every UI surface
   interactivity_enabled: true
-  developer_mode_enabled: true
-  wrangle_studio_enabled: true
   gallery_enabled: true
   # Can the user access the Blueprint Architect (data analysis recipe IDE)?
   blueprint_enabled: true

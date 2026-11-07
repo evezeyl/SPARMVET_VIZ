@@ -49,7 +49,7 @@ Test each app features by changing the `app_features_id` in the active config YA
 - [x] Right sidebar aqudit panel visible with "Pipeline Audit" header.
 - [x] Session Management accordion visible.
 - [x] Single Graph Export accordion visible (if `export_graph_enabled: true`).
-- [x] "Test Lab" nav item **NOT** visible (developer_mode_enabled: false).
+- [x] "Test Lab" nav item **NOT** visible (test_lab_enabled: false).
 
 ### 1d. `developer`
 - [x] All of the above PLUS "Test Lab" nav item visible.

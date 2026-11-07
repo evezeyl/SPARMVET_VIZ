@@ -1,5 +1,5 @@
 # UNIVERSAL DATA ANALYSIS RECIPE TEMPLATE (ADR-003 / ADR-014)
-id: "example_data_analysis_recipe_id"
+id: universal_template
 info:
   display_name: "Universal Template"
   category: "Template"

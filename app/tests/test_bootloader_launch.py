@@ -299,6 +299,22 @@ def test_old_app_features_key_stops_the_app_and_names_the_new_one(tmp_path, monk
     assert f"'{old}'" in err and f"'{new}'" in err
 
 
+@pytest.mark.parametrize("retired", ["wrangle_studio_enabled", "developer_mode_enabled"])
+def test_retired_flag_stops_the_app_and_says_what_to_use(tmp_path, monkeypatch, capsys, retired):
+    dep, _ = _deployment(tmp_path)
+    source = yaml.safe_load((REPO / "config" / "app_features" / "qa.yaml").read_text().replace("!include ", ""))
+    body = {k: v for k, v in source.items() if k not in ("workspaces",)}
+    body["flags"] = {**body["flags"], retired: True}
+    old_file = tmp_path / "retired_flag.yaml"
+    old_file.write_text(yaml.safe_dump(body))
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    monkeypatch.setenv("SPARMVET_APP_FEATURES", str(old_file))
+    with pytest.raises(SystemExit):
+        Bootloader()
+    err = capsys.readouterr().err
+    assert f"'{retired}'" in err and "retired" in err and "blueprint_enabled" in err
+
+
 @pytest.mark.parametrize("old, new", [("curated_data", "cache"), ("user_sessions", "user_data"),
                                       ("manifests", "data_analysis_recipes")])
 def test_old_location_key_stops_the_app_and_names_the_new_one(tmp_path, monkeypatch, capsys, old, new):

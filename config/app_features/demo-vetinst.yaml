@@ -6,8 +6,6 @@ display_name: "VetInst Demo"
 
 flags:
   interactivity_enabled: false
-  developer_mode_enabled: false
-  wrangle_studio_enabled: false
   gallery_enabled: false
   # Can the user access the Blueprint Architect (data analysis recipe IDE)?
   blueprint_enabled: false

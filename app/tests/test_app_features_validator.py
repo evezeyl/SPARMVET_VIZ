@@ -7,7 +7,6 @@ V = AppFeaturesValidator()
 _FULL_FEATURES = {
     "interactivity_enabled": True,
     "t3_sandbox_enabled": False,
-    "developer_mode_enabled": False,
     "gallery_enabled": False,
     "blueprint_enabled": False,
     "test_lab_enabled": False,

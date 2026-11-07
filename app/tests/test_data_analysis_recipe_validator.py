@@ -6,6 +6,7 @@ a new data analysis recipe added there is tested without changing this file.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_data_analysis_recipe_validator.py -q
 """
+import re
 from pathlib import Path
 from textwrap import dedent
 
@@ -50,7 +51,8 @@ analysis_groups:
 
 def _write(tmp_path: Path, body: str, name: str = "m.yaml", with_analysis: bool = True) -> Path:
     path = tmp_path / name
-    path.write_text(dedent(body) + (_ANALYSIS if with_analysis else ""))
+    text = re.sub(r"(?m)^id: .*$", f"id: {path.stem}", dedent(body))  # the id: key equals the file name
+    path.write_text(text + (_ANALYSIS if with_analysis else ""))
     return path
 
 
@@ -171,3 +173,28 @@ def test_find_data_analysis_recipes_ignores_subfolders(tmp_path):
     sub.mkdir()
     (sub / "fragment.yaml").write_text("x: 1\n")
     assert [p.name for p in find_data_analysis_recipes(tmp_path)] == ["a.yaml"]
+
+
+# --- the id: key says the same as the file name ---
+
+def test_id_that_differs_from_the_file_name_is_a_problem(tmp_path):
+    p = tmp_path / "my_file.yaml"
+    p.write_text("id: other_name\ndata_schemas: {}\njoins: {}\nanalysis_groups: {g: {plots: {}}}\n")
+    problems = validate_data_analysis_recipe(p)
+    assert [x.location for x in problems] == ["id"]
+    assert "my_file" in problems[0].tip
+
+
+def test_id_equal_to_the_file_name_is_fine(tmp_path):
+    p = tmp_path / "my_file.yaml"
+    p.write_text("id: my_file\ndata_schemas: {}\njoins: {}\nanalysis_groups: {g: {plots: {}}}\n")
+    assert validate_data_analysis_recipe(p) == []
+
+
+def test_every_shipped_data_analysis_recipe_has_its_file_name_as_id():
+    root = Path(__file__).resolve().parents[2] / "config" / "data_analysis_recipes"
+    files = [f for d in (root, *[p for p in root.iterdir() if p.is_dir()]) for f in d.glob("*.yaml")]
+    assert files
+    wrong = [str(p.relative_to(root)) for p in files
+             if any(x.location == "id" for x in validate_data_analysis_recipe(p))]
+    assert wrong == []

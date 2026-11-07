@@ -15,8 +15,6 @@ from app.modules.deployment_error import DeploymentError
 _REQUIRED_FLAGS = [
     "interactivity_enabled",
     "t3_sandbox_enabled",
-    "wrangle_studio_enabled",
-    "developer_mode_enabled",
     "gallery_enabled",
     "blueprint_enabled",
     "test_lab_enabled",

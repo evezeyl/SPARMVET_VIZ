@@ -475,7 +475,7 @@
 │   │   │   └── retest_top_n_other.yaml
 │   │   ├── templates
 │   │   │   ├── audit.yaml
-│   │   │   ├── complex_demo
+│   │   │   ├── complex_template
 │   │   │   │   ├── final_contract.yaml
 │   │   │   │   ├── genomics_input.yaml
 │   │   │   │   ├── genomics_wrangling.yaml
