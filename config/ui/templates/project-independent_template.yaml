@@ -1,8 +1,6 @@
 # UI Persona: Project Independent
-persona_name: "project-independent"
 persona_id: "project-independent"
 display_name: "Project Independent User"
-logic_access: "Advanced"
 theme_css: "config/ui/theme.css"
 
 features:
@@ -49,7 +47,6 @@ testing_mode: true
 automation:
   ghost_save:
     enabled: true
-    frequency_minutes: 2
 
 workspaces:
   home:

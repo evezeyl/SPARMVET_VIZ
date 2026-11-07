@@ -527,15 +527,6 @@ class Bootloader:
         """Returns automation settings (e.g., ghost_save frequency)."""
         return self.automation.get(key, {}).get(subkey)
 
-    def get_script_path(self, key: str) -> Path:
-        """Resolves system script paths from connector config (ADR-032)."""
-        mapping = self.connector_config.get("scripts", {})
-        path_str = mapping.get(key)
-        if not path_str:
-            raise KeyError(
-                f"Script key '{key}' not found in connector 'scripts' block.")
-        return Path(path_str)
-
     def get_python_path(self) -> str:
         """Retrieves the configured Python interpreter path (ADR-031)."""
         runtime = self.connector_config.get("runtime", {})

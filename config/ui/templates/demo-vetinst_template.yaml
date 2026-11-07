@@ -1,10 +1,8 @@
 # UI Persona: VetInst Demo
 # Minimal read-only exploration view for demonstrations.
 # No data import, no export panel, no persona badge — clean presentation layer.
-persona_name: "demo-vetinst"
 persona_id: "demo-vetinst"
 display_name: "VetInst Demo"
-logic_access: "Basic"
 theme_css: "assets/demo/demo_vetinst.css"
 
 features:

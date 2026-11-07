@@ -1,8 +1,6 @@
 # UI Persona: Developer Mode
-persona_name: "developer"
 persona_id: "developer"
 display_name: "Workflow Developer"
-logic_access: "Full"
 theme_css: "config/ui/theme.css"
 
 features:
@@ -49,11 +47,12 @@ testing_mode: true
 automation:
   ghost_save:
     enabled: true
-    frequency_minutes: 2
 
 # BLUEPRINT AI Agent Helper (ADR-076). Active only when features.blueprint_agent_enabled
 # is true AND the configured backend initialises successfully (auth probe, binary present).
 # On any init failure the bootloader falls back to DisabledAdapter and hides the chat panel.
+# model, api_key_env, endpoint and gallery_awareness below are reserved for the claude_api and
+# local backends, which are not implemented yet (task CONFIG-AGENT-BACKENDS-1); only claude_cli runs.
 blueprint_agent:
   enabled: true
   backend: "claude_cli"             # claude_cli | claude_api | local | disabled

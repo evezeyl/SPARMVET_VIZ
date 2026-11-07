@@ -14,10 +14,8 @@
 #     reference persona
 #
 # Launch: `SPARMVET_PERSONA=qa ./.venv/bin/python -m shiny run app/src/main.py`
-persona_name: "qa"
 persona_id: "qa"
 display_name: "QA / Test Harness"
-logic_access: "Full"
 theme_css: "config/ui/theme.css"
 
 features:
@@ -57,12 +55,13 @@ automation:
     # mid-test and create non-determinism. Tests that need ghost-save
     # behaviour invoke session_manager.write_t3_ghost() explicitly.
     enabled: false
-    frequency_minutes: 0
 
 # BLUEPRINT AI Agent Helper (ADR-076). Active in QA so the chat panel and
 # adapter init paths are exercised in headless smoke tests. Tests that need
 # deterministic responses should mock the adapter rather than rely on a live
 # backend — the default backend below is `disabled` for that reason.
+# model, api_key_env, endpoint and gallery_awareness below are reserved for the claude_api and
+# local backends, which are not implemented yet (task CONFIG-AGENT-BACKENDS-1); only claude_cli runs.
 blueprint_agent:
   enabled: true
   backend: "disabled"               # QA mocks the adapter; flip to claude_cli for manual runs

@@ -55,10 +55,6 @@ locations:
   # Location 5 — Gallery assets (read-only).
   gallery: "gallery/"
 
-scripts:
-  # Leave paths as-is; they are relative to project_root.
-  test_data_gen: "libs/test_lab/src/test_lab/aqua_synthesizer.py"
-  excel_parser: "libs/ingestion/src/ingestion/excel_handler.py"
 
 runtime:
   # On Connect the interpreter is resolved by rsconnect. Do not change.

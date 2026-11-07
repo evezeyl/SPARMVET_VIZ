@@ -1,8 +1,6 @@
 # UI Persona: Pipeline Exploration Advanced
-persona_name: "pipeline-exploration-advanced"
 persona_id: "pipeline-exploration-advanced"
 display_name: "Pipeline Exploration - Advanced"
-logic_access: "Advanced"
 theme_css: "config/ui/theme.css"
 
 features:
@@ -49,7 +47,6 @@ testing_mode: true
 automation:
   ghost_save:
     enabled: true
-    frequency_minutes: 2
 
 workspaces:
   home:

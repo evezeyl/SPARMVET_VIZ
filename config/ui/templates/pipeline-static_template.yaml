@@ -1,8 +1,6 @@
 # UI Persona: Pipeline Static
-persona_name: "pipeline-static"
 persona_id: "pipeline-static"
 display_name: "Automated Pipeline - Static"
-logic_access: "None"
 theme_css: "config/ui/theme.css"
 
 features:
@@ -52,7 +50,6 @@ testing_mode: false
 automation:
   ghost_save:
     enabled: false
-    frequency_minutes: 1
 
 workspaces:
   home:
