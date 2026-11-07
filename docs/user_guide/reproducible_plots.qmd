@@ -48,7 +48,7 @@ Ask for a new arrangement every time (for exploring only):
 
 ## What your export contains
 
-The export bundle holds a **copy of your data analysis recipe** (the `recipes` folder). A reader can reproduce your picture from it:
+The export bundle holds a **copy of your data analysis recipe** (the `steps` folder). A reader can reproduce your picture from it:
 
 | What the data analysis recipe says | Can a reader reproduce the exact picture? |
 |---|---|

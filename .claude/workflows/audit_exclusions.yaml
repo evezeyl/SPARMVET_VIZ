@@ -144,7 +144,7 @@ parity_coverage:
 
 data_analysis_recipe_coherence:
 
-  # Join keys that are legitimately used in assembly recipes but are produced
+  # Join keys that are legitimately used in assembly steps but are produced
   # by wrangling steps rather than declared as top-level input_fields slugs.
   # The static checker cannot trace column provenance through assembly steps,
   # so these are accepted as known-good.

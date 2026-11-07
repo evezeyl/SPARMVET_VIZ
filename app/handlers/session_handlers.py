@@ -35,7 +35,7 @@ def define_session_server(input, output, session, *,
     current_app_features : reactive.Value[str]
         Active launch app features (hyphen form, e.g. "pipeline-exploration-advanced").
     home_state : reactive.Value[dict] | None
-        Shared home dashboard state (data_analysis_recipe_sha256, t3_recipe_by_plot, etc.).
+        Shared home dashboard state (data_analysis_recipe_sha256, t3_audit_steps_by_plot, etc.).
     safe_input : callable | None
         safe_input(input, key, default) — used by the active-session export
         download to read project_id for the filename. Optional for back-compat.
@@ -271,7 +271,7 @@ def define_session_server(input, output, session, *,
         if current_msig and saved_msig and current_msig != saved_msig:
             _notify(
                 "⚠️ Session was saved against a different data analysis recipe version. "
-                "Recipe nodes may not match current columns.",
+                "Audit step may not match current columns.",
                 type="warning", duration=8,
             )
 
@@ -279,15 +279,15 @@ def define_session_server(input, output, session, *,
         t3_ghosts = session_manager.list_t3_ghosts(session_key)
         if t3_ghosts:
             # Restore most-recent T3 ghost into home_state.
-            # Phase 22-J: list_t3_ghosts emits both flat t3_recipe (legacy) and
-            # t3_recipe_by_plot (current). Legacy ghosts have nodes bucketed
+            # Phase 22-J: list_t3_ghosts emits both flat t3_audit_steps (legacy) and
+            # t3_audit_steps_by_plot (current). Legacy ghosts have nodes bucketed
             # under "__legacy__" — they're surfaced as orphans in the audit
             # panel until the user re-targets or deletes them.
             latest = t3_ghosts[0]
-            by_plot = latest.get("t3_recipe_by_plot") or {}
+            by_plot = latest.get("t3_audit_steps_by_plot") or {}
             new_state = {
                 **state,
-                "t3_recipe_by_plot": by_plot,
+                "t3_audit_steps_by_plot": by_plot,
                 "t3_plot_overrides": latest.get("t3_plot_overrides", {}),
                 "tier_toggle": latest.get("tier_toggle", "T2"),
                 "t3_ghost_file": latest.get("file", ""),

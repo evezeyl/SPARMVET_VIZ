@@ -20,7 +20,7 @@ def test_gallery_filtering():
     pivot = idx["pivot"]
     registry = idx["registry"]
 
-    print(f"Index loaded. Total recipes: {len(registry)}")
+    print(f"Index loaded. Total examples: {len(registry)}")
 
     # Simulated Filters
     sel_families = ["Distribution"]
@@ -61,7 +61,7 @@ def test_gallery_filtering():
             if path.exists():
                 print(f"   [OK] Data analysis recipe exists: {path}")
                 # Verify metadata
-                md_path = path.parent / "recipe_meta.md"
+                md_path = path.parent / "example_meta.md"
                 if md_path.exists():
                     print(f"   [OK] Metadata exists: {md_path}")
                 else:

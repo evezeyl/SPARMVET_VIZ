@@ -1,5 +1,5 @@
 """app/tests/test_session_manager.py
-Unit tests for SessionManager and RecipeNode helpers.
+Unit tests for SessionManager and AuditStep helpers.
 
 Run:
     ./.venv/bin/python -m pytest app/tests/test_session_manager.py -v
@@ -20,10 +20,10 @@ import pytest
 
 from app.modules.session_manager import (
     SessionManager,
-    make_recipe_node,
+    make_audit_step,
     node_blocks_apply,
     gatekeeper_blocked,
-    recipe_sha256,
+    audit_steps_sha256,
 )
 
 
@@ -230,10 +230,10 @@ def test_restore_t1t2_reassemble(sm, data_analysis_recipe_file, source_files):
 
 def test_write_list_t3_ghosts(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    recipe = [make_recipe_node("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
+    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
 
-    p1 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", recipe, {}, label="first")
-    p2 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", recipe, {}, label="second")
+    p1 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="first")
+    p2 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="second")
 
     ghosts = sm.list_t3_ghosts(key)
     assert len(ghosts) == 2
@@ -302,11 +302,11 @@ def test_delete_session(sm, data_analysis_recipe_file, source_files):
 
 
 # ---------------------------------------------------------------------------
-# RecipeNode helpers
+# AuditStep helpers
 # ---------------------------------------------------------------------------
 
-def test_make_recipe_node_defaults():
-    node = make_recipe_node("filter_row", {"column": "x", "op": "eq", "value": "a"})
+def test_make_audit_step_defaults():
+    node = make_audit_step("filter_row", {"column": "x", "op": "eq", "value": "a"})
     assert node["active"] is True
     assert node["reason"] == ""
     assert "id" in node
@@ -314,50 +314,50 @@ def test_make_recipe_node_defaults():
 
 
 def test_node_blocks_apply_empty_reason():
-    node = make_recipe_node("filter_row", {}, reason="")
+    node = make_audit_step("filter_row", {}, reason="")
     assert node_blocks_apply(node) is True
 
 
 def test_node_blocks_apply_filled_reason():
-    node = make_recipe_node("filter_row", {}, reason="Outlier removed.")
+    node = make_audit_step("filter_row", {}, reason="Outlier removed.")
     assert node_blocks_apply(node) is False
 
 
 def test_node_blocks_apply_aesthetic_never_blocks():
-    node = make_recipe_node("aesthetic_override", {}, reason="")
+    node = make_audit_step("aesthetic_override", {}, reason="")
     assert node_blocks_apply(node) is False
 
 
 def test_node_blocks_apply_inactive_never_blocks():
-    node = make_recipe_node("filter_row", {}, reason="")
+    node = make_audit_step("filter_row", {}, reason="")
     node["active"] = False
     assert node_blocks_apply(node) is False
 
 
 def test_gatekeeper_blocked():
-    recipe = [
-        make_recipe_node("filter_row", {}, reason="ok"),
-        make_recipe_node("exclusion_row", {}, reason=""),
-        make_recipe_node("drop_column", {"column": "x"}, reason=""),
-        make_recipe_node("aesthetic_override", {}, reason=""),
+    audit_steps = [
+        make_audit_step("filter_row", {}, reason="ok"),
+        make_audit_step("exclusion_row", {}, reason=""),
+        make_audit_step("drop_column", {"column": "x"}, reason=""),
+        make_audit_step("aesthetic_override", {}, reason=""),
     ]
-    blocked = gatekeeper_blocked(recipe)
+    blocked = gatekeeper_blocked(audit_steps)
     assert len(blocked) == 2
-    assert recipe[1]["id"] in blocked
-    assert recipe[2]["id"] in blocked
+    assert audit_steps[1]["id"] in blocked
+    assert audit_steps[2]["id"] in blocked
 
 
-def test_recipe_sha256_active_only():
-    recipe = [
-        make_recipe_node("filter_row", {}, reason="kept"),
-        {**make_recipe_node("exclusion_row", {}, reason="gone"), "active": False},
+def test_transformation_sha256_active_only():
+    audit_steps = [
+        make_audit_step("filter_row", {}, reason="kept"),
+        {**make_audit_step("exclusion_row", {}, reason="gone"), "active": False},
     ]
-    h = recipe_sha256(recipe)
+    h = audit_steps_sha256(audit_steps)
     assert isinstance(h, str) and len(h) == 64
 
     # Removing inactive node should not change the hash
-    recipe2 = [recipe[0]]
-    assert recipe_sha256(recipe) == recipe_sha256(recipe2)
+    recipe2 = [audit_steps[0]]
+    assert audit_steps_sha256(audit_steps) == audit_steps_sha256(recipe2)
 
 
 # ---------------------------------------------------------------------------
@@ -394,8 +394,8 @@ def test_stored_assembly_ghost_key_names(sm, data_analysis_recipe_file, source_f
 def test_stored_t3_ghost_key_names(sm):
     import json
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    node = make_recipe_node("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")
+    node = make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")
     path = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", [node], {}, label="x")
     raw = json.loads(Path(path).read_text())
     assert {"session_key", "data_analysis_recipe_id", "data_analysis_recipe_sha256", "data_batch_hash", "saved_at",
-            "tier_toggle", "t3_recipe", "t3_plot_overrides"} <= set(raw)
+            "tier_toggle", "t3_audit_steps", "t3_plot_overrides"} <= set(raw)

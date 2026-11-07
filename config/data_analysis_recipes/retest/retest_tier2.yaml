@@ -27,7 +27,7 @@ joins:
   Result:
     ingredients:
       - dataset_id: Samples
-    recipe:
+    steps:
       tier1: []            # EDIT HERE (test 3): move the tier2 step below up to this list
       tier2:               # EDIT HERE (tests 2 and 4): change min: 10 to another number
         - action: filter_range
@@ -36,7 +36,7 @@ joins:
   All_samples:
     ingredients:
       - dataset_id: Samples
-    recipe:
+    steps:
       tier1: []
       tier2: []
 

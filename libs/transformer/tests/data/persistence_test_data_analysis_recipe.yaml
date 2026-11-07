@@ -55,7 +55,7 @@ joins:
     ingredients:
     - dataset_id: SourceA
     - dataset_id: SourceB
-    recipe:
+    steps:
     - action: join
       right_ingredient: SourceB
       'on': id

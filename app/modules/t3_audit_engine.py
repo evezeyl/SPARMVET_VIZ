@@ -1,4 +1,4 @@
-"""app/modules/t3_recipe_engine.py
+"""app/modules/t3_audit_engine.py
 Pure helpers extracted from home_theater.py (Phase 24-A, ADR-051).
 
 Two-Category Law (ADR-045): this module is a non-Shiny module

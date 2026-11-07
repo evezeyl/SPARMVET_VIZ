@@ -11,7 +11,7 @@ directory_taxonomy:
   input_fields: "Defines raw incoming schemas (keys: type, original_name, role)."
   wrangling: "Defines Tier 1/Tier 2 transformations for individual data sources."
   output_fields: "Defines the terminal contract schemas (dict of slug: {type, ...})."
-  join: "Contains the join recipe file(s) for joining multiple ingredients into a collection anchor. Top-level data analysis recipe key: joins:."
+  join: "Contains the join steps file(s) for joining multiple ingredients into a collection anchor. Top-level data analysis recipe key: joins:."
   plots: "Contains visualization spec files for analysis_groups. Each file has a single 'spec:' root key."
 
 constructor_standard:
@@ -24,7 +24,7 @@ yaml_resilience:
   quoting_policy: "ALWAYS quote join keys: write 'on': not on:. 'on' unquoted is parsed as boolean True and silently corrupts join steps."
   shorthand_prohibition: "NEVER use action-name-as-key shorthand (e.g., '- join: {...}', '- mutate: [...]'). ALL steps must use the 'action:' key. Shorthand is silently skipped — no error is raised."
 
-canonical_recipe_syntax:
+canonical_steps_syntax:
   mandatory_key: "Every step MUST have an 'action:' key."
   join_step:
     correct: "- action: join\n  right_ingredient: <dataset_id>\n  'on': <column>\n  how: inner"

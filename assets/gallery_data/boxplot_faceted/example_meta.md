@@ -3,7 +3,7 @@
 > 📊 Comparison · 🔢 1 Numeric, 2 Categorical (Faceted) · 📈 Intermediate · ⚙️ geom_boxplot · 🎯 distribution · 📏 medium+
 
 ### Suitability
-Breaking down distribution by species using facets. A 'Comparative' recipe.
+Breaking down distribution by species using facets. A 'Comparative' example.
 
 ### Data Schema (Tier 1)
 - `example_data.tsv` contains headers: id, amr_class, mic_value, species

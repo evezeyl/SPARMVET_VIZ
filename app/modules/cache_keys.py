@@ -79,20 +79,20 @@ def tier1_material(raw: dict) -> dict:
     if isinstance(joins, dict):
         stripped = {}
         for join_id, spec in joins.items():
-            recipe = spec.get("recipe") if isinstance(spec, dict) else None
-            if isinstance(recipe, dict) and "tier2" in recipe:
-                spec = {**spec, "recipe": {k: v for k, v in recipe.items() if k != "tier2"}}
+            steps = spec.get("steps") if isinstance(spec, dict) else None
+            if isinstance(steps, dict) and "tier2" in steps:
+                spec = {**spec, "steps": {k: v for k, v in steps.items() if k != "tier2"}}
             stripped[join_id] = spec
         material["joins"] = stripped
     return material
 
 
 def tier2_steps(raw: dict, join_id: str) -> list:
-    """The tier2 steps of one join's recipe (empty when there are none: T2 equals T1)."""
+    """The tier2 steps of one join's step list (empty when there are none: T2 equals T1)."""
     joins = raw.get("joins")
     spec = joins.get(join_id) if isinstance(joins, dict) else None
-    recipe = spec.get("recipe") if isinstance(spec, dict) else None
-    steps = recipe.get("tier2") if isinstance(recipe, dict) else None
+    steps = spec.get("steps") if isinstance(spec, dict) else None
+    steps = steps.get("tier2") if isinstance(steps, dict) else None
     return list(steps) if steps else []
 
 

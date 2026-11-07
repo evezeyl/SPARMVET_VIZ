@@ -108,7 +108,7 @@ Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mi
 
 ### `debug_assembler.py` — Test a pipeline assembly (Layer 2)
 
-Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, executes the assembly recipe (joins), and applies the `final_contract`. Mirrors orchestrator behaviour exactly.
+Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, executes the assembly steps (joins), and applies the `final_contract`. Mirrors orchestrator behaviour exactly.
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
@@ -149,7 +149,7 @@ Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, 
 
 ### `debug_runner.py` — Test a single viz component
 
-Tests one VizFactory component from a recipe data analysis recipe. Prints a data glimpse and saves the rendered plot.
+Tests one VizFactory component from a step list data analysis recipe. Prints a data glimpse and saves the rendered plot.
 
 ```bash
 ./.venv/bin/python libs/viz_factory/tests/debug_runner.py \
@@ -173,7 +173,7 @@ No file I/O — runs fully in-memory, prints PASS/FAIL to stdout.
 
 ### `debug_phase3_refinements.py` — Test persistence hashing
 
-Verifies the `sink_parquet` short-circuit logic: first run materialises, second run short-circuits, third run with a changed recipe invalidates the cache.
+Verifies the `sink_parquet` short-circuit logic: first run materialises, second run short-circuits, third run with a changed step list invalidates the cache.
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_phase3_refinements.py
@@ -269,7 +269,7 @@ Audits the viz_factory component registry for coverage gaps relative to the task
 
 ### `debug_bulk_sync.py` — Gallery bulk sync
 
-Runs a bulk synchronization pass over `assets/gallery_data/` recipe data analysis recipes to ensure gallery components are in sync with the registry.
+Runs a bulk synchronization pass over `assets/gallery_data/` example data analysis recipes to ensure gallery components are in sync with the registry.
 
 ```bash
 ./.venv/bin/python libs/viz_factory/tests/debug_bulk_sync.py

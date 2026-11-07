@@ -88,7 +88,7 @@ Never use shorthand like `- cast: {...}`. It is silently ignored.
 
 **Assembly join steps — use `right_ingredient:` not `dataset_id:`, quote `'on'`:**
 ```yaml
-recipe:
+steps:
   - action: join
     right_ingredient: metadata_schema
     'on': sample_id

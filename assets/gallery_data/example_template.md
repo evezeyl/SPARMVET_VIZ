@@ -1,4 +1,4 @@
-## [Recipe Name]
+## [Example Name]
 
 > 📊 [Family: Distribution | Correlation | Comparison | Ranking | Evolution | Part-to-Whole] · 🔢 [Data Pattern] · 📈 [Simple | Intermediate | Advanced]
 

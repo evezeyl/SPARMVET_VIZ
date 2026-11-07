@@ -470,9 +470,9 @@ class WrangleStudio:
             # 1. Check Assemblies (Tier 2 Junctions)
             join_defs = full_cfg.get("joins", {})
             if node_id in join_defs:
-                recipe = join_defs[node_id].get("recipe", [])
+                steps = join_defs[node_id].get("steps", [])
                 from transformer.data_wrangler import DataWrangler
-                found_logic = DataWrangler._resolve_tier(recipe, "tier1")
+                found_logic = DataWrangler._resolve_tier(steps, "tier1")
                 self.active_viz_id.set(None)  # Not a plot
 
             # 2. Check Plots (Terminals)
@@ -511,7 +511,7 @@ class WrangleStudio:
             Logic application rules:
             - wrangling / plot_wrangling: apply logic_stack (transform raw ingredient)
             - assembly / output_fields / input_fields / plot_spec: serve parquet as-is
-              (parquet IS the final product — re-applying recipe would double-transform)
+              (parquet IS the final product — re-applying step list would double-transform)
             """
             anchor_path_str = self.active_anchor_path.get()
             if not anchor_path_str:

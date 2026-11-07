@@ -5,7 +5,7 @@ info:
   subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
   category: AMR Research
   description: Hyper-modular data analysis recipe structure with dedicated subdirectories and
-    annotated assembly recipes.
+    annotated assembly steps.
   version: '1.8'
 
 # ── Data Schemas ──────────────────────────────────────────────────────────────
@@ -151,38 +151,38 @@ metadata_schema:
   output_fields: !include '1_test_data_ST22_dummy/output_fields/metadata_schema_output_fields.yaml'
 
 # ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
-# Simple joins: see wrangling/ for each recipe.
+# Simple joins: see wrangling/ for each step list.
 # Complex assemblies (ST22_Anchor, AR1) also have final_contract in output_fields/.
 joins:
   FastP_with_metadata:
     ingredients:
     - dataset_id: FastP
     - dataset_id: metadata_schema
-    recipe: !include '1_test_data_ST22_dummy/wrangling/FastP_Metadata_wrangling.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/FastP_Metadata_wrangling.yaml'
 
   Quast_with_metadata:
     ingredients:
     - dataset_id: Quast
     - dataset_id: metadata_schema
-    recipe: !include '1_test_data_ST22_dummy/wrangling/Quast_Metadata_wrangling.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/Quast_Metadata_wrangling.yaml'
 
   Bracken_with_metadata:
     ingredients:
     - dataset_id: Bracken
     - dataset_id: metadata_schema
-    recipe: !include '1_test_data_ST22_dummy/wrangling/Bracken_Metadata_wrangling.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/Bracken_Metadata_wrangling.yaml'
 
   ResFinder_with_metadata:
     ingredients:
     - dataset_id: ResFinder
     - dataset_id: metadata_schema
-    recipe: !include '1_test_data_ST22_dummy/wrangling/ResFinder_Metadata_wrangling.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/ResFinder_Metadata_wrangling.yaml'
 
   MLST_with_metadata:
     ingredients:
     - dataset_id: MLST
     - dataset_id: metadata_schema
-    recipe: !include '1_test_data_ST22_dummy/wrangling/MLST_Metadata_wrangling.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/MLST_Metadata_wrangling.yaml'
 
   QC_Reads_Anchor:
     ingredients:
@@ -190,7 +190,7 @@ joins:
     - dataset_id: Quast
     - dataset_id: Bracken
     - dataset_id: metadata_schema
-    recipe: !include '1_test_data_ST22_dummy/wrangling/QC_Reads_Anchor_wrangling.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/QC_Reads_Anchor_wrangling.yaml'
 
   Summary_phenotype_length_fragmentation:
     info: 'Demo: Assembly to prepare plot attempting to link some predicted phenotype
@@ -199,7 +199,7 @@ joins:
     ingredients:
     - dataset_id: Summary
     - dataset_id: Summary_quality
-    recipe: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
+    steps: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
     output_fields: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly_output_fields.yaml'
 
   ST22_Anchor:
@@ -211,7 +211,7 @@ joins:
     - dataset_id: MLST
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
-    recipe: !include '1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling.yaml'
     final_contract: !include '1_test_data_ST22_dummy/output_fields/ST22_Anchor_final_output_fields.yaml'
 
   AR1_MLST_Serotype_Virulence:
@@ -221,7 +221,7 @@ joins:
     - dataset_id: metadata_schema
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
-    recipe: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
     final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
 
 # ── Analysis Groups ───────────────────────────────────────────────────────────

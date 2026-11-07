@@ -30,32 +30,32 @@ def test_hashing_and_shortcircuit(parquet_path: str = "tmp/phase3_test_hash.parq
     if os.path.exists(parquet_path):
         os.remove(parquet_path)
 
-    recipe = [
+    steps = [
         {"action": "sink_parquet", "path": parquet_path, "force_recompute": False}
     ]
 
     # 1. First run: Should materialize
     assembler = DataAssembler(ingredients)
     print("▶ Run 1 (Initial Materialization)")
-    assembler.assemble(recipe)
+    assembler.assemble(steps)
 
     # Check if hash is in metadata
     from utils.hashing import get_parquet_metadata_hash
     h1 = get_parquet_metadata_hash(parquet_path)
     print(f"✅ Metadata Hash found: {h1}")
 
-    # 2. Second run: Same recipe, should short-circuit
-    print("\n▶ Run 2 (Same Recipe - Expect Short-Circuit)")
+    # 2. Second run: Same step list, should short-circuit
+    print("\n▶ Run 2 (Same Step list - Expect Short-Circuit)")
     # We should see the log message from DataAssembler
-    assembler.assemble(recipe)
+    assembler.assemble(steps)
 
-    # 3. Third run: Modified recipe, should invalidate cache
-    print("\n▶ Run 3 (Recipe Change - Expect Cache Invalidation)")
-    recipe_new = [
+    # 3. Third run: Modified step list, should invalidate cache
+    print("\n▶ Run 3 (Step list Change - Expect Cache Invalidation)")
+    steps_new = [
         {"action": "filter_eq", "column": "sample_id", "value": "S1"},
         {"action": "sink_parquet", "path": parquet_path, "force_recompute": False}
     ]
-    assembler.assemble(recipe_new)
+    assembler.assemble(steps_new)
 
 
 def test_malformed_gatekeeping():

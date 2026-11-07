@@ -35,7 +35,7 @@ The ask "leverage R" can mean two different things with different solutions:
 
 | Motivation | What it really needs | Solution category |
 |---|---|---|
-| **(a) Colleagues author in R** and want their ggplot2 recipes to run in the app | Accept raw ggplot2 snippets as an input | Ingestion / escape-hatch (see Option C) |
+| **(a) Colleagues author in R** and want their ggplot2 step lists to run in the app | Accept raw ggplot2 snippets as an input | Ingestion / escape-hatch (see Option C) |
 | **(b) Want R-only geoms / fidelity** (ggalluvial, ggsankey, ggraph, sf maps) that plotnine lacks | An R rendering path for specific chart families | Backend (see Option A / B) |
 
 Worth confirming which one is actually driving the interest — they lead to different builds.
@@ -75,7 +75,7 @@ Every plot spec can render through either backend; deployment or app features ch
 
 ### Option C — ggplot2-snippet escape hatch (ingestion, not a backend)
 
-Accept a raw ggplot2 code block in a manifest/recipe (analogous to the T3 `developer_raw_yaml` escape hatch), rendered via `Rscript`. Serves motivation (a) directly.
+Accept a raw ggplot2 code block in a manifest/steps (analogous to the T3 `developer_raw_yaml` escape hatch), rendered via `Rscript`. Serves motivation (a) directly.
 
 - **Pros:** lowest architectural commitment; meets "I wrote this in R, just run it"; no transpiler.
 - **Cons:** breaks the declarative-spec model (arbitrary R code, not introspectable by Blueprint); a security/sandbox concern (executing user R); not portable to the form-driven IDE.

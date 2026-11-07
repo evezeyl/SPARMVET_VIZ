@@ -266,3 +266,12 @@ nouns:
 # Paths whose new name depends on the area of the bare word (decided by hand).
 paths_exact:
   libs/id_reconciliation/src/id_reconciliation/recipe.py: libs/id_reconciliation/src/id_reconciliation/id_transformation.py
+
+# Clean-up of grammar after the recipe rewrite (applied to every text file, idempotent).
+recipe_postfix:
+  - ['\bstep lists? steps\b', 'steps']
+  - ['\bstep lists? step\b', 'step']
+  - ['\b(audit steps|steps|tier1 steps|tier2 steps|join steps|wrangling steps) steps\b', '\1']
+  - ['\bstep list card\b', 'data analysis recipe card']
+  - ['\b([Aa]) ([Ee]xample|audit|id transformation|AuditStep|IdTransformation)', '\1n \2']
+  - ['\b([Aa])n (step list|steps)\b', '\1 \2']

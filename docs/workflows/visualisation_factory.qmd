@@ -56,9 +56,9 @@ plots:
 - `in` (Membership check — value must be a list)
 - `not_in` (Exclusion check — value must be a list)
 
-These operators are the UI contract between the Filter Recipe Builder (`home_theater.py`) and VizFactory. The `dtype` key from the filter recipe is stripped before injection — VizFactory operates on raw column values only.
+These operators are the UI contract between the Filter builder (`home_theater.py`) and VizFactory. The `dtype` key from the filter step list is stripped before injection — VizFactory operates on raw column values only.
 
-## 4. Concrete User Recipes (Registry)
+## 4. Concrete User Step lists (Registry)
 
 The registry actively maintains 120+ components. Below is the full inventory of implemented elements:
 

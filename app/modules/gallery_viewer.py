@@ -31,7 +31,7 @@ class GalleryViewer:
                     "Your analysis is ready for sharing. Please verify the documentation triplet:"),
                 ui.div(
                     ui.input_checkbox(
-                        "check_yaml", "✅ Recipe Logic (.yaml)", value=True),
+                        "check_yaml", "✅ Example Logic (.yaml)", value=True),
                     ui.input_checkbox(
                         "check_tsv", "✅ Reference Data (.tsv)", value=True),
                     ui.input_checkbox(
@@ -61,7 +61,7 @@ class GalleryViewer:
             easy_close=True
         )
 
-    def split_viewer_layout(self, recipe_id="active"):
+    def split_viewer_layout(self, example_id="active"):
         """
         Implements the ADR-033 Vertical Stack UI for Maximized Previews.
         Top: Technical (Full Width) / Bottom: Educational (Guidance Underneath).
@@ -78,7 +78,7 @@ class GalleryViewer:
                         ui.nav_panel("Data Sample",
                                      ui.div(ui.output_ui("gallery_static_data"),
                                             style="max-height: 650px; overflow: auto;")),
-                        ui.nav_panel("YAML Recipe",
+                        ui.nav_panel("YAML Example",
                                      ui.output_text_verbatim("gallery_yaml_preview")),
                         id="gallery_tech_tabs"
                     ),
@@ -140,9 +140,9 @@ class GalleryViewer:
 
     def build_sidebar_ui(self):
         """
-        Gallery filter + recipe selector UI for the left nav_sidebar.
+        Gallery filter + example selector UI for the left nav_sidebar.
         ADR-057: moved from internal layout_sidebar to persistent nav_sidebar accordion.
-        Choices are read dynamically from gallery_index.json pivot so new recipe
+        Choices are read dynamically from gallery_index.json pivot so new example
         families/patterns appear automatically without code changes.
         """
         pivot = self._load_pivot()
@@ -179,10 +179,10 @@ class GalleryViewer:
 
         return ui.accordion(
             ui.accordion_panel(
-                "👨‍🍳 Recipe",
+                "👨‍🍳 Example",
                 ui.input_select(
-                    "gallery_recipe_select",
-                    ui.span("Select a Recipe", class_="fw-bold"),
+                    "gallery_example_select",
+                    ui.span("Select an Example", class_="fw-bold"),
                     choices={}
                 ),
                 ui.input_action_button(
@@ -190,7 +190,7 @@ class GalleryViewer:
                     ui.HTML('<i class="bi bi-copy"></i> Clone to Sandbox'),
                     class_="btn-primary w-100 mt-2"
                 ),
-                value="gallery_recipe_panel",
+                value="gallery_example_panel",
             ),
             ui.accordion_panel(
                 "🔍 Gallery Taxonomy",
@@ -238,7 +238,7 @@ class GalleryViewer:
             ),
             id="gallery_sidebar_accordion",
             multiple=True,
-            open=["gallery_recipe_panel", "gallery_taxonomy_panel"],
+            open=["gallery_example_panel", "gallery_taxonomy_panel"],
         )
 
     def render_explorer_ui(self):
@@ -250,8 +250,8 @@ class GalleryViewer:
             ui.div(
                 ui.span("📚 Gallery Inspiration", class_="banner-title"),
                 ui.span(
-                    "Browse visual recipes for inspiration. "
-                    "Did you see a nice figure? Send us a request for recipe implementation.",
+                    "Browse visual examples for inspiration. "
+                    "Did you see a nice figure? Send us a request for example implementation.",
                     class_="banner-subtitle"
                 ),
                 class_="view-title-banner"
@@ -269,7 +269,7 @@ class GalleryViewer:
         headers = [
             "![Final Visualization](preview_plot.png)",
             "",
-            "# Recipe Meta: Autofilled from Session Audit",
+            "# Example Meta: Autofilled from Session Audit",
             "## Family (Purpose): [Distribution | Correlation | Comparison | Ranking]",
             "## Data Pattern: [1 Numeric | 2 Numeric | 1 Numeric, 1 Categorical]",
             "## Difficulty: [Simple | Intermediate | Advanced]",
@@ -285,7 +285,7 @@ class GalleryViewer:
             "- Columns required for visualization mappings.",
             "",
             "## 3. Transformation Logic (Tier 2 Logic)",
-            "The following logic nodes were utilized in this recipe:"
+            "The following logic nodes were utilized in this example:"
         ]
 
         for i, node in enumerate(audit_stack):

@@ -1,6 +1,6 @@
 ---
 title: "ADR-066: Reproducibility Hash Schema"
-subtitle: "Three-layer fingerprinting for data analysis recipe, data, and wrangling recipe"
+subtitle: "Three-layer fingerprinting for data analysis recipe, data, and wrangling steps"
 ---
 
 ## Status
@@ -27,7 +27,7 @@ Each question requires a separate hash. No single hash can answer all three.
 
 ### 1. Stage keys (`tier1_key`, `tier2_key`) — processing fingerprint
 
-*Replaces the former `decision_hash` (a hash of the assembly recipe only), see ADR-089.*
+*Replaces the former `decision_hash` (a hash of the assembly steps only), see ADR-089.*
 
 **What they hash:** the `tier1_key` covers the engine version, the **resolved data analysis recipe** (every included file merged, without the downstream-only parts) and the data content. The `tier2_key` covers the `tier1_key` and the join's `tier2` steps. Each key contains the one before it, so a change upstream changes every key after it.
 
@@ -107,14 +107,14 @@ flowchart LR
 | Key | Inputs | Stored as |
 |---|---|---|
 | `tier1_key` | engine cache version (and the installed `polars` and `transformer` versions); the **resolved data analysis recipe** without the downstream-only parts; `data_batch_hash` | Tier 1 parquet, key in the file metadata (`sparmvet_decision_hash`) |
-| `tier2_key` | `tier1_key`; the `tier2` steps of that join's recipe | Tier 2 parquet `<name>__T2.parquet` (nothing when `tier2` is empty: T2 equals T1) |
+| `tier2_key` | `tier1_key`; the `tier2` steps of that join's step list | Tier 2 parquet `<name>__T2.parquet` (nothing when `tier2` is empty: T2 equals T1) |
 | plot input | `tier2_key`; the plot spec; `plot_defaults`; the palette registry | not stored |
 
 The **resolved data analysis recipe** is what `ConfigManager` returns after every `!include` is merged, as if all the fragments were concatenated into one file. It is written in a canonical form (sorted keys), so comments, spacing and how the data analysis recipe is split into files do not change the key.
 
 ### The fail-safe rule
 
-The Tier 1 key covers **everything in the resolved data analysis recipe except a short list of known downstream parts**: `info`, `analysis_groups`, `plot_defaults`, plots, and the `tier2` steps of the join recipes. A new or unknown section is part of Tier 1 automatically. A wrong guess can therefore only cause an extra recompute, never a stale result.
+The Tier 1 key covers **everything in the resolved data analysis recipe except a short list of known downstream parts**: `info`, `analysis_groups`, `plot_defaults`, plots, and the `tier2` steps of the join steps. A new or unknown section is part of Tier 1 automatically. A wrong guess can therefore only cause an extra recompute, never a stale result.
 
 ### Detecting changes in the running app
 

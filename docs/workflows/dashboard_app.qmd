@@ -29,7 +29,7 @@ The interface implements a high-density **Three-Zone Shell (ADR-043/044)** desig
 graph LR
     subgraph Left_Sidebar ["Navigation Panel (Left)"]
         direction TB
-        A["Project Selector"] --> B["Filter Recipe Builder"]
+        A["Project Selector"] --> B["Filter builder"]
         B --> C["System Tools (Export Bundle / Ingest)"]
     end
 
@@ -50,7 +50,7 @@ graph LR
 ```
 :::
 
-1.  **Project Navigator (Dark Grey #c0c0c0):** Project selection, context-reactive **Filter Recipe Builder** (add/remove filter rows, Apply commits to plots and data preview), and **System Tools** (Export Bundle — zip with plots, data, recipes, Quarto report).
+1.  **Project Navigator (Dark Grey #c0c0c0):** Project selection, context-reactive **Filter builder** (add/remove filter rows, Apply commits to plots and data preview), and **System Tools** (Export Bundle — zip with plots, data, step lists, Quarto report).
 2.  **Home Theater (Neutral Grey #d1d1d1):** Unified results mode (ADR-043). Top-level groups from the data analysis recipe as pill tabs; each group's plots in a `navset_card_tab`; a **Tier Toggle** strip (T1/T2/T3) above; an independent collapsible Data Preview below with a column selector.
 3.  **Pipeline Audit (Dark Grey #c0c0c0):** App features gated — **hidden entirely** for `pipeline-static` and `pipeline-exploration-simple` (theater expands full width); visible for ≥ `pipeline-exploration-advanced` showing Violet (T2) and Yellow (T3) audit nodes.
 
@@ -63,7 +63,7 @@ graph LR
 | `Bootloader (bootloader.py)` | Initializes system paths and app features feature toggles. | `app/src/bootloader.py` |
 | `UI (ui.py)` | Static 3-zone HTML/CSS shell — no reactive logic. | `app/src/ui.py` |
 | `Server (server.py)` | Thin orchestrator (~228 lines). Shared state and calcs; delegates to five handlers. | `app/src/server.py` |
-| `HomeTheater (home_theater.py)` | Home mode: data analysis recipe-driven tabs, filter recipe builder, data preview, export bundle. | `app/handlers/home_theater.py` |
+| `HomeTheater (home_theater.py)` | Home mode: data analysis recipe-driven tabs, filter builder, data preview, export bundle. | `app/handlers/home_theater.py` |
 | `AuditStack (audit_stack.py)` | T2/T3 audit nodes, Apply gate, Revert. | `app/handlers/audit_stack.py` |
 | `BlueprintHandlers (blueprint_handlers.py)` | Blueprint Architect: data analysis recipe import, TubeMap, Lineage Rail. | `app/handlers/blueprint_handlers.py` |
 | `DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)` | Pure data analysis recipe introspection — importable anywhere, zero Shiny dependency. | `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` |

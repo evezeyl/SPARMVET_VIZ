@@ -10,9 +10,9 @@ Tests (no Shiny server required):
   5. Comparison mode — advanced+ only, reads comparison_mode_enabled flag
   6. Primary key extraction — extract_primary_keys from data analysis recipe
   7. Plot ID discovery — all expected plot IDs present in data analysis recipe
-  8. Filter recipe builder data model — _pending_filters schema shape
+  8. Filter builder data model — _pending_filters schema shape
   9. Session provenance — data analysis recipe sha256 computable from path
- 10. Ghost restore schema — t3_recipe_by_plot structure correct after round-trip
+ 10. Ghost restore schema — t3_audit_steps_by_plot structure correct after round-trip
 
 Run:
     python3 app/tests/debug_home_theater.py
@@ -306,19 +306,19 @@ def test_session_provenance(project_root: Path):
 
 
 # ---------------------------------------------------------------------------
-# 8. Ghost round-trip — t3_recipe_by_plot
+# 8. Ghost round-trip — t3_audit_steps_by_plot
 # ---------------------------------------------------------------------------
 def test_ghost_roundtrip():
-    section("8. Ghost round-trip — t3_recipe_by_plot schema")
+    section("8. Ghost round-trip — t3_audit_steps_by_plot schema")
     try:
-        from app.modules.session_manager import SessionManager, make_recipe_node
+        from app.modules.session_manager import SessionManager, make_audit_step
 
         with tempfile.TemporaryDirectory() as tmp:
             sm = SessionManager(location_4=Path(tmp))
             session_key = "testkey123"
 
-            node_a = make_recipe_node("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
-            node_b = make_recipe_node("drop_column", params={"column": "notes"}, plot_scope="subtab_amr_heatmap")
+            node_a = make_audit_step("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
+            node_b = make_audit_step("drop_column", params={"column": "notes"}, plot_scope="subtab_amr_heatmap")
 
             t3_by_plot = {
                 "subtab_mlst_bar": [node_a],
@@ -331,9 +331,9 @@ def test_ghost_roundtrip():
                 data_analysis_recipe_sha256="abc123",
                 data_batch_hash="def456",
                 tier_toggle="T3",
-                t3_recipe=[],
+                t3_audit_steps=[],
                 t3_plot_overrides={},
-                t3_recipe_by_plot=t3_by_plot,
+                t3_audit_steps_by_plot=t3_by_plot,
             )
             record("ghost_written", path.exists(), str(path))
 
@@ -341,8 +341,8 @@ def test_ghost_roundtrip():
             record("ghost_listed", len(ghosts) == 1, f"count={len(ghosts)}")
 
             ghost = ghosts[0]
-            restored = ghost.get("t3_recipe_by_plot", {})
-            record("t3_recipe_by_plot_present", bool(restored))
+            restored = ghost.get("t3_audit_steps_by_plot", {})
+            record("t3_audit_steps_by_plot_present", bool(restored))
             record("mlst_bar_stack_restored",
                    len(restored.get("subtab_mlst_bar", [])) == 1)
             record("amr_heatmap_stack_restored",
@@ -359,14 +359,14 @@ def test_ghost_roundtrip():
 
 
 # ---------------------------------------------------------------------------
-# 9. Filter recipe builder data model
+# 9. Filter builder data model
 # ---------------------------------------------------------------------------
-def test_filter_recipe_schema():
-    section("9. Filter recipe node schema")
+def test_filter_builder_schema():
+    section("9. Filter audit step schema")
     try:
-        from app.modules.session_manager import make_recipe_node, gatekeeper_blocked
+        from app.modules.session_manager import make_audit_step, gatekeeper_blocked
 
-        node = make_recipe_node("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
+        node = make_audit_step("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
         required_keys = {"id", "node_type", "created_at", "plot_scope", "params", "reason", "active"}
         missing = required_keys - set(node.keys())
         record("filter_node_has_required_keys", not missing, f"missing={missing}")
@@ -383,7 +383,7 @@ def test_filter_recipe_schema():
         record("gatekeeper_unblocks_with_reason", unblocked)
 
         # PK warning node
-        pk_node = make_recipe_node(
+        pk_node = make_audit_step(
             "exclusion_row",
             params={"column": "sample_id", "op": "ne", "value": "S1"},
             primary_key_warning=True,
@@ -391,7 +391,7 @@ def test_filter_recipe_schema():
         record("pk_node_has_warning_flag", bool(pk_node.get("primary_key_warning")))
 
     except Exception as e:
-        record("filter_recipe_schema_error", False, str(e))
+        record("filter_builder_schema_error", False, str(e))
         traceback.print_exc()
 
 
@@ -447,7 +447,7 @@ def main():
     test_primary_keys(project_root)
     test_session_provenance(project_root)
     test_ghost_roundtrip()
-    test_filter_recipe_schema()
+    test_filter_builder_schema()
     test_bootloader_locations(project_root)
 
     # Summary

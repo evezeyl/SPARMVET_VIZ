@@ -58,9 +58,9 @@ Validation error at startup if any co-flag is missing.**
 | `t3_sandbox_enabled` | ✅ | The T3 sandbox itself |
 | `comparison_mode_enabled` | ✅ | T3 is meaningless without ability to compare T2 vs T3 |
 | `audit_report_enabled` | ✅ | T3 decisions must be auditable |
-| `session_management_enabled` | ✅ | T3 recipe must be saveable |
+| `session_management_enabled` | ✅ | audit steps must be saveable |
 | `autosave` / `ghost_save` | ✅ | Disaster recovery for active work |
-| `export_enabled` | ✅ | T3 decisions must be exportable (recipe + audit trail) |
+| `export_enabled` | ✅ | T3 decisions must be exportable (step list + audit trail) |
 | `tier_toggle_t1t2_enabled` | ✅ | Required to see T1↔T2 in context |
 | `tier_toggle_t3_enabled` | ✅ | Required to see T2↔T3 comparison |
 | `hashes_export` | ✅ Always on | ADR-069 |
@@ -81,7 +81,7 @@ Validation error at startup if any co-flag is missing.**
 **Cascade:** If T3 on and `export_enabled: false` → startup validation error.
 
 **ADR-069 audit trail** — every export always includes:
-`data_batch_hash` + `data_analysis_recipe_sha256` + `decision_hash` + `git_commit` + `release_version` + `created_at` + `data_analysis_recipe_name` + `app_features_id` + `active_tier` + `software_versions` + `data_source_paths` + `t3_recipe` (when T3 active)
+`data_batch_hash` + `data_analysis_recipe_sha256` + `decision_hash` + `git_commit` + `release_version` + `created_at` + `data_analysis_recipe_name` + `app_features_id` + `active_tier` + `software_versions` + `data_source_paths` + `t3_audit_steps` (when T3 active)
 
 Image files (PNG/SVG/PDF) additionally embed an 8-field provenance subset in file metadata (Pillow iTXt / SVG `<metadata>` / XMP). See ADR-069.
 
@@ -100,7 +100,7 @@ Image files (PNG/SVG/PDF) additionally embed an 8-field provenance subset in fil
 
 ---
 
-### 6. GALLERY — Chart recipe browser
+### 6. GALLERY — Chart example browser
 
 | Code flag | Required | Notes |
 |---|---|---|

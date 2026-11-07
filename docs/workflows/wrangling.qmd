@@ -96,7 +96,7 @@ You can think about this system as :
 | **Component**          | **Format**     | **Purpose**                                                |
 | ---------------------- | -------------- | ---------------------------------------------------------- |
 | **Action Registry**    | **Dictionary** | Internal "Phonebook" of available decorators. (Static)     |
-| **Wrangling Pipeline** | **List**       | The "Recipe" for a specific dataset. (Sequential)          |
+| **Wrangling Pipeline** | **List**       | The "Step list" for a specific dataset. (Sequential)          |
 | **Action Parameters**  | **Dictionary** | The specific settings for an action (e.g., which columns). |
 
 ## Universal Testing & Verification
@@ -110,7 +110,7 @@ To maintain **Zero-Failure Integrity**, the Transformer uses an automated audit 
 ### Automated Verification Protocol
 - **Action Discovery**: Directly queries the `registry.py` for all decorated functions.
 - **Atomic Validation**: For every action, identifies the `{action}_data_analysis_recipe.yaml` and `{action}_test.tsv` triplet and executes via `debug_wrangler.py`.
-- **Relational Validation**: Executes full assembly recipes (Layer 2) via `debug_assembler.py` and verifies successful joins.
+- **Relational Validation**: Executes full assembly steps (Layer 2) via `debug_assembler.py` and verifies successful joins.
 - **Materialized Evidence**: Every test generates a debug TSV in `tmp/transformer/` for human verification.
 - **Standardized Reporting**: Produces a `YYYY-MM-DD_transformer_integrity_report.txt` audit log.
 
@@ -178,7 +178,7 @@ The full list of 25+ atomic decorators has been aggressively verified via the In
 | --- | --- | --- | --- | --- |
 | `DataWrangler (data_wrangler.py)` | Main function that takes raw data and metadata, applies the data contract, reads the YAML `data_wrangling` dictionary, and returns a tidy Polars DataFrame by executing those rules (e.g., `split_and_explode`). | Raw data (e.g., TSV files) and metadata (e.g., YAML config) | Tidy Polars DataFrame following the data contract | `transformer/data_wrangler.py` |
 | `MetadataValidator (metadata_validator.py)` | Validates the user-uploaded metadata against the data contract and applies any `metadata_wrangling` rules defined in the schema. | Metadata that doesn't meet the contract is rejected with an error message. | User-uploaded metadata (e.g., TSV) that is validated, wrangled, and ready for joining. | `transformer/metadata_validator.py` |
-| `DataAssembler (data_assembler.py)` | Orchestrates Phase 4 Relational Joins. Connects wrangled datasets (ingredients) using assembly recipes. | Multiple wrangled LazyFrames | A unified, filtered, and contract-enforced Polars DataFrame. | `transformer/data_assembler.py` |
+| `DataAssembler (data_assembler.py)` | Orchestrates Phase 4 Relational Joins. Connects wrangled datasets (ingredients) using assembly steps. | Multiple wrangled LazyFrames | A unified, filtered, and contract-enforced Polars DataFrame. | `transformer/data_assembler.py` |
 
 
 ## Wrangling in a Large Sense: The Assembly Layer
@@ -190,7 +190,7 @@ The `DataAssembler (data_assembler.py)` orchestrates the vertical integration of
 
 ::: {.callout-note}
 ### ADR-018: The Unified Transformer Model
-To ensure homogeneity, both `DataWrangler (data_wrangler.py)` and `DataAssembler (data_assembler.py)` pull from the same `ActionRegistry (registry.py)`. This means any atomic cleaning step (like `strip_whitespace` or `split_column`) is automatically available within an Assembly Recipe.
+To ensure homogeneity, both `DataWrangler (data_wrangler.py)` and `DataAssembler (data_assembler.py)` pull from the same `ActionRegistry (registry.py)`. This means any atomic cleaning step (like `strip_whitespace` or `split_column`) is automatically available within an Assembly steps.
 :::
 
 The Assembler is responsible for:
@@ -205,8 +205,8 @@ Assembly-specific actions are defined in `libs/transformer/src/transformer/actio
 - **`join`**: Standard relational join.
 - **`join_filter`**: A specialized internal whitelisting tool. It performs an `inner` join against a reference table (e.g., filtering Virulence hits against a confirmed gene catalog).
 
-### Assembly Recipes & Contracts
-Assemblies are defined in the `joins` block (Key-as-ID pattern). An assembly "Recipe" is a sequential list of actions (Joins + Wrangling) that builds the final data grain. The `final_contract` acts as the ultimate guard, protecting the UI from "Column Drift" by selecting exactly the required plotting dimensions.
+### Assembly steps & Contracts
+Assemblies are defined in the `joins` block (Key-as-ID pattern). An assembly "Step list" is a sequential list of actions (Joins + Wrangling) that builds the final data grain. The `final_contract` acts as the ultimate guard, protecting the UI from "Column Drift" by selecting exactly the required plotting dimensions.
 
 ---
 

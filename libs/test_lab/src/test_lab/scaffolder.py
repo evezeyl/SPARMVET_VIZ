@@ -4,7 +4,7 @@
 #           joins pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
 # consumes: polars, pathlib, typing, yaml, re, io, zipfile (stdlib/third-party)
 #           test_lab.bootstrapper (DataAnalysisRecipeBootstrapper, IncludeRef, represent_include)
-#           id_reconciliation.data_structures (TransformationRecipe)
+#           id_reconciliation.data_structures (IdTransformation)
 # consumed_by: libs/test_lab/tests/test_scaffolder.py
 # @end_deps
 import io
@@ -19,9 +19,9 @@ import yaml
 from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
 
 try:
-    from id_reconciliation.data_structures import TransformationRecipe
+    from id_reconciliation.data_structures import IdTransformation
 except ImportError:
-    TransformationRecipe = None  # type: ignore[assignment,misc]
+    IdTransformation = None  # type: ignore[assignment,misc]
 
 
 yaml.add_representer(IncludeRef, represent_include)
@@ -29,7 +29,7 @@ yaml.add_representer(IncludeRef, represent_include)
 
 class DataAnalysisRecipeScaffolder:
     """
-    Generates a scaffolded project ZIP from TSVs and optional TransformationRecipe objects.
+    Generates a scaffolded project ZIP from TSVs and optional IdTransformation objects.
 
     Builds on DataAnalysisRecipeBootstrapper schema inference and adds:
     - joins pre-filled with ingredients: format
@@ -45,7 +45,7 @@ class DataAnalysisRecipeScaffolder:
         self,
         tsv_paths: List[Path],
         project_id: str,
-        recipes: Optional[Dict[str, Any]] = None,
+        steps: Optional[Dict[str, Any]] = None,
         metadata_path: Optional[Path] = None,
     ) -> bytes:
         """
@@ -54,7 +54,7 @@ class DataAnalysisRecipeScaffolder:
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
             project_id: Data analysis recipe ID and top-level folder name in the ZIP.
-            recipes: Optional mapping of sanitized dataset_id → TransformationRecipe.
+            steps: Optional mapping of sanitized dataset_id → IdTransformation.
                      Steps are injected into that dataset's tier1: wrangling block.
             metadata_path: Optional dedicated metadata TSV. When provided, a
                            metadata_schema entry is added and included as an ingredient.
@@ -63,10 +63,10 @@ class DataAnalysisRecipeScaffolder:
             ZIP bytes. Extract to a directory; the master YAML is at
             ``<project_id>/<project_id>.yaml``.
         """
-        recipes = recipes or {}
+        steps = steps or {}
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
-            self._write_zip(zf, tsv_paths, project_id, recipes, metadata_path)
+            self._write_zip(zf, tsv_paths, project_id, steps, metadata_path)
         buf.seek(0)
         return buf.read()
 
@@ -74,7 +74,7 @@ class DataAnalysisRecipeScaffolder:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _write_zip(self, zf, tsv_paths, project_id, recipes, metadata_path):
+    def _write_zip(self, zf, tsv_paths, project_id, steps, metadata_path):
         fragments_prefix = f"{project_id}/{project_id}"
         dataset_ids = []
 
@@ -87,7 +87,7 @@ class DataAnalysisRecipeScaffolder:
 
             self._write_fragment(zf, f"{fragments_prefix}/{dataset_id}_input_fields.yaml", fields)
             self._write_wrangling(zf, f"{fragments_prefix}/{dataset_id}_wrangling.yaml",
-                                  pk_candidates, recipes.get(dataset_id, []))
+                                  pk_candidates, steps.get(dataset_id, []))
             self._write_fragment(zf, f"{fragments_prefix}/{dataset_id}_output_fields.yaml", fields)
 
         if metadata_path is not None:
@@ -111,7 +111,7 @@ class DataAnalysisRecipeScaffolder:
             self._write_assembly_stub(zf, assembly_path, all_ingredient_ids[1:])
             joins_config[join_id] = {
                 "ingredients": ingredients,
-                "recipe": IncludeRef(f"{project_id}/assembly/{join_id}.yaml"),
+                "steps": IncludeRef(f"{project_id}/assembly/{join_id}.yaml"),
                 "final_contract": {},
             }
         else:
@@ -162,8 +162,8 @@ class DataAnalysisRecipeScaffolder:
             }
             for ds_id in right_ingredients
         ]
-        recipe = {"recipe": {"tier1": join_steps, "tier2": []}}
-        zf.writestr(arcname, yaml.dump(recipe, sort_keys=False, allow_unicode=True))
+        steps = {"steps": {"tier1": join_steps, "tier2": []}}
+        zf.writestr(arcname, yaml.dump(steps, sort_keys=False, allow_unicode=True))
 
     def _build_master(self, project_id, tsv_paths, dataset_ids, metadata_path, joins_config):
         data_schemas = {}

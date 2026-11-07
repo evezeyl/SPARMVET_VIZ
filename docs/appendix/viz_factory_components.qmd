@@ -398,7 +398,7 @@ You can pass custom parameters directly into the `theme` component to tweak fine
 
 ## 6. Gallery Taxonomy (6-Axis Classification)
 
-Every recipe in the Viz Gallery is tagged across **six axes** that drive the sidebar filter panels in the Gallery tab. Authors must populate all six fields in the `info` block of their `data_analysis_recipe.yaml` before a submission is accepted.
+Every example in the Viz Gallery is tagged across **six axes** that drive the sidebar filter panels in the Gallery tab. Authors must populate all six fields in the `info` block of their `data_analysis_recipe.yaml` before a submission is accepted.
 
 ### Icon → Axis reference
 
@@ -429,7 +429,7 @@ Every recipe in the Viz Gallery is tagged across **six axes** that drive the sid
 
 ```yaml
 info:
-  name: Recipe Name
+  name: Step list Name
   submission_date: 'YYYY-MM-DD'
   family: Distribution              # 📊
   pattern: 1 Numeric, 1 Categorical # 🔢
@@ -439,9 +439,9 @@ info:
   sample_size: medium+              # 📏
 ```
 
-### `recipe_meta.md` tag strip
+### `example_meta.md` tag strip
 
-Every `recipe_meta.md` must include a blockquote tag strip on line 3 (immediately after the `## Recipe Name` heading and a blank line):
+Every `example_meta.md` must include a blockquote tag strip on line 3 (immediately after the `## Steps Name` heading and a blank line):
 
 ```markdown
 ## Violin + Boxplot Overlay

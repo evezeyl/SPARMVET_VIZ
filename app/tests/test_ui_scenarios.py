@@ -55,7 +55,7 @@ class TestUIScenarios(unittest.TestCase):
         """Objective 3: Gallery Axis-Based Validation."""
         print("Testing Gallery Axis-Based Parsing...")
         gallery_path = Path(
-            "assets/gallery_data/ridgeline_advanced/recipe_meta.md")
+            "assets/gallery_data/ridgeline_advanced/example_meta.md")
         self.assertTrue(gallery_path.exists())
 
         with open(gallery_path, "r") as f:
@@ -87,7 +87,7 @@ class TestUIScenarios(unittest.TestCase):
         import zipfile
         with zipfile.ZipFile(zip_path, 'r') as zf:
             files = zf.namelist()
-            self.assertIn("recipe_meta.md", files)
+            self.assertIn("example_meta.md", files)
             self.assertIn("data/tier1_anchor.csv", files)
             self.assertIn("data/tier3_leaf.csv", files)
 

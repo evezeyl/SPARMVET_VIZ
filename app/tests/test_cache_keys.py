@@ -39,21 +39,21 @@ def _yaml_value(value) -> str:
     return json.dumps(value)  # JSON is valid YAML
 
 
-def make_project(root: Path, *, split=True, comment="", wrangling_tier1=(), recipe_tier1=(),
-                 recipe_tier2=(), plot_label="P", extra_section=None) -> Path:
+def make_project(root: Path, *, split=True, comment="", wrangling_tier1=(), steps_tier1=(),
+                 steps_tier2=(), plot_label="P", extra_section=None) -> Path:
     """Write tiny.yaml (and, when split, its included fragments) under root; return the entry path."""
     root.mkdir(parents=True, exist_ok=True)
     wrangling = {"tier1": list(wrangling_tier1), "tier2": []}
-    recipe = {"tier1": list(recipe_tier1), "tier2": list(recipe_tier2)}
+    steps = {"tier1": list(steps_tier1), "tier2": list(steps_tier2)}
     if split:
         (root / "tiny" / "wrangling").mkdir(parents=True, exist_ok=True)
         (root / "tiny" / "wrangling" / "T_wrangling.yaml").write_text(_yaml_value(wrangling))
-        (root / "tiny" / "wrangling" / "C_recipe.yaml").write_text(_yaml_value(recipe))
+        (root / "tiny" / "wrangling" / "C_steps.yaml").write_text(_yaml_value(steps))
         wrangling_text = "!include 'tiny/wrangling/T_wrangling.yaml'"
-        recipe_text = "!include 'tiny/wrangling/C_recipe.yaml'"
+        steps_text = "!include 'tiny/wrangling/C_steps.yaml'"
     else:
         wrangling_text = _yaml_value(wrangling)
-        recipe_text = _yaml_value(recipe)
+        steps_text = _yaml_value(steps)
     extra = f"{extra_section}\n" if extra_section else ""
     entry = root / "tiny.yaml"
     entry.write_text(f"""{comment}id: tiny
@@ -69,7 +69,7 @@ joins:
   C:
     ingredients:
       - dataset_id: T
-    recipe: {recipe_text}
+    steps: {steps_text}
 {extra}analysis_groups:
   g:
     label: G
@@ -140,8 +140,8 @@ def test_change_in_the_entry_file_tier1_part_moves_tier1(tmp_path):
 def test_tier2_only_change_keeps_tier1_and_moves_tier2(tmp_path):
     entry = make_project(tmp_path)
     loaded_a, t1a, t2a = keys_of(entry)
-    make_project(tmp_path, recipe_tier2=[FILTER_A])
-    bump(tmp_path / "tiny" / "wrangling" / "C_recipe.yaml")
+    make_project(tmp_path, steps_tier2=[FILTER_A])
+    bump(tmp_path / "tiny" / "wrangling" / "C_steps.yaml")
     loaded_b, t1b, t2b = keys_of(entry)
     assert t1a == t1b, "a Tier 2 step must not force a Tier 1 rebuild"
     assert t2a != t2b
@@ -149,10 +149,10 @@ def test_tier2_only_change_keeps_tier1_and_moves_tier2(tmp_path):
 
 
 def test_tier1_change_moves_tier2_even_when_tier2_steps_are_the_same(tmp_path):
-    entry = make_project(tmp_path, recipe_tier2=[FILTER_A])
+    entry = make_project(tmp_path, steps_tier2=[FILTER_A])
     _, t1a, t2a = keys_of(entry)
-    make_project(tmp_path, recipe_tier1=[FILTER_B], recipe_tier2=[FILTER_A])
-    bump(tmp_path / "tiny" / "wrangling" / "C_recipe.yaml")
+    make_project(tmp_path, steps_tier1=[FILTER_B], steps_tier2=[FILTER_A])
+    bump(tmp_path / "tiny" / "wrangling" / "C_steps.yaml")
     _, t1b, t2b = keys_of(entry)
     assert t1a != t1b and t2a != t2b
 
@@ -187,8 +187,8 @@ def test_engine_version_moves_the_keys(tmp_path, monkeypatch):
 
 
 def test_one_file_and_split_data_analysis_recipe_have_the_same_cache_key_material(tmp_path):
-    split = make_project(tmp_path / "split", split=True, wrangling_tier1=[FILTER_A], recipe_tier2=[FILTER_B])
-    single = make_project(tmp_path / "single", split=False, wrangling_tier1=[FILTER_A], recipe_tier2=[FILTER_B])
+    split = make_project(tmp_path / "split", split=True, wrangling_tier1=[FILTER_A], steps_tier2=[FILTER_B])
+    single = make_project(tmp_path / "single", split=False, wrangling_tier1=[FILTER_A], steps_tier2=[FILTER_B])
     loaded_split, t1_split, t2_split = keys_of(split)
     loaded_single, t1_single, t2_single = keys_of(single)
     assert (t1_split, t2_split) == (t1_single, t2_single)
@@ -212,7 +212,7 @@ def test_loaded_files_lists_the_entry_and_every_include(tmp_path):
     entry = make_project(tmp_path)
     loaded = load_data_analysis_recipe(entry)
     names = sorted(Path(f).name for f in loaded.files)
-    assert names == ["C_recipe.yaml", "T_wrangling.yaml", "tiny.yaml"]
+    assert names == ["C_steps.yaml", "T_wrangling.yaml", "tiny.yaml"]
 
 
 def test_file_set_hash_does_not_depend_on_where_the_folder_is(tmp_path):
@@ -222,7 +222,7 @@ def test_file_set_hash_does_not_depend_on_where_the_folder_is(tmp_path):
     assert load_data_analysis_recipe(a).data_analysis_recipe_sha256 == load_data_analysis_recipe(b).data_analysis_recipe_sha256
 
 
-def test_file_set_hash_matches_the_documented_recipe(tmp_path):
+def test_file_set_hash_matches_the_documented_steps(tmp_path):
     entry = make_project(tmp_path)
     loaded = load_data_analysis_recipe(entry)
     assert loaded.data_analysis_recipe_sha256 == data_analysis_recipe_fileset_hash(loaded.files, tmp_path)
@@ -236,8 +236,8 @@ def test_data_analysis_recipe_in_memory_is_reused_when_nothing_changed(tmp_path)
 def test_data_analysis_recipe_in_memory_is_reloaded_when_an_included_file_changed(tmp_path):
     entry = make_project(tmp_path)
     before = load_data_analysis_recipe(entry)
-    make_project(tmp_path, recipe_tier2=[FILTER_A])
-    bump(tmp_path / "tiny" / "wrangling" / "C_recipe.yaml")
+    make_project(tmp_path, steps_tier2=[FILTER_A])
+    bump(tmp_path / "tiny" / "wrangling" / "C_steps.yaml")
     after = load_data_analysis_recipe(entry)
     assert after is not before
     assert tier2_steps(after.raw, "C") == [FILTER_A]

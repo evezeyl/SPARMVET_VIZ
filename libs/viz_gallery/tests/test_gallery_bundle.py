@@ -1,6 +1,6 @@
 """Characterization of the gallery bundle layout and its index (ADR-037, ADR-091).
 
-Written against the file names of 2026-11-07 (data_analysis_recipe.yaml, recipe_meta.md). The
+Written against the file names of 2026-11-07 (data_analysis_recipe.yaml, example_meta.md). The
 configuration rename (issue evezeyl/SPARMVET_VIZ#27) renames the bundle files and
 regenerates gallery_index.json, which stores the path of each bundle file.
 """
@@ -15,7 +15,7 @@ import yaml
 from viz_gallery.gallery_manager import GalleryManager
 
 SHIPPED = Path(__file__).resolve().parents[3] / "assets" / "gallery_data"
-BUNDLE_FILES = ("data_analysis_recipe.yaml", "example_data.tsv", "recipe_meta.md")
+BUNDLE_FILES = ("data_analysis_recipe.yaml", "example_data.tsv", "example_meta.md")
 TAXONOMY = {"family", "pattern", "difficulty", "geom", "show", "sample_size"}
 
 
@@ -25,8 +25,8 @@ def _bundles(root):
 
 def test_submit_writes_the_bundle_files(tmp_path):
     gm = GalleryManager(str(tmp_path))
-    folder = Path(gm.submit_recipe(
-        "My Plot", recipe=[], data=pl.DataFrame({"a": [1, 2], "b": ["x", "y"]}),
+    folder = Path(gm.submit_example(
+        "My Plot", example=[], data=pl.DataFrame({"a": [1, 2], "b": ["x", "y"]}),
         meta_markdown="## My Plot\n", geom="geom_point"))
     for name in BUNDLE_FILES:
         assert (folder / name).exists(), name
@@ -63,7 +63,7 @@ def test_bundle_without_meta_is_left_out_of_the_index(tmp_path):
     keep = next(iter(_bundles(SHIPPED)))
     shutil.copytree(keep, work / "complete")
     shutil.copytree(keep, work / "no_meta")
-    (work / "no_meta" / "recipe_meta.md").unlink()
+    (work / "no_meta" / "example_meta.md").unlink()
     index = GalleryManager(str(work)).rebuild_index()
     assert list(index["registry"]) == ["complete"]
 

@@ -113,9 +113,9 @@ The task names eight feature areas:
 | **Action insertions** | Form picker designed (ADR-075), context-tagged catalog working | Insert UI not built. Position rules ("can I add a `join` here?") rely on `context` tag — but no UI to enforce it visually. |
 | **Update data view for selected lineage** | Zone C "Live Data Glimpse" exists, materialises from cached parquets | Works for current node. **Does not refresh dynamically when user edits a node** — currently shows last-applied state. Decision point: live vs. on-Apply (BLUEPRINT.md Open Question 1). |
 | **Improved data inspection** | DataGrid + status line | No column stats, no value-distribution preview, no null-deployment UI. Mentioned as desire in §9 but no ADR. |
-| **Joint definitions** | `assembly/` recipe files, `right_ingredient` + `'on'` join syntax | No visual UI for join authoring. Join key inference is manual today. **Significant gap** for "without code". |
+| **Joint definitions** | `assembly/` step list files, `right_ingredient` + `'on'` join syntax | No visual UI for join authoring. Join key inference is manual today. **Significant gap** for "without code". |
 | **Work in T1/T2/T3** | T1/T2 authoring shares the same form picker (filtered by `context`); T3 is HOME-only (publication finisher) | BLUEPRINT does NOT author T3. T3 lives in HOME (audit nodes). Decision needed: should BLUEPRINT also expose T3? Or is the boundary "BLUEPRINT writes data analysis recipe YAML, HOME writes T3 audit nodes"? |
-| **Definition of groups and plot recipe** | `analysis_groups` block in master data analysis recipe, `plots/<plot_id>.yaml` files | UI for creating groups / plots / assigning plots to groups: NOT built. Today user must edit YAML directly. |
+| **Definition of groups and plot step list** | `analysis_groups` block in master data analysis recipe, `plots/<plot_id>.yaml` files | UI for creating groups / plots / assigning plots to groups: NOT built. Today user must edit YAML directly. |
 
 ---
 
@@ -190,7 +190,7 @@ If user writes a YAML comment `# this is the join for Q3`, then opens form view,
 | Option | Inspection capabilities |
 |---|---|
 | **A. Glimpse only (current state — DataGrid + 5-row preview)** | MVP-safe |
-| **B. Glimpse + per-column stats panel (mean/median/null count/uniques)** | Polars `describe_stats` already exists as an action; UI presents it without writing into the recipe |
+| **B. Glimpse + per-column stats panel (mean/median/null count/uniques)** | Polars `describe_stats` already exists as an action; UI presents it without writing into the step list |
 | **C. Full profiler (B + value distributions + correlation)** | Heavy UI; overlaps with downstream tooling |
 
 **Recommendation:** B (cheap win, leverages existing action). User input needed.

@@ -5,7 +5,7 @@ subtitle: "What those long strings of letters and numbers in your README mean �
 
 ## What is an export bundle?
 
-When you click **Export Bundle** in the Export panel, SPARMVET_VIZ produces a self-contained archive of your work: your plots, your data at each tier, the wrangling recipe that produced them, and a record of every filter decision you made and why.
+When you click **Export Bundle** in the Export panel, SPARMVET_VIZ produces a self-contained archive of your work: your plots, your data at each tier, the wrangling steps that produced them, and a record of every filter decision you made and why.
 
 The export shows what you see. The plots and tables in the archive are the Result (Tier 2), exactly like the Result plot in the app. Steps you have sent to audit (a filter, an exclusion or a column drop with a reason, for example to remove poor quality data) are always applied to the exported plot and its data, and the data of that plot is saved as `T3_data_<plot>.tsv`. Filters you only tried while exploring are never exported.
 
@@ -41,7 +41,7 @@ A SHA-256 fingerprint works the same way: it produces a unique 64-character stri
 
 This is the fingerprint of the **data analysis recipe file** — the YAML configuration that defines your pipeline: which data files to load, what cleaning steps to apply, and how to build each plot.
 
-**What it guarantees:** If someone else runs the same analysis with a data analysis recipe that has the same SHA256, they will get the same plots (assuming the same raw data). The fingerprint covers the data analysis recipe file **and every file it includes** (wrangling, recipes, plots). If any of them was edited — even a single line — this fingerprint will be different.
+**What it guarantees:** If someone else runs the same analysis with a data analysis recipe that has the same SHA256, they will get the same plots (assuming the same raw data). The fingerprint covers the data analysis recipe file **and every file it includes** (wrangling, audit trails, plots). If any of them was edited — even a single line — this fingerprint will be different.
 
 **When to use it:** When sharing your export with a colleague or submitting as supplementary material to a paper. They can verify that the configuration file in the archive is the exact one used to produce the results.
 

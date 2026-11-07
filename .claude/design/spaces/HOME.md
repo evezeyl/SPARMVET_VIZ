@@ -23,7 +23,7 @@ The other user spaces exist to serve HOME: BLUEPRINT builds the data analysis re
 | Functionality | What the user can do |
 |---|---|
 | **Load data** | Import one or more data files (CSV/TSV/XLSX) into the session |
-| **Select data analysis recipe** | Choose which predefined data analysis recipe (analysis recipe) to apply, optionally filtered by selector |
+| **Select data analysis recipe** | Choose which predefined data analysis recipe (analysis step list) to apply, optionally filtered by selector |
 | **Run analysis** | Execute the data analysis recipe pipeline: T1 filter/select, T2 group/aggregate, joint merge, tidy pivot/reshape, wrangle, plot — as defined; no ad-hoc steps |
 | **Filter / drop data** | Apply justified exclusions (e.g. remove low-quality samples) with a mandatory reason — logged to audit trail |
 | **Palette override** | Apply a per-session colour palette that overrides the data analysis recipe defaults for this run; does not modify the data analysis recipe; label display is auto-adjusted for legibility based on plot size and label count (prefer automatic over manual control) |
@@ -39,14 +39,14 @@ The other user spaces exist to serve HOME: BLUEPRINT builds the data analysis re
 
 - HOME does not build or edit data analysis recipes — that is BLUEPRINT.
 - HOME does not generate or transform test data — that is TEST_LAB.
-- HOME does not browse or contribute recipes — that is GALLERY.
+- HOME does not browse or contribute examples — that is GALLERY.
 - HOME does not expose raw Python/R code to the user.
 
 ---
 
 ## Key Design Constraints
 
-- **Data analysis recipe-driven**: HOME never applies ad-hoc transformations. Every action comes from a data analysis recipe node. Structural changes (new steps, new columns, new plot types) go to BLUEPRINT.
+- **Data analysis recipe-driven**: HOME never applies ad-hoc transformations. Every action comes from a data analysis audit step. Structural changes (new steps, new columns, new plot types) go to BLUEPRINT.
 - **Narrow user interaction surface by design**: the user adjusts within the data analysis recipe's bounds, not around it. This is intentional — it ensures reproducibility and protects the audit trail.
 - **Audit always on**: Every applied action is logged with hash, timestamp, and provenance (ADR-069). No opt-out.
 - **Filter/drop requires justification**: any data exclusion must carry a reason field. Empty reason = blocked. This is a UX constraint, not just a data constraint.
@@ -63,7 +63,7 @@ The other user spaces exist to serve HOME: BLUEPRINT builds the data analysis re
 | Code module | Role |
 |---|---|
 | `wrangle_studio.py` | Pipeline rendering, plot output, sub-tab management |
-| `t3_recipe_engine.py` | T3 sandbox: live recipe editing within a session |
+| `t3_audit_engine.py` | T3 sandbox: live step list editing within a session |
 | `filter_and_audit_handlers.py` | TIER_TOG filters, audit trail panel |
 | `ingestion_handlers.py` | Data loading, file parsing |
 | `data_import_handlers.py` | Import UI and metadata mapping |

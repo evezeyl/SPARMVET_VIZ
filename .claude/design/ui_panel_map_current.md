@@ -76,7 +76,7 @@
 │ ┌───────────────────────┐ │ │  div.spv-panel (padding 8px 10px 0)   │ │ │  .card-header     │ │
 │ │  Data analysis recipe Choice      │ │ │  ui.navset_pill  #home_groups_nav     │ │ │                   │ │
 │ │  accordion panel      │ │ │                                       │ │ │  ⏳ Pending       │ │
-│ │  .accordion-button    │ │ │  ┌─────────────────────────────────┐  │ │ │  .recipe-pending- │ │
+│ │  .accordion-button    │ │ │  ┌─────────────────────────────────┐  │ │ │  .audit-pending- │ │
 │ │  .accordion-body      │ │ │  │  Active Group Tab               │  │ │ │  badge            │ │
 │ └───────────────────────┘ │ │  │  div.p-2                        │  │ │ │                   │ │
 │                           │ │  │                                 │  │ │ │  Tier 2 — h6      │ │
@@ -127,7 +127,7 @@
 | Audit card body | `#audit_sidebar .card .card-body` | Tier 2 / Tier 3 content |
 | Tier 2 node | `.audit-node-tier2` | Blue tint bg `#eef0fb` |
 | Tier 3 node | `.audit-node-tier3` | Teal tint bg `#e6f7f5` |
-| Pending badge | `.recipe-pending-badge` | Amber chip |
+| Pending badge | `.audit-pending-badge` | Amber chip |
 | Apply button | `#btn_apply` | Bottom of audit sidebar |
 
 ---
@@ -249,11 +249,11 @@
 │ ╚═══════════════════════╝ │ │  div.view-title-banner                │ │ │  card             │ │
 │                           │ │  "📚 Gallery Inspiration"             │ │ └───────────────────┘ │
 │ ┌───────────────────────┐ │ └───────────────────────────────────────┘ │                       │
-│ │  🖼️ Recipe            │ │ ┌───────────────────────────────────────┐ │                       │
+│ │  🖼️ Steps            │ │ ┌───────────────────────────────────────┐ │                       │
 │ │  accordion panel      │ │ │  Preview accordion                    │ │                       │
 │ │  #gallery_sidebar_    │ │ │  #gallery_preview_accordion           │ │                       │
 │ │  accordion            │ │ │  header bg: #f8f9fa                 │ │                       │
-│ │  #gallery_recipe_     │ │ │  body (flush): #gallery_tech_tabs     │ │                       │
+│ │  #gallery_example_     │ │ │  body (flush): #gallery_tech_tabs     │ │                       │
 │ │  select + clone btn   │ │ │  Plot Preview / Data Sample / YAML    │ │                       │
 │ └───────────────────────┘ │ └───────────────────────────────────────┘ │                       │
 │ ┌───────────────────────┐ │ ┌───────────────────────────────────────┐ │                       │
@@ -274,10 +274,10 @@
 
 | Panel label | CSS selector | Notes |
 |---|---|---|
-| Gallery sidebar accordion | `#gallery_sidebar_accordion` | Recipe + Taxonomy panels |
+| Gallery sidebar accordion | `#gallery_sidebar_accordion` | Example + Taxonomy panels |
 | Gallery taxonomy filters | `.gallery-sidebar-group` | ×6 filter groups (ADR-063: 6-axis taxonomy) |
 | Gallery filter title | `.gallery-filter-title` | 0.85rem/700/uppercase labels |
-| Recipe selector + clone | `#gallery_recipe_select`, `#btn_clone_gallery` | Inside sidebar accordion |
+| Example selector + clone | `#gallery_example_select`, `#btn_clone_gallery` | Inside sidebar accordion |
 | View title banner | `.view-title-banner` | "📚 Gallery Inspiration" |
 | Preview accordion | `#gallery_preview_accordion` | bslib accordion |
 | Preview accordion header | `#gallery_preview_accordion .accordion-button` | bg `#f8f9fa`, §14 |
@@ -299,7 +299,7 @@
 | Primary blue (buttons, active pills) | `#345beb` | `.btn-primary`, `.nav-pills .nav-link.active`, `#btn_apply` |
 | Primary blue hover | `#2a4bc4` | `.btn-primary:hover` |
 | Export / teal | `#10a395` | `#export_*`, `#btn_export`, `#filter_add_row`, upload buttons |
-| Reset / amber | `#ffc107` | `#filter_reset`, `.recipe-pending-badge` |
+| Reset / amber | `#ffc107` | `#filter_reset`, `.audit-pending-badge` |
 | Sidebar accordion header | `#a0a0a0` | `#nav_sidebar .accordion-button` |
 | Audit card header bg / text | `#ffffff` bg / `#345beb` text | `#audit_sidebar .card-header` — **was #a0a0a0, fixed 2026-05-03** |
 | Inactive nav-pill links | `#345beb` | `#nav_sidebar .nav-pills .nav-link:not(.active)`, theater pill/tab links |

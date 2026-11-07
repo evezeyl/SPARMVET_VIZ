@@ -26,9 +26,9 @@ from pathlib import Path
 
 from app.modules.session_manager import (
     SessionManager,
-    make_recipe_node,
+    make_audit_step,
     gatekeeper_blocked,
-    recipe_sha256,
+    audit_steps_sha256,
 )
 from app.modules.exporter import generate_methods_text
 
@@ -94,37 +94,37 @@ def run(output_dir: Path) -> bool:
         results.append(("restore_t1t2 reassemble (Parquet missing)", PASS if ok else FAIL))
 
         # ── Step 6: Write T3 ghosts ──────────────────────────────────────
-        recipe = [
-            make_recipe_node("filter_row",
+        steps = [
+            make_audit_step("filter_row",
                              {"column": "species", "op": "in", "value": ["cat"]},
                              reason="Only feline samples in scope."),
-            make_recipe_node("exclusion_row",
+            make_audit_step("exclusion_row",
                              {"column": "sample_id", "op": "eq", "value": "S2"},
                              reason="S2 has instrument error noted in lab book."),
         ]
-        g1 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", recipe, {}, label="batch-A v1")
-        g2 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", recipe, {}, label="batch-A v2")
+        g1 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", steps, {}, label="batch-A v1")
+        g2 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", steps, {}, label="batch-A v2")
         ghosts = sm.list_t3_ghosts(key)
         ok = len(ghosts) == 2 and ghosts[0]["saved_at"] >= ghosts[1]["saved_at"]
         results.append(("Write 2 T3 ghosts, newest-first order", PASS if ok else FAIL))
 
         # ── Step 7: Gatekeeper ───────────────────────────────────────────
-        bad_recipe = [make_recipe_node("filter_row", {}, reason="")]
-        blocked = gatekeeper_blocked(bad_recipe)
+        bad_steps = [make_audit_step("filter_row", {}, reason="")]
+        blocked = gatekeeper_blocked(bad_steps)
         ok = len(blocked) == 1
         results.append(("Gatekeeper blocks empty reason", PASS if ok else FAIL))
 
-        good_recipe = [make_recipe_node("filter_row", {}, reason="Justified.")]
-        ok = len(gatekeeper_blocked(good_recipe)) == 0
+        good_steps = [make_audit_step("filter_row", {}, reason="Justified.")]
+        ok = len(gatekeeper_blocked(good_steps)) == 0
         results.append(("Gatekeeper passes filled reason", PASS if ok else FAIL))
 
-        # ── Step 8: recipe_sha256 (active only) ─────────────────────────
-        mixed = recipe + [{**make_recipe_node("drop_column", {"column": "x"},
+        # ── Step 8: audit_steps_sha256 (active only) ─────────────────────────
+        mixed = steps + [{**make_audit_step("drop_column", {"column": "x"},
                            reason="not needed"), "active": False}]
-        h1 = recipe_sha256(mixed)
-        h2 = recipe_sha256(recipe)
+        h1 = audit_steps_sha256(mixed)
+        h2 = audit_steps_sha256(steps)
         ok = h1 == h2  # deactivated node ignored
-        results.append(("recipe_sha256 ignores active:False nodes", PASS if ok else FAIL))
+        results.append(("audit_steps_sha256 ignores active:False nodes", PASS if ok else FAIL))
 
         # ── Step 9: generate_methods_text ────────────────────────────────
         methods, discarded = generate_methods_text(mixed)

@@ -51,7 +51,7 @@ class SubmissionExporter:
         data_path = self.export_dir / "data_subset.csv"
         data_df.to_csv(data_path, index=False)
 
-        data_analysis_recipe_path = self.export_dir / "active_recipe.yaml"
+        data_analysis_recipe_path = self.export_dir / "active_steps.yaml"
         with open(data_analysis_recipe_path, "w") as f:
             yaml.dump(data_analysis_recipe, f)
 
@@ -59,7 +59,7 @@ class SubmissionExporter:
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(audit_path, arcname="audit_log.txt")
             zipf.write(data_path, arcname="data_subset.csv")
-            zipf.write(data_analysis_recipe_path, arcname="active_recipe.yaml")
+            zipf.write(data_analysis_recipe_path, arcname="active_steps.yaml")
             if plot_path and Path(plot_path).exists():
                 zipf.write(plot_path, arcname="high_dpi_plot.png")
 
@@ -98,7 +98,7 @@ class SubmissionExporter:
                 zipf.write(plot_path, arcname="preview_plot.png")
 
             # Educational Metadata Template (ADR-033/Phase 14-C)
-            meta_template = f"""# Recipe Metadata: {project_id}
+            meta_template = f"""# Audit trail Metadata: {project_id}
 ## Family (Purpose): [Distribution | Correlation | Comparison | Ranking]
 ## Data Pattern: [1 Numeric | 2 Numeric | 1 Numeric, 1 Categorical]
 ## Difficulty: [Simple | Intermediate | Advanced]
@@ -118,10 +118,10 @@ class SubmissionExporter:
 ## Inspiration & Resources
 - [Link to community resource or R Graph Gallery](https://r-graph-gallery.com/)
 """
-            meta_path = self.export_dir / "recipe_meta.md"
+            meta_path = self.export_dir / "example_meta.md"
             with open(meta_path, "w") as f:
                 f.write(meta_template)
-            zipf.write(meta_path, arcname="recipe_meta.md")
+            zipf.write(meta_path, arcname="example_meta.md")
 
         return str(zip_path)
 
@@ -130,8 +130,8 @@ class SubmissionExporter:
 # Phase 22-E: Audit Report generation (§12f)
 # ---------------------------------------------------------------------------
 
-def generate_methods_text(t3_recipe: list) -> tuple:
-    """Convert active T3 RecipeNodes into plain-English Methods lines.
+def generate_methods_text(t3_audit_steps: list) -> tuple:
+    """Convert active T3 AuditSteps into plain-English Methods lines.
 
     Phase 22-J / ADR-049: handles propagated nodes (multiple copies sharing
     `id`) by deduplicating on `id` and listing all target plot scopes in
@@ -150,7 +150,7 @@ def generate_methods_text(t3_recipe: list) -> tuple:
     # Dedupe propagated copies: group by id, collect all plot_scopes.
     seen: dict = {}
     order: list[str] = []
-    for node in t3_recipe:
+    for node in t3_audit_steps:
         if not node.get("active", True):
             discarded.append(node)
             continue
@@ -255,17 +255,17 @@ def render_audit_report(
     # Phase 22-J: per-plot stacks. Flatten for the report — generate_methods_text
     # dedupes propagated copies (linked id) and lists all target scopes in one
     # Methods line.
-    by_plot = home_state.get("t3_recipe_by_plot", {}) or {}
-    t3_recipe = [n for nodes in by_plot.values() for n in nodes]
+    by_plot = home_state.get("t3_audit_steps_by_plot", {}) or {}
+    t3_audit_steps = [n for nodes in by_plot.values() for n in nodes]
     data_analysis_recipe_sha256 = home_state.get("data_analysis_recipe_sha256") or ""
     tier_toggle = home_state.get("tier_toggle", "T2")
 
-    active_recipe = [n for n in t3_recipe if n.get("active", True)]
-    t3_recipe_sha256 = hashlib.sha256(
-        json.dumps(active_recipe, sort_keys=True).encode()
+    active_audit_steps = [n for n in t3_audit_steps if n.get("active", True)]
+    t3_audit_steps_sha256 = hashlib.sha256(
+        json.dumps(active_audit_steps, sort_keys=True).encode()
     ).hexdigest()
 
-    methods_lines, discarded_nodes = generate_methods_text(t3_recipe)
+    methods_lines, discarded_nodes = generate_methods_text(t3_audit_steps)
     now = datetime.now(timezone.utc)
     export_ts = now.strftime("%Y-%m-%dT%H:%M:%S")
     date_str = now.strftime("%Y-%m-%d")
@@ -273,12 +273,12 @@ def render_audit_report(
     report_data = {
         "data_analysis_recipe_id": data_analysis_recipe_id,
         "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
-        "t3_recipe_sha256": t3_recipe_sha256,
+        "t3_audit_steps_sha256": t3_audit_steps_sha256,
         "session_key": session_key,
         "tier_toggle": tier_toggle,
         "methods_text": methods_lines,
         "discarded_nodes": discarded_nodes,
-        "active_recipe": active_recipe,
+        "active_audit_steps": active_audit_steps,
         "figures": figure_paths or [],
         "datasets": dataset_summaries or [],
     }
@@ -294,7 +294,7 @@ def render_audit_report(
         "{{date}}": date_str,
         "{{data_analysis_recipe_id}}": data_analysis_recipe_id or "—",
         "{{data_analysis_recipe_sha256}}": (data_analysis_recipe_sha256[:16] + "…") if data_analysis_recipe_sha256 else "—",
-        "{{t3_recipe_sha256}}": t3_recipe_sha256[:16] + "…",
+        "{{t3_audit_steps_sha256}}": t3_audit_steps_sha256[:16] + "…",
         "{{deployment}}": deployment,
         "{{export_timestamp}}": export_ts,
     }.items():

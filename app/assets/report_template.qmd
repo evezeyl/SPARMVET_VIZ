@@ -11,7 +11,7 @@ format:
 params:
   data_analysis_recipe_id: "{{data_analysis_recipe_id}}"
   data_analysis_recipe_sha256: "{{data_analysis_recipe_sha256}}"
-  t3_recipe_sha256: "{{t3_recipe_sha256}}"
+  t3_audit_steps_sha256: "{{t3_audit_steps_sha256}}"
   deployment: "{{deployment}}"
   export_timestamp: "{{export_timestamp}}"
 ---
@@ -28,7 +28,7 @@ report_data = json.loads(pathlib.Path("report_data.json").read_text())
 |---|---|
 | **Data analysis recipe** | `{{data_analysis_recipe_id}}` |
 | **Data analysis recipe SHA256** | `{{data_analysis_recipe_sha256}}` |
-| **T3 Recipe SHA256** | `{{t3_recipe_sha256}}` |
+| **audit steps SHA256** | `{{t3_audit_steps_sha256}}` |
 | **Deployment** | `{{deployment}}` |
 | **Exported** | `{{export_timestamp}}` |
 
@@ -92,14 +92,14 @@ else:
     display(Markdown("*No discarded nodes.*"))
 ```
 
-## Raw T3 Recipe (Active Nodes)
+## Raw audit steps (Active Nodes)
 
 ```{python}
 #| echo: false
 import yaml
-active_recipe = report_data.get("active_recipe", [])
-if active_recipe:
-    display(Markdown(f"```yaml\n{yaml.dump(active_recipe, allow_unicode=True, sort_keys=False)}\n```"))
+active_audit_steps = report_data.get("active_audit_steps", [])
+if active_audit_steps:
+    display(Markdown(f"```yaml\n{yaml.dump(active_audit_steps, allow_unicode=True, sort_keys=False)}\n```"))
 else:
-    display(Markdown("*No T3 recipe nodes.*"))
+    display(Markdown("*No audit steps nodes.*"))
 ```

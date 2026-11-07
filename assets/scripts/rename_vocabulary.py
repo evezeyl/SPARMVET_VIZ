@@ -498,6 +498,13 @@ def _rewrite_py(src: str, fix) -> str:
     return "\n".join(lines)
 
 
+def _gallery_line(line: str) -> str:
+    line = re.sub(r"\bStep lists\b", "Examples", line)
+    line = re.sub(r"\bStep list\b", "Example", line)
+    line = re.sub(r"\bstep lists\b", "examples", line)
+    return re.sub(r"\bstep list\b", "example", line)
+
+
 def cmd_apply(args) -> int:
     pairs_all, rules = load_pairs()
     keep = [k.lower() for k in rules["keep_substrings"]]
@@ -520,6 +527,28 @@ def cmd_apply(args) -> int:
                 total += n
                 print(f"{n:>4}  {f}")
         print(f"identifier tokens {'to rename' if args.dry_run else 'renamed'}: {total}")
+    if args.what == "postfix":
+        n_files = 0
+        for f in tracked_files():
+            if f in TEXT_SKIP or Path(f).suffix not in TEXT_EXT:
+                continue
+            try:
+                src = Path(f).read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            out = src
+            for rx, repl in rules.get("recipe_postfix", []):
+                out = re.sub(rx, repl, out)
+            # gallery text: a step list there is a gallery example
+            whole = "gallery" in f.lower()
+            out = "\n".join(
+                _gallery_line(l) if (whole or re.search("gallery", l, re.I)) else l for l in out.split("\n"))
+            if out != src:
+                n_files += 1
+                print(f"postfix  {f}")
+                if not args.dry_run:
+                    Path(f).write_text(out, encoding="utf-8")
+        print(f"postfix files {'to change' if args.dry_run else 'changed'}: {n_files}")
     if args.what == "context":
         forms = rules.get("forms", {})
         n_files = 0
@@ -555,7 +584,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", metavar="PATH", help="write the Markdown mapping table here")
     ap.add_argument("--unmapped", action="store_true", help="print only the UNMAPPED tokens and exit 1 if any")
-    ap.add_argument("--apply", choices=["identifiers", "moves", "text", "context", "all"],
+    ap.add_argument("--apply", choices=["identifiers", "moves", "text", "context", "postfix", "all"],
                     help="change files: rename Python identifiers and/or git mv Python files")
     ap.add_argument("--words", nargs="+", default=[], help="with --apply: retired words to rename, e.g. persona")
     ap.add_argument("--ext", choices=["py", "all"], default="py", help="with --apply moves: which files to move")

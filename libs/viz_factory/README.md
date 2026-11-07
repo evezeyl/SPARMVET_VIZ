@@ -113,7 +113,7 @@ Supported ops: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`, `between`.
 - Scalar ops: value is auto-coerced to the column dtype read from `df.collect_schema()` (string operands on numeric columns get converted to int/float). String operand on a numeric column triggers a `[viz_factory] ⚠️` log line — that signals a widget bypass.
 - `between`: value is `[lo, hi]`; uses `pl.col(c).is_between(lo, hi, closed=...)`. Honours an optional `closed` field on the filter row (`'both'` default = inclusive, `'none'` = exclusive).
 - Auto-promotion: `eq` with a list value is silently upgraded to `in`; same for `ne` → `not_in`.
-- **Note:** `dtype` key from the filter recipe builder is stripped before injection — VizFactory filter dicts do not use it (the dtype is re-read from the LF schema each call).
+- **Note:** `dtype` key from the filter builder is stripped before injection — VizFactory filter dicts do not use it (the dtype is re-read from the LF schema each call).
 
 Both filter paths (this one + `_apply_filter_rows` in `home_theater.py`) implement identical logic. Locked down by `app/tests/test_filter_operators.py` (21 cases).
 

@@ -96,8 +96,8 @@ output_fields: {}
 The platform is designed to be resilient to partial data:
 
 - **Optional Metadata**: If `metadata_schema` is missing from the data analysis recipe or its file is not found, the `DataOrchestrator (orchestrator.py)` bypasses the metadata join and proceeds with the primary data sources.
-- **Strict Assembly**: Any ingredient explicitly referenced in an assembly `recipe` step is a **strict requirement**. If the ingredient is missing, the `DataAssembler (data_assembler.py)` raises a descriptive error to prevent analyzing incomplete relational states.
-- **Identity Fallback**: If no assembly recipe is provided, the system returns the primary data source as-is.
+- **Strict Assembly**: Any ingredient explicitly referenced in an assembly `steps` step is a **strict requirement**. If the ingredient is missing, the `DataAssembler (data_assembler.py)` raises a descriptive error to prevent analyzing incomplete relational states.
+- **Identity Fallback**: If no assembly steps is provided, the system returns the primary data source as-is.
 
 ---
 
@@ -133,11 +133,11 @@ input_fields:
 
 When different datasets use different names for the same concept (`SampleName`, `ID`, `sample_id`), each dataset declares its own `original_name` and the slugs become the common internal language for joins.
 
-`is_primary_key: true` is informational — it documents intent but does not drive automatic renaming across datasets. Join keys must be explicitly declared in the `joins` recipe using `on` or `left_on`/`right_on`.
+`is_primary_key: true` is informational — it documents intent but does not drive automatic renaming across datasets. Join keys must be explicitly declared in the `joins` step list using `on` or `left_on`/`right_on`.
 
 ---
 
-## Step 5: Assembly Recipes (The Join Step)
+## Step 5: Assembly steps (The Join Step)
 
 Once datasets are individually wrangled (Tier 1), they are joined in the `joins` block.
 
@@ -147,7 +147,7 @@ joins:
     ingredients:
       - dataset_id: resfinder_results
       - dataset_id: metadata_schema
-    recipe:
+    steps:
       - action: join
         right_ingredient: metadata_schema
         on: sample_id
@@ -163,8 +163,8 @@ joins:
 Key points:
 - `ingredients` is a **list of dicts** with `dataset_id` keys.
 - `final_contract` is a **dict `{column_name: type_string}`** that selects which columns survive to the plot layer. Only columns listed here are retained.
-- `recipe` follows the same action-list structure as `wrangling.tier1`.
-- The recipe may be `!include`-ed from a separate file for large pipelines.
+- `steps` follows the same action-list structure as `wrangling.tier1`.
+- The step list may be `!include`-ed from a separate file for large pipelines.
 
 ---
 

@@ -1,5 +1,5 @@
 # @deps
-# provides: DataAnalysisRecipeBootstrapper class (bootstrap, id_cleaning_recipes) — infers TSV schemas
+# provides: DataAnalysisRecipeBootstrapper class (bootstrap, id_cleaning_steps) — infers TSV schemas
 #           and writes data analysis recipe YAML fragments (analysis_groups, joins, tiered wrangling)
 # consumes: polars, pathlib, typing, yaml, re (stdlib/third-party)
 # consumed_by: libs/test_lab/tests/test_bootstrapper.py
@@ -61,7 +61,7 @@ class DataAnalysisRecipeBootstrapper:
         project_id: str,
         out_dir: Path,
         metadata_path: Optional[Path] = None,
-        id_cleaning_recipes: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+        id_cleaning_steps: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
         """
         Creates a project folder and populates it with data analysis recipe fragments.
@@ -72,7 +72,7 @@ class DataAnalysisRecipeBootstrapper:
             out_dir: Root directory for output.
             metadata_path: Optional dedicated metadata TSV. When provided, a
                 ``metadata_schema`` block is added to the master data analysis recipe.
-            id_cleaning_recipes: Optional per-dataset wrangling steps to inject
+            id_cleaning_steps: Optional per-dataset wrangling steps to inject
                 into ``tier1:``. Keyed by dataset_id (sanitized stem). Valid
                 actions: ``strip_whitespace``, ``cast`` (String only),
                 ``regex_replace``.
@@ -83,7 +83,7 @@ class DataAnalysisRecipeBootstrapper:
         fragments_dir = project_dir / project_id  # Subfolder for fragments
         fragments_dir.mkdir(parents=True, exist_ok=True)
 
-        id_cleaning_recipes = id_cleaning_recipes or {}
+        id_cleaning_steps = id_cleaning_steps or {}
         datasets_config = {}
 
         for tsv_p in tsv_paths:
@@ -113,7 +113,7 @@ class DataAnalysisRecipeBootstrapper:
                 yaml.dump(fields, f, sort_keys=False)
 
             # Write Fragment: wrangling (tiered, ADR-024 §3)
-            tier1_steps = id_cleaning_recipes.get(dataset_id, [])
+            tier1_steps = id_cleaning_steps.get(dataset_id, [])
             wrangling_file = fragments_dir / f"{dataset_id}_wrangling.yaml"
             pk_hints = (
                 f"# Candidate PK: {', '.join(pk_candidates)} (100% unique)\n"

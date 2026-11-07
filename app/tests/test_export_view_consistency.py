@@ -24,7 +24,7 @@ def _fresh_cache():
 @pytest.fixture
 def world(tmp_path):
     w = Tier2World(tmp_path)
-    w.write_data_analysis_recipe(recipe_tier2=[FILTER_A])           # T2 keeps group A: s1, s2
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])           # T2 keeps group A: s1, s2
     w.write_data("sample_id\tgroup\ns1\tA\ns2\tA\ns3\tB\n")
     return w
 
@@ -59,14 +59,14 @@ def test_a_data_change_after_the_view_is_reported(world):
 
 def test_a_change_in_an_included_file_after_the_view_is_reported(world):
     view = keys(world)
-    world.write_data_analysis_recipe(recipe_tier2=[FILTER_B])
+    world.write_data_analysis_recipe(steps_tier2=[FILTER_B])
     changes = changed_since_view(view, keys(world))
     assert len(changes) == 1 and changes[0].startswith("the data analysis recipe")
 
 
 def test_data_analysis_recipe_and_data_changes_are_both_named(world):
     view = keys(world)
-    world.write_data_analysis_recipe(recipe_tier2=[FILTER_B])
+    world.write_data_analysis_recipe(steps_tier2=[FILTER_B])
     world.write_data("sample_id\tgroup\ns1\tA\n")
     assert len(changed_since_view(view, keys(world))) == 2
 
@@ -91,7 +91,7 @@ def test_my_view_builds_on_tier2_when_there_are_tier2_steps(world):
 
 
 def test_my_view_builds_on_tier1_when_there_are_no_tier2_steps(world):
-    world.write_data_analysis_recipe(recipe_tier2=[])
+    world.write_data_analysis_recipe(steps_tier2=[])
     assert ids(audited_frame(base(world), [], [])) == ["s1", "s2", "s3"]
 
 

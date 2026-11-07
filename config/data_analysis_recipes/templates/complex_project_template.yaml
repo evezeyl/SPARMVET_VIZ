@@ -29,5 +29,5 @@ joins:
     ingredients:
       - dataset_id: "genomics"
       - dataset_id: "metadata"
-    recipe: !include 'complex_demo/master_recipe.yaml'
+    steps: !include 'complex_demo/master_steps.yaml'
     final_contract: !include 'complex_demo/final_contract.yaml'

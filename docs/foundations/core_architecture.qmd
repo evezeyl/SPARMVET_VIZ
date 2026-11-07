@@ -64,7 +64,7 @@ Contains `@render.*` and `@reactive.*` decorators only. Each module exposes `def
 | `blueprint_handlers.py` | Blueprint Architect: data analysis recipe import, TubeMap, Lineage Rail. |
 | `gallery_handlers.py` | Gallery: filtering, preview, clone, submission. |
 | `ingestion_handlers.py` | Data analysis recipe file ingestion (`btn_ingest`). |
-| `export_handlers.py` | Export results bundle (ZIP): plots, data tiers, recipes, lineage graph, Quarto report. |
+| `export_handlers.py` | Export results bundle (ZIP): plots, data tiers, step lists, lineage graph, Quarto report. |
 
 **The Two-Category Law:** Code is either pure introspection (Tier 2) or Shiny wiring (Tier 3). Mixing them in the same file is a protocol violation (ADR-045).
 

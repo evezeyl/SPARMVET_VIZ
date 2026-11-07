@@ -50,7 +50,7 @@ joins:
     - dataset_id: fg_metadata
     - dataset_id: fg_phenotypes
     - dataset_id: fg_genotypes
-    recipe: !include 'figshare_integration/wrangling/figshare_triple_join_recipe.yaml'
+    steps: !include 'figshare_integration/wrangling/figshare_triple_join_steps.yaml'
 
 # ── Analysis Groups ───────────────────────────────────────────────────────────
 # Plot specs: see figshare_integration/plots/

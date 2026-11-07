@@ -23,7 +23,7 @@ VENV_PYTEST = Path(__file__).parents[3] / ".venv" / "bin" / "python"
 MODULE_MAP = {
     "matcher": TESTS_DIR / "test_matcher.py",
     "pattern_detector": TESTS_DIR / "test_pattern_detector.py",
-    "recipe": TESTS_DIR / "test_recipe.py",
+    "steps": TESTS_DIR / "test_transformation.py",
     "core": TESTS_DIR / "test_core.py",
 }
 

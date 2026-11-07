@@ -42,7 +42,7 @@ Each library is independently installable and usable without the UI layer. If yo
 - [**ingestion**](./libs/ingestion/): TSV/Excel discovery, schema normalization, MetadataValidator gatekeeper.
 - [**transformer**](./libs/transformer/): The central wrangling and assembly engine (DataWrangler, DataAssembler).
 - [**viz_factory**](./libs/viz_factory/): Graphical composition and Plotnine orchestration.
-- [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, recipe governance.
+- [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, example governance.
 - [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, data analysis recipe bootstrapping, and reconciliation.
 - [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities. **Base layer** — may be imported by any domain lib.
 - [**connector**](./libs/connector/): Deployment resolution and data-source adapters (ADR-048, Phase 23).
@@ -61,13 +61,13 @@ SPARMVET is designed to be deployed in different contexts — from a read-only p
 | **T3 audit** | Justify and commit data decisions — creates permanent audit branch |
 | **Export** | Download reproducible bundle with full provenance |
 | **Import** | Upload metadata or full data mapped to the data analysis recipe |
-| **Gallery** | Browse chart recipe templates |
+| **Gallery** | Browse chart example templates |
 | **Blueprint Architect** | Inspect and design data analysis recipe lineage |
 | **Test Lab** | Generate synthetic data and scaffold data analysis recipes |
 
 ### Non-negotiable rule: full audit trail in every export
 
-Every export — regardless of configuration — includes a complete provenance record: data hashes, data analysis recipe hash, wrangling recipe hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_app_features.qmd).
+Every export — regardless of configuration — includes a complete provenance record: data hashes, data analysis recipe hash, wrangling steps hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_app_features.qmd).
 
 ### Quick start
 

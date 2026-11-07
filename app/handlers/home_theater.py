@@ -20,7 +20,7 @@ Sub-handlers (Phase 24, ADR-051) — called from inside define_server():
   app/handlers/session_handlers.py            session management panel
   app/handlers/export_handlers.py             system tools + bundle + audit reports
   app/handlers/filter_and_audit_handlers.py   filter UI + T3 audit + propagation modal
-  app/modules/t3_recipe_engine.py             pure helpers (_apply_filter_rows, _op_label)
+  app/modules/t3_audit_engine.py             pure helpers (_apply_filter_rows, _op_label)
 
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.*
 decorators only. It MUST NOT be imported by non-Shiny contexts.
@@ -30,7 +30,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_audit_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -44,7 +44,7 @@ from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.view_badge import has_tier2_steps, view_badge
 
-from app.modules.t3_recipe_engine import _apply_filter_rows
+from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
@@ -144,7 +144,7 @@ def define_server(input, output, session, *,
         Phase 21-C: active data tier selection ("T1", "T2", "T3").
     home_state : reactive.Value[dict] | None
         §13 Home Module State Object — survives all panel switches.
-        Contains t3_recipe, applied_filters, tier_toggle, and navigation state.
+        Contains t3_audit_steps, applied_filters, tier_toggle, and navigation state.
     session_manager : SessionManager | None
         §12d Session ghost save/restore manager.
     session_pipeline_errors : reactive.Value[list] | None
@@ -178,7 +178,7 @@ def define_server(input, output, session, *,
         if v is not None:
             _last_project_id.set(v)
 
-    # ── Phase 21-F: Filter recipe builder state ────────────────────────────────
+    # ── Phase 21-F: Filter builder state ────────────────────────────────
     # List of dicts: {column, op, value, dtype}  — consumed by plot handlers and data preview.
     # Separate from the sidebar_filters render so tier toggle / tab switches don't reset it.
     applied_filters = reactive.Value([])   # committed on Apply
@@ -272,7 +272,7 @@ def define_server(input, output, session, *,
         return _resolve_t1_lf(spec)
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
-        """Return the committed T3 RecipeNodes for the active plot subtab.
+        """Return the committed T3 AuditSteps for the active plot subtab.
 
         Phase 22-J / ADR-049: per-plot stacks. When `plot_id` is None, uses
         the currently active subtab. Empty list if no T3 nodes for that plot.
@@ -280,7 +280,7 @@ def define_server(input, output, session, *,
         if home_state is None:
             return []
         state = home_state.get()
-        by_plot = state.get("t3_recipe_by_plot", {}) or {}
+        by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
         if plot_id is None:
             plot_id = state.get("active_plot_subtab") or active_home_subtab.get()
         if not plot_id:
@@ -361,7 +361,7 @@ def define_server(input, output, session, *,
             })
         return rows
 
-    # _apply_filter_rows moved to app/modules/t3_recipe_engine.py (Phase 24-A, ADR-051)
+    # _apply_filter_rows moved to app/modules/t3_audit_engine.py (Phase 24-A, ADR-051)
     # Imported at module top.
 
     def _spec_discrete_axes(spec: dict | None) -> tuple[set[str], set[str]]:
@@ -1347,7 +1347,7 @@ def define_server(input, output, session, *,
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
-        # Gallery (ADR-057: filter + recipe selector moved here from internal sidebar)
+        # Gallery (ADR-057: filter + audit trail selector moved here from internal sidebar)
         # notification_log lives in the RIGHT sidebar only (ADR-073 slot registry) —
         # do not also mount it here, it duplicates the id and races with the right
         # sidebar's copy (REG-10).
@@ -1666,7 +1666,7 @@ def define_server(input, output, session, *,
                         style="background:#fffde7;"
                     ),
                     ui.div(
-                        ui.output_ui("recipe_pending_badge_ui"),
+                        ui.output_ui("audit_pending_badge_ui"),
                         ui.output_ui("audit_nodes_header_ui"),
                         # PROP-2: effective filter summary (sidebar + T3 nodes)
                         ui.output_ui("filter_inventory_ui"),
@@ -1699,8 +1699,8 @@ def define_server(input, output, session, *,
                 ui.card(
                     ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
                     ui.div(
-                        ui.p("📚 Browse visual recipes.", class_="text-muted small p-2"),
-                        ui.p("Select a recipe to copy its YAML into the Architect sandbox.",
+                        ui.p("📚 Browse visual audit trails.", class_="text-muted small p-2"),
+                        ui.p("Select an audit trail to copy its YAML into the Architect sandbox.",
                              class_="text-muted small px-2"),
                         class_="p-1"
                     ),
@@ -1788,7 +1788,7 @@ def define_server(input, output, session, *,
         if home_state is not None:
             state = home_state.get()
             active_sub = state.get("active_plot_subtab", "")
-            by_plot = state.get("t3_recipe_by_plot", {}) or {}
+            by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
             t3_nodes = [
                 n for n in by_plot.get(active_sub, [])
                 if n.get("active", True)

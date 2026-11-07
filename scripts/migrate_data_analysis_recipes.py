@@ -27,7 +27,7 @@ Context-aware matching
 -----------------------
 The script matches lines of the form:
 
-    action: <old_name>       # in wrangling / assembly recipe steps
+    action: <old_name>       # in wrangling / assembly steps
     - name: <old_name>       # in plot spec layers
 
 Both forms are matched with optional leading whitespace. The replacement preserves indentation.

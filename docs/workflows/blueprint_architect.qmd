@@ -235,7 +235,7 @@ prefilled from the original:
 | Branch role | Shared (by reference / inline copy) | Divergent (new, empty) |
 |---|---|---|
 | `data_schema` | `source` (copied inline), `input_fields` (`!include` reused) | `wrangling` → `tier1: []` / `tier2: []`; `output_fields` → `{}` |
-| `join` (assembly) | `ingredients` (copied inline) | `recipe` → `[]`; `output_fields` → `{}` |
+| `join` (assembly) | `ingredients` (copied inline) | `steps` → `[]`; `output_fields` → `{}` |
 | `plot` (leaf) | `target_dataset` (carried inside the copied spec) | a **copy** of the original spec (see below) |
 
 The empty seed is deliberate and matches the Tier-1-shared / Tier-2-diverges mental model: the
@@ -344,7 +344,7 @@ materialises each ingredient via the orchestrator and passes plain Python rows i
 - A **dtype family check** is shown as an *advisory* (not a hard gate): because the assembler
   casts keys to String, cross-family joins technically run, but the advisory warns when raw
   values are unlikely to align.
-- **`build_join_step`** emits a canonical `join` recipe step. Symmetric keys (left == right)
+- **`build_join_step`** emits a canonical `join` step. Symmetric keys (left == right)
   emit `on`; differing keys emit `left_on` / `right_on`. A single key emits a scalar; composite
   keys emit a list. Join strategies offered: `inner`, `left`, `outer`, `semi`, `anti`, `cross`.
 

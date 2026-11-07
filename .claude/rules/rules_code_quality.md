@@ -31,7 +31,7 @@ not in source logic or developer-level annotations.
 
 ### Always allowed (not Python)
 
-- YAML `label:` values in `analysis_groups`, `recipe_meta.md`, gallery bundles
+- YAML `label:` values in `analysis_groups`, `example_meta.md`, gallery bundles
 - All `.md` files: tasks, changelogs, rules, README, handoffs
 - Quarto `.qmd` documentation files
 - `tasks.md` section headers and priority markers

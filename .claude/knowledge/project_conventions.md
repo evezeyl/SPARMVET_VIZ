@@ -22,7 +22,7 @@
 | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` | **BLUEPRINT form catalog** (ADR-075, to be created) | `@register_action` + `@register_plot_component` `ui_schema` dicts → widget catalog | Reads `ui_schema` kwarg from registries at startup; builds action/component picker for BLUEPRINT IDE. Headless-safe — zero Shiny imports. |
 | `scripts/migrate_data_analysis_recipes.py` | **Action name migration scanner** (ACTION-RENAME-1, to be created) | Project-wide YAML scan → rename report + apply | Scans `config/data_analysis_recipes/`, app features files, `assets/gallery_data/` for deprecated action names; reports discrepancies; applies renames with `--apply` flag. |
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
-| `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_recipe_changes` |
+| `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_audit_step_changes` |
 | `app/handlers/blueprint_handlers.py` | Blueprint Architect Shiny wiring (ADR-039/045) | Reactive hooks → Architect UI | `_handle_data_analysis_recipe_import`, `_do_load_component`, `sync_blueprint_mapper`, `_handle_upload_*` |
 | `app/handlers/gallery_handlers.py` | Gallery Shiny wiring (ADR-037/045) | Reactive hooks → Gallery UI | `_update_gallery_options`, `handle_gallery_clone`, `gallery_preview_img`, `gallery_md_content` |
 | `app/handlers/ingestion_handlers.py` | Ingestion & app features Shiny wiring (ADR-045) | Reactive hooks → Ingest/App features | `handle_ingest`, `update_app_features_context` |
@@ -32,7 +32,7 @@
 | `libs/transformer/src/transformer/data_assembler.py` | Layer 2 orchestration (Relational) | Multiple LFs → LazyFrame | `DataAssembler`, `sink_parquet` |
 | `libs/utils/src/utils/config_loader.py` | Recursive YAML & Include Resolver | YAML → Python Dict | `ConfigManager`, `!include` |
 | `libs/test_lab/src/test_lab/aqua_synthesizer.py` | [ADR-032/ADR-068] Relational Data Synthesis (SDK Core) | Schema → TSV | `clean_header`, `generate_fake_column`, `--generate_only` |
-| `libs/test_lab/src/test_lab/scaffolder.py` | [ADR-084] Data analysis recipe Scaffolding — generates project ZIP from uploaded TSVs | TSV paths + project_id → bytes (ZIP) | `DataAnalysisRecipeScaffolder.scaffold(tsv_paths, project_id, recipes, metadata_path)`. Wired in TEST_LAB handler `tl_scaffold_ui` / `tl_scaffold_download`. |
+| `libs/test_lab/src/test_lab/scaffolder.py` | [ADR-084] Data analysis recipe Scaffolding — generates project ZIP from uploaded TSVs | TSV paths + project_id → bytes (ZIP) | `DataAnalysisRecipeScaffolder.scaffold(tsv_paths, project_id, steps, metadata_path)`. Wired in TEST_LAB handler `tl_scaffold_ui` / `tl_scaffold_download`. |
 | `libs/viz_factory/src/viz_factory.py` | Artist Pillar: Plot Composition | Data + Data analysis recipe → ggplot | `VizFactory`, `Plot Layers` |
 | `libs/viz_factory/src/viz_factory/plot_config_resolver.py` | **Plot config cascade resolver** (VIZFAC-RESOLVER-1, to be created) | Tiered config dicts → flat resolved dict | Pure function `resolve_plot_config()` resolves L5(T3 override) > L4(spec) > L3(optimisation) > L2(plot_defaults) > L1(built-ins). See `.claude/design/plot_config_cascade.md`. |
 | `libs/utils/src/utils/pipeline_error.py` | **Runtime error dataclass** (ADR-079, DIAG-RUNTIME-BASE-1, to be created) | Library exceptions → structured runtime error | `PipelineError` dataclass; sits alongside `DeploymentError` (ADR-078); audience model adds `analyst`/`data_provider`/`data_analysis_recipe_author`; per-category render surfaces. |
@@ -109,10 +109,10 @@ Deployment schema and full documentation: `config/deployment/templates/deploymen
 **Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all flag-gated decisions. Comparing `bootloader.app features` against name strings is prohibited — app features files are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_enabled`, `audit_report_enabled`. See `rules_app_features_flags.md` §Anti-Pattern.
 
 - **Location 1 (Raw/Ingestion)**: Path to raw external data assets.
-- **Location 2 (Data analysis recipes)**: Path to pipeline definitions and wrangling recipes.
+- **Location 2 (Data analysis recipes)**: Path to pipeline definitions and wrangling steps.
 - **Location 3 (Tiers 1 & 2)**: Curated Parquet Anchors & Views (`session_anchor.parquet`).
 - **Location 4 (User & Tiers 3)**: User session states, active UI leaf interactions, and autosaves.
-- **Location 5 (Gallery)**: Assets gallery for cloned/submitted recipes (`assets/gallery_data/`). Governed by `gallery_index.json` (Pivot-Index).
+- **Location 5 (Gallery)**: Assets gallery for cloned/submitted examples (`assets/gallery_data/`). Governed by `gallery_index.json` (Pivot-Index).
 
 ## 5. Tiered Data Lifecycle (ADR-024)
 
@@ -191,7 +191,7 @@ Eight pure functions in `libs/blueprint_arch/src/blueprint_arch/data_analysis_re
 | `resolve_fields_for_schema(schema_id, ctx_map, inc_map)` | — | Recursive field resolution with cycle guard; returns ADR-041 Rich Dict. |
 | `build_plot_lineage(plot_id, data_analysis_recipe_path)` | — | **ADR-074.** Backward trace from a named plot ID to its T1 root. Returns ordered `list[node_dict]`. Used by the export bundle lineage graph generator. |
 | `get_plot_ids_in_group(group_id, data_analysis_recipe_path)` | — | **ADR-074.** Forward trace — returns all `plot_id` strings declared under the given `analysis_group`. |
-| `generate_branch_plan(master_path, schema_id, role, new_id)` | — | **BP-BRANCH-NODE-1 (ADR-082 Q3).** Plans a node-level lineage bifurcation: shared upstream reused by `!include`, divergent downstream written as new empty fragment files wired into the master via text-level insertion (preserves existing `!include` tags). Roles: `wrangling`/`input_fields`/`output_fields` (→ `data_schemas`: share source + input_fields, new empty wrangling + output_fields), `join` (→ `joins`: share ingredients, new empty recipe + output_fields), `plot_spec` (→ `analysis_groups`: share target_dataset, copy spec — a leaf must render). Returns `{ok, error, summary, new_master_text, fragments}`. Replaces the legacy append-only `generate_fork_yaml`. Consumed by `blueprint_handlers.py` (gated: `data_analysis_recipe_edit_enabled`). |
+| `generate_branch_plan(master_path, schema_id, role, new_id)` | — | **BP-BRANCH-NODE-1 (ADR-082 Q3).** Plans a node-level lineage bifurcation: shared upstream reused by `!include`, divergent downstream written as new empty fragment files wired into the master via text-level insertion (preserves existing `!include` tags). Roles: `wrangling`/`input_fields`/`output_fields` (→ `data_schemas`: share source + input_fields, new empty wrangling + output_fields), `join` (→ `joins`: share ingredients, new empty step list + output_fields), `plot_spec` (→ `analysis_groups`: share target_dataset, copy spec — a leaf must render). Returns `{ok, error, summary, new_master_text, fragments}`. Replaces the legacy append-only `generate_fork_yaml`. Consumed by `blueprint_handlers.py` (gated: `data_analysis_recipe_edit_enabled`). |
 
 **Key constraint**: Only `str` rel-paths are used as ctx dict keys. Inline YAML content (`{"inline": val}`) is stored in the `siblings` dict only — never as a dict key (unhashable).
 
@@ -326,12 +326,12 @@ def define_my_server(input, output, session, *, ..., notification_log=None):
 
 ---
 
-## 16. Gallery recipe_meta.md Standard Format (ADR-061)
+## 16. Gallery example_meta.md Standard Format (ADR-061)
 
-Every `assets/gallery_data/<recipe>/recipe_meta.md` must follow this structure:
+Every `assets/gallery_data/<steps>/example_meta.md` must follow this structure:
 
 ```markdown
-## [Recipe Name]
+## [Step list Name]
 
 > 📊 [Family] · 🔢 [Data Pattern] · 📈 [Difficulty]
 
@@ -352,14 +352,14 @@ Every `assets/gallery_data/<recipe>/recipe_meta.md` must follow this structure:
 ```
 
 **Rules:**
-- `##` is the recipe name — the ONLY h2 in the file. No "Recipe Metadata:" prefix.
+- `##` is the step list name — the ONLY h2 in the file. No "Step list Metadata:" prefix.
 - The `> ` blockquote immediately after the h2 is the taxonomy tag strip. It must contain all three classification values separated by ` · `. No other blockquotes at the top level.
 - Content sections use `###` (h3). Never use `##` for sections.
 - `h4`/`h5`/`h6` are available for rare sub-sections within a `###` block.
 
 **Rationale:** the previous format used `##` for both taxonomy lines and section headings — visually indistinguishable. The blockquote tag strip is compact, left-bordered, and semantically distinct.
 
-**Reference:** `assets/gallery_data/recipe_template.md` is the canonical template.
+**Reference:** `assets/gallery_data/example_template.md` is the canonical template.
 
 ---
 

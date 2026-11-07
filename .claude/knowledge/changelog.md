@@ -45,7 +45,7 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 - **Removed** separate "Export Audit Report" button and its handler (`export_audit_report_ui`, `export_audit_report_download`, `_audit_report_filename`). The `audit_report_enabled` app features flag is now unused by the UI (kept in validator for backwards compat).
 - **Removed** "Single Graph Export" accordion panel from the sidebar. Functionality superseded by the scope toggle.
 - **Added** 3-way scope toggle `[Global project | Active group | Active plot]` to the Export panel, gated on app features having both `export_enabled`.
-- **Added** `recipes/t3_steps.yaml` to the export bundle when T3 has committed active nodes.
+- **Added** `steps/t3_steps.yaml` to the export bundle when T3 has committed active nodes.
 - **Added** "T3 Audit Trail" section to `report.qmd` — per-plot table of committed T3 steps + user justifications; deactivated nodes excluded.
 - Accordion label renamed from "Global Project Export" → "Export".
 - Spec: `.claude/design/export_specification.md`
@@ -131,7 +131,7 @@ See task `ASSEMBLY-RENAME` in `.claude/tasks/tasks.md` for the 5-pass VSCode che
 | ADR-066 | Rename `joins` → `joins` — avoids bioinformatics term collision; affects all data analysis recipe YAMLs and ~21 Python files | DECIDED |
 | ADR-067 | Extract `libs/blueprint_arch/` — pure-Python data analysis recipe navigation + TubeMap; headless-safe, zero Shiny imports | DECIDED |
 | ADR-068 | Extract `libs/test_lab/` — absorbs `generator_utils`, renames `dev_studio.py` → `test_lab_studio.py` | DECIDED |
-| ADR-069 | Complete Export Audit Trail Standard — T3 recipe IS the audit trace; auto-included in `report.qmd`; no separate FILTERS.txt for T3 | DECIDED |
+| ADR-069 | Complete Export Audit Trail Standard — audit steps IS the audit trace; auto-included in `report.qmd`; no separate FILTERS.txt for T3 | DECIDED |
 | ADR-070 | Functionality-First Deployment Model — app features files are named flag bundles, not the primary concept; behavior is always flag-driven | DECIDED |
 | ADR-071 | Deployment Hardening Standard — no CDN links; all assets vendored locally; no secrets in source; cross-panel output prohibition | DECIDED |
 | ADR-072 | [RESERVED] — numbering gap; no decision recorded | N/A |

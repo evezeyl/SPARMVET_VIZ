@@ -1,5 +1,5 @@
 tier1:
-  # Assembly Recipe: Correlations & Specialization (Optimized Stage-Wise)
+  # Assembly steps: Correlations & Specialization (Optimized Stage-Wise)
   # 1. Start with 'Summary' and filter to Phenotypes ONLY
   - action: "filter_eq"
     column: "category"

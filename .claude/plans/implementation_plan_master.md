@@ -194,7 +194,7 @@ This implementation plan is governed by the authoritative rulebooks and architec
 
 ### Phase 12-B: Position-Aware Sandbox & Controls
 
-- [ ] **Bifurcated Tier 3 (`t3_recipe`)**: Implement the distinction between `t3_recipe_prefill` (wide format exploration prior to blueprint steps) and `t3_recipe_complete` (final plot data including T2 blueprint).
+- [ ] **Bifurcated Tier 3 (`t3_audit_steps`)**: Implement the distinction between `t3_audit_steps_prefill` (wide format exploration prior to blueprint steps) and `t3_audit_steps_complete` (final plot data including T2 blueprint).
 - [ ] **Single Audit Stack**: Pre-fill with *Violet* properties, append *Yellow* properties. Position dictates execution order relative to the blueprint.
 - [ ] **Validation & Revert Protocol**: Add `btn_revert` to wipe the user sandbox and reset to the unmodified T2 blueprint. Implement disable toggles and deletion warnings.
 - [ ] **Comment Gatekeeper**: Tie `btn_apply` to validation of `comment_fields` across all active yellow/modified nodes.
@@ -212,7 +212,7 @@ This implementation plan is governed by the authoritative rulebooks and architec
 ## Phase 17: Contextual UI Masking & Focus Mode (DONE 2026-04-19)
 
 - [x] **Contextual Masking (ADR-038)**: Implemented server-side reactive reification to hide Global Sidebar controls.
-- [x] **Clone Post-Action**: Implemented automatic tab switching / Home signaling after recipe cloning.
+- [x] **Clone Post-Action**: Implemented automatic tab switching / Home signaling after step list cloning.
 - [x] **State Restoration**: Hardened session resume while in Gallery mode.
 
 ## Phase 18: Blueprint Architect — Bidirectional Lineage Navigation (ACTIVE)
@@ -312,13 +312,13 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ### Phase 21-F: Context-Reactive Filters + Column Selection ✅ COMPLETED 2026-04-23
 
-- [x] Filter recipe builder UI: `_pending_filters` + `applied_filters` reactive.Values.
+- [x] Filter builder UI: `_pending_filters` + `applied_filters` reactive.Values.
 - [x] Shell stability pattern: `sidebar_filters` reads only `current_app_features`; child outputs (`filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, `filter_t3_btn_ui`) independent.
 - [x] `_apply_filter_rows` helper: auto-promotes eq/ne→in/not_in for list values; casts column to Utf8 for set ops; coerces scalar to numeric dtype.
 - [x] `applied_filters` → plot handlers and `home_data_preview` (predicate pushdown).
 - [x] `not_in` op added to VizFactory predicate pushdown.
 - [x] Column selector (`selectize`) above DataGrid, preview-only.
-- [ ] 21-F-5 (T3 Apply to recipe) — UI stub present; serialization deferred.
+- [ ] 21-F-5 (T3 Apply to step list) — UI stub present; serialization deferred.
 - [ ] 21-F-7 (add `scale_x_discrete` to data analysis recipes) — deferred to user.
 
 ### Phase 21-G: App features Gated Right Sidebar Suppression ✅ COMPLETED 2026-04-30
@@ -330,7 +330,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 ### Phase 21-H: Headless Verification & @verify Gate ✅ COMPLETED 2026-04-30
 
 - [x] `app/tests/debug_home_theater.py` created — 10 sections, 76/76 checks PASS.
-- [x] Covers: app features feature flags, data analysis recipe tab structure, tier choices, sidebar suppression, comparison mode gating, PK extraction, session provenance SHA256, ghost round-trip, filter recipe schema, bootloader locations.
+- [x] Covers: app features feature flags, data analysis recipe tab structure, tier choices, sidebar suppression, comparison mode gating, PK extraction, session provenance SHA256, ghost round-trip, filter step list schema, bootloader locations.
 - [x] Output artifact: `tmpAI/home_theater_verify/results.json`.
 
 ### Phase 21-I: Export Results Bundle ✅ COMPLETED 2026-04-23
@@ -339,7 +339,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 - [x] `system_tools_ui`: user-name field, preset radio (web/publication), filter warning, download button.
 - [x] `@render.download export_bundle_download`: async generator yielding zip bytes.
-- [x] Bundle: `plots/` (SVG/PNG), `data/` (T1+T2 always; T3 for advanced+T3), `recipes/`, `FILTERS.txt` (No Trace No Export), `report.qmd` (Quarto source), `README.txt`.
+- [x] Bundle: `plots/` (SVG/PNG), `data/` (T1+T2 always; T3 for advanced+T3), `steps/`, `FILTERS.txt` (No Trace No Export), `report.qmd` (Quarto source), `README.txt`.
 - [ ] Ghost save to `user_data` — deferred.
 - [ ] Per-plot checkbox selection — deferred (all plots always exported).
 
@@ -376,8 +376,8 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ### Phase 22-E: Extract `app/handlers/audit_stack.py`
 
-- [x] Created with `define_server(input, output, session, *, wrangle_studio, recipe_pending, snapshot_recipe, active_cfg, active_collection_id)`.
-- [x] Handlers moved: `handle_apply`, `track_recipe_changes`, `recipe_pending_badge_ui`, `audit_nodes_tier2`, `audit_nodes_tier3`.
+- [x] Created with `define_server(input, output, session, *, wrangle_studio, audit_pending, snapshot_steps, active_cfg, active_collection_id)`.
+- [x] Handlers moved: `handle_apply`, `track_audit_step_changes`, `audit_pending_badge_ui`, `audit_nodes_tier2`, `audit_nodes_tier3`.
 
 ### Phase 22-F: Extract `app/handlers/blueprint_handlers.py`
 
@@ -403,7 +403,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ### Phase 22-J: Per-Plot T3 Audit Scoping & Join-Key Propagation ✅ COMPLETED 2026-04-25
 
-- [x] `t3_recipe_by_plot: dict[plot_subtab_id, list[RecipeNode]]` replaces flat `t3_recipe` — per-plot stacks.
+- [x] `t3_audit_steps_by_plot: dict[plot_subtab_id, list[AuditStep]]` replaces flat `t3_audit_steps` — per-plot stacks.
 - [x] Propagation modal: 3-option scope dialog ("This plot only / All plots / All plots except…") at T3 promotion.
 - [x] PK-touching nodes show ⚠️ warning banner in modal and on audit card.
 - [x] Linked-id deletion: 🗑 delete removes a node and all copies sharing the same `id` across every plot stack.
@@ -435,7 +435,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 | File | Owns | Step | LoC | Move | Cleanup |
 |---|---|---|---|---|---|
 | `app/handlers/home_theater.py` (slimmed) | `_safe_id`, `_collect_all_group_plot_ids`, `define_server` init + reactive helpers + closures (`_resolve_active_spec/_lf`, `_t3_filter_rows`, `_t3_drop_columns`, `_active_plot_t3_nodes`, `_all_plot_subtab_ids`, `_plot_label`, `_spec_discrete_axes`), `_make_group_plot_handler`, `_make_cmp_baseline_handler`, `dynamic_tabs`, `_track_tier_toggle`, `_sync_session_provenance`, `_track_active_home_subtab`, `home_data_preview`, `home_col_selector_ui`, `col_drop_audit_btn_ui`, `sidebar_nav_ui`, `sidebar_tools_ui`, `right_sidebar_content_ui`, plot/table renders + brush + comparison toggle, plus calls to the three sub-handlers | — | 1,278 | — | — |
-| `app/modules/t3_recipe_engine.py` (new) | `_apply_filter_rows(lf, filter_rows)`, `_op_label(op)` — pure helpers (Two-Category Law). | 24-A | 133 | `89bb5ef` | `890b609` |
+| `app/modules/t3_audit_engine.py` (new) | `_apply_filter_rows(lf, filter_rows)`, `_op_label(op)` — pure helpers (Two-Category Law). | 24-A | 133 | `89bb5ef` | `890b609` |
 | `app/handlers/session_handlers.py` (new) | `define_session_server` registers `session_management_ui`, `_handle_session_import`, `_handle_session_actions`, `_restore_session`. | 24-B | 262 | `f540cbf` | `d50197e` |
 | `app/handlers/export_handlers.py` (new) | `define_export_server` registers `system_tools_ui`, `export_bundle_download`, `export_audit_report_ui`, `export_audit_report_download`, `export_audit_docx`, `_audit_report_filename`, `_export_bundle_filename`. | 24-C | 597 | `4c38f26` | `18dbd46` |
 | `app/handlers/filter_and_audit_handlers.py` (new) | `define_filter_audit_server` registers `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, `_filter_add_row`, `_filter_apply`, `_filter_reset`, `_col_drop_to_audit`, `_column_presence_per_plot`, `_open_propagation_modal`, `_handle_propagation_confirm`, `_plot_has_column`, `_clear_filters_on_t3_apply`, `_make_remove_handler` (+ 50-row registry), private `_last_apply_count`. | 24-D | 811 | `f0f7d92` | `2393e50` |
@@ -451,7 +451,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 4. **`sidebar_filters` MOVED with the rest** (originally planned to stay). Once filter UI moved to `filter_and_audit_handlers.py`, keeping the static shell in `home_theater.py` would have introduced an awkward cross-file UI/effect boundary. Static shell + child renders + effects co-locate.
 
-5. **`_op_label` lifted to `t3_recipe_engine.py` in 24-D.** During 24-C it was inlined in `export_handlers.py` (mechanical move). 24-D folded a prep step that lifted it to the canonical pure-helper module so both `export_handlers` and `filter_and_audit_handlers` import from one place.
+5. **`_op_label` lifted to `t3_audit_engine.py` in 24-D.** During 24-C it was inlined in `export_handlers.py` (mechanical move). 24-D folded a prep step that lifted it to the canonical pure-helper module so both `export_handlers` and `filter_and_audit_handlers` import from one place.
 
 6. **24-B kwarg surface narrower than planned.** Plan listed 7 reactive kwargs; actual session block reads only 3 (`session_manager`, `current_app_features`, `home_state`). Final signature reflects the truth.
 
@@ -534,7 +534,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 - Filter reset: clears selectize and text widgets.
 - Trash button CSS aligned between filter rows and audit panel.
 - IMPORT-1: Data Import assignment table with `MetadataValidator` validation, parquet cache bust, `data_refresh_trigger` reactive (ADR-058).
-- EXPORT-SGE-2: `full_recipe.yaml` (resolved assembly + T3 nodes + plot spec) in SGE ZIP bundle.
+- EXPORT-SGE-2: `full_steps.yaml` (resolved assembly + T3 nodes + plot spec) in SGE ZIP bundle.
 - EXPORT-SGE-4: multi-file Ctrl/⌘ hint in Data Import upload control.
 - PROP-4: one-at-a-time workflow + reason writing guide in `docs/user_guide/audit_pipeline.qmd`.
 - Task closures: STATE-1, STATE-2, BUG-PERF-1, AUDIT-2–4, UX-1/2, EXPORT-SGE-2/4, PROP-4, IMPORT-1.
@@ -559,14 +559,14 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 - Gallery sidebar: icon fix, select-all alignment, dynamic pivot choices (GALLERY-ICONS, GALLERY-SELECTALL, GALLERY-PIVOT — ADR-061).
 - Gallery collapsible panes: Preview + Guidance both bslib accordion, open by default (GALLERY-PANES — ADR-061).
-- `recipe_meta.md` standard 3-tier format: `##`/`>`/`###` for all 13 → 34 files (GALLERY-META — ADR-061).
+- `example_meta.md` standard 3-tier format: `##`/`>`/`###` for all 13 → 34 files (GALLERY-META — ADR-061).
 - CSS §17 Educational Guidance Pane Content consolidated (CSS-SECTION17 — ADR-061).
 - Sidebar toggle `position:fixed` removed — defer to bslib positioning (CSS-TOGGLE — ADR-062).
-- 13 new gallery recipes with corrected VizFactory format (GALLERY-RECIPES-13 — ADR-063).
+- 13 new gallery examples with corrected VizFactory format (GALLERY-STEPS-13 — ADR-063).
 - 6-axis gallery taxonomy: `geom`/`show`/`sample_size` added end-to-end (GALLERY-TAXONOMY-6 — ADR-063).
 - `TAXONOMY_CHEATSHEET.md` — canonical icon/axis/value reference (GALLERY-TAXONOMY-CHEAT).
 - `generate_previews.py` — headless PNG generator; all 34 previews regenerated (GALLERY-PREVIEWS).
-- All 34 `recipe_meta.md` tag strips extended to 6 fields (GALLERY-META-6AXIS).
+- All 34 `example_meta.md` tag strips extended to 6 fields (GALLERY-META-6AXIS).
 - `_collapsible_panel()` helper; Home Plot Card + Data Preview collapsible (HOME-PLOT-COLLAPSE — ADR-064).
 - Blueprint Work Area bslib accordion; Bootstrap cards styled (BLUEPRINT-WORK-COLLAPSE — ADR-064).
 - CSS §18/18b accordion harmonization: bold text, `border-radius + overflow:hidden`, no grey borders (CSS-ACCORDION-HARM — ADR-064).
@@ -820,7 +820,7 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 
 - Flat list rejection uses `DataAnalysisRecipeError` (consistent with existing structural errors in `data_wrangler.py`) rather than `ConfigurationError` — keeps the error taxonomy homogeneous within the transformer layer.
 - `_resolve_tier()` tip includes a literal migration snippet so authors can copy-paste the fix directly from the error message.
-- Scaffold panel bakes in reconciliation steps from the ID Reconciliation panel above via `recipes={dataset_key: recipe.steps}` — `TransformationRecipe.steps` is `list[dict]`, directly compatible with the scaffolder API.
+- Scaffold panel bakes in reconciliation steps from the ID Reconciliation panel above via `steps={dataset_key: steps.steps}` — `IdTransformation.steps` is `list[dict]`, directly compatible with the scaffolder API.
 - Shell stability (Rule R4): `tl_scaffold_ui` renders widget shells only; `_scaffold_file_infos` / `_scaffold_meta_info` are `@reactive.Calc` so multiple consumers share the computed value without redundant input reads inside renders.
 
 ### Tombstones (expire Phase 36)

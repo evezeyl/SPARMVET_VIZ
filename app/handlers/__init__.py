@@ -19,7 +19,7 @@ Constraints (Two-Category Law — ADR-045):
 Handler modules
 ---------------
 home_theater.py    — Home Theater: dynamic_tabs, sidebar_nav_ui, filters, plots, tables
-audit_stack.py     — Pipeline Audit: T2/T3 nodes, btn_apply, track_recipe_changes
+audit_stack.py     — Pipeline Audit: T2/T3 nodes, btn_apply, track_audit_step_changes
 blueprint_handlers.py — Blueprint Architect: data analysis recipe import, TubeMap, Lineage Rail
 gallery_handlers.py — Gallery: filtering, preview, clone, submission
 ingestion_handlers.py — Ingestion & app features switching

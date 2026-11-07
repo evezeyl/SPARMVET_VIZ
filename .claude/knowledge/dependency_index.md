@@ -42,14 +42,14 @@
 
 ## `.claude/rules/rules_data_analysis_recipe_structure.md`
 - **Role:** `meta`
-- **provides:** `rule:canonical_recipe_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
+- **provides:** `rule:canonical_steps_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
 - **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_agent_role_bioscientist.md`
 - **Role:** `meta`
 - **provides:** `rule:data_analysis_recipe_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
-- **consumes:** `rule:canonical_recipe_syntax`, `rule:analysis_groups_structure`
+- **consumes:** `rule:canonical_steps_syntax`, `rule:analysis_groups_structure`
 - **documents:** `libs/transformer/src/transformer/actions/`, `libs/viz_factory/src/viz_factory/`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
 
@@ -120,21 +120,21 @@
 ## `app/handlers/filter_and_audit_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_filter_audit_server`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_controls_ui`, `input:filter_apply`, `input:filter_send_to_audit`
-- **consumes:** `app/modules/session_manager.py (make_recipe_node)`, `app/modules/t3_recipe_engine.py (_op_label)`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (_op_label)`, `app/src/bootloader.py (is_enabled)`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
 
 ## `app/handlers/gallery_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (gallery_handlers)`
-- **consumes:** `app/src/bootloader.py`, `libs/transformer/src/transformer/data_wrangler.py (removed — clone now builds RecipeNode directly)`
+- **consumes:** `app/src/bootloader.py`, `libs/transformer/src/transformer/data_wrangler.py (removed — clone now builds AuditStep directly)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/ui_implementation_contract.md#12e`
 
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`
-- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_recipe_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_audit_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
 
@@ -222,7 +222,7 @@
 
 ## `app/modules/session_manager.py`
 - **Role:** `ref`
-- **provides:** `class:SessionManager`, `typedef:RecipeNode`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`
 - **consumes:** `stdlib only (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`
@@ -241,7 +241,7 @@
 - **consumed_by:** `app/src/server.py`, `scripts/validate_app_features_config.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
 
-## `app/modules/t3_recipe_engine.py`
+## `app/modules/t3_audit_engine.py`
 - **Role:** `ref`
 - **provides:** `function:_apply_filter_rows`
 - **consumes:** `polars`
@@ -561,7 +561,7 @@
 
 ## `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
 - **Role:** `info`
-- **provides:** `IDPair`, `MatchResult`, `TransformationRecipe`
+- **provides:** `IDPair`, `MatchResult`, `IdTransformation`
 - **consumes:** `libs/utils/src/utils/id_patterns.py (PatternSuggestion re-exported for backward compat)`
 - **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
 
@@ -577,9 +577,9 @@
 - **consumes:** `libs/utils/src/utils/id_patterns.py`
 - **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
 
-## `libs/id_reconciliation/src/id_reconciliation/recipe.py`
+## `libs/id_reconciliation/src/id_reconciliation/steps.py`
 - **Role:** `info`
-- **provides:** `save_recipe`, `load_recipe`
+- **provides:** `save_transformation`, `load_transformation`
 - **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
 - **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
 
@@ -598,7 +598,7 @@
 
 ## `libs/test_lab/src/test_lab/anonymiser.py`
 - **Role:** `info`
-- **provides:** `Anonymiser class (anonymise`, `anonymise_batch`, `build_deanon_recipe)`
+- **provides:** `Anonymiser class (anonymise`, `anonymise_batch`, `build_deanon_steps)`
 - **consumes:** `polars`, `hashlib`, `yaml`, `datetime`, `pathlib (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/test_anonymiser.py`
 
@@ -610,7 +610,7 @@
 
 ## `libs/test_lab/src/test_lab/bootstrapper.py`
 - **Role:** `info`
-- **provides:** `DataAnalysisRecipeBootstrapper class (bootstrap`, `id_cleaning_recipes) — infers TSV schemas`
+- **provides:** `DataAnalysisRecipeBootstrapper class (bootstrap`, `id_cleaning_steps) — infers TSV schemas`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/test_bootstrapper.py`
 
@@ -674,7 +674,7 @@
 ## `libs/transformer/src/transformer/actions/persistence/anchor.py`
 - **Role:** `wrangle`
 - **provides:** `action:sink_parquet`, `action:scan_parquet`
-- **consumed_by:** `app/modules/orchestrator.py (injected into recipe)`, `libs/transformer/tests/debug_assembler.py (injected into recipe)`
+- **consumed_by:** `app/modules/orchestrator.py (injected into steps)`, `libs/transformer/tests/debug_assembler.py (injected into steps)`
 - **doc:** `.claude/rules/rules_data_engine.md`
 
 ## `libs/transformer/src/transformer/actions/relational/joins.py`
@@ -937,7 +937,7 @@
 
 ## `libs/viz_gallery/src/viz_gallery/gallery_manager.py`
 - **Role:** `info`
-- **provides:** `GalleryManager class — submit_recipe()`, `list_submissions()`, `rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/`
+- **provides:** `GalleryManager class — submit_example()`, `list_submissions()`, `rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/`
 - **consumes:** `yaml`, `shutil`, `pathlib.Path`, `datetime`, `polars`, `json`, `hashlib`
 - **consumed_by:** `app/handlers/gallery_handlers.py`
 

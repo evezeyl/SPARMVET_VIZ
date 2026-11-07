@@ -294,12 +294,12 @@ def define_server(input, output, session, *,
 
     def _parse_logic_to_nodes(wrangling, source_name):
         """
-        Normalizes potentially flat data analysis recipe nodes into structured UI nodes.
+        Normalizes potentially flat data analysis audit step into structured UI nodes.
         ADR-031: Supports both Structure (params: {}) and Flat (top-level keys) formats.
 
         BP-PLOT-COMMIT-1: each node is tagged with its source tier (``_tier``) so the
         commit path can route it back to the same wrangling.tier{1,2} on Save. A bare
-        list (legacy flat / recipe) defaults to tier1. Legacy tier3 nodes (artifacts of
+        list (legacy flat / step list) defaults to tier1. Legacy tier3 nodes (artifacts of
         the pre-BP-PLOT-COMMIT-1 dump bug) are folded into tier2 — BLUEPRINT never
         authors T3 (ADR-082 §4).
         """
@@ -336,7 +336,7 @@ def define_server(input, output, session, *,
                              Plot-level scalars / taxonomy (target_dataset, theme, palette,
                              family, ...) are recovered from the original file; mapping +
                              layers are taken from the live stack (authoritative).
-          - wrangling /   -> {wrangling: {tier1: [...], tier2: [...]}} (or {recipe: ...}),
+          - wrangling /   -> {wrangling: {tier1: [...], tier2: [...]}} (or {steps: ...}),
             plot_wrangling    action nodes routed to their source tier via the _tier marker.
                               T3 is never written (ADR-082 §4) — _parse_logic_to_nodes folded
                               any legacy tier3 into tier2 on load.
@@ -377,11 +377,11 @@ def define_server(input, output, session, *,
             return {"spec": spec_out} if had_wrapper else spec_out
 
         if role in ("wrangling", "plot_wrangling"):
-            # Preserve the original container key (wrangling vs recipe) for round-trip.
+            # Preserve the original container key (wrangling vs step list) for round-trip.
             container_key = "wrangling"
-            if isinstance(original, dict) and "recipe" in original \
+            if isinstance(original, dict) and "steps" in original \
                     and "wrangling" not in original:
-                container_key = "recipe"
+                container_key = "steps"
 
             tiers: dict = {"tier1": [], "tier2": []}
             for node in nodes:
@@ -418,7 +418,7 @@ def define_server(input, output, session, *,
             target = cfg.raw_config.get("metadata_schema")
         if not target:
             return {}
-        return target.get("wrangling", target.get("recipe", {}))
+        return target.get("wrangling", target.get("steps", {}))
 
     def _do_load_component(master_path: str, selected: str,
                            inc_map: dict, ctx_map: dict):
@@ -445,7 +445,7 @@ def define_server(input, output, session, *,
                 elif isinstance(file_content, dict):
                     wrangling = file_content.get(
                         "wrangling",
-                        file_content.get("recipe", file_content.get("tier1", []))
+                        file_content.get("steps", file_content.get("tier1", []))
                     )
                 else:
                     wrangling = []
@@ -626,7 +626,7 @@ def define_server(input, output, session, *,
                     elif isinstance(file_content, dict):
                         wrangling = file_content.get(
                             "wrangling",
-                            file_content.get("recipe", file_content.get("tier1", [])))
+                            file_content.get("steps", file_content.get("tier1", [])))
                     else:
                         wrangling = []
                     nodes = _parse_logic_to_nodes(wrangling, abs_file.name)
@@ -1844,7 +1844,7 @@ def define_server(input, output, session, *,
     # ══════════════════════════════════════════════════════════════════════
     # BP-JOINT-1 (ADR-082 Q5) — Joint Designer pane
     # Left + right ingredient schemas side-by-side with a live, real-data
-    # key-match preview; emits a canonical `join` recipe step into logic_stack.
+    # key-match preview; emits a canonical `join` step into logic_stack.
     # ══════════════════════════════════════════════════════════════════════
 
     # Last computed key-match result (+ meta), rendered by joint_preview_ui.

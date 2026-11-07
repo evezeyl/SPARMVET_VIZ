@@ -25,7 +25,7 @@ import polars as pl
 import yaml
 
 # @deps
-# provides: Anonymiser class (anonymise, anonymise_batch, build_deanon_recipe)
+# provides: Anonymiser class (anonymise, anonymise_batch, build_deanon_steps)
 # consumes: polars, hashlib, yaml, datetime, pathlib (stdlib/third-party)
 # consumed_by: libs/test_lab/tests/test_anonymiser.py
 #              app/handlers/test_lab_handlers.py (TL-UI-ANON-1 — not yet built)
@@ -225,8 +225,8 @@ class Anonymiser:
 
         return results
 
-    def build_deanon_recipe(self, id_column: str, mapping_filename: str) -> str:
-        """Return a YAML snippet for a BLUEPRINT join recipe to restore original IDs.
+    def build_deanon_steps(self, id_column: str, mapping_filename: str) -> str:
+        """Return a YAML snippet for a BLUEPRINT join steps to restore original IDs.
 
         Paste this into a tier2 wrangling block in BLUEPRINT to de-anonymise results
         by joining the anonymised dataset with the mapping TSV.

@@ -28,7 +28,7 @@ joins:
   Genes_joined:
     ingredients:
       - dataset_id: Genes
-    recipe:
+    steps:
       tier1: []
       tier2: []
 

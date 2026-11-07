@@ -38,7 +38,7 @@ joins:
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema
-    recipe: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
+    steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
     final_contract:
       Year: categorical
       Source: categorical
@@ -52,7 +52,7 @@ joins:
     ingredients:
       - dataset_id: plasmid_data
       - dataset_id: metadata_schema
-    recipe: !include 2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml
+    steps: !include 2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml
     final_contract:
       Year: categorical
       Source: categorical

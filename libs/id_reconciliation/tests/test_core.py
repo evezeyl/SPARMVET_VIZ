@@ -6,7 +6,7 @@ from id_reconciliation import (
     format_match_table,
     detect_many_to_many,
     apply_recode_step,
-    TransformationRecipe,
+    IdTransformation,
 )
 
 
@@ -36,12 +36,12 @@ def test_format_match_table_sorted():
 
 
 def test_apply_recode_strip_whitespace():
-    recipe = TransformationRecipe(
+    id_transformation = IdTransformation(
         ref_column="id", target_column="id",
         steps=[{"action": "strip_whitespace"}],
     )
     df = pl.DataFrame({"id": [" A ", "B ", " C"]})
-    result = apply_recode_step(df, "id", recipe)
+    result = apply_recode_step(df, "id", id_transformation)
     assert result["id"].to_list() == ["A", "B", "C"]
 
 
@@ -102,16 +102,16 @@ def test_precheck_compatibility_no_cleaning_needed():
     assert result["needs_cleaning"] is False
 
 
-def test_generate_recipe_infers_prefix_step():
-    """generate_recipe produces a regex_replace step for a prefix-removal pattern."""
+def test_generate_transformation_infers_prefix_step():
+    """generate_transformation produces a regex_replace step for a prefix-removal pattern."""
     refs = [f"sample_{i:03d}" for i in range(1, 6)]
     targets = [f"{i:03d}" for i in range(1, 6)]
     engine = IDReconciliationEngine()
     results = engine.reconcile(refs, targets)
-    recipe = engine.generate_recipe(results, "sample_id", "ID")
-    assert recipe.ref_column == "sample_id"
-    assert recipe.target_column == "ID"
-    assert any(s.get("action") == "regex_replace" for s in recipe.steps)
+    id_transformation = engine.generate_transformation(results, "sample_id", "ID")
+    assert id_transformation.ref_column == "sample_id"
+    assert id_transformation.target_column == "ID"
+    assert any(s.get("action") == "regex_replace" for s in id_transformation.steps)
 
 
 def test_format_match_table_progressive_chunks():

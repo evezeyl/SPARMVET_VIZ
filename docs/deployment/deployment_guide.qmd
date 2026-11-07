@@ -194,7 +194,7 @@ Place a deployment at `~/.sparmvet/deployment.yaml` pointing at local data direc
 SPARMVET is designed to be deployed multiple times — once per pipeline — rather than as a single monolith serving all pipelines. Each deployment is independent:
 
 - Its own `project_root` (separate data directories).
-- Its own `default_data_analysis_recipe` (the YAML recipe for that pipeline).
+- Its own `default_data_analysis_recipe` (the YAML step list for that pipeline).
 - Its own app features (which features are available to end users).
 - Its own `user_data` path (user exports and session saves are isolated).
 
@@ -209,10 +209,10 @@ Every deployment defines the same five locations. All paths are relative to `pro
 | Key | Purpose | Typical subdirectory |
 |---|---|---|
 | `raw_data` | Raw input files (TSV, Excel, VCF) before ingestion | `inputs/` |
-| `data_analysis_recipes` | Pipeline YAML data analysis recipes and wrangling recipes | `data_analysis_recipes/` |
+| `data_analysis_recipes` | Pipeline YAML data analysis recipes and wrangling steps | `data_analysis_recipes/` |
 | `cache` | Tier 1 and Tier 2 Parquet caches (computed by the engine) | `parquet/` |
 | `user_data` | User exports (zip bundles), session saves, Tier 3 artifacts | `sessions/` |
-| `gallery` | Pre-rendered gallery examples and YAML recipe clones | `gallery/` |
+| `gallery` | Pre-rendered gallery examples and YAML example clones | `gallery/` |
 
 `cache` and `user_data` are written by the app. The others are read-only from the app's perspective (the pipeline or admin populates them). Ensure filesystem permissions reflect this.
 

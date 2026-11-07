@@ -201,7 +201,7 @@ Splits a string column into two new columns on a delimiter.
   drop_source: true
 ```
 
-### `join` (Assembly recipe only)
+### `join` (Assembly steps only)
 Joins a right ingredient into the base frame.
 ```yaml
 - action: join
@@ -243,7 +243,7 @@ joins:
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema
-    recipe: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
+    steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
     final_contract:
       sample_id: string
       gene: string
@@ -254,7 +254,7 @@ joins:
 
 - `ingredients` is a **list of dicts** with `dataset_id` keys (not a flat list of strings).
 - `final_contract` is a **dict `{column: type}`** — a whitelist that selects and validates final columns. Only columns listed here survive to the plot layer.
-- `recipe` may be inline or `!include`-ed.
+- `steps` may be inline or `!include`-ed.
 
 ---
 

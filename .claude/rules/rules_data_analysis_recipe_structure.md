@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 deps:
-  provides: [rule:canonical_recipe_syntax, rule:directory_taxonomy, rule:analysis_groups_structure, rule:final_contract]
+  provides: [rule:canonical_steps_syntax, rule:directory_taxonomy, rule:analysis_groups_structure, rule:final_contract]
   documents: [libs/transformer/src/transformer/data_assembler.py, app/handlers/home_theater.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/data_analysis_recipe_structure.yaml, .claude/knowledge/dependency_index.md]
 ---
@@ -24,7 +24,7 @@ When decomposition is triggered, components must be strictly categorized into su
 - `input_fields/`: Defines raw incoming schemas.
 - `wrangling/`: Defines all Transformation (`tier1`, `tier2`) operations for individual data sources.
 - `output_fields/`: Defines the terminal contract schemas.
-- `join/`: Defines the join recipe (`recipe:` key only) for joining multiple ingredients into a collection. One file per join block (e.g., `AMR_Profile_Joint.yaml`). Top-level data analysis recipe key: `joins:`.
+- `join/`: Defines the join steps (`steps:` key only) for joining multiple ingredients into a collection. One file per join block (e.g., `AMR_Profile_Joint.yaml`). Top-level data analysis recipe key: `joins:`.
 - `plots/`: Contains visualization specifications for `analysis_groups`. Each file contains a single `spec:` block.
 
 ## 3. Structural Authority Reference
@@ -44,19 +44,19 @@ The file `assets/template_data_analysis_recipes/1_test_data_ST22_dummy.yaml` ser
 - **Developer Rule**: Always check the `final_contract` if a newly created column is missing from the output TSV/Parquet.
 
 ## 6. Biological Typing & Discrete Plotting
-- **The Protocol**: To ensure Plotnine correctly renders discrete scales (e.g., for Year, Sequence Type), columns MUST be cast to appropriate types in the assembly recipe.
+- **The Protocol**: To ensure Plotnine correctly renders discrete scales (e.g., for Year, Sequence Type), columns MUST be cast to appropriate types in the assembly steps.
 - **The Rule**: Numeric values used as categories (integer years) MUST be cast to `int` or `string` in the Tier 2 assembly to prevent continuous-scale stretching in visualizations.
 
 ---
 
-## 7. Canonical Recipe Syntax (STRICT — No Shorthand)
+## 7. Canonical steps syntax (STRICT — No Shorthand)
 
 **ALL** wrangling and assembly steps MUST use the canonical `action:` key format. Shorthand formats (using the action name as the YAML key, e.g., `- join: {...}`, `- mutate: [...]`, `- sort: [...]`) are **NOT supported by the engine** and are **silently skipped**, producing wrong results with no error.
 
 ### ✅ Canonical (ONLY valid format)
 
 ```yaml
-recipe:
+steps:
   - action: cast
     columns: [Year]
     dtype: String
@@ -86,7 +86,7 @@ recipe:
 
 ### Key-specific rules
 
-| Recipe concept | Canonical key | FORBIDDEN alias |
+| Step list concept | Canonical key | FORBIDDEN alias |
 |---|---|---|
 | Join right-side dataset | `right_ingredient` | `dataset_id` |
 | Join column (symmetric) | `'on'` (quoted!) | `on` (unquoted — YAML parses as boolean `True`) |
@@ -268,7 +268,7 @@ Project palettes are defined in `config/palettes.yaml` and loaded by `bootloader
 
 > **Implementation status:** target behaviour. `ConfigManager` still exits on a data analysis recipe error until the fork issue for data analysis recipe error handling is done.
 
-- A problem in a data analysis recipe (missing `analysis_groups:`, missing `!include` file, bad recipe shape) raises `DeploymentFailure` carrying the same `DeploymentError` records and operator-readable block as before (ADR-078). It never calls `sys.exit`.
+- A problem in a data analysis recipe (missing `analysis_groups:`, missing `!include` file, bad step list shape) raises `DeploymentFailure` carrying the same `DeploymentError` records and operator-readable block as before (ADR-078). It never calls `sys.exit`.
 - Code that loads a data analysis recipe catches it, shows the data analysis recipe name, location and fix to the user (notification/alerts panel), leaves that data analysis recipe out of the project list, and keeps running.
 - Command-line scripts and audits catch it, print the block and exit non-zero themselves.
 - Zero valid data analysis recipes is a valid state: the app starts with an empty state, and `default_data_analysis_recipe` in the deployment is optional.

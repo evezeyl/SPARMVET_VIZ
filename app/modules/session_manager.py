@@ -16,13 +16,13 @@ Same data + edited data analysis recipe → different session.
 Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 ---------------------------------------------------------------------------
   assembly.json          — T1/T2 provenance (written once per assembly)
-  t3_{timestamp}.json   — T3 recipe snapshots (one per btn_apply / panel leave)
+  t3_{timestamp}.json   — audit steps snapshots (one per btn_apply / panel leave)
 """
 
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:RecipeNode
+# provides: class:SessionManager, typedef:AuditStep
 # consumes: stdlib only (hashlib, json, shutil, zipfile, pathlib, datetime, uuid)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md#12d
@@ -39,10 +39,10 @@ from typing import Any, TypedDict
 
 
 # ---------------------------------------------------------------------------
-# RecipeNode schema (§12b)
+# AuditStep schema (§12b)
 # ---------------------------------------------------------------------------
 
-class RecipeNode(TypedDict, total=False):
+class AuditStep(TypedDict, total=False):
     node_type: str              # filter_row | exclusion_row | drop_column | aesthetic_override | developer_raw_yaml
     id: str                     # hex UUID — propagated copies SHARE this id (linked deletion, ADR-049)
     created_at: str             # ISO timestamp
@@ -54,7 +54,7 @@ class RecipeNode(TypedDict, total=False):
     gallery_source: dict        # optional: {gallery_id, gallery_yaml_hash}
 
 
-def make_recipe_node(
+def make_audit_step(
     node_type: str,
     params: dict,
     plot_scope: str = "__all__",
@@ -62,8 +62,8 @@ def make_recipe_node(
     gallery_source: dict | None = None,
     primary_key_warning: bool = False,
     node_id: str | None = None,
-) -> RecipeNode:
-    """Create a new RecipeNode.
+) -> AuditStep:
+    """Create a new AuditStep.
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ def make_recipe_node(
         the ghost; renders as a warning banner on the audit card and as a marker in
         the export Methods section.
     """
-    node: RecipeNode = {
+    node: AuditStep = {
         "node_type": node_type,
         "id": node_id or uuid.uuid4().hex,
         "created_at": _now_iso(),
@@ -93,10 +93,10 @@ def make_recipe_node(
 
 
 def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
-    """Return the union of join-key column names across all assembly recipes.
+    """Return the union of join-key column names across all assembly steps.
 
     A column is a primary key if it appears as `on`/`left_on`/`right_on` in any
-    `joins.*.recipe[*]` step. This includes both true PKs
+    `joins.*.audit trail[*]` step. This includes both true PKs
     (sample_id) and secondary/accessory keys for long-format joins (gene_id).
 
     See ADR-049 / §12g.2.
@@ -108,10 +108,10 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     for join_def in join_defs.values():
         if not isinstance(join_def, dict):
             continue
-        recipe = join_def.get("recipe", [])
-        if not isinstance(recipe, list):
+        audit_steps = join_def.get("steps", [])
+        if not isinstance(audit_steps, list):
             continue
-        for step in recipe:
+        for step in audit_steps:
             if not isinstance(step, dict):
                 continue
             for field in ("on", "left_on", "right_on"):
@@ -125,7 +125,7 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     return sorted(keys)
 
 
-def node_blocks_apply(node: RecipeNode) -> bool:
+def node_blocks_apply(node: AuditStep) -> bool:
     """True if this node must have a non-empty reason before btn_apply."""
     return node.get("active", True) and node.get("node_type") in {
         "filter_row", "exclusion_row", "drop_column", "developer_raw_yaml"
@@ -313,24 +313,24 @@ class SessionManager:
         data_analysis_recipe_sha256: str,
         data_batch_hash: str,
         tier_toggle: str,
-        t3_recipe: list[dict] | None = None,
+        t3_audit_steps: list[dict] | None = None,
         t3_plot_overrides: dict | None = None,
         label: str = "",
-        t3_recipe_by_plot: dict[str, list[dict]] | None = None,
+        t3_audit_steps_by_plot: dict[str, list[dict]] | None = None,
         notification_log: list | None = None,
     ) -> Path:
         """Write a timestamped t3_{timestamp}.json to the session directory.
 
-        Phase 22-J: prefers `t3_recipe_by_plot` (per-plot stacks). The flat
-        `t3_recipe` argument is kept for backward compatibility with callers
+        Phase 22-J: prefers `t3_audit_steps_by_plot` (per-plot stacks). The flat
+        `t3_audit_steps` argument is kept for backward compatibility with callers
         not yet updated and is stored alongside as a flattened convenience.
         """
-        if t3_recipe_by_plot is None:
-            t3_recipe_by_plot = {}
-        if t3_recipe is None:
+        if t3_audit_steps_by_plot is None:
+            t3_audit_steps_by_plot = {}
+        if t3_audit_steps is None:
             # Flatten per-plot for the legacy field — readers that don't know
             # about per-plot still get a usable list.
-            t3_recipe = [n for nodes in t3_recipe_by_plot.values() for n in nodes]
+            t3_audit_steps = [n for nodes in t3_audit_steps_by_plot.values() for n in nodes]
         ts = _timestamp()
         ghost = {
             "session_key": session_key,
@@ -341,8 +341,8 @@ class SessionManager:
             "label": label,
             "tier_toggle": tier_toggle,
             "schema_version": 2,           # 22-J: bumped from implicit v1 (flat list only)
-            "t3_recipe": t3_recipe,        # legacy flat view, kept for bw compat
-            "t3_recipe_by_plot": t3_recipe_by_plot,
+            "t3_audit_steps": t3_audit_steps,        # legacy flat view, kept for bw compat
+            "t3_audit_steps_by_plot": t3_audit_steps_by_plot,
             "t3_plot_overrides": t3_plot_overrides or {},
             "notification_log": notification_log or [],
         }
@@ -357,8 +357,8 @@ class SessionManager:
     def list_t3_ghosts(self, session_key: str) -> list[dict]:
         """All t3_*.json for a session, sorted newest-first.
 
-        Phase 22-J: surfaces both `t3_recipe` (legacy flat) and
-        `t3_recipe_by_plot` (per-plot stacks). For pre-22-J ghosts that have
+        Phase 22-J: surfaces both `t3_audit_steps` (legacy flat) and
+        `t3_audit_steps_by_plot` (per-plot stacks). For pre-22-J ghosts that have
         only the flat list, the flat nodes are bucketed under "__legacy__" so
         the UI can offer re-targeting (§12g.8).
         """
@@ -369,8 +369,8 @@ class SessionManager:
                 data = json.loads(f.read_text())
             except Exception:
                 continue
-            by_plot = data.get("t3_recipe_by_plot")
-            flat = data.get("t3_recipe", [])
+            by_plot = data.get("t3_audit_steps_by_plot")
+            flat = data.get("t3_audit_steps", [])
             if not isinstance(by_plot, dict) or not by_plot:
                 # Legacy ghost — lift the flat list into the orphaned bucket.
                 by_plot = {"__legacy__": list(flat)} if flat else {}
@@ -382,8 +382,8 @@ class SessionManager:
                 "data_batch_hash": data.get("data_batch_hash", ""),
                 "tier_toggle": data.get("tier_toggle", "T2"),
                 "schema_version": data.get("schema_version", 1),
-                "t3_recipe": flat,
-                "t3_recipe_by_plot": by_plot,
+                "t3_audit_steps": flat,
+                "t3_audit_steps_by_plot": by_plot,
                 "t3_plot_overrides": data.get("t3_plot_overrides", {}),
             })
         return ghosts
@@ -481,19 +481,19 @@ class SessionManager:
 
 
 # ---------------------------------------------------------------------------
-# T3 recipe helpers
+# audit steps helpers
 # ---------------------------------------------------------------------------
 
-def recipe_sha256(t3_recipe: list[dict]) -> str:
-    """SHA256 of the active-only T3 recipe serialized to JSON (sorted keys)."""
-    active = [n for n in t3_recipe if n.get("active", True)]
+def audit_steps_sha256(t3_audit_steps: list[dict]) -> str:
+    """SHA256 of the active-only audit steps serialized to JSON (sorted keys)."""
+    active = [n for n in t3_audit_steps if n.get("active", True)]
     serialized = json.dumps(active, sort_keys=True, ensure_ascii=False).encode()
     return hashlib.sha256(serialized).hexdigest()
 
 
-def gatekeeper_blocked(t3_recipe: list[dict]) -> list[str]:
+def gatekeeper_blocked(t3_audit_steps: list[dict]) -> list[str]:
     """Return list of node IDs that block btn_apply (active nodes with empty reason)."""
-    return [n["id"] for n in t3_recipe if node_blocks_apply(n)]
+    return [n["id"] for n in t3_audit_steps if node_blocks_apply(n)]
 
 
 # ---------------------------------------------------------------------------

@@ -6,7 +6,7 @@ When interacting with massive biological or economical datasets, certain operati
 
 ### The Golden Rule: Don't Panic!
 **You cannot permanently break this application.**
-SPARMVET operates entirely on "copies" of your recipes and data during your session. The worst-case scenario if you make a massive mistake in the T3 sandbox is that the page freezes. If that happens:
+SPARMVET operates entirely on "copies" of your audit trails and data during your session. The worst-case scenario if you make a massive mistake in the T3 sandbox is that the page freezes. If that happens:
 1. Reload your browser page.
 2. Select your project again from the sidebar.
 You will never delete or corrupt the system's baseline data.
@@ -31,7 +31,7 @@ A **Data analysis recipe** dictates the baseline state of your data (Tier 2). It
 
 If you edit your `.yaml` data analysis recipe file and upload it...
 - **Normal Behavior**: The screen dims with an "In Calculation" overlay.
-- **Why?**: The system has to throw out the old "pre-chopped onions" and prepare new ones based on your new recipe. This wipes the Tier 2 cache and rebuilds it. It takes time, but ensures your visuals perfectly match your new rules.
+- **Why?**: The system has to throw out the old "pre-chopped onions" and prepare new ones based on your new audit trail. This wipes the Tier 2 cache and rebuilds it. It takes time, but ensures your visuals perfectly match your new rules.
 
 ### Fast vs Slow Interactions
 - **Fast:** Changing a dropdown to filter a plot, or tweaking a plot color in the T3 sandbox. This relies on the ultra-fast cache.
@@ -105,7 +105,7 @@ The **Filters** accordion in the left sidebar lets you narrow down what is plott
 
 The column selector for the data preview (above the table) lets you show or hide columns in the preview only — this does not affect the plot.
 
-> **Note:** If you are an advanced user with T3 active, an "Apply to recipe" button will appear — this saves the filters as a step in your wrangling recipe (feature in progress).
+> **Note:** If you are an advanced user with T3 active, an "Apply to audit trail" button will appear — this saves the filters as a step in your wrangling steps (feature in progress).
 
 ### Exporting your results (Export panel)
 
@@ -115,7 +115,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 |----------|-----------------|
 | `plots/` | All plots as SVG (web) or PNG ≥600 DPI (publication) |
 | `data/` | T1 as TSV; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view |
-| `recipes/` | The YAML wrangling/assembly files for your project |
+| `steps/` | The YAML wrangling/assembly files for your project |
 | `report.qmd` | A Quarto source file — run `quarto render report.qmd` to produce an HTML or PDF report |
 | `T3_data_<plot>.tsv` | The data of a plot with the steps you sent to audit (only for plots that have such steps) |
 | `README.txt` | Summary of what is in the bundle |
@@ -126,7 +126,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 2. Choose a preset: **Web / Presentation** (SVG, smaller file) or **Publication** (PNG, ≥600 DPI).
 3. Click **📦 Export Bundle** and save the file.
 
-> **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `recipes/t3_steps.yaml`. Your results are always traceable.
+> **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `steps/t3_steps.yaml`. Your results are always traceable.
 
 ### The Audit Stack (advanced app features files only)
 

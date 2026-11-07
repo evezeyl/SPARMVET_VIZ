@@ -37,7 +37,7 @@ Leaf-to-root order: pure functions first, reactives last.
 
 | Step | New File | Source Lines | Risk |
 |---|---|---|---|
-| **24-A** | `app/modules/t3_recipe_engine.py` | L284–L381 (pure helpers) | Low — pure functions, no Shiny |
+| **24-A** | `app/modules/t3_audit_engine.py` | L284–L381 (pure helpers) | Low — pure functions, no Shiny |
 | **24-B** | `app/handlers/filter_handlers.py` | L2005–L2762 (filter UI + reactives) | Medium — reactive.Value refs passed via kwargs |
 | **24-C** | `app/handlers/t3_audit_handlers.py` | L2392–L2762 (T3 audit/propagation) | Medium — interleaved with filter, read carefully |
 | **24-D** | `app/handlers/session_handlers.py` | L1772–L1994 (session persistence) | Low — self-contained, no filter deps |
@@ -176,5 +176,5 @@ Sub-handler `define_*()` calls are internal — their signatures can evolve free
 
 - Every new handler file needs the `@deps` header comment block (see `home_theater.py` L22–27 for format).
 - `_safe_id()` and `_collect_all_group_plot_ids()` stay in `home_theater.py` (called at init time before sub-handlers are registered).
-- Filter operator contract: `closed=` field on between rows must be `'both'` or `'none'`. Anything else triggers defensive fallback. This logic lives in `t3_recipe_engine.py` after 24-A.
+- Filter operator contract: `closed=` field on between rows must be `'both'` or `'none'`. Anything else triggers defensive fallback. This logic lives in `t3_audit_engine.py` after 24-A.
 - PK filter is ALLOWED (ADR-049a). Do not reintroduce `if is_pk: node_type = "exclusion_row"` silent-conversion.

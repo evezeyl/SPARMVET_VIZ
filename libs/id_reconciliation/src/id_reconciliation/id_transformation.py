@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import yaml
 from pathlib import Path
-from .data_structures import TransformationRecipe
+from .data_structures import IdTransformation
 
 # @deps
-# provides: save_recipe, load_recipe
+# provides: save_transformation, load_transformation
 # consumes: libs/id_reconciliation/src/id_reconciliation/data_structures.py
 # consumed_by: libs/id_reconciliation/src/id_reconciliation/core.py
 # @end_deps
 
 
-def save_recipe(recipe: TransformationRecipe, path: Path) -> None:
-    """Persist a TransformationRecipe to YAML."""
+def save_transformation(id_transformation: IdTransformation, path: Path) -> None:
+    """Persist an IdTransformation to YAML."""
     data = {
-        "ref_column": recipe.ref_column,
-        "target_column": recipe.target_column,
-        "steps": recipe.steps,
-        "metadata": recipe.metadata,
+        "ref_column": id_transformation.ref_column,
+        "target_column": id_transformation.target_column,
+        "steps": id_transformation.steps,
+        "metadata": id_transformation.metadata,
     }
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -25,11 +25,11 @@ def save_recipe(recipe: TransformationRecipe, path: Path) -> None:
         yaml.dump(data, fh, default_flow_style=False, allow_unicode=True)
 
 
-def load_recipe(path: Path) -> TransformationRecipe:
-    """Load a TransformationRecipe from YAML."""
+def load_transformation(path: Path) -> IdTransformation:
+    """Load an IdTransformation from YAML."""
     with Path(path).open("r", encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
-    return TransformationRecipe(
+    return IdTransformation(
         ref_column=data["ref_column"],
         target_column=data["target_column"],
         steps=data.get("steps", []),

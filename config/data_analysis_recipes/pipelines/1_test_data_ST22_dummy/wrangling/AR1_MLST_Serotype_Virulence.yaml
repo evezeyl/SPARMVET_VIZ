@@ -1,4 +1,4 @@
-# AR1 Assembly Recipe: Sample-to-Gene Mapping (Shared)
+# AR1 Assembly steps: Sample-to-Gene Mapping (Shared)
 tier1:
   # Step 1: Build the Sample Backbone
   - action: "join"

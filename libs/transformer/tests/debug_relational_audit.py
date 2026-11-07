@@ -89,13 +89,13 @@ def perform_relational_audit(data_analysis_recipe_path: str, output_dir: str):
 
             # Execute Assembly (Layer 2)
             assembler = DataAssembler(ingredient_dfs)
-            recipe = info.get("recipe", [])
-            # Handle tiered recipe
-            if isinstance(recipe, dict):
-                recipe = recipe.get("tier1", []) + recipe.get("tier2", [])
+            steps = info.get("steps", [])
+            # Handle tiered steps
+            if isinstance(steps, dict):
+                steps = steps.get("tier1", []) + steps.get("tier2", [])
 
             try:
-                lf_result = assembler.assemble(recipe)
+                lf_result = assembler.assemble(steps)
                 df_result = lf_result.collect()
 
                 report.write(

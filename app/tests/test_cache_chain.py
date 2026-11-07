@@ -45,12 +45,12 @@ class World:
         self.data_file.write_text(text)
         bump(self.data_file)
 
-    def write_data_analysis_recipe(self, *, wrangling_tier1=(), recipe_tier1=(), recipe_tier2=(), plot_label="P",
+    def write_data_analysis_recipe(self, *, wrangling_tier1=(), steps_tier1=(), steps_tier2=(), plot_label="P",
                        group_type="categorical", final_contract=None, source_path=None) -> None:
         frag = self.data_analysis_recipes_dir / "tiny" / "wrangling"
         frag.mkdir(parents=True, exist_ok=True)
         (frag / "T_wrangling.yaml").write_text(json.dumps({"tier1": list(wrangling_tier1), "tier2": []}))
-        (frag / "C_recipe.yaml").write_text(json.dumps({"tier1": list(recipe_tier1), "tier2": list(recipe_tier2)}))
+        (frag / "C_steps.yaml").write_text(json.dumps({"tier1": list(steps_tier1), "tier2": list(steps_tier2)}))
         contract = f"    final_contract: {json.dumps(final_contract)}\n" if final_contract else ""
         entry = self.data_analysis_recipes_dir / "tiny.yaml"
         entry.write_text(f"""id: tiny
@@ -66,7 +66,7 @@ joins:
   C:
     ingredients:
       - dataset_id: T
-    recipe: !include 'tiny/wrangling/C_recipe.yaml'
+    steps: !include 'tiny/wrangling/C_steps.yaml'
 {contract}analysis_groups:
   g:
     label: G
@@ -80,7 +80,7 @@ joins:
             - name: geom_bar
               params: {{}}
 """)
-        for f in (entry, frag / "T_wrangling.yaml", frag / "C_recipe.yaml"):
+        for f in (entry, frag / "T_wrangling.yaml", frag / "C_steps.yaml"):
             bump(f)
 
     # -- what a session does ---------------------------------------------------------------
@@ -152,15 +152,15 @@ def test_change_in_an_included_file_is_picked_up(world):
     assert [r["sample_id"] for r in rows] == ["s1", "s2"]
 
 
-def test_change_in_the_assembly_recipe_tier1_rebuilds(world):
-    world.write_data_analysis_recipe(recipe_tier1=[FILTER_B])
+def test_change_in_the_assembly_steps_tier1_rebuilds(world):
+    world.write_data_analysis_recipe(steps_tier1=[FILTER_B])
     rows = world.build()
     assert world.was_rewritten()
     assert [r["sample_id"] for r in rows] == ["s3"]
 
 
 def test_tier2_only_change_keeps_the_tier1_anchor(world):
-    world.write_data_analysis_recipe(recipe_tier2=[FILTER_A])
+    world.write_data_analysis_recipe(steps_tier2=[FILTER_A])
     assert len(world.build()) == 3
     assert not world.was_rewritten(), "a Tier 2 step must not force a Tier 1 rebuild"
 

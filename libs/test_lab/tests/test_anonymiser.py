@@ -237,11 +237,11 @@ class TestOutputFiles:
         assert (tmp_path / "out" / "mapping_sample_id.tsv").exists()
         assert (tmp_path / "out" / "anonymisation_config.yaml").exists()
 
-    def test_deanon_recipe_is_valid_yaml(self, metadata_tsv):
-        recipe_yaml = Anonymiser().build_deanon_recipe(
+    def test_deanon_steps_is_valid_yaml(self, metadata_tsv):
+        steps_yaml = Anonymiser().build_deanon_steps(
             "sample_id", "mapping_sample_id.tsv"
         )
-        parsed = yaml.safe_load(recipe_yaml)
+        parsed = yaml.safe_load(steps_yaml)
         assert isinstance(parsed, list)
         step = parsed[0]
         assert step["action"] == "join"

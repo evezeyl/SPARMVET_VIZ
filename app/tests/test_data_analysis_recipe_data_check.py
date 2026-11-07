@@ -69,7 +69,7 @@ def _project(tmp_path: Path, *, reads_header="sample_id\treads", reads_rows=("s1
             ingredients:
               - dataset_id: A
               - dataset_id: B
-            recipe:
+            steps:
               tier1:
                 - action: join
                   right_ingredient: B
@@ -78,7 +78,7 @@ def _project(tmp_path: Path, *, reads_header="sample_id\treads", reads_rows=("s1
           OnlyA:
             ingredients:
               - dataset_id: A
-            recipe:
+            steps:
               tier1: []
         """) + _ANALYSIS)
     return data_analysis_recipe

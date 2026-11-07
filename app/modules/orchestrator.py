@@ -207,8 +207,8 @@ class DataOrchestrator:
 
         # Path C: assembly — ordered ingredient dict so DataAssembler starts
         # from the correct base (first declared ingredient, not first dict key)
-        recipe_raw = collection_spec.get("recipe", [])
-        recipe = DataWrangler._resolve_tier(recipe_raw, "tier1")
+        steps_raw = collection_spec.get("steps", [])
+        steps = DataWrangler._resolve_tier(steps_raw, "tier1")
 
         ingredient_ids = [
             item.get("dataset_id") if isinstance(item, dict) else item
@@ -237,7 +237,7 @@ class DataOrchestrator:
         per_ingredient_cast: dict[str, set] = {ds_id: set() for ds_id in assembly_ingredients}
         base_cast: set = set()  # columns to cast on the base frame
 
-        for step in recipe:
+        for step in steps:
             right_id = step.get("right_ingredient")
             sym = step.get("on")
             left_on = step.get("left_on")
@@ -275,19 +275,19 @@ class DataOrchestrator:
         assembly_ingredients = normalised
 
         # Filter steps referring to missing ingredients
-        filtered_recipe = []
-        for step in recipe:
+        filtered_steps = []
+        for step in steps:
             right_id = step.get("right_ingredient")
             if right_id and right_id not in assembly_ingredients:
                 print(
-                    f"⚠️ Skipping recipe step '{step.get('action')}' due to missing ingredient '{right_id}'")
+                    f"⚠️ Skipping step '{step.get('action')}' due to missing ingredient '{right_id}'")
                 continue
-            filtered_recipe.append(step)
+            filtered_steps.append(step)
 
         # ADR-089: the chained Tier 1 key replaces the old provenance (data analysis recipe entry file
         # hash + data hash). It covers the resolved data analysis recipe including every included file,
         # the data content and the engine version, so any upstream change rebuilds the anchor.
-        filtered_recipe.append({
+        filtered_steps.append({
             "action": "sink_parquet",
             "path": str(output_path),
             "force_recompute": False,
@@ -296,7 +296,7 @@ class DataOrchestrator:
         })
 
         assembler = DataAssembler(assembly_ingredients)
-        lf = assembler.assemble(filtered_recipe)
+        lf = assembler.assemble(filtered_steps)
 
 
         lf = self._apply_final_contract(lf, collection_spec)

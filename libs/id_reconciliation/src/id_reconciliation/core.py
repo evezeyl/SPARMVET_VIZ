@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import polars as pl
 from utils.id_patterns import PatternSuggestion, apply_pattern, suggest_regex
-from .data_structures import IDPair, MatchResult, TransformationRecipe
+from .data_structures import IDPair, MatchResult, IdTransformation
 from .matcher import exact_match, fuzzy_match_batch
 from .pattern_detector import detect_patterns
 
@@ -139,13 +139,13 @@ class IDReconciliationEngine:
         )
         return self.reconcile(ref_ids, target_ids)
 
-    def generate_recipe(
+    def generate_transformation(
         self,
         results: list[MatchResult],
         ref_column: str,
         target_column: str,
-    ) -> TransformationRecipe:
-        """Build a TransformationRecipe from reconciliation results.
+    ) -> IdTransformation:
+        """Build an IdTransformation from reconciliation results.
 
         Infers cleaning steps from the transform_applied fields on matched results
         and includes an explicit recode map for remaining fuzzy matches.
@@ -182,7 +182,7 @@ class IDReconciliationEngine:
         if fuzzy_pairs:
             metadata["fuzzy_recode_map"] = {orig: target for orig, target in fuzzy_pairs}
 
-        return TransformationRecipe(
+        return IdTransformation(
             ref_column=ref_column,
             target_column=target_column,
             steps=steps,
@@ -214,14 +214,14 @@ def format_match_table(results: list[MatchResult]) -> pl.DataFrame:
 def apply_recode_step(
     df: pl.DataFrame,
     column: str,
-    recipe: TransformationRecipe,
+    id_transformation: IdTransformation,
 ) -> pl.DataFrame:
-    """Apply recode steps from a TransformationRecipe to a DataFrame column.
+    """Apply recode steps from an IdTransformation to a DataFrame column.
 
     Supported actions: strip_whitespace, cast_string, regex_replace, lowercase,
     mutate (Polars expression string), drop_duplicates, null_if, drop_nulls.
     """
-    for step in recipe.steps:
+    for step in id_transformation.steps:
         action = step.get("action")
         if action == "strip_whitespace":
             df = df.with_columns(pl.col(column).str.strip_chars())

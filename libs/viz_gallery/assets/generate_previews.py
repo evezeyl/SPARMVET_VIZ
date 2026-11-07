@@ -10,7 +10,7 @@ Usage (from project root, with .venv active):
     .venv/bin/python libs/viz_gallery/assets/generate_previews.py --only beeswarm_sina ecdf
     .venv/bin/python libs/viz_gallery/assets/generate_previews.py --skip bar_simple
 
-The first plot_id found in each data analysis recipe is rendered (should be one per recipe).
+The first plot_id found in each data analysis recipe is rendered (should be one per example).
 """
 import argparse
 import sys
@@ -33,13 +33,13 @@ except ImportError as e:
     sys.exit(1)
 
 
-def render_recipe(recipe_dir: Path, factory: VizFactory) -> bool:
-    data_analysis_recipe_path = recipe_dir / "data_analysis_recipe.yaml"
-    data_path = recipe_dir / "example_data.tsv"
-    out_path = recipe_dir / "preview_plot.png"
+def render_example(example_dir: Path, factory: VizFactory) -> bool:
+    data_analysis_recipe_path = example_dir / "data_analysis_recipe.yaml"
+    data_path = example_dir / "example_data.tsv"
+    out_path = example_dir / "preview_plot.png"
 
     if not data_analysis_recipe_path.exists() or not data_path.exists():
-        print(f"  ⚠️  {recipe_dir.name}: missing data analysis recipe or data — skipped")
+        print(f"  ⚠️  {example_dir.name}: missing data analysis recipe or data — skipped")
         return False
 
     try:
@@ -48,7 +48,7 @@ def render_recipe(recipe_dir: Path, factory: VizFactory) -> bool:
 
         plots = data_analysis_recipe.get("plots", {})
         if not plots:
-            print(f"  ⚠️  {recipe_dir.name}: no plots key in data analysis recipe — skipped")
+            print(f"  ⚠️  {example_dir.name}: no plots key in data analysis recipe — skipped")
             return False
 
         plot_id = next(iter(plots))
@@ -57,16 +57,16 @@ def render_recipe(recipe_dir: Path, factory: VizFactory) -> bool:
         p = factory.render(df, data_analysis_recipe, plot_id)
         p.save(out_path, width=8, height=5, dpi=120, verbose=False)
 
-        thumb_path = recipe_dir / "preview_thumb.png"
+        thumb_path = example_dir / "preview_thumb.png"
         with Image.open(out_path) as img:
             img.thumbnail((100, 75), Image.LANCZOS)
             img.save(thumb_path)
 
-        print(f"  ✅ {recipe_dir.name} → preview_plot.png + preview_thumb.png")
+        print(f"  ✅ {example_dir.name} → preview_plot.png + preview_thumb.png")
         return True
 
     except Exception as e:
-        print(f"  ❌ {recipe_dir.name}: {e}")
+        print(f"  ❌ {example_dir.name}: {e}")
         return False
 
 
@@ -74,10 +74,10 @@ def main():
     parser = argparse.ArgumentParser(description="Generate gallery preview PNGs.")
     parser.add_argument("--gallery", default=str(project_root / "assets/gallery_data"),
                         help="Path to gallery_data directory (default: assets/gallery_data)")
-    parser.add_argument("--only", nargs="+", metavar="RECIPE",
-                        help="Only render these recipe names")
-    parser.add_argument("--skip", nargs="+", metavar="RECIPE",
-                        help="Skip these recipe names")
+    parser.add_argument("--only", nargs="+", metavar="STEPS",
+                        help="Only render these example names")
+    parser.add_argument("--skip", nargs="+", metavar="STEPS",
+                        help="Skip these example names")
     parser.add_argument("--force", action="store_true",
                         help="Re-render even if preview_plot.png already exists")
     args = parser.parse_args()
@@ -97,7 +97,7 @@ def main():
 
     print(f"\n🖼️  Gallery Preview Generator")
     print(f"   Gallery : {gallery_dir}")
-    print(f"   Recipes : {len(dirs)}\n")
+    print(f"   Examples : {len(dirs)}\n")
 
     ok = failed = skipped = 0
     for d in dirs:
@@ -115,7 +115,7 @@ def main():
             print(f"  🖼️  {d.name}: generated missing preview_thumb.png from existing preview_plot.png")
             ok += 1
             continue
-        if render_recipe(d, factory):
+        if render_example(d, factory):
             ok += 1
         else:
             failed += 1

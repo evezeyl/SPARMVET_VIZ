@@ -37,7 +37,7 @@ joins:
     description: "Default assembly for the project."
     ingredients:
       - dataset_id: "Primary_Dataset"
-    recipe: [] # Identity fallback (Identity Mode)
+    steps: [] # Identity fallback (Identity Mode)
     final_contract: ["sample_id", "value_col"]
 
 # SECTION 5: ANALYSIS GROUPS

@@ -22,7 +22,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
-from app.modules.t3_recipe_engine import _apply_filter_rows, _op_label
+from app.modules.t3_audit_engine import _apply_filter_rows, _op_label
 
 
 # ---------------------------------------------------------------------------
@@ -552,7 +552,7 @@ def define_export_server(input, output, session, *,
         Produces a zip file containing:
         - plots/          SVG (web preset) or high-DPI PNG (publication preset) per plot
         - data/           T1 TSV for each dataset referenced by active plots
-        - recipes/        YAML wrangling recipe(s) for the active project
+        - audit trails/        YAML wrangling steps(s) for the active project
         - report.qmd      Quarto source report embedding all plots and datasets
         - README.txt      Bundle data analysis recipe (timestamp, project, app features, preset)
         """
@@ -643,12 +643,12 @@ def define_export_server(input, output, session, *,
         _t3_aesthetic_overrides: dict[str, dict] = {}
         if home_state is not None and bootloader.is_enabled("t3_sandbox_enabled"):
             _state = home_state.get()
-            _rbp = _state.get("t3_recipe_by_plot", {}) or {}
+            _rbp = _state.get("t3_audit_steps_by_plot", {}) or {}
             for _pid, _ in all_plots:
                 _nodes = [n for n in _rbp.get(f"subtab_{_pid}", []) if n.get("active", True)]
                 if _nodes:
                     _t3_by_plot[_pid] = _nodes
-            # t3_plot_overrides: resolved aesthetic state per plot (separate from recipe nodes)
+            # t3_plot_overrides: resolved aesthetic state per plot (separate from audit step)
             _overrides_all = _state.get("t3_plot_overrides", {}) or {}
             for _pid, _ in all_plots:
                 _subtab = f"subtab_{_pid}"
@@ -890,7 +890,7 @@ def define_export_server(input, output, session, *,
                             f"T1 data export failed:\n{e}"
                         )
 
-                    # ── T2 (exported when tier2 recipe steps exist) ───────
+                    # ── T2 (exported when tier2 steps exist) ───────
                     try:
                         from app.modules.cache_keys import tier2_steps
                         if target_ds and tier2_steps(active_cfg().raw_config, target_ds):
@@ -944,7 +944,7 @@ def define_export_server(input, output, session, *,
                                     f"T3 data export failed:\n{e}"
                                 )
 
-                # ── Copy YAML recipes (active project ONLY) ──────────────
+                # ── Copy YAML audit trails (active project ONLY) ──────────────
                 # EXPORT-BUG-2 (2026-04-30): the previous code did
                 # proj_dir.rglob("*.yaml") on the parent directory, which
                 # scooped up EVERY other project's data analysis recipe + their include
@@ -961,7 +961,7 @@ def define_export_server(input, output, session, *,
                         # 1. The active data analysis recipe itself
                         with open(data_analysis_recipe_p, "rb") as f:
                             zf.writestr(
-                                f"{bundle_dir}/recipes/{data_analysis_recipe_p.name}",
+                                f"{bundle_dir}/audit_steps/{data_analysis_recipe_p.name}",
                                 f.read()
                             )
                         # 2. Includes subdirectory (if it exists for this project)
@@ -971,11 +971,11 @@ def define_export_server(input, output, session, *,
                                 rel = yaml_file.relative_to(proj_dir)
                                 with open(yaml_file, "rb") as f:
                                     zf.writestr(
-                                        f"{bundle_dir}/recipes/{rel}",
+                                        f"{bundle_dir}/audit_steps/{rel}",
                                         f.read()
                                     )
                 except Exception as e:
-                    zf.writestr(f"{bundle_dir}/recipes/ERROR.txt", str(e))
+                    zf.writestr(f"{bundle_dir}/audit_steps/ERROR.txt", str(e))
 
                 # ── t3_steps.yaml (when T3 has committed changes) ─────────
                 if _t3_by_plot or _t3_aesthetic_overrides:
@@ -997,15 +997,15 @@ def define_export_server(input, output, session, *,
                                 for _pid, _nodes in _t3_by_plot.items()
                             },
                         }
-                        # Aesthetic overrides are stored separately from recipe nodes (§12c)
+                        # Aesthetic overrides are stored separately from audit step (§12c)
                         if _t3_aesthetic_overrides:
                             t3_steps_data["t3_aesthetic_overrides"] = _t3_aesthetic_overrides
                         zf.writestr(
-                            f"{bundle_dir}/recipes/t3_steps.yaml",
+                            f"{bundle_dir}/audit_steps/t3_steps.yaml",
                             _yaml.safe_dump(t3_steps_data, sort_keys=False, allow_unicode=True),
                         )
                     except Exception as e:
-                        zf.writestr(f"{bundle_dir}/recipes/t3_steps_ERROR.txt", str(e))
+                        zf.writestr(f"{bundle_dir}/audit_steps/t3_steps_ERROR.txt", str(e))
 
             # data_analysis_recipe_sha, data_sha, tiers_exported, prov — all computed before tmpdir block.
 
@@ -1184,12 +1184,12 @@ def define_export_server(input, output, session, *,
                 for _ds_k, _ds_h in _prov_dh.items():
                     _dh_qmd_rows.append(
                         f"| Decision hash ({_ds_k}) | `{_ds_h}` | "
-                        f"SHA256 of wrangling recipe for `{_ds_k}` — read from Parquet metadata key `sparmvet_decision_hash` |"
+                        f"SHA256 of wrangling steps for `{_ds_k}` — read from Parquet metadata key `sparmvet_decision_hash` |"
                     )
             else:
                 _dh_qmd_rows.append(
                     "| Decision hash | see Parquet metadata | "
-                    "SHA256 of wrangling recipe dict — one per T1/T2 Parquet file |"
+                    "SHA256 of wrangling steps dict — one per T1/T2 Parquet file |"
                 )
             # Software version row
             _sw_qmd = prov.get("software_versions", {})
@@ -1210,7 +1210,7 @@ def define_export_server(input, output, session, *,
                 *_dh_qmd_rows,
                 "",
                 "> These hashes allow independent verification that this report was generated",
-                "> from the exact data analysis recipe, raw data, and wrangling recipe present at export time.",
+                "> from the exact data analysis recipe, raw data, and wrangling steps present at export time.",
                 "> The Tier 1 and Tier 2 keys are stored in the metadata of the parquet files",
                 "> (`sparmvet_tier1_key`, `sparmvet_tier2_key`) and in the plot image metadata.",
                 "",
@@ -1397,10 +1397,10 @@ def define_export_server(input, output, session, *,
                 "",
                 "> Report generated by SPARMVET-VIZ.",
                 f"> Git commit: `{prov['git_commit']}` | Release: `{prov['release_version']}`",
-                "> Recipes are in the `recipes/` folder.",
+                "> Audit trails are in the `audit trails/` folder.",
                 f"> Data analysis recipe SHA256 (file set): {prov['data_analysis_recipe_sha256'] or 'n/a'}",
                 f"> Data batch hash (raw source files): {prov['data_batch_hash'] or 'n/a'}",
-                "> Decision hashes (wrangling recipe): see `sparmvet_decision_hash` in each Parquet metadata block.",
+                "> Decision hashes (wrangling steps): see `sparmvet_decision_hash` in each Parquet metadata block.",
             ]
 
             qmd_source = "\n".join(qmd_lines)
@@ -1520,7 +1520,7 @@ def define_export_server(input, output, session, *,
                 *mapping_block,
                 "",
                 "Audited T3 steps (always applied to the plot and its data):",
-                *([f"  {_p}: {len(_t3_by_plot.get(_p, []))} step(s), see recipes/t3_steps.yaml and the T3 Audit Trail in report.qmd"
+                *([f"  {_p}: {len(_t3_by_plot.get(_p, []))} step(s), see audit_steps/t3_steps.yaml and the T3 Audit Trail in report.qmd"
                    for _p in sorted(audited_plots)] or ["  none"]),
                 "",
                 "Contents:",
@@ -1529,7 +1529,7 @@ def define_export_server(input, output, session, *,
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
                 "  <dataset>/T3_data_<plot>.tsv — My view data of each plot (T3, when exported): T2 (T1 when there",
                 "                     are no tier2 steps) plus that plot's filters and column drops",
-                "  recipes/          — YAML wrangling recipes",
+                "  audit trails/          — YAML wrangling steps",
                 "  lineage/          — lineage_graph.json (shared-node DAG, ADR-074)",
                 "  report.qmd        — Quarto source (re-render: quarto render report.qmd)",
                 rendered_note,

@@ -15,7 +15,7 @@ joins:
   Master_Collection:
     ingredients:
     - dataset_id: Stress_Source
-    recipe: !include 'stress_test_master/wrangling/Master_Collection_recipe.yaml'
+    steps: !include 'stress_test_master/wrangling/Master_Collection_steps.yaml'
 plot_defaults:
   default_font_family: Liberation Sans
 analysis_groups:

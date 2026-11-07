@@ -197,7 +197,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 - [ ] LAB-08 — Exact matches are detected and shown in a match table (certainty 1.0 for exact).
 - [ ] LAB-09 — When IDs don't line up (e.g. `sample_001` vs `001`), the tool **suggests a transformation** (prefix/suffix strip, delimiter extract, case-normalise).
 - [ ] LAB-10 — Apply a suggested pattern → match count increases; remaining unmatched fall to fuzzy (rapidfuzz) with <1.0 certainty.
-- [ ] LAB-11 — Save the **transformation recipe** as YAML → downloads; reload it back into the tool → same steps restored (round-trip).
+- [ ] LAB-11 — Save the **id transformation** as YAML → downloads; reload it back into the tool → same steps restored (round-trip).
 - [ ] LAB-12 — Many-to-many ID collisions are flagged (not silently joined).
 - [ ] LAB-13 — Boundary check: composite/multi-key reconciliation is **out of scope** here — confirm the tool only offers single-key (no composite-key UI). *(That belongs in BLUEPRINT Joint Designer.)*
 
@@ -271,7 +271,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 ### 4f. Save / load
 - [ ] BLU-27 — Save the data analysis recipe → writes YAML to disk and/or downloads. The saved file is valid and reloads.
 - [ ] BLU-28 — A data analysis recipe saved from BLUEPRINT can be selected and **run in HOME** end-to-end.
-- [ ] BLU-30 **NEW (from issue [#9](https://github.com/evezeyl/SPARMVET_VIZ/issues/9), ADR-089)** — Edit a file of the data analysis recipe in BLUEPRINT (an included wrangling or recipe fragment), save, then reload Home: the new rows appear **without restarting the server** (Tier 1 parquet rebuilt when the change is in Tier 1; only Tier 2 recomputed when the change is in a Tier 2 step). Test while testing BLUEPRINT, together with BLU-09 and BLU-28. *(The cache rules are also covered by `app/tests/test_cache_chain.py`; the BLUEPRINT click-through is still yours.)*
+- [ ] BLU-30 **NEW (from issue [#9](https://github.com/evezeyl/SPARMVET_VIZ/issues/9), ADR-089)** — Edit a file of the data analysis recipe in BLUEPRINT (an included wrangling or step list fragment), save, then reload Home: the new rows appear **without restarting the server** (Tier 1 parquet rebuilt when the change is in Tier 1; only Tier 2 recomputed when the change is in a Tier 2 step). Test while testing BLUEPRINT, together with BLU-09 and BLU-28. *(The cache rules are also covered by `app/tests/test_cache_chain.py`; the BLUEPRINT click-through is still yours.)*
 - [ ] BLU-29 `[?]` — Join-component save: confirm the `on:` key is correctly quoted in saved YAML (known serialization risk — `on` is a YAML boolean trap). If a saved join reloads with `True` as a key, that's a `[!]`.
 
 ---
@@ -342,9 +342,9 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ### 5g. Export bundle
 - [ ] HOM-31 — Export panel: set a bundle label, pick format (PNG/SVG/PDF), pick scope (global / group / plot), click Export → `.zip` downloads.
-- [ ] HOM-32 — Bundle contains `plots/`, `data/` (T1+T2; T3 when advanced+T3 active), `recipes/`, `report.qmd` (with a **T3 Audit Trail** section when T3 nodes exist), `README.txt`. Filters present → `FILTERS.txt` included ("no trace, no export").
+- [ ] HOM-32 — Bundle contains `plots/`, `data/` (T1+T2; T3 when advanced+T3 active), `steps/`, `report.qmd` (with a **T3 Audit Trail** section when T3 nodes exist), `README.txt`. Filters present → `FILTERS.txt` included ("no trace, no export").
 - [ ] HOM-33 — `report.qmd` front-matter records data analysis recipe id + sha; methods text reads in plain English from active T3 nodes; PK-touching nodes carry the ⚠️ marker.
-- [ ] HOM-46 `[?]` **NEW (note from Eve, 2026-11-05)** — Export after an audit: the exported data analysis recipe must state **the data actually used**, not the default data. Check with a deployment that has `prefer_discovery: true` (data delivered into `raw_data`) and after a Data Import. Suspected gap: the bundle's `recipes/` holds a verbatim copy of the data analysis recipe, which still shows the default `source.path`, while the README/report list the data really used (`data_source_paths`). Decide how the bundle states which data was used. [ADR-088 point 5](../knowledge/architecture_decisions.md)
+- [ ] HOM-46 `[?]` **NEW (note from Eve, 2026-11-05)** — Export after an audit: the exported data analysis recipe must state **the data actually used**, not the default data. Check with a deployment that has `prefer_discovery: true` (data delivered into `raw_data`) and after a Data Import. Suspected gap: the bundle's `steps/` holds a verbatim copy of the data analysis recipe, which still shows the default `source.path`, while the README/report list the data really used (`data_source_paths`). Decide how the bundle states which data was used. [ADR-088 point 5](../knowledge/architecture_decisions.md)
 
 ### 5h. Data Import (advanced+/independent)
 - [x] HOM-34 — **Files: [`assets/test_uploads/`](../../assets/test_uploads/README.md) (`FastP_valid_changed.tsv`); restore afterwards with `git restore assets/test_data/`.** Data Import accordion: upload a TSV matching a schema → assignment table appears with the right dataset id pre-selected → Apply → plots reload, no traceback.
@@ -356,16 +356,16 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ---
 
-## 6. GALLERY (GAL) — recipe browser (re-verify)
+## 6. GALLERY (GAL) — example browser (re-verify)
 
 > Config file: `project-independent_template.yaml`, `developer_template.yaml`, or `qa_template.yaml` (all set `gallery_enabled: true`). Click **Gallery** nav pill. Mature space — lighter pass.
 
-- [ ] GAL-01 — Gallery loads: recipe browser in center; left sidebar shows Recipe selector + collapsible taxonomy filters (Family / Data Pattern / Difficulty).
-- [ ] GAL-02 — Taxonomy filter choices come from `gallery_index.json` (not hardcoded); "Select all" toggles a group's checkboxes; "Apply" filters the recipe list.
-- [ ] GAL-03 — Click a recipe card → center shows its preview PNG + guidance (Visual Cookbook) panes; both accordions collapse/expand independently.
-- [ ] GAL-04 — Recipe shows: description, required columns, raw data analysis recipe YAML; YAML is copyable (the GALLERY→BLUEPRINT handoff is copy-paste, per design — no direct "send to").
+- [ ] GAL-01 — Gallery loads: example browser in center; left sidebar shows Example selector + collapsible taxonomy filters (Family / Data Pattern / Difficulty).
+- [ ] GAL-02 — Taxonomy filter choices come from `gallery_index.json` (not hardcoded); "Select all" toggles a group's checkboxes; "Apply" filters the example list.
+- [ ] GAL-03 — Click a data analysis recipe card → center shows its preview PNG + guidance (Visual Cookbook) panes; both accordions collapse/expand independently.
+- [ ] GAL-04 — Example shows: description, required columns, raw data analysis recipe YAML; YAML is copyable (the GALLERY→BLUEPRINT handoff is copy-paste, per design — no direct "send to").
 - [ ] GAL-05 — Taxonomy tag strip renders (`📊 Family · 🔢 Pattern · 📈 Difficulty …`).
-- [ ] GAL-06 `[~]` — **(carried, old §12)** The recipe-title icons should use the **same** icon set as the taxonomy tag strip, fetched when the taxonomy auto-populates the sidebar (consistency). Confirm; if mismatched, `[~]`.
+- [ ] GAL-06 `[~]` — **(carried, old §12)** The example-title icons should use the **same** icon set as the taxonomy tag strip, fetched when the taxonomy auto-populates the sidebar (consistency). Confirm; if mismatched, `[~]`.
 - [ ] GAL-07 `[~]` — **(carried, old §12)** "Select all" row still has a slightly large gap below it. Low priority.
 - [ ] GAL-08 — Click Home → returns to plots; left sidebar tools reappear; selected data analysis recipe preserved.
 - [ ] GAL-09 `[b]` — Search, community contribution/request, "Open in BLUEPRINT" — **not built** (per GALLERY.md). Confirm absent; don't fail.
@@ -378,9 +378,9 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 - [ ] XSP-01 — TEST_LAB Scaffolding ZIP → load that data analysis recipe in BLUEPRINT → it opens and is editable.
 - [ ] XSP-02 — TEST_LAB Reformatter TSV → use it as input to ID Reconciliation (choose the file) → works as any standalone input.
-- [ ] XSP-03 — GALLERY recipe YAML (copied) → paste into BLUEPRINT escape hatch → it parses.
+- [ ] XSP-03 — Gallery examples YAML (copied) → paste into BLUEPRINT escape hatch → it parses.
 - [ ] XSP-04 — BLUEPRINT saved data analysis recipe → appears in HOME's data analysis recipe selector → runs.
-- [ ] XSP-05 — Anonymiser anon-TSV + mapping-TSV → can be re-joined (de-anonymised) following the printed recipe.
+- [ ] XSP-05 — Anonymiser anon-TSV + mapping-TSV → can be re-joined (de-anonymised) following the printed step list.
 - [ ] XSP-06 — Confirm there is **no** cross-space coupling: disabling a space's flag never strands another space's output (the artifact is a file on disk).
 
 ---

@@ -6,9 +6,9 @@ consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_da
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1), .claude/rules/rules_data_engine.md#3
 @end_deps
 
-Data analysis recipe recipe validator (headless, no Shiny).
+Data analysis recipe validator (headless, no Shiny).
 
-Checks that every wrangling block and every assembly recipe of a data analysis recipe is in a shape the
+Checks that every wrangling block and every assembly steps of a data analysis recipe is in a shape the
 engine accepts (tiered, with tier1/tier2 keys), by running the same resolver the engine uses
 (DataWrangler._resolve_tier). One rule, shared by the contract test, the weekly audit and,
 later, the BLUEPRINT "Validate data analysis recipe" action (BP-VALIDATE-1).
@@ -55,8 +55,8 @@ def find_data_analysis_recipes(directory: Union[str, Path]) -> list[Path]:
     return sorted(Path(directory).glob("*.yaml"))
 
 
-def _recipe_blocks(raw: dict) -> Iterator[tuple[str, object]]:
-    """Yield (location, block) for every wrangling block or assembly recipe a data analysis recipe can carry."""
+def _step_blocks(raw: dict) -> Iterator[tuple[str, object]]:
+    """Yield (location, block) for every wrangling block or assembly steps a data analysis recipe can carry."""
     if "wrangling" in raw:
         yield "wrangling", raw["wrangling"]
     for section in _SCHEMA_SECTIONS:
@@ -72,8 +72,8 @@ def _recipe_blocks(raw: dict) -> Iterator[tuple[str, object]]:
     assemblies = raw.get("joins")
     if isinstance(assemblies, dict):
         for assembly_id, spec in assemblies.items():
-            if isinstance(spec, dict) and "recipe" in spec:
-                yield f"joins.{assembly_id}.recipe", spec["recipe"]
+            if isinstance(spec, dict) and "steps" in spec:
+                yield f"joins.{assembly_id}.steps", spec["steps"]
 
 
 def _load_error_text(stderr_text: str, exc: BaseException) -> str:
@@ -85,7 +85,7 @@ def _load_error_text(stderr_text: str, exc: BaseException) -> str:
 
 
 def validate_data_analysis_recipe(path: Union[str, Path]) -> list[DataAnalysisRecipeProblem]:
-    """Return all recipe problems of the data analysis recipe at path (empty list when it is valid)."""
+    """Return all step list problems of the data analysis recipe at path (empty list when it is valid)."""
     path = Path(path)
     name = path.name
     if not path.is_file():
@@ -104,7 +104,7 @@ def validate_data_analysis_recipe(path: Union[str, Path]) -> list[DataAnalysisRe
         return [DataAnalysisRecipeProblem(name, "load", "data analysis recipe root is not a mapping")]
 
     problems: list[DataAnalysisRecipeProblem] = []
-    for location, block in _recipe_blocks(raw):
+    for location, block in _step_blocks(raw):
         seen: set[str] = set()
         for tier in ("tier1", "tier2"):
             try:

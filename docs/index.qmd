@@ -49,7 +49,7 @@ It would also allow to swap to a different UI (user interface) or the Data sourc
 ### 📚 User Resources {.unnumbered}
 
 For analysts and non-developers navigating the platform:
-- [**The Scientific Cookbook**](./appendix/user_guide_gallery.qmd): A guide to the Gallery and sharing research "recipes."
+- [**The Scientific Cookbook**](./appendix/user_guide_gallery.qmd): A guide to the Gallery and sharing research "examples."
 - [**The Trunk and Branch Guide**](./reference/wrangling_guide.qmd): Understanding the Tiered Wrangling and assembly logic.
 - [**Developing without Code**](./appendix/test_lab_rationale.qmd): Understanding the Test Lab and Building Block analogies.
 - [**The Data Lifecycle**](./appendix/data_lifecycle_theater.qmd): A deep dive into Tiers 1-3 and the Comparison Theater.

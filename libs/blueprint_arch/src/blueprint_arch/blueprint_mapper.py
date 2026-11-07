@@ -118,7 +118,7 @@ class BlueprintMapper:
             _add_node(safe, f'{safe}(["{label}\\nSource"])', "trunk", sid)
             # Wrangling node (always present — may be inline or file)
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             wrn_id = self._n(sid, "wrn")
             if has_wrn:
                 _add_node(wrn_id, f'{wrn_id}["{sid}\\nWrangling"]', "wrangle", sid)
@@ -134,7 +134,7 @@ class BlueprintMapper:
             label = self._get_label(aid, details)
             _add_node(safe, f'{safe}(["{label}\\nAdd Data"])', "add", aid)
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             wrn_id = self._n(aid, "wrn")
             if has_wrn:
                 _add_node(wrn_id, f'{wrn_id}["{aid}\\nWrangling"]', "wrangle", aid)
@@ -146,7 +146,7 @@ class BlueprintMapper:
             _add_node("metadata_schema",
                       'metadata_schema(["Metadata\\nSchema"])', "meta", "metadata_schema")
             has_wrn = isinstance(meta, dict) and bool(
-                meta.get("wrangling") or meta.get("recipe"))
+                meta.get("wrangling") or meta.get("steps"))
             if has_wrn:
                 wrn_id = self._n("metadata_schema", "wrn")
                 _add_node(wrn_id, f'{wrn_id}["metadata_schema\\nWrangling"]',
@@ -181,9 +181,9 @@ class BlueprintMapper:
                 up = _upstream_node(parent_raw)
                 _add_edge(up, safe)
 
-            # Assembly wrangling/recipe node
+            # Assembly wrangling/audit step
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wrn_id = self._n(asid, "wrn")
                 _add_node(wrn_id, f'{wrn_id}["{asid}\\nJoin Wrangling"]',
@@ -343,7 +343,7 @@ class BlueprintMapper:
             all_known.add(safe)
 
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wid = _wrn_id(sid)
                 elements.append(_node(wid, f"{sid}\nWrangle", "wrangle", sid, 1))
@@ -359,7 +359,7 @@ class BlueprintMapper:
             all_known.add(safe)
 
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wid = _wrn_id(aid)
                 elements.append(_node(wid, f"{aid}\nWrangle", "wrangle", aid, 1))
@@ -373,7 +373,7 @@ class BlueprintMapper:
                                   "metadata_schema", 0))
             all_known.add("metadata_schema")
             has_wrn = isinstance(meta, dict) and bool(
-                meta.get("wrangling") or meta.get("recipe"))
+                meta.get("wrangling") or meta.get("steps"))
             if has_wrn:
                 wid = _wrn_id("metadata_schema")
                 elements.append(_node(wid, "Metadata\nWrangle", "wrangle",
@@ -408,7 +408,7 @@ class BlueprintMapper:
                 elements.append(_edge(_upstream(parent_raw), safe))
 
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wid = _wrn_id(asid)
                 # Assembly wrangling is still tier 2 — it follows the join

@@ -86,7 +86,7 @@ class ConfigManager:
             # The ingestor, MetadataValidator, and DataWrangler all rely on this
             # behaviour — do NOT remove it without updating those layers.
             redundant_keys = {"input_fields", "output_fields",
-                              "wrangling", "source", "recipe", "spec"}
+                              "wrangling", "source", "steps", "spec"}
             if isinstance(content, dict) and len(content) == 1:
                 key = list(content.keys())[0]
                 if key in redundant_keys:

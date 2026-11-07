@@ -41,18 +41,18 @@ def run_headless_audit(data_analysis_recipe_path: str, data_dir: str, output_roo
 
     print(result.stdout)
 
-    # 2. Extract the recipe from the data analysis recipe (ConfigManager resolves the !include files)
+    # 2. Extract the example from the data analysis recipe (ConfigManager resolves the !include files)
     from utils.config_loader import ConfigManager
     data_analysis_recipe_data = ConfigManager(data_analysis_recipe_path).raw_config
 
-    # Discovery logic for the recipe (ADR-024): the tier1 steps of the first join, or a
+    # Discovery logic for the example (ADR-024): the tier1 steps of the first join, or a
     # top-level 'wrangling' key.
-    recipe = []
+    example = []
     if "wrangling" in data_analysis_recipe_data:
-        recipe = data_analysis_recipe_data["wrangling"]
+        example = data_analysis_recipe_data["wrangling"]
     elif "joins" in data_analysis_recipe_data:
         first_key = list(data_analysis_recipe_data["joins"].keys())[0]
-        recipe = data_analysis_recipe_data["joins"][first_key].get("recipe", [])
+        example = data_analysis_recipe_data["joins"][first_key].get("steps", [])
 
     # 3. Load the processed data
     df = pl.read_parquet(processed_parquet)
@@ -69,9 +69,9 @@ def run_headless_audit(data_analysis_recipe_path: str, data_dir: str, output_roo
     gallery_vault = Path(output_root) / "gallery_vault"
     manager = GalleryManager(gallery_dir=str(gallery_vault))
 
-    bundle_path = manager.submit_recipe(
+    bundle_path = manager.submit_example(
         name=Path(data_analysis_recipe_path).stem,
-        recipe=recipe,
+        example=example,
         data=df,
         meta_markdown=meta_md,
     )

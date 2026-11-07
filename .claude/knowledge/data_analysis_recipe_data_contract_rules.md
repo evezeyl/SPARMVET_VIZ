@@ -243,7 +243,7 @@ config/data_analysis_recipes/pipelines/
       ...
     wrangling/
       Summary_wrangling.yaml
-      MLST_Metadata_wrangling.yaml     ← assembly recipe
+      MLST_Metadata_wrangling.yaml     ← assembly steps
       ST22_Anchor_wrangling.yaml
       ...
     output_fields/
@@ -265,11 +265,11 @@ config/data_analysis_recipes/pipelines/
 |---|---|---|
 | `input_fields` | `{SchemaID}_input_fields.yaml` | `MLST_input_fields.yaml` |
 | `wrangling` (schema) | `{SchemaID}_wrangling.yaml` | `MLST_wrangling.yaml` |
-| `wrangling` (assembly recipe) | `{AssemblyID}_wrangling.yaml` or `{AssemblyID}_recipe.yaml` | `MLST_Metadata_wrangling.yaml` |
+| `wrangling` (assembly steps) | `{AssemblyID}_wrangling.yaml` or `{AssemblyID}_steps.yaml` | `MLST_Metadata_wrangling.yaml` |
 | `output_fields` | `{SchemaID}_output_fields.yaml` | `MLST_output_fields.yaml` |
 | `final_contract` | `{AssemblyID}_final_output_fields.yaml` or `{AssemblyID}_final_contract.yaml` | `ST22_Anchor_final_output_fields.yaml` |
 | plot `spec` | `{plot_id}.yaml` | `MLST_counts_bar.yaml` |
-| assembly `recipe` (flat list) | `{AssemblyID}_assembly.yaml` | `Summary_phenotype_length_fragmentation_assembly.yaml` |
+| assembly `steps` (flat list) | `{AssemblyID}_assembly.yaml` | `Summary_phenotype_length_fragmentation_assembly.yaml` |
 
 #### `!include` path resolution
 
@@ -283,7 +283,7 @@ input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.ya
 
 #### Auto-unnesting of wrapper keys
 
-`ConfigManager` silently strips a redundant top-level wrapper key when the fragment's root key matches one of: `input_fields`, `output_fields`, `wrangling`, `source`, `recipe`, `spec`. This means a fragment can optionally start with its own section key and still be included correctly. **Flat fragments (no wrapper) are preferred** per ADR-041.
+`ConfigManager` silently strips a redundant top-level wrapper key when the fragment's root key matches one of: `input_fields`, `output_fields`, `wrangling`, `source`, `steps`, `spec`. This means a fragment can optionally start with its own section key and still be included correctly. **Flat fragments (no wrapper) are preferred** per ADR-041.
 
 - ctx_map stores rel_paths as keys: `ctx_map["1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml"] = {...}`
 - `inc_map` maps rel_path → absolute file path
@@ -372,7 +372,7 @@ In Mode B, the analysis_groups scan must run **unconditionally** (not only when 
       ▼
 [joins.Y]
   ingredients: [X, metadata_schema, ...]
-  recipe        ──► joins, aggregations across ingredients
+  step list        ──► joins, aggregations across ingredients
   output_fields / final_contract
                 ──► OPTIONAL: if absent, union of all ingredient output_fields
       │
@@ -430,7 +430,7 @@ if collection_spec is None and collection_id in ingredients:
 
 ### Path B — Named assembly
 
-`collection_id` found in `joins`. Uses the declared `ingredients` list in declaration order, runs the recipe, sinks to parquet.
+`collection_id` found in `joins`. Uses the declared `ingredients` list in declaration order, runs the step list, sinks to parquet.
 
 ### Path C — Fallback (legacy)
 
@@ -445,7 +445,7 @@ if collection_spec is None and collection_id in ingredients:
 `DataAssembler.assemble()` treats `list(self.ingredients.keys())[0]` as the **base frame** for all joins. Order is therefore critical:
 
 - The first declared ingredient becomes the left side of every join
-- All other ingredients are joined onto it via the recipe steps
+- All other ingredients are joined onto it via the steps
 - Columns from later ingredients shadow same-named columns from earlier ones (Polars `how='left'` keeps left column)
 
 **Rule:** The `ingredients:` list in an join data analysis recipe MUST declare the primary/base ingredient first. The orchestrator preserves declaration order by using an `OrderedDict`-equivalent comprehension:
@@ -482,13 +482,13 @@ This is silent at data analysis recipe-writing time and only surfaces during mat
 
 ### Solution (in orchestrator)
 
-Before calling `DataAssembler`, scan all recipe steps for join keys and cast them to `String` on the appropriate ingredient frames:
+Before calling `DataAssembler`, scan all steps for join keys and cast them to `String` on the appropriate ingredient frames:
 
 ```python
 per_ingredient_cast: dict[str, set] = {ds_id: set() for ds_id in assembly_ingredients}
 base_cast: set = set()
 
-for step in recipe:
+for step in step list:
     right_id = step.get("right_ingredient")
     sym = step.get("on")         # symmetric key used on both sides
     left_on = step.get("left_on")   # asymmetric — left side only
@@ -516,7 +516,7 @@ for ds_id, lf in assembly_ingredients.items():
     assembly_ingredients[ds_id] = lf.with_columns(cast_exprs) if cast_exprs else lf
 ```
 
-This handles both symmetric (`on: sample_id`) and asymmetric (`left_on: VF_gene`, `right_on: Gene_name`) join keys across all recipe steps. String is the safe common denominator — downstream consumers that need Categorical can re-cast.
+This handles both symmetric (`on: sample_id`) and asymmetric (`left_on: VF_gene`, `right_on: Gene_name`) join keys across all steps. String is the safe common denominator — downstream consumers that need Categorical can re-cast.
 
 ---
 
@@ -529,7 +529,7 @@ if not out_p.exists():
 ```
 
 This optimization causes stale data bugs:
-- If the data analysis recipe recipe changed but the parquet still exists, the old data is served
+- If the data analysis recipe changed but the parquet still exists, the old data is served
 - If a previous materialization used the wrong ingredients (orchestrator bug), the bad parquet persists forever
 - Blueprint Architect switches `collection_id` frequently — the cached parquet may belong to a different assembly
 

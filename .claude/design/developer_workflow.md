@@ -77,22 +77,22 @@ stage their data and goal require.
 | Tool | Produces | Standalone use |
 |---|---|---|
 | **Reformatter** | TSV(s) from XLSX/CSV | "I just need clean TSVs" |
-| **ID Reconciliation** | Verified ID matches + transformation recipe (YAML) | "Do my files' IDs line up?" |
+| **ID Reconciliation** | Verified ID matches + id transformation (YAML) | "Do my files' IDs line up?" |
 | **Anonymiser** | Anonymised TSV(s) + mapping TSV | "Make this safe to share" |
 | **AquaSynthesizer** | Synthetic TSV + config (demo or stress-test) | "Give me test/edge-case data" |
 
 ### Stage 2 — Scaffold (TEST_LAB)
 
-**Data analysis recipe Scaffolding** turns prepared files + reconciliation recipes into a **boilerplate
+**Data analysis recipe Scaffolding** turns prepared files + id transformation into a **boilerplate
 data analysis recipe ZIP** (basename-mirroring structure). It generates *boilerplate only* — structure,
-inferred types, PK hints, and ID-cleaning recipes baked into `tier1`. Analysis groups, plots,
+inferred types, PK hints, and ID-cleaning step lists baked into `tier1`. Analysis groups, plots,
 joins-strategy, and `final_contract` are **the developer's job in BLUEPRINT** (`rules_test_lab.md §4`).
 
 ### Stage 3 — Build pipeline (BLUEPRINT)
 
 The developer opens the boilerplate and builds the real pipeline with no code: add
 wrangling/join/plot nodes via forms, organise groups, preview on Apply, validate, save.
-GALLERY feeds this stage as **inspiration** — browse a recipe, copy its YAML, adapt it.
+GALLERY feeds this stage as **inspiration** — browse an example, copy its YAML, adapt it.
 
 ### Stage 4 — Run (HOME)
 
@@ -110,7 +110,7 @@ them (and own the consequences).
 | If you want to… | Recommended precursor | Why (the logical dependency) |
 |---|---|---|
 | **Anonymise multiple related files** | Reconcile IDs first | Anonymisation must map the *same original ID to the same anon ID across files* so joins stay valid. Reconciliation verifies the IDs actually align before they are replaced. (Single-file anonymisation needs no precursor.) |
-| **Scaffold a data analysis recipe with joins** | Reconcile IDs first | The scaffolder bakes verified join keys + ID-cleaning recipes into `tier1`. Without reconciliation it has no recipe to bake and no verified key. |
+| **Scaffold a data analysis recipe with joins** | Reconcile IDs first | The scaffolder bakes verified join keys + ID-cleaning step lists into `tier1`. Without reconciliation it has no step list to bake and no verified key. |
 | **Reconcile messy-format files** | Reformat first | Reconciliation needs clean tabular TSVs; an XLSX or odd-delimiter CSV is reformatted first. |
 | **Test a data analysis recipe you are building** | Synthesise data | Stress-test data exercises the pipeline's error handling before real data is loaded. |
 
@@ -124,7 +124,7 @@ and a developer with already-clean, already-aligned data skips it entirely.
 There is **no in-app "Send to" handoff and no automated injection between tools.** Modules link
 the simple, independent way:
 
-1. A tool runs and **exports** its result (download — TSV, recipe YAML, data analysis recipe ZIP, etc.).
+1. A tool runs and **exports** its result (download — TSV, step list YAML, data analysis recipe ZIP, etc.).
 2. The user **chooses** that file as the input to the next tool, exactly as any standalone
    module accepts a file.
 
@@ -147,7 +147,7 @@ reads a reactive calc that recomputes from inputs.
 
 - Each tool runs to completion and returns a downloadable artifact. Between runs it holds no
   state; closing a panel resets it (`rules_test_lab.md §1`).
-- The only persistence is **named files** the user saves explicitly (reconciliation recipes,
+- The only persistence is **named files** the user saves explicitly (id transformation,
   named synthetic scenarios).
 - No `reactive.Value` store accumulates state across tools. Linking is via exported files the
   user re-chooses — not an in-memory pipeline engine.
@@ -170,9 +170,9 @@ app features combination.
 | Handoff | How it works |
 |---|---|
 | TEST_LAB Scaffolding → BLUEPRINT | Export the boilerplate data analysis recipe ZIP; open it in BLUEPRINT (if enabled) via BLUEPRINT's normal data analysis recipe load. |
-| GALLERY → BLUEPRINT | Copy the recipe YAML; paste/open it in BLUEPRINT (if enabled). |
+| GALLERY → BLUEPRINT | Copy the example YAML; paste/open it in BLUEPRINT (if enabled). |
 | BLUEPRINT → HOME | Save the data analysis recipe to disk; HOME's data analysis recipe selector picks it up. |
-| TEST_LAB Anonymiser → BLUEPRINT (de-anonymise) | Join the anonymised data with the mapping TSV in BLUEPRINT (recipe printed in the Anonymiser output). |
+| TEST_LAB Anonymiser → BLUEPRINT (de-anonymise) | Join the anonymised data with the mapping TSV in BLUEPRINT (step list printed in the Anonymiser output). |
 
 Each row is just "export here, choose there." No control reaches across a space boundary.
 
@@ -188,7 +188,7 @@ Each row is just "export here, choose there." No control reaches across a space 
                           │       ├──────────────► AquaSynthesizer ──► synthetic TSV ──────┐ │
                           │       │                 (demo / stress)    + config/scenario   │ │
                           │       ▼                                                        │ │
-                          │   ID Reconciliation ──► verified matches + recipe(YAML)        │ │
+                          │   ID Reconciliation ──► verified matches + step list(YAML)        │ │
                           │       │       │                                                │ │
                           │       │       └────────► Anonymiser ──► anon TSV + mapping ───┐│ │
                           │       ▼                                                       ││ │
@@ -196,7 +196,7 @@ Each row is just "export here, choose there." No control reaches across a space 
                           │                                                             │ ││ │
                           └─────────────────────────────────────────────────────────── │ ││ ┘
                                                                                         │ ││
-   GALLERY ──► browse recipe ──► copy YAML ─────────────────────────────────────┐      │ ││
+   GALLERY ──► browse example ──► copy YAML ─────────────────────────────────────┐      │ ││
                                                                                  ▼      ▼ ▼▼
                                                                           ┌──────────────────┐
                                                                           │     BLUEPRINT    │

@@ -250,7 +250,7 @@ propagation-modal + reason-gate — i.e. **every** filter typed while in T3 mode
 becomes a permanent, audited decision. There's currently no "just try this filter
 in T3 without committing it" path. Decision needed: does T3 mode get its own
 exploration-only filter layer (separate from `applied_filters` and the audit
-recipe), or is the current behaviour intentional (T3 = "you're already in the
+step list), or is the current behaviour intentional (T3 = "you're already in the
 definitive-decision zone, exploration happens in T1/T2 first")? This is a real
 product decision, not a small tweak — worth its own conversation.
 

@@ -22,7 +22,7 @@ This rulebook merges documentation strategies and aesthetic constraints into a u
 ## 2. The Split-Documentation Strategy
 
 - **Primary Guides (`foundations/`, `workflows/`):** Compressed, technical, focused on "Why" and "Flow". Provide rapid high-level overviews for developers.
-- **Appendix Galleries (`appendix/`):** Step-by-step exhaustive user manuals focused on "Copy-Paste" recipes and "How-To". Example: All pipelines and visual components MUST include concrete YAML usage examples ("Recipes") for non-programmers.
+- **Appendix Galleries (`appendix/`):** Step-by-step exhaustive user manuals focused on "Copy-Paste" step lists and "How-To". Example: All pipelines and visual components MUST include concrete YAML usage examples ("Step lists") for non-programmers.
 
 ## 3. The Violet Law (Documentation Standard ONLY)
 

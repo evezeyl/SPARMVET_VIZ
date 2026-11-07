@@ -8,7 +8,7 @@ The core philosophy of SPARMVET is that visualizations shouldn't be locked behin
 
 The Gallery serves two massive purposes for the community (be it biologists, economists, or data analysts):
 1. **Inspiration:** Not sure what plot best suits your data? Browse the gallery to see what peers have built and discover new analytical angles.
-2. **Instant Recipes:** Every plot in the Gallery isn't just a picture; it's a full *recipe*. You can copy the exact YAML logic used to build that plot and paste it into your own data analysis recipe.
+2. **Instant Examples:** Every plot in the Gallery isn't just a picture; it's a full *example*. You can copy the exact YAML logic used to build that plot and paste it into your own data analysis recipe.
 
 ## Submitting to the Gallery
 
@@ -30,7 +30,7 @@ Before you submit, your Data analysis recipe must contain specific metadata to e
 
 ## Gallery Taxonomy & Sidebar Filters
 
-Every recipe is classified across **six axes**. These axes power the sidebar filter panels in the Gallery tab — selecting a value narrows the recipe list in real time.
+Every example is classified across **six axes**. These axes power the sidebar filter panels in the Gallery tab — selecting a value narrows the example list in real time.
 
 | Icon | Axis | What it captures |
 |------|------|-----------------|
@@ -39,6 +39,6 @@ Every recipe is classified across **six axes**. These axes power the sidebar fil
 | 📈 | **Difficulty** | `Simple` / `Intermediate` / `Advanced` |
 | ⚙️ | **Primary Geom** | The main plotnine layer (e.g. `geom_violin`, `geom_bar`, `geom_point`) |
 | 🎯 | **What it Shows** | The chart's primary message: `distribution`, `trend`, `ranking`, `relationship`, … |
-| 📏 | **Sample Size** | Whether the recipe needs large n (`large`, `medium+`) or works on any aggregated data (`any`) |
+| 📏 | **Sample Size** | Whether the example needs large n (`large`, `medium+`) or works on any aggregated data (`any`) |
 
-Authors must populate all six fields in the `info` block of their `data_analysis_recipe.yaml` before a submission is accepted. Full allowed-value lists, the data analysis recipe block format, and the `recipe_meta.md` tag-strip convention are in the [VizFactory Component Gallery appendix](../appendix/viz_factory_components.qmd#gallery-taxonomy-6-axis-classification).
+Authors must populate all six fields in the `info` block of their `data_analysis_recipe.yaml` before a submission is accepted. Full allowed-value lists, the data analysis recipe block format, and the `example_meta.md` tag-strip convention are in the [VizFactory Component Gallery appendix](../appendix/viz_factory_components.qmd#gallery-taxonomy-6-axis-classification).

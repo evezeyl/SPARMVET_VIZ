@@ -80,7 +80,7 @@ When in doubt, restate the definition above and confirm before building or editi
 
 - BLUEPRINT does not run the full production analysis — that is HOME.
 - BLUEPRINT does not generate test data — that is TEST_LAB.
-- BLUEPRINT does not curate or share community recipes — that is GALLERY.
+- BLUEPRINT does not curate or share community examples — that is GALLERY.
 - BLUEPRINT does not expose a raw YAML editor as the primary interface (it may have one as an advanced escape hatch).
 
 ---

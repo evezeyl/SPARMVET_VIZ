@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 def generate_config_hash(config: Any) -> str:
     """
-    Generates a deterministic SHA-256 hash for a python object (manifest/recipe).
+    Generates a deterministic SHA-256 hash for a python object (manifest/steps).
     Useful for detecting if the logic that generated a cache has changed.
     """
     # Deterministic serialization: sort keys, remove whitespace

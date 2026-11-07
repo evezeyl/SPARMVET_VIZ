@@ -4,7 +4,7 @@
 
 ## Overview
 
-`viz_gallery` manages the storage, retrieval, and indexing of SPARMVET recipes. It ensures that every plot in the "Scientific Cookbook" adheres to the formal governance standards.
+`viz_gallery` manages the storage, retrieval, and indexing of SPARMVET examples. It ensures that every plot in the "Scientific Cookbook" adheres to the formal governance standards.
 
 ## Key Components
 
@@ -25,7 +25,7 @@ Every gallery bundle folder MUST contain all four files:
 
 1. `data_analysis_recipe.yaml` — 6-axis taxonomy: family, pattern, difficulty, geom, show, sample_size
 2. `example_data.tsv` — representative dataset
-3. `recipe_meta.md` — scientific guidance + author metadata
+3. `example_meta.md` — scientific guidance + author metadata
 4. `preview_plot.png` — pre-rendered evidence PNG
 
 Full standards: `.claude/rules/rules_gallery_standards.md`

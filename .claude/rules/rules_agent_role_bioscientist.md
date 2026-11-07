@@ -3,7 +3,7 @@ trigger: always_on
 deps:
   provides: [rule:data_analysis_recipe_construction_protocol, rule:debug_workflow, rule:registered_actions_table, rule:handoff_protocol, rule:output_routing]
   documents: [libs/transformer/src/transformer/actions/, libs/viz_factory/src/viz_factory/, libs/transformer/tests/debug_assembler.py, libs/viz_factory/tests/debug_gallery.py]
-  consumes: [rule:canonical_recipe_syntax, rule:analysis_groups_structure]
+  consumes: [rule:canonical_steps_syntax, rule:analysis_groups_structure]
   consumed_by: [.claude/knowledge/dependency_index.md]
 ---
 
@@ -68,7 +68,7 @@ Before writing any data analysis recipe, verify compliance with ALL of these:
 
 | File | What it governs |
 |---|---|
-| `.claude/rules/rules_data_analysis_recipe_structure.md` | **Primary authority.** Directory layout, basename mirroring, `assembly/`, `analysis_groups` structure, canonical recipe syntax (§7), plot spec format (§8), `final_contract` whitelist (§5). |
+| `.claude/rules/rules_data_analysis_recipe_structure.md` | **Primary authority.** Directory layout, basename mirroring, `assembly/`, `analysis_groups` structure, canonical steps syntax (§7), plot spec format (§8), `final_contract` whitelist (§5). |
 | `.claude/rules/rules_data_engine.md` | 3-Tier lifecycle, wrangling block structure (`tier1:`/`tier2:` mandatory), Decorator standards, Polars parity. |
 | `.claude/knowledge/project_conventions.md` | **Quick reference.** File registry (what every script does), verification protocol, path authority, tiered data lifecycle, data analysis recipe construction summary, action registry. Cross-check against this when you are unsure which script to run or which path to use. |
 | `docs/appendix/data_analysis_recipe_structure.yaml` | Physical reference: directory layout, YAML resilience (boolean traps), constructor standard. |
@@ -110,12 +110,12 @@ wrangling:
 
 **Silent Skip Warning**: If an `input_fields` slug does not match any column name in the source TSV, the engine silently skips it — no error, no warning. Before writing wrangling steps that reference a field, verify the column name exists in the actual TSV file. Use `head -1 <tsv_file>` to inspect the raw headers.
 
-### 3-B. Assembly recipe (in `assembly/<name>.yaml`)
+### 3-B. Assembly steps (in `assembly/<name>.yaml`)
 
 One canonical step per action. Use `right_ingredient:` (not `dataset_id:`). Quote `'on'`. **Column ordering matters**: you can only reference a column in a step if it exists at that point in the pipeline. Columns from a right ingredient are only available AFTER the join step that brings them in.
 
 ```yaml
-recipe:
+steps:
   - action: mutate
     column: predicted_phenotype_clean
     expression: "pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()"
@@ -205,7 +205,7 @@ final_contract:
   Multiresistant: string
 ```
 
-Types MUST match what the assembly recipe produces (`cast` → verify dtype). If a column appears in `final_contract` but was not produced by the recipe, the assembler will raise a `ColumnNotFoundError`.
+Types MUST match what the assembly steps produces (`cast` → verify dtype). If a column appears in `final_contract` but was not produced by the step list, the assembler will raise a `ColumnNotFoundError`.
 
 ---
 
@@ -222,7 +222,7 @@ Step 2 — Write Tier 1 wrangling for one data_schema
          ↓ GATE: run debug_assembler.py, inspect TSV output, confirm row counts and values
 Step 3 — Write Tier 1 wrangling for next data_schema (repeat per schema)
          ↓ GATE: same as step 2
-Step 4 — Write assembly recipe (joins + derived columns)
+Step 4 — Write assembly steps (joins + derived columns)
          ↓ GATE: run debug_assembler.py, inspect contracted TSV, confirm join integrity
 Step 5 — Write final_contract
          ↓ GATE: re-run debug_assembler.py, confirm exactly the right columns and types appear
@@ -234,18 +234,18 @@ Step 7 — Add to analysis_groups in master data analysis recipe
 
 ### Rules of sequential execution
 
-- **One step per response.** Do not write Tier 1 wrangling and an assembly recipe in the same response. Propose one, halt, wait for the user to confirm the debug output before proceeding.
+- **One step per response.** Do not write Tier 1 wrangling and an assembly steps in the same response. Propose one, halt, wait for the user to confirm the debug output before proceeding.
 - **State what you expect before running.** Before proposing a step, state: "After this step I expect the output to have X columns, Y rows, and Z values in column C." This makes mismatches obvious.
 - **State the consequence of each decision.** When proposing a transformation (e.g., `filter_range identity min: 90`), explicitly state: "This will drop rows where identity < 90. Based on the source data, this may reduce the row count from ~N to ~M. Rows dropped here will not be recoverable downstream."
 - **If a gate fails, diagnose before proposing a fix.** Do not immediately propose a revised data analysis recipe on a failure. First read the error, state what caused it, and explain the fix before writing new YAML.
-- **Never propose the next step while waiting for gate confirmation.** If you have written a wrangling fragment and are waiting for the debug output to be shared, do not proceed to the assembly recipe. Ask the user to share the output.
+- **Never propose the next step while waiting for gate confirmation.** If you have written a wrangling fragment and are waiting for the debug output to be shared, do not proceed to the assembly steps. Ask the user to share the output.
 
 ### What "truth" means at each gate
 
 | Step | Truth check |
 |---|---|
 | Tier 1 wrangling | TSV column names match `input_fields` slugs; row count is plausible; no unexpected nulls in critical columns |
-| Assembly recipe | Row count matches expectation (no Cartesian product); join-sourced columns have non-null values; derived columns (`Multiresistant`, etc.) contain expected values |
+| Assembly steps | Row count matches expectation (no Cartesian product); join-sourced columns have non-null values; derived columns (`Multiresistant`, etc.) contain expected values |
 | `final_contract` | Exactly the declared columns appear in the TSV; no `"2022.0"` for year columns; all types match |
 | Plot specs | PNG renders without error; axes, fill, and facets display correctly; no blank panels |
 
@@ -324,10 +324,10 @@ Before declaring a data analysis recipe complete:
 - [ ] All action names verified against §8 of this file (or `libs/transformer/src/transformer/actions/`).
 - [ ] All component names in `layers:` verified against `libs/viz_factory/src/viz_factory/`.
 - [ ] `position` and `labels` appear in `layers:`, NOT as flat keys.
-- [ ] `final_contract` contains only columns that exist after all recipe steps.
+- [ ] `final_contract` contains only columns that exist after all steps.
 - [ ] All `plot_id`s are snake_case and globally unique across the project.
 - [ ] Directory structure follows basename mirroring mandate (`rules_data_analysis_recipe_structure.md §1`).
-- [ ] `assembly/` subdirectory used for assembly recipe files.
+- [ ] `assembly/` subdirectory used for assembly steps files.
 - [ ] Debug scripts run successfully with dated output (see §7).
 
 ---
@@ -394,7 +394,7 @@ Outputs:
 | `SchemaError` on join | Join key dtype mismatch between ingredients | Add `cast` step before join on the mismatched side |
 | `FileNotFoundError` | Source file path wrong | Check `source: path:` in `data_schemas` |
 | Column missing from TSV output | Column not in `final_contract` whitelist | Add it to `final_contract` |
-| Column in `final_contract` but missing from output | Column was never produced by the recipe | Check wrangling/assembly step that should create it |
+| Column in `final_contract` but missing from output | Column was never produced by the step list | Check wrangling/assembly step that should create it |
 | Row explosion (count >> expected) | Cartesian product on join | Verify join key uniqueness in both ingredients |
 | Plot renders but values look wrong | `final_contract` dtype mismatch | Verify cast steps match declared types |
 

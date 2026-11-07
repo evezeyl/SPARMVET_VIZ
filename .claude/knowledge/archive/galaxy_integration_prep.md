@@ -334,7 +334,7 @@ Top Tools for Docker Scaffolding & Orchestration
 | Tool / App | Role in your Workflow | Why for you? |
 | --- | --- | --- |
 | Docker (Official Extension) | Scaffolding & Management | Use the command Docker: Add Docker Files to Workspace. It detects your app type and generates the Dockerfile and Compose files automatically. |
-| Cline (Agentic Claude) | Recipe Generator | "You can prompt it: ""Based on my Fedora environment and this dashboard code, write a multi-stage Dockerfile."" It will write and save the files for you." |
+| Cline (Agentic Claude) | Step list Generator | "You can prompt it: ""Based on my Fedora environment and this dashboard code, write a multi-stage Dockerfile."" It will write and save the files for you." |
 | Docker DX | Best Practices | A newer extension that provides real-time linting for Dockerfiles, suggesting security fixes and build optimizations (BuildKit/Buildx). |
 | Portainer | Visual Management | A web-based UI (installable via Docker) that lets you manage your ""thinkpad"" containers visually if you prefer not to use the CLI. |
 
@@ -375,7 +375,7 @@ Result: It creates the files and even tests the docker-compose up command in you
 1. Architecture Review with Gemini
 Gemini is excellent at checking for "environment drift." You can share your docker-compose.yml and your Fedora 43 system specs:
 
-"Review this Docker recipe for Fedora 43. Ensure the file permissions and X11 forwarding for the dashboard will work on my KDE desktop."
+"Review this Docker step list for Fedora 43. Ensure the file permissions and X11 forwarding for the dashboard will work on my KDE desktop."
 Result: It will catch common Linux-specific issues like GID/UID mismatches between the host and container.
 
 Helpful Tip: Docker Compose "Models"

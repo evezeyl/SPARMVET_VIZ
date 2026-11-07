@@ -99,7 +99,7 @@ The reason isn't just for others — it's for you in six months when you're resp
 
 ## Primary keys — extra care needed
 
-A **primary key** is a column that links your tables together. In a typical SPARMVET project the primary key is `sample_id`; in long-format AMR data, gene identifiers can also serve as join keys. SPARMVET detects primary keys automatically from your data analysis recipe's join recipes.
+A **primary key** is a column that links your tables together. In a typical SPARMVET project the primary key is `sample_id`; in long-format AMR data, gene identifiers can also serve as join keys. SPARMVET detects primary keys automatically from your data analysis recipe's join steps.
 
 When you target a primary key with an audit decision, SPARMVET applies extra rules:
 

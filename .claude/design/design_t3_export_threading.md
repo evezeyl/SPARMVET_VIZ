@@ -1,4 +1,4 @@
-# Design: T3 Export Threading + Lineage Recipe
+# Design: T3 Export Threading + Lineage Audit trail
 # Covers: T3 node type gap + export bundle lineage (formerly EXPORT-SGE-2)
 # Status: MOSTLY COMPLETE — aesthetic_override render wiring blocked by VIZFAC-RESOLVER-1.
 #
@@ -45,7 +45,7 @@ LazyFrame before export. They are extracted by `_t3_drop_columns()` and
 `_t3_filter_rows()` in `home_theater.py`.
 
 If new T3 node types are added (rename, derive, pivot, cast …), they will:
-- be committed to `t3_recipe.json` correctly (ghost + session)
+- be committed to `t3_audit_steps.json` correctly (ghost + session)
 - appear in the on-screen plot correctly IF `viz_factory.render()` respects them
 - **NOT appear in the exported TSV** in the export bundle
 
@@ -76,23 +76,23 @@ so all three paths are consistent.
 
 ---
 
-## Problem 2 — No lineage recipe in the export bundle
+## Problem 2 — No lineage audit trail in the export bundle
 
 **Current state:**
-The export bundle includes `recipes/<proj>/` (all YAML files) and `t3_steps.yaml`
+The export bundle includes `steps/<proj>/` (all YAML files) and `t3_steps.yaml`
 (T3 committed nodes). A reader can reconstruct the wrangling pipeline but must
-manually trace which join recipe produced the dataset for a given plot.
+manually trace which join steps produced the dataset for a given plot.
 
 **Data linkage pattern (from data analysis recipes):**
 Plot spec has `target_dataset: "legacy_results"`.
 The full data analysis recipe has:
 - `data_schemas.legacy_results` — field contracts
-- `joins.legacy_results` — the T1→T2 join recipe (join, wrangle steps)
+- `joins.legacy_results` — the T1→T2 join steps (join, wrangle steps)
 
-**Proposed addition: `full_recipe.yaml` per in-scope plot:**
+**Proposed addition: `full_steps.yaml` per in-scope plot:**
 
 ```yaml
-# Full reproducible recipe for plot: amr_profile
+# Full reproducible audit trail for plot: amr_profile
 plot_id: amr_profile
 target_dataset: legacy_results
 
@@ -101,13 +101,13 @@ data_schema:
   # from data analysis recipe data_schemas.{target_dataset}
   fields: …
 
-join_recipe:
+join_steps:
   # from data analysis recipe joins.{target_dataset}
-  recipe: …
+  steps: …
 
 # ── T3 (user session) ───────────────────────────────────────────────────────
 t3_nodes:
-  # from committed home_state.t3_recipe_by_plot[subtab]
+  # from committed home_state.t3_audit_steps_by_plot[subtab]
   - node_type: drop_column
     params: {column: year}
     active: true
@@ -126,15 +126,15 @@ plot_spec:
 target_ds = spec.get("target_dataset", "")
 raw = cfg.raw_config
 
-full_recipe = {
+full_steps = {
     "plot_id": p_id,
     "target_dataset": target_ds,
     "data_schema": raw.get("data_schemas", {}).get(target_ds, {}),
-    "join_recipe": raw.get("joins", {}).get(target_ds, {}),
+    "join_steps": raw.get("joins", {}).get(target_ds, {}),
     "t3_nodes": _active_plot_t3_nodes(subtab),
     "plot_spec": spec,
 }
-zf.writestr(f"recipes/{p_id}_full_recipe.yaml", yaml.safe_dump(full_recipe, sort_keys=False))
+zf.writestr(f"audit_steps/{p_id}_full_steps.yaml", yaml.safe_dump(full_steps, sort_keys=False))
 ```
 
 **Edge cases to resolve before implementing:**
@@ -151,9 +151,9 @@ zf.writestr(f"recipes/{p_id}_full_recipe.yaml", yaml.safe_dump(full_recipe, sort
 | Task | File(s) | Complexity | Prerequisite |
 |------|---------|-----------|-------------|
 | T3 threading gap | `home_theater.py` (new `_apply_t3_to_lf`), `export_handlers.py` | Low (now) / Medium (when new node types land) | Add new T3 node type first |
-| Lineage recipe in bundle | `export_handlers.py` | Low-Medium | Confirm `!include` resolution in `active_cfg().raw_config` |
+| Lineage audit trail in bundle | `export_handlers.py` | Low-Medium | Confirm `!include` resolution in `active_cfg().raw_config` |
 | Dead code cleanup | `home_theater.py` (remove import+call), `single_graph_export_handlers.py` (remove file) | Low | Decision: keep or remove handler |
 
 **Suggested order:** (1) decide fate of `single_graph_export_handlers.py`; (2) resolve
-`!include` question; (3) implement lineage recipe in bundle. T3 threading gap is a
+`!include` question; (3) implement lineage audit trail in bundle. T3 threading gap is a
 forward-compatibility concern — no urgency until the first rename/derive node type is designed.

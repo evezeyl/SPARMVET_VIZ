@@ -54,7 +54,7 @@ joins:
     - dataset_id: metadata_schema
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
-    recipe: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
+    steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
     final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
 analysis_groups:
   MLST_Overview:

@@ -3,13 +3,13 @@ Pipeline Audit Shiny wiring (ADR-044 / ADR-045, Phase 22-C).
 
 Entry point:
     define_server(input, output, session, *,
-                  wrangle_studio, recipe_pending, snapshot_recipe,
+                  wrangle_studio, audit_pending, snapshot_steps,
                   active_cfg, active_collection_id,
                   home_state=None, session_manager=None)
 
-Concern: T2 violet node rendering, T3 Yellow RecipeNode rendering, btn_apply
-         gatekeeper (blocks if any required reason field is empty), recipe
-         change tracking, recipe_pending_badge_ui.
+Concern: T2 violet node rendering, T3 Yellow AuditStep rendering, btn_apply
+         gatekeeper (blocks if any required reason field is empty), audit trail
+         change tracking, audit_pending_badge_ui.
 
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.*
 decorators only. It MUST NOT be imported by non-Shiny contexts.
@@ -30,7 +30,7 @@ from shiny import reactive, render, ui
 from utils.pipeline_error import PipelineError
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
-    make_recipe_node,
+    make_audit_step,
     gatekeeper_blocked,
 )
 
@@ -47,11 +47,11 @@ _REASON_REQUIRED = {"filter_row", "exclusion_row", "drop_column", "developer_raw
 
 
 def _safe_input_suffix(node_id: str) -> str:
-    """Sanitize a RecipeNode id for use in a Shiny input ID.
+    """Sanitize an AuditStep id for use in a Shiny input ID.
 
     Shiny input IDs allow only [A-Za-z0-9_]. Legacy ghost files may contain
     UUID4 strings with hyphens, so we replace any invalid char with '_'.
-    Current make_recipe_node() emits hex (no hyphens), so this is a no-op for
+    Current make_audit_step() emits hex (no hyphens), so this is a no-op for
     new nodes.
     """
     return "".join(c if c.isalnum() or c == "_" else "_" for c in node_id)
@@ -103,7 +103,7 @@ def _params_summary(node: dict) -> str:
 
 
 def define_server(input, output, session, *,
-                  wrangle_studio, recipe_pending, snapshot_recipe,
+                  wrangle_studio, audit_pending, snapshot_steps,
                   active_cfg, active_collection_id,
                   home_state=None, session_manager=None,
                   notification_log=None, bootloader=None,
@@ -117,7 +117,7 @@ def define_server(input, output, session, *,
     )
 
     # ------------------------------------------------------------------
-    # btn_apply: commit T3 recipe, ghost save, release gatekeeper
+    # btn_apply: commit audit steps, ghost save, release gatekeeper
     # ------------------------------------------------------------------
 
     @reactive.Effect
@@ -127,7 +127,7 @@ def define_server(input, output, session, *,
 
         Pending nodes carry their target `plot_scope` (set by the propagation
         expansion in home_theater._handle_propagation_confirm). Commit means
-        appending each node into t3_recipe_by_plot[node.plot_scope].
+        appending each node into t3_audit_steps_by_plot[node.plot_scope].
 
         Reasons are read from live `t3_reason_<id_suffix>` inputs; multiple
         propagated copies share the same suffix (because they share `id`),
@@ -135,13 +135,13 @@ def define_server(input, output, session, *,
         the "one decision, many places" model.
         """
         if home_state is None:
-            snapshot_recipe.set(wrangle_studio.logic_stack.get())
-            recipe_pending.set(False)
+            snapshot_steps.set(wrangle_studio.logic_stack.get())
+            audit_pending.set(False)
             return
 
         state = home_state.get()
         by_plot: dict[str, list[dict]] = {
-            k: [dict(n) for n in v] for k, v in state.get("t3_recipe_by_plot", {}).items()
+            k: [dict(n) for n in v] for k, v in state.get("t3_audit_steps_by_plot", {}).items()
         }
         pending = [dict(n) for n in state.get("_pending_t3_nodes", [])]
 
@@ -195,7 +195,7 @@ def define_server(input, output, session, *,
             # Persist reason edits even on block so user keeps their typing.
             home_state.set({
                 **state,
-                "t3_recipe_by_plot": by_plot,
+                "t3_audit_steps_by_plot": by_plot,
                 "_pending_t3_nodes": pending,
             })
             return
@@ -209,7 +209,7 @@ def define_server(input, output, session, *,
 
         new_state = {
             **state,
-            "t3_recipe_by_plot": by_plot,
+            "t3_audit_steps_by_plot": by_plot,
             "_pending_t3_nodes": [],
             "t3_apply_count": int(state.get("t3_apply_count", 0)) + 1,
         }
@@ -219,34 +219,34 @@ def define_server(input, output, session, *,
             _write_t3_ghost(new_state, session_manager,
                             notif_log=notification_log.get() if notification_log is not None else [])
 
-        snapshot_recipe.set(wrangle_studio.logic_stack.get())
-        recipe_pending.set(False)
+        snapshot_steps.set(wrangle_studio.logic_stack.get())
+        audit_pending.set(False)
 
         total_nodes = sum(len(v) for v in by_plot.values())
         _notify(
-            f"✅ T3 recipe applied — {total_nodes} node(s) across "
+            f"✅ audit steps applied — {total_nodes} node(s) across "
             f"{len([k for k, v in by_plot.items() if v])} plot stack(s).",
             type="message", duration=4,
         )
 
     # ------------------------------------------------------------------
-    # Track recipe changes (pending badge)
+    # Track audit trail changes (pending badge)
     # ------------------------------------------------------------------
 
     @reactive.Effect
-    def track_recipe_changes():
+    def track_audit_step_changes():
         _ = wrangle_studio.apply_logic
-        recipe_pending.set(True)
+        audit_pending.set(True)
 
     # ------------------------------------------------------------------
-    # recipe_pending_badge_ui
+    # audit_pending_badge_ui
     # ------------------------------------------------------------------
 
     @output
     @render.ui
-    def recipe_pending_badge_ui():
-        if recipe_pending.get():
-            return ui.div("⏳ Pending", class_="recipe-pending-badge text-center")
+    def audit_pending_badge_ui():
+        if audit_pending.get():
+            return ui.div("⏳ Pending", class_="audit-pending-badge text-center")
         return ui.div()
 
     def _active_target_ds() -> str:
@@ -301,13 +301,13 @@ def define_server(input, output, session, *,
         collection_id = _active_target_ds()
         # The violet nodes are the inherited Tier 2 steps (ui_implementation_contract.md section 1),
         # the ones the Result view applies on top of Tier 1; Tier 1 steps are not listed here.
-        recipe = tier2_steps(cfg.raw_config, collection_id)
+        audit_steps = tier2_steps(cfg.raw_config, collection_id)
 
-        if not recipe:
+        if not audit_steps:
             return ui.div(ui.div("No Tier 2 steps defined.", class_="audit-node-tier2"))
 
         nodes = []
-        for step in recipe:
+        for step in audit_steps:
             action = step.get("action", "unknown")
             label = step.get("label") or step.get("right_ingredient") or action
             nodes.append(ui.tooltip(
@@ -317,7 +317,7 @@ def define_server(input, output, session, *,
         return ui.div(*nodes)
 
     # ------------------------------------------------------------------
-    # audit_nodes_tier3 — Yellow RecipeNodes (T3 committed + pending)
+    # audit_nodes_tier3 — Yellow AuditSteps (T3 committed + pending)
     # ------------------------------------------------------------------
 
     @output
@@ -347,7 +347,7 @@ def define_server(input, output, session, *,
         # stack plus pending nodes targeting this plot (or any plot — pending
         # nodes carry plot_scope set during propagation expansion).
         active_subtab = state.get("active_plot_subtab") or ""
-        by_plot = state.get("t3_recipe_by_plot", {}) or {}
+        by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
         committed_here = list(by_plot.get(active_subtab, []))
         pending_all = list(state.get("_pending_t3_nodes", []))
         pending_here = [n for n in pending_all
@@ -503,7 +503,7 @@ def define_server(input, output, session, *,
         """Non-mutating overlay: every committed (per-plot) + pending node
         with the live `t3_reason_<id_suffix>` input merged into `reason`.
 
-        Phase 22-J: reads from t3_recipe_by_plot (flattened) plus _pending_t3_nodes.
+        Phase 22-J: reads from t3_audit_steps_by_plot (flattened) plus _pending_t3_nodes.
         Linked-id reason fan-out: a single typed reason on any copy is mirrored
         into every copy sharing the same id, so the gatekeeper sees the user's
         intent across all linked copies even if they only typed in one box.
@@ -511,7 +511,7 @@ def define_server(input, output, session, *,
         if home_state is None:
             return []
         state = home_state.get()
-        by_plot = state.get("t3_recipe_by_plot", {}) or {}
+        by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
         flat_committed = [n for nodes in by_plot.values() for n in nodes]
         merged: list[dict] = []
         # First pass: pull live reason text per node id.
@@ -537,7 +537,7 @@ def define_server(input, output, session, *,
         return merged
 
     # ------------------------------------------------------------------
-    # Delete-node handlers — permanent removal from t3_recipe / _pending_t3_nodes
+    # Delete-node handlers — permanent removal from t3_audit_steps / _pending_t3_nodes
     # ------------------------------------------------------------------
     # We track click counts per-node-id between effect firings; nodes whose
     # click count increased since last seen are removed entirely. This is
@@ -557,7 +557,7 @@ def define_server(input, output, session, *,
             return
         state = home_state.get()
         by_plot: dict[str, list[dict]] = {
-            k: list(v) for k, v in state.get("t3_recipe_by_plot", {}).items()
+            k: list(v) for k, v in state.get("t3_audit_steps_by_plot", {}).items()
         }
         pending = list(state.get("_pending_t3_nodes", []))
 
@@ -588,7 +588,7 @@ def define_server(input, output, session, *,
         new_pending = [n for n in pending if n.get("id") not in ids_to_delete]
         home_state.set({
             **state,
-            "t3_recipe_by_plot": new_by_plot,
+            "t3_audit_steps_by_plot": new_by_plot,
             "_pending_t3_nodes": new_pending,
         })
         # Count how many physical copies were removed (for the notification)
@@ -777,7 +777,7 @@ def define_server(input, output, session, *,
 
         # Collect all subtabs for the except-picker.
         try:
-            all_specs = state.get("t3_recipe_by_plot", {})
+            all_specs = state.get("t3_audit_steps_by_plot", {})
             all_subs = list(all_specs.keys())
         except Exception:
             all_subs = [active_sub]
@@ -837,7 +837,7 @@ def define_server(input, output, session, *,
             except_picks = []
 
         try:
-            all_specs = state.get("t3_recipe_by_plot", {})
+            all_specs = state.get("t3_audit_steps_by_plot", {})
             all_subs = list(all_specs.keys())
         except Exception:
             all_subs = [active_sub]
@@ -937,7 +937,7 @@ def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None)
             data_analysis_recipe_sha256=msig,
             data_batch_hash=dbh,
             tier_toggle=state.get("tier_toggle", "T2"),
-            t3_recipe_by_plot=state.get("t3_recipe_by_plot", {}),
+            t3_audit_steps_by_plot=state.get("t3_audit_steps_by_plot", {}),
             t3_plot_overrides=state.get("t3_plot_overrides", {}),
             label=state.get("t3_ghost_label", ""),
             notification_log=notif_log or [],

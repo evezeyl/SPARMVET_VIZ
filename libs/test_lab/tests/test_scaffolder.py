@@ -147,20 +147,20 @@ class TestAssemblyStubQuoting:
             content = zf.read(assembly_files[0]).decode()
         assert "'on':" in content, f"'on': must be quoted in assembly stub. Got:\n{content}"
 
-    def test_assembly_stub_has_tiered_recipe(self, samples_tsv, amr_tsv):
+    def test_assembly_stub_has_tiered_steps(self, samples_tsv, amr_tsv):
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder
         zb = DataAnalysisRecipeScaffolder().scaffold([samples_tsv, amr_tsv], "proj")
         with zipfile.ZipFile(io.BytesIO(zb)) as zf:
             assembly_files = [n for n in zf.namelist() if "assembly/" in n]
             raw = zf.read(assembly_files[0]).decode()
         data = yaml.safe_load(raw)
-        assert "recipe" in data
-        assert "tier1" in data["recipe"]
-        assert "tier2" in data["recipe"]
+        assert "steps" in data
+        assert "tier1" in data["steps"]
+        assert "tier2" in data["steps"]
 
 
 class TestWranglingFragments:
-    """Verify wrangling fragments are tiered and accept TransformationRecipe steps."""
+    """Verify wrangling fragments are tiered and accept IdTransformation steps."""
 
     def test_wrangling_is_tiered(self, samples_tsv):
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder
@@ -172,10 +172,10 @@ class TestWranglingFragments:
         assert "tier1" in data
         assert "tier2" in data
 
-    def test_recipe_steps_injected_into_tier1(self, samples_tsv):
+    def test_transformation_steps_injected_into_tier1(self, samples_tsv):
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder
         steps = [{"action": "strip_whitespace", "columns": ["sample_id"]}]
-        zb = DataAnalysisRecipeScaffolder().scaffold([samples_tsv], "proj", recipes={"samples": steps})
+        zb = DataAnalysisRecipeScaffolder().scaffold([samples_tsv], "proj", steps={"samples": steps})
         with zipfile.ZipFile(io.BytesIO(zb)) as zf:
             raw = zf.read("proj/proj/samples_wrangling.yaml").decode()
         yaml_lines = [l for l in raw.splitlines() if not l.startswith("#")]

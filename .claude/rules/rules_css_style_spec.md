@@ -89,7 +89,7 @@ These are the ONLY allowed values for informational banners (connected/error/bus
 | Scientific table even-row bg | `#f8fafc` | Even rows in `.central-theater` table (Slate-50) |
 | Gallery guidance table border | `#c8b96a` | Tables inside `.gallery-md-pane` (golden, matches note theme) |
 | Gallery guidance blockquote border | `#c8b86a` | Left-border accent in guidance blockquote |
-| Gallery guidance h2 color | `#3b3620` | Dark olive — recipe title in guidance pane |
+| Gallery guidance h2 color | `#3b3620` | Dark olive — example title in guidance pane |
 | Gallery guidance even-row | `#fffde7` | Even rows in guidance table |
 | Gallery guidance row hover | `#fff8a0` | Row hover in guidance table |
 | PK-warn badge border | `#ffeeba` | `.spv-badge-pk-warn` border |
@@ -117,11 +117,11 @@ All text in the application follows exactly this scale. **No other sizes are per
 | **Primary** | `0.85rem` | 700 | Accordion buttons, card headers, gallery filter titles, section headings |
 | **Secondary** | `0.80rem` | 400/600 | Body text, form content, input labels, filter rows |
 | **Sub-secondary** | `0.78rem` | 400 | Gallery blockquotes, small labels |
-| **Small** | `0.75rem` | 400 | Badges, `.spv-text-xs`, recipe-pending-badge text in audit sidebar |
+| **Small** | `0.75rem` | 400 | Badges, `.spv-text-xs`, audit-pending-badge text in audit sidebar |
 | **Micro** | `0.65rem` | 400 | `.ultra-small`, dtype labels, helper/meta annotations |
 
 Special cases (allowed and documented):
-- `1.0rem` / 700 — gallery h1/h2 recipe titles, `.banner-title` in view-title-banner
+- `1.0rem` / 700 — gallery h1/h2 example titles, `.banner-title` in view-title-banner
 - `0.9rem` — **FORBIDDEN** (outside scale; was introduced in today's agent error — already fixed)
 
 **Font weight:** Only 400 (regular), 600 (medium), 700 (bold). Never 500, 800, 900.  
@@ -199,8 +199,8 @@ Add new buttons by finding the right type — never invent a new color.
 > Type 3 amber but rendered as a badge-like element with a specific class.
 
 - **Color:** `#ffc107` bg, `#e0a800` border, black text
-- **Class:** `.recipe-pending-badge`
-- **Usage:** Replaces or accompanies `#btn_apply` when `recipe_pending == True`. The badge
+- **Class:** `.audit-pending-badge`
+- **Usage:** Replaces or accompanies `#btn_apply` when `audit_pending == True`. The badge
   signals "there are uncommitted changes — press to apply."
 
 ### Type 5 — Disabled / Inactive (Grey)

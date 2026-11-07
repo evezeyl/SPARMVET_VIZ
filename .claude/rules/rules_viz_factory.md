@@ -40,7 +40,7 @@ No visual component is considered verified without:
 - `in` / `not_in`: `value` must be a Python list; `pl.col(col).cast(Utf8).is_in(str_vals)` (string-cast both sides).
 - `between`: `value` must be `[lo, hi]`; uses `pl.col(c).is_between(lo, hi, closed=...)`. Honours optional `closed` field (`'both'` default = inclusive, `'none'` = exclusive).
 - Adding new ops requires updating `viz_factory.py:render()` **and** documenting here.
-- The `dtype` key from the filter recipe builder is UI-layer metadata — strip it before injecting into `plot_config["filters"]`.
+- The `dtype` key from the filter builder is UI-layer metadata — strip it before injecting into `plot_config["filters"]`.
 
 **Auto axis label rule:** `_auto_adjust_axis_labels()` runs at the end of every `render()` unless an `element_text` layer for that axis is already in the data analysis recipe. See `libs/viz_factory/README.md` for thresholds.
 

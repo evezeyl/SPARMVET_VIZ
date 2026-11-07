@@ -67,7 +67,7 @@ app/
 
 1. **Imports** of modules, handlers, and libraries.
 2. **Module initialisation**: `WrangleStudio(session.id)`, `TestLabStudio()`, `DataOrchestrator(...)`, `VizFactory(...)`.
-3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `recipe_pending`, `snapshot_recipe`, `gallery_refresh_trigger`, `current_app_features`.
+3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `audit_pending`, `snapshot_steps`, `gallery_refresh_trigger`, `current_app_features`.
 4. **Shared reactive calcs** (`@reactive.Calc`): `active_collection_id`, `active_cfg`, `tier1_anchor`. These are shared because multiple handlers depend on them. (`tier_reference` and `tier3_leaf` were removed 2026-11-06: they fed outputs that no UI mounted; Tier 2 and My view data are resolved in `home_theater.py` and the orchestrator.)
 5. **Shared utility functions**: `_safe_input`, `_apply_tier2_transforms`. These are pure helpers used by multiple handlers.
 6. **Five `define_server(...)` delegation calls** — one per handler module, in dependency order.
@@ -124,7 +124,7 @@ def define_server(input, output, session, *, <explicit_dependencies>):
 # app/handlers/home_theater.py
 def define_server(input, output, session, *,
                   active_cfg, tier1_anchor,
-                  current_app_features, anchor_path, recipe_pending, snapshot_recipe,
+                  current_app_features, anchor_path, audit_pending, snapshot_steps,
                   wrangle_studio, orchestrator, viz_factory, bootloader):
 ```
 
@@ -135,7 +135,7 @@ def define_server(input, output, session, *,
 | I need to change... | Edit this file |
 |---|---|
 | How the Home tabs are built / left sidebar shows | `app/handlers/home_theater.py` |
-| Filter recipe builder (add row / apply / reset) | `app/handlers/home_theater.py` |
+| Filter builder (add row / apply / reset) | `app/handlers/home_theater.py` |
 | Data preview column selector | `app/handlers/home_theater.py` |
 | Export results bundle (zip / plots / data / Quarto) | `app/handlers/home_theater.py` |
 | The Pipeline Audit stack (Violet/Yellow nodes, Apply gate) | `app/handlers/audit_stack.py` |
@@ -157,7 +157,7 @@ def define_server(input, output, session, *,
 
 `app/handlers/home_theater.py` implements the unified Home Theater (ADR-043/ADR-044/ADR-047).
 
-### Filter Recipe Builder (Phase 21-F)
+### Filter builder (Phase 21-F)
 
 | Reactive | Type | Purpose |
 |---|---|---|
@@ -188,7 +188,7 @@ Each filter row: `{column: str, op: str, value: str|list, dtype: str}`.
 | `export_bundle_download` | `@render.download` (async) | Generates and yields zip bundle bytes |
 | `_export_bundle_filename()` | helper | Reactive-safe filename: `YYYYMMDD_HHMMSS_<name>_results.zip` |
 
-**Bundle contents**: `plots/` (SVG or PNG), `data/` (T1; T2 when the join has tier2 steps; `T3_data_<plot>.tsv` per plot with audited steps), `recipes/` (project YAMLs), `report.qmd` (Quarto source), `README.txt`. Exploration filters are never exported (no `FILTERS.txt` since 2026-11-06).
+**Bundle contents**: `plots/` (SVG or PNG), `data/` (T1; T2 when the join has tier2 steps; `T3_data_<plot>.tsv` per plot with audited steps), `steps/` (project YAMLs), `report.qmd` (Quarto source), `README.txt`. Exploration filters are never exported (no `FILTERS.txt` since 2026-11-06).
 
 ---
 

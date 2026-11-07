@@ -37,7 +37,7 @@ This FAQ captures the strategic "Whys" and "How-To" patterns discovered during t
 
 ### What is the "Backbone Rule" in Assembly?
 **Strategy**: The `DataAssembler (data_assembler.py)` uses **Position-Based Initialization**. It always treats the very first entry in your `ingredients` list as the "Backbone" of the assembly.
-- Any action in your recipe that isn't a `join` (like `filter_eq` or `rename`) is automatically applied to this evolving Backbone.
+- Any action in your step list that isn't a `join` (like `filter_eq` or `rename`) is automatically applied to this evolving Backbone.
 - **Tip**: You can control the base of your assembly simply by changing the order of your ingredients.
 
 ### What is the "Mirror Strategy" for splitting data?
@@ -80,7 +80,7 @@ Use the column selector (selectize multi-select) above the **Data Preview** tabl
 
 ### How do I export my results?
 
-Use the **Export Bundle** button in the **Export** panel (left sidebar). Enter a label (no spaces), choose a preset, and click the button. The download contains: plots (SVG or high-DPI PNG), data as TSV (T1; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view), YAML recipes, a Quarto `.qmd` report, and a README that records the fingerprints and keys of the data analysis recipe and data used.
+Use the **Export Bundle** button in the **Export** panel (left sidebar). Enter a label (no spaces), choose a preset, and click the button. The download contains: plots (SVG or high-DPI PNG), data as TSV (T1; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view), YAML step lists, a Quarto `.qmd` report, and a README that records the fingerprints and keys of the data analysis recipe and data used.
 
 The export shows what you see: the plots are the Result. Steps you sent to audit are always applied (and saved as `T3_data_<plot>.tsv`). Filters you only tried while exploring are never exported.
 

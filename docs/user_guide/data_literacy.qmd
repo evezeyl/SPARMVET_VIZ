@@ -34,7 +34,7 @@ Because SPARMVET processes hundreds of thousands of rows simultaneously, it reli
 The SPARMVET Wrangle Studio (Tier 2 and Tier 3) allows you to clean and twist your data *after* it's been uploaded. To avoid massive delays or crashes, follow these rules:
 
 ### 1. Drop Columns Early
-As soon as you begin your Wrangle recipe, use the `drop_columns` or `select_columns` action to shed everything you don't need for your final plot. Less data means faster rendering.
+As soon as you begin your Wrangle steps, use the `drop_columns` or `select_columns` action to shed everything you don't need for your final plot. Less data means faster rendering.
 
 ### 2. Avoid "Cartesian Explosions" (Duplicate Rows)
 When you use a `join` action to merge two datasets (e.g., adding MetaData to RawData), ensure you are joining on a strictly unique ID in the MetaData (like a `Sample_ID`). 
@@ -50,6 +50,6 @@ Stick to standard letters, numbers, and underscores (`_`).
 ## Summary
 - One variable per column.
 - Fix spelling inconsistencies.
-- Drop unused columns immediately in your recipe.
+- Drop unused columns immediately in your step list.
 - Make sure join keys are unique.
 - Use underscores instead of spaces in your column headers.

@@ -12,7 +12,7 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 ## Key Components
 
 - `DataWrangler (data_wrangler.py)`: Core engine that executes atomic cleaning actions against single datasets using declarative YAML pipelines.
-- `DataAssembler (data_assembler.py)`: Relational join orchestrator. Implements **Strict Assembly Enforcement**: requires all ingredients explicitly defined in a recipe, otherwise triggers a controlled crash to protect data integrity.
+- `DataAssembler (data_assembler.py)`: Relational join orchestrator. Implements **Strict Assembly Enforcement**: requires all ingredients explicitly defined in a step list, otherwise triggers a controlled crash to protect data integrity.
 - `PipelineExecutor (pipeline.py)`: Top-level runner that coordinates the full end-to-end flow (Ingest -> Wrangle -> Assemble).
 - `ActionRegistry (registry.py)`: Central dictionary mapping YAML action keys to Python function logic.
 - `MetadataValidator (metadata_validator.py)`: Ensures user-provided data aligns with data analysis recipe contracts. Performs **Malformed Data Gatekeeping** (ADR-034) by trapping missing columns with typo-correction suggestions (`validate`), rejecting values that cannot be cast to the declared type before a file is written (`validate_types`), and enforcing schema types (`enforce_schema`).
@@ -114,7 +114,7 @@ For Phase 1 & Phase 4 verification, use the local debugging runners to execute d
 
 ## Registered Action Registry
 
-All actions available for use in data analysis recipe `wrangling` and `recipe` blocks. Verified against `libs/transformer/src/transformer/actions/`.
+All actions available for use in data analysis recipe `wrangling` and `steps` blocks. Verified against `libs/transformer/src/transformer/actions/`.
 
 | Category | Actions |
 |---|---|
@@ -181,7 +181,7 @@ def action_my_action(lf, spec):
 |---|---|---|
 | `t1` | Tier 1 wrangling | Cleaning, renaming, filtering |
 | `t2` | Tier 2 wrangling | Reshaping, aggregation |
-| `assembly` | Assembly recipe | Joins, cross-source derivation |
+| `assembly` | Assembly steps | Joins, cross-source derivation |
 
 ### Accessing the catalog programmatically
 

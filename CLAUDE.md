@@ -68,7 +68,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | `rules_app_features_flags.md` | Flag matrix, cascade rules, anti-patterns (Phase 25+) |
 | `ui_implementation_contract.md` | Section-by-section UI surface spec (Phase 25+) |
 | `rules_code_quality.md` | Emoji ban (active), comment philosophy, pre-deployment documentation tiers |
-| `rules_gallery_standards.md` | Gallery recipe standards |
+| `rules_gallery_standards.md` | Gallery example standards |
 | `rules_viz_factory.md` | VizFactory registration rules |
 | `rules_app_structure.md` | App directory and module structure |
 | `dasharch.md` | @dasharch agent role definition |

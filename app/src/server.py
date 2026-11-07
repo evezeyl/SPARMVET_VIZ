@@ -93,8 +93,8 @@ def server(input, output, session):
 
     # State Management
     anchor_path = reactive.Value(None)
-    recipe_pending = reactive.Value(False)
-    snapshot_recipe = reactive.Value([])
+    audit_pending = reactive.Value(False)
+    snapshot_steps = reactive.Value([])
     gallery_refresh_trigger = reactive.Value(0)
     data_refresh_trigger = reactive.Value(0)   # incremented after data import to bust plot cache
     notification_log = reactive.Value([])      # UX-NOTIF-1: persistent alert log (last 20)
@@ -182,14 +182,14 @@ def server(input, output, session):
         session_pipeline_errors=session_pipeline_errors,
     )
 
-    # Pipeline Audit: T2/T3 nodes, btn_apply, recipe_pending_badge (requires t3_sandbox_enabled)
+    # Pipeline Audit: T2/T3 nodes, btn_apply, audit_pending_badge (requires t3_sandbox_enabled)
     if bootloader.is_enabled("t3_sandbox_enabled"):
         from app.handlers.audit_stack import define_server as _define_audit_server
         _define_audit_server(
             input, output, session,
             wrangle_studio=wrangle_studio,
-            recipe_pending=recipe_pending,
-            snapshot_recipe=snapshot_recipe,
+            audit_pending=audit_pending,
+            snapshot_steps=snapshot_steps,
             active_cfg=active_cfg,
             active_collection_id=active_collection_id,
             home_state=home_state,

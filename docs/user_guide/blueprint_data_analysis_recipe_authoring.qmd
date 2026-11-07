@@ -148,7 +148,7 @@ joins:
     ingredients:
       - dataset_id: Summary
       - dataset_id: Metadata
-    recipe:
+    steps:
       - action: join
         right_ingredient: Metadata
         'on': sample_id
@@ -325,7 +325,7 @@ Common validation failures and how to fix them:
 | Error | Likely cause | Fix |
 |---|---|---|
 | "Unknown action" | Typo in an `action:` key | Check the action list in the BLUEPRINT picker |
-| "Column not found" | `final_contract` references a column that was never created | Check that the column is produced earlier in the recipe |
+| "Column not found" | `final_contract` references a column that was never created | Check that the column is produced earlier in the step list |
 | "Join key mismatch" | Join key dtype differs between datasets | Add a `cast` step before the join |
 | "`on` is not a valid key" | Unquoted `on:` parsed as boolean | Change to `'on':` (quoted single tick) |
 
@@ -371,7 +371,7 @@ Suppose you have a working data analysis recipe and want to add a bar chart of r
 4. Add `input_fields` matching your TSV column headers exactly
 5. Add any `tier1` cleaning steps needed
 6. Click **Save**
-7. Go to Step 2 and add this schema as an ingredient in your join recipe
+7. Go to Step 2 and add this schema as an ingredient in your join steps
 
 ---
 
@@ -384,7 +384,7 @@ Suppose you have a working data analysis recipe and want to add a bar chart of r
 | `wrangling` | Cleaning and transformation steps (`tier1` shared; `tier2` plot-specific) |
 | `output_fields` | The columns you keep in the output (whitelist — omit to keep all) |
 | `joins` | A named joined table assembled from multiple data schemas |
-| `recipe` | The sequence of join and derivation steps for a joined table |
+| `steps` | The sequence of join and derivation steps for a joined table |
 | `analysis_groups` | Named groups of plots shown as tabs in HOME |
 | `target_dataset` | The joined table a plot reads from |
 | `mapping` | Column-to-aesthetic assignments (`x`, `y`, `fill`, `facet_by`) |

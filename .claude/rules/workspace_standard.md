@@ -114,7 +114,7 @@ grep -r "mirrors:.*orchestrator.py" . --include="*.py" --include="*.yaml" --incl
 ---
 trigger: always_on
 deps:
-  provides: [rule:canonical_recipe_syntax, rule:analysis_groups_structure]
+  provides: [rule:canonical_steps_syntax, rule:analysis_groups_structure]
   documents: [libs/transformer/src/transformer/data_assembler.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/data_analysis_recipe_structure.yaml]
 ---
@@ -162,7 +162,7 @@ Annotate files where a change has non-obvious ripple effects:
 - All core library modules (`data_assembler.py`, `data_wrangler.py`, `ingestor.py`, `orchestrator.py`, `metadata_validator.py`)
 - All debug scripts that mirror production logic
 - All rule files (`.claude/rules/*.md`)
-- All assembly recipe files (`assembly/*.yaml`)
+- All assembly steps files (`assembly/*.yaml`)
 - Plot spec files only if they have special structural dependencies
 
 Do NOT annotate: test data files, simple TSV/CSV data, one-off utility scripts, generated files.

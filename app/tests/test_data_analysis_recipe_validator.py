@@ -1,5 +1,5 @@
 """Contract test for data analysis recipes: every data analysis recipe in the active deployment's data analysis recipes location
-must have recipes in a shape the engine accepts (issue evezeyl/SPARMVET_VIZ#8).
+must have step lists in a shape the engine accepts (issue evezeyl/SPARMVET_VIZ#8).
 
 The data analysis recipes folder is read from the deployment (Location 2) through the bootloader, so
 a new data analysis recipe added there is tested without changing this file.
@@ -23,7 +23,7 @@ def test_data_analysis_recipes_are_found():
 
 
 @pytest.mark.parametrize("path", DATA_ANALYSIS_RECIPES, ids=lambda p: p.name)
-def test_manifest_has_no_recipe_problems(path):
+def test_manifest_has_no_steps_problems(path):
     problems = validate_data_analysis_recipe(path)
     assert problems == [], "\n".join(str(p) for p in problems)
 
@@ -54,12 +54,12 @@ def _write(tmp_path: Path, body: str, name: str = "m.yaml", with_analysis: bool 
     return path
 
 
-def test_tiered_recipe_is_valid(tmp_path):
+def test_tiered_steps_is_valid(tmp_path):
     path = _write(tmp_path, """
         id: t
         joins:
           A:
-            recipe:
+            steps:
               tier1:
                 - action: join
                   right_ingredient: B
@@ -68,19 +68,19 @@ def test_tiered_recipe_is_valid(tmp_path):
     assert validate_data_analysis_recipe(path) == []
 
 
-def test_flat_assembly_recipe_is_reported_once_with_location(tmp_path):
+def test_flat_assembly_steps_is_reported_once_with_location(tmp_path):
     path = _write(tmp_path, """
         id: t
         joins:
           A:
-            recipe:
+            steps:
               - action: join
                 right_ingredient: B
                 'on': sample_id
         """)
     problems = validate_data_analysis_recipe(path)
     assert len(problems) == 1
-    assert problems[0].location == "joins.A.recipe"
+    assert problems[0].location == "joins.A.steps"
     assert "Flat" in problems[0].problem
     assert problems[0].data_analysis_recipe == "m.yaml"
 
@@ -110,7 +110,7 @@ def test_all_problems_are_reported_not_only_the_first(tmp_path):
                 columns: [Year]
         joins:
           A:
-            recipe:
+            steps:
               - action: join
                 right_ingredient: S
         """)
@@ -122,7 +122,7 @@ def test_join_in_tier2_is_reported(tmp_path):
         id: t
         joins:
           A:
-            recipe:
+            steps:
               tier1: []
               tier2:
                 - action: join
@@ -148,7 +148,7 @@ def test_missing_include_is_a_problem_not_a_crash(tmp_path):
         id: t
         joins:
           A:
-            recipe: !include 'does_not_exist/recipe.yaml'
+            steps: !include 'does_not_exist/steps.yaml'
         """)
     problems = validate_data_analysis_recipe(path)
     assert len(problems) == 1 and problems[0].location == "load"

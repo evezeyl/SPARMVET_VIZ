@@ -46,7 +46,7 @@ joins:
     ingredients:
     - dataset_id: relational_left
     - dataset_id: relational_right
-    recipe:
+    steps:
       tier1:
       - action: join
         right_ingredient: relational_right

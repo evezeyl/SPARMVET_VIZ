@@ -9,7 +9,7 @@ joins:
   Tier2_Branch:
     ingredients:
       - dataset_id: "Trunk"
-    recipe:
+    steps:
       - action: "summarize"
         group_by: "label_A"
         columns: "id"

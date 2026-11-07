@@ -28,7 +28,7 @@ class PipelineExecutor:
     High-level orchestrator for executing full data pipelines defined in data analysis recipes.
     Bridges Ingestion, Wrangling, and Assembly into a single execution unit.
 
-    Produces the Tier 1 result (tier1 wrangling and tier1 recipe steps). Tier 2 is not applied.
+    Produces the Tier 1 result (tier1 wrangling and tier1 steps). Tier 2 is not applied.
     This is the plain executor used by the debug runner; the app uses DataOrchestrator.
     """
 
@@ -83,7 +83,7 @@ class PipelineExecutor:
             raise ValueError(
                 f"Assembly '{join_id}' not found in data analysis recipe.")
 
-        recipe = DataWrangler._resolve_tier(assembly_spec.get("recipe", []), "tier1")
+        steps = DataWrangler._resolve_tier(assembly_spec.get("steps", []), "tier1")
 
         assembler = DataAssembler(ingredients)
-        return assembler.assemble(recipe)
+        return assembler.assemble(steps)

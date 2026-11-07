@@ -101,21 +101,21 @@ The `VizFactory (viz_factory.py)` was designed with a fundamental principle: **t
 
 This philosophy data analysis recipes in three ways:
 
-1. **Declarative Data analysis recipes are the Brush**: A user does not write Python code to produce a plot. They write a YAML recipe that describes *what* they want to see. The factory translates intent into pixels.
+1. **Declarative Data analysis recipes are the Brush**: A user does not write Python code to produce a plot. They write a YAML step list that describes *what* they want to see. The factory translates intent into pixels.
 
 2. **Sensible Defaults Reduce Friction**: The Default Layer Injection Policy (Section 7 / ADR-024) ensures that minimal data analysis recipes produce coherent plots. A single `geom_point` layer is sufficient to get a professional `theme_bw` scatter plot by default.
 
-3. **Copy-Modify-Render Workflow**: The planned **Gallery & Recipe Pattern** (ADR-025) will provide a Visual Cookbook where each registered component is shown with its exact data analysis recipe and resulting image — enabling self-service plot customization.
+3. **Copy-Modify-Render Workflow**: The planned **Gallery & Example Pattern** (ADR-025) will provide a Visual Cookbook where each registered component is shown with its exact data analysis recipe and resulting image — enabling self-service plot customization.
 
-## 10. The Gallery & Recipe Pattern (ADR-025)
+## 10. The Gallery & Example Pattern (ADR-025)
 
 ::: {.callout-note}
 **Status:** PROPOSED — next development sprint.
 :::
 
-Each VizFactory component will be documented as a 3-part **Recipe**:
+Each VizFactory component will be documented as a 3-part **Step list**:
 
-| Recipe Part | Content | Purpose |
+| Step list Part | Content | Purpose |
 | :--- | :--- | :--- |
 | **Data Header** | First 5 rows of the test TSV | Shows expected data shape |
 | **YAML Data analysis recipe** | Exact copy-paste data analysis recipe | Enables direct reuse |

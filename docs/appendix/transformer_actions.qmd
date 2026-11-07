@@ -1,6 +1,6 @@
 # Transformer Action Gallery (With Examples)
 
-This appendix provides concrete YAML usage examples for the 25+ verified decorators executed by `DataWrangler` and `DataAssembler`. Use these "recipes" in your data analysis recipes to configure pipeline transformations without writing any logic.
+This appendix provides concrete YAML usage examples for the 25+ verified decorators executed by `DataWrangler` and `DataAssembler`. Use these "step lists" in your data analysis recipes to configure pipeline transformations without writing any logic.
 
 > **Blueprint Architect IDE**: Every action listed here is also discoverable via the programmatic catalog (see §0). The catalog drives the form generator in the Blueprint Architect IDE — no hand-coded forms needed.
 
@@ -35,7 +35,7 @@ null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
 |---|---|---|
 | `t1` | Tier-1 wrangling block | Cleaning, renaming, filtering, casting |
 | `t2` | Tier-2 wrangling block | Reshaping, aggregation, long-format transforms |
-| `assembly` | Assembly recipe | Joins, cross-source derivation |
+| `assembly` | Assembly steps | Joins, cross-source derivation |
 
 ### Widget type vocabulary
 

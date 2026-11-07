@@ -106,7 +106,7 @@ joins:
     ingredients:
     - dataset_id: amr_results
     - dataset_id: metadata_schema
-    recipe:
+    steps:
       tier1:
       - action: join
         right_ingredient: metadata_schema

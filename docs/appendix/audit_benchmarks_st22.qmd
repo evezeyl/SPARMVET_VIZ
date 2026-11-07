@@ -57,7 +57,7 @@ Following the **Background Mandate (2026-04-17)**, all future script executions 
 
 ### Decision Metadata Hashing (Cache Integrity)
 
-> **Superseded (ADR-089, 2026-11-05):** the recipe hash `sparmvet_decision_hash` was replaced by chained keys: a `tier1_key` (engine version, resolved data analysis recipe, data content) and a `tier2_key` (Tier 1 key and the Tier 2 steps), stored in the Parquet metadata. A change in an included file, which the old hash missed, now rebuilds the stage.
+> **Superseded (ADR-089, 2026-11-05):** the step list hash `sparmvet_decision_hash` was replaced by chained keys: a `tier1_key` (engine version, resolved data analysis recipe, data content) and a `tier2_key` (Tier 1 key and the Tier 2 steps), stored in the Parquet metadata. A change in an included file, which the old hash missed, now rebuilds the stage.
 
 - **Mechanism:** the orchestrator compares the key stored in the Tier 1 / Tier 2 Parquet file with the current key; a mismatch recomputes only the stages whose key changed.
 - **Verification:** `app/tests/test_cache_chain.py` and `app/tests/test_tier2_store.py`.

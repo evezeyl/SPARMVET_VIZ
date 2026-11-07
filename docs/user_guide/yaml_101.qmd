@@ -8,7 +8,7 @@ Welcome to SPARMVET! As a user, researcher, or domain expert, you will frequentl
 A Data analysis recipe is just a **YAML** file (`.yaml` or `.yml`). But don't let the acronym intimidate you!
 YAML stands for "YAML Ain't Markup Language". It is simply a way to write human-readable text that our pipelines can easily understand as instructions.
 
-Think of a YAML file as a recipe card: you use basic text to outline ingredients (your data) and the steps you want taken (your wrangling/plots).
+Think of a YAML file as a data analysis recipe card: you use basic text to outline ingredients (your data) and the steps you want taken (your wrangling/plots).
 
 ## How to Edit a YAML File
 You **do not** need a programming IDE (like VSCode or PyCharm) to edit YAML files, nor should you use Word Processors (like MS Word) because they add hidden formatting characters that break the pipelines.

@@ -165,7 +165,7 @@ blueprint_agent:
   api_key_env: ANTHROPIC_API_KEY  # env var name for API key (claude_api only)
   endpoint: ~                  # optional API endpoint override
   instructions_file: "config/ui/agents/blueprint_agent.md"  # system-prompt template
-  gallery_awareness: true      # whether agent can reference gallery recipes
+  gallery_awareness: true      # whether agent can reference gallery examples
 ```
 
 | Backend | How it connects | Required env vars |
@@ -329,7 +329,7 @@ Full analytical access. You can add your own processing steps in T3, compare the
 Everything above, plus you can upload your own data files (including Excel output from pipelines), associate them with the correct pipeline schemas, and switch between different pipeline data analysis recipes. Intended for researchers running analyses independently of an automated pipeline.
 
 ## developer
-All features. Access to the Gallery for browsing and cloning recipes, the Test Lab for generating synthetic test data, the full action registry in the audit panel, and the Blueprint Architect with AI agent assistance. Intended for pipeline developers and system administrators.
+All features. Access to the Gallery for browsing and cloning examples, the Test Lab for generating synthetic test data, the full action registry in the audit panel, and the Blueprint Architect with AI agent assistance. Intended for pipeline developers and system administrators.
 
 ## demo-vetinst *(reference demo)*
 Read-only view of plots and data. Export is disabled so the demo environment stays clean between presentations. All interaction and ingestion features are off. Intended for NVI/Vetinst public demonstrations.
@@ -424,7 +424,7 @@ Changing a shared sidebar file propagates to all app features files that `!inclu
 | `project_info` | — | any | Data analysis recipe title, description, dataset summary. Always renders. |
 | `deployment_info` | — | any | Branding: logo, contact, institution. Params: `logo`, `contact`, `institution`. |
 | `data_analysis_recipe_choice` | `data_analysis_recipe_selector.visible` | home | Data analysis recipe selector dropdown |
-| `filters` | `interactivity_enabled` | home | Row filter recipe builder |
+| `filters` | `interactivity_enabled` | home | Row filter builder |
 | `export` | `export_enabled` | home | Export bundle with scope toggle |
 | `session_management` | `session_management_enabled` | home | Session save/restore/import |
 | `data_import` | `metadata_ingestion_enabled` | home | Metadata upload + optional multi-file ingestion |

@@ -126,7 +126,7 @@ Runs every pipeline data analysis recipe in `config/data_analysis_recipes/pipeli
 - Missing required keys (`input_fields`, `wrangling`, `output_fields`)
 - Broken `!include` paths
 - Undefined `@register_action` names in wrangling steps
-- `final_contract` columns not produced by the assembly recipe
+- `final_contract` columns not produced by the assembly steps
 - Join key dtype mismatches
 
 **Fix guidance** for common assembler errors:

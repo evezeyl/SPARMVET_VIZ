@@ -18,7 +18,7 @@ One accordion panel labelled **"Export"** replaces the previous two-panel layout
 
 | Option | Scope | Tooltip shown on hover |
 |---|---|---|
-| **Global project** | All plots, all data, full recipes | "Export everything in the active project" |
+| **Global project** | All plots, all data, full step lists | "Export everything in the active project" |
 | **Active group** | All plots in the group the current tab belongs to; lineage backtraced per plot | "Export all plots in the current group (e.g., all Quality Control plots)" |
 | **Active plot** | The single plot currently displayed; its lineage backtraced | "Export only the plot you are currently viewing" |
 
@@ -78,11 +78,11 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 | `data/<dataset>_T1.tsv` | Always | All datasets referenced by active plots |
 | `data/<dataset>_T2.tsv` | Always | |
 | `data/<dataset>_T3.tsv` | T3 active at export time | Advanced+ app features + T3 tier active |
-| `recipes/<data_analysis_recipe_files>` | Always | All YAML files from active data analysis recipe directory |
-| `recipes/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
+| `steps/<data_analysis_recipe_files>` | Always | All YAML files from active data analysis recipe directory |
+| `steps/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
 | `report.<fmt>` | Always | Quarto-rendered report; includes T3 audit section when applicable (see §3) |
 | `README.txt` | Always | Timestamp, project, app features, preset, tiers, hash values (all 3 hashes) |
-| `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`recipes/t3_steps.yaml`, T3 Audit Trail in `report.qmd`) is the trace |
+| `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`steps/t3_steps.yaml`, T3 Audit Trail in `report.qmd`) is the trace |
 
 ---
 
@@ -90,7 +90,7 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 
 The report includes a **"T3 Audit Trail"** section at the end **when**:
 - `t3_sandbox_enabled: true` for the active app features, **AND**
-- `t3_recipe_by_plot` contains at least one committed, active node
+- `t3_audit_steps_by_plot` contains at least one committed, active node
 
 When the condition is not met, the section is absent (no empty placeholder).
 
@@ -115,12 +115,12 @@ For each plot that has T3 modifications:
 
 ---
 
-## 4. T3 recipe serialisation into recipes/
+## 4. audit steps serialisation into step lists/
 
-`recipes/t3_steps.yaml` structure (one file, all plots):
+`steps/t3_steps.yaml` structure (one file, all plots):
 
 ```yaml
-# T3 recipe steps — user-committed modifications
+# audit steps — user-committed modifications
 # Generated: YYYYMMDD_HHMMSS
 export_scope: global   # or: single_plot / <plot_id>
 t3_steps:
@@ -141,15 +141,15 @@ For **Active plot** export: only the steps for that single plot's lineage; `expo
 ## 5. Scoped export — Active group and Active plot
 
 Both scoped modes use lineage backtrace: for each plot in scope, walk
-`target_dataset → ingredients → data_schemas` to find every dataset and recipe
+`target_dataset → ingredients → data_schemas` to find every dataset and step list
 file that feeds it. The union of all lineage sets becomes the export contents.
 
 | What is scoped | Active group | Active plot |
 |---|---|---|
 | `plots/` | All plots in the active group | Only the active plot |
 | `data/` | Union of all upstream datasets for each plot in the group | Only datasets in the active plot's lineage |
-| `recipes/` | Union of all data analysis recipe files feeding each plot in the group | Only the data analysis recipe files that feed the active plot |
-| `recipes/t3_steps.yaml` | T3 steps for all plots in the group | T3 steps for the active plot only |
+| `steps/` | Union of all data analysis recipe files feeding each plot in the group | Only the data analysis recipe files that feed the active plot |
+| `steps/t3_steps.yaml` | T3 steps for all plots in the group | T3 steps for the active plot only |
 | `report.<fmt>` | Full report scoped to the group; T3 audit section per plot | Report for one plot; T3 audit section for that plot |
 
 **Lineage backtrace algorithm:**  

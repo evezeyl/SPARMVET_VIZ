@@ -13,7 +13,7 @@ Inspired by the R Graph Gallery (r-graph-gallery.com)
 - **Headers:** id, growth_index, species
 
 ### Transformation Logic (Tier 2)
-- This recipe utilizes advanced layer stacking and coordinate manipulation.
+- This example utilizes advanced layer stacking and coordinate manipulation.
 
 
 ### Inspiration & Resources

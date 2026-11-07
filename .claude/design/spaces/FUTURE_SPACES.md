@@ -15,7 +15,7 @@ These are **not tasks** — they are design seeds. Revisit when the relevant nee
 - "What if" comparisons outside a data analysis recipe
 - Any analysis type where the user is discovering, not reproducing
 
-**Key distinction from HOME:** HOME runs a predefined recipe and documents every step for reproducibility. EXPLORATION lets the user poke at data without that contract. They are parallel, not competing — a user might explore first, then formalise a finding into a BLUEPRINT data analysis recipe that runs in HOME.
+**Key distinction from HOME:** HOME runs a predefined step list and documents every step for reproducibility. EXPLORATION lets the user poke at data without that contract. They are parallel, not competing — a user might explore first, then formalise a finding into a BLUEPRINT data analysis recipe that runs in HOME.
 
 **Design note:** This space can live alongside HOME, BLUEPRINT, TEST_LAB, GALLERY as a fifth (or sixth) user space. It does not need to fit inside any existing space.
 

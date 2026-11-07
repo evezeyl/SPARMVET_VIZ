@@ -71,7 +71,7 @@ project_root: "/data/pipeline/amr/"    # absolute base; all locations resolve un
 
 locations:
   raw_data:      "inputs/"       # Location 1 — raw files (TSV, Excel, VCF); read-only
-  data_analysis_recipes:     "data_analysis_recipes/"    # Location 2 — YAML data analysis recipes and recipes; read-only
+  data_analysis_recipes:     "data_analysis_recipes/"    # Location 2 — YAML data analysis recipes and step lists; read-only
   cache:  "parquet/"      # Location 3 — Tier 1/2 Parquet caches; written by engine
   user_data: "sessions/"     # Location 4 — exports, session saves, T3 artifacts; user-writable
   gallery:       "gallery/"      # Location 5 — gallery assets; read-only

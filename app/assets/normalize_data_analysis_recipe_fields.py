@@ -142,7 +142,7 @@ def _walk_and_normalize(obj, path="root"):
                 changes.append(
                     f"  [{path}.{key}]: enforced Rich Dictionary format")
                 obj[key] = normalized
-        elif key in ("wrangling", "recipe", "pre_plot_wrangling"):
+        elif key in ("wrangling", "steps", "pre_plot_wrangling"):
             normalized, changed = _normalize_wrangling(val)
             if changed:
                 changes.append(

@@ -81,7 +81,7 @@ def define_server(
             ui.output_ui("tl_recon_threshold_ui"),
             ui.output_data_frame("tl_recon_table"),
             ui.download_button(
-                "tl_recon_download", "Download Recipe YAML",
+                "tl_recon_download", "Download Id transformation YAML",
                 class_="btn btn-primary btn-sm mt-2",
             ),
             class_="p-2",
@@ -217,7 +217,7 @@ def define_server(
         return ui.div(
             ui.p(
                 f"Warning: {len(m2m)} ref IDs match multiple targets ({preview}{extra}). "
-                "A written reason is required before downloading the recipe.",
+                "A written reason is required before downloading the id transformation.",
                 class_="text-warning small mt-1",
             ),
             ui.input_text_area(
@@ -259,7 +259,7 @@ def define_server(
         return ui.div(
             ui.input_slider(
                 "tl_recon_threshold",
-                "Minimum certainty to include in recipe (1.0 = exact matches only)",
+                "Minimum certainty to include in id transformation (1.0 = exact matches only)",
                 min=0.5, max=1.0, value=0.7, step=0.05,
             ),
             class_="mt-2",
@@ -276,7 +276,7 @@ def define_server(
         from id_reconciliation import format_match_table
         return render.DataGrid(format_match_table(results).to_pandas(), width="100%")
 
-    @render.download(filename=lambda: "reconciliation_recipe.yaml")
+    @render.download(filename=lambda: "id_transformation.yaml")
     async def tl_recon_download():
         from id_reconciliation import IDReconciliationEngine, detect_many_to_many
         results = _recon_results()
@@ -295,16 +295,16 @@ def define_server(
             target_col = "target_id"
         filtered = [r for r in results if r.certainty >= threshold]
         engine = IDReconciliationEngine()
-        recipe = engine.generate_recipe(filtered, ref_col, target_col)
+        id_transformation = engine.generate_transformation(filtered, ref_col, target_col)
         m2m = detect_many_to_many(results)
         if m2m:
             try:
                 reason = input.tl_recon_m2m_reason()
                 if reason:
-                    recipe.metadata["many_to_many_reason"] = reason
+                    id_transformation.metadata["many_to_many_reason"] = reason
             except Exception:
                 pass
-        yield recipe.to_yaml().encode()
+        yield id_transformation.to_yaml().encode()
 
     # ── end TL-UI-RECONCILE-1 ────────────────────────────────────────────
 
@@ -392,7 +392,7 @@ def define_server(
         stems = [Path(fi["name"]).stem for fi in infos]
         return ui.input_select(
             "tl_scaffold_recon_dataset",
-            "Apply recipe steps to dataset",
+            "Apply id transformation steps to dataset",
             choices={s: s for s in stems},
             selected=stems[0],
         )
@@ -423,8 +423,8 @@ def define_server(
         except Exception:
             join_key = "sample_id"
 
-        # Build recipes dict from reconciliation result if requested
-        recipes = None
+        # Build id transformations dict from reconciliation result if requested
+        id_transformations = None
         with_recon_dataset = None
         try:
             use_recon = bool(input.tl_scaffold_use_recon())
@@ -452,14 +452,14 @@ def define_server(
                 filtered = [r for r in results if r.certainty >= threshold]
                 if filtered:
                     engine = IDReconciliationEngine()
-                    recipe = engine.generate_recipe(filtered, ref_col, target_col)
-                    recipes = {dataset_key: recipe.steps}
+                    id_transformation = engine.generate_transformation(filtered, ref_col, target_col)
+                    id_transformations = {dataset_key: id_transformation.steps}
                     with_recon_dataset = dataset_key
 
         scaffolder = DataAnalysisRecipeScaffolder(join_key=join_key)
         zip_bytes = scaffolder.scaffold(
             tsv_paths, project_id,
-            recipes=recipes,
+            id_transformations=id_transformations,
             metadata_path=meta_path,
         )
         return {

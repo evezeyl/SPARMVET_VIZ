@@ -121,7 +121,7 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `GALLERY` | `gallery_enabled` | Gallery browser (34 recipes, 6-axis taxonomy). Standalone — no cascade. |
+| `GALLERY` | `gallery_enabled` | Gallery browser (34 examples, 6-axis taxonomy). Standalone — no cascade. |
 | `BLUEPRINT` | `blueprint_enabled` | Blueprint Architect (TubeMap, data analysis recipe navigator). Standalone. Sub-flags deferred. |
 | `TEST_LAB` | `test_lab_enabled` | Test Lab (synthetic data, data analysis recipe scaffolding). Standalone. Sub-flags deferred. |
 

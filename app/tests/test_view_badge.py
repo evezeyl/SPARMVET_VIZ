@@ -8,10 +8,10 @@ from app.modules.view_badge import has_tier2_steps, view_badge
 
 RAW = {
     "joins": {
-        "WithT2": {"recipe": {"tier1": [{"action": "sort", "columns": ["a"]}],
+        "WithT2": {"steps": {"tier1": [{"action": "sort", "columns": ["a"]}],
                               "tier2": [{"action": "filter_eq", "column": "a", "value": 1}]}},
-        "WithoutT2": {"recipe": {"tier1": [{"action": "sort", "columns": ["a"]}], "tier2": []}},
-        "TierOnly": {"recipe": {"tier1": []}},
+        "WithoutT2": {"steps": {"tier1": [{"action": "sort", "columns": ["a"]}], "tier2": []}},
+        "TierOnly": {"steps": {"tier1": []}},
     }
 }
 
@@ -38,7 +38,7 @@ def test_my_view_says_what_it_is_identical_to(has_tier2, has_changes, notes):
     assert badge.label == "Viewing: My view" and badge.notes == notes
 
 
-def test_has_tier2_steps_reads_the_joins_recipe():
+def test_has_tier2_steps_reads_the_joins_steps():
     assert has_tier2_steps(RAW, "WithT2") is True
     assert has_tier2_steps(RAW, "WithoutT2") is False
     assert has_tier2_steps(RAW, "TierOnly") is False

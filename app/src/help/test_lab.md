@@ -9,7 +9,7 @@ Generate synthetic test data matching a schema. Outputs to `tmp/` for immediate 
 Run the Tier 1 and Tier 2 wrangling steps from a data analysis recipe fragment against a TSV file without the full app. Outputs a `USER_debug_view.tsv` in `tmp/` for manual review.
 
 ### Assembler Debug
-Run the full assembly recipe (joins + derived columns + `final_contract`) against source data. Produces pre-contract and contracted Parquet + TSV files.
+Run the full assembly steps (joins + derived columns + `final_contract`) against source data. Produces pre-contract and contracted Parquet + TSV files.
 
 ### Gallery Debug
 Render all plots from a data analysis recipe into PNG files. Requires the Assembler to have been run first (needs Parquet in `tmp/`).

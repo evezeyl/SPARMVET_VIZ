@@ -15,11 +15,11 @@ This document defines the authoritative nomenclature for the **SPARMVET_VIZ** pl
 
 - **Anchor (Tier 1/2)**: The authoritative, materialized Parquet file representing the joined and cleaned project data.
 - **Leaf (Tier 3)**: The transient, reactive view produced by applying user-defined filters and wrangling nodes in the UI.
-- **Recipe**: A serialized YAML sequence of transformation nodes representing the data lineage from Anchor to Leaf.
+- **Step list**: A serialized YAML sequence of transformation nodes representing the data lineage from Anchor to Leaf.
 - **Bootloader (bootloader.py)**: The system initialization engine responsible for path authority, UI app features toggling, and agnostic project discovery.
 
 ## UI Elements
 
 - **Home**: The central dashboard workspace where plots and data tables are rendered. All analytical navigation happens here — the former "Analysis Theater" nav mode was eliminated by ADR-043 (Phase 21); there is no separate Viz mode.
-- **Wrangle Studio**: The visual builder SDK for constructing and modifying logic recipes (available within the Test Lab to `developer` app features files).
+- **Wrangle Studio**: The visual builder SDK for constructing and modifying logic step lists (available within the Test Lab to `developer` app features files).
 - **Test Lab**: The developer-facing environment for record synthesis, environment auditing, and pipeline testing (formerly "Dev Studio").

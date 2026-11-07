@@ -44,5 +44,5 @@ The "Branch" is a micro-dataset or pre-aggregated summary explicitly requested b
 ## Tier 3 (The Leaf): Dynamic View (VizFactory (viz_factory.py))
 The "Leaf" is the final state of the data as it enters the plotting engine. 
 - **Instruction**: Predicate pushdown logic (filtering/selection) that is unique to a single panel or small set of panels.
-- **Reactivity (Memory Array)**: To ensure rapid exploration, Tier 3 maintains a "Memory Array" of inherited Tier 2 nodes. A UI toggle allows users to view data with or without these pre-filled steps instantly via Polars' lazy evaluation—without losing the underlying recipe.
+- **Reactivity (Memory Array)**: To ensure rapid exploration, Tier 3 maintains a "Memory Array" of inherited Tier 2 nodes. A UI toggle allows users to view data with or without these pre-filled steps instantly via Polars' lazy evaluation—without losing the underlying step list.
 - **Performance**: Enforced via Polars' lazy evaluation, ensuring the smallest possible footprint enters the Plotnine/Matplotlib rendering pipeline.

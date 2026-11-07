@@ -157,7 +157,7 @@ Using `project-independent` or `developer` app features throughout the following
 - [x] Pick **"This plot only"** → confirm.
 - [x] Right sidebar "Tier 3 — My Adjustments" shows a pending node with yellow reason input.
 - [x] Type a reason. `Apply` button transitions from "Apply ⛔" (no reason) to enabled "Apply".
-- [x] Click Apply. Notification: "✅ T3 recipe applied — N node(s) across 1 plot stack(s)."
+- [x] Click Apply. Notification: "✅ audit steps applied — N node(s) across 1 plot stack(s)."
 - [x] Plot and data preview reflect the filter.
 - [x] Switch to another plot sub-tab → that plot is **unaffected** (per-plot scoping).
 
@@ -237,18 +237,18 @@ a primary key is for - so simple term, explaining potential consequences ... and
 ## 12. Gallery nav
 
 - [x] Click **Gallery** in nav pills (project-independent or developer app features).
-- [x] Center panel shows the gallery recipe browser.
-- [x] Left sidebar shows Recipe selector + collapsible taxonomy filters (not "Discovery Mode Active").
+- [x] Center panel shows the gallery examples browser.
+- [x] Left sidebar shows Example selector + collapsible taxonomy filters (not "Discovery Mode Active").
 
 ### Gallery sidebar (2026-05-03 changes)
-- [x] Left sidebar: "👨‍🍳 Recipe" accordion — single emoji, no double icon.
+- [x] Left sidebar: "👨‍🍳 Step list" accordion — single emoji, no double icon.
 - [x] Left sidebar: "🔍 Gallery Taxonomy" accordion — single emoji, no double icon.
 - [x] Taxonomy sub-panels labelled `🏷️ Family (Purpose)`, `🏷️ Data Pattern`, `🏷️ Difficulty`.
 - [x] Each taxonomy sub-panel is collapsible (nested accordion). All open by default.
 - [x] "Select all [ ]" row is right-aligned inside each taxonomy panel. No large gap below it. [Sill a bit large I think but we can live with that]
 - [x] Toggling "Select all" on/off updates all checkboxes in that group. *(BUG fixed 2026-05-03: replaced @reactive.event with plain @reactive.Effect + None-guard in gallery_handlers.py — re-verify)*
-- [x] Choices in all three groups are loaded from `gallery_index.json` pivot (not hardcoded). *(DONE 2026-05-03: 8 new recipes added, index rebuilt — 21 recipes, 6 families: Comparison, Correlation, Distribution, Evolution, Part-to-Whole, Ranking. Verify new families appear in sidebar filters at next relaunch.)*
-- [x] "Apply" button filters the recipe selector correctly.
+- [x] Choices in all three groups are loaded from `gallery_index.json` pivot (not hardcoded). *(DONE 2026-05-03: 8 new examples added, index rebuilt — 21 examples, 6 families: Comparison, Correlation, Distribution, Evolution, Part-to-Whole, Ranking. Verify new families appear in sidebar filters at next relaunch.)*
+- [x] "Apply" button filters the step list selector correctly.
 
 ### Gallery theater (2026-05-03 changes)
 - [x] No `<hr>` line between the view-title-banner and the Preview accordion.
@@ -256,10 +256,10 @@ a primary key is for - so simple term, explaining potential consequences ... and
 - [x] "📖 Visual Cookbook: Guidance" accordion is open by default; clicking the header collapses it.
 - [x] When Preview is collapsed only the Guidance pane is visible (and vice versa).
 - [x] Guidance pane has yellow soft-note background; collapse arrow is amber-tinted (might be amber - looks good to me).
-- [x] Recipe title renders as compact `h2` (same visual weight as accordion header).
+- [x] Step list title renders as compact `h2` (same visual weight as accordion header).
 - [x] Taxonomy tag strip `> 📊 Family · 🔢 Pattern · 📈 Difficulty` renders as a small blockquote with amber left border.
-SOLVED [Yes but we used tags icons on the left side bar in the recipe title renders, so maybe we should use the same icons then than those that are shown in the Taxonomy tag strip - that would be better. So this would mean removing the tags icons to the reciple title renders and make the icones being fetched at the same time when the recipe taxonomy is autobuild and autopopulates in the left side bar.]
-- [x] Content sections (`### Suitability`, `### Data Schema`, etc.) are smaller than the recipe title. [Not much smaller if smaller, but looks good enough for me - because they have lighter collor particulary]
+SOLVED [Yes but we used tags icons on the left side bar in the example title renders, so maybe we should use the same icons then than those that are shown in the Taxonomy tag strip - that would be better. So this would mean removing the tags icons to the reciple title renders and make the icones being fetched at the same time when the step list taxonomy is autobuild and autopopulates in the left side bar.]
+- [x] Content sections (`### Suitability`, `### Data Schema`, etc.) are smaller than the step list title. [Not much smaller if smaller, but looks good enough for me - because they have lighter collor particulary]
 
 ### Sidebar toggle (2026-05-03 fix — ADR-062)
 - [ ] Left sidebar toggle: collapse → shows main content full width.
@@ -267,7 +267,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the recipe title rend
 - [ ] Right sidebar toggle (t3_sandbox app features only): collapse and expand both work.
 - [ ] **Critical**: hide BOTH sidebars → both toggles remain clickable → can expand either sidebar independently.
 
-- [x] Clicking a gallery card loads the recipe preview on the center pane.
+- [x] Clicking a gallery card loads the example preview on the center pane.
 - [x] Click Home → center panel returns to plots, left sidebar tools re-appear.
 - [ ] *(Deferred)* Returning to Home from Gallery preserves the previously active data_analysis_recipe/plot state (THEATER-1 scope).
 
@@ -303,7 +303,7 @@ Should the save take as much as 2 minutes - it should not be possible to export 
 - [ ] Open **Global Project Export** accordion.
 - [ ] Click the export button.
 - [ ] A `.zip` bundle downloads (or a path is reported in the terminal).
-- [ ] Bundle contains at minimum: the assembled data, a recipe/filter trace, and a plot export.
+- [ ] Bundle contains at minimum: the assembled data, a steps/filter trace, and a plot export.
 - [ ] *(EXPORT-2/EXPORT-3 selective export and Quarto report polish are open items — don't test those specifics here.)*
 
 ---

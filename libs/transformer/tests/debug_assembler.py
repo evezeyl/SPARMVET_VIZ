@@ -126,20 +126,20 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
         if not assembly_ingredients:
             assembly_ingredients = ingredients
 
-        # b) Execute Assembly (Layer 2: Relational recipe)
-        # Use _resolve_tier to handle tiered recipe format (same as orchestrator)
-        recipe_raw = assembly_info.get("recipe", [])
-        recipe = DataWrangler._resolve_tier(recipe_raw, "tier1")
+        # b) Execute Assembly (Layer 2: Relational step list)
+        # Use _resolve_tier to handle tiered steps format (same as orchestrator)
+        steps_raw = assembly_info.get("steps", [])
+        steps = DataWrangler._resolve_tier(steps_raw, "tier1")
 
-        if not recipe and recipe_raw:
-            print(f"  └── ⚠️  Warning: No tier1 steps resolved from recipe.")
+        if not steps and steps_raw:
+            print(f"  └── ⚠️  Warning: No tier1 steps resolved from step list.")
 
         # Normalise join key dtypes across all ingredients before assembling.
         # Mirrors orchestrator.py join dtype normalisation logic exactly.
         per_ingredient_cast: dict = {ds_id: set() for ds_id in assembly_ingredients}
         base_cast: set = set()
 
-        for step in recipe:
+        for step in steps:
             right_id = step.get("right_ingredient")
             sym = step.get("on")
             left_on = step.get("left_on")
@@ -173,15 +173,15 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
         assembly_ingredients = normalised
 
         # Filter steps referring to missing ingredients
-        filtered_recipe = []
-        for step in recipe:
+        filtered_steps = []
+        for step in steps:
             right_id = step.get("right_ingredient")
             if right_id and right_id not in assembly_ingredients:
                 print(f"  └── ⚠️  Skipping step '{step.get('action')}' — missing ingredient '{right_id}'")
                 continue
-            filtered_recipe.append(step)
+            filtered_steps.append(step)
 
-        # Inject sink_parquet into the recipe — assembler handles content-hash
+        # Inject sink_parquet into the step list — assembler handles content-hash
         # short-circuit internally. This parquet captures the full pre-contract
         # intermediate result (all columns), consistent with orchestrator behaviour.
         if tmp_dir:
@@ -193,17 +193,17 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
         tmp_root.mkdir(parents=True, exist_ok=True)
         intermediate_parquet = str(tmp_root / f"EVE_assembly_{assembly_id}.parquet")
 
-        filtered_recipe.append({
+        filtered_steps.append({
             "action": "sink_parquet",
             "path": intermediate_parquet,
             "force_recompute": False
         })
 
-        print(f"  └── 🏗️  Assembling using recipe: {len(filtered_recipe)} steps.")
+        print(f"  └── 🏗️  Assembling using step list: {len(filtered_steps)} steps.")
 
         assembler = DataAssembler(assembly_ingredients)
         try:
-            consolidated_lf = assembler.assemble(filtered_recipe)
+            consolidated_lf = assembler.assemble(filtered_steps)
         except Exception as e:
             print(f"  └── ❌ Assembly Error: {e}")
             continue

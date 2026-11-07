@@ -13,7 +13,7 @@ Scientists often receive Excel workbooks, need anonymised shareable datasets, or
 - **AquaSynthesizer (aqua_synthesizer.py)**: Reads a real TSV and emits a structurally identical synthetic TSV — same column names, same value distributions and levels, different values. Safe to share. Also generates controlled-error datasets for pipeline testing.
 - **DataAnalysisRecipeBootstrapper (bootstrapper.py)**: Infers column types and cardinalities from a TSV and writes a boilerplate `input_fields` YAML fragment — eliminates manual schema typing when onboarding a new data source.
 - **XlsxExtractor (extractor.py)**: Reads multi-sheet XLSX workbooks and writes one normalised TSV per sheet. Entry point for the Excel → TSV conversion flow in the Data Import panel.
-- **ID Reconciliation**: Primary-key matching (exact, pattern-based, fuzzy), recipe generation, and recode workflows are now in `libs/id_reconciliation/`. See that library's README for usage.
+- **ID Reconciliation**: Primary-key matching (exact, pattern-based, fuzzy), step list generation, and recode workflows are now in `libs/id_reconciliation/`. See that library's README for usage.
 
 ## CLI Usage
 

@@ -130,7 +130,7 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
         inp = _slot(block, "input_fields")
         out = _slot(block, "output_fields")
         wrn = _slot(block, "wrangling")
-        rec = _slot(block, "recipe")
+        rec = _slot(block, "steps")
         con = _slot(block, "final_contract")
 
         effective_out = out or con
@@ -454,7 +454,7 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
             "input_fields":  _slot(block.get("input_fields")),
             "wrangling":     _slot(block.get("wrangling")),
             "output_fields": _slot(block.get("output_fields") or block.get("final_contract")),
-            "recipe":        _slot(block.get("recipe")),
+            "steps":        _slot(block.get("steps")),
             "ingredients":   _extract_ingredients(block),
             "target_dataset": None,
             "group_id":      group_id,
@@ -489,7 +489,7 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
                 "input_fields":   None,   # resolved from target_dataset at display time
                 "wrangling":      pre_wrn,
                 "output_fields":  None,   # plots are terminals
-                "recipe":         spec_slot,
+                "steps":         spec_slot,
                 "ingredients":    [],
                 "target_dataset": target_ds,
                 "group_id":       group_id,
@@ -878,7 +878,7 @@ def generate_branch_plan(
                     output_fields fragment ({})
       join                                       → branch an assembly:
           SHARED  : ingredients (copied inline)
-          DIVERGE : new recipe fragment ([]) + new output_fields fragment ({})
+          DIVERGE : new step list fragment ([]) + new output_fields fragment ({})
       plot_spec                                  → branch a plot (leaf node):
           SHARED  : target_dataset (carried inside the copied spec)
           SEED    : a COPY of the original spec under new_id — a plot is a leaf,
@@ -974,7 +974,7 @@ def generate_branch_plan(
         ingredients = join_def.get("ingredients")
         if ingredients not in (None, {}, []):
             lines.append(_render_block_key("ingredients", ingredients, indent=4))
-        lines.append(f"    recipe: !include '{rec_rel}'")
+        lines.append(f"    steps: !include '{rec_rel}'")
         lines.append(f"    output_fields: !include '{out_rel}'")
         block_text = "\n".join(lines)
 
@@ -985,7 +985,7 @@ def generate_branch_plan(
         return {
             "ok": True, "error": "",
             "summary": (f"Branched assembly {schema_id} -> {new_id}: shares "
-                        "ingredients; new empty recipe + output_fields."),
+                        "ingredients; new empty step list + output_fields."),
             "new_master_text": new_master,
             "fragments": [
                 {"abs_path": str(master_dir / rec_rel), "rel_include": rec_rel,

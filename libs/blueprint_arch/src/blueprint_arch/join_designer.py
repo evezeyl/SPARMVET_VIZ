@@ -7,7 +7,7 @@ orchestrator, extracts the join-key columns with polars (String-cast, mirroring 
 assembler joins), and passes plain Python rows here. Importable headless — no Shiny, no polars.
 
 Consumed by: app/handlers/blueprint_handlers.py (Joint Designer wiring).
-Produces: canonical `join` recipe steps consumed by the transformer `join` action.
+Produces: canonical `join` steps consumed by the transformer `join` action.
 If deleted: the Joint Designer pane loses its overlap stats and step (de)serialisation.
 """
 from __future__ import annotations
@@ -116,7 +116,7 @@ def compute_key_match(left_rows, right_rows, left_dtypes, right_dtypes, sample_n
 
 
 def build_join_step(right_ingredient, left_keys, right_keys, how="inner", comment=""):
-    """Emit a canonical `join` recipe step from Joint Designer selections.
+    """Emit a canonical `join` step from Joint Designer selections.
 
     left_keys / right_keys: aligned, non-empty lists of column names (the left side refers
         to the accumulating assembly base; the right side to `right_ingredient`'s columns).

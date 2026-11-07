@@ -73,18 +73,18 @@ class TestBootstrapperBugFixes:
         assert "tier2" in content, "wrangling fragment must have 'tier2' key"
 
 
-class TestIdCleaningRecipes:
-    """Tests for the id_cleaning_recipes parameter."""
+class TestIdCleaningSteps:
+    """Tests for the id_cleaning_steps parameter."""
 
     def test_cleaning_steps_injected_into_tier1(self, minimal_tsv, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
-        recipes = {
+        steps = {
             "samples": [
                 {"action": "strip_whitespace", "columns": ["sample_id"]},
             ]
         }
         bs = DataAnalysisRecipeBootstrapper()
-        bs.bootstrap([minimal_tsv], "test_proj", tmp_path, id_cleaning_recipes=recipes)
+        bs.bootstrap([minimal_tsv], "test_proj", tmp_path, id_cleaning_steps=steps)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
         data = yaml.safe_load(frag.read_text().lstrip("# Candidate PK:").split("\n", 1)[-1])
         # The wrangling fragment may have PK comment line; parse YAML after it
@@ -95,7 +95,7 @@ class TestIdCleaningRecipes:
         assert len(data["tier1"]) == 1
         assert data["tier1"][0]["action"] == "strip_whitespace"
 
-    def test_no_cleaning_recipes_produces_empty_tier1(self, minimal_tsv, tmp_path):
+    def test_no_cleaning_steps_produces_empty_tier1(self, minimal_tsv, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
         bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)

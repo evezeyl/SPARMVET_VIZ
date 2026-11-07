@@ -5,7 +5,7 @@ from transformer.actions.base import register_action
 
 # @deps
 # provides: action:sink_parquet, action:scan_parquet
-# consumed_by: app/modules/orchestrator.py (injected into recipe), libs/transformer/tests/debug_assembler.py (injected into recipe)
+# consumed_by: app/modules/orchestrator.py (injected into step list), libs/transformer/tests/debug_assembler.py (injected into step list)
 # doc: .claude/rules/rules_data_engine.md
 # @end_deps
 

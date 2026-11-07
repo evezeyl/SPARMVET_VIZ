@@ -4,7 +4,7 @@
 
 ## 1. The Tier 3 "Branching & Blueprint" Logic
 
-Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Blueprint" recipe.
+Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Blueprint" audit trail.
 
 - **Node Inheritance**: Copied T2 nodes are **Violet** (#f3e5f5). New user nodes are **Yellow** (#fffde7).
 - **Position Awareness**:
@@ -15,7 +15,7 @@ Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Bl
   - **Trash (Permanent)**: A trash icon allows for removal. If the node is **Violet**, a modal triggers: _"CRITICAL: Removing a blueprint step may break the intended visualization. Are you sure?"_
 
 - **The Revert Protocol**: The **btn_revert** performs a **Full Wipe**. It clears all user nodes and restores the Tier 3 stack to the exact state of the Tier 2 blueprint.
-- **Direct Pass-Through**: If the T2 data analysis recipe contains zero transformation steps (T2=T1), the T3 recipe starts **Empty**.
+- **Direct Pass-Through**: If the T2 data analysis recipe contains zero transformation steps (T2=T1), the audit steps starts **Empty**.
 
 ## 2. Shell Architecture (The 3-Zone Navigator) — Updated ADR-043/ADR-044 (2026-04-23)
 
@@ -71,7 +71,7 @@ Reactivity in the Active Leaf (Right side) is strictly gated by documentation to
 - **Comment Mandate**: Every Yellow node (and modified Violet node) MUST have a non-empty string in its `comment_field`.
 - **Execution Rule**: The **btn_apply** state is disabled if:
  	- **Disabled (Grey)**:
-  1. No changes detected/made OR comments are missing (`recipe_pending == False`).
+  1. No changes detected/made OR comments are missing (`audit_pending == False`).
   2. Any node in the stack (excluding disabled ones / and ones inherited by tier 2) has an empty comment field.  
   - **Active (Orange/Green)**: Changes detected AND all nodes have comments.
 - **Calculation Scope**: Clicking **btn_apply** executes the 3-stage Polars pipeline and updates only the **Active Leaf** (Right) panes.
@@ -84,7 +84,7 @@ Reactivity in the Active Leaf (Right side) is strictly gated by documentation to
 | **Brush on Active T3 Plot**     | Filter rows in T3 data.            | Automatic Yellow Node   |
 | **Col Drop in Active T3 Table** | `df.drop_columns()` in T3.         | Automatic Yellow Node   |
 | **(Advanced Filter) in active T3 Table**        | Filter cols in T3 data. | Automatic Yellow Node   |
-| **Drag Node**                | Reorder Polars operation sequence. | Update `recipe_pending` |
+| **Drag Node**                | Reorder Polars operation sequence. | Update `audit_pending` |
 | **Filters panel "Apply"** — commits to `applied_filters` | Renders only on "My view" (T3). T1/T2 unaffected. | **NONE** (Transient) |
 | **Filters panel "Send to Audit"** — T3 + `t3_sandbox_enabled` only | Promotes staged rows via the propagation modal. | Automatic Yellow Node (reason-gated) |
 | **Ref Table Filter** in Tier 1 or Tier 2 Table         | Visual-only filter for inspection. | **NONE** (Transient)    |
@@ -143,8 +143,8 @@ below uses "T3 / My view" interchangeably with the historical "T3 Wrangling" / "
 |**Zone**|**ID**|**Reactive Behavior**|
 |---|---|---|
 |**Table Ref**|`table_ref`|**Visual Only**: Filtering here updates the table view but creates NO audit nodes and does NOT trigger the Apply button.|
-|**Table Active**|`table_active`|**Recipe Driver**: "Brush" events or column de-selections automatically generate a new **Yellow Node** in the Audit Stack.|
-|**Audit Stack**|`audit_stack`|**Order Matters**: Drag-and-drop reordering of nodes marks `recipe_pending = True`.|
+|**Table Active**|`table_active`|**Audit trail Driver**: "Brush" events or column de-selections automatically generate a new **Yellow Node** in the Audit Stack.|
+|**Audit Stack**|`audit_stack`|**Order Matters**: Drag-and-drop reordering of nodes marks `audit_pending = True`.|
 
 ## 7. Session Management vs. Global Export
 
@@ -157,7 +157,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 **Function:** Persists and restores the full working state so a user can resume interrupted work, or maintain separate sessions for different pipeline runs (e.g., AMR pipeline run 2025-01 vs run 2025-06).
 
 **What is saved per session:**
-- Active `t3_recipe` (all Yellow nodes and their comment fields)
+- Active `t3_audit_steps` (all Yellow nodes and their comment fields)
 - `applied_filters` (committed filter rows)
 - Active sub-tab and tier toggle state
 - Reference to the active data analysis recipe and data source (so the session knows which pipeline run it belongs to)
@@ -199,7 +199,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 1. **Key check.** The export compares the keys the open view was built on (`_project_keys`) with the keys computed now. If the data analysis recipe file set or the data changed, nothing is exported: an error notification explains it and the download holds only `EXPORT_NOT_CREATED.txt` (what changed, what it means, reload with F5, check, export again, both sets of keys). Never export silently from different files than the user looked at.
 2. **Data source.** T1, T2 and the plots are read through `DataOrchestrator.materialize_tier1/2` with the session keys (key-checked). Plots are rendered from T2 (plots never show T1, ADR-086), the same base as HOME. Reusing an anchor by file name is forbidden (ADR-089 point 7).
 3. **Build rule T3 > T2 > T1.** My view data is the stored T2 (T1 when the join has no tier2 steps) plus the plot's filter rows and column drops, built by `export_handlers.audited_frame`, the same steps and order as the HOME data preview.
-4. **The export is the Result plus the audited steps; exploration is never exported** (issue #25, Eve 2026-11-06). Audited T3 steps (`filter_row`, `exclusion_row`, `drop_column`, `aesthetic_override`, committed with a reason, for example to remove poor quality data) are the user's decision for the publication: they are ALWAYS applied to the exported plot of that plot and to its `T3_data_<plot>.tsv`, from any view, and recorded (T3 trail in the report, `recipes/t3_steps.yaml`). Exploration filters (`applied_filters`: what the user tries in T1, T2 or My view to understand the data, not sent to audit) are a sandbox and are NEVER exported, from any view; there is no checkbox to include them and no `FILTERS.txt`. A reminder tells the user so: under the Filters buttons in My view ("Sandbox: only steps sent to audit are exported.") and in the Export panel. The pure rule is `export_handlers.plot_content_rules(audited_rows, audited_drops)`: exploration is not even an argument.
+4. **The export is the Result plus the audited steps; exploration is never exported** (issue #25, Eve 2026-11-06). Audited T3 steps (`filter_row`, `exclusion_row`, `drop_column`, `aesthetic_override`, committed with a reason, for example to remove poor quality data) are the user's decision for the publication: they are ALWAYS applied to the exported plot of that plot and to its `T3_data_<plot>.tsv`, from any view, and recorded (T3 trail in the report, `steps/t3_steps.yaml`). Exploration filters (`applied_filters`: what the user tries in T1, T2 or My view to understand the data, not sent to audit) are a sandbox and are NEVER exported, from any view; there is no checkbox to include them and no `FILTERS.txt`. A reminder tells the user so: under the Filters buttons in My view ("Sandbox: only steps sent to audit are exported.") and in the Export panel. The pure rule is `export_handlers.plot_content_rules(audited_rows, audited_drops)`: exploration is not even an argument.
 5. **Traceability.** README, `report.qmd` and PNG/SVG metadata record `data_analysis_recipe_sha256` (file set), `data_batch_hash`, and per dataset `tier1_key` and `tier2_key` (empty when T2 equals T1).
 6. **Tests.** `app/tests/test_export_provenance.py`, `test_export_view_consistency.py` (headless) and `test_export_download.py` (real download, qa app features).
 
@@ -215,9 +215,9 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 | `data/<ds>_T1.tsv` | T1 (Assembled) — always |
 | `data/<ds>_T2.tsv` | T2 (Analysis-ready) — only when the join has tier2 steps; read from the stored Tier 2 parquet (issue #10) |
 | `<ds>/T3_data_<plot>.tsv` | Audited data of a plot (T3): stored T2 (T1 without tier2 steps) plus that plot's AUDITED filters and drops. Written for every plot with audited steps, never for others; no checkbox (EXPORT-T3-1, issue #25, 2026-11-06) |
-| `recipes/<proj>/` | All YAML wrangling/join/plot files for the active project |
-| ~~`FILTERS.txt`~~ | Removed 2026-11-06: exploration filters are never exported, so there is no filter trace to write; the audit trail is `recipes/t3_steps.yaml` and the T3 Audit Trail of `report.qmd` |
-| `recipes/t3_steps.yaml` | T3 committed nodes (active only) — auto-included when T3 has committed nodes and `t3_sandbox_enabled` |
+| `steps/<proj>/` | All YAML wrangling/join/plot files for the active project |
+| ~~`FILTERS.txt`~~ | Removed 2026-11-06: exploration filters are never exported, so there is no filter trace to write; the audit trail is `steps/t3_steps.yaml` and the T3 Audit Trail of `report.qmd` |
+| `steps/t3_steps.yaml` | T3 committed nodes (active only) — auto-included when T3 has committed nodes and `t3_sandbox_enabled` |
 | `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section, **T3 Audit Trail** section (per-plot table of Step/Action/Details/Justification when T3 has active nodes) |
 | `README.txt` | Bundle data analysis recipe: timestamp, project, app features, scope, tiers, metadata source filename, counts |
 
@@ -253,9 +253,9 @@ t3_steps:
 
 **Status:** The `Single Graph Export` accordion panel was **removed** in the 2026-05-04 export redesign.
 
-The "Active plot" scope option in the 3-way scope toggle (§7.2) replaces this panel. Selecting `[Active plot]` in the scope toggle and clicking `📦 Export Bundle` produces a single-plot bundle containing only the active plot's data, recipe, and audit trail. The `export_enabled` flag now gates the full Export panel (both the bundle and the scope toggle) rather than a separate accordion.
+The "Active plot" scope option in the 3-way scope toggle (§7.2) replaces this panel. Selecting `[Active plot]` in the scope toggle and clicking `📦 Export Bundle` produces a single-plot bundle containing only the active plot's data, audit trail, and audit trail. The `export_enabled` flag now gates the full Export panel (both the bundle and the scope toggle) rather than a separate accordion.
 
-## 8. Filter Recipe Builder (Phase 21-F — Left Sidebar, 2026-04-23; ADR-085, 2026-08-10)
+## 8. Filter builder (Phase 21-F — Left Sidebar, 2026-04-23; ADR-085, 2026-08-10)
 
 Row filters live in the left sidebar (Home mode only). They affect the "My view" (T3) plot and data preview
 **only** — T1 and T2 never reflect `applied_filters` or any T3 audit node (ADR-085 tier-isolation invariant,
@@ -270,7 +270,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 - **`filter_apply`** — always commits `_pending_filters` → `applied_filters`. Renders on every tier's
   button bar, but only has a visible effect on "My view" per the tier-isolation invariant.
 - **`filter_send_to_audit`** — rendered only when `tier_toggle == "T3"` **and** `t3_sandbox_enabled`.
-  Promotes the staged rows into the T3 recipe via the propagation modal (primary-key stamping, this-plot /
+  Promotes the staged rows into the audit steps via the propagation modal (primary-key stamping, this-plot /
   all-plots / all-except scope choice). Without `t3_sandbox_enabled`, "My view" has no equivalent action —
   it is a pure scratchpad (see §5).
 
@@ -404,7 +404,7 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 | `project_info` | — | any | Data analysis recipe title, description, dataset summary |
 | `deployment_info` | — | any | Branding: logo, contact, institution (params in template) |
 | `data_analysis_recipe_choice` | `data_analysis_recipe_selector.visible` | home | Data analysis recipe selector dropdown |
-| `filters` | `interactivity_enabled` | home | Row filter recipe builder (§8) |
+| `filters` | `interactivity_enabled` | home | Row filter builder (§8) |
 | `data_import` | `metadata_ingestion_enabled` | home | Metadata upload + optional multi-file (§9/§10) |
 | `export` | `export_enabled` | home | Export bundle with 3-way scope toggle (§7.2) |
 | `session_management` | `session_management_enabled` | home | Session save/restore/import (§7.1) |
@@ -430,9 +430,9 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 
 ### 12a. Scope Lock
 
-**ADR-085 note:** this section describes the **audited** layer of "My view" (T3) — the RecipeNode types
+**ADR-085 note:** this section describes the **audited** layer of "My view" (T3) — the AuditStep types
 below only ever exist once `t3_sandbox_enabled` is on and something has been explicitly Sent to Audit. The
-plain exploration layer (`applied_filters`, transient, no reason, no RecipeNode) exists independently and
+plain exploration layer (`applied_filters`, transient, no reason, no AuditStep) exists independently and
 is available in "My view" even without `t3_sandbox_enabled` — see §5, §8.
 
 T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanently locked to four node types:
@@ -453,9 +453,9 @@ T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanen
 
 T3 never exposes an action-picker UI. Wrangling (rename, cast, derive, split, etc.) is always done in Tier 1/2 data analysis recipes — never in T3.
 
-### 12b. RecipeNode Schema
+### 12b. AuditStep Schema
 
-Each node in the T3 recipe is a YAML mapping:
+Each node in the audit steps is a YAML mapping:
 
 ```yaml
 - node_type: filter_row          # filter_row | exclusion_row | drop_column | aesthetic_override | developer_raw_yaml
@@ -473,15 +473,15 @@ For `aesthetic_override` nodes, `params` carries `{fill, colour, alpha, shape}` 
 
 `reason` is a free-text string. The UI renders it as a required text-input next to each Yellow node; the field border turns red if empty and `btn_apply` is locked.
 
-### 12c. T3 Recipe IS the Audit Trace
+### 12c. audit steps IS the Audit Trace
 
-There is **no separate FILTERS.txt** for T3. The T3 YAML recipe is the complete audit trail.
+There is **no separate FILTERS.txt** for T3. The T3 YAML audit trail is the complete audit trail.
 
 - Every Yellow node has `id`, `created_at`, `plot_scope`, `params`, and `reason`.
-- The recipe is append-only during a session (deletions mark nodes `active: false` rather than removing them from the file, so the sequence of decisions is preserved).
+- The audit trail is append-only during a session (deletions mark nodes `active: false` rather than removing them from the file, so the sequence of decisions is preserved).
 - **Export warning for deactivated nodes:** If any node has `active: false` at export time, the UI shows a blocking warning dialog: *"You have [N] deactivated filter(s) / exclusion(s) / column drop(s). Export reflects only active nodes. Deactivated nodes will NOT appear in the exported data or Methods section. Confirm you want to discard them from this export?"* The user must explicitly confirm. The export is the unambiguous truth — deactivated nodes are absent from the exported data and from the Methods section. They are listed in an appendix ("Decisions Considered and Discarded") for transparency only.
 
-`aesthetic_override` nodes are stored **separately** from the wrangling recipe as `t3_plot_overrides` (a dict keyed by plot sub-tab ID) in the session state object (§13). They are included in the export report but do not block `btn_apply`.
+`aesthetic_override` nodes are stored **separately** from the wrangling steps as `t3_plot_overrides` (a dict keyed by plot sub-tab ID) in the session state object (§13). They are included in the export report but do not block `btn_apply`.
 
 ### 12d. Ghost Save — Two Slots
 
@@ -489,7 +489,7 @@ There is **no separate FILTERS.txt** for T3. The T3 YAML recipe is the complete 
 
 A **session** is the combination of one data analysis recipe + one data batch. The same data analysis recipe run against different data batches (e.g., batch A vs. batch B of ST22 samples) produces different sessions. Two discriminators are combined:
 
-- **`data_analysis_recipe_sha256`**: SHA256 of the pipeline data analysis recipe YAML. Changes if the data analysis recipe is edited (wrangling steps, field definitions, join recipe).
+- **`data_analysis_recipe_sha256`**: SHA256 of the pipeline data analysis recipe YAML. Changes if the data analysis recipe is edited (wrangling steps, field definitions, join steps).
 - **`data_batch_hash`**: A single SHA256 derived by hashing all per-source-file SHA256s together in deterministic (sorted) order. Changes when any input file is replaced, even if the data analysis recipe is unchanged.
 
 ```
@@ -506,7 +506,7 @@ Using content hashes (not IDs or names) means the key is invariant to data analy
 | Slot | File | Written when | Content |
 |---|---|---|---|
 | **T1/T2 Ghost** | `_sessions/{session_key}/assembly.json` | Once on first assembly; re-written when data analysis recipe or source data changes | Data analysis recipe ID + SHA256, source files + per-file SHA256, `data_batch_hash`, assembled Parquet paths, assembly timestamp |
-| **T3 Ghost** | `_sessions/{session_key}/t3_{timestamp}.json` | On every `btn_apply`; on every panel switch away from Home | Full T3 recipe YAML + `t3_plot_overrides` + tier toggle + `session_key` + `saved_at` |
+| **T3 Ghost** | `_sessions/{session_key}/t3_{timestamp}.json` | On every `btn_apply`; on every panel switch away from Home | Full audit steps YAML + `t3_plot_overrides` + tier toggle + `session_key` + `saved_at` |
 
 Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files for a session are co-located, making it easy to archive, share, or delete a full session as a unit.
 
@@ -556,14 +556,14 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
   "saved_at": "2026-04-24T14:30:12",
   "label": "",
   "tier_toggle": "T3",
-  "t3_recipe": [],
+  "t3_audit_steps": [],
   "t3_plot_overrides": {}
 }
 ```
 
 `label` is an optional user-supplied name (e.g., "batch-A final filters"). Empty by default; editable from the session panel.
 
-**Data analysis recipe SHA256 mismatch on restore:** If the saved `data_analysis_recipe_sha256` differs from the current data analysis recipe, the UI warns: *"This session was saved against a different data analysis recipe version. Recipe nodes referencing renamed or removed columns may fail. Proceed with caution."* The user can still restore but is not blocked.
+**Data analysis recipe SHA256 mismatch on restore:** If the saved `data_analysis_recipe_sha256` differs from the current data analysis recipe, the UI warns: *"This session was saved against a different data analysis recipe version. Audit step referencing renamed or removed columns may fail. Proceed with caution."* The user can still restore but is not blocked.
 
 **Data batch mismatch on restore:** If `data_batch_hash` differs (user loaded a different data batch), the UI warns: *"This session was saved against a different data batch. Row filters and exclusions may match different or no rows."* Again, non-blocking — user confirms.
 
@@ -609,7 +609,7 @@ title: "SPARMVET Audit Report"
 date: "2026-04-24"
 data_analysis_recipe_id: "my_pipeline_v2"
 data_analysis_recipe_sha256: "a3f9..."   # SHA256 of the pipeline data analysis recipe YAML at time of export
-t3_recipe_sha256: "b7c1..."  # SHA256 of the serialized T3 recipe
+t3_audit_steps_sha256: "b7c1..."  # SHA256 of the serialized audit steps
 ```
 
 **Report sections:**
@@ -624,7 +624,7 @@ t3_recipe_sha256: "b7c1..."  # SHA256 of the serialized T3 recipe
    - `developer_raw_yaml`: *"A custom data analysis recipe fragment was applied to [plot_scope]. Reason: [reason]."*
 4. **Figures** — embedded PNG outputs for each active plot sub-tab.
 5. **Appendix: Decisions Considered and Discarded** — lists any `active: false` nodes by type, params, and reason. Present only if deactivated nodes exist. Framed as transparency, not Methods.
-6. **Raw T3 Recipe** — full YAML (active nodes only) appended as a fenced code block for reproducibility.
+6. **Raw audit steps** — full YAML (active nodes only) appended as a fenced code block for reproducibility.
 
 **Render engine:** Quarto only. The format selector drives `quarto render --to html|pdf|docx`. No Pandoc subprocess needed — Quarto handles all format targets internally.
 
@@ -639,14 +639,14 @@ A T3 audit decision (filter, exclusion, drop) is rarely "global" in a meaningful
 - A row filter `value > 90` makes sense on a long-format AMR similarity plot but is meaningless (or wrong) on a metadata QC plot.
 - A primary-key exclusion (e.g. drop sample `S2` for poor quality) typically *should* propagate everywhere — but Case A in §12g.4 below shows when the user wants to keep that sample visible on a QC plot to **justify** the exclusion in the report.
 
-The design replaces the old single-list `t3_recipe` model with a per-plot stack plus an explicit propagation choice at promotion time.
+The design replaces the old single-list `t3_audit_steps` model with a per-plot stack plus an explicit propagation choice at promotion time.
 
 #### 12g.1. Storage shape
 
-The single `t3_recipe: list[RecipeNode]` is replaced by:
+The single `t3_audit_steps: list[AuditStep]` is replaced by:
 
 ```python
-"t3_recipe_by_plot": {
+"t3_audit_steps_by_plot": {
     "subtab_qc_box": [node_a, node_b],
     "subtab_amr_heatmap": [node_a, node_c],   # node_a propagated here, same id
     ...
@@ -657,12 +657,12 @@ Propagated nodes appear in multiple plot stacks but **share the same `id`**. Lin
 
 #### 12g.2. Primary-key set
 
-The "primary keys" set is the union of every join key declared in any assembly recipe:
+The "primary keys" set is the union of every join key declared in any assembly steps:
 
 ```yaml
 joins:
   bigtable:
-    recipe:
+    steps:
       - action: join
         on: sample_id           # → {sample_id} added
       - action: join
@@ -678,10 +678,10 @@ Both true primary keys (`sample_id`) and secondary/accessory keys used in long-f
 
 | User action | Targeted column | Result |
 |---|---|---|
-| Drop column | non-key | `drop_column` RecipeNode, per-plot propagation dialog |
+| Drop column | non-key | `drop_column` AuditStep, per-plot propagation dialog |
 | Drop column | **any join key** | **BLOCKED** — notification: *"Column [c] is a join key — cannot be dropped. Use a row filter or row exclusion instead."* |
-| Filter row (value condition) | non-key column | `filter_row` RecipeNode |
-| Filter row | join key, any operator | `filter_row` RecipeNode with `primary_key_warning=True`. **No silent conversion.** The user's operator is preserved verbatim. The PK warning banner appears in the modal and the audit panel. |
+| Filter row (value condition) | non-key column | `filter_row` AuditStep |
+| Filter row | join key, any operator | `filter_row` AuditStep with `primary_key_warning=True`. **No silent conversion.** The user's operator is preserved verbatim. The PK warning banner appears in the modal and the audit panel. |
 | Filter row | non-key column whose effect happens to remove all rows for some sample | Stays as `filter_row`. The audit reports "value condition not met" — semantically different from "sample excluded". |
 
 **Rationale (amended 2026-04-30, AUDIT-1)**: the original spec silently converted `eq`/`in` on a PK column to `ne`/`not_in` (filter_row → exclusion_row), aiming to bias the audit-report wording toward "removed". Live testing (Phase 22-J) showed this broke user mental model — `sample_id == S2` is a *select*, not a *remove*, and the silent flip surprised users. New rule: **the operator is the truth**, the `primary_key_warning` banner is the safety rail. Users who want exclusion semantics author `ne` or `not_in` directly. The warning still flows into the exported report ("⚠️ \[Primary key affected\]") so methods sections remain explicit about PK-touching decisions.
@@ -703,7 +703,7 @@ Three scope options:
 
 **S3b — column-presence check at propagation**: when copying to other plots, skip plots whose data schema lacks the targeted column. Show a notification listing skipped plots. The audit accurately reflects which plots actually had the column to act on.
 
-#### 12g.5. RecipeNode schema additions
+#### 12g.5. AuditStep schema additions
 
 Two new optional fields on every node:
 
@@ -724,7 +724,7 @@ Two new optional fields on every node:
 
 #### 12g.6. Right-sidebar audit panel
 
-Shows only the active plot's stack (`t3_recipe_by_plot[active_plot_subtab]`) plus pending nodes targeting this plot. Switching plots swaps the visible stack.
+Shows only the active plot's stack (`t3_audit_steps_by_plot[active_plot_subtab]`) plus pending nodes targeting this plot. Switching plots swaps the visible stack.
 
 A propagated node appears in every stack it was applied to — the user sees it on each plot's panel. Above the node card, a small badge: *"Applied to N plots"* (N counts unique plot_scopes for this `id`). Clicking the badge could (future) show the list.
 
@@ -740,15 +740,15 @@ The banner explains "this filter targets a join key — removing rows here chang
 
 `_pending_t3_nodes` stays a flat list. At promotion time the user picks the scope; the pending node carries `plot_scopes_intent: list[str]` (the chosen target plot subtab ids, or the special token `"__all_at_apply__"` to expand to every plot at commit). On `btn_apply`:
 1. Resolve `plot_scopes_intent` → concrete list of plot subtab ids.
-2. For each, instantiate a RecipeNode copy sharing the same `id`, with that plot's `plot_scope`.
-3. Append each copy to `t3_recipe_by_plot[plot_scope]`.
+2. For each, instantiate an AuditStep copy sharing the same `id`, with that plot's `plot_scope`.
+3. Append each copy to `t3_audit_steps_by_plot[plot_scope]`.
 4. Drop the pending node.
 
 This keeps the pending area readable (one entry per user decision, not N entries).
 
 #### 12g.8. Ghost save & restore
 
-T3 ghost format stores `t3_recipe_by_plot: {plot_scope: [nodes]}` directly. Backward-compat: if an old ghost contains a flat `t3_recipe: [...]`, treat all nodes as targeting `__legacy__` (orphaned bucket); show a notification on restore: "*Loaded a legacy T3 ghost — N nodes are orphaned and will not apply until you re-target them. Open the Audit panel to review.*"
+T3 ghost format stores `t3_audit_steps_by_plot: {plot_scope: [nodes]}` directly. Backward-compat: if an old ghost contains a flat `t3_audit_steps: [...]`, treat all nodes as targeting `__legacy__` (orphaned bucket); show a notification on restore: "*Loaded a legacy T3 ghost — N nodes are orphaned and will not apply until you re-target them. Open the Audit panel to review.*"
 
 **Orphaned nodes after data analysis recipe restructure**: if a saved ghost has `plot_scope: "subtab_qc_box_v1"` but the current data analysis recipe only has `subtab_qc_box_v2`, those nodes are flagged at restore time and listed under an "Orphaned" section in each affected plot's audit panel. The user manually re-targets or deletes them.
 
@@ -769,7 +769,7 @@ No primary-key warning ever applies to aesthetic nodes.
 
 #### 12g.10. Undo & re-include
 
-There is no "re-include" node type. The user undoes by deleting the audit node; the data reappears because the recipe no longer removes it. With linked-id propagation, deleting a node from one plot deletes it from every plot. To "un-propagate from one plot only" the user must delete and re-author with a smaller scope.
+There is no "re-include" node type. The user undoes by deleting the audit node; the data reappears because the audit trail no longer removes it. With linked-id propagation, deleting a node from one plot deletes it from every plot. To "un-propagate from one plot only" the user must delete and re-author with a smaller scope.
 
 #### 12g.11. Export report — primary-key warning persistence
 
@@ -802,9 +802,9 @@ home_state = reactive.Value({
     "_pending_filters": [],            # list of {column, op, value} — staged, not yet applied
     "applied_filters": [],             # list of {column, op, value} — committed on btn_apply
 
-    # T3 recipe (wrangling nodes — filter, exclusion, drop_column, developer_raw_yaml)
-    # Phase 22-J: per-plot stacks. Replaces the flat t3_recipe list. See §12g.
-    "t3_recipe_by_plot": {},           # {plot_subtab_id: list[RecipeNode]} — committed state
+    # audit steps (wrangling nodes — filter, exclusion, drop_column, developer_raw_yaml)
+    # Phase 22-J: per-plot stacks. Replaces the flat t3_audit_steps list. See §12g.
+    "t3_audit_steps_by_plot": {},           # {plot_subtab_id: list[AuditStep]} — committed state
     "_pending_t3_nodes": [],           # pending nodes; each carries plot_scopes_intent (§12g.7)
     "primary_keys": [],                # list of column names — union of all assembly join keys (§12g.2)
 
@@ -812,7 +812,7 @@ home_state = reactive.Value({
     "t3_ghost_file": None,             # str: path to the ghost file this session was restored from (None if new)
     "t3_ghost_saved_at": None,         # ISO str: timestamp of last ghost write
 
-    # T3 plot aesthetic overrides (separate from wrangling recipe)
+    # T3 plot aesthetic overrides (separate from wrangling steps)
     "t3_plot_overrides": {},           # {plot_subtab_id: {fill, colour, alpha, shape}}
 
     # Assembly provenance
@@ -823,7 +823,7 @@ home_state = reactive.Value({
 
 **Panel independence rule:** Every top-level panel (Home, Gallery, Blueprint Architect, Test Lab) maintains its own independent state object. Switching panels never resets another panel's state. Gallery sub-tab position, Blueprint selected node, and Home tier toggle are all independently preserved.
 
-**State persistence:** On every `btn_apply`, `home_state` is serialized to `_autosave_t3.json` (T3 Ghost slot). On panel switch away from Home, only `t3_recipe`, `_pending_t3_nodes`, `t3_plot_overrides`, `tier_toggle`, and the two accordion states are written (not filter state, which is already committed).
+**State persistence:** On every `btn_apply`, `home_state` is serialized to `_autosave_t3.json` (T3 Ghost slot). On panel switch away from Home, only `t3_audit_steps`, `_pending_t3_nodes`, `t3_plot_overrides`, `tier_toggle`, and the two accordion states are written (not filter state, which is already committed).
 
 **Reactive dependency graph:**
 
@@ -831,11 +831,11 @@ home_state = reactive.Value({
 active_group_tab ──► active_plot_subtab ──► tier_toggle
                                           │
                         applied_filters ──►│──► plot render
-                        t3_recipe       ──►│
+                        t3_audit_steps       ──►│
                         t3_plot_overrides ►│
 ```
 
-Tab changes clear `_pending_filters` and `_pending_t3_nodes` but never touch `applied_filters` or `t3_recipe` (committed state is never cleared by navigation).
+Tab changes clear `_pending_filters` and `_pending_t3_nodes` but never touch `applied_filters` or `t3_audit_steps` (committed state is never cleared by navigation).
 
 ---
 

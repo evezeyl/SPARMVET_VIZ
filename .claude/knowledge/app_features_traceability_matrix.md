@@ -17,7 +17,7 @@
 | `web-demo` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | false | false |
 
 **passive_exploration:** can apply filters and drop columns to explore the view (T1/T2 — plot updates temporarily, nothing saved, no audit trail). Already implemented; previously undocumented.
-**t3_audit:** can promote filters/drops to the T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, recipe export). Controlled by `t3_sandbox_enabled` flag (Phase 25-O).
+**t3_audit:** can promote filters/drops to the T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, step list export). Controlled by `t3_sandbox_enabled` flag (Phase 25-O).
 Single Graph Export accordion removed in 2026-05-04 export redesign — superseded by "Active plot" scope option in the 3-way scope toggle on the Export panel.
 
 > **CRITICAL**: App features IDs use **hyphens** (`pipeline-exploration-advanced`), never underscores. Underscore variants silently fail all app features gates.
@@ -78,7 +78,7 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 | **Navigation** | `project_id` (→ Data analysis recipe Choice) | Data analysis recipe discovery and loading. Hidden for pipeline app features files — data analysis recipe fixed by config. |
 | **Tier Toggle** | `tier_toggle` | T1 / T2 / T3. T3 hidden for `pipeline-static` (no interactivity) and `pipeline-exploration-simple` (passive exploration only — no T3 audit). |
 | **Comparison Mode** | `comparison_mode` | Toggle visible for t3_audit app features files only, AND only when tier == T3. Gate on `comparison_mode_enabled` flag. |
-| **Filters** | `sidebar_filters` | Recipe-builder row filter UI. In T3: `➜ Audit (N)` promotes rows to per-plot T3 audit stack. In T1/T2: `Apply (N)` commits transient `applied_filters` (passive exploration — plot updates, nothing saved). |
+| **Filters** | `sidebar_filters` | Step list-builder row filter UI. In T3: `➜ Audit (N)` promotes rows to per-plot T3 audit stack. In T1/T2: `Apply (N)` commits transient `applied_filters` (passive exploration — plot updates, nothing saved). |
 | **Filters** | `home_col_selector_ui` | Column visibility for Data Preview. In T3: `➜ Audit drops (N)` promotes drops to `drop_column` audit nodes. |
 | **Theater** | `dynamic_tabs` | Data analysis recipe-driven: groups → `navset_pill`, plots → `navset_card_tab`. |
 | **Theater** | `home_data_preview` | DataGrid scoped to active plot's `target_dataset`. Applies committed T3 filter/drop nodes. |
@@ -88,7 +88,7 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 | **Audit Stack** | `propagation_modal` | 3-option scope dialog: "This plot only / All plots / All plots except…". |
 | **Audit Stack** | `🗑 delete` | Removes a node and ALL linked copies sharing the same `id` across every plot stack. |
 | **Session Mgmt** | `session_list_ui` | Lists all assembly/T3 ghosts. Restore + Export (.zip, Phase 25) + Delete per session. Visible for ≥ `pipeline-exploration-simple` (gate: `session_management_enabled`). |
-| **Export** | `export_bundle_download` | ZIP: plots (format selector: PNG/SVG/PDF) + T1/T2 TSVs + YAML recipes + Quarto `.qmd` + README. All app features files. |
+| **Export** | `export_bundle_download` | ZIP: plots (format selector: PNG/SVG/PDF) + T1/T2 TSVs + YAML step lists + Quarto `.qmd` + README. All app features files. |
 | **Export** | `export_audit_report` | HTML/PDF/DOCX audit report via Quarto (server-side, Phase 25). t3_audit app features files only. |
 | **Export** | `export_graph_download` | Single plot + data slice + data analysis recipe section + T3 modifications. t3_audit app features files. (Phase 25 BUILD_NEW.) |
 

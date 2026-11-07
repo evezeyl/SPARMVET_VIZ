@@ -45,7 +45,7 @@ locations:
   #   Populated by the pipeline or by an admin. Read-only from app perspective.
   raw_data: "inputs/"
 
-  # Location 2: Pipeline YAML data analysis recipes and wrangling recipes.
+  # Location 2: Pipeline YAML data analysis recipes and wrangling steps.
   #   Contains the master.yaml and its !include fragments.
   data_analysis_recipes: "data_analysis_recipes/"
 
@@ -58,7 +58,7 @@ locations:
   #   Must be writable by the app process.
   user_data: "sessions/"
 
-  # Location 5: Gallery assets (pre-rendered examples, recipe clones).
+  # Location 5: Gallery assets (pre-rendered examples, example clones).
   #   Read-only from app perspective unless gallery indexing is run.
   gallery: "gallery/"
 

@@ -11,7 +11,7 @@ contracts WITHOUT running the assembler:
      identifier and is never expected to appear as a TSV column name.
 
   2. Action name validity — every `action:` value in `wrangling` and assembly
-     `recipe` blocks must be registered via @register_action("name") in the
+     `step list` blocks must be registered via @register_action("name") in the
      transformer library.  Catches typos and stale action names.
 
   3. Component name validity — every `name:` value inside plot `layers:` blocks
@@ -496,7 +496,7 @@ def render_report(
         "Then verify with `debug_runner.py` that the plot still renders correctly.",
         "",
         "## References",
-        "- `rules_data_analysis_recipe_structure.md §7` — Canonical recipe syntax, YAML boolean trap",
+        "- `rules_data_analysis_recipe_structure.md §7` — Canonical steps syntax, YAML boolean trap",
         "- `rules_agent_role_bioscientist.md §8` — Registered action names (authoritative list)",
         "- `rules_agent_role_bioscientist.md §3-A/B` — Wrangling and assembly canon",
         "- Routine 13 (Data analysis recipe coherence) in `.claude/workflows/audit_routine_registry.md`",

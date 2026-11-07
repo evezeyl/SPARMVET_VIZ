@@ -1,5 +1,5 @@
 # @deps
-# provides: GalleryManager class — submit_recipe(), list_submissions(), rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/
+# provides: GalleryManager class — submit_example(), list_submissions(), rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/
 # consumes: yaml, shutil, pathlib.Path, datetime, polars, json, hashlib
 # consumed_by: app/handlers/gallery_handlers.py
 # @end_deps
@@ -16,7 +16,7 @@ import hashlib
 class GalleryManager:
     """
     GalleryManager (gallery_manager.py) – part of the viz_gallery library.
-    Handles persistence of a recipe, data sample, and metadata to the
+    Handles persistence of an example, data sample, and metadata to the
     assets/gallery_data directory.
     """
 
@@ -24,7 +24,7 @@ class GalleryManager:
         self.gallery_dir = Path(gallery_dir)
         self.gallery_dir.mkdir(parents=True, exist_ok=True)
 
-    def submit_recipe(self, name: str, recipe: list, data: pl.DataFrame,
+    def submit_example(self, name: str, example: list, data: pl.DataFrame,
                       meta_markdown: str, family: str = "Distribution",
                       pattern: str = "1 Numeric", difficulty: str = "Simple",
                       geom: str = "", show: str = "", sample_size: str = "any",
@@ -39,7 +39,7 @@ class GalleryManager:
         target_dir = self.gallery_dir / folder_name
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Save recipe data analysis recipe (YAML)
+        # 1. Save example data analysis recipe (YAML)
         data_analysis_recipe_bundle = {
             "info": {
                 "name": name,
@@ -58,7 +58,7 @@ class GalleryManager:
             "wrangling": {
                 "tier1": [],
                 "tier2": [],
-                "tier3": recipe
+                "tier3": example
             }
         }
         with open(target_dir / "data_analysis_recipe.yaml", "w") as f:
@@ -69,7 +69,7 @@ class GalleryManager:
             target_dir / "example_data.tsv", separator="\t")
 
         # 3. Save metadata markdown
-        with open(target_dir / "recipe_meta.md", "w") as f:
+        with open(target_dir / "example_meta.md", "w") as f:
             f.write(meta_markdown)
 
         # 4. Optional plot preview
@@ -110,7 +110,7 @@ class GalleryManager:
             required = {
                 "data_analysis_recipe": data_analysis_recipe_path.exists(),
                 "data": (d / "example_data.tsv").exists(),
-                "meta": (d / "recipe_meta.md").exists(),
+                "meta": (d / "example_meta.md").exists(),
             }
 
             if not all(required.values()):
@@ -124,10 +124,10 @@ class GalleryManager:
                 try:
                     data_analysis_recipe = yaml.safe_load(f)
                     info = data_analysis_recipe.get("info", {})
-                    recipe_id = d.name
+                    example_id = d.name
 
                     # Store in Registry
-                    registry[recipe_id] = {
+                    registry[example_id] = {
                         "name": info.get("name", d.name),
                         "path": str(data_analysis_recipe_path),
                         "has_preview": (d / "preview_plot.png").exists(),
@@ -150,15 +150,15 @@ class GalleryManager:
                     s_val = info.get("show", "")
                     ss_val = info.get("sample_size", "any")
 
-                    pivot["by_family"].setdefault(f_val, []).append(recipe_id)
-                    pivot["by_pattern"].setdefault(p_val, []).append(recipe_id)
-                    pivot["by_difficulty"].setdefault(d_val, []).append(recipe_id)
+                    pivot["by_family"].setdefault(f_val, []).append(example_id)
+                    pivot["by_pattern"].setdefault(p_val, []).append(example_id)
+                    pivot["by_difficulty"].setdefault(d_val, []).append(example_id)
                     if g_val:
-                        pivot["by_geom"].setdefault(g_val, []).append(recipe_id)
+                        pivot["by_geom"].setdefault(g_val, []).append(example_id)
                     if s_val:
-                        pivot["by_show"].setdefault(s_val, []).append(recipe_id)
+                        pivot["by_show"].setdefault(s_val, []).append(example_id)
                     if ss_val:
-                        pivot["by_sample_size"].setdefault(ss_val, []).append(recipe_id)
+                        pivot["by_sample_size"].setdefault(ss_val, []).append(example_id)
 
                 except Exception as e:
                     print(f"❌ Failed to parse {d.name}: {e}")

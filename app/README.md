@@ -2,7 +2,7 @@
 
 The SPARMVET App is a **Thin Shiny Shell** (ADR-003) that orchestrates four distinct layers:
 
-1. **Navigation (Left)**: App features gated controls — Project selection, context-reactive Filter Recipe Builder, System Tools (Export Bundle). Dark grey (#c0c0c0).
+1. **Navigation (Left)**: App features gated controls — Project selection, context-reactive Filter builder, System Tools (Export Bundle). Dark grey (#c0c0c0).
 2. **Home Theater (Center)**: Unified results mode (ADR-043). Data analysis recipe-driven groups (`navset_pill`) → plots (`navset_card_tab`) → collapsible Data Preview. Neutral grey (#d1d1d1).
 3. **Pipeline Audit (Right)**: App features gated (hidden for `pipeline_static`/`pipeline_exploration_simple`; full T2+T3 audit stack for ≥ advanced).
 4. **Specialist Modes**: Blueprint Architect (Wrangle Studio), Gallery, Test Lab — each routed via `sidebar_nav`.
@@ -18,7 +18,7 @@ app/
 │   └── server.py               ← Thin orchestrator (~228 lines, ADR-045)
 │                                  Shared state: anchor_path, tier_toggle,
 │                                  applied_filters, active_home_subtab,
-│                                  current_app_features, recipe_pending
+│                                  current_app_features, audit_pending
 │                                  Shared calcs: active_cfg, tier1_anchor
 │
 ├── modules/                    ← Importable, testable, Shiny-free
@@ -53,7 +53,7 @@ app/
 | Per-group plot tabs | 21-B | `subtabs_{group_id}`, `plot_group_{p_id}` |
 | Tier toggle | 21-C | `tier_toggle` (input + reactive.Value) |
 | Data preview | 21-D | `home_data_preview`, `home_col_selector_ui` |
-| Filter recipe builder | 21-F | `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui` |
+| Filter builder | 21-F | `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui` |
 | Export bundle | 21-I | `system_tools_ui`, `export_bundle_download` |
 
 ### Testing

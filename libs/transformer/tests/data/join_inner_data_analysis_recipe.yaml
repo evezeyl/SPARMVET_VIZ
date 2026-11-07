@@ -23,7 +23,7 @@ joins:
     ingredients:
     - dataset_id: TableA
     - dataset_id: TableB
-    recipe:
+    steps:
     - action: join
       right_ingredient: TableB
       'on': id

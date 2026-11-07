@@ -206,7 +206,7 @@ Collapsible YAML tree rendered by `_render_yaml_tree`: Bootstrap accordion panel
 
 ## 5b. Zone B Tab 4 — Joint Designer (BP-JOINT-1, ADR-082 Q5)
 
-Dedicated pane for authoring `join` recipe steps. Opened by selecting a `join`/`join_filter`
+Dedicated pane for authoring `join` steps. Opened by selecting a `join`/`join_filter`
 action in Tab 1 and pressing Add Node (switches tab via `ui.update_navs`), or by selecting an
 existing join node (edit pre-fill). Replaces the former fabricated join modal.
 

@@ -38,7 +38,7 @@ Copy `templates/deployment_template.yaml`, fill in your paths and deployment typ
 ```yaml
 locations:
   raw_data:      "..."   # read-only input files
-  data_analysis_recipes:     "..."   # YAML data analysis recipes and recipes
+  data_analysis_recipes:     "..."   # YAML data analysis recipes and step lists
   cache:  "..."   # Parquet caches (app writes here)
   user_data: "..."   # exports, saves, T3 artifacts (user-writable)
   gallery:       "..."   # gallery assets (read-only)

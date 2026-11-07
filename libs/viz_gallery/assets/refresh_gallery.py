@@ -34,7 +34,7 @@ def main():
 
     # 2. Report Findings
     print("\n--- 📊 Gallery Statistics ---")
-    print(f"Total Valid Recipes: {index['metadata']['count']}")
+    print(f"Total Valid Examples: {index['metadata']['count']}")
 
     pivot = index['pivot']
     print("\nTaxonomy Coverage:")
