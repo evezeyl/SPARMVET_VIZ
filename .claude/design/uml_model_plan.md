@@ -64,15 +64,17 @@ Compared with arc42 (12 sections), the C4 model, and Kruchten's 4+1 views with I
 
 ## 5. Discrepancy checks
 
-`assets/scripts/audit_uml_model.py`, small, run with the other audits, tested with a planted error for each check:
+**Built (2026-11-07):** `assets/scripts/audit_uml_model.py`. Run manually (`./.venv/bin/python assets/scripts/audit_uml_model.py --project-root .`) and from `scripts/run_audits.sh ondemand`. No StarUML needed: it reads `docs/UML/app.mdj` as JSON. Each check below was proven with a planted error (one mutation per check: break a code/test reference, an ADR id, a flag name, a status value) and confirmed it fails, then confirmed it recovers once the model is restored. Its first real run against the finished model caught F-21 (a 4-file citation of an ADR, "ADR-037", that was never actually written).
 
 | Check | Finds |
 |---|---|
-| Every `code` tag resolves (file and symbol) | Renamed or deleted code |
+| Every `code` tag resolves (file and symbol via `ast`, or a string literal for a Shiny widget id) | Renamed or deleted code |
 | Every `test` tag resolves | A claim of proof with nothing behind it |
-| Every `adr` tag exists and is not superseded | Model built on an old decision |
-| Every `flag` tag is a real flag | UI promises a flag does not gate |
-| Every widget id in UI-HOME exists in the code | Screen and code disagree |
+| Every `adr` tag exists and is not marked historical/removed/superseded | Model built on an old or missing decision |
+| Every `flag` tag is a real flag or field in a shipped app features file | UI promises a flag does not gate |
+| Every `status` tag is `implemented`, `partial` or `planned` | A typo in the model's own status convention |
+
+Not yet checked (left for a later pass if it turns out to matter): widget ids in `UI-HOME` beyond what a `code` tag already names; whether `PKG-TIERS` dependency arrows still match a fresh scan of real imports.
 | Library arrows in PKG-TIERS equal the real imports | Forbidden imports, a rule that no longer matches |
 
 It checks names and links. It does not prove that the code runs in the order a sequence diagram shows; the tests do that.

@@ -8486,16 +8486,6 @@
 								},
 								{
 									"_type": "Tag",
-									"_id": "AAAAAAGhty/4xMFU25M=",
-									"_parent": {
-										"$ref": "AAAAAAGhty/4rcFOJkY="
-									},
-									"name": "adr",
-									"kind": "string",
-									"value": "ADR-037"
-								},
-								{
-									"_type": "Tag",
 									"_id": "AAAAAAGht1SjhNgr1L4=",
 									"_parent": {
 										"$ref": "AAAAAAGhty/4rcFOJkY="
@@ -27371,7 +27361,7 @@
 									},
 									"name": "code",
 									"kind": "string",
-									"value": "data_analysis_recipe_id"
+									"value": "app/handlers/home_theater.py:data_analysis_recipe_id"
 								},
 								{
 									"_type": "Tag",

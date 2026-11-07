@@ -21,6 +21,7 @@ Checked on Fedora 43 on 2026-11-07. Versions are the ones that were used; the mi
 | Audit scripts | Scheduled hygiene checks | `./scripts/run_audits.sh all`; single ones: `./.venv/bin/python scripts/audit_<name>.py --project-root .` | before a merge |
 | `assets/scripts/audit_old_words.py` | Retired configuration words (ADR-091, ADR-092) | `./.venv/bin/python assets/scripts/audit_old_words.py --check` | before a merge |
 | `assets/scripts/check_launch_commands.py`, `check_doc_links.py` | Documented launch commands start; documented paths exist | `./.venv/bin/python assets/scripts/check_launch_commands.py README.md ...` | documentation changes |
+| `assets/scripts/audit_uml_model.py` | Every code/test/adr/flag/status tag in `docs/UML/app.mdj` resolves against the repository; needs no StarUML running | `./.venv/bin/python assets/scripts/audit_uml_model.py --project-root .` | after editing `docs/UML/app.mdj` |
 
 ## Not installed (pending)
 

@@ -42,8 +42,9 @@ fi
 run_audit() {
   local script="$1"
   local out="$2"
+  local dir="${3:-scripts}"
   echo "--- $(date '+%H:%M:%S') Running ${script} ---"
-  "${PYTHON}" "scripts/${script}" --output "${LOGS}/${out}_${DATE}.md" || true
+  "${PYTHON}" "${dir}/${script}" --output "${LOGS}/${out}_${DATE}.md" || true
   echo "    -> ${LOGS}/${out}_${DATE}.md"
 }
 
@@ -75,6 +76,7 @@ if [[ "${DAY}" == "ondemand" ]]; then
   run_audit audit_parity_coverage.py audit_parity_coverage
   run_audit audit_docs_sync.py       audit_docs_sync
   run_audit audit_library_tests.py   audit_library_tests
+  run_audit audit_uml_model.py       audit_uml_model      assets/scripts
 fi
 
 echo "=== Audit run complete. Unprocessed reports ==="
