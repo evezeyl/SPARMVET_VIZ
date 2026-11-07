@@ -35,9 +35,9 @@ content:
             - provide inspiration (gallery of figures) : ask for a new figure, get a new figure
             - developper mode: help to create own visualisation for non technical users (gallery + developper mode)
     - "techincal solution proposed":
-        - an app using several indendent libraries that uses human redeable configurations (recipes) to produce figures (from getting the data, preparing the data to make it ready for analysis, analysis and production of figures)
+        - an app using several indendent libraries that uses human redeable configurations (step lists) to produce figures (from getting the data, preparing the data to make it ready for analysis, analysis and production of figures)
         - The app will work no matter what the type of data is AS LONG as the data is TABULAR (stage 1) and in the correct format. 
-        - an interactive user interface (ca. website) that allows users to view, create and modify recipes, search for inspiration (gallery) and produce complex configurations files to produce more figures for different tools and share those with the community! (eg. ST2.2 but also others) 
+        - an interactive user interface (ca. website) that allows users to view, create and modify examples, search for inspiration (gallery) and produce complex configurations files to produce more figures for different tools and share those with the community! (eg. ST2.2 but also others) 
     - "development status":
         - "we have a working prototype of the app ?
         - interactive visualisation part requires debugging, improvement of functionnalties and outlook. 

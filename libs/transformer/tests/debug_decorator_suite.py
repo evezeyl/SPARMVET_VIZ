@@ -57,14 +57,14 @@ def run_suite():
     for action_id in actions_to_test:
         print(f"\n▶️  ACTION: {action_id}")
 
-        manifest_path = test_data_dir / f"{action_id}_manifest.yaml"
+        data_analysis_recipe_path = test_data_dir / f"{action_id}_data_analysis_recipe.yaml"
         data_path = test_data_dir / f"{action_id}_test.tsv"
         output_file = output_dir / f"{action_id}_debug_view.tsv"
 
         # 1:1:1 Validation
-        if not manifest_path.exists() or not data_path.exists():
+        if not data_analysis_recipe_path.exists() or not data_path.exists():
             status = "NON-COMPLIANT"
-            msg = "Missing manifest/data pair"
+            msg = "Missing data_analysis_recipe/data pair"
             results.append({"id": action_id, "status": status, "msg": msg})
             print(f"   └── ❌ {status}: {msg}")
             continue
@@ -72,7 +72,7 @@ def run_suite():
         # Execution
         cmd = [
             sys.executable, str(wrangler_runner),
-            "--manifest", str(manifest_path),
+            "--data-analysis-recipe", str(data_analysis_recipe_path),
             "--output", str(output_file)
         ]
 

@@ -1,0 +1,47 @@
+# Complex Template
+# Use this for large-scale data analysis recipes requiring modularity and shared fragments.
+
+id: complex_template
+info:
+  display_name: "Complex Enterprise Demo"
+  description: "Modular data analysis recipe using !include for relational integrity and reuse."
+  version: "1.0"
+
+data_schemas:
+  genomics:
+    source:
+      type: "local_tsv"
+      path: "./assets/test_data/genomics_data.tsv"
+    input_fields: !include 'complex_template/genomics_input.yaml'
+    wrangling: !include 'complex_template/genomics_wrangling.yaml'
+    output_fields: ["sample_id", "gene_presence"]
+
+metadata:
+  source:
+    type: "local_tsv"
+    path: "./assets/test_data/metadata.tsv"
+  input_fields: !include 'complex_template/metadata_input.yaml'
+
+joins:
+  master_assembly:
+    description: "Joins genomics with metadata."
+    ingredients:
+      - dataset_id: "genomics"
+      - dataset_id: "metadata"
+    steps: !include 'complex_template/master_steps.yaml'
+    final_contract: !include 'complex_template/final_contract.yaml'
+
+analysis_groups:
+  Overview:
+    label: "Overview"
+    plots:
+      gene_presence_by_country:
+        label: "Gene presence by country"
+        spec:
+          target_dataset: master_assembly
+          mapping:
+            x: country
+            fill: gene_presence
+          layers:
+            - name: geom_bar
+              params: {}

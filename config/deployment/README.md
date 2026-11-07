@@ -1,46 +1,46 @@
-# config/deployment/ — Deployment Profiles (ADR-048)
+# config/deployment/ — Deployments (ADR-048)
 
-Deployment profiles describe **how SPARMVET is deployed into a specific environment**: where data lives, which manifest loads at startup, which persona is active by default, and what type of system it is.
+Deployments describe **how SPARMVET is deployed into a specific environment**: where data lives, which data analysis recipe loads at startup, which app features is active by default, and what type of system it is.
 
-One Docker image + one deployment profile = one running SPARMVET instance.
+One Docker image + one deployment = one running SPARMVET instance.
 
 ## Directory Layout
 
 ```
 config/deployment/
 ├── local/
-│   └── local_profile.yaml               ← Dev fallback (resolution level 4)
+│   └── local.yaml               ← Dev fallback (resolution level 4)
 ├── connect/
-│   └── connect_profile_template.yaml    ← Posit Connect template (DEPLOY-CONNECT-1)
+│   └── connect_template.yaml    ← Posit Connect template (DEPLOY-CONNECT-1)
 ├── pipeline_test/
-│   └── pipeline_test_profile.yaml       ← Headless CI profile
+│   └── pipeline_test.yaml       ← Headless CI deployment
 └── templates/
-    └── connector_template.yaml          ← Full schema reference with inline comments
+    └── deployment_template.yaml          ← Full schema reference with inline comments
 ```
 
-## Profile Resolution Order
+## Deployment Resolution Order
 
-The Bootloader finds the active profile at startup (first match wins):
+The Bootloader finds the active deployment at startup (first match wins):
 
 | Level | Source | Who uses it |
 |---|---|---|
-| 1 | `SPARMVET_PROFILE` env var | Galaxy XML wrapper, IRIDA container, Docker Compose, systemd |
-| 2 | `~/.sparmvet/profile.yaml` | Local PC scientist / admin |
-| 3 | `/etc/sparmvet/profile.yaml` | Institutional server (sysadmin) |
-| 4 | `config/deployment/local/local_profile.yaml` | Developer running from the repo |
+| 1 | `SPARMVET_DEPLOYMENT` env var | Galaxy XML wrapper, IRIDA container, Docker Compose, systemd |
+| 2 | `~/.sparmvet/deployment.yaml` | Local PC scientist / admin |
+| 3 | `/etc/sparmvet/deployment.yaml` | Institutional server (sysadmin) |
+| 4 | `config/deployment/local/local.yaml` | Developer running from the repo |
 
-The active level is logged at startup: `[Bootloader] Profile resolved at level N (label): path`
+The active level is logged at startup: `[Bootloader] Deployment resolved at level N (label): path`
 
-## Creating a New Profile
+## Creating a New Deployment
 
-Copy `templates/connector_template.yaml`, fill in your paths and deployment type, and place it at the appropriate level. The five required location keys are:
+Copy `templates/deployment_template.yaml`, fill in your paths and deployment type, and place it at the appropriate level. The five required location keys are:
 
 ```yaml
 locations:
   raw_data:      "..."   # read-only input files
-  manifests:     "..."   # YAML manifests and recipes
-  curated_data:  "..."   # Parquet caches (app writes here)
-  user_sessions: "..."   # exports, saves, T3 artifacts (user-writable)
+  data_analysis_recipes:     "..."   # YAML data analysis recipes and step lists
+  cache:  "..."   # Parquet caches (app writes here)
+  user_data: "..."   # exports, saves, T3 artifacts (user-writable)
   gallery:       "..."   # gallery assets (read-only)
 ```
 
@@ -57,7 +57,7 @@ All location paths are relative to `project_root` (if set), otherwise relative t
 ## Posit Connect Deployment (DEPLOY-CONNECT-1)
 
 Posit Connect cannot install editable source packages (`-e ./libs/...`). The
-`connect/` directory contains the profile template and a bundle prep script.
+`connect/` directory contains the deployment template and a bundle prep script.
 
 **Quick start:**
 
@@ -65,7 +65,7 @@ Posit Connect cannot install editable source packages (`-e ./libs/...`). The
 # 1. Build wheels for all local libs into pkgs/
 bash assets/scripts/bundle_connect.sh
 
-# 2. Review / fill in config/deployment/connect/connect_profile_template.yaml
+# 2. Review / fill in config/deployment/connect/connect_template.yaml
 
 # 3. Deploy (requires CONNECT_SERVER + CONNECT_API_KEY env vars)
 bash assets/scripts/bundle_connect.sh --deploy
@@ -77,8 +77,8 @@ bash assets/scripts/bundle_connect.sh --deploy
 
 | Variable | Value | Purpose |
 |---|---|---|
-| `SPARMVET_PROFILE` | path to your filled-in profile | Profile resolution level 1 |
-| `SPARMVET_PERSONA` | e.g. `pipeline-static` | Override default persona |
+| `SPARMVET_DEPLOYMENT` | path to your filled-in deployment | Deployment resolution level 1 |
+| `SPARMVET_APP_FEATURES` | e.g. `pipeline-static` | Override default app features |
 
 **What `bundle_connect.sh` does:**
 1. Builds wheels for `libs/*` and `app/` into `pkgs/` using `pip wheel --no-deps`
@@ -92,4 +92,4 @@ for local packages before looking at PyPI.
 
 ## Full Schema Reference
 
-See `templates/connector_template.yaml` (inline comments) or `docs/workflows/connector.qmd` (narrative).
+See `templates/deployment_template.yaml` (inline comments) or `docs/workflows/connector.qmd` (narrative).

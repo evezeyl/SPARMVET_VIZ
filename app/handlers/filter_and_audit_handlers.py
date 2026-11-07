@@ -1,5 +1,5 @@
 """app/handlers/filter_and_audit_handlers.py
-Filter recipe builder UI + T3 audit promotion + propagation modal.
+Filter builder UI + T3 audit promotion + propagation modal.
 
 Extracted from home_theater.py in Phase 24-D (ADR-051).
 
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_controls_ui, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_recipe_node), app/modules/t3_recipe_engine.py (_op_label), app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (_op_label), app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -25,7 +25,7 @@ from __future__ import annotations
 from shiny import reactive, render, ui
 
 from app.src.bootloader import bootloader
-from app.modules.t3_recipe_engine import _op_label
+from app.modules.t3_audit_engine import _op_label
 
 
 def define_filter_audit_server(input, output, session, *,
@@ -43,7 +43,7 @@ def define_filter_audit_server(input, output, session, *,
       applied_filters       reactive.Value[list]   — committed transient filters (T1/T2 plot view)
       _pending_filters      reactive.Value[list]   — staging rows in the add-row form
       _propagation_scratch  reactive.Value[dict]   — scratch nodes between Apply/Drop and modal confirm
-      home_state            reactive.Value[dict] | None — t3 recipe state, active subtab, etc.
+      home_state            reactive.Value[dict] | None — audit steps state, active subtab, etc.
       tier_toggle           reactive.Value[str]    — "T1"|"T2"|"T3"
       active_home_subtab    reactive.Value[str]    — current home plot subtab id
     Helpers (kwargs):
@@ -88,7 +88,7 @@ def define_filter_audit_server(input, output, session, *,
                 )
             )
         # pipeline-exploration-simple: interactivity on but no T3 audit — show disclaimer
-        # Proxy: metadata_ingestion_enabled=false identifies simple/passive-only personas
+        # Proxy: metadata_ingestion_enabled=false identifies simple/passive-only app features files
         disclaimer = None
         if not bootloader.is_enabled("metadata_ingestion_enabled"):
             disclaimer = ui.div(
@@ -98,8 +98,8 @@ def define_filter_audit_server(input, output, session, *,
                 )
             )
         # Left "Apply" is the single entry point: in T1/T2 it commits transient
-        # filters; in T3 it pushes pending RecipeNodes into home_state for the
-        # right-sidebar audit panel. No separate "Apply to recipe" button.
+        # filters; in T3 it pushes pending AuditSteps into home_state for the
+        # right-sidebar audit panel. No separate "Apply to audit trail" button.
         return ui.div(
             disclaimer or ui.div(),
             ui.output_ui("filter_rows_ui"),
@@ -355,7 +355,7 @@ def define_filter_audit_server(input, output, session, *,
             reminder,
         )
 
-    # ── Filter recipe builder effects ─────────────────────────────────────────
+    # ── Filter builder effects ─────────────────────────────────────────
 
     @reactive.Effect
     @reactive.event(input.filter_add_row)
@@ -473,7 +473,7 @@ def define_filter_audit_server(input, output, session, *,
             )
             return
 
-        from app.modules.session_manager import make_recipe_node
+        from app.modules.session_manager import make_audit_step
         state = home_state.get()
         primary_keys = set(state.get("primary_keys") or [])
         active_subtab = state.get("active_plot_subtab") or active_home_subtab.get() or ""
@@ -498,7 +498,7 @@ def define_filter_audit_server(input, output, session, *,
             # action site, not here).
             node_type = "filter_row"
 
-            scratch_nodes.append(make_recipe_node(
+            scratch_nodes.append(make_audit_step(
                 node_type, params,
                 plot_scope=active_subtab,
                 reason="",
@@ -570,10 +570,10 @@ def define_filter_audit_server(input, output, session, *,
             )
             return
 
-        from app.modules.session_manager import make_recipe_node
+        from app.modules.session_manager import make_audit_step
         active_subtab = state.get("active_plot_subtab") or active_home_subtab.get() or ""
         scratch_nodes = [
-            make_recipe_node(
+            make_audit_step(
                 "drop_column", {"column": col},
                 plot_scope=active_subtab,
                 reason="",
@@ -645,7 +645,7 @@ def define_filter_audit_server(input, output, session, *,
         - All plots except… (reveals a multiselect)
 
         On confirm, `_handle_propagation_confirm` reads the radio + multiselect
-        and resolves the scratch nodes into one RecipeNode per target plot
+        and resolves the scratch nodes into one AuditStep per target plot
         (sharing `id`), then appends them to home_state._pending_t3_nodes.
         """
         all_subtabs = _all_plot_subtab_ids()
@@ -825,7 +825,7 @@ def define_filter_audit_server(input, output, session, *,
         # §12g.7 — expand each scratch node into one copy per target plot,
         # sharing id (linked deletion). Skip plots whose schema lacks the
         # targeted column (§12g.9 / D9): collect skipped for a notification.
-        from app.modules.session_manager import make_recipe_node
+        from app.modules.session_manager import make_audit_step
         pending_nodes = list(state.get("_pending_t3_nodes", []))
         skipped: dict[str, list[str]] = {}  # plot → [columns skipped]
         applied_count = 0
@@ -839,7 +839,7 @@ def define_filter_audit_server(input, output, session, *,
                 if not _plot_has_column(plot_id, col):
                     skipped.setdefault(plot_id, []).append(col)
                     continue
-                pending_nodes.append(make_recipe_node(
+                pending_nodes.append(make_audit_step(
                     scratch_node["node_type"], dict(params),
                     plot_scope=plot_id,
                     reason="",
@@ -878,7 +878,7 @@ def define_filter_audit_server(input, output, session, *,
         except Exception:
             return True
 
-    # When btn_apply commits the T3 recipe, clear the left-panel filter list:
+    # When btn_apply commits the audit steps, clear the left-panel filter list:
     # those rows are now permanent T3 nodes and should not be re-applicable as
     # transient filters. Triggered via t3_apply_count bumps in audit_stack.
     _last_apply_count = reactive.Value(0)
@@ -888,7 +888,7 @@ def define_filter_audit_server(input, output, session, *,
         """After T3 apply, clear left-panel filter staging.
 
         Both _pending_filters (staging UI) and applied_filters (active plot view)
-        are cleared because T3 RecipeNodes now drive the plot via _t3_filter_rows
+        are cleared because T3 AuditSteps now drive the plot via _t3_filter_rows
         (the legacy applied_filters path is no longer the source of truth once a
         node is committed to T3).
         """

@@ -1,0 +1,95 @@
+id: 1_Abromics_general_pipeline
+info:
+  display_name: Abromics General Pipeline
+  category: Edited
+  tags:
+  - Abromics
+  - SOA8_ST2.2
+  - SPARMVET
+  - STEC
+  - Escherichia coli
+  description: Data analysis recipe for Abromics General Pipeline. SPARMVET. Usable for STEC /
+    E.coli.
+  version: '1.0'
+data_schemas:
+  MLST:
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
+metadata_schema:
+  source:
+    type: local_tsv
+    path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
+  input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
+  wrangling:
+    tier1: []
+    tier2: []
+  output_fields: []
+additional_datasets_schemas:
+  VirulenceFinder:
+    source:
+      type: local_tsv
+      path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
+  APEC_STEC_virulence_genes:
+    source:
+      type: local_tsv
+      path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
+    input_fields: !include '../../../assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_input_fields.yaml'
+    wrangling:
+      tier1:
+      - action: strip_whitespace
+    output_fields: {}
+joins:
+  AR1_MLST_Serotype_Virulence:
+    description: Joins MLST results with metadata for the main distribution plot.
+    ingredients:
+    - dataset_id: MLST
+    - dataset_id: metadata_schema
+    - dataset_id: VirulenceFinder
+    - dataset_id: APEC_STEC_virulence_genes
+    steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
+analysis_groups:
+  MLST_Overview:
+    label: MLST Overview
+    plots:
+      abromics_st_by_country:
+        label: Sequence Types by Country
+        spec:
+          target_dataset: AR1_MLST_Serotype_Virulence
+          layers:
+          - name: geom_bar
+            params: {}
+          - name: scale_x_discrete
+            params: {}
+          - name: labs
+            params:
+              title: Sequence Types by Country
+              x: Sequence Type
+              fill: Country
+          mapping:
+            x: sequence_type
+            fill: country
+      abromics_st_by_source:
+        label: Sequence Types by Source
+        spec:
+          target_dataset: AR1_MLST_Serotype_Virulence
+          layers:
+          - name: geom_bar
+            params: {}
+          - name: scale_x_discrete
+            params: {}
+          - name: labs
+            params:
+              title: Sequence Types by Source
+              x: Sequence Type
+              fill: Source
+          mapping:
+            x: sequence_type
+            fill: source

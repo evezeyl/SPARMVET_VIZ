@@ -1,5 +1,5 @@
 id: scale_shape_identity_test
-description: Test manifest for scale_shape_identity_test.yaml
+description: Test data analysis recipe for scale_shape_identity_test.yaml
 input_fields: []
 wrangling:
   tier1: []

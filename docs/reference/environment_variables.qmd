@@ -4,13 +4,13 @@ title: "Environment Variables Reference"
 
 # Environment Variables
 
-SPARMVET_VIZ uses four environment variables to configure the deployment context at launch. They are the only supported mechanism for injecting deployment-specific configuration into the app without modifying files.
+SPARMVET_VIZ uses these environment variables to configure the deployment context at launch. They are the only supported mechanism for injecting deployment-specific configuration into the app without modifying files.
 
-All four are read by `app/src/bootloader.py` at startup. The app prints which profile and persona it loaded — check the terminal output to verify:
+All are read by `app/src/bootloader.py` at startup. The app prints which deployment and app features it loaded — check the terminal output to verify:
 
 ```
-[Bootloader] Profile resolved at level N (<source>): /absolute/path/to/profile.yaml
-[Bootloader] Persona: <id> → /absolute/path/to/config/ui/templates/<id>_template.yaml
+[Bootloader] Deployment resolved at level N (<source>): /absolute/path/to/deployment.yaml
+[Bootloader] App features: <id> → /absolute/path/to/config/app_features/<id>.yaml
 ```
 
 ---
@@ -19,93 +19,94 @@ All four are read by `app/src/bootloader.py` at startup. The app prints which pr
 
 | Variable | Required? | Default | Set by | What it does |
 |---|---|---|---|---|
-| `SPARMVET_PROFILE` | No | Falls through 4-level chain | Galaxy XML, IRIDA container, Docker Compose, systemd | **Absolute path** to a deployment profile YAML. When set, skips all other resolution levels. Raises `FileNotFoundError` immediately if the path does not exist. |
-| `SPARMVET_PERSONA` | Conditionally | `default_persona` in profile | Developer, Galaxy XML, Docker Compose | **Path to a persona config YAML file**, or legacy shortname. Controls which UI features are visible and enabled. See [Persona path resolution](#persona-coupling) below. |
-| `SPARMVET_CONNECTOR` | No | `"local"` | Legacy / backward compat | Connector type; used only as a fallback key for the level-4 dev profile path (`config/deployment/<connector>/local_profile.yaml`). In practice always `"local"` — the profile's `deployment_type` field is the canonical place to declare the connector now. |
+| `SPARMVET_DEPLOYMENT` | No | Falls through 4-level chain | Galaxy XML, IRIDA container, Docker Compose, systemd | **Absolute path** to a deployment file. When set, skips all other resolution levels. Raises `FileNotFoundError` immediately if the path does not exist. |
+| `SPARMVET_APP_FEATURES` | Conditionally | `default_app_features` in deployment | Developer, Galaxy XML, Docker Compose | **Path to an app features config YAML file**, or legacy shortname. Controls which UI features are visible and enabled. See [App features path resolution](#app features coupling) below. |
+| `SPARMVET_DATA_ANALYSIS_RECIPE` | No | `default_data_analysis_recipe` in the deployment | Developer, tester, a launcher | The data analysis recipe that opens at startup, by **file name without `.yaml`** in the data analysis recipes location. Overrides the deployment default for one run. The app stops if the name is not found, and also if the app features hide the data analysis recipe selector and no data analysis recipe is named anywhere. |
+| `SPARMVET_CONNECTOR` | removed | none | none | **Removed** by ADR-091. The app stops at startup if it is set. The development fallback is `config/deployment/local/local.yaml`; use `SPARMVET_DEPLOYMENT` for another deployment file. | <!-- audit:allow-old-word -->
 | `SPARMVET_IRIDA_TOKEN` | Only for IRIDA deployments | none — raises `AuthenticationError` if unset | IRIDA platform at container launch | OAuth2 bearer token for `IridaConnector`. **Never store in any file** — IRIDA injects this at runtime only. |
 
 ---
 
-## Deployment profile resolution chain
+## Deployment resolution chain
 
-`SPARMVET_PROFILE` participates in a 4-level priority chain. The first match wins:
+`SPARMVET_DEPLOYMENT` participates in a 4-level priority chain. The first match wins:
 
 ```
-1. SPARMVET_PROFILE env var        → /path/to/profile.yaml   (Galaxy, IRIDA, Docker, systemd)
-2. ~/.sparmvet/profile.yaml         → user-level, local PC
-3. /etc/sparmvet/profile.yaml       → system-level, institutional server
-4. config/deployment/local/local_profile.yaml  → developer repo fallback
+1. SPARMVET_DEPLOYMENT env var        → /path/to/deployment.yaml   (Galaxy, IRIDA, Docker, systemd)
+2. ~/.sparmvet/deployment.yaml         → user-level, local PC
+3. /etc/sparmvet/deployment.yaml       → system-level, institutional server
+4. config/deployment/local/local.yaml  → developer repo fallback
 ```
 
 In practice:
 
 - **Local developer**: level 4 (repo fallback) — no setup needed.
-- **Scientist on their own machine**: place `~/.sparmvet/profile.yaml` once — level 2, no env var needed.
-- **Galaxy tool**: Galaxy XML wrapper sets `SPARMVET_PROFILE` in `<environment_variables>` — level 1.
-- **IRIDA**: IRIDA plugin sets `SPARMVET_PROFILE` + `SPARMVET_IRIDA_TOKEN` — level 1.
-- **Docker Compose / server**: `SPARMVET_PROFILE` set in the service definition — level 1.
+- **Scientist on their own machine**: place `~/.sparmvet/deployment.yaml` once — level 2, no env var needed.
+- **Galaxy tool**: Galaxy XML wrapper sets `SPARMVET_DEPLOYMENT` in `<environment_variables>` — level 1.
+- **IRIDA**: IRIDA plugin sets `SPARMVET_DEPLOYMENT` + `SPARMVET_IRIDA_TOKEN` — level 1.
+- **Docker Compose / server**: `SPARMVET_DEPLOYMENT` set in the service definition — level 1.
 
 ---
 
-## Persona resolution order
+## App features resolution order
 
-`SPARMVET_PERSONA` participates in a 3-level priority chain:
+`SPARMVET_APP_FEATURES` participates in a 3-level priority chain:
 
 ```
-1. persona= kwarg to Bootloader()      → programmatic (used in tests only)
-2. SPARMVET_PERSONA env var            → developer launch / CI
-3. default_persona in deployment profile → production deployments (Galaxy, IRIDA)
+1. app features= kwarg to Bootloader()      → programmatic (used in tests only)
+2. SPARMVET_APP_FEATURES env var            → developer launch / CI
+3. default_app_features in deployment → production deployments (Galaxy, IRIDA)
 ```
 
 If none of the three is set, the app raises `ValueError` at startup and refuses to start.
 
-**Production deployments** (Galaxy, IRIDA) should set `default_persona` in the profile rather than using the env var — that way the persona is bundled with the profile and no additional configuration is needed at launch.
+**Production deployments** (Galaxy, IRIDA) should set `default_app_features` in the deployment rather than using the env var — that way the app features is bundled with the deployment and no additional configuration is needed at launch.
 
-**CI / Playwright tests** must set `SPARMVET_PERSONA=qa` — the `qa` persona has all flags `true` and `ghost_save: false` for determinism.
+**CI / Playwright tests** must set `SPARMVET_APP_FEATURES=qa` — the `qa` app features has all flags `true` and `ghost_save: false` for determinism.
 
 ---
 
-## Persona path resolution {#persona-coupling}
+## App features path resolution {#app features coupling}
 
-`SPARMVET_PERSONA` accepts either a **file path** (recommended) or a **legacy shortname**:
+`SPARMVET_APP_FEATURES` accepts either a **file path** (recommended) or a **legacy shortname**:
 
 | Value | How resolved |
 |---|---|
-| `/absolute/path/to/my_persona.yaml` | Loaded directly from that path |
-| `config/ui/templates/developer_template.yaml` | Loaded from that relative path |
-| `developer` | Shortname → `config/ui/templates/developer_template.yaml` (backward compat) |
+| `/absolute/path/to/my_app_features.yaml` | Loaded directly from that path |
+| `config/app_features/developer.yaml` | Loaded from that relative path |
+| `developer` | Shortname → `config/app_features/developer.yaml` (backward compat) |
 
-The persona config file can be placed **anywhere** — there is no filename convention requirement. The file's `display_name` field is used in the UI header; the `persona_id` field is an internal identifier within the file. Neither needs to match the filename.
+The app features config file can be placed **anywhere** — there is no filename convention requirement. The file's `display_name` field is used in the UI header; the `app_features_id` field is an internal identifier within the file. Neither needs to match the filename.
 
-**To create and use a custom persona:**
+**To create and use a custom app features:**
 
 ```bash
 # 1. Copy any existing template as a starting point
-cp config/ui/templates/project-independent_template.yaml /my/configs/amr_pipeline_persona.yaml
+cp config/app_features/standalone.yaml /my/configs/amr_pipeline_app_features.yaml
 
-# 2. Edit display_name, persona_id, and feature flags in the new file
+# 2. Edit display_name, app_features_id, and feature flags in the new file
 # 3. Launch with the path
-SPARMVET_PERSONA=/my/configs/amr_pipeline_persona.yaml \
+SPARMVET_APP_FEATURES=/my/configs/amr_pipeline_app_features.yaml \
   ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 ```
 
-**For Galaxy / Docker / IRIDA:** set `SPARMVET_PERSONA` to the absolute path of the persona file in the container image. Each pipeline wrapper can point to a different file:
+**For Galaxy / Docker / IRIDA:** set `SPARMVET_APP_FEATURES` to the absolute path of the app features file in the container image. Each pipeline wrapper can point to a different file:
 
 ```xml
 <!-- Galaxy XML wrapper — AMR pipeline -->
-<environment_variable name="SPARMVET_PROFILE">/profiles/amr_profile.yaml</environment_variable>
-<environment_variable name="SPARMVET_PERSONA">/profiles/amr_persona.yaml</environment_variable>
+<environment_variable name="SPARMVET_DEPLOYMENT">/deployments/amr_profile.yaml</environment_variable>
+<environment_variable name="SPARMVET_APP_FEATURES">/deployments/amr_app_features.yaml</environment_variable>
 
 <!-- Galaxy XML wrapper — Plasmid pipeline -->
-<environment_variable name="SPARMVET_PROFILE">/profiles/plasmid_profile.yaml</environment_variable>
-<environment_variable name="SPARMVET_PERSONA">/profiles/plasmid_persona.yaml</environment_variable>
+<environment_variable name="SPARMVET_DEPLOYMENT">/deployments/plasmid_profile.yaml</environment_variable>
+<environment_variable name="SPARMVET_APP_FEATURES">/deployments/plasmid_app_features.yaml</environment_variable>
 ```
 
-Alternatively, embed `default_persona` in each deployment profile (pointing to a path) so that only `SPARMVET_PROFILE` needs to be set at launch:
+Alternatively, embed `default_app_features` in each deployment (pointing to a path) so that only `SPARMVET_DEPLOYMENT` needs to be set at launch:
 
 ```yaml
-# /profiles/amr_profile.yaml
-default_persona: /profiles/amr_persona.yaml
+# /deployments/amr_profile.yaml
+default_app_features: /deployments/amr_app_features.yaml
 ```
 
 ---
@@ -115,21 +116,21 @@ default_persona: /profiles/amr_persona.yaml
 ```bash
 export PYTHONPATH=$PYTHONPATH:.
 
-# Using shortnames (backward compat — resolves to config/ui/templates/<id>_template.yaml)
-SPARMVET_PERSONA=developer            ./.venv/bin/python -m shiny run app/src/main.py --port 8001
-SPARMVET_PERSONA=project-independent  ./.venv/bin/python -m shiny run app/src/main.py --port 8001
-SPARMVET_PERSONA=pipeline-static      ./.venv/bin/python -m shiny run app/src/main.py --port 8001
+# Using short names (a file name in config/app_features/, without .yaml)
+SPARMVET_APP_FEATURES=developer            ./.venv/bin/python -m shiny run app/src/main.py --port 8001
+SPARMVET_APP_FEATURES=standalone  ./.venv/bin/python -m shiny run app/src/main.py --port 8001
+SPARMVET_APP_FEATURES=pipeline-static SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 
-# Using a file path (recommended for custom/production personas)
-SPARMVET_PERSONA=/my/configs/amr_persona.yaml \
+# Using a file path (recommended for custom/production app features files)
+SPARMVET_APP_FEATURES=/my/configs/amr_app_features.yaml \
   ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 
 # CI / Playwright smoke tests: all flags on, ghost_save off
-SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 
-# Explicit profile + persona (both as paths — fully portable)
-SPARMVET_PROFILE=/path/to/my_profile.yaml \
-SPARMVET_PERSONA=/path/to/my_persona.yaml \
+# Explicit deployment + app features (both as paths — fully portable)
+SPARMVET_DEPLOYMENT=/path/to/my_deployment.yaml \
+SPARMVET_APP_FEATURES=/path/to/my_app_features.yaml \
   ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 ```
 
@@ -137,30 +138,59 @@ SPARMVET_PERSONA=/path/to/my_persona.yaml \
 
 ---
 
-## Deployment profile fields (not env vars)
+## Deployment fields (not env vars)
 
-The following fields are set inside the deployment profile YAML, not as environment variables. They are documented here for discoverability.
+The following fields are set inside the deployment file, not as environment variables. They are documented here for discoverability.
 
-### `prefer_discovery`
+### `default_app_features`, `default_data_analysis_recipe`
 
 ```yaml
-prefer_discovery: true    # default: false (absent)
+default_app_features: pipeline-static          # the app features file to use (SPARMVET_APP_FEATURES overrides)
+default_data_analysis_recipe: amr_overview     # file name without .yaml in the data analysis recipes location
+                                               # (SPARMVET_DATA_ANALYSIS_RECIPE overrides)
 ```
 
-When `true`, the orchestrator strips `source` blocks from manifest schema entries before ingest. The ingestor discovers data files in `raw_data_dir` by schema ID name (`*{schema_id}*.tsv`) instead of reading an explicit path.
+Each of the three choices (deployment, app features, data analysis recipe) can be overridden on its own at launch; the order is always: launch variable, then the deployment default. A static page hides the data analysis recipe selector, so it must name its data analysis recipe here.
 
-Use this on any deployment profile that simulates or implements production connector delivery (pipeline delivers data to `raw_data_dir`). Do NOT set on the local dev fallback profile — developers rely on `source.path` to run manifests against arbitrary test data.
+### `app_features_override`
 
-The `source.path` field in manifest schema entries is a development shortcut only. It is never used when `prefer_discovery: true`, and is never used in production (Galaxy, IRIDA) regardless of this flag.
+```yaml
+app_features_override:
+  data_ingestion_enabled: false     # an operator lock: this flag is set whatever the app features file says
+```
 
-See `docs/workflows/connector.qmd` for the full connector lifecycle and per-profile guidance.
+### `branding`
+
+```yaml
+branding:
+  theme_css: assets/demo/web_demo.css     # layered over the default stylesheet config/ui/theme.css; holds only the differences
+  banner: {logo_url: assets/demo/logo-no.svg, title: "AMR overview", subtitle: "Institute"}
+```
+
+### Paths with `~` and `${VAR}`
+
+Every folder of the deployment (`project_root`, `locations`, `irida.local_cache`, `runtime.python_interpreter`, `branding.theme_css`) accepts `~` and `${VAR}`. A variable that is not set stops the app and the message names it. This gives each person their own folders from one shared deployment file; it does not give each web user of a shared server a folder of their own.
+
+### `data_lookup`
+
+```yaml
+data_lookup: by_dataset_id    # data_analysis_recipe_paths (default, when absent) | by_dataset_id
+```
+
+With `by_dataset_id`, the orchestrator strips `source` blocks from data analysis recipe schema entries before ingest. The ingestor discovers data files in `raw_data_dir` by schema ID name (`*{schema_id}*.tsv`) instead of reading an explicit path.
+
+Use this on any deployment that simulates or implements production connector delivery (pipeline delivers data to `raw_data_dir`). Do NOT set on the local dev fallback deployment — developers rely on `source.path` to run data analysis recipes against arbitrary test data.
+
+The `source.path` field in data analysis recipe schema entries is a development shortcut only. It is never used when `data_lookup: by_dataset_id`, and is never used in production (Galaxy, IRIDA) with that setting.
+
+See `docs/workflows/connector.qmd` for the full connector lifecycle and per-deployment guidance.
 
 ---
 
 ## Related documentation
 
-- `docs/workflows/ui_persona.qmd` — persona templates and feature flag reference
-- `docs/workflows/connector.qmd` — deployment profiles and connector types
+- `docs/workflows/ui_app_features.qmd` — app features files and feature flag reference
+- `docs/workflows/connector.qmd` — deployments and connector types
 - `docs/deployment/deployment_guide.qmd` — Galaxy, IRIDA, Docker, server deployment
-- `.claude/knowledge/architecture_decisions.md` — ADR-048 (deployment profile resolution), ADR-053 (flag-only gating), ADR-054 (bootloader component)
-- `.claude/rules/rules_persona_feature_flags.md` — flag dependency cascade rules
+- `.claude/knowledge/architecture_decisions.md` — ADR-048 (deployment resolution), ADR-053 (flag-only gating), ADR-054 (bootloader component)
+- `.claude/rules/rules_app_features_flags.md` — flag dependency cascade rules

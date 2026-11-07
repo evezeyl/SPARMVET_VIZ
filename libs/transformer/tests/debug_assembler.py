@@ -2,9 +2,9 @@
 # @deps
 # provides: script:debug_assembler
 # mirrors: app/modules/orchestrator.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, libs/utils/src/utils/config_loader.py (full-pipeline manifests only)
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)
 # consumed_by: libs/viz_factory/tests/debug_gallery.py, libs/transformer/tests/transformer_integrity_suite.py
-# doc: .claude/rules/rules_persona_bioscientist.md#7
+# doc: .claude/rules/rules_agent_role_bioscientist.md#7
 # @end_deps
 import argparse
 import os
@@ -33,7 +33,7 @@ except ImportError as e:
     sys.exit(1)
 
 
-def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_dir: str = None):
+def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str = None, tmp_dir: str = None):
     """
     Consolidated Assembly Layer Debugger (ADR 012 / ADR 018).
     Orchestrates Layer 1 (Wrangler) and Layer 2 (Assembler) execution.
@@ -42,23 +42,23 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
     print(f" 🏗️  LAYER 2 ASSEMBLY DEBUGGER (Consolidated)")
     print(f"[{'='*60}]\n")
 
-    # 1. Load Manifest
-    # Full pipeline manifests use !include directives → require ConfigManager.
-    # Partial test manifests (no !include) use yaml.safe_load directly.
+    # 1. Load Data Analysis Recipe
+    # Full pipeline data analysis recipes use !include directives → require ConfigManager.
+    # Partial test data analysis recipes (no !include) use yaml.safe_load directly.
     try:
-        manifest_text = Path(manifest_path).read_text(encoding="utf-8")
-        if "!include" in manifest_text:
-            config_manager = ConfigManager(manifest_path)
-            manifest = config_manager.raw_config
+        data_analysis_recipe_text = Path(data_analysis_recipe_path).read_text(encoding="utf-8")
+        if "!include" in data_analysis_recipe_text:
+            config_manager = ConfigManager(data_analysis_recipe_path)
+            data_analysis_recipe = config_manager.raw_config
         else:
-            manifest = yaml.safe_load(manifest_text) or {}
+            data_analysis_recipe = yaml.safe_load(data_analysis_recipe_text) or {}
     except Exception as e:
-        print(f"  └── ❌ Manifest Error: Failed to load {manifest_path}. {e}")
+        print(f"  └── ❌ Data analysis recipe Error: Failed to load {data_analysis_recipe_path}. {e}")
         sys.exit(1)
 
-    assemblies = manifest.get("join_manifests", {})
+    assemblies = data_analysis_recipe.get("joins", {})
     if not assemblies:
-        print("  └── ❌ Error: No 'join_manifests' found in manifest.")
+        print("  └── ❌ Error: No 'joins' found in data analysis recipe.")
         return
 
     # 2. Initialize Ingestor
@@ -74,13 +74,13 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
     ingestor = DataIngestor(data_dir)
     print(f"  └── 📥 Ingestion Base: {data_dir}")
 
-    # 3. Identify all available schemas in manifest
+    # 3. Identify all available schemas in data analysis recipe
     all_schemas = {}
-    all_schemas.update(manifest.get("data_schemas", {}))
+    all_schemas.update(data_analysis_recipe.get("data_schemas", {}))
     # metadata_schema is a single block
-    if "metadata_schema" in manifest:
-        all_schemas["metadata_schema"] = manifest["metadata_schema"]
-    all_schemas.update(manifest.get("additional_datasets_schemas", {}))
+    if "metadata_schema" in data_analysis_recipe:
+        all_schemas["metadata_schema"] = data_analysis_recipe["metadata_schema"]
+    all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
 
     # Global cache for all materialized assemblies in this run (ADR-024)
     assembly_results_cache: Dict[str, pl.LazyFrame] = {}
@@ -126,20 +126,20 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
         if not assembly_ingredients:
             assembly_ingredients = ingredients
 
-        # b) Execute Assembly (Layer 2: Relational recipe)
-        # Use _resolve_tier to handle tiered recipe format (same as orchestrator)
-        recipe_raw = assembly_info.get("recipe", [])
-        recipe = DataWrangler._resolve_tier(recipe_raw, "tier1")
+        # b) Execute Assembly (Layer 2: Relational step list)
+        # Use _resolve_tier to handle tiered steps format (same as orchestrator)
+        steps_raw = assembly_info.get("steps", [])
+        steps = DataWrangler._resolve_tier(steps_raw, "tier1")
 
-        if not recipe and recipe_raw:
-            print(f"  └── ⚠️  Warning: No tier1 steps resolved from recipe.")
+        if not steps and steps_raw:
+            print(f"  └── ⚠️  Warning: No tier1 steps resolved from step list.")
 
         # Normalise join key dtypes across all ingredients before assembling.
         # Mirrors orchestrator.py join dtype normalisation logic exactly.
         per_ingredient_cast: dict = {ds_id: set() for ds_id in assembly_ingredients}
         base_cast: set = set()
 
-        for step in recipe:
+        for step in steps:
             right_id = step.get("right_ingredient")
             sym = step.get("on")
             left_on = step.get("left_on")
@@ -173,37 +173,37 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
         assembly_ingredients = normalised
 
         # Filter steps referring to missing ingredients
-        filtered_recipe = []
-        for step in recipe:
+        filtered_steps = []
+        for step in steps:
             right_id = step.get("right_ingredient")
             if right_id and right_id not in assembly_ingredients:
                 print(f"  └── ⚠️  Skipping step '{step.get('action')}' — missing ingredient '{right_id}'")
                 continue
-            filtered_recipe.append(step)
+            filtered_steps.append(step)
 
-        # Inject sink_parquet into the recipe — assembler handles content-hash
+        # Inject sink_parquet into the step list — assembler handles content-hash
         # short-circuit internally. This parquet captures the full pre-contract
         # intermediate result (all columns), consistent with orchestrator behaviour.
         if tmp_dir:
             tmp_root = Path(tmp_dir)
         else:
-            lineage_id = Path(manifest_path).stem
+            lineage_id = Path(data_analysis_recipe_path).stem
             date_str = datetime.now().strftime("%Y-%m-%d")
             tmp_root = project_root / f"tmpAI/{date_str}/{lineage_id}"
         tmp_root.mkdir(parents=True, exist_ok=True)
         intermediate_parquet = str(tmp_root / f"EVE_assembly_{assembly_id}.parquet")
 
-        filtered_recipe.append({
+        filtered_steps.append({
             "action": "sink_parquet",
             "path": intermediate_parquet,
             "force_recompute": False
         })
 
-        print(f"  └── 🏗️  Assembling using recipe: {len(filtered_recipe)} steps.")
+        print(f"  └── 🏗️  Assembling using step list: {len(filtered_steps)} steps.")
 
         assembler = DataAssembler(assembly_ingredients)
         try:
-            consolidated_lf = assembler.assemble(filtered_recipe)
+            consolidated_lf = assembler.assemble(filtered_steps)
         except Exception as e:
             print(f"  └── ❌ Assembly Error: {e}")
             continue
@@ -260,8 +260,8 @@ def run_assembler_debug(manifest_path: str, data_dir_override: str = None, tmp_d
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Consolidated Assembly Layer Debugger (ADR 012/018)")
-    parser.add_argument("--manifest", required=True,
-                        help="Path to pipeline manifest YAML.")
+    parser.add_argument("--data-analysis-recipe", required=True,
+                        help="Path to pipeline data analysis recipe YAML.")
     parser.add_argument(
         "--data", help="Optional override for source data directory.")
     parser.add_argument(
@@ -278,4 +278,4 @@ if __name__ == "__main__":
     if out:
         p = Path(out)
         out = str(p.parent) if p.suffix else str(p)
-    run_assembler_debug(args.manifest, args.data, out)
+    run_assembler_debug(args.data_analysis_recipe, args.data, out)

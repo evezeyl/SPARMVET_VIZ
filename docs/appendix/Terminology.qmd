@@ -1,25 +1,34 @@
 # Terminology Reference
-# Authority: ADR-003, ADR-029b
+# Authority: ADR-003, ADR-029b, ADR-091 (names), issue evezeyl/SPARMVET_VIZ#29 (the word "project")
 
-This document defines the authoritative nomenclature for the **SPARMVET_VIZ** platform. To ensure universal schema compatibility, all components must use the following generic terminology.
+This document defines the authoritative nomenclature for the **SPARMVET_VIZ** platform. To ensure universal schema compatibility, all components use the following generic terminology. The word "project" is not used for the data analysis recipe, because IRIDA and Galaxy have their own projects (groups of samples). <!-- audit:allow-old-word -->
 
 ## Core Operational Units
 
-- **Project**: The top-level organizational unit (formerly *Species*). A project is defined by a central YAML manifest and may contain multiple data collections.
-- **Schema**: The structural definition of a dataset's fields and types. Schemas are defined in the `input_fields` and `output_fields` blocks of the project manifest.
-- **Collection**: A logical grouping of datasets (e.g., Genotypes + Phenotypes) assembled under a single project anchor.
+- **Data analysis recipe**: The top-level unit of analysis. One YAML file (`config/data_analysis_recipes/<id>.yaml`, plus the fragments it includes) that defines the inputs, the tier steps, the joins and the plots. Its identifier is the **data analysis recipe id** (the file name without `.yaml`). Its `info:` block describes it for people (title, description, version, study, contact, anything the author writes) and is shown in the Info panel.
+- **Schema**: The structural definition of a dataset's fields and types. Schemas are defined in the `input_fields` and `output_fields` blocks of the data analysis recipe.
+- **Collection**: A logical grouping of datasets (e.g., Genotypes + Phenotypes) assembled by one join of the data analysis recipe.
 - **Record**: A single row of data (formerly *Sample*). A record is the atomic unit of analysis and visualization.
 - **Record ID**: The unique primary key (PK) identifying a record across multiple datasets within a collection.
 
 ## Technical Components
 
-- **Anchor (Tier 1/2)**: The authoritative, materialized Parquet file representing the joined and cleaned project data.
-- **Leaf (Tier 3)**: The transient, reactive view produced by applying user-defined filters and wrangling nodes in the UI.
-- **Recipe**: A serialized YAML sequence of transformation nodes representing the data lineage from Anchor to Leaf.
-- **Bootloader (bootloader.py)**: The system initialization engine responsible for path authority, UI persona toggling, and agnostic project discovery.
+- **Anchor (Tier 1/2)**: The authoritative, materialized Parquet file representing the joined and cleaned data of one collection.
+- **Leaf (Tier 3)**: The transient, reactive view produced by applying user-defined filters and audit steps in the UI.
+- **Step list**: A serialized YAML sequence of transformation nodes (`steps:` of a join, or `tier1:` / `tier2:` of a data schema).
+- **Audit steps**: The Tier 3 decisions a user sends to audit, each with a reason (`t3_audit_steps_by_plot`).
+- **Bootloader (bootloader.py)**: The system initialization engine responsible for path authority, UI app features toggling, and discovery of the data analysis recipes.
+
+## Configuration
+
+- **Deployment**: where and how the app runs (folders, operator defaults, branding). Selected by `SPARMVET_DEPLOYMENT`.
+- **App features**: what the user may do (feature flags). Selected by `SPARMVET_APP_FEATURES`. Shipped sets: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `standalone` (a researcher who manages their own data, not fed by a pipeline), `developer`, `qa`, `demo-vetinst`, `web-demo`.
+- **Deployment palette**: a named colour palette that the operator defines in `config/palettes.yaml` for all data analysis recipes of the deployment.
+- **IRIDA project**: IRIDA's own group of samples (`irida.project_id` in the deployment file). It has nothing to do with the data analysis recipe. <!-- audit:allow-old-word -->
 
 ## UI Elements
 
-- **Home**: The central dashboard workspace where plots and data tables are rendered. All analytical navigation happens here — the former "Analysis Theater" nav mode was eliminated by ADR-043 (Phase 21); there is no separate Viz mode.
-- **Wrangle Studio**: The visual builder SDK for constructing and modifying logic recipes (available within the Test Lab to `developer` personas).
+- **Home**: The central dashboard workspace where plots and data tables are rendered. All analytical navigation happens here; the former "Analysis Theater" nav mode was eliminated by ADR-043 (Phase 21); there is no separate Viz mode.
+- **Info panel**: The left sidebar panel `data_analysis_recipe_info`. It shows whatever is written under `info:` in the open data analysis recipe.
+- **Wrangle Studio**: The visual builder SDK for constructing and modifying step lists (available within the Test Lab to `developer` app features files).
 - **Test Lab**: The developer-facing environment for record synthesis, environment auditing, and pipeline testing (formerly "Dev Studio").

@@ -11,15 +11,15 @@ Display rules
 -------------
 - testing_mode == False  (pipeline-static, pipeline-exploration-simple):
     Read-only display of the configured/injected data paths derived from
-    the active manifest's data_schemas. The user cannot override paths;
+    the active data analysis recipe's data_schemas. The user cannot override paths;
     they are fixed by the deployment configuration.
 - testing_mode == True   (developer, qa, pipeline-exploration-advanced,
-    project-independent):
+    standalone):
     Same listing but framed as the *current default* and accompanied by
-    the manifest replacement upload (gated by metadata_ingestion_enabled)
+    the data analysis recipe replacement upload (gated by metadata_ingestion_enabled)
     and the multi-file ingestion slot (gated by data_ingestion_enabled).
 
-Reactive value passed in: active_cfg (so the listing refreshes on project
+Reactive value passed in: active_cfg (so the listing refreshes on switch of the data analysis recipe
 switch).
 """
 
@@ -74,18 +74,18 @@ def define_data_import_server(input, output, session, *,
     # Pending upload state: list of {name, tmp_path, ds_id, error}
     _import_pending: reactive.Value[list] = reactive.Value([])
 
-    # ── Main panel UI (stable — refreshes only on project switch) ────────────
+    # ── Main panel UI (stable — refreshes only on data analysis recipe switch) ────────────
 
     @output
     @render.ui
     def data_import_ui():
-        cfg = active_cfg()  # subscribe to project switches
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+        cfg = active_cfg()  # subscribe to data analysis recipe switches
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         testing_mode = bootloader.get_testing_mode()
-        prefer_discovery = bootloader.connector_config.get("prefer_discovery", False)
+        by_dataset_id = bootloader.data_lookup == "by_dataset_id"
 
         # ── Source-file listing ─────────────────────────────────────────────
-        if prefer_discovery:
+        if by_dataset_id:
             raw_data_dir = bootloader.get_location("raw_data")
             files_block = ui.div(
                 ui.tags.small(
@@ -100,7 +100,7 @@ def define_data_import_server(input, output, session, *,
             )
         else:
             try:
-                source_files = orchestrator.get_source_files(proj_id) if proj_id else {}
+                source_files = orchestrator.get_source_files(data_analysis_recipe_id) if data_analysis_recipe_id else {}
             except Exception:
                 source_files = {}
 
@@ -125,7 +125,7 @@ def define_data_import_server(input, output, session, *,
                 )
             else:
                 files_block = ui.tags.small(
-                    "No source files resolved for this manifest.",
+                    "No source files resolved for this data analysis recipe.",
                     class_="text-muted px-2 d-block spv-text-meta",
                 )
 
@@ -152,7 +152,7 @@ def define_data_import_server(input, output, session, *,
             hint = (
                 "💡 Hold Ctrl (Windows/Linux) or ⌘ Cmd (Mac) to select multiple files."
                 if multi else
-                "Select a TSV/CSV metadata file to replace the active manifest source."
+                "Select a TSV/CSV metadata file to replace the active data analysis recipe source."
             )
             upload_blocks.append(
                 ui.div(
@@ -266,8 +266,8 @@ def define_data_import_server(input, output, session, *,
 
         cfg = active_cfg()
         raw = cfg.raw_config
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
-        anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        anchor_dir = bootloader.get_location("user_data") / "anchors"
 
         from transformer.metadata_validator import MetadataValidator
         validator = MetadataValidator()
@@ -342,7 +342,7 @@ def define_data_import_server(input, output, session, *,
             parquet_cache = anchor_dir / f"{ds_id}.parquet"
             if parquet_cache.exists():
                 parquet_cache.unlink()
-            bootloader.set_cached_asset(proj_id, ds_id, "anchor", "lf", None)
+            bootloader.set_cached_asset(data_analysis_recipe_id, ds_id, "anchor", "lf", None)
 
             entry["error"] = ""
             updated.append(entry)

@@ -200,7 +200,7 @@ class TestOutputFiles:
         )
         assert (tmp_path / "out" / "anonymisation_config.yaml").exists()
 
-    def test_config_yaml_not_pipeline_manifest(self, metadata_tsv, tmp_path):
+    def test_config_yaml_not_pipeline_data_analysis_recipe(self, metadata_tsv, tmp_path):
         Anonymiser().anonymise(
             metadata_tsv,
             id_column="sample_id",
@@ -208,7 +208,7 @@ class TestOutputFiles:
         )
         config_path = tmp_path / "out" / "anonymisation_config.yaml"
         content = config_path.read_text()
-        assert "NOT a pipeline manifest" in content
+        assert "NOT a pipeline data analysis recipe" in content
         data = yaml.safe_load(content)
         assert "anonymisation_config" in data
         assert "id" not in data
@@ -237,11 +237,11 @@ class TestOutputFiles:
         assert (tmp_path / "out" / "mapping_sample_id.tsv").exists()
         assert (tmp_path / "out" / "anonymisation_config.yaml").exists()
 
-    def test_deanon_recipe_is_valid_yaml(self, metadata_tsv):
-        recipe_yaml = Anonymiser().build_deanon_recipe(
+    def test_deanon_steps_is_valid_yaml(self, metadata_tsv):
+        steps_yaml = Anonymiser().build_deanon_steps(
             "sample_id", "mapping_sample_id.tsv"
         )
-        parsed = yaml.safe_load(recipe_yaml)
+        parsed = yaml.safe_load(steps_yaml)
         assert isinstance(parsed, list)
         step = parsed[0]
         assert step["action"] == "join"

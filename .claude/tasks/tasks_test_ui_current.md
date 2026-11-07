@@ -1,7 +1,7 @@
 # Live-UI Test Checklist — Current Dashboard
 
 > **SUPERSEDED (2026-06-19):** Pinned to the **Phase 26** baseline — predates TEST_LAB,
-> the BLUEPRINT full feature set, the 8-persona set, and the Phase-34 legacy removals.
+> the BLUEPRINT full feature set, the 8-app features set, and the Phase-34 legacy removals.
 > The current live test plan is **[`test_plan_2026-06.md`](test_plan_2026-06.md)** (Phase 34
 > baseline). Still-open items from this file were folded into the new plan (look for `(carried)`).
 > Kept for history — do not test against this; it will be archived once the new plan's first
@@ -20,16 +20,16 @@
 - [x] `git log --oneline -1` shows a Phase 25 commit at HEAD.
 - [x] App starts: `./.venv/bin/python app/src/main.py` — UI loads without Python traceback in terminal.
 - [x] No red error banners in the browser on first load.
-- [x] Check terminal for `DEBUG: Rendering sidebar_nav_ui for Persona: <name>` — confirm the expected persona loaded.
+- [x] Check terminal for `DEBUG: Rendering sidebar_nav_ui for App features: <name>` — confirm the expected app features loaded.
 
 ---
 
-## 1. Persona gating — what appears per persona
+## 1. App features gating — what appears per app features
 
-Test each persona by changing the `persona_id` in the active config YAML (or selecting in the UI if manifest selector is visible).
+Test each app features by changing the `app_features_id` in the active config YAML (or selecting in the UI if data analysis recipe selector is visible).
 
 ### 1a. `pipeline-static`
-- [x] Left sidebar: **no** manifest selector, **no** T3 mode toggle, no right sidebar audit panel.
+- [x] Left sidebar: **no** data analysis recipe selector, **no** T3 mode toggle, no right sidebar audit panel.
 - [x] Tier toggle shows only T1 / T2 (no T3).
 - [x] No "Gallery" or "Blueprint Architect" nav items in sidebar.
 - [x] No "Session Management" or "Single Graph Export" accordion panels.
@@ -41,15 +41,15 @@ Test each persona by changing the `persona_id` in the active config YAML (or sel
 - [x] No developer-only panels (Test Lab, Blueprint Architect).
 - [x] Gallery NOT visible.
 
-### 1c. `project-independent`
-- [x] Manifest selector accordion **visible**.
+### 1c. `standalone`
+- [x] Data analysis recipe selector accordion **visible**.
 - [x] Gallery nav item visible.
-- [x] Blueprint Architect (Wrangle Studio) nav item Not visible (persona updated).
+- [x] Blueprint Architect (Wrangle Studio) nav item Not visible (app features updated).
 - [x] T3 tier present in tier toggle.
 - [x] Right sidebar aqudit panel visible with "Pipeline Audit" header.
 - [x] Session Management accordion visible.
 - [x] Single Graph Export accordion visible (if `export_graph_enabled: true`).
-- [x] "Test Lab" nav item **NOT** visible (developer_mode_enabled: false).
+- [x] "Test Lab" nav item **NOT** visible (test_lab_enabled: false).
 
 ### 1d. `developer`
 - [x] All of the above PLUS "Test Lab" nav item visible.
@@ -59,24 +59,24 @@ Test each persona by changing the `persona_id` in the active config YAML (or sel
 
 ## 2. Left sidebar — accordion panels
 
-Using `project-independent` or `developer` persona throughout the following sections.
+Using `standalone` or `developer` app features throughout the following sections.
 
-- [x] **Manifest Choice** accordion opens/collapses cleanly. Project selection dropdown shows available projects.
-- [x] Changing project selection reloads plots in the center theater (may take a moment).
-- [x] Switching to Gallery and back to Home preserves the selected project (does not reset to first on list). *(BUG fixed 2026-05-03: _last_project_id reactive.Value tracks selection; sidebar_tools_ui uses isolated read on re-render)*
-- [x] **Data Import** accordion shows the import UI (file upload or path selector depending on persona).
+- [x] **Data analysis recipe Choice** accordion opens/collapses cleanly. Data analysis recipe dropdown shows the available data analysis recipes.
+- [x] Changing the data analysis recipe reloads plots in the center theater (may take a moment).
+- [x] Switching to Gallery and back to Home preserves the selected data analysis recipe (does not reset to first on list). *(BUG fixed 2026-05-03: _last_data_analysis_recipe_id reactive.Value tracks selection; sidebar_tools_ui uses isolated read on re-render)*
+- [x] **Data Import** accordion shows the import UI (file upload or path selector depending on app features).
 - [x] **Filters** accordion opens cleanly with the filter builder form.
-- [x] **Global Project Export** accordion visible and contains export button.
-- [x] **Single Graph Export** accordion visible (if enabled for persona).
+- [x] **Global Export** accordion visible and contains export button.
+- [x] **Single Graph Export** accordion visible (if enabled for app features).
 - [x] **Session Management** accordion visible (if enabled).
 - [x] Accordion open/close state is independent — opening one does not close others.
-- [x] Persona name shown below nav pills: "Active: Project Independent User" (or equivalent). Ok - now defined by the persona config, we can have any Persona name. 
+- [x] App features name shown below nav pills: "Active: Standalone User" (or equivalent). Ok - now defined by the app features config, we can have any App features name. 
 
 ---
 
 ## 3. Center theater — tabs and plot rendering
 
-- [x] Tabs at top of center panel correspond to analysis groups in the active manifest.
+- [x] Tabs at top of center panel correspond to analysis groups in the active data analysis recipe.
 - [x] Clicking each tab loads its plots (no Python traceback in terminal).
 - [x] Within a tab with multiple plots, sub-tabs navigate between individual plots.
 - [x] Plot renders as a static image (plotnine via `@render.plot`).
@@ -84,7 +84,7 @@ Using `project-independent` or `developer` persona throughout the following sect
 - [x] Data preview updates when you switch plot sub-tabs.
 - [x] **Column selector absent for pipeline-static / pipeline-exploration-simple**: no "Visible columns (preview only)" or "Columns (drop unselected via audit)" control shown (`interactivity_enabled: false` — `home_col_selector_ui` returns empty div).
 - [x] **Thin header strip** at top of center panel shows: dataset label (left) + tier toggle radio buttons (right).
-- [x] Tier toggle shows T1 / T2 for pipeline personas; T1 / T2 / T3 for advanced personas.
+- [x] Tier toggle shows T1 / T2 for pipeline app features files; T1 / T2 / T3 for advanced app features files.
 
 ---
 
@@ -92,7 +92,7 @@ Using `project-independent` or `developer` persona throughout the following sect
 
 ### 4a. T1 → T2
 
-- [x] Switch to T2. Plot and data preview update (if T2 transforms are defined in the manifest — otherwise visually identical to T1 is expected). [Year Distribution plot for test]
+- [x] Switch to T2. Plot and data preview update (if T2 transforms are defined in the data analysis recipe — otherwise visually identical to T1 is expected). [Year Distribution plot for test]
 - [x] No flickering or duplicate renders in the terminal output.
 
 ### 4b. T1 / T2 → T3
@@ -157,7 +157,7 @@ Using `project-independent` or `developer` persona throughout the following sect
 - [x] Pick **"This plot only"** → confirm.
 - [x] Right sidebar "Tier 3 — My Adjustments" shows a pending node with yellow reason input.
 - [x] Type a reason. `Apply` button transitions from "Apply ⛔" (no reason) to enabled "Apply".
-- [x] Click Apply. Notification: "✅ T3 recipe applied — N node(s) across 1 plot stack(s)."
+- [x] Click Apply. Notification: "✅ audit steps applied — N node(s) across 1 plot stack(s)."
 - [x] Plot and data preview reflect the filter.
 - [x] Switch to another plot sub-tab → that plot is **unaffected** (per-plot scoping).
 
@@ -236,19 +236,19 @@ a primary key is for - so simple term, explaining potential consequences ... and
 
 ## 12. Gallery nav
 
-- [x] Click **Gallery** in nav pills (project-independent or developer persona).
-- [x] Center panel shows the gallery recipe browser.
-- [x] Left sidebar shows Recipe selector + collapsible taxonomy filters (not "Discovery Mode Active").
+- [x] Click **Gallery** in nav pills (standalone or developer app features).
+- [x] Center panel shows the gallery examples browser.
+- [x] Left sidebar shows Example selector + collapsible taxonomy filters (not "Discovery Mode Active").
 
 ### Gallery sidebar (2026-05-03 changes)
-- [x] Left sidebar: "👨‍🍳 Recipe" accordion — single emoji, no double icon.
+- [x] Left sidebar: "👨‍🍳 Step list" accordion — single emoji, no double icon.
 - [x] Left sidebar: "🔍 Gallery Taxonomy" accordion — single emoji, no double icon.
 - [x] Taxonomy sub-panels labelled `🏷️ Family (Purpose)`, `🏷️ Data Pattern`, `🏷️ Difficulty`.
 - [x] Each taxonomy sub-panel is collapsible (nested accordion). All open by default.
 - [x] "Select all [ ]" row is right-aligned inside each taxonomy panel. No large gap below it. [Sill a bit large I think but we can live with that]
 - [x] Toggling "Select all" on/off updates all checkboxes in that group. *(BUG fixed 2026-05-03: replaced @reactive.event with plain @reactive.Effect + None-guard in gallery_handlers.py — re-verify)*
-- [x] Choices in all three groups are loaded from `gallery_index.json` pivot (not hardcoded). *(DONE 2026-05-03: 8 new recipes added, index rebuilt — 21 recipes, 6 families: Comparison, Correlation, Distribution, Evolution, Part-to-Whole, Ranking. Verify new families appear in sidebar filters at next relaunch.)*
-- [x] "Apply" button filters the recipe selector correctly.
+- [x] Choices in all three groups are loaded from `gallery_index.json` pivot (not hardcoded). *(DONE 2026-05-03: 8 new examples added, index rebuilt — 21 examples, 6 families: Comparison, Correlation, Distribution, Evolution, Part-to-Whole, Ranking. Verify new families appear in sidebar filters at next relaunch.)*
+- [x] "Apply" button filters the step list selector correctly.
 
 ### Gallery theater (2026-05-03 changes)
 - [x] No `<hr>` line between the view-title-banner and the Preview accordion.
@@ -256,26 +256,26 @@ a primary key is for - so simple term, explaining potential consequences ... and
 - [x] "📖 Visual Cookbook: Guidance" accordion is open by default; clicking the header collapses it.
 - [x] When Preview is collapsed only the Guidance pane is visible (and vice versa).
 - [x] Guidance pane has yellow soft-note background; collapse arrow is amber-tinted (might be amber - looks good to me).
-- [x] Recipe title renders as compact `h2` (same visual weight as accordion header).
+- [x] Step list title renders as compact `h2` (same visual weight as accordion header).
 - [x] Taxonomy tag strip `> 📊 Family · 🔢 Pattern · 📈 Difficulty` renders as a small blockquote with amber left border.
-SOLVED [Yes but we used tags icons on the left side bar in the recipe title renders, so maybe we should use the same icons then than those that are shown in the Taxonomy tag strip - that would be better. So this would mean removing the tags icons to the reciple title renders and make the icones being fetched at the same time when the recipe taxonomy is autobuild and autopopulates in the left side bar.]
-- [x] Content sections (`### Suitability`, `### Data Schema`, etc.) are smaller than the recipe title. [Not much smaller if smaller, but looks good enough for me - because they have lighter collor particulary]
+SOLVED [Yes but we used tags icons on the left side bar in the example title renders, so maybe we should use the same icons then than those that are shown in the Taxonomy tag strip - that would be better. So this would mean removing the tags icons to the reciple title renders and make the icones being fetched at the same time when the step list taxonomy is autobuild and autopopulates in the left side bar.]
+- [x] Content sections (`### Suitability`, `### Data Schema`, etc.) are smaller than the step list title. [Not much smaller if smaller, but looks good enough for me - because they have lighter collor particulary]
 
 ### Sidebar toggle (2026-05-03 fix — ADR-062)
 - [ ] Left sidebar toggle: collapse → shows main content full width.
 - [ ] Left sidebar toggle: expand → sidebar reappears. Works after any number of hide/show cycles.
-- [ ] Right sidebar toggle (t3_sandbox persona only): collapse and expand both work.
+- [ ] Right sidebar toggle (t3_sandbox app features only): collapse and expand both work.
 - [ ] **Critical**: hide BOTH sidebars → both toggles remain clickable → can expand either sidebar independently.
 
-- [x] Clicking a gallery card loads the recipe preview on the center pane.
+- [x] Clicking a gallery card loads the example preview on the center pane.
 - [x] Click Home → center panel returns to plots, left sidebar tools re-appear.
-- [ ] *(Deferred)* Returning to Home from Gallery preserves the previously active manifest/plot state (THEATER-1 scope).
+- [ ] *(Deferred)* Returning to Home from Gallery preserves the previously active data_analysis_recipe/plot state (THEATER-1 scope).
 
 ---
 
-## 13. Comparison mode (project-independent / developer)
+## 13. Comparison mode (standalone / developer)
 
-- [x] In T3 mode, look for the **comparison mode toggle** below the tier toggle strip. *(Only appears for personas with `comparison_mode_enabled: true` in T3 mode.)*
+- [x] In T3 mode, look for the **comparison mode toggle** below the tier toggle strip. *(Only appears for app features files with `comparison_mode_enabled: true` in T3 mode.)*
 - [x] Toggle it on. Center panel shows two columns (reference vs. adjusted view), or the layout changes to show comparison.
 - [x] Toggle it off. Returns to single-panel view.
 - [x] FIXED *(Known issue AUDIT-4: Compare T2/T3 toggle may lose state on plot switch — note if that occurs.)*
@@ -286,7 +286,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the recipe title rend
 
 - [x] Open **Session Management** accordion in left sidebar.
 - [x] Commit at least 2 T3 nodes across different plots.
-- [ ] Wait 2 minutes (ghost auto-save interval for developer/project-independent personas) OR use a manual save button if present.
+- [ ] Wait 2 minutes (ghost auto-save interval for developer/standalone app features files) OR use a manual save button if present.
 [Can we have the information about the latest ghost save in the Session Management panel ? eg. "Last auto-save: 2026-05-02 14:35:22" - would be nice for the user to know when the last save was, and if the auto-save is working as expected. 
 
 Should the save take as much as 2 minutes - it should not be possible to export the session during that time OR export active session should first trigger the save and then export. ]
@@ -298,12 +298,12 @@ Should the save take as much as 2 minutes - it should not be possible to export 
 
 ---
 
-## 15. Global Project Export
+## 15. Global Export
 
-- [ ] Open **Global Project Export** accordion.
+- [ ] Open **Global Export** accordion.
 - [ ] Click the export button.
 - [ ] A `.zip` bundle downloads (or a path is reported in the terminal).
-- [ ] Bundle contains at minimum: the assembled data, a recipe/filter trace, and a plot export.
+- [ ] Bundle contains at minimum: the assembled data, the data analysis recipe files, and a plot export.
 - [ ] *(EXPORT-2/EXPORT-3 selective export and Quarto report polish are open items — don't test those specifics here.)*
 
 ---
@@ -339,13 +339,13 @@ These are known open bugs — record whether they reproduce or seem fixed.
 
 ## 19. Data Import (IMPORT-1)
 
-Using `project-independent` or `developer` persona (the **Data Import** accordion must be visible).
+Using `standalone` or `developer` app features (the **Data Import** accordion must be visible).
 
 ### 19a. Single file upload
 
 - [ ] Open **Data Import** accordion in left sidebar.
 - [ ] Click the file upload control and select a single TSV/CSV that matches a dataset schema (e.g. `metadata.tsv` for the `metadata` dataset ID).
-- [ ] An **assignment table** appears: one row per uploaded file, with a dropdown showing available dataset IDs from the manifest.
+- [ ] An **assignment table** appears: one row per uploaded file, with a dropdown showing available dataset IDs from the data analysis recipe.
 - [ ] The correct dataset ID is pre-selected (or selectable). Click **Apply**.
 - [ ] Terminal shows no Python traceback. A success notification appears.
 - [ ] The plots reload with the new data (parquet cache busted — first load may be slightly slower).
@@ -375,7 +375,7 @@ Using `project-independent` or `developer` persona (the **Data Import** accordio
 
 Test with the `year_distribution` plot (uses `scale_x_continuous` with `breaks_integer: true`).
 
-- [ ] Navigate to the plot that shows year on the x-axis (e.g. "Year Distribution" in the test manifest).
+- [ ] Navigate to the plot that shows year on the x-axis (e.g. "Year Distribution" in the test data analysis recipe).
 - [ ] X-axis labels are whole integers (`2018`, `2019`, …) — no decimals (`2019.0`).
 - [ ] Toggle T1 → T2 → T1: axis labels remain integers throughout.
 - [ ] No Python traceback in terminal related to `MaxNLocator` or `breaks`.
@@ -411,14 +411,14 @@ Test with the `year_distribution` plot (uses `scale_x_continuous` with `breaks_i
 
 ## 22. Notification log panel (UX-NOTIF-1)
 
-Using `project-independent` or `developer` persona (right sidebar must be visible).
+Using `standalone` or `developer` app features (right sidebar must be visible).
 
 - [ ] Perform any user-facing action that triggers a notification (e.g. apply a filter, commit a T3 node, import data, export a graph).
 - [ ] Right sidebar bottom shows a `🔔 Alerts (N)` accordion — N reflects the number of logged entries.
 - [ ] Click to expand the accordion — entries appear newest-first with a timestamp (`HH:MM:SS`) and colored message (green = success, amber = warning, red = error, blue = message/info).
 - [ ] Trigger 3–4 different notifications (apply T3, reset, export). All appear in the log.
 - [ ] Max 20 entries kept — older ones are dropped silently when the limit is reached.
-- [ ] **Log does NOT appear** for `pipeline-static` persona (right sidebar is absent for non-t3_sandbox personas).
+- [ ] **Log does NOT appear** for `pipeline-static` app features (right sidebar is absent for non-t3_sandbox app features files).
 - [ ] Switching nav tabs (Home → Gallery → Home) does not clear the log — it persists in-memory for the session.
 - [ ] **DEFERRED (UX-NOTIF-2)**: Log clears on page refresh — T3 ghost persistence not yet implemented.
 
@@ -446,6 +446,6 @@ Using `project-independent` or `developer` persona (right sidebar must be visibl
 
 **Reference docs:**
 - `docs/user_guide/audit_pipeline.qmd` — user-facing audit walkthrough
-- `.claude/knowledge/architecture_decisions.md` — ADR-049 (per-plot scoping), ADR-052 (right sidebar gating), ADR-053 (flag-only persona gating)
+- `.claude/knowledge/architecture_decisions.md` — ADR-049 (per-plot scoping), ADR-052 (right sidebar gating), ADR-053 (flag-only app features gating)
 - `.claude/tasks/tasks.md` — open bug list
 - `.claude/tasks/archives/tasks_archive_phase25.md` — Phase 25 completed items

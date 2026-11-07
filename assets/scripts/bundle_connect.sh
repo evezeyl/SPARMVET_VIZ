@@ -94,17 +94,17 @@ if [ "$DEPLOY" -eq 1 ]; then
         exit 1
     fi
 
-    # Set SPARMVET_PROFILE to the Connect profile path on the server.
+    # Set SPARMVET_DEPLOYMENT to the Connect deployment path on the server.
     # Replace PLACEHOLDER_APP_GUID with the actual app GUID after first deploy.
-    SPARMVET_PROFILE_PATH="${SPARMVET_PROFILE_PATH:-config/deployment/connect/connect_profile_template.yaml}"
+    SPARMVET_DEPLOYMENT_PATH="${SPARMVET_DEPLOYMENT_PATH:-config/deployment/connect/connect_template.yaml}"
 
     $PYTHON -m rsconnect deploy shiny . \
         --server "$CONNECT_SERVER" \
         --api-key "$CONNECT_API_KEY" \
         --entrypoint "app/src/main:app" \
         --requirements requirements-connect.txt \
-        --environment "SPARMVET_PROFILE=$SPARMVET_PROFILE_PATH" \
-        --environment "SPARMVET_PERSONA=pipeline-static" \
+        --environment "SPARMVET_DEPLOYMENT=$SPARMVET_DEPLOYMENT_PATH" \
+        --environment "SPARMVET_APP_FEATURES=pipeline-static" \
         --title "SPARMVET_VIZ"
 
     echo "  Deployment complete."

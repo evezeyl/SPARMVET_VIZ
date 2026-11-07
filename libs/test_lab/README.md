@@ -2,18 +2,18 @@
 
 **Authority:** ADR-011
 
-Data utility toolkit. Provides synthetic data generation, manifest scaffolding, and format extraction. Used by the Test Lab user space and by asset scripts for headless data preparation. Primary-key reconciliation is handled by `libs/id_reconciliation/`.
+Data utility toolkit. Provides synthetic data generation, data analysis recipe scaffolding, and format extraction. Used by the Test Lab user space and by asset scripts for headless data preparation. Primary-key reconciliation is handled by `libs/id_reconciliation/`.
 
 ## Purpose
 
-Scientists often receive Excel workbooks, need anonymised shareable datasets, or want to test a manifest against controlled edge cases. `test_lab` handles all of these without touching the main ingestion pipeline.
+Scientists often receive Excel workbooks, need anonymised shareable datasets, or want to test a data analysis recipe against controlled edge cases. `test_lab` handles all of these without touching the main ingestion pipeline.
 
 ## Key Components
 
 - **AquaSynthesizer (aqua_synthesizer.py)**: Reads a real TSV and emits a structurally identical synthetic TSV — same column names, same value distributions and levels, different values. Safe to share. Also generates controlled-error datasets for pipeline testing.
-- **ManifestBootstrapper (bootstrapper.py)**: Infers column types and cardinalities from a TSV and writes a boilerplate `input_fields` YAML fragment — eliminates manual schema typing when onboarding a new data source.
+- **DataAnalysisRecipeBootstrapper (bootstrapper.py)**: Infers column types and cardinalities from a TSV and writes a boilerplate `input_fields` YAML fragment — eliminates manual schema typing when onboarding a new data source.
 - **XlsxExtractor (extractor.py)**: Reads multi-sheet XLSX workbooks and writes one normalised TSV per sheet. Entry point for the Excel → TSV conversion flow in the Data Import panel.
-- **ID Reconciliation**: Primary-key matching (exact, pattern-based, fuzzy), recipe generation, and recode workflows are now in `libs/id_reconciliation/`. See that library's README for usage.
+- **ID Reconciliation**: Primary-key matching (exact, pattern-based, fuzzy), step list generation, and recode workflows are now in `libs/id_reconciliation/`. See that library's README for usage.
 
 ## CLI Usage
 
@@ -23,7 +23,7 @@ All components expose `argparse` CLIs:
 # Synthesize anonymous test data
 .venv/bin/python -m test_lab.aqua_synthesizer --input real_data.tsv --output synthetic.tsv
 
-# Bootstrap manifest fields from a TSV
+# Bootstrap data analysis recipe fields from a TSV
 .venv/bin/python -m test_lab.bootstrapper --input new_data.tsv --output input_fields.yaml
 
 # Extract XLSX sheets to TSV

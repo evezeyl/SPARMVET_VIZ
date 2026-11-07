@@ -37,7 +37,7 @@ Leaf-to-root order: pure functions first, reactives last.
 
 | Step | New File | Source Lines | Risk |
 |---|---|---|---|
-| **24-A** | `app/modules/t3_recipe_engine.py` | L284–L381 (pure helpers) | Low — pure functions, no Shiny |
+| **24-A** | `app/modules/t3_audit_engine.py` | L284–L381 (pure helpers) | Low — pure functions, no Shiny |
 | **24-B** | `app/handlers/filter_handlers.py` | L2005–L2762 (filter UI + reactives) | Medium — reactive.Value refs passed via kwargs |
 | **24-C** | `app/handlers/t3_audit_handlers.py` | L2392–L2762 (T3 audit/propagation) | Medium — interleaved with filter, read carefully |
 | **24-D** | `app/handlers/session_handlers.py` | L1772–L1994 (session persistence) | Low — self-contained, no filter deps |
@@ -49,12 +49,12 @@ Leaf-to-root order: pure functions first, reactives last.
 
 ## Per-Step Discipline (mandatory for each step)
 
-### Before editing — write a change manifest
+### Before editing — write a change data analysis recipe
 
 Post to chat (and copy to `.antigravity/tasks/tasks_phase24.md` §step) before any edit:
 
 ```
-CHANGE MANIFEST — Step 24-X
+CHANGE DATA ANALYSIS RECIPE — Step 24-X
 Target new file: <path>
 Source lines in home_theater.py: L<start>–L<end>
 Names being MOVED: [list all def/class names]
@@ -92,8 +92,8 @@ PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_filter_operators.py -v
 # 3. App import must stay clean
 python -c "from app.src.main import app; print('OK')"
 
-# 4. Headless Playwright smoke tests — 10 pass, 2 persona-skipped (~35s)
-PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
+# 4. Headless Playwright smoke tests — 10 pass, 2 app features skipped (~35s)
+PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_smoke.py -v
 ```
 
 Smoke tests use headless Chromium (playwright + shiny.pytest.create_app_fixture).
@@ -102,12 +102,12 @@ filter add/apply/reset, data preview.
 
 **Note:** `libs/generator_utils/` and `libs/utils/` have pre-existing import errors — always
 exclude them. `app/tests/test_reactive_shell.py` and `test_ui_scenarios.py` have 3 pre-existing
-failures unrelated to Phase 24 (persona_selector not rendered in UI). Don't regress them further.
+failures unrelated to Phase 24 (app_features_selector not rendered in UI). Don't regress them further.
 
 If any gate fails:
 1. `git reset --hard HEAD~1`
 2. Diagnose. Do not patch on top.
-3. Retry from the change manifest step.
+3. Retry from the change data analysis recipe step.
 4. If the same gate fails twice: STOP and post a failure report. Do not proceed.
 
 ---
@@ -117,7 +117,7 @@ If any gate fails:
 1. **Never mix refactor + bug fix or feature in the same commit.**
 2. **Never delete code in the same commit it's moved.** Move first (commit N), delete second (commit N+1).
 3. **Never edit `_apply_filter_rows` semantics** without running the 21-case filter regression (`test_filter_operators.py`) before AND after.
-4. **Never change `bootloader.is_enabled()` call sites.** Persona gating uses hyphens (`pipeline-exploration-advanced`), never underscores.
+4. **Never change `bootloader.is_enabled()` call sites.** App features gating uses hyphens (`pipeline-exploration-advanced`), never underscores.
 5. **Never strip `upstream_provenance` from sink_parquet step** in `app/modules/orchestrator.py` — that's BUG-CACHE-1's keystone.
 6. **Never import a handler module from a non-Shiny context** (ADR-045 Two-Category Law). `app/modules/` = pure; `app/handlers/` = Shiny-only.
 7. **Shared reactive.Values stay in `home_theater.define_server()`**: `applied_filters`, `_pending_filters`, `_propagation_scratch` must be created there and passed as kwargs to sub-handlers. They must NOT be module-level globals.
@@ -147,7 +147,7 @@ Stop and post a blocker report if:
 - An extraction would require changing a function *signature* on the public surface of `define_server(...)` in `home_theater.py`.
 - Any `@reactive.Effect` / `@render.*` boundary becomes unclear (e.g., two reactives sharing a closure variable that can't be cleanly passed as kwargs).
 - Total LOC added to new files differs from LOC removed from `home_theater.py` by more than 5% after cleanup commits. (Indicates hidden logic drift.)
-- A new import dependency surfaces that wasn't listed in the change manifest.
+- A new import dependency surfaces that wasn't listed in the change data analysis recipe.
 
 ---
 
@@ -159,7 +159,7 @@ from app.handlers.home_theater import define_server
 define_server(input, output, session, *,
               bootloader, wrangle_studio, dev_studio,
               orchestrator, viz_factory, gallery_viewer,
-              current_persona, anchor_path, tier1_anchor,
+              current_app_features, anchor_path, tier1_anchor,
               tier_reference, tier3_leaf, active_cfg,
               active_collection_id, safe_input,
               active_home_subtab, tier_toggle,
@@ -176,5 +176,5 @@ Sub-handler `define_*()` calls are internal — their signatures can evolve free
 
 - Every new handler file needs the `@deps` header comment block (see `home_theater.py` L22–27 for format).
 - `_safe_id()` and `_collect_all_group_plot_ids()` stay in `home_theater.py` (called at init time before sub-handlers are registered).
-- Filter operator contract: `closed=` field on between rows must be `'both'` or `'none'`. Anything else triggers defensive fallback. This logic lives in `t3_recipe_engine.py` after 24-A.
+- Filter operator contract: `closed=` field on between rows must be `'both'` or `'none'`. Anything else triggers defensive fallback. This logic lives in `t3_audit_engine.py` after 24-A.
 - PK filter is ALLOWED (ADR-049a). Do not reintroduce `if is_pk: node_type = "exclusion_row"` silent-conversion.

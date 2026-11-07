@@ -12,10 +12,10 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 ## Key Components
 
 - `DataWrangler (data_wrangler.py)`: Core engine that executes atomic cleaning actions against single datasets using declarative YAML pipelines.
-- `DataAssembler (data_assembler.py)`: Relational join orchestrator. Implements **Strict Assembly Enforcement**: requires all ingredients explicitly defined in a recipe, otherwise triggers a controlled crash to protect data integrity.
+- `DataAssembler (data_assembler.py)`: Relational join orchestrator. Implements **Strict Assembly Enforcement**: requires all ingredients explicitly defined in a step list, otherwise triggers a controlled crash to protect data integrity.
 - `PipelineExecutor (pipeline.py)`: Top-level runner that coordinates the full end-to-end flow (Ingest -> Wrangle -> Assemble).
 - `ActionRegistry (registry.py)`: Central dictionary mapping YAML action keys to Python function logic.
-- `MetadataValidator (metadata_validator.py)`: Ensures user-provided data aligns with manifest contracts. Performs **Malformed Data Gatekeeping** (ADR-034) by trapping missing columns with typo-correction suggestions (`validate`), rejecting values that cannot be cast to the declared type before a file is written (`validate_types`), and enforcing schema types (`enforce_schema`).
+- `MetadataValidator (metadata_validator.py)`: Ensures user-provided data aligns with data analysis recipe contracts. Performs **Malformed Data Gatekeeping** (ADR-034) by trapping missing columns with typo-correction suggestions (`validate`), rejecting values that cannot be cast to the declared type before a file is written (`validate_types`), and enforcing schema types (`enforce_schema`).
 - `IntegritySuite (transformer_integrity_suite.py)` - [Orchestrator]: Programmatically verifies the correctness of every registered action.
 - `Phase3Debugger (debug_phase3_refinements.py)` - [Test Utility]: CLI runner for verifying decision hashing and gatekeeping logic.
 - `debug_wrangler.py` - [Dev Tool]: CLI runner for isolated atomic wrangling verification. Entry: `run_wrangler_debug()`.
@@ -35,9 +35,9 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - **Reactive State (Tier 3)**: Transient views generated via Predicate Pushdown. Supports **Gated Reactivity** via the `btn_apply` trigger, allowing for side-by-side inspection in **Comparison Mode** (T2 reference vs T3 active).
 - **Path Authority**: Persistence locations (Tiers 1-3) are determined by `config/connectors`, decoupling hardware from the UI.
 
-## Manifest Syntax (Tiered Wrangling Mandate)
+## Data analysis recipe Syntax (Tiered Wrangling Mandate)
 
-Following **ADR-024**, every `wrangling` entry in a manifest MUST use a nested key structure. This formalizes the separation between generic data cleaning and plot-specific preparation.
+Following **ADR-024**, every `wrangling` entry in a data analysis recipe MUST use a nested key structure. This formalizes the separation between generic data cleaning and plot-specific preparation.
 
 ```yaml
 wrangling:
@@ -64,11 +64,11 @@ wrangling:
         - default: "keep"
 ```
 
-### Manifest Safeguards (ADR-012b)
+### Data analysis recipe Safeguards (ADR-012b)
 
 - **The Boolean Shield**: To prevent the YAML parser from misinterpreting `on:` as `True`, always use quotes (`"on":`) or ensure the logic engine (DataAssembler) is hardened to resolve both keys.
 - **Relational Strategy**: When joining multiple 'Long' format datasets (e.g., AMR + Virulence), prioritize `join_filter` over `join` to maintain a manageable row count and prevent computational bloat.
-- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is rejected by `_resolve_tier()` with a `ManifestError`. Migrate to the tiered structure above.
+- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is rejected by `_resolve_tier()` with a `DataAnalysisRecipeError`. Migrate to the tiered structure above.
 
 ### Identity Logic (ADR-014)
 
@@ -80,17 +80,17 @@ wrangling:
 To maximize performance when iterating on complex pipelines, the `DataAssembler (data_assembler.py)` implements a **Short-Circuit Execution** pattern backed by **Decision Metadata Hashing**.
 
 - **The Logic**: The orchestrator (`app/modules/orchestrator.py`) compares the chained key stored in the Parquet file's metadata (`sparmvet_tier1_key`, `sparmvet_tier2_key`, ADR-089) with the current key, before any ingestion.
-- **Automated Freshness Check**: The key covers the resolved manifest (every included file), the data content and the engine version. If it matches, joins and wrangling are skipped. If it differs, the stage is recomputed. A Tier 2 change recomputes only Tier 2. The file is written with Polars, the key inside the file metadata.
-- **Manual Override**: To force a full re-computation regardless of hash status, set `force_recompute: true` in the YAML manifest.
+- **Automated Freshness Check**: The key covers the resolved data analysis recipe (every included file), the data content and the engine version. If it matches, joins and wrangling are skipped. If it differs, the stage is recomputed. A Tier 2 change recomputes only Tier 2. The file is written with Polars, the key inside the file metadata.
+- **Manual Override**: To force a full re-computation regardless of hash status, set `force_recompute: true` in the YAML data analysis recipe.
 
 ## I/O Summary
 
-- **Input**: Raw `pl.LazyFrame`s from the Ingestion layer, and YAML Manifest `spec` dictionaries.
+- **Input**: Raw `pl.LazyFrame`s from the Ingestion layer, and YAML Data Analysis Recipe `spec` dictionaries.
 - **Output**: Cleaned, joined, and contract-enforced `pl.LazyFrame`s matching the `output_fields` specification.
 
 ## Local CLI Runners
 
-For Phase 1 & Phase 4 verification, use the local debugging runners to execute declarative YAML manifests and verify output TSVs.
+For Phase 1 & Phase 4 verification, use the local debugging runners to execute declarative YAML data analysis recipes and verify output TSVs.
 
 **Full Suite Verification (The Automated Gate):**
 
@@ -101,20 +101,20 @@ For Phase 1 & Phase 4 verification, use the local debugging runners to execute d
 **Atomic Wrangling (Isolated Action):**
 
 ```bash
-./.venv/bin/python libs/transformer/tests/debug_wrangler.py --data [INPUT] --manifest [YAML] --output [OUT_TSV]
+./.venv/bin/python libs/transformer/tests/debug_wrangler.py --data [INPUT] --data-analysis-recipe [YAML] --output [OUT_TSV]
 ```
 
 **Relational Assembly (Multi-Source Job):**
 
 ```bash
-./.venv/bin/python libs/transformer/tests/debug_assembler.py --manifest [YAML] --tmp [OUT_DIR]
+./.venv/bin/python libs/transformer/tests/debug_assembler.py --data-analysis-recipe [YAML] --tmp [OUT_DIR]
 ```
 
-`debug_assembler.py` uses **detection-based manifest loading**: if the manifest text contains `!include`, it routes through `ConfigManager` (which resolves YAML include directives); otherwise it uses `yaml.safe_load` directly. This means both full pipeline manifests and standalone test manifests work without any flag.
+`debug_assembler.py` uses **detection-based data analysis recipe loading**: if the data analysis recipe text contains `!include`, it routes through `ConfigManager` (which resolves YAML include directives); otherwise it uses `yaml.safe_load` directly. This means both full pipeline data analysis recipes and standalone test data analysis recipes work without any flag.
 
 ## Registered Action Registry
 
-All actions available for use in manifest `wrangling` and `recipe` blocks. Verified against `libs/transformer/src/transformer/actions/`.
+All actions available for use in data analysis recipe `wrangling` and `steps` blocks. Verified against `libs/transformer/src/transformer/actions/`.
 
 | Category | Actions |
 |---|---|
@@ -181,7 +181,7 @@ def action_my_action(lf, spec):
 |---|---|---|
 | `t1` | Tier 1 wrangling | Cleaning, renaming, filtering |
 | `t2` | Tier 2 wrangling | Reshaping, aggregation |
-| `assembly` | Assembly recipe | Joins, cross-source derivation |
+| `assembly` | Assembly steps | Joins, cross-source derivation |
 
 ### Accessing the catalog programmatically
 

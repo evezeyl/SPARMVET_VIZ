@@ -49,11 +49,11 @@ def test_each_configured_sheet_becomes_a_tsv_with_the_standard_key_name(workbook
     assert pl.read_csv(out["test_resfinder"], separator="\t").height == 2
 
 
-def test_output_goes_into_a_subfolder_named_after_the_project_or_the_workbook(workbook, tmp_path):
+def test_output_goes_into_a_subfolder_named_after_the_data_analysis_recipe_or_the_workbook(workbook, tmp_path):
     cfg = config(tmp_path, {"Metadata": {"primary_key": "Sample_ID"}})
-    by_project = XlsxExtractor(project_basename="Proj").extract(str(workbook), cfg, str(tmp_path / "a"))
+    by_data_analysis_recipe_name = XlsxExtractor(data_analysis_recipe_basename="Proj").extract(str(workbook), cfg, str(tmp_path / "a"))
     by_workbook = XlsxExtractor().extract(str(workbook), cfg, str(tmp_path / "b"))
-    assert by_project["metadata"].parent.name == "Proj"
+    assert by_data_analysis_recipe_name["metadata"].parent.name == "Proj"
     assert by_workbook["metadata"].parent.name == "raw"
 
 

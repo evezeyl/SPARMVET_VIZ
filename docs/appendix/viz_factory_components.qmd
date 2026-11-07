@@ -36,7 +36,7 @@ plot_comps = get_components_for_context("plot")
 | `context` | Yes | Always `["plot"]` for geom/stat/theme/scale components |
 | `tags` | Yes | Search keywords for the picker |
 | `wraps` | Yes | Link to plotnine source (`lib`, `attr_path`) |
-| `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via manifest |
+| `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via data analysis recipe |
 | `params` | Yes | Dict of param definitions (widget, label, required, …) |
 
 ### Category vocabulary
@@ -66,11 +66,11 @@ plot_comps = get_components_for_context("plot")
 | `geom_tile` | `correlation` | alpha, fill, colour, width, height, linejoin |
 | `labs` | `annotation` | title, subtitle, caption, x, y, fill, colour, size, shape, alpha |
 
-All other registered components still work from YAML manifests — the `ui_schema` only controls IDE visibility.
+All other registered components still work from YAML data analysis recipes — the `ui_schema` only controls IDE visibility.
 
 ### Why `allow_extra_params: True`?
 
-Components do `p + geom_bar(**spec)` — the spec dict passes through directly to plotnine. The `params` dict lists the most common kwargs for the form renderer, but any valid plotnine kwarg can be added directly in the manifest YAML. Setting `allow_extra_params: True` tells the form renderer to allow this without validation errors.
+Components do `p + geom_bar(**spec)` — the spec dict passes through directly to plotnine. The `params` dict lists the most common kwargs for the form renderer, but any valid plotnine kwarg can be added directly in the data analysis recipe YAML. Setting `allow_extra_params: True` tells the form renderer to allow this without validation errors.
 
 ### Adding a `ui_schema` to a new component (developer guide)
 
@@ -110,7 +110,7 @@ def handle_mygeom(p, spec):
 
 ---
 
-## 1. Anatomy of a Plot Manifest
+## 1. Anatomy of a Plot Data Analysis Recipe
 
 Every plot in the dashboard is built from a YAML dictionary that follows this exact skeleton:
 
@@ -398,11 +398,11 @@ You can pass custom parameters directly into the `theme` component to tweak fine
 
 ## 6. Gallery Taxonomy (6-Axis Classification)
 
-Every recipe in the Viz Gallery is tagged across **six axes** that drive the sidebar filter panels in the Gallery tab. Authors must populate all six fields in the `info` block of their `recipe_manifest.yaml` before a submission is accepted.
+Every example in the Viz Gallery is tagged across **six axes** that drive the sidebar filter panels in the Gallery tab. Authors must populate all six fields in the `info` block of their `data_analysis_recipe.yaml` before a submission is accepted.
 
 ### Icon → Axis reference
 
-| Icon | Axis | Manifest key | Sidebar label |
+| Icon | Axis | Data analysis recipe key | Sidebar label |
 |------|------|-------------|--------------|
 | 📊 | **Family (Purpose)** | `info.family` | `📊 Family (Purpose)` |
 | 🔢 | **Data Pattern** | `info.pattern` | `🔢 Data Pattern` |
@@ -425,11 +425,11 @@ Every recipe in the Viz Gallery is tagged across **six axes** that drive the sid
 
 **📏 Sample Size:** `any` · `individual points` · `medium+` · `large`
 
-### Manifest `info` block
+### Data analysis recipe `info` block
 
 ```yaml
 info:
-  name: Recipe Name
+  name: Step list Name
   submission_date: 'YYYY-MM-DD'
   family: Distribution              # 📊
   pattern: 1 Numeric, 1 Categorical # 🔢
@@ -439,9 +439,9 @@ info:
   sample_size: medium+              # 📏
 ```
 
-### `recipe_meta.md` tag strip
+### `example_meta.md` tag strip
 
-Every `recipe_meta.md` must include a blockquote tag strip on line 3 (immediately after the `## Recipe Name` heading and a blank line):
+Every `example_meta.md` must include a blockquote tag strip on line 3 (immediately after the `## Steps Name` heading and a blank line):
 
 ```markdown
 ## Violin + Boxplot Overlay

@@ -73,5 +73,5 @@ Each library in `./libs/` is designed to be **independently installable and reus
 
 ## 5. Python Interpreter Authority
 
-- The path to the active Python interpreter MUST be defined in config/connectors/ (e.g., python_path: "./.venv/bin/python").
+- The path to the active Python interpreter MUST be defined in the deployment file in config/deployment/ (e.g., `runtime: {python_interpreter: "./.venv/bin/python"}`).
 - UI components and scripts MUST fetch this path via the Bootloader rather than hardcoding environment-specific strings.

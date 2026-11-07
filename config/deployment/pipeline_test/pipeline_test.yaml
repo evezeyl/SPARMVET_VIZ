@@ -1,0 +1,35 @@
+# SPARMVET Pipeline Test Deployment
+# Simulates production connector behaviour: data is injected by the pipeline,
+# not read from data analysis recipe source.path entries.
+#
+# data_lookup: by_dataset_id — orchestrator ignores data analysis recipe source.path and discovers
+# files by schema ID name in raw_data. This exercises the same code path a real
+# Galaxy/IRIDA connector would use.
+#
+# Use with pipeline-static or pipeline-exploration-simple app features:
+#   SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
+#   SPARMVET_APP_FEATURES=$ROOT/config/app_features/pipeline-static.yaml \
+#     $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
+
+deployment_type: filesystem
+deployment_name: "SPARMVET_VIZ (Pipeline Test)"
+
+# data_lookup: by_dataset_id — ignore data analysis recipe source.path, discover files by schema
+# ID name in raw_data. Mirrors production connector behaviour.
+data_lookup: by_dataset_id
+
+# pipeline-static hides the data analysis recipe selector, so the deployment names the data analysis recipe that opens
+default_data_analysis_recipe: 1_test_data_ST22_dummy
+
+locations:
+  # Raw data dir — points at ST22 duplicate with clean names, simulating pipeline output
+  raw_data: "assets/test_data/duplicated_1_test_data_ST22_dummy/"
+
+  # Standard locations — same as local dev
+  data_analysis_recipes: "config/data_analysis_recipes/pipelines/"
+  cache: "tmp/pipeline_test/parquet_data/"
+  user_data: "tmp/pipeline_test/user/"
+  gallery: "assets/gallery_data/"
+
+runtime:
+  python_interpreter: "./.venv/bin/python"

@@ -2,7 +2,7 @@
 Regression tests for the filter-operator contract (UX-FILTER-1, DEMO-3/DEMO-4).
 
 Two filter application paths exist:
-  1. _apply_filter_rows in app/modules/t3_recipe_engine.py — used for the data
+  1. _apply_filter_rows in app/modules/t3_audit_engine.py — used for the data
      preview pane and several T2/T3 transient filter passes (moved from
      home_theater.py in Phase 24-A, ADR-051).
   2. The Tier 3 UI-filter loop in libs/viz_factory/src/viz_factory/viz_factory.py

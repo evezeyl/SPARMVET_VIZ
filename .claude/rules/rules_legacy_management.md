@@ -103,7 +103,7 @@ Historical content is **never instructions** — it is documentation of the past
 
 ```markdown
 > **HISTORICAL:** This section describes the pre-ADR-083 plot authoring model.
-> Current authoring rules are in `rules_manifest_structure.md §8`.
+> Current authoring rules are in `rules_data_analysis_recipe_structure.md §8`.
 ```
 
 **Rules for Historical content:**
@@ -117,11 +117,11 @@ Historical content is **never instructions** — it is documentation of the past
 ### 2c. Tombstone (post-removal migration notice)
 
 Content that existed, was removed, and whose tombstone exists only to help authors who
-encounter old manifests, scripts, or specs that reference the removed feature.
+encounter old data analysis recipes, scripts, or specs that reference the removed feature.
 
 ```markdown
 > **REMOVED (ADR-083, Phase 33, 2026-05-20):**
-> `factory_id` has been removed from the engine. Manifests using it will receive a
+> `factory_id` has been removed from the engine. Data analysis recipes using it will receive a
 > `PipelineError` with migration instructions.
 > **Migration tool:** `assets/scripts/migrate_plot_specs.py --apply`
 > **Tombstone expires:** Phase 35 (delete this block after two phases)
@@ -142,7 +142,7 @@ Add a tasks.md entry when creating a tombstone: `- [ ] Delete factory_id tombsto
 | `.claude/knowledge/*.md` | Yes | Yes (banner) | Yes (banner) | Yes (banner + expiry) |
 | `docs/appendix/*.yaml` | Yes | Yes (comment) | No — docs should stay current | Yes (comment + expiry) |
 | `libs/**/*.py` | Yes | Yes (comment + warning) | No — delete, use git history | No — delete |
-| `config/manifests/**/*.yaml` | Yes | No — migrate or delete | No — delete | No — delete |
+| `config/data_analysis_recipes/**/*.yaml` | Yes | No — migrate or delete | No — delete | No — delete |
 | `assets/scripts/*.py` | Yes | Yes (comment) | No — delete | No — delete |
 | `tasks.md` | Current tasks | Task for removal | No | No |
 
@@ -222,7 +222,7 @@ For each consumer found in Step 1, classify:
 |---|---|
 | Rule / knowledge doc | Update to canonical form, or add DEPRECATED marker if it too is deprecated |
 | Python code (engine) | Update to use replacement, or gate on removal task |
-| YAML manifest / config | Migrate to canonical form (use migration script if one exists) |
+| YAML data analysis recipe / config | Migrate to canonical form (use migration script if one exists) |
 | Test | Update or remove test; add test for the replacement behaviour |
 | User doc (README, .qmd) | Update to canonical form |
 | ADR | Mark section HISTORICAL if it described the deprecated approach |
@@ -255,7 +255,7 @@ Run this checklist across every location that referenced the deprecated item:
 - [ ] All `docs/appendix/*.yaml` and `docs/appendix/*.qmd` files — canonical examples only
 - [ ] All `docs/**/*.qmd` user documentation — no deprecated patterns in tutorials
 - [ ] All `libs/*/README.md` files — function/class names up to date
-- [ ] All `assets/template_manifests/` — templates use canonical format only
+- [ ] All `assets/template_data_analysis_recipes/` — templates use canonical format only
 - [ ] `CLAUDE.md` and `AGENT_GUIDE.md` if they referenced the deprecated item
 
 ### Step 7 — ADR and architecture record

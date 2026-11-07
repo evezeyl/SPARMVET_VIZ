@@ -33,11 +33,11 @@ DEFAULT_HOME_STATE: dict = {
     # Row filters (left sidebar)
     "_pending_filters": [],
     "applied_filters": [],
-    # T3 recipe — Phase 22-J / ADR-049: per-plot stacks.
-    # Each plot subtab id maps to a list of committed RecipeNodes.
+    # audit steps — Phase 22-J / ADR-049: per-plot stacks.
+    # Each plot subtab id maps to a list of committed AuditSteps.
     # Propagated nodes appear in multiple stacks but share the same `id`
     # for linked deletion.
-    "t3_recipe_by_plot": {},               # {plot_subtab_id: [RecipeNode]}
+    "t3_audit_steps_by_plot": {},               # {plot_subtab_id: [AuditStep]}
     "_pending_t3_nodes": [],               # pending nodes (carry plot_scopes_intent)
     "t3_apply_count": 0,                   # bumps on commit — triggers filter clear
     "primary_keys": [],                    # union of all join keys (§12g.2)
@@ -45,7 +45,7 @@ DEFAULT_HOME_STATE: dict = {
     # T3 plot aesthetic overrides {plot_subtab_id: {fill, colour, alpha, shape}}
     "t3_plot_overrides": {},
     # Assembly provenance
-    "manifest_sha256": None,
+    "data_analysis_recipe_sha256": None,
     "assembly_timestamp": None,
     # Session ghost provenance
     "t3_ghost_file": None,

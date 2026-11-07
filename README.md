@@ -4,19 +4,19 @@ SPARMVET (SP-Analytical AMR Visualization Engine) is a modular, declarative fram
 
 ## 🚀 Core Philosophy
 
-1. **Strict Data Contracts (ADR-013)**: Data enters through an ingestion layer where it is immediately validated against a manifest.
+1. **Strict Data Contracts (ADR-013)**: Data enters through an ingestion layer where it is immediately validated against a data analysis recipe.
 2. **3-Tier Data Lifecycle (ADR-024)**:
     - **Tier 1 (The Trunk)**: Foundations. Cleaning, joining, and relational tidy-up.
     - **Tier 2 (The Branch)**: Specifics. Reshaping and aggregation for a particular plot.
     - **Tier 3 (The Leaf)**: Transient. Reactive filtering in the UI via Predicate Pushdown.
 3. **Electronic Artist Pillar (VizFactory)**: A declarative Plotnine/ggplot abstraction that decouples "what to plot" from "how to plot."
 
-## 📜 Declarative Manifest Syntax
+## 📜 Declarative Data Analysis Recipe Syntax
 
 Wrangling logic is separated into logical tiers to promote reuse and clarity:
 
 ```yaml
-id: "example_manifest"
+id: "example_data_analysis_recipe"
 wrangling:
   tier1: # Relational Foundations
     - action: "rename"
@@ -42,15 +42,15 @@ Each library is independently installable and usable without the UI layer. If yo
 - [**ingestion**](./libs/ingestion/): TSV/Excel discovery, schema normalization, MetadataValidator gatekeeper.
 - [**transformer**](./libs/transformer/): The central wrangling and assembly engine (DataWrangler, DataAssembler).
 - [**viz_factory**](./libs/viz_factory/): Graphical composition and Plotnine orchestration.
-- [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, recipe governance.
-- [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, manifest bootstrapping, and reconciliation.
+- [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, example governance.
+- [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, data analysis recipe bootstrapping, and reconciliation.
 - [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities. **Base layer** — may be imported by any domain lib.
-- [**connector**](./libs/connector/): Deployment profile resolution and data-source adapters (ADR-048, Phase 23).
-- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, manifest navigator). Headless-safe — usable in CLI tools and export handlers without Shiny.
+- [**connector**](./libs/connector/): Deployment resolution and data-source adapters (ADR-048, Phase 23).
+- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, data analysis recipe navigator). Headless-safe — usable in CLI tools and export handlers without Shiny.
 
 ## 🚀 Deployment Configuration
 
-SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. Deployment is controlled by a **configuration profile** (called a persona) that defines which user functionalities are available.
+SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. What the user may do is set by the **app features** (a named set of feature flags, one file per set in `config/app_features/`); where the app runs, which folders it uses and which data analysis recipe opens are set by the **deployment** (`config/deployment/`).
 
 ### User functionalities
 
@@ -60,37 +60,37 @@ SPARMVET is designed to be deployed in different contexts — from a read-only p
 | **Passive filter** | Explore data ephemerally — no audit trail |
 | **T3 audit** | Justify and commit data decisions — creates permanent audit branch |
 | **Export** | Download reproducible bundle with full provenance |
-| **Import** | Upload metadata or full data mapped to the manifest |
-| **Gallery** | Browse chart recipe templates |
-| **Blueprint Architect** | Inspect and design manifest lineage |
-| **Test Lab** | Generate synthetic data and scaffold manifests |
+| **Import** | Upload metadata or full data mapped to the data analysis recipe |
+| **Gallery** | Browse chart example templates |
+| **Blueprint Architect** | Inspect and design data analysis recipe lineage |
+| **Test Lab** | Generate synthetic data and scaffold data analysis recipes |
 
 ### Non-negotiable rule: full audit trail in every export
 
-Every export — regardless of configuration — includes a complete provenance record: data hashes, manifest hash, wrangling recipe hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_personas.qmd).
+Every export — regardless of configuration — includes a complete provenance record: data hashes, data analysis recipe hash, wrangling steps hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_app_features.qmd).
 
 ### Quick start
 
 ```bash
-SPARMVET_PERSONA=pipeline-exploration-simple .venv/bin/python -m shiny run app/src/main.py
+SPARMVET_APP_FEATURES=pipeline-exploration-simple SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy .venv/bin/python -m shiny run app/src/main.py
 ```
 
-Available profiles: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom profiles can be created in `config/ui/templates/`.
+Available app features: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `standalone`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom app features files can be created in `config/app_features/`. A static page (`pipeline-static`, `pipeline-exploration-simple`) hides the data analysis recipe selector, so it must name its data analysis recipe: `SPARMVET_DATA_ANALYSIS_RECIPE=<name>` or `default_data_analysis_recipe` in the deployment.
 
-**Sidebar layout is configurable per persona and per workspace** (Home, Blueprint, Gallery, Test Lab). Each persona template declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_persona.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
+**Sidebar layout is configurable per app features and per workspace** (Home, Blueprint, Gallery, Test Lab). Each app features file declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_app_features.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
 
-**Institutional / project color palettes** can be defined in `config/palettes.yaml` (optional). Named palettes defined there are available in:
-- The BLUEPRINT IDE color widget ("Project palette" source), and
-- Manifest `plot_defaults: palette: <name>` for automatic fill/colour scale injection at render time.
+**institutional (deployment) color palettes** can be defined in `config/palettes.yaml` (optional). Named palettes defined there are available in:
+- The BLUEPRINT IDE color widget ("Deployment palette" source), and
+- Data analysis recipe `plot_defaults: palette: <name>` for automatic fill/colour scale injection at render time.
 
-The built-in `sparmvet_brand` palette is always available even without this file. See [Manifest Structure Appendix](./docs/appendix/manifest_structure.yaml) for the format and resolution rules (ADR-081).
+The built-in `sparmvet_brand` palette is always available even without this file. See [Data analysis recipe Structure Appendix](./docs/appendix/data_analysis_recipe_structure.yaml) for the format and resolution rules (ADR-081).
 
-**Validate persona configs before deploying:**
+**Validate app features configs before deploying:**
 ```bash
-.venv/bin/python scripts/validate_persona_config.py --all --strict
+.venv/bin/python scripts/validate_app_features_config.py --all --strict
 ```
 
-See [Deployment Configuration](./docs/user_guide/deployment_personas.qmd) for the full guide, dependency rules, and how to create a custom profile.
+See [App features](./docs/workflows/ui_app_features.qmd) for the feature flags and their dependency rules, and the [Deployment guide](./docs/deployment/deployment_guide.qmd) for deployments.
 
 ### Posit Connect deployment
 
@@ -100,7 +100,7 @@ Posit Connect cannot install editable source packages (`-e ./libs/...`). Use the
 # 1. Build wheels for all local libs into pkgs/
 bash assets/scripts/bundle_connect.sh
 
-# 2. Fill in config/deployment/connect/connect_profile_template.yaml
+# 2. Fill in config/deployment/connect/connect_template.yaml
 
 # 3. Deploy (requires CONNECT_SERVER + CONNECT_API_KEY env vars)
 bash assets/scripts/bundle_connect.sh --deploy
@@ -116,9 +116,10 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 
 - [Developer Preface & Architecture](./docs/index.qmd): Vision, integrity status, and filter message flow.
 - [Wrangling Guide](./docs/reference/wrangling_guide.qmd): Tier 1/2/3 lifecycle and assembly logic.
-- [Deployment Configuration](./docs/user_guide/deployment_personas.qmd): User functionalities, dependency rules, and available profiles.
+- [App features](./docs/workflows/ui_app_features.qmd): user functionalities, dependency rules and the available app features files.
+- [Deployment guide](./docs/deployment/deployment_guide.qmd): deployments for Galaxy, IRIDA, servers and a local machine.
 - [Deployment Guide](./docs/deployment/deployment_guide.qmd): Galaxy, IRIDA, server, and local deployment (ADR-048).
-- [Connector / Profile Schema](./docs/workflows/connector.qmd): Deployment profile YAML schema reference.
+- [Connector / Deployment Schema](./docs/workflows/connector.qmd): Deployment file schema reference.
 
 ## 🔧 Developer Scripts
 
@@ -128,13 +129,13 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 |---|---|
 | `scripts/install_libs.sh` | Install all 8 editable libs in one command (`VENV=.my_venv ./scripts/install_libs.sh`) |
 
-### `assets/scripts/` — manifest and deployment authoring
+### `assets/scripts/` — data analysis recipe and deployment authoring
 
 | Script | Purpose |
 |---|---|
-| `normalize_manifest_fields.py` | Sanitize manifests to ADR-041 Rich Dict standard |
-| `create_manifest.py` | Scaffold a new pipeline manifest from a dataset |
-| `create_test_deployment.py` | Generate a dev deployment profile (ADR-048) |
+| `normalize_data_analysis_recipe_fields.py` | Sanitize data analysis recipes to ADR-041 Rich Dict standard |
+| `create_data_analysis_recipe.py` | Scaffold a new pipeline data analysis recipe from a dataset |
+| `create_test_deployment.py` | Generate a dev deployment (ADR-048) |
 | `build_dep_graph.py` | Rebuild the `@deps` dependency graph |
 | `generate_demo_data.py` | Generate synthetic demo data via AquaSynthesizer |
 | `bundle_connect.sh` | Build wheels for all local libs and optionally deploy to Posit Connect (DEPLOY-CONNECT-1) |

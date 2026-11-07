@@ -1,13 +1,13 @@
 # @deps
 # provides: class:SidebarValidator
-# consumes: app/modules/sidebar_registry.py, app/modules/deployment_error.py, config/ui/templates/*.yaml, config/ui/sidebars/*.yaml
-# consumed_by: app/src/server.py, scripts/validate_persona_config.py
+# consumes: app/modules/sidebar_registry.py, app/modules/deployment_error.py, config/app_features/*.yaml, config/ui/sidebars/*.yaml
+# consumed_by: app/src/server.py, scripts/validate_app_features_config.py
 # doc: .claude/rules/ui_implementation_contract.md §11, .claude/rules/rules_ui_dashboard.md §2
 # @end_deps
 """
-SidebarValidator — checks workspaces sidebar configs in persona templates (ADR-073).
+SidebarValidator — checks workspaces sidebar configs in app features files (ADR-073).
 
-Runs alongside PersonaValidator at app startup. Returns list[DeploymentError] (ADR-078
+Runs alongside AppFeaturesValidator at app startup. Returns list[DeploymentError] (ADR-078
 Phase C, DIAG-VALIDATE-SIDEBAR-1). Errors block startup; informational notes are printed.
 """
 
@@ -15,6 +15,7 @@ from pathlib import Path
 import yaml
 
 from app.modules.sidebar_registry import PANEL_REGISTRY
+from app.modules.renamed_keys import RENAMED_PANEL_TYPES
 from app.modules.deployment_error import DeploymentError
 
 _WORKSPACES = ("home", "blueprint", "gallery", "test_lab")
@@ -31,7 +32,7 @@ _REF = "ADR-073 + .claude/rules/ui_implementation_contract.md §11"
 
 
 class SidebarValidator:
-    """Validates workspaces sidebar configs in a persona template (ADR-073).
+    """Validates workspaces sidebar configs in an app features file (ADR-073).
 
     Call validate() with the already-parsed template dict and its file path.
     Returns list[DeploymentError] (empty = valid). Informational notes are printed.
@@ -49,13 +50,13 @@ class SidebarValidator:
             )
             return errors
 
-        features = template.get("features", {})
-        persona_id = template.get("persona_id", template_path)
+        features = template.get("flags", {})
+        app_features_id = template.get("name", template_path)
 
-        if "manifest_selector_visible" not in features:
-            ms = template.get("manifest_selector", {})
+        if "data_analysis_recipe_selector_visible" not in features:
+            ms = template.get("data_analysis_recipe_selector", {})
             features = dict(features)
-            features["manifest_selector_visible"] = bool(ms.get("visible", True))
+            features["data_analysis_recipe_selector_visible"] = bool(ms.get("visible", True))
 
         for ws in _WORKSPACES:
             ws_cfg = workspaces.get(ws)
@@ -74,7 +75,7 @@ class SidebarValidator:
                     errors.append(DeploymentError(
                         component="SidebarValidator",
                         problem=(
-                            f"[{persona_id}] {loc_key} must be a mapping dict "
+                            f"[{app_features_id}] {loc_key} must be a mapping dict "
                             f"(got {type(sb).__name__}) — likely a broken !include path."
                         ),
                         location=loc,
@@ -94,7 +95,7 @@ class SidebarValidator:
                 if not isinstance(panels, list):
                     errors.append(DeploymentError(
                         component="SidebarValidator",
-                        problem=f"[{persona_id}] {loc_key}.panels must be a list.",
+                        problem=f"[{app_features_id}] {loc_key}.panels must be a list.",
                         location=f"{loc_key}.panels in {template_path}",
                         fix=(
                             f"Edit {template_path}: set {loc_key}.panels to a YAML sequence. "
@@ -102,7 +103,7 @@ class SidebarValidator:
                             f"  {loc_key}:\n"
                             f"    visible: true\n"
                             f"    panels:\n"
-                            f"      - type: project_info"
+                            f"      - type: data_analysis_recipe_info"
                         ),
                         who="operator",
                         reference=_REF,
@@ -114,7 +115,7 @@ class SidebarValidator:
                         errors.append(DeploymentError(
                             component="SidebarValidator",
                             problem=(
-                                f"[{persona_id}] {loc_key}: panel entry must be a dict "
+                                f"[{app_features_id}] {loc_key}: panel entry must be a dict "
                                 f"with a 'type' key, got {slot!r}."
                             ),
                             location=f"{loc_key}.panels[] in {template_path}",
@@ -132,7 +133,7 @@ class SidebarValidator:
                     if not ptype:
                         errors.append(DeploymentError(
                             component="SidebarValidator",
-                            problem=f"[{persona_id}] {loc_key}: panel entry missing 'type' key.",
+                            problem=f"[{app_features_id}] {loc_key}: panel entry missing 'type' key.",
                             location=f"{loc_key}.panels[] in {template_path}",
                             fix=(
                                 f"Edit {template_path}: add 'type: <panel_type>' to the "
@@ -144,9 +145,26 @@ class SidebarValidator:
                         ))
                         continue
 
+                    if ptype in RENAMED_PANEL_TYPES:
+                        errors.append(DeploymentError(
+                            component="SidebarValidator",
+                            problem=(
+                                f"[{app_features_id}] {loc_key}: panel type '{ptype}' was renamed to "
+                                f"'{RENAMED_PANEL_TYPES[ptype]}'."
+                            ),
+                            location=f"{loc_key}.panels[] in {template_path}",
+                            fix=(
+                                f"Edit {template_path}: write '- type: {RENAMED_PANEL_TYPES[ptype]}' instead "
+                                f"of '- type: {ptype}'. The panel now shows the info: block of the data analysis recipe."
+                            ),
+                            who="operator",
+                            reference=_REF,
+                        ))
+                        continue
+
                     if ptype not in PANEL_REGISTRY:
                         print(
-                            f"[SidebarValidator] WARNING: [{persona_id}] "
+                            f"[SidebarValidator] WARNING: [{app_features_id}] "
                             f"{loc_key} contains unknown panel type '{ptype}'. "
                             f"Known types: {list(PANEL_REGISTRY.keys())}"
                         )
@@ -158,7 +176,7 @@ class SidebarValidator:
 
                     if not visible and panels:
                         print(
-                            f"[SidebarValidator] NOTE: [{persona_id}] "
+                            f"[SidebarValidator] NOTE: [{app_features_id}] "
                             f"{loc_key} has visible:false but "
                             f"declares {len(panels)} panel(s) — they will not be rendered."
                         )
@@ -167,7 +185,7 @@ class SidebarValidator:
         return errors
 
     def validate_file(self, template_path: str) -> list[DeploymentError]:
-        """Load a persona template YAML and validate its workspaces section.
+        """Load an app features file YAML and validate its workspaces section.
 
         Supports !include via a local SafeLoader subclass that resolves paths
         relative to the template file.
@@ -176,12 +194,12 @@ class SidebarValidator:
         if not path.exists():
             return [DeploymentError(
                 component="SidebarValidator",
-                problem=f"Persona template file not found: {template_path}",
+                problem=f"App features file file not found: {template_path}",
                 location=template_path,
                 fix=(
                     f"Ensure the template file exists at {template_path}. "
-                    f"Check SPARMVET_PERSONA env var and the deployment profile "
-                    f"'default_persona' key."
+                    f"Check SPARMVET_APP_FEATURES env var and the deployment "
+                    f"'default_app_features' key."
                 ),
                 who="operator",
                 reference=_REF,

@@ -9,7 +9,7 @@ from id_reconciliation import (
     IDReconciliationEngine,
     IDPair,
     MatchResult,
-    TransformationRecipe,
+    IdTransformation,
     detect_many_to_many,
     format_match_table,
     apply_recode_step,

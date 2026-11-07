@@ -14,7 +14,7 @@ append a `> FIX:` line under the same heading, not in the checklist.
 
 ## PRE-01 — Console errors on first launch
 
-Manifest opened by default: `figshare_integration`. Persona: developer ("Active:
+Data analysis recipe opened by default: `figshare_integration`. App features: developer ("Active:
 Workflow Developer"). Terminal: only `ConfigManager` auto-unnesting info lines, no
 traceback. Chrome console showed:
 
@@ -175,7 +175,7 @@ questions. Splitting them so the bug fix isn't blocked on the design discussion.
 **Confirmed by reading the code, not yet re-verified live in the browser** (worth
 doing after the fix). The tier toggle itself is fine — `_resolve_active_lf`
 (`app/handlers/home_theater.py:241`) correctly branches: T1 → raw T1 lazyframe,
-T2/T3 → T1 + the manifest's tier2 wrangling. That part works as designed.
+T2/T3 → T1 + the data analysis recipe's tier2 wrangling. That part works as designed.
 
 The bug is downstream: `_t3_filter_rows()` and `_t3_drop_columns()`
 (`home_theater.py:280`, `:328`) return the **committed** T3 audit nodes for the
@@ -250,7 +250,7 @@ propagation-modal + reason-gate — i.e. **every** filter typed while in T3 mode
 becomes a permanent, audited decision. There's currently no "just try this filter
 in T3 without committing it" path. Decision needed: does T3 mode get its own
 exploration-only filter layer (separate from `applied_filters` and the audit
-recipe), or is the current behaviour intentional (T3 = "you're already in the
+step list), or is the current behaviour intentional (T3 = "you're already in the
 definitive-decision zone, exploration happens in T1/T2 first")? This is a real
 product decision, not a small tweak — worth its own conversation.
 
@@ -315,21 +315,21 @@ report) surfaced two more things the first pass didn't cover — both folded int
    (now double-gated: `tier_toggle == "T3"` AND `t3_sandbox_enabled`, both in
    `filter_controls_ui` and defensively re-checked in `_filter_send_to_audit`).
 
-**No config file changes needed** — `pipeline-exploration-simple_template.yaml`
+**No config file changes needed** — `pipeline-exploration-simple.yaml`
 already has exactly `interactivity_enabled: true` + `t3_sandbox_enabled: false`,
 which is precisely the combination that now produces "My view without audit."
-The fix changed what the flags *mean* in code, not their values per persona.
+The fix changed what the flags *mean* in code, not their values per app features.
 
 **Documented in:** `architecture_decisions.md` ADR-085 (rewritten to the final
 form, not left as a superseded stub), `ui_implementation_contract.md` §4/§5/§8/§12a,
-`rules_persona_feature_flags.md` Group B, `test_plan_2026-06.md` CFG-02 + the CFG
+`rules_app_features_flags.md` Group B, `test_plan_2026-06.md` CFG-02 + the CFG
 matrix row. `@deps` blocks updated in both modified files; dependency graph
 regenerated (144 nodes, 278 edges).
 
 Verified: import clean, `test_filter_operators.py` 24/24, Playwright smoke suite
-14 passed / 3 skipped (unchanged baseline — `qa` persona has `t3_sandbox_enabled:
+14 passed / 3 skipped (unchanged baseline — `qa` app features has `t3_sandbox_enabled:
 true`, so the automated suite doesn't exercise the new scratchpad-only path;
-that needs a live check under `pipeline-exploration-simple_template.yaml`,
+that needs a live check under `pipeline-exploration-simple.yaml`,
 tracked as CFG-02).
 
 ---
@@ -343,7 +343,7 @@ tracked as CFG-02).
 > continuous as T2 (but that is not most urgent)."
 
 Not yet investigated. Likely candidate area: `viz_factory.render()`'s discrete-
-axis handling (`rules_manifest_structure.md §6` — "Biological Typing & Discrete
+axis handling (`rules_data_analysis_recipe_structure.md §6` — "Biological Typing & Discrete
 Plotting" mandates casting integer-year columns to `int`/`string` for discrete
 scales) combined with whatever wrangling step T3's "My view" pipeline applies
 that T2's doesn't — worth checking whether the T3 code path re-casts Year back

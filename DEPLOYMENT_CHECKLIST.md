@@ -43,12 +43,12 @@ scripts/install_libs.sh
 
 ---
 
-### 3. Persona Validation
+### 3. App features Validation
 
-Validate all persona templates:
+Validate all app features files:
 
 ```bash
-.venv/bin/python scripts/validate_persona_config.py --all
+.venv/bin/python scripts/validate_app_features_config.py --all
 ```
 
 **Expected output:** `Total: 8 template(s) errors=0 RESULT: PASS`
@@ -65,8 +65,8 @@ Verify the full app starts without errors:
 
 **Expected output:**
 ```
-[Bootloader] Profile resolved...
-[Bootloader] Persona: ...
+[Bootloader] Deployment resolved...
+[Bootloader] App features: ...
 --- LOADING UI VERSION V5.1 ...
 ✅ App imports cleanly
 ✅ Documentation available at /docs/    [if docs were rendered]
@@ -95,7 +95,7 @@ Run the baseline unit test suite to catch regressions:
 ### Galaxy / IRIDA
 
 1. Run all steps above.
-2. Ensure `SPARMVET_PROFILE` env var points to the correct profile YAML for your deployment (e.g., `config/deployment/galaxy/galaxy_profile.yaml`).
+2. Ensure `SPARMVET_DEPLOYMENT` env var points to the correct deployment file for your deployment (e.g., `config/deployment/galaxy/galaxy_deployment.yaml`).
 3. Bundle and push via appropriate platform tool.
 
 ### Posit Connect
@@ -110,7 +110,7 @@ Run the baseline unit test suite to catch regressions:
 ### Local Server
 
 1. Run all steps above.
-2. Set `SPARMVET_PROFILE` to your local profile path.
+2. Set `SPARMVET_DEPLOYMENT` to your local deployment path.
 3. Start the server:
    ```bash
    .venv/bin/python -m shiny run app/src/main.py --host 0.0.0.0 --port 8000
@@ -123,7 +123,7 @@ Run the baseline unit test suite to catch regressions:
 | Issue | Solution |
 |---|---|
 | `docs/_site` not found | Run `quarto render docs/` from repo root |
-| Persona validation fails | Check `scripts/validate_persona_config.py --all` output for specific errors |
+| App features validation fails | Check `scripts/validate_app_features_config.py --all` output for specific errors |
 | App import fails | Run `.venv/bin/python scripts/install_libs.sh` to refresh editable installs |
 | Tests fail | Run `pytest` with `--tb=short` to see full traceback |
 
@@ -134,7 +134,7 @@ Run the baseline unit test suite to catch regressions:
 After deployment, verify in the deployed app:
 
 1. **Home workspace loads** — click through analysis groups and plots
-2. **Sidebar panels render** — manifest choice, filters, export, etc.
+2. **Sidebar panels render** — data analysis recipe choice, filters, export, etc.
 3. **Help system works** (if docs were bundled) — click `?` button in workspace headers
 4. **Filter + Apply works** (if T3 enabled) — add a filter, click Apply, confirm plot updates
 

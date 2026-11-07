@@ -3,7 +3,7 @@
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-ASSEMBLER-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
-# doc: .claude/rules/rules_manifest_structure.md#7
+# doc: .claude/rules/rules_data_analysis_recipe_structure.md#7
 # @end_deps
 import os
 from typing import Dict, List, Any
@@ -17,7 +17,7 @@ from utils.pipeline_error import PipelineError
 class DataAssembler:
     """
     Orchestrates the assembly of multiple wrangled datasets (ingredients)
-    into a final consolidated LazyFrame based on a relational recipe.
+    into a final consolidated LazyFrame based on a relational step list.
     """
 
     def __init__(self, ingredients: Dict[str, pl.LazyFrame]):
@@ -28,7 +28,7 @@ class DataAssembler:
         self.ingredients = ingredients
 
     @staticmethod
-    def _normalize_recipe(recipe: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _normalize_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Pre-normalization pass: expands shorthand step syntax to canonical form.
 
@@ -48,7 +48,7 @@ class DataAssembler:
         normalized = []
         _KNOWN_SHORTHAND = {"join", "join_filter", "select", "filter",
                             "rename", "drop", "mutate", "sink_parquet"}
-        for raw_step in recipe:
+        for raw_step in steps:
             step = copy.deepcopy(raw_step)
             if "action" in step:
                 # Already canonical
@@ -77,63 +77,63 @@ class DataAssembler:
 
         return normalized
 
-    def assemble(self, recipe: List[Dict[str, Any]]) -> pl.LazyFrame:
+    def assemble(self, steps: List[Dict[str, Any]]) -> pl.LazyFrame:
         """
         Executes the assembly steps (joins, filters, renames) sequentially.
         Includes ADR-024 Short-Circuit logic for Tier 1 Parquet anchors.
         Handles optional ingredients and defensive join logic (ADR-012/014).
 
         Args:
-            recipe: List of assembly actions (e.g., join, join_filter, sink_parquet).
+            steps: List of assembly actions (e.g., join, join_filter, sink_parquet).
 
         Returns:
             A consolidated Polars LazyFrame.
         """
         # Expand any shorthand syntax before hashing or executing
-        recipe = self._normalize_recipe(recipe)
+        steps = self._normalize_steps(steps)
 
         # --- Defensive Identity Logic (ADR-014) ---
-        if not recipe or len(self.ingredients) == 0:
+        if not steps or len(self.ingredients) == 0:
             if len(self.ingredients) == 1:
                 return list(self.ingredients.values())[0]
             pe = PipelineError(
                 component="DataAssembler",
-                problem="No recipe and no ingredients — cannot assemble.",
+                problem="No step list and no ingredients — cannot assemble.",
                 location="assemble() entry",
-                fix="Verify that the manifest declares at least one data_schema and a join_manifests recipe.",
-                who="manifest_author",
+                fix="Verify that the data analysis recipe declares at least one data_schema and a joins step list.",
+                who="data_analysis_recipe_author",
                 category="assembly",
                 surface="plot_overlay",
                 severity="error",
-                reference="rules_manifest_structure.md §7",
+                reference="rules_data_analysis_recipe_structure.md §7",
             )
             print(pe.format())
             raise TransformationError(pe.problem, tip=pe.fix)
 
         # --- Decision Metadata Hash Calculation (ADR-024 refinement) ---
-        # ADR-016: We hash a clean copy of the recipe to avoid mutation-induced invalidation.
+        # ADR-016: We hash a clean copy of the step list to avoid mutation-induced invalidation.
         # We strip internal/injected keys (starts with __ or specific cache keys)
         import copy
-        clean_recipe = copy.deepcopy(recipe)
-        for step in clean_recipe:
+        clean_steps = copy.deepcopy(steps)
+        for step in clean_steps:
             keys_to_purge = [k for k in step.keys() if isinstance(k, str) and (k.startswith(
                 "__") or k in ("decision_hash",))]
             for k in keys_to_purge:
                 step.pop(k, None)
 
-        decision_hash = generate_config_hash(clean_recipe)
+        decision_hash = generate_config_hash(clean_steps)
 
         consolidated_lf: pl.LazyFrame = None
         start_index = 0
 
         # --- ADR-024: Tier 1/2 Short-Circuit Logic ---
-        for i in range(len(recipe) - 1, -1, -1):
-            step = recipe[i]
+        for i in range(len(steps) - 1, -1, -1):
+            step = steps[i]
             if step.get("action") == "sink_parquet":
                 path = step.get("path")
                 force = step.get("force_recompute", False)
                 if path and os.path.exists(path) and not force:
-                    # Verify if the logic (manifest) has changed since last materialization
+                    # Verify if the logic (data analysis recipe) has changed since last materialization
                     existing_hash = get_parquet_metadata_hash(path)
                     if existing_hash == decision_hash:
                         print(
@@ -146,8 +146,8 @@ class DataAssembler:
                             f"  ─── WARNING: Cache Invalidation: Logic change detected for {path}. Recomputing...")
 
         # Process the remaining steps
-        for i in range(start_index, len(recipe)):
-            step = recipe[i]
+        for i in range(start_index, len(steps)):
+            step = steps[i]
             action_name = step.get("action")
             if not action_name:
                 continue
@@ -159,7 +159,7 @@ class DataAssembler:
             # Resolve the right-hand ingredient if it's a join-type action
             right_id = step.get("right_ingredient")
             if right_id:
-                # Crash if ingredient is missing — the manifest's right_ingredient key is wrong.
+                # Crash if ingredient is missing — the data analysis recipe's right_ingredient key is wrong.
                 if right_id not in self.ingredients:
                     available = ", ".join(self.ingredients.keys())
                     pe = PipelineError(
@@ -167,12 +167,12 @@ class DataAssembler:
                         problem=f"Ingredient '{right_id}' required by '{action_name}' step is not available.",
                         location=f"assembly step {i}: action='{action_name}', right_ingredient='{right_id}'",
                         fix=f"Check right_ingredient spelling. Available ingredients: {available}",
-                        who="manifest_author",
+                        who="data_analysis_recipe_author",
                         category="assembly",
                         surface="plot_overlay",
                         severity="error",
                         evidence={"available_ingredients": available},
-                        reference="rules_manifest_structure.md §7",
+                        reference="rules_data_analysis_recipe_structure.md §7",
                     )
                     print(pe.format())
                     raise TransformationError(pe.problem, tip=pe.fix)
@@ -194,12 +194,12 @@ class DataAssembler:
                             "Add 'on': <column> to the join step (quoted — 'on' is a YAML boolean trap). "
                             f"Found keys in step: {actual_keys}"
                         ),
-                        who="manifest_author",
+                        who="data_analysis_recipe_author",
                         category="assembly",
                         surface="plot_overlay",
                         severity="error",
                         evidence={"step_keys_found": str(actual_keys)},
-                        reference="docs/appendix/manifest_structure.yaml §yaml_resilience",
+                        reference="docs/appendix/data_analysis_recipe_structure.yaml §yaml_resilience",
                     )
                     print(pe.format())
                     raise TransformationError(pe.problem, tip=pe.fix)
@@ -226,14 +226,14 @@ class DataAssembler:
                     problem=f"Unknown assembly action '{action_name}'.",
                     location=f"assembly step {i}",
                     fix=(
-                        f"'{action_name}' is not registered. Check the action name in the manifest recipe. "
-                        "See rules_persona_bioscientist.md §8 for the authoritative action list."
+                        f"'{action_name}' is not registered. Check the action name in the data analysis recipe. "
+                        "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
-                    reference="rules_persona_bioscientist.md §8",
+                    reference="rules_agent_role_bioscientist.md §8",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc
@@ -246,15 +246,15 @@ class DataAssembler:
                     problem=f"Column not found during '{action_name}': {exc}",
                     location=f"assembly step {i}: action='{action_name}'",
                     fix=(
-                        "Verify the column exists at this point in the recipe. "
+                        "Verify the column exists at this point in the step list. "
                         "Columns from a joined ingredient are only available AFTER the join step."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
                     evidence={"polars_error": str(exc)},
-                    reference="rules_persona_bioscientist.md §3-B",
+                    reference="rules_agent_role_bioscientist.md §3-B",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc
@@ -267,12 +267,12 @@ class DataAssembler:
                         "Join keys on both sides must share the same dtype. "
                         "Add a cast step before the join to normalise the mismatched column."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
                     evidence={"polars_error": str(exc)},
-                    reference="rules_persona_bioscientist.md §3-B",
+                    reference="rules_agent_role_bioscientist.md §3-B",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc
@@ -281,8 +281,8 @@ class DataAssembler:
                     component="DataAssembler",
                     problem=f"Assembly step '{action_name}' raised an unexpected error: {type(exc).__name__}",
                     location=f"assembly step {i}: action='{action_name}'",
-                    fix="Review the step parameters and the data state at this point in the recipe.",
-                    who="manifest_author",
+                    fix="Review the step parameters and the data state at this point in the step list.",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",

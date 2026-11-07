@@ -26,9 +26,9 @@ from pathlib import Path
 
 from app.modules.session_manager import (
     SessionManager,
-    make_recipe_node,
+    make_audit_step,
     gatekeeper_blocked,
-    recipe_sha256,
+    audit_steps_sha256,
 )
 from app.modules.exporter import generate_methods_text
 
@@ -45,25 +45,25 @@ def run(output_dir: Path) -> bool:
         tmp = Path(tmpdir)
 
         # ── Fixture files ────────────────────────────────────────────────
-        manifest_file = tmp / "my_pipeline.yaml"
-        manifest_file.write_text("id: my_pipeline\nversion: 1\n")
+        data_analysis_recipe_file = tmp / "my_pipeline.yaml"
+        data_analysis_recipe_file.write_text("id: my_pipeline\nversion: 1\n")
         data_a = tmp / "metadata.tsv"
         data_b = tmp / "amr.tsv"
         data_a.write_text("sample_id\tspecies\nS1\tcat\nS2\tdog\n")
         data_b.write_text("sample_id\tgene\nS1\tblaZ\nS2\tblaZ\n")
         source_files = {"metadata": data_a, "amr": data_b}
 
-        sm = SessionManager(tmp / "user_sessions")
+        sm = SessionManager(tmp / "user_data")
 
         # ── Step 1: Compute hashes ───────────────────────────────────────
-        msig = SessionManager.compute_manifest_sha256(manifest_file)
+        msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
         dbh = SessionManager.compute_data_batch_hash(source_files)
         key = SessionManager.compute_session_key(msig, dbh)
         ok = len(msig) == 64 and len(dbh) == 64 and ":" in key
         results.append(("Compute session_key", PASS if ok else FAIL))
 
         # ── Step 2: T1/T2 restore — new session ─────────────────────────
-        r = sm.restore_t1t2(manifest_file, source_files)
+        r = sm.restore_t1t2(data_analysis_recipe_file, source_files)
         ok = r["status"] == "new_session"
         results.append(("restore_t1t2 new_session", PASS if ok else FAIL))
 
@@ -78,53 +78,53 @@ def run(output_dir: Path) -> bool:
             {"assembly": str(p1), "contracted": str(p2)},
         )
         ghost = sm.read_assembly_ghost(key)
-        ok = ghost is not None and ghost["manifest_id"] == "my_pipeline"
+        ok = ghost is not None and ghost["data_analysis_recipe_id"] == "my_pipeline"
         results.append(("Write/read assembly ghost", PASS if ok else FAIL))
 
         # ── Step 4: T1/T2 restore — fast path ───────────────────────────
-        r = sm.restore_t1t2(manifest_file, source_files)
+        r = sm.restore_t1t2(data_analysis_recipe_file, source_files)
         ok = r["status"] == "fast_path"
         results.append(("restore_t1t2 fast_path", PASS if ok else FAIL))
 
         # ── Step 5: T1/T2 restore — reassemble (Parquets deleted) ───────
         p1.unlink()
         p2.unlink()
-        r = sm.restore_t1t2(manifest_file, source_files)
+        r = sm.restore_t1t2(data_analysis_recipe_file, source_files)
         ok = r["status"] == "reassemble"
         results.append(("restore_t1t2 reassemble (Parquet missing)", PASS if ok else FAIL))
 
         # ── Step 6: Write T3 ghosts ──────────────────────────────────────
-        recipe = [
-            make_recipe_node("filter_row",
+        steps = [
+            make_audit_step("filter_row",
                              {"column": "species", "op": "in", "value": ["cat"]},
                              reason="Only feline samples in scope."),
-            make_recipe_node("exclusion_row",
+            make_audit_step("exclusion_row",
                              {"column": "sample_id", "op": "eq", "value": "S2"},
                              reason="S2 has instrument error noted in lab book."),
         ]
-        g1 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", recipe, {}, label="batch-A v1")
-        g2 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", recipe, {}, label="batch-A v2")
+        g1 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", steps, {}, label="batch-A v1")
+        g2 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", steps, {}, label="batch-A v2")
         ghosts = sm.list_t3_ghosts(key)
         ok = len(ghosts) == 2 and ghosts[0]["saved_at"] >= ghosts[1]["saved_at"]
         results.append(("Write 2 T3 ghosts, newest-first order", PASS if ok else FAIL))
 
         # ── Step 7: Gatekeeper ───────────────────────────────────────────
-        bad_recipe = [make_recipe_node("filter_row", {}, reason="")]
-        blocked = gatekeeper_blocked(bad_recipe)
+        bad_steps = [make_audit_step("filter_row", {}, reason="")]
+        blocked = gatekeeper_blocked(bad_steps)
         ok = len(blocked) == 1
         results.append(("Gatekeeper blocks empty reason", PASS if ok else FAIL))
 
-        good_recipe = [make_recipe_node("filter_row", {}, reason="Justified.")]
-        ok = len(gatekeeper_blocked(good_recipe)) == 0
+        good_steps = [make_audit_step("filter_row", {}, reason="Justified.")]
+        ok = len(gatekeeper_blocked(good_steps)) == 0
         results.append(("Gatekeeper passes filled reason", PASS if ok else FAIL))
 
-        # ── Step 8: recipe_sha256 (active only) ─────────────────────────
-        mixed = recipe + [{**make_recipe_node("drop_column", {"column": "x"},
+        # ── Step 8: audit_steps_sha256 (active only) ─────────────────────────
+        mixed = steps + [{**make_audit_step("drop_column", {"column": "x"},
                            reason="not needed"), "active": False}]
-        h1 = recipe_sha256(mixed)
-        h2 = recipe_sha256(recipe)
+        h1 = audit_steps_sha256(mixed)
+        h2 = audit_steps_sha256(steps)
         ok = h1 == h2  # deactivated node ignored
-        results.append(("recipe_sha256 ignores active:False nodes", PASS if ok else FAIL))
+        results.append(("audit_steps_sha256 ignores active:False nodes", PASS if ok else FAIL))
 
         # ── Step 9: generate_methods_text ────────────────────────────────
         methods, discarded = generate_methods_text(mixed)
@@ -154,7 +154,7 @@ def run(output_dir: Path) -> bool:
         zip_out.write_bytes(zip_bytes)
 
         # ── Step 13: Import zip into fresh SessionManager ────────────────
-        sm2 = SessionManager(tmp / "user_sessions_import")
+        sm2 = SessionManager(tmp / "user_data_import")
         restored_key = sm2.import_session_zip(zip_bytes)
         ok = restored_key == key and sm2.read_assembly_ghost(key) is not None
         results.append(("import_session_zip roundtrip", PASS if ok else FAIL))

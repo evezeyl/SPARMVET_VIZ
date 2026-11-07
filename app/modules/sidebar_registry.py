@@ -20,17 +20,17 @@ Each entry in PANEL_REGISTRY:
 
 # None gate_flag = always visible; string = bootloader.is_enabled(flag) must be True
 PANEL_REGISTRY: dict[str, dict] = {
-    "project_info": {
+    "data_analysis_recipe_info": {
         "gate_flag": None,
-        "label": "Project Info",
+        "label": "Info",
     },
     "deployment_info": {
         "gate_flag": None,
         "label": "Deployment Info",
     },
-    "manifest_choice": {
-        "gate_flag": "manifest_selector_visible",
-        "label": "Manifest Choice",
+    "data_analysis_recipe_choice": {
+        "gate_flag": "data_analysis_recipe_selector_visible",
+        "label": "Data analysis recipe Choice",
     },
     "filters": {
         "gate_flag": "interactivity_enabled",
@@ -80,7 +80,7 @@ PANEL_REGISTRY: dict[str, dict] = {
 
 
 def is_panel_active(panel_type: str, bootloader) -> bool:
-    """Return True if the panel should be rendered for the current persona.
+    """Return True if the panel should be rendered for the current app features.
 
     Checks the gate_flag from PANEL_REGISTRY against bootloader.is_enabled().
     Unknown panel types log a warning and return False.

@@ -55,7 +55,7 @@ ROLE_MAP = {
     "libs/ingestion":           "wrangle",
     "libs/viz_factory":         "plot",
     "libs/utils":               "ref",
-    "config/manifests":         "branch",
+    "config/data_analysis_recipes":         "branch",
     ".claude/rules":            "meta",
     ".claude/knowledge":   "meta",
     ".claude/plans":       "meta",
@@ -167,7 +167,7 @@ def scan_file(path: Path, root: Path) -> dict[str, Any] | None:
 
 
 def scan_project(root: Path) -> list[dict]:
-    """Walk the project and collect all annotated file descriptors."""
+    """Walk the data analysis recipe and collect all annotated file descriptors."""
     nodes = []
     for path in sorted(root.rglob("*")):
         if path.is_dir():

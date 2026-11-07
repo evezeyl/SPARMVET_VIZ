@@ -205,7 +205,7 @@ _GET_FIELD_CONTRACT_TOOL = Tool(
     name="get_field_contract",
     description=(
         "Resolve the input_fields and output_fields for a named data schema in the "
-        "active manifest. Returns field slugs, types, and labels. "
+        "active data analysis recipe. Returns field slugs, types, and labels. "
         "Use this to check which columns are available at each pipeline stage."
     ),
     parameters={
@@ -216,14 +216,14 @@ _GET_FIELD_CONTRACT_TOOL = Tool(
                 "type": "str",
                 "description": (
                     "The data schema identifier (e.g. 'amr_data', 'metadata_schema'). "
-                    "Must match a key declared in the active manifest's data_schemas block."
+                    "Must match a key declared in the active data analysis recipe's data_schemas block."
                 ),
             },
-            "manifest_path": {
+            "data_analysis_recipe_path": {
                 "type": "str",
                 "description": (
-                    "Path to the pipeline manifest YAML (relative to project root). "
-                    "If omitted, the active manifest from the current session context is used."
+                    "Path to the pipeline data analysis recipe YAML (relative to project root). "
+                    "If omitted, the active data analysis recipe from the current session context is used."
                 ),
             },
         },
@@ -234,52 +234,52 @@ _GET_FIELD_CONTRACT_TOOL = Tool(
 def _tool_get_field_contract(args: dict) -> dict:
     """Return input and output field contracts for a schema_id."""
     schema_id = args.get("schema_id", "").strip()
-    manifest_path_str = args.get("manifest_path", "").strip() or None
+    data_analysis_recipe_path_str = args.get("data_analysis_recipe_path", "").strip() or None
 
     if not schema_id:
         return {"status": "error", "message": "'schema_id' is required."}
 
-    if not manifest_path_str:
+    if not data_analysis_recipe_path_str:
         return {
             "status": "error",
             "message": (
-                "'manifest_path' was not provided and no active manifest is "
-                "available in this tool call. Please supply 'manifest_path'."
+                "'data_analysis_recipe_path' was not provided and no active data analysis recipe is "
+                "available in this tool call. Please supply 'data_analysis_recipe_path'."
             ),
         }
 
-    manifest_path = Path(manifest_path_str)
-    if not manifest_path.exists():
+    data_analysis_recipe_path = Path(data_analysis_recipe_path_str)
+    if not data_analysis_recipe_path.exists():
         return {
             "status": "error",
-            "message": f"Manifest not found: {manifest_path_str}",
+            "message": f"Data analysis recipe not found: {data_analysis_recipe_path_str}",
         }
 
     try:
-        from blueprint_arch.manifest_navigator import (
+        from blueprint_arch.data_analysis_recipe_navigator import (
             build_schema_registry,
             build_sibling_map,
             load_fields_file,
             resolve_fields_for_schema,
         )
     except Exception as exc:
-        return {"status": "error", "message": f"Failed to import manifest_navigator: {exc}"}
+        return {"status": "error", "message": f"Failed to import data_analysis_recipe_navigator: {exc}"}
 
     # Build inc_map from !include references (mirrors blueprint_handlers.py pattern)
     try:
-        raw_text = manifest_path.read_text(encoding="utf-8")
-        manifest_dir = manifest_path.parent
+        raw_text = data_analysis_recipe_path.read_text(encoding="utf-8")
+        data_analysis_recipe_dir = data_analysis_recipe_path.parent
         inc_map: dict[str, str] = {}
         for rel_path in re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text):
-            abs_path = (manifest_dir / rel_path).resolve()
+            abs_path = (data_analysis_recipe_dir / rel_path).resolve()
             if abs_path.exists():
                 inc_map[rel_path] = str(abs_path)
     except Exception as exc:
-        return {"status": "error", "message": f"Failed to read manifest: {exc}"}
+        return {"status": "error", "message": f"Failed to read data analysis recipe: {exc}"}
 
     try:
-        ctx_map = build_sibling_map(str(manifest_path))
-        schema_reg = build_schema_registry(str(manifest_path), inc_map)
+        ctx_map = build_sibling_map(str(data_analysis_recipe_path))
+        schema_reg = build_schema_registry(str(data_analysis_recipe_path), inc_map)
     except Exception as exc:
         return {"status": "error", "message": f"Failed to build schema registry: {exc}"}
 
@@ -288,7 +288,7 @@ def _tool_get_field_contract(args: dict) -> dict:
         return {
             "status": "error",
             "message": (
-                f"Schema '{schema_id}' not found in manifest. "
+                f"Schema '{schema_id}' not found in data analysis recipe. "
                 f"Available schemas: {available}"
             ),
         }
@@ -305,8 +305,8 @@ def _tool_get_field_contract(args: dict) -> dict:
         if isinstance(val, dict):
             return val
         if isinstance(val, str) and val:
-            # Relative path from manifest dir — resolve via inc_map or direct
-            abs_path = (manifest_path.parent / val).resolve()
+            # Relative path from data analysis recipe dir — resolve via inc_map or direct
+            abs_path = (data_analysis_recipe_path.parent / val).resolve()
             if abs_path.exists():
                 try:
                     return load_fields_file(abs_path)

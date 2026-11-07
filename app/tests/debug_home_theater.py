@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """app/tests/debug_home_theater.py
-Phase 21-H headless verification of Home Theater logic for all 5 personas.
+Phase 21-H headless verification of Home Theater logic for all 5 app features files.
 
 Tests (no Shiny server required):
-  1. Persona feature flags — correct gating per persona
-  2. Manifest analysis_groups → tab structure
-  3. Tier choices — T3 gated to advanced+ personas only
-  4. Right sidebar suppression — correct hidden_personas set
+  1. App features feature flags — correct gating per app features
+  2. Data analysis recipe analysis_groups → tab structure
+  3. Tier choices — T3 gated to advanced+ app features files only
+  4. Right sidebar suppression — correct hidden_app_features set
   5. Comparison mode — advanced+ only, reads comparison_mode_enabled flag
-  6. Primary key extraction — extract_primary_keys from manifest
-  7. Plot ID discovery — all expected plot IDs present in manifest
-  8. Filter recipe builder data model — _pending_filters schema shape
-  9. Session provenance — manifest sha256 computable from path
- 10. Ghost restore schema — t3_recipe_by_plot structure correct after round-trip
+  6. Primary key extraction — extract_primary_keys from data analysis recipe
+  7. Plot ID discovery — all expected plot IDs present in data analysis recipe
+  8. Filter builder data model — _pending_filters schema shape
+  9. Session provenance — data analysis recipe sha256 computable from path
+ 10. Ghost restore schema — t3_audit_steps_by_plot structure correct after round-trip
 
 Run:
     python3 app/tests/debug_home_theater.py
@@ -38,21 +38,21 @@ PASS = "✅ PASS"
 FAIL = "❌ FAIL"
 SKIP = "⏭  SKIP"
 
-ALL_PERSONAS = [
+ALL_APP_FEATURES = [
     "pipeline-static",
     "pipeline-exploration-simple",
     "pipeline-exploration-advanced",
-    "project-independent",
+    "standalone",
     "developer",
 ]
 
-# Personas that should see T3 tier option and right sidebar
-ADVANCED_PERSONAS = {"pipeline-exploration-advanced", "project-independent", "developer"}
-# Personas where right sidebar should be suppressed
-HIDDEN_SIDEBAR_PERSONAS = {"pipeline-static", "pipeline-exploration-simple"}
+# App features files that should see T3 tier option and right sidebar
+ADVANCED_APP_FEATURES = {"pipeline-exploration-advanced", "standalone", "developer"}
+# App features files where right sidebar should be suppressed
+HIDDEN_SIDEBAR_APP_FEATURES = {"pipeline-static", "pipeline-exploration-simple"}
 
-TEST_PROJECT_ID = "1_test_data_ST22_dummy"
-MANIFEST_REL = f"config/manifests/pipelines/{TEST_PROJECT_ID}.yaml"
+TEST_DATA_ANALYSIS_RECIPE_ID = "1_test_data_ST22_dummy"
+DATA_ANALYSIS_RECIPE_REL = f"config/data_analysis_recipes/pipelines/{TEST_DATA_ANALYSIS_RECIPE_ID}.yaml"
 
 results: list[dict] = []
 
@@ -70,72 +70,74 @@ def section(title: str):
 
 
 # ---------------------------------------------------------------------------
-# 1. Persona feature flags
+# 1. App features feature flags
 # ---------------------------------------------------------------------------
-def test_persona_feature_flags():
-    section("1. Persona feature flags")
-    from app.src.bootloader import Bootloader
+def test_app_features_feature_flags():
+    section("1. App features feature flags")
+    import os
+os.environ.setdefault("SPARMVET_DATA_ANALYSIS_RECIPE", "1_test_data_ST22_dummy")  # pipeline app features hide the selector
+from app.src.bootloader import Bootloader
 
     expected = {
         "pipeline-static": {
             "interactivity_enabled": False,
-            "developer_mode_enabled": False,
+            "blueprint_enabled": False,
             "gallery_enabled": False,
             "session_management_enabled": False,
             "comparison_mode_enabled": False,
         },
         "pipeline-exploration-simple": {
             "interactivity_enabled": True,
-            "developer_mode_enabled": False,
+            "blueprint_enabled": False,
             "gallery_enabled": False,
             "session_management_enabled": True,
             "comparison_mode_enabled": True,
         },
         "pipeline-exploration-advanced": {
             "interactivity_enabled": True,
-            "developer_mode_enabled": False,
+            "blueprint_enabled": False,
             "session_management_enabled": True,
             "comparison_mode_enabled": True,
         },
-        "project-independent": {
+        "standalone": {
             "interactivity_enabled": True,
             "data_ingestion_enabled": True,
             "session_management_enabled": True,
         },
         "developer": {
             "interactivity_enabled": True,
-            "developer_mode_enabled": True,
+            "blueprint_enabled": True,
             "gallery_enabled": True,
             "session_management_enabled": True,
             "comparison_mode_enabled": True,
         },
     }
 
-    for persona, checks in expected.items():
-        bl = Bootloader(persona=persona)
+    for app_features, checks in expected.items():
+        bl = Bootloader(app_features=app_features)
         for feature, want in checks.items():
             got = bl.is_enabled(feature)
             record(
-                f"{persona}.{feature}",
+                f"{app_features}.{feature}",
                 got == want,
                 f"want={want} got={got}",
             )
 
 
 # ---------------------------------------------------------------------------
-# 2. Manifest analysis_groups → tab structure
+# 2. Data analysis recipe analysis_groups → tab structure
 # ---------------------------------------------------------------------------
 def test_tab_structure(project_root: Path):
-    section("2. Manifest analysis_groups → tab structure")
+    section("2. Data analysis recipe analysis_groups → tab structure")
     try:
         from utils.config_loader import ConfigManager
-        manifest_path = project_root / MANIFEST_REL
-        if not manifest_path.exists():
-            record("manifest_exists", False, f"not found: {manifest_path}")
+        data_analysis_recipe_path = project_root / DATA_ANALYSIS_RECIPE_REL
+        if not data_analysis_recipe_path.exists():
+            record("data_analysis_recipe_exists", False, f"not found: {data_analysis_recipe_path}")
             return
-        record("manifest_exists", True)
+        record("data_analysis_recipe_exists", True)
 
-        cm = ConfigManager(str(manifest_path))
+        cm = ConfigManager(str(data_analysis_recipe_path))
         groups = cm.raw_config.get("analysis_groups", {})
         record("analysis_groups_present", bool(groups), f"{len(groups)} group(s)")
 
@@ -170,16 +172,16 @@ def test_tab_structure(project_root: Path):
 # 3. Tier choices gating
 # ---------------------------------------------------------------------------
 def test_tier_choices():
-    section("3. Tier choices per persona")
-    for persona in ALL_PERSONAS:
+    section("3. Tier choices per app features")
+    for app_features in ALL_APP_FEATURES:
         tier_choices = {"T1": "Assembled", "T2": "Analysis-ready"}
-        if persona in ADVANCED_PERSONAS:
+        if app_features in ADVANCED_APP_FEATURES:
             tier_choices["T3"] = "My adjustments"
 
         has_t3 = "T3" in tier_choices
-        should_have_t3 = persona in ADVANCED_PERSONAS
+        should_have_t3 = app_features in ADVANCED_APP_FEATURES
         record(
-            f"tier_T3_visible_{persona}",
+            f"tier_T3_visible_{app_features}",
             has_t3 == should_have_t3,
             f"has_T3={has_t3}",
         )
@@ -190,34 +192,34 @@ def test_tier_choices():
 # ---------------------------------------------------------------------------
 def test_sidebar_suppression():
     section("4. Right sidebar suppression")
-    for persona in ALL_PERSONAS:
-        suppressed = persona in HIDDEN_SIDEBAR_PERSONAS
-        should_suppress = persona in {"pipeline-static", "pipeline-exploration-simple"}
+    for app_features in ALL_APP_FEATURES:
+        suppressed = app_features in HIDDEN_SIDEBAR_APP_FEATURES
+        should_suppress = app_features in {"pipeline-static", "pipeline-exploration-simple"}
         record(
-            f"sidebar_suppressed_{persona}",
+            f"sidebar_suppressed_{app_features}",
             suppressed == should_suppress,
             f"suppressed={suppressed}",
         )
 
-    # Verify the actual hidden_personas set in home_theater.py matches expectation
+    # Verify the actual hidden_app_features set in home_theater.py matches expectation
     try:
         import ast, re
         ht_path = Path(__file__).parents[1] / "handlers" / "home_theater.py"
         src = ht_path.read_text()
-        # Find hidden_personas assignment near right_sidebar_content_ui
-        m = re.search(r'hidden_personas\s*=\s*(\{[^}]+\})', src)
+        # Find hidden_app_features assignment near right_sidebar_content_ui
+        m = re.search(r'hidden_app_features\s*=\s*(\{[^}]+\})', src)
         if m:
             literal = m.group(1)
             found_set = ast.literal_eval(literal)
             record(
-                "hidden_personas_set_in_code",
-                found_set == HIDDEN_SIDEBAR_PERSONAS,
+                "hidden_app_features_set_in_code",
+                found_set == HIDDEN_SIDEBAR_APP_FEATURES,
                 f"found={found_set}",
             )
         else:
-            record("hidden_personas_set_in_code", False, "pattern not found in source")
+            record("hidden_app_features_set_in_code", False, "pattern not found in source")
     except Exception as e:
-        record("hidden_personas_set_in_code", False, str(e))
+        record("hidden_app_features_set_in_code", False, str(e))
 
 
 # ---------------------------------------------------------------------------
@@ -267,12 +269,12 @@ def test_primary_keys(project_root: Path):
         from utils.config_loader import ConfigManager
         from app.modules.session_manager import extract_primary_keys
 
-        manifest_path = project_root / MANIFEST_REL
-        if not manifest_path.exists():
-            record("primary_keys_manifest_present", False)
+        data_analysis_recipe_path = project_root / DATA_ANALYSIS_RECIPE_REL
+        if not data_analysis_recipe_path.exists():
+            record("primary_keys_data_analysis_recipe_present", False)
             return
 
-        cm = ConfigManager(str(manifest_path))
+        cm = ConfigManager(str(data_analysis_recipe_path))
         pks = extract_primary_keys(cm.raw_config)
         record("primary_keys_extracted", isinstance(pks, (set, list, frozenset)),
                f"keys={sorted(pks)}")
@@ -283,42 +285,42 @@ def test_primary_keys(project_root: Path):
 
 
 # ---------------------------------------------------------------------------
-# 7. Session provenance — manifest sha256
+# 7. Session provenance — data analysis recipe sha256
 # ---------------------------------------------------------------------------
 def test_session_provenance(project_root: Path):
-    section("7. Session provenance — manifest sha256")
+    section("7. Session provenance — data analysis recipe sha256")
     try:
         from app.modules.session_manager import SessionManager
 
-        manifest_path = project_root / MANIFEST_REL
-        if not manifest_path.exists():
-            record("provenance_manifest_present", False)
+        data_analysis_recipe_path = project_root / DATA_ANALYSIS_RECIPE_REL
+        if not data_analysis_recipe_path.exists():
+            record("provenance_data_analysis_recipe_present", False)
             return
 
-        sha = SessionManager.compute_manifest_sha256(manifest_path)
-        record("manifest_sha256_computed", bool(sha) and len(sha) == 64, f"sha={sha[:12]}…")
+        sha = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_path)
+        record("data_analysis_recipe_sha256_computed", bool(sha) and len(sha) == 64, f"sha={sha[:12]}…")
 
         # Deterministic: same file → same hash
-        sha2 = SessionManager.compute_manifest_sha256(manifest_path)
-        record("manifest_sha256_deterministic", sha == sha2)
+        sha2 = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_path)
+        record("data_analysis_recipe_sha256_deterministic", sha == sha2)
     except Exception as e:
         record("session_provenance_error", False, str(e))
 
 
 # ---------------------------------------------------------------------------
-# 8. Ghost round-trip — t3_recipe_by_plot
+# 8. Ghost round-trip — t3_audit_steps_by_plot
 # ---------------------------------------------------------------------------
 def test_ghost_roundtrip():
-    section("8. Ghost round-trip — t3_recipe_by_plot schema")
+    section("8. Ghost round-trip — t3_audit_steps_by_plot schema")
     try:
-        from app.modules.session_manager import SessionManager, make_recipe_node
+        from app.modules.session_manager import SessionManager, make_audit_step
 
         with tempfile.TemporaryDirectory() as tmp:
             sm = SessionManager(location_4=Path(tmp))
             session_key = "testkey123"
 
-            node_a = make_recipe_node("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
-            node_b = make_recipe_node("drop_column", params={"column": "notes"}, plot_scope="subtab_amr_heatmap")
+            node_a = make_audit_step("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
+            node_b = make_audit_step("drop_column", params={"column": "notes"}, plot_scope="subtab_amr_heatmap")
 
             t3_by_plot = {
                 "subtab_mlst_bar": [node_a],
@@ -327,13 +329,13 @@ def test_ghost_roundtrip():
 
             path = sm.write_t3_ghost(
                 session_key=session_key,
-                manifest_id=TEST_PROJECT_ID,
-                manifest_sha256="abc123",
+                data_analysis_recipe_id=TEST_DATA_ANALYSIS_RECIPE_ID,
+                data_analysis_recipe_sha256="abc123",
                 data_batch_hash="def456",
                 tier_toggle="T3",
-                t3_recipe=[],
+                t3_audit_steps=[],
                 t3_plot_overrides={},
-                t3_recipe_by_plot=t3_by_plot,
+                t3_audit_steps_by_plot=t3_by_plot,
             )
             record("ghost_written", path.exists(), str(path))
 
@@ -341,8 +343,8 @@ def test_ghost_roundtrip():
             record("ghost_listed", len(ghosts) == 1, f"count={len(ghosts)}")
 
             ghost = ghosts[0]
-            restored = ghost.get("t3_recipe_by_plot", {})
-            record("t3_recipe_by_plot_present", bool(restored))
+            restored = ghost.get("t3_audit_steps_by_plot", {})
+            record("t3_audit_steps_by_plot_present", bool(restored))
             record("mlst_bar_stack_restored",
                    len(restored.get("subtab_mlst_bar", [])) == 1)
             record("amr_heatmap_stack_restored",
@@ -359,14 +361,14 @@ def test_ghost_roundtrip():
 
 
 # ---------------------------------------------------------------------------
-# 9. Filter recipe builder data model
+# 9. Filter builder data model
 # ---------------------------------------------------------------------------
-def test_filter_recipe_schema():
-    section("9. Filter recipe node schema")
+def test_filter_builder_schema():
+    section("9. Filter audit step schema")
     try:
-        from app.modules.session_manager import make_recipe_node, gatekeeper_blocked
+        from app.modules.session_manager import make_audit_step, gatekeeper_blocked
 
-        node = make_recipe_node("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
+        node = make_audit_step("filter_row", params={"column": "sample_id", "op": "eq", "value": "S1"})
         required_keys = {"id", "node_type", "created_at", "plot_scope", "params", "reason", "active"}
         missing = required_keys - set(node.keys())
         record("filter_node_has_required_keys", not missing, f"missing={missing}")
@@ -383,7 +385,7 @@ def test_filter_recipe_schema():
         record("gatekeeper_unblocks_with_reason", unblocked)
 
         # PK warning node
-        pk_node = make_recipe_node(
+        pk_node = make_audit_step(
             "exclusion_row",
             params={"column": "sample_id", "op": "ne", "value": "S1"},
             primary_key_warning=True,
@@ -391,7 +393,7 @@ def test_filter_recipe_schema():
         record("pk_node_has_warning_flag", bool(pk_node.get("primary_key_warning")))
 
     except Exception as e:
-        record("filter_recipe_schema_error", False, str(e))
+        record("filter_builder_schema_error", False, str(e))
         traceback.print_exc()
 
 
@@ -402,17 +404,17 @@ def test_bootloader_locations(project_root: Path):
     section("10. Bootloader location resolution")
     try:
         from app.src.bootloader import Bootloader
-        bl = Bootloader(persona="developer")
+        bl = Bootloader(app_features="developer")
 
-        for loc_key in ("manifests", "user_sessions"):
+        for loc_key in ("data_analysis_recipes", "user_data"):
             try:
                 loc = bl.get_location(loc_key)
                 record(f"location_{loc_key}", True, str(loc))
             except Exception as e:
                 record(f"location_{loc_key}", False, str(e))
 
-        default_project = bl.get_default_project()
-        record("default_project_discoverable", bool(default_project), default_project)
+        default_data_analysis_recipe = bl.get_default_data_analysis_recipe()
+        record("default_data_analysis_recipe_discoverable", bool(default_data_analysis_recipe), default_data_analysis_recipe)
 
     except Exception as e:
         record("bootloader_location_error", False, str(e))
@@ -439,7 +441,7 @@ def main():
     print(f"  Output dir   : {out_dir}")
     print(f"{'='*60}")
 
-    test_persona_feature_flags()
+    test_app_features_feature_flags()
     test_tab_structure(project_root)
     test_tier_choices()
     test_sidebar_suppression()
@@ -447,7 +449,7 @@ def main():
     test_primary_keys(project_root)
     test_session_provenance(project_root)
     test_ghost_roundtrip()
-    test_filter_recipe_schema()
+    test_filter_builder_schema()
     test_bootloader_locations(project_root)
 
     # Summary

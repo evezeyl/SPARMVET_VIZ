@@ -75,17 +75,17 @@ def audit_palette_file(palette_path: Path) -> tuple[list[str], list[str], list[s
         )
         return violations, warnings, infos
 
-    project_palettes = raw["palettes"]
-    if not isinstance(project_palettes, dict):
+    deployment_palettes = raw["palettes"]
+    if not isinstance(deployment_palettes, dict):
         violations.append(
             f"FORMAT_ERROR — 'palettes:' value must be a mapping of name → list[hex], "
-            f"got {type(project_palettes).__name__}."
+            f"got {type(deployment_palettes).__name__}."
         )
         return violations, warnings, infos
 
-    infos.append(f"Loaded {len(project_palettes)} palette(s) from config/palettes.yaml.")
+    infos.append(f"Loaded {len(deployment_palettes)} palette(s) from config/palettes.yaml.")
 
-    for name, colors in project_palettes.items():
+    for name, colors in deployment_palettes.items():
         # Name validation
         if not isinstance(name, str) or not name.strip():
             violations.append(f"INVALID_NAME — palette key is not a non-empty string: {name!r}")
@@ -179,6 +179,11 @@ def build_report(violations: list[str], warnings: list[str], infos: list[str],
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
+        "--project-root",
+        default=".",
+        help="Project root; --palettes is read relative to it (default: current directory)",
+    )
+    parser.add_argument(
         "--palettes",
         default="config/palettes.yaml",
         help="Path to the palette registry YAML file (default: config/palettes.yaml)",
@@ -189,7 +194,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    palette_path = Path(args.palettes)
+    palette_path = Path(args.project_root) / args.palettes
     try:
         violations, warnings, infos = audit_palette_file(palette_path)
         report, exit_code = build_report(violations, warnings, infos, palette_path)

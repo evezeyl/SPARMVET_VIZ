@@ -1,4 +1,4 @@
-"""MetadataValidator.validate_types: values must fit the type the manifest declares (issue #11).
+"""MetadataValidator.validate_types: values must fit the type the data analysis recipe declares (issue #11).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_validate_types.py -q
 """
@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 
 from transformer.metadata_validator import MetadataValidator
-from utils.errors import ManifestError
+from utils.errors import DataAnalysisRecipeError
 
 CONTRACT = {
     "sample_id": {"type": "categorical"},
@@ -28,7 +28,7 @@ def test_a_valid_file_passes():
 
 
 def test_text_in_a_numeric_column_is_rejected_with_the_column_and_values():
-    with pytest.raises(ManifestError) as err:
+    with pytest.raises(DataAnalysisRecipeError) as err:
         check(lf(sample_id=["a", "b", "c"], reads=["1", "abc", "n/a"], label=["x", "y", "z"]))
     message = str(err.value)
     assert "'reads'" in message and "'abc'" in message and "'n/a'" in message
@@ -37,7 +37,7 @@ def test_text_in_a_numeric_column_is_rejected_with_the_column_and_values():
 
 def test_only_a_few_examples_are_shown():
     values = [f"bad{i}" for i in range(10)]
-    with pytest.raises(ManifestError) as err:
+    with pytest.raises(DataAnalysisRecipeError) as err:
         check(lf(sample_id=values, reads=values, label=values))
     assert str(err.value).count("bad") == 3
 
@@ -56,7 +56,7 @@ def test_missing_values_are_not_errors():
 
 
 def test_a_whole_number_column_declared_int_rejects_decimals():
-    with pytest.raises(ManifestError):
+    with pytest.raises(DataAnalysisRecipeError):
         check(lf(n=["1", "2.5"]), {"n": {"type": "int"}})
 
 

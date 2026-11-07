@@ -2,6 +2,8 @@
 
 > **Vocabulary note (ADR-088, 2026-11-05):** in older entries below, "persona" means what is now called the **app features template** (the file in `config/ui/templates/` that switches features on or off), and "connector" or "profile" means the **deployment profile**. These entries are history and keep their original wording. "Persona" for an AI agent role (`@dasharch`, `@bioscientist`) is unchanged and is called "AI agent persona" where it could be confused.
 
+> **Vocabulary note (ADR-091, 2026-11-07):** the final names replace those of ADR-088. Old word -> new word: persona / app features template / `SPARMVET_PERSONA` -> **app features** / `SPARMVET_APP_FEATURES` (files in `config/app_features/`, switches called flags); deployment profile / connector config / `SPARMVET_PROFILE` -> **deployment** / `SPARMVET_DEPLOYMENT`; manifest -> **data analysis recipe** / `SPARMVET_DATA_ANALYSIS_RECIPE` (folder `config/data_analysis_recipes/`, `join_manifests` -> `joins`, `recipe:` step list -> `steps:`); recipe in its other meanings -> audit steps (T3), example (gallery), id transformation (id reconciliation). Entries below keep the words of their time.
+
 # Last Updated: 2026-04-23 (Session 3) by @dasharch
 >
 > all paths must be provided relative to the project root. Absolute paths or symlinks are not allowed.
@@ -4226,10 +4228,10 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 
 ## ADR-091: Final configuration names, launch variables, and where each setting lives (2026-11-07)
 
-**Status:** PROPOSED (2026-11-07, revised the same day after Eve's review: no hybrid vocabulary). The names were agreed with @evezeyl in chat; the entry becomes ACCEPTED when Eve has reviewed it together with the issue evezeyl/SPARMVET_VIZ#27 (the IRIDA check is evezeyl/SPARMVET_VIZ#28). Authority: @dasharch.
+**Status:** ACCEPTED (2026-11-07, reviewed by @evezeyl; the review decisions are listed at the end of this entry; two design gaps found during the review are open). The names were agreed with @evezeyl in chat; the entry becomes ACCEPTED when Eve has reviewed it together with the issue evezeyl/SPARMVET_VIZ#27 (the IRIDA check is evezeyl/SPARMVET_VIZ#28). Authority: @dasharch.
 **Replaces:** the vocabulary table (point 1), the manifest identity and startup order (points 3 and 4) of ADR-088. ADR-088 keeps its text as history under a HISTORICAL banner; the live rules exist only here, in the new terms.
 **Amends:** ADR-048 (deployment profile becomes "deployment"; its IRIDA token assumption is flagged below), ADR-052 (`manifest_selector.fixed_manifest` leaves the app features files).
-**Implementation status:** NOT IMPLEMENTED. One issue, one scripted pass (point 7). Until it ships, the launch commands in `retest_procedure_2026-11-06.md` and `test_plan_2026-06.md` keep the old names (`SPARMVET_PROFILE`, `SPARMVET_PERSONA`).
+**Implementation status:** IMPLEMENTED on the branch `rename/config-vocabulary` (2026-11-07, phases 0 to 9, tags `rename-phase-N`), waiting for the full retest and the merge into `dev`. Plan and phases: `.claude/tasks/config_rename_strategy.md`.
 
 **Context.** ADR-088 fixed the three kinds of configuration but left three problems:
 1. Several settings sit in the wrong file (verified in code, 2026-11-07):
@@ -4303,3 +4305,58 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 - The words in the UI, the code and the docs mean one thing each; the retired words fail early instead of working silently.
 - The rename is large but mechanical: "persona" is in 51 Python files and 87 documentation and rule files, "manifest" in most of the code base. The tests (1215 headless, 37 browser) plus the old-words audit are the safety net.
 - Memory notes and the project instruction file that use "persona" or "manifest" are updated in the same run.
+
+**Review decisions (Eve, 2026-11-07).**
+- Scope rule: the rename covers the application configuration and what reads, writes or shows it; names of wrapped Python libraries, data content and domain terms, and external tools' own terms (for example the Posit Connect `manifest.json`) are kept. Wrapper libraries are reviewed per file, never replaced blind.
+- "Connector" names two things: the adapter library `libs/connector` keeps its name; the deployment-file sense (`connector_path`, `connector_config`, `_load_connector_config`, `connector_template.yaml`, `local_connector`) is renamed to `deployment_*`; `SPARMVET_CONNECTOR` is removed; `docs/workflows/connector.qmd` is split or renamed. It is a fifth retired word in the audit.
+- Open points 1 to 4 accepted as proposed: key renames (`curated_data` to `cache`, `user_sessions` to `user_data`, `features:` to `flags:`, `persona_id` to `name` with `persona_name` deleted, `show_persona_badge` to `show_app_features_badge`, `prefer_discovery` to `data_lookup`); the launcher as a later small issue; an `app_features_override:` block in the deployment file instead of the one-off `data_ingestion_enabled`; "agent role" for the two AI agent files. Open point 5 (IRIDA) is issue evezeyl/SPARMVET_VIZ#28.
+- Unused or unfinished keys become tasks, not silent deletions: the timed autosave of `user_preferences.qmd` was never built, the saving is event-driven (Apply, leaving Home, assembly), so the key `ghost_save.frequency_minutes` is deleted and the Quarto page corrected (task CONFIG-GHOST-DOC-1); the four `blueprint_agent.*` keys stay, marked "reserved, not implemented" (task CONFIG-AGENT-BACKENDS-1); dead `scripts.*` keys and `get_script_path()` are deleted.
+- Stale entries of `.claude/settings.json` are removed (task CONFIG-SETTINGS-CLEAN-1). The history folders `.claude/baselines/` and `.claude/conversations/` are excluded from the audit.
+- Design records under `.claude/design/`: live ones are rewritten, history ones get a HISTORICAL banner (the live list is confirmed in the mapping step).
+
+**Gaps found during the review (open, tracked as tasks).**
+1. *Recipes location write access.* The deployment guide says the recipes location is read-only for the app, but BLUEPRINT writes component files and branch fragments into it (`blueprint_handlers.py`, around lines 1104 and 1412). The app features and the deployment can therefore be a combination that fails at the first save. Eve's direction (2026-11-07): never overwrite what matters silently. Interim: warn and keep a timestamped backup before overwriting a recipe file. Target design: BLUEPRINT works on a draft copy in the user data location, the manifest validation (issue evezeyl/SPARMVET_VIZ#26) runs on it, and an explicit publish step copies it into the recipes location when it is good. The recipes location can then stay read-only for production and static deployments (CONFIG-RECIPES-WRITE-1).
+2. *Application resources are found relative to the working directory.* The app features folder, `config/ui/theme.css`, the sidebars and the development fallback are all read as relative paths (`bootloader.py`, `ui.py`), so a container or an installed copy started from another folder fails. They belong to the code, not to the operator's data, and should be located from the code root, with an explicit setting only if a deployment needs another folder (CONFIG-APP-RESOURCES-1).
+3. *Branding is read from the app features file, but belongs to the deployment.* The base stylesheet `config/ui/theme.css` is always loaded and a second stylesheet is layered on top when `theme_css` names another file (`ui.py` lines 18 to 25), which is the intended "default plus optional override" for sites that need their own banner. But `theme_css` and the banner (`get_ui_banner()`, `logo_url`) are read from the app features file, so a static site that needs its own banner would need a copy of a features file; ADR-055 says the deployment overrides it, which the code does not do. Decision (Eve, 2026-11-07): a `branding:` block in the deployment file (`theme_css`, banner title, `logo_url`); the default stylesheet always loads from the code root and the deployment stylesheet only has to hold the differences; the old keys in an app features file stop the app at startup with the migration message. Part of the behaviour phase of the rename (CONFIG-BRANDING-1). The characterization tests of phase 0 already run with the repository as working directory.
+
+**Implementation notes (2026-11-07).**
+- Deployment values: `data_lookup` is `data_analysis_recipe_paths` (default) or `by_dataset_id`; `default_data_analysis_recipe` holds the recipe **name** (file name without `.yaml`), not a path; the unused connector method for the default recipe path was removed.
+- Names of the old meanings of "recipe": `steps` (the `recipe:` key, `steps_tier1`), `audit_steps` (T3: `t3_audit_steps_by_plot`, `AuditStep`), `example` (gallery: `data_analysis_recipe.yaml`, `example_meta.md`, `example_data.tsv`), `IdTransformation` (libs/id_reconciliation). A name shared between files has one meaning in all of them.
+- Old names fail loudly: `app/modules/renamed_keys.py` (launch variables, deployment keys, locations, app features keys, session keys), `libs/utils/src/utils/legacy_keys.py` (recipe file keys, gallery file names). `assets/scripts/migrate_config_vocabulary.py` converts recipes, saved sessions and gallery bundles (dry run by default).
+- Two demo deployments (`config/deployment/demo/`) carry the banner and stylesheet the two demo app features used to hold.
+- Kept on purpose, with a phrase in the audit: the vendored assets list (`VENDOR_MANIFEST.md`), Posit Connect's `manifest.json`, `AMR_Profile_Joint` and other biology words.
+- Not done here (own tasks): the launcher (open point 2), CONFIG-RECIPES-WRITE-1, CONFIG-APP-RESOURCES-1, CONFIG-CACHE-LOCATION-1, CONFIG-AGENT-BACKENDS-1, CONFIG-IRIDA-CHECK-1.
+
+
+
+### ADR-091 follow-up: the word "project" (2026-11-07, issue evezeyl/SPARMVET_VIZ#29)
+
+"Project" was the generic word that replaced "species" (Terminology, ADR-003/ADR-029b). Today it was a second name for the data analysis recipe, and IRIDA and Galaxy have their own project, so it is retired for the recipe.
+
+1. `project_id` and related names become `data_analysis_recipe_id`; the text says "data analysis recipe" or "recipe id" where the identifier is meant.
+2. The sidebar panel `project_info` (it showed only the deployment name) becomes `data_analysis_recipe_info` ("Info"). It shows the `info:` mapping of the open recipe as written: any keys, nested mappings indented, no fixed field list. `info:` is outside the cache keys.
+3. The top-level recipe key `type:` (species, project, pipeline, audit) was read by no code and is removed; `legacy_keys.py` refuses it and the migration script drops it.
+4. "Project palette" becomes "Deployment palette"; the app features name `project-independent` becomes `standalone`.
+5. Kept: IRIDA's project (`irida.project_id`), `pyproject`, `project_root`, "this project" for the repository.
+6. Old names are refused with a "renamed to" message (`renamed_keys.py`); the old-words audit counts "project". Mapping: `.claude/tasks/project_word_mapping.md`.
+
+Lesson: a panel renderer that reads `active_cfg()` re-renders the whole sidebar (shell stability pattern, ADR-045 R4): the Info content is its own output slot.
+
+## ADR-092: One flag for the Blueprint Architect, one identifier for a data analysis recipe (2026-11-07)
+
+**Status:** ACCEPTED (Eve, 2026-11-07), implemented on branch `rename/config-vocabulary`. Drafts: `issue-drafts/one-flag-for-the-blueprint-architect.md`, `issue-drafts/one-identifier-per-data-analysis-recipe.md`.
+
+**Context 1 (flags).** Three flags covered the same Blueprint Architect: `developer_mode_enabled`, `wrangle_studio_enabled` (the tab) and `blueprint_enabled` (the panels and handlers). In seven of the eight shipped app features they were equal. In `standalone` the tab was off while the panels were on, so the Blueprint Architect was set up and unreachable. `developer_mode_enabled` was read by nothing except the creation of the `WrangleStudio` state object, and `standalone` and `pipeline-exploration-advanced` (Pipeline Audit on, developer mode off) opened a blank page, because the audit panel reads that object (found 2026-11-07; the old code behaved the same).
+
+**Decision 1.**
+1. `blueprint_enabled` alone controls the Blueprint Architect: the tab, the panels, the handlers and the Blueprint state. `test_lab_enabled` controls the Test Lab, `t3_sandbox_enabled` the audit panel.
+2. `WrangleStudio` (the state object) exists when `blueprint_enabled` or `t3_sandbox_enabled` is on.
+3. `developer_mode_enabled` and `wrangle_studio_enabled` are retired. An app features file that still carries them stops the app with a message that names the replacement (`renamed_keys.RETIRED_FLAG_KEYS`, ADR-077: no silent alias).
+4. `standalone` now has the Blueprint Architect tab (its `blueprint_enabled` was already true).
+5. Tests: `test_every_app_features_starts.py` starts every shipped app features (and opens the Blueprint tab where the flag is on); `test_flag_matrix_doc.py` keeps the flag table in the rules equal to the files.
+
+**Context 2 (identifier).** The file name is the identifier of a data analysis recipe everywhere (selector, cache keys, sessions, export, `data_analysis_recipe_id`). The `id:` key inside the file was read only for the audit panel header and differed from the file name in two shipped recipes (and in all templates). Two identifiers for one thing.
+
+**Decision 2.** The `id:` key stays (it marks the root of a recipe, `rules_test_lab.md` §3a) and must equal the file name. `validate_data_analysis_recipe` reports a difference with a tip; a test checks every shipped recipe and template; the shipped ones are corrected (`1_test_data_ST22_dummy`, `figshare_integration`, `audit`, `e_coli`, `simple_template`, `universal_template`, `complex_template`). The include folder of `complex_template` is renamed to match the file (basename mirroring).
+
+**Not done (tracked in tasks.md):** the Blueprint selector still lists file paths instead of ids (CONFIG-BLUEPRINT-ID-DISPLAY-1); `complex_template` lacks `analysis_groups:` and does not load; the templates are not covered by a load test.

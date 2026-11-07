@@ -14,6 +14,6 @@ This area is aimed at facilitating research by removing the "syntax barrier." Yo
 
 1. **Experimental Freedom**: Try "Long-to-Wide" or "Pivot" operations without fear of breaking the original data.
 2. **Immediate Feedback**: The **Triple-Tier Grid** shows you exactly how each block changes your data in real-time.
-3. **Ghost-Loading**: You can "ghost-load" recipes from the Gallery into this staging area to see how professional analysts handle similar datasets.
+3. **Ghost-Loading**: You can "ghost-load" examples from the Gallery into this staging area to see how professional analysts handle similar datasets.
 
 The Test Lab is the bridge between raw, messy data and professional, publication-ready visualizations. It is your space to experiment, learn, and refine your analytical intuition.

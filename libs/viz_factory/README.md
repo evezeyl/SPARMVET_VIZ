@@ -2,11 +2,11 @@
 
 ## Purpose
 
-The `VizFactory (viz_factory.py)` library provides a high-level, declarative interface for generating data-agnostic visualizations. It decouples the analytical pipeline from visual rendering by using a YAML-based manifest system.
+The `VizFactory (viz_factory.py)` library provides a high-level, declarative interface for generating data-agnostic visualizations. It decouples the analytical pipeline from visual rendering by using a YAML-based data analysis recipe system.
 
 ## I/O
 
-- **Input**: `pl.LazyFrame` (Polars) and a Dictionary (Manifest) following the SPARMVET visualization spec.
+- **Input**: `pl.LazyFrame` (Polars) and a Dictionary (Data analysis recipe) following the SPARMVET visualization spec.
 - **Output**: A `ggplot` object (Plotnine) ready for rendering or export.
 
 ## Tiered Data Consumption
@@ -19,7 +19,7 @@ The `VizFactory (viz_factory.py)` is agnostic to the analytical depth of the inc
 
 ## Architectural Features
 
-- **Visual Cookbook Integration (ADR-033)**: Supports educational split-pane documentation, pairing technical manifests with structured Markdown guidance for enhanced visual literacy.
+- **Visual Cookbook Integration (ADR-033)**: Supports educational split-pane documentation, pairing technical data analysis recipes with structured Markdown guidance for enhanced visual literacy.
 
 ## Canonical Plot Spec Format (ADR-083)
 
@@ -40,7 +40,7 @@ spec:
         title: "Resistance by Year"
 ```
 
-**Migration:** If you have manifests that still use `factory_id`, run:
+**Migration:** If you have data analysis recipes that still use `factory_id`, run:
 
 ```bash
 ./.venv/bin/python assets/scripts/migrate_plot_specs.py --apply
@@ -59,9 +59,9 @@ The resolver is the single merge point for all configuration tiers. It implement
 | Tier | Source | Who controls |
 |---|---|---|
 | **L5** | T3 `aesthetic_override` for the active plot | Analyst (T3 sandbox) |
-| **L4** | Plot `spec:` in `analysis_groups` | Manifest author |
+| **L4** | Plot `spec:` in `analysis_groups` | Data analysis recipe author |
 | **L3** | Optimisation layer (axis text, panel spacing — visual only) | VizFactory |
-| **L2** | Manifest `plot_defaults:` block | Manifest author |
+| **L2** | Data analysis recipe `plot_defaults:` block | Data analysis recipe author |
 | **L1** | VizFactory built-in defaults (`theme_bw`, `coord_cartesian`, `facet_null`) | Developer |
 
 `layers:` lists are deduplicated by `(layer_kind, target)` — highest tier wins for the same kind. `geom_*`/`stat_*` layers are never deduplicated (stack in order).
@@ -84,24 +84,24 @@ from viz_factory.plot_config_resolver import (
 
 | Palette name | Scale injected |
 |---|---|
-| Project palette name (in registry) | `scale_fill_manual` / `scale_color_manual` with hex list |
+| Deployment palette name (in registry) | `scale_fill_manual` / `scale_color_manual` with hex list |
 | Viridis family (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) | `scale_fill_viridis_d` / `scale_color_viridis_d` |
 | Any other string | `scale_fill_brewer` / `scale_color_brewer` |
 | Unknown name | Warning with list of valid palette names; no scale injected |
 
 Scale injection is skipped when:
 - The plot mapping has no `fill` or `color` aesthetic
-- The manifest already declares a `scale_fill_*` or `scale_color_*` layer
+- The data analysis recipe already declares a `scale_fill_*` or `scale_color_*` layer
 
 ---
 
 ## Smart Default Hierarchy
 
-The `VizFactory (viz_factory.py)` implements a tiered default injection policy to ensure plots render successfully even with sparse manifest definitions:
+The `VizFactory (viz_factory.py)` implements a tiered default injection policy to ensure plots render successfully even with sparse data analysis recipe definitions:
 
 1. **Plot-Level Specs**: Explicit layers defined in the plot's `layers` block take absolute priority.
-2. **Manifest-Level Defaults**: The factory automatically merges the top-level `plot_defaults` block from the active manifest into each plot's configuration. This allows you to define a global theme or color scheme once for an entire pipeline.
-3. **Library-Hardcoded Fallbacks**: If no theme or coordinate system is specified at either manifest level, the factory silently injects industry-standard defaults (e.g., `theme_bw`, `coord_cartesian`).
+2. **Data analysis recipe-Level Defaults**: The factory automatically merges the top-level `plot_defaults` block from the active data analysis recipe into each plot's configuration. This allows you to define a global theme or color scheme once for an entire pipeline.
+3. **Library-Hardcoded Fallbacks**: If no theme or coordinate system is specified at either data analysis recipe level, the factory silently injects industry-standard defaults (e.g., `theme_bw`, `coord_cartesian`).
 
 ## Tier 3 Predicate Pushdown (UI Filters)
 
@@ -113,13 +113,13 @@ Supported ops: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`, `between`.
 - Scalar ops: value is auto-coerced to the column dtype read from `df.collect_schema()` (string operands on numeric columns get converted to int/float). String operand on a numeric column triggers a `[viz_factory] ⚠️` log line — that signals a widget bypass.
 - `between`: value is `[lo, hi]`; uses `pl.col(c).is_between(lo, hi, closed=...)`. Honours an optional `closed` field on the filter row (`'both'` default = inclusive, `'none'` = exclusive).
 - Auto-promotion: `eq` with a list value is silently upgraded to `in`; same for `ne` → `not_in`.
-- **Note:** `dtype` key from the filter recipe builder is stripped before injection — VizFactory filter dicts do not use it (the dtype is re-read from the LF schema each call).
+- **Note:** `dtype` key from the filter builder is stripped before injection — VizFactory filter dicts do not use it (the dtype is re-read from the LF schema each call).
 
 Both filter paths (this one + `_apply_filter_rows` in `home_theater.py`) implement identical logic. Locked down by `app/tests/test_filter_operators.py` (21 cases).
 
 ## Auto Axis Label Adjustment (IU-7, 2026-04-23)
 
-`VizFactory._auto_adjust_axis_labels(p, df_collected, x_col, y_col)` is applied automatically at the end of every `render()` call unless the manifest already has an explicit `element_text` layer targeting that axis.
+`VizFactory._auto_adjust_axis_labels(p, df_collected, x_col, y_col)` is applied automatically at the end of every `render()` call unless the data analysis recipe already has an explicit `element_text` layer targeting that axis.
 
 **X-axis rules (categorical only — numeric/datetime left untouched):**
 
@@ -137,13 +137,13 @@ Both filter paths (this one + `_apply_filter_rows` in `home_theater.py`) impleme
 | `n_unique > 20` or `max_len > 20` | size 7 |
 | `n_unique > 12` or `max_len > 12` | size 8 |
 
-To suppress auto-adjustment for a specific axis, add an `element_text` layer targeting `axis_text_x` or `axis_text_y` in the manifest — the auto-adjuster skips axes already addressed by the manifest.
+To suppress auto-adjustment for a specific axis, add an `element_text` layer targeting `axis_text_x` or `axis_text_y` in the data analysis recipe — the auto-adjuster skips axes already addressed by the data analysis recipe.
 
 ## Aesthetic Validation Gate (ADR-034)
 
 To prevent silent failures, the factory performs a "Pre-Flight" check before rendering:
 
-- **Typo Detection**: If a manifest aesthetic (x, y, fill) references a missing column, the system uses string-similarity heuristics to suggest the closest matches in the dataset.
+- **Typo Detection**: If a data analysis recipe aesthetic (x, y, fill) references a missing column, the system uses string-similarity heuristics to suggest the closest matches in the dataset.
 - **Fail-Fast**: Invalid aesthetics trigger a `VisualizationError` with a helpful `tip` for the user, rather than producing an empty frame or crashing the UI.
 
 ## Documentation
@@ -160,15 +160,15 @@ To prevent silent failures, the factory performs a "Pre-Flight" check before ren
 
 ## Key Components (Violet Standard)
 
-- **VizFactory (viz_factory.py)**: Central orchestration class that handles manifest parsing and ggplot composition. Supports explicit `title`, `subtitle`, and `caption` mapping from the manifest via the `labs` layer.
+- **VizFactory (viz_factory.py)**: Central orchestration class that handles data analysis recipe parsing and ggplot composition. Supports explicit `title`, `subtitle`, and `caption` mapping from the data analysis recipe via the `labs` layer.
 - **GeomFactory (geoms/core.py)**: Registry for 40+ geometric and statistical layers (Point, Line, Bar, Density, Sina, etc.) including the boxplot/violin family.
 - **ScaleFactory (scales/core.py)**: Handles visual scaling, axis naming, and math/date transformations (log10, sqrt, datetime). DECO-2 (2026-04-30) added the aesthetic-generic family: `scale_alpha[_manual]`, `scale_size[_manual|_area]`, `scale_shape[_manual]`, `scale_linetype[_manual]`, `scale_color_hue` / `scale_fill_hue`, `scale_color_continuous` / `scale_fill_continuous`.
 - **ThemeFactory (themes/core.py)**: Manages stylistic presets including 3rd-party themes (538, Seaborn, XKCD), the multi-label `labs` component, and DECO-2 single-axis label helpers `xlab` / `ylab` / `ggtitle` / `annotate` (free-form text/segment/rect/point overlays).
 - **FacetFactory (facets/core.py)**: Orchestrates layout partitioning (Wrap, Grid).
-- **GalleryMaterializer (assets/scripts/materialize_manifest_plots.py)**: [Audit Utility] Cross-pillar tool for materializing all plots in a manifest into Layer 3 PNGs for bulk verification.
+- **GalleryMaterializer (assets/scripts/materialize_data_analysis_recipe_plots.py)**: [Audit Utility] Cross-pillar tool for materializing all plots in a data analysis recipe into Layer 3 PNGs for bulk verification.
 - **IntegritySuite (viz_factory_integrity_suite.py)**: [Orchestrator] Programmatically audits all 193+ registered components for 1:1:1 evidence (was 176 before DECO-2).
 
-- **VisualisationRunner (debug_runner.py)** - [Dev Tool]: High-performance CLI for rendering isolated components and verifying manifest mappings.
+- **VisualisationRunner (debug_runner.py)** - [Dev Tool]: High-performance CLI for rendering isolated components and verifying data analysis recipe mappings.
 - **Audit (debug_audit.py)** - [Validator]: Scans for Ghost Tasks (Tasks marked [x] but missing logic).
 - **Distiller (debug_distiller.py)** - [Component Debugger]: Isolated test for Color Distiller palettes and scaling.
 - **Sync (debug_bulk_sync.py)** - [Developer Utility]: Logic tool to auto-reflect library test results into the central task tracker.
@@ -191,7 +191,7 @@ Test modules:
 
 ### 2. Integrity suite — end-to-end PNG materialisation
 
-Walks every `*_test.yaml` in `tests/test_data/` through `debug_runner.py` and writes PNG artefacts. Heavier (matplotlib renders) but the most thorough check that a component works end-to-end through manifest → ggplot → image:
+Walks every `*_test.yaml` in `tests/test_data/` through `debug_runner.py` and writes PNG artefacts. Heavier (matplotlib renders) but the most thorough check that a component works end-to-end through data analysis recipe → ggplot → image:
 
 ```bash
 ./.venv/bin/python libs/viz_factory/tests/viz_factory_integrity_suite.py --output_dir tmp/viz_factory/
@@ -254,7 +254,7 @@ def handle_mygeom(p, spec):
 | `context` | Yes | Always `["plot"]` for geom/stat/theme components |
 | `tags` | Yes | Search keywords for the picker |
 | `wraps` | Yes | Link to plotnine source (`lib`, `attr_path`) |
-| `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via manifest |
+| `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via data analysis recipe |
 | `params` | Yes | Dict of param definitions (widget, label, required, …) |
 
 ### Category vocabulary
@@ -265,7 +265,7 @@ These match the Gallery taxonomy (see `assets/gallery_data/TAXONOMY_CHEATSHEET.m
 
 ### Why `allow_extra_params: True`?
 
-Components do `p + geom_bar(**spec)` — the spec dict passes through directly to plotnine. The `params` dict in the schema lists the most common kwargs for the form renderer, but the user can always add additional plotnine kwargs directly in the manifest YAML. Setting `allow_extra_params: True` tells the form renderer to allow this.
+Components do `p + geom_bar(**spec)` — the spec dict passes through directly to plotnine. The `params` dict in the schema lists the most common kwargs for the form renderer, but the user can always add additional plotnine kwargs directly in the data analysis recipe YAML. Setting `allow_extra_params: True` tells the form renderer to allow this.
 
 ### Accessing the component catalog
 

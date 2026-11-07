@@ -21,7 +21,7 @@ plotnine *does* ship the low-level primitives (`geom_segment`, `geom_path`, `geo
 
 ## 2. The leaning (if the plotnine path is taken): real custom geoms
 
-End state would be a registered `geom_sankey` (and later `geom_alluvial`, `geom_net`) that a manifest author uses as one layer:
+End state would be a registered `geom_sankey` (and later `geom_alluvial`, `geom_net`) that a data analysis recipe author uses as one layer:
 
 ```yaml
 layers:

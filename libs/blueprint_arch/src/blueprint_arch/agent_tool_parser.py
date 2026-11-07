@@ -123,7 +123,7 @@ def register_tool_schema(
     required:   list of arg names that must be present in `args`.
     properties: dict mapping arg name -> {"type": <python type name>} for
                 lightweight type coercion checks. Example:
-                  {"manifest_path": {"type": "str"}, "schema_id": {"type": "str"}}
+                  {"data_analysis_recipe_path": {"type": "str"}, "schema_id": {"type": "str"}}
     """
     _TOOL_SCHEMAS[tool_name] = {
         "required": required or [],

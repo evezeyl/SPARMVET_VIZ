@@ -1,5 +1,5 @@
 id: geom_jitter_test
-description: Test manifest for geom_jitter_test.yaml
+description: Test data analysis recipe for geom_jitter_test.yaml
 input_fields: []
 wrangling:
   tier1: []

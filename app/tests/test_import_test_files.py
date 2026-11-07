@@ -1,7 +1,7 @@
 """The Data Import test files (assets/test_uploads/) behave as their README says.
 
 Uses the same checks the Data Import panel runs (MetadataValidator: column names, then types,
-against the manifest's input_fields), and checks that the files are exactly what the generating script
+against the data analysis recipe's input_fields), and checks that the files are exactly what the generating script
 produces, so the set cannot drift away from the data.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_import_test_files.py -q
@@ -18,7 +18,7 @@ from utils.config_loader import ConfigManager
 
 ROOT = Path(__file__).resolve().parents[2]
 UPLOADS = ROOT / "assets" / "test_uploads"
-MANIFEST = ROOT / "config" / "manifests" / "pipelines" / "1_test_data_ST22_dummy.yaml"
+DATA_ANALYSIS_RECIPE = ROOT / "config" / "data_analysis_recipes" / "pipelines" / "1_test_data_ST22_dummy.yaml"
 
 ACCEPTED = [
     ("FastP", "FastP_valid_changed.tsv"),
@@ -36,7 +36,7 @@ REJECTED = [
 
 @pytest.fixture(scope="module")
 def schemas():
-    return ConfigManager(str(MANIFEST)).raw_config["data_schemas"]
+    return ConfigManager(str(DATA_ANALYSIS_RECIPE)).raw_config["data_schemas"]
 
 
 def _column_check_accepts(path: Path, schema: dict) -> bool:
@@ -74,7 +74,7 @@ def test_the_bracken_file_changes_only_the_named_declared_column(schemas):
     assert changed["sample_id"].to_list() == original["sample_id"].to_list()
     differing = [c for c in original.columns if original[c].to_list() != changed[c].to_list()]
     assert differing == ["proportion_1"]
-    assert "proportion_1" in schemas["Bracken"]["input_fields"], "the changed column must be one the manifest declares"
+    assert "proportion_1" in schemas["Bracken"]["input_fields"], "the changed column must be one the data analysis recipe declares"
 
 
 def test_the_files_are_exactly_what_the_script_generates(tmp_path):

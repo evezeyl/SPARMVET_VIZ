@@ -1,8 +1,8 @@
 visible: true
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
   - type: deployment_info
-  - type: manifest_choice
+  - type: data_analysis_recipe_choice
   - type: filters
   - type: data_import
   - type: export

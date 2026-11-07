@@ -7,22 +7,22 @@ tests, CLI scripts, and server code.
 
 Session identity
 ----------------
-session_key = manifest_sha256[:12] + ":" + data_batch_hash[:12]
+session_key = data_analysis_recipe_sha256[:12] + ":" + data_batch_hash[:12]
 
-A session is uniquely identified by the combination of manifest content AND
-source data content. Same manifest + different data batch → different session.
-Same data + edited manifest → different session.
+A session is uniquely identified by the combination of data analysis recipe content AND
+source data content. Same data analysis recipe + different data batch → different session.
+Same data + edited data analysis recipe → different session.
 
 Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 ---------------------------------------------------------------------------
   assembly.json          — T1/T2 provenance (written once per assembly)
-  t3_{timestamp}.json   — T3 recipe snapshots (one per btn_apply / panel leave)
+  t3_{timestamp}.json   — audit steps snapshots (one per btn_apply / panel leave)
 """
 
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:RecipeNode
+# provides: class:SessionManager, typedef:AuditStep
 # consumes: stdlib only (hashlib, json, shutil, zipfile, pathlib, datetime, uuid)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md#12d
@@ -39,10 +39,10 @@ from typing import Any, TypedDict
 
 
 # ---------------------------------------------------------------------------
-# RecipeNode schema (§12b)
+# AuditStep schema (§12b)
 # ---------------------------------------------------------------------------
 
-class RecipeNode(TypedDict, total=False):
+class AuditStep(TypedDict, total=False):
     node_type: str              # filter_row | exclusion_row | drop_column | aesthetic_override | developer_raw_yaml
     id: str                     # hex UUID — propagated copies SHARE this id (linked deletion, ADR-049)
     created_at: str             # ISO timestamp
@@ -54,7 +54,7 @@ class RecipeNode(TypedDict, total=False):
     gallery_source: dict        # optional: {gallery_id, gallery_yaml_hash}
 
 
-def make_recipe_node(
+def make_audit_step(
     node_type: str,
     params: dict,
     plot_scope: str = "__all__",
@@ -62,8 +62,8 @@ def make_recipe_node(
     gallery_source: dict | None = None,
     primary_key_warning: bool = False,
     node_id: str | None = None,
-) -> RecipeNode:
-    """Create a new RecipeNode.
+) -> AuditStep:
+    """Create a new AuditStep.
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ def make_recipe_node(
         the ghost; renders as a warning banner on the audit card and as a marker in
         the export Methods section.
     """
-    node: RecipeNode = {
+    node: AuditStep = {
         "node_type": node_type,
         "id": node_id or uuid.uuid4().hex,
         "created_at": _now_iso(),
@@ -92,26 +92,26 @@ def make_recipe_node(
     return node
 
 
-def extract_primary_keys(manifest_raw_config: dict) -> list[str]:
-    """Return the union of join-key column names across all assembly recipes.
+def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
+    """Return the union of join-key column names across all assembly steps.
 
     A column is a primary key if it appears as `on`/`left_on`/`right_on` in any
-    `join_manifests.*.recipe[*]` step. This includes both true PKs
+    `joins.*.audit trail[*]` step. This includes both true PKs
     (sample_id) and secondary/accessory keys for long-format joins (gene_id).
 
     See ADR-049 / §12g.2.
     """
     keys: set[str] = set()
-    join_defs = manifest_raw_config.get("join_manifests", {})
+    join_defs = data_analysis_recipe_raw_config.get("joins", {})
     if not isinstance(join_defs, dict):
         return []
     for join_def in join_defs.values():
         if not isinstance(join_def, dict):
             continue
-        recipe = join_def.get("recipe", [])
-        if not isinstance(recipe, list):
+        audit_steps = join_def.get("steps", [])
+        if not isinstance(audit_steps, list):
             continue
-        for step in recipe:
+        for step in audit_steps:
             if not isinstance(step, dict):
                 continue
             for field in ("on", "left_on", "right_on"):
@@ -125,7 +125,7 @@ def extract_primary_keys(manifest_raw_config: dict) -> list[str]:
     return sorted(keys)
 
 
-def node_blocks_apply(node: RecipeNode) -> bool:
+def node_blocks_apply(node: AuditStep) -> bool:
     """True if this node must have a non-empty reason before btn_apply."""
     return node.get("active", True) and node.get("node_type") in {
         "filter_row", "exclusion_row", "drop_column", "developer_raw_yaml"
@@ -135,6 +135,10 @@ def node_blocks_apply(node: RecipeNode) -> bool:
 # ---------------------------------------------------------------------------
 # SessionManager
 # ---------------------------------------------------------------------------
+
+class LegacySessionError(ValueError):
+    """A stored session uses keys from before the configuration rename (ADR-091)."""
+
 
 class SessionManager:
     """Manages session identity, T1/T2 ghost, and T3 ghost files.
@@ -150,17 +154,17 @@ class SessionManager:
         self.root.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------
-    # 22-A-2: Manifest SHA256
+    # 22-A-2: Data analysis recipe SHA256
     # ------------------------------------------------------------------
 
     @staticmethod
-    def compute_manifest_sha256(manifest_path: Path) -> str:
-        """Hash of the manifest file set: the entry file and every included file (ADR-089).
+    def compute_data_analysis_recipe_sha256(data_analysis_recipe_path: Path) -> str:
+        """Hash of the data analysis recipe file set: the entry file and every included file (ADR-089).
 
         Sorted `relative_path:sha256` lines, hashed again. Independently verifiable with sha256sum.
         """
-        from app.modules.cache_keys import load_manifest
-        return load_manifest(manifest_path).manifest_sha256
+        from app.modules.cache_keys import load_data_analysis_recipe
+        return load_data_analysis_recipe(data_analysis_recipe_path).data_analysis_recipe_sha256
 
     # ------------------------------------------------------------------
     # 22-A-3: Data batch hash
@@ -188,9 +192,9 @@ class SessionManager:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def compute_session_key(manifest_sha256: str, data_batch_hash: str) -> str:
-        """f'{manifest_sha256[:12]}:{data_batch_hash[:12]}'"""
-        return f"{manifest_sha256[:12]}:{data_batch_hash[:12]}"
+    def compute_session_key(data_analysis_recipe_sha256: str, data_batch_hash: str) -> str:
+        """f'{data_analysis_recipe_sha256[:12]}:{data_batch_hash[:12]}'"""
+        return f"{data_analysis_recipe_sha256[:12]}:{data_batch_hash[:12]}"
 
     # ------------------------------------------------------------------
     # 22-A-5: Session directory
@@ -209,8 +213,8 @@ class SessionManager:
     def write_assembly_ghost(
         self,
         session_key: str,
-        manifest_id: str,
-        manifest_sha256: str,
+        data_analysis_recipe_id: str,
+        data_analysis_recipe_sha256: str,
         data_batch_hash: str,
         source_files: dict[str, str],   # {dataset_id: path_str}
         parquet_paths: dict[str, str],   # {"assembly": ..., "contracted": ...}
@@ -218,8 +222,8 @@ class SessionManager:
         """Write assembly.json to the session directory."""
         ghost = {
             "session_key": session_key,
-            "manifest_id": manifest_id,
-            "manifest_sha256": manifest_sha256,
+            "data_analysis_recipe_id": data_analysis_recipe_id,
+            "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
             "data_batch_hash": data_batch_hash,
             "assembled_at": _now_iso(),
             "source_files": {
@@ -236,11 +240,21 @@ class SessionManager:
     # 22-A-7: Read T1/T2 assembly ghost
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _read_current_json(path: Path, label: str) -> dict:
+        """Read a stored session file; refuse one written before the rename, naming the fix."""
+        from app.modules.renamed_keys import legacy_session_problem
+        data = json.loads(path.read_text())
+        problem = legacy_session_problem(data, f"{label} ({path.name})")
+        if problem:
+            raise LegacySessionError(problem)
+        return data
+
     def read_assembly_ghost(self, session_key: str) -> dict | None:
         path = self.session_dir(session_key) / "assembly.json"
         if not path.exists():
             return None
-        return json.loads(path.read_text())
+        return self._read_current_json(path, f"Session {session_key}")
 
     # ------------------------------------------------------------------
     # 22-A-8: T1/T2 restore — 6-step Prepped Chef check
@@ -248,7 +262,7 @@ class SessionManager:
 
     def restore_t1t2(
         self,
-        manifest_path: Path,
+        data_analysis_recipe_path: Path,
         source_files: dict[str, Path],
     ) -> dict:
         """6-step Prepped Chef restore logic.
@@ -257,7 +271,7 @@ class SessionManager:
             {
                 "status": "fast_path" | "reassemble" | "new_session" | "missing_source",
                 "session_key": str,
-                "manifest_sha256": str,
+                "data_analysis_recipe_sha256": str,
                 "data_batch_hash": str,
                 "parquet_paths": dict,   # present on fast_path
                 "missing": list[str],    # present on missing_source
@@ -267,15 +281,15 @@ class SessionManager:
         missing = [k for k, p in source_files.items() if not Path(p).exists()]
         if missing:
             return {"status": "missing_source", "missing": missing,
-                    "session_key": "", "manifest_sha256": "", "data_batch_hash": "",
+                    "session_key": "", "data_analysis_recipe_sha256": "", "data_batch_hash": "",
                     "parquet_paths": {}}
 
         # Step 2: compute hashes
-        manifest_sha256 = self.compute_manifest_sha256(manifest_path)
+        data_analysis_recipe_sha256 = self.compute_data_analysis_recipe_sha256(data_analysis_recipe_path)
         data_batch_hash = self.compute_data_batch_hash(source_files)
-        session_key = self.compute_session_key(manifest_sha256, data_batch_hash)
+        session_key = self.compute_session_key(data_analysis_recipe_sha256, data_batch_hash)
 
-        base = {"session_key": session_key, "manifest_sha256": manifest_sha256,
+        base = {"session_key": session_key, "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
                 "data_batch_hash": data_batch_hash}
 
         # Step 3: look for existing assembly ghost
@@ -309,40 +323,40 @@ class SessionManager:
     def write_t3_ghost(
         self,
         session_key: str,
-        manifest_id: str,
-        manifest_sha256: str,
+        data_analysis_recipe_id: str,
+        data_analysis_recipe_sha256: str,
         data_batch_hash: str,
         tier_toggle: str,
-        t3_recipe: list[dict] | None = None,
+        t3_audit_steps: list[dict] | None = None,
         t3_plot_overrides: dict | None = None,
         label: str = "",
-        t3_recipe_by_plot: dict[str, list[dict]] | None = None,
+        t3_audit_steps_by_plot: dict[str, list[dict]] | None = None,
         notification_log: list | None = None,
     ) -> Path:
         """Write a timestamped t3_{timestamp}.json to the session directory.
 
-        Phase 22-J: prefers `t3_recipe_by_plot` (per-plot stacks). The flat
-        `t3_recipe` argument is kept for backward compatibility with callers
+        Phase 22-J: prefers `t3_audit_steps_by_plot` (per-plot stacks). The flat
+        `t3_audit_steps` argument is kept for backward compatibility with callers
         not yet updated and is stored alongside as a flattened convenience.
         """
-        if t3_recipe_by_plot is None:
-            t3_recipe_by_plot = {}
-        if t3_recipe is None:
+        if t3_audit_steps_by_plot is None:
+            t3_audit_steps_by_plot = {}
+        if t3_audit_steps is None:
             # Flatten per-plot for the legacy field — readers that don't know
             # about per-plot still get a usable list.
-            t3_recipe = [n for nodes in t3_recipe_by_plot.values() for n in nodes]
+            t3_audit_steps = [n for nodes in t3_audit_steps_by_plot.values() for n in nodes]
         ts = _timestamp()
         ghost = {
             "session_key": session_key,
-            "manifest_id": manifest_id,
-            "manifest_sha256": manifest_sha256,
+            "data_analysis_recipe_id": data_analysis_recipe_id,
+            "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
             "data_batch_hash": data_batch_hash,
             "saved_at": _now_iso(),
             "label": label,
             "tier_toggle": tier_toggle,
             "schema_version": 2,           # 22-J: bumped from implicit v1 (flat list only)
-            "t3_recipe": t3_recipe,        # legacy flat view, kept for bw compat
-            "t3_recipe_by_plot": t3_recipe_by_plot,
+            "t3_audit_steps": t3_audit_steps,        # legacy flat view, kept for bw compat
+            "t3_audit_steps_by_plot": t3_audit_steps_by_plot,
             "t3_plot_overrides": t3_plot_overrides or {},
             "notification_log": notification_log or [],
         }
@@ -357,8 +371,8 @@ class SessionManager:
     def list_t3_ghosts(self, session_key: str) -> list[dict]:
         """All t3_*.json for a session, sorted newest-first.
 
-        Phase 22-J: surfaces both `t3_recipe` (legacy flat) and
-        `t3_recipe_by_plot` (per-plot stacks). For pre-22-J ghosts that have
+        Phase 22-J: surfaces both `t3_audit_steps` (legacy flat) and
+        `t3_audit_steps_by_plot` (per-plot stacks). For pre-22-J ghosts that have
         only the flat list, the flat nodes are bucketed under "__legacy__" so
         the UI can offer re-targeting (§12g.8).
         """
@@ -366,11 +380,13 @@ class SessionManager:
         ghosts = []
         for f in sorted(d.glob("t3_*.json"), reverse=True):
             try:
-                data = json.loads(f.read_text())
+                data = self._read_current_json(f, f"Session {session_key}")
+            except LegacySessionError:
+                raise
             except Exception:
                 continue
-            by_plot = data.get("t3_recipe_by_plot")
-            flat = data.get("t3_recipe", [])
+            by_plot = data.get("t3_audit_steps_by_plot")
+            flat = data.get("t3_audit_steps", [])
             if not isinstance(by_plot, dict) or not by_plot:
                 # Legacy ghost — lift the flat list into the orphaned bucket.
                 by_plot = {"__legacy__": list(flat)} if flat else {}
@@ -378,12 +394,12 @@ class SessionManager:
                 "file": str(f),
                 "saved_at": data.get("saved_at", ""),
                 "label": data.get("label", ""),
-                "manifest_sha256": data.get("manifest_sha256", ""),
+                "data_analysis_recipe_sha256": data.get("data_analysis_recipe_sha256", ""),
                 "data_batch_hash": data.get("data_batch_hash", ""),
                 "tier_toggle": data.get("tier_toggle", "T2"),
                 "schema_version": data.get("schema_version", 1),
-                "t3_recipe": flat,
-                "t3_recipe_by_plot": by_plot,
+                "t3_audit_steps": flat,
+                "t3_audit_steps_by_plot": by_plot,
                 "t3_plot_overrides": data.get("t3_plot_overrides", {}),
             })
         return ghosts
@@ -397,19 +413,25 @@ class SessionManager:
         sessions = []
         for assembly_file in self.root.glob("*/assembly.json"):
             try:
-                ghost = json.loads(assembly_file.read_text())
+                ghost = self._read_current_json(assembly_file, f"Session {assembly_file.parent.name}")
                 session_key = ghost.get("session_key", assembly_file.parent.name)
                 t3_ghosts = self.list_t3_ghosts(session_key)
                 latest_t3 = t3_ghosts[0].get("saved_at", "") if t3_ghosts else ""
                 sessions.append({
                     "session_key": session_key,
-                    "manifest_id": ghost.get("manifest_id", ""),
-                    "manifest_sha256": ghost.get("manifest_sha256", ""),
+                    "data_analysis_recipe_id": ghost.get("data_analysis_recipe_id", ""),
+                    "data_analysis_recipe_sha256": ghost.get("data_analysis_recipe_sha256", ""),
                     "data_batch_hash": ghost.get("data_batch_hash", ""),
                     "assembled_at": ghost.get("assembled_at", ""),
                     "latest_t3_saved_at": latest_t3,
                     "t3_count": len(t3_ghosts),
                 })
+            except LegacySessionError as exc:
+                # shown in the session panel with the fix, never skipped silently
+                sessions.append({"session_key": assembly_file.parent.name, "legacy_problem": str(exc),
+                                 "data_analysis_recipe_id": "", "data_analysis_recipe_sha256": "",
+                                 "data_batch_hash": "", "assembled_at": "", "latest_t3_saved_at": "",
+                                 "t3_count": 0})
             except Exception:
                 continue
         sessions.sort(key=lambda s: s["latest_t3_saved_at"] or s["assembled_at"], reverse=True)
@@ -444,6 +466,11 @@ class SessionManager:
             t3_files = [n for n in names if "/t3_" in n and n.endswith(".json")]
             if not assembly_files and not t3_files:
                 raise ValueError("ZIP does not contain a valid session (no assembly.json or t3_*.json found).")
+            from app.modules.renamed_keys import legacy_session_problem
+            for name in assembly_files + t3_files:
+                problem = legacy_session_problem(json.loads(zf.read(name)), f"Imported session file {name}")
+                if problem:
+                    raise LegacySessionError(problem)
             zf.extractall(self.root)
             # Derive session_key from assembly.json if present, otherwise from T3 ghost.
             anchor = assembly_files[0] if assembly_files else t3_files[0]
@@ -481,19 +508,19 @@ class SessionManager:
 
 
 # ---------------------------------------------------------------------------
-# T3 recipe helpers
+# audit steps helpers
 # ---------------------------------------------------------------------------
 
-def recipe_sha256(t3_recipe: list[dict]) -> str:
-    """SHA256 of the active-only T3 recipe serialized to JSON (sorted keys)."""
-    active = [n for n in t3_recipe if n.get("active", True)]
+def audit_steps_sha256(t3_audit_steps: list[dict]) -> str:
+    """SHA256 of the active-only audit steps serialized to JSON (sorted keys)."""
+    active = [n for n in t3_audit_steps if n.get("active", True)]
     serialized = json.dumps(active, sort_keys=True, ensure_ascii=False).encode()
     return hashlib.sha256(serialized).hexdigest()
 
 
-def gatekeeper_blocked(t3_recipe: list[dict]) -> list[str]:
+def gatekeeper_blocked(t3_audit_steps: list[dict]) -> list[str]:
     """Return list of node IDs that block btn_apply (active nodes with empty reason)."""
-    return [n["id"] for n in t3_recipe if node_blocks_apply(n)]
+    return [n["id"] for n in t3_audit_steps if node_blocks_apply(n)]
 
 
 # ---------------------------------------------------------------------------

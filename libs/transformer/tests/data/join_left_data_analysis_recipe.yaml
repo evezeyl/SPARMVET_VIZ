@@ -1,0 +1,32 @@
+data_schemas:
+  TableA:
+    id: TableA
+    source:
+      type: local_tsv
+      path: ./libs/transformer/tests/data/join_data_A.tsv
+    input_fields: {}
+    wrangling:
+      tier1: []
+    output_fields: {}
+  TableB:
+    id: TableB
+    source:
+      type: local_tsv
+      path: ./libs/transformer/tests/data/join_data_B.tsv
+    input_fields: {}
+    wrangling:
+      tier1: []
+    output_fields: {}
+joins:
+  left:
+    description: Verify that 'left' join keeps all Table A keys (IDs 1, 2, 3), with
+      nulls for B.
+    ingredients:
+    - dataset_id: TableA
+    - dataset_id: TableB
+    steps:
+    - action: join
+      right_ingredient: TableB
+      'on': id
+      how: left
+    final_contract: {}

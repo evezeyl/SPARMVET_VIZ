@@ -1,0 +1,17 @@
+id: APEC_STEC_virulence_genes
+info:
+  display_name: APEC STEC virulence genes
+  category: Edited
+  tags:
+  - APEC
+  - STEC
+  - SPARMVET
+  - Escherichia coli
+  description: Data analysis recipe for APEC STEC virulence genes. SPARMVET. Usable for STEC / E.coli.
+  version: '1.0'
+data_schemas:
+  APEC_STEC_virulence_genes:
+    # data_location: './Virulence_genes_APEC.tsv
+    input_fields: !include 'Virulence_genes_APEC_input_fields.yaml'
+    wrangling: [ ] 
+    output_fields: [ ]

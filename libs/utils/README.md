@@ -6,8 +6,8 @@ Shared utilities used across all application layers. Acts as the neutral resolut
 
 ## Key Components
 
-- **ConfigManager (config_loader.py)**: Recursively reads, validates, and dispatches YAML configuration files from `config/`. Supports `!include` tags for modular manifests. Single source of truth for all parsed configuration.
-- **HashingUtility (hashing.py)**: Deterministic SHA-256 fingerprinting for manifests, source files, and Parquet metadata. Produces the `manifest_sha256` and `data_batch_hash` used in session keys and export provenance (ADR-069).
+- **ConfigManager (config_loader.py)**: Recursively reads, validates, and dispatches YAML configuration files from `config/`. Supports `!include` tags for modular data analysis recipes. Single source of truth for all parsed configuration.
+- **HashingUtility (hashing.py)**: Deterministic SHA-256 fingerprinting for data analysis recipes, source files, and Parquet metadata. Produces the `data_analysis_recipe_sha256` and `data_batch_hash` used in session keys and export provenance (ADR-069).
 - **DebugOutput (debug_output.py)**: Shared CLI output helpers used by debug scripts across `libs/`.
 - **Errors (errors.py)**: Shared exception hierarchy (`SparmvetError`, sub-classes).
 

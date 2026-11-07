@@ -1,0 +1,74 @@
+# UI App features: Pipeline Exploration Simple
+name: "pipeline-exploration-simple"
+display_name: "Pipeline Exploration - Simple"
+
+flags:
+  # Can the user interact with the Tier 3 View? (Toggleable/Collapsible)
+  interactivity_enabled: true
+  # Does the user have access to the Gallery Browser?
+  gallery_enabled: false
+  # Can the user access the Blueprint Architect (data analysis recipe IDE)?
+  blueprint_enabled: false
+  # Can the user edit the YAML escape hatch in Blueprint IDE? (ADR-075; depends on blueprint_enabled)
+  data_analysis_recipe_edit_enabled: false
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: false
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: false
+  # Comparison Theater (Phase 12-A) — requires t3_sandbox_enabled to be meaningful
+  comparison_mode_enabled: true
+  # Session Management visibility
+  session_management_enabled: false
+  # External Import helper visibility
+  import_helper_enabled: false
+  # Can the user access T3 sandbox (wrangling + right sidebar audit panel)?
+  t3_sandbox_enabled: false
+  # Can the user export results (bundle zip + scope toggle)?
+  export_enabled: true
+  # Can the user export the consolidated audit report (HTML/PDF/DOCX)?
+  # Can the user upload replacement metadata (triggers T1 rebuild)?
+  metadata_ingestion_enabled: false
+  # Can the user ingest raw data files / Excel uploads?
+  data_ingestion_enabled: false
+  # Show/hide sidebar accordion panels
+  # Show active app features name in nav header
+  show_app_features_badge: true
+
+# Data analysis recipe selection — false: data analysis recipe fixed by deployment config (the operator names it with default_data_analysis_recipe in the deployment file)
+data_analysis_recipe_selector:
+  visible: false
+
+# testing_mode — false: data injected by pipeline; true: pre-fill data selector from data analysis recipe defaults
+testing_mode: false
+
+automation:
+  ghost_save:
+    enabled: false
+
+workspaces:
+  home:
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
+    right_sidebar:
+      visible: false
+      panels: []
+  blueprint:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  gallery:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []

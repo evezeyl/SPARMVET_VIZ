@@ -5,7 +5,7 @@ Entry point:
     define_server(input, output, session, *,
                   bootloader, wrangle_studio, dev_studio,
                   orchestrator, viz_factory, gallery_viewer,
-                  current_persona, anchor_path, tier1_anchor,
+                  current_app_features, anchor_path, tier1_anchor,
                   active_cfg,
                   active_collection_id, safe_input, active_home_subtab, tier_toggle,
                   home_state=None, session_manager=None)
@@ -20,7 +20,7 @@ Sub-handlers (Phase 24, ADR-051) — called from inside define_server():
   app/handlers/session_handlers.py            session management panel
   app/handlers/export_handlers.py             system tools + bundle + audit reports
   app/handlers/filter_and_audit_handlers.py   filter UI + T3 audit + propagation modal
-  app/modules/t3_recipe_engine.py             pure helpers (_apply_filter_rows, _op_label)
+  app/modules/t3_audit_engine.py             pure helpers (_apply_filter_rows, _op_label)
 
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.*
 decorators only. It MUST NOT be imported by non-Shiny contexts.
@@ -30,7 +30,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_recipe_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_audit_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -41,10 +41,10 @@ from pathlib import Path
 
 import polars as pl
 from shiny import reactive, render, ui
-from app.modules.cache_keys import load_manifest
+from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.view_badge import has_tier2_steps, view_badge
 
-from app.modules.t3_recipe_engine import _apply_filter_rows
+from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
@@ -52,7 +52,7 @@ from app.handlers.filter_and_audit_handlers import define_filter_audit_server
 from app.handlers.data_import_handlers import define_data_import_server
 
 # ADR-036: Shiny input IDs must match ^[a-zA-Z0-9_]+$ — no spaces, emoji, or
-# punctuation. This sanitiser strips anything outside that set so manifest
+# punctuation. This sanitiser strips anything outside that set so data analysis recipe
 # group/plot labels can use any characters (including emoji) without breaking
 # the input wiring. Collapses runs of stripped chars into a single underscore,
 # trims leading/trailing underscores, lowercases, and falls back to "group" if
@@ -76,9 +76,9 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
     """
     seen = set()
     results = []
-    for proj_id, manifest_path in bootloader.available_projects.items():
+    for data_analysis_recipe_id, data_analysis_recipe_path in bootloader.available_data_analysis_recipes.items():
         try:
-            cfg = load_manifest(manifest_path).config
+            cfg = load_data_analysis_recipe(data_analysis_recipe_path).config
             # Collect from analysis_groups
             groups = cfg.raw_config.get("analysis_groups", {})
             for _gid, gspec in groups.items():
@@ -94,7 +94,7 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
                     results.append((p_id, plot_spec))
         except (Exception, SystemExit):
             # SystemExit from ConfigManager structural validation must not propagate
-            # into the Shiny connection handler — bad manifests are silently skipped here.
+            # into the Shiny connection handler — bad data analysis recipes are silently skipped here.
             pass
     return results
 
@@ -102,7 +102,7 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
 def define_server(input, output, session, *,
                   bootloader, wrangle_studio, dev_studio,
                   orchestrator, viz_factory, gallery_viewer,
-                  current_persona, anchor_path, tier1_anchor,
+                  current_app_features, anchor_path, tier1_anchor,
                   active_cfg,
                   active_collection_id, safe_input,
                   active_home_subtab, tier_toggle,
@@ -126,8 +126,8 @@ def define_server(input, output, session, *,
         Plotting engine.
     gallery_viewer : GalleryViewer
         Gallery explorer module.
-    current_persona : reactive.Value[str]
-        Active persona (ADR-030).
+    current_app_features : reactive.Value[str]
+        Active app features (ADR-030).
     anchor_path : reactive.Value[str | None]
         Path to active Parquet anchor.
     tier1_anchor : reactive.Calc
@@ -144,7 +144,7 @@ def define_server(input, output, session, *,
         Phase 21-C: active data tier selection ("T1", "T2", "T3").
     home_state : reactive.Value[dict] | None
         §13 Home Module State Object — survives all panel switches.
-        Contains t3_recipe, applied_filters, tier_toggle, and navigation state.
+        Contains t3_audit_steps, applied_filters, tier_toggle, and navigation state.
     session_manager : SessionManager | None
         §12d Session ghost save/restore manager.
     session_pipeline_errors : reactive.Value[list] | None
@@ -159,26 +159,26 @@ def define_server(input, output, session, *,
     # @render.plot slot. Handlers read active_cfg() at render time, not init time.
     _all_group_plot_ids = _collect_all_group_plot_ids(bootloader)
 
-    # ── Project load notification — fires on startup and on every project switch ─
+    # ── Data analysis recipe load notification: fires on startup and on every switch of data analysis recipe ─
     @reactive.Effect
-    @reactive.event(input.project_id)
-    def _notify_project_loaded():
-        proj = safe_input(input, "project_id", "")
+    @reactive.event(input.data_analysis_recipe_id)
+    def _notify_data_analysis_recipe_loaded():
+        proj = safe_input(input, "data_analysis_recipe_id", "")
         if proj:
-            _notify(f"📂 Project '{proj}' loaded — plots are ready.", type="message", duration=5)
+            _notify(f"📂 Data analysis recipe '{proj}' loaded — plots are ready.", type="message", duration=5)
 
-    # Track selected project across sidebar nav switches (project_id input is
+    # Track selected data analysis recipe across sidebar nav switches (data_analysis_recipe_id input is
     # absent from DOM while Gallery/Blueprint is active; without this, returning
-    # to Home re-renders sidebar_tools_ui with the default project selected).
-    _last_project_id = reactive.Value(bootloader.get_default_project())
+    # to Home re-renders sidebar_tools_ui with the default data analysis recipe selected).
+    _last_data_analysis_recipe_id = reactive.Value(bootloader.get_default_data_analysis_recipe())
 
     @reactive.Effect
-    def _track_project_id():
-        v = safe_input(input, "project_id", None)
+    def _track_data_analysis_recipe_id():
+        v = safe_input(input, "data_analysis_recipe_id", None)
         if v is not None:
-            _last_project_id.set(v)
+            _last_data_analysis_recipe_id.set(v)
 
-    # ── Phase 21-F: Filter recipe builder state ────────────────────────────────
+    # ── Phase 21-F: Filter builder state ────────────────────────────────
     # List of dicts: {column, op, value, dtype}  — consumed by plot handlers and data preview.
     # Separate from the sidebar_filters render so tier toggle / tab switches don't reset it.
     applied_filters = reactive.Value([])   # committed on Apply
@@ -215,16 +215,16 @@ def define_server(input, output, session, *,
         return spec
 
     @reactive.Calc
-    def _project_keys():
-        """Chained cache keys of the active project (ADR-089), computed once per session.
+    def _data_analysis_recipe_keys():
+        """Chained cache keys of the active data analysis recipe (ADR-089), computed once per session.
 
         Hashes the data files by content, so it re-runs only when the project or the
         imported data changes (data_refresh_trigger), not on every plot render.
         """
         if data_refresh_trigger is not None:
             data_refresh_trigger.get()
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
-        return orchestrator.compute_project_keys(proj_id)
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        return orchestrator.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
 
     def _resolve_t1_lf(spec: dict | None):
         """Return the T1 LazyFrame for spec, always ignoring tier_toggle."""
@@ -235,16 +235,16 @@ def define_server(input, output, session, *,
             return tier1_anchor()
         target_ds = spec.get("target_dataset")
         if target_ds:
-            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
             out_path = anchor_dir / f"{target_ds}.parquet"
-            proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
             # ADR-089: never reuse an anchor by file name. The orchestrator checks the chained
             # key stored in the file (a cheap metadata read) and rebuilds only when it differs.
             return orchestrator.materialize_tier1(
-                project_id=proj_id,
+                data_analysis_recipe_id=data_analysis_recipe_id,
                 collection_id=target_ds,
                 output_path=out_path,
-                keys=_project_keys(),
+                keys=_data_analysis_recipe_keys(),
             )
         return tier1_anchor()
 
@@ -262,17 +262,17 @@ def define_server(input, output, session, *,
             target_ds = spec["target_dataset"]
             if data_refresh_trigger is not None:
                 data_refresh_trigger.get()
-            out_path = bootloader.get_location("user_sessions") / "anchors" / f"{target_ds}.parquet"
-            proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+            out_path = bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet"
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
             # Issue #10 / ADR-089: T2 is read from its stored parquet (key-checked). An error is
             # not caught here: showing Tier 1 in place of a failed Tier 2 would be a false result.
             return orchestrator.materialize_tier2(
-                project_id=proj_id, collection_id=target_ds,
-                tier1_path=out_path, keys=_project_keys())
+                data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target_ds,
+                tier1_path=out_path, keys=_data_analysis_recipe_keys())
         return _resolve_t1_lf(spec)
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
-        """Return the committed T3 RecipeNodes for the active plot subtab.
+        """Return the committed T3 AuditSteps for the active plot subtab.
 
         Phase 22-J / ADR-049: per-plot stacks. When `plot_id` is None, uses
         the currently active subtab. Empty list if no T3 nodes for that plot.
@@ -280,7 +280,7 @@ def define_server(input, output, session, *,
         if home_state is None:
             return []
         state = home_state.get()
-        by_plot = state.get("t3_recipe_by_plot", {}) or {}
+        by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
         if plot_id is None:
             plot_id = state.get("active_plot_subtab") or active_home_subtab.get()
         if not plot_id:
@@ -301,7 +301,7 @@ def define_server(input, output, session, *,
         return cols
 
     def _all_plot_subtab_ids() -> list[str]:
-        """Enumerate every plot subtab id available in the active manifest.
+        """Enumerate every plot subtab id available in the active data analysis recipe.
 
         Used by the propagation dialog to populate the "All plots except…"
         multiselect and to expand "All plots" intent at btn_apply commit.
@@ -361,7 +361,7 @@ def define_server(input, output, session, *,
             })
         return rows
 
-    # _apply_filter_rows moved to app/modules/t3_recipe_engine.py (Phase 24-A, ADR-051)
+    # _apply_filter_rows moved to app/modules/t3_audit_engine.py (Phase 24-A, ADR-051)
     # Imported at module top.
 
     def _spec_discrete_axes(spec: dict | None) -> tuple[set[str], set[str]]:
@@ -403,7 +403,7 @@ def define_server(input, output, session, *,
             if spec is None:
                 return None
 
-            # Build synthetic manifest so viz_factory.render can be used.
+            # Build synthetic data analysis recipe so viz_factory.render can be used.
             # Phase 21-F-2: Inject committed filters into plot spec.
             # _apply_filter_rows handles coercion and eq/ne→in/not_in promotion for lists.
             # Here we just strip the 'dtype' key before passing to VizFactory
@@ -440,7 +440,7 @@ def define_server(input, output, session, *,
                         elif vf["op"] in ("ne", "not_in"):
                             vf["op"] = "not_in"
                 plot_spec["filters"] = vf_filters
-            synthetic_manifest = {
+            synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
             }
@@ -470,7 +470,7 @@ def define_server(input, output, session, *,
             )
 
             try:
-                return viz_factory.render(lf, synthetic_manifest, p_id,
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                           aesthetic_override=_t3_overrides)
             except Exception as e:
                 # Capture error for session_pipeline_errors without violating R1
@@ -530,7 +530,7 @@ def define_server(input, output, session, *,
             import copy
             plot_spec = copy.deepcopy(spec)
             # No exploration filters or T3 nodes — this is the T2 reference view
-            synthetic_manifest = {
+            synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
             }
@@ -545,7 +545,7 @@ def define_server(input, output, session, *,
                 return fig
 
             try:
-                return viz_factory.render(lf, synthetic_manifest, p_id)
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id)
             except Exception as e:
                 if session_pipeline_errors is not None:
                     from datetime import datetime
@@ -687,10 +687,10 @@ def define_server(input, output, session, *,
         """
         Routes to WrangleStudio, TestLab, Gallery, or the Unified Home Theater.
         ADR-043 / Phase 21-A: 'Analysis Theater / Viz' nav mode eliminated.
-        Home renders exclusively from manifest analysis_groups.
+        Home renders exclusively from data analysis recipe analysis_groups.
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
-        p = current_persona.get()
+        p = current_app_features.get()
 
         # 1. Module Routing (ADR-031 Compliance)
         if active_sidebar == "Wrangle Studio":
@@ -704,19 +704,19 @@ def define_server(input, output, session, *,
 
         # 2. Results Theater (Home) Logic — ADR-043 Unified Home Theater
         try:
-            proj_id = safe_input(input, "project_id", bootloader.get_default_project())
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
             coll_id = active_collection_id()
             # ADR-024: Materialize to persistent session location
-            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
             if not anchor_dir.exists():
                 anchor_dir.mkdir(parents=True, exist_ok=True)
             out_path = anchor_dir / f"{coll_id}.parquet"
 
             lf_full = orchestrator.materialize_tier1(
-                project_id=proj_id,
+                data_analysis_recipe_id=data_analysis_recipe_id,
                 collection_id=coll_id,
                 output_path=out_path,
-                keys=_project_keys(),
+                keys=_data_analysis_recipe_keys(),
             )
 
         except Exception as e:
@@ -728,9 +728,9 @@ def define_server(input, output, session, *,
         cfg = active_cfg()
         groups = cfg.raw_config.get("analysis_groups", {})
 
-        # --- UI-TITLE-1: manifest title banner ---
-        # Resolution: persona ui_title.text override > manifest info.display_name > nothing.
-        # If resolved title is empty or persona sets ui_title.visible=false: no banner.
+        # --- UI-TITLE-1: data analysis recipe title banner ---
+        # Resolution: app features ui_title.text override > data analysis recipe info.display_name > nothing.
+        # If resolved title is empty or app features sets ui_title.visible=false: no banner.
         _ui_title_cfg = bootloader.config.get("ui_title", {})
         _title_visible = _ui_title_cfg.get("visible", True)
         _title_text = (
@@ -765,7 +765,7 @@ def define_server(input, output, session, *,
                 "Raw",
                 "T1 — As assembled",
                 "T1: Raw assembled data. No processing steps applied. "
-                "In most projects T1 = T2. Use this to compare against the processed result.",
+                "In most data analysis recipes T1 = T2. Use this to compare against the processed result.",
             ),
             "T2": _tier_label(
                 "Result",
@@ -793,7 +793,7 @@ def define_server(input, output, session, *,
         )
         tier_choices["T3"] = _tier_label("My view", "T3 — Filtered / Dropped", _my_view_desc)
 
-        # STATIC-VIEW-1a: static personas (interactivity_enabled=false) have no tier
+        # STATIC-VIEW-1a: static app features files (interactivity_enabled=false) have no tier
         # switching — hide the strip entirely. T2 is the implicit default via the
         # _track_tier_toggle fallback (safe_input returns "T2" when input absent).
         if bootloader.is_enabled("interactivity_enabled"):
@@ -803,7 +803,7 @@ def define_server(input, output, session, *,
                 "T2": _tier_label(
                     "Result",
                     "T2 — Processed",
-                    "Plots show the T2 result produced by the manifest. "
+                    "Plots show the T2 result produced by the data analysis recipe. "
                     "If no processing steps are defined, T2 = T1.",
                 ),
                 "T3": _tier_label("My view", "T3 — Filtered / Dropped", _my_view_desc),
@@ -842,8 +842,8 @@ def define_server(input, output, session, *,
                         "tier_toggle",
                         label=None,
                         choices=tier_choices,
-                        # Default T2: in most projects T2 = T1 so there is no cost,
-                        # and projects with processing steps show the intended result.
+                        # Default T2: in most data analysis recipes T2 = T1 so there is no cost,
+                        # and data analysis recipes with processing steps show the intended result.
                         # Use static default — tier_toggle reactive value is NOT read here
                         # so that tier changes do NOT invalidate/re-render dynamic_tabs DOM.
                         # The _track_tier_toggle effect keeps tier_toggle reactive in sync.
@@ -886,7 +886,7 @@ def define_server(input, output, session, *,
 
         # --- No groups: fallback to top-level plots or show guidance ---
         if not groups:
-            # Attempt to fall back to top-level plots in the manifest
+            # Attempt to fall back to top-level plots in the data analysis recipe
             top_plots = cfg.raw_config.get("plots", {})
             if top_plots:
                 # Wrap top-level plots in a synthetic single group
@@ -906,7 +906,7 @@ def define_server(input, output, session, *,
                 groups_nav = ui.div(plots_card, class_="spv-panel p-2")
             else:
                 groups_nav = ui.p(
-                    "Define analysis_groups (or top-level plots) in your manifest to populate this view.",
+                    "Define analysis_groups (or top-level plots) in your data analysis recipe to populate this view.",
                     class_="text-muted p-4"
                 )
             return ui.div(
@@ -1007,7 +1007,7 @@ def define_server(input, output, session, *,
     def _sync_anchor_path():
         try:
             coll_id = active_collection_id()
-            anchor_dir = bootloader.get_location("user_sessions") / "anchors"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
             out_path = anchor_dir / f"{coll_id}.parquet"
             if out_path.exists():
                 new_val = str(out_path)
@@ -1017,46 +1017,46 @@ def define_server(input, output, session, *,
             pass
 
     # Data change detection — runs as a side-effect separate from dynamic_tabs render.
-    # Reads project_id to react when the user switches projects; computes source file
+    # Reads data_analysis_recipe_id to react when the user switches data analysis recipes; computes source file
     # hashes, compares to stored data_batch_hash, warns if changed, and always writes
-    # manifest_sha256 + data_batch_hash into home_state for session_manager.
+    # data_analysis_recipe_sha256 + data_batch_hash into home_state for session_manager.
     @reactive.Effect
     def _sync_session_provenance():
         if home_state is None:
             return
-        proj_id = safe_input(input, "project_id", bootloader.get_default_project())
-        if not proj_id:
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        if not data_analysis_recipe_id:
             return
         try:
             from app.modules.session_manager import SessionManager as _SM
             from app.modules.session_manager import extract_primary_keys
-            source_files = orchestrator.get_source_files(proj_id)
+            source_files = orchestrator.get_source_files(data_analysis_recipe_id)
             new_dbh = _SM.compute_data_batch_hash(source_files) if source_files else ""
-            manifest_path = bootloader.get_location("manifests") / f"{proj_id}.yaml"
-            new_msig = _SM.compute_manifest_sha256(manifest_path) if manifest_path.exists() else ""
+            data_analysis_recipe_path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"
+            new_msig = _SM.compute_data_analysis_recipe_sha256(data_analysis_recipe_path) if data_analysis_recipe_path.exists() else ""
             new_pks = extract_primary_keys(active_cfg().raw_config)
 
             cur = home_state.get()
             prev_dbh = cur.get("data_batch_hash") or ""
-            prev_msig = cur.get("manifest_sha256") or ""
-            # Only warn if the SAME manifest's source files changed.
-            # A project switch (different manifest_sha256) naturally has a
+            prev_msig = cur.get("data_analysis_recipe_sha256") or ""
+            # Only warn if the SAME data analysis recipe's source files changed.
+            # A data analysis recipe switch (different data_analysis_recipe_sha256) naturally has a
             # different data_batch_hash — that's expected, not an alert.
-            same_manifest = prev_msig and prev_msig == new_msig
-            if same_manifest and prev_dbh and prev_dbh != new_dbh:
+            same_data_analysis_recipe = prev_msig and prev_msig == new_msig
+            if same_data_analysis_recipe and prev_dbh and prev_dbh != new_dbh:
                 _notify(
                     "⚠️ Source data files for this project have changed — re-assembling.",
                     type="warning", duration=8,
                 )
             needs_update = (
-                cur.get("manifest_sha256") != new_msig
+                cur.get("data_analysis_recipe_sha256") != new_msig
                 or cur.get("data_batch_hash") != new_dbh
                 or list(cur.get("primary_keys") or []) != list(new_pks)
             )
             if needs_update:
                 home_state.set({
                     **cur,
-                    "manifest_sha256": new_msig,
+                    "data_analysis_recipe_sha256": new_msig,
                     "data_batch_hash": new_dbh,
                     "primary_keys": new_pks,
                 })
@@ -1069,8 +1069,8 @@ def define_server(input, output, session, *,
                     session_key = _SM.compute_session_key(new_msig, new_dbh)
                     session_manager.write_assembly_ghost(
                         session_key=session_key,
-                        manifest_id=proj_id,
-                        manifest_sha256=new_msig,
+                        data_analysis_recipe_id=data_analysis_recipe_id,
+                        data_analysis_recipe_sha256=new_msig,
                         data_batch_hash=new_dbh,
                         source_files={k: str(v) for k, v in source_files.items()},
                         parquet_paths={},
@@ -1238,6 +1238,32 @@ def define_server(input, output, session, *,
         except Exception:
             return ui.div()
 
+
+    @output
+    @render.ui
+    def data_analysis_recipe_info_ui():
+        """Info of the open data analysis recipe: its info: block as written, nested keys indented.
+        Reads active_cfg only, so a switch of data analysis recipe refreshes this slot and not the sidebar."""
+        from app.modules.data_analysis_recipe_info import info_lines
+        try:
+            lines = info_lines((active_cfg().raw_config or {}).get("info"))
+        except Exception:
+            lines = []
+        if not lines:
+            return ui.div(ui.tags.small("No info in this data analysis recipe.", class_="text-muted"), class_="p-1")
+        return ui.div(
+            *[
+                ui.div(
+                    ui.tags.small(label, class_="text-muted"),
+                    *([ui.tags.small(": " + value)] if value is not None else []),
+                    style=f"margin-left:{depth * 12}px;",
+                    class_="data-analysis-recipe-info-line",
+                )
+                for depth, label, value in lines
+            ],
+            class_="p-1",
+        )
+
     @output
     @render.ui
     def col_drop_audit_btn_ui():
@@ -1271,17 +1297,17 @@ def define_server(input, output, session, *,
 
     @render.ui
     def sidebar_nav_ui():
-        perm = current_persona.get()
-        print(f"DEBUG: Rendering sidebar_nav_ui for Persona: {perm}")
+        perm = current_app_features.get()
+        print(f"DEBUG: Rendering sidebar_nav_ui for App features: {perm}")
 
         nav_items = [ui.nav_panel("Home", value="Home")]
 
-        # PERSONA-1 (2026-04-30): gates consult the persona feature-flag system
-        # via bootloader.is_enabled(...) instead of hardcoded persona names. This
-        # matches the design intent of .claude/rules/rules_persona_feature_flags.md
+        # APP_FEATURES-1 (2026-04-30): gates consult the app features feature-flag system
+        # via bootloader.is_enabled(...) instead of hardcoded app features names. This
+        # matches the design intent of .claude/rules/rules_app_features_flags.md
         # — flags like gallery_enabled are documented as INDEPENDENT and can be
-        # flipped per-persona in config/ui/templates/ without touching code here.
-        if bootloader.is_enabled("wrangle_studio_enabled"):
+        # flipped per app features file in config/app_features/ without touching code here.
+        if bootloader.is_enabled("blueprint_enabled"):
             nav_items.append(ui.nav_panel("Blueprint Architect", value="Wrangle Studio"))
 
         if bootloader.is_enabled("test_lab_enabled"):
@@ -1293,7 +1319,7 @@ def define_server(input, output, session, *,
         badge = (
             ui.h6(f"Active: {perm.replace('_', ' ').title()}",
                   class_="text-muted px-2 py-1 mb-1 border-bottom spv-text-meta")
-            if bootloader.is_enabled("show_persona_badge")
+            if bootloader.is_enabled("show_app_features_badge")
             else None
         )
         help_btn = ui.input_action_button(
@@ -1337,17 +1363,17 @@ def define_server(input, output, session, *,
         )
         ui.modal_show(m)
 
-    # 4. Sidebar Tools (Contextual Manifest Workbench)
+    # 4. Sidebar Tools (Contextual Data analysis recipe Workbench)
     @output(id="sidebar_tools_ui")
     @render.ui
     def sidebar_tools_ui():
         """
         Relocated Sidebar Management (ADR-038).
-        Enforces dedicated Persona-based control clusters.
+        Enforces dedicated App features based control clusters.
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
-        # Gallery (ADR-057: filter + recipe selector moved here from internal sidebar)
+        # Gallery (ADR-057: filter + example selector moved here from internal sidebar)
         # notification_log lives in the RIGHT sidebar only (ADR-073 slot registry) —
         # do not also mount it here, it duplicates the id and races with the right
         # sidebar's copy (REG-10).
@@ -1356,26 +1382,26 @@ def define_server(input, output, session, *,
                 gallery_viewer.build_sidebar_ui(),
             )
 
-        # Manifest Workbench (Wrangle Studio)
+        # Data analysis recipe Workbench (Wrangle Studio)
         if active_sidebar == "Wrangle Studio":
             return ui.div(
                 ui.accordion(
                     ui.accordion_panel(
-                        "🗂️ Master Manifest",
-                        ui.input_select("stored_manifest_selector", None,
+                        "🗂️ Master Data Analysis Recipe",
+                        ui.input_select("stored_data_analysis_recipe_selector", None,
                                         choices=["Scanning config/..."]),
                         ui.input_action_button(
-                            "btn_bp_new_manifest", "+ New",
+                            "btn_bp_new_data_analysis_recipe", "+ New",
                             class_="btn-outline-primary btn-sm w-100 mt-1",
                         ),
                         ui.tags.small(
-                            "Select a project manifest. Click any node in the TubeMap to navigate.",
+                            "Select a data analysis recipe. Click any node in the TubeMap to navigate.",
                             class_="text-muted d-block mt-1"),
                         ui.output_ui("bp_draft_status_ui"),
                         icon=ui.tags.i(class_="bi bi-diagram-3")
                     ),
                     ui.accordion_panel(
-                        "📝 Manifest Info",
+                        "📝 Data analysis recipe Info",
                         ui.output_ui("bp_meta_form_ui"),
                         icon=ui.tags.i(class_="bi bi-info-square")
                     ),
@@ -1386,14 +1412,14 @@ def define_server(input, output, session, *,
                     ),
                     ui.accordion_panel(
                         "📤 External Exchange",
-                        ui.input_file("manifest_uploader", "Select YAML...",
+                        ui.input_file("data_analysis_recipe_uploader", "Select YAML...",
                                       accept=[".yaml"], multiple=False),
                         ui.input_action_button("btn_upload_replace", "📥 Upload (Replace)",
                                                class_="btn-info btn-sm w-100 mb-1"),
                         ui.input_action_button("btn_upload_append", "➕ Upload & Append",
                                                class_="btn-outline-primary btn-sm w-100"),
                         ui.hr(),
-                        ui.download_button("btn_download_manifest", "💾 Download/Export",
+                        ui.download_button("btn_download_data_analysis_recipe", "💾 Download/Export",
                                            class_="btn-outline-primary w-100"),
                         icon=ui.tags.i(class_="bi bi-cloud-arrow-up")
                     ),
@@ -1414,7 +1440,7 @@ def define_server(input, output, session, *,
                 ui.div(
                     ui.input_select("dataset_pipeline_selector", None,
                                     choices=["Select a Master first"]),
-                    ui.input_action_button("btn_import_manifest", "Import",
+                    ui.input_action_button("btn_import_data_analysis_recipe", "Import",
                                            class_="btn-info btn-sm"),
                     ui.input_action_button("btn_save_internal", "Save",
                                            class_="btn-success btn-sm"),
@@ -1425,29 +1451,25 @@ def define_server(input, output, session, *,
             )
 
         # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
-        # Build project state needed by some panel renderers.
+        # Build data analysis recipe state needed by some panel renderers.
         try:
-            proj_choices = list(bootloader.available_projects.keys())
-            def_proj = bootloader.get_default_project()
+            data_analysis_recipe_choices = list(bootloader.available_data_analysis_recipes.keys())
+            default_data_analysis_recipe = bootloader.get_default_data_analysis_recipe()
         except Exception:
-            proj_choices = []
-            def_proj = None
+            data_analysis_recipe_choices = []
+            default_data_analysis_recipe = None
 
         with reactive.isolate():
-            _current_proj = _last_project_id.get() or def_proj
+            _current_data_analysis_recipe = _last_data_analysis_recipe_id.get() or default_data_analysis_recipe
 
         # Panel renderer map: type → callable() → accordion_panel | None
         # None means the panel type was handled (e.g. notification_log goes outside accordion).
-        def _render_project_info():
+        def _render_data_analysis_recipe_info():
+            """Info panel shell. Only mounts a slot: the content is its own output so that reading the
+            the data analysis recipe here would not re-render (and destroy) the whole sidebar (shell stability pattern)."""
             return ui.accordion_panel(
-                "Project",
-                ui.div(
-                    ui.tags.small(
-                        bootloader.deployment_name,
-                        class_="text-muted d-block"
-                    ),
-                    class_="p-1"
-                ),
+                "Info",
+                ui.output_ui("data_analysis_recipe_info_ui"),
                 icon=ui.tags.i(class_="bi bi-info-circle-fill")
             )
 
@@ -1465,13 +1487,13 @@ def define_server(input, output, session, *,
                 icon=ui.tags.i(class_="bi bi-building")
             )
 
-        def _render_manifest_choice():
+        def _render_data_analysis_recipe_choice():
             return ui.accordion_panel(
-                "Manifest Choice",
+                "Data analysis recipe Choice",
                 ui.div(
-                    ui.input_select("project_id", "Project Selection",
-                                    choices=proj_choices,
-                                    selected=_current_proj),
+                    ui.input_select("data_analysis_recipe_id", "Data analysis recipe",
+                                    choices=data_analysis_recipe_choices,
+                                    selected=_current_data_analysis_recipe),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")
@@ -1518,16 +1540,16 @@ def define_server(input, output, session, *,
             )
 
         _home_panel_renderers = {
-            "project_info":       _render_project_info,
+            "data_analysis_recipe_info":       _render_data_analysis_recipe_info,
             "deployment_info":    _render_deployment_info,
-            "manifest_choice":    _render_manifest_choice,
+            "data_analysis_recipe_choice":    _render_data_analysis_recipe_choice,
             "filters":            _render_filters,
             "data_import":        _render_data_import,
             "export":             _render_export,
             "session_management": _render_session_management,
         }
 
-        # Iterate slot list from persona template (ADR-073).
+        # Iterate slot list from app features file (ADR-073).
         sidebar_cfg = bootloader.get_sidebar_config("home", "left")
         panels = []
         include_notification_log = False
@@ -1546,8 +1568,8 @@ def define_server(input, output, session, *,
             if panel is not None:
                 panels.append(panel)
 
-        _has_manifest = bootloader.get_manifest_selector().get("visible", True)
-        open_panels = ["Manifest Choice"] if _has_manifest else []
+        _has_data_analysis_recipe = bootloader.get_data_analysis_recipe_selector().get("visible", True)
+        open_panels = ["Data analysis recipe Choice"] if _has_data_analysis_recipe else []
         return ui.div(
             ui.accordion(
                 *panels,
@@ -1610,7 +1632,7 @@ def define_server(input, output, session, *,
                     ui.output_ui("bp_help_panel_ui"),
                     class_="mb-2 shadow-sm border-0"
                 ),
-                # VIZFAC-BLUEPRINT-FORM-1: plot_defaults editor (manifest root node)
+                # VIZFAC-BLUEPRINT-FORM-1: plot_defaults editor (data analysis recipe root node)
                 ui.card(
                     ui.card_header(
                         ui.div(ui.h5("Plot Defaults", class_="mb-0"),
@@ -1620,8 +1642,8 @@ def define_server(input, output, session, *,
                     class_="mb-2 shadow-sm border-0"
                 ),
             ]
-            # BP-BRANCH-NODE-1: Branch Node card (manifest_edit_enabled only)
-            if bootloader.is_enabled("manifest_edit_enabled"):
+            # BP-BRANCH-NODE-1: Branch Node card (data_analysis_recipe_edit_enabled only)
+            if bootloader.is_enabled("data_analysis_recipe_edit_enabled"):
                 parts.append(
                     ui.card(
                         ui.card_header(
@@ -1666,7 +1688,7 @@ def define_server(input, output, session, *,
                         style="background:#fffde7;"
                     ),
                     ui.div(
-                        ui.output_ui("recipe_pending_badge_ui"),
+                        ui.output_ui("audit_pending_badge_ui"),
                         ui.output_ui("audit_nodes_header_ui"),
                         # PROP-2: effective filter summary (sidebar + T3 nodes)
                         ui.output_ui("filter_inventory_ui"),
@@ -1680,7 +1702,7 @@ def define_server(input, output, session, *,
                 ))
                 parts.append(ui.output_ui("audit_stack_tools_ui"))
                 # The "Plot Style" panel (aesthetic_style_panel_ui, defined in audit_stack.py) is NOT
-                # mounted: letting users change in HOME what the manifest defines is too much for
+                # mounted: letting users change in HOME what the data analysis recipe defines is too much for
                 # now, and using it broke the plot (test plan HOM-47). Its code is kept, unused, as
                 # an eventual enhancement (fork issue #15). To bring it back, add
                 # parts.append(ui.output_ui("aesthetic_style_panel_ui")) here, after fixing HOM-47.
@@ -1699,8 +1721,8 @@ def define_server(input, output, session, *,
                 ui.card(
                     ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
                     ui.div(
-                        ui.p("📚 Browse visual recipes.", class_="text-muted small p-2"),
-                        ui.p("Select a recipe to copy its YAML into the Architect sandbox.",
+                        ui.p("📚 Browse visual examples.", class_="text-muted small p-2"),
+                        ui.p("Select an example to copy its YAML into the Architect sandbox.",
                              class_="text-muted small px-2"),
                         class_="p-1"
                     ),
@@ -1729,9 +1751,9 @@ def define_server(input, output, session, *,
                         icon=ui.tags.i(class_="bi bi-link-45deg"),
                     ),
                     ui.accordion_panel(
-                        "Manifest Scaffolding",
+                        "Data analysis recipe Scaffolding",
                         ui.tags.small(
-                            "Generate boilerplate pipeline manifest from uploaded files.",
+                            "Generate boilerplate pipeline data analysis recipe from uploaded files.",
                             class_="text-muted d-block p-1",
                         ),
                         icon=ui.tags.i(class_="bi bi-file-earmark-code"),
@@ -1788,7 +1810,7 @@ def define_server(input, output, session, *,
         if home_state is not None:
             state = home_state.get()
             active_sub = state.get("active_plot_subtab", "")
-            by_plot = state.get("t3_recipe_by_plot", {}) or {}
+            by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
             t3_nodes = [
                 n for n in by_plot.get(active_sub, [])
                 if n.get("active", True)
@@ -1920,7 +1942,7 @@ def define_server(input, output, session, *,
         bootloader=bootloader,
         orchestrator=orchestrator,
         viz_factory=viz_factory,
-        current_persona=current_persona,
+        current_app_features=current_app_features,
         active_cfg=active_cfg,
         tier1_anchor=tier1_anchor,
         tier_toggle=tier_toggle,
@@ -1931,7 +1953,7 @@ def define_server(input, output, session, *,
         session_pipeline_errors=session_pipeline_errors,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
-        view_keys=_project_keys,
+        view_keys=_data_analysis_recipe_keys,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────
@@ -1941,7 +1963,7 @@ def define_server(input, output, session, *,
     define_session_server(
         input, output, session,
         session_manager=session_manager,
-        current_persona=current_persona,
+        current_app_features=current_app_features,
         home_state=home_state,
         safe_input=safe_input,
         notification_log=notification_log,

@@ -31,7 +31,7 @@ not in source logic or developer-level annotations.
 
 ### Always allowed (not Python)
 
-- YAML `label:` values in `analysis_groups`, `recipe_meta.md`, gallery bundles
+- YAML `label:` values in `analysis_groups`, `example_meta.md`, gallery bundles
 - All `.md` files: tasks, changelogs, rules, README, handoffs
 - Quarto `.qmd` documentation files
 - `tasks.md` section headers and priority markers
@@ -69,7 +69,7 @@ for schema_id, schema in schemas.items():
 
 | Type | Example | When to write |
 |---|---|---|
-| Constraint note | `# 'on' is a YAML reserved word — must quote in manifests` | Non-obvious external constraint |
+| Constraint note | `# 'on' is a YAML reserved word — must quote in data_analysis_recipes` | Non-obvious external constraint |
 | ADR reference | `# ADR-045: renders must never call reactive.Value.set()` | Rule that a reader might be tempted to violate |
 | Gotcha | `# Float64 → Int64 → String: direct cast gives "2022.0"` | Behaviour that surprises developers |
 | WHY block | `# WHY: we write to tmpAI/ not tmp/ — tmp/ is reserved for @verify outputs` | Design decision not obvious from code |
@@ -95,7 +95,7 @@ Every module gets a module-level docstring in plain English describing:
 - What user space / workflow does this file serve?
 - What are its inputs and what does it produce?
 - What would break if this file were deleted?
-- Which persona flag(s) gate this module (for app/ handlers)
+- Which app features flag(s) gate this module (for app/ handlers)
 
 ```python
 """
@@ -106,8 +106,8 @@ transformations: window aggregations, cumulative counts, date extraction,
 z-scores, percentiles, and interpolation.
 
 Consumed by: DataAssembler (data_assembler.py) via the action registry.
-Persona gate: none — all personas can trigger these via manifests.
-If deleted: manifests using any of these action names will silently skip those steps.
+App features gate: none — all app features files can trigger these via data analysis recipes.
+If deleted: data analysis recipes using any of these action names will silently skip those steps.
 """
 ```
 
@@ -132,7 +132,7 @@ def classify_update(current: str, latest: str) -> str:
 
 Every `@register_action` and `@register_plot_component` function gets a docstring
 explaining the transformation in domain terms — what a scientist would need to know
-to use it in a manifest:
+to use it in a data analysis recipe:
 
 ```python
 @register_action("cast")
@@ -142,7 +142,7 @@ def cast(lf: pl.LazyFrame, spec: dict) -> pl.LazyFrame:
     Use when a TSV-inferred numeric column (e.g. Year as Float64) needs to be
     a String for discrete plot axes, or when a join key has mismatched types.
     Two-step cast required for Float64 → String: cast to Int64 first to avoid
-    '2022.0' output (see rules_manifest_structure.md §3-B).
+    '2022.0' output (see rules_data_analysis_recipe_structure.md §3-B).
 
     spec keys: columns (list[str]), dtype (str — Polars type name e.g. 'String', 'Int64')
     """
@@ -157,7 +157,7 @@ one-liner explaining its reactive dependencies and what it produces or side-effe
 @output
 @render.ui
 def sidebar_filters():
-    """Mounts the filter accordion shell. Reads only current_persona — stable shell pattern (ADR-045 §R4)."""
+    """Mounts the filter accordion shell. Reads only current_app_features — stable shell pattern (ADR-045 §R4)."""
 ```
 
 ---

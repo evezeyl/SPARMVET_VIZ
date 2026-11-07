@@ -24,8 +24,8 @@ def test_tier3_predicate_pushdown(output: str = None):
         "category": ["A", "B", "A", "B"]
     })
     
-    # 2. Setup Manifest with Filter
-    manifest = {
+    # 2. Setup Data Analysis Recipe with Filter
+    data_analysis_recipe = {
         "plots": {
             "species_comparison": {
                 "mapping": {"x": "species", "y": "count", "fill": "category"},
@@ -47,7 +47,7 @@ def test_tier3_predicate_pushdown(output: str = None):
     registry.PLOT_COMPONENTS["geom_col"] = lambda p, params: p + geom_col(**params)
     
     print("Starting Tier 3 Render...")
-    p = factory.render(df, manifest, "species_comparison")
+    p = factory.render(df, data_analysis_recipe, "species_comparison")
     
     # 4. Verify results (Internal State check)
     # We can check the data in the plot object

@@ -1,0 +1,70 @@
+# UI App features: Pipeline Exploration Advanced
+name: "pipeline-exploration-advanced"
+display_name: "Pipeline Exploration - Advanced"
+
+flags:
+  # Can the user interact with the Tier 3 View?
+  interactivity_enabled: true
+  # Does the user have access to the Gallery Browser?
+  gallery_enabled: false
+  # Can the user access the Blueprint Architect (data analysis recipe IDE)?
+  blueprint_enabled: false
+  # Can the user edit the YAML escape hatch in Blueprint IDE? (ADR-075; depends on blueprint_enabled)
+  data_analysis_recipe_edit_enabled: false
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: false
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: false
+  # Comparison Theater (Phase 12-A)
+  comparison_mode_enabled: true
+  # Session Management visibility
+  session_management_enabled: true
+  # External Import helper visibility
+  import_helper_enabled: false
+  # Can the user access T3 sandbox (wrangling + right sidebar audit panel)?
+  t3_sandbox_enabled: true
+  # Can the user export results (bundle zip + scope toggle)?
+  export_enabled: true
+  # Can the user export the consolidated audit report (HTML/PDF/DOCX)?
+  # Can the user upload replacement metadata (triggers T1 rebuild)?
+  metadata_ingestion_enabled: true
+  # Can the user ingest raw data files / Excel uploads?
+  data_ingestion_enabled: false
+  # Show/hide sidebar accordion panels
+  # Show active app features name in nav header
+  show_app_features_badge: true
+
+data_analysis_recipe_selector:
+  visible: true
+
+testing_mode: true
+
+automation:
+  ghost_save:
+    enabled: true
+
+workspaces:
+  home:
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/home_standard_right.yaml
+  blueprint:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  gallery:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []

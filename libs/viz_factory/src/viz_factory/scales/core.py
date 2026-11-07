@@ -679,7 +679,7 @@ def handle_x_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
-    "description": "Reverse the direction of the y-axis; use when higher values should appear at the bottom (e.g. depth profiles, rank plots).",
+    "description": "Reverse the direction of the y-axis; use when higher values should appear at the bottom (e.g. depth deployments, rank plots).",
     "yaml_example": "layers:\n  - name: scale_y_reverse",
 })
 def handle_y_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -1144,7 +1144,7 @@ def _coerce_tuple_kwargs(spec: Dict[str, Any], keys=("h", "c", "l", "range")) ->
     """YAML naturally produces lists; plotnine/mizani's hue/lightness palettes
     do ``h[1] - h[0]`` which fails on Python lists (only works on tuples or
     numpy arrays). Convert known tuple-expecting kwargs from list → tuple so
-    manifest authors can write the natural YAML form ``h: [0, 360]`` without
+    data analysis recipe authors can write the natural YAML form ``h: [0, 360]`` without
     crashing at draw time."""
     out = dict(spec)
     for k in keys:

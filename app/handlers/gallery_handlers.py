@@ -4,10 +4,10 @@ Gallery Shiny wiring (ADR-037 / ADR-045, Phase 22-F).
 Entry point:
     define_server(input, output, session, *,
                   bootloader, safe_input,
-                  current_persona=None, home_state=None)
+                  current_app_features=None, home_state=None)
 
-Concern: Gallery filtering, preview rendering, recipe clone, gallery_browser_anchor.
-         Clone transplants a developer_raw_yaml RecipeNode into home_state._pending_t3_nodes
+Concern: Gallery filtering, preview rendering, example clone, gallery_browser_anchor.
+         Clone transplants a developer_raw_yaml AuditStep into home_state._pending_t3_nodes
          (§12e). Gated on t3_sandbox_enabled.
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.* decorators
 only. It MUST NOT be imported by non-Shiny contexts.
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (gallery_handlers)
-# consumes: app/src/bootloader.py, libs/transformer/src/transformer/data_wrangler.py (removed — clone now builds RecipeNode directly)
+# consumes: app/src/bootloader.py, libs/transformer/src/transformer/data_wrangler.py (removed — clone now builds AuditStep directly)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/ui_implementation_contract.md#12e
 # @end_deps
@@ -36,7 +36,7 @@ from shiny import reactive, render, ui
 
 def define_server(input, output, session, *,
                   bootloader, safe_input,
-                  current_persona=None, home_state=None):
+                  current_app_features=None, home_state=None):
     """Register all Gallery reactive handlers.
 
     Parameters
@@ -45,10 +45,10 @@ def define_server(input, output, session, *,
         Path Authority instance (ADR-031).
     safe_input : callable
         Shared utility: safe_input(input_obj, key, default) → value.
-    current_persona : reactive.Value[str] | None
-        Active persona — used to gate "Send to T3" (§12e).
+    current_app_features : reactive.Value[str] | None
+        Active app features — used to gate "Send to T3" (§12e).
     home_state : reactive.Value[dict] | None
-        §13 Home Module State Object — receives transplanted RecipeNodes.
+        §13 Home Module State Object — receives transplanted AuditSteps.
     """
 
     # --- Gallery Taxonomy 'Select All' Logic ---
@@ -149,15 +149,15 @@ def define_server(input, output, session, *,
             registry = idx.get("registry", {})
             choices = {rid: entry["name"] for rid, entry in registry.items()}
             choices = dict(sorted(choices.items(), key=lambda item: item[1]))
-            ui.update_select("gallery_recipe_select", choices=choices)
+            ui.update_select("gallery_example_select", choices=choices)
 
     @reactive.Effect
     @reactive.event(input.btn_clone_gallery)
     def handle_gallery_clone():
-        # Gate: only personas with T3 sandbox can receive transplants (§12e).
+        # Gate: only app features files with T3 sandbox can receive transplants (§12e).
         if not bootloader.is_enabled("t3_sandbox_enabled"):
             ui.notification_show(
-                "Send to T3 is not available for this persona.",
+                "Send to T3 is not available for this app features.",
                 type="warning", duration=5,
             )
             return
@@ -165,8 +165,8 @@ def define_server(input, output, session, *,
         if home_state is None:
             return
 
-        recipe_id = safe_input(input, "gallery_recipe_select", None)
-        if not recipe_id:
+        example_id = safe_input(input, "gallery_example_select", None)
+        if not example_id:
             return
 
         index_path = bootloader.get_location("gallery") / "gallery_index.json"
@@ -177,23 +177,23 @@ def define_server(input, output, session, *,
             with open(index_path, "r") as f:
                 idx = json.load(f)
 
-            recipe_entry = idx["registry"].get(recipe_id)
-            if not recipe_entry:
+            example_entry = idx["registry"].get(example_id)
+            if not example_entry:
                 return
 
-            file_path = recipe_entry["path"]
+            file_path = example_entry["path"]
             with open(file_path, "r") as f:
                 raw_yaml = f.read()
-                manifest = yaml.safe_load(raw_yaml)
+                data_analysis_recipe = yaml.safe_load(raw_yaml)
 
             # Extract the wrangling block as the YAML fragment for T3.
-            wrangling_raw = manifest.get("wrangling", {})
+            wrangling_raw = data_analysis_recipe.get("wrangling", {})
             yaml_fragment = yaml.dump(
                 {"wrangling": wrangling_raw}, default_flow_style=False, allow_unicode=True,
             )
             gallery_yaml_hash = hashlib.sha256(raw_yaml.encode()).hexdigest()[:16]
 
-            # Build a developer_raw_yaml RecipeNode (§12b / §12e).
+            # Build a developer_raw_yaml AuditStep (§12b / §12e).
             node: dict = {
                 "node_type": "developer_raw_yaml",
                 "id": str(uuid.uuid4()),
@@ -203,7 +203,7 @@ def define_server(input, output, session, *,
                 "params": {"yaml_fragment": yaml_fragment},
                 "reason": "",  # empty — blocks btn_apply until user fills it in
                 "gallery_source": {
-                    "gallery_id": recipe_id,
+                    "gallery_id": example_id,
                     "gallery_yaml_hash": gallery_yaml_hash,
                 },
             }
@@ -215,7 +215,7 @@ def define_server(input, output, session, *,
             home_state.set({**cur, "_pending_t3_nodes": pending})
 
             ui.notification_show(
-                f"Recipe '{recipe_id}' sent to T3 sandbox. "
+                f"Example '{example_id}' sent to T3 sandbox. "
                 "Add a reason in the Audit panel, then press Apply.",
                 type="message", duration=8,
             )
@@ -225,7 +225,7 @@ def define_server(input, output, session, *,
     # --- Gallery Content Resolution (ADR-037) ---
     @reactive.Calc
     def _gallery_active_metadata():
-        rid = safe_input(input, "gallery_recipe_select", None)
+        rid = safe_input(input, "gallery_example_select", None)
         if not rid:
             return None
         index_path = bootloader.get_location("gallery") / "gallery_index.json"
@@ -240,7 +240,7 @@ def define_server(input, output, session, *,
     def gallery_preview_img():
         meta = _gallery_active_metadata()
         if not meta:
-            return ui.div("Select a recipe to view preview.", class_="p-5 text-muted")
+            return ui.div("Select an example to view preview.", class_="p-5 text-muted")
 
         path_str = meta.get("path")
         if not path_str:
@@ -286,10 +286,10 @@ def define_server(input, output, session, *,
     def gallery_yaml_preview():
         meta = _gallery_active_metadata()
         if not meta:
-            return "Select a recipe"
+            return "Select an example"
         path_str = meta.get("path")
         if not path_str:
-            return "Manifest path not found"
+            return "Data analysis recipe path not found"
 
         if Path(path_str).exists():
             with open(path_str, "r") as f:
@@ -307,11 +307,11 @@ def define_server(input, output, session, *,
         if not path_str:
             return ui.div("Metadata path not found", class_="text-danger")
 
-        md_path = Path(path_str).parent / "recipe_meta.md"
+        md_path = Path(path_str).parent / "example_meta.md"
         if md_path.exists():
             with open(md_path, "r") as f:
                 return ui.div(ui.markdown(f.read()), class_="gallery-guidance-styled")
-        return ui.div("Educational metadata (recipe_meta.md) missing.", class_="alert alert-warning")
+        return ui.div("Educational metadata (example_meta.md) missing.", class_="alert alert-warning")
 
     @reactive.Effect
     @reactive.event(input.btn_apply_gallery_filters, input.sidebar_nav)
@@ -339,7 +339,7 @@ def define_server(input, output, session, *,
         sel_shows       = safe_input(input, "gallery_filter_show", [])
         sel_ss          = safe_input(input, "gallery_filter_sample_size", [])
 
-        ui.notification_show("🔍 Filtering recipes...",
+        ui.notification_show("🔍 Filtering examples...",
                              duration=1, type="message")
 
         # 3. Pivot-Set Intersection across all 6 axes
@@ -347,7 +347,7 @@ def define_server(input, output, session, *,
         pivot = idx["pivot"]
 
         def _pivot_set(axis: str, selections) -> set:
-            """Union of recipe IDs matching any selected value on an axis.
+            """Union of example IDs matching any selected value on an axis.
             If nothing selected OR axis absent, return full registry (no filter)."""
             if not selections:
                 return set(registry.keys())
@@ -372,7 +372,7 @@ def define_server(input, output, session, *,
         choices = dict(sorted(choices.items(), key=lambda item: item[1]))
 
         # 4. Push Update to UI
-        ui.update_select("gallery_recipe_select",
+        ui.update_select("gallery_example_select",
                          label=ui.span(
                              f"Visual Gallery ({len(choices)} matched)", style="font-weight:700;color:#345beb;"),
                          choices=choices,

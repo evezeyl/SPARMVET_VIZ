@@ -1,0 +1,176 @@
+"""Names that were renamed by the configuration rename (ADR-091) and must fail loudly.
+
+Why: an old launch variable or an old key must not work silently (ADR-077, ADR-088) and
+must not be ignored silently either: the operator gets a message that names the new one.
+Pure module: no Shiny, no I/O. Used by the bootloader at startup and by the validators.
+"""
+from app.modules.deployment_error import DeploymentError
+
+# old environment variable -> new environment variable (None: removed, no replacement)
+RENAMED_ENV_VARS = {
+    "SPARMVET_PERSONA": "SPARMVET_APP_FEATURES",
+    "SPARMVET_PROFILE": "SPARMVET_DEPLOYMENT",
+    "SPARMVET_CONNECTOR": None,
+}
+
+# keys of a deployment file: old -> new
+RENAMED_DEPLOYMENT_KEYS = {
+    "default_persona": "default_app_features",
+    "default_manifest": "default_data_analysis_recipe",
+    "prefer_discovery": "data_lookup (by_dataset_id or manifest_paths)",
+    "data_ingestion_enabled": "app_features_override: {data_ingestion_enabled: ...}",
+}
+
+# keys of the locations block of a deployment file: old -> new
+RENAMED_LOCATION_KEYS = {
+    "curated_data": "cache",
+    "user_sessions": "user_data",
+    "manifests": "data_analysis_recipes",
+}
+
+# top-level keys of an app features file: old -> new
+RENAMED_APP_FEATURES_KEYS = {
+    "persona_id": "name",
+    "features": "flags",
+    "manifest_selector": "data_analysis_recipe_selector",
+    "theme_css": "branding.theme_css in the deployment file",
+    "ui_banner": "branding.banner in the deployment file",
+}
+
+# keys inside the flags block of an app features file: old -> new
+RENAMED_FLAG_KEYS = {
+    "show_persona_badge": "show_app_features_badge",
+    "manifest_edit_enabled": "data_analysis_recipe_edit_enabled",
+}
+
+# flags that were retired: old -> what to use now (no silent alias, ADR-077)
+RETIRED_FLAG_KEYS = {
+    "wrangle_studio_enabled": "blueprint_enabled (it now controls the Blueprint Architect tab, its panels and its state)",
+    "developer_mode_enabled": "blueprint_enabled for the Blueprint Architect and test_lab_enabled for the Test Lab",
+}
+
+# names of shipped app features files: old -> new
+RENAMED_APP_FEATURES_NAMES = {
+    "project-independent": "standalone",
+}
+
+# panel types in the sidebar slot lists of an app features file: old -> new
+RENAMED_PANEL_TYPES = {
+    "project_info": "data_analysis_recipe_info",
+}
+
+# keys written into saved sessions (assembly.json, t3_*.json): old -> new
+RENAMED_SESSION_KEYS = {
+    "manifest_id": "data_analysis_recipe_id",
+    "manifest_sha256": "data_analysis_recipe_sha256",
+    "t3_recipe": "t3_audit_steps",
+    "t3_recipe_by_plot": "t3_audit_steps_by_plot",
+    "t3_recipe_sha256": "t3_audit_steps_sha256",
+}
+
+MIGRATION_HINT = "python assets/scripts/migrate_config_vocabulary.py"
+
+_REF = "ADR-091 (configuration rename), issue evezeyl/SPARMVET_VIZ#27"
+
+
+def renamed_env_var_errors(environ) -> list[DeploymentError]:
+    errors = []
+    for old, new in RENAMED_ENV_VARS.items():
+        if not environ.get(old):
+            continue
+        if new is None:
+            problem = f"The environment variable {old} was removed."
+            fix = (f"Unset {old}. The development fallback is config/deployment/local/local.yaml; "
+                   "to use another deployment file set SPARMVET_DEPLOYMENT.")
+        else:
+            problem = f"The environment variable {old} was renamed to {new}."
+            fix = f"Set {new} with the same value and unset {old}."
+        errors.append(DeploymentError(
+            component="Bootloader", problem=problem,
+            location=f"{old} is set in the environment", fix=fix,
+            who="operator", reference=_REF,
+        ))
+    return errors
+
+
+def renamed_deployment_key_errors(config: dict, where: str) -> list[DeploymentError]:
+    return [
+        DeploymentError(
+            component="Bootloader",
+            problem=f"The deployment key '{old}' was renamed to '{new}'.",
+            location=f"{old} in {where}",
+            fix=f"Rename the key '{old}' to '{new}' in {where}.",
+            who="operator",
+            reference=_REF,
+        )
+        for old, new in RENAMED_DEPLOYMENT_KEYS.items()
+        if old in config
+    ] + [
+        DeploymentError(
+            component="Bootloader",
+            problem=f"The location '{old}' was renamed to '{new}'.",
+            location=f"locations.{old} in {where}",
+            fix=f"Rename the location '{old}' to '{new}' in {where}.",
+            who="operator",
+            reference=_REF,
+        )
+        for old, new in RENAMED_LOCATION_KEYS.items()
+        if old in (config.get("locations") or {})
+    ]
+
+
+def renamed_app_features_key_errors(config: dict, where: str) -> list[DeploymentError]:
+    errors = []
+    for old, new in RENAMED_APP_FEATURES_KEYS.items():
+        if old in config:
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=f"The app features key '{old}' was renamed to '{new}'.",
+                location=f"{old} in {where}",
+                fix=f"Rename the key '{old}' to '{new}' in {where}.",
+                who="operator",
+                reference=_REF,
+            ))
+    selector = config.get("data_analysis_recipe_selector") or {}
+    for old in ("fixed_data_analysis_recipe", "fixed_manifest"):
+        if old in selector:
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=f"The key '{old}' no longer exists: an app features file names no recipe.",
+                location=f"data_analysis_recipe_selector.{old} in {where}",
+                fix="Delete it and set default_data_analysis_recipe in the deployment file "
+                    "(or SPARMVET_DATA_ANALYSIS_RECIPE for one run).",
+                who="operator", reference=_REF,
+            ))
+    flags = config.get("flags", config.get("features", {})) or {}
+    for old, new in RENAMED_FLAG_KEYS.items():
+        if old in flags:
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=f"The flag '{old}' was renamed to '{new}'.",
+                location=f"{old} in {where}",
+                fix=f"Rename the flag '{old}' to '{new}' in {where}.",
+                who="operator",
+                reference=_REF,
+            ))
+    for old, use in RETIRED_FLAG_KEYS.items():
+        if old in flags:
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=f"The flag '{old}' was retired; it is read by nothing any more.",
+                location=f"{old} in {where}",
+                fix=f"Delete '{old}' from {where}. Use {use}.",
+                who="operator",
+                reference=_REF,
+            ))
+    return errors
+
+
+def legacy_session_problem(raw: dict, where: str) -> str | None:
+    """A message naming the fix when a stored session uses keys from before the rename, else None."""
+    old = [k for k in RENAMED_SESSION_KEYS if k in raw]
+    if not old:
+        return None
+    pairs = ", ".join(f"'{k}' is now '{RENAMED_SESSION_KEYS[k]}'" for k in old)
+    return (f"{where} was saved before the configuration rename ({pairs}). "
+            f"Convert it with: {MIGRATION_HINT} --sessions <sessions folder> --apply, or delete it.")

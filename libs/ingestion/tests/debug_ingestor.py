@@ -16,7 +16,7 @@ except ImportError as e:
     sys.exit(1)
 
 
-def test_ingestion(manifest_path: str, data_dir: str):
+def test_ingestion(data_analysis_recipe_path: str, data_dir: str):
     """
     A developer utility for the Ingestion layer. 
     It tests loading data from disk and comparing raw columns to the declared _fields schema.
@@ -27,9 +27,9 @@ def test_ingestion(manifest_path: str, data_dir: str):
     print(f"[{'*'*40}]\n")
 
     try:
-        config = ConfigManager(manifest_path)
+        config = ConfigManager(data_analysis_recipe_path)
     except Exception as e:
-        print(f"❌ Failed to load manifest configuration: {e}")
+        print(f"❌ Failed to load data analysis recipe configuration: {e}")
         sys.exit(1)
 
     schemas = config.get_data_schemas()
@@ -73,7 +73,7 @@ def test_ingestion(manifest_path: str, data_dir: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test Dashboard Ingestion.")
     parser.add_argument("--yaml", type=str, required=True,
-                        help="Path to the master manifest YAML file.")
+                        help="Path to the master data analysis recipe YAML file.")
     parser.add_argument("--data", type=str, required=True,
                         help="Path to the folder containing the raw TSV files.")
 

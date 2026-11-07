@@ -2,13 +2,13 @@
 title: "YAML 101: The File That Controls Everything"
 ---
 
-Welcome to SPARMVET! As a user, researcher, or domain expert, you will frequently interact with **Manifests**. Rather than navigating a rigid web page to define what plots you want, SPARMVET uses Manifest files to give you total, powerful control over the data engine.
+Welcome to SPARMVET! As a user, researcher, or domain expert, you will frequently interact with **Data analysis recipes**. Rather than navigating a rigid web page to define what plots you want, SPARMVET uses Data analysis recipe files to give you total, powerful control over the data engine.
 
 ## What is YAML?
-A Manifest is just a **YAML** file (`.yaml` or `.yml`). But don't let the acronym intimidate you!
+A Data analysis recipe is just a **YAML** file (`.yaml` or `.yml`). But don't let the acronym intimidate you!
 YAML stands for "YAML Ain't Markup Language". It is simply a way to write human-readable text that our pipelines can easily understand as instructions.
 
-Think of a YAML file as a recipe card: you use basic text to outline ingredients (your data) and the steps you want taken (your wrangling/plots).
+Think of a YAML file as a data analysis recipe card: you use basic text to outline ingredients (your data) and the steps you want taken (your wrangling/plots).
 
 ## How to Edit a YAML File
 You **do not** need a programming IDE (like VSCode or PyCharm) to edit YAML files, nor should you use Word Processors (like MS Word) because they add hidden formatting characters that break the pipelines.
@@ -58,7 +58,7 @@ pipeline:
 ```
 
 ## Summary
-1. Open a YAML manifest in your plain text editor (Notepad/TextEdit/Gedit).
+1. Open a YAML data analysis recipe in your plain text editor (Notepad/TextEdit/Gedit).
 2. Look at the colons `:` for dictionaries and dashes `-` for lists.
 3. Only use spaces to indent. Never use Tabs.
 4. Save the file and upload it to the SPARMVET Dashboard!

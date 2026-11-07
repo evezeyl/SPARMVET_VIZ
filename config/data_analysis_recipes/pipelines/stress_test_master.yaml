@@ -1,0 +1,40 @@
+id: stress_test_master
+info:
+  display_name: 'STRESS: Master Performance Baseline'
+  description: Bulletproof stress test data analysis recipe for verifying Tier 3 responsiveness
+    and Comparison Theater.
+data_schemas:
+  Stress_Source:
+    source:
+      type: local_tsv
+      path: assets/test_data/STRESS/STRESS_data.tsv
+    input_fields: !include 'stress_test_master/input_fields/Stress_Source_input_fields.yaml'
+    wrangling: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
+    output_fields: !include 'stress_test_master/output_fields/Stress_Source_output_fields.yaml'
+joins:
+  Master_Collection:
+    ingredients:
+    - dataset_id: Stress_Source
+    steps: !include 'stress_test_master/wrangling/Master_Collection_steps.yaml'
+plot_defaults:
+  default_font_family: Liberation Sans
+analysis_groups:
+  Stress_Distribution:
+    label: Distribution Analysis
+    plots:
+      stress_species_amr:
+        label: Species x AMR Distribution
+        spec:
+          target_dataset: Master_Collection
+          layers:
+          - name: geom_bar
+            params: {}
+          - name: labs
+            params:
+              title: 'STRESS TEST: Species x AMR Distribution'
+              x: Species
+              y: Observed Count
+              fill: AMR Class
+          mapping:
+            x: species
+            fill: amr_class

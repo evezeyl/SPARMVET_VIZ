@@ -20,7 +20,7 @@ def test_gallery_filtering():
     pivot = idx["pivot"]
     registry = idx["registry"]
 
-    print(f"Index loaded. Total recipes: {len(registry)}")
+    print(f"Index loaded. Total examples: {len(registry)}")
 
     # Simulated Filters
     sel_families = ["Distribution"]
@@ -59,15 +59,15 @@ def test_gallery_filtering():
             # Verify Path Resolution
             path = Path(entry['path'])
             if path.exists():
-                print(f"   [OK] Manifest exists: {path}")
+                print(f"   [OK] Data analysis recipe exists: {path}")
                 # Verify metadata
-                md_path = path.parent / "recipe_meta.md"
+                md_path = path.parent / "example_meta.md"
                 if md_path.exists():
                     print(f"   [OK] Metadata exists: {md_path}")
                 else:
                     print(f"   [FAIL] Metadata MISSING: {md_path}")
             else:
-                print(f"   [FAIL] Manifest NOT FOUND: {path}")
+                print(f"   [FAIL] Data analysis recipe NOT FOUND: {path}")
 
 
 def main():

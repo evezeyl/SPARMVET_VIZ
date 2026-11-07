@@ -7,7 +7,7 @@
 IridaConnector — connector for IRIDA REST API deployments (ADR-048 §5, §8).
 
 Full OAuth2 fetch implementation is Phase 23-D. This module provides:
-- The correct interface (resolve_paths, fetch_data, get_manifest_path).
+- The correct interface (resolve_paths, fetch_data, get_data_analysis_recipe_path).
 - Token validation (reads SPARMVET_IRIDA_TOKEN from env, fails early if absent).
 - Path resolution using irida.local_cache as effective project_root post-fetch.
 - A NotImplementedError from fetch_data() until Phase 23-D lands.
@@ -33,7 +33,7 @@ class IridaConnector(FilesystemConnector):
     Connector for IRIDA REST API deployments.
 
     Token security rule (ADR-048 §8): the OAuth2 bearer token is NEVER stored
-    in the deployment profile YAML. It is always read from the SPARMVET_IRIDA_TOKEN
+    in the deployment file. It is always read from the SPARMVET_IRIDA_TOKEN
     environment variable, injected by IRIDA at container launch.
     """
 
@@ -61,21 +61,21 @@ class IridaConnector(FilesystemConnector):
         """
         local_cache = self._local_cache()
         if local_cache:
-            patched = {**self._profile, "project_root": str(local_cache)}
+            patched = {**self._deployment, "project_root": str(local_cache)}
             return FilesystemConnector(patched).resolve_paths()
         return super().resolve_paths()
 
     def get_irida_base_url(self) -> str | None:
-        """Return the IRIDA base URL from the profile irida block."""
-        return self._profile.get("irida", {}).get("base_url")
+        """Return the IRIDA base URL from the deployment irida block."""
+        return self._deployment.get("irida", {}).get("base_url")
 
     def get_irida_project_id(self) -> int | None:
-        """Return the IRIDA project ID from the profile irida block."""
-        return self._profile.get("irida", {}).get("project_id")
+        """Return the IRIDA project ID from the deployment irida block."""
+        return self._deployment.get("irida", {}).get("project_id")
 
     def _local_cache(self) -> Path | None:
         """Return the local_cache path from the irida block, or None."""
-        cache_str = self._profile.get("irida", {}).get("local_cache")
+        cache_str = self._deployment.get("irida", {}).get("local_cache")
         return Path(cache_str) if cache_str else None
 
     def _validate_irida_config(self) -> None:
@@ -95,22 +95,22 @@ class IridaConnector(FilesystemConnector):
                     "Inject the IRIDA OAuth2 bearer token at container launch via the "
                     "environment: SPARMVET_IRIDA_TOKEN=<token>. "
                     "For local testing, set it in your shell before starting the app. "
-                    "Never store the token in the deployment profile YAML (ADR-048 §8)."
+                    "Never store the token in the deployment file (ADR-048 §8)."
                 ),
                 who="operator",
                 reference=_REF,
             ))
 
-        if not self._profile.get("irida"):
+        if not self._deployment.get("irida"):
             errors.append(DeploymentError(
                 component="IridaConnector",
                 problem=(
-                    "Deployment profile is missing the required 'irida:' block "
+                    "Deployment is missing the required 'irida:' block "
                     "(base_url, project_id, local_cache)."
                 ),
-                location="irida: block in deployment profile",
+                location="irida: block in deployment",
                 fix=(
-                    "Add an 'irida:' block to the deployment profile with keys: "
+                    "Add an 'irida:' block to the deployment with keys: "
                     "base_url (IRIDA server URL), project_id (integer), "
                     "local_cache (path where downloaded data will be stored). "
                     "Example:\n"

@@ -103,7 +103,7 @@ class TestParamSignatureAlignment:
 
     def test_join_has_right_ingredient_and_join_keys(self):
         params = ACTION_SCHEMAS["join"]["params"]
-        assert "right_ingredient" in params  # manifest-level param
+        assert "right_ingredient" in params  # data analysis recipe-level param
         assert "on" in params
         assert "left_on" in params
         assert "right_on" in params

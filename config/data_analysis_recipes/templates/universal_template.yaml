@@ -1,0 +1,46 @@
+# UNIVERSAL DATA ANALYSIS RECIPE TEMPLATE (ADR-003 / ADR-014)
+id: universal_template
+info:
+  display_name: "Universal Template"
+  category: "Template"
+  description: "A data-agnostic data analysis recipe with optional metadata."
+  version: "1.0"
+
+# SECTION 1: DATA SCHEMAS
+data_schemas:
+  Primary_Dataset:
+    source:
+      type: "local_tsv"
+      path: "./path/to/data.tsv"
+    input_fields:
+      sample_id: {type: "categorical", is_primary_key: true}
+      value_col: {type: "numeric"}
+    wrangling: []
+    output_fields:
+      sample_id: {type: "categorical", is_primary_key: true}
+      value_col: {type: "numeric"}
+
+# SECTION 2: OPTIONAL METADATA (ADR-014)
+# metadata_schema:
+#   source: {type: "local_tsv", path: "./path/to/metadata.tsv"}
+#   input_fields: {sample_id: {is_primary_key: true}, country: {type: "categorical"}}
+#   wrangling: []
+#   output_fields: []
+
+# SECTION 3: ADDITIONAL DATA (OPTIONAL)
+additional_datasets_schemas: {}
+
+# SECTION 4: COLLECTIONS (ASSEMBLY)
+joins:
+  Main_Collection:
+    description: "Default assembly for the data analysis recipe."
+    ingredients:
+      - dataset_id: "Primary_Dataset"
+    steps: [] # Identity fallback (Identity Mode)
+    final_contract: ["sample_id", "value_col"]
+
+# SECTION 5: ANALYSIS GROUPS
+analysis_groups:
+  Discovery_Group:
+    description: "Visual exploration space"
+    plots: {}

@@ -21,10 +21,10 @@ To ensure a seamless developer experience, the SDK follows a linear automation p
 - **Process**: Normalizes each sheet into a standardized `.tsv` for the Ingestion layer.
 - **Benefit**: Removes reliance on proprietary binary formats early in the pipeline.
 
-### Stage B: Manifest Bootstrapping (`ManifestBootstrapper`)
+### Stage B: Data Analysis Recipe Bootstrapping (`DataAnalysisRecipeBootstrapper`)
 - **Input**: Standardized `.tsv` files.
-- **Process**: Infers the data schema (column names and types) to generate the `input_fields` and `output_fields` blocks of the manifest.
-- **Law of Basename Anchor**: To maintain [ADR-013](../foundations/data_contracts_adr.qmd), the **Pipeline Folder Name** must match the **Master Manifest Name**. This allows the Ingestor to resolve dependencies reliably.
+- **Process**: Infers the data schema (column names and types) to generate the `input_fields` and `output_fields` blocks of the data analysis recipe.
+- **Law of Basename Anchor**: To maintain [ADR-013](../foundations/data_contracts_adr.qmd), the **Pipeline Folder Name** must match the **Master Data analysis recipe Name**. This allows the Ingestor to resolve dependencies reliably.
 
 ### Stage C: Aqua Synthetic Suite (`AquaSynthesizer`)
 - **Focus**: Relational Integrity.
@@ -51,5 +51,5 @@ While currently implemented as a CLI toolset, the logic within `test_lab` is str
 
 ## Operational Standards
 
-- **Basename Consistency**: Always name your manifest files according to their primary ID.
+- **Basename Consistency**: Always name your data analysis recipe files according to their primary ID.
 - **Synthetic Verification**: Before deploying to a new environment, use the SDK to generate a "Fake Dataset" to verify the end-to-end pipeline integrity.

@@ -1,0 +1,26 @@
+# SPARMVET Local Development Deployment (ADR-048)
+# Deployment Resolution Level 4 — dev repo fallback.
+# Used when SPARMVET_DEPLOYMENT env var is unset and no user/system deployment exists.
+deployment_type: filesystem
+deployment_name: "SPARMVET_VIZ (Local Dev)"
+default_app_features: "developer"
+
+locations:
+  # Location 1: Raw ingestion data
+  raw_data: "assets/test_data/"
+  
+  # Location 2: Pipeline Data Analysis Recipe definitions
+  data_analysis_recipes: "config/data_analysis_recipes/pipelines/"
+  
+  # Location 3: Curated Anchors & Views (Tiers 1 & 2 Parquet)
+  cache: "tmp/UI_TEST/parquet_data/"
+  
+  # Location 4: User specific artifacts, sessions, and Tier 3 outputs
+  user_data: "tmp/UI_TEST/user/"
+  
+  # Location 5: Gallery examples
+  gallery: "assets/gallery_data/"
+
+
+runtime:
+  python_interpreter: "./.venv/bin/python"

@@ -1,9 +1,9 @@
 /*
  * SPARMVET_VIZ — Default UI Theme
  *
- * This is the authoritative base stylesheet. All personas load this file by default
+ * This is the authoritative base stylesheet. All app features files load this file by default
  * via the theme_css key in their template. To customise the appearance for a
- * deployment or persona, point theme_css at a different CSS file (or create one
+ * deployment or app features, point theme_css at a different CSS file (or create one
  * that @import this file and adds overrides on top).
  *
  * Sections
@@ -172,7 +172,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 /* Export / Add buttons: unified teal #10a395
    Includes filter "+ Add" and session export — same visual weight as bundle exports */
 #btn_export, #export_global, #export_bundle_download,
-#export_audit_report_download, #btn_download_manifest,
+#export_audit_report_download, #btn_download_data_analysis_recipe,
 #export_single_graph, #session_export_active, #filter_add_row {
     background-color: #10a395 !important; border-color: #0d8a7e !important;
     color: white !important; font-weight: 600 !important; height: 32px !important;
@@ -180,7 +180,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     border-radius: 6px !important;
 }
 #btn_export:hover, #export_global:hover, #export_bundle_download:hover,
-#export_audit_report_download:hover, #btn_download_manifest:hover,
+#export_audit_report_download:hover, #btn_download_data_analysis_recipe:hover,
 #export_single_graph:hover, #session_export_active:hover, #filter_add_row:hover {
     background-color: #0d8a7e !important; border-color: #0b7569 !important;
 }
@@ -200,13 +200,13 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 }
 [id^="session_delete_"]:hover { background-color: #e0a800 !important; border-color: #c79500 !important; }
 /* Blueprint Exchange: upload/import = export category → teal; save = primary action → blue */
-#btn_upload_replace, #btn_upload_append, #btn_import_manifest {
+#btn_upload_replace, #btn_upload_append, #btn_import_data_analysis_recipe {
     background-color: #10a395 !important; border-color: #0d8a7e !important;
     color: white !important; font-weight: 600 !important; height: 32px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
     border-radius: 6px !important;
 }
-#btn_upload_replace:hover, #btn_upload_append:hover, #btn_import_manifest:hover {
+#btn_upload_replace:hover, #btn_upload_append:hover, #btn_import_data_analysis_recipe:hover {
     background-color: #0d8a7e !important; border-color: #0b7569 !important;
 }
 #btn_save_internal {
@@ -234,7 +234,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 }
 .btn-primary,
 #btn_apply { font-weight: 700; border-radius: 6px !important; }
-.recipe-pending-badge { display: inline-flex; height: 32px !important; align-items: center; background: #ffc107; color: #000; border-radius: 6px !important; padding: 0 12px; font-size: 0.85rem; font-weight: 700; margin-right: 2px; border: 1px solid #e0a800; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1; }
+.audit-pending-badge { display: inline-flex; height: 32px !important; align-items: center; background: #ffc107; color: #000; border-radius: 6px !important; padding: 0 12px; font-size: 0.85rem; font-weight: 700; margin-right: 2px; border: 1px solid #e0a800; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1; }
 
 /* ── 7. Ingest & Upload UI ──────────────────────────────────────────────── */
 .upload-row .form-control { height: 32px !important; font-size: 0.8rem !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
@@ -490,7 +490,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 }
 
 /* ── 14. Banner base ─────────────────────────────────────────────────────── */
-/* Structural defaults — colour/sizing overridden by persona theme CSS files. */
+/* Structural defaults — colour/sizing overridden by app features theme CSS files. */
 .sparmvet-banner {
     display: flex;
     align-items: center;
@@ -576,7 +576,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 #audit_sidebar .ultra-small { font-size: 0.65rem !important; color: #6c757d !important; }
 
 /* Pending badge in audit sidebar: smaller text, centered, breathing room before Tier 2 */
-#audit_sidebar .recipe-pending-badge {
+#audit_sidebar .audit-pending-badge {
     font-size: 0.75rem !important;
     width: fit-content !important;
     margin: 4px auto 14px auto !important;
@@ -589,7 +589,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
  *
  * To customise per-deployment without touching this file, create a CSS file that
  * @imports theme.css and overrides these rules — exactly like assets/demo/demo_vetinst.css
- * does for the banner/persona.  Point the persona template's theme_css key at your file.
+ * does for the banner/app features.  Point the app features file's theme_css key at your file.
  *
  * Selectors
  *   #gallery_guidance_accordion  — the collapsible wrapper (header + body)
@@ -636,8 +636,8 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* Heading scale — standard format (recipe_template.md):
-     h2  = recipe name (title)
+/* Heading scale — standard format (example_template.md):
+     h2  = step list name (title)
      blockquote = taxonomy tag strip (📊 Family · 🔢 Pattern · 📈 Difficulty)
      h3  = content sections (Suitability, Data Schema, …)
      h4+ = rare sub-sections */

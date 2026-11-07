@@ -1,0 +1,67 @@
+# SPARMVET_VIZ — Posit Connect Deployment Template (ADR-048)
+#
+# Copy this file, fill in the path values, and point SPARMVET_DEPLOYMENT at
+# the result on the Connect server, or commit it as the production deployment.
+#
+# Deployment resolution order (first match wins):
+#   1. SPARMVET_DEPLOYMENT env var  ← recommended for Connect
+#   2. ~/.sparmvet/deployment.yaml
+#   3. /etc/sparmvet/deployment.yaml
+#   4. config/deployment/local/local.yaml  (dev fallback only)
+#
+# On Connect set:
+#   SPARMVET_DEPLOYMENT=/connect/content/<app-guid>/connect.yaml
+#   SPARMVET_APP_FEATURES=pipeline-static   (or whichever app features this deployment shows)
+#
+# If the pipeline produces data via an automated script (not user upload):
+#   Lock it in this deployment: app_features_override: {data_ingestion_enabled: false}
+#   so the Data Import panel is suppressed and data is always pipeline-provided.
+
+deployment_type: filesystem
+deployment_name: "SPARMVET — Production (Posit Connect)"
+
+# The data analysis recipe to load at startup.
+# Relative to project_root below.
+# If absent, the data analysis recipe selector appears in the UI (flag-gated).
+default_data_analysis_recipe: "my_pipeline"   # file name without .yaml in the data analysis recipes folder
+
+# App features to activate. For a locked pipeline deployment use pipeline-static.
+# See config/app_features/ for the full list.
+default_app_features: pipeline-static
+
+# Absolute base path on the Connect server.
+# All locations below are relative to this.
+project_root: "/connect/content/PLACEHOLDER_APP_GUID"
+
+locations:
+  # Location 1 — Raw input files (populated by your pipeline, not by the app).
+  # The pipeline writes TSV/CSV here; the app reads it at T1 materialisation.
+  raw_data: "inputs/"
+
+  # Location 2 — Pipeline YAML data analysis recipes.
+  # Contains master.yaml and its !include fragments.
+  data_analysis_recipes: "data_analysis_recipes/"
+
+  # Location 3 — Tier 1 & 2 Parquet caches.
+  # App writes here on first run; reads on subsequent runs.
+  # Must be writable by the Connect app process.
+  cache: "parquet/"
+
+  # Location 4 — User-writable space.
+  # Export bundles, session saves, T3 artifacts.
+  # Must be writable. On Connect this is typically the app's persistent storage.
+  user_data: "sessions/"
+
+  # Location 5 — Gallery assets (read-only).
+  gallery: "gallery/"
+
+
+runtime:
+  # On Connect the interpreter is resolved by rsconnect. Do not change.
+  python_interpreter: "python"
+
+# Deployment-level feature overrides (applied on top of app features file flags).
+# Lock data_ingestion_enabled to false when data is always pushed by the pipeline.
+# metadata_ingestion_enabled remains user-controllable and is NOT overridden here.
+# app_features_override:
+#   data_ingestion_enabled: false

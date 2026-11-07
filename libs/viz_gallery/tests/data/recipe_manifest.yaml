@@ -1,9 +1,0 @@
-info:
-  name: Test Recipe
-  submission_date: "2026-04-15"
-wrangling:
-  tier3:
-    - action: filter_eq
-      column: Category
-      value: A
-      comment: "Test filter"

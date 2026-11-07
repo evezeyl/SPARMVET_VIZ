@@ -17,20 +17,20 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 
 | Slug | Component | Who | Trigger |
 |---|---|---|---|
-| [boot-profile-env-missing](#boot-profile-env-missing) | Bootloader | operator | `SPARMVET_PROFILE` set but file absent |
-| [boot-profile-not-found](#boot-profile-not-found) | Bootloader | operator | No profile at any of 4 resolution levels |
-| [boot-profile-file-missing](#boot-profile-file-missing) | Bootloader | operator | Profile file absent at resolved path |
-| [boot-profile-parse-error](#boot-profile-parse-error) | Bootloader | operator | Profile YAML is syntactically invalid |
-| [boot-profile-missing-locations](#boot-profile-missing-locations) | Bootloader | operator | One or more of 5 required `locations:` keys absent |
+| [boot-deployment-env-missing](#boot-deployment-env-missing) | Bootloader | operator | `SPARMVET_DEPLOYMENT` set but file absent |
+| [boot-deployment-not-found](#boot-deployment-not-found) | Bootloader | operator | No deployment at any of 4 resolution levels |
+| [boot-deployment-file-missing](#boot-deployment-file-missing) | Bootloader | operator | Deployment file absent at resolved path |
+| [boot-deployment-parse-error](#boot-deployment-parse-error) | Bootloader | operator | Deployment YAML is syntactically invalid |
+| [boot-deployment-missing-locations](#boot-deployment-missing-locations) | Bootloader | operator | One or more of 5 required `locations:` keys absent |
 | [boot-connector-init-failed](#boot-connector-init-failed) | Bootloader | operator | Connector `fetch_data()` or `resolve_paths()` crashed |
-| [boot-persona-not-configured](#boot-persona-not-configured) | Bootloader | operator | No persona from kwarg, env var, or profile |
-| [boot-persona-template-missing](#boot-persona-template-missing) | Bootloader | operator | Persona template file not found |
-| [boot-persona-template-parse-error](#boot-persona-template-parse-error) | Bootloader | operator | Persona template YAML invalid |
-| [persona-id-underscore](#persona-id-underscore) | PersonaValidator | operator | `persona_id` uses `_` instead of `-` |
-| [persona-t3-companions-missing](#persona-t3-companions-missing) | PersonaValidator | operator | `t3_sandbox_enabled` without required companion flags |
-| [persona-cascade-d-fatal](#persona-cascade-d-fatal) | PersonaValidator | operator | Group D child flag enabled, parent flag disabled |
-| [persona-template-not-found](#persona-template-not-found) | PersonaValidator | operator | Template file absent (via `validate_file`) |
-| [persona-template-parse-error](#persona-template-parse-error) | PersonaValidator | operator | Template YAML parse failure |
+| [boot-app features not-configured](#boot-app features not-configured) | Bootloader | operator | No app features from kwarg, env var, or deployment |
+| [boot-app features template-missing](#boot-app features template-missing) | Bootloader | operator | App features file file not found |
+| [boot-app features template-parse-error](#boot-app features template-parse-error) | Bootloader | operator | App features file YAML invalid |
+| [app features id-underscore](#app features id-underscore) | AppFeaturesValidator | operator | `app_features_id` uses `_` instead of `-` |
+| [app features t3-companions-missing](#app features t3-companions-missing) | AppFeaturesValidator | operator | `t3_sandbox_enabled` without required companion flags |
+| [app features cascade-d-fatal](#app features cascade-d-fatal) | AppFeaturesValidator | operator | Group D child flag enabled, parent flag disabled |
+| [app features template-not-found](#app features template-not-found) | AppFeaturesValidator | operator | Template file absent (via `validate_file`) |
+| [app features template-parse-error](#app features template-parse-error) | AppFeaturesValidator | operator | Template YAML parse failure |
 | [sidebar-template-not-found](#sidebar-template-not-found) | SidebarValidator | operator | Template file absent (via `validate_file`) |
 | [sidebar-template-parse-error](#sidebar-template-parse-error) | SidebarValidator | operator | Template YAML parse failure |
 | [sidebar-include-missing](#sidebar-include-missing) | SidebarValidator | operator | `!include` target for a sidebar block not found |
@@ -40,22 +40,22 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 | [sidebar-panel-missing-type](#sidebar-panel-missing-type) | SidebarValidator | operator | Panel entry has no `type:` key |
 | [connector-filesystem-path-missing](#connector-filesystem-path-missing) | FilesystemConnector | operator | A required location directory is absent on disk |
 | [connector-irida-token-missing](#connector-irida-token-missing) | IridaConnector | operator | `SPARMVET_IRIDA_TOKEN` env var not set |
-| [connector-irida-block-missing](#connector-irida-block-missing) | IridaConnector | operator | `irida:` block absent from deployment profile |
-| [manifest-file-missing](#manifest-file-missing) | ConfigManager | operator | Manifest YAML file not found |
-| [manifest-yaml-parse-error](#manifest-yaml-parse-error) | ConfigManager | developer | Master manifest is syntactically invalid YAML |
-| [manifest-include-missing](#manifest-include-missing) | ConfigManager | developer | `!include` target in manifest not found on disk |
-| [manifest-no-analysis-groups](#manifest-no-analysis-groups) | ConfigManager | developer | Manifest lacks `analysis_groups:` block |
-| [manifest-data-schemas-not-dict](#manifest-data-schemas-not-dict) | ConfigManager | developer | `data_schemas:` is not a YAML mapping |
-| [manifest-schema-entry-not-dict](#manifest-schema-entry-not-dict) | ConfigManager | developer | A schema entry under `data_schemas:` is not a mapping |
-| [manifest-schema-missing-source](#manifest-schema-missing-source) | ConfigManager | developer | A schema entry is missing the `source:` block |
+| [connector-irida-block-missing](#connector-irida-block-missing) | IridaConnector | operator | `irida:` block absent from deployment |
+| [data-analysis-recipe-file-missing](#data-analysis-recipe-file-missing) | ConfigManager | operator | Data analysis recipe YAML file not found |
+| [data-analysis-recipe-yaml-parse-error](#data-analysis-recipe-yaml-parse-error) | ConfigManager | developer | Master data analysis recipe is syntactically invalid YAML |
+| [data-analysis-recipe-include-missing](#data-analysis-recipe-include-missing) | ConfigManager | developer | `!include` target in data analysis recipe not found on disk |
+| [data-analysis-recipe-no-analysis-groups](#data-analysis-recipe-no-analysis-groups) | ConfigManager | developer | Data analysis recipe lacks `analysis_groups:` block |
+| [data-analysis-recipe-data-schemas-not-dict](#data-analysis-recipe-data-schemas-not-dict) | ConfigManager | developer | `data_schemas:` is not a YAML mapping |
+| [data-analysis-recipe-schema-entry-not-dict](#data-analysis-recipe-schema-entry-not-dict) | ConfigManager | developer | A schema entry under `data_schemas:` is not a mapping |
+| [data-analysis-recipe-schema-missing-source](#data-analysis-recipe-schema-missing-source) | ConfigManager | developer | A schema entry is missing the `source:` block |
 
 ---
 
 ## A — Bootloader Errors
 
-### `boot-profile-env-missing` {#boot-profile-env-missing}
+### `boot-deployment-env-missing` {#boot-deployment-env-missing}
 
-**Problem:** `SPARMVET_PROFILE` env var is set to `'<path>'` but the file does not exist.
+**Problem:** `SPARMVET_DEPLOYMENT` env var is set to `'<path>'` but the file does not exist.
 
 **When it appears:** The env var takes priority in the 4-level resolution chain.
 When it is set but the file is absent the app fails immediately rather than silently
@@ -64,54 +64,54 @@ a deliberate configuration, not a typo to ignore).
 
 **Fix:**
 
-- Create the profile file at the path the env var points to, **or**
-- Correct `SPARMVET_PROFILE` to the actual profile path, **or**
-- Unset `SPARMVET_PROFILE` to fall through to levels 2–4.
+- Create the deployment file at the path the env var points to, **or**
+- Correct `SPARMVET_DEPLOYMENT` to the actual deployment path, **or**
+- Unset `SPARMVET_DEPLOYMENT` to fall through to levels 2–4.
 
-**Source:** `app/src/bootloader.py → _resolve_profile_path()` — ADR-048 §4.
+**Source:** `app/src/bootloader.py → _resolve_deployment_path()` — ADR-048 §4.
 
 ---
 
-### `boot-profile-not-found` {#boot-profile-not-found}
+### `boot-deployment-not-found` {#boot-deployment-not-found}
 
-**Problem:** No deployment profile found at any of the 4 resolution levels.
+**Problem:** No deployment found at any of the 4 resolution levels.
 
 **Resolution chain checked (first match wins):**
 
-1. `SPARMVET_PROFILE` env var — not set
-2. `~/.sparmvet/profile.yaml` — not found
-3. `/etc/sparmvet/profile.yaml` — not found
-4. `config/deployment/local/local_profile.yaml` — not found
+1. `SPARMVET_DEPLOYMENT` env var — not set
+2. `~/.sparmvet/deployment.yaml` — not found
+3. `/etc/sparmvet/deployment.yaml` — not found
+4. `config/deployment/local/local.yaml` — not found
 
-**Fix:** Create a profile at `config/deployment/local/local_profile.yaml`
-(copy `local_profile.yaml.example` if available), or set `SPARMVET_PROFILE` to an
-absolute path to your deployment profile YAML.
+**Fix:** Create a deployment at `config/deployment/local/local.yaml`
+(copy `local.yaml.example` if available), or set `SPARMVET_DEPLOYMENT` to an
+absolute path to your deployment file.
 
-**Source:** `app/src/bootloader.py → _resolve_profile_path()` — ADR-048 §4.
+**Source:** `app/src/bootloader.py → _resolve_deployment_path()` — ADR-048 §4.
 
 ---
 
-### `boot-profile-file-missing` {#boot-profile-file-missing}
+### `boot-deployment-file-missing` {#boot-deployment-file-missing}
 
-**Problem:** Deployment profile file not found at `<path>`.
+**Problem:** Deployment file not found at `<path>`.
 
-This error fires from `_load_connector_config()` after a profile path has been
+This error fires from `_load_deployment_config()` after a deployment path has been
 resolved. It means the file existed when the path was resolved (or was provided
 explicitly) but is no longer present when the loader tries to open it — usually a
 race condition or a relative-path ambiguity when the app is started from a
-non-project-root directory.
+non-repository-root directory.
 
-**Fix:** Ensure the profile file exists at the resolved path.
-For local dev: copy `config/deployment/local/local_profile.yaml.example` to
-`config/deployment/local/local_profile.yaml` and fill in the `locations:` paths.
+**Fix:** Ensure the deployment file exists at the resolved path.
+For local dev: copy `config/deployment/local/local.yaml.example` to
+`config/deployment/local/local.yaml` and fill in the `locations:` paths.
 
-**Source:** `app/src/bootloader.py → _load_connector_config()`.
+**Source:** `app/src/bootloader.py → _load_deployment_config()`.
 
 ---
 
-### `boot-profile-parse-error` {#boot-profile-parse-error}
+### `boot-deployment-parse-error` {#boot-deployment-parse-error}
 
-**Problem:** Failed to parse deployment profile `'<path>'`.
+**Problem:** Failed to parse deployment `'<path>'`.
 
 **Fix:** Run the following to surface the line number of the YAML syntax error:
 
@@ -122,31 +122,31 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 Common causes: tab characters instead of spaces, unquoted colons inside values,
 missing quotes around keys that look like YAML booleans (`on`, `yes`, `true`).
 
-**Source:** `app/src/bootloader.py → _load_connector_config()`.
+**Source:** `app/src/bootloader.py → _load_deployment_config()`.
 
 ---
 
-### `boot-profile-missing-locations` {#boot-profile-missing-locations}
+### `boot-deployment-missing-locations` {#boot-deployment-missing-locations}
 
-**Problem:** Deployment profile is missing required location keys: `[<keys>]`.
+**Problem:** Deployment is missing required location keys: `[<keys>]`.
 
-The five required keys are: `raw_data`, `manifests`, `curated_data`,
-`user_sessions`, `gallery`.
+The five required keys are: `raw_data`, `data_analysis_recipes`, `cache`,
+`user_data`, `gallery`.
 
-**Fix:** Add the missing keys to the `locations:` block in your deployment profile.
+**Fix:** Add the missing keys to the `locations:` block in your deployment.
 Paths may be absolute or relative to `project_root` (if set).
-Reference: `config/deployment/local/local_profile.yaml`.
+Reference: `config/deployment/local/local.yaml`.
 
 ```yaml
 locations:
   raw_data: data/raw
-  manifests: config/manifests/pipelines
-  curated_data: data/curated
-  user_sessions: data/sessions
+  data_analysis_recipes: config/data_analysis_recipes/pipelines
+  cache: data/curated
+  user_data: data/sessions
   gallery: assets/gallery_data
 ```
 
-**Source:** `app/src/bootloader.py → _validate_profile()` — ADR-048.
+**Source:** `app/src/bootloader.py → _validate_deployment()` — ADR-048.
 
 ---
 
@@ -169,49 +169,49 @@ This wraps any exception raised during `connector.fetch_data()` or
 
 ---
 
-### `boot-persona-not-configured` {#boot-persona-not-configured}
+### `boot-app features not-configured` {#boot-app features not-configured}
 
-**Problem:** No persona configured — cannot determine which feature flags to load.
+**Problem:** No app features configured — cannot determine which feature flags to load.
 
-**Resolution chain checked:** `persona=` kwarg → `SPARMVET_PERSONA` env var →
-`default_persona` in deployment profile — all absent.
+**Resolution chain checked:** `app features=` kwarg → `SPARMVET_APP_FEATURES` env var →
+`default_app_features` in deployment — all absent.
 
 **Fix (choose one):**
 
 ```bash
 # Option A — env var (Galaxy XML, Docker Compose, systemd)
-export SPARMVET_PERSONA=developer
+export SPARMVET_APP_FEATURES=developer
 
-# Option B — deployment profile
-echo "default_persona: developer" >> config/deployment/local/local_profile.yaml
+# Option B — deployment
+echo "default_app_features: developer" >> config/deployment/local/local.yaml
 ```
 
-Valid persona IDs: `pipeline-static`, `pipeline-exploration-simple`,
-`pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`.
+Valid app features IDs: `pipeline-static`, `pipeline-exploration-simple`,
+`pipeline-exploration-advanced`, `standalone`, `developer`, `qa`.
 
 **Source:** `app/src/bootloader.py → __init__()`.
 
 ---
 
-### `boot-persona-template-missing` {#boot-persona-template-missing}
+### `boot-app features template-missing` {#boot-app features template-missing}
 
-**Problem:** Persona template not found: `<path>`.
+**Problem:** App features file not found: `<path>`.
 
 **Fix:** Ensure the template file exists at the reported path.
-Built-in templates live under `config/ui/templates/`.
-If using a custom template: verify `SPARMVET_PERSONA` is set to an absolute file
+Built-in templates live under `config/app_features/`.
+If using a custom template: verify `SPARMVET_APP_FEATURES` is set to an absolute file
 path, not a shortname that doesn't match any template file.
 
 **Valid built-in IDs:** `pipeline-static`, `pipeline-exploration-simple`,
-`pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`.
+`pipeline-exploration-advanced`, `standalone`, `developer`, `qa`.
 
-**Source:** `app/src/bootloader.py → _load_persona_config()` — ADR-026.
+**Source:** `app/src/bootloader.py → _load_app_features_config()` — ADR-026.
 
 ---
 
-### `boot-persona-template-parse-error` {#boot-persona-template-parse-error}
+### `boot-app features template-parse-error` {#boot-app features template-parse-error}
 
-**Problem:** Failed to parse persona template `'<path>'`.
+**Problem:** Failed to parse app features file `'<path>'`.
 
 **Fix:**
 
@@ -222,34 +222,34 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 Also verify that all `!include` paths under `workspaces:` exist in
 `config/ui/sidebars/`.
 
-**Source:** `app/src/bootloader.py → _load_persona_config()`.
+**Source:** `app/src/bootloader.py → _load_app_features_config()`.
 
 ---
 
-## B — PersonaValidator Errors
+## B — AppFeaturesValidator Errors
 
-### `persona-id-underscore` {#persona-id-underscore}
+### `app features id-underscore` {#app features id-underscore}
 
-**Problem:** `persona_id '<id>'` contains underscores.
+**Problem:** `app_features_id '<id>'` contains underscores.
 
-SPARMVET persona IDs use **hyphens only** — never underscores. An underscore-based
+SPARMVET app features IDs use **hyphens only** — never underscores. An underscore-based
 ID silently fails UI gating because the feature-flag lookup uses the hyphenated form.
 
-**Fix:** Open the template YAML and change `persona_id`:
+**Fix:** Open the template YAML and change `app_features_id`:
 
 ```yaml
 # Wrong
-persona_id: pipeline_static
+app_features_id: pipeline_static
 
 # Correct
-persona_id: pipeline-static
+app_features_id: pipeline-static
 ```
 
-**Source:** `app/modules/persona_validator.py` Rule 2 — ADR-026.
+**Source:** `app/modules/app_features_validator.py` Rule 2 — ADR-026.
 
 ---
 
-### `persona-t3-companions-missing` {#persona-t3-companions-missing}
+### `app features t3-companions-missing` {#app features t3-companions-missing}
 
 **Problem:** `t3_sandbox_enabled=True` but required companion flags are False:
 `<list of flags>`.
@@ -258,7 +258,7 @@ The T3 sandbox requires all three companions active simultaneously:
 `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`.
 (`audit_report_enabled` was removed in 2026-05: the audit trail is part of every export.)
 
-**Fix:** In the persona template `features:` block, either:
+**Fix:** In the app features file `features:` block, either:
 
 - Set all three companions to `true`, **or**
 - Set `t3_sandbox_enabled: false` (disabling T3 entirely).
@@ -271,16 +271,16 @@ features:
   export_enabled: true
 ```
 
-**Source:** `app/modules/persona_validator.py` Rule 6 — `rules_persona_feature_flags.md §Cascade-T3`.
+**Source:** `app/modules/app_features_validator.py` Rule 6 — `rules_app_features_flags.md §Cascade-T3`.
 
 ---
 
-### `persona-cascade-d-fatal` {#persona-cascade-d-fatal}
+### `app features cascade-d-fatal` {#app features cascade-d-fatal}
 
 **Problem:** `'<child>=True'` requires `'<parent>=True'`.
 
 This is a **fatal startup error** — the app will not start until the template is
-corrected. Group D flags (`manifest_edit_enabled`, `blueprint_agent_enabled`) depend
+corrected. Group D flags (`data_analysis_recipe_edit_enabled`, `blueprint_agent_enabled`) depend
 on `blueprint_enabled`. ADR-077 prohibits silent suppression of this dependency.
 
 **Fix:** Open the template and reconcile the flags:
@@ -289,34 +289,34 @@ on `blueprint_enabled`. ADR-077 prohibits silent suppression of this dependency.
 # Option A — disable the child
 features:
   blueprint_enabled: false
-  manifest_edit_enabled: false   # was true — now matches parent
+  data_analysis_recipe_edit_enabled: false   # was true — now matches parent
 
 # Option B — enable the parent
 features:
   blueprint_enabled: true
-  manifest_edit_enabled: true
+  data_analysis_recipe_edit_enabled: true
 ```
 
-**Source:** `app/modules/persona_validator.py` Rule 7 — ADR-075, ADR-076, ADR-077.
+**Source:** `app/modules/app_features_validator.py` Rule 7 — ADR-075, ADR-076, ADR-077.
 
 ---
 
-### `persona-template-not-found` {#persona-template-not-found}
+### `app features template-not-found` {#app features template-not-found}
 
-**Problem:** Persona template file not found: `<path>`.
+**Problem:** App features file file not found: `<path>`.
 
-Raised by `PersonaValidator.validate_file()` when the file is absent before
+Raised by `AppFeaturesValidator.validate_file()` when the file is absent before
 validation even begins.
 
-**Fix:** Same as [`boot-persona-template-missing`](#boot-persona-template-missing).
+**Fix:** Same as [`boot-app features template-missing`](#boot-app features template-missing).
 
-**Source:** `app/modules/persona_validator.py → validate_file()`.
+**Source:** `app/modules/app_features_validator.py → validate_file()`.
 
 ---
 
-### `persona-template-parse-error` {#persona-template-parse-error}
+### `app features template-parse-error` {#app features template-parse-error}
 
-**Problem:** Failed to parse persona template YAML.
+**Problem:** Failed to parse app features file YAML.
 
 **Fix:**
 
@@ -326,7 +326,7 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 
 Common causes: tab indentation, unquoted `@` or `#` characters, mismatched brackets.
 
-**Source:** `app/modules/persona_validator.py → validate_file()`.
+**Source:** `app/modules/app_features_validator.py → validate_file()`.
 
 ---
 
@@ -334,9 +334,9 @@ Common causes: tab indentation, unquoted `@` or `#` characters, mismatched brack
 
 ### `sidebar-template-not-found` {#sidebar-template-not-found}
 
-**Problem:** Persona template file not found: `<path>`.
+**Problem:** App features file file not found: `<path>`.
 
-**Fix:** Same as [`boot-persona-template-missing`](#boot-persona-template-missing).
+**Fix:** Same as [`boot-app features template-missing`](#boot-app features template-missing).
 
 **Source:** `app/modules/sidebar_validator.py → validate_file()`.
 
@@ -361,19 +361,19 @@ python -c "import yaml; yaml.safe_load(open('<path>'))"
 **Problem:** `!include` target not found for `workspaces.<ws>.<side>_sidebar` in
 `<template_path>`.
 
-A persona template references a sidebar config via `!include` (e.g.
+An app features file references a sidebar config via `!include` (e.g.
 `left_sidebar: !include sidebars/blueprint_standard_left.yaml`) but the target
 file is absent.
 
 **Fix:** Create the missing file under `config/ui/sidebars/`, or correct the
-`!include` path in the persona template.
+`!include` path in the app features file.
 
 Sidebar configs follow this minimal structure:
 
 ```yaml
 visible: true
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
   - type: filters
 ```
 
@@ -405,7 +405,7 @@ resolved to a scalar string because the target file doesn't exist or is empty).
 ```yaml
 visible: true
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
   - type: filters
 ```
 
@@ -422,11 +422,11 @@ panels:
 ```yaml
 # Wrong
 panels:
-  - project_info
+  - data_analysis_recipe_info
 
 # Correct
 panels:
-  - type: project_info
+  - type: data_analysis_recipe_info
 ```
 
 **Source:** `app/modules/sidebar_validator.py → validate()`.
@@ -441,12 +441,12 @@ panels:
 
 ```yaml
 panels:
-  - type: project_info    # required
+  - type: data_analysis_recipe_info    # required
     params: {}            # optional
 ```
 
-Known panel types (from `sidebar_registry.py`): `project_info`, `deployment_info`,
-`manifest_choice`, `filters`, `data_import`, `export`, `session_management`,
+Known panel types (from `sidebar_registry.py`): `data_analysis_recipe_info`, `deployment_info`,
+`data_analysis_recipe_choice`, `filters`, `data_import`, `export`, `session_management`,
 `audit_stack`, `blueprint_nav`, `blueprint_logic`, `gallery_search`,
 `notification_log`.
 
@@ -460,12 +460,12 @@ Known panel types (from `sidebar_registry.py`): `project_info`, `deployment_info
 
 **Problem:** Required location `'<key>'` does not exist on disk: `<path>`.
 
-The three locations that must pre-exist on disk: `raw_data`, `manifests`, `gallery`.
-(`curated_data` and `user_sessions` are created at runtime by the assembler and
+The three locations that must pre-exist on disk: `raw_data`, `data_analysis_recipes`, `gallery`.
+(`cache` and `user_data` are created at runtime by the assembler and
 session manager respectively — they are not checked here.)
 
 **Fix:** Create the missing directory at the reported path, or update
-`locations.<key>` in the deployment profile to point at an existing directory.
+`locations.<key>` in the deployment to point at an existing directory.
 
 ```bash
 mkdir -p <reported_path>
@@ -480,7 +480,7 @@ mkdir -p <reported_path>
 **Problem:** `SPARMVET_IRIDA_TOKEN` environment variable is required for IRIDA
 deployment but is not set.
 
-The OAuth2 bearer token is **never** stored in the deployment profile YAML (ADR-048
+The OAuth2 bearer token is **never** stored in the deployment file (ADR-048
 §8). It must be injected at container launch.
 
 **Fix:**
@@ -494,7 +494,7 @@ environment:
 export SPARMVET_IRIDA_TOKEN="<token>"
 ```
 
-Never add the token to `local_profile.yaml` or any version-controlled file.
+Never add the token to `local.yaml` or any version-controlled file.
 
 **Source:** `libs/connector/src/connector/irida.py → _validate_irida_config()` — ADR-048 §8.
 
@@ -502,15 +502,15 @@ Never add the token to `local_profile.yaml` or any version-controlled file.
 
 ### `connector-irida-block-missing` {#connector-irida-block-missing}
 
-**Problem:** Deployment profile is missing the required `irida:` block
-(`base_url`, `project_id`, `local_cache`).
+**Problem:** Deployment is missing the required `irida:` block
+(`base_url`, `data_analysis_recipe_id`, `local_cache`).
 
-**Fix:** Add the `irida:` block to your deployment profile YAML:
+**Fix:** Add the `irida:` block to your deployment file:
 
 ```yaml
 irida:
   base_url: https://irida.example.org/api
-  project_id: 42
+  data_analysis_recipe_id: 42
   local_cache: /tmp/irida_cache
 ```
 
@@ -518,28 +518,28 @@ irida:
 
 ---
 
-## E — Manifest Errors (ConfigManager)
+## E — Data analysis recipe Errors (ConfigManager)
 
-### `manifest-file-missing` {#manifest-file-missing}
+### `data-analysis-recipe-file-missing` {#data-analysis-recipe-file-missing}
 
-**Problem:** Manifest file not found: `'<path>'`.
+**Problem:** Data analysis recipe file not found: `'<path>'`.
 
-**Fix:** Verify the manifest path set in the deployment profile (`default_manifest`
-key) or the manifest selector dropdown. Manifests live under
-`config/manifests/pipelines/`.
+**Fix:** Verify the data analysis recipe path set in the deployment (`default_data_analysis_recipe`
+key) or the data analysis recipe selector dropdown. Data analysis recipes live under
+`config/data_analysis_recipes/pipelines/`.
 
 **Source:** `libs/utils/src/utils/config_loader.py → ConfigManager.__init__()` — ADR-041.
 
 ---
 
-### `manifest-yaml-parse-error` {#manifest-yaml-parse-error}
+### `data-analysis-recipe-yaml-parse-error` {#data-analysis-recipe-yaml-parse-error}
 
-**Problem:** Malformed YAML in manifest: `<parse error detail>`.
+**Problem:** Malformed YAML in data analysis recipe: `<parse error detail>`.
 
 **Fix:**
 
 ```bash
-python -c "import yaml; yaml.safe_load(open('<manifest_path>'))"
+python -c "import yaml; yaml.safe_load(open('<data_analysis_recipe_path>'))"
 ```
 
 The most common SPARMVET-specific cause is the YAML boolean trap:
@@ -558,21 +558,21 @@ The most common SPARMVET-specific cause is the YAML boolean trap:
 
 ---
 
-### `manifest-include-missing` {#manifest-include-missing}
+### `data-analysis-recipe-include-missing` {#data-analysis-recipe-include-missing}
 
 **Problem:** `!include` target not found: `'<file>'`.
 
 **Fix:** Create the missing fragment file at the reported path, or correct the
-`!include` path in the master manifest. Verify the basename mirroring directory
-exists (`rules_manifest_structure.md §1`).
+`!include` path in the master data analysis recipe. Verify the basename mirroring directory
+exists (`rules_data_analysis_recipe_structure.md §1`).
 
-A high-complexity manifest `main.yaml` must mirror its fragments in a `main/`
+A high-complexity data analysis recipe `main.yaml` must mirror its fragments in a `main/`
 directory at the same level:
 
 ```
-config/manifests/pipelines/
-  my_manifest.yaml
-  my_manifest/
+config/data_analysis_recipes/pipelines/
+  my_data_analysis_recipe.yaml
+  my_data_analysis_recipe/
     input_fields/
     wrangling/
     assembly/
@@ -583,9 +583,9 @@ config/manifests/pipelines/
 
 ---
 
-### `manifest-no-analysis-groups` {#manifest-no-analysis-groups}
+### `data-analysis-recipe-no-analysis-groups` {#data-analysis-recipe-no-analysis-groups}
 
-**Problem:** Manifest is missing the required `analysis_groups:` block.
+**Problem:** Data analysis recipe is missing the required `analysis_groups:` block.
 
 The app's Home Theater derives all tabs from `analysis_groups` — without it, there
 is nothing to render.
@@ -599,16 +599,16 @@ analysis_groups:
     plots:
       my_plot:
         label: "My Plot"
-        spec: !include my_manifest/plots/my_plot.yaml
+        spec: !include my_data_analysis_recipe/plots/my_plot.yaml
 ```
 
-See `rules_manifest_structure.md §8` for the full specification.
+See `rules_data_analysis_recipe_structure.md §8` for the full specification.
 
 **Source:** `libs/utils/src/utils/config_loader.py` — ADR-041, ADR-003.
 
 ---
 
-### `manifest-data-schemas-not-dict` {#manifest-data-schemas-not-dict}
+### `data-analysis-recipe-data-schemas-not-dict` {#data-analysis-recipe-data-schemas-not-dict}
 
 **Problem:** `data_schemas:` must be a YAML mapping, got `<type>`.
 
@@ -626,7 +626,7 @@ data_schemas:
 
 ---
 
-### `manifest-schema-entry-not-dict` {#manifest-schema-entry-not-dict}
+### `data-analysis-recipe-schema-entry-not-dict` {#data-analysis-recipe-schema-entry-not-dict}
 
 **Problem:** `data_schemas.<schema_id>` must be a mapping, got `<type>`.
 
@@ -637,7 +637,7 @@ least a `source:` block containing a `path:` key.
 
 ---
 
-### `manifest-schema-missing-source` {#manifest-schema-missing-source}
+### `data-analysis-recipe-schema-missing-source` {#data-analysis-recipe-schema-missing-source}
 
 **Problem:** `data_schemas.<schema_id>` is missing the required `source:` block.
 

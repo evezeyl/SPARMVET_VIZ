@@ -15,32 +15,32 @@ class TestUIScenarios(unittest.TestCase):
         self.export_dir.mkdir(parents=True, exist_ok=True)
         self.exporter = SubmissionExporter(str(self.export_dir))
 
-    def run_persona_check(self, persona_name, expected_features):
-        """Helper to verify feature gating for a persona."""
-        print(f"Checking Persona: {persona_name}...")
-        loader = Bootloader(persona=persona_name)
+    def run_app_features_check(self, app_features_name, expected_features):
+        """Helper to verify feature gating for an app features."""
+        print(f"Checking App features: {app_features_name}...")
+        loader = Bootloader(app_features=app_features_name)
         for feature, expected in expected_features.items():
             actual = loader.is_enabled(feature)
             self.assertEqual(actual, expected,
-                             f"Feature {feature} mismatch for {persona_name}")
-        print(f"  [PASS] {persona_name} gating verified.")
+                             f"Feature {feature} mismatch for {app_features_name}")
+        print(f"  [PASS] {app_features_name} gating verified.")
 
-    def test_persona_sweep(self):
-        """Objective 1: Full Simulation Run for personas."""
-        personas = {
-            "project-independent": {"developer_mode_enabled": False, "gallery_enabled": True},
-            "developer": {"developer_mode_enabled": True, "gallery_enabled": True},
-            "qa": {"developer_mode_enabled": True, "comparison_mode_enabled": True},
+    def test_app_features_sweep(self):
+        """Objective 1: Full Simulation Run for app features files."""
+        app_features = {
+            "standalone": {"blueprint_enabled": True, "gallery_enabled": True},
+            "developer": {"blueprint_enabled": True, "gallery_enabled": True},
+            "qa": {"blueprint_enabled": True, "comparison_mode_enabled": True},
         }
-        for name, features in personas.items():
-            self.run_persona_check(name, features)
+        for name, features in app_features.items():
+            self.run_app_features_check(name, features)
 
     def test_negative_scenarios_adr034(self):
         """Objective 2: Error-Gate Audit (Heuristic check)."""
         print("Testing Negative Scenarios (ADR-034)...")
         # 1. Missing Column Simulation
         df = pl.DataFrame({"sample_id": [1, 2], "growth": [0.5, 0.8]})
-        # Simulate a manifest with a typo 'growt'
+        # Simulate a data analysis recipe with a typo 'growt'
         bad_mapping = {"x": "sample_id", "y": "growt"}  # Typo!
 
         # We check if we can catch this (In a real UI this shows a modal)
@@ -55,7 +55,7 @@ class TestUIScenarios(unittest.TestCase):
         """Objective 3: Gallery Axis-Based Validation."""
         print("Testing Gallery Axis-Based Parsing...")
         gallery_path = Path(
-            "assets/gallery_data/ridgeline_advanced/recipe_meta.md")
+            "assets/gallery_data/ridgeline_advanced/example_meta.md")
         self.assertTrue(gallery_path.exists())
 
         with open(gallery_path, "r") as f:
@@ -75,10 +75,10 @@ class TestUIScenarios(unittest.TestCase):
         }
 
         zip_path = self.exporter.bundle_global_export(
-            project_id="INTEGRITY_TEST",
+            data_analysis_recipe_id="INTEGRITY_TEST",
             plot_path=None,
             tiers=tiers,
-            manifest={"info": {"name": "Test"}},
+            data_analysis_recipe={"info": {"name": "Test"}},
             audit_trail=["Step 1: Ingest"]
         )
 
@@ -87,7 +87,7 @@ class TestUIScenarios(unittest.TestCase):
         import zipfile
         with zipfile.ZipFile(zip_path, 'r') as zf:
             files = zf.namelist()
-            self.assertIn("recipe_meta.md", files)
+            self.assertIn("example_meta.md", files)
             self.assertIn("data/tier1_anchor.csv", files)
             self.assertIn("data/tier3_leaf.csv", files)
 

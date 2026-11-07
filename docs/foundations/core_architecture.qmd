@@ -19,7 +19,7 @@ The application is split into distinct layers:
 | **Configuration Layer** | Configuration YAMLs | The "Brain." A file that tells the dashboard: "For this data/species, look at column X." **Contains the data contract**, data wrangling rules, and plotting defaults. |
 | Orchestrator Logic | _The Controller_ (app server)| This is the shiny server logic that **reacts** to user input and calls the right functions. |
 | **Visualization Factory** | Plotting Library (Data Agnostic) | The "Artist." Functions that take a dataframe and return a Plotnine plot object. Plotting defaults are passed via configuration files. |
-| Display & Interaction | _Presentation Layer (UI)_ (app ui) | The "Face." The HTML/CSS layout and the sliders/dropdowns. **UI Personas** (`config/ui/`) strictly control functional masking (Developer Mode, Gallery, etc.) and MUST NOT store system paths. |
+| Display & Interaction | _Presentation Layer (UI)_ (app ui) | The "Face." The HTML/CSS layout and the sliders/dropdowns. **UI App features files** (`config/ui/`) strictly control functional masking (Developer Mode, Gallery, etc.) and MUST NOT store system paths. |
 
 <br/>
 
@@ -37,7 +37,7 @@ The `app/` package is split into three tiers with a hard boundary between them:
 |---|---|
 | `server.py` | Thin orchestrator (228 lines). Owns shared reactive state, shared calcs, and delegates to handlers via `define_server(...)`. No business logic. |
 | `ui.py` | Static Shiny HTML/CSS shell. No reactive logic. |
-| `bootloader.py` | Path Authority & Persona bootstrap (ADR-031). |
+| `bootloader.py` | Path Authority & App features bootstrap (ADR-031). |
 
 **Tier 2 — Importable Modules** (`app/modules/` and `libs/blueprint_arch/`)
 
@@ -45,7 +45,7 @@ Pure Python — importable from headless scripts, test suites, and CLI tools wit
 
 | Module | Location | Role |
 |---|---|---|
-| `manifest_navigator.py` | `libs/blueprint_arch/` (ADR-067) | Pure manifest introspection engine: `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group`. |
+| `data_analysis_recipe_navigator.py` | `libs/blueprint_arch/` (ADR-067) | Pure data analysis recipe introspection engine: `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group`. |
 | `schema_registry.py` | `libs/blueprint_arch/` (ADR-075) | Headless-safe catalog of `ui_schema` dicts registered by `@register_action` and `@register_plot_component`. Powers Blueprint IDE form generation. |
 | `orchestrator.py` | `app/modules/` | `DataOrchestrator` — Tier 1 assembly bridge (Parquet materialization). |
 | `wrangle_studio.py` | `app/modules/` | `WrangleStudio` — Blueprint Architect visual builder class. |
@@ -61,10 +61,10 @@ Contains `@render.*` and `@reactive.*` decorators only. Each module exposes `def
 |---|---|
 | `home_theater.py` | Home mode tabs, sidebar nav, filters, plots, tables. |
 | `audit_stack.py` | Pipeline Audit: T2/T3 nodes, Apply gate, Revert. |
-| `blueprint_handlers.py` | Blueprint Architect: manifest import, TubeMap, Lineage Rail. |
+| `blueprint_handlers.py` | Blueprint Architect: data analysis recipe import, TubeMap, Lineage Rail. |
 | `gallery_handlers.py` | Gallery: filtering, preview, clone, submission. |
-| `ingestion_handlers.py` | Manifest file ingestion (`btn_ingest`). |
-| `export_handlers.py` | Export results bundle (ZIP): plots, data tiers, recipes, lineage graph, Quarto report. |
+| `ingestion_handlers.py` | Data analysis recipe file ingestion (`btn_ingest`). |
+| `export_handlers.py` | Export results bundle (ZIP): plots, data tiers, step lists, lineage graph, Quarto report. |
 
 **The Two-Category Law:** Code is either pure introspection (Tier 2) or Shiny wiring (Tier 3). Mixing them in the same file is a protocol violation (ADR-045).
 

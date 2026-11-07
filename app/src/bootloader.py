@@ -2,18 +2,18 @@
 # provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import)
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
-# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, project_conventions.md §"Deployment Profile Resolution"
+# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, project_conventions.md §"Deployment Resolution"
 # @end_deps
 # app/src/bootloader.py
 #
-# Deployment profile resolution chain (ADR-048 §4) — first match wins:
-#   Level 1: SPARMVET_PROFILE env var       — Galaxy XML, IRIDA, Docker Compose, systemd
-#   Level 2: ~/.sparmvet/profile.yaml        — local PC (scientist/admin places once)
-#   Level 3: /etc/sparmvet/profile.yaml      — institutional server (sysadmin places at deploy)
-#   Level 4: config/deployment/local/local_profile.yaml — developer repo fallback
+# Deployment resolution chain (ADR-048 §4) — first match wins:
+#   Level 1: SPARMVET_DEPLOYMENT env var       — Galaxy XML, IRIDA, Docker Compose, systemd
+#   Level 2: ~/.sparmvet/deployment.yaml        — local PC (scientist/admin places once)
+#   Level 3: /etc/sparmvet/deployment.yaml      — institutional server (sysadmin places at deploy)
+#   Level 4: config/deployment/local/local.yaml — developer repo fallback
 #
 # Connector lifecycle (ADR-048 §5, Option B):
-#   After profile load, the appropriate connector is instantiated via get_connector().
+#   After deployment load, the appropriate connector is instantiated via get_connector().
 #   connector.fetch_data() runs first (no-op for filesystem/Galaxy; downloads for IRIDA).
 #   connector.resolve_paths() is then the authoritative source for all location paths.
 #   get_location() reads from those resolved paths directly.
@@ -24,6 +24,12 @@ from pathlib import Path
 from typing import Dict, Any
 
 from app.modules.deployment_error import DeploymentError, exit_if_errors
+from utils.path_expansion import expand_deployment_paths
+from app.modules.renamed_keys import (
+    renamed_app_features_key_errors,
+    renamed_deployment_key_errors,
+    renamed_env_var_errors,
+)
 
 _BOOT_REF = "ADR-048 — .claude/rules/rules_runtime_environment.md §1"
 
@@ -35,75 +41,76 @@ class SidebarConfig:
     panels: list = field(default_factory=list)
 
 _RESOLUTION_LEVEL_LABELS = {
-    1: "SPARMVET_PROFILE env var",
-    2: "~/.sparmvet/profile.yaml (user-level)",
-    3: "/etc/sparmvet/profile.yaml (system-level)",
-    4: "config/deployment/local/local_profile.yaml (dev fallback)",
+    1: "SPARMVET_DEPLOYMENT env var",
+    2: "~/.sparmvet/deployment.yaml (user-level)",
+    3: "/etc/sparmvet/deployment.yaml (system-level)",
+    4: "config/deployment/local/local.yaml (dev fallback)",
 }
 
 
 class Bootloader:
     """
     System Bootloader (ADR-031, ADR-026, ADR-048).
-    Handles path authority, UI persona feature toggling, and deployment profile resolution.
+    Handles path authority, UI app features feature toggling, and deployment resolution.
 
-    Profile resolution chain (ADR-048 §4):
-        1. SPARMVET_PROFILE env var  — explicit path; used by Galaxy/IRIDA/Docker
-        2. ~/.sparmvet/profile.yaml  — user-level; local PC without env var
-        3. /etc/sparmvet/profile.yaml — system-level; admin-placed on server
-        4. config/deployment/local/local_profile.yaml — repo dev fallback
+    Deployment resolution chain (ADR-048 §4):
+        1. SPARMVET_DEPLOYMENT env var  — explicit path; used by Galaxy/IRIDA/Docker
+        2. ~/.sparmvet/deployment.yaml  — user-level; local PC without env var
+        3. /etc/sparmvet/deployment.yaml — system-level; admin-placed on server
+        4. config/deployment/local/local.yaml — repo dev fallback
 
-    See project_conventions.md §"Deployment Profile Resolution" for full details.
+    See project_conventions.md §"Deployment Resolution" for full details.
     """
     # ADR-031: Static Cache Layer
-    _persona_cache: Dict[str, Dict[str, Any]] = {}
-    _connector_cache: Dict[str, Dict[str, Any]] = {}          # keyed by resolved profile path string
-    _resolved_locations_cache: Dict[str, Dict[str, Path]] = {}  # keyed by resolved profile path string
+    _app_features_cache: Dict[str, Dict[str, Any]] = {}
+    _deployment_cache: Dict[str, Dict[str, Any]] = {}          # keyed by resolved deployment path string
+    _resolved_locations_cache: Dict[str, Dict[str, Path]] = {}  # keyed by resolved deployment path string
 
-    # Hierarchical Asset Cache: project_id -> dataset_id -> plot_id -> asset_type -> asset
+    # Hierarchical Asset Cache: data_analysis_recipe_id -> dataset_id -> plot_id -> asset_type -> asset
     _asset_cache: Dict[str, Dict[str, Dict[str, Dict[str, Any]]]] = {}
 
-    def get_cached_asset(self, project_id: str, dataset_id: str, plot_id: str, asset_type: str) -> Any:
+    def get_cached_asset(self, data_analysis_recipe_id: str, dataset_id: str, plot_id: str, asset_type: str) -> Any:
         try:
-            return self._asset_cache[project_id][dataset_id][plot_id][asset_type]
+            return self._asset_cache[data_analysis_recipe_id][dataset_id][plot_id][asset_type]
         except KeyError:
             return None
 
-    def set_cached_asset(self, project_id: str, dataset_id: str, plot_id: str, asset_type: str, asset: Any):
-        if project_id not in self._asset_cache:
-            self._asset_cache[project_id] = {}
-        if dataset_id not in self._asset_cache[project_id]:
-            self._asset_cache[project_id][dataset_id] = {}
-        if plot_id not in self._asset_cache[project_id][dataset_id]:
-            self._asset_cache[project_id][dataset_id][plot_id] = {}
-        self._asset_cache[project_id][dataset_id][plot_id][asset_type] = asset
+    def set_cached_asset(self, data_analysis_recipe_id: str, dataset_id: str, plot_id: str, asset_type: str, asset: Any):
+        if data_analysis_recipe_id not in self._asset_cache:
+            self._asset_cache[data_analysis_recipe_id] = {}
+        if dataset_id not in self._asset_cache[data_analysis_recipe_id]:
+            self._asset_cache[data_analysis_recipe_id][dataset_id] = {}
+        if plot_id not in self._asset_cache[data_analysis_recipe_id][dataset_id]:
+            self._asset_cache[data_analysis_recipe_id][dataset_id][plot_id] = {}
+        self._asset_cache[data_analysis_recipe_id][dataset_id][plot_id][asset_type] = asset
 
-    def __init__(self, persona: str | None = None, connector: str | None = None):
-        # Persona resolved after profile load — see step 2 below
-        self._persona_kwarg = persona
-        # connector kwarg kept for backward compatibility; used only in level-4 fallback path
-        self.connector = connector or os.environ.get("SPARMVET_CONNECTOR", "local")
+    def __init__(self, app_features: str | None = None):
+        exit_if_errors(renamed_env_var_errors(os.environ))
+        # App features resolved after deployment load — see step 2 below
+        self._app_features_kwarg = app_features
 
-        # 1. Path Authority — 4-level profile resolution (ADR-048 §4)
-        self.connector_path, self.deployment_level = self._resolve_profile_path()
+        # 1. Path Authority — 4-level deployment resolution (ADR-048 §4)
+        self.deployment_path, self.deployment_level = self._resolve_deployment_path()
         print(
-            f"[Bootloader] Profile resolved at level {self.deployment_level} "
-            f"({_RESOLUTION_LEVEL_LABELS[self.deployment_level]}): {self.connector_path}"
+            f"[Bootloader] Deployment resolved at level {self.deployment_level} "
+            f"({_RESOLUTION_LEVEL_LABELS[self.deployment_level]}): {self.deployment_path}"
         )
 
-        # Load profile (cached by resolved absolute path)
-        _cache_key = str(self.connector_path.resolve())
-        if _cache_key not in self._connector_cache:
-            self._connector_cache[_cache_key] = self._load_connector_config()
-        self.connector_config = self._connector_cache[_cache_key]
+        # Load deployment (cached by resolved absolute path)
+        _cache_key = str(self.deployment_path.resolve())
+        if _cache_key not in self._deployment_cache:
+            self._deployment_cache[_cache_key] = self._load_deployment_config()
+        self.deployment_config = self._deployment_cache[_cache_key]
+        exit_if_errors(renamed_deployment_key_errors(self.deployment_config, str(self.deployment_path)))
 
-        # ADR-048 deployment fields (all optional in local dev profile)
-        project_root_str = self.connector_config.get("project_root")
+        # ADR-048 deployment fields (all optional in local dev deployment)
+        project_root_str = self.deployment_config.get("project_root")
         self.project_root: Path | None = Path(project_root_str) if project_root_str else None
-        self.default_manifest: str | None = self.connector_config.get("default_manifest")
-        self.default_persona: str | None = self.connector_config.get("default_persona")
-        self.deployment_name: str = self.connector_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
-        self.deployment_type: str = self.connector_config.get("deployment_type", "filesystem")
+        self.default_data_analysis_recipe: str | None = self.deployment_config.get("default_data_analysis_recipe")
+        self.default_app_features: str | None = self.deployment_config.get("default_app_features")
+        self.data_lookup: str = self.deployment_config.get("data_lookup", "data_analysis_recipe_paths")
+        self.deployment_name: str = self.deployment_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
+        self.deployment_type: str = self.deployment_config.get("deployment_type", "filesystem")
 
         # Connector lifecycle (ADR-048 §5, Option B):
         # fetch_data() runs once at startup — no-op for filesystem/Galaxy, downloads for IRIDA.
@@ -111,7 +118,7 @@ class Bootloader:
         if _cache_key not in self._resolved_locations_cache:
             try:
                 from connector import get_connector
-                _conn = get_connector(self.connector_config)
+                _conn = get_connector(self.deployment_config)
                 print(f"[Bootloader] Connector: {_conn.__class__.__name__} — fetch_data()")
                 _conn.fetch_data()
                 self._resolved_locations_cache[_cache_key] = _conn.resolve_paths()
@@ -119,10 +126,10 @@ class Bootloader:
                 exit_if_errors([DeploymentError(
                     component="Bootloader",
                     problem=f"Connector initialisation failed: {_exc}",
-                    location=str(self.connector_path),
+                    location=str(self.deployment_path),
                     fix=(
                         "Check that all credentials and endpoints declared in the deployment "
-                        "profile are reachable. For IridaConnector: verify SPARMVET_IRIDA_TOKEN "
+                        "deployment are reachable. For IridaConnector: verify SPARMVET_IRIDA_TOKEN "
                         "is set and the IRIDA server is accessible. For BioBlendConnector: verify "
                         "GALAXY_URL and GALAXY_API_KEY. For FilesystemConnector: verify path "
                         "entries under 'locations:' exist on disk."
@@ -133,70 +140,71 @@ class Bootloader:
         self._resolved_locations: Dict[str, Path] = self._resolved_locations_cache[_cache_key]
 
         # Keep raw locations dict for backward compat (key validation only)
-        self.locations = self.connector_config.get("locations", {})
+        self.locations = self.deployment_config.get("locations", {})
 
         # Validate required location keys
-        self._validate_profile()
+        self._validate_deployment()
 
-        # 2. Persona Logic — resolution order: kwarg > env var > profile default_persona > error
-        self.persona = (
-            self._persona_kwarg
-            or os.environ.get("SPARMVET_PERSONA")
-            or self.default_persona
+        # 2. App features logic — resolution order: kwarg > env var > deployment default_app_features > error
+        self.app_features = (
+            self._app_features_kwarg
+            or os.environ.get("SPARMVET_APP_FEATURES")
+            or self.default_app_features
         )
-        if not self.persona:
+        if not self.app_features:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem="No persona configured — cannot determine which feature flags to load.",
+                problem="No app features configured — cannot determine which feature flags to load.",
                 location=(
-                    "Resolution order checked: persona= kwarg, SPARMVET_PERSONA env var, "
-                    f"default_persona in {self.connector_path} — all absent."
+                    "Resolution order checked: app_features= kwarg, SPARMVET_APP_FEATURES env var, "
+                    f"default_app_features in {self.deployment_path} — all absent."
                 ),
                 fix=(
-                    "Set the SPARMVET_PERSONA environment variable (e.g. SPARMVET_PERSONA=developer), "
-                    f"or add 'default_persona: developer' to {self.connector_path}."
+                    "Set the SPARMVET_APP_FEATURES environment variable (e.g. SPARMVET_APP_FEATURES=developer), "
+                    f"or add 'default_app_features: developer' to {self.deployment_path}."
                 ),
                 who="operator",
                 reference=_BOOT_REF,
             )])
-        self.set_persona(self.persona)
+        self.set_app_features(self.app_features)
 
-        # 3. Project Authority (Agnostic Discovery)
-        self.project_dir = self.get_location("manifests")
-        self.available_projects = self._discover_projects()
+        # 3. Data analysis recipes folder (agnostic discovery)
+        self.data_analysis_recipes_dir = self.get_location("data_analysis_recipes")
+        self.available_data_analysis_recipes = self._discover_data_analysis_recipes()
+        self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
 
-    def _resolve_profile_path(self) -> tuple[Path, int]:
+    def _resolve_deployment_path(self) -> tuple[Path, int]:
         """
-        Resolve the deployment profile path via the 4-level priority chain (ADR-048 §4).
+        Resolve the deployment path via the 4-level priority chain (ADR-048 §4).
 
         Returns (resolved_path, level) where level ∈ {1, 2, 3, 4}.
 
         Raises FileNotFoundError if:
-        - SPARMVET_PROFILE is set but points to a non-existent file (hard error — misconfiguration).
-        - No profile is found at any level (shows all checked paths in the message).
+        - SPARMVET_DEPLOYMENT is set but points to a non-existent file (hard error — misconfiguration).
+        - No deployment is found at any level (shows all checked paths in the message).
 
         Resolution order (first match wins):
-            1. SPARMVET_PROFILE env var  — Galaxy XML, IRIDA container launch, Docker Compose, systemd
-            2. ~/.sparmvet/profile.yaml  — local PC (scientist or admin places this once at setup)
-            3. /etc/sparmvet/profile.yaml — institutional server (sysadmin places at deploy time)
-            4. config/deployment/local/local_profile.yaml — developer running from repo root
+            1. SPARMVET_DEPLOYMENT env var  — Galaxy XML, IRIDA container launch, Docker Compose, systemd
+            2. ~/.sparmvet/deployment.yaml  — local PC (scientist or admin places this once at setup)
+            3. /etc/sparmvet/deployment.yaml — institutional server (sysadmin places at deploy time)
+            4. config/deployment/local/local.yaml — developer running from repo root
         """
         # Level 1: explicit env var — fail hard if set but missing (misconfiguration, not "not found")
-        env_profile = os.environ.get("SPARMVET_PROFILE")
-        if env_profile:
-            p = Path(env_profile)
+        env_deployment = os.environ.get("SPARMVET_DEPLOYMENT")
+        if env_deployment:
+            p = Path(env_deployment)
             if not p.exists():
                 exit_if_errors([DeploymentError(
                     component="Bootloader",
                     problem=(
-                        f"SPARMVET_PROFILE env var is set to '{env_profile}' "
+                        f"SPARMVET_DEPLOYMENT env var is set to '{env_deployment}' "
                         f"but the file does not exist."
                     ),
-                    location=f"SPARMVET_PROFILE={env_profile}",
+                    location=f"SPARMVET_DEPLOYMENT={env_deployment}",
                     fix=(
-                        f"Either create the profile file at '{env_profile}', "
-                        f"correct the path in SPARMVET_PROFILE, or unset the variable "
-                        f"to fall through to lower-priority profile locations."
+                        f"Either create the deployment file at '{env_deployment}', "
+                        f"correct the path in SPARMVET_DEPLOYMENT, or unset the variable "
+                        f"to fall through to lower-priority deployment locations."
                     ),
                     who="operator",
                     reference=_BOOT_REF,
@@ -204,124 +212,172 @@ class Bootloader:
             return p, 1
 
         # Level 2: user-level config
-        user_profile = Path.home() / ".sparmvet" / "profile.yaml"
-        if user_profile.exists():
-            return user_profile, 2
+        user_deployment = Path.home() / ".sparmvet" / "deployment.yaml"
+        if user_deployment.exists():
+            return user_deployment, 2
 
         # Level 3: system-level config
-        system_profile = Path("/etc/sparmvet/profile.yaml")
-        if system_profile.exists():
-            return system_profile, 3
+        system_deployment = Path("/etc/sparmvet/deployment.yaml")
+        if system_deployment.exists():
+            return system_deployment, 3
 
         # Level 4: dev repo fallback
-        dev_fallback = Path(f"config/deployment/{self.connector}/local_profile.yaml")
+        dev_fallback = Path("config/deployment/local/local.yaml")
         if dev_fallback.exists():
             return dev_fallback, 4
 
         exit_if_errors([DeploymentError(
             component="Bootloader",
-            problem="No deployment profile found at any resolution level.",
+            problem="No deployment found at any resolution level.",
             location=(
-                f"Checked: (1) SPARMVET_PROFILE env var (not set), "
-                f"(2) {Path.home() / '.sparmvet' / 'profile.yaml'} (not found), "
-                f"(3) /etc/sparmvet/profile.yaml (not found), "
+                f"Checked: (1) SPARMVET_DEPLOYMENT env var (not set), "
+                f"(2) {Path.home() / '.sparmvet' / 'deployment.yaml'} (not found), "
+                f"(3) /etc/sparmvet/deployment.yaml (not found), "
                 f"(4) {dev_fallback} (not found)"
             ),
             fix=(
-                "Create a profile at config/deployment/local/local_profile.yaml "
-                "(copy from config/deployment/local/local_profile.yaml.example if available), "
-                "or set SPARMVET_PROFILE to an absolute path to your deployment profile YAML."
+                "Create a deployment at config/deployment/local/local.yaml "
+                "(copy from config/deployment/local/local.yaml.example if available), "
+                "or set SPARMVET_DEPLOYMENT to an absolute path to your deployment file."
             ),
             who="operator",
             reference=_BOOT_REF,
         )])
         raise FileNotFoundError("unreachable")  # satisfies type checker
 
-    def _validate_profile(self) -> None:
+    def _validate_deployment(self) -> None:
         """Exit with DeploymentError if required location keys are missing from resolved paths."""
-        required = {"raw_data", "manifests", "curated_data", "user_sessions", "gallery"}
+        errors = []
+        if self.data_lookup not in ("data_analysis_recipe_paths", "by_dataset_id"):
+            errors.append(DeploymentError(
+                component="Bootloader",
+                problem=f"data_lookup '{self.data_lookup}' is not a valid choice",
+                location=f"data_lookup in {self.deployment_path}",
+                fix="Use data_analysis_recipe_paths (data from the source.path of the data analysis recipe) or by_dataset_id (data delivered into raw_data as <dataset id>.tsv).",
+                who="operator",
+                reference=_BOOT_REF,
+            ))
+        exit_if_errors(errors)
+        required = {"raw_data", "data_analysis_recipes", "cache", "user_data", "gallery"}
         missing = required - set(self._resolved_locations.keys())
         if missing:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
                 problem=(
-                    f"Deployment profile is missing required location keys: "
+                    f"Deployment is missing required location keys: "
                     f"{sorted(missing)}"
                 ),
-                location=str(self.connector_path),
+                location=str(self.deployment_path),
                 fix=(
-                    f"Add the missing keys to the 'locations:' block in {self.connector_path}. "
-                    f"Required keys: raw_data, manifests, curated_data, user_sessions, gallery. "
-                    f"See config/deployment/local/local_profile.yaml for reference values."
+                    f"Add the missing keys to the 'locations:' block in {self.deployment_path}. "
+                    f"Required keys: raw_data, data analysis recipes, cache, user_data, gallery. "
+                    f"See config/deployment/local/local.yaml for reference values."
                 ),
                 who="operator",
                 reference=_BOOT_REF,
             )])
 
-    def set_persona(self, persona: str):
-        """Load persona config from a file path or legacy shortname.
+    def set_app_features(self, app_features: str):
+        """Load an app features file from a path or a short name.
 
         Accepts:
-          - Absolute path: /path/to/my_persona.yaml
-          - Relative path: config/ui/templates/developer_template.yaml
-          - Legacy shortname: developer  →  config/ui/templates/developer_template.yaml
+          - Absolute path: /path/to/my_app_features.yaml
+          - Relative path: config/app_features/developer.yaml
+          - Short name: developer  →  config/app_features/developer.yaml
         """
-        self.persona = persona
-        p = Path(persona)
-        if "/" in persona or "\\" in persona or persona.endswith(".yaml"):
-            self.persona_path = p.resolve()
+        self.app_features = app_features
+        p = Path(app_features)
+        if "/" in app_features or "\\" in app_features or app_features.endswith(".yaml"):
+            self.app_features_path = p.resolve()
         else:
-            # Legacy shortname — backward compatible
-            self.persona_path = Path(
-                f"config/ui/templates/{persona}_template.yaml").resolve()
+            # Short name: a file in config/app_features/
+            self.app_features_path = Path(
+                f"config/app_features/{app_features}.yaml").resolve()
 
-        cache_key = str(self.persona_path)
-        if cache_key not in self._persona_cache:
-            self._persona_cache[cache_key] = self._load_persona_config()
+        cache_key = str(self.app_features_path)
+        if cache_key not in self._app_features_cache:
+            self._app_features_cache[cache_key] = self._load_app_features_config()
 
-        self.config = self._persona_cache[cache_key]
-        print(f"[Bootloader] Persona: {self.persona} → {self.persona_path}")
-        self.features = self.config.get("features", {})
+        self.config = self._app_features_cache[cache_key]
+        print(f"[Bootloader] App features: {self.app_features} → {self.app_features_path}")
+        # Operator lock: app_features_override in the deployment file is absolute, for example
+        # data_ingestion_enabled: false when a pipeline always pushes the data. Applied per
+        # instance, never into the cache shared by the class (it is keyed by file only).
+        self.flags = {**self.config.get("flags", {}),
+                      **(self.deployment_config.get("app_features_override") or {})}
         self.automation = self.config.get("automation", {})
 
     @property
-    def persona_display_name(self) -> str:
-        """Human-readable persona name from the template's display_name field.
+    def app_features_display_name(self) -> str:
+        """Human-readable app features name from the template's display_name field.
 
-        Falls back to persona_id, then to the raw persona value (path or shortname).
+        Falls back to name, then to the raw app features value (path or shortname).
         Used for UI display only — never for behavioral gating.
         """
         return (
             self.config.get("display_name")
-            or self.config.get("persona_id")
-            or self.persona
+            or self.config.get("name")
+            or self.app_features
         )
 
-    def _discover_projects(self) -> Dict[str, str]:
-        """Scans the project directory for YAML manifests."""
-        mf_files = list(self.project_dir.glob("*.yaml"))
+    def _discover_data_analysis_recipes(self) -> Dict[str, str]:
+        """Scans the project directory for YAML data analysis recipes."""
+        mf_files = list(self.data_analysis_recipes_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
-    def get_default_project(self) -> str:
-        """Returns the fixed_manifest project ID if set, else the first available project."""
-        fixed = self.get_manifest_selector().get("fixed_manifest")
-        if fixed:
-            return fixed
-        if not self.available_projects:
-            raise FileNotFoundError("No projects found in Location 2.")
-        return list(self.available_projects.keys())[0]
+    def _resolve_default_data_analysis_recipe(self) -> str | None:
+        """SPARMVET_DATA_ANALYSIS_RECIPE, then default_data_analysis_recipe of the deployment.
 
-    def _load_connector_config(self) -> Dict[str, Any]:
-        """Loads the deployment profile YAML."""
-        if not self.connector_path.exists():
+        A named data analysis recipe that is not in the data analysis recipes folder, or a hidden selector with nothing
+        named, is an operator mistake and stops the app (ADR-077, ADR-091)."""
+        source, name = None, None
+        if os.environ.get("SPARMVET_DATA_ANALYSIS_RECIPE"):
+            source, name = "SPARMVET_DATA_ANALYSIS_RECIPE", os.environ["SPARMVET_DATA_ANALYSIS_RECIPE"]
+        elif self.default_data_analysis_recipe:
+            source, name = "default_data_analysis_recipe", str(self.default_data_analysis_recipe)
+        if name:
+            if name not in self.available_data_analysis_recipes:
+                exit_if_errors([DeploymentError(
+                    component="Bootloader",
+                    problem=f"The data analysis recipe '{name}' named by {source} was not found.",
+                    location=f"{source} (data analysis recipes folder: {self.data_analysis_recipes_dir})",
+                    fix=("Use the file name without .yaml of a data analysis recipe in the data analysis recipes folder. "
+                         f"Found: {sorted(self.available_data_analysis_recipes) or 'none'}."),
+                    who="operator", reference=_BOOT_REF,
+                )])
+            return name
+        if not self.get_data_analysis_recipe_selector().get("visible", True):
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Deployment profile file not found: {self.connector_path}",
-                location=str(self.connector_path),
+                problem="The app features hide the data analysis recipe selector but no data analysis recipe is named.",
+                location="default_data_analysis_recipe in the deployment file and SPARMVET_DATA_ANALYSIS_RECIPE",
+                fix="Name the data analysis recipe that opens: set default_data_analysis_recipe in the deployment file "
+                    "(or SPARMVET_DATA_ANALYSIS_RECIPE for one run).",
+                who="operator", reference=_BOOT_REF,
+            )])
+        return None
+
+    def get_default_data_analysis_recipe(self) -> str:
+        """The data analysis recipe that opens at startup (ADR-091): the launch variable, then the
+        deployment default, otherwise the first available one (the user chooses when the
+        selector is shown)."""
+        if self.default_data_analysis_recipe_name:
+            return self.default_data_analysis_recipe_name
+        if not self.available_data_analysis_recipes:
+            raise FileNotFoundError("No data analysis recipes found in Location 2.")
+        return list(self.available_data_analysis_recipes.keys())[0]
+
+    def _load_deployment_config(self) -> Dict[str, Any]:
+        """Loads the deployment file."""
+        if not self.deployment_path.exists():
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem=f"Deployment file not found: {self.deployment_path}",
+                location=str(self.deployment_path),
                 fix=(
-                    "Ensure the profile file exists at the resolved path. "
-                    "For local dev: copy config/deployment/local/local_profile.yaml.example "
-                    "to config/deployment/local/local_profile.yaml and fill in the location paths."
+                    "Ensure the deployment file exists at the resolved path. "
+                    "For local dev: copy config/deployment/local/local.yaml.example "
+                    "to config/deployment/local/local.yaml and fill in the location paths."
                 ),
                 who="operator",
                 reference=_BOOT_REF,
@@ -329,16 +385,19 @@ class Bootloader:
             return {}  # unreachable
 
         try:
-            with open(self.connector_path, "r") as f:
-                return yaml.safe_load(f) or {}
+            with open(self.deployment_path, "r") as f:
+                data = yaml.safe_load(f) or {}
+            # ~ and ${VAR} in the folders of the deployment (ADR-091); an unset variable stops the app
+            exit_if_errors(expand_deployment_paths(data, str(self.deployment_path)))
+            return data
         except Exception as e:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Failed to parse deployment profile '{self.connector_path}': {e}",
-                location=str(self.connector_path),
+                problem=f"Failed to parse deployment '{self.deployment_path}': {e}",
+                location=str(self.deployment_path),
                 fix=(
-                    f"Check {self.connector_path} for YAML syntax errors. "
-                    f"Run: python -c \"import yaml; yaml.safe_load(open('{self.connector_path}'))\" "
+                    f"Check {self.deployment_path} for YAML syntax errors. "
+                    f"Run: python -c \"import yaml; yaml.safe_load(open('{self.deployment_path}'))\" "
                     f"to surface the parse error line."
                 ),
                 who="operator",
@@ -346,39 +405,43 @@ class Bootloader:
             )])
             return {}  # unreachable
 
-    def _load_persona_config(self) -> Dict[str, Any]:
-        """Loads UI feature toggles from the persona template and applies dependency cascade.
+    def _load_app_features_config(self) -> Dict[str, Any]:
+        """Loads UI feature toggles from the app features file and applies dependency cascade.
 
-        Cascade rules (rules_persona_feature_flags.md §107–127):
+        Cascade rules (rules_app_features_flags.md §107–127):
           - interactivity_enabled=False suppresses t3_sandbox/comparison/session/export_graph/audit_report
           - import_helper_enabled=False suppresses data_ingestion_enabled
-          - Deployment-profile data_ingestion_enabled:false is an absolute override
+          - Deployment data_ingestion_enabled:false is an absolute override
 
-        Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are NOT
+        Group D cascades (data_analysis_recipe_edit_enabled, blueprint_agent_enabled) are NOT
         silently suppressed here — they are fatal validator errors raised by
-        PersonaValidator at startup (Rule 7). If you wrote them on while
+        AppFeaturesValidator at startup (Rule 7). If you wrote them on while
         blueprint_enabled=False, the app refuses to start. See
-        rules_persona_feature_flags.md Cascade Enforcement §4–5.
+        rules_app_features_flags.md Cascade Enforcement §4–5.
         A WARNING is printed for each flag that was True in the template and forced False.
 
-        Supports !include in persona templates (paths relative to the template file).
+        Supports !include in app features files (paths relative to the template file).
         Uses a subclass of SafeLoader to avoid polluting the global constructor registry.
         """
-        path = self.persona_path
+        path = self.app_features_path
         if not path.exists():
+            from app.modules.renamed_keys import RENAMED_APP_FEATURES_NAMES
+            renamed = RENAMED_APP_FEATURES_NAMES.get(path.stem)
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Persona template not found: {path}",
+                problem=(f"App features file not found: {path}"
+                         + (f" ('{path.stem}' was renamed to '{renamed}')" if renamed else "")),
                 location=str(path),
                 fix=(
-                    f"Ensure the template file exists at {path}. "
-                    f"Valid persona IDs (with templates in config/ui/templates/): "
+                    (f"Use '{renamed}' in SPARMVET_APP_FEATURES or default_app_features. " if renamed else "") +
+                    f"Ensure the app features file exists at {path}. "
+                    f"Valid names (files in config/app_features/): "
                     f"pipeline-static, pipeline-exploration-simple, pipeline-exploration-advanced, "
-                    f"project-independent, developer, qa. "
-                    f"Check SPARMVET_PERSONA env var or default_persona in the deployment profile."
+                    f"standalone, developer, qa. "
+                    f"Check SPARMVET_APP_FEATURES env var or default_app_features in the deployment."
                 ),
                 who="operator",
-                reference="ADR-026 + config/ui/templates/",
+                reference="ADR-026 + config/app_features/",
             )])
             return {}  # unreachable
 
@@ -400,10 +463,11 @@ class Bootloader:
 
             with open(path, "r") as f:
                 config = yaml.load(f, Loader=_TemplateLoader) or {}
+            exit_if_errors(renamed_app_features_key_errors(config, str(path)))
         except Exception as e:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Failed to parse persona template '{path}': {e}",
+                problem=f"Failed to parse app features file '{path}': {e}",
                 location=str(path),
                 fix=(
                     f"Check {path} for YAML syntax errors. "
@@ -413,11 +477,11 @@ class Bootloader:
                     f"config/ui/sidebars/."
                 ),
                 who="operator",
-                reference="ADR-026 + config/ui/templates/",
+                reference="ADR-026 + config/app_features/",
             )])
             return {}  # unreachable
 
-        features = config.get("features", {})
+        features = config.get("flags", {})
 
         # Backward compat: old templates may still have export_bundle_enabled /
         # export_graph_enabled. Map them to export_enabled (either old flag true → true).
@@ -430,10 +494,10 @@ class Bootloader:
             features.pop("export_bundle_enabled", None)
             features.pop("export_graph_enabled", None)
 
-        # FLAG-2: mirror manifest_selector.visible into features for is_enabled() access.
-        ms = config.get("manifest_selector", {})
-        if "manifest_selector_visible" not in features:
-            features["manifest_selector_visible"] = bool(ms.get("visible", True))
+        # FLAG-2: mirror data_analysis_recipe_selector.visible into features for is_enabled() access.
+        ms = config.get("data_analysis_recipe_selector", {})
+        if "data_analysis_recipe_selector_visible" not in features:
+            features["data_analysis_recipe_selector_visible"] = bool(ms.get("visible", True))
 
         # Group B: interactivity_enabled=False suppresses all interactive child flags.
         if not features.get("interactivity_enabled", False):
@@ -455,18 +519,13 @@ class Bootloader:
                 )
                 features["data_ingestion_enabled"] = False
 
-        # NOTE: Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are
-        # intentionally NOT silently suppressed here. PersonaValidator Rule 7 raises a
+        # NOTE: Group D cascades (data_analysis_recipe_edit_enabled, blueprint_agent_enabled) are
+        # intentionally NOT silently suppressed here. AppFeaturesValidator Rule 7 raises a
         # fatal error at startup if a template declares them on while blueprint_enabled=False.
         # The flag value passes through this loader unchanged so the validator sees the
         # user's actual intent (rather than a silently-rewritten "safe" version).
 
-        # Deployment-profile override: data_ingestion_enabled:false in profile is absolute
-        # (automated-pipeline deployments push data; user cannot upload).
-        if self.connector_config.get("data_ingestion_enabled") is False:
-            features["data_ingestion_enabled"] = False
-
-        config["features"] = features
+        config["flags"] = features
         return config
 
     def get_location(self, key: str) -> Path:
@@ -479,33 +538,33 @@ class Bootloader:
             raise KeyError(f"Location key '{key}' not defined in connector.")
         return self._resolved_locations[key]
 
-    # Features that default TRUE when not declared in a persona template.
+    # Features that default TRUE when not declared in an app features file.
     # Everything else defaults False (opt-in).
-    _FEATURES_DEFAULT_TRUE = {"show_persona_badge"}
+    _FEATURES_DEFAULT_TRUE = {"show_app_features_badge"}
 
     def is_enabled(self, feature: str) -> bool:
         """Checks if a UI feature is enabled."""
         default = feature in self._FEATURES_DEFAULT_TRUE
-        return self.features.get(feature, default)
+        return self.flags.get(feature, default)
 
     def get_theme_css_path(self) -> Path:
-        """Returns the CSS theme file for this persona (theme_css key, defaults to config/ui/theme.css)."""
-        css_rel = self.config.get("theme_css", "config/ui/theme.css")
+        """Returns the CSS theme file for this app features (theme_css key, defaults to config/ui/theme.css)."""
+        css_rel = (self.deployment_config.get("branding") or {}).get("theme_css", "config/ui/theme.css")
         return Path(css_rel)
 
     def get_ui_banner(self) -> dict | None:
-        """Returns ui_banner config dict {logo_url, title, subtitle} or None if not set."""
-        return self.config.get("ui_banner") or None
+        """Returns the banner dict {logo_url, title, subtitle} of the deployment's branding, or None."""
+        return (self.deployment_config.get("branding") or {}).get("banner") or None
 
-    def get_manifest_selector(self) -> dict:
-        """Returns the manifest_selector block: {visible: bool, fixed_manifest: str|None}."""
-        return self.config.get("manifest_selector", {"visible": True, "fixed_manifest": None})
+    def get_data_analysis_recipe_selector(self) -> dict:
+        """Returns the data_analysis_recipe_selector block: {visible: bool}."""
+        return self.config.get("data_analysis_recipe_selector", {"visible": True})
 
     def get_sidebar_config(self, workspace: str, side: str) -> "SidebarConfig":
         """Returns the resolved sidebar configuration for the given workspace and side.
 
-        Reads workspaces.<workspace>.<side>_sidebar from the active persona template.
-        !include references in the template are resolved at load time by _load_persona_config().
+        Reads workspaces.<workspace>.<side>_sidebar from the active app features file.
+        !include references in the template are resolved at load time by _load_app_features_config().
 
         Default when not defined: left=visible with no panels, right=not visible.
         """
@@ -520,29 +579,20 @@ class Bootloader:
         )
 
     def get_testing_mode(self) -> bool:
-        """Returns testing_mode flag (true = pre-fill data selector from manifest defaults)."""
+        """Returns testing_mode flag (true = pre-fill data selector from data analysis recipe defaults)."""
         return bool(self.config.get("testing_mode", True))
 
     def get_automation_setting(self, key: str, subkey: str) -> Any:
         """Returns automation settings (e.g., ghost_save frequency)."""
         return self.automation.get(key, {}).get(subkey)
 
-    def get_script_path(self, key: str) -> Path:
-        """Resolves system script paths from connector config (ADR-032)."""
-        mapping = self.connector_config.get("scripts", {})
-        path_str = mapping.get(key)
-        if not path_str:
-            raise KeyError(
-                f"Script key '{key}' not found in connector 'scripts' block.")
-        return Path(path_str)
-
     def get_python_path(self) -> str:
         """Retrieves the configured Python interpreter path (ADR-031)."""
-        runtime = self.connector_config.get("runtime", {})
+        runtime = self.deployment_config.get("runtime", {})
         path = runtime.get("python_interpreter")
         if not path:
             raise KeyError(
-                "Connector config missing 'runtime.python_interpreter' definition.")
+                "Deployment file missing 'runtime.python_interpreter' definition.")
         return str(path)
 
     # Built-in SPARMVET brand palette — always present so the system has a safe default.
@@ -562,7 +612,7 @@ class Bootloader:
         """Load deployment palette registry from config/palettes.yaml (BP-COLOR-2).
 
         Returns {name: [hex, ...]} merged dict: built-in SPARMVET palettes plus any
-        project-defined palettes from config/palettes.yaml. Project palettes override
+        deployment-defined palettes from config/palettes.yaml. Deployment palettes override
         built-ins when names collide (intentional — institutions can rebrand defaults).
 
         Never returns an empty dict — the built-in 'sparmvet_brand' palette is always
@@ -574,7 +624,7 @@ class Bootloader:
         if hasattr(self, "_palettes_cache"):
             return self._palettes_cache
 
-        # Always start from built-ins — project palettes are merged on top
+        # Always start from built-ins — deployment palettes are merged on top
         result = dict(self._BUILTIN_PALETTES)
 
         palette_path = Path("config/palettes.yaml")
@@ -583,7 +633,7 @@ class Bootloader:
             print(
                 f"[Bootloader] INFO: no deployment palette file at "
                 f"'{palette_path}'. Using built-in palettes only "
-                f"({list(result.keys())}). To add project palettes, create "
+                f"({list(result.keys())}). To add deployment palettes, create "
                 f"config/palettes.yaml — see the file header for the required format."
             )
         else:
@@ -595,8 +645,8 @@ class Bootloader:
                         f"Expected a YAML mapping at the top level, got {type(raw).__name__}. "
                         f"The file must start with 'palettes:' and contain named palette entries."
                     )
-                project_palettes = raw.get("palettes")
-                if not isinstance(project_palettes, dict):
+                deployment_palettes = raw.get("palettes")
+                if not isinstance(deployment_palettes, dict):
                     raise ValueError(
                         f"'palettes:' key is missing or not a mapping. "
                         f"Each palette must be a named list of hex strings, e.g.:\n"
@@ -607,7 +657,7 @@ class Bootloader:
                     )
                 # Validate individual entries and warn on bad ones (don't discard the whole file)
                 loaded_count = 0
-                for name, colors in project_palettes.items():
+                for name, colors in deployment_palettes.items():
                     if not isinstance(colors, list) or not colors:
                         print(
                             f"[Bootloader] WARNING: palette '{name}' in "
@@ -618,15 +668,15 @@ class Bootloader:
                     result[name] = [str(c) for c in colors]
                     loaded_count += 1
                 print(
-                    f"[Bootloader] Loaded {loaded_count} project palette(s) from "
-                    f"'{palette_path}': {[k for k in project_palettes if k in result]}"
+                    f"[Bootloader] Loaded {loaded_count} deployment palette(s) from "
+                    f"'{palette_path}': {[k for k in deployment_palettes if k in result]}"
                 )
             except Exception as exc:
                 print(
                     f"[Bootloader] WARNING: could not load palette registry from "
                     f"'{palette_path.resolve()}': {exc}. "
                     f"Falling back to built-in palettes. Fix the file and restart to "
-                    f"activate project palettes."
+                    f"activate deployment palettes."
                 )
                 # result already contains built-ins — no data loss
 
@@ -634,9 +684,9 @@ class Bootloader:
         return self._palettes_cache
 
     def get_agent_config(self) -> dict:
-        """Return the blueprint_agent: block from the active persona template.
+        """Return the blueprint_agent: block from the active app features file.
 
-        Returns an empty dict if the block is absent (e.g. non-developer personas).
+        Returns an empty dict if the block is absent (e.g. non-developer app features files).
         Callers should gate on is_enabled('blueprint_agent_enabled') before using.
         """
         return self.config.get("blueprint_agent", {})
@@ -656,7 +706,7 @@ class Bootloader:
         if not self.is_enabled("blueprint_agent_enabled"):
             from blueprint_arch.agent_adapter import DisabledAdapter
             self._agent_adapter_cache = DisabledAdapter(
-                "blueprint_agent_enabled is false for this persona."
+                "blueprint_agent_enabled is false for this app features."
             )
             return self._agent_adapter_cache
 

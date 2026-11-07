@@ -1,9 +1,9 @@
 """app/handlers/ingestion_handlers.py
 Ingestion Shiny wiring (ADR-045).
 
-Entry point: define_server(input, output, session, *, bootloader, current_persona, safe_input)
+Entry point: define_server(input, output, session, *, bootloader, current_app_features, safe_input)
 
-Concern: manifest file ingestion (btn_ingest).
+Concern: data analysis recipe file ingestion (btn_ingest).
 Two-Category Law (ADR-045): This file contains @reactive.* decorators only.
 It MUST NOT be imported by non-Shiny contexts.
 """
@@ -22,15 +22,15 @@ from pathlib import Path
 from shiny import reactive, ui
 
 
-def define_server(input, output, session, *, bootloader, current_persona, safe_input):
-    """Register ingestion and persona reactive handlers.
+def define_server(input, output, session, *, bootloader, current_app_features, safe_input):
+    """Register ingestion and app features reactive handlers.
 
     Parameters
     ----------
     bootloader : Bootloader
-        Path Authority instance (ADR-031). Reinitialised on ingest/persona change.
-    current_persona : reactive.Value[str]
-        Shared persona reactive value (read/written here and by home_theater).
+        Path Authority instance (ADR-031). Reinitialised on ingest/app features change.
+    current_app_features : reactive.Value[str]
+        Shared app features reactive value (read/written here and by home_theater).
     safe_input : callable
         Shared utility: safe_input(input_obj, key, default) → value.
     """
@@ -42,14 +42,14 @@ def define_server(input, output, session, *, bootloader, current_persona, safe_i
         if not files:
             return
         ui.notification_show("⏳ Ingesting...", type="message")
-        manifest_dir = bootloader.get_location("manifests")
+        data_analysis_recipe_dir = bootloader.get_location("data_analysis_recipes")
         for f in files:
             name = f['name']
             path = Path(f['datapath'])
             if name.endswith(".yaml"):
-                shutil.copy(path, manifest_dir / name)
-        bootloader.__init__(persona=current_persona.get())
-        ui.update_select("project_id", choices=list(
-            bootloader.available_projects.keys()))
+                shutil.copy(path, data_analysis_recipe_dir / name)
+        bootloader.__init__(app_features=current_app_features.get())
+        ui.update_select("data_analysis_recipe_id", choices=list(
+            bootloader.available_data_analysis_recipes.keys()))
         ui.notification_show("✅ Ingestion complete.", type="success")
 

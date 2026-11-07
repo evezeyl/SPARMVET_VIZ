@@ -15,18 +15,18 @@
 # For now: docker build -t sparmvet-viz:latest -f assets/containers/Dockerfile .
 # (run from repo root so the build context is the full repo)
 #
-# --- Run (filesystem connector, developer persona) ---
+# --- Run (filesystem connector, developer app features) ---
 #   docker run --rm -p 8001:8001 \
-#     -v /data/my_project:/data \
-#     -e SPARMVET_PROFILE=/data/profile.yaml \
+#     -v /data/my_data_analysis_recipe:/data \
+#     -e SPARMVET_DEPLOYMENT=/data/deployment.yaml \
 #     sparmvet-viz:latest
 #
-# --- Run (pipeline mode, static persona, data injected via volume) ---
+# --- Run (pipeline mode, static app features, data injected via volume) ---
 #   docker run --rm -p 8001:8001 \
 #     -v /pipeline/output:/pipeline/output:ro \
 #     -v /pipeline/config:/app/config/deployment/pipeline:ro \
-#     -e SPARMVET_PROFILE=/app/config/deployment/pipeline/profile.yaml \
-#     -e SPARMVET_PERSONA=/app/config/deployment/pipeline/persona.yaml \
+#     -e SPARMVET_DEPLOYMENT=/app/config/deployment/pipeline/deployment.yaml \
+#     -e SPARMVET_APP_FEATURES=/app/config/app_features/pipeline-static.yaml \
 #     sparmvet-viz:latest
 
 FROM python:3.12-slim

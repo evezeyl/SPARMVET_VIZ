@@ -1,0 +1,62 @@
+# UI App features: Web Demo
+# Pure exploration view — filters only, no export, no gallery, no ingestion.
+# App features badge hidden. Suitable for demos and public-facing presentations.
+name: "web-demo"
+display_name: "Web Demo"
+
+flags:
+  interactivity_enabled: true
+  gallery_enabled: false
+  # Can the user access the Blueprint Architect (data analysis recipe IDE)?
+  blueprint_enabled: false
+  # Can the user edit the YAML escape hatch in Blueprint IDE? (ADR-075; depends on blueprint_enabled)
+  data_analysis_recipe_edit_enabled: false
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: false
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: false
+  comparison_mode_enabled: false
+  session_management_enabled: false
+  import_helper_enabled: false
+  t3_sandbox_enabled: false
+  export_enabled: false
+  metadata_ingestion_enabled: false
+  data_ingestion_enabled: false
+  show_app_features_badge: false
+
+data_analysis_recipe_selector:
+  visible: false
+
+testing_mode: false
+
+automation:
+  ghost_save:
+    enabled: false
+
+workspaces:
+  home:
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
+    right_sidebar:
+      visible: false
+      panels: []
+  blueprint:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  gallery:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: false
+      panels: []
+    right_sidebar:
+      visible: false
+      panels: []

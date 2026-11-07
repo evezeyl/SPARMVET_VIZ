@@ -19,7 +19,7 @@ class SubmissionExporter:
         self.export_dir = Path(export_dir)
         self.export_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_audit_log(self, narrative: list, project_id: str = "ABROMICS_DEMO") -> str:
+    def create_audit_log(self, narrative: list, data_analysis_recipe_id: str = "ABROMICS_DEMO") -> str:
         """Converts the narrative log into a human-readable audit trace via Pandoc."""
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         md_path = self.export_dir / "audit_log.md"
@@ -27,7 +27,7 @@ class SubmissionExporter:
 
         # 1. Draft the Markdown trace
         with open(md_path, "w") as f:
-            f.write(f"# SPARMVET AUDIT LOG: {project_id}\n")
+            f.write(f"# SPARMVET AUDIT LOG: {data_analysis_recipe_id}\n")
             f.write(f"Generated: {ts}\n\n")
             f.write("## 📜 Narrative Trace (ADR-026)\n")
             for entry in narrative:
@@ -41,7 +41,7 @@ class SubmissionExporter:
         except Exception:
             return str(md_path)  # Fallback to markdown if pandoc fails
 
-    def bundle_package(self, plot_path: str, data_df: pd.DataFrame, manifest: dict, audit_trail: list) -> str:
+    def bundle_package(self, plot_path: str, data_df: pd.DataFrame, data_analysis_recipe: dict, audit_trail: list) -> str:
         """Creates the final .zip Submission Package."""
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_path = self.export_dir / f"submission_{ts}.zip"
@@ -51,40 +51,40 @@ class SubmissionExporter:
         data_path = self.export_dir / "data_subset.csv"
         data_df.to_csv(data_path, index=False)
 
-        manifest_path = self.export_dir / "active_recipe.yaml"
-        with open(manifest_path, "w") as f:
-            yaml.dump(manifest, f)
+        data_analysis_recipe_path = self.export_dir / "active_data_analysis_recipe.yaml"
+        with open(data_analysis_recipe_path, "w") as f:
+            yaml.dump(data_analysis_recipe, f)
 
         # 2. Build the Zip
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(audit_path, arcname="audit_log.txt")
             zipf.write(data_path, arcname="data_subset.csv")
-            zipf.write(manifest_path, arcname="active_recipe.yaml")
+            zipf.write(data_analysis_recipe_path, arcname="active_data_analysis_recipe.yaml")
             if plot_path and Path(plot_path).exists():
                 zipf.write(plot_path, arcname="high_dpi_plot.png")
 
         return str(zip_path)
 
-    def bundle_global_export(self, project_id: str, plot_path: str, tiers: dict, manifest: dict, audit_trail: list) -> str:
+    def bundle_global_export(self, data_analysis_recipe_id: str, plot_path: str, tiers: dict, data_analysis_recipe: dict, audit_trail: list) -> str:
         """
         Bundles the full session state (Phase 14-C).
-        Format: SPARMVET_EXPORT_{ISO_DATE}_{PROJECT_ID}.zip
+        Format: SPARMVET_EXPORT_{ISO_DATE}_{DATA_ANALYSIS_RECIPE_ID}.zip
         """
         iso_date = datetime.now().strftime("%Y-%m-%d")
-        zip_name = f"SPARMVET_EXPORT_{iso_date}_{project_id}.zip"
+        zip_name = f"SPARMVET_EXPORT_{iso_date}_{data_analysis_recipe_id}.zip"
         zip_path = self.export_dir / zip_name
 
         # 1. Prep individual files
-        audit_path = self.create_audit_log(audit_trail, project_id)
+        audit_path = self.create_audit_log(audit_trail, data_analysis_recipe_id)
 
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(audit_path, arcname="audit_log.txt")
 
-            # YAML Manifest
-            manifest_path = self.export_dir / "session_manifest.yaml"
-            with open(manifest_path, "w") as f:
-                yaml.dump(manifest, f)
-            zipf.write(manifest_path, arcname="session_manifest.yaml")
+            # YAML Data Analysis Recipe
+            data_analysis_recipe_path = self.export_dir / "session_data_analysis_recipe.yaml"
+            with open(data_analysis_recipe_path, "w") as f:
+                yaml.dump(data_analysis_recipe, f)
+            zipf.write(data_analysis_recipe_path, arcname="session_data_analysis_recipe.yaml")
 
             # Tiers 1-3 Data
             for tier_name, df in tiers.items():
@@ -98,7 +98,7 @@ class SubmissionExporter:
                 zipf.write(plot_path, arcname="preview_plot.png")
 
             # Educational Metadata Template (ADR-033/Phase 14-C)
-            meta_template = f"""# Recipe Metadata: {project_id}
+            meta_template = f"""# Example Metadata: {data_analysis_recipe_id}
 ## Family (Purpose): [Distribution | Correlation | Comparison | Ranking]
 ## Data Pattern: [1 Numeric | 2 Numeric | 1 Numeric, 1 Categorical]
 ## Difficulty: [Simple | Intermediate | Advanced]
@@ -118,10 +118,10 @@ class SubmissionExporter:
 ## Inspiration & Resources
 - [Link to community resource or R Graph Gallery](https://r-graph-gallery.com/)
 """
-            meta_path = self.export_dir / "recipe_meta.md"
+            meta_path = self.export_dir / "example_meta.md"
             with open(meta_path, "w") as f:
                 f.write(meta_template)
-            zipf.write(meta_path, arcname="recipe_meta.md")
+            zipf.write(meta_path, arcname="example_meta.md")
 
         return str(zip_path)
 
@@ -130,8 +130,8 @@ class SubmissionExporter:
 # Phase 22-E: Audit Report generation (§12f)
 # ---------------------------------------------------------------------------
 
-def generate_methods_text(t3_recipe: list) -> tuple:
-    """Convert active T3 RecipeNodes into plain-English Methods lines.
+def generate_methods_text(t3_audit_steps: list) -> tuple:
+    """Convert active T3 AuditSteps into plain-English Methods lines.
 
     Phase 22-J / ADR-049: handles propagated nodes (multiple copies sharing
     `id`) by deduplicating on `id` and listing all target plot scopes in
@@ -150,7 +150,7 @@ def generate_methods_text(t3_recipe: list) -> tuple:
     # Dedupe propagated copies: group by id, collect all plot_scopes.
     seen: dict = {}
     order: list[str] = []
-    for node in t3_recipe:
+    for node in t3_audit_steps:
         if not node.get("active", True):
             discarded.append(node)
             continue
@@ -207,7 +207,7 @@ def generate_methods_text(t3_recipe: list) -> tuple:
             )
         elif nt == "developer_raw_yaml":
             methods.append(
-                f"{prefix}A custom manifest fragment was applied{scope_str}. "
+                f"{prefix}A custom data analysis recipe fragment was applied{scope_str}. "
                 f"Reason: {reason}."
             )
 
@@ -218,8 +218,8 @@ def render_audit_report(
     home_state: dict,
     session_key: str,
     output_dir,
-    manifest_id: str = "",
-    deployment_profile: str = "local",
+    data_analysis_recipe_id: str = "",
+    deployment: str = "local",
     figure_paths=None,
     dataset_summaries=None,
     fmt: str = "html",
@@ -255,30 +255,30 @@ def render_audit_report(
     # Phase 22-J: per-plot stacks. Flatten for the report — generate_methods_text
     # dedupes propagated copies (linked id) and lists all target scopes in one
     # Methods line.
-    by_plot = home_state.get("t3_recipe_by_plot", {}) or {}
-    t3_recipe = [n for nodes in by_plot.values() for n in nodes]
-    manifest_sha256 = home_state.get("manifest_sha256") or ""
+    by_plot = home_state.get("t3_audit_steps_by_plot", {}) or {}
+    t3_audit_steps = [n for nodes in by_plot.values() for n in nodes]
+    data_analysis_recipe_sha256 = home_state.get("data_analysis_recipe_sha256") or ""
     tier_toggle = home_state.get("tier_toggle", "T2")
 
-    active_recipe = [n for n in t3_recipe if n.get("active", True)]
-    t3_recipe_sha256 = hashlib.sha256(
-        json.dumps(active_recipe, sort_keys=True).encode()
+    active_audit_steps = [n for n in t3_audit_steps if n.get("active", True)]
+    t3_audit_steps_sha256 = hashlib.sha256(
+        json.dumps(active_audit_steps, sort_keys=True).encode()
     ).hexdigest()
 
-    methods_lines, discarded_nodes = generate_methods_text(t3_recipe)
+    methods_lines, discarded_nodes = generate_methods_text(t3_audit_steps)
     now = datetime.now(timezone.utc)
     export_ts = now.strftime("%Y-%m-%dT%H:%M:%S")
     date_str = now.strftime("%Y-%m-%d")
 
     report_data = {
-        "manifest_id": manifest_id,
-        "manifest_sha256": manifest_sha256,
-        "t3_recipe_sha256": t3_recipe_sha256,
+        "data_analysis_recipe_id": data_analysis_recipe_id,
+        "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
+        "t3_audit_steps_sha256": t3_audit_steps_sha256,
         "session_key": session_key,
         "tier_toggle": tier_toggle,
         "methods_text": methods_lines,
         "discarded_nodes": discarded_nodes,
-        "active_recipe": active_recipe,
+        "active_audit_steps": active_audit_steps,
         "figures": figure_paths or [],
         "datasets": dataset_summaries or [],
     }
@@ -292,10 +292,10 @@ def render_audit_report(
     filled = template
     for key, val in {
         "{{date}}": date_str,
-        "{{manifest_id}}": manifest_id or "—",
-        "{{manifest_sha256}}": (manifest_sha256[:16] + "…") if manifest_sha256 else "—",
-        "{{t3_recipe_sha256}}": t3_recipe_sha256[:16] + "…",
-        "{{deployment_profile}}": deployment_profile,
+        "{{data_analysis_recipe_id}}": data_analysis_recipe_id or "—",
+        "{{data_analysis_recipe_sha256}}": (data_analysis_recipe_sha256[:16] + "…") if data_analysis_recipe_sha256 else "—",
+        "{{t3_audit_steps_sha256}}": t3_audit_steps_sha256[:16] + "…",
+        "{{deployment}}": deployment,
         "{{export_timestamp}}": export_ts,
     }.items():
         filled = filled.replace(key, val)
@@ -326,7 +326,7 @@ date: "{{date}}"
 
 ## Study Context
 
-Manifest: {{manifest_id}} | SHA256: {{manifest_sha256}}
+Data Analysis Recipe: {{data_analysis_recipe_id}} | SHA256: {{data_analysis_recipe_sha256}}
 Exported: {{export_timestamp}}
 
 ## Methods

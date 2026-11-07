@@ -1,4 +1,0 @@
-- action: "split_and_explode"
-  target_column: "gene_presence"
-  separator: ";"
-- action: "strip_whitespace"

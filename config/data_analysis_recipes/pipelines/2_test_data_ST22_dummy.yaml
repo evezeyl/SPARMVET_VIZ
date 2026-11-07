@@ -1,0 +1,82 @@
+# @deps
+# provides: data analysis recipe:2_test_data_ST22_dummy
+# consumes: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)
+# consumes: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)
+# consumed_by: app/src/server.py (via bootloader), libs/transformer/tests/debug_assembler.py, libs/viz_factory/tests/debug_gallery.py
+# doc: .claude/rules/rules_data_analysis_recipe_structure.md
+# @end_deps
+
+# ADR-041: SPARMVET Consolidated Lineage Data Analysis Recipe
+# Sequential Build: 2_test_data_ST22_dummy
+# Date: 2026-04-23
+
+id: 2_test_data_ST22_dummy
+description: "Improved ST22 Analysis Lineage - Sequential Build"
+
+metadata_schema:
+  source:
+    type: "local_tsv"
+    path: "assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv"
+  input_fields: !include 2_test_data_ST22_dummy/input_fields/metadata_schema.yaml
+
+data_schemas:
+  amr_data:
+    source:
+      type: "local_tsv"
+      path: "assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv"
+    input_fields: !include 2_test_data_ST22_dummy/input_fields/amr_data.yaml
+    wrangling: !include 2_test_data_ST22_dummy/wrangling/amr_data.yaml
+  plasmid_data:
+    source:
+      type: "local_tsv"
+      path: "assets/test_data/1_test_data_ST22_dummy/test_data_PlasmidFinder_20260307_105756.tsv"
+    input_fields: !include 2_test_data_ST22_dummy/input_fields/plasmid_data.yaml
+    wrangling: !include 2_test_data_ST22_dummy/wrangling/plasmid_data.yaml
+
+joins:
+  AMR_Profile_Joint:
+    ingredients:
+      - dataset_id: amr_data
+      - dataset_id: metadata_schema
+    steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
+    final_contract:
+      Year: categorical
+      Source: categorical
+      Country: categorical
+      gene: categorical
+      predicted_phenotype_clean: categorical
+      sample_id: categorical
+      accession: categorical
+      Multiresistant: categorical
+  Plasmid_Profile_Joint:
+    ingredients:
+      - dataset_id: plasmid_data
+      - dataset_id: metadata_schema
+    steps: !include 2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml
+    final_contract:
+      Year: categorical
+      Source: categorical
+      Country: categorical
+      plasmid_name: categorical
+      sample_id: categorical
+      accession: categorical
+
+plot_defaults:
+  default_font_family: "Liberation Sans"
+
+analysis_groups:
+  AMR_Insight:
+    label: "AMR Profiling Insight"
+    plots:
+      multi_resistance_by_country:
+        label: "Multi-Resistance by Country"
+        spec: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml
+      multi_resistance_by_source:
+        label: "Multi-Resistance by Source"
+        spec: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_source.yaml
+  Plasmid_Insight:
+    label: "Plasmid Dynamics"
+    plots:
+      plasmid_prevalence_by_country:
+        label: "Plasmid Prevalence by Country"
+        spec: !include 2_test_data_ST22_dummy/plots/plasmid_counts_by_year.yaml

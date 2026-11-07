@@ -6,7 +6,7 @@
 
 **View banner (ADR-056):**
 - Title: "Blueprint Architect Flight Deck" (`.banner-title` — bold 1.0rem)
-- Subtitle: "Pipeline overview — helps you build manifests." (`.banner-subtitle` — muted 0.78rem)
+- Subtitle: "Pipeline overview — helps you build data analysis recipes." (`.banner-subtitle` — muted 0.78rem)
 - CSS class: `.view-title-banner` (rounded, shadowed, defined in `config/ui/theme.css`)
 
 **TubeMap accordion header (Phase 26):**
@@ -53,7 +53,7 @@ Primary navigation surface. Clicking any node in the DAG drives the entire UI: l
 | `wrangle` — wrangling step | `[...]` rect | `#ffc107` (amber) | `schema_id__wrn` composite ID |
 | `ref` — additional dataset | `([...])` rounded rect | `#6c757d` (grey) | `additional_datasets_schemas` |
 | `meta` — metadata schema | `([...])` rounded rect | `#fd7e14` (orange) | `metadata_schema` singleton |
-| `branch` — assembly | `{...}` rhombus | `#9c27b0` (purple) | `join_manifests` entries |
+| `branch` — assembly | `{...}` rhombus | `#9c27b0` (purple) | `joins` entries |
 | `plot` — terminal plot | `[[...]]` stadium | `#198754` (green) | Per-plot nodes in subgraphs |
 | `activeNode` overlay | dashed border | stroke `#212529` 4px | Applied on top of base class; also on `__wrn` sub-node |
 | `info` — missing target | `[...]` rect | `#e3f2fd` / `#1976d2` | Warning node when `target_dataset` unset |
@@ -77,12 +77,12 @@ TubeMap node click
     → reverse-lookup _component_ctx_map: safe(schema_id) == safe(entry.schema_id)
     → role priority: assembly(0) > wrangling(1) > plot_spec(2) > plot_wrangling(3) > output_fields(4) > input_fields(5)
     → ui.update_select("dataset_pipeline_selector", selected=best_rel)
-    → ui.js_eval("document.getElementById('btn_import_manifest').click()")
-  → _handle_manifest_import          [server.py @reactive.event]
+    → ui.js_eval("document.getElementById('btn_import_data_analysis_recipe').click()")
+  → _handle_data_analysis_recipe_import          [server.py @reactive.event]
     → Mode A (file path) or Mode B (inline schema_id)
     → sets: logic_stack, active_fields, active_component_info,
             active_upstream, active_downstream, active_lineage_chain,
-            active_manifest_path, active_anchor_path (if materialisation needed)
+            active_data_analysis_recipe_path, active_anchor_path (if materialisation needed)
     → regenerates TubeMap with active_node=schema_id (activeNode highlight)
 ```
 
@@ -116,13 +116,13 @@ TubeMap click drives all three Interface (Fields) panels via `_sync_selector_fro
 cy.tap(node)
   → Shiny.setInputValue("blueprint_node_clicked", schema_id)
   → _sync_selector_from_node_click  [server.py @reactive.event]
-    → builds inc_map/ctx_map if empty (first click before manifest selector fires)
+    → builds inc_map/ctx_map if empty (first click before data analysis recipe selector fires)
     → reverse-lookup: safe(schema_id) → best_rel via _PRIORITY dict
     → calls _do_load_component(master_path, best_rel_or_schema_id, inc_map, ctx_map) directly
     → no js_eval round-trip (previously unreliable)
 ```
 
-`_do_load_component` sets: `logic_stack`, `active_fields`, `active_component_info`, `active_upstream`, `active_downstream`, `active_lineage_chain`, `active_manifest_path`, `active_anchor_path`, `active_tubemap_mermaid` (with active node highlight), `active_viz_id` (for plots).
+`_do_load_component` sets: `logic_stack`, `active_fields`, `active_component_info`, `active_upstream`, `active_downstream`, `active_lineage_chain`, `active_data_analysis_recipe_path`, `active_anchor_path`, `active_tubemap_mermaid` (with active node highlight), `active_viz_id` (for plots).
 
 ---
 
@@ -177,7 +177,7 @@ plot.spec.target_dataset  →  assembly.final_contract        (if declared)
 
 **Critical:** `target_dataset` is at `plot_spec["spec"]["target_dataset"]` (under the `spec:` wrapper), NOT at `plot_spec["target_dataset"]`. Both levels must be checked.
 
-**Implementation:** `_resolve_fields_for_schema(target_dataset_id, ctx_map, inc_map)` in `server.py` handles this recursion. For Mode B (inline manifests), the fallback also reads directly from `raw_config["join_manifests"][target_ds].get("output_fields")`.
+**Implementation:** `_resolve_fields_for_schema(target_dataset_id, ctx_map, inc_map)` in `server.py` handles this recursion. For Mode B (inline data analysis recipes), the fallback also reads directly from `raw_config["joins"][target_ds].get("output_fields")`.
 
 **Materialization for plot preview:** `orchestrator.materialize_tier1(collection_id=target_dataset_id)` — NOT `plot_id`. The parquet is stored as `anchors/{target_dataset_id}.parquet`.
 
@@ -194,7 +194,7 @@ plot.spec.target_dataset  →  assembly.final_contract        (if declared)
 
 **Fields table columns:** `field` (slug), `type`, `description`. Rendered by `_parse_fields_safe` which handles Rich Dict (`{slug: {type, label, ...}}`), simple dict (`{slug: type}`), and list-of-dict formats. Legacy format triggers a warning badge.
 
-**Fix Format button (⚙️):** Runs `normalize_manifest_fields.py` on the active file in-place, enforcing ADR-041 Rich Dict format. Shows diff count in notification.
+**Fix Format button (⚙️):** Runs `normalize_data_analysis_recipe_fields.py` on the active file in-place, enforcing ADR-041 Rich Dict format. Shows diff count in notification.
 
 ---
 
@@ -206,11 +206,11 @@ Collapsible YAML tree rendered by `_render_yaml_tree`: Bootstrap accordion panel
 
 ## 5b. Zone B Tab 4 — Joint Designer (BP-JOINT-1, ADR-082 Q5)
 
-Dedicated pane for authoring `join` recipe steps. Opened by selecting a `join`/`join_filter`
+Dedicated pane for authoring `join` steps. Opened by selecting a `join`/`join_filter`
 action in Tab 1 and pressing Add Node (switches tab via `ui.update_navs`), or by selecting an
 existing join node (edit pre-fill). Replaces the former fabricated join modal.
 
-- **Two ingredient selects** (left/base + right) populated from the manifest's data-source
+- **Two ingredient selects** (left/base + right) populated from the data analysis recipe's data-source
   schemas (`schema_registry`, excluding joins/plots).
 - **Side-by-side schema cards** — each shows the chosen ingredient's field slugs.
 - **Per-side key pickers** (`input_selectize` multiple) — composite/multi-key supported. They
@@ -235,9 +235,9 @@ Pure logic lives in `libs/blueprint_arch/src/blueprint_arch/join_designer.py`
 Always visible, 50/50 horizontal split:
 
 **Left — Plot Preview (`architect_active_plot`):**
-- Renders the active plot spec using `ConfigManager(active_manifest_path).raw_config` + `active_viz_id`
+- Renders the active plot spec using `ConfigManager(active_data_analysis_recipe_path).raw_config` + `active_viz_id`
 - Data source: `processed_data_surgical` (surgical parquet from `active_anchor_path`)
-- Falls back to `processed_data()` (base project anchor) if surgical data unavailable
+- Falls back to `processed_data()` (base anchor) if surgical data unavailable
 - Shows spinner / "Select a plot component to preview" when `active_viz_id` is None
 
 **Right — Live Data Glimpse (`architect_data_status_ui` + data table):**
@@ -255,7 +255,7 @@ Always visible, 50/50 horizontal split:
 | `plot_spec` | Parent assembly output | NO — parquet IS the input to plot |
 | `output_fields` / `input_fields` | Not materialised | N/A |
 
-Parquets are cached in `user_sessions/anchors/{schema_id}.parquet`. If the file already exists, it is not recomputed. To force refresh: delete the file.
+Parquets are cached in `user_data/anchors/{schema_id}.parquet`. If the file already exists, it is not recomputed. To force refresh: delete the file.
 
 ---
 

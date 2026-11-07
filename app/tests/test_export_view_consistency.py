@@ -1,7 +1,7 @@
 """What the user sees is what is exported (ADR-089, issue #10, EXPORT-KEYCHECK-1, EXPORT-T3-1).
 
 Two parts, both headless:
-- the key check: an export is refused when a manifest or data file changed after the view was opened;
+- the key check: an export is refused when a data analysis recipe or data file changed after the view was opened;
 - the T3 / My view build: T3 > T2 > T1, the same steps as the data preview in HOME.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_view_consistency.py -q
@@ -9,28 +9,28 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_view_consis
 import pytest
 
 from app.handlers.export_handlers import blocked_export_notice, changed_since_view, audited_frame
-from app.modules.cache_keys import clear_manifest_cache
+from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.tests.test_cache_chain import FILTER_A, FILTER_B
 from app.tests.test_tier2_store import Tier2World
 
 
 @pytest.fixture(autouse=True)
 def _fresh_cache():
-    clear_manifest_cache()
+    clear_data_analysis_recipe_cache()
     yield
-    clear_manifest_cache()
+    clear_data_analysis_recipe_cache()
 
 
 @pytest.fixture
 def world(tmp_path):
     w = Tier2World(tmp_path)
-    w.write_manifest(recipe_tier2=[FILTER_A])           # T2 keeps group A: s1, s2
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])           # T2 keeps group A: s1, s2
     w.write_data("sample_id\tgroup\ns1\tA\ns2\tA\ns3\tB\n")
     return w
 
 
 def keys(w):
-    return w.orch.compute_project_keys("tiny")
+    return w.orch.compute_data_analysis_recipe_keys("tiny")
 
 
 def base(w):
@@ -59,14 +59,14 @@ def test_a_data_change_after_the_view_is_reported(world):
 
 def test_a_change_in_an_included_file_after_the_view_is_reported(world):
     view = keys(world)
-    world.write_manifest(recipe_tier2=[FILTER_B])
+    world.write_data_analysis_recipe(steps_tier2=[FILTER_B])
     changes = changed_since_view(view, keys(world))
-    assert len(changes) == 1 and changes[0].startswith("the manifest")
+    assert len(changes) == 1 and changes[0].startswith("the data analysis recipe")
 
 
-def test_manifest_and_data_changes_are_both_named(world):
+def test_data_analysis_recipe_and_data_changes_are_both_named(world):
     view = keys(world)
-    world.write_manifest(recipe_tier2=[FILTER_B])
+    world.write_data_analysis_recipe(steps_tier2=[FILTER_B])
     world.write_data("sample_id\tgroup\ns1\tA\n")
     assert len(changed_since_view(view, keys(world))) == 2
 
@@ -91,7 +91,7 @@ def test_my_view_builds_on_tier2_when_there_are_tier2_steps(world):
 
 
 def test_my_view_builds_on_tier1_when_there_are_no_tier2_steps(world):
-    world.write_manifest(recipe_tier2=[])
+    world.write_data_analysis_recipe(steps_tier2=[])
     assert ids(audited_frame(base(world), [], [])) == ["s1", "s2", "s3"]
 
 

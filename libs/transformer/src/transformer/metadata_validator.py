@@ -1,7 +1,7 @@
 import polars as pl
 from typing import Dict, Any
 import difflib
-from utils.errors import ManifestError, TransformationError
+from utils.errors import DataAnalysisRecipeError, TransformationError
 
 # @deps
 # provides: class:MetadataValidator, method:validate, method:validate_types
@@ -12,14 +12,14 @@ from utils.errors import ManifestError, TransformationError
 
 class MetadataValidator:
     """
-    Ensures user-provided data aligns with manifest contracts (ADR-013, ADR-034).
+    Ensures user-provided data aligns with data analysis recipe contracts (ADR-013, ADR-034).
     Validates column existence, data types, and primary key integrity.
     """
 
-    # Manifest type name -> Polars dtype. Used by enforce_schema (the cast) and validate_types
+    # Data analysis recipe type name -> Polars dtype. Used by enforce_schema (the cast) and validate_types
     # (the check before a cast), so the two always agree.
     DTYPE_MAP = {
-        # canonical manifest vocabulary (input_fields / output_fields)
+        # canonical data analysis recipe vocabulary (input_fields / output_fields)
         "numeric": pl.Float64,
         "categorical": pl.Categorical,
         "date": pl.Date,
@@ -42,7 +42,7 @@ class MetadataValidator:
     def validate(self, lf: pl.LazyFrame, contract: Dict[str, Any], context: str = "Input") -> None:
         """
         Validates the LazyFrame against the specified contract (input_fields or output_fields).
-        Raises ManifestError if mandatory columns are missing.
+        Raises DataAnalysisRecipeError if mandatory columns are missing.
         """
         if not contract:
             return
@@ -60,23 +60,23 @@ class MetadataValidator:
                 if matches:
                     suggestions[m] = matches[0]
 
-            tip = f"Ensure the {context} file contains the columns defined in the manifest."
+            tip = f"Ensure the {context} file contains the columns defined in the data analysis recipe."
             if suggestions:
                 tip += f" Hint: Did you mean {list(suggestions.values())}?"
 
-            raise ManifestError(
+            raise DataAnalysisRecipeError(
                 f"{context} Validation Failed. Missing columns: {missing}",
                 tip=tip
             )
 
     def validate_types(self, lf: pl.LazyFrame, contract: Dict[str, Any], context: str = "Input",
                        max_examples: int = 3) -> None:
-        """Check that every value can be cast to the type the manifest declares (issue #11).
+        """Check that every value can be cast to the type the data analysis recipe declares (issue #11).
 
         Run this before an uploaded file is written: enforce_schema casts lazily, so a text value
         in a numeric column only fails later, when the data is read. Only numeric and date types
         can fail; 'categorical' and 'utf8' accept anything, so IDs written as digits import as text.
-        Raises ManifestError naming each column and a few offending values.
+        Raises DataAnalysisRecipeError naming each column and a few offending values.
         """
         if not contract:
             return
@@ -97,15 +97,15 @@ class MetadataValidator:
                 shown = ", ".join(repr(v) for v in examples)
                 problems.append(f"column '{col}' ({props.get('type')}): {shown}")
         if problems:
-            raise ManifestError(
-                f"{context} Values do not match the manifest types. " + "; ".join(problems),
-                tip="Fix these values in the file, or change the column type in the manifest. "
+            raise DataAnalysisRecipeError(
+                f"{context} Values do not match the data analysis recipe types. " + "; ".join(problems),
+                tip="Fix these values in the file, or change the column type in the data analysis recipe. "
                     "Columns declared categorical or utf8 accept any text, including digits.",
             )
 
     def enforce_schema(self, lf: pl.LazyFrame, contract: Dict[str, Any]) -> pl.LazyFrame:
         """
-        Force-casts columns and renames according to the manifest contract.
+        Force-casts columns and renames according to the data analysis recipe contract.
         Used for atomic cleaning (Layer 1).
         """
         if not contract:
@@ -122,15 +122,15 @@ class MetadataValidator:
             # 2. Handle Type Casting
             # REMOVED (LEGACY-TYPE-ALIASES-1, Phase 34, 2026-05-22): 'string' and 'character'
             # are no longer accepted. Use 'categorical' (identifiers, repeating values) or
-            # 'utf8' (high-cardinality free text). See rules_manifest_structure.md §9.
+            # 'utf8' (high-cardinality free text). See rules_data_analysis_recipe_structure.md §9.
             _REMOVED_TYPE_ALIASES = {"string", "character"}
             raw_type = props.get("type", "categorical")
             if raw_type in _REMOVED_TYPE_ALIASES:
                 raise TransformationError(
                     f"Type alias '{raw_type}' is removed — use 'categorical' (for identifiers "
                     f"and repeating values) or 'utf8' (for high-cardinality free text). "
-                    f"Column: '{col_name}'. See rules_manifest_structure.md §9.",
-                    tip=f"Replace 'type: {raw_type}' with 'type: categorical' in the manifest "
+                    f"Column: '{col_name}'. See rules_data_analysis_recipe_structure.md §9.",
+                    tip=f"Replace 'type: {raw_type}' with 'type: categorical' in the data analysis recipe "
                         f"input_fields / output_fields / final_contract for column '{col_name}'."
                 )
 

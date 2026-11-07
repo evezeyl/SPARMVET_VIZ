@@ -28,15 +28,15 @@ analysis_groups:
     plots:
       plot_one:
         label: "Plot One"
-        spec: !include test_manifest/plots/plot_one.yaml
+        spec: !include test_data_analysis_recipe/plots/plot_one.yaml
 """
 
 
 @pytest.fixture
-def tmp_manifest(tmp_path):
-    m = tmp_path / "test_manifest.yaml"
+def tmp_data_analysis_recipe(tmp_path):
+    m = tmp_path / "test_data_analysis_recipe.yaml"
     m.write_text(_MINIMAL, encoding="utf-8")
-    spec_dir = tmp_path / "test_manifest" / "plots"
+    spec_dir = tmp_path / "test_data_analysis_recipe" / "plots"
     spec_dir.mkdir(parents=True)
     (spec_dir / "plot_one.yaml").write_text(
         "spec:\n  target_dataset: ''\n  mapping: {}\n  layers: []\n"
@@ -47,12 +47,12 @@ def tmp_manifest(tmp_path):
 # ── list_groups_plots ─────────────────────────────────────────────────────
 
 class TestListGroupsPlots:
-    def test_returns_groups(self, tmp_manifest):
-        groups = list_groups_plots(tmp_manifest)
+    def test_returns_groups(self, tmp_data_analysis_recipe):
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         assert "GroupA" in groups
 
-    def test_spec_is_include_tag(self, tmp_manifest):
-        groups = list_groups_plots(tmp_manifest)
+    def test_spec_is_include_tag(self, tmp_data_analysis_recipe):
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         spec = groups["GroupA"]["plots"]["plot_one"]["spec"]
         assert isinstance(spec, _IncludeTag)
         assert "plot_one.yaml" in spec.path
@@ -61,95 +61,95 @@ class TestListGroupsPlots:
 # ── create_group ──────────────────────────────────────────────────────────
 
 class TestCreateGroup:
-    def test_creates_group(self, tmp_manifest):
-        ok, _ = create_group(tmp_manifest, "NewGroup", "New Group Label")
+    def test_creates_group(self, tmp_data_analysis_recipe):
+        ok, _ = create_group(tmp_data_analysis_recipe, "NewGroup", "New Group Label")
         assert ok
-        groups = list_groups_plots(tmp_manifest)
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         assert "NewGroup" in groups
         assert groups["NewGroup"]["label"] == "New Group Label"
 
-    def test_label_defaults_to_id(self, tmp_manifest):
-        ok, _ = create_group(tmp_manifest, "EmptyLabel", "")
+    def test_label_defaults_to_id(self, tmp_data_analysis_recipe):
+        ok, _ = create_group(tmp_data_analysis_recipe, "EmptyLabel", "")
         assert ok
-        assert list_groups_plots(tmp_manifest)["EmptyLabel"]["label"] == "EmptyLabel"
+        assert list_groups_plots(tmp_data_analysis_recipe)["EmptyLabel"]["label"] == "EmptyLabel"
 
-    def test_rejects_invalid_id(self, tmp_manifest):
-        ok, msg = create_group(tmp_manifest, "has space", "label")
+    def test_rejects_invalid_id(self, tmp_data_analysis_recipe):
+        ok, msg = create_group(tmp_data_analysis_recipe, "has space", "label")
         assert not ok
         assert "snake_case" in msg
 
-    def test_rejects_duplicate(self, tmp_manifest):
-        ok, _ = create_group(tmp_manifest, "GroupA", "label")
+    def test_rejects_duplicate(self, tmp_data_analysis_recipe):
+        ok, _ = create_group(tmp_data_analysis_recipe, "GroupA", "label")
         assert not ok
 
 
 # ── delete_group ──────────────────────────────────────────────────────────
 
 class TestDeleteGroup:
-    def test_blocks_non_empty(self, tmp_manifest):
-        ok, msg = delete_group(tmp_manifest, "GroupA")
+    def test_blocks_non_empty(self, tmp_data_analysis_recipe):
+        ok, msg = delete_group(tmp_data_analysis_recipe, "GroupA")
         assert not ok
         assert "1 plot" in msg
 
-    def test_deletes_empty_group(self, tmp_manifest):
-        create_group(tmp_manifest, "Empty", "Empty")
-        ok, _ = delete_group(tmp_manifest, "Empty")
+    def test_deletes_empty_group(self, tmp_data_analysis_recipe):
+        create_group(tmp_data_analysis_recipe, "Empty", "Empty")
+        ok, _ = delete_group(tmp_data_analysis_recipe, "Empty")
         assert ok
-        assert "Empty" not in list_groups_plots(tmp_manifest)
+        assert "Empty" not in list_groups_plots(tmp_data_analysis_recipe)
 
-    def test_rejects_missing_group(self, tmp_manifest):
-        ok, _ = delete_group(tmp_manifest, "NoSuch")
+    def test_rejects_missing_group(self, tmp_data_analysis_recipe):
+        ok, _ = delete_group(tmp_data_analysis_recipe, "NoSuch")
         assert not ok
 
 
 # ── create_plot ───────────────────────────────────────────────────────────
 
 class TestCreatePlot:
-    def test_creates_plot_entry(self, tmp_manifest):
-        ok, _ = create_plot(tmp_manifest, "GroupA", "plot_two", "Plot Two")
+    def test_creates_plot_entry(self, tmp_data_analysis_recipe):
+        ok, _ = create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "Plot Two")
         assert ok
-        groups = list_groups_plots(tmp_manifest)
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         assert "plot_two" in groups["GroupA"]["plots"]
 
-    def test_creates_spec_file(self, tmp_manifest):
-        create_plot(tmp_manifest, "GroupA", "plot_two", "Plot Two")
-        spec_file = (Path(tmp_manifest).parent / "test_manifest" / "plots"
+    def test_creates_spec_file(self, tmp_data_analysis_recipe):
+        create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "Plot Two")
+        spec_file = (Path(tmp_data_analysis_recipe).parent / "test_data_analysis_recipe" / "plots"
                      / "plot_two.yaml")
         assert spec_file.exists()
         content = yaml.safe_load(spec_file.read_text())
         assert "spec" in content
 
-    def test_include_tag_written(self, tmp_manifest):
-        create_plot(tmp_manifest, "GroupA", "plot_two", "Plot Two")
-        groups = list_groups_plots(tmp_manifest)
+    def test_include_tag_written(self, tmp_data_analysis_recipe):
+        create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "Plot Two")
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         spec = groups["GroupA"]["plots"]["plot_two"]["spec"]
         assert isinstance(spec, _IncludeTag)
         assert "plot_two.yaml" in spec.path
 
-    def test_round_trip_preserves_existing_include(self, tmp_manifest):
-        create_plot(tmp_manifest, "GroupA", "plot_two", "Plot Two")
-        groups = list_groups_plots(tmp_manifest)
+    def test_round_trip_preserves_existing_include(self, tmp_data_analysis_recipe):
+        create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "Plot Two")
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         assert isinstance(groups["GroupA"]["plots"]["plot_one"]["spec"], _IncludeTag)
 
-    def test_rejects_duplicate_plot(self, tmp_manifest):
-        ok, _ = create_plot(tmp_manifest, "GroupA", "plot_one", "dup")
+    def test_rejects_duplicate_plot(self, tmp_data_analysis_recipe):
+        ok, _ = create_plot(tmp_data_analysis_recipe, "GroupA", "plot_one", "dup")
         assert not ok
 
-    def test_rejects_missing_group(self, tmp_manifest):
-        ok, _ = create_plot(tmp_manifest, "NoGroup", "p", "label")
+    def test_rejects_missing_group(self, tmp_data_analysis_recipe):
+        ok, _ = create_plot(tmp_data_analysis_recipe, "NoGroup", "p", "label")
         assert not ok
 
-    def test_rejects_invalid_plot_id(self, tmp_manifest):
-        ok, msg = create_plot(tmp_manifest, "GroupA", "bad id!", "label")
+    def test_rejects_invalid_plot_id(self, tmp_data_analysis_recipe):
+        ok, msg = create_plot(tmp_data_analysis_recipe, "GroupA", "bad id!", "label")
         assert not ok
         assert "snake_case" in msg
 
-    def test_does_not_overwrite_existing_spec_file(self, tmp_manifest):
-        spec_file = (Path(tmp_manifest).parent / "test_manifest" / "plots"
+    def test_does_not_overwrite_existing_spec_file(self, tmp_data_analysis_recipe):
+        spec_file = (Path(tmp_data_analysis_recipe).parent / "test_data_analysis_recipe" / "plots"
                      / "plot_one.yaml")
         original = spec_file.read_text()
         # plot_one already registered — create_plot returns an error before touching disk
-        ok, _ = create_plot(tmp_manifest, "GroupA", "plot_one", "dup")
+        ok, _ = create_plot(tmp_data_analysis_recipe, "GroupA", "plot_one", "dup")
         assert not ok
         assert spec_file.read_text() == original
 
@@ -157,52 +157,52 @@ class TestCreatePlot:
 # ── delete_plot ───────────────────────────────────────────────────────────
 
 class TestDeletePlot:
-    def test_removes_plot(self, tmp_manifest):
-        ok, _ = delete_plot(tmp_manifest, "GroupA", "plot_one")
+    def test_removes_plot(self, tmp_data_analysis_recipe):
+        ok, _ = delete_plot(tmp_data_analysis_recipe, "GroupA", "plot_one")
         assert ok
-        assert "plot_one" not in list_groups_plots(tmp_manifest)["GroupA"]["plots"]
+        assert "plot_one" not in list_groups_plots(tmp_data_analysis_recipe)["GroupA"]["plots"]
 
-    def test_rejects_missing_plot(self, tmp_manifest):
-        ok, _ = delete_plot(tmp_manifest, "GroupA", "no_such_plot")
+    def test_rejects_missing_plot(self, tmp_data_analysis_recipe):
+        ok, _ = delete_plot(tmp_data_analysis_recipe, "GroupA", "no_such_plot")
         assert not ok
 
-    def test_rejects_missing_group(self, tmp_manifest):
-        ok, _ = delete_plot(tmp_manifest, "NoGroup", "plot_one")
+    def test_rejects_missing_group(self, tmp_data_analysis_recipe):
+        ok, _ = delete_plot(tmp_data_analysis_recipe, "NoGroup", "plot_one")
         assert not ok
 
 
 # ── assign_plot ───────────────────────────────────────────────────────────
 
 class TestAssignPlot:
-    def test_moves_plot(self, tmp_manifest):
-        create_group(tmp_manifest, "GroupB", "Group B")
-        ok, _ = assign_plot(tmp_manifest, "plot_one", "GroupA", "GroupB")
+    def test_moves_plot(self, tmp_data_analysis_recipe):
+        create_group(tmp_data_analysis_recipe, "GroupB", "Group B")
+        ok, _ = assign_plot(tmp_data_analysis_recipe, "plot_one", "GroupA", "GroupB")
         assert ok
-        groups = list_groups_plots(tmp_manifest)
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         assert "plot_one" not in groups["GroupA"]["plots"]
         assert "plot_one" in groups["GroupB"]["plots"]
 
-    def test_preserves_include_tag_on_move(self, tmp_manifest):
-        create_group(tmp_manifest, "GroupB", "Group B")
-        assign_plot(tmp_manifest, "plot_one", "GroupA", "GroupB")
-        groups = list_groups_plots(tmp_manifest)
+    def test_preserves_include_tag_on_move(self, tmp_data_analysis_recipe):
+        create_group(tmp_data_analysis_recipe, "GroupB", "Group B")
+        assign_plot(tmp_data_analysis_recipe, "plot_one", "GroupA", "GroupB")
+        groups = list_groups_plots(tmp_data_analysis_recipe)
         spec = groups["GroupB"]["plots"]["plot_one"]["spec"]
         assert isinstance(spec, _IncludeTag)
 
-    def test_rejects_same_group(self, tmp_manifest):
-        ok, _ = assign_plot(tmp_manifest, "plot_one", "GroupA", "GroupA")
+    def test_rejects_same_group(self, tmp_data_analysis_recipe):
+        ok, _ = assign_plot(tmp_data_analysis_recipe, "plot_one", "GroupA", "GroupA")
         assert not ok
 
-    def test_rejects_missing_plot(self, tmp_manifest):
-        create_group(tmp_manifest, "GroupB", "Group B")
-        ok, _ = assign_plot(tmp_manifest, "no_plot", "GroupA", "GroupB")
+    def test_rejects_missing_plot(self, tmp_data_analysis_recipe):
+        create_group(tmp_data_analysis_recipe, "GroupB", "Group B")
+        ok, _ = assign_plot(tmp_data_analysis_recipe, "no_plot", "GroupA", "GroupB")
         assert not ok
 
-    def test_rejects_missing_source_group(self, tmp_manifest):
-        create_group(tmp_manifest, "GroupB", "Group B")
-        ok, _ = assign_plot(tmp_manifest, "plot_one", "NoGroup", "GroupB")
+    def test_rejects_missing_source_group(self, tmp_data_analysis_recipe):
+        create_group(tmp_data_analysis_recipe, "GroupB", "Group B")
+        ok, _ = assign_plot(tmp_data_analysis_recipe, "plot_one", "NoGroup", "GroupB")
         assert not ok
 
-    def test_rejects_missing_target_group(self, tmp_manifest):
-        ok, _ = assign_plot(tmp_manifest, "plot_one", "GroupA", "NoGroup")
+    def test_rejects_missing_target_group(self, tmp_data_analysis_recipe):
+        ok, _ = assign_plot(tmp_data_analysis_recipe, "plot_one", "GroupA", "NoGroup")
         assert not ok

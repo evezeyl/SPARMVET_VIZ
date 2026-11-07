@@ -297,7 +297,7 @@ def render_report(
                 f"### 🔴 Coverage Gap — {len(plotnine_gap)} unregistered plotnine symbols",
                 "",
                 "These exist in the installed plotnine but have no `@register_plot_component` entry.",
-                "Each missing symbol is a potential feature the VizFactory cannot express in a manifest.",
+                "Each missing symbol is a potential feature the VizFactory cannot express in a data analysis recipe.",
                 "",
             ]
             for prefix in PLOTNINE_PREFIXES + ["other"]:

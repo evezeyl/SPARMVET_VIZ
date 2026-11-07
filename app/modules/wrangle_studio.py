@@ -117,7 +117,7 @@ class WrangleStudio:
         # Reactive list of active nodes: [{"action": "rename", "params": {"columns": ["x"], "new_name": "y"}}]
         self.logic_stack = reactive.Value([])
 
-        # Expanded Manifest Data (ADR-031 Expansion)
+        # Expanded Data Analysis Recipe Data (ADR-031 Expansion)
         self.active_raw_yaml = reactive.Value("")
         self.active_fields = reactive.Value({"input": [], "output": []})
         self.active_viz_spec = reactive.Value({})
@@ -138,11 +138,11 @@ class WrangleStudio:
         self.active_viz_id = reactive.Value(None)
         self.data_ready_signal = reactive.Value(0)
         self.active_tubemap_mermaid = reactive.Value("")
-        # Master manifest path — set on every component import so architect_active_plot
+        # Master data analysis recipe path — set on every component import so architect_active_plot
         # can load the full resolved config via ConfigManager (not just the fragment)
-        self.active_manifest_path = reactive.Value("")
+        self.active_data_analysis_recipe_path = reactive.Value("")
         # BP-PLOT-COMMIT-1: absolute path of the loaded component FILE (the !include
-        # fragment), so Save writes back to that file — not the master manifest.
+        # fragment), so Save writes back to that file — not the master data analysis recipe.
         # Empty string when the component was loaded inline (no standalone file).
         self.active_component_path = reactive.Value("")
         # Anchor parquet path set after materialization so surgical calc reacts to it
@@ -165,7 +165,7 @@ class WrangleStudio:
             ui.div(
                 ui.span("👣 Blueprint Architect Flight Deck", class_="banner-title"),
                 ui.span(
-                    "Pipeline overview — helps you build manifests.",
+                    "Pipeline overview — helps you build data analysis recipes.",
                     class_="banner-subtitle"
                 ),
                 class_="view-title-banner"
@@ -175,7 +175,7 @@ class WrangleStudio:
             ui.div(
                 ui.accordion(
                     ui.accordion_panel(
-                        "🗺️ Project Lineage (TubeMap)",
+                        "🗺️ Data analysis recipe lineage (TubeMap)",
                         ui.div(
                             # ── Toolbar ──────────────────────────────────────────
                             ui.div(
@@ -337,7 +337,7 @@ class WrangleStudio:
                 ui.nav_panel(
                     "3. YAML (Raw Source)",
                     ui.card(
-                        ui.card_header("Manifest Source Inspector"),
+                        ui.card_header("Data analysis recipe Source Inspector"),
                         ui.output_ui("yaml_source_viewer_ui")
                     )
                 ),
@@ -468,11 +468,11 @@ class WrangleStudio:
             found_logic = []
 
             # 1. Check Assemblies (Tier 2 Junctions)
-            join_defs = full_cfg.get("join_manifests", {})
+            join_defs = full_cfg.get("joins", {})
             if node_id in join_defs:
-                recipe = join_defs[node_id].get("recipe", [])
+                steps = join_defs[node_id].get("steps", [])
                 from transformer.data_wrangler import DataWrangler
-                found_logic = DataWrangler._resolve_tier(recipe, "tier1")
+                found_logic = DataWrangler._resolve_tier(steps, "tier1")
                 self.active_viz_id.set(None)  # Not a plot
 
             # 2. Check Plots (Terminals)
@@ -488,7 +488,7 @@ class WrangleStudio:
                 ui_nodes.append({
                     "action": node.get("action", "unknown"),
                     "params": {k: v for k, v in node.items() if k != "action"},
-                    "comment": node.get("label", "Inherited from Manifest")
+                    "comment": node.get("label", "Inherited from Data analysis recipe")
                 })
 
             self.logic_stack.set(ui_nodes)
@@ -511,7 +511,7 @@ class WrangleStudio:
             Logic application rules:
             - wrangling / plot_wrangling: apply logic_stack (transform raw ingredient)
             - assembly / output_fields / input_fields / plot_spec: serve parquet as-is
-              (parquet IS the final product — re-applying recipe would double-transform)
+              (parquet IS the final product — re-applying step list would double-transform)
             """
             anchor_path_str = self.active_anchor_path.get()
             if not anchor_path_str:
@@ -550,29 +550,29 @@ class WrangleStudio:
             error banner only read it. A @render.* must never write a reactive value.
             """
             viz_id = self.active_viz_id.get()
-            manifest_path = self.active_manifest_path.get()
-            if not viz_id or not manifest_path:
+            data_analysis_recipe_path = self.active_data_analysis_recipe_path.get()
+            if not viz_id or not data_analysis_recipe_path:
                 return None, ""
 
             # Prioritize surgical data (materialized anchor for this component)
             df = processed_data_surgical()
             if df is None or df.height == 0:
-                df = processed_data()  # Fallback to base project anchor
+                df = processed_data()  # Fallback to base anchor
 
             if df is None or df.height == 0:
                 return None, f"No data loaded for '{viz_id}' — select a plot node to materialise its dataset."
 
             try:
                 from utils.config_loader import ConfigManager as _CM
-                if not Path(manifest_path).exists():
-                    return None, f"Manifest not found: {manifest_path}"
-                full_cfg = _CM(manifest_path).raw_config
+                if not Path(data_analysis_recipe_path).exists():
+                    return None, f"Data analysis recipe not found: {data_analysis_recipe_path}"
+                full_cfg = _CM(data_analysis_recipe_path).raw_config
 
                 # Resolve the plot spec from flat `plots:` (gallery bundles)
-                # or modern `analysis_groups:` (pipeline manifests, ADR-043).
-                render_manifest = None
+                # or modern `analysis_groups:` (pipeline data analysis recipes, ADR-043).
+                render_data_analysis_recipe = None
                 if viz_id in full_cfg.get("plots", {}):
-                    render_manifest = full_cfg
+                    render_data_analysis_recipe = full_cfg
                 else:
                     for grp_spec in full_cfg.get("analysis_groups", {}).values():
                         if not isinstance(grp_spec, dict):
@@ -581,23 +581,23 @@ class WrangleStudio:
                         if plot_entry is not None:
                             spec = (plot_entry.get("spec", plot_entry)
                                     if isinstance(plot_entry, dict) else plot_entry)
-                            render_manifest = {
+                            render_data_analysis_recipe = {
                                 "plots": {viz_id: spec},
                                 "plot_defaults": full_cfg.get("plot_defaults", {}),
                             }
                             break
 
-                if render_manifest is None:
+                if render_data_analysis_recipe is None:
                     available = list(full_cfg.get("plots", {}).keys())
                     for grp in full_cfg.get("analysis_groups", {}).values():
                         if isinstance(grp, dict):
                             available.extend(grp.get("plots", {}).keys())
                     return None, (
-                        f"Plot ID '{viz_id}' not found in manifest. "
+                        f"Plot ID '{viz_id}' not found in data analysis recipe. "
                         f"Available: {', '.join(available[:5])}"
                     )
 
-                plt = viz_factory.render(df.lazy(), render_manifest, viz_id)
+                plt = viz_factory.render(df.lazy(), render_data_analysis_recipe, viz_id)
                 return plt, ""
             except Exception as e:
                 msg = str(e)
@@ -1032,11 +1032,11 @@ class WrangleStudio:
             except Exception:
                 ui_schema = {}
 
-            # Resolve allow_external_links from deployment profile
+            # Resolve allow_external_links from deployment
             allow_external = True
             if bootloader is not None:
                 try:
-                    allow_external = bootloader.profile.get("allow_external_links", True)
+                    allow_external = bootloader.deployment_config.get("allow_external_links", True)
                 except Exception:
                     pass
 
@@ -1052,7 +1052,7 @@ class WrangleStudio:
             if description:
                 parts.append(ui.p(description, class_="bp-help-description"))
 
-            # YAML example code block (copy-paste snippet for manifest authors)
+            # YAML example code block (copy-paste snippet for data analysis recipe authors)
             if yaml_example:
                 parts.append(
                     ui.tags.pre(yaml_example, class_="bp-help-docstring bp-help-yaml-example")
@@ -1161,7 +1161,7 @@ class WrangleStudio:
             if not cy_json:
                 return ui.div(
                     ui.p("No Blueprint Lineage Loaded.", class_="text-muted fst-italic"),
-                    ui.p("Select a project to view its TubeMap.", class_="small text-muted"),
+                    ui.p("Select a data analysis recipe to view its TubeMap.", class_="small text-muted"),
                     class_="d-flex flex-column align-items-center justify-content-center h-100"
                 )
 
@@ -1619,11 +1619,11 @@ class WrangleStudio:
 
             # BP-FWD-HINT-1: Forward propagation hint — which downstream contracts
             # would drop this field if it were added/renamed at the current tier?
-            manifest_path = self.active_manifest_path.get()
-            if (up_found or down_found) and manifest_path and chain:
+            data_analysis_recipe_path = self.active_data_analysis_recipe_path.get()
+            if (up_found or down_found) and data_analysis_recipe_path and chain:
                 try:
-                    from blueprint_arch.manifest_navigator import build_sibling_map as _bsm
-                    ctx = _bsm(manifest_path)
+                    from blueprint_arch.data_analysis_recipe_navigator import build_sibling_map as _bsm
+                    ctx = _bsm(data_analysis_recipe_path)
                     active_idx = next(
                         (i for i, n in enumerate(chain) if n.get("is_active")), None
                     )
@@ -1695,14 +1695,14 @@ class WrangleStudio:
         def handle_add_plot_wrangling():
             """Inform the user how to scaffold a pre_plot_wrangling file.
             Full scaffolding (Phase 18-D complete) will auto-create the file and
-            insert the pre_plot_wrangling: !include key into the manifest plot block.
+            insert the pre_plot_wrangling: !include key into the data analysis recipe plot block.
             """
             info = self.active_component_info.get()
             schema_id = info.get("schema_id", "this plot") if info else "this plot"
             ui.notification_show(
                 f"To add plot wrangling for '{schema_id}': create a wrangling YAML "
                 f"and add 'pre_plot_wrangling: !include <path>' to its plot block in "
-                f"the master manifest. Then reload the manifest.",
+                f"the master data analysis recipe. Then reload the data analysis recipe.",
                 type="message",
                 duration=8
             )
@@ -1799,15 +1799,15 @@ class WrangleStudio:
         def bp_yaml_escape_ui():
             """YAML escape hatch (BP-ESCAPE-1).
 
-            Read-only pre block for all blueprint_enabled personas.
-            Editable textarea + Save when manifest_edit_enabled is true.
+            Read-only pre block for all blueprint_enabled app features files.
+            Editable textarea + Save when data_analysis_recipe_edit_enabled is true.
             """
             raw = self.active_raw_yaml.get()
-            editable = bootloader is not None and bootloader.is_enabled("manifest_edit_enabled")
+            editable = bootloader is not None and bootloader.is_enabled("data_analysis_recipe_edit_enabled")
 
             if not raw:
                 return ui.div(
-                    ui.p("No manifest loaded. Select a manifest in the left panel first.",
+                    ui.p("No data analysis recipe loaded. Select a data analysis recipe in the left panel first.",
                          class_="text-muted small fst-italic"),
                     class_="bp-escape-container p-2"
                 )
@@ -2212,13 +2212,13 @@ class WrangleStudio:
                 )
 
             elif widget_type == "color":
-                # BP-COLOR-1/2: composite color widget with project palette support
+                # BP-COLOR-1/2: composite color widget with deployment palette support
                 # Sub-IDs follow the pattern bp_form_{param_key}_*
                 mode_id = f"bp_form_{param_key}_mode"      # column | literal
                 col_id = f"bp_form_{param_key}_col"        # column selector
-                lit_mode_id = f"bp_form_{param_key}_lmode" # palette | project | custom
+                lit_mode_id = f"bp_form_{param_key}_lmode" # palette | deployment | custom
                 palette_id = f"bp_form_{param_key}_palette"
-                project_palette_id = f"bp_form_{param_key}_project_palette"
+                deployment_palette_id = f"bp_form_{param_key}_deployment_palette"
                 hex_id = f"bp_form_{param_key}_hex"
 
                 # Runtime matplotlib palette names (authoritative)
@@ -2230,11 +2230,11 @@ class WrangleStudio:
                     "Set1", "Set2", "Set3", "Paired", "Dark2", "Accent",
                 ]
 
-                # Project palettes from deployment registry (BP-COLOR-2)
-                _project_palettes = {}
+                # Deployment palettes from deployment registry (BP-COLOR-2)
+                _deployment_palettes = {}
                 if self._bootloader is not None:
-                    _project_palettes = self._bootloader.get_palettes()
-                _has_project_palettes = bool(_project_palettes)
+                    _deployment_palettes = self._bootloader.get_palettes()
+                _has_deployment_palettes = bool(_deployment_palettes)
 
                 cat_cols = [k for k, v in upstream_cols.items()
                             if v == "categorical"]
@@ -2246,9 +2246,9 @@ class WrangleStudio:
                     cur_col = current_val.get("column", cat_cols[0])
                     cur_lmode = current_val.get("literal_mode", "palette")
                     cur_palette = current_val.get("palette", _LIB_PALETTES[0])
-                    cur_project_palette = current_val.get(
-                        "project_palette",
-                        next(iter(_project_palettes), "")
+                    cur_deployment_palette = current_val.get(
+                        "deployment_palette",
+                        next(iter(_deployment_palettes), "")
                     )
                     cur_hex = current_val.get("hex", "#345beb")
                 elif isinstance(current_val, str) and current_val in upstream_cols:
@@ -2256,38 +2256,38 @@ class WrangleStudio:
                     cur_col = current_val
                     cur_lmode = "palette"
                     cur_palette = _LIB_PALETTES[0]
-                    cur_project_palette = next(iter(_project_palettes), "")
+                    cur_deployment_palette = next(iter(_deployment_palettes), "")
                     cur_hex = "#345beb"
                 else:
                     top_mode = "literal"
                     cur_col = cat_cols[0]
                     cur_lmode = "palette"
                     cur_palette = _LIB_PALETTES[0]
-                    cur_project_palette = next(iter(_project_palettes), "")
+                    cur_deployment_palette = next(iter(_deployment_palettes), "")
                     cur_hex = str(current_val or "#345beb")
 
-                # Build source radio choices: "project" only when palettes are defined
+                # Build source radio choices: "deployment" only when palettes are defined
                 _lmode_choices = {"palette": "Palette library"}
-                if _has_project_palettes:
-                    _lmode_choices["project"] = "Project palette"
+                if _has_deployment_palettes:
+                    _lmode_choices["deployment"] = "Deployment palette"
                 _lmode_choices["custom"] = "Custom hex"
 
-                # Project palette selector (inside literal mode conditional)
-                if _has_project_palettes:
-                    _project_palette_names = list(_project_palettes.keys())
-                    _project_palette_widget = ui.panel_conditional(
-                        f"input['{lit_mode_id}'] === 'project'",
+                # Deployment palette selector (inside literal mode conditional)
+                if _has_deployment_palettes:
+                    _deployment_palette_names = list(_deployment_palettes.keys())
+                    _deployment_palette_widget = ui.panel_conditional(
+                        f"input['{lit_mode_id}'] === 'deployment'",
                         ui.input_select(
-                            project_palette_id, "Project palette",
-                            choices={p: p for p in _project_palette_names},
-                            selected=(cur_project_palette
-                                      if cur_project_palette in _project_palettes
-                                      else _project_palette_names[0])
+                            deployment_palette_id, "Deployment palette",
+                            choices={p: p for p in _deployment_palette_names},
+                            selected=(cur_deployment_palette
+                                      if cur_deployment_palette in _deployment_palettes
+                                      else _deployment_palette_names[0])
                         )
                     )
                 else:
-                    # No project palettes — placeholder slot kept for layout stability
-                    _project_palette_widget = ui.span("")
+                    # No deployment palettes — placeholder slot kept for layout stability
+                    _deployment_palette_widget = ui.span("")
 
                 elem = ui.div(
                     ui.p(label, class_="fw-bold small mb-1"),
@@ -2315,7 +2315,7 @@ class WrangleStudio:
                                 choices=_lmode_choices,
                                 selected=cur_lmode, inline=True
                             ),
-                            _project_palette_widget,
+                            _deployment_palette_widget,
                             ui.panel_conditional(
                                 f"input['{lit_mode_id}'] === 'palette'",
                                 ui.input_select(

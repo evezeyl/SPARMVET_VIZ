@@ -2,21 +2,21 @@
 
 **Authority:** ADR-045, ADR-067
 
-Pure-Python manifest introspection and TubeMap rendering. Zero Shiny imports — fully headless-safe and importable by debug scripts, test suites, and CLI tools without side effects.
+Pure-Python data analysis recipe introspection and TubeMap rendering. Zero Shiny imports — fully headless-safe and importable by debug scripts, test suites, and CLI tools without side effects.
 
 ## Purpose
 
-Provides the structural intelligence for the Blueprint Architect user space: parsing manifest lineages, building the dependency graph (TubeMap), and computing the Lineage Rail for the UI. Separated from `app/` under ADR-067 so this logic can be tested and invoked independently of the Shiny runtime.
+Provides the structural intelligence for the Blueprint Architect user space: parsing data analysis recipe lineages, building the dependency graph (TubeMap), and computing the Lineage Rail for the UI. Separated from `app/` under ADR-067 so this logic can be tested and invoked independently of the Shiny runtime.
 
 ## Key Components
 
-- **ManifestNavigator (manifest_navigator.py)**: Pure manifest introspection engine. Builds sibling maps, schema registries, lineage chains, and resolves `input_fields`/`output_fields` contracts. The sole source of structural truth for manifest topology.
-- **BlueprintMapper (blueprint_mapper.py)**: Generates Cytoscape.js graph elements (nodes + edges) for the TubeMap visualisation. Maps manifest roles to colour-coded visual tiers (trunk, branch, ref, plot, etc.).
+- **DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)**: Pure data analysis recipe introspection engine. Builds sibling maps, schema registries, lineage chains, and resolves `input_fields`/`output_fields` contracts. The sole source of structural truth for data analysis recipe topology.
+- **BlueprintMapper (blueprint_mapper.py)**: Generates Cytoscape.js graph elements (nodes + edges) for the TubeMap visualisation. Maps data analysis recipe roles to colour-coded visual tiers (trunk, branch, ref, plot, etc.).
 
 ## Public API
 
 ```python
-from blueprint_arch.manifest_navigator import (
+from blueprint_arch.data_analysis_recipe_navigator import (
     build_sibling_map,         # rel_path → {role, schema_id, siblings, ingredients}
     build_schema_registry,     # schema_id → {schema_type, input_fields, wrangling, ...}
     build_lineage_chain,       # ordered [{rel, schema_id, role, label, is_active}]
@@ -36,7 +36,7 @@ cy_elements = mapper.generate_cy_elements(sibling_map, component_ctx_map)
 
 - **Zero Shiny imports** — Two-Category Law (ADR-045). Any file in this lib is safe to import from headless contexts.
 - **No `sys.path` hacks** — must be installed editable (`pip install -e libs/blueprint_arch`).
-- **Read-only** — this lib reads manifests, it never writes them. Writing belongs in `app/handlers/blueprint_handlers.py`.
+- **Read-only** — this lib reads data analysis recipes, it never writes them. Writing belongs in `app/handlers/blueprint_handlers.py`.
 
 ## Installation
 
@@ -139,18 +139,18 @@ In test files, place these imports at module level so all test functions see a p
 
 ## Group & Plot Manager (ADR-082)
 
-`group_plot_manager.py` provides headless-safe CRUD operations for `analysis_groups` and their `plots` entries in a manifest. All functions read and write the manifest file directly — no Shiny state.
+`group_plot_manager.py` provides headless-safe CRUD operations for `analysis_groups` and their `plots` entries in a data analysis recipe. All functions read and write the data analysis recipe file directly — no Shiny state.
 
 ### Public API
 
 ```python
 from blueprint_arch.group_plot_manager import (
-    list_groups_plots,  # (manifest_path) -> dict[group_id, list[plot_id]]
-    create_group,       # (manifest_path, group_id, label) -> tuple[bool, str]
-    delete_group,       # (manifest_path, group_id) -> tuple[bool, str]
-    create_plot,        # (manifest_path, group_id, plot_id, label) -> tuple[bool, str]
-    delete_plot,        # (manifest_path, group_id, plot_id) -> tuple[bool, str]
-    assign_plot,        # (manifest_path, group_id, plot_id, spec_path) -> tuple[bool, str]
+    list_groups_plots,  # (data_analysis_recipe_path) -> dict[group_id, list[plot_id]]
+    create_group,       # (data_analysis_recipe_path, group_id, label) -> tuple[bool, str]
+    delete_group,       # (data_analysis_recipe_path, group_id) -> tuple[bool, str]
+    create_plot,        # (data_analysis_recipe_path, group_id, plot_id, label) -> tuple[bool, str]
+    delete_plot,        # (data_analysis_recipe_path, group_id, plot_id) -> tuple[bool, str]
+    assign_plot,        # (data_analysis_recipe_path, group_id, plot_id, spec_path) -> tuple[bool, str]
 )
 ```
 
@@ -160,7 +160,7 @@ All mutation functions return `(success: bool, message: str)`. On duplicate IDs 
 
 ## Agent Tools (ADR-076)
 
-`agent_tools.py` exposes a narrow headless-safe tool catalog used by the BLUEPRINT AI Agent to query the manifest structure and component registry.
+`agent_tools.py` exposes a narrow headless-safe tool catalog used by the BLUEPRINT AI Agent to query the data analysis recipe structure and component registry.
 
 ### Public API
 
@@ -177,7 +177,7 @@ result = call_tool("get_available_actions", {"context": "t1"})
 |---|---|
 | `get_available_actions` | Returns actions valid for a given context (`t1`, `t2`, `assembly`) |
 | `get_available_components` | Returns plot components valid for the `plot` context |
-| `get_field_contract` | Returns `input_fields` and `output_fields` for a named schema in the active manifest |
+| `get_field_contract` | Returns `input_fields` and `output_fields` for a named schema in the active data analysis recipe |
 
 ---
 
@@ -215,7 +215,7 @@ from blueprint_arch.join_designer import (
 )
 ```
 
-`compute_key_match` returns `{overlap_count, left_only, right_only, sample_matches}` — the data that drives the overlap preview in the IDE. `build_join_step` always emits the string key `"on"` (quoted) for symmetric joins, avoiding the YAML boolean trap. `parse_join_step` applies the same `step.get(True)` fallback as the assembler for loading existing manifests that contain unquoted `on:`.
+`compute_key_match` returns `{overlap_count, left_only, right_only, sample_matches}` — the data that drives the overlap preview in the IDE. `build_join_step` always emits the string key `"on"` (quoted) for symmetric joins, avoiding the YAML boolean trap. `parse_join_step` applies the same `step.get(True)` fallback as the assembler for loading existing data analysis recipes that contain unquoted `on:`.
 
 ---
 
@@ -228,6 +228,6 @@ PYTHONPATH=. .venv/bin/python -m pytest libs/blueprint_arch/tests/ -v
 | Test file | Covers |
 |---|---|
 | `test_schema_registry.py` | Catalog loading, all 19 transformer actions and 7 viz components present, structural field validation, filtering and search correctness |
-| `test_lineage_nav.py` | `build_sibling_map`, `build_lineage_chain`, `build_schema_registry`, `generate_branch_plan` against fixture manifests |
+| `test_lineage_nav.py` | `build_sibling_map`, `build_lineage_chain`, `build_schema_registry`, `generate_branch_plan` against fixture data analysis recipes |
 | `test_join_designer.py` | `compute_key_match` overlap logic, `build_join_step` output shape, `parse_join_step` boolean-trap handling |
 | `test_group_plot_manager.py` | CRUD round-trips for groups and plots, error cases for duplicates and missing IDs |

@@ -18,37 +18,37 @@ The answer is the **Platform Vision**: transform the internal tool into an acces
 
 > *"The artist does not describe the paint — the artist describes the painting."*
 
-The `VizFactory (viz_factory.py)` was deliberately designed around this principle. The user never writes Plotnine code. Instead, they write a **manifest** — a human-readable YAML recipe that describes *what* they want to see. The factory translates intent into pixels.
+The `VizFactory (viz_factory.py)` was deliberately designed around this principle. The user never writes Plotnine code. Instead, they write a **data analysis recipe** — a human-readable YAML example that describes *what* they want to see. The factory translates intent into pixels.
 
 Three properties make this possible:
 
 | Property | Mechanism | Effect |
 | :--- | :--- | :--- |
-| **Declarative Recipes** | YAML manifest with `layers:` list | User composes, not programs |
-| **Sensible Defaults** | ADR-024 injection policy | Minimal manifests produce coherent plots |
-| **Copy-Modify-Render** | Gallery & Recipe Pattern (ADR-025) | Self-service customisation |
+| **Declarative Examples** | YAML data analysis recipe with `layers:` list | User composes, not programs |
+| **Sensible Defaults** | ADR-024 injection policy | Minimal data analysis recipes produce coherent plots |
+| **Copy-Modify-Render** | Gallery & Example Pattern (ADR-025) | Self-service customisation |
 
-This approach directly supports **Low-Level Coding** — the practice where domain scientists interact with code at the YAML abstraction layer, not the Python layer. The YAML manifest *is* the code.
+This approach directly supports **Low-Level Coding** — the practice where domain scientists interact with code at the YAML abstraction layer, not the Python layer. The YAML data analysis recipe *is* the code.
 
 ---
 
-## 3. The Gallery & Recipe Pattern (ADR-025)
+## 3. The Gallery & Example Pattern (ADR-025)
 
-The Gallery is a **Visual Cookbook** — a curated collection of verified plot recipes. Each entry is a 3-part **Recipe**:
+The Gallery is a **Visual Cookbook** — a curated collection of verified plot examples. Each entry is a 3-part **Example**:
 
 ::: {.callout-important}
-**The 3-Part Recipe Contract (ADR-025)**
+**The 3-Part Example Contract (ADR-025)**
 
 1. **Data Header** — A TSV snippet (first 5 rows) showing the expected column structure.
-2. **YAML Manifest** — The exact copy-paste manifest that produced the plot. Nothing more, nothing less.
-3. **Rendered Plot** — The PNG output from that exact manifest, serving as visual confirmation.
+2. **YAML Data analysis recipe** — The exact copy-paste data analysis recipe that produced the plot. Nothing more, nothing less.
+3. **Rendered Plot** — The PNG output from that exact data analysis recipe, serving as visual confirmation.
 :::
 
-This pattern ensures that **every plot in the system is fully reproducible by copying its recipe**. A user finding an interesting visualisation can immediately understand what data shape is required, copy the manifest, adapt the column names, and render their own version.
+This pattern ensures that **every plot in the system is fully reproducible by copying its example**. A user finding an interesting visualisation can immediately understand what data shape is required, copy the data analysis recipe, adapt the column names, and render their own version.
 
 ### Gallery Generation
 
-The `viz_factory_integrity_suite.py` runner will support a `--gallery` flag that auto-generates a `gallery_report.md` document combining all three recipe parts for every registered component.
+The `viz_factory_integrity_suite.py` runner will support a `--gallery` flag that auto-generates a `gallery_report.md` document combining all three example parts for every registered component.
 
 ```bash
 # Generate full gallery across all VizFactory layers:
@@ -63,7 +63,7 @@ The `viz_factory_integrity_suite.py` runner will support a `--gallery` flag that
 
 The flagship gallery entry is the **Phase 9 Triple-Source Integration**, which provides the most complete end-to-end demonstration of the platform's capabilities.
 
-### Data Recipe
+### Data Example
 
 | Source | File | Shape | Description |
 | :--- | :--- | :--- | :--- |
@@ -74,11 +74,11 @@ The flagship gallery entry is the **Phase 9 Triple-Source Integration**, which p
 
 > Reference: Chung et al. (2023), Figshare DOI: [10.6084/m9.figshare.21737288.v1](https://doi.org/10.6084/m9.figshare.21737288.v1), CC-BY 4.0
 
-### Manifest Recipe
+### Data analysis recipe
 
 ```yaml
-# Assembly manifest: config/manifests/pipelines/figshare_integration.yaml
-assembly_manifests:
+# Assembly data analysis recipe: config/data_analysis_recipes/pipelines/figshare_integration.yaml
+joins:
   - anchor: fg_metadata
     join:
       - source: fg_phenotypes
@@ -90,11 +90,11 @@ assembly_manifests:
         pre_drop: [host_animal_common]  # Collision guard
 ```
 
-### Plot Recipes (Stage 3)
+### Plot Examples (Stage 3)
 
 Three integration plots are pre-built as gallery entries:
 
-| Plot | Manifest Key | Insight |
+| Plot | Data analysis recipe Key | Insight |
 | :--- | :--- | :--- |
 | **A** — Phenotype per Antibiotic | `plot_A_phenotype_per_antibiotic` | R/I/S distribution across 19 antibiotics |
 | **B** — Gene Family per Host | `plot_B_gene_family_per_host` | Top 12 AMR gene families by host animal |
@@ -112,8 +112,8 @@ The shift from tool to platform requires a short, focused sprint:
 | :--- | :--- | :--- |
 | **High** | Implement `--gallery` flag in `viz_factory_integrity_suite.py` | `tmp/gallery/gallery_report.md` |
 | **High** | Add gallery entry for Phase 9 plots (manually) | Figshare AMR gallery page |
-| **Medium** | Quarto gallery page: `docs/vision/gallery.qmd` \[PLANNED\] | Browsable cookbook |
-| **Low** | Interactive manifest editor (future) | Shiny UI YAML text area |
+| **Medium** | Quarto gallery page (planned, not written yet) | Browsable cookbook |
+| **Low** | Interactive data analysis recipe editor (future) | Shiny UI YAML text area |
 
 ---
 
@@ -123,4 +123,4 @@ For the full architectural rationale behind the design choices in this chapter, 
 
 - `VizFactory (viz_factory.py)` architecture: [Viz Factory Rationale](../appendix/viz_factory_rationale.qmd)
 - Data flow and assembly: [Wrangling & Assembly](../workflows/wrangling.qmd)
-- ADR-025 Gallery & Recipe Pattern: [Architecture Decisions](../../.claude/knowledge/architecture_decisions.md)
+- ADR-025 Gallery & Example Pattern: [Architecture Decisions](../../.claude/knowledge/architecture_decisions.md)

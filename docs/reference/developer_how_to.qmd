@@ -8,8 +8,8 @@ When contributing to SPARMVET or reporting a bug, follow these strict rules to e
 
 ### How to Submit an Issue or Bug Report
 If you encounter a systemic failure, please open an Issue on GitHub matching this formatting template:
-1. **The Context:** What persona were you in? What UI tab were you using?
-2. **The Manifest/Data:** Provide a minimalist YAML manifest and a tiny dummy dataset (10 rows max) that reliably triggers the error. *Never provide raw production data.*
+1. **The Context:** What app features were you in? What UI tab were you using?
+2. **The DataAnalysisRecipe/Data:** Provide a minimalist YAML data analysis recipe and a tiny dummy dataset (10 rows max) that reliably triggers the error. *Never provide raw production data.*
 3. **The Expected vs. Actual Behavior:** State explicitly what you wanted the system to do, and copy the exact error log (or `SPARMVET_Error`) the system generated instead.
 
 ### The `@verify` Pull Request Protocol
@@ -45,36 +45,36 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   ```
 
 - **`debug_wrangler.py`**
-  Tests Layer 1 wrangling from a manifest against a dataset. Mirrors the orchestrator's Tier 1 path exactly.
+  Tests Layer 1 wrangling from a data analysis recipe against a dataset. Mirrors the orchestrator's Tier 1 path exactly.
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-      --manifest libs/transformer/tests/data/strip_whitespace_manifest.yaml \
+      --data-analysis-recipe libs/transformer/tests/data/strip_whitespace_data_analysis_recipe.yaml \
       --output tmp/strip_whitespace_result.tsv
   # Optional: --data override, --tier tier1|tier2|all
   ```
 
 - **`debug_assembler.py`**
-  Tests Layer 2 assembly — ingests all datasets, applies Tier 1 wrangling, executes the join recipe, and applies `final_contract`. Accepts `--output` (file or directory).
+  Tests Layer 2 assembly — ingests all datasets, applies Tier 1 wrangling, executes the join steps, and applies `final_contract`. Accepts `--output` (file or directory).
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
-      --manifest config/manifests/pipelines/my_pipeline.yaml \
+      --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml \
       --output tmp/my_assembly/
   ```
 
 - **`debug_decorator_suite.py`**
-  Bulk CI scan — crawls `libs/transformer/tests/data/` for `*_manifest.yaml` triplets and runs each through `debug_wrangler.py`.
+  Bulk CI scan — crawls `libs/transformer/tests/data/` for `*_data_analysis_recipe.yaml` triplets and runs each through `debug_wrangler.py`.
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_decorator_suite.py
   ```
 
 - **`debug_wrangler_errors.py`**
-  Verifies error detection — confirms DataWrangler raises helpful errors (with typo suggestions) when manifests reference non-existent columns. Runs in-memory.
+  Verifies error detection — confirms DataWrangler raises helpful errors (with typo suggestions) when data analysis recipes reference non-existent columns. Runs in-memory.
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_wrangler_errors.py
   ```
 
 - **`debug_phase3_refinements.py`**
-  Verifies `sink_parquet` short-circuit logic (materialise → short-circuit → cache invalidation on recipe change).
+  Verifies `sink_parquet` short-circuit logic (materialise → short-circuit → cache invalidation on step list change).
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_phase3_refinements.py \
       --output tmp/phase3_test_hash.parquet
@@ -84,7 +84,7 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   Standalone relational join audit.
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_relational_audit.py \
-      --manifest libs/transformer/tests/data/relational_audit.yaml \
+      --data-analysis-recipe libs/transformer/tests/data/relational_audit.yaml \
       --output tmp/relational_audit/
   ```
 
@@ -92,14 +92,14 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   Tests the expression-cleaning action module.
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_expressions.py \
-      --manifest libs/transformer/tests/data/label_if_manifest.yaml
+      --data-analysis-recipe libs/transformer/tests/data/label_if_data_analysis_recipe.yaml
   ```
 
 - **`debug_pipeline.py`**
   Tests the `PipelineExecutor` abstraction.
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_pipeline.py \
-      --manifest my_manifest.yaml --data-dir assets/test_data/my_project/
+      --data-analysis-recipe my_data_analysis_recipe.yaml --data-dir assets/test_data/my_data_analysis_recipe/
   ```
 
 ---
@@ -111,7 +111,7 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   **Purpose:** Exact → pattern → fuzzy matching pipeline between two ID lists. Returns `MatchResult` list with `match_type` and `certainty`. Use `format_match_table(results)` for a Polars DataFrame output.
 
 - **`id_reconciliation_integrity_suite.py`**
-  **Purpose:** Orchestrator that runs all module tests and reports pass/fail per module. Run with `--module matcher|pattern_detector|recipe|core` to target one area.
+  **Purpose:** Orchestrator that runs all module tests and reports pass/fail per module. Run with `--module matcher|pattern_detector|steps|core` to target one area.
 
 - **Many-to-many detection**
   `detect_many_to_many(results)` returns a dict of ref_id → [target_ids] for cases where one ref matched multiple targets (requires manual resolution).
@@ -131,10 +131,10 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   ```
 
 - **`debug_runner.py`** *(Single Component Runner)*
-  Tests one VizFactory component from a recipe manifest YAML.
+  Tests one VizFactory component from a step list data analysis recipe YAML.
   ```bash
   ./.venv/bin/python libs/viz_factory/tests/debug_runner.py \
-      --manifest libs/viz_factory/tests/test_data/geom_bar_test.yaml \
+      --data-analysis-recipe libs/viz_factory/tests/test_data/geom_bar_test.yaml \
       --output tmp/viz_test/geom_bar.png
   ```
 
@@ -153,7 +153,7 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   ```
 
 - **`debug_bulk_sync.py`**
-  Bulk synchronization pass over `assets/gallery_data/` recipe manifests.
+  Bulk synchronization pass over `assets/gallery_data/` example data analysis recipes.
   ```bash
   ./.venv/bin/python libs/viz_factory/tests/debug_bulk_sync.py
   ```
@@ -184,15 +184,15 @@ For full CLI reference and current integrity suite results, see [Transformer & V
 
 The **Reverse Short-Circuit** is the logic engine behind our "Prepped Chef" strategy. It optimizes the data pipeline by checking for already-finished results before starting expensive joining or summarizing operations.
 
-- **How it works**: When `DataAssembler.assemble()` is called with a recipe, it iterates **backwards** through the steps.
-- **The Check**: It looks for the latest `sink_parquet` action in the recipe.
+- **How it works**: When `DataAssembler.assemble()` is called with a step list, it iterates **backwards** through the steps.
+- **The Check**: It looks for the latest `sink_parquet` action in the step list.
 - **The Decision**: If the target `.parquet` file already exists on disk (and `force_recompute` is False), the Assembler **skips every single step** prior to that file. It simply scans the existing file and continues from the next step.
 - **Tier 2 Branching**: This mechanism allows developers to define "Branches" (pre-aggregated summaries) via the **Summarizer (performance/aggregation.py)**. If a Branch summary exists, the system bypasses both the raw joins (Tier 1) and the summary calculation (Tier 2).
 
 #### Manual Verification of Branching
-Use the `debug_assembler.py` tool with a manifest that includes a `sink_parquet` action:
+Use the `debug_assembler.py` tool with a data analysis recipe that includes a `sink_parquet` action:
 ```bash
-./.venv/bin/python libs/transformer/tests/debug_assembler.py --manifest [TIER2_MANIFEST].yaml
+./.venv/bin/python libs/transformer/tests/debug_assembler.py --data-analysis-recipe [TIER2_DATA_ANALYSIS_RECIPE].yaml
 ```
 If the summary exists, you will see the following in the console:
 `─── 🗲  Short-Circuit: Existing Parquet branch found at tmp/branch_summary.parquet. Skipping early steps.`

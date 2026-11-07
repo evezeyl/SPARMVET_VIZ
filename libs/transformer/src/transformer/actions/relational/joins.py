@@ -4,8 +4,8 @@ from transformer.actions.base import register_action
 
 # @deps
 # provides: action:join, action:join_filter
-# consumed_by: any YAML manifest using join steps, .claude/rules/rules_persona_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
-# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
+# consumed_by: any YAML data analysis recipe using join steps, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
 

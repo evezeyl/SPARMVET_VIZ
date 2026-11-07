@@ -57,7 +57,7 @@ input_fields:
 | `boolean` | True/False, presence/absence | Resistance flags, pass/fail status |
 
 > **DEPRECATED (removal task: LEGACY-TYPE-ALIASES-1):** `character` and `string` as type values are deprecated aliases for `categorical`.
-> New manifests MUST use `categorical`. Existing manifests using these aliases should be migrated. Engine acceptance of aliases will be removed.
+> New data analysis recipes MUST use `categorical`. Existing data analysis recipes using these aliases should be migrated. Engine acceptance of aliases will be removed.
 
 ---
 
@@ -65,7 +65,7 @@ input_fields:
 
 All wrangling logic must use the **tiered structure** (ADR-041).
 
-> **REMOVED (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** Flat `wrangling: []` lists are rejected by the engine with a `ManifestError`.
+> **REMOVED (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** Flat `wrangling: []` lists are rejected by the engine with a `DataAnalysisRecipeError`.
 > Migrate to the tiered structure shown below. Tombstone expires Phase 36.
 
 ```yaml
@@ -201,7 +201,7 @@ Splits a string column into two new columns on a delimiter.
   drop_source: true
 ```
 
-### `join` (Assembly recipe only)
+### `join` (Assembly steps only)
 Joins a right ingredient into the base frame.
 ```yaml
 - action: join
@@ -235,15 +235,15 @@ Maps values in a column against an external reference file to derive a new categ
 
 ## 4. Assembly Block Rules
 
-The `join_manifests` block defines how wrangled datasets are joined into a single analysis frame.
+The `joins` block defines how wrangled datasets are joined into a single analysis frame.
 
 ```yaml
-join_manifests:
+joins:
   AMR_Profile_Joint:
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema
-    recipe: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
+    steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
     final_contract:
       sample_id: string
       gene: string
@@ -254,16 +254,16 @@ join_manifests:
 
 - `ingredients` is a **list of dicts** with `dataset_id` keys (not a flat list of strings).
 - `final_contract` is a **dict `{column: type}`** — a whitelist that selects and validates final columns. Only columns listed here survive to the plot layer.
-- `recipe` may be inline or `!include`-ed.
+- `steps` may be inline or `!include`-ed.
 
 ---
 
 ## 5. Fragment Files and `!include`
 
-Large manifests can be split into fragment files using `!include`:
+Large data analysis recipes can be split into fragment files using `!include`:
 
 ```yaml
-# In master_manifest.yaml
+# In master_data_analysis_recipe.yaml
 data_schemas:
   amr_data:
     source:
@@ -293,4 +293,4 @@ input_fields:
     label: Sample ID
 ```
 
-The `!include` path is always **relative to the master manifest file's directory**.
+The `!include` path is always **relative to the master data analysis recipe file's directory**.

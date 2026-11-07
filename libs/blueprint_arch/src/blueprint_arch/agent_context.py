@@ -32,7 +32,7 @@ import yaml
 
 
 def build_system_prompt(
-    manifest_path: str | Path | None = None,
+    data_analysis_recipe_path: str | Path | None = None,
     *,
     instructions_file: str | Path | None = None,
     project_root: str | Path | None = None,
@@ -42,7 +42,7 @@ def build_system_prompt(
     Assembles three sections:
     1. Custom instructions (from instructions_file, if provided and exists)
     2. Compressed action registry summary (from transformer ACTION_SCHEMAS)
-    3. Current project context (manifest path + declared data schemas + analysis groups)
+    3. Current data analysis recipe context (data analysis recipe path + declared data schemas + analysis groups)
 
     Returns a single string ready to pass as the --system argument to claude -p.
     """
@@ -56,9 +56,9 @@ def build_system_prompt(
     # 2. Compressed action registry
     sections.append(_build_action_summary())
 
-    # 3. Current project context
-    if manifest_path:
-        sections.append(_build_project_context(Path(manifest_path)))
+    # 3. Current data analysis recipe context
+    if data_analysis_recipe_path:
+        sections.append(_build_data_analysis_recipe_context(Path(data_analysis_recipe_path)))
 
     # 4. Tool-call protocol instructions (fenced-block format, ADR-076 §10.1)
     sections.append(_TOOL_CALL_PROTOCOL)
@@ -120,20 +120,20 @@ def _build_action_summary() -> str:
     return "\n".join(lines)
 
 
-def _build_project_context(manifest_path: Path) -> str:
-    """Build a concise project context block from the active manifest."""
-    if not manifest_path.exists():
-        return f"## Active Manifest\nPath: {manifest_path}\n(file not found)"
+def _build_data_analysis_recipe_context(data_analysis_recipe_path: Path) -> str:
+    """Build a concise data analysis recipe context block from the active data analysis recipe."""
+    if not data_analysis_recipe_path.exists():
+        return f"## Active Data Analysis Recipe\nPath: {data_analysis_recipe_path}\n(file not found)"
 
     try:
-        with open(manifest_path, "r") as f:
+        with open(data_analysis_recipe_path, "r") as f:
             raw = yaml.safe_load(f) or {}
     except Exception as exc:
-        return f"## Active Manifest\nPath: {manifest_path}\n(parse error: {exc})"
+        return f"## Active Data Analysis Recipe\nPath: {data_analysis_recipe_path}\n(parse error: {exc})"
 
     lines = [
-        "## Active Manifest",
-        f"Path: {manifest_path}",
+        "## Active Data Analysis Recipe",
+        f"Path: {data_analysis_recipe_path}",
     ]
 
     data_schemas = raw.get("data_schemas", {})
@@ -179,8 +179,8 @@ _TOOL_CALL_PROTOCOL = textwrap.dedent("""\
     - The marker pair <!-- AGENT_TOOL_CALL --> and <!-- /AGENT_TOOL_CALL --> MUST wrap every tool call.
     - The JSON block MUST be valid JSON (not YAML, not pseudocode).
     - Tool calls MUST use the exact tool names listed below.
-    - Do NOT include free-text "here is your manifest, paste this in" output.
-      ALL manifest changes go through the propose_manifest_diff tool — the user clicks Apply.
+    - Do NOT include free-text "here is your data analysis recipe, paste this in" output.
+      ALL data analysis recipe changes go through the propose_data_analysis_recipe_diff tool — the user clicks Apply.
     - You may include conversational text before or after a tool call block.
     - If a tool call JSON is malformed, the server will send you an error turn to retry.
 
@@ -189,15 +189,15 @@ _TOOL_CALL_PROTOCOL = textwrap.dedent("""\
       get_available_components — list registered viz_factory components
       get_field_contract       — get input_fields/output_fields for a schema; args: {"schema_id": "..."}
       get_data_schema_summary  — privacy-preserving column stats; args: {"schema_id": "..."}
-      get_current_manifest_section — read a manifest section; args: {"section_path": "data_schemas.amr_results"}
-      validate_manifest_fragment — validate candidate YAML; args: {"yaml_fragment": "..."}
-      propose_manifest_diff    — THE ONLY PATH to propose changes; args: {"target": "...", "operations": [...]}
+      get_current_data_analysis_recipe_section — read a data analysis recipe section; args: {"section_path": "data_schemas.amr_results"}
+      validate_data_analysis_recipe_fragment — validate candidate YAML; args: {"yaml_fragment": "..."}
+      propose_data_analysis_recipe_diff    — THE ONLY PATH to propose changes; args: {"target": "...", "operations": [...]}
 
-    propose_manifest_diff format:
+    propose_data_analysis_recipe_diff format:
     {
-      "tool": "propose_manifest_diff",
+      "tool": "propose_data_analysis_recipe_diff",
       "arguments": {
-        "target": "config/manifests/pipelines/my_pipeline.yaml",
+        "target": "config/data_analysis_recipes/pipelines/my_pipeline.yaml",
         "operations": [
           {"op": "add", "path": "/data_schemas/amr_results/wrangling/tier1/-",
            "value": {"action": "filter_range", "columns": ["identity"], "min": 90}}
@@ -205,7 +205,7 @@ _TOOL_CALL_PROTOCOL = textwrap.dedent("""\
       }
     }
 
-    IMPORTANT manifest rules (violations cause silent failures in the engine):
+    IMPORTANT data analysis recipe rules (violations cause silent failures in the engine):
     - Always use "action:" key — NEVER shorthand like "- join: {...}" or "- mutate: [...]"
     - Join right-side dataset: "right_ingredient:" not "dataset_id:"
     - Quote "on" in joins: "'on':" (bare `on` is YAML boolean True)
@@ -222,7 +222,7 @@ def build_turn_context(
     *,
     active_workspace: str = "blueprint",
     active_plot_subtab: str | None = None,
-    current_manifest_section: str | None = None,
+    current_data_analysis_recipe_section: str | None = None,
     last_validation_error: dict | None = None,
     row_counts: dict | None = None,
     data_visibility: str = "schema_summary",
@@ -235,8 +235,8 @@ def build_turn_context(
     Args:
         active_workspace: the workspace the user is in ("blueprint", "home", etc.)
         active_plot_subtab: the active plot sub-tab id (if any)
-        current_manifest_section: the manifest section currently visible in the IDE
-        last_validation_error: the most recent validate_manifest_fragment error dict
+        current_data_analysis_recipe_section: the data analysis recipe section currently visible in the IDE
+        last_validation_error: the most recent validate_data_analysis_recipe_fragment error dict
         row_counts: {"t1_anchor": int, "t2_branch": int} from the orchestrator
         data_visibility: "off" | "schema_summary" | "full_sample" (ADR-076 §4)
     """
@@ -246,8 +246,8 @@ def build_turn_context(
     }
     if active_plot_subtab:
         ctx["active_plot_subtab"] = active_plot_subtab
-    if current_manifest_section:
-        ctx["current_manifest_section"] = current_manifest_section
+    if current_data_analysis_recipe_section:
+        ctx["current_data_analysis_recipe_section"] = current_data_analysis_recipe_section
     if last_validation_error:
         ctx["last_validation_error"] = last_validation_error
     if row_counts:

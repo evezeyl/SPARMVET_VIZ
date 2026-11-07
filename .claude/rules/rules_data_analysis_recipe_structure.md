@@ -1,0 +1,284 @@
+---
+trigger: always_on
+deps:
+  provides: [rule:canonical_steps_syntax, rule:directory_taxonomy, rule:analysis_groups_structure, rule:final_contract]
+  documents: [libs/transformer/src/transformer/data_assembler.py, app/handlers/home_theater.py]
+  consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/data_analysis_recipe_structure.yaml, .claude/knowledge/dependency_index.md]
+---
+
+# Data analysis recipe Structural Standard (rules_data_analysis_recipe_structure.md)
+
+**Authority:** Defines the structural organization and explicit layout requirements for all data and plotting data analysis recipes.
+
+## 1. Basename Mirroring Mandate (Keyword & Complexity Trigger)
+
+To maintain modularity and prevent YAML bloat, **high-complexity data analysis recipes** (e.g., Master Pipelines) MUST separate their logical components into individual YAML snippet files via the `!include` constructor.
+
+- **The Rule**: A main data analysis recipe file (e.g., `main.yaml`) MUST organize its `!include` components within a directory matching its exact basename (e.g., a `main/` directory located at same level as `main.yaml`).
+- **Complexity Trigger**: For small or "Single-Task" data analysis recipes, inline logic is permitted to avoid overhead. However, any data analysis recipe exceeding ~150 lines or involving more than 3 data sources MUST transition to the Mirrored Directory standard.
+
+## 2. Directory Taxonomy (Keyword-Driven Organization)
+
+When decomposition is triggered, components must be strictly categorized into subdirectories based on their logical keywords. Specifically:
+
+- `input_fields/`: Defines raw incoming schemas.
+- `wrangling/`: Defines all Transformation (`tier1`, `tier2`) operations for individual data sources.
+- `output_fields/`: Defines the terminal contract schemas.
+- `join/`: Defines the join steps (`steps:` key only) for joining multiple ingredients into a collection. One file per join block (e.g., `AMR_Profile_Joint.yaml`). Top-level data analysis recipe key: `joins:`.
+- `plots/`: Contains visualization specifications for `analysis_groups`. Each file contains a single `spec:` block.
+
+## 3. Structural Authority Reference
+
+The file `assets/template_data_analysis_recipes/1_test_data_ST22_dummy.yaml` serves as the official structural standard.
+
+- Any adaptations made to the `1_test_data_ST22_dummy.yaml` template logic or subdirectory groupings MUST be immediately reflected back into this rulebook to remain the authoritative requirement for the entire system.
+
+## 4. Documentation & Appendix Mandate
+
+- **User Documentation Sync**: Any changes made to the structure of data analysis recipes MUST be immediately reflected in the appropriate library READMEs and user-facing `.qmd` documentation files.
+- **Standalone Appendix Registry**: The YAML data analysis recipe structure must be physically maintained as a standalone reference file located at `docs/appendix/data_analysis_recipe_structure.yaml`. If any changes are implemented regarding how data analysis recipes are used, grouped, or structured, this appendix file must be updated to serve as the external user-facing source of truth.
+
+## 5. Explicit Whitelisting (The Final Contract)
+- **The Protocol**: The `final_contract` block in a pipeline or assembly data analysis recipe is an **Exclusive Whitelist**. 
+- **The Effect**: Any column existing in the dataframe but not explicitly listed in the `final_contract` will be dropped by the Assembler projection guard. 
+- **Developer Rule**: Always check the `final_contract` if a newly created column is missing from the output TSV/Parquet.
+
+## 6. Biological Typing & Discrete Plotting
+- **The Protocol**: To ensure Plotnine correctly renders discrete scales (e.g., for Year, Sequence Type), columns MUST be cast to appropriate types in the assembly steps.
+- **The Rule**: Numeric values used as categories (integer years) MUST be cast to `int` or `string` in the Tier 2 assembly to prevent continuous-scale stretching in visualizations.
+
+---
+
+## 7. Canonical steps syntax (STRICT — No Shorthand)
+
+**ALL** wrangling and assembly steps MUST use the canonical `action:` key format. Shorthand formats (using the action name as the YAML key, e.g., `- join: {...}`, `- mutate: [...]`, `- sort: [...]`) are **NOT supported by the engine** and are **silently skipped**, producing wrong results with no error.
+
+### ✅ Canonical (ONLY valid format)
+
+```yaml
+steps:
+  - action: cast
+    columns: [Year]
+    dtype: String
+  - action: mutate
+    column: predicted_phenotype_clean
+    expression: "pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()"
+  - action: join
+    right_ingredient: metadata_schema
+    'on': sample_id
+    how: inner
+  - action: sort
+    columns: [Year, Source, Country]
+```
+
+### ❌ Forbidden shorthand (silently broken)
+
+```yaml
+# ALL OF THESE ARE FORBIDDEN:
+- mutate:
+    - col: "expr"        # WRONG — engine never sees 'action' key
+- join:
+    dataset_id: foo      # WRONG — must be 'right_ingredient', not 'dataset_id'
+    on: sample_id        # WRONG — 'on' is YAML boolean True, must be quoted 'on'
+- sort:
+    - Year               # WRONG — shorthand, no 'action' key
+```
+
+### Key-specific rules
+
+| Step list concept | Canonical key | FORBIDDEN alias |
+|---|---|---|
+| Join right-side dataset | `right_ingredient` | `dataset_id` |
+| Join column (symmetric) | `'on'` (quoted!) | `on` (unquoted — YAML parses as boolean `True`) |
+| Mutate (one column per step) | `column` + `expression` | List of `{col: expr}` pairs |
+| Cast a column type | `action: cast`, `columns`, `dtype` | `action: mutate` with `pl.col().cast()` inline |
+
+### YAML Boolean Trap
+
+The key `on` is a **YAML reserved word** that is silently parsed as boolean `True`. **Always quote it**: `'on': sample_id`.
+
+**Engine resilience (defensive fallback — not a license to omit quotes):**
+`DataAssembler` (`data_assembler.py:182-185`) recovers from unquoted `on:` via key-chain fallback:
+
+```python
+join_key = (step.get("on") or          # correct (quoted 'on' → string key)
+            step.get("left_on") or
+            step.get("on_column") or
+            step.get(True))             # fallback: unquoted 'on' → boolean True key
+```
+
+`ConfigManager` uses `yaml.SafeLoader` with **no custom resolver** for the boolean trap — prevention is not handled at load time. The fallback in the assembler catches the most common failure mode, but:
+- `parse_join_step` in `join_designer.py` (Blueprint save path) applies the same guard: `step.get("on", step.get(True))`.
+- The **serialization path** (writing a dict back to YAML via `yaml.dump`) will emit `'on': value` correctly only if the key is already the string `"on"` — `yaml.dump` does NOT automatically quote YAML reserved words when the key comes from a Python string. Safe as long as `build_join_step` is used (it emits the string key `"on"`).
+- **Risk for the join Save path** (`_serialise_component_for_save`, not yet implemented): the serializer MUST explicitly quote the `on` key in the output YAML (e.g., via a custom representer or manual string quoting). Failure to do so will produce a data analysis recipe that reloads with `True` as the key; the assembler fallback will recover, but the data analysis recipe will be non-human-readable and flagged as malformed.
+
+**Rule:** Always quote in data analysis recipe YAML (`'on': sample_id`). The fallback is a safety net, not the intended path.
+
+---
+
+## 8. `analysis_groups` Structure (Data analysis recipe-Driven Home Theater)
+
+> **REMOVED (LEGACY-FLAT-PLOTS-1, Phase 34, 2026-05-22):** Root-level `plots:` is now a `ConfigurationError`.
+> ConfigManager raises a fatal error if a data analysis recipe contains `plots:` at the root. Declare all plots inside `analysis_groups:` exclusively.
+> Migration: move all plot specs from root `plots:` into an `analysis_groups:` block.
+> **Tombstone expires:** Phase 36 (delete this block after two phases)
+
+The `analysis_groups` top-level key defines the groups and plots rendered in the Home Theater (Phase 21-B). **This is the ONLY authoring format for plots.**
+
+```yaml
+analysis_groups:
+  <group_id>:                         # Snake_case, no spaces
+    label: "Human-readable group name"
+    plots:
+      <plot_id>:                      # Snake_case; unique across ALL data analysis recipes
+        label: "Human-readable plot name"
+        spec: !include <basename>/<subdir>/<plot_id>.yaml
+```
+
+**Rules:**
+- `plot_id` must be snake_case (ASCII identifier — letters, digits, underscore) and **globally unique across all data analysis recipes** (the app registers `@render.plot` by ID at startup).
+- `group_id` (the dict key) is auto-sanitised to a Shiny-safe internal ID via `_safe_id()`. **Spaces, emoji, and punctuation are allowed** — they're stripped from the internal ID but preserved verbatim in the visible label. (Updates ADR-036: previously hardcoded sanitisation; now general regex sanitisation.)
+- Each `spec: !include` points to a file in `plots/` subdirectory.
+- The included plot file must contain a single `spec:` root key. `ConfigManager` auto-unnests it.
+
+### Visible labels (icons & emoji are encouraged)
+
+The visible tab/group label in the UI comes from this resolution chain:
+
+1. `label:` field if set (recommended — explicit and concise)
+2. `description:` field if set
+3. The dict key (group_id / plot_id) as fallback
+
+All three preserve any unicode, including emoji and CJK. Data Analysis Recipe authors can use any icons in `label:` to make the UI friendly. Example:
+
+```yaml
+analysis_groups:
+  Cat 🐱:                              # Internal id auto-sanitised to "cat"
+    label: "🐱 Cat"                    # ← Tab shows "🐱 Cat"
+    description: The boss's favourites
+    plots:
+      miaou:                           # plot_id stays snake_case (unique-id contract)
+        label: "Miaou 🐱"              # ← Tab shows "Miaou 🐱"
+        spec: !include cat/miaou.yaml
+```
+
+Reserve `description:` for longer prose; use `label:` for short emoji-rich tab text.
+
+### Plot spec file structure (`plots/<plot_id>.yaml`)
+
+> **DEPRECATED (ADR-083, 2026-05-20):** `factory_id` shorthand (e.g. `factory_id: bar_logic`) is removed.
+> Use explicit `geom_*` layers in `layers:` and all aesthetics under `mapping:` (see canonical format below).
+> Engine raises `PipelineError` when `factory_id` is present. Migration: `assets/scripts/migrate_plot_specs.py --apply`.
+> **Removal task:** BP-PLOT-LEGACY-REMOVE-1
+
+Plot specs use a grammar-of-graphics format (ADR-083): explicit `geom_*` layers in `layers:`, all aesthetics in a `mapping:` block.
+
+```yaml
+spec:
+  target_dataset: <join_id>      # Must match a joins key
+  mapping:
+    x: <column>                  # Aesthetic mapping — column must exist in target_dataset
+    fill: <column>               # Optional
+    facet_by: <column>           # Optional — triggers facet_wrap(~<column>)
+  theme: theme_light             # Optional — must be a registered theme component
+  layers:
+    - name: geom_bar             # Primary geom — always first. See registered components.
+      params: {}
+    - name: position_dodge       # For side-by-side bars
+      params: {}
+    - name: labs
+      params:
+        title: "Plot Title"
+        fill: "Legend Label"
+        x: "X Axis Label"
+```
+
+Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_tile`, `geom_boxplot`, `geom_violin`. See `libs/viz_factory/src/viz_factory/geoms/` for the full registered list.
+
+**`position`, `labels`, and `color`/`fill` scales as flat keys are NOT supported.** They must appear as named layers. See registered components in `libs/viz_factory/src/viz_factory/`.
+
+---
+
+## 9. Authorized Data Types for `input_fields` / `output_fields`
+
+| Data analysis recipe type | Polars load type | Polars output contract | When to use |
+|---|---|---|---|
+| `categorical` | `pl.String` (internal) | `pl.Categorical` | **Default** for identifiers and repeating values (`sample_id`, `taxon`, `country`, `gene`). Ensures discrete-scale correctness in Plotnine. |
+| `utf8` | `pl.String` | `pl.String` | High-cardinality text, descriptions, free-form fields where categorization gives no benefit. |
+
+> **REMOVED (LEGACY-TYPE-ALIASES-1, Phase 34, 2026-05-22):** `string` and `character` are no longer accepted type values.
+> The engine raises `TransformationError` when either is encountered in `input_fields`, `output_fields`, or `final_contract`.
+> Migration: replace `type: string` with `type: categorical` (identifiers, repeating values) or `type: utf8` (high-cardinality free text).
+> **Tombstone expires:** Phase 36 (delete this block after two phases)
+
+**Primary key rule:** `sample_id` MUST be `type: categorical`. Using `numeric` for join keys causes type-parity mismatches in `action: join` steps.
+
+---
+
+## 10. `plot_defaults` Block (ADR-081, BP-COLOR-3, VIZFAC-PLOT-CASCADE-1)
+
+The optional `plot_defaults:` top-level key in a data analysis recipe sets defaults applied to every plot in that data analysis recipe. Individual plot specs may override any key. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 spec > L3 optimisation > L2 plot_defaults > L1 built-ins). Full cascade spec: [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md).
+
+### 10a. Allowed keys (authoritative — extend by ADR amendment only)
+
+```yaml
+plot_defaults:
+  # Visual style
+  palette:             nvi_official       # deployment palette name or matplotlib name (see §10b)
+  theme:               theme_light        # registered theme component name (e.g. theme_bw)
+  default_font_family: "Liberation Sans"  # plotnine default font family
+
+  # Layout
+  facet_panel_spacing: 0.1    # float 0–1; plotnine default 0.05; increase for dense facets
+  legend_position:     "right" # "right" | "top" | "bottom" | "left" | "none"
+
+  # Optimisation toggles (reserved — disabled by default except auto_axis_text)
+  optimisation:
+    auto_axis_text: true   # auto-rotate axis labels when text is long (default true)
+    density_jitter: false  # jitter geom_point on dense scatter (default false)
+    panel_spacing:  false  # auto-adjust facet panel spacing (default false)
+    legend_ncol:    false  # auto-set legend column count (default false)
+```
+
+**Unknown key warning:** keys not in the list above emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`. Non-fatal — experimental keys are allowed — but the warning prevents silent typos.
+
+### 10b. `palette` key
+
+- Value must be either a deployment palette name (defined in `config/palettes.yaml`) or a matplotlib palette name (`Blues`, `viridis`, `Set1`, etc.).
+- VizFactory resolves the palette at render time via the cascade resolver.
+- Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none**.
+- Scale injection is skipped when the plot mapping has no `fill` / `color` aesthetic, or when the data analysis recipe already declares a `scale_fill_*` / `scale_color_*` layer.
+
+### 10c. `theme` key
+
+- Value must be a registered theme component name. Examples: `theme_bw`, `theme_light`, `theme_minimal`, `theme_dashboard`.
+- Per-plot `theme:` in the spec overrides this default (L4 wins over L2).
+
+### Built-in palettes (always available, no `config/palettes.yaml` required)
+
+| Name | Colors |
+|---|---|
+| `sparmvet_brand` | `#345beb`, `#10a395`, `#ffc107`, `#d62828`, `#6c757d`, `#6a4c93` |
+
+Deployment palettes are defined in `config/palettes.yaml` and loaded by `bootloader.get_palettes()` at startup. See that file's header for the format. Agents MUST NOT assume a deployment palette name exists unless `config/palettes.yaml` has been inspected.
+
+---
+
+## 11. Data analysis recipe Load Errors (ADR-087)
+
+> **Implementation status:** target behaviour. `ConfigManager` still exits on a data analysis recipe error until the fork issue for data analysis recipe error handling is done.
+
+- A problem in a data analysis recipe (missing `analysis_groups:`, missing `!include` file, bad step list shape) raises `DeploymentFailure` carrying the same `DeploymentError` records and operator-readable block as before (ADR-078). It never calls `sys.exit`.
+- Code that loads a data analysis recipe catches it, shows the data analysis recipe name, location and fix to the user (notification/alerts panel), leaves that data analysis recipe out of the project list, and keeps running.
+- Command-line scripts and audits catch it, print the block and exit non-zero themselves.
+- Zero valid data analysis recipes is a valid state: the app starts with an empty state, and `default_data_analysis_recipe` in the deployment is optional.
+- Deployment configuration errors (deployment, connector, app features file) stay fatal at startup (ADR-077).
+- To check a data analysis recipe without loading it into the app, use `validate_data_analysis_recipe()` (`app/modules/data_analysis_recipe_validator.py`).
+- `validate_data_analysis_recipe_data(path, raw_data_dir)` (same module) also reads the data files and reports a dataset that cannot be loaded and an `output_fields` entry that matches no column after tier-1 wrangling, with a "did you mean" hint (issue #18). The engine does not apply `output_fields` of a data schema, so a wrong name there is otherwise silent. `app/tests/test_data_analysis_recipe_data_check.py` runs it on every shipped data analysis recipe.
+- A dataset that the requested collection needs and that cannot be loaded makes `materialize_tier1` raise `IngestionError` naming the dataset and the reason. Before issue #18 it was dropped and the join steps that used it were skipped with a console line.
+
+---
+
+## 12. The `id:` key equals the file name (ADR-092)
+
+The file name without `.yaml` is the data analysis recipe id (selector, cache keys, sessions, export). The top-level `id:` key of the file marks the root of a data analysis recipe and is shown in the Pipeline Audit panel, so it MUST equal the file name. `validate_data_analysis_recipe()` reports a difference; `app/tests/test_data_analysis_recipe_validator.py` checks every shipped data analysis recipe and template. There is no top-level `type:` key (removed, issue evezeyl/SPARMVET_VIZ#29); describe the data analysis recipe under `info:`.

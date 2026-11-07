@@ -11,7 +11,7 @@ aliases:
 
 
 
-For the `input_fields` (and `output_fields`) in a manifest, the following data types are authorized for representing string-based data:
+For the `input_fields` (and `output_fields`) in a data analysis recipe, the following data types are authorized for representing string-based data:
 
 ### 1. `categorical` (Recommended)
 
@@ -31,9 +31,9 @@ This maps directly to a raw Polars `pl.String` (formerly `Utf8`).
 
 ### Internal Mapping Summary
 
-Based on the `DataIngestor` and `debug_wrangler.py` logic, the system translates your manifest types as follows:
+Based on the `DataIngestor` and `debug_wrangler.py` logic, the system translates your data analysis recipe types as follows:
 
-|Manifest Type|Polars Interpretation (Ingestion)|Polars Type (Output Contract)|
+|Data analysis recipe Type|Polars Interpretation (Ingestion)|Polars Type (Output Contract)|
 |---|---|---|
 |**`categorical`**|`pl.String` (Internal Load)|**`pl.Categorical`**|
 |**`string`**|`pl.String`|**`pl.String`**|

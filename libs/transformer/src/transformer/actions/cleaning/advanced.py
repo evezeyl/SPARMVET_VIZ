@@ -8,8 +8,8 @@ from utils.errors import TransformationError
 # @deps
 # provides: action:split_and_explode, action:derive_categories, action:split_column_to_parts, action:divide_columns
 # consumes: libs/utils/src/utils/errors.py (TransformationError)
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_persona_bioscientist.md#8
-# doc: .claude/rules/rules_persona_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-078)
+# consumed_by: any YAML data analysis recipe using these action names, .claude/rules/rules_agent_role_bioscientist.md#8
+# doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-078)
 # @end_deps
 
 

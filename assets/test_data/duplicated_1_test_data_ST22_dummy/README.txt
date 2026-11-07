@@ -1,20 +1,20 @@
 Purpose
 -------
 This directory is a duplicate of 1_test_data_ST22_dummy, used exclusively to test
-the production connector path (prefer_discovery mode).
+the production connector path (data_lookup: by_dataset_id).
 
 In production, a pipeline (Galaxy, IRIDA) writes output files to a known location
 and the connector provides that location as raw_data_dir. The ingestor discovers
-files by schema ID name — it does NOT use source.path entries from the manifest.
+files by schema ID name — it does NOT use source.path entries from the data analysis recipe.
 
 This directory simulates "pipeline output landed here" by using clean filenames
 (schema ID as filename, no date suffix) so the ingestor's glob discovery works
 directly. The 1_test_data_ST22_dummy directory keeps the original timestamped
-filenames and source.path entries for development/manifest testing.
+filenames and source.path entries for development/data_analysis_recipe testing.
 
 Naming convention
 -----------------
-Files are named exactly as their schema ID in the manifest (+ .tsv), so that
+Files are named exactly as their schema ID in the data analysis recipe (+ .tsv), so that
 ingestor.find_file(schema_id) finds them by exact or glob match:
 
   Summary.tsv              ← schema: Summary
@@ -27,7 +27,7 @@ ingestor.find_file(schema_id) finds them by exact or glob match:
   ResFinder.tsv            ← schema: ResFinder
   MLST_results.tsv         ← schema: MLST  (glob *MLST*.tsv finds this)
   metadata_schema.tsv      ← schema: metadata_schema
-  PlasmidFinder.tsv        ← not in current ST22 manifest; kept for future use
+  PlasmidFinder.tsv        ← not in current ST22 data analysis recipe; kept for future use
 
 Schemas not represented (VirulenceFinder, APEC_STEC_virulence_genes) will fail
 gracefully with a warning — those schemas depend on external reference data not
@@ -35,16 +35,16 @@ produced by the local pipeline.
 
 Launch commands (see EVE_WORK/notes/cheatsheat.md)
 ---------------------------------------------------
-Used with pipeline_test_profile.yaml (prefer_discovery: true, raw_data → this dir):
+Used with pipeline_test.yaml (data_lookup: by_dataset_id, raw_data → this dir):
 
-  pipeline-static persona:
-    SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
-    SPARMVET_PERSONA=$ROOT/config/ui/templates/pipeline-static_template.yaml \
+  pipeline-static app features:
+    SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
+    SPARMVET_APP_FEATURES=$ROOT/config/app_features/pipeline-static.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
-  pipeline-exploration-simple persona:
-    SPARMVET_PROFILE=$ROOT/config/deployment/pipeline_test/pipeline_test_profile.yaml \
-    SPARMVET_PERSONA=$ROOT/config/ui/templates/pipeline-exploration-simple_template.yaml \
+  pipeline-exploration-simple app features:
+    SPARMVET_DEPLOYMENT=$ROOT/config/deployment/pipeline_test/pipeline_test.yaml \
+    SPARMVET_APP_FEATURES=$ROOT/config/app_features/pipeline-exploration-simple.yaml \
       $ROOT/.venv/bin/python -m shiny run $ROOT/app/src/main.py --port 8001
 
 Origin

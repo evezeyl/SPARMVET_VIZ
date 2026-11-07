@@ -10,11 +10,11 @@
 ## Absolute Prohibitions
 
 1. **NEVER import Shiny in `libs/test_lab/` or `libs/id_reconciliation/`.** Headless libs only. Shiny wiring belongs in `app/handlers/` (Two-Category Law, ADR-045).
-2. **NEVER load `synthetic_data_config.yaml` via `ConfigManager.load()`.** Synthetic configs use `AquaSynthesizer` reader only. Root key `synthetic_data_config:` is NOT a pipeline manifest.
+2. **NEVER load `synthetic_data_config.yaml` via `ConfigManager.load()`.** Synthetic configs use `AquaSynthesizer` reader only. Root key `synthetic_data_config:` is NOT a pipeline data analysis recipe.
 3. **NEVER generate composite-key join logic from TEST_LAB.** Single-key only (`on: sample_id`). Composite keys (`on: [col1, col2]`) belong in BLUEPRINT Join Designer.
-4. **NEVER generate `analysis_groups:`, plot specs, or analysis wrangling from ManifestBootstrapper.** Boilerplate scope only: structure + inferred types + PK hints + single-key cleaning recipes.
+4. **NEVER generate `analysis_groups:`, plot specs, or analysis wrangling from DataAnalysisRecipeBootstrapper.** Boilerplate scope only: structure + inferred types + PK hints + single-key cleaning id transformations.
 5. **NEVER import a peer domain lib inside `libs/id_reconciliation/`.** Only stdlib + polars + utils (Tier 1) + rapidfuzz. No transformer, blueprint_arch, viz_factory, ingestion, connector.
-6. **NEVER persist T3-style ghost state in TEST_LAB.** Tools are stateless. Only named YAML files (recipes, scenarios) explicitly saved by the user persist. No ghost saves, no `_autosave_*.json`.
+6. **NEVER persist T3-style ghost state in TEST_LAB.** Tools are stateless. Only named YAML files (id transformations, scenarios) explicitly saved by the user persist. No ghost saves, no `_autosave_*.json`.
 7. **NEVER mount TEST_LAB UI without `test_lab_enabled: true`.** Positive inclusion (ADR-071) — TEST_LAB panel must not exist in the DOM unless the flag is active.
 8. **NEVER use `sys.path.append/insert` in `libs/test_lab/` or `libs/id_reconciliation/` tests.** All imports resolve via `pip install -e` (ADR-011/016). Path hacking is unconditionally PROHIBITED.
 
@@ -24,9 +24,9 @@
 
 TEST_LAB is a **toolbox**, not a workspace with session continuity.
 
-- Each tool (ID Reconciliation, Manifest Scaffolding, AquaSynthesizer, Anonymisation, Reformatter) runs to completion and returns a downloadable artifact.
+- Each tool (ID Reconciliation, Data Analysis Recipe Scaffolding, AquaSynthesizer, Anonymisation, Reformatter) runs to completion and returns a downloadable artifact.
 - Between runs, tools hold no state. Closing a tool panel resets it to empty state.
-- **Named files only persist** — reconciliation recipes and named scenario YAMLs saved explicitly by the user.
+- **Named files only persist** — id transformation and named scenario YAMLs saved explicitly by the user.
 - Unsaved results (match tables, preview rows, progress messages) are in-memory and lost on panel close or browser refresh.
 
 **Implementation rule:** TEST_LAB handlers MUST NOT create `reactive.Value` stores that accumulate state beyond the current tool interaction. A tool's reactive graph resolves from inputs to outputs with no side effects outside the panel.
@@ -67,14 +67,14 @@ All ID pattern primitives live in **`libs/utils/src/utils/id_patterns.py`**, not
 
 Only these names constitute the public API (exported from `__init__.py`):
 
-- Classes: `IDReconciliationEngine`, `IDPair`, `MatchResult`, `TransformationRecipe`
+- Classes: `IDReconciliationEngine`, `IDPair`, `MatchResult`, `IdTransformation`
 - Classes (from `utils.id_patterns`, re-exported): `PatternSuggestion`
 - Functions: `detect_many_to_many`, `format_match_table`, `apply_recode_step`
 
 **Canonical import for `PatternSuggestion`:** `from utils.id_patterns import PatternSuggestion`
 It is also available via `from id_reconciliation import PatternSuggestion` (re-exported for convenience), but code outside `libs/id_reconciliation/` should prefer the canonical utils path.
 
-Internal sub-modules (`core.py`, `matcher.py`, `pattern_detector.py`, `recipe.py`, `data_structures.py`) are implementation details. External callers MUST import from the public API only.
+Internal sub-modules (`core.py`, `matcher.py`, `pattern_detector.py`, `steps.py`, `data_structures.py`) are implementation details. External callers MUST import from the public API only.
 
 ---
 
@@ -82,14 +82,14 @@ Internal sub-modules (`core.py`, `matcher.py`, `pattern_detector.py`, `recipe.py
 
 ### 3a. Root key discipline
 
-A file is a **pipeline manifest** if and only if its root key is `id:` with a `data_schemas:` block. Synthetic data configs use root key `synthetic_data_config:`. These are mutually exclusive formats — a file cannot be both.
+A file is a **pipeline data analysis recipe** if and only if its root key is `id:` with a `data_schemas:` block. Synthetic data configs use root key `synthetic_data_config:`. These are mutually exclusive formats — a file cannot be both.
 
 ```yaml
-# CORRECT — pipeline manifest
+# CORRECT — pipeline data analysis recipe
 id: my_pipeline
 data_schemas: ...
 
-# CORRECT — synthetic data config (NOT a pipeline manifest)
+# CORRECT — synthetic data config (NOT a pipeline data analysis recipe)
 synthetic_data_config:
   metadata: ...
   columns: ...
@@ -102,7 +102,7 @@ A file with both `synthetic_data_config:` and `id:` / `data_schemas:` keys is a 
 Every file generated by `AquaSynthesizer.generate()` MUST begin with:
 
 ```
-# NOT a pipeline manifest. NOT processed by the SPARMVET data engine.
+# NOT a pipeline data analysis recipe. NOT processed by the SPARMVET data engine.
 # Generated by AquaSynthesizer. Load with AquaSynthesizer.load_config() only.
 synthetic_data_config:
 ```
@@ -111,7 +111,7 @@ These two comment lines must appear before any YAML content. Removing them is a 
 
 ### 3c. Loader isolation
 
-`AquaSynthesizer` uses its own YAML reader. It MUST NOT call `ConfigManager.load()`, `ingestion.IngestorFactory`, or any data pipeline component. The synthetic config schema is intentionally different from the manifest schema.
+`AquaSynthesizer` uses its own YAML reader. It MUST NOT call `ConfigManager.load()`, `ingestion.IngestorFactory`, or any data pipeline component. The synthetic config schema is intentionally different from the data analysis recipe schema.
 
 ### 3d. Named scenarios
 
@@ -119,9 +119,9 @@ Named error scenarios (`libs/test_lab/scenarios/<name>.yaml`) use root key `synt
 
 ---
 
-## 4. Manifest Bootstrapper Output Scope (ADR-084 §6)
+## 4. Data analysis recipe Bootstrapper Output Scope (ADR-084 §6)
 
-The Manifest Bootstrapper generates **boilerplate only**.
+The Data analysis recipe Bootstrapper generates **boilerplate only**.
 
 ### 4a. What the Bootstrapper generates
 
@@ -134,8 +134,8 @@ The Manifest Bootstrapper generates **boilerplate only**.
 | `wrangling: tier1: []` / `tier2: []` stubs | Yes | Empty stubs only |
 | `output_fields: {}` stub | Yes | Empty — user fills |
 | PK candidate hints as YAML comments | Yes | e.g. `# Candidate PK: sample_id (100% unique)` |
-| Single-key cleaning steps | Yes | Only if `id_cleaning_recipes` param provided |
-| `join_manifests: {}` stub | Yes | Empty stub |
+| Single-key cleaning steps | Yes | Only if `id_cleaning_steps` param provided |
+| `joins: {}` stub | Yes | Empty stub |
 | `metadata_schema:` stub | Conditional | Only if a metadata file was actually uploaded |
 | `analysis_groups:` | No | User's responsibility |
 | Analysis wrangling | No | User's responsibility |
@@ -144,15 +144,15 @@ The Manifest Bootstrapper generates **boilerplate only**.
 
 ### 4b. Known bugs — fix in TL-BOOTSTRAP-FIX-1 before any TEST_LAB integration
 
-1. Writes `"plotting"` key instead of `"analysis_groups"` — produces silently broken manifests.
+1. Writes `"plotting"` key instead of `"analysis_groups"` — produces silently broken data analysis recipes.
 2. Hardcodes `metadata_schema:` entry regardless of what was uploaded.
-3. Missing `join_manifests: {}` stub — BLUEPRINT validation fails without it.
+3. Missing `joins: {}` stub — BLUEPRINT validation fails without it.
 
 Do not add new Bootstrapper features until TL-BOOTSTRAP-FIX-1 is complete.
 
-### 4c. ID cleaning recipe injection
+### 4c. ID cleaning id transformation injection
 
-When called with `id_cleaning_recipes` param, the Bootstrapper may inject steps into `tier1:` wrangling. Valid actions: `strip_whitespace`, `cast` (String only), `regex_replace`. No other wrangling is injected by the Bootstrapper.
+When called with `id_cleaning_steps` param, the Bootstrapper may inject steps into `tier1:` wrangling. Valid actions: `strip_whitespace`, `cast` (String only), `regex_replace`. No other wrangling is injected by the Bootstrapper.
 
 ---
 
@@ -160,7 +160,7 @@ When called with `id_cleaning_recipes` param, the Bootstrapper may inject steps 
 
 TEST_LAB's ID Reconciliation tool handles **one key column per pairwise matching run**. This is the scope boundary between TEST_LAB and BLUEPRINT.
 
-**What TEST_LAB handles:** two files, one key column each; exact match detection; pattern-based transformation suggestion (prefix/suffix removal, case normalization, delimiter extraction); fuzzy matching for remaining unmatched IDs; `TransformationRecipe` YAML generation.
+**What TEST_LAB handles:** two files, one key column each; exact match detection; pattern-based transformation suggestion (prefix/suffix removal, case normalization, delimiter extraction); fuzzy matching for remaining unmatched IDs; `IdTransformation` YAML generation.
 
 **What TEST_LAB does NOT handle:**
 
@@ -169,7 +169,7 @@ TEST_LAB's ID Reconciliation tool handles **one key column per pairwise matching
 | Composite join keys (`on: [col1, col2]`) | BLUEPRINT Join Designer |
 | Three-way or n-way matching | Run pairwise in TEST_LAB, combine in BLUEPRINT |
 | Join strategy (inner/left/outer) | BLUEPRINT Join Designer |
-| Post-join wrangling | BLUEPRINT / manifest `tier2:` |
+| Post-join wrangling | BLUEPRINT / data analysis recipe `tier2:` |
 
 Adding composite-key support to `IDReconciliationEngine` or the TEST_LAB UI is a scope violation. File an Enhancement Request task instead.
 
@@ -184,15 +184,15 @@ Adding composite-key support to `IDReconciliationEngine` or the TEST_LAB UI is a
 
 `test_lab_studio.py` (under `app/modules/`) is a module-level orchestrator class analogous to `WrangleStudio`. It may hold Python state but MUST NOT import `shiny.reactive` or register `@render.*` functions. Those belong in `test_lab_handlers.py`.
 
-`libs/test_lab/` classes (`TestLabSession`, `ManifestBootstrapper`, `AquaSynthesizer`, `Anonymiser`, `DataReformatter`) must not reference Shiny types, including in `TYPE_CHECKING` blocks.
+`libs/test_lab/` classes (`TestLabSession`, `DataAnalysisRecipeBootstrapper`, `AquaSynthesizer`, `Anonymiser`, `DataReformatter`) must not reference Shiny types, including in `TYPE_CHECKING` blocks.
 
 ---
 
-## 7. Persona Gate: `test_lab_enabled` (ADR-071, ADR-084 §7)
+## 7. App features Gate: `test_lab_enabled` (ADR-071, ADR-084 §7)
 
-TEST_LAB is a developer-persona feature gated by `test_lab_enabled`.
+TEST_LAB is a developer-app features feature gated by `test_lab_enabled`.
 
-**Flag values:** pipeline-static=false, pipeline-exploration-simple=false, pipeline-exploration-advanced=false, project-independent=false, **developer=true**, **qa=true**.
+**Flag values:** pipeline-static=false, pipeline-exploration-simple=false, pipeline-exploration-advanced=false, standalone=false, **developer=true**, **qa=true**.
 
 The TEST_LAB nav pill and all panel DOM nodes MUST be conditionally created:
 
@@ -205,7 +205,7 @@ if bootloader.is_enabled("test_lab_enabled"):
 yield ui.nav_panel("Test Lab", ..., style="display:none")
 ```
 
-Code MUST NOT check `persona in ("developer", "qa")`. Standard anti-pattern prohibition from `rules_persona_feature_flags.md`.
+Code MUST NOT check `app features in ("developer", "qa")`. Standard anti-pattern prohibition from `rules_app_features_flags.md`.
 
 ---
 
@@ -224,13 +224,13 @@ libs/id_reconciliation/
     core.py                   # IDReconciliationEngine orchestrator
     matcher.py                # exact / fuzzy / pattern matching engines
     pattern_detector.py       # thin re-export shim → utils.id_patterns
-    recipe.py                 # TransformationRecipe YAML persistence
-    data_structures.py        # IDPair, MatchResult, TransformationRecipe
+    id_transformation.py                 # IdTransformation YAML persistence
+    data_structures.py        # IDPair, MatchResult, IdTransformation
   tests/
     conftest.py
     test_core.py
     test_matcher.py
-    test_recipe.py
+    test_transformation.py
 
 libs/test_lab/
   pyproject.toml              # polars, utils, id_reconciliation, ingestion
@@ -239,7 +239,7 @@ libs/test_lab/
   src/test_lab/
     __init__.py
     session.py                # TestLabSession (stateless per-interaction coordinator)
-    bootstrapper.py           # ManifestBootstrapper
+    bootstrapper.py           # DataAnalysisRecipeBootstrapper
     synthesizer.py            # AquaSynthesizer
     anonymiser.py             # Anonymiser
     reformatter.py            # DataReformatter
@@ -258,7 +258,7 @@ libs/test_lab/
 TEST_LAB libraries follow the standard protocol (rules_verification_testing.md §1-3). Additions:
 
 - Synthetic data test outputs go to `tmpAI/test_lab/` (agent scratch), never `tmp/test_lab/` (reserved for @verify).
-- Recipe persistence tests use system `/tmp/` for intermediate files — not project tmp directories.
+- Id transformation persistence tests use system `/tmp/` for intermediate files — not project tmp directories.
 - **Named scenario roundtrip test** is mandatory before TL-SYNTH-1 is marked done: save a scenario YAML, reload it, assert all fields match.
 - **Bootstrapper correctness gate:** generated boilerplate MUST pass `ConfigManager.load()` without errors. Required for TL-SCAFFOLD-1 to be done.
 
@@ -280,10 +280,10 @@ grep -rn "from transformer\|from blueprint_arch\|from viz_factory\|from ingestio
 grep -rn "ConfigManager" libs/test_lab/src/ --include="*.py"
 
 # All synthetic config files have mandatory header
-grep -rL "NOT a pipeline manifest" libs/test_lab/scenarios/ 2>/dev/null
+grep -rL "NOT a pipeline data analysis recipe" libs/test_lab/scenarios/ 2>/dev/null
 
-# No persona name checks in test_lab_handlers
-grep -rn "persona.*developer\|persona.*qa" app/handlers/test_lab_handlers.py 2>/dev/null
+# No app features name checks in test_lab_handlers
+grep -rn "app features.*developer\|app features.*qa" app/handlers/test_lab_handlers.py 2>/dev/null
 
 # No sys.path in test files
 grep -rn "sys\.path" libs/test_lab/tests/ libs/id_reconciliation/tests/ 2>/dev/null

@@ -25,7 +25,7 @@ So app2 is not a workaround — it is the designed-for case. The shared product 
 
 ```
 libs/ingestion · libs/transformer · libs/viz_factory · libs/connector · libs/blueprint_arch · libs/utils
-        (the engine + render + manifest contract — frontend-agnostic)
+        (the engine + render + data analysis recipe contract — frontend-agnostic)
               │                                   │
           app/ (app1)                         app2 (NEW)
        workbench / producer                viewer / dashboard / consumer
@@ -41,14 +41,14 @@ The two visions serve **different users with different mental models**:
 |---|---|---|
 | Role | Workbench / producer | Viewer / dashboard / consumer |
 | User | Bioinformatician building pipelines | Epidemiologist / surveillance team / decision-maker |
-| Activity | Wrangle, audit (T3), author manifests, explore | Read pre-built pathogen dashboards; explore interactively |
+| Activity | Wrangle, audit (T3), author data analysis recipes, explore | Read pre-built pathogen dashboards; explore interactively |
 | Journey | TEST_LAB → BLUEPRINT → GALLERY → HOME (`developer_workflow.md`) | Open a dashboard, interact, export/share |
 | Interactivity | L1 server-reactive (filter→re-render) | L2 client-live (linked selection) — the JS fork |
-| Personas | Full persona/flag system, T3 audit | Likely simpler (or none) — mostly read/explore |
+| App features files | Full app features/flag system, T3 audit | Likely simpler (or none) — mostly read/explore |
 
 **Field precedent:** this is the NextStrain model — *augur* (the pipeline) and *auspice* (the interactive viewer) are separate tools sharing a data contract. Microreact is similarly a viewer, not a pipeline builder. Splitting producer from consumer is the norm in genomic surveillance, not the exception.
 
-The current app's whole architecture (persona masking, T3 audit gatekeeper, tier toggles, manifest authoring) is **producer machinery**. A consumer dashboard does not want most of it — bolting HOME2 into app1 means carrying all that weight for an audience that doesn't need it.
+The current app's whole architecture (app features masking, T3 audit gatekeeper, tier toggles, data analysis recipe authoring) is **producer machinery**. A consumer dashboard does not want most of it — bolting HOME2 into app1 means carrying all that weight for an audience that doesn't need it.
 
 ---
 
@@ -57,10 +57,10 @@ The current app's whole architecture (persona masking, T3 audit gatekeeper, tier
 | Factor | HOME2 (space in app1) | app2 (separate app) |
 |---|---|---|
 | Reuses libs | yes | yes |
-| Reuses app1 wiring (bootloader, personas, sidebar registry) | yes | no (re-implements the slim parts it needs) |
-| Fights existing producer machinery | yes (persona masking, reactive shell, T3) | no — clean slate |
+| Reuses app1 wiring (bootloader, app features files, sidebar registry) | yes | no (re-implements the slim parts it needs) |
+| Fights existing producer machinery | yes (app features masking, reactive shell, T3) | no — clean slate |
 | Framework freedom (pick best for interactive dashboards) | constrained to app1's Shiny shell | free to choose |
-| Deployment independence (different audience/target) | one artifact, shared deploy | independent deploy, own profile |
+| Deployment independence (different audience/target) | one artifact, shared deploy | independent deploy, own deployment |
 | Maintenance | one app | two apps (shared-lib contract must stay stable) |
 | Best when… | dashboard is a producer convenience inside the workbench | dashboard is a distinct product for a distinct audience |
 
@@ -76,10 +76,10 @@ These are not exclusive: HOME2 could be a thin producer-side preview; app2 the p
 |---|---|---|
 | Ingestion, Tier 1/2/3 assembly, contracts | ✅ all | — |
 | VizFactory (render backends: plotnine / R / geom_polygon) | ✅ all | render-backend dispatch reuse |
-| Manifest grammar + `dashboard:` block | ✅ | dashboard layout consumer |
-| Path authority / deployment profiles | pattern reusable (`connector`) | own profile set |
+| Data analysis recipe grammar + `dashboard:` block | ✅ | dashboard layout consumer |
+| Path authority / deployments | pattern reusable (`connector`) | own deployment set |
 | **Frontend shell** | — | **the new app — layout, panel grid, interactivity** |
-| Persona / T3 audit / authoring | — | mostly **not needed** (simpler gating) |
+| App features / T3 audit / authoring | — | mostly **not needed** (simpler gating) |
 
 The engine and render layers are 100% reused. Only the **frontend** is new — exactly Eve's instinct ("leverage existing libraries, build new UI only").
 
@@ -94,7 +94,7 @@ The engine and render layers are 100% reused. Only the **frontend** is new — e
 | Quarto / Observable dashboards | limited L2 | report-style static-ish dashboards | good for export-quality, weak for live linking |
 | Panel / Dash / Streamlit | L2 | quick dashboards | new framework to maintain |
 
-**Lean for a first app2:** Shiny for Python + JS widgets — keeps one framework and reuses bootloader/profile patterns, while getting client-side interactivity (Leaflet maps, Plotly charts, Cytoscape/phylo trees). Move to a JS+FastAPI frontend only if a polished public surveillance viewer is the actual requirement.
+**Lean for a first app2:** Shiny for Python + JS widgets — keeps one framework and reuses bootloader/deployment patterns, while getting client-side interactivity (Leaflet maps, Plotly charts, Cytoscape/phylo trees). Move to a JS+FastAPI frontend only if a polished public surveillance viewer is the actual requirement.
 
 ---
 
@@ -102,8 +102,8 @@ The engine and render layers are 100% reused. Only the **frontend** is new — e
 
 Producer and consumer apps deploy differently:
 
-- **app1 (workbench):** Galaxy/IRIDA interactive tool, developer/scientist personas, behind institutional auth.
-- **app2 (viewer):** could be a standalone web deployment — institutional or public-facing surveillance dashboard, read-mostly, simpler/no persona system, its own deployment profile.
+- **app1 (workbench):** Galaxy/IRIDA interactive tool, developer/scientist app features files, behind institutional auth.
+- **app2 (viewer):** could be a standalone web deployment — institutional or public-facing surveillance dashboard, read-mostly, simpler/no app features system, its own deployment.
 
 Different audiences, different security postures, different uptime needs. One monolith serving both is awkward; two frontends on a shared engine is clean.
 
@@ -111,8 +111,8 @@ Different audiences, different security postures, different uptime needs. One mo
 
 ## 8. Risks / constraints
 
-- **Two apps to maintain.** The shared-lib contract (manifest grammar, VizFactory API) must stay stable — version the libraries and treat their public APIs as contracts. (The `@deps` system already tracks cross-lib coupling.)
-- **Duplicated app-level concerns** (config, deployment profiles, gating). Mitigate by extracting genuinely shared app-level helpers into a small lib (e.g. `connector` already holds path authority) rather than copy-paste.
+- **Two apps to maintain.** The shared-lib contract (data analysis recipe grammar, VizFactory API) must stay stable — version the libraries and treat their public APIs as contracts. (The `@deps` system already tracks cross-lib coupling.)
+- **Duplicated app-level concerns** (config, deployments, gating). Mitigate by extracting genuinely shared app-level helpers into a small lib (e.g. `connector` already holds path authority) rather than copy-paste.
 - **The interactive (L2/JS) render path is new regardless** — app2 doesn't avoid it, it's the natural home for it (see `composite_dashboard_home2.md` §10). app2 decouples that JS investment from the producer app's stable server-reactive model.
 - **Scope creep** — app2 must stay a *viewer*; the moment it grows authoring/wrangling it is duplicating app1. Keep the producer/consumer line crisp.
 
@@ -120,7 +120,7 @@ Different audiences, different security postures, different uptime needs. One mo
 
 ## 9. How this composes the whole exploration
 
-- The **engine + manifest + shared-key** trunk serves app1, HOME2, and app2 alike — build/keep it solid.
+- The **engine + data analysis recipe + shared-key** trunk serves app1, HOME2, and app2 alike — build/keep it solid.
 - **R backend** (`r_backend.md`) and **ggtree** (`bioinformatics_viz.md`) produce static panels usable in *either* frontend.
 - The **interactive (JS) roadmap** (`composite_dashboard_home2.md` §10) finds its cleanest home in **app2**, away from app1's producer machinery.
 - **app2 is a way to satisfy "different needs/deployments" without overloading app1** — which is precisely the Clear Lines payoff.
@@ -146,10 +146,10 @@ All three honor the two-tier dependency model. The current state is **monorepo +
 ## 11. Open questions (survey-informed)
 
 1. Is the dashboard audience the **same** producers (→ HOME2) or a **different** consumer group (→ app2)? *The survey's most decision-relevant question.*
-2. Does app2 need authoring at all, or is it strictly a viewer fed by app1-produced manifests/data?
+2. Does app2 need authoring at all, or is it strictly a viewer fed by app1-produced data_analysis_recipes/data?
 3. Framework: Shiny+widgets (continuity) vs JS+FastAPI (polished public viewer)?
 4. Deployment target(s) for app2 — institutional intranet, public, Galaxy/IRIDA embed?
-5. Gating — does app2 need any persona system, or just per-dashboard access control?
-6. Do app1 and app2 share a deployment profile mechanism, or fully separate?
+5. Gating — does app2 need any app features system, or just per-dashboard access control?
+6. Do app1 and app2 share a deployment mechanism, or fully separate?
 
 **Nothing scheduled.** Decision waits on Eve's organizational needs survey — the producer-vs-consumer audience split is the pivot.

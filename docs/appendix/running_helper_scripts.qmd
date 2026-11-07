@@ -1,7 +1,7 @@
 # User-Facing Helper Scripts
 # Authority: ADR-031, ADR-032
 
-The `assets/scripts/` directory contains helper scripts for **users and data managers** — people who work with manifests and data but do not maintain the libraries themselves. These scripts help you create, verify, and convert manifests, set up test deployments, and generate demo data.
+The `assets/scripts/` directory contains helper scripts for **users and data managers** — people who work with data analysis recipes and data but do not maintain the libraries themselves. These scripts help you create, verify, and convert data analysis recipes, set up test deployments, and generate demo data.
 
 ::: {.callout-important}
 ### Script Location Policy (ADR-032)
@@ -19,11 +19,11 @@ PYTHON="./.venv/bin/python"
 
 ---
 
-## 1. Normalize Manifest Fields
+## 1. Normalize Data Analysis Recipe Fields
 
-**Script:** `assets/scripts/normalize_manifest_fields.py`
+**Script:** `assets/scripts/normalize_data_analysis_recipe_fields.py`
 
-Sanitizes YAML manifests to comply with the **ADR-041 Rich Dictionary** standard. Detects and auto-fixes:
+Sanitizes YAML data analysis recipes to comply with the **ADR-041 Rich Dictionary** standard. Detects and auto-fixes:
 
 - Legacy type names (`utf8` → `categorical`, `string` → `categorical`, `float64` → `numeric`, etc.)
 - Missing Rich Dict keys (`original_name`, `type`, `label`) — fills with safe defaults
@@ -32,81 +32,81 @@ Sanitizes YAML manifests to comply with the **ADR-041 Rich Dictionary** standard
 - Empty `final_contract` list (`final_contract: []` → `final_contract: {}`)
 
 ```bash
-# Dry-run a single manifest (inspect only — no files written)
-./.venv/bin/python assets/scripts/normalize_manifest_fields.py \
-    --manifest config/manifests/pipelines/my_pipeline.yaml
+# Dry-run a single data analysis recipe (inspect only — no files written)
+./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
+    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml
 
-# Apply fixes to a single manifest
-./.venv/bin/python assets/scripts/normalize_manifest_fields.py \
-    --manifest config/manifests/pipelines/my_pipeline.yaml --write
+# Apply fixes to a single data analysis recipe
+./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
+    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml --write
 
-# Scan and fix all manifests in a directory (recursive)
-./.venv/bin/python assets/scripts/normalize_manifest_fields.py \
-    --dir config/manifests/ --write
+# Scan and fix all data analysis recipes in a directory (recursive)
+./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
+    --dir config/data_analysis_recipes/ --write
 
 # Skip backup files (default creates a .bak copy before writing)
-./.venv/bin/python assets/scripts/normalize_manifest_fields.py \
-    --manifest my_manifest.yaml --write --no-backup
+./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
+    --data-analysis-recipe my_data_analysis_recipe.yaml --write --no-backup
 ```
 
 **Arguments:**
 
 | Argument | Description |
 |---|---|
-| `--manifest FILE` | Single manifest to inspect/normalize (mutually exclusive with `--dir`) |
+| `--data-analysis-recipe FILE` | Single data analysis recipe to inspect/normalize (mutually exclusive with `--dir`) |
 | `--dir DIR` | Directory to scan recursively for `*.yaml` files |
 | `--write` | Apply fixes (default: dry-run, no files modified) |
 | `--no-backup` | Skip creating `.yaml.bak` backup before writing |
 
 ---
 
-## 2. Create a Manifest
+## 2. Create a Data analysis recipe
 
-**Script:** `assets/scripts/create_manifest.py`
+**Script:** `assets/scripts/create_data_analysis_recipe.py`
 
-Scaffolds a new pipeline manifest from a directory of TSV files. Inspects column headers and infers a starting Rich Dictionary `input_fields` block.
+Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Inspects column headers and infers a starting Rich Dictionary `input_fields` block.
 
 ```bash
-./.venv/bin/python assets/scripts/create_manifest.py \
-    --data-dir assets/test_data/my_project/ \
-    --output config/manifests/pipelines/my_project.yaml
+./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \
+    --data-dir assets/test_data/my_data_analysis_recipe/ \
+    --output config/data_analysis_recipes/pipelines/my_data_analysis_recipe.yaml
 ```
 
 ---
 
-## 3. Create a Figshare / External Dataset Manifest
+## 3. Create a Figshare / External Dataset Data Analysis Recipe
 
-**Script:** `assets/scripts/SF_create_manifest.py`
+**Script:** `assets/scripts/SF_create_data_analysis_recipe.py`
 
-Variant of `create_manifest.py` tailored for Figshare and other external dataset structures.
+Variant of `create_data_analysis_recipe.py` tailored for Figshare and other external dataset structures.
 
 ```bash
-./.venv/bin/python assets/scripts/SF_create_manifest.py \
+./.venv/bin/python assets/scripts/SF_create_data_analysis_recipe.py \
     --data-dir assets/test_data/figshare.21737288/ \
-    --output config/manifests/pipelines/figshare_amr.yaml
+    --output config/data_analysis_recipes/pipelines/figshare_amr.yaml
 ```
 
 ---
 
-## 4. Create a Test Deployment Profile
+## 4. Create a Test Deployment
 
 **Script:** `assets/scripts/create_test_deployment.py`
 
-Generates an **ADR-048 compliant** deployment profile YAML for local testing. The profile is written to `config/connectors/local/`.
+Generates an **ADR-048 compliant** deployment file for local testing. The deployment is written to `config/connectors/local/`.
 
 ```bash
 ./.venv/bin/python assets/scripts/create_test_deployment.py \
-    --manifest-id 1_test_data_ST22_dummy \
+    --data-analysis-recipe-id 1_test_data_ST22_dummy \
     --description "ST22 AMR local test" \
-    --persona developer
+    --app-features developer
 
 # Custom project root (e.g. for a mounted path)
 ./.venv/bin/python assets/scripts/create_test_deployment.py \
-    --manifest-id my_pipeline \
+    --data-analysis-recipe-id my_pipeline \
     --project-root /mnt/data/sparmvet
 ```
 
-The profile defines `deployment_type`, `locations` (raw data, manifests, curated data, gallery), `default_manifest`, and `default_persona`.
+The deployment defines `deployment_type`, `locations` (raw data, data analysis recipes, curated data, gallery), `default_data_analysis_recipe`, and `default_app_features`.
 
 ---
 
@@ -124,15 +124,15 @@ Output is written to `assets/test_data/demo_high_integrity/`. Verifies join inte
 
 ---
 
-## 6. Manifest Debugging Scripts
+## 6. Data analysis recipe Debugging Scripts
 
-### `debug_apply_manifest_standards.py`
+### `debug_apply_data_analysis_recipe_standards.py`
 
-Applies ADR-041 formatting standards to a manifest file — adds missing header blocks and corrects structural issues.
+Applies ADR-041 formatting standards to a data analysis recipe file — adds missing header blocks and corrects structural issues.
 
 ```bash
-./.venv/bin/python assets/scripts/debug_apply_manifest_standards.py \
-    --manifest config/manifests/pipelines/my_pipeline.yaml
+./.venv/bin/python assets/scripts/debug_apply_data_analysis_recipe_standards.py \
+    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml
 ```
 
 ### `debug_bootstrap_viz_yamls.py`
@@ -172,10 +172,10 @@ These scripts are for the multi-stage Figshare AMR dataset integration pipeline.
 
 ---
 
-## 8. Materialize Manifest Plots (Deprecated Shim)
+## 8. Materialize Data Analysis Recipe Plots (Deprecated Shim)
 
-**Script:** `assets/scripts/materialize_manifest_plots.py`
+**Script:** `assets/scripts/materialize_data_analysis_recipe_plots.py`
 
 ::: {.callout-warning}
-This script is a deprecated compatibility shim. Use `debug_assembler.py` directly for manifest plot materialization. See [Developer CLI Tools](../reference/developer_how_to.qmd).
+This script is a deprecated compatibility shim. Use `debug_assembler.py` directly for data analysis recipe plot materialization. See [Developer CLI Tools](../reference/developer_how_to.qmd).
 :::

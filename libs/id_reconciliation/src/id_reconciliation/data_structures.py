@@ -5,11 +5,11 @@ from typing import Optional
 from utils.id_patterns import PatternSuggestion  # noqa: F401 — re-exported for callers
 
 # @deps
-# provides: IDPair, MatchResult, TransformationRecipe
+# provides: IDPair, MatchResult, IdTransformation
 # consumes: libs/utils/src/utils/id_patterns.py (PatternSuggestion re-exported for backward compat)
 # consumed_by: libs/id_reconciliation/src/id_reconciliation/core.py,
 #              libs/id_reconciliation/src/id_reconciliation/matcher.py,
-#              libs/id_reconciliation/src/id_reconciliation/recipe.py,
+#              libs/id_reconciliation/src/id_reconciliation/id_transformation.py,
 #              libs/id_reconciliation/src/id_reconciliation/__init__.py
 # @end_deps
 
@@ -31,7 +31,7 @@ class MatchResult:
 
 
 @dataclass
-class TransformationRecipe:
+class IdTransformation:
     ref_column: str
     target_column: str
     steps: list[dict] = field(default_factory=list)
@@ -47,7 +47,7 @@ class TransformationRecipe:
         }, default_flow_style=False, allow_unicode=True)
 
     @classmethod
-    def from_yaml(cls, text: str) -> "TransformationRecipe":
+    def from_yaml(cls, text: str) -> "IdTransformation":
         import yaml
         data = yaml.safe_load(text)
         return cls(

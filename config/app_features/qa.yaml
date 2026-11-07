@@ -1,0 +1,82 @@
+# UI App features: QA / Test Harness Mode (APP_FEATURES-2, 2026-04-30)
+#
+# Purpose: a deterministic app features for automated UI testing and headless
+# regression checks. Mirrors `developer` (all features enabled) but with:
+#   - Predictable defaults (no auto-saves that mutate session state mid-test)
+#   - Clear naming so logs/screenshots from CI runs are unambiguous
+#
+# Use cases:
+#   - Headless integration tests (debug_home_theater.py, future Playwright/
+#     Selenium runs) that need every UI surface visible
+#   - Manual smoke tests where the tester wants to exercise the full feature
+#     set without flipping individual flags
+#   - Future automated UI test runner (Phase 26+) that needs a stable
+#     reference app features
+#
+# Launch: `SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m shiny run app/src/main.py`
+name: "qa"
+display_name: "QA / Test Harness"
+
+flags:
+  # All feature flags ON — tests need access to every UI surface
+  interactivity_enabled: true
+  gallery_enabled: true
+  # Can the user access the Blueprint Architect (data analysis recipe IDE)?
+  blueprint_enabled: true
+  # Can the user edit the YAML escape hatch in Blueprint IDE? (ADR-075; depends on blueprint_enabled)
+  data_analysis_recipe_edit_enabled: true
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: true
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: true
+  comparison_mode_enabled: true
+  session_management_enabled: true
+  import_helper_enabled: true
+  t3_sandbox_enabled: true
+  export_enabled: true
+  metadata_ingestion_enabled: true
+  data_ingestion_enabled: true
+  # Show/hide sidebar accordion panels
+  # Show active app features name in nav header
+  show_app_features_badge: true
+
+data_analysis_recipe_selector:
+  visible: true
+
+testing_mode: true
+
+automation:
+  ghost_save:
+    # Disabled in QA mode — auto-save would mutate session state
+    # mid-test and create non-determinism. Tests that need ghost-save
+    # behaviour invoke session_manager.write_t3_ghost() explicitly.
+    enabled: false
+
+# BLUEPRINT AI Agent Helper (ADR-076). Active in QA so the chat panel and
+# adapter init paths are exercised in headless smoke tests. Tests that need
+# deterministic responses should mock the adapter rather than rely on a live
+# backend — the default backend below is `disabled` for that reason.
+# model, api_key_env, endpoint and gallery_awareness below are reserved for the claude_api and
+# local backends, which are not implemented yet (task CONFIG-AGENT-BACKENDS-1); only claude_cli runs.
+blueprint_agent:
+  enabled: true
+  backend: "disabled"               # QA mocks the adapter; flip to claude_cli for manual runs
+  model: "claude-opus-4-7"
+  api_key_env: "ANTHROPIC_API_KEY"
+  endpoint: null
+  instructions_file: "config/ui/agents/blueprint_default.md"
+  gallery_awareness: false
+
+workspaces:
+  home:
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/home_standard_right.yaml
+  blueprint:
+    left_sidebar: !include ../ui/sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/blueprint_standard_right.yaml
+  gallery:
+    left_sidebar: !include ../ui/sidebars/gallery_focus_left.yaml
+    right_sidebar: !include ../ui/sidebars/gallery_focus_right.yaml
+  test_lab:
+    left_sidebar: !include ../ui/sidebars/testlab_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/testlab_standard_right.yaml

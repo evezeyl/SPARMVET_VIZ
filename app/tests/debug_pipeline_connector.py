@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """app/tests/debug_pipeline_connector.py
-Headless verification of the production connector path (prefer_discovery mode).
+Headless verification of the production connector path (data_lookup by_dataset_id).
 
-Tests the full pipeline from profile load → connector → orchestrator → tier1 assembly
+Tests the full pipeline from deployment load → connector → orchestrator → tier1 assembly
 without starting the Shiny UI. Confirms which schemas are discovered, which are
 skipped, and what the assembled anchor looks like.
 
@@ -28,11 +28,11 @@ FAIL = "❌ FAIL"
 WARN = "⚠️  WARN"
 INFO = "   "
 
-PIPELINE_TEST_PROFILE = ROOT / "config/deployment/pipeline_test/pipeline_test_profile.yaml"
+PIPELINE_TEST_DEPLOYMENT = ROOT / "config/deployment/pipeline_test/pipeline_test.yaml"
 
-PERSONAS = {
-    "pipeline-static":             ROOT / "config/ui/templates/pipeline-static_template.yaml",
-    "pipeline-exploration-simple": ROOT / "config/ui/templates/pipeline-exploration-simple_template.yaml",
+APP_FEATURES = {
+    "pipeline-static":             ROOT / "config/app_features/pipeline-static.yaml",
+    "pipeline-exploration-simple": ROOT / "config/app_features/pipeline-exploration-simple.yaml",
 }
 
 results: list[tuple[str, str, str]] = []  # (test_name, status, detail)
@@ -51,20 +51,20 @@ def section(title):
     print(f"{'─'*60}")
 
 
-# ── 1. Profile exists ──────────────────────────────────────────────────────
-section("1. Profile")
+# ── 1. Deployment exists ──────────────────────────────────────────────────────
+section("1. Deployment")
 
-if PIPELINE_TEST_PROFILE.exists():
-    record("pipeline_test_profile.yaml exists", PASS)
+if PIPELINE_TEST_DEPLOYMENT.exists():
+    record("pipeline_test.yaml exists", PASS)
 else:
-    record("pipeline_test_profile.yaml exists", FAIL, str(PIPELINE_TEST_PROFILE))
+    record("pipeline_test.yaml exists", FAIL, str(PIPELINE_TEST_DEPLOYMENT))
     sys.exit(1)
 
-# ── 2. Boot with pipeline_test profile ────────────────────────────────────
+# ── 2. Boot with pipeline_test deployment ────────────────────────────────────
 section("2. Bootloader")
 
-os.environ["SPARMVET_PROFILE"] = str(PIPELINE_TEST_PROFILE)
-os.environ["SPARMVET_PERSONA"] = str(PERSONAS["pipeline-static"])
+os.environ["SPARMVET_DEPLOYMENT"] = str(PIPELINE_TEST_DEPLOYMENT)
+os.environ["SPARMVET_APP_FEATURES"] = str(APP_FEATURES["pipeline-static"])
 
 try:
     # Re-import fresh (clear module-level singleton)
@@ -73,13 +73,13 @@ try:
     from app.src.bootloader import bootloader  # noqa: E402
 
     raw_data_dir = bootloader.get_location("raw_data")
-    manifests_dir = bootloader.get_location("manifests")
-    prefer_discovery = bootloader.connector_config.get("prefer_discovery", False)
+    data_analysis_recipes_dir = bootloader.get_location("data_analysis_recipes")
+    data_lookup = bootloader.data_lookup
 
     record("Bootloader initialised", PASS)
-    record("prefer_discovery flag", PASS if prefer_discovery else FAIL, str(prefer_discovery))
+    record("data_lookup", PASS if data_lookup == "by_dataset_id" else FAIL, data_lookup)
     record("raw_data_dir", INFO, str(raw_data_dir))
-    record("manifests_dir", INFO, str(manifests_dir))
+    record("data_analysis_recipes_dir", INFO, str(data_analysis_recipes_dir))
     record("raw_data_dir exists", PASS if raw_data_dir.exists() else FAIL, str(raw_data_dir))
 except Exception as e:
     record("Bootloader initialised", FAIL, str(e))
@@ -104,18 +104,18 @@ try:
     from ingestion.ingestor import DataIngestor
     from utils.config_loader import ConfigManager
 
-    manifest_id = bootloader.get_manifest_selector().get("fixed_manifest", "1_test_data_ST22_dummy")
-    manifest_path = manifests_dir / f"{manifest_id}.yaml"
-    record("Manifest path", PASS if manifest_path.exists() else FAIL, str(manifest_path))
+    data_analysis_recipe_id = bootloader.get_default_data_analysis_recipe()
+    data_analysis_recipe_path = data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
+    record("Data analysis recipe path", PASS if data_analysis_recipe_path.exists() else FAIL, str(data_analysis_recipe_path))
 
     # ConfigManager resolves the !include files, like the app does (plain yaml cannot).
-    manifest = ConfigManager(str(manifest_path)).raw_config
+    data_analysis_recipe = ConfigManager(str(data_analysis_recipe_path)).raw_config
 
     all_schemas: dict = {}
-    all_schemas.update(manifest.get("data_schemas", {}))
-    if "metadata_schema" in manifest:
-        all_schemas["metadata_schema"] = manifest["metadata_schema"]
-    all_schemas.update(manifest.get("additional_datasets_schemas", {}))
+    all_schemas.update(data_analysis_recipe.get("data_schemas", {}))
+    if "metadata_schema" in data_analysis_recipe:
+        all_schemas["metadata_schema"] = data_analysis_recipe["metadata_schema"]
+    all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
 
     ingestor = DataIngestor(data_dir=str(raw_data_dir))
 
@@ -138,7 +138,7 @@ except Exception as e:
     traceback.print_exc()
 
 # ── 5. Full tier1 assembly ─────────────────────────────────────────────────
-section("5. Full tier1 assembly (prefer_discovery=True)")
+section("5. Full tier1 assembly (data_lookup=by_dataset_id)")
 
 try:
     from app.modules.orchestrator import DataOrchestrator
@@ -147,14 +147,14 @@ try:
         out_path = Path(tmpdir) / "anchor.parquet"
 
         orchestrator = DataOrchestrator(
-            manifests_dir=manifests_dir,
+            data_analysis_recipes_dir=data_analysis_recipes_dir,
             raw_data_dir=raw_data_dir,
-            prefer_discovery=prefer_discovery,
+            data_lookup=data_lookup,
         )
 
         lf = orchestrator.materialize_tier1(
-            project_id=manifest_id,
-            collection_id=list(manifest.get("join_manifests", {}).keys())[0],
+            data_analysis_recipe_id=data_analysis_recipe_id,
+            collection_id=list(data_analysis_recipe.get("joins", {}).keys())[0],
             output_path=out_path,
         )
 
@@ -169,21 +169,21 @@ except Exception as e:
     traceback.print_exc()
 
 # ── 6. Repeat for pipeline-exploration-simple ─────────────────────────────
-section("6. Persona: pipeline-exploration-simple (same profile)")
+section("6. App features: pipeline-exploration-simple (same deployment)")
 
-os.environ["SPARMVET_PERSONA"] = str(PERSONAS["pipeline-exploration-simple"])
+os.environ["SPARMVET_APP_FEATURES"] = str(APP_FEATURES["pipeline-exploration-simple"])
 try:
     if "app.src.bootloader" in sys.modules:
         del sys.modules["app.src.bootloader"]
     from app.src.bootloader import bootloader as bl2  # noqa: E402
 
-    ms = bl2.get_manifest_selector()
-    record("Persona loaded", PASS, bl2.persona_display_name)
-    record("manifest_selector.fixed_manifest", INFO, str(ms.get("fixed_manifest")))
-    record("prefer_discovery", INFO, str(bl2.connector_config.get("prefer_discovery", False)))
+    ms = bl2.get_data_analysis_recipe_selector()
+    record("App features loaded", PASS, bl2.app_features_display_name)
+    record("default data analysis recipe", INFO, bl2.get_default_data_analysis_recipe())
+    record("data_lookup", INFO, bl2.data_lookup)
     record("testing_mode", INFO, str(bl2.get_testing_mode()))
 except Exception as e:
-    record("Persona loaded", FAIL, str(e))
+    record("App features loaded", FAIL, str(e))
     traceback.print_exc()
 
 # ── Summary ────────────────────────────────────────────────────────────────

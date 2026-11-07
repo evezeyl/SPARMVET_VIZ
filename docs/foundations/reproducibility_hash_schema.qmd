@@ -1,13 +1,13 @@
 ---
 title: "ADR-066: Reproducibility Hash Schema"
-subtitle: "Three-layer fingerprinting for manifest, data, and wrangling recipe"
+subtitle: "Three-layer fingerprinting for data analysis recipe, data, and wrangling steps"
 ---
 
 ## Status
 
 **Accepted** — 2026-05-04. Supersedes the informal ADR-024 note on `decision_hash`.
 
-**Extended by ADR-089 (2026-11-05):** the three hashes below are now combined into a *cache chain* (see [Cache chain](#cache-chain-adr-089)). `manifest_sha256` now covers every file of the manifest, not only the entry file.
+**Extended by ADR-089 (2026-11-05):** the three hashes below are now combined into a *cache chain* (see [Cache chain](#cache-chain-adr-089)). `data_analysis_recipe_sha256` now covers every file of the data analysis recipe, not only the entry file.
 
 ---
 
@@ -15,8 +15,8 @@ subtitle: "Three-layer fingerprinting for manifest, data, and wrangling recipe"
 
 SPARMVET_VIZ caches processed data (T1/T2 Parquet files) and user sessions (T3 audit trails). For results to be reproducible and for users to trust their exported reports, the system must be able to answer three independent questions:
 
-1. **Did the processing change?** (Has the manifest, the data or the engine changed since this cache was produced?)
-2. **Is this the same manifest file?** (Is the export anchored to the exact manifest used in this session?)
+1. **Did the processing change?** (Has the data analysis recipe, the data or the engine changed since this cache was produced?)
+2. **Is this the same data analysis recipe file?** (Is the export anchored to the exact data analysis recipe used in this session?)
 3. **Is this the same raw data?** (Was this analysis run on the same pipeline output files?)
 
 Each question requires a separate hash. No single hash can answer all three.
@@ -27,9 +27,9 @@ Each question requires a separate hash. No single hash can answer all three.
 
 ### 1. Stage keys (`tier1_key`, `tier2_key`) — processing fingerprint
 
-*Replaces the former `decision_hash` (a hash of the assembly recipe only), see ADR-089.*
+*Replaces the former `decision_hash` (a hash of the assembly steps only), see ADR-089.*
 
-**What they hash:** the `tier1_key` covers the engine version, the **resolved manifest** (every included file merged, without the downstream-only parts) and the data content. The `tier2_key` covers the `tier1_key` and the join's `tier2` steps. Each key contains the one before it, so a change upstream changes every key after it.
+**What they hash:** the `tier1_key` covers the engine version, the **resolved data analysis recipe** (every included file merged, without the downstream-only parts) and the data content. The `tier2_key` covers the `tier1_key` and the join's `tier2` steps. Each key contains the one before it, so a change upstream changes every key after it.
 
 **Where they live:** in the Parquet file metadata of each stored stage: `sparmvet_tier1_key` (Tier 1 file) and `sparmvet_tier2_key` (`<name>__T2.parquet`). The older key `sparmvet_decision_hash` is still written, with the same value, for readers of older bundles. Readable without scanning data rows.
 
@@ -37,25 +37,25 @@ Each question requires a separate hash. No single hash can answer all three.
 
 **Implementation:** `app/modules/cache_keys.py` (`tier1_key`, `tier2_key`), `app/modules/orchestrator.py` (`materialize_tier1`, `materialize_tier2`). The Parquet file is written by `libs/transformer/src/transformer/actions/persistence/anchor.py` with Polars, metadata inside the file.
 
-**Key property:** the keys use the resolved content, so comments, spacing and the way the manifest is split into files do not change them.
+**Key property:** the keys use the resolved content, so comments, spacing and the way the data analysis recipe is split into files do not change them.
 
 ---
 
-### 2. `manifest_sha256` — Manifest file-set fingerprint
+### 2. `data_analysis_recipe_sha256` — Data analysis recipe file-set fingerprint
 
-**What it hashes:** the **file set** of the manifest: the entry file and every file it includes (the mirrored folder and any other `!include` target). Each file is hashed, the lines `relative_path:sha256` are sorted by path and joined, and the result is hashed again.
+**What it hashes:** the **file set** of the data analysis recipe: the entry file and every file it includes (the mirrored folder and any other `!include` target). Each file is hashed, the lines `relative_path:sha256` are sorted by path and joined, and the result is hashed again.
 
-**Where it lives:** Computed at project-load time, stored in `home_state["manifest_sha256"]`.
+**Where it lives:** Computed at data analysis recipe load time, stored in `home_state["data_analysis_recipe_sha256"]`.
 
-**Purpose:** Session identity and export provenance. Allows verification that the session (and any export from it) was produced from a specific, unchanged set of manifest files. It can be verified independently with `sha256sum` (see below).
+**Purpose:** Session identity and export provenance. Allows verification that the session (and any export from it) was produced from a specific, unchanged set of data analysis recipe files. It can be verified independently with `sha256sum` (see below).
 
-**Implementation:** `app/modules/session_manager.py` → `compute_manifest_sha256()`.
+**Implementation:** `app/modules/session_manager.py` → `compute_data_analysis_recipe_sha256()`.
 
 **Key property:** It changes if any file of the set is touched at all, including comments and formatting. Before ADR-089 it hashed only the entry file, so a change in an included file was invisible to it.
 
 ```python
 lines = sorted(f"{relative_path}:{SHA256(file_bytes)}" for file in entry_and_included_files)
-manifest_sha256 = SHA256("\n".join(lines).encode())
+data_analysis_recipe_sha256 = SHA256("\n".join(lines).encode())
 ```
 
 ---
@@ -73,7 +73,7 @@ combined = "\n".join(parts).encode()
 data_batch_hash = SHA256(combined)
 ```
 
-**Where it lives:** Computed at project-load time, stored in `home_state["data_batch_hash"]`.
+**Where it lives:** Computed at data analysis recipe load time, stored in `home_state["data_batch_hash"]`.
 
 **Purpose:** Data identity. Ensures that a T3 session (audit trail, filter choices) is not silently applied to a different batch of raw data — for example, when a Galaxy pipeline reruns and produces updated TSV files. If the raw data changes, the session key changes and the system treats it as a new session.
 
@@ -83,13 +83,13 @@ data_batch_hash = SHA256(combined)
 
 ## Cache chain (ADR-089) {#cache-chain-adr-089}
 
-The stored results (Tier 1 and Tier 2 Parquet files) must always reflect the manifest exactly. Each stored stage therefore has a **key** made from its own inputs **and the key of the stage before it**. A change anywhere upstream changes every key downstream, so nothing is missed. A change that touches one stage recomputes only that stage and the ones after it.
+The stored results (Tier 1 and Tier 2 Parquet files) must always reflect the data analysis recipe exactly. Each stored stage therefore has a **key** made from its own inputs **and the key of the stage before it**. A change anywhere upstream changes every key downstream, so nothing is missed. A change that touches one stage recomputes only that stage and the ones after it.
 
 ::: {.lightbox}
 ```{mermaid}
 flowchart LR
   D["Data files<br/>(data_batch_hash)"] --> K1
-  M["Resolved manifest<br/>minus downstream-only parts"] --> K1
+  M["Resolved data analysis recipe<br/>minus downstream-only parts"] --> K1
   E["Engine version"] --> K1
   K1{{"tier1_key"}} --> P1[("Tier 1 parquet")]
   K1 --> K2
@@ -106,23 +106,23 @@ flowchart LR
 
 | Key | Inputs | Stored as |
 |---|---|---|
-| `tier1_key` | engine cache version (and the installed `polars` and `transformer` versions); the **resolved manifest** without the downstream-only parts; `data_batch_hash` | Tier 1 parquet, key in the file metadata (`sparmvet_decision_hash`) |
-| `tier2_key` | `tier1_key`; the `tier2` steps of that join's recipe | Tier 2 parquet `<name>__T2.parquet` (nothing when `tier2` is empty: T2 equals T1) |
+| `tier1_key` | engine cache version (and the installed `polars` and `transformer` versions); the **resolved data analysis recipe** without the downstream-only parts; `data_batch_hash` | Tier 1 parquet, key in the file metadata (`sparmvet_decision_hash`) |
+| `tier2_key` | `tier1_key`; the `tier2` steps of that join's step list | Tier 2 parquet `<name>__T2.parquet` (nothing when `tier2` is empty: T2 equals T1) |
 | plot input | `tier2_key`; the plot spec; `plot_defaults`; the palette registry | not stored |
 
-The **resolved manifest** is what `ConfigManager` returns after every `!include` is merged, as if all the fragments were concatenated into one file. It is written in a canonical form (sorted keys), so comments, spacing and how the manifest is split into files do not change the key.
+The **resolved data analysis recipe** is what `ConfigManager` returns after every `!include` is merged, as if all the fragments were concatenated into one file. It is written in a canonical form (sorted keys), so comments, spacing and how the data analysis recipe is split into files do not change the key.
 
 ### The fail-safe rule
 
-The Tier 1 key covers **everything in the resolved manifest except a short list of known downstream parts**: `info`, `analysis_groups`, `plot_defaults`, plots, and the `tier2` steps of the join recipes. A new or unknown section is part of Tier 1 automatically. A wrong guess can therefore only cause an extra recompute, never a stale result.
+The Tier 1 key covers **everything in the resolved data analysis recipe except a short list of known downstream parts**: `info`, `analysis_groups`, `plot_defaults`, plots, and the `tier2` steps of the join steps. A new or unknown section is part of Tier 1 automatically. A wrong guess can therefore only cause an extra recompute, never a stale result.
 
 ### Detecting changes in the running app
 
-The parsed manifest is kept in memory for speed. `ConfigManager` records every file it read, and the app keeps a content digest of each. At the start of each session the app compares them (manifest files are small, so reading them is cheap); if any differs, the manifest is reloaded and rehashed. Content is compared, not size and modification time, because an edit with the same size in the same clock tick would be missed otherwise. Data files are hashed by content at the start of a session (a cheaper size-and-time option may become an explicit deployment setting for very large data, never the default).
+The parsed data analysis recipe is kept in memory for speed. `ConfigManager` records every file it read, and the app keeps a content digest of each. At the start of each session the app compares them (data analysis recipe files are small, so reading them is cheap); if any differs, the data analysis recipe is reloaded and rehashed. Content is compared, not size and modification time, because an edit with the same size in the same clock tick would be missed otherwise. Data files are hashed by content at the start of a session (a cheaper size-and-time option may become an explicit deployment setting for very large data, never the default).
 
 ### Working in BLUEPRINT: develop in Tier 2, then move to Tier 1
 
-While you test a manifest, put new steps in **Tier 2**. Editing them recomputes only Tier 2, which is fast, and the Tier 1 parquet is kept. When the steps are stable, move them to **Tier 1** (the Bifurcation Point Rule in `rules_data_engine.md`): logic shared by every plot of a data source belongs in the trunk, so it is computed once.
+While you test a data analysis recipe, put new steps in **Tier 2**. Editing them recomputes only Tier 2, which is fast, and the Tier 1 parquet is kept. When the steps are stable, move them to **Tier 1** (the Bifurcation Point Rule in `rules_data_engine.md`): logic shared by every plot of a data source belongs in the trunk, so it is computed once.
 
 ---
 
@@ -131,10 +131,10 @@ While you test a manifest, put new steps in **Tier 2**. Editing them recomputes 
 The session key combines two of the three hashes:
 
 ```
-session_key = manifest_sha256[:12] + ":" + data_batch_hash[:12]
+session_key = data_analysis_recipe_sha256[:12] + ":" + data_batch_hash[:12]
 ```
 
-This means: a session is uniquely identified by the combination of *which manifest* and *which batch of raw data* it was run on. The `decision_hash` is not part of the session key — it operates at the Parquet level, below the session.
+This means: a session is uniquely identified by the combination of *which data analysis recipe* and *which batch of raw data* it was run on. The `decision_hash` is not part of the session key — it operates at the Parquet level, below the session.
 
 **Implementation:** `app/modules/session_manager.py` → `compute_session_key()`.
 
@@ -142,9 +142,9 @@ This means: a session is uniquely identified by the combination of *which manife
 
 ## Where Hashes Appear in Exports
 
-All the hashes are surfaced in every export output, as literal values. The export records the keys it used (the Tier 1 and Tier 2 key of each dataset); it refuses to run when the keys of the open view differ from the keys now (the manifest or the data changed after the view was opened).
+All the hashes are surfaced in every export output, as literal values. The export records the keys it used (the Tier 1 and Tier 2 key of each dataset); it refuses to run when the keys of the open view differ from the keys now (the data analysis recipe or the data changed after the view was opened).
 
-| Export surface | manifest_sha256 | data_batch_hash | tier1_key / tier2_key |
+| Export surface | data_analysis_recipe_sha256 | data_batch_hash | tier1_key / tier2_key |
 |---|---|---|---|
 | Bundle README.txt | ✅ full | ✅ full | ✅ per dataset |
 | Bundle QMD provenance table | ✅ full | ✅ full | ✅ per dataset |
@@ -157,7 +157,7 @@ All the hashes are surfaced in every export output, as literal values. The expor
 To independently verify an export bundle:
 
 ```bash
-# 1. Verify manifest hash (file set: entry file + every included file)
+# 1. Verify data analysis recipe hash (file set: entry file + every included file)
 python3 -c "
 import hashlib, sys, os
 entry = sys.argv[1]; base = os.path.dirname(os.path.abspath(entry))
@@ -166,8 +166,8 @@ lines = sorted(
     os.path.relpath(os.path.abspath(f), base) + ':' + hashlib.sha256(open(f, 'rb').read()).hexdigest()
     for f in files)
 print(hashlib.sha256('\\n'.join(lines).encode()).hexdigest())
-" path/to/manifest.yaml path/to/manifest/plots/p1.yaml ...
-# Compare to: Manifest SHA256 in README.txt
+" path/to/data_analysis_recipe.yaml path/to/data_analysis_recipe/plots/p1.yaml ...
+# Compare to: Data analysis recipe SHA256 in README.txt
 
 # 2. Verify data batch hash
 python3 -c "
@@ -195,8 +195,8 @@ print(meta.metadata.get(key, b'not found').decode())
 
 ## Consequences
 
-- Any change to any file of the manifest (even whitespace) produces a different `manifest_sha256`. This is intentional: it reflects the files as distributed, not just their logic. The cache keys are different: they use the resolved content, so a comment-only change does not rebuild anything.
-- The stage keys are more stable: reformatting the manifest YAML does not change them, as they hash the resolved content (sorted keys, no whitespace). Only changes to the processing itself invalidate the cache.
+- Any change to any file of the data analysis recipe (even whitespace) produces a different `data_analysis_recipe_sha256`. This is intentional: it reflects the files as distributed, not just their logic. The cache keys are different: they use the resolved content, so a comment-only change does not rebuild anything.
+- The stage keys are more stable: reformatting the data analysis recipe YAML does not change them, as they hash the resolved content (sorted keys, no whitespace). Only changes to the processing itself invalidate the cache.
 - The `data_batch_hash` hashes raw file bytes. File metadata (modification time, permissions) does not affect it — only content.
 
 ---

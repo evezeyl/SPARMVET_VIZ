@@ -81,7 +81,7 @@ def define_server(
             ui.output_ui("tl_recon_threshold_ui"),
             ui.output_data_frame("tl_recon_table"),
             ui.download_button(
-                "tl_recon_download", "Download Recipe YAML",
+                "tl_recon_download", "Download Id transformation YAML",
                 class_="btn btn-primary btn-sm mt-2",
             ),
             class_="p-2",
@@ -217,7 +217,7 @@ def define_server(
         return ui.div(
             ui.p(
                 f"Warning: {len(m2m)} ref IDs match multiple targets ({preview}{extra}). "
-                "A written reason is required before downloading the recipe.",
+                "A written reason is required before downloading the id transformation.",
                 class_="text-warning small mt-1",
             ),
             ui.input_text_area(
@@ -259,7 +259,7 @@ def define_server(
         return ui.div(
             ui.input_slider(
                 "tl_recon_threshold",
-                "Minimum certainty to include in recipe (1.0 = exact matches only)",
+                "Minimum certainty to include in id transformation (1.0 = exact matches only)",
                 min=0.5, max=1.0, value=0.7, step=0.05,
             ),
             class_="mt-2",
@@ -276,7 +276,7 @@ def define_server(
         from id_reconciliation import format_match_table
         return render.DataGrid(format_match_table(results).to_pandas(), width="100%")
 
-    @render.download(filename=lambda: "reconciliation_recipe.yaml")
+    @render.download(filename=lambda: "id_transformation.yaml")
     async def tl_recon_download():
         from id_reconciliation import IDReconciliationEngine, detect_many_to_many
         results = _recon_results()
@@ -295,29 +295,29 @@ def define_server(
             target_col = "target_id"
         filtered = [r for r in results if r.certainty >= threshold]
         engine = IDReconciliationEngine()
-        recipe = engine.generate_recipe(filtered, ref_col, target_col)
+        id_transformation = engine.generate_transformation(filtered, ref_col, target_col)
         m2m = detect_many_to_many(results)
         if m2m:
             try:
                 reason = input.tl_recon_m2m_reason()
                 if reason:
-                    recipe.metadata["many_to_many_reason"] = reason
+                    id_transformation.metadata["many_to_many_reason"] = reason
             except Exception:
                 pass
-        yield recipe.to_yaml().encode()
+        yield id_transformation.to_yaml().encode()
 
     # ── end TL-UI-RECONCILE-1 ────────────────────────────────────────────
 
-    # ── Manifest Scaffolding (TL-UI-SCAFFOLD-1) ──────────────────────────
+    # ── Data analysis recipe Scaffolding (TL-UI-SCAFFOLD-1) ──────────────────────────
 
     @output
     @render.ui
     def tl_scaffold_ui():
         return ui.div(
             ui.input_text(
-                "tl_scaffold_project_id",
-                "Project ID (snake_case)",
-                placeholder="my_project",
+                "tl_scaffold_data_analysis_recipe_id",
+                "Data analysis recipe ID (snake_case)",
+                placeholder="my_data_analysis_recipe",
             ),
             ui.input_file(
                 "tl_scaffold_files",
@@ -339,12 +339,12 @@ def define_server(
             ),
             ui.output_ui("tl_scaffold_recon_ui"),
             ui.input_action_button(
-                "tl_scaffold_run", "Scaffold Manifest",
+                "tl_scaffold_run", "Scaffold Data analysis recipe",
                 class_="btn btn-primary btn-sm mt-2",
             ),
             ui.output_ui("tl_scaffold_status_ui"),
             ui.download_button(
-                "tl_scaffold_download", "Download manifest ZIP",
+                "tl_scaffold_download", "Download data analysis recipe ZIP",
                 class_="btn btn-primary btn-sm mt-1",
             ),
             class_="p-2",
@@ -392,7 +392,7 @@ def define_server(
         stems = [Path(fi["name"]).stem for fi in infos]
         return ui.input_select(
             "tl_scaffold_recon_dataset",
-            "Apply recipe steps to dataset",
+            "Apply id transformation steps to dataset",
             choices={s: s for s in stems},
             selected=stems[0],
         )
@@ -400,14 +400,14 @@ def define_server(
     @reactive.Calc
     @reactive.event(input.tl_scaffold_run)
     def _scaffold_result():
-        from test_lab.scaffolder import ManifestScaffolder
+        from test_lab.scaffolder import DataAnalysisRecipeScaffolder
 
         try:
-            project_id = (input.tl_scaffold_project_id() or "").strip()
+            data_analysis_recipe_id = (input.tl_scaffold_data_analysis_recipe_id() or "").strip()
         except Exception:
-            project_id = ""
-        if not project_id:
-            return {"error": "Enter a project ID before scaffolding."}
+            data_analysis_recipe_id = ""
+        if not data_analysis_recipe_id:
+            return {"error": "Enter a data analysis recipe ID before scaffolding."}
 
         infos = _scaffold_file_infos()
         if not infos:
@@ -423,8 +423,8 @@ def define_server(
         except Exception:
             join_key = "sample_id"
 
-        # Build recipes dict from reconciliation result if requested
-        recipes = None
+        # Build id transformations dict from reconciliation result if requested
+        id_transformations = None
         with_recon_dataset = None
         try:
             use_recon = bool(input.tl_scaffold_use_recon())
@@ -452,19 +452,19 @@ def define_server(
                 filtered = [r for r in results if r.certainty >= threshold]
                 if filtered:
                     engine = IDReconciliationEngine()
-                    recipe = engine.generate_recipe(filtered, ref_col, target_col)
-                    recipes = {dataset_key: recipe.steps}
+                    id_transformation = engine.generate_transformation(filtered, ref_col, target_col)
+                    id_transformations = {dataset_key: id_transformation.steps}
                     with_recon_dataset = dataset_key
 
-        scaffolder = ManifestScaffolder(join_key=join_key)
+        scaffolder = DataAnalysisRecipeScaffolder(join_key=join_key)
         zip_bytes = scaffolder.scaffold(
-            tsv_paths, project_id,
-            recipes=recipes,
+            tsv_paths, data_analysis_recipe_id,
+            id_transformations=id_transformations,
             metadata_path=meta_path,
         )
         return {
             "zip_bytes": zip_bytes,
-            "project_id": project_id,
+            "data_analysis_recipe_id": data_analysis_recipe_id,
             "n_files": len(tsv_paths),
             "with_meta": meta_path is not None,
             "with_recon_dataset": with_recon_dataset,
@@ -475,7 +475,7 @@ def define_server(
     def tl_scaffold_status_ui():
         if input.tl_scaffold_run() == 0:
             return ui.p(
-                "Fill in the form and click Scaffold Manifest.",
+                "Fill in the form and click Scaffold Data Analysis Recipe.",
                 class_="text-muted small mt-1",
             )
         result = _scaffold_result()
@@ -484,7 +484,7 @@ def define_server(
         if "error" in result:
             return ui.p(result["error"], class_="text-warning small mt-1")
         n = result["n_files"]
-        pid = result["project_id"]
+        pid = result["data_analysis_recipe_id"]
         meta_note = " + metadata schema stub" if result["with_meta"] else ""
         recon_note = (
             f" ID Reconciliation steps baked into '{result['with_recon_dataset']}'."
@@ -507,11 +507,11 @@ def define_server(
     def _scaffold_download_filename():
         result = _scaffold_result()
         if result is None or "error" in result:
-            return "manifest_scaffold.zip"
+            return "data_analysis_recipe_scaffold.zip"
         from datetime import datetime
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        pid = result.get("project_id", "scaffold")
-        return f"{ts}_{pid}_manifest.zip"
+        pid = result.get("data_analysis_recipe_id", "scaffold")
+        return f"{ts}_{pid}_data_analysis_recipe.zip"
 
     # ── end TL-UI-SCAFFOLD-1 ─────────────────────────────────────────────
 

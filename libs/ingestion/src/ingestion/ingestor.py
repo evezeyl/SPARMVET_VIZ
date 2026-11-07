@@ -16,7 +16,7 @@ from utils.pipeline_error import PipelineError
 class DataIngestor:
     """
     The official Ingestion Engine for the Dashboard.
-    Responsible for mapping conceptual datasets defined in the YAML manifest
+    Responsible for mapping conceptual datasets defined in the YAML data analysis recipe
     to physical files on disk, executing Polars lazy loading, and optionally 
     validating the raw columns against the schema structure.
     """
@@ -29,7 +29,7 @@ class DataIngestor:
                 problem=f"Data directory not found: {self.data_dir}",
                 location="DataIngestor.__init__",
                 fix=(
-                    "Verify that the 'data_dir' path in your deployment profile or manifest "
+                    "Verify that the 'data_dir' path in your deployment or data analysis recipe "
                     "source block points to an existing directory containing the source TSV/Parquet files."
                 ),
                 who="operator",
@@ -88,7 +88,7 @@ class DataIngestor:
                     problem=f"Could not locate a physical file for dataset '{dataset_name}' at {search_context}.",
                     location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
                     fix=(
-                        "Check that the manifest 'source.path' key points to an existing file, "
+                        "Check that the data analysis recipe 'source.path' key points to an existing file, "
                         "or that a TSV matching the dataset name exists in the data directory. "
                         "Use an explicit 'source: {type: local_tsv, path: ...}' block to avoid fuzzy discovery."
                     ),

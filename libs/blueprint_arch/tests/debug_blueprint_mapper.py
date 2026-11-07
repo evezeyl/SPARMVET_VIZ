@@ -5,14 +5,14 @@ from pathlib import Path
 
 
 def test_mapper():
-    manifest_path = "config/manifests/pipelines/1_test_data_ST22_dummy.yaml"
-    print(f"Testing BlueprintMapper with: {manifest_path}")
+    data_analysis_recipe_path = "config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml"
+    print(f"Testing BlueprintMapper with: {data_analysis_recipe_path}")
 
-    if not Path(manifest_path).exists():
-        print(f"ERROR: {manifest_path} not found.")
+    if not Path(data_analysis_recipe_path).exists():
+        print(f"ERROR: {data_analysis_recipe_path} not found.")
         return
 
-    cm = ConfigManager(manifest_path)
+    cm = ConfigManager(data_analysis_recipe_path)
     mapper = BlueprintMapper(cm.raw_config)
     mermaid_code = mapper.generate_mermaid()
 

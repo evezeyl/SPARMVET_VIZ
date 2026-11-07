@@ -44,7 +44,7 @@ Now an order comes in for a specific dish (a Plot):
 
 ---
 
-## Technical Summary for Manifest Authors
+## Technical Summary for Data analysis recipe Authors
 
 Individual data contracts (`.yaml`) are structured to reflect these stages:
 
@@ -59,4 +59,4 @@ wrangling:
 ```
 
 > [!TIP]
-> **The Identity Logic**: If you don't need any special cooking (Tier 2), the chef simply serves the prepared ingredients exactly as they are. In your manifest, `tier2` is optional—if omitted, SPARMVET effectively treats the Trunk as the Branch.
+> **The Identity Logic**: If you don't need any special cooking (Tier 2), the chef simply serves the prepared ingredients exactly as they are. In your data analysis recipe, `tier2` is optional—if omitted, SPARMVET effectively treats the Trunk as the Branch.

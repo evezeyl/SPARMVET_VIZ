@@ -26,13 +26,13 @@ Any failures here are summarized in `.txt` reports sent to `tmp/` and immediatel
 
 ### Fast Overview: Testing & Debugging Engines
 
-| Component Name (File) | Library | Primary Function | Target Manifest/Data |
+| Component Name (File) | Library | Primary Function | Target DataAnalysisRecipe/Data |
 | :--- | :--- | :--- | :--- |
-| **Pipeline (debug_pipeline.py)** | `libs/transformer` | End-to-end pipeline execution (Ingest -> Wrangle -> Assemble) | YAML Pipeline Manifests |
+| **Pipeline (debug_pipeline.py)** | `libs/transformer` | End-to-end pipeline execution (Ingest -> Wrangle -> Assemble) | YAML Pipeline Data Analysis Recipes |
 | **Expressions (debug_expressions.py)** | `libs/transformer` | Atomic cleaning logic verification (Cast, Coalesce, LabelIf) | Mock LazyFrames |
 | **Ingestor (debug_ingestor.py)** | `libs/ingestion` | Manual verification of schema enforcement and file I/O | Raw TSV/VCF Assets |
 | **Audit (debug_audit.py)** | `libs/viz_factory` | Integrity check between Tasks, Registry, and Evidence | `tasks.md` + Registry |
-| **Distiller (debug_distiller.py)** | `libs/viz_factory` | Plotnine Color Distiller scaling verification | Isolated scale manifests |
+| **Distiller (debug_distiller.py)** | `libs/viz_factory` | Plotnine Color Distiller scaling verification | Isolated scale data analysis recipes |
 | **Sync (debug_bulk_sync.py)** | `libs/viz_factory` | Automated task state synchronization (Test -> `tasks.md`) | `tasks.md` + PNG artifacts |
 
 **Testing Strategy:**
@@ -62,7 +62,7 @@ Run command: `pytest app/tests/`
 
 ## Using Synthetic Test Data
 
-Because this repository must remain free of real biological data (to protect privacy), use the `AquaSynthesizer` tool in TEST_LAB (`libs/test_lab/src/test_lab/aqua_synthesizer.py`) to generate synthetic TSV datasets for your tests. The old `assets/scripts/create_test_data.py` script has been superseded by AquaSynthesizer (Phase 34).
+Because this repository must remain free of real biological data (to protect privacy), use the `AquaSynthesizer` tool in TEST_LAB (`libs/test_lab/src/test_lab/aqua_synthesizer.py`) to generate synthetic TSV datasets for your tests. The old create_test_data script has been superseded by AquaSynthesizer (Phase 34).
 
 **Best Practice:**
 1. Generate a small, synthetic TSV pair (`test_data.tsv` and `test_metadata.tsv`) using `AquaSynthesizer`.

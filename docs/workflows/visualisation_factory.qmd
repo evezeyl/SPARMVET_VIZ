@@ -1,7 +1,7 @@
 # Visualisation Factory Layer
 
 The `libs/viz_factory/` module is the **Visualisation factory (Artist Pillar)**. 
-An independent, data-agnostic library that takes tidy Polars data and a declarative manifest and **returns Figure objects** (Plotnine `ggplot`).
+An independent, data-agnostic library that takes tidy Polars data and a declarative data analysis recipe and **returns Figure objects** (Plotnine `ggplot`).
 
 ## 1. Core Principles
 1.  **Data Agnostic**: The Graph Factory doesn't care if it's plotting *E. coli* or *Listeria*. It only sees columns defined in the `mapping` block.
@@ -24,12 +24,12 @@ The Viz Factory uses an automated integrity suite to programmatically query the 
 
 ### Automated Verification Protocol
 - **Action Discovery**: Directly queries the `registry.py` for all decorated functions.
-- **1:1:1 Validation**: For every component, executes its manifest via `debug_runner.py`.
+- **1:1:1 Validation**: For every component, executes its data analysis recipe via `debug_runner.py`.
 - **Automated Reporting**: Generates a standardized `viz_factory_integrity_report.txt` in `tmp/`.
 
 ## 3. High-Performance Filtering (Tier 3: The Leaf)
 
-To maximize dashboard performance, the `VizFactory` supports declarative **Predicate Pushdown**. This allows analysts to define interactive filters in the manifest that are executed by the Polars engine *before* the data is materialized for Plotnine.
+To maximize dashboard performance, the `VizFactory` supports declarative **Predicate Pushdown**. This allows analysts to define interactive filters in the data analysis recipe that are executed by the Polars engine *before* the data is materialized for Plotnine.
 
 ### Leaf Filter Specification
 Filters are defined in the `filters` block of a plot configuration. Each filter requires a `column`, an `op` (operator), and a `value`.
@@ -56,9 +56,9 @@ plots:
 - `in` (Membership check — value must be a list)
 - `not_in` (Exclusion check — value must be a list)
 
-These operators are the UI contract between the Filter Recipe Builder (`home_theater.py`) and VizFactory. The `dtype` key from the filter recipe is stripped before injection — VizFactory operates on raw column values only.
+These operators are the UI contract between the Filter builder (`home_theater.py`) and VizFactory. The `dtype` key from the filter step list is stripped before injection — VizFactory operates on raw column values only.
 
-## 4. Concrete User Recipes (Registry)
+## 4. Concrete User Step lists (Registry)
 
 The registry actively maintains 120+ components. Below is the full inventory of implemented elements:
 
@@ -110,30 +110,30 @@ The registry actively maintains 120+ components. Below is the full inventory of 
 - `position_jitter`: Add noise to prevent overplotting.
 
 ### Labels & Headlining (themes/core.py)
-- `labs`: Explicitly maps `title`, `subtitle`, and `caption` from the manifest to the plot labs. Use this for dashboard headers and data provenance footnotes.
+- `labs`: Explicitly maps `title`, `subtitle`, and `caption` from the data analysis recipe to the plot labs. Use this for dashboard headers and data provenance footnotes.
 - `xlab` / `ylab` (DECO-2): Single-axis label one-liners. `params: {label: "Sample index"}`.
 - `ggtitle` (DECO-2): Title (and optional subtitle) shorthand. `params: {title: "...", subtitle: "..."}`.
 - `annotate` (DECO-2): Free-form annotation layer. `params` passes through to `plotnine.annotate`; required key `geom` selects which annotation type (e.g. `text`, `segment`, `rect`, `point`). Useful for thresholds, callouts, significance markers.
 
 ## 5. Headless Art Audits (The Gallery)
 
-To ensure visual consistency across large projects without launching the dashboard, researchers can use the **`GalleryMaterializer (assets/scripts/materialize_manifest_plots.py)`**.
+To ensure visual consistency across large data analysis recipes without launching the dashboard, researchers can use the **`GalleryMaterializer (assets/scripts/materialize_data_analysis_recipe_plots.py)`**.
 
 This utility performs a "Bulk Render":
-1. Scans the master manifest for all plots in all `analysis_groups`.
+1. Scans the master data analysis recipe for all plots in all `analysis_groups`.
 2. Automatically locates the corresponding Layer 1 (Wrangled) or Layer 2 (Assembled) data in `tmp/`.
 3. Materializes unique PNG files into `tmp/materialized_gallery/`.
 
 **Command:**
 ```bash
-./.venv/bin/python assets/scripts/materialize_manifest_plots.py --manifest path/to/manifest.yaml
+./.venv/bin/python assets/scripts/materialize_data_analysis_recipe_plots.py --data-analysis-recipe path/to/data_analysis_recipe.yaml
 ```
 
 ## 6. Summary Table (Core Orchestrator)
 
 | Function | Role | Input | Output | Location |
 | --- | --- | --- | --- | --- |
-| `VizFactory (viz_factory.py)` | Orchestrator | LazyFrame, Manifest | ggplot | `libs/viz_factory/src/` |
+| `VizFactory (viz_factory.py)` | Orchestrator | LazyFrame, Data Analysis Recipe | ggplot | `libs/viz_factory/src/` |
 | `register_plot_component (registry.py)` | Plugin Decorator | Callable | Callable | `libs/viz_factory/src/` |
 
 ## Reasons Behind the Choices Made
@@ -143,7 +143,7 @@ This utility performs a "Bulk Render":
 
 ## 7. Automatic Axis Label Adjustment (IU-7, 2026-04-23)
 
-To prevent overlapping axis labels without requiring manual manifest tweaking, `VizFactory` applies heuristic adjustments at the end of every `render()` call.
+To prevent overlapping axis labels without requiring manual data analysis recipe tweaking, `VizFactory` applies heuristic adjustments at the end of every `render()` call.
 
 This is **automatic and silent** — you only need to act if you want to override the defaults.
 
@@ -163,9 +163,9 @@ This is **automatic and silent** — you only need to act if you want to overrid
 | > 20 unique values or label length > 20 | Size 7 |
 | > 12 unique values or label length > 12 | Size 8 |
 
-### Override in the manifest
+### Override in the data analysis recipe
 
-To suppress auto-adjustment for a specific axis, add an `element_text` layer in your manifest targeting that axis:
+To suppress auto-adjustment for a specific axis, add an `element_text` layer in your data analysis recipe targeting that axis:
 
 ```yaml
 layers:
@@ -176,20 +176,20 @@ layers:
       size: 11
 ```
 
-The auto-adjuster skips any axis that already has an explicit `element_text` layer in the manifest.
+The auto-adjuster skips any axis that already has an explicit `element_text` layer in the data analysis recipe.
 
 ## 6. Smart Defaults & Aesthetic Validation (ADR-034)
 
 To maximize user success and ensure a "Fail-Soft" experience, the `VizFactory` implements high-level governance rules during the rendering cycle.
 
-### 6.1 Manifest Default Inhertance
+### 6.1 Data analysis recipe Default Inhertance
 The factory automatically collapses three layers of configuration into every plot:
 1.  **Plot Specifics**: Defined in the individual `plots:` entry.
-2.  **Manifest Tier**: The top-level `plot_defaults` block (if present in the YAML) is merged into every plot. This is the ideal place to define project-wide themes (e.g., `theme: theme_minimal`).
+2.  **Data analysis recipe Tier**: The top-level `plot_defaults` block (if present in the YAML) is merged into every plot. This is the ideal place to define project-wide themes (e.g., `theme: theme_minimal`).
 3.  **Library Fallbacks**: Hardcoded safe anchors (e.g., `theme_bw`) apply if neither of the above are defined.
 
 ### 6.2 The Validation Gate
 The factory performs a "Pre-Flight" scan of all mapping aesthetics.
 - **Auto-Discovery**: It introspects the Polars schema to ensure every column referenced in the `mapping` exists.
 - **Fuzzy Matching**: If a column is missing, the system provides an immediate **Hint** (e.g., *"Did you mean 'species'?"*) to catch typos before the Plotnine engine is even initialized.
-- **Fail-Fast**: Invalid manifests raise a `VisualizationError` with a human-readable `tip`, preventing UI crashes or empty frames.
+- **Fail-Fast**: Invalid data analysis recipes raise a `VisualizationError` with a human-readable `tip`, preventing UI crashes or empty frames.

@@ -1,6 +1,6 @@
 # @deps
-# provides: ManifestBootstrapper class (bootstrap, id_cleaning_recipes) — infers TSV schemas
-#           and writes manifest YAML fragments (analysis_groups, join_manifests, tiered wrangling)
+# provides: DataAnalysisRecipeBootstrapper class (bootstrap, id_cleaning_steps) — infers TSV schemas
+#           and writes data analysis recipe YAML fragments (analysis_groups, joins, tiered wrangling)
 # consumes: polars, pathlib, typing, yaml, re (stdlib/third-party)
 # consumed_by: libs/test_lab/tests/test_bootstrapper.py
 # @end_deps
@@ -25,9 +25,9 @@ def represent_include(dumper, data):
 yaml.add_representer(IncludeRef, represent_include)
 
 
-class ManifestBootstrapper:
+class DataAnalysisRecipeBootstrapper:
     """
-    Logic for inferring data schemas from TSVs and bootstrapping manifest YAMLs.
+    Logic for inferring data schemas from TSVs and bootstrapping data analysis recipe YAMLs.
     Follows the mandatory 3-block structure (input_fields, wrangling, output_fields).
     """
 
@@ -58,32 +58,32 @@ class ManifestBootstrapper:
     def bootstrap(
         self,
         tsv_paths: List[Path],
-        project_id: str,
+        data_analysis_recipe_id: str,
         out_dir: Path,
         metadata_path: Optional[Path] = None,
-        id_cleaning_recipes: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+        id_cleaning_steps: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
         """
-        Creates a project folder and populates it with manifest fragments.
+        Creates a data analysis recipe folder and populates it with data analysis recipe fragments.
 
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
-            project_id: Manifest ID and output folder name.
+            data_analysis_recipe_id: Data analysis recipe ID and output folder name.
             out_dir: Root directory for output.
             metadata_path: Optional dedicated metadata TSV. When provided, a
-                ``metadata_schema`` block is added to the master manifest.
-            id_cleaning_recipes: Optional per-dataset wrangling steps to inject
+                ``metadata_schema`` block is added to the master data analysis recipe.
+            id_cleaning_steps: Optional per-dataset wrangling steps to inject
                 into ``tier1:``. Keyed by dataset_id (sanitized stem). Valid
                 actions: ``strip_whitespace``, ``cast`` (String only),
                 ``regex_replace``.
         """
-        project_dir = out_dir / project_id
-        project_dir.mkdir(parents=True, exist_ok=True)
+        data_analysis_recipe_dir = out_dir / data_analysis_recipe_id
+        data_analysis_recipe_dir.mkdir(parents=True, exist_ok=True)
 
-        fragments_dir = project_dir / project_id  # Subfolder for fragments
+        fragments_dir = data_analysis_recipe_dir / data_analysis_recipe_id  # Subfolder for fragments
         fragments_dir.mkdir(parents=True, exist_ok=True)
 
-        id_cleaning_recipes = id_cleaning_recipes or {}
+        id_cleaning_steps = id_cleaning_steps or {}
         datasets_config = {}
 
         for tsv_p in tsv_paths:
@@ -113,7 +113,7 @@ class ManifestBootstrapper:
                 yaml.dump(fields, f, sort_keys=False)
 
             # Write Fragment: wrangling (tiered, ADR-024 §3)
-            tier1_steps = id_cleaning_recipes.get(dataset_id, [])
+            tier1_steps = id_cleaning_steps.get(dataset_id, [])
             wrangling_file = fragments_dir / f"{dataset_id}_wrangling.yaml"
             pk_hints = (
                 f"# Candidate PK: {', '.join(pk_candidates)} (100% unique)\n"
@@ -142,19 +142,18 @@ class ManifestBootstrapper:
                     "type": "local_tsv",
                     "path": source_path,
                 },
-                "input_fields": IncludeRef(f"{project_id}/{dataset_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{project_id}/{dataset_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{project_id}/{dataset_id}_output_fields.yaml")
+                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_input_fields.yaml"),
+                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_wrangling.yaml"),
+                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_output_fields.yaml")
             }
 
-        # Write Master Manifest
-        master_manifest: Dict[str, Any] = {
-            "id": project_id,
-            "type": "pipeline",
+        # Write Master Data Analysis Recipe
+        master_data_analysis_recipe: Dict[str, Any] = {
+            "id": data_analysis_recipe_id,
             "info": {
-                "display_name": project_id.replace('_', ' ').title(),
+                "display_name": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
-                "description": f"Auto-bootstrapped pipeline for {project_id}"
+                "description": f"Auto-bootstrapped pipeline for {data_analysis_recipe_id}"
             },
             "data_schemas": datasets_config,
         }
@@ -162,18 +161,18 @@ class ManifestBootstrapper:
         # metadata_schema only when a metadata file was explicitly supplied
         if metadata_path is not None:
             meta_id = self._sanitize_name(metadata_path.stem)
-            master_manifest["metadata_schema"] = {
+            master_data_analysis_recipe["metadata_schema"] = {
                 "source": {"type": "local_tsv", "path": str(metadata_path)},
-                "input_fields": IncludeRef(f"{project_id}/{meta_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{project_id}/{meta_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{project_id}/{meta_id}_output_fields.yaml"),
+                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_input_fields.yaml"),
+                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_wrangling.yaml"),
+                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_output_fields.yaml"),
             }
 
-        master_manifest["join_manifests"] = {}
-        master_manifest["analysis_groups"] = {}
+        master_data_analysis_recipe["joins"] = {}
+        master_data_analysis_recipe["analysis_groups"] = {}
 
-        master_file = project_dir / f"{project_id}.yaml"
+        master_file = data_analysis_recipe_dir / f"{data_analysis_recipe_id}.yaml"
         with open(master_file, 'w') as f:
-            yaml.dump(master_manifest, f, sort_keys=False)
+            yaml.dump(master_data_analysis_recipe, f, sort_keys=False)
 
         return master_file

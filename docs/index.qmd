@@ -19,7 +19,7 @@ As prototyping option we chose:
 - **Shiny (Express) for Python** for UI and Interactivity.
 - **Polars LazyFrames** for high-performance, out-of-core data handling.
 - **Plotnine** for publication-quality, grammar-of-graphics visualizations.
-- **Project/Collection Paradigm (ADR-003)**: Decouples domain logic from software architecture using universal terminology.
+- **Data analysis recipe and collection paradigm (ADR-003)**: Decouples domain logic from software architecture using universal terminology.
 
 ### Integrity & Trust {.unnumbered}
 As of **April 2026**, the system has achieved **100% Test Integrity**:
@@ -49,7 +49,7 @@ It would also allow to swap to a different UI (user interface) or the Data sourc
 ### 📚 User Resources {.unnumbered}
 
 For analysts and non-developers navigating the platform:
-- [**The Scientific Cookbook**](./appendix/user_guide_gallery.qmd): A guide to the Gallery and sharing research "recipes."
+- [**The Scientific Cookbook**](./appendix/user_guide_gallery.qmd): A guide to the Gallery and sharing research "examples."
 - [**The Trunk and Branch Guide**](./reference/wrangling_guide.qmd): Understanding the Tiered Wrangling and assembly logic.
 - [**Developing without Code**](./appendix/test_lab_rationale.qmd): Understanding the Test Lab and Building Block analogies.
 - [**The Data Lifecycle**](./appendix/data_lifecycle_theater.qmd): A deep dive into Tiers 1-3 and the Comparison Theater.
@@ -57,7 +57,7 @@ For analysts and non-developers navigating the platform:
 ### 🚀 Admin & Deployment Resources {.unnumbered}
 
 For system administrators deploying SPARMVET in production:
-- [**Deployment Guide**](./deployment/deployment_guide.qmd): How to configure the app for Galaxy, IRIDA, institutional servers, and local machines using a deployment profile YAML.
-- [**UI Personas**](./workflows/ui_persona.qmd): What each persona can do, the full feature flag matrix, and how personas interact with deployment profiles.
+- [**Deployment Guide**](./deployment/deployment_guide.qmd): How to configure the app for Galaxy, IRIDA, institutional servers, and local machines using a deployment file.
+- [**UI App features files**](./workflows/ui_app_features.qmd): What each app features can do, the full feature flag matrix, and how app features files interact with deployments.
 
 

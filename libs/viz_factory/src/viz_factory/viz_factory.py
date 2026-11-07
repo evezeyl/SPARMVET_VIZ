@@ -8,14 +8,21 @@ from utils.errors import VisualizationError
 from utils.pipeline_error import PipelineError
 import difflib
 
+# @deps
+# provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py
+# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
+# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090)
+# @end_deps
+
 # Default seed of every random plot component (jitter). With a fixed default the same data and the
-# same manifest give the same picture, which reports and audits need. A layer can set its own
+# same data analysis recipe give the same picture, which reports and audits need. A layer can set its own
 # `random_state`, and VizFactory(random_state=...) changes the default for a whole factory
 # (tests that need a known arrangement, or a deliberate different one).
 #
 # The seed is a default, never a rule: `random_state: null` (or "random") on a layer, or
 # VizFactory(random_state=None), asks for a different arrangement on every render. Jitter can be
-# useful to try again, and the choice stays with the manifest author.
+# useful to try again, and the choice stays with the data analysis recipe author.
 DEFAULT_RANDOM_STATE = 0
 RANDOM = "random"   # accepted spelling for "no seed", next to None / null
 
@@ -68,12 +75,12 @@ class VizFactory:
 
     Palette registry (BP-COLOR-3):
     - Built-in SPARMVET palettes are always present (no external file required).
-    - Project palettes are injected at construction via palette_registry kwarg — the app layer
+    - Deployment palettes are injected at construction via palette_registry kwarg — the app layer
       resolves config/palettes.yaml via bootloader.get_palettes() and passes the dict here.
     - Library is fully independent: works with only built-ins when no registry is passed.
-    - Manifests may declare plot_defaults: palette: <name> to set a default scale for all plots.
-    - Individual plot specs may declare palette: <name> to override the manifest default.
-    - Resolution order: plot-level palette > manifest plot_defaults.palette > none (matplotlib default).
+    - Data analysis recipes may declare plot_defaults: palette: <name> to set a default scale for all plots.
+    - Individual plot specs may declare palette: <name> to override the data analysis recipe default.
+    - Resolution order: plot-level palette > data analysis recipe plot_defaults.palette > none (matplotlib default).
     """
 
     # Built-in brand palette — always present; no external config required.
@@ -92,14 +99,14 @@ class VizFactory:
     def __init__(self, palette_registry: dict | None = None, random_state=DEFAULT_RANDOM_STATE):
         # Seed used by every random component that does not set its own (see DEFAULT_RANDOM_STATE).
         self._random_state = random_state   # an int, or None / "random" for no seed
-        # Merge built-ins with project palettes injected by the app layer.
-        # Project palettes override built-ins when names collide (intentional branding).
+        # Merge built-ins with deployment palettes injected by the app layer.
+        # Deployment palettes override built-ins when names collide (intentional branding).
         self._palette_registry: dict = {**self._BUILTIN_PALETTES, **(palette_registry or {})}
 
-    def render(self, df: Any, manifest: Dict[str, Any], plot_id: str,
+    def render(self, df: Any, data_analysis_recipe: Dict[str, Any], plot_id: str,
                aesthetic_override: dict | None = None):
         """
-        Main entry point for rendering a single plot by ID from a manifest.
+        Main entry point for rendering a single plot by ID from a data analysis recipe.
         Supports both Polars LazyFrame and DataFrame.
 
         Uses the five-tier plot config cascade (VIZFAC-PLOT-CASCADE-1):
@@ -117,26 +124,26 @@ class VizFactory:
         if isinstance(df, pl.DataFrame):
             df = df.lazy()
 
-        raw_spec = manifest.get('plots', {}).get(plot_id)
+        raw_spec = data_analysis_recipe.get('plots', {}).get(plot_id)
         if not raw_spec:
             pe = PipelineError(
                 component="VizFactory",
-                problem=f"Plot ID '{plot_id}' not found in manifest.",
+                problem=f"Plot ID '{plot_id}' not found in data analysis recipe.",
                 location=f"VizFactory.render(plot_id='{plot_id}')",
                 fix=(
                     "Verify that the plot_id is declared under 'analysis_groups.<group>.plots' "
-                    "in the manifest and that the `spec: !include` path resolves correctly."
+                    "in the data analysis recipe and that the `spec: !include` path resolves correctly."
                 ),
-                who="manifest_author",
+                who="data_analysis_recipe_author",
                 category="visualization",
                 surface="plot_overlay",
                 severity="error",
-                evidence={"plot_id": plot_id, "available_plots": list(manifest.get("plots", {}).keys())},
+                evidence={"plot_id": plot_id, "available_plots": list(data_analysis_recipe.get("plots", {}).keys())},
             )
             print(pe.format())
             raise VisualizationError(pe.problem, tip=pe.fix)
 
-        plot_defaults = manifest.get('plot_defaults') or {}
+        plot_defaults = data_analysis_recipe.get('plot_defaults') or {}
 
         # 1. Tier 3: Apply UI-driven filters (predicate pushdown on LazyFrame).
         # Must happen before collect() to preserve lazy evaluation.
@@ -236,16 +243,16 @@ class VizFactory:
                 problem=f"Unknown plot_defaults key '{key}' — ignored.",
                 location=f"VizFactory.render(plot_id='{plot_id}')",
                 fix=(
-                    f"Remove or correct the key '{key}' in the manifest 'plot_defaults:' block. "
+                    f"Remove or correct the key '{key}' in the data analysis recipe 'plot_defaults:' block. "
                     "Valid keys: palette, theme, default_font_family, facet_panel_spacing, "
-                    "legend_position, optimisation. See rules_manifest_structure.md §10."
+                    "legend_position, optimisation. See rules_data_analysis_recipe_structure.md §10."
                 ),
-                who="manifest_author",
+                who="data_analysis_recipe_author",
                 category="visualization",
                 surface="notification",
                 severity="warning",
                 evidence={"unknown_key": key},
-                reference="rules_manifest_structure.md §10",
+                reference="rules_data_analysis_recipe_structure.md §10",
             )
             print(pe.format())
         if resolved["_l5_mutex_warn"]:
@@ -275,7 +282,7 @@ class VizFactory:
                     problem=f"Aesthetic '{aesthetic}' references unknown column '{col_name}'.",
                     location=f"VizFactory.render(plot_id='{plot_id}')",
                     fix=tip,
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="visualization",
                     surface="plot_overlay",
                     severity="error",
@@ -285,7 +292,7 @@ class VizFactory:
                         "near_match": matches[0] if matches else None,
                         "available_columns": all_cols[:20],
                     },
-                    reference="rules_manifest_structure.md §8",
+                    reference="rules_data_analysis_recipe_structure.md §8",
                 )
                 print(pe.format())
                 raise VisualizationError(pe.problem, tip=pe.fix)
@@ -325,7 +332,7 @@ class VizFactory:
                         + (f"Did you mean '{matches[0]}'? " if matches else "")
                         + "See rules_viz_factory.md §1 and libs/viz_factory/src/viz_factory/ for the component list."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="visualization",
                     surface="plot_overlay",
                     severity="error",
@@ -341,8 +348,8 @@ class VizFactory:
                     component="VizFactory",
                     problem=f"Layer '{layer_name}' raised {type(exc).__name__}: {exc}",
                     location=f"VizFactory.render(plot_id='{plot_id}')",
-                    fix="Review the layer parameters in the manifest spec. Check that all parameter values match the plotnine API for this component.",
-                    who="manifest_author",
+                    fix="Review the layer parameters in the data analysis recipe spec. Check that all parameter values match the plotnine API for this component.",
+                    who="data_analysis_recipe_author",
                     category="visualization",
                     surface="plot_overlay",
                     severity="error",
@@ -363,7 +370,7 @@ class VizFactory:
             print(f"Applied axis text overrides: {list(element_text_batch.keys())}")
 
         # 8. Apply flat labels / guides blocks (backwards-compat with spec-level dicts).
-        # In typical manifests these come from a labs layer; the flat keys are legacy.
+        # In typical data analysis recipes these come from a labs layer; the flat keys are legacy.
         labels_block = resolved.get("labels", {})
         if labels_block:
             from plotnine import labs
@@ -417,7 +424,7 @@ class VizFactory:
             Sequential/diverging names → scale_*_distiller (continuous-safe fallback).
             Otherwise → scale_*_brewer (categorical).
         - Only injects for aesthetics present in the mapping.
-        - Never overwrites a scale already declared in the manifest layers.
+        - Never overwrites a scale already declared in the data analysis recipe layers.
         """
         uses_fill = "fill" in mapping_spec and not has_fill_scale
         uses_color = ("color" in mapping_spec or "colour" in mapping_spec) and not has_color_scale
@@ -425,17 +432,17 @@ class VizFactory:
         if not uses_fill and not uses_color:
             return p
 
-        project_colors = self._palette_registry.get(palette_name)
-        if project_colors:
-            # Project palette — inject scale_*_manual
+        deployment_colors = self._palette_registry.get(palette_name)
+        if deployment_colors:
+            # Deployment palette — inject scale_*_manual
             if uses_fill:
                 from plotnine import scale_fill_manual
-                p = p + scale_fill_manual(values=project_colors)
-                print(f"[VizFactory] Applied project palette '{palette_name}' → scale_fill_manual")
+                p = p + scale_fill_manual(values=deployment_colors)
+                print(f"[VizFactory] Applied deployment palette '{palette_name}' → scale_fill_manual")
             if uses_color:
                 from plotnine import scale_color_manual
-                p = p + scale_color_manual(values=project_colors)
-                print(f"[VizFactory] Applied project palette '{palette_name}' → scale_color_manual")
+                p = p + scale_color_manual(values=deployment_colors)
+                print(f"[VizFactory] Applied deployment palette '{palette_name}' → scale_color_manual")
         else:
             # Matplotlib palette name — use brewer or distiller
             # Viridis family and continuous palettes go through distiller
@@ -460,7 +467,7 @@ class VizFactory:
                         problem=f"Viridis palette '{palette_name}' failed to apply: {exc}",
                         location="_apply_palette",
                         fix=f"Check that '{palette_name}' is a valid viridis option (viridis, plasma, magma, inferno, cividis).",
-                        who="manifest_author",
+                        who="data_analysis_recipe_author",
                         category="visualization",
                         surface="plot_overlay",
                         severity="warning",
@@ -478,14 +485,14 @@ class VizFactory:
                 except Exception as exc:
                     pe = PipelineError(
                         component="VizFactory",
-                        problem=f"Palette '{palette_name}' not found in project registry or plotnine/RColorBrewer.",
+                        problem=f"Palette '{palette_name}' not found in the deployment palette registry or plotnine/RColorBrewer.",
                         location="_apply_palette",
                         fix=(
-                            f"Check the palette name in the manifest. "
-                            f"Valid project palettes: {list(self._palette_registry.keys()) or ['(none registered)']}. "
+                            f"Check the palette name in the data analysis recipe. "
+                            f"Valid deployment palettes: {list(self._palette_registry.keys()) or ['(none registered)']}. "
                             "Or use a matplotlib/RColorBrewer name such as 'Blues', 'Set1', 'viridis'."
                         ),
-                        who="manifest_author",
+                        who="data_analysis_recipe_author",
                         category="visualization",
                         surface="plot_overlay",
                         severity="warning",

@@ -18,9 +18,9 @@ def _minimal() -> PipelineError:
     return PipelineError(
         component="DataWrangler",
         problem="Column 'species' not found in dataset.",
-        location="config/manifests/pipelines/test.yaml :: tier1 step 2",
+        location="config/data_analysis_recipes/pipelines/test.yaml :: tier1 step 2",
         fix="Add 'species' to input_fields or correct the action column name.",
-        who="manifest_author",
+        who="data_analysis_recipe_author",
         category="wrangling",
         surface="notification",
     )
@@ -76,7 +76,7 @@ class TestConstruction:
         with pytest.raises(ValueError, match="who must be one of"):
             PipelineError(
                 component="X", problem="p", location="l", fix="f",
-                who="unknown_persona", category="wrangling", surface="notification",
+                who="unknown_app_features", category="wrangling", surface="notification",
             )
 
     def test_invalid_category(self):
@@ -109,7 +109,7 @@ class TestConstruction:
         )
         assert err.severity == "warning"
 
-    @pytest.mark.parametrize("who", ["analyst", "data_provider", "manifest_author", "developer", "operator"])
+    @pytest.mark.parametrize("who", ["analyst", "data_provider", "data_analysis_recipe_author", "developer", "operator"])
     def test_all_valid_who(self, who):
         err = PipelineError(
             component="X", problem="p", location="l", fix="f",
@@ -155,7 +155,7 @@ class TestFormat:
         out = _minimal().format()
         assert "DataWrangler" in out
         assert "wrangling" in out
-        assert "manifest_author" in out
+        assert "data_analysis_recipe_author" in out
         assert "notification" in out
 
     def test_optional_fields_present_when_set(self):
@@ -259,7 +259,7 @@ class TestMakeRenderPayload:
         cases = {
             "analyst": "Analyst",
             "data_provider": "Data Provider",
-            "manifest_author": "Manifest Author",
+            "data_analysis_recipe_author": "Data analysis recipe Author",
             "developer": "Developer",
             "operator": "Operator",
         }

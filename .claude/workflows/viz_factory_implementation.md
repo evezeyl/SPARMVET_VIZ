@@ -9,7 +9,7 @@ This workflow defines the mandatory process for implementing new plotting compon
 ## 1. Specification & Contract
 
 - **Source Material**: Search `EVE_WORK/reference/plotnine_api_context.md` for the component signature and available parameters.
-- **Contract Definition**: Define the `mapping` and `params` dictionary schema for the manifest.
+- **Contract Definition**: Define the `mapping` and `params` dictionary schema for the data analysis recipe.
 
 ## 2. Implementation Phase
 
@@ -22,7 +22,7 @@ This workflow defines the mandatory process for implementing new plotting compon
 No component is complete without an automated triplet test in `libs/viz_factory/tests/test_data/`:
 
 1. **Data (`{component}_test.tsv`)**: Create a minimal TSV file with synthetic data suited for the component.
-2. **Manifest (`{component}_test.yaml`)**: Define a manifest that MUST strictly follow the standards dictated in `[rules_manifest_structure.md](../rules/rules_manifest_structure.md)` and that additionally:
+2. **Data analysis recipe (`{component}_test.yaml`)**: Define a data analysis recipe that MUST strictly follow the standards dictated in `[rules_data_analysis_recipe_structure.md](../rules/rules_data_analysis_recipe_structure.md)` and that additionally:
     - Points to the TSV via a `data_path` key.
     - Defines the aesthetic `mapping`.
     - Includes the new component in the `layers` list.

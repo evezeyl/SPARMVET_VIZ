@@ -37,10 +37,10 @@ _TIER_RANK = {
 
 class BlueprintMapper:
     """
-    [ADR-039] Generates a DAG-based 'TubeMap' visualization for SPARMVET manifests.
+    [ADR-039] Generates a DAG-based 'TubeMap' visualization for SPARMVET data analysis recipes.
 
-    Parses the full manifest structure (data_schemas, additional_datasets_schemas,
-    metadata_schema, join_manifests, and plots flattened by ConfigManager from
+    Parses the full data analysis recipe structure (data_schemas, additional_datasets_schemas,
+    metadata_schema, joins, and plots flattened by ConfigManager from
     analysis_groups) and outputs:
       - generate_mermaid()      → Mermaid LR DAG string (legacy, kept for reference)
       - generate_cy_elements()  → Cytoscape.js elements JSON (primary, tube-map UI)
@@ -52,7 +52,7 @@ class BlueprintMapper:
     Node types:
       trunk    (blue)   — raw data source (data_schemas)
       wrangle  (yellow) — wrangling step
-      branch   (purple) — join_manifests join node
+      branch   (purple) — joins join node
       plot     (green)  — terminal plot node
       add      (grey)   — additional_datasets_schemas
       meta     (orange) — metadata_schema
@@ -118,7 +118,7 @@ class BlueprintMapper:
             _add_node(safe, f'{safe}(["{label}\\nSource"])', "trunk", sid)
             # Wrangling node (always present — may be inline or file)
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             wrn_id = self._n(sid, "wrn")
             if has_wrn:
                 _add_node(wrn_id, f'{wrn_id}["{sid}\\nWrangling"]', "wrangle", sid)
@@ -134,7 +134,7 @@ class BlueprintMapper:
             label = self._get_label(aid, details)
             _add_node(safe, f'{safe}(["{label}\\nAdd Data"])', "add", aid)
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             wrn_id = self._n(aid, "wrn")
             if has_wrn:
                 _add_node(wrn_id, f'{wrn_id}["{aid}\\nWrangling"]', "wrangle", aid)
@@ -146,15 +146,15 @@ class BlueprintMapper:
             _add_node("metadata_schema",
                       'metadata_schema(["Metadata\\nSchema"])', "meta", "metadata_schema")
             has_wrn = isinstance(meta, dict) and bool(
-                meta.get("wrangling") or meta.get("recipe"))
+                meta.get("wrangling") or meta.get("steps"))
             if has_wrn:
                 wrn_id = self._n("metadata_schema", "wrn")
                 _add_node(wrn_id, f'{wrn_id}["metadata_schema\\nWrangling"]',
                           "wrangle", "metadata_schema")
                 _add_edge("metadata_schema", wrn_id)
 
-        # ── 4. Assembly Manifests ──────────────────────────────────────────────
-        join_defs = self.cfg.get("join_manifests", {})
+        # ── 4. Assembly Data Analysis Recipes ──────────────────────────────────────────────
+        join_defs = self.cfg.get("joins", {})
 
         def _upstream_node(parent_raw: str) -> str:
             """Return the last node in the parent schema's chain."""
@@ -181,9 +181,9 @@ class BlueprintMapper:
                 up = _upstream_node(parent_raw)
                 _add_edge(up, safe)
 
-            # Assembly wrangling/recipe node
+            # Assembly wrangling/audit step
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wrn_id = self._n(asid, "wrn")
                 _add_node(wrn_id, f'{wrn_id}["{asid}\\nJoin Wrangling"]',
@@ -200,7 +200,7 @@ class BlueprintMapper:
                 for pid in group_spec.get("plots", {}).keys():
                     plot_to_group[pid] = group_name
 
-        # Also pick up target_dataset from analysis_groups directly (inline manifests
+        # Also pick up target_dataset from analysis_groups directly (inline data analysis recipes
         # don't go through ConfigManager flattening so plots_flat may be empty)
         inline_plots: dict = {}
         for group_name, group_spec in analysis_groups.items():
@@ -343,7 +343,7 @@ class BlueprintMapper:
             all_known.add(safe)
 
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wid = _wrn_id(sid)
                 elements.append(_node(wid, f"{sid}\nWrangle", "wrangle", sid, 1))
@@ -359,7 +359,7 @@ class BlueprintMapper:
             all_known.add(safe)
 
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wid = _wrn_id(aid)
                 elements.append(_node(wid, f"{aid}\nWrangle", "wrangle", aid, 1))
@@ -373,7 +373,7 @@ class BlueprintMapper:
                                   "metadata_schema", 0))
             all_known.add("metadata_schema")
             has_wrn = isinstance(meta, dict) and bool(
-                meta.get("wrangling") or meta.get("recipe"))
+                meta.get("wrangling") or meta.get("steps"))
             if has_wrn:
                 wid = _wrn_id("metadata_schema")
                 elements.append(_node(wid, "Metadata\nWrangle", "wrangle",
@@ -381,8 +381,8 @@ class BlueprintMapper:
                 elements.append(_edge("metadata_schema", wid))
                 all_known.add(wid)
 
-        # ── 4. Assembly Manifests (tier 2) ─────────────────────────────────────
-        join_defs = self.cfg.get("join_manifests", {})
+        # ── 4. Assembly Data Analysis Recipes (tier 2) ─────────────────────────────────────
+        join_defs = self.cfg.get("joins", {})
 
         def _upstream(parent_raw: str) -> str:
             """Last node in a parent schema's chain (wrangling if present)."""
@@ -408,7 +408,7 @@ class BlueprintMapper:
                 elements.append(_edge(_upstream(parent_raw), safe))
 
             has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("recipe"))
+                details.get("wrangling") or details.get("steps"))
             if has_wrn:
                 wid = _wrn_id(asid)
                 # Assembly wrangling is still tier 2 — it follows the join
@@ -465,10 +465,10 @@ if __name__ == "__main__":
     from utils.config_loader import ConfigManager
 
     parser = argparse.ArgumentParser(
-        description="Generate a TubeMap (Mermaid) for a manifest.")
-    parser.add_argument("manifest", help="Path to the manifest YAML")
+        description="Generate a TubeMap (Mermaid) for a data analysis recipe.")
+    parser.add_argument("data_analysis_recipe", help="Path to the data analysis recipe YAML")
     args = parser.parse_args()
 
-    cm = ConfigManager(args.manifest)
+    cm = ConfigManager(args.data_analysis_recipe)
     mapper = BlueprintMapper(cm.raw_config)
     print(mapper.generate_mermaid())

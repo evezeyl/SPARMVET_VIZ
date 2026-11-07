@@ -1,5 +1,5 @@
 id: scale_alpha_discrete_test
-description: Test manifest for scale_alpha_discrete_test.yaml
+description: Test data analysis recipe for scale_alpha_discrete_test.yaml
 input_fields: []
 wrangling:
   tier1: []

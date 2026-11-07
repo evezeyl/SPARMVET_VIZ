@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 # Allowed value sets — validated in __post_init__
 # ---------------------------------------------------------------------------
 
-_VALID_WHO = frozenset({"analyst", "data_provider", "manifest_author", "developer", "operator"})
+_VALID_WHO = frozenset({"analyst", "data_provider", "data_analysis_recipe_author", "developer", "operator"})
 _VALID_CATEGORY = frozenset({"ingestion", "wrangling", "assembly", "visualization", "t3_apply", "blueprint_edit"})
 _VALID_SURFACE = frozenset({"plot_overlay", "notification", "audit_panel", "data_import_panel", "blueprint_inline"})
 _VALID_SEVERITY = frozenset({"error", "warning"})
@@ -59,13 +59,13 @@ class PipelineError:
     """One-sentence, concrete. Names the column, action, or value that failed."""
 
     location: str
-    """Manifest path + slug, plot_id, action step index, or uploaded-file name."""
+    """Data analysis recipe path + slug, plot_id, action step index, or uploaded-file name."""
 
     fix: str
     """Concrete remediation routed to the `who` audience."""
 
     who: str
-    """'analyst' | 'data_provider' | 'manifest_author' | 'developer' | 'operator'."""
+    """'analyst' | 'data_provider' | 'data_analysis_recipe_author' | 'developer' | 'operator'."""
 
     # ── Runtime-specific (mandatory) ─────────────────────────────────────
     category: str
@@ -219,7 +219,7 @@ def make_render_payload(error: PipelineError) -> dict:
     who_label = {
         "analyst": "Analyst",
         "data_provider": "Data Provider",
-        "manifest_author": "Manifest Author",
+        "data_analysis_recipe_author": "Data analysis recipe Author",
         "developer": "Developer",
         "operator": "Operator",
     }.get(error.who, error.who.title())

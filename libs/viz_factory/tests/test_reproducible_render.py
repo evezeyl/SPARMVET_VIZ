@@ -1,4 +1,4 @@
-"""The same data and manifest must give the same picture, also for random scatter (jitter).
+"""The same data and data analysis recipe must give the same picture, also for random scatter (jitter).
 
 Every way jitter reaches a plot is seeded by default, a layer can set its own `random_state`, and
 VizFactory(random_state=...) sets the default for a whole factory (the handle for tests that need

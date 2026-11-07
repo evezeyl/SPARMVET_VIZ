@@ -8,34 +8,34 @@
 | :--- | :--- | :--- | :--- |
 | `./.claude/` | DIRECTIVES (Rules & Workflows) | Folder | `workspace_standard`, `rules_app_structure`, `verification_protocol` |
 | `./.claude/` | PROJECT STATE (Knowledge, Plans, Tasks) | Folder | `architecture_decisions`, `tasks.md`, `audit_*.md` |
-| `app/src/bootloader.py` | Path Authority & Persona Bootstrapper | Config → Paths/Toggles | `Bootloader`, `persona`, ADR-031 |
+| `app/src/bootloader.py` | Path Authority & App features Bootstrapper | Config → Paths/Toggles | `Bootloader`, `app features`, ADR-031 |
 | `app/src/ui.py` | 3-Zone Dashboard Shell (static HTML/CSS only) | UI Spec → Layout | `Navigation`, `Theater`, `Audit Stack` |
-| `config/ui/theme.css` | Base stylesheet — injected at startup via `bootloader.get_theme_css_path()` | CSS → `ui.tags.style()` | ADR-055; personas declare `theme_css:` key to override for branding. **Full design token spec in `.claude/rules/rules_css_style_spec.md` — read before writing any CSS.** Canonical colours: primary blue `#345beb`, export teal `#10a395`, reset amber `#ffc107`. View title banners use `.view-title-banner` / `.banner-title` / `.banner-subtitle`. |
-| `config/ui/sidebars/` | Shared sidebar panel-list YAML files (ADR-073) | YAML → persona template `!include` | One file per workspace×tier combination. Referenced via `!include sidebars/<name>.yaml` in persona template `workspaces:` section. |
+| `config/ui/theme.css` | Base stylesheet — injected at startup via `bootloader.get_theme_css_path()` | CSS → `ui.tags.style()` | ADR-055; app features files declare `theme_css:` key to override for branding. **Full design token spec in `.claude/rules/rules_css_style_spec.md` — read before writing any CSS.** Canonical colours: primary blue `#345beb`, export teal `#10a395`, reset amber `#ffc107`. View title banners use `.view-title-banner` / `.banner-title` / `.banner-subtitle`. |
+| `config/ui/sidebars/` | Shared sidebar panel-list YAML files (ADR-073) | YAML → app features file `!include` | One file per workspace×tier combination. Referenced via `!include sidebars/<name>.yaml` in app features file `workspaces:` section. |
 | `app/modules/sidebar_registry.py` | Panel type registry (ADR-073) — headless-safe, Two-Category Law | `PANEL_REGISTRY` dict → type name → renderer ref + gate flag | Used by `home_theater.py` slot iteration and `SidebarValidator`. Never import Shiny here. |
-| `scripts/validate_persona_config.py` | Persona + sidebar compatibility validator CLI (ADR-073) | `--persona <id>` / `--all` / `--strict` | Runs `PersonaValidator` + `SidebarValidator`. Use `--strict` in CI. Also runs at app startup (warnings logged, errors block). |
+| `scripts/validate_app_features_config.py` | App features + sidebar compatibility validator CLI (ADR-073) | `--app-features <id>` / `--all` / `--strict` | Runs `AppFeaturesValidator` + `SidebarValidator`. Use `--strict` in CI. Also runs at app startup (warnings logged, errors block). |
 | `scripts/audit_*.py` | 13 audit scripts for automated codebase hygiene (ADR-080) | `--output .claude/logs/audits/audit_NAME_YYYY-MM-DD.md` | See `.claude/workflows/audit_routine_registry.md` for full list and `.claude/workflows/schedule_commands.md` for execution guide. |
 | `scripts/run_audits.sh` | Audit wrapper — groups scripts by day slot; enforces `dev` branch (ADR-080) | `./scripts/run_audits.sh <sunday\|wednesday\|thursday\|friday\|all\|ondemand>` | Auto-switches to `dev` branch; prints unprocessed report summary at end. Session-end quick run: pass `sunday` for the four highest-value scripts. |
 | `scripts/systemd/` | Systemd user timer units for persistent audit scheduling (ADR-080) | `./scripts/systemd/install.sh` (one-time setup) | `sparmvet-audit@.service` + 4 `.timer` files with `Persistent=true` — fires missed runs on next boot. See `schedule_commands.md §D`. |
 | `app/src/server.py` | **Thin Orchestrator only** (ADR-045, 237 lines, limit ~250) | Shared state/calcs → Handler delegation | `active_cfg`, `tier1_anchor`, 5× `define_server()` calls |
-| `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` | **Pure manifest introspection engine** (ADR-045/ADR-067/ADR-074) | Manifest path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group`, `generate_branch_plan` — importable anywhere, zero Shiny dependency |
+| `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` | **Pure data analysis recipe introspection engine** (ADR-045/ADR-067/ADR-074) | Data analysis recipe path → Structural dicts | `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`, `build_plot_lineage`, `get_plot_ids_in_group`, `generate_branch_plan` — importable anywhere, zero Shiny dependency |
 | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` | **BLUEPRINT form catalog** (ADR-075, to be created) | `@register_action` + `@register_plot_component` `ui_schema` dicts → widget catalog | Reads `ui_schema` kwarg from registries at startup; builds action/component picker for BLUEPRINT IDE. Headless-safe — zero Shiny imports. |
-| `scripts/migrate_manifests.py` | **Action name migration scanner** (ACTION-RENAME-1, to be created) | Project-wide YAML scan → rename report + apply | Scans `config/manifests/`, persona templates, `assets/gallery_data/` for deprecated action names; reports discrepancies; applies renames with `--apply` flag. |
+| `scripts/migrate_data_analysis_recipes.py` | **Action name migration scanner** (ACTION-RENAME-1, to be created) | Project-wide YAML scan → rename report + apply | Scans `config/data_analysis_recipes/`, app features files, `assets/gallery_data/` for deprecated action names; reports discrepancies; applies renames with `--apply` flag. |
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
-| `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_recipe_changes` |
-| `app/handlers/blueprint_handlers.py` | Blueprint Architect Shiny wiring (ADR-039/045) | Reactive hooks → Architect UI | `_handle_manifest_import`, `_do_load_component`, `sync_blueprint_mapper`, `_handle_upload_*` |
+| `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_audit_step_changes` |
+| `app/handlers/blueprint_handlers.py` | Blueprint Architect Shiny wiring (ADR-039/045) | Reactive hooks → Architect UI | `_handle_data_analysis_recipe_import`, `_do_load_component`, `sync_blueprint_mapper`, `_handle_upload_*` |
 | `app/handlers/gallery_handlers.py` | Gallery Shiny wiring (ADR-037/045) | Reactive hooks → Gallery UI | `_update_gallery_options`, `handle_gallery_clone`, `gallery_preview_img`, `gallery_md_content` |
-| `app/handlers/ingestion_handlers.py` | Ingestion & persona Shiny wiring (ADR-045) | Reactive hooks → Ingest/Persona | `handle_ingest`, `update_persona_context` |
-| `app/modules/orchestrator.py` | Tier 1 Ingestion & Assembly Bridge | Manifest + Data → Parquet | `DataOrchestrator (orchestrator.py)` |
+| `app/handlers/ingestion_handlers.py` | Ingestion & app features Shiny wiring (ADR-045) | Reactive hooks → Ingest/App features | `handle_ingest`, `update_app_features_context` |
+| `app/modules/orchestrator.py` | Tier 1 Ingestion & Assembly Bridge | Data analysis recipe + Data → Parquet | `DataOrchestrator (orchestrator.py)` |
 | `libs/ingestion/src/ingestion/ingestor.py` | Reads sources, early validation | File → LazyFrame | `DataIngestor (ingestor.py)`, `scan_csv` |
 | `libs/transformer/src/transformer/data_wrangler.py` | Layer 1 execution (Atomic) | Dataset → LazyFrame | `DataWrangler`, `@register_action` |
 | `libs/transformer/src/transformer/data_assembler.py` | Layer 2 orchestration (Relational) | Multiple LFs → LazyFrame | `DataAssembler`, `sink_parquet` |
 | `libs/utils/src/utils/config_loader.py` | Recursive YAML & Include Resolver | YAML → Python Dict | `ConfigManager`, `!include` |
 | `libs/test_lab/src/test_lab/aqua_synthesizer.py` | [ADR-032/ADR-068] Relational Data Synthesis (SDK Core) | Schema → TSV | `clean_header`, `generate_fake_column`, `--generate_only` |
-| `libs/test_lab/src/test_lab/scaffolder.py` | [ADR-084] Manifest Scaffolding — generates project ZIP from uploaded TSVs | TSV paths + project_id → bytes (ZIP) | `ManifestScaffolder.scaffold(tsv_paths, project_id, recipes, metadata_path)`. Wired in TEST_LAB handler `tl_scaffold_ui` / `tl_scaffold_download`. |
-| `libs/viz_factory/src/viz_factory.py` | Artist Pillar: Plot Composition | Data + Manifest → ggplot | `VizFactory`, `Plot Layers` |
+| `libs/test_lab/src/test_lab/scaffolder.py` | [ADR-084] Data analysis recipe Scaffolding — generates data analysis recipe ZIP from uploaded TSVs | TSV paths + data_analysis_recipe_id → bytes (ZIP) | `DataAnalysisRecipeScaffolder.scaffold(tsv_paths, data_analysis_recipe_id, steps, metadata_path)`. Wired in TEST_LAB handler `tl_scaffold_ui` / `tl_scaffold_download`. |
+| `libs/viz_factory/src/viz_factory.py` | Artist Pillar: Plot Composition | Data + Data analysis recipe → ggplot | `VizFactory`, `Plot Layers` |
 | `libs/viz_factory/src/viz_factory/plot_config_resolver.py` | **Plot config cascade resolver** (VIZFAC-RESOLVER-1, to be created) | Tiered config dicts → flat resolved dict | Pure function `resolve_plot_config()` resolves L5(T3 override) > L4(spec) > L3(optimisation) > L2(plot_defaults) > L1(built-ins). See `.claude/design/plot_config_cascade.md`. |
-| `libs/utils/src/utils/pipeline_error.py` | **Runtime error dataclass** (ADR-079, DIAG-RUNTIME-BASE-1, to be created) | Library exceptions → structured runtime error | `PipelineError` dataclass; sits alongside `DeploymentError` (ADR-078); audience model adds `analyst`/`data_provider`/`manifest_author`; per-category render surfaces. |
+| `libs/utils/src/utils/pipeline_error.py` | **Runtime error dataclass** (ADR-079, DIAG-RUNTIME-BASE-1, to be created) | Library exceptions → structured runtime error | `PipelineError` dataclass; sits alongside `DeploymentError` (ADR-078); audience model adds `analyst`/`data_provider`/`data_analysis_recipe_author`; per-category render surfaces. |
 | `libs/viz_gallery/assets/refresh_gallery.py` | [ADR-037] Gallery Indexing & Integrity Refresher | CLI Tool → JSON | `refresh_gallery.py`, Pivot-Index |
 | `app/modules/gallery_viewer.py` | [ADR-033/057] Split-Pane Gallery (full-width) + sidebar filter builder | Main content + sidebar UI | `GalleryViewer.render_explorer_ui()` (main), `GalleryViewer.build_sidebar_ui()` (nav_sidebar accordion — called by home_theater.py sidebar_tools_ui) |
 | `protocol_tiered_data.md` | Logic Protocol for Tiers (ADR-024) | Source of Truth | Short-Circuit, Predicate Pushdown |
@@ -44,8 +44,8 @@
 | `pipeline/*.yaml` | Master configurations and nested data contracts | (Defs) → Pipeline state | `input_fields`, `output_fields` |
 | `libs/*/src/*/registry.py` | Authority for valid Wrangling and Viz actions | Registry → Validation | `@register_action`, `@register_geom` |
 
-| `libs/transformer/tests/debug_assembler.py` | Assembly debug runner — mirrors orchestrator exactly | Manifest → `tmp/EVE_contracted_*.parquet` + `.tsv` | `DataWrangler._resolve_tier`, `MetadataValidator`, join dtype norm, `final_contract` |
-| `libs/viz_factory/tests/debug_gallery.py` | Headless plot renderer for manifest audit | Contracted parquet → PNG | Reads `tmp/EVE_contracted_*.parquet`; `VizFactory.render()` |
+| `libs/transformer/tests/debug_assembler.py` | Assembly debug runner — mirrors orchestrator exactly | Data analysis recipe → `tmp/EVE_contracted_*.parquet` + `.tsv` | `DataWrangler._resolve_tier`, `MetadataValidator`, join dtype norm, `final_contract` |
+| `libs/viz_factory/tests/debug_gallery.py` | Headless plot renderer for data analysis recipe audit | Contracted parquet → PNG | Reads `tmp/EVE_contracted_*.parquet`; `VizFactory.render()` |
 | `.claude/knowledge/dependency_index.md` | **Forward/backward dependency map** for all tightly-coupled files | — | Check before modifying any indexed file; lists `provides` / `consumed_by` / sync risk pairs |
 
 ## 2. Verification & Logging Protocol
@@ -53,8 +53,8 @@
 - **Standard**: All manual verification must follow the **Evidence Loop** defined in [rules_verification_testing.md](./.claude/rules/rules_verification_testing.md).
 - **Mandatory Halt**: No task is [DONE] without a `@verify` gate and materialization to `tmp/`.
 - **Phase-Gating Mandate**: UI Testing and module integration are STRICTLY PROHIBITED until the explicit Headless tests pass.
-- **Headless Artifact Routing**: Automatic library test outputs map to `tmp/{lib}/`, while Manifest tests route strictly to `tmp/Manifest_test/{manifest_basename}/`.
-- **Manifest Architecture**: Manifests must use the "Basename Mirroring" standard (`manifest_name/` directory containing components).
+- **Headless Artifact Routing**: Automatic library test outputs map to `tmp/{lib}/`, while Data analysis recipe tests route strictly to `tmp/data_analysis_recipe_test/{data_analysis_recipe_basename}/`.
+- **Data analysis recipe Architecture**: Data Analysis Recipes must use the "Basename Mirroring" standard (`data_analysis_recipe_name/` directory containing components).
 - **Session Audit**: Every significant architectural or data change MUST be logged in `./.claude/logs/audit_{{YYYY-MM-DD}}.md`. Append-only.
 
 ## 3a. Shiny Reactive Shell Stability Law (2026-04-23)
@@ -64,7 +64,7 @@ Critical pattern discovered during Phase 21-F implementation. Violating this cau
 **Law:** A `@render.ui` output that reads a frequently-changing `reactive.Value` (e.g., `_pending_filters`) will re-render its entire DOM subtree on every change, destroying any child `output_ui` nodes. Shiny cannot re-bind destroyed output IDs — child outputs become invisible permanently until page refresh.
 
 **Correct pattern — split into independent outputs:**
-1. **Shell** (`sidebar_filters`): reads only slowly-changing reactives (persona only). Mounts stable `output_ui()` slot IDs. Never re-renders unless persona changes.
+1. **Shell** (`sidebar_filters`): reads only slowly-changing reactives (app features only). Mounts stable `output_ui()` slot IDs. Never re-renders unless app features changes.
 2. **Sub-outputs** (`filter_rows_ui`, `filter_form_ui`, `filter_controls_ui`, etc.): each is an independent `@output @render.ui` function reading only the reactive values it needs. Re-renders in isolation without touching sibling outputs.
 
 **`selected=` must be explicit:** When a `@render.ui` re-renders a `ui.input_select(...)`, Shiny resets the selection to the first option unless `selected=current_value` is passed explicitly at render time. Use `safe_input(input, "fb_col", default)` to read the current selection before rendering.
@@ -73,46 +73,46 @@ Critical pattern discovered during Phase 21-F implementation. Violating this cau
 
 ## 3. UI Shell Architecture (ADR-043/ADR-044/ADR-073)
 
-- **Sidebars are declarative (ADR-073):** Left and right sidebar layouts are declared per persona template under `workspaces.<ws>.left_sidebar` / `workspaces.<ws>.right_sidebar`. Panel types are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`). Persona template `!include` targets in `config/ui/sidebars/` enable shared configs across personas. `bootloader.get_sidebar_config(workspace, side)` is the runtime API. **Never hardcode sidebar panel sequences in Python** — add to the registry and declare in template.
-- **Two-layer resolution:** Slot list (persona template) controls presence/order; feature flags control capability. Fully independent. A panel in the slot list with a disabled flag is silently skipped.
+- **Sidebars are declarative (ADR-073):** Left and right sidebar layouts are declared per app features file under `workspaces.<ws>.left_sidebar` / `workspaces.<ws>.right_sidebar`. Panel types are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`). App features file `!include` targets in `config/ui/sidebars/` enable shared configs across app features files. `bootloader.get_sidebar_config(workspace, side)` is the runtime API. **Never hardcode sidebar panel sequences in Python** — add to the registry and declare in template.
+- **Two-layer resolution:** Slot list (app features file) controls presence/order; feature flags control capability. Fully independent. A panel in the slot list with a disabled flag is silently skipped.
 - **Navigation (Left, #c0c0c0)**: Workspace-dependent. Filter widgets are **context-reactive to the active plot sub-tab** — regenerated on sub-tab change, scoped to that plot's `plot_spec` aesthetics. Switching workspaces physically replaces the left sidebar DOM.
 - **Theater (Center, #d1d1d1)**:
-  - **Home Mode (Unified)**: Tabs driven exclusively by manifest `analysis_groups`. Each group tab contains `navset_underline` plot sub-tabs wrapped in a **collapsible accordion**. Data preview in a **separate collapsible accordion below**. No hardcoded tabs. Controlled by the **Tier Toggle** (T1/T2 always; T3-Wrangle/T3-Plot persona-gated). **Comparison Mode** (persona-gated separate toggle) splits the theater into T2-reference (left) and T3-active (right).
+  - **Home Mode (Unified)**: Tabs driven exclusively by data analysis recipe `analysis_groups`. Each group tab contains `navset_underline` plot sub-tabs wrapped in a **collapsible accordion**. Data preview in a **separate collapsible accordion below**. No hardcoded tabs. Controlled by the **Tier Toggle** (T1/T2 always; T3-Wrangle/T3-Plot flag-gated). **Comparison Mode** (flag-gated separate toggle) splits the theater into T2-reference (left) and T3-active (right).
   - **Architect Mode (Flight Deck)**: Tri-pane vertical stack (Collapsible TubeMap → Live Plot → Live Table). Unchanged.
 - **Audit/Logic Stack (Right, #c0c0c0)**:
-  - **Home Mode**: Controlled by `workspaces.home.right_sidebar.visible` in persona template (ADR-073). `false` = layout element excluded (theater expands full width). `true` with `audit_stack` panel = shows T2 Violet blueprint nodes + T3 Yellow sandbox nodes (requires `t3_sandbox_enabled=true`).
+  - **Home Mode**: Controlled by `workspaces.home.right_sidebar.visible` in app features file (ADR-073). `false` = layout element excluded (theater expands full width). `true` with `audit_stack` panel = shows T2 Violet blueprint nodes + T3 Yellow sandbox nodes (requires `t3_sandbox_enabled=true`).
   - **Architect Mode**: Active Blueprint Component Logic Stack. Controlled by `workspaces.blueprint.right_sidebar`.
 - **Focus Mode (ADR-038)**: Gallery workspace left sidebar slot list contains only `gallery_search` — operation panels absent by design, not by flag suppression.
 - **Thin UI (ADR-003)**: UI modules MUST NOT implement wrangling or plotting logic. Authoritative GUI specifications rely on `ui_implementation_contract.md`.
-- **CSS convention (ADR-055):** All dashboard styling lives in `config/ui/theme.css` — not inline in Python code. New UI styling goes in that file (or a persona-specific override file declared via `theme_css:` in the persona template). Inline `style=` attributes are allowed only for truly one-off values that cannot be expressed as a CSS rule. `bootloader.get_theme_css_path()` resolves the active CSS path at startup.
+- **CSS convention (ADR-055):** All dashboard styling lives in `config/ui/theme.css` — not inline in Python code. New UI styling goes in that file (or an app features specific override file declared via `theme_css:` in the app features file). Inline `style=` attributes are allowed only for truly one-off values that cannot be expressed as a CSS rule. `bootloader.get_theme_css_path()` resolves the active CSS path at startup.
 - **Removed**: The "Analysis Theater / Viz" nav item is eliminated (ADR-043). The `theater_grid` toggle, `btn_max_plot`, `btn_max_table`, `btn_reset_theater` controls are superseded by the Tier Toggle + Comparison Mode model. The hardcoded "Inspector" tab is removed.
 
 ## 4. Path Authority Strategy (ADR-031 / ADR-048)
 
-System storage and hardware endpoints are strictly decoupled from UI code via a deployment profile YAML. The active profile is resolved by `app/src/bootloader.py` via a **4-level priority chain** (ADR-048 §4):
+System storage and hardware endpoints are strictly decoupled from UI code via a deployment file. The active deployment is resolved by `app/src/bootloader.py` via a **4-level priority chain** (ADR-048 §4):
 
 | Level | Source | Used by |
 |---|---|---|
-| 1 | `SPARMVET_PROFILE` env var → explicit path | Galaxy XML wrapper, IRIDA container, Docker Compose, systemd |
-| 2 | `~/.sparmvet/profile.yaml` | Local PC (scientist or admin places this once at setup) |
-| 3 | `/etc/sparmvet/profile.yaml` | Institutional server (sysadmin places at deploy time) |
-| 4 | `config/deployment/local/local_profile.yaml` | Developer running from repo root (current dev fallback) |
+| 1 | `SPARMVET_DEPLOYMENT` env var → explicit path | Galaxy XML wrapper, IRIDA container, Docker Compose, systemd |
+| 2 | `~/.sparmvet/deployment.yaml` | Local PC (scientist or admin places this once at setup) |
+| 3 | `/etc/sparmvet/deployment.yaml` | Institutional server (sysadmin places at deploy time) |
+| 4 | `config/deployment/local/local.yaml` | Developer running from repo root (current dev fallback) |
 
-The first level that exists wins. If `SPARMVET_PROFILE` is set but the path doesn't exist, the Bootloader raises `FileNotFoundError` immediately (hard misconfiguration). Startup log line: `[Bootloader] Profile resolved at level N (...)`.
+The first level that exists wins. If `SPARMVET_DEPLOYMENT` is set but the path doesn't exist, the Bootloader raises `FileNotFoundError` immediately (hard misconfiguration). Startup log line: `[Bootloader] Deployment resolved at level N (...)`.
 
-**Connector lifecycle (ADR-048 §11, 2026-05-02):** After profile resolution, the bootloader immediately calls `get_connector(profile)` → `connector.fetch_data()` → `connector.resolve_paths()`. The resolved paths from `resolve_paths()` are stored in `self._resolved_locations` and become the **authoritative source for all location paths**. `bootloader.get_location(key)` reads from `_resolved_locations` — never from the raw profile dict. The connector result is cached per profile path (`_resolved_locations_cache`); `fetch_data()` runs at most once per process.
+**Connector lifecycle (ADR-048 §11, 2026-05-02):** After deployment resolution, the bootloader immediately calls `get_connector(deployment)` → `connector.fetch_data()` → `connector.resolve_paths()`. The resolved paths from `resolve_paths()` are stored in `self._resolved_locations` and become the **authoritative source for all location paths**. `bootloader.get_location(key)` reads from `_resolved_locations` — never from the raw deployment dict. The connector result is cached per deployment path (`_resolved_locations_cache`); `fetch_data()` runs at most once per process.
 
-Profile schema and full documentation: `config/deployment/templates/connector_template.yaml` and ADR-048.
+Deployment schema and full documentation: `config/deployment/templates/deployment_template.yaml` and ADR-048.
 
-**Persona resolution order (Phase 25-M fix):** `persona=` kwarg > `SPARMVET_PERSONA` env var > `default_persona` in deployment profile > `ValueError`. No hardcoded fallback in code — the local dev profile (`config/deployment/local/local_profile.yaml`) sets `default_persona: "developer"`.
+**App features resolution order (Phase 25-M fix):** `app features=` kwarg > `SPARMVET_APP_FEATURES` env var > `default_app_features` in deployment > `ValueError`. No hardcoded fallback in code — the local dev deployment (`config/deployment/local/local.yaml`) sets `default_app_features: "developer"`.
 
-**Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all persona-gated decisions. Comparing `bootloader.persona` against name strings is prohibited — personas are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_enabled`, `audit_report_enabled`. See `rules_persona_feature_flags.md` §Anti-Pattern.
+**Flag-only gating rule (ADR-053):** Runtime code MUST use `bootloader.is_enabled(flag)` for all flag-gated decisions. Comparing `bootloader.app features` against name strings is prohibited — app features files are abstract presets. Key flags: `t3_sandbox_enabled` (T3 tier + right sidebar), `interactivity_enabled` (T3 Tier Toggle + comparison mode), `session_management_enabled`, `export_enabled`, `audit_report_enabled`. See `rules_app_features_flags.md` §Anti-Pattern.
 
 - **Location 1 (Raw/Ingestion)**: Path to raw external data assets.
-- **Location 2 (Manifests)**: Path to pipeline definitions and wrangling recipes.
+- **Location 2 (Data analysis recipes)**: Path to pipeline definitions and wrangling steps.
 - **Location 3 (Tiers 1 & 2)**: Curated Parquet Anchors & Views (`session_anchor.parquet`).
 - **Location 4 (User & Tiers 3)**: User session states, active UI leaf interactions, and autosaves.
-- **Location 5 (Gallery)**: Assets gallery for cloned/submitted recipes (`assets/gallery_data/`). Governed by `gallery_index.json` (Pivot-Index).
+- **Location 5 (Gallery)**: Assets gallery for cloned/submitted examples (`assets/gallery_data/`). Governed by `gallery_index.json` (Pivot-Index).
 
 ## 5. Tiered Data Lifecycle (ADR-024)
 
@@ -120,9 +120,9 @@ Profile schema and full documentation: `config/deployment/templates/connector_te
 - **Tier 2 (Branch)**: Shared summarizes/views derived from Tier 1 for rapid analysis discovery.
 - **Tier 3 (Leaf)**: User-specific reactive transient view. Predicate Pushdown enabled via `scan_parquet` of the Tier 1 file.
 
-## 9. Manifest Construction (ADR-041)
+## 9. Data analysis recipe Construction (ADR-041)
 
-To ensure interoperability between the Blueprint Architect UI and the Polars Backend Engines, all manifest components must adhere to the following unified standard:
+To ensure interoperability between the Blueprint Architect UI and the Polars Backend Engines, all data analysis recipe components must adhere to the following unified standard:
 
 ### 1. The Schema (Keyed)
 
@@ -180,18 +180,18 @@ tier1:
 
 ## 8. Blueprint Architect — Lineage Index (ADR-040 / ADR-045)
 
-Eight pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` provide the manifest structural index powering the Blueprint Architect (moved to `libs/blueprint_arch/` in Phase 29, ADR-067):
+Eight pure functions in `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` provide the data analysis recipe structural index powering the Blueprint Architect (moved to `libs/blueprint_arch/` in Phase 29, ADR-067):
 
 | Function | Keyed by | Value summary |
 | :--- | :--- | :--- |
-| `build_sibling_map(manifest_path_str)` | `rel_path` (str) | `{role, schema_id, schema_type, siblings, ingredients}`. Role values: `input_fields`, `output_fields`, `wrangling`, `join`, `plot_spec`. |
-| `build_schema_registry(manifest_path_str, includes_map)` | `schema_id` (str) | Full slot map: each slot is `str` (rel_path), `{"inline": val}`, or `None`. |
+| `build_sibling_map(data_analysis_recipe_path_str)` | `rel_path` (str) | `{role, schema_id, schema_type, siblings, ingredients}`. Role values: `input_fields`, `output_fields`, `wrangling`, `join`, `plot_spec`. |
+| `build_schema_registry(data_analysis_recipe_path_str, includes_map)` | `schema_id` (str) | Full slot map: each slot is `str` (rel_path), `{"inline": val}`, or `None`. |
 | `build_lineage_chain(selected_rel, ctx_map)` | — | Ordered `list[node_dict]` for the Rail; `is_active` marks the selected node. |
 | `load_fields_file(abs_path)` | — | Reads standalone fields YAML with ADR-014 unnesting. |
 | `resolve_fields_for_schema(schema_id, ctx_map, inc_map)` | — | Recursive field resolution with cycle guard; returns ADR-041 Rich Dict. |
-| `build_plot_lineage(plot_id, manifest_path)` | — | **ADR-074.** Backward trace from a named plot ID to its T1 root. Returns ordered `list[node_dict]`. Used by the export bundle lineage graph generator. |
-| `get_plot_ids_in_group(group_id, manifest_path)` | — | **ADR-074.** Forward trace — returns all `plot_id` strings declared under the given `analysis_group`. |
-| `generate_branch_plan(master_path, schema_id, role, new_id)` | — | **BP-BRANCH-NODE-1 (ADR-082 Q3).** Plans a node-level lineage bifurcation: shared upstream reused by `!include`, divergent downstream written as new empty fragment files wired into the master via text-level insertion (preserves existing `!include` tags). Roles: `wrangling`/`input_fields`/`output_fields` (→ `data_schemas`: share source + input_fields, new empty wrangling + output_fields), `join` (→ `join_manifests`: share ingredients, new empty recipe + output_fields), `plot_spec` (→ `analysis_groups`: share target_dataset, copy spec — a leaf must render). Returns `{ok, error, summary, new_master_text, fragments}`. Replaces the legacy append-only `generate_fork_yaml`. Consumed by `blueprint_handlers.py` (gated: `manifest_edit_enabled`). |
+| `build_plot_lineage(plot_id, data_analysis_recipe_path)` | — | **ADR-074.** Backward trace from a named plot ID to its T1 root. Returns ordered `list[node_dict]`. Used by the export bundle lineage graph generator. |
+| `get_plot_ids_in_group(group_id, data_analysis_recipe_path)` | — | **ADR-074.** Forward trace — returns all `plot_id` strings declared under the given `analysis_group`. |
+| `generate_branch_plan(master_path, schema_id, role, new_id)` | — | **BP-BRANCH-NODE-1 (ADR-082 Q3).** Plans a node-level lineage bifurcation: shared upstream reused by `!include`, divergent downstream written as new empty fragment files wired into the master via text-level insertion (preserves existing `!include` tags). Roles: `wrangling`/`input_fields`/`output_fields` (→ `data_schemas`: share source + input_fields, new empty wrangling + output_fields), `join` (→ `joins`: share ingredients, new empty step list + output_fields), `plot_spec` (→ `analysis_groups`: share target_dataset, copy spec — a leaf must render). Returns `{ok, error, summary, new_master_text, fragments}`. Replaces the legacy append-only `generate_fork_yaml`. Consumed by `blueprint_handlers.py` (gated: `data_analysis_recipe_edit_enabled`). |
 
 **Key constraint**: Only `str` rel-paths are used as ctx dict keys. Inline YAML content (`{"inline": val}`) is stored in the `siblings` dict only — never as a dict key (unhashable).
 
@@ -201,20 +201,20 @@ Eight pure functions in `libs/blueprint_arch/src/blueprint_arch/manifest_navigat
 
 **Sidebar display labels**: `_update_dataset_pipelines` shows `"{schema_id} — {role}"` labels. Option value stays as `rel_path` for `inc_map` lookup.
 
-**Rail / TubeMap click → full load**: Both `handle_lineage_node_click` and `_sync_selector_from_node_click` call `ui.update_select(...)` then `ui.js_eval("document.getElementById('btn_import_manifest').click();")`.
+**Rail / TubeMap click → full load**: Both `handle_lineage_node_click` and `_sync_selector_from_node_click` call `ui.update_select(...)` then `ui.js_eval("document.getElementById('btn_import_data_analysis_recipe').click();")`.
 
-**Live View plot preview**: `architect_active_plot` uses `ConfigManager(active_manifest_path.get()).raw_config` (full manifest). `active_viz_id` is set only when `role=="plot_spec"`. `active_raw_yaml` holds only the component fragment — do not use it for rendering.
+**Live View plot preview**: `architect_active_plot` uses `ConfigManager(active_data_analysis_recipe_path.get()).raw_config` (full data analysis recipe). `active_viz_id` is set only when `role=="plot_spec"`. `active_raw_yaml` holds only the component fragment — do not use it for rendering.
 
 **Temporary workspace**: `./tmpAI/` is agent-exclusive scratch space (headless tests, debug artifacts). `./tmp/` is for user-review outputs only (`@verify` evidence). Both are git-ignored. See `rules_verification_testing.md` §6
 
 ---
 
-## 11. @bioscientist Protocol (Manifest Design)
+## 11. @bioscientist Protocol (Data analysis recipe Design)
 
-- **Mandatory Knowledge**: `config/manifests/README.md`, `rules_persona_bioscientist.md`.
+- **Mandatory Knowledge**: `config/data_analysis_recipes/README.md`, `rules_agent_role_bioscientist.md`.
 - **Registry Check**: Before generating YAML, the agent MUST verify action existence in `libs/transformer/src/transformer/registry.py` and `libs/viz_factory/src/viz_factory/registry.py`.
-- **Logic Breakdown**: Every manifest proposal must include the scientific rationale for joins and transformation steps.
-- **Gap Detection**: If an action is missing, it becomes a `[ENHANCEMENT REQUEST]` for the **@dasharch** persona, recorded in `tasks.md`.
+- **Logic Breakdown**: Every data analysis recipe proposal must include the scientific rationale for joins and transformation steps.
+- **Gap Detection**: If an action is missing, it becomes a `[ENHANCEMENT REQUEST]` for the **@dasharch** app features, recorded in `tasks.md`.
 ---
 
 ## 10. Pipeline Stability & YAML Resilience (ADR-042)
@@ -247,7 +247,7 @@ Do NOT call `reactive.invalidate()` directly or attempt to re-trigger individual
 
 **Cache bust sequence (on import):**
 1. Delete `{anchors_dir}/{ds_id}.parquet` if it exists.
-2. `bootloader.set_cached_asset(project_id, ds_id, "anchor", "lf", None)` — clears the LF cache entry.
+2. `bootloader.set_cached_asset(data_analysis_recipe_id, ds_id, "anchor", "lf", None)` — clears the LF cache entry.
 3. `data_refresh_trigger.set(data_refresh_trigger.get() + 1)` — triggers reactive invalidation of all plot renders.
 
 ---
@@ -262,7 +262,7 @@ dtype_map = {
     "date": pl.Date, "utf8": pl.Utf8, "character": pl.Utf8,
     "float": pl.Float64, "int": pl.Int64, "integer": pl.Int64,
     "bool": pl.Boolean, "boolean": pl.Boolean,
-    # PascalCase (polars canonical names, used in some manifests)
+    # PascalCase (polars canonical names, used in some data analysis recipes)
     "Int64": pl.Int64, "Float64": pl.Float64, "String": pl.Utf8,
     "Boolean": pl.Boolean, "Date": pl.Date, "Categorical": pl.Categorical,
 }
@@ -276,7 +276,7 @@ An unrecognised type string triggers `warnings.warn` — it does NOT silently de
 
 ## 14. VizFactory Continuous Scale — Custom Break Logic
 
-To add a manifest-level break parameter to `scale_x_continuous` / `scale_y_continuous`, use `_resolve_continuous_spec(spec)` in `libs/viz_factory/src/viz_factory/scales/core.py`.
+To add a data analysis recipe-level break parameter to `scale_x_continuous` / `scale_y_continuous`, use `_resolve_continuous_spec(spec)` in `libs/viz_factory/src/viz_factory/scales/core.py`.
 
 Current supported param: `breaks_integer: true` → integer-only axis ticks via `MaxNLocator`.
 
@@ -287,7 +287,7 @@ def _integer_breaks(lims):
     return MaxNLocator(integer=True).tick_values(lims[0], lims[1])
 ```
 
-Manifest usage (must be under `params:`, not at the layer's top level):
+Data analysis recipe usage (must be under `params:`, not at the layer's top level):
 ```yaml
 layers:
   - name: scale_x_continuous
@@ -326,12 +326,12 @@ def define_my_server(input, output, session, *, ..., notification_log=None):
 
 ---
 
-## 16. Gallery recipe_meta.md Standard Format (ADR-061)
+## 16. Gallery example_meta.md Standard Format (ADR-061)
 
-Every `assets/gallery_data/<recipe>/recipe_meta.md` must follow this structure:
+Every `assets/gallery_data/<steps>/example_meta.md` must follow this structure:
 
 ```markdown
-## [Recipe Name]
+## [Step list Name]
 
 > 📊 [Family] · 🔢 [Data Pattern] · 📈 [Difficulty]
 
@@ -352,14 +352,14 @@ Every `assets/gallery_data/<recipe>/recipe_meta.md` must follow this structure:
 ```
 
 **Rules:**
-- `##` is the recipe name — the ONLY h2 in the file. No "Recipe Metadata:" prefix.
+- `##` is the step list name — the ONLY h2 in the file. No "Step list Metadata:" prefix.
 - The `> ` blockquote immediately after the h2 is the taxonomy tag strip. It must contain all three classification values separated by ` · `. No other blockquotes at the top level.
 - Content sections use `###` (h3). Never use `##` for sections.
 - `h4`/`h5`/`h6` are available for rare sub-sections within a `###` block.
 
 **Rationale:** the previous format used `##` for both taxonomy lines and section headings — visually indistinguishable. The blockquote tag strip is compact, left-bordered, and semantically distinct.
 
-**Reference:** `assets/gallery_data/recipe_template.md` is the canonical template.
+**Reference:** `assets/gallery_data/example_template.md` is the canonical template.
 
 ---
 
@@ -371,10 +371,10 @@ Every `assets/gallery_data/<recipe>/recipe_meta.md` must follow this structure:
 
 | Cascade type | Where enforced | When to use |
 |---|---|---|
-| **Fatal** | `PersonaValidator._FATAL_CASCADE_GATES` + Rule 7 — startup error blocks app | Default for any new flag-dependency. Examples: ADR-075 `manifest_edit_enabled`, ADR-076 `blueprint_agent_enabled`. |
-| **Soft** | `bootloader._load_persona_config()` — silently sets child to false + warning | Legacy compatibility only (Group B `interactivity_enabled`, Group C `import_helper_enabled`). Do NOT use for new flags without explicit ADR justification. |
+| **Fatal** | `AppFeaturesValidator._FATAL_CASCADE_GATES` + Rule 7 — startup error blocks app | Default for any new flag-dependency. Examples: ADR-075 `data_analysis_recipe_edit_enabled`, ADR-076 `blueprint_agent_enabled`. |
+| **Soft** | `bootloader._load_app_features_config()` — silently sets child to false + warning | Legacy compatibility only (Group B `interactivity_enabled`, Group C `import_helper_enabled`). Do NOT use for new flags without explicit ADR justification. |
 
-**ADR authoring rule:** every ADR introducing a new flag MUST declare cascade type explicitly with rationale. The cascade type is documented in `rules_persona_feature_flags.md` Cascade Enforcement § when the rule is added.
+**ADR authoring rule:** every ADR introducing a new flag MUST declare cascade type explicitly with rationale. The cascade type is documented in `rules_app_features_flags.md` Cascade Enforcement § when the rule is added.
 
 ---
 
@@ -415,9 +415,9 @@ exit_if_errors(errors, header="My component failed validation")
 - `developer` — code change required. Module bug, broken contract, missing implementation.
 - `both` — config issue that also reveals an underlying design problem worth raising.
 
-**`fix` field discipline:** "Invalid configuration" is a diagnostic failure. "Set `blueprint_agent_enabled: false` in `developer_template.yaml`" is a diagnostic success. Always name the file, the key, and the new value.
+**`fix` field discipline:** "Invalid configuration" is a diagnostic failure. "Set `blueprint_agent_enabled: false` in `developer.yaml`" is a diagnostic success. Always name the file, the key, and the new value.
 
-**Roadmap:** Phase B (DIAG-CORE-1, ✅) covers PersonaValidator. Phase C (committed work, see `tasks.md` "Diagnostic Error Discipline" block) retrofits SidebarValidator, Bootloader, Connectors, manifest preflight, plus a `docs/troubleshooting/` reference catalog. Runtime errors (ingestion / assembler / wrangler / viz_factory / T3 apply / Blueprint) are deferred to ADR-079 because their audience and render path differ.
+**Roadmap:** Phase B (DIAG-CORE-1, ✅) covers AppFeaturesValidator. Phase C (committed work, see `tasks.md` "Diagnostic Error Discipline" block) retrofits SidebarValidator, Bootloader, Connectors, data analysis recipe preflight, plus a `docs/troubleshooting/` reference catalog. Runtime errors (ingestion / assembler / wrangler / viz_factory / T3 apply / Blueprint) are deferred to ADR-079 because their audience and render path differ.
 
 **Forbidden patterns:**
 - `raise ValueError(f"validation failed: {'; '.join(strs)}")` at startup boundaries
@@ -438,7 +438,7 @@ if adapter.is_disabled:
 else:
     from blueprint_arch.agent_context import build_system_prompt, build_turn_context
     system_prompt = build_system_prompt(
-        manifest_path=active_manifest_path,
+        data_analysis_recipe_path=active_data_analysis_recipe_path,
         instructions_file=bootloader.get_agent_config().get("instructions_file"),
         project_root=bootloader.project_root,
     )
@@ -461,7 +461,7 @@ else:
 ```
 <!-- AGENT_TOOL_CALL -->
 ```json
-{"tool": "propose_manifest_diff", "arguments": {...}}
+{"tool": "propose_data_analysis_recipe_diff", "arguments": {...}}
 ```
 <!-- /AGENT_TOOL_CALL -->
 ```
@@ -508,10 +508,10 @@ VizFactory(palette_registry=bootloader.get_palettes())
 
 VizFactory is **library-autonomous**: works with only `_BUILTIN_PALETTES` when `palette_registry=None`. Never reads `config/palettes.yaml` directly — ADR-011 boundary.
 
-### Manifest usage
+### Data analysis recipe usage
 
 ```yaml
-# Manifest-level default (applies to all plots):
+# Data analysis recipe-level default (applies to all plots):
 plot_defaults:
   palette: nvi_official
 
@@ -525,9 +525,9 @@ plots:
 
 | Palette source | Scale injected |
 |---|---|
-| Project registry hit | `scale_fill_manual` / `scale_color_manual` (hex list) |
+| Deployment palette registry hit | `scale_fill_manual` / `scale_color_manual` (hex list) |
 | Viridis family name | `scale_fill_viridis_d` / `scale_color_viridis_d` |
 | Other matplotlib name | `scale_fill_brewer` / `scale_color_brewer` |
-| Unknown name | WARNING listing valid project palette names |
+| Unknown name | WARNING listing valid deployment palette names |
 
 Guards: only injects for aesthetics in mapping; never overwrites existing `scale_fill_*`/`scale_color_*` layers.

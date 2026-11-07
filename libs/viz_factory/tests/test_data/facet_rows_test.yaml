@@ -1,5 +1,5 @@
 id: facet_rows_test
-description: Test manifest for facet_rows_test.yaml
+description: Test data analysis recipe for facet_rows_test.yaml
 input_fields: []
 wrangling:
   tier1: []

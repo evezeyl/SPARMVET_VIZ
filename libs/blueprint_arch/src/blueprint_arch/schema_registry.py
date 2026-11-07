@@ -25,7 +25,7 @@ Widget type vocabulary (params entries):
 Context tags (schema["context"]):
     t1       — valid in Tier 1 wrangling blocks
     t2       — valid in Tier 2 wrangling blocks
-    assembly — valid in assembly recipe steps
+    assembly — valid in assembly steps
     plot     — valid as a viz_factory layer (components only)
 """
 

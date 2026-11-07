@@ -2,11 +2,11 @@
 
 **Authority:** ADR-011, ADR-032
 
-The architectural "Gatekeeper." Reads raw input formats (Excel, TSV) and validates them against the `input_fields` manifest contract before any wrangling occurs. Bad data is rejected here — nothing malformed reaches the Transformer layer.
+The architectural "Gatekeeper." Reads raw input formats (Excel, TSV) and validates them against the `input_fields` data analysis recipe contract before any wrangling occurs. Bad data is rejected here — nothing malformed reaches the Transformer layer.
 
 ## Key Components
 
-- **DataIngestor (ingestor.py)**: Handles file I/O and enforces manifest schema contracts. Validates column presence, types, and cardinality against `input_fields`. Emits schema-validated `pl.LazyFrame`s.
+- **DataIngestor (ingestor.py)**: Handles file I/O and enforces data analysis recipe schema contracts. Validates column presence, types, and cardinality against `input_fields`. Emits schema-validated `pl.LazyFrame`s.
 - **Excel-to-TSV CLI (excel_handler.py)**: CLI utility (`main()`) for multi-sheet Excel workbook normalisation. Extracts each sheet to a standardised TSV for subsequent ingestion via DataIngestor.
 
 ## I/O Summary
@@ -36,6 +36,6 @@ PYTHONPATH=. .venv/bin/python -m pytest libs/ingestion/tests/ -v
 
 ```bash
 PYTHONPATH=. .venv/bin/python libs/ingestion/tests/debug_ingestor.py \
-  --manifest config/manifests/pipelines/<manifest>.yaml \
+  --data-analysis-recipe config/data_analysis_recipes/pipelines/<data analysis recipe>.yaml \
   --tmp tmpAI/ingestion/
 ```

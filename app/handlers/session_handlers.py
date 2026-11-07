@@ -23,7 +23,7 @@ from app.src.bootloader import bootloader
 
 
 def define_session_server(input, output, session, *,
-                          session_manager, current_persona, home_state,
+                          session_manager, current_app_features, home_state,
                           safe_input=None,
                           notification_log=None):
     """Register session-management UI + import/restore/delete reactive handlers.
@@ -32,13 +32,13 @@ def define_session_server(input, output, session, *,
     ----------
     session_manager : SessionManager | None
         Session persistence facade. May be None when launched without persistence.
-    current_persona : reactive.Value[str]
-        Active launch persona (hyphen form, e.g. "pipeline-exploration-advanced").
+    current_app_features : reactive.Value[str]
+        Active launch app features (hyphen form, e.g. "pipeline-exploration-advanced").
     home_state : reactive.Value[dict] | None
-        Shared home dashboard state (manifest_sha256, t3_recipe_by_plot, etc.).
+        Shared home dashboard state (data_analysis_recipe_sha256, t3_audit_steps_by_plot, etc.).
     safe_input : callable | None
         safe_input(input, key, default) — used by the active-session export
-        download to read project_id for the filename. Optional for back-compat.
+        download to read data_analysis_recipe_id for the filename. Optional for back-compat.
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -50,7 +50,7 @@ def define_session_server(input, output, session, *,
     def session_management_ui():
         """Session Management panel — gated by session_management_enabled flag.
 
-        Fix PERSONA-1: replaced hardcoded advanced_personas set with
+        Fix APP_FEATURES-1: replaced hardcoded advanced_app_features set with
         bootloader.is_enabled('session_management_enabled'). pipeline-exploration-simple
         has session_management_enabled=true in its template and now correctly sees
         this panel.
@@ -66,7 +66,7 @@ def define_session_server(input, output, session, *,
         active_key = ""
         if home_state is not None:
             state = home_state.get()
-            msig = state.get("manifest_sha256") or ""
+            msig = state.get("data_analysis_recipe_sha256") or ""
             dbh = state.get("data_batch_hash") or ""
             if msig and dbh:
                 from app.modules.session_manager import SessionManager
@@ -101,18 +101,22 @@ def define_session_server(input, output, session, *,
                 ui.p("No saved sessions.", class_="text-muted small"),
             )
 
-        # Group sessions by manifest_sha256[:12]
+        # Group sessions by data_analysis_recipe_sha256[:12]
         groups: dict[str, list] = {}
         for s in sessions:
-            grp = s.get("manifest_sha256", "")[:12] or "unknown"
+            grp = s.get("data_analysis_recipe_sha256", "")[:12] or "unknown"
             groups.setdefault(grp, []).append(s)
 
         cards = []
         for grp_key, grp_sessions in groups.items():
-            manifest_id = grp_sessions[0].get("manifest_id", grp_key)
+            data_analysis_recipe_id = grp_sessions[0].get("data_analysis_recipe_id", grp_key)
             group_panels = []
             for s in grp_sessions:
                 sk = s["session_key"]
+                if s.get("legacy_problem"):
+                    group_panels.append(ui.div(ui.tags.small(s["legacy_problem"], class_="text-danger d-block"),
+                                               class_="session-card legacy mb-1"))
+                    continue
                 batch_short = s.get("data_batch_hash", "")[:8] or "?"
                 t3_count = s.get("t3_count", 0)
                 last_saved = s.get("latest_t3_saved_at") or s.get("assembled_at", "")
@@ -158,7 +162,7 @@ def define_session_server(input, output, session, *,
 
             cards.append(
                 ui.accordion_panel(
-                    f"📁 {manifest_id}",
+                    f"📁 {data_analysis_recipe_id}",
                     *group_panels,
                 )
             )
@@ -194,7 +198,7 @@ def define_session_server(input, output, session, *,
             yield b""
             return
         state = home_state.get()
-        msig = state.get("manifest_sha256") or ""
+        msig = state.get("data_analysis_recipe_sha256") or ""
         dbh = state.get("data_batch_hash") or ""
         if not (msig and dbh):
             _notify(
@@ -214,10 +218,10 @@ def define_session_server(input, output, session, *,
     def _active_session_export_filename() -> str:
         import datetime
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        proj_id = ""
+        data_analysis_recipe_id = ""
         if safe_input is not None:
-            proj_id = safe_input(input, "project_id", "") or ""
-        proj_tag = f"_{proj_id}" if proj_id else ""
+            data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", "") or ""
+        proj_tag = f"_{data_analysis_recipe_id}" if data_analysis_recipe_id else ""
         return f"{ts}{proj_tag}_session.zip"
 
     # Session restore + delete handlers are registered dynamically per session.
@@ -259,35 +263,44 @@ def define_session_server(input, output, session, *,
         if session_manager is None or home_state is None:
             return
 
-        ghost = session_manager.read_assembly_ghost(session_key)
+        from app.modules.session_manager import LegacySessionError
+        try:
+            ghost = session_manager.read_assembly_ghost(session_key)
+        except LegacySessionError as exc:
+            _notify(f"❌ {exc}", type="error", duration=12)
+            return
         if ghost is None:
             _notify("❌ Session assembly record not found.", type="error", duration=6)
             return
 
-        # Check manifest SHA256 vs current
+        # Check data analysis recipe SHA256 vs current
         state = home_state.get()
-        current_msig = state.get("manifest_sha256") or ""
-        saved_msig = ghost.get("manifest_sha256", "")
+        current_msig = state.get("data_analysis_recipe_sha256") or ""
+        saved_msig = ghost.get("data_analysis_recipe_sha256", "")
         if current_msig and saved_msig and current_msig != saved_msig:
             _notify(
-                "⚠️ Session was saved against a different manifest version. "
-                "Recipe nodes may not match current columns.",
+                "⚠️ Session was saved against a different data analysis recipe version. "
+                "Audit step may not match current columns.",
                 type="warning", duration=8,
             )
 
         # Load T3 ghosts list for this session
-        t3_ghosts = session_manager.list_t3_ghosts(session_key)
+        try:
+            t3_ghosts = session_manager.list_t3_ghosts(session_key)
+        except LegacySessionError as exc:
+            _notify(f"❌ {exc}", type="error", duration=12)
+            return
         if t3_ghosts:
             # Restore most-recent T3 ghost into home_state.
-            # Phase 22-J: list_t3_ghosts emits both flat t3_recipe (legacy) and
-            # t3_recipe_by_plot (current). Legacy ghosts have nodes bucketed
+            # Phase 22-J: list_t3_ghosts emits both flat t3_audit_steps (legacy) and
+            # t3_audit_steps_by_plot (current). Legacy ghosts have nodes bucketed
             # under "__legacy__" — they're surfaced as orphans in the audit
             # panel until the user re-targets or deletes them.
             latest = t3_ghosts[0]
-            by_plot = latest.get("t3_recipe_by_plot") or {}
+            by_plot = latest.get("t3_audit_steps_by_plot") or {}
             new_state = {
                 **state,
-                "t3_recipe_by_plot": by_plot,
+                "t3_audit_steps_by_plot": by_plot,
                 "t3_plot_overrides": latest.get("t3_plot_overrides", {}),
                 "tier_toggle": latest.get("tier_toggle", "T2"),
                 "t3_ghost_file": latest.get("file", ""),

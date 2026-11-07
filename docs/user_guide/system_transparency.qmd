@@ -6,9 +6,9 @@ When interacting with massive biological or economical datasets, certain operati
 
 ### The Golden Rule: Don't Panic!
 **You cannot permanently break this application.**
-SPARMVET operates entirely on "copies" of your recipes and data during your session. The worst-case scenario if you make a massive mistake in the T3 sandbox is that the page freezes. If that happens:
+SPARMVET operates entirely on "copies" of your audit trails and data during your session. The worst-case scenario if you make a massive mistake in the T3 sandbox is that the page freezes. If that happens:
 1. Reload your browser page.
-2. Select your project again from the sidebar.
+2. Select your data analysis recipe again from the sidebar.
 You will never delete or corrupt the system's baseline data.
 
 ---
@@ -25,13 +25,13 @@ The very first time you upload a dataset, SPARMVET must "chop the onion." It con
 - **Normal Behavior:** The first upload takes up to 30-40 seconds.
 - **Normal Behavior:** Any subsequent visualization using that data will appear almost instantly.
 
-## 2. Manifest Triggers: Why things recalculate
+## 2. Data analysis recipe Triggers: Why things recalculate
 
-A **Manifest** dictates the baseline state of your data (Tier 2). It tells the system *how* the data should initially look before you start playing with it in the dashboard.
+A **Data analysis recipe** dictates the baseline state of your data (Tier 2). It tells the system *how* the data should initially look before you start playing with it in the dashboard.
 
-If you edit your `.yaml` manifest file and upload it...
+If you edit your `.yaml` data analysis recipe file and upload it...
 - **Normal Behavior**: The screen dims with an "In Calculation" overlay.
-- **Why?**: The system has to throw out the old "pre-chopped onions" and prepare new ones based on your new recipe. This wipes the Tier 2 cache and rebuilds it. It takes time, but ensures your visuals perfectly match your new rules.
+- **Why?**: The system has to throw out the old "pre-chopped onions" and prepare new ones based on your new audit trail. This wipes the Tier 2 cache and rebuilds it. It takes time, but ensures your visuals perfectly match your new rules.
 
 ### Fast vs Slow Interactions
 - **Fast:** Changing a dropdown to filter a plot, or tweaking a plot color in the T3 sandbox. This relies on the ultra-fast cache.
@@ -41,7 +41,7 @@ If you edit your `.yaml` manifest file and upload it...
 
 While loading screens and dimming are normal, the following are *abnormal* and might require assistance:
 
-- **The "Red Error Box" loops indefinitely:** If the system catches a Malformed Manifest (e.g. you used a tab instead of a space in YAML), it will give you a tip (e.g. `SPARMVET_Error: Invalid whitespace`). If fixing the file and re-uploading still causes endless loops, contact support.
+- **The "Red Error Box" loops indefinitely:** If the system catches a Malformed Data Analysis Recipe (e.g. you used a tab instead of a space in YAML), it will give you a tip (e.g. `SPARMVET_Error: Invalid whitespace`). If fixing the file and re-uploading still causes endless loops, contact support.
 - **Visuals completely vanish:** If you apply a filter in the T3 Filters panel (e.g. filtering for `Meropenem`) and the plot completely vanishes without an error message, it is highly likely you made a typo (e.g. your data actually says `meropenem`). Check your spelling! (See Tidy Data guide).
 
 Understanding these mechanics ensures you spend less time panicking, and more time uncovering insights in your data.
@@ -50,11 +50,11 @@ Understanding these mechanics ensures you spend less time panicking, and more ti
 
 ## 4. The Unified Home Theater (v2.0 — Phase 21)
 
-SPARMVET's main results area — the **Home** view — is organized entirely by your project's manifest. There is no separate "Analysis Theater" mode; all analytical navigation happens in one place.
+SPARMVET's main results area — the **Home** view — is organized entirely by your data analysis recipe's data analysis recipe. There is no separate "Analysis Theater" mode; all analytical navigation happens in one place.
 
 ### How tabs are built
 
-Your manifest defines **Analysis Groups** (e.g., "Quality Control", "AMR Analysis"). Each group becomes a top-level tab. Within each tab, individual plots become **sub-tabs**. Everything is auto-generated from your YAML — if you add a new plot to your manifest, it appears immediately without changing any application code.
+Your data analysis recipe defines **Analysis Groups** (e.g., "Quality Control", "AMR Analysis"). Each group becomes a top-level tab. Within each tab, individual plots become **sub-tabs**. Everything is auto-generated from your YAML — if you add a new plot to your data analysis recipe, it appears immediately without changing any application code.
 
 ### What you are looking at: "Data to show" and "Plot to show"
 
@@ -65,7 +65,7 @@ Two small choices above the plot area control which layer you look at. They are 
 | Choice | What you see |
 |---|---|
 | **Raw (T1)** | The assembled data before the Tier 2 steps (read-only reference). |
-| **Result (T2)** | The data exactly as the manifest specifies (read-only reference). Equal to Raw when the dataset has no Tier 2 steps. |
+| **Result (T2)** | The data exactly as the data analysis recipe specifies (read-only reference). Equal to Raw when the dataset has no Tier 2 steps. |
 | **My view** | The Result with your own filters and column drops applied. |
 
 **Plot to show:**
@@ -76,15 +76,15 @@ Two small choices above the plot area control which layer you look at. They are 
 | **My view** | The plot with your filters, drops and (advanced) audited steps applied. |
 | **Compare Result vs My view** | Both side by side. |
 
-Each panel states what it shows and when two views are identical (for example "T2 identical to T1"). My view is only available if your profile allows filters.
+Each panel states what it shows and when two views are identical (for example "T2 identical to T1"). My view is only available if your deployment allows filters.
 
 ### Filters adapt to what you are looking at
 
 When you switch between sub-tabs (e.g., from "QC Reads Barplot" to "Assembly Quality Dotplot"), the filter controls on the left automatically update to show **only the columns relevant to that plot**. You will never be presented with a filter for a column that does not appear in the current visualization.
 
-### Comparison Mode *(advanced personas)*
+### Comparison Mode *(advanced app features files)*
 
-If your user profile allows it, a **Comparison Mode** toggle splits the theater into two columns: the T2 blueprint reference on the left and your T3 sandbox on the right — both plots and data tables side by side — so you can see exactly what effect your wrangling steps have had.
+If your app features allows it, a **Comparison Mode** toggle splits the theater into two columns: the T2 blueprint reference on the left and your T3 sandbox on the right — both plots and data tables side by side — so you can see exactly what effect your wrangling steps have had.
 
 ### Collapsing sections
 
@@ -105,17 +105,17 @@ The **Filters** accordion in the left sidebar lets you narrow down what is plott
 
 The column selector for the data preview (above the table) lets you show or hide columns in the preview only — this does not affect the plot.
 
-> **Note:** If you are an advanced user with T3 active, an "Apply to recipe" button will appear — this saves the filters as a step in your wrangling recipe (feature in progress).
+> **Note:** If you are an advanced user with T3 active, an "Apply to audit trail" button will appear — this saves the filters as a step in your wrangling steps (feature in progress).
 
 ### Exporting your results (Export panel)
 
-The **Export** accordion in the left sidebar contains an **Export Bundle** button. This produces a self-contained `.zip` file with everything you need to reproduce and share your results. The export is the Result plus the steps you sent to audit: Steps you sent to audit (with a reason, for example to remove poor quality data) are always applied to the exported plot and its data. Filters you only tried while exploring are never exported. If the manifest or the data changed after you opened the view, the export is refused and explains why (see [Understanding your export](understanding_your_export.qmd)).
+The **Export** accordion in the left sidebar contains an **Export Bundle** button. This produces a self-contained `.zip` file with everything you need to reproduce and share your results. The export is the Result plus the steps you sent to audit: Steps you sent to audit (with a reason, for example to remove poor quality data) are always applied to the exported plot and its data. Filters you only tried while exploring are never exported. If the data analysis recipe or the data changed after you opened the view, the export is refused and explains why (see [Understanding your export](understanding_your_export.qmd)).
 
 | Contents | What it contains |
 |----------|-----------------|
 | `plots/` | All plots as SVG (web) or PNG ≥600 DPI (publication) |
 | `data/` | T1 as TSV; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view |
-| `recipes/` | The YAML wrangling/assembly files for your project |
+| `data_analysis_recipes/` | The YAML wrangling/assembly files for your data analysis recipe |
 | `report.qmd` | A Quarto source file — run `quarto render report.qmd` to produce an HTML or PDF report |
 | `T3_data_<plot>.tsv` | The data of a plot with the steps you sent to audit (only for plots that have such steps) |
 | `README.txt` | Summary of what is in the bundle |
@@ -126,16 +126,16 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 2. Choose a preset: **Web / Presentation** (SVG, smaller file) or **Publication** (PNG, ≥600 DPI).
 3. Click **📦 Export Bundle** and save the file.
 
-> **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `recipes/t3_steps.yaml`. Your results are always traceable.
+> **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `data_analysis_recipes/t3_steps.yaml`. Your results are always traceable.
 
-### The Audit Stack (advanced personas only)
+### The Audit Stack (advanced app features files only)
 
-If your user profile grants sandbox access, a **Pipeline Audit** panel appears on the right side of the screen. It shows:
+If your app features grants sandbox access, a **Pipeline Audit** panel appears on the right side of the screen. It shows:
 
-- **Violet nodes** — the T2 blueprint steps (inherited from the manifest, read-only reference).
+- **Violet nodes** — the T2 blueprint steps (inherited from the data analysis recipe, read-only reference).
 - **Yellow nodes** — your personal T3 additions (filters, column selections, etc.).
 
-For simpler user profiles, this panel is hidden entirely and the plot area expands to fill the full screen width.
+For simpler user deployments, this panel is hidden entirely and the plot area expands to fill the full screen width.
 
 ### The Alert Log (🔔 Alerts)
 

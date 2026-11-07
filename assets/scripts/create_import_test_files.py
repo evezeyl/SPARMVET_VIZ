@@ -3,7 +3,7 @@
 
 Writes a small set of valid and deliberately broken upload files to a folder, so the Data
 Import panel (test plan HOM-34, HOM-35, HOM-36) can be tested by hand with the same files
-every time. The files are derived from the FastP and Bracken test datasets of the manifest
+every time. The files are derived from the FastP and Bracken test datasets of the data analysis recipe
 `1_test_data_ST22_dummy`; nothing in the source data is modified.
 
 Usage:
@@ -24,10 +24,10 @@ BRACKEN = "test_data_Bracken_20260307_105756.tsv"
 
 # Columns changed in the "valid" files. The IDs (sample_id) are numbers too, so the columns are
 # named on purpose; changing sample_id would break every join. Both columns are declared in the
-# manifest AND used by a plot (qc_reads_horizontal_barplot: x = total_reads, fill = proportion_1),
+# data analysis recipe AND used by a plot (qc_reads_horizontal_barplot: x = total_reads, fill = proportion_1),
 # otherwise an import would change nothing visible.
 FASTP_VALUE_COLUMN = "total_reads"
-BRACKEN_VALUE_COLUMN = "proportion_1"   # declared in the manifest and used as the fill of the QC plot
+BRACKEN_VALUE_COLUMN = "proportion_1"   # declared in the data analysis recipe and used as the fill of the QC plot
 FASTP_HEADER_TO_BREAK = "total_reads"
 
 

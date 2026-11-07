@@ -19,16 +19,16 @@ from utils.deployment_error import DeploymentError, exit_if_errors
 from .base import BaseConnector
 
 # Paths that must exist on disk before the app can start.
-# curated_data and user_sessions are written by the app at runtime — created on demand.
-_REQUIRED_TO_EXIST = ("raw_data", "manifests", "gallery")
-_REF = "ADR-048 — deployment profile 'locations:' block"
+# cache and user_data are written by the app at runtime — created on demand.
+_REQUIRED_TO_EXIST = ("raw_data", "data_analysis_recipes", "gallery")
+_REF = "ADR-048 — deployment 'locations:' block"
 
 
 class FilesystemConnector(BaseConnector):
     """
-    Reads location paths directly from the deployment profile.
+    Reads location paths directly from the deployment.
 
-    If project_root is set in the profile, relative location paths are resolved
+    If project_root is set in the deployment, relative location paths are resolved
     under it. Absolute paths are used as-is.
     """
 
@@ -38,9 +38,9 @@ class FilesystemConnector(BaseConnector):
 
         project_root (if present) is prepended to any relative location path.
         """
-        project_root_str = self._profile.get("project_root")
+        project_root_str = self._deployment.get("project_root")
         project_root = Path(project_root_str) if project_root_str else None
-        locations = self._profile.get("locations", {})
+        locations = self._deployment.get("locations", {})
 
         resolved: Dict[str, Path] = {}
         for key, path_str in locations.items():
@@ -56,10 +56,10 @@ class FilesystemConnector(BaseConnector):
                 errors.append(DeploymentError(
                     component="FilesystemConnector",
                     problem=f"Required location '{key}' does not exist on disk: {p}",
-                    location=f"locations.{key} in deployment profile",
+                    location=f"locations.{key} in deployment",
                     fix=(
                         f"Create the directory at '{p}' or update the 'locations.{key}' "
-                        f"path in the deployment profile to point at an existing directory."
+                        f"path in the deployment to point at an existing directory."
                     ),
                     who="operator",
                     reference=_REF,

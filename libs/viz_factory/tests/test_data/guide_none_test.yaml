@@ -1,5 +1,5 @@
 id: guide_none_test
-description: Test manifest for guide_none_test.yaml
+description: Test data analysis recipe for guide_none_test.yaml
 input_fields: []
 wrangling:
   tier1: []

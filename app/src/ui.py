@@ -12,21 +12,21 @@ from app.src.bootloader import bootloader
 
 print("--- LOADING UI VERSION V5.1 (Aggressive Centering) ---")
 # 1. System Aesthetics (ADR-027, ADR-030)
-# Base theme is always injected first.  If the persona points to a different
+# Base theme is always injected first.  If the app features points to a different
 # CSS file it is injected as a second <style> block so it only needs overrides
 # — no @import required (which wouldn't resolve when injected as a string).
 _BASE_THEME = Path("config/ui/theme.css")
 _base_css = _BASE_THEME.read_text(encoding="utf-8")
-_persona_theme_path = bootloader.get_theme_css_path()
-_persona_extra_css = (
-    _persona_theme_path.read_text(encoding="utf-8")
-    if _persona_theme_path.resolve() != _BASE_THEME.resolve()
+_app_features_theme_path = bootloader.get_theme_css_path()
+_app_features_extra_css = (
+    _app_features_theme_path.read_text(encoding="utf-8")
+    if _app_features_theme_path.resolve() != _BASE_THEME.resolve()
     else ""
 )
 
 
 def _resolve_logo_src(logo_url: str) -> str:
-    """Return a usable <img src> value for logo_url from persona config.
+    """Return a usable <img src> value for logo_url from app features config.
 
     Remote URLs (http/https) are returned as-is.
     Local paths are read from disk and returned as a base64 data URI so no
@@ -49,7 +49,7 @@ def _resolve_logo_src(logo_url: str) -> str:
 app_ui = ui.page_fillable(
     ui.head_content(
         ui.tags.style(_base_css),
-        *([ui.tags.style(_persona_extra_css)] if _persona_extra_css else []),
+        *([ui.tags.style(_app_features_extra_css)] if _app_features_extra_css else []),
         # Vendored locally — air-gap / restricted-network safe (DEPLOY-CDN-1).
         # Source: app/src/www/vendor/ — pinned versions, no CDN dependency.
         ui.tags.link(
@@ -277,7 +277,7 @@ window.cyFit     = cyFit;
         """)
     ),
 
-    # Optional persona banner — logo + title injected from ui_banner key in persona template
+    # Optional app features banner — logo + title injected from ui_banner key in app features file
     *([ui.div(
         *([ui.tags.img(
             src=_resolve_logo_src(bootloader.get_ui_banner().get("logo_url", "")),
@@ -317,7 +317,7 @@ window.cyFit     = cyFit;
         ),
         # 3. Right sidebar — excluded from DOM when not visible (ADR-073).
         # Structural exclusion (not CSS hide) so the center column fills full width.
-        # Visibility is driven by workspaces.home.right_sidebar.visible in persona template;
+        # Visibility is driven by workspaces.home.right_sidebar.visible in app features file;
         # replacing the prior t3_sandbox_enabled flag check (ADR-053 violation, task 25-O).
         (
             ui.div(

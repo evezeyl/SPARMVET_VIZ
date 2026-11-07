@@ -23,7 +23,7 @@ Think of your data as a tree:
 
 ---
 
-## Manifest Template (Copy-Paste)
+## Data analysis recipe Template (Copy-Paste)
 
 ### Template A: Both Tiers (Advanced Plot)
 Use this when you need to reshape data (e.g., splitting multiple gene hits) before plotting.

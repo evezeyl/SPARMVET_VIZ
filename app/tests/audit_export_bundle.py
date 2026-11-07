@@ -16,8 +16,8 @@ def audit_export():
         "tier3_leaf": pl.DataFrame({"id": [1], "val": ["A"]})
     }
 
-    manifest = {
-        "project": "AUDIT_TEST",
+    data_analysis_recipe = {
+        "data_analysis_recipe": "AUDIT_TEST",
         "plots": {"test_plot": {"mapping": {"x": "id"}, "layers": [{"name": "geom_point"}]}}
     }
 
@@ -28,11 +28,11 @@ def audit_export():
 
     # 2. Bundle
     zip_path = exporter.bundle_global_export(
-        project_id="AUDIT_PROJ",
+        data_analysis_recipe_id="AUDIT_PROJ",
         plot_path="tmp/audit_plot.png",  # Simulated
         tiers={k: v.collect().to_pandas() if hasattr(v, "collect")
                else v.to_pandas() for k, v in tiers.items()},
-        manifest=manifest,
+        data_analysis_recipe=data_analysis_recipe,
         audit_trail=audit_trail
     )
 
@@ -53,10 +53,10 @@ def audit_export():
             print(log_content[:200])
             print("-" * 20)
 
-        # Check manifest format
-        with zipf.open("session_manifest.yaml") as f:
+        # Check data analysis recipe format
+        with zipf.open("session_data_analysis_recipe.yaml") as f:
             man_content = yaml.safe_load(f)
-            print(f"\nManifest Project: {man_content.get('project')}")
+            print(f"\nDataAnalysisRecipe: {man_content.get("data_analysis_recipe")}")
 
 
 if __name__ == "__main__":

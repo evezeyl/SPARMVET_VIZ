@@ -1,6 +1,6 @@
 # Gallery Taxonomy Cheatsheet
 
-Icons used consistently across all recipe manifests, recipe_meta.md tag strips, and the Gallery sidebar filter panels.
+Icons used consistently across all example data analysis recipes, example_meta.md tag strips, and the Gallery sidebar filter panels.
 
 ---
 
@@ -8,12 +8,12 @@ Icons used consistently across all recipe manifests, recipe_meta.md tag strips, 
 
 | Icon | Axis | Sidebar label | Where used |
 |------|------|--------------|-----------|
-| 📊 | **Family (Purpose)** | `📊 Family (Purpose)` | manifest `info.family`, meta `> 📊 …`, sidebar |
-| 🔢 | **Data Pattern** | `🔢 Data Pattern` | manifest `info.pattern`, meta `> … 🔢 …`, sidebar |
-| 📈 | **Difficulty** | `📈 Difficulty` | manifest `info.difficulty`, meta `> … 📈 …`, sidebar |
-| ⚙️ | **Primary Geom** | `⚙️ Primary Geom` | manifest `info.geom`, meta `> … ⚙️ …`, sidebar |
-| 🎯 | **What it Shows** | `🎯 What it Shows` | manifest `info.show`, meta `> … 🎯 …`, sidebar |
-| 📏 | **Sample Size** | `📏 Sample Size` | manifest `info.sample_size`, meta `> … 📏 …`, sidebar |
+| 📊 | **Family (Purpose)** | `📊 Family (Purpose)` | data analysis recipe `info.family`, meta `> 📊 …`, sidebar |
+| 🔢 | **Data Pattern** | `🔢 Data Pattern` | data analysis recipe `info.pattern`, meta `> … 🔢 …`, sidebar |
+| 📈 | **Difficulty** | `📈 Difficulty` | data analysis recipe `info.difficulty`, meta `> … 📈 …`, sidebar |
+| ⚙️ | **Primary Geom** | `⚙️ Primary Geom` | data analysis recipe `info.geom`, meta `> … ⚙️ …`, sidebar |
+| 🎯 | **What it Shows** | `🎯 What it Shows` | data analysis recipe `info.show`, meta `> … 🎯 …`, sidebar |
+| 📏 | **Sample Size** | `📏 Sample Size` | data analysis recipe `info.sample_size`, meta `> … 📏 …`, sidebar |
 
 ---
 
@@ -51,7 +51,7 @@ Icons used consistently across all recipe manifests, recipe_meta.md tag strips, 
 | `Advanced` | Non-trivial wrangling, derived columns, or specialised geoms |
 
 ### ⚙️ Primary Geom
-The first `geom_*` or `stat_*` layer in the recipe. Use the exact plotnine function name (lowercase, underscore):
+The first `geom_*` or `stat_*` layer in the example. Use the exact plotnine function name (lowercase, underscore):
 
 `geom_area` · `geom_bar` · `geom_bin_2d` · `geom_boxplot` · `geom_col` · `geom_density`
 `geom_freqpoly` · `geom_histogram` · `geom_jitter` · `geom_line` · `geom_path` · `geom_point`
@@ -81,12 +81,12 @@ The first `geom_*` or `stat_*` layer in the recipe. Use the exact plotnine funct
 
 ---
 
-## Tag strip format in recipe_meta.md
+## Tag strip format in example_meta.md
 
-Every `recipe_meta.md` must include a blockquote tag strip on line 3 (after the `## Name` heading and a blank line):
+Every `example_meta.md` must include a blockquote tag strip on line 3 (after the `## Name` heading and a blank line):
 
 ```markdown
-## Recipe Name
+## Example Name
 
 > 📊 Family · 🔢 Data Pattern · 📈 Difficulty · ⚙️ geom_name · 🎯 show_value · 📏 sample_size_value
 ```
@@ -100,11 +100,11 @@ Example:
 
 ---
 
-## Manifest info block format
+## Data analysis recipe info block format
 
 ```yaml
 info:
-  name: Recipe Name
+  name: Example Name
   submission_date: 'YYYY-MM-DD'
   family: Distribution         # 📊
   pattern: 1 Numeric, 1 Categorical  # 🔢

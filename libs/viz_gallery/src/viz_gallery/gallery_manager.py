@@ -1,10 +1,11 @@
 # @deps
-# provides: GalleryManager class — submit_recipe(), list_submissions(), rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/
+# provides: GalleryManager class — submit_example(), list_submissions(), rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/
 # consumes: yaml, shutil, pathlib.Path, datetime, polars, json, hashlib
 # consumed_by: app/handlers/gallery_handlers.py
 # @end_deps
 # libs/viz_gallery/src/viz_gallery/gallery_manager.py
 import yaml
+from utils.legacy_keys import LEGACY_GALLERY_FILES
 import shutil
 from pathlib import Path
 from datetime import datetime
@@ -16,7 +17,7 @@ import hashlib
 class GalleryManager:
     """
     GalleryManager (gallery_manager.py) – part of the viz_gallery library.
-    Handles persistence of a recipe, data sample, and metadata to the
+    Handles persistence of an example, data sample, and metadata to the
     assets/gallery_data directory.
     """
 
@@ -24,7 +25,7 @@ class GalleryManager:
         self.gallery_dir = Path(gallery_dir)
         self.gallery_dir.mkdir(parents=True, exist_ok=True)
 
-    def submit_recipe(self, name: str, recipe: list, data: pl.DataFrame,
+    def submit_example(self, name: str, example: list, data: pl.DataFrame,
                       meta_markdown: str, family: str = "Distribution",
                       pattern: str = "1 Numeric", difficulty: str = "Simple",
                       geom: str = "", show: str = "", sample_size: str = "any",
@@ -39,8 +40,8 @@ class GalleryManager:
         target_dir = self.gallery_dir / folder_name
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Save recipe manifest (YAML)
-        manifest_bundle = {
+        # 1. Save example data analysis recipe (YAML)
+        data_analysis_recipe_bundle = {
             "info": {
                 "name": name,
                 "submission_date": datetime.now().strftime("%Y-%m-%d"),
@@ -58,18 +59,18 @@ class GalleryManager:
             "wrangling": {
                 "tier1": [],
                 "tier2": [],
-                "tier3": recipe
+                "tier3": example
             }
         }
-        with open(target_dir / "recipe_manifest.yaml", "w") as f:
-            yaml.dump(manifest_bundle, f, sort_keys=False)
+        with open(target_dir / "data_analysis_recipe.yaml", "w") as f:
+            yaml.dump(data_analysis_recipe_bundle, f, sort_keys=False)
 
         # 2. Save data sample (TSV) – limit to 100 rows for preview
         data.head(100).write_csv(
             target_dir / "example_data.tsv", separator="\t")
 
         # 3. Save metadata markdown
-        with open(target_dir / "recipe_meta.md", "w") as f:
+        with open(target_dir / "example_meta.md", "w") as f:
             f.write(meta_markdown)
 
         # 4. Optional plot preview
@@ -99,18 +100,24 @@ class GalleryManager:
             "by_sample_size": {},
         }
 
+        legacy_bundles: list = []
         folders = [d for d in self.gallery_dir.iterdir() if d.is_dir()]
         for d in folders:
-            manifest_path = d / "recipe_manifest.yaml"
-            if not manifest_path.exists():
+            data_analysis_recipe_path = d / "data_analysis_recipe.yaml"
+            if not data_analysis_recipe_path.exists():
+                if (d / LEGACY_GALLERY_FILES[0]).exists():
+                    # a bundle from before the configuration rename (ADR-091): say so, never skip silently
+                    print(f"Skipping {d.name}: it uses the old file names ({', '.join(LEGACY_GALLERY_FILES)}). "
+                          f"Convert with: python assets/scripts/migrate_config_vocabulary.py --gallery <folder> --apply")
+                    legacy_bundles.append(d.name)
                 continue
 
-            # Integrity Check (ADR-037): manifest + data + meta required;
+            # Integrity Check (ADR-037): data analysis recipe + data + meta required;
             # preview_plot.png is optional (gallery UI shows a placeholder when absent)
             required = {
-                "manifest": manifest_path.exists(),
+                "data_analysis_recipe": data_analysis_recipe_path.exists(),
                 "data": (d / "example_data.tsv").exists(),
-                "meta": (d / "recipe_meta.md").exists(),
+                "meta": (d / "example_meta.md").exists(),
             }
 
             if not all(required.values()):
@@ -120,16 +127,16 @@ class GalleryManager:
             if not (d / "preview_plot.png").exists():
                 print(f"ℹ️  {d.name}: no preview_plot.png — will show placeholder in gallery")
 
-            with open(manifest_path, "r") as f:
+            with open(data_analysis_recipe_path, "r") as f:
                 try:
-                    manifest = yaml.safe_load(f)
-                    info = manifest.get("info", {})
-                    recipe_id = d.name
+                    data_analysis_recipe = yaml.safe_load(f)
+                    info = data_analysis_recipe.get("info", {})
+                    example_id = d.name
 
                     # Store in Registry
-                    registry[recipe_id] = {
+                    registry[example_id] = {
                         "name": info.get("name", d.name),
-                        "path": str(manifest_path),
+                        "path": str(data_analysis_recipe_path),
                         "has_preview": (d / "preview_plot.png").exists(),
                         "has_thumb": (d / "preview_thumb.png").exists(),
                         "taxonomy": {
@@ -150,15 +157,15 @@ class GalleryManager:
                     s_val = info.get("show", "")
                     ss_val = info.get("sample_size", "any")
 
-                    pivot["by_family"].setdefault(f_val, []).append(recipe_id)
-                    pivot["by_pattern"].setdefault(p_val, []).append(recipe_id)
-                    pivot["by_difficulty"].setdefault(d_val, []).append(recipe_id)
+                    pivot["by_family"].setdefault(f_val, []).append(example_id)
+                    pivot["by_pattern"].setdefault(p_val, []).append(example_id)
+                    pivot["by_difficulty"].setdefault(d_val, []).append(example_id)
                     if g_val:
-                        pivot["by_geom"].setdefault(g_val, []).append(recipe_id)
+                        pivot["by_geom"].setdefault(g_val, []).append(example_id)
                     if s_val:
-                        pivot["by_show"].setdefault(s_val, []).append(recipe_id)
+                        pivot["by_show"].setdefault(s_val, []).append(example_id)
                     if ss_val:
-                        pivot["by_sample_size"].setdefault(ss_val, []).append(recipe_id)
+                        pivot["by_sample_size"].setdefault(ss_val, []).append(example_id)
 
                 except Exception as e:
                     print(f"❌ Failed to parse {d.name}: {e}")
@@ -167,7 +174,8 @@ class GalleryManager:
         full_index = {
             "metadata": {
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "count": len(registry)
+                "count": len(registry),
+                "legacy_bundles": legacy_bundles,
             },
             "registry": registry,
             "pivot": pivot

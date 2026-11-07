@@ -7,7 +7,7 @@ orchestrator, extracts the join-key columns with polars (String-cast, mirroring 
 assembler joins), and passes plain Python rows here. Importable headless — no Shiny, no polars.
 
 Consumed by: app/handlers/blueprint_handlers.py (Joint Designer wiring).
-Produces: canonical `join` recipe steps consumed by the transformer `join` action.
+Produces: canonical `join` steps consumed by the transformer `join` action.
 If deleted: the Joint Designer pane loses its overlap stats and step (de)serialisation.
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ from __future__ import annotations
 # provides: join_designer:compute_key_match, join_designer:build_join_step, join_designer:parse_join_step
 # consumes: —
 # consumed_by: app/handlers/blueprint_handlers.py, libs/blueprint_arch/tests/test_join_designer.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-082 (Q5), .claude/rules/rules_manifest_structure.md#7
+# doc: .claude/knowledge/architecture_decisions.md#ADR-082 (Q5), .claude/rules/rules_data_analysis_recipe_structure.md#7
 # @end_deps
 
 # Join strategies offered by the Designer — mirrors the `how` enum declared in the
@@ -116,7 +116,7 @@ def compute_key_match(left_rows, right_rows, left_dtypes, right_dtypes, sample_n
 
 
 def build_join_step(right_ingredient, left_keys, right_keys, how="inner", comment=""):
-    """Emit a canonical `join` recipe step from Joint Designer selections.
+    """Emit a canonical `join` step from Joint Designer selections.
 
     left_keys / right_keys: aligned, non-empty lists of column names (the left side refers
         to the accumulating assembly base; the right side to `right_ingredient`'s columns).
@@ -125,8 +125,8 @@ def build_join_step(right_ingredient, left_keys, right_keys, how="inner", commen
 
     NOTE on the YAML boolean trap: the emitted symmetric key is the string "on". When this
     step is serialised the writer MUST quote it (`'on':`) — unquoted `on:` reloads as the
-    boolean True (rules_manifest_structure.md §7). DataAssembler defensively recovers via
-    step.get("on") or step.get(True) (data_assembler.py:182-185), but the saved manifest
+    boolean True (rules_data_analysis_recipe_structure.md §7). DataAssembler defensively recovers via
+    step.get("on") or step.get(True) (data_assembler.py:182-185), but the saved data analysis recipe
     will be malformed. The Designer save path must handle quoting.
     """
     left_keys = list(left_keys)
@@ -157,7 +157,7 @@ def build_join_step(right_ingredient, left_keys, right_keys, how="inner", commen
 def parse_join_step(step):
     """Inverse of build_join_step — extract Designer fields from a canonical join step.
 
-    Defensive against the YAML boolean trap: an unquoted `on:` in a hand-authored manifest
+    Defensive against the YAML boolean trap: an unquoted `on:` in a hand-authored data analysis recipe
     reloads as the boolean key True, so we look up both "on" and True.
     Returns {right_ingredient, left_keys, right_keys, how, comment}. `how` falls back to
     "left" when absent (the transformer join action's default), so an edit faithfully

@@ -23,7 +23,7 @@ libs/id_reconciliation/
 │       ├── core.py                         # Main orchestrator
 │       ├── matcher.py                      # Matching engines (exact, fuzzy, pattern)
 │       ├── pattern_detector.py             # Pattern suggestion & application
-│       ├── recipe.py                       # Transformation recipe format & persistence
+│       ├── id_transformation.py                       # id transformation format & persistence
 │       └── data_structures.py              # MatchResult, PatternSuggestion, etc.
 └── tests/
     ├── conftest.py
@@ -65,8 +65,8 @@ class MatchResult:
     summary: dict  # {"total_source": 455, "matched": 452, "unmatched_source": 3, ...}
 
 @dataclass
-class TransformationRecipe:
-    """Reusable recipe for ID transformation."""
+class IdTransformation:
+    """Reusable id transformation for ID transformation."""
     metadata: dict
       # {"source_file": "...", "target_file": "...", 
       #  "source_id_column": "...", "target_id_column": "...",
@@ -84,9 +84,9 @@ class TransformationRecipe:
     many_to_many_pairs: list[tuple]  # [(left_id, [right_id_1, right_id_2]), ...]
       # Detected but user confirmed ("suppressed")
 
-class TransformationRecipe:
+class IdTransformation:
     @classmethod
-    def from_yaml(cls, filepath: str) -> "TransformationRecipe": ...
+    def from_yaml(cls, filepath: str) -> "IdTransformation": ...
     
     def to_yaml(self, filepath: str) -> None: ...
     
@@ -103,7 +103,7 @@ class TransformationRecipe:
 
 ```python
 class IDReconciliationEngine:
-    """Main entry point for ID matching & recipe generation."""
+    """Main entry point for ID matching & id transformation generation."""
     
     def __init__(self, verbose: bool = False):
         ...
@@ -187,16 +187,16 @@ class IDReconciliationEngine:
         """
         ...
     
-    # === PHASE 5: Recipe Generation ===
-    def generate_recipe(self,
+    # === PHASE 5: Id transformation Generation ===
+    def generate_transformation(self,
                        source_file: str,
                        target_file: str,
                        source_id_column: str,
                        target_id_column: str,
                        final_match_result: MatchResult,
-                       verified_by: str = "user") -> TransformationRecipe:
+                       verified_by: str = "user") -> IdTransformation:
         """
-        Generate a reusable transformation recipe from final match result.
+        Generate a reusable id transformation from final match result.
         
         Stores:
         - Transformation steps applied
@@ -289,23 +289,23 @@ class TestLabStudio:
                                                 match_result.unmatched_source)
         # User verifies matches, applies patterns, etc.
         
-        # Generate recipe
-        recipe = self.engine.generate_recipe(
+        # Generate id transformation
+        id_transformation = self.engine.generate_transformation(
             source_file, target_file, "id", "id",
             final_match_result, verified_by="eve"
         )
-        recipe.to_yaml(f"user_sessions/{session_id}/recipe_{source_file}_{target_file}.yaml")
+        id_transformation.to_yaml(f"user_data/{session_id}/id_transformation_{source_file}_{target_file}.yaml")
 ```
 
-### BLUEPRINT (Manifest Scaffolding)
+### BLUEPRINT (Data analysis recipe Scaffolding)
 
 ```python
-from id_reconciliation import IDReconciliationEngine, TransformationRecipe
+from id_reconciliation import IDReconciliationEngine, IdTransformation
 
 class WrangleStudio:
-    def scaffold_manifest_from_files(self, uploaded_files: list[str]) -> str:
+    def scaffold_data_analysis_recipe_from_files(self, uploaded_files: list[str]) -> str:
         """
-        Generate a boilerplate manifest from uploaded data files.
+        Generate a boilerplate data analysis recipe from uploaded data files.
         
         Step 1: ID Reconciliation (PREREQUISITE)
         """
@@ -318,17 +318,17 @@ class WrangleStudio:
         # Run all pairwise matches (assume user has already verified via TEST_LAB tool)
         # OR: call reconciliation inline & prompt user in UI
         
-        # Load or generate recipes
-        recipes = [TransformationRecipe.from_yaml(recipe_file) 
-                   for recipe_file in self._find_saved_recipes(uploaded_files)]
+        # Load or generate id transformations
+        id_transformations = [IdTransformation.from_yaml(steps_file) 
+                   for steps_file in self._find_saved_id_transformations(uploaded_files)]
         
-        # Apply recipes to build join graph
-        join_manifests = self._build_join_recipes(recipes)
+        # Apply id transformations to build join graph
+        joins = self._build_join_steps(id_transformations)
         
-        # Generate boilerplate manifest
-        manifest_yaml = self._generate_manifest_boilerplate(join_manifests)
+        # Generate boilerplate data analysis recipe
+        data_analysis_recipe_yaml = self._generate_data_analysis_recipe_boilerplate(joins)
         
-        return manifest_yaml
+        return data_analysis_recipe_yaml
 ```
 
 ---
@@ -392,12 +392,12 @@ def test_many_to_many_detection():
     # Scenario: S001 → exists in target as both S001 and S001_QC_pass
     ...
 
-def test_recipe_persistence():
-    """Recipe should be saveable & loadable."""
-    recipe = TransformationRecipe(...)
-    recipe.to_yaml("/tmp/recipe.yaml")
-    loaded = TransformationRecipe.from_yaml("/tmp/recipe.yaml")
-    assert loaded == recipe
+def test_transformation_persistence():
+    """Id transformation should be saveable & loadable."""
+    id_transformation = IdTransformation(...)
+    id_transformation.to_yaml("/tmp/id_transformation.yaml")
+    loaded = IdTransformation.from_yaml("/tmp/id_transformation.yaml")
+    assert loaded == id transformation
 
 def test_recode_workflow():
     """User should be able to clean IDs via recode actions."""
@@ -426,14 +426,14 @@ def test_recode_workflow():
 - `IDPair` — single matched pair with certainty
 - `MatchResult` — result of pairwise matching
 - `PatternSuggestion` — suggested transformation rule
-- `TransformationRecipe` — reusable recipe (persisted as YAML)
+- `IdTransformation` — reusable id transformation (persisted as YAML)
 
 **Main Methods:**
 - `precheck_compatibility(file_metadata)` → PreCheckResult
 - `match_pair(source_ids, target_ids)` → MatchResult
 - `suggest_patterns(source_ids, target_ids, unmatched)` → list[PatternSuggestion]
 - `apply_pattern(match_result, pattern)` → MatchResult
-- `generate_recipe(...)` → TransformationRecipe
+- `generate_transformation(...)` → IdTransformation
 
 **Utility Functions:**
 - `detect_many_to_many(matched_pairs)` → list[tuple]
@@ -454,7 +454,7 @@ def test_recode_workflow():
 
 4. **Recode action extensibility** — the action set is hardcoded (trim, extract, regex, etc.). Should users be able to define custom actions? Or JSON-based action definitions?
 
-5. **Recipe reuse caching** — when user imports the same file types again, should TEST_LAB auto-detect & suggest applying the saved recipe? Or always run fresh matching?
+5. **Id transformation reuse caching** — when user imports the same file types again, should TEST_LAB auto-detect & suggest applying the saved id transformation? Or always run fresh matching?
 
-6. **Integration with Manifest Scaffolding UI** — should recipes be generated inside TEST_LAB (standalone), or should BLUEPRINT call the engine inline & prompt user for verification? Currently assuming both are possible.
+6. **Integration with Data analysis recipe Scaffolding UI** — should id transformations be generated inside TEST_LAB (standalone), or should BLUEPRINT call the engine inline & prompt user for verification? Currently assuming both are possible.
 

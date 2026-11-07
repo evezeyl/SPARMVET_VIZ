@@ -1,0 +1,464 @@
+---
+title: "UI App features files — Access Levels & Feature Control"
+subtitle: "How SPARMVET adapts its interface to different users and deployment contexts"
+---
+
+```{css, echo=FALSE}
+code:not(.sourceCode) {
+  background-color: #3a2a4d !important;
+  color: #e0cffc !important;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+```
+
+# What is an App features?
+
+A **app features** defines what a user can see and do in the SPARMVET interface. It controls which panels are visible, which tools are accessible, and how much of the analytical pipeline is exposed.
+
+App features files answer the question: **who is this user, and what level of access do they need?**
+
+They do **not** control which data or pipeline is loaded — that is the job of the [Deployment](../deployment/deployment_guide.qmd). App features and deployment are fully independent: the same app features can be used with any pipeline, and the same pipeline can be deployed for different app features levels.
+
+---
+
+# The Eight App features files
+
+SPARMVET defines eight app features files. Five are production app features files (ordered by capability), two are demo variants, and one is reserved for CI automation:
+
+| # | App features ID | Display name | Intended user |
+|---|---|---|---|
+| 1 | `pipeline-static` | Automated Pipeline — Static | End-user receiving fixed pipeline results; no interaction needed |
+| 2 | `demo-vetinst` | Demo — Vetinst Reference | Read-only reference demo for NVI/Vetinst presentations; export disabled |
+| 3 | `pipeline-exploration-simple` | Pipeline Exploration — Simple | Scientist exploring results with basic filters and exports |
+| 4 | `web-demo` | Web Demo | Minimal interaction for public web demos; filters enabled, export disabled |
+| 5 | `pipeline-exploration-advanced` | Pipeline Exploration — Advanced | Power user with full sandbox access and audit trail |
+| 6 | `standalone` | Standalone User | Researcher managing their own data and data analysis recipes |
+| 7 | `developer` | Workflow Developer | Admin or developer building and testing pipelines |
+| 8 | `qa` | QA / CI Automation | Mirrors `developer` flags but disables ghost-save for deterministic Playwright test runs |
+
+The five **production app features files** (1, 3, 5, 6, 7) are ordered — higher app features files have all the capabilities of lower ones plus additional features. The two **demo app features files** (2, 4) are independent variants that disable export and advanced features for safe demonstrations. The **qa app features** (8) is not intended for human users.
+
+---
+
+# Feature Map by App features
+
+## Core UI Access
+
+| Feature | pipeline-static | pipeline-simple | pipeline-advanced | standalone | developer |
+|---|:---:|:---:|:---:|:---:|:---:|
+| View plots (T1/T2) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Row filter builder | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Export results bundle | ✅ | ✅ | ✅ | ✅ | ✅ |
+| T3 sandbox (wrangling) | — | ✅ | ✅ | ✅ | ✅ |
+| Comparison mode | — | ✅ | ✅ | ✅ | ✅ |
+| Right sidebar (audit trail) | — | — | ✅ | ✅ | ✅ |
+| Export active graph | — | — | ✅ | ✅ | ✅ |
+| Metadata ingestion | — | — | ✅ | ✅ | ✅ |
+| Session save / restore | — | — | ✅ | ✅ | ✅ |
+| Data ingestion + Excel | — | — | — | ✅ | ✅ |
+| Data analysis recipe selector | — | — | — | ✅ | ✅ |
+| Gallery browser | — | — | — | — | ✅ |
+| Test Lab (Wrangle Studio) | — | — | — | — | ✅ |
+
+## Right Sidebar Visibility
+
+The right sidebar (Pipeline Audit) is **completely absent** for the two lowest app features files — its layout column is excluded from the DOM so the theater expands to full width. For higher app features files it shows the T2 blueprint (Violet nodes) and the user's T3 additions (Yellow nodes).
+
+| App features | Right sidebar |
+|---|---|
+| `pipeline-static` | Hidden — theater full width |
+| `pipeline-exploration-simple` | Hidden — theater full width |
+| `pipeline-exploration-advanced` | Visible — Violet (T2) + Yellow (T3) nodes |
+| `standalone` | Visible — full sandbox + audit |
+| `developer` | Visible — full sandbox + action registry |
+
+## Left Sidebar Content
+
+The left sidebar content changes depending on which top-level panel is active. Within the **Home** panel, the Export section shows different tools per app features:
+
+| Tool | pipeline-static | pipeline-simple | pipeline-advanced | standalone | developer |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Export Results Bundle | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Export Active Graph | — | — | ✅ | ✅ | ✅ |
+| Metadata Ingestion | — | — | ✅ | ✅ | ✅ |
+| Session Save / Import | — | — | ✅ | ✅ | ✅ |
+| Data Ingestion + Excel | — | — | — | ✅ | ✅ |
+
+---
+
+# Feature Flag Dependencies
+
+Some features depend on others being enabled. Enabling a flag without its dependency produces no effect (or a startup warning). The groupings below describe the logical dependency chains:
+
+## Group A — Viewing (no dependencies)
+
+These features are always available regardless of app features. They require only that data has been ingested and a data analysis recipe is loaded.
+
+- View plots at T1 and T2 tiers
+- Row filter builder (left sidebar, Home mode)
+- Export Results Bundle
+- Data Preview with column selector
+
+## Group B — T3 Sandbox (requires `interactivity_enabled: true`)
+
+All T3 features depend on `interactivity_enabled`. If this is false, all features in this group are silently unavailable regardless of their individual flags.
+
+```
+interactivity_enabled: true
+  └─ T3 tier toggle options (T3-Wrangle, T3-Plot)
+  └─ comparison_mode_enabled: true   → Comparison Mode toggle in theater
+  └─ session_management_enabled: true → Session Save/Import + ghost save
+  └─ export_enabled: true       → Export Active Graph (requires T3 context)
+```
+
+**Effect if `interactivity_enabled: false`:** T3 tier toggle buttons are hidden. `comparison_mode_enabled`, `session_management_enabled`, and `export_enabled` have no effect even if set to `true`.
+
+## Group C — Right Sidebar (requires `interactivity_enabled: true`)
+
+The right sidebar (Pipeline Audit) is only meaningful when T3 is accessible. It is always suppressed for the two lowest app features files — the layout column is excluded from the DOM.
+
+```
+interactivity_enabled: true
+  └─ Right sidebar visible for ≥ pipeline-exploration-advanced
+       └─ btn_apply gate (requires at least one Yellow node with a comment)
+       └─ btn_revert (full wipe back to T2 blueprint)
+```
+
+## Group D — Data Ingestion (requires `import_helper_enabled: true`)
+
+Data ingestion features form their own group. `import_helper_enabled` is the master gate:
+
+```
+import_helper_enabled: true
+  └─ data_ingestion_enabled: true   → Multi-file upload, schema association, Excel converter
+  └─ metadata_ingestion_enabled: true → Metadata replacement upload (also standalone — see below)
+```
+
+**`metadata_ingestion_enabled` is semi-independent:** It can be `true` even when `import_helper_enabled: false` — for example, a `pipeline-exploration-advanced` app features can upload corrected metadata but cannot perform general data ingestion. When `import_helper_enabled: false`, the metadata upload appears as a standalone control in Export (not nested under the full ingestion panel).
+
+## Group E — Developer Features
+
+```
+test_lab_enabled: true/false    ← gate for the Test Lab (AquaSynthesizer, ID reconciliation, scaffolding)
+gallery_enabled: true/false     ← Gallery browser (independent)
+
+blueprint_enabled: true/false   ← the one gate for the Blueprint Architect: its tab, its panels and its state
+                                  (the flags developer_mode_enabled and wrangle_studio_enabled were retired, issue evezeyl/SPARMVET_VIZ#29)
+  ├─ data_analysis_recipe_edit_enabled      → YAML escape hatch in Blueprint IDE (editable mode)
+  │                                When false: YAML panel is read-only; always visible.
+  │                                FATAL cascade (ADR-077): true requires blueprint_enabled: true.
+  └─ blueprint_agent_enabled    → Conversational AI agent for data analysis recipe design (ADR-076)
+                                   When false: agent chat panel absent from Blueprint sidebar.
+                                   FATAL cascade (ADR-077): true requires blueprint_enabled: true.
+```
+
+### `blueprint_agent:` config block
+
+When `blueprint_agent_enabled: true`, the app features file must also declare a `blueprint_agent:` block specifying the backend and connection details:
+
+```yaml
+blueprint_agent:
+  backend: claude_cli          # claude_cli | claude_api | disabled
+  model: claude-sonnet-4-6     # model ID (claude_api backend only)
+  api_key_env: ANTHROPIC_API_KEY  # env var name for API key (claude_api only)
+  endpoint: ~                  # optional API endpoint override
+  instructions_file: "config/ui/agents/blueprint_agent.md"  # system-prompt template
+  gallery_awareness: true      # whether agent can reference gallery examples
+```
+
+| Backend | How it connects | Required env vars |
+|---|---|---|
+| `claude_cli` | Calls the Claude Code CLI subprocess (`claude` binary) | Claude Code must be installed and authenticated |
+| `claude_api` | Direct Anthropic API call | `ANTHROPIC_API_KEY` (or the value of `api_key_env`) |
+| `disabled` | Chat panel shows "agent unavailable" banner | None |
+
+If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloader falls back to `DisabledAdapter` and logs the cause. The `qa` app features always uses `backend: disabled` to prevent live API calls during automated test runs.
+
+## Dependency Summary Table
+
+**Cascade type** — *Soft*: bootloader silently forces child to false and logs a warning. *Fatal (ADR-077)*: `AppFeaturesValidator` raises a startup error; app refuses to boot until the template is corrected.
+
+| Flag | Depends on | Independent? | Cascade type |
+|---|---|---|---|
+| `interactivity_enabled` | Nothing | ✅ | — |
+| `comparison_mode_enabled` | `interactivity_enabled` | — | Soft |
+| `session_management_enabled` | `interactivity_enabled` | — | Soft |
+| `export_enabled` | `interactivity_enabled` | — | Soft |
+| `export_enabled` | Nothing (Group A — always safe) | ✅ | — |
+| `metadata_ingestion_enabled` | Nothing (semi-standalone) | ✅ | — |
+| `import_helper_enabled` | Nothing | ✅ | — |
+| `data_ingestion_enabled` | `import_helper_enabled` | — | Soft |
+| `test_lab_enabled` | Nothing | ✅ | — |
+| `gallery_enabled` | Nothing | ✅ | — |
+| `blueprint_enabled` | Nothing | ✅ | — |
+| `data_analysis_recipe_edit_enabled` | `blueprint_enabled` | — | **Fatal (ADR-077)** |
+| `blueprint_agent_enabled` | `blueprint_enabled` | — | **Fatal (ADR-077)** |
+
+---
+
+# App features Configuration Files
+
+App features files live in `config/app_features/`. Each file is a YAML document:
+
+```
+config/app_features/
+  pipeline-static.yaml
+  pipeline-exploration-simple.yaml
+  pipeline-exploration-advanced.yaml
+  standalone.yaml
+  developer.yaml
+```
+
+## Full flag reference
+
+```yaml
+# config/app_features/<app features>_template.yaml
+
+app_features_name: "pipeline-static"      # internal ID — must match filename prefix
+app_features_id: "pipeline-static"        # used by Bootloader — must match filename prefix
+display_name: "Automated Pipeline — Static"   # shown in UI
+logic_access: "None"                 # informational: None / Basic / Advanced / Full
+
+features:
+  # ── Group A: Viewing ──────────────────────────────────────────────────────
+  # (no dependencies; always meaningful)
+  export_enabled: true        # Export Results Bundle (zip) in Export
+
+  # ── Group B: T3 Sandbox ───────────────────────────────────────────────────
+  interactivity_enabled: false       # Master gate for all T3 features
+  comparison_mode_enabled: false     # Comparison Mode toggle (requires interactivity)
+  session_management_enabled: false  # Session Save/Import + ghost save (requires interactivity)
+  export_enabled: false        # Export Active Graph (requires interactivity)
+
+  # ── Group C: Right Sidebar ────────────────────────────────────────────────
+  # Controlled by interactivity_enabled + app features level (advanced+)
+  # No separate flag — suppression is structural (layout element excluded)
+
+  # ── Group D: Data Ingestion ───────────────────────────────────────────────
+  metadata_ingestion_enabled: false  # Upload replacement metadata → T1 rebuild
+  import_helper_enabled: false       # Master gate for general data ingestion
+  data_ingestion_enabled: false      # Multi-file ingest + Excel converter (requires import_helper)
+
+  # ── Group E: Developer Features ───────────────────────────────────────────
+  test_lab_enabled: false            # Test Lab
+  gallery_enabled: false             # Gallery browser
+  blueprint_enabled: false           # Blueprint Architect (data analysis recipe design IDE)
+  data_analysis_recipe_edit_enabled: false       # Enables direct YAML editing in BLUEPRINT escape hatch
+                                     # (read-only view always available with blueprint_enabled)
+                                     # FATAL cascade (ADR-077): requires blueprint_enabled: true
+  blueprint_agent_enabled: false     # Conversational AI agent for data analysis recipe design (ADR-076)
+                                     # FATAL cascade (ADR-077): requires blueprint_enabled: true
+
+# Required when blueprint_agent_enabled: true
+blueprint_agent:
+  backend: disabled                  # claude_cli | claude_api | disabled
+  model: claude-sonnet-4-6           # model ID — used only with claude_api backend
+  api_key_env: ANTHROPIC_API_KEY     # env var holding the API key (claude_api only)
+  endpoint: ~                        # optional API endpoint override
+  instructions_file: "config/ui/agents/blueprint_agent.md"
+  gallery_awareness: false
+
+automation:
+  ghost_save:
+    enabled: false                   # Auto-save on btn_apply and filter commit
+    frequency_minutes: 1             # Interval if periodic save is implemented
+```
+
+## `theme_css` — per app features file Stylesheet (Optional)
+
+The `theme_css` field is an optional path to a CSS file that controls the visual styling of the dashboard for this app features. It defaults to `config/ui/theme.css` (the base stylesheet bundled with the app) if not set.
+
+The file is loaded at startup by `Bootloader.get_theme_css_path()` and injected into the page head via `ui.tags.style()`. To customise styling for a specific deployment or branding requirement, create a new CSS file and point `theme_css:` at it — no Python changes are needed.
+
+```yaml
+# Example: custom branding for a specific deployment
+theme_css: "config/ui/acme_org_theme.css"
+```
+
+The base theme (`config/ui/theme.css`) is always available as a reference and fallback. Editing it affects all app features files that do not declare an override.
+
+---
+
+# How the Active App features is Selected
+
+The app features is resolved at startup in this order (first match wins):
+
+1. `default_app_features` in the active deployment file
+2. App features selector in the UI (if visible — `developer` app features only by default)
+3. Fallback: `pipeline-static`
+
+In production deployments (Galaxy, IRIDA, server), the deployment always sets `default_app_features`, so the selector is never shown. In development, the developer template allows switching app features files from the UI for testing.
+
+The active app features is loaded by `Bootloader` (`app/src/bootloader.py`) at bootload time and cached for the session. The resolved template path is printed to the terminal at startup: `[Bootloader] App features: <id> → <absolute/path/to/_template.yaml>`. Changing app features requires a page reload.
+
+---
+
+# App features vs. Deployment — What Goes Where
+
+This is the most common source of confusion. The rule is simple:
+
+| Question | Answered by |
+|---|---|
+| What can this user do? | App features file (`config/app_features/`) |
+| Which pipeline/data is loaded? | Deployment (`config/deployment/` or `SPARMVET_DEPLOYMENT`) |
+| Where is data stored on disk? | Deployment (`locations` block) |
+| Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment (`app_features_override: {data_ingestion_enabled: false}` overrides app features) |
+| What data analysis recipe is loaded at startup? | Deployment (`default_data_analysis_recipe`) |
+| Can the user switch data analysis recipes? | App features (`data_analysis_recipe_selector.visible`) |
+
+The only feature that is jointly controlled is **data ingestion** — the deployment can disable it regardless of app features (e.g., for automated pipeline deployments where data is always pushed automatically).
+
+---
+
+# For Users: What Each App features Means in Practice
+
+## pipeline-static
+You see the results. You can filter what is displayed and export a bundle. You cannot change how data is processed. This is the default for automated pipeline integrations (Galaxy, IRIDA).
+
+## pipeline-exploration-simple
+Same as above, plus you can view the data at different processing stages (T1 raw, T2 analysis-ready) and use the T3 sandbox to apply your own filters. The audit trail is hidden to keep the interface clean.
+
+## pipeline-exploration-advanced
+Full analytical access. You can add your own processing steps in T3, compare them side-by-side with the pipeline's output, export individual graphs, upload corrected metadata, and save/restore your work sessions. The Pipeline Audit panel shows all steps taken.
+
+## standalone
+Everything above, plus you can upload your own data files (including Excel output from pipelines), associate them with the correct pipeline schemas, and switch between different pipeline data analysis recipes. Intended for researchers running analyses independently of an automated pipeline.
+
+## developer
+All features. Access to the Gallery for browsing and cloning examples, the Test Lab for generating synthetic test data, the full action registry in the audit panel, and the Blueprint Architect with AI agent assistance. Intended for pipeline developers and system administrators.
+
+## demo-vetinst *(reference demo)*
+Read-only view of plots and data. Export is disabled so the demo environment stays clean between presentations. All interaction and ingestion features are off. Intended for NVI/Vetinst public demonstrations.
+
+## web-demo *(public demo)*
+Filters are enabled so a presenter can show interactive exploration, but export, sessions, and ingestion are all disabled. Intended for web-accessible demos where anonymous visitors should not be able to download data.
+
+## qa *(CI automation only)*
+Identical capabilities to `developer`, but `automation.ghost_save: false` disables background session writes for deterministic Playwright test runs. This app features is set via `SPARMVET_APP_FEATURES=qa` in CI pipelines — it is not intended for human use.
+
+---
+
+# Sidebar Configuration (ADR-073)
+
+Each app features file declares its sidebar layout per user workspace (Home, Blueprint, Gallery, Test Lab). This replaces the previous hardcoded accordion sequence and adds full configurability without touching Python.
+
+## Structure in the app features file
+
+```yaml
+workspaces:
+  home:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: data_analysis_recipe_info
+        - type: filters
+        - type: export
+        - type: session_management
+    right_sidebar:
+      visible: true
+      panels:
+        - type: audit_stack
+  blueprint:
+    left_sidebar: !include sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include sidebars/blueprint_standard_right.yaml
+  gallery:
+    left_sidebar: !include sidebars/gallery_focus_left.yaml
+    right_sidebar:
+      visible: false
+      panels: []
+  test_lab:
+    left_sidebar:
+      visible: true
+      panels:
+        - type: data_analysis_recipe_info
+    right_sidebar:
+      visible: false
+      panels: []
+```
+
+## Two-layer resolution
+
+Sidebar layout uses two independent controls:
+
+| Layer | Controls | Where defined |
+|---|---|---|
+| **Slot list** | Which panels appear and in what order | `workspaces.<ws>.<side>_sidebar.panels` in template |
+| **Feature flag** | Whether the panel's functionality is active | Existing feature flags (`bootloader.is_enabled(flag)`) |
+
+A panel in the slot list whose feature flag is disabled is silently skipped at render time. Feature flags and cascade rules are completely unchanged — the slot list is purely a layout declaration.
+
+## Shared sidebar configs via `!include`
+
+Panel lists that are shared across several app features files live in `config/ui/sidebars/` as reusable YAML files:
+
+```
+config/ui/sidebars/
+  home_static_left.yaml
+  home_advanced_left.yaml      ← shared by advanced, independent, developer, qa
+  home_advanced_right.yaml     ← shared by all T3-capable app features files
+  blueprint_standard_left.yaml
+  blueprint_standard_right.yaml
+  gallery_focus_left.yaml
+  testlab_standard_left.yaml
+```
+
+Reference them in the app features file with `!include`:
+
+```yaml
+workspaces:
+  home:
+    left_sidebar: !include sidebars/home_advanced_left.yaml
+    right_sidebar: !include sidebars/home_advanced_right.yaml
+```
+
+Changing a shared sidebar file propagates to all app features files that `!include` it. Custom app features files override only the file they need — no Python changes required.
+
+## Built-in panel types
+
+| Type | Gate flag | Workspaces | Description |
+|---|---|---|---|
+| `data_analysis_recipe_info` | — | any | Data analysis recipe title, description, dataset summary. Always renders. |
+| `deployment_info` | — | any | Branding: logo, contact, institution. Params: `logo`, `contact`, `institution`. |
+| `data_analysis_recipe_choice` | `data_analysis_recipe_selector.visible` | home | Data analysis recipe selector dropdown |
+| `filters` | `interactivity_enabled` | home | Row filter builder |
+| `export` | `export_enabled` | home | Export bundle with scope toggle |
+| `session_management` | `session_management_enabled` | home | Session save/restore/import |
+| `data_import` | `metadata_ingestion_enabled` | home | Metadata upload + optional multi-file ingestion |
+| `audit_stack` | `t3_sandbox_enabled` | home (right) | T3 audit trail panel |
+| `blueprint_nav` | `blueprint_enabled` | blueprint | Pipeline selector + TubeMap node selector |
+| `blueprint_logic` | `blueprint_enabled` | blueprint (right) | Active component logic stack |
+| `blueprint_agent_chat` | `blueprint_agent_enabled` | blueprint (right) | Conversational AI agent for data analysis recipe design — asks questions, suggests steps, validates YAML fragments (ADR-076) |
+| `gallery_search` | `gallery_enabled` | gallery | Focus mode: search and filter |
+| `notification_log` | — | any (right) | Alert log (ADR-060) |
+
+## Sidebar visibility
+
+`left_sidebar.visible: false` — excludes the sidebar container from the DOM entirely (not CSS-hidden).
+
+`right_sidebar.visible: false` — excludes the right sidebar from layout at build time. For lower app features files (`pipeline-static`, `pipeline-exploration-simple`) this is set in their templates, replacing the previous app features name string check.
+
+**Auto-hide:** If `visible` is not explicitly set and all panels are skipped (all gate flags off), the sidebar is treated as hidden.
+
+## Validation
+
+Before deploying any app features file change, run:
+
+```bash
+# Validate one app features
+.venv/bin/python scripts/validate_app_features_config.py --app-features pipeline-exploration-advanced
+
+# Validate all app features files — CI gate
+.venv/bin/python scripts/validate_app_features_config.py --all --strict
+```
+
+The script checks: panel types against the registry, `!include` targets exist, gate-flag / slot-list consistency. `--strict` upgrades warnings to errors. The script is also run at app startup (warnings logged, errors block startup).
+
+## Adding a new panel type (developer guide)
+
+1. Register it in `app/modules/sidebar_registry.py`: add an entry to `PANEL_REGISTRY` with the renderer function reference and optional gate flag.
+2. Implement the renderer as a function in the relevant handler (Shiny-aware code stays in handlers per ADR-045 Two-Category Law).
+3. Add the panel type to the `!include` sidebar YAML files for any app features/workspace that should show it.
+4. Run `scripts/validate_app_features_config.py --all` to verify no existing templates are broken.
+
+No changes to `home_theater.py` or `ui.py` are needed for new panel types — the slot iteration is generic.

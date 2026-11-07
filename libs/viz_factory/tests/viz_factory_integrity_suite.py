@@ -81,16 +81,16 @@ def run_suite(output_dir: Path = None):
 
     results = []
     for comp in sorted(registered):
-        manifest_path = test_data_dir / f"{comp}_test.yaml"
+        data_analysis_recipe_path = test_data_dir / f"{comp}_test.yaml"
         # The triplet expects {comp}_test.tsv as well, but test_runner handles that.
 
-        if not manifest_path.exists():
+        if not data_analysis_recipe_path.exists():
             status = "NO TEST"
-            log(f"{comp:<35} | 🟡 {status:<8} | Missing manifest in test_data/")
-            results.append((comp, status, "No manifest"))
+            log(f"{comp:<35} | 🟡 {status:<8} | Missing data analysis recipe in test_data/")
+            results.append((comp, status, "No data analysis recipe"))
             continue
 
-        cmd = [sys.executable, str(test_runner), str(manifest_path),
+        cmd = [sys.executable, str(test_runner), str(data_analysis_recipe_path),
                "--output_dir", str(out_root)]
         try:
             res = subprocess.run(cmd, capture_output=True,

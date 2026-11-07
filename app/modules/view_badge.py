@@ -47,7 +47,7 @@ def view_badge(tier: str, has_tier2: bool, has_changes: bool) -> ViewBadge:
     """The badge for a view.
 
     tier         "T1" (Raw), "T2" (Result) or "T3" (My view)
-    has_tier2    the plot's dataset has tier-2 steps in the manifest
+    has_tier2    the plot's dataset has tier-2 steps in the data analysis recipe
     has_changes  My view has an applied filter, or a committed filter or column drop, for this plot
     """
     label = f"Viewing: {TIER_NAMES.get(tier, tier)}"

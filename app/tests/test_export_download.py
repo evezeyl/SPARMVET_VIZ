@@ -1,11 +1,11 @@
 """A real export download from the running app (EXPORT-CHECK-1, partly automated).
 
-Opens the app (qa persona), loads the dummy project, clicks the export button, unzips the bundle
+Opens the app (qa app features), loads the dummy data analysis recipe, clicks the export button, unzips the bundle
 and checks what the user is promised: the keys are recorded, the data files exist, and nothing
 is refused. The refusal path (a file changed after the view was opened) is tested here too, by
 changing a data file on disk after the view is open and restoring it afterwards.
 
-Run: PYTHONPATH=. SPARMVET_PERSONA=qa ./.venv/bin/python -m pytest app/tests/test_export_download.py -v
+Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_export_download.py -v
 """
 import io
 import re
@@ -19,7 +19,7 @@ from playwright.sync_api import Page
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401
-from app.tests.test_shiny_smoke import _load_project, _navigate_to_mlst_plot, _open_filters_panel, _wait_shiny
+from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _wait_shiny
 
 DATA_DIR = Path("assets/test_data/1_test_data_ST22_dummy")
 
@@ -40,7 +40,7 @@ def _open_export_panel(page: Page) -> None:
 
 @pytest.fixture(scope="module")
 def loaded(page: Page, shiny_app: ShinyAppProc):
-    _load_project(page, shiny_app.url)
+    _load_data_analysis_recipe(page, shiny_app.url)
     _open_export_panel(page)
     return page
 
@@ -50,9 +50,13 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     names = z.namelist()
     assert not any(n.endswith("EXPORT_NOT_CREATED.txt") for n in names), "the export was refused"
     readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
+    # the folder with the YAML files of the data analysis recipe (ADR-091: not steps/, not audit_steps/)
+    assert any("/data_analysis_recipes/" in n for n in names)
+    assert not any("/audit_steps/" in n or "/steps/" in n for n in names)
+    assert "data_analysis_recipes/" in readme
     assert re.search(r"tier1_key=[0-9a-f]{64}", readme)
     assert re.search(r"tier2_key=([0-9a-f]{64}|none)", readme)
-    assert re.search(r"Manifest SHA256\s*: [0-9a-f]{64}", readme)
+    assert re.search(r"Data analysis recipe SHA256\s*: [0-9a-f]{64}", readme)
     assert re.search(r"Data batch hash\s*: [0-9a-f]{64}", readme)
     assert any(n.endswith("T1_data.tsv") for n in names)
     assert any("/plots/" in n and not n.endswith("_ERROR.txt") for n in names)

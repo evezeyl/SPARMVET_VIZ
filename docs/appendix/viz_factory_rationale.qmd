@@ -31,14 +31,14 @@ The following components were part of the initial plan but have been deferred to
 | `scale_linetype_manual` | Manual Mapping | Explicit dictionary mapping required; defer. |
 
 ## 4. Technical Parity Verification
-Every implemented scale (Color, Fill, Axis, Size, Shape, Alpha, Identity) has been verified using the **Unified Test Runner** and individual YAML manifests, ensuring that any future implementation of the deferred tasks follows the same verified registry pattern.
+Every implemented scale (Color, Fill, Axis, Size, Shape, Alpha, Identity) has been verified using the **Unified Test Runner** and individual YAML data analysis recipes, ensuring that any future implementation of the deferred tasks follows the same verified registry pattern.
 
 ## 5. Faceting Lifecycle: Root Cause & Resolution
 During the transition to Plotnine 0.16.x, we encountered a visual failure where facets were registered but did not render correctly in 2D grid layouts.
 
 ### A. Root Cause: Signature Drift
 - **Issue**: Standard `facet_grid` formerly accepted a formula-style positional argument (`rows ~ cols`). In later versions, the component registry prefers explicit keyword arguments (`rows=None, cols=None`).
-- **Symptom**: Manifests using the string `"facets: row ~ col"` resulted in a `TypeError` or were ignored if passed positionally through the decorator.
+- **Symptom**: Data analysis recipes using the string `"facets: row ~ col"` resulted in a `TypeError` or were ignored if passed positionally through the decorator.
 
 ### B. Resolution: The Formula Parser
 We implemented an internal formula parser within `handle_facet_grid`:
@@ -49,7 +49,7 @@ We implemented an internal formula parser within `handle_facet_grid`:
 We implemented the coordinate layer with a "Silent Default" policy to maintain the SPARMVET declarative standard.
 
 ### A. The Silent Cartesian Fallback
-- **Logic**: If a manifest lacks a `coord_` entry, the `VizFactory` explicitly injects `coord_cartesian()`. This ensures that every plot has a defined coordinate system before rendering, preventing ambiguity.
+- **Logic**: If a data analysis recipe lacks a `coord_` entry, the `VizFactory` explicitly injects `coord_cartesian()`. This ensures that every plot has a defined coordinate system before rendering, preventing ambiguity.
 - **Facet Default**: Similarly, `facet_null()` is injected as the default layout if no `facet_` layer is found, standardizing the single-panel entry point.
 
 ### B. Polar System Deferral
@@ -60,8 +60,8 @@ We implemented the coordinate layer with a "Silent Default" policy to maintain t
 - **Pattern**: Implemented `coord_lims` as a registered alias for `coord_cartesian(xlim=..., ylim=...)`. 
 - **Rationale**: This provides a semantic hook for users to enforce axis clipping at the coordinate level, which is technically safer than setting limits at the scale level (which removes data points from the calculation).
 
-## 7. Manifest Omission & Default Layer Policy (ADR-024)
-The `VizFactory (viz_factory.py)` now supports **partial manifests** — layers that are not explicitly defined in the YAML are silently injected with sensible defaults.
+## 7. Data analysis recipe Omission & Default Layer Policy (ADR-024)
+The `VizFactory (viz_factory.py)` now supports **partial data analysis recipes** — layers that are not explicitly defined in the YAML are silently injected with sensible defaults.
 
 | Layer Category | Default | Injection Condition |
 | :--- | :--- | :--- |
@@ -70,9 +70,9 @@ The `VizFactory (viz_factory.py)` now supports **partial manifests** — layers 
 | **Facet** | `facet_null` | Injected if no `facet_*` layer present |
 | **Position** | `position_identity` | ggplot2 geom-level default; no VizFactory injection needed |
 | **Stat** | `stat_identity` | ggplot2 geom-level default; no VizFactory injection needed |
-| **Geom** | *(none)* | **No default geom.** Every manifest MUST define at least one geom. |
+| **Geom** | *(none)* | **No default geom.** Every data analysis recipe MUST define at least one geom. |
 
-**Rationale**: This simplifies manifest authoring significantly. A minimal valid manifest is:
+**Rationale**: This simplifies data analysis recipe authoring significantly. A minimal valid data analysis recipe is:
 ```yaml
 plots:
   minimal_scatter:
@@ -97,29 +97,29 @@ These are marked in `tasks.md` as `[DEFERRED - FEATURE NOT YET IMPLEMENTED IN PL
 
 ## 9. The User-as-Artist Philosophy
 
-The `VizFactory (viz_factory.py)` was designed with a fundamental principle: **the end user is the artist, not the system**. The system provides the tools (components), the canvas (data), and the grammar (manifests) — but the creative act of combining them belongs to the user.
+The `VizFactory (viz_factory.py)` was designed with a fundamental principle: **the end user is the artist, not the system**. The system provides the tools (components), the canvas (data), and the grammar (data analysis recipes) — but the creative act of combining them belongs to the user.
 
-This philosophy manifests in three ways:
+This philosophy data analysis recipes in three ways:
 
-1. **Declarative Manifests are the Brush**: A user does not write Python code to produce a plot. They write a YAML recipe that describes *what* they want to see. The factory translates intent into pixels.
+1. **Declarative Data analysis recipes are the Brush**: A user does not write Python code to produce a plot. They write a YAML step list that describes *what* they want to see. The factory translates intent into pixels.
 
-2. **Sensible Defaults Reduce Friction**: The Default Layer Injection Policy (Section 7 / ADR-024) ensures that minimal manifests produce coherent plots. A single `geom_point` layer is sufficient to get a professional `theme_bw` scatter plot by default.
+2. **Sensible Defaults Reduce Friction**: The Default Layer Injection Policy (Section 7 / ADR-024) ensures that minimal data analysis recipes produce coherent plots. A single `geom_point` layer is sufficient to get a professional `theme_bw` scatter plot by default.
 
-3. **Copy-Modify-Render Workflow**: The planned **Gallery & Recipe Pattern** (ADR-025) will provide a Visual Cookbook where each registered component is shown with its exact manifest and resulting image — enabling self-service plot customization.
+3. **Copy-Modify-Render Workflow**: The planned **Gallery & Example Pattern** (ADR-025) will provide a Visual Cookbook where each registered component is shown with its exact data analysis recipe and resulting image — enabling self-service plot customization.
 
-## 10. The Gallery & Recipe Pattern (ADR-025)
+## 10. The Gallery & Example Pattern (ADR-025)
 
 ::: {.callout-note}
 **Status:** PROPOSED — next development sprint.
 :::
 
-Each VizFactory component will be documented as a 3-part **Recipe**:
+Each VizFactory component will be documented as a 3-part **Step list**:
 
-| Recipe Part | Content | Purpose |
+| Step list Part | Content | Purpose |
 | :--- | :--- | :--- |
 | **Data Header** | First 5 rows of the test TSV | Shows expected data shape |
-| **YAML Manifest** | Exact copy-paste manifest | Enables direct reuse |
-| **Rendered Plot** | PNG output from the manifest | Visual confirmation |
+| **YAML Data analysis recipe** | Exact copy-paste data analysis recipe | Enables direct reuse |
+| **Rendered Plot** | PNG output from the data analysis recipe | Visual confirmation |
 
 ### Premiere Entry: Triple-Source AMR Integration
 

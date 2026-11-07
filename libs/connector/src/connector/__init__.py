@@ -12,7 +12,7 @@ Public API:
     FilesystemConnector — filesystem + Galaxy-mounted deployments.
     GalaxyConnector    — Galaxy GxIT (thin filesystem wrapper + job dir env var fallback).
     IridaConnector     — IRIDA REST API (fetch_data() pending Phase 23-D).
-    get_connector(profile) — factory: returns the right connector for a profile dict.
+    get_connector(deployment) — factory: returns the right connector for a deployment dict.
 """
 from .base import BaseConnector
 from .filesystem import FilesystemConnector
@@ -28,18 +28,18 @@ __all__ = [
 ]
 
 
-def get_connector(profile: dict) -> BaseConnector:
+def get_connector(deployment: dict) -> BaseConnector:
     """
-    Factory: return the appropriate connector for a deployment profile dict.
+    Factory: return the appropriate connector for a deployment dict.
 
     deployment_type → connector class:
         "filesystem" (or absent) → FilesystemConnector
         "galaxy"                 → GalaxyConnector
         "irida"                  → IridaConnector
     """
-    dtype = profile.get("deployment_type", "filesystem")
+    dtype = deployment.get("deployment_type", "filesystem")
     if dtype == "irida":
-        return IridaConnector(profile)
+        return IridaConnector(deployment)
     if dtype == "galaxy":
-        return GalaxyConnector(profile)
-    return FilesystemConnector(profile)
+        return GalaxyConnector(deployment)
+    return FilesystemConnector(deployment)

@@ -58,8 +58,8 @@ When you start the dashboard, Tier 3 is an exact copy of Tier 1 that "inherits" 
 The dashboard is organized into three distinct operational zones to ensure a high-density, focused workspace.
 
 ### The Left Panel (The Navigator 🗺️)
-- **Purpose**: Global context and project management.
-- **Controls**: Project Selection, Persona Switching, and Global Agnostic Filters.
+- **Purpose**: Global context and data analysis recipe management.
+- **Controls**: Data analysis recipe selection, App features Switching, and Global Agnostic Filters.
 - **Rules**: Persist across all modules but are collapsible to maximize theater space.
 
 ### The Central Theater (The Map & Canvas 🎨)
@@ -72,7 +72,7 @@ The dashboard is organized into three distinct operational zones to ensure a hig
 - **Reset Sync**: The blue **Reset Sync** button allows you to instantly revert your Tier 3 workspace back to the Tier 2 baseline.
 - **Order**: Your transformations are stacked visually, showing exactly how the "Leaf" data differs from the "Anchor."
 
-## 4. Position-Aware Recipes: Before vs. After
+## 4. Position-Aware Step lists: Before vs. After
 
 In the **Audit Panel** (Right Sidebar), the order of your steps matters:
 

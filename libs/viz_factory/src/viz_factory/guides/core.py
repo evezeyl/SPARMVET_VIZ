@@ -133,7 +133,7 @@ def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "barwidth": {"widget": "number", "label": "Bar width (grid units)", "required": False},
         "barheight": {"widget": "number", "label": "Bar height (grid units)", "required": False},
     },
-    "description": "British spelling alias for guide_colorbar; identical behaviour \u2014 use whichever spelling is consistent with the rest of your manifest.",
+    "description": "British spelling alias for guide_colorbar; identical behaviour \u2014 use whichever spelling is consistent with the rest of your data analysis recipe.",
     "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: colourbar",
 })
 def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:

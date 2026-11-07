@@ -5,13 +5,13 @@ Public API: import only from this module. Internal sub-modules are implementatio
 """
 # @deps
 # provides: IDReconciliationEngine, IDPair, MatchResult, PatternSuggestion,
-#           TransformationRecipe, detect_many_to_many, format_match_table, apply_recode_step
+#           IdTransformation, detect_many_to_many, format_match_table, apply_recode_step
 # consumes: libs/id_reconciliation/src/id_reconciliation/data_structures.py,
 #           libs/id_reconciliation/src/id_reconciliation/core.py
 # consumed_by: app/handlers/test_lab_handlers.py (future)
 # @end_deps
 
-from .data_structures import IDPair, MatchResult, PatternSuggestion, TransformationRecipe
+from .data_structures import IDPair, MatchResult, PatternSuggestion, IdTransformation
 from .core import (
     IDReconciliationEngine,
     detect_many_to_many,
@@ -24,7 +24,7 @@ __all__ = [
     "IDPair",
     "MatchResult",
     "PatternSuggestion",
-    "TransformationRecipe",
+    "IdTransformation",
     "detect_many_to_many",
     "format_match_table",
     "apply_recode_step",

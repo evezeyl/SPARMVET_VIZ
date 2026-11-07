@@ -27,7 +27,7 @@ except for **three classes of inline style that must never be moved to CSS**:
 |---|---|
 | `background-color: #e9ecef` on the Blueprint *Live Data Glimpse* button | Bootstrap collapse wires `data-bs-toggle` to the `<button>` — if CSS wins the background the `!important` war, the button still works but may lose its visual toggle state |
 | `overflow: visible` on `div.spv-panel` wrapping `#acc_home_data` | Selectize dropdowns inside the data-preview body must be able to overflow the accordion boundary. `overflow: hidden` (required for `border-radius` clipping) breaks them. |
-| Dynamic `style=` attributes on audit-node badges | Set by Python at render time from recipe metadata; not predictable at CSS authoring time |
+| Dynamic `style=` attributes on audit-node badges | Set by Python at render time from step list metadata; not predictable at CSS authoring time |
 
 ---
 
@@ -35,11 +35,11 @@ except for **three classes of inline style that must never be moved to CSS**:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│  BANNER  (optional, persona-driven)          .sparmvet-banner          │
+│  BANNER  (optional, app features driven)          .sparmvet-banner          │
 ├─────────────────┬──────────────────────────────┬───────────────────────┤
 │  LEFT SIDEBAR   │  CENTRAL THEATER             │  RIGHT SIDEBAR        │
 │  #nav_sidebar   │  .central-theater            │  #audit_sidebar       │
-│  (aside.sidebar)│  output_ui("dynamic_tabs")   │  (persona-gated)      │
+│  (aside.sidebar)│  output_ui("dynamic_tabs")   │  (flag-gated)      │
 │  ~340 px fixed  │  → per-view HTML rendered    │  ~340 px fixed        │
 └─────────────────┴──────────────────────────────┴───────────────────────┘
 ```
@@ -64,7 +64,7 @@ The CSS variables that control column widths are set at §12 (`--bslib-sidebar-w
 |---|---|
 | Sidebar widths | Set via Python `width=` argument in `layout_sidebar()`; CSS variable only adjusts padding |
 | Nav-pill order (Home / Blueprint / Test Lab / Gallery) | Python list in `home_theater.py` |
-| Which accordion panels are shown per persona | Controlled by `bootloader.is_enabled()` flags in persona templates |
+| Which accordion panels are shown per app features | Controlled by `bootloader.is_enabled()` flags in app features files |
 
 ---
 
@@ -97,7 +97,7 @@ input types — see §3 for what is currently wired and what remains `#007bc2`.
 ```
 LEFT SIDEBAR (#nav_sidebar)
 │  Nav Pills Strip
-│  ├── Manifest Choice       (accordion, open at startup)
+│  ├── Data analysis recipe Choice       (accordion, open at startup)
 │  ├── Data Import           (accordion, collapsed at startup)
 │  ├── Filters               (accordion, collapsed at startup)
 │  ├── Export (accordion, collapsed at startup)
@@ -144,7 +144,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 | Tier divider h6 (Active Logic Stack etc.) | `#audit_sidebar h6` | `#345beb`, 0.85rem/700 | Yes — §16 |
 | Tier 2 node | `.audit-node-tier2` | bg `#eef0fb` | Yes — §2 |
 | Tier 3 node | `.audit-node-tier3` | bg `#e6f7f5` | Yes — §2 |
-| Pending badge | `.recipe-pending-badge` | amber chip | Yes — §6 |
+| Pending badge | `.audit-pending-badge` | amber chip | Yes — §6 |
 | Apply button | `#btn_apply` | `#345beb` bg, `.btn-primary` | Yes — §6 |
 | Session delete button | `[id^="session_delete_"]` | amber `#ffc107` bg, black text | Yes — §6 |
 
@@ -155,7 +155,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 ```
 LEFT SIDEBAR (#nav_sidebar)
 │  Nav Pills Strip
-│  ├── Master Manifest       (#wrangle_sidebar_accordion)
+│  ├── Master Data Analysis Recipe       (#wrangle_sidebar_accordion)
 │  └── External Exchange
 │
 CENTRAL THEATER (.wrangle-studio-container)
@@ -232,7 +232,7 @@ All card header / body rules from §18 apply.
 ```
 LEFT SIDEBAR (#nav_sidebar)
 │  Nav Pills Strip
-│  ├── 🖼️ Recipe             (#gallery_sidebar_accordion > #gallery_recipe_select)
+│  ├── 🖼️ Steps             (#gallery_sidebar_accordion > #gallery_example_select)
 │  └── 🔍 Gallery Taxonomy   (.gallery-sidebar-group ×6 filters)
 │       [▶ Apply]
 │
@@ -277,7 +277,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 | Primary blue (buttons, active pills, headings) | `#345beb` | §6, §3, §5, §9, §14, §16, §17, §18 |
 | Primary blue hover | `#2a4bc4` | §6 |
 | Export / teal | `#10a395` | §6 — `#export_*`, `#btn_export`, `#filter_add_row` |
-| Reset / amber | `#ffc107` | §6 — `#filter_reset`, `.recipe-pending-badge`, session delete buttons |
+| Reset / amber | `#ffc107` | §6 — `#filter_reset`, `.audit-pending-badge`, session delete buttons |
 | Sidebar accordion header | `#a0a0a0` | §3 |
 | Sidebar accordion body | `#c0c0c0` | §3 (`--bslib-sidebar-bg`) |
 | Page background | `#d1d1d1` | §1 |

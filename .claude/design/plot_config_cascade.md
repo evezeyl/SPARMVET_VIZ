@@ -20,9 +20,9 @@ This document defines a single five-tier priority cascade resolved at one merge 
 
 | Location | Function | What it merges | Order |
 |---|---|---|---|
-| `viz_factory.py:79–80` | `_standardize_config(raw_plot_config, manifest_defaults)` | `plot_defaults` keys not present in spec | spec wins; defaults fill gaps |
-| `viz_factory.py:282–287` | `_auto_adjust_axis_labels(p, ...)` | Auto-rotation + auto-size for axis text | runs unless an `element_text` layer for that axis is in the manifest |
-| `viz_factory.py:289–302` | Palette injection | `plot_config["palette"]` resolved against built-in + project palette registry | only if the corresponding scale layer is absent |
+| `viz_factory.py:79–80` | `_standardize_config(raw_plot_config, data_analysis_recipe_defaults)` | `plot_defaults` keys not present in spec | spec wins; defaults fill gaps |
+| `viz_factory.py:282–287` | `_auto_adjust_axis_labels(p, ...)` | Auto-rotation + auto-size for axis text | runs unless an `element_text` layer for that axis is in the data analysis recipe |
+| `viz_factory.py:289–302` | Palette injection | `plot_config["palette"]` resolved against built-in + deployment palette registry | only if the corresponding scale layer is absent |
 
 There is **no separate optimisation layer**; `_auto_adjust_axis_labels` is the sole optimisation, baked into the render flow.
 
@@ -38,14 +38,14 @@ This is the load-bearing gap that motivates this design — without the cascade,
 
 ### 1c. `plot_defaults` schema today
 
-Sole use across project + gallery manifests (grep confirmed):
+Sole use across data analysis recipes and gallery data analysis recipes (grep confirmed):
 
 ```yaml
 plot_defaults:
   default_font_family: "Liberation Sans"
 ```
 
-The `palette:` key was specified in `rules_viz_factory.md §6b` and `rules_manifest_structure.md §10` as a supported `plot_defaults` key but is not currently used in any committed manifest. The block is essentially undocumented and unenforced — manifest authors guess.
+The `palette:` key was specified in `rules_viz_factory.md §6b` and `rules_data_analysis_recipe_structure.md §10` as a supported `plot_defaults` key but is not currently used in any committed data analysis recipe. The block is essentially undocumented and unenforced — data analysis recipe authors guess.
 
 ---
 
@@ -56,15 +56,15 @@ Resolution order (highest wins):
 | Tier | Source | Authority over | Modifiable by |
 |---|---|---|---|
 | **L5** | T3 `aesthetic_override` for the active plot | All visual aesthetics (fill, colour, alpha, shape, size, palette) | Analyst (T3 sandbox) |
-| **L4** | Plot `spec:` — `analysis_groups.<grp>.plots.<id>.spec` | Aesthetics, mapping, layers, scales, theme, facet | Manifest author |
+| **L4** | Plot `spec:` — `analysis_groups.<grp>.plots.<id>.spec` | Aesthetics, mapping, layers, scales, theme, facet | Data analysis recipe author |
 | **L3** | Optimisation layer (computed from data + spec at render time) | Visual-only (axis text rotation, font sizing, density-aware layout) | None — emitted by VizFactory |
-| **L2** | Manifest `plot_defaults:` block | Cross-plot defaults (palette, theme, font_family) | Manifest author |
+| **L2** | Data analysis recipe `plot_defaults:` block | Cross-plot defaults (palette, theme, font_family) | Data analysis recipe author |
 | **L1** | VizFactory built-in defaults | Last-resort fallbacks (`theme_bw`, `coord_cartesian`, `facet_null`) | Developer |
 
 **Conflict rule:** every key resolves to exactly one source. When two tiers compete for the same key (e.g. L5 sets `palette: foo`, L4 sets `palette: bar`), the higher tier wins silently — there is no merge-of-values, only winner-takes-all per key. The exception is the `layers:` list, which is **append-then-deduplicate** (see §4).
 
 **Why optimisation is L3 (between spec and defaults), not L0:**
-The optimisation layer is a *computed default* — it should fill in what the spec didn't say, but should never override what the spec did say. Putting it above `plot_defaults` ensures auto axis rotation only fires when neither the spec nor the manifest defaults have addressed axis text. Putting it below the spec ensures a manifest author's explicit `element_text` always wins.
+The optimisation layer is a *computed default* — it should fill in what the spec didn't say, but should never override what the spec did say. Putting it above `plot_defaults` ensures auto axis rotation only fires when neither the spec nor the data analysis recipe defaults have addressed axis text. Putting it below the spec ensures a data analysis recipe author's explicit `element_text` always wins.
 
 ---
 
@@ -155,7 +155,7 @@ Anything outside that envelope requires extending the locked scope here first �
 
 ### 5b. Current behaviour preserved
 
-The existing `_auto_adjust_axis_labels()` heuristic (rotation + size based on `n_unique` and `max_len` of the column) is the entire L3 implementation today. It moves into `compute_optimisation_layer` with no behavioural change. The per-axis guard logic ("skip if manifest already addressed it") becomes implicit: L4 wins by virtue of being a higher tier, so the L3 emission for that axis is overridden during dedup.
+The existing `_auto_adjust_axis_labels()` heuristic (rotation + size based on `n_unique` and `max_len` of the column) is the entire L3 implementation today. It moves into `compute_optimisation_layer` with no behavioural change. The per-axis guard logic ("skip if data analysis recipe already addressed it") becomes implicit: L4 wins by virtue of being a higher tier, so the L3 emission for that axis is overridden during dedup.
 
 ### 5c. Future extensions (deferred — non-blocking)
 
@@ -210,7 +210,7 @@ Resolution rules:
 
 ## 7. `plot_defaults:` Schema — Explicit Documented Keys
 
-Today's situation ("guess what's allowed") becomes a documented set. Manifest authors get autocomplete; Blueprint IDE gets a form to mount.
+Today's situation ("guess what's allowed") becomes a documented set. Data analysis recipe authors get autocomplete; Blueprint IDE gets a form to mount.
 
 ### 7a. Allowed keys (initial set — extend by ADR amendment)
 
@@ -233,7 +233,7 @@ plot_defaults:
     legend_ncol:       bool          # default false
 ```
 
-Unknown keys in `plot_defaults` emit a `PipelineError` (`severity: warning`, `who: manifest_author`, `surface: notification`). They do not crash — manifest authors can layer experimental keys without breakage — but the warning prevents typos from going silent.
+Unknown keys in `plot_defaults` emit a `PipelineError` (`severity: warning`, `who: data_analysis_recipe_author`, `surface: notification`). They do not crash — data analysis recipe authors can layer experimental keys without breakage — but the warning prevents typos from going silent.
 
 ### 7b. Per-plot override
 
@@ -244,10 +244,10 @@ The `spec:` block accepts the same keys as `plot_defaults`. A plot that wants a 
 ## 8. Render Path After Cascade
 
 ```python
-def render(self, df, manifest, plot_id, *, aesthetic_override=None):
+def render(self, df, data analysis recipe, plot_id, *, aesthetic_override=None):
     # 1. Pull raw config
-    raw_spec = manifest.get("plots", {}).get(plot_id) or _raise_missing_plot(plot_id)
-    plot_defaults = manifest.get("plot_defaults", {}) or {}
+    raw_spec = data_analysis_recipe.get("plots", {}).get(plot_id) or _raise_missing_plot(plot_id)
+    plot_defaults = data_analysis_recipe.get("plot_defaults", {}) or {}
 
     # 2. Apply UI filters (Tier 3 predicate pushdown — unchanged)
     df = self._apply_ui_filters(df, raw_spec.get("filters", []))
@@ -283,7 +283,7 @@ The render path becomes ~30 lines of "walk the resolved dict and emit". All merg
 
 ## 9. Backward Compatibility
 
-- **No manifest changes required for existing plots.** A spec with no `plot_defaults` and no `aesthetic_override` resolves to the same plotnine output as today (modulo dedup tie-breaks, which are tested in §11).
+- **No data analysis recipe changes required for existing plots.** A spec with no `plot_defaults` and no `aesthetic_override` resolves to the same plotnine output as today (modulo dedup tie-breaks, which are tested in §11).
 - **The `factory_id` translation** (`bar_logic` → `geom_bar` injection) moves into the resolver as a normalisation step on `raw_spec` before tier merging. Behaviour preserved.
 - **The flat aesthetic promotion** (`x:`, `y:`, `fill:` at spec top level → `mapping:`) also moves into the resolver. Behaviour preserved.
 - **The auto axis label heuristic** moves to L3. Behaviour preserved (per-axis guard becomes implicit via tier dedup).
@@ -299,8 +299,8 @@ The render path becomes ~30 lines of "walk the resolved dict and emit". All merg
 | **VIZFAC-RENDER-WIRE-1** `[sonnet/medium]` | Refactor `VizFactory.render()` to use `resolve_plot_config()`. Move `factory_id` normalisation, flat-aesthetic promotion, and auto-axis-label heuristic into the resolver. Existing `viz_factory_integrity_suite` MUST pass unchanged. |
 | **VIZFAC-T3-OVERRIDE-1** `[sonnet/medium]` | Wire `aesthetic_override` into the call site: `home_theater.py` plot renders extract `home_state["t3_plot_overrides"].get(plot_id)`, pass as `aesthetic_override=` kwarg to `VizFactory.render()`. Schema validation per §6 (mutex check, key whitelist) emits `PipelineError` (depends on DIAG-RUNTIME-BASE-1). |
 | **VIZFAC-T3-EXPORT-1** `[sonnet/medium]` | Same wiring in `export_handlers.py` so exported plots reflect T3 overrides. Updates `TECH-T3-THREAD-1` scope. |
-| **VIZFAC-DEFAULTS-DOCS-1** `[sonnet/low]` | Document `plot_defaults:` allowed keys (§7a) in `rules_manifest_structure.md §10`, `rules_viz_factory.md §6`, and `docs/appendix/manifest_structure.yaml`. Unknown-key warning machinery: emit `PipelineError` with `who: manifest_author` per §7a. |
-| **VIZFAC-BLUEPRINT-FORM-1** `[sonnet/medium]` `[blocked: VIZFAC-DEFAULTS-DOCS-1]` | Blueprint IDE: mount a `plot_defaults` editor form in the BLUEPRINT logic sidebar when the active node is the manifest root. Form fields driven by §7a allowed keys + their `ui_schema` (mirror the action picker pattern). |
+| **VIZFAC-DEFAULTS-DOCS-1** `[sonnet/low]` | Document `plot_defaults:` allowed keys (§7a) in `rules_data_analysis_recipe_structure.md §10`, `rules_viz_factory.md §6`, and `docs/appendix/data_analysis_recipe_structure.yaml`. Unknown-key warning machinery: emit `PipelineError` with `who: data_analysis_recipe_author` per §7a. |
+| **VIZFAC-BLUEPRINT-FORM-1** `[sonnet/medium]` `[blocked: VIZFAC-DEFAULTS-DOCS-1]` | Blueprint IDE: mount a `plot_defaults` editor form in the BLUEPRINT logic sidebar when the active node is the data analysis recipe root. Form fields driven by §7a allowed keys + their `ui_schema` (mirror the action picker pattern). |
 
 Tasks are independently testable. VIZFAC-RESOLVER-1 is the foundation; VIZFAC-RENDER-WIRE-1 makes the system use it without behavioural change; the remaining four are independent feature deliveries that build on the new seam.
 
@@ -330,8 +330,8 @@ The truth table prevents regressions; it is the contract document of the cascade
 
 - **Two-pass render** — designed for compatibility (§5d) but not implemented.
 - **New optimisation heuristics** — designed-for hooks (§5c) but not implemented.
-- **Per-persona plot defaults** — a `persona_plot_defaults` template field could layer between L2 and L1 in the future. Not in this design.
-- **Manifest-level theme inheritance from a parent manifest** — `!include` resolution is structural, not config-cascading. Out of scope.
+- **per app features file plot defaults** — a `app_features_plot_defaults` template field could layer between L2 and L1 in the future. Not in this design.
+- **Data analysis recipe-level theme inheritance from a parent data analysis recipe** — `!include` resolution is structural, not config-cascading. Out of scope.
 - **Aesthetic propagation across plots** — handled by §12g of `ui_implementation_contract.md` via per-plot node duplication. The cascade resolver sees only the per-plot override slice; cross-plot propagation is upstream of the resolver.
 
 ---
@@ -342,6 +342,6 @@ The truth table prevents regressions; it is the contract document of the cascade
 - ADR-049 — Per-Plot T3 Audit Scoping (where `aesthetic_override` lives)
 - ADR-079 — Runtime Error Discipline (where unknown-key warnings flow)
 - `rules_viz_factory.md §6` — palette resolution (existing rule, refined here)
-- `rules_manifest_structure.md §10` — `plot_defaults` block (existing rule, expanded here)
+- `rules_data_analysis_recipe_structure.md §10` — `plot_defaults` block (existing rule, expanded here)
 - `ui_implementation_contract.md §12g` — aesthetic_override propagation
 - `.claude/design/design_t3_export_threading.md` — companion gap analysis (T3 → export bundle)

@@ -1,7 +1,7 @@
 # @deps
 # provides: class:DeploymentError, function:format_errors_block, function:exit_if_errors, function:raise_if_errors, class:DeploymentFailure
 # consumes: -
-# consumed_by: app/modules/deployment_error.py (re-export shim), app/modules/persona_validator.py, app/modules/sidebar_validator.py, app/src/bootloader.py, app/src/server.py, scripts/validate_persona_config.py, libs/connector/src/connector/irida.py, libs/connector/src/connector/filesystem.py
+# consumed_by: app/modules/deployment_error.py (re-export shim), app/modules/app_features_validator.py, app/modules/sidebar_validator.py, app/src/bootloader.py, app/src/server.py, scripts/validate_app_features_config.py, libs/connector/src/connector/irida.py, libs/connector/src/connector/filesystem.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-078
 # @end_deps
 """
@@ -15,7 +15,7 @@ A `DeploymentError` is a structured error record for any failure surfaced at sta
 or configuration time. The fields are designed so an operator who has never opened
 the codebase can locate the problem and fix it without reading Python.
 
-Used by validators (persona, sidebar, manifest, ingestion) and bootloader / connector
+Used by validators (app features, sidebar, data analysis recipe, ingestion) and bootloader / connector
 init paths. Headless-safe — no Shiny imports.
 """
 from __future__ import annotations
@@ -34,7 +34,7 @@ class DeploymentError:
     """
 
     component: str
-    """Source of the error — class or subsystem name. e.g. 'PersonaValidator',
+    """Source of the error — class or subsystem name. e.g. 'AppFeaturesValidator',
     'Bootloader', 'IridaConnector'. Helps the operator identify which logs to grep
     and which person owns the surface."""
 
@@ -44,9 +44,9 @@ class DeploymentError:
     'invalid configuration'."""
 
     location: str
-    """Where the problem was detected. File path (preferably relative to project
-    root) plus key/line if available. e.g. 'config/ui/templates/foo.yaml:23' or
-    'features.blueprint_agent_enabled in config/ui/templates/foo.yaml'."""
+    """Where the problem was detected. File path (preferably relative to the repository
+    root) plus key/line if available. e.g. 'config/app_features/foo.yaml:23' or
+    'features.blueprint_agent_enabled in config/app_features/foo.yaml'."""
 
     fix: str
     """Concrete remediation. Should be actionable without further investigation:

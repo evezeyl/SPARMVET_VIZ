@@ -1,5 +1,5 @@
 id: theme_minimal_test
-description: Test manifest for theme_minimal_test.yaml
+description: Test data analysis recipe for theme_minimal_test.yaml
 input_fields: []
 wrangling:
   tier1: []

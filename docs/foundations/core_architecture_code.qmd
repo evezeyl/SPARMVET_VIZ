@@ -2,15 +2,15 @@
 
 | path/name | Role component | Responsibility | Technology |
 | --- | --- | --- | --- |
-| config | [**Configuration Layer**](./data_contracts_adr.qmd) | **Contains the data contract** for data AND metadata, persona templates, deployment profiles, plotting defaults. | YAML |
+| config | [**Configuration Layer**](./data_contracts_adr.qmd) | **Contains the data contract** for data AND metadata, app features files, deployments, plotting defaults. | YAML |
 | libs/utils | [**Utilities — Base Layer**](#library-dependency-model) | Shared utilities (config loading, hashing, error types). The only library that other domain libraries may import from. Must be declared as an explicit dependency. | Python |
-| libs/connector | [**Data Connector**](../workflows/connector.qmd) | Deployment profile resolution and data-source adapters. Handles authentication and fetches raw data for different deployment contexts (local, Galaxy, IRIDA). | BioBlend/API |
+| libs/connector | [**Data Connector**](../workflows/connector.qmd) | Deployment resolution and data-source adapters. Handles authentication and fetches raw data for different deployment contexts (local, Galaxy, IRIDA). | BioBlend/API |
 | libs/ingestion | [**Data Ingestion**](../workflows/ingestion.qmd) | The "Gatekeeper." Reads TSV/Excel/YAML, validates against the data contract, runs defensive checks. | Polars |
 | libs/transformer | [**Data Wrangling**](../workflows/wrangling.qmd) | The "Cleaner". Applies the 3-Tier lifecycle, contains the **Action Registry** for declarative YAML rules, merges data into tidy Polars DataFrames. | Polars |
-| libs/viz_factory | [**Visualization Factory**](../workflows/visualisation_factory.qmd) | Plotnine plot composition from manifest specs. Data-agnostic: receives a DataFrame and a plot spec, returns a figure. | Plotnine |
-| libs/viz_gallery | [**Gallery**](../workflows/ui_persona.qmd) | Gallery bundle persistence — index, recipe governance, preview generation. | Python |
-| libs/blueprint_arch | [**Blueprint Architecture**](../workflows/ui_persona.qmd) | Pure manifest introspection and DAG mapping. Headless-safe: usable in CLI tools and export handlers without Shiny. | Python |
-| libs/test_lab | [**Test Lab**](../workflows/ui_persona.qmd) | Synthetic data generation (AquaSynthesizer), manifest bootstrapping, data reconciliation utilities. | Python |
+| libs/viz_factory | [**Visualization Factory**](../workflows/visualisation_factory.qmd) | Plotnine plot composition from data analysis recipe specs. Data-agnostic: receives a DataFrame and a plot spec, returns a figure. | Plotnine |
+| libs/viz_gallery | [**Gallery**](../workflows/ui_app_features.qmd) | Gallery bundle persistence — index, example governance, preview generation. | Python |
+| libs/blueprint_arch | [**Blueprint Architecture**](../workflows/ui_app_features.qmd) | Pure data analysis recipe introspection and DAG mapping. Headless-safe: usable in CLI tools and export handlers without Shiny. | Python |
+| libs/test_lab | [**Test Lab**](../workflows/ui_app_features.qmd) | Synthetic data generation (AquaSynthesizer), data analysis recipe bootstrapping, data reconciliation utilities. | Python |
 | app/src/server.py | [**Orchestration Layer**](../workflows/dashboard_app.qmd) | Thin Shiny server that wires libraries together and reacts to user input. The only layer that imports from multiple `libs/`. | Shiny for Python |
 | app/src/ui.py | [**Display & Interaction**](../workflows/dashboard_app.qmd) | Static HTML/CSS shell and widget layout. No data logic. | Shiny for Python |
 

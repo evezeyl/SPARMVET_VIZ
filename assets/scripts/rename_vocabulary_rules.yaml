@@ -1,0 +1,277 @@
+# Rename rules for the configuration vocabulary (ADR-091, issue evezeyl/SPARMVET_VIZ#27).
+# Read by assets/scripts/rename_vocabulary.py. Eve approves this file (and the table made
+# from it, .claude/tasks/config_rename_mapping.md) before any file is changed.
+#
+# pairs: [old, new] in snake_case. Each pair is applied to snake_case, CamelCase and
+# UPPER_CASE spellings of a token, longest old string first. So the pair
+# [transformation_recipe, id_transformation] also renames TransformationRecipe to
+# IdTransformation and TRANSFORMATION_RECIPE to ID_TRANSFORMATION.
+
+pairs:
+  # --- persona: retired for the application (ADR-091 point 5) ---
+  - [rules_persona_feature_flags, rules_app_features_flags]
+  - [rules_persona_bioscientist, rules_agent_role_bioscientist]
+  - [audit_template_flags, audit_app_features_flags]
+  - [personas, app_features]
+  - [persona, app_features]
+
+  # --- profile (deployment): retired for configuration ---
+  - [connect_profile_template, connect_template]
+  - [pipeline_test_profile, pipeline_test]
+  - [local_profile, local]
+  - [retest_profile, retest]
+  - [connect_profile, connect]
+  - [deployment_profiles, deployments]
+  - [deployment_profile, deployment]
+  - [profiles, deployments]
+  - [profile, deployment]
+
+  # --- locations of the deployment file ---
+  - [curated_data, cache]
+  - [user_sessions, user_data]
+
+  # --- connector: the word names two things. Only the deployment-file sense is renamed;
+  #     the adapter library libs/connector (get_connector, FilesystemConnector, IridaConnector,
+  #     GalaxyConnector) keeps its name. ---
+  - [sparmvet_connector, REMOVE_SPARMVET_CONNECTOR]
+  - [load_connector_config, load_deployment_config]
+  - [connector_cache, deployment_cache]
+  - [connector_config, deployment_config]
+  - [connector_path, deployment_path]
+  - [connector_template, deployment_template]
+  - [local_connector, local]
+
+  # --- manifest: becomes data analysis recipe ---
+  - [Manifest_test, data_analysis_recipe_test]
+  - [join_manifests, joins]
+  - [assembly_manifests, joins]
+  - [recipe_manifest, data_analysis_recipe]
+  - [manifests, data_analysis_recipes]
+  - [manifest, data_analysis_recipe]
+
+  # --- recipe, by old meaning ---
+  # (a) saved set of ID transformations in libs/id_reconciliation
+  - [transformation_recipe, id_transformation]
+  - [reconciliation_recipe, id_transformation]
+  - [id_cleaning_recipes, id_cleaning_steps]
+  - [build_deanon_recipe, build_deanon_steps]
+  - [deanon_recipe, deanon_steps]
+  - [generate_recipe, generate_transformation]
+  - [save_recipe, save_transformation]
+  - [load_recipe, load_transformation]
+  - [test_recipe_persistence, test_transformation_persistence]
+  - [test_recipe, test_transformation]
+  # (b) T3 audit steps of the user (audit stack, ghosts, export)
+  - [t3_recipe_by_plot, t3_audit_steps_by_plot]
+  - [t3_recipe_engine, t3_audit_engine]
+  - [t3_recipe_sha256, t3_audit_steps_sha256]
+  - [t3_recipe, t3_audit_steps]
+  - [make_recipe_node, make_audit_step]
+  - [recipe_nodes, audit_steps]
+  - [recipe_node, audit_step]
+  - [recipe_pending_badge_ui, audit_pending_badge_ui]
+  - [recipe_pending_badge, audit_pending_badge]
+  - [recipe_pending, audit_pending]
+  - [recipe_sha256, audit_steps_sha256]
+  - [track_recipe_changes, track_audit_step_changes]
+  - [_recipe_blocks, _step_blocks]
+  # (c) list of wrangling or assembly steps in a data analysis recipe
+  - [canonical_recipe_syntax, canonical_steps_syntax]
+  - [figshare_triple_join_recipe, figshare_triple_join_steps]
+  - [master_collection_recipe, master_collection_steps]
+  - [Master_Collection_recipe, Master_Collection_steps]
+  - [master_recipe, master_steps]
+  - [join_recipe, join_steps]
+  - [clean_recipe, clean_steps]
+  - [recipe_tier1, steps_tier1]
+  - [recipe_tier2, steps_tier2]
+  - [_normalize_recipe, _normalize_steps]
+  - [_build_join_recipes, _build_join_steps]
+  - [recipe_new, steps_new]
+  - [recipe_text, steps_text]
+  - [recipe_yaml, steps_yaml]
+  - [recipe_file, steps_file]
+  - [full_recipe, full_steps]
+  - [bad_recipe, bad_steps]
+  - [good_recipe, good_steps]
+  - [c_recipe, c_steps]
+  # (d) gallery bundle (an example with data, text and preview)
+  - [gallery_recipe_select, gallery_example_select]
+  - [gallery_recipe_panel, gallery_example_panel]
+  - [gallery_recipe_, gallery_example_]
+  - [submit_recipe, submit_example]
+  - [render_recipe, render_example]
+  - [recipe_template, example_template]
+  - [recipe_meta, example_meta]
+  # (e) filter builder
+  - [filter_recipe, filter_builder]
+  - [find_saved_recipes, find_saved_id_transformations]
+  # (f) remaining plural and singular: decided by context, see "context" below
+  - [recipes, STEPS_OR_RECIPE_BY_CONTEXT]
+  - [recipe, STEPS_OR_RECIPE_BY_CONTEXT]
+
+# Tokens that keep their word because it is a domain term or another meaning (matched
+# case-insensitively as substrings of a token).
+keep_substrings:
+  - amr_profile        # antimicrobial resistance profile (biology)
+  - plasmid_profile    # same
+  - profiler           # data profiling
+  - profiling
+  - personal           # the word personal, not persona
+  - null-profile
+  - vendor_manifest    # app/src/www/vendor/VENDOR_MANIFEST.md, the list of vendored assets (ADR-071)
+  - manifest.json      # Posit Connect (rsconnect) bundle file, an external tool
+  - data_analysis_recipe   # the new term itself
+  - DataAnalysisRecipe
+
+# Whole files and folders with an explicit new path.
+paths:
+  config/ui/templates: config/app_features
+  config/manifests: config/data_analysis_recipes
+  assets/template_manifests: assets/template_data_analysis_recipes
+  # the suffix _template is dropped from the app features files
+  drop_suffix: _template
+
+# Phrases in prose, applied in the documentation phase, longest first.
+phrases:
+  - ["deployment profile", "deployment"]
+  - ["Deployment Profile", "Deployment"]
+  - ["connector profile", "deployment"]
+  - ["profile YAML", "deployment file"]
+  - ["UI persona", "app features"]
+  - ["persona template", "app features file"]
+  - ["app features template", "app features file"]
+  - ["persona name", "app features name"]
+  - ["manifest author", "recipe author"]
+  - ["pipeline manifest", "data analysis recipe"]
+  - ["master manifest", "master data analysis recipe"]
+
+# Prose rules for plain words in comments, strings and documents, applied by
+# rename_vocabulary.py --apply text. Regex, case-sensitive, ordered, first match wins at a
+# position. Words that carry an underscore, slash, dot or hyphen-joined id are handled by the
+# pairs above, not here.
+prose:
+  persona:
+    - ['(?i)@dasharch persona', '@dasharch agent role']
+    - ['(?i)@bioscientist persona', '@bioscientist agent role']
+    - ['\\bAI agent personas?\\b', 'agent role']
+    - ['(?i)\bper-persona\b', 'per app features file']
+    - ['\bpersona-gated\b', 'flag-gated']
+    - ['\bPersona templates\b', 'App features files']
+    - ['\bpersona templates\b', 'app features files']
+    - ['\bPersona template\b', 'App features file']
+    - ['\bpersona template\b', 'app features file']
+    - ['\bPersonas\b', 'App features files']
+    - ['\bpersonas\b', 'app features files']
+    - ['\bPersona\b', 'App features']
+    - ['\bpersona\b', 'app features']
+    - ['\bPERSONA\b', 'APP_FEATURES']
+  profile:
+    - ['\bDeployment [Pp]rofiles\b', 'Deployments']
+    - ['\bdeployment profiles\b', 'deployments']
+    - ['\bDeployment [Pp]rofile\b', 'Deployment']
+    - ['\bdeployment profile\b', 'deployment']
+    - ['\bconnector profiles\b', 'deployments']
+    - ['\bconnector profile\b', 'deployment']
+    - ['\bprofile YAML\b', 'deployment file']
+    - ['\bprofile file\b', 'deployment file']
+    - ['\buser profile\b', 'app features']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bProfiles\b', 'Deployments']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bProfile\b', 'Deployment']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bprofiles\b', 'deployments']
+    - ['(?<!AMR )(?<!Flavor )(?<!Resistance )(?<!resistance )\bprofile\b', 'deployment']
+
+# Paths where a word is domain text, not configuration (never rewritten for that word).
+prose_skip_paths:
+  profile:
+    - assets/gallery_data/
+
+# Spellings of a plain retired word by context, used by rename_vocabulary.py --apply context.
+#   snake: identifiers, keys, string ids, dict keys (and the hyphenated flag form --data-analysis-recipe)
+#   prose: sentences in comments, docstrings, messages, documents (sentence case or lower case)
+#   title: prose in Title Case phrases (labels such as "Import Manifest")
+forms:
+  manifest:
+    snake: data_analysis_recipe
+    prose: data analysis recipe
+    title: Data Analysis Recipe
+
+# Phrases that keep their word in prose (matched case-insensitively before rewriting).
+protect_phrases:
+  - vendor manifest
+  - vendor-manifest
+
+# ---- the bare word "recipe": phrases first, then a noun by file --------------------------------
+# Regex phrases for prose (applied to any span, case-insensitive, first letter case kept).
+recipe_phrases:
+  - ['data analysis recipe recipes?', 'data analysis recipe']
+  - ['\bwithin the data analysis recipe, the recipe\b', 'within the data analysis recipe, the steps']
+  - ['\braw T3 recipe\b', 'raw audit steps']
+  - ['\bT3 recipes?\b', 'audit steps']
+  - ['\bfilter recipe builder\b', 'filter builder']
+  - ['\brow filter recipe builder\b', 'row filter builder']
+  - ['\brecipe nodes?\b', 'audit step']
+  - ['\b(assembly|join|wrangling|wrangle|tier1|tier2|tiered) recipes?\b', '\1 steps']
+  - ['\bcanonical recipe syntax\b', 'canonical steps syntax']
+  - ['\bgallery recipes?\b', 'gallery examples']
+  - ['\b(id )?(transformation|reconciliation) recipes?\b', 'id transformation']
+  - ['\bFilter Recipe Builder\b', 'Filter builder']
+
+# Default meaning of the bare word, by file (first prefix wins; anything else means steps).
+#   steps: a list of wrangling or join steps in a data analysis recipe
+#   audit: the T3 audit steps of the user (audit stack, ghosts, export)
+#   example: a gallery bundle (data, text, preview and its data analysis recipe)
+#   id_transformation: a saved set of id transformations (libs/id_reconciliation)
+recipe_nouns:
+  - {prefix: libs/id_reconciliation/, noun: id_transformation}
+  - {prefix: app/handlers/test_lab_handlers.py, noun: id_transformation}
+  - {prefix: docs/workflows/test_lab_sdk.qmd, noun: id_transformation}
+  - {prefix: .claude/design/id_reconciliation_module_sketch.md, noun: id_transformation}
+  - {prefix: .claude/design/spaces/TEST_LAB.md, noun: id_transformation}
+  - {prefix: .claude/rules/rules_test_lab.md, noun: id_transformation}
+  - {prefix: libs/viz_gallery/, noun: example}
+  - {prefix: assets/gallery_data/, noun: example}
+  - {prefix: app/handlers/gallery_handlers.py, noun: example}
+  - {prefix: app/modules/gallery_viewer.py, noun: example}
+  - {prefix: app/tests/test_gallery, noun: example}
+  - {prefix: docs/user_guide/viz_gallery.qmd, noun: example}
+  - {prefix: docs/vision/, noun: example}
+  - {prefix: .claude/rules/rules_gallery_standards.md, noun: example}
+  - {prefix: .claude/design/spaces/GALLERY.md, noun: example}
+  - {prefix: app/handlers/audit_stack.py, noun: audit}
+  - {prefix: app/handlers/filter_and_audit_handlers.py, noun: audit}
+  - {prefix: app/handlers/home_theater.py, noun: audit}
+  - {prefix: app/handlers/export_handlers.py, noun: audit}
+  - {prefix: app/handlers/session_handlers.py, noun: audit}
+  - {prefix: app/modules/session_manager.py, noun: audit}
+  - {prefix: app/modules/exporter.py, noun: audit}
+  - {prefix: app/modules/orchestrator_helpers.py, noun: audit}
+  - {prefix: app/modules/t3_audit_engine.py, noun: audit}
+  - {prefix: app/tests/test_session, noun: audit}
+  - {prefix: app/tests/test_export, noun: audit}
+  - {prefix: app/tests/test_t3, noun: audit}
+  - {prefix: app/tests/test_filter, noun: audit}
+  - {prefix: .claude/rules/ui_implementation_contract.md, noun: audit}
+  - {prefix: .claude/rules/rules_ui_dashboard.md, noun: audit}
+  - {prefix: .claude/design/design_t3_export_threading.md, noun: audit}
+  - {prefix: docs/user_guide/system_transparency.qmd, noun: audit}
+  - {prefix: docs/user_guide/understanding_your_export.qmd, noun: audit}
+
+nouns:
+  steps:    {snake: steps, snake_pl: steps, prose: step list, prose_pl: step lists, title: Step list, title_pl: Step lists}
+  audit:    {snake: audit_steps, snake_pl: audit_steps, prose: audit trail, prose_pl: audit trails, title: Audit trail, title_pl: Audit trails}
+  example:  {snake: example, snake_pl: examples, prose: example, prose_pl: examples, title: Example, title_pl: Examples}
+  id_transformation: {snake: id_transformation, snake_pl: id_transformations, prose: id transformation, prose_pl: id transformations, title: Id transformation, title_pl: Id transformations}
+
+# Paths whose new name depends on the area of the bare word (decided by hand).
+paths_exact:
+  libs/id_reconciliation/src/id_reconciliation/recipe.py: libs/id_reconciliation/src/id_reconciliation/id_transformation.py
+
+# Clean-up of grammar after the recipe rewrite (applied to every text file, idempotent).
+recipe_postfix:
+  - ['\bstep lists? steps\b', 'steps']
+  - ['\bstep lists? step\b', 'step']
+  - ['\b(audit steps|steps|tier1 steps|tier2 steps|join steps|wrangling steps) steps\b', '\1']
+  - ['\bstep list card\b', 'data analysis recipe card']
+  - ['\b([Aa]) ([Ee]xample|audit|id transformation|AuditStep|IdTransformation)', '\1n \2']
+  - ['\b([Aa])n (step list|steps)\b', '\1 \2']

@@ -6,7 +6,7 @@
   "registry": {
     "bar_simple": {
       "name": "Bar Simple",
-      "path": "assets/gallery_data/bar_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/bar_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -20,7 +20,7 @@
     },
     "boxplot_simple": {
       "name": "Boxplot Simple",
-      "path": "assets/gallery_data/boxplot_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/boxplot_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -34,7 +34,7 @@
     },
     "point_simple": {
       "name": "Point Simple",
-      "path": "assets/gallery_data/point_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/point_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -48,7 +48,7 @@
     },
     "density_simple": {
       "name": "Density Simple",
-      "path": "assets/gallery_data/density_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/density_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -62,7 +62,7 @@
     },
     "violin_simple": {
       "name": "Violin Simple",
-      "path": "assets/gallery_data/violin_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/violin_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -76,7 +76,7 @@
     },
     "histogram_simple": {
       "name": "Histogram Simple",
-      "path": "assets/gallery_data/histogram_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/histogram_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -90,7 +90,7 @@
     },
     "tile_simple": {
       "name": "Tile Simple",
-      "path": "assets/gallery_data/tile_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/tile_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -104,7 +104,7 @@
     },
     "boxplot_faceted": {
       "name": "Boxplot Faceted",
-      "path": "assets/gallery_data/boxplot_faceted/recipe_manifest.yaml",
+      "path": "assets/gallery_data/boxplot_faceted/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -118,7 +118,7 @@
     },
     "point_faceted": {
       "name": "Point Faceted",
-      "path": "assets/gallery_data/point_faceted/recipe_manifest.yaml",
+      "path": "assets/gallery_data/point_faceted/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -132,7 +132,7 @@
     },
     "violin_faceted": {
       "name": "Violin Faceted",
-      "path": "assets/gallery_data/violin_faceted/recipe_manifest.yaml",
+      "path": "assets/gallery_data/violin_faceted/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -146,7 +146,7 @@
     },
     "ridgeline_advanced": {
       "name": "Ridgeline Advanced",
-      "path": "assets/gallery_data/ridgeline_advanced/recipe_manifest.yaml",
+      "path": "assets/gallery_data/ridgeline_advanced/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -160,7 +160,7 @@
     },
     "lollipop_advanced": {
       "name": "Lollipop Advanced",
-      "path": "assets/gallery_data/lollipop_advanced/recipe_manifest.yaml",
+      "path": "assets/gallery_data/lollipop_advanced/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -174,7 +174,7 @@
     },
     "heatmap_correlation": {
       "name": "Heatmap Correlation",
-      "path": "assets/gallery_data/heatmap_correlation/recipe_manifest.yaml",
+      "path": "assets/gallery_data/heatmap_correlation/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -188,7 +188,7 @@
     },
     "line_simple": {
       "name": "Line Chart (Simple)",
-      "path": "assets/gallery_data/line_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/line_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -202,7 +202,7 @@
     },
     "line_grouped": {
       "name": "Line Chart (Grouped)",
-      "path": "assets/gallery_data/line_grouped/recipe_manifest.yaml",
+      "path": "assets/gallery_data/line_grouped/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -216,7 +216,7 @@
     },
     "area_simple": {
       "name": "Area Chart",
-      "path": "assets/gallery_data/area_simple/recipe_manifest.yaml",
+      "path": "assets/gallery_data/area_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -230,7 +230,7 @@
     },
     "stacked_bar": {
       "name": "Stacked Bar Chart",
-      "path": "assets/gallery_data/stacked_bar/recipe_manifest.yaml",
+      "path": "assets/gallery_data/stacked_bar/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -244,7 +244,7 @@
     },
     "proportion_bar": {
       "name": "Proportion Bar Chart",
-      "path": "assets/gallery_data/proportion_bar/recipe_manifest.yaml",
+      "path": "assets/gallery_data/proportion_bar/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -258,7 +258,7 @@
     },
     "bar_horizontal": {
       "name": "Horizontal Bar Chart",
-      "path": "assets/gallery_data/bar_horizontal/recipe_manifest.yaml",
+      "path": "assets/gallery_data/bar_horizontal/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -272,7 +272,7 @@
     },
     "jitter_strip": {
       "name": "Jitter Strip Plot",
-      "path": "assets/gallery_data/jitter_strip/recipe_manifest.yaml",
+      "path": "assets/gallery_data/jitter_strip/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -286,7 +286,7 @@
     },
     "bubble": {
       "name": "Bubble Chart",
-      "path": "assets/gallery_data/bubble/recipe_manifest.yaml",
+      "path": "assets/gallery_data/bubble/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -300,7 +300,7 @@
     },
     "beeswarm_sina": {
       "name": "Beeswarm / Sina Plot",
-      "path": "assets/gallery_data/beeswarm_sina/recipe_manifest.yaml",
+      "path": "assets/gallery_data/beeswarm_sina/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -314,7 +314,7 @@
     },
     "ecdf": {
       "name": "ECDF Plot",
-      "path": "assets/gallery_data/ecdf/recipe_manifest.yaml",
+      "path": "assets/gallery_data/ecdf/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -328,7 +328,7 @@
     },
     "violin_boxplot": {
       "name": "Violin + Boxplot Overlay",
-      "path": "assets/gallery_data/violin_boxplot/recipe_manifest.yaml",
+      "path": "assets/gallery_data/violin_boxplot/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -342,7 +342,7 @@
     },
     "qq_plot": {
       "name": "Q-Q Plot (Quantile-Quantile)",
-      "path": "assets/gallery_data/qq_plot/recipe_manifest.yaml",
+      "path": "assets/gallery_data/qq_plot/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -356,7 +356,7 @@
     },
     "freqpoly": {
       "name": "Frequency Polygon",
-      "path": "assets/gallery_data/freqpoly/recipe_manifest.yaml",
+      "path": "assets/gallery_data/freqpoly/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -370,7 +370,7 @@
     },
     "scatter_smooth": {
       "name": "Scatter Plot with Smoother",
-      "path": "assets/gallery_data/scatter_smooth/recipe_manifest.yaml",
+      "path": "assets/gallery_data/scatter_smooth/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -384,7 +384,7 @@
     },
     "density_2d_bin": {
       "name": "2D Bin Density",
-      "path": "assets/gallery_data/density_2d_bin/recipe_manifest.yaml",
+      "path": "assets/gallery_data/density_2d_bin/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -398,7 +398,7 @@
     },
     "connected_scatter": {
       "name": "Connected Scatter Plot",
-      "path": "assets/gallery_data/connected_scatter/recipe_manifest.yaml",
+      "path": "assets/gallery_data/connected_scatter/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -412,7 +412,7 @@
     },
     "bar_grouped": {
       "name": "Grouped Bar Chart",
-      "path": "assets/gallery_data/bar_grouped/recipe_manifest.yaml",
+      "path": "assets/gallery_data/bar_grouped/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -426,7 +426,7 @@
     },
     "error_bar": {
       "name": "Error Bar / Point Range",
-      "path": "assets/gallery_data/error_bar/recipe_manifest.yaml",
+      "path": "assets/gallery_data/error_bar/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -440,7 +440,7 @@
     },
     "dumbbell": {
       "name": "Dumbbell Chart",
-      "path": "assets/gallery_data/dumbbell/recipe_manifest.yaml",
+      "path": "assets/gallery_data/dumbbell/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -454,7 +454,7 @@
     },
     "stacked_area": {
       "name": "Stacked Area Chart",
-      "path": "assets/gallery_data/stacked_area/recipe_manifest.yaml",
+      "path": "assets/gallery_data/stacked_area/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
@@ -468,7 +468,7 @@
     },
     "step_chart": {
       "name": "Step Chart",
-      "path": "assets/gallery_data/step_chart/recipe_manifest.yaml",
+      "path": "assets/gallery_data/step_chart/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {

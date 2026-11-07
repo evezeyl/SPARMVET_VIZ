@@ -2,9 +2,9 @@
 
 This directory contains standalone tests for investigating and verifying the logic of individual wrangling actions.
 
-## Tiered Manifest Structure (ADR-024)
+## Tiered Data Analysis Recipe Structure (ADR-024)
 
-All manifests in this directory follow the **Tiered Wrangling Structure**. When contributing new tests, ensure the wrangling block uses `tier1` and/or `tier2`:
+All data analysis recipes in this directory follow the **Tiered Wrangling Structure**. When contributing new tests, ensure the wrangling block uses `tier1` and/or `tier2`:
 
 ```yaml
 id: "example_test"
@@ -27,7 +27,7 @@ data_schemas:
 ## Test Runners
 
 - **debug_wrangler.py**: Dedicated runner for Layer 1 actions.
-  - usage: `python debug_wrangler.py --manifest path/to/manifest.yaml --tier [tier1|tier2|all]`
+  - usage: `python debug_wrangler.py --data-analysis-recipe path/to/data_analysis_recipe.yaml --tier [tier1|tier2|all]`
 - **transformer_integrity_suite.py**: Executes all atomic action tests and generates a pass/fail report.
 
 ## Materialization Gate (@verify)

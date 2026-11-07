@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "test_lab"
 version = "0.1.0"
-description = "SPARMVET_VIZ Test Lab: synthetic data generation, bootstrapping, manifest extraction, and key reconciliation"
+description = "SPARMVET_VIZ Test Lab: synthetic data generation, bootstrapping, data analysis recipe extraction, and key reconciliation"
 dependencies = [
     "polars>=1.0.0",
     "numpy>=2.0.0",

@@ -17,7 +17,7 @@ Usage:
   .venv/bin/python assets/scripts/migrate_plot_specs.py --apply
 
   # Restrict to a specific directory
-  .venv/bin/python assets/scripts/migrate_plot_specs.py --apply --root config/manifests/pipelines
+  .venv/bin/python assets/scripts/migrate_plot_specs.py --apply --root config/data_analysis_recipes/pipelines
 
   # Also scan tests/ fixtures
   .venv/bin/python assets/scripts/migrate_plot_specs.py --apply --scan-tests
@@ -30,7 +30,7 @@ from pathlib import Path
 import yaml
 
 # ---------------------------------------------------------------------------
-# !include passthrough — local Loader/Dumper subclass (mirrors persona_validator.py)
+# !include passthrough — local Loader/Dumper subclass (mirrors app_features_validator.py)
 # ---------------------------------------------------------------------------
 
 class _IncludeTag:
@@ -201,7 +201,7 @@ def _walk_and_migrate(obj: object) -> tuple[object, list[str]]:
 def _migrate_file(path: Path, dry_run: bool) -> list[str]:
     """
     Migrate one YAML file. Handles bare spec dicts, spec:-wrapped dicts,
-    and master manifests that contain !include tags alongside inline plot specs.
+    and master data analysis recipes that contain !include tags alongside inline plot specs.
     _IncludeTag values are preserved verbatim — their target files are migrated
     separately when the scanner reaches them.
     Returns list of change descriptions (empty = no change).
@@ -261,8 +261,8 @@ def _find_plot_yamls(roots: list[Path]) -> list[Path]:
 # Generator patches
 # ---------------------------------------------------------------------------
 
-def _patch_create_manifest(path: Path, dry_run: bool) -> list[str]:
-    """Patch create_manifest.py: replace factory_id stub with canonical geom form."""
+def _patch_create_data_analysis_recipe(path: Path, dry_run: bool) -> list[str]:
+    """Patch create_data_analysis_recipe.py: replace factory_id stub with canonical geom form."""
     text = path.read_text(encoding="utf-8")
     old = '''\
                 "demo_bar": {
@@ -279,11 +279,11 @@ def _patch_create_manifest(path: Path, dry_run: bool) -> list[str]:
                     "title": "Replace Me Title"
                 }'''
     if old not in text:
-        return ["WARNING: create_manifest.py patch target not found — manual review required"]
+        return ["WARNING: create_data_analysis_recipe.py patch target not found — manual review required"]
     if dry_run:
-        return ["create_manifest.py:281 — factory_id:bar_logic -> canonical geom_bar stub (dry-run)"]
+        return ["create_data_analysis_recipe.py:281 — factory_id:bar_logic -> canonical geom_bar stub (dry-run)"]
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
-    return ["create_manifest.py:281 — factory_id:bar_logic -> canonical geom_bar stub"]
+    return ["create_data_analysis_recipe.py:281 — factory_id:bar_logic -> canonical geom_bar stub"]
 
 
 # ---------------------------------------------------------------------------
@@ -305,7 +305,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--root", type=Path, default=None,
-        help="Root directory to scan for YAML files (default: config/manifests/)."
+        help="Root directory to scan for YAML files (default: config/data_analysis_recipes/)."
     )
     parser.add_argument(
         "--scan-tests", action="store_true",
@@ -313,7 +313,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--skip-generators", action="store_true",
-        help="Skip patching generator scripts (create_manifest.py)."
+        help="Skip patching generator scripts (create_data_analysis_recipe.py)."
     )
     args = parser.parse_args()
 
@@ -331,7 +331,7 @@ def main() -> None:
     if args.root:
         scan_roots.append(args.root)
     else:
-        scan_roots.append(project_root / "config" / "manifests")
+        scan_roots.append(project_root / "config" / "data_analysis_recipes")
 
     if args.scan_tests:
         tests_dir = project_root / "tests"
@@ -372,12 +372,12 @@ def main() -> None:
 
     # Patch generators
     if not args.skip_generators:
-        create_manifest = project_root / "assets" / "scripts" / "create_manifest.py"
-        if create_manifest.exists():
-            gen_changes = _patch_create_manifest(create_manifest, dry_run=dry_run)
+        create_data_analysis_recipe = project_root / "assets" / "scripts" / "create_data_analysis_recipe.py"
+        if create_data_analysis_recipe.exists():
+            gen_changes = _patch_create_data_analysis_recipe(create_data_analysis_recipe, dry_run=dry_run)
             if gen_changes:
                 verb = "Would patch" if dry_run else "Patched"
-                rel = create_manifest.relative_to(project_root)
+                rel = create_data_analysis_recipe.relative_to(project_root)
                 print(f"\nGenerators:")
                 print(f"  {verb}: {rel}")
                 for c in gen_changes:
@@ -389,7 +389,7 @@ def main() -> None:
         print(
             "\nMigration complete. Verify render parity:"
             "\n  .venv/bin/python libs/viz_factory/tests/debug_gallery.py "
-            "--manifest config/manifests/pipelines/2_test_data_ST22_dummy.yaml "
+            "--data-analysis-recipe config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml "
             "--tmp tmpAI/migrate_verify/ --output_root tmpAI/migrate_verify/plots/"
         )
 

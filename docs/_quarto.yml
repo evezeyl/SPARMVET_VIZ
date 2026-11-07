@@ -35,12 +35,12 @@ book:
     # Core technical architecture, protocols, and IDE execution constraints
     chapters:
       - reference/development_rules.qmd # Mandatory SPARMVET Laws (Violet Law, etc.)
-      - reference/environment_variables.qmd # SPARMVET_PERSONA, SPARMVET_PROFILE, SPARMVET_IRIDA_TOKEN
+      - reference/environment_variables.qmd # SPARMVET_APP_FEATURES, SPARMVET_DEPLOYMENT, SPARMVET_IRIDA_TOKEN
       - foundations/core_architecture.qmd # The top-level decoupled logic
       - foundations/core_architecture_code.qmd # Deep dive into the physical codebase layout 
-      - foundations/data_contracts_adr.qmd # ADR-013 explaining YAML dict manifests
+      - foundations/data_contracts_adr.qmd # ADR-013 explaining YAML dict data analysis recipes
       - foundations/data_tiering_adr.qmd # ADR-024 explaining Tier 1 vs Tier 2
-      - foundations/reproducibility_hash_schema.qmd # ADR-066: three-hash schema (decision_hash, manifest_sha256, data_batch_hash)
+      - foundations/reproducibility_hash_schema.qmd # ADR-066: three-hash schema (decision_hash, data_analysis_recipe_sha256, data_batch_hash)
       - foundations/reproducibility_same_input_same_output.qmd # ADR-090: row order (Polars), jitter seed, how to keep results the same
       - foundations/verification_protocol.qmd # The @verify gate and explicit evidence testing
       - reference/testing.qmd # Execution constraints for CLI tests
@@ -52,16 +52,16 @@ book:
       - reference/developer_how_to.qmd # Repo standard for Issue submission and PRs
       - reference/ui_style_guide.qmd # CSS panel map, element selectors, style constraints
       - troubleshooting/index.qmd # Startup error catalog — one entry per DeploymentError slug (ADR-078)
-      - deployment/deployment_guide.qmd # Deployment guide — profile YAML, location keys, connector setup (ADR-048, ADR-074)
+      - deployment/deployment_guide.qmd # Deployment guide — deployment file, location keys, connector setup (ADR-048, ADR-074)
 
   - part: "Chapter 2: Non-Coder User Guide"
     # Absolute user focus: Visual mapping, No Code, Analogies, YAML 101
     chapters:
       - user_guide/yaml_101.qmd # YAML basics and Text Editor recommendations
-      - user_guide/blueprint_manifest_authoring.qmd # Step-by-step manifest authoring guide for bioscientists
+      - user_guide/blueprint_data_analysis_recipe_authoring.qmd # Step-by-step data analysis recipe authoring guide for bioscientists
       - user_guide/data_literacy.qmd # Tidy Data (1 var/col), Spelling, Case-sensitivity
-      - workflows/dashboard_app.qmd # The UI layout and Persona mapping
-      - workflows/ui_persona.qmd # Eight personas — feature flags, ADR-076/077, panel slot registry
+      - workflows/dashboard_app.qmd # The UI layout and App features mapping
+      - workflows/ui_app_features.qmd # Eight app features files — feature flags, ADR-076/077, panel slot registry
       - workflows/user_preferences.qmd # Changing layout without breaking it
       - workflows/ingestion.qmd # "The Border Control" analogy
       - workflows/wrangling.qmd # "The Assembly Line" analogy
