@@ -48,7 +48,12 @@ Order is wide to narrow, and the table is in working order: context and containe
 | DM-CONFIG | Deployment, app features, launch variables, precedence | Class | logical |
 | REQ-CORE | Quality goals and the requirements that protect a correct result | SysML requirement | all |
 
-Three text pages go with them, because no diagram shows them well: **quality goals** (correct science and reproducibility first), **cross-cutting concepts** (configuration, error handling, provenance, security) and **risks and technical debt**. They live next to the model in `docs/UML/`.
+**Written (2026-11-07):** three text pages that go with the diagrams, because no diagram shows them
+well, in `docs/UML/`: [`quality_goals.md`](quality_goals.md) (correct science and reproducibility
+first, each goal backed by a `REQ-CORE` requirement), [`cross_cutting_concepts.md`](cross_cutting_concepts.md)
+(configuration resolution, fail-fast, error handling, provenance, reactive write discipline,
+flag-driven gating, the Two-Category Law, tier isolation, security deferred) and
+[`risks_and_technical_debt.md`](risks_and_technical_debt.md) (the findings register, sorted by cost).
 
 **Next, in this order:** GALLERY, BLUEPRINT, TEST_LAB (use case, wireframe, components). **Later:** class diagrams of the core, data analysis recipe data model, other platforms.
 
