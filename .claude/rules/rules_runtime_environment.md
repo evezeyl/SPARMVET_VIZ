@@ -58,6 +58,17 @@ Each library in `./libs/` is designed to be **independently installable and reus
 - May import from `libs/utils/` (Tier 1) only, with explicit `pyproject.toml` declaration.
 - Each library must be independently installable via `pip install -e ./libs/<name>/` with no hidden dependencies.
 
+**Named exception — `libs/test_lab/` (ADR-084, `rules_test_lab.md` §8):** `test_lab` is a
+toolbox that composes other domain libraries (`id_reconciliation`, `ingestion`) as a
+one-directional consumer — no domain library imports `test_lab` back, so this does not
+create the peer coupling the rule above forbids. It MUST NOT depend on `transformer`,
+`viz_factory`, `blueprint_arch`, or `connector`. Any such import MUST be declared in
+`test_lab/pyproject.toml` the same as any other dependency (§ below) — an undeclared
+import, even inside a `try/except ImportError`, is still a violation. As of 2026-11-07
+`test_lab` has no actual runtime import of either library (a stale, unused
+`id_reconciliation` import was removed from `scaffolder.py`, finding F-17) — the
+permission exists for when a tool genuinely needs it.
+
 ### Tier 3 — Orchestration layer: `app/` and `assets/scripts/`
 
 - May import from any library in `./libs/`.
@@ -69,7 +80,10 @@ Each library in `./libs/` is designed to be **independently installable and reus
 
 **Existing tech debt (do not expand):** All previously listed violations have been resolved. The `transformer→ingestion` item was a TYPE_CHECKING-only annotation (not a runtime violation). The `"libs/utils"` pyproject entries have been corrected. Track any new violations in `tasks.md`.
 
-`libs/utils/` imports are the only acceptable cross-lib exception going forward, and must always be declared in `pyproject.toml` using the package name `"utils"`.
+`libs/utils/` imports are the only acceptable cross-lib exception for every domain library
+other than `test_lab`, and must always be declared in `pyproject.toml` using the package
+name `"utils"`. `test_lab`'s named exception above is the one documented case of a
+non-`utils` cross-lib dependency.
 
 ## 5. Python Interpreter Authority
 

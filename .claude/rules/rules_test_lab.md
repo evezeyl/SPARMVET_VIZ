@@ -184,7 +184,7 @@ Adding composite-key support to `IDReconciliationEngine` or the TEST_LAB UI is a
 
 `test_lab_studio.py` (under `app/modules/`) is a module-level orchestrator class analogous to `WrangleStudio`. It may hold Python state but MUST NOT import `shiny.reactive` or register `@render.*` functions. Those belong in `test_lab_handlers.py`.
 
-`libs/test_lab/` classes (`TestLabSession`, `DataAnalysisRecipeBootstrapper`, `AquaSynthesizer`, `Anonymiser`, `DataReformatter`) must not reference Shiny types, including in `TYPE_CHECKING` blocks.
+`libs/test_lab/` classes (`DataAnalysisRecipeBootstrapper`, `AquaSynthesizer`, `Anonymiser`, `DataReformatter`, `DataAnalysisRecipeScaffolder`, `XlsxExtractor`) must not reference Shiny types, including in `TYPE_CHECKING` blocks. There is no `TestLabSession` class in the library — `TestLabStudio` (`app/modules/test_lab_studio.py`, Tier 3) plays that per-interaction coordinator role, outside the library and outside the Two-Category Law boundary by design.
 
 ---
 
@@ -217,39 +217,47 @@ libs/utils/
     id_patterns.py            # PatternSuggestion, detect_patterns, apply_pattern, suggest_regex
 
 libs/id_reconciliation/
-  pyproject.toml              # polars, utils only
+  pyproject.toml              # polars, utils, rapidfuzz
   README.md
   src/id_reconciliation/
     __init__.py               # public API exports
     core.py                   # IDReconciliationEngine orchestrator
     matcher.py                # exact / fuzzy / pattern matching engines
     pattern_detector.py       # thin re-export shim → utils.id_patterns
-    id_transformation.py                 # IdTransformation YAML persistence
+    id_transformation.py      # IdTransformation YAML persistence
     data_structures.py        # IDPair, MatchResult, IdTransformation
   tests/
     conftest.py
     test_core.py
     test_matcher.py
+    test_pattern_detector.py
     test_transformation.py
+    id_reconciliation_integrity_suite.py
 
 libs/test_lab/
-  pyproject.toml              # polars, utils, id_reconciliation, ingestion
+  pyproject.toml              # polars, numpy, openpyxl, pyyaml (id_reconciliation/ingestion permitted, rules_runtime_environment.md Tier 2 exception — not currently used)
   README.md
   scenarios/                  # named scenario YAMLs (user-created, git-ignored)
   src/test_lab/
     __init__.py
-    session.py                # TestLabSession (stateless per-interaction coordinator)
     bootstrapper.py           # DataAnalysisRecipeBootstrapper
-    synthesizer.py            # AquaSynthesizer
+    aqua_synthesizer.py       # AquaSynthesizer
     anonymiser.py             # Anonymiser
     reformatter.py            # DataReformatter
+    scaffolder.py             # DataAnalysisRecipeScaffolder
+    extractor.py               # XlsxExtractor
   tests/
-    conftest.py
     test_bootstrapper.py
     test_synthesizer.py
+    test_anonymiser.py
+    test_reformatter.py
+    test_scaffolder.py
+    test_extractor.py
 ```
 
-`libs/test_lab/` may depend on `libs/id_reconciliation/` and `libs/ingestion/`. MUST NOT depend on transformer, viz_factory, blueprint_arch, or connector.
+There is no `TestLabSession` class and no `conftest.py` in `libs/test_lab/tests/` today — see §6 for the coordinator role actually in place (`TestLabStudio`, Tier 3).
+
+`libs/test_lab/` may depend on `libs/id_reconciliation/` and `libs/ingestion/` (named exception to the Clear Lines policy, `rules_runtime_environment.md` Tier 2) but as of 2026-11-07 uses neither at runtime. MUST NOT depend on transformer, viz_factory, blueprint_arch, or connector.
 
 ---
 

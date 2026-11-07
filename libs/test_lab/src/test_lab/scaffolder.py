@@ -4,7 +4,6 @@
 #           joins pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
 # consumes: polars, pathlib, typing, yaml, re, io, zipfile (stdlib/third-party)
 #           test_lab.bootstrapper (DataAnalysisRecipeBootstrapper, IncludeRef, represent_include)
-#           id_reconciliation.data_structures (IdTransformation)
 # consumed_by: libs/test_lab/tests/test_scaffolder.py
 # @end_deps
 import io
@@ -17,11 +16,6 @@ import polars as pl
 import yaml
 
 from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
-
-try:
-    from id_reconciliation.data_structures import IdTransformation
-except ImportError:
-    IdTransformation = None  # type: ignore[assignment,misc]
 
 
 yaml.add_representer(IncludeRef, represent_include)
@@ -54,7 +48,8 @@ class DataAnalysisRecipeScaffolder:
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
             data_analysis_recipe_id: Data analysis recipe ID and top-level folder name in the ZIP.
-            steps: Optional mapping of sanitized dataset_id → IdTransformation.
+            steps: Optional mapping of sanitized dataset_id → list of wrangling step
+                     dicts (e.g. from an ID Reconciliation transformation's step list).
                      Steps are injected into that dataset's tier1: wrangling block.
             metadata_path: Optional dedicated metadata TSV. When provided, a
                            metadata_schema entry is added and included as an ingredient.
