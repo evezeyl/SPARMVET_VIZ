@@ -292,7 +292,7 @@
 ## `app/src/server.py`
 - **Role:** `ref`
 - **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
-- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: developer_mode_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-045`, `ADR-003`
 
@@ -879,6 +879,13 @@
 - **provides:** `component:theme_gray`, `component:theme_bw`, `component:theme_linedraw`, `component:theme_light`, `component:theme_minimal`, `component:theme_classic`, `component:theme_void`, `component:theme_dark`, `component:theme_538`, `component:theme_matplotlib`, `component:theme_seaborn`, `component:theme_tufte`, `component:theme_xkcd`, `component:theme_dashboard`, `component:theme_publication`, `component:theme_legend_position`, `component:theme_custom`, `component:element_text`, `component:element_line`, `component:element_rect`, `component:element_blank`, `component:xlab`, `component:ylab`, `component:ggtitle`, `component:annotate`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
 - **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **Role:** `plot`
+- **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090)`
 
 ## `libs/viz_factory/tests/debug_audit.py`
 - **Role:** `plot`

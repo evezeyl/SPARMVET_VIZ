@@ -1,4 +1,6 @@
-# Audit findings of 2026-11-07 that the rename did not cause: plan (CONFIG-AUDIT-FIXES-1)
+# Audit findings of 2026-11-07 that the rename did not cause (CONFIG-AUDIT-FIXES-1)
+
+**Status 2026-11-07:** steps 1 to 7 done (all scheduled audits exit 0, `audit_changelog_sync.py` had a second bug: its report said PASS while its exit code said fail). Step 8 (dependency review) stays open as its own task `DEPS-REVIEW-1`.
 
 Source: the scheduled audit scripts in `scripts/`, run on `rename/config-vocabulary` after ADR-092
 (output kept in `tmpAI/rename/audits/`, not committed). Each step is one small commit with a green test run;

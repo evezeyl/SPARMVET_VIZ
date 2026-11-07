@@ -8,6 +8,13 @@ from utils.errors import VisualizationError
 from utils.pipeline_error import PipelineError
 import difflib
 
+# @deps
+# provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py
+# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
+# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090)
+# @end_deps
+
 # Default seed of every random plot component (jitter). With a fixed default the same data and the
 # same data analysis recipe give the same picture, which reports and audits need. A layer can set its own
 # `random_state`, and VizFactory(random_state=...) changes the default for a whole factory

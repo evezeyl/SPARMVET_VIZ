@@ -59,6 +59,7 @@ If any files are returned, triage them before any other work — see `.claude/wo
 | File | When to read |
 |---|---|
 | `rules_runtime_environment.md` | Environment / dependency issues |
+| `rules_toolchain.md` | Tools needed to build, test and document the app, and how to call them |
 | `rules_data_engine.md` | 3-Tier lifecycle, Anchor/Branch/Leaf, decorator law |
 | `rules_data_analysis_recipe_structure.md` | YAML standards, `!include` structure, basename mirroring |
 | `rules_verification_testing.md` | `@verify` protocol, `tmpAI/` vs `tmp/` governance |

@@ -198,3 +198,12 @@ def test_every_shipped_data_analysis_recipe_has_its_file_name_as_id():
     wrong = [str(p.relative_to(root)) for p in files
              if any(x.location == "id" for x in validate_data_analysis_recipe(p))]
     assert wrong == []
+
+
+def test_every_template_is_a_valid_data_analysis_recipe():
+    """The templates are what people copy: each must load and pass the same checks as a real data analysis recipe."""
+    root = Path(__file__).resolve().parents[2] / "config" / "data_analysis_recipes" / "templates"
+    templates = sorted(root.glob("*.yaml"))
+    assert len(templates) >= 5
+    bad = {t.name: [str(p) for p in validate_data_analysis_recipe(t)] for t in templates}
+    assert {k: v for k, v in bad.items() if v} == {}

@@ -91,7 +91,7 @@ The dashboard adheres to the **Tiered Data Lifecycle (ADR-024)** to ensure sub-5
 ### Architectural Decisions
 
 *   **Plotnine over Plotly:** We prioritize `Plotnine (viz_factory.py)` for Phase 1 to ensure 100% consistency with the Tidy data logic. Static image generation (SVG) on the server-side prevents browser-side lag during heavy rendering. (ADR-008)
-*   **Lazy Processing:** We use `Polars (transformer.py)` for all transformations. The data preparation occurs *before* it touches the UI, keeping the memory footprint low. (ADR-010)
+*   **Lazy Processing:** We use Polars for all transformations, through `DataWrangler (data_wrangler.py)` and `DataAssembler (data_assembler.py)`. The data preparation occurs *before* it touches the UI, keeping the memory footprint low. (ADR-010)
 *   **No-WASM Model:** We decided against WASM (Shinylive) in favor of a server-side model to maintain professional scalability and handle multi-gigabyte datasets that would otherwise overwhelm a local browser thread.
 
 ### Aesthetic Lock

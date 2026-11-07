@@ -30,3 +30,18 @@ joins:
       - dataset_id: "metadata"
     steps: !include 'complex_template/master_steps.yaml'
     final_contract: !include 'complex_template/final_contract.yaml'
+
+analysis_groups:
+  Overview:
+    label: "Overview"
+    plots:
+      gene_presence_by_country:
+        label: "Gene presence by country"
+        spec:
+          target_dataset: master_assembly
+          mapping:
+            x: country
+            fill: gene_presence
+          layers:
+            - name: geom_bar
+              params: {}

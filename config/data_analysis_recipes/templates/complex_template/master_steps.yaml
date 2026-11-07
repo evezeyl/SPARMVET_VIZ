@@ -1,5 +1,6 @@
 steps:
-  - action: "join"
-    right_ingredient: "metadata"
-    'on': "sample_id"
-    how: "left"
+  tier1:
+    - action: "join"
+      right_ingredient: "metadata"
+      'on': "sample_id"
+      how: "left"

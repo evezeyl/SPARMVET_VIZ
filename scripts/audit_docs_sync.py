@@ -111,6 +111,11 @@ def check_deps_documents(project_root: Path) -> list[dict]:
 # ── Check 3: Backtick file path references in docs ───────────────────────────
 
 def _is_ignorable(path_str: str) -> bool:
+    """Skip documented patterns and examples ({lib}, {{NAME}}, *, ?, foo.py, <placeholder>), not real files."""
+    if any(ch in path_str for ch in "{}*?<>"):
+        return True
+    if re.search(r"(?:^|/)(?:foo|bar|example)\.py$|/test_\*\.py$", path_str):
+        return True
     return any(pat in path_str for pat in IGNORE_PATH_PATTERNS)
 
 
@@ -157,6 +162,9 @@ def check_doc_backtick_paths(project_root: Path) -> list[dict]:
 
 # ── Check 4: Violet Law references ───────────────────────────────────────────
 
+_EXAMPLE_NAMES = {"ClassName", "ComponentName"}
+_EXAMPLE_FILES = {"filename.py", "file_name.py"}
+
 def check_violet_law(project_root: Path) -> list[dict]:
     violations = []
     docs_dir = project_root / DOCS_DIR
@@ -165,7 +173,7 @@ def check_violet_law(project_root: Path) -> list[dict]:
 
     # Build index of all .py filenames under libs/ and app/
     known_py_names: set[str] = set()
-    for search_root in ["libs", "app"]:
+    for search_root in ["libs", "app", "assets/scripts", "scripts"]:
         root = project_root / search_root
         if root.exists():
             for py_file in root.rglob("*.py"):
@@ -183,13 +191,15 @@ def check_violet_law(project_root: Path) -> list[dict]:
             if key in seen:
                 continue
             seen.add(key)
+            if class_name in _EXAMPLE_NAMES or filename in _EXAMPLE_FILES:
+                continue  # the pattern shown as an example, not a reference
             if filename not in known_py_names:
                 violations.append({
                     "check": "VIOLET_STALE",
                     "path": str(qmd_file.relative_to(project_root)),
                     "detail": (
                         f"Violet Law reference `{class_name} ({filename})` — "
-                        f"`{filename}` not found under libs/ or app/"
+                        f"`{filename}` not found under libs/, app/, assets/scripts/ or scripts/"
                     ),
                     "missing_file": filename,
                 })

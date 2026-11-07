@@ -179,6 +179,11 @@ def build_report(violations: list[str], warnings: list[str], infos: list[str],
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
+        "--project-root",
+        default=".",
+        help="Project root; --palettes is read relative to it (default: current directory)",
+    )
+    parser.add_argument(
         "--palettes",
         default="config/palettes.yaml",
         help="Path to the palette registry YAML file (default: config/palettes.yaml)",
@@ -189,7 +194,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    palette_path = Path(args.palettes)
+    palette_path = Path(args.project_root) / args.palettes
     try:
         violations, warnings, infos = audit_palette_file(palette_path)
         report, exit_code = build_report(violations, warnings, infos, palette_path)

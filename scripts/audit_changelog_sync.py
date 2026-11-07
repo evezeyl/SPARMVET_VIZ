@@ -70,6 +70,16 @@ def extract_changelog_phases(changelog_path: Path) -> set[str]:
     return found
 
 
+def is_phase_covered(label: str, changelog_phases: set[str]) -> bool:
+    """True when the changelog mentions the phase, or its integer prefix (a range such as "phases 3-27"
+    expands to bare integers, so the sub-phase "9-B" is covered by "9"). Used by the report and the exit code."""
+    ul = label.upper()
+    if ul in changelog_phases:
+        return True
+    m = re.match(r"^(\d+)", ul)
+    return bool(m and m.group(1) in changelog_phases)
+
+
 def render_report(
     completed: list[tuple[str, int]],
     changelog_phases: set[str],
@@ -80,13 +90,7 @@ def render_report(
     now = datetime.now().isoformat(timespec="seconds")
 
     def _is_covered(label: str) -> bool:
-        ul = label.upper()
-        if ul in changelog_phases:
-            return True
-        # Sub-phase (e.g. "9-B") is covered if its integer prefix is in the set
-        # (range delegations like "phases 3–27" expand to bare integers)
-        m = re.match(r"^(\d+)", ul)
-        return bool(m and m.group(1) in changelog_phases)
+        return is_phase_covered(label, changelog_phases)
 
     missing_entries = [
         (label, lineno)
@@ -176,7 +180,7 @@ def main() -> int:
         output_path.write_text(report, encoding="utf-8")
         print(f"\nReport written to: {output_path}", file=sys.stderr)
 
-    missing = [l for l, _ in completed if l.upper() not in changelog_phases]
+    missing = [l for l, _ in completed if not is_phase_covered(l, changelog_phases)]
     return 1 if missing else 0
 
 
