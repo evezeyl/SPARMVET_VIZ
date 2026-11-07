@@ -519,7 +519,7 @@
 - **Role:** `info`
 - **provides:** `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`
 - **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
-- **consumed_by:** `app/handlers/test_lab_handlers.py (future)`
+- **consumed_by:** `app/handlers/test_lab_handlers.py`
 
 ## `libs/id_reconciliation/src/id_reconciliation/core.py`
 - **Role:** `info`

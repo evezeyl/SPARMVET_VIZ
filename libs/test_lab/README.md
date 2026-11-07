@@ -13,11 +13,14 @@ Scientists often receive Excel workbooks, need anonymised shareable datasets, or
 - **AquaSynthesizer (aqua_synthesizer.py)**: Reads a real TSV and emits a structurally identical synthetic TSV — same column names, same value distributions and levels, different values. Safe to share. Also generates controlled-error datasets for pipeline testing.
 - **DataAnalysisRecipeBootstrapper (bootstrapper.py)**: Infers column types and cardinalities from a TSV and writes a boilerplate `input_fields` YAML fragment — eliminates manual schema typing when onboarding a new data source.
 - **XlsxExtractor (extractor.py)**: Reads multi-sheet XLSX workbooks and writes one normalised TSV per sheet. Entry point for the Excel → TSV conversion flow in the Data Import panel.
+- **DataReformatter (reformatter.py)**: Converts XLSX/CSV files to TSV with bulk folder processing. Class API only, no CLI — wired into `app/handlers/test_lab_handlers.py`.
+- **Anonymiser (anonymiser.py)**: `anonymise()`/`anonymise_batch()` strip identifying columns and replace an ID column with a sequential, hash-based, or custom-prefix anonymous id, writing an original-id-to-anon-id mapping TSV alongside. Multi-file batches keep the same original id mapped to the same anon id across files. Class API only, no CLI.
+- **DataAnalysisRecipeScaffolder (scaffolder.py)**: Turns prepared TSVs (plus optional wrangling steps per dataset, e.g. from an ID Reconciliation id transformation) into a boilerplate data analysis recipe ZIP — structure, inferred types, PK hints, `tier1` wrangling stubs only. No analysis groups, plots, or join strategy (that is BLUEPRINT's job, see `rules_test_lab.md §4`). Class API only, no CLI.
 - **ID Reconciliation**: Primary-key matching (exact, pattern-based, fuzzy), step list generation, and recode workflows are now in `libs/id_reconciliation/`. See that library's README for usage.
 
 ## CLI Usage
 
-All components expose `argparse` CLIs:
+Three components expose `argparse` CLIs; the other three (Reformatter, Anonymiser, Scaffolder) are class-only APIs wired directly into `app/handlers/test_lab_handlers.py`:
 
 ```bash
 # Synthesize anonymous test data

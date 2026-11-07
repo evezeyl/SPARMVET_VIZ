@@ -8,7 +8,7 @@ Public API: import only from this module. Internal sub-modules are implementatio
 #           IdTransformation, detect_many_to_many, format_match_table, apply_recode_step
 # consumes: libs/id_reconciliation/src/id_reconciliation/data_structures.py,
 #           libs/id_reconciliation/src/id_reconciliation/core.py
-# consumed_by: app/handlers/test_lab_handlers.py (future)
+# consumed_by: app/handlers/test_lab_handlers.py
 # @end_deps
 
 from .data_structures import IDPair, MatchResult, PatternSuggestion, IdTransformation
