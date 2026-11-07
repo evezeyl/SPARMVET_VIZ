@@ -11,8 +11,8 @@ Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Bl
   - Nodes dragged **ABOVE** Violet nodes = Pre-transform (Wide Data/T1 filters).
   - Nodes dragged **BELOW** Violet nodes = Post-transform (Long Data/T2 filters).
 - **The Deletion & Deactivation Protocol**:
-  - **Disable (Strikethrough)**: A "Power" icon allows the user to toggle a node off. The node remains in the UI with a strikethrough effect but is ignored by the Polars engine.
-  - **Trash (Permanent)**: A trash icon allows for removal. If the node is **Violet**, a modal triggers: _"CRITICAL: Removing a blueprint step may break the intended visualization. Are you sure?"_
+  - **Disable (Strikethrough)**: A "Power" icon allows the user to toggle a node off. The node remains in the UI with a strikethrough effect but is ignored by the Polars engine. **Not implemented (2026-11-07, finding F-07):** `audit_stack.py` reads `node.get("active", True)` to render the strikethrough style, but nothing in the running app ever sets `active` to `False` — there is no Power-icon control wired up. Tracked as task STM-NODE.
+  - **Trash (Permanent)**: A trash icon allows for removal. If the node is **Violet**, a modal triggers: _"CRITICAL: Removing a blueprint step may break the intended visualization. Are you sure?"_ **As built:** deletion is real list removal (`audit_stack.py:585`, `[n for n in nodes if n.get("id") not in ids_to_delete]`), not a soft `active: false` mark — see §12c below, which this contradicted until F-07.
 
 - **The Revert Protocol**: The **btn_revert** performs a **Full Wipe**. It clears all user nodes and restores the Tier 3 stack to the exact state of the Tier 2 blueprint.
 - **Direct Pass-Through**: If the T2 data analysis recipe contains zero transformation steps (T2=T1), the audit steps starts **Empty**.
@@ -435,7 +435,7 @@ below only ever exist once `t3_sandbox_enabled` is on and something has been exp
 plain exploration layer (`applied_filters`, transient, no reason, no AuditStep) exists independently and
 is available in "My view" even without `t3_sandbox_enabled` — see §5, §8.
 
-T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanently locked to four node types:
+T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanently locked to five node types (four of which gate `btn_apply` on a mandatory reason — `aesthetic_override` is the exception, see the Gatekeeper rule below):
 
 | Node Type | What it does | Reason required? |
 |---|---|---|
@@ -478,8 +478,8 @@ For `aesthetic_override` nodes, `params` carries `{fill, colour, alpha, shape}` 
 There is **no separate FILTERS.txt** for T3. The T3 YAML audit trail is the complete audit trail.
 
 - Every Yellow node has `id`, `created_at`, `plot_scope`, `params`, and `reason`.
-- The audit trail is append-only during a session (deletions mark nodes `active: false` rather than removing them from the file, so the sequence of decisions is preserved).
-- **Export warning for deactivated nodes:** If any node has `active: false` at export time, the UI shows a blocking warning dialog: *"You have [N] deactivated filter(s) / exclusion(s) / column drop(s). Export reflects only active nodes. Deactivated nodes will NOT appear in the exported data or Methods section. Confirm you want to discard them from this export?"* The user must explicitly confirm. The export is the unambiguous truth — deactivated nodes are absent from the exported data and from the Methods section. They are listed in an appendix ("Decisions Considered and Discarded") for transparency only.
+- **Design intent (not yet built, F-07):** the audit trail was designed to be append-only, with deletions marking nodes `active: false` rather than removing them, so the sequence of decisions is preserved. **As built,** there is no control that ever sets `active: false` — deletion is real removal from the list (`audit_stack.py:585`). The `active: false` / "deactivated node" path below describes the intended future behaviour once the Power-icon toggle (§1) is implemented; today it never triggers. Tracked as task STM-NODE.
+- **Export warning for deactivated nodes (not yet reachable, see above):** If any node has `active: false` at export time, the UI shows a blocking warning dialog: *"You have [N] deactivated filter(s) / exclusion(s) / column drop(s). Export reflects only active nodes. Deactivated nodes will NOT appear in the exported data or Methods section. Confirm you want to discard them from this export?"* The user must explicitly confirm. The export is the unambiguous truth — deactivated nodes are absent from the exported data and from the Methods section. They are listed in an appendix ("Decisions Considered and Discarded") for transparency only.
 
 `aesthetic_override` nodes are stored **separately** from the wrangling steps as `t3_plot_overrides` (a dict keyed by plot sub-tab ID) in the session state object (§13). They are included in the export report but do not block `btn_apply`.
 
