@@ -449,7 +449,7 @@ Before deploying any app features file change, run:
 
 ```bash
 # Validate one app features
-.venv/bin/python scripts/validate_app_features_config.py --app features pipeline-exploration-advanced
+.venv/bin/python scripts/validate_app_features_config.py --app-features pipeline-exploration-advanced
 
 # Validate all app features files — CI gate
 .venv/bin/python scripts/validate_app_features_config.py --all --strict

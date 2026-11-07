@@ -329,7 +329,7 @@ After running:
 2. For each failing template:
    - Open config/ui/templates/<app features>_template.yaml
    - Fix the flagged issue (missing flag, wrong cascade, forbidden dependency)
-   - Re-run validate_app_features_config.py --app features <name> --strict to verify the fix
+   - Re-run validate_app_features_config.py --app-features <name> --strict to verify the fix
 3. Fatal cascade errors (ADR-077: manifest_edit_enabled or blueprint_agent_enabled without
    blueprint_enabled) MUST be fixed before the app can start — treat as P0
 4. Update the status matrix in .claude/workflows/audit_routine_registry.md

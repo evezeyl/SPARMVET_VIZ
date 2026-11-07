@@ -6,7 +6,7 @@ Validates one or all app features files for feature-flag consistency and sidebar
 registry correctness. Intended for CI use (--strict) and developer diagnostics.
 
 Usage:
-    ./.venv/bin/python scripts/validate_app_features_config.py --app features developer
+    ./.venv/bin/python scripts/validate_app_features_config.py --app-features developer
     ./.venv/bin/python scripts/validate_app_features_config.py --all
     ./.venv/bin/python scripts/validate_app_features_config.py --all --strict
 

@@ -182,7 +182,7 @@ Fatal cascade errors (ADR-077) block the app from starting entirely. Fix them be
 For individual template debugging:
 
 ```bash
-.venv/bin/python scripts/validate_app_features_config.py --app features developer --strict
+.venv/bin/python scripts/validate_app_features_config.py --app-features developer --strict
 .venv/bin/python scripts/validate_app_features_config.py --all
 ```
 
