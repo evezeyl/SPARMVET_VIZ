@@ -7,7 +7,7 @@ import pytest
 from app.modules.view_badge import has_tier2_steps, view_badge
 
 RAW = {
-    "join_manifests": {
+    "joins": {
         "WithT2": {"recipe": {"tier1": [{"action": "sort", "columns": ["a"]}],
                               "tier2": [{"action": "filter_eq", "column": "a", "value": 1}]}},
         "WithoutT2": {"recipe": {"tier1": [{"action": "sort", "columns": ["a"]}], "tier2": []}},

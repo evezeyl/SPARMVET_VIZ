@@ -31,7 +31,7 @@ The canonical AMR-surveillance figure — a tree of isolates with tip colours by
 
 ## 3. The architectural distinction that matters
 
-**ggtree does NOT fit the generic "manifest spec = ggplot2 grammar → transpile a tidy frame" story** from `r_backend.md` §2. Its input is a **tree object** (phylo / treedata with topology), not a `target_dataset` tidy table. Its grammar operates on tree structure:
+**ggtree does NOT fit the generic "data analysis recipe spec = ggplot2 grammar → transpile a tidy frame" story** from `r_backend.md` §2. Its input is a **tree object** (phylo / treedata with topology), not a `target_dataset` tidy table. Its grammar operates on tree structure:
 
 ```r
 ggtree(tree) + geom_tippoint(aes(color = source)) +
@@ -50,11 +50,11 @@ This means:
 ## 4. How it would integrate (sketch — not a proposal)
 
 **Input/data flow:**
-- Tree file (Newick/Nexus) is an **asset** referenced by the manifest (like a boundary asset), parsed in R via `treeio`.
+- Tree file (Newick/Nexus) is an **asset** referenced by the data analysis recipe (like a boundary asset), parsed in R via `treeio`.
 - Annotation comes from the normal pipeline: Tier 1/2/3 tabular data → Feather/Arrow → R (`arrow` package).
 - R joins annotation onto tree tips by an isolate/sample key, renders via ggtree/ggtreeExtra, returns SVG/PNG bytes.
 
-**Manifest spec sketch (a specialized `tree_plot` type):**
+**Data analysis recipe spec sketch (a specialized `tree_plot` type):**
 
 ```yaml
 spec:

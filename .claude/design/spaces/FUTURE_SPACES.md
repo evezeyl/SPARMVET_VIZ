@@ -9,13 +9,13 @@ These are **not tasks** — they are design seeds. Revisit when the relevant nee
 
 **Trigger:** when adding maps, interactive visualisations, or other ad-hoc exploratory analysis types.
 
-**Concept:** A space where the user explores data freely — not bound to a predefined manifest. Lower audit burden than HOME (exploration is not a reproducible publication workflow). Could host:
+**Concept:** A space where the user explores data freely — not bound to a predefined data analysis recipe. Lower audit burden than HOME (exploration is not a reproducible publication workflow). Could host:
 - Interactive maps (geographic data)
 - Free-form interactive plots (brush, zoom, filter on the fly)
-- "What if" comparisons outside a manifest
+- "What if" comparisons outside a data analysis recipe
 - Any analysis type where the user is discovering, not reproducing
 
-**Key distinction from HOME:** HOME runs a predefined recipe and documents every step for reproducibility. EXPLORATION lets the user poke at data without that contract. They are parallel, not competing — a user might explore first, then formalise a finding into a BLUEPRINT manifest that runs in HOME.
+**Key distinction from HOME:** HOME runs a predefined recipe and documents every step for reproducibility. EXPLORATION lets the user poke at data without that contract. They are parallel, not competing — a user might explore first, then formalise a finding into a BLUEPRINT data analysis recipe that runs in HOME.
 
 **Design note:** This space can live alongside HOME, BLUEPRINT, TEST_LAB, GALLERY as a fifth (or sixth) user space. It does not need to fit inside any existing space.
 

@@ -28,9 +28,9 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": None,
         "label": "Deployment Info",
     },
-    "manifest_choice": {
-        "gate_flag": "manifest_selector_visible",
-        "label": "Manifest Choice",
+    "data_analysis_recipe_choice": {
+        "gate_flag": "data_analysis_recipe_selector_visible",
+        "label": "Data analysis recipe Choice",
     },
     "filters": {
         "gate_flag": "interactivity_enabled",

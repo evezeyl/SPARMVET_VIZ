@@ -7,11 +7,11 @@ tests, CLI scripts, and server code.
 
 Session identity
 ----------------
-session_key = manifest_sha256[:12] + ":" + data_batch_hash[:12]
+session_key = data_analysis_recipe_sha256[:12] + ":" + data_batch_hash[:12]
 
-A session is uniquely identified by the combination of manifest content AND
-source data content. Same manifest + different data batch → different session.
-Same data + edited manifest → different session.
+A session is uniquely identified by the combination of data analysis recipe content AND
+source data content. Same data analysis recipe + different data batch → different session.
+Same data + edited data analysis recipe → different session.
 
 Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 ---------------------------------------------------------------------------
@@ -92,17 +92,17 @@ def make_recipe_node(
     return node
 
 
-def extract_primary_keys(manifest_raw_config: dict) -> list[str]:
+def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     """Return the union of join-key column names across all assembly recipes.
 
     A column is a primary key if it appears as `on`/`left_on`/`right_on` in any
-    `join_manifests.*.recipe[*]` step. This includes both true PKs
+    `joins.*.recipe[*]` step. This includes both true PKs
     (sample_id) and secondary/accessory keys for long-format joins (gene_id).
 
     See ADR-049 / §12g.2.
     """
     keys: set[str] = set()
-    join_defs = manifest_raw_config.get("join_manifests", {})
+    join_defs = data_analysis_recipe_raw_config.get("joins", {})
     if not isinstance(join_defs, dict):
         return []
     for join_def in join_defs.values():
@@ -150,17 +150,17 @@ class SessionManager:
         self.root.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------
-    # 22-A-2: Manifest SHA256
+    # 22-A-2: Data analysis recipe SHA256
     # ------------------------------------------------------------------
 
     @staticmethod
-    def compute_manifest_sha256(manifest_path: Path) -> str:
-        """Hash of the manifest file set: the entry file and every included file (ADR-089).
+    def compute_data_analysis_recipe_sha256(data_analysis_recipe_path: Path) -> str:
+        """Hash of the data analysis recipe file set: the entry file and every included file (ADR-089).
 
         Sorted `relative_path:sha256` lines, hashed again. Independently verifiable with sha256sum.
         """
-        from app.modules.cache_keys import load_manifest
-        return load_manifest(manifest_path).manifest_sha256
+        from app.modules.cache_keys import load_data_analysis_recipe
+        return load_data_analysis_recipe(data_analysis_recipe_path).data_analysis_recipe_sha256
 
     # ------------------------------------------------------------------
     # 22-A-3: Data batch hash
@@ -188,9 +188,9 @@ class SessionManager:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def compute_session_key(manifest_sha256: str, data_batch_hash: str) -> str:
-        """f'{manifest_sha256[:12]}:{data_batch_hash[:12]}'"""
-        return f"{manifest_sha256[:12]}:{data_batch_hash[:12]}"
+    def compute_session_key(data_analysis_recipe_sha256: str, data_batch_hash: str) -> str:
+        """f'{data_analysis_recipe_sha256[:12]}:{data_batch_hash[:12]}'"""
+        return f"{data_analysis_recipe_sha256[:12]}:{data_batch_hash[:12]}"
 
     # ------------------------------------------------------------------
     # 22-A-5: Session directory
@@ -209,8 +209,8 @@ class SessionManager:
     def write_assembly_ghost(
         self,
         session_key: str,
-        manifest_id: str,
-        manifest_sha256: str,
+        data_analysis_recipe_id: str,
+        data_analysis_recipe_sha256: str,
         data_batch_hash: str,
         source_files: dict[str, str],   # {dataset_id: path_str}
         parquet_paths: dict[str, str],   # {"assembly": ..., "contracted": ...}
@@ -218,8 +218,8 @@ class SessionManager:
         """Write assembly.json to the session directory."""
         ghost = {
             "session_key": session_key,
-            "manifest_id": manifest_id,
-            "manifest_sha256": manifest_sha256,
+            "data_analysis_recipe_id": data_analysis_recipe_id,
+            "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
             "data_batch_hash": data_batch_hash,
             "assembled_at": _now_iso(),
             "source_files": {
@@ -248,7 +248,7 @@ class SessionManager:
 
     def restore_t1t2(
         self,
-        manifest_path: Path,
+        data_analysis_recipe_path: Path,
         source_files: dict[str, Path],
     ) -> dict:
         """6-step Prepped Chef restore logic.
@@ -257,7 +257,7 @@ class SessionManager:
             {
                 "status": "fast_path" | "reassemble" | "new_session" | "missing_source",
                 "session_key": str,
-                "manifest_sha256": str,
+                "data_analysis_recipe_sha256": str,
                 "data_batch_hash": str,
                 "parquet_paths": dict,   # present on fast_path
                 "missing": list[str],    # present on missing_source
@@ -267,15 +267,15 @@ class SessionManager:
         missing = [k for k, p in source_files.items() if not Path(p).exists()]
         if missing:
             return {"status": "missing_source", "missing": missing,
-                    "session_key": "", "manifest_sha256": "", "data_batch_hash": "",
+                    "session_key": "", "data_analysis_recipe_sha256": "", "data_batch_hash": "",
                     "parquet_paths": {}}
 
         # Step 2: compute hashes
-        manifest_sha256 = self.compute_manifest_sha256(manifest_path)
+        data_analysis_recipe_sha256 = self.compute_data_analysis_recipe_sha256(data_analysis_recipe_path)
         data_batch_hash = self.compute_data_batch_hash(source_files)
-        session_key = self.compute_session_key(manifest_sha256, data_batch_hash)
+        session_key = self.compute_session_key(data_analysis_recipe_sha256, data_batch_hash)
 
-        base = {"session_key": session_key, "manifest_sha256": manifest_sha256,
+        base = {"session_key": session_key, "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
                 "data_batch_hash": data_batch_hash}
 
         # Step 3: look for existing assembly ghost
@@ -309,8 +309,8 @@ class SessionManager:
     def write_t3_ghost(
         self,
         session_key: str,
-        manifest_id: str,
-        manifest_sha256: str,
+        data_analysis_recipe_id: str,
+        data_analysis_recipe_sha256: str,
         data_batch_hash: str,
         tier_toggle: str,
         t3_recipe: list[dict] | None = None,
@@ -334,8 +334,8 @@ class SessionManager:
         ts = _timestamp()
         ghost = {
             "session_key": session_key,
-            "manifest_id": manifest_id,
-            "manifest_sha256": manifest_sha256,
+            "data_analysis_recipe_id": data_analysis_recipe_id,
+            "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
             "data_batch_hash": data_batch_hash,
             "saved_at": _now_iso(),
             "label": label,
@@ -378,7 +378,7 @@ class SessionManager:
                 "file": str(f),
                 "saved_at": data.get("saved_at", ""),
                 "label": data.get("label", ""),
-                "manifest_sha256": data.get("manifest_sha256", ""),
+                "data_analysis_recipe_sha256": data.get("data_analysis_recipe_sha256", ""),
                 "data_batch_hash": data.get("data_batch_hash", ""),
                 "tier_toggle": data.get("tier_toggle", "T2"),
                 "schema_version": data.get("schema_version", 1),
@@ -403,8 +403,8 @@ class SessionManager:
                 latest_t3 = t3_ghosts[0].get("saved_at", "") if t3_ghosts else ""
                 sessions.append({
                     "session_key": session_key,
-                    "manifest_id": ghost.get("manifest_id", ""),
-                    "manifest_sha256": ghost.get("manifest_sha256", ""),
+                    "data_analysis_recipe_id": ghost.get("data_analysis_recipe_id", ""),
+                    "data_analysis_recipe_sha256": ghost.get("data_analysis_recipe_sha256", ""),
                     "data_batch_hash": ghost.get("data_batch_hash", ""),
                     "assembled_at": ghost.get("assembled_at", ""),
                     "latest_t3_saved_at": latest_t3,

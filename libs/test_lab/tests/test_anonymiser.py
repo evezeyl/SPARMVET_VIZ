@@ -200,7 +200,7 @@ class TestOutputFiles:
         )
         assert (tmp_path / "out" / "anonymisation_config.yaml").exists()
 
-    def test_config_yaml_not_pipeline_manifest(self, metadata_tsv, tmp_path):
+    def test_config_yaml_not_pipeline_data_analysis_recipe(self, metadata_tsv, tmp_path):
         Anonymiser().anonymise(
             metadata_tsv,
             id_column="sample_id",
@@ -208,7 +208,7 @@ class TestOutputFiles:
         )
         config_path = tmp_path / "out" / "anonymisation_config.yaml"
         content = config_path.read_text()
-        assert "NOT a pipeline manifest" in content
+        assert "NOT a pipeline data analysis recipe" in content
         data = yaml.safe_load(content)
         assert "anonymisation_config" in data
         assert "id" not in data

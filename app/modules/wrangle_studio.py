@@ -117,7 +117,7 @@ class WrangleStudio:
         # Reactive list of active nodes: [{"action": "rename", "params": {"columns": ["x"], "new_name": "y"}}]
         self.logic_stack = reactive.Value([])
 
-        # Expanded Manifest Data (ADR-031 Expansion)
+        # Expanded Data Analysis Recipe Data (ADR-031 Expansion)
         self.active_raw_yaml = reactive.Value("")
         self.active_fields = reactive.Value({"input": [], "output": []})
         self.active_viz_spec = reactive.Value({})
@@ -138,11 +138,11 @@ class WrangleStudio:
         self.active_viz_id = reactive.Value(None)
         self.data_ready_signal = reactive.Value(0)
         self.active_tubemap_mermaid = reactive.Value("")
-        # Master manifest path — set on every component import so architect_active_plot
+        # Master data analysis recipe path — set on every component import so architect_active_plot
         # can load the full resolved config via ConfigManager (not just the fragment)
-        self.active_manifest_path = reactive.Value("")
+        self.active_data_analysis_recipe_path = reactive.Value("")
         # BP-PLOT-COMMIT-1: absolute path of the loaded component FILE (the !include
-        # fragment), so Save writes back to that file — not the master manifest.
+        # fragment), so Save writes back to that file — not the master data analysis recipe.
         # Empty string when the component was loaded inline (no standalone file).
         self.active_component_path = reactive.Value("")
         # Anchor parquet path set after materialization so surgical calc reacts to it
@@ -165,7 +165,7 @@ class WrangleStudio:
             ui.div(
                 ui.span("👣 Blueprint Architect Flight Deck", class_="banner-title"),
                 ui.span(
-                    "Pipeline overview — helps you build manifests.",
+                    "Pipeline overview — helps you build data analysis recipes.",
                     class_="banner-subtitle"
                 ),
                 class_="view-title-banner"
@@ -337,7 +337,7 @@ class WrangleStudio:
                 ui.nav_panel(
                     "3. YAML (Raw Source)",
                     ui.card(
-                        ui.card_header("Manifest Source Inspector"),
+                        ui.card_header("Data analysis recipe Source Inspector"),
                         ui.output_ui("yaml_source_viewer_ui")
                     )
                 ),
@@ -468,7 +468,7 @@ class WrangleStudio:
             found_logic = []
 
             # 1. Check Assemblies (Tier 2 Junctions)
-            join_defs = full_cfg.get("join_manifests", {})
+            join_defs = full_cfg.get("joins", {})
             if node_id in join_defs:
                 recipe = join_defs[node_id].get("recipe", [])
                 from transformer.data_wrangler import DataWrangler
@@ -488,7 +488,7 @@ class WrangleStudio:
                 ui_nodes.append({
                     "action": node.get("action", "unknown"),
                     "params": {k: v for k, v in node.items() if k != "action"},
-                    "comment": node.get("label", "Inherited from Manifest")
+                    "comment": node.get("label", "Inherited from Data analysis recipe")
                 })
 
             self.logic_stack.set(ui_nodes)
@@ -550,8 +550,8 @@ class WrangleStudio:
             error banner only read it. A @render.* must never write a reactive value.
             """
             viz_id = self.active_viz_id.get()
-            manifest_path = self.active_manifest_path.get()
-            if not viz_id or not manifest_path:
+            data_analysis_recipe_path = self.active_data_analysis_recipe_path.get()
+            if not viz_id or not data_analysis_recipe_path:
                 return None, ""
 
             # Prioritize surgical data (materialized anchor for this component)
@@ -564,15 +564,15 @@ class WrangleStudio:
 
             try:
                 from utils.config_loader import ConfigManager as _CM
-                if not Path(manifest_path).exists():
-                    return None, f"Manifest not found: {manifest_path}"
-                full_cfg = _CM(manifest_path).raw_config
+                if not Path(data_analysis_recipe_path).exists():
+                    return None, f"Data analysis recipe not found: {data_analysis_recipe_path}"
+                full_cfg = _CM(data_analysis_recipe_path).raw_config
 
                 # Resolve the plot spec from flat `plots:` (gallery bundles)
-                # or modern `analysis_groups:` (pipeline manifests, ADR-043).
-                render_manifest = None
+                # or modern `analysis_groups:` (pipeline data analysis recipes, ADR-043).
+                render_data_analysis_recipe = None
                 if viz_id in full_cfg.get("plots", {}):
-                    render_manifest = full_cfg
+                    render_data_analysis_recipe = full_cfg
                 else:
                     for grp_spec in full_cfg.get("analysis_groups", {}).values():
                         if not isinstance(grp_spec, dict):
@@ -581,23 +581,23 @@ class WrangleStudio:
                         if plot_entry is not None:
                             spec = (plot_entry.get("spec", plot_entry)
                                     if isinstance(plot_entry, dict) else plot_entry)
-                            render_manifest = {
+                            render_data_analysis_recipe = {
                                 "plots": {viz_id: spec},
                                 "plot_defaults": full_cfg.get("plot_defaults", {}),
                             }
                             break
 
-                if render_manifest is None:
+                if render_data_analysis_recipe is None:
                     available = list(full_cfg.get("plots", {}).keys())
                     for grp in full_cfg.get("analysis_groups", {}).values():
                         if isinstance(grp, dict):
                             available.extend(grp.get("plots", {}).keys())
                     return None, (
-                        f"Plot ID '{viz_id}' not found in manifest. "
+                        f"Plot ID '{viz_id}' not found in data analysis recipe. "
                         f"Available: {', '.join(available[:5])}"
                     )
 
-                plt = viz_factory.render(df.lazy(), render_manifest, viz_id)
+                plt = viz_factory.render(df.lazy(), render_data_analysis_recipe, viz_id)
                 return plt, ""
             except Exception as e:
                 msg = str(e)
@@ -1052,7 +1052,7 @@ class WrangleStudio:
             if description:
                 parts.append(ui.p(description, class_="bp-help-description"))
 
-            # YAML example code block (copy-paste snippet for manifest authors)
+            # YAML example code block (copy-paste snippet for data analysis recipe authors)
             if yaml_example:
                 parts.append(
                     ui.tags.pre(yaml_example, class_="bp-help-docstring bp-help-yaml-example")
@@ -1619,11 +1619,11 @@ class WrangleStudio:
 
             # BP-FWD-HINT-1: Forward propagation hint — which downstream contracts
             # would drop this field if it were added/renamed at the current tier?
-            manifest_path = self.active_manifest_path.get()
-            if (up_found or down_found) and manifest_path and chain:
+            data_analysis_recipe_path = self.active_data_analysis_recipe_path.get()
+            if (up_found or down_found) and data_analysis_recipe_path and chain:
                 try:
-                    from blueprint_arch.manifest_navigator import build_sibling_map as _bsm
-                    ctx = _bsm(manifest_path)
+                    from blueprint_arch.data_analysis_recipe_navigator import build_sibling_map as _bsm
+                    ctx = _bsm(data_analysis_recipe_path)
                     active_idx = next(
                         (i for i, n in enumerate(chain) if n.get("is_active")), None
                     )
@@ -1695,14 +1695,14 @@ class WrangleStudio:
         def handle_add_plot_wrangling():
             """Inform the user how to scaffold a pre_plot_wrangling file.
             Full scaffolding (Phase 18-D complete) will auto-create the file and
-            insert the pre_plot_wrangling: !include key into the manifest plot block.
+            insert the pre_plot_wrangling: !include key into the data analysis recipe plot block.
             """
             info = self.active_component_info.get()
             schema_id = info.get("schema_id", "this plot") if info else "this plot"
             ui.notification_show(
                 f"To add plot wrangling for '{schema_id}': create a wrangling YAML "
                 f"and add 'pre_plot_wrangling: !include <path>' to its plot block in "
-                f"the master manifest. Then reload the manifest.",
+                f"the master data analysis recipe. Then reload the data analysis recipe.",
                 type="message",
                 duration=8
             )
@@ -1800,14 +1800,14 @@ class WrangleStudio:
             """YAML escape hatch (BP-ESCAPE-1).
 
             Read-only pre block for all blueprint_enabled app features files.
-            Editable textarea + Save when manifest_edit_enabled is true.
+            Editable textarea + Save when data_analysis_recipe_edit_enabled is true.
             """
             raw = self.active_raw_yaml.get()
-            editable = bootloader is not None and bootloader.is_enabled("manifest_edit_enabled")
+            editable = bootloader is not None and bootloader.is_enabled("data_analysis_recipe_edit_enabled")
 
             if not raw:
                 return ui.div(
-                    ui.p("No manifest loaded. Select a manifest in the left panel first.",
+                    ui.p("No data analysis recipe loaded. Select a data analysis recipe in the left panel first.",
                          class_="text-muted small fst-italic"),
                     class_="bp-escape-container p-2"
                 )

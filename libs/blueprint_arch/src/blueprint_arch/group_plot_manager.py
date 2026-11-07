@@ -1,7 +1,7 @@
 """group_plot_manager.py
-Pure CRUD for analysis_groups in SPARMVET manifests.
+Pure CRUD for analysis_groups in SPARMVET data analysis recipes.
 
-Headless — no Shiny imports. All functions take a manifest_path string and
+Headless — no Shiny imports. All functions take a data_analysis_recipe_path string and
 operate directly on the YAML file, preserving !include directives via the
 _IncludeLoader/_IncludeDumper pattern (mirrors migrate_plot_specs.py).
 
@@ -70,48 +70,48 @@ def _validate_id(value: str) -> str | None:
     return None
 
 
-def _load(manifest_path: str) -> dict:
-    with open(manifest_path, encoding="utf-8") as f:
+def _load(data_analysis_recipe_path: str) -> dict:
+    with open(data_analysis_recipe_path, encoding="utf-8") as f:
         return yaml.load(f, Loader=_IncludeLoader) or {}
 
 
-def _save(manifest_path: str, raw: dict) -> None:
-    with open(manifest_path, "w", encoding="utf-8") as f:
+def _save(data_analysis_recipe_path: str, raw: dict) -> None:
+    with open(data_analysis_recipe_path, "w", encoding="utf-8") as f:
         yaml.dump(raw, f, Dumper=_IncludeDumper,
                   default_flow_style=False, sort_keys=False, allow_unicode=True)
 
 
 # ── Public API ────────────────────────────────────────────────────────────
 
-def list_groups_plots(manifest_path: str) -> dict:
-    """Return the analysis_groups dict from the manifest.
+def list_groups_plots(data_analysis_recipe_path: str) -> dict:
+    """Return the analysis_groups dict from the data analysis recipe.
 
     spec values are _IncludeTag objects when declared via !include, or dicts
     when inline. Callers handle both forms.
     """
-    return _load(manifest_path).get("analysis_groups", {})
+    return _load(data_analysis_recipe_path).get("analysis_groups", {})
 
 
-def create_group(manifest_path: str, group_id: str, label: str) -> tuple[bool, str]:
+def create_group(data_analysis_recipe_path: str, group_id: str, label: str) -> tuple[bool, str]:
     """Add a new empty group to analysis_groups. Returns (success, message)."""
     err = _validate_id(group_id)
     if err:
         return False, err
-    raw = _load(manifest_path)
+    raw = _load(data_analysis_recipe_path)
     ag = raw.setdefault("analysis_groups", {})
     if group_id in ag:
         return False, f"Group '{group_id}' already exists."
     ag[group_id] = {"label": label.strip() or group_id, "plots": {}}
-    _save(manifest_path, raw)
+    _save(data_analysis_recipe_path, raw)
     return True, f"Group '{group_id}' created."
 
 
-def delete_group(manifest_path: str, group_id: str) -> tuple[bool, str]:
+def delete_group(data_analysis_recipe_path: str, group_id: str) -> tuple[bool, str]:
     """Delete a group. Fails if it still has plots (prevents accidental loss).
 
     Returns (success, message).
     """
-    raw = _load(manifest_path)
+    raw = _load(data_analysis_recipe_path)
     ag = raw.get("analysis_groups", {})
     if group_id not in ag:
         return False, f"Group '{group_id}' not found."
@@ -119,22 +119,22 @@ def delete_group(manifest_path: str, group_id: str) -> tuple[bool, str]:
     if n:
         return False, f"Remove all {n} plot(s) from '{group_id}' before deleting the group."
     del ag[group_id]
-    _save(manifest_path, raw)
+    _save(data_analysis_recipe_path, raw)
     return True, f"Group '{group_id}' deleted."
 
 
-def create_plot(manifest_path: str, group_id: str,
+def create_plot(data_analysis_recipe_path: str, group_id: str,
                 plot_id: str, label: str) -> tuple[bool, str]:
     """Add a plot stub to a group and create its spec file.
 
-    Writes a minimal spec stub to {manifest_dir}/{manifest_stem}/plots/{plot_id}.yaml
-    and registers a !include reference in the master manifest.
+    Writes a minimal spec stub to {data_analysis_recipe_dir}/{data_analysis_recipe_stem}/plots/{plot_id}.yaml
+    and registers a !include reference in the master data analysis recipe.
     Returns (success, message).
     """
     err = _validate_id(plot_id)
     if err:
         return False, err
-    raw = _load(manifest_path)
+    raw = _load(data_analysis_recipe_path)
     ag = raw.get("analysis_groups", {})
     if group_id not in ag:
         return False, f"Group '{group_id}' not found."
@@ -143,8 +143,8 @@ def create_plot(manifest_path: str, group_id: str,
         return False, f"Plot '{plot_id}' already exists in group '{group_id}'."
 
     # Create stub spec file (only if absent — never overwrite existing work).
-    stem = Path(manifest_path).stem
-    spec_dir = Path(manifest_path).parent / stem / "plots"
+    stem = Path(data_analysis_recipe_path).stem
+    spec_dir = Path(data_analysis_recipe_path).parent / stem / "plots"
     spec_dir.mkdir(parents=True, exist_ok=True)
     spec_file = spec_dir / f"{plot_id}.yaml"
     if not spec_file.exists():
@@ -154,16 +154,16 @@ def create_plot(manifest_path: str, group_id: str,
 
     rel = f"{stem}/plots/{plot_id}.yaml"
     grp_plots[plot_id] = {"label": label.strip() or plot_id, "spec": _IncludeTag(rel)}
-    _save(manifest_path, raw)
+    _save(data_analysis_recipe_path, raw)
     return True, f"Plot '{plot_id}' created in group '{group_id}'."
 
 
-def delete_plot(manifest_path: str, group_id: str, plot_id: str) -> tuple[bool, str]:
+def delete_plot(data_analysis_recipe_path: str, group_id: str, plot_id: str) -> tuple[bool, str]:
     """Remove a plot entry from a group. Does NOT delete the spec file.
 
     Returns (success, message).
     """
-    raw = _load(manifest_path)
+    raw = _load(data_analysis_recipe_path)
     ag = raw.get("analysis_groups", {})
     if group_id not in ag:
         return False, f"Group '{group_id}' not found."
@@ -171,16 +171,16 @@ def delete_plot(manifest_path: str, group_id: str, plot_id: str) -> tuple[bool, 
     if plot_id not in plots:
         return False, f"Plot '{plot_id}' not found in group '{group_id}'."
     del plots[plot_id]
-    _save(manifest_path, raw)
+    _save(data_analysis_recipe_path, raw)
     return True, f"Plot '{plot_id}' removed from group '{group_id}'."
 
 
-def assign_plot(manifest_path: str, plot_id: str,
+def assign_plot(data_analysis_recipe_path: str, plot_id: str,
                 from_group: str, to_group: str) -> tuple[bool, str]:
     """Move a plot from one group to another. Returns (success, message)."""
     if from_group == to_group:
         return False, "Source and target group are the same."
-    raw = _load(manifest_path)
+    raw = _load(data_analysis_recipe_path)
     ag = raw.get("analysis_groups", {})
     if from_group not in ag:
         return False, f"Source group '{from_group}' not found."
@@ -193,5 +193,5 @@ def assign_plot(manifest_path: str, plot_id: str,
     if plot_id in tgt:
         return False, f"Plot '{plot_id}' already exists in group '{to_group}'."
     tgt[plot_id] = src.pop(plot_id)
-    _save(manifest_path, raw)
+    _save(data_analysis_recipe_path, raw)
     return True, f"Plot '{plot_id}' moved from '{from_group}' to '{to_group}'."

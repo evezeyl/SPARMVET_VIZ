@@ -184,10 +184,10 @@ def define_server(input, output, session, *,
             file_path = recipe_entry["path"]
             with open(file_path, "r") as f:
                 raw_yaml = f.read()
-                manifest = yaml.safe_load(raw_yaml)
+                data_analysis_recipe = yaml.safe_load(raw_yaml)
 
             # Extract the wrangling block as the YAML fragment for T3.
-            wrangling_raw = manifest.get("wrangling", {})
+            wrangling_raw = data_analysis_recipe.get("wrangling", {})
             yaml_fragment = yaml.dump(
                 {"wrangling": wrangling_raw}, default_flow_style=False, allow_unicode=True,
             )
@@ -289,7 +289,7 @@ def define_server(input, output, session, *,
             return "Select a recipe"
         path_str = meta.get("path")
         if not path_str:
-            return "Manifest path not found"
+            return "Data analysis recipe path not found"
 
         if Path(path_str).exists():
             with open(path_str, "r") as f:

@@ -1,6 +1,6 @@
 # Repository Audit Scripts
 
-SPARMVET_VIZ ships a set of standalone audit scripts in `scripts/` that verify repository hygiene, ADR compliance, manifest integrity, and documentation consistency. They are designed for three uses:
+SPARMVET_VIZ ships a set of standalone audit scripts in `scripts/` that verify repository hygiene, ADR compliance, data analysis recipe integrity, and documentation consistency. They are designed for three uses:
 
 1. **Automated cloud routines** — run weekly by [Claude Code Routines](https://claude.ai/code/routines) without manual intervention.
 2. **Pre-merge gates** — run locally or in CI before opening a PR to catch violations early.
@@ -16,7 +16,7 @@ All scripts follow the same interface: `--project-root` (auto-detected) and `--o
 DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_cross_lib.py          --output .claude/logs/audits/audit_cross_lib_${DATE}.md
 .venv/bin/python scripts/audit_deps_verify.py        --output .claude/logs/audits/audit_deps_${DATE}.md
-.venv/bin/python scripts/audit_manifest_integrity.py --output .claude/logs/audits/audit_manifest_${DATE}.md
+.venv/bin/python scripts/audit_data_analysis_recipe_integrity.py --output .claude/logs/audits/audit_data_analysis_recipe_${DATE}.md
 .venv/bin/python scripts/audit_task_drift.py         --output .claude/logs/audits/audit_task_drift_${DATE}.md
 .venv/bin/python scripts/audit_template_flags.py     --output .claude/logs/audits/audit_templates_${DATE}.md
 .venv/bin/python scripts/audit_phase_order.py        --output .claude/logs/audits/audit_phase_order_${DATE}.md
@@ -103,21 +103,21 @@ See `workspace_standard.md §5-B` for the format for YAML and Markdown files.
 
 ---
 
-### `audit_manifest_integrity.py` — Manifest Structure Integrity
+### `audit_data_analysis_recipe_integrity.py` — Data analysis recipe Structure Integrity
 
-Runs every pipeline manifest in `config/manifests/pipelines/` through `debug_assembler.py`. A manifest passes if the assembler exits `0`. Assembler scratch artifacts are written to `tmpAI/audit_manifest_integrity/` (agent scratch, not for user review).
+Runs every pipeline data analysis recipe in `config/data_analysis_recipes/pipelines/` through `debug_assembler.py`. A data analysis recipe passes if the assembler exits `0`. Assembler scratch artifacts are written to `tmpAI/audit_data_analysis_recipe_integrity/` (agent scratch, not for user review).
 
 ```bash
-# Check all manifests
-.venv/bin/python scripts/audit_manifest_integrity.py
+# Check all data analysis recipes
+.venv/bin/python scripts/audit_data_analysis_recipe_integrity.py
 
-# Check a single manifest
-.venv/bin/python scripts/audit_manifest_integrity.py \
-    --manifest config/manifests/pipelines/my_manifest.yaml
+# Check a single data analysis recipe
+.venv/bin/python scripts/audit_data_analysis_recipe_integrity.py \
+    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_data_analysis_recipe.yaml
 
 # Write report
-.venv/bin/python scripts/audit_manifest_integrity.py \
-    --output .claude/logs/audits/audit_manifest_2026-05-12.md
+.venv/bin/python scripts/audit_data_analysis_recipe_integrity.py \
+    --output .claude/logs/audits/audit_data_analysis_recipe_2026-05-12.md
 ```
 
 **What it catches:**
@@ -172,7 +172,7 @@ Runs `AppFeaturesValidator` and `SidebarValidator` in `--strict` mode (warnings 
 **What it catches:**
 
 - Missing flags (template missing a flag the matrix declares)
-- Wrong cascade: parent flag `false` but child flag `true` (soft: warning; fatal for `blueprint_enabled` / `manifest_edit_enabled` / `blueprint_agent_enabled` — see ADR-077)
+- Wrong cascade: parent flag `false` but child flag `true` (soft: warning; fatal for `blueprint_enabled` / `data_analysis_recipe_edit_enabled` / `blueprint_agent_enabled` — see ADR-077)
 - Sidebar slot misconfigurations (invalid panel types, missing workspace declarations)
 
 **Fatal vs soft violations:**
@@ -359,13 +359,13 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=qa .venv/bin/python -m pytest app/tests/test_
 
 ## For Contributors
 
-If you are adding a new domain library, wrangling action, manifest, or app features file, run the relevant subset of audits before opening a PR:
+If you are adding a new domain library, wrangling action, data analysis recipe, or app features file, run the relevant subset of audits before opening a PR:
 
 | Change | Recommended audits |
 |---|---|
 | New `libs/<name>/` | `audit_cross_lib.py`, `audit_deps_verify.py` |
-| New `@register_action` | `audit_deps_verify.py`, `audit_manifest_integrity.py` |
-| New pipeline manifest | `audit_manifest_integrity.py` |
+| New `@register_action` | `audit_deps_verify.py`, `audit_data_analysis_recipe_integrity.py` |
+| New pipeline data analysis recipe | `audit_data_analysis_recipe_integrity.py` |
 | New / modified app features file | `audit_template_flags.py` |
 | New phase in the roadmap | `audit_phase_order.py` |
 | Closing a major phase | `audit_changelog_sync.py` |
@@ -393,7 +393,7 @@ These scripts back the cloud-hosted audit routines managed at [claude.ai/code/ro
 |---|---|---|
 | `audit_deps_verify.py` | Weekly | Sundays 23:00 |
 | `audit_cross_lib.py` | Weekly | Sundays 23:00 |
-| `audit_manifest_integrity.py` | Weekly | Wednesdays 22:00 |
+| `audit_data_analysis_recipe_integrity.py` | Weekly | Wednesdays 22:00 |
 | `audit_task_drift.py` | Weekly | Fridays 20:00 |
 | `audit_template_flags.py` | Weekly | Thursdays 21:00 |
 | `audit_phase_order.py` | Weekly | Thursdays 21:00 |

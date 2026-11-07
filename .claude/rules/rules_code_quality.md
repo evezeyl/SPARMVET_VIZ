@@ -69,7 +69,7 @@ for schema_id, schema in schemas.items():
 
 | Type | Example | When to write |
 |---|---|---|
-| Constraint note | `# 'on' is a YAML reserved word — must quote in manifests` | Non-obvious external constraint |
+| Constraint note | `# 'on' is a YAML reserved word — must quote in data_analysis_recipes` | Non-obvious external constraint |
 | ADR reference | `# ADR-045: renders must never call reactive.Value.set()` | Rule that a reader might be tempted to violate |
 | Gotcha | `# Float64 → Int64 → String: direct cast gives "2022.0"` | Behaviour that surprises developers |
 | WHY block | `# WHY: we write to tmpAI/ not tmp/ — tmp/ is reserved for @verify outputs` | Design decision not obvious from code |
@@ -106,8 +106,8 @@ transformations: window aggregations, cumulative counts, date extraction,
 z-scores, percentiles, and interpolation.
 
 Consumed by: DataAssembler (data_assembler.py) via the action registry.
-App features gate: none — all app features files can trigger these via manifests.
-If deleted: manifests using any of these action names will silently skip those steps.
+App features gate: none — all app features files can trigger these via data analysis recipes.
+If deleted: data analysis recipes using any of these action names will silently skip those steps.
 """
 ```
 
@@ -132,7 +132,7 @@ def classify_update(current: str, latest: str) -> str:
 
 Every `@register_action` and `@register_plot_component` function gets a docstring
 explaining the transformation in domain terms — what a scientist would need to know
-to use it in a manifest:
+to use it in a data analysis recipe:
 
 ```python
 @register_action("cast")
@@ -142,7 +142,7 @@ def cast(lf: pl.LazyFrame, spec: dict) -> pl.LazyFrame:
     Use when a TSV-inferred numeric column (e.g. Year as Float64) needs to be
     a String for discrete plot axes, or when a join key has mismatched types.
     Two-step cast required for Float64 → String: cast to Int64 first to avoid
-    '2022.0' output (see rules_manifest_structure.md §3-B).
+    '2022.0' output (see rules_data_analysis_recipe_structure.md §3-B).
 
     spec keys: columns (list[str]), dtype (str — Polars type name e.g. 'String', 'Int64')
     """

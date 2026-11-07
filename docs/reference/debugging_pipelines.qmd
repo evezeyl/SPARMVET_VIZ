@@ -46,7 +46,7 @@ Pattern detection uses boundary-aware regex (`suggest_regex` in `libs/utils/src/
 ### Many-to-Many Detection
 If a single reference ID matches multiple targets, `detect_many_to_many(results)` returns those cases for review.
 
-**Action Required**: You must refine your `wrangling` manifest with a more specific `regex_extract` or `filter` to narrow down the target to a 1:1 match.
+**Action Required**: You must refine your `wrangling` data analysis recipe with a more specific `regex_extract` or `filter` to narrow down the target to a 1:1 match.
 
 ## 3. Materializing Proof
 
@@ -57,4 +57,4 @@ import polars as pl
 print(pl.read_csv("tmp/reconciler/full_audit_map.tsv", separator='\t').head(10))
 ```
 
-HALT for `@verify` before committing any manifest updates based on these audit files.
+HALT for `@verify` before committing any data analysis recipe updates based on these audit files.

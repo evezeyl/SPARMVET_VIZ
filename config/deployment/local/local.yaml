@@ -9,8 +9,8 @@ locations:
   # Location 1: Raw ingestion data
   raw_data: "assets/test_data/"
   
-  # Location 2: Pipeline Manifest definitions
-  manifests: "config/manifests/pipelines/"
+  # Location 2: Pipeline Data Analysis Recipe definitions
+  data_analysis_recipes: "config/data_analysis_recipes/pipelines/"
   
   # Location 3: Curated Anchors & Views (Tiers 1 & 2 Parquet)
   cache: "tmp/UI_TEST/parquet_data/"

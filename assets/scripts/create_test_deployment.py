@@ -14,13 +14,13 @@ config/deployment/local/ for use as a dev fallback (Deployment Resolution Level 
 
 Usage:
   ./.venv/bin/python assets/scripts/create_test_deployment.py \\
-      --manifest_id 2_test_data_ST22_dummy \\
+      --data_analysis_recipe_id 2_test_data_ST22_dummy \\
       --deployment_file my_test_run.yaml \\
       --description "AMR ST22 test run for local dev"
 
   # Optional overrides (defaults to standard test data paths):
   ./.venv/bin/python assets/scripts/create_test_deployment.py \\
-      --manifest_id 2_test_data_ST22_dummy \\
+      --data_analysis_recipe_id 2_test_data_ST22_dummy \\
       --deployment_file custom.yaml \\
       --description "Custom test" \\
       --project_root /data/my_pipeline \\
@@ -39,8 +39,8 @@ def main():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--manifest_id", required=True,
-                        help="ID of the manifest to lock at startup (e.g., 2_test_data_ST22_dummy).")
+    parser.add_argument("--data_analysis_recipe_id", required=True,
+                        help="ID of the data analysis recipe to lock at startup (e.g., 2_test_data_ST22_dummy).")
     parser.add_argument("--deployment_file", required=True,
                         help="Output filename (e.g., local_test.yaml). Written to config/deployment/local/.")
     parser.add_argument("--description", required=True,
@@ -69,12 +69,12 @@ def main():
         "project_root": args.project_root,
         "locations": {
             "raw_data":     "assets/test_data/",
-            "manifests":    "config/manifests/pipelines/",
+            "data_analysis_recipes":    "config/data_analysis_recipes/pipelines/",
             "cache": "tmp/UI_TEST/parquet_data/",
             "user_data": "tmp/UI_TEST/user/",
             "gallery":      "assets/gallery_data/",
         },
-        "default_manifest": f"{args.manifest_id}.yaml",
+        "default_data_analysis_recipe": f"{args.data_analysis_recipe_id}.yaml",
         "default_app_features": args.app_features,
         "runtime": {
             "python_interpreter": "./.venv/bin/python",
@@ -85,7 +85,7 @@ def main():
         yaml.dump(deployment, f, sort_keys=False, default_flow_style=False)
 
     print(f"Deployment written: {out_path}")
-    print(f"  manifest  : {args.manifest_id}")
+    print(f"  data analysis recipe  : {args.data_analysis_recipe_id}")
     print(f"  app features   : {args.app_features}")
     print(f"  project   : {args.project_root}")
     print()

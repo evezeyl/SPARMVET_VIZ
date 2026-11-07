@@ -21,9 +21,9 @@ The space identities make the split explicit:
 | **BLUEPRINT** | "BLUEPRINT users produce and document pipelines." |
 
 The developer's job is everything that gets you from *messy files + a scientific goal* to a
-*valid, shareable manifest that HOME can run*. HOME.md states the spine:
+*valid, shareable data analysis recipe that HOME can run*. HOME.md states the spine:
 
-> "BLUEPRINT builds the manifests HOME runs, TEST_LAB prepares the data HOME receives,
+> "BLUEPRINT builds the data analysis recipes HOME runs, TEST_LAB prepares the data HOME receives,
 > GALLERY provides the inspiration BLUEPRINT uses."
 
 This doc does **not** introduce a new locked pipeline. It documents how the existing,
@@ -60,11 +60,11 @@ stage their data and goal require.
    Prepare data           Scaffold             Build pipeline           Run
    (TEST_LAB)             (TEST_LAB)           (BLUEPRINT)              (HOME)
    ─────────────          ────────────         ──────────────           ──────────
-   Reformat               Manifest             Open boilerplate         Load manifest
+   Reformat               Data Analysis Recipe             Open boilerplate         Load data analysis recipe
    Reconcile IDs    ───►  Scaffolding    ───►  Add wrangling/joins ───► Run analysis
    Anonymise              (boilerplate         Add plots/groups         Filter + audit
-   Synthesise             manifest ZIP)        Preview / validate       Export (provenance)
-                                               Save manifest
+   Synthesise             data analysis recipe ZIP)        Preview / validate       Export (provenance)
+                                               Save data analysis recipe
                                                     ▲
                                                     │ inspiration (copy YAML)
                                                ┌────┴─────┐
@@ -83,8 +83,8 @@ stage their data and goal require.
 
 ### Stage 2 — Scaffold (TEST_LAB)
 
-**Manifest Scaffolding** turns prepared files + reconciliation recipes into a **boilerplate
-manifest ZIP** (basename-mirroring structure). It generates *boilerplate only* — structure,
+**Data analysis recipe Scaffolding** turns prepared files + reconciliation recipes into a **boilerplate
+data analysis recipe ZIP** (basename-mirroring structure). It generates *boilerplate only* — structure,
 inferred types, PK hints, and ID-cleaning recipes baked into `tier1`. Analysis groups, plots,
 joins-strategy, and `final_contract` are **the developer's job in BLUEPRINT** (`rules_test_lab.md §4`).
 
@@ -96,7 +96,7 @@ GALLERY feeds this stage as **inspiration** — browse a recipe, copy its YAML, 
 
 ### Stage 4 — Run (HOME)
 
-The finished manifest is selected in HOME and run for publication-ready, audit-tracked output.
+The finished data analysis recipe is selected in HOME and run for publication-ready, audit-tracked output.
 This is the consumer end — out of scope for the producer workflow except as the destination.
 
 ---
@@ -110,9 +110,9 @@ them (and own the consequences).
 | If you want to… | Recommended precursor | Why (the logical dependency) |
 |---|---|---|
 | **Anonymise multiple related files** | Reconcile IDs first | Anonymisation must map the *same original ID to the same anon ID across files* so joins stay valid. Reconciliation verifies the IDs actually align before they are replaced. (Single-file anonymisation needs no precursor.) |
-| **Scaffold a manifest with joins** | Reconcile IDs first | The scaffolder bakes verified join keys + ID-cleaning recipes into `tier1`. Without reconciliation it has no recipe to bake and no verified key. |
+| **Scaffold a data analysis recipe with joins** | Reconcile IDs first | The scaffolder bakes verified join keys + ID-cleaning recipes into `tier1`. Without reconciliation it has no recipe to bake and no verified key. |
 | **Reconcile messy-format files** | Reformat first | Reconciliation needs clean tabular TSVs; an XLSX or odd-delimiter CSV is reformatted first. |
-| **Test a manifest you are building** | Synthesise data | Stress-test data exercises the pipeline's error handling before real data is loaded. |
+| **Test a data analysis recipe you are building** | Synthesise data | Stress-test data exercises the pipeline's error handling before real data is loaded. |
 
 Reconciliation is therefore *frequently the first optional step* — but it is never mandatory,
 and a developer with already-clean, already-aligned data skips it entirely.
@@ -124,7 +124,7 @@ and a developer with already-clean, already-aligned data skips it entirely.
 There is **no in-app "Send to" handoff and no automated injection between tools.** Modules link
 the simple, independent way:
 
-1. A tool runs and **exports** its result (download — TSV, recipe YAML, manifest ZIP, etc.).
+1. A tool runs and **exports** its result (download — TSV, recipe YAML, data analysis recipe ZIP, etc.).
 2. The user **chooses** that file as the input to the next tool, exactly as any standalone
    module accepts a file.
 
@@ -134,7 +134,7 @@ used. The "edit gap" is automatic — the exported file is a concrete artifact t
 inspect or edit before feeding it onward; nothing auto-runs.
 
 **One in-space convenience exists (optional, within TEST_LAB only):** if ID Reconciliation has
-been run in the current session, the Manifest Scaffolding tool offers a checkbox to bake those
+been run in the current session, the Data analysis recipe Scaffolding tool offers a checkbox to bake those
 reconciliation steps into the generated `tier1:` wrangling. Scaffolding still works fully
 standalone — you choose its data files yourself — so the reconciliation carry-over is pure
 opt-in. This is the *only* cross-tool wiring, it lives entirely within one space (one
@@ -169,9 +169,9 @@ app features combination.
 
 | Handoff | How it works |
 |---|---|
-| TEST_LAB Scaffolding → BLUEPRINT | Export the boilerplate manifest ZIP; open it in BLUEPRINT (if enabled) via BLUEPRINT's normal manifest load. |
+| TEST_LAB Scaffolding → BLUEPRINT | Export the boilerplate data analysis recipe ZIP; open it in BLUEPRINT (if enabled) via BLUEPRINT's normal data analysis recipe load. |
 | GALLERY → BLUEPRINT | Copy the recipe YAML; paste/open it in BLUEPRINT (if enabled). |
-| BLUEPRINT → HOME | Save the manifest to disk; HOME's manifest selector picks it up. |
+| BLUEPRINT → HOME | Save the data analysis recipe to disk; HOME's data analysis recipe selector picks it up. |
 | TEST_LAB Anonymiser → BLUEPRINT (de-anonymise) | Join the anonymised data with the mapping TSV in BLUEPRINT (recipe printed in the Anonymiser output). |
 
 Each row is just "export here, choose there." No control reaches across a space boundary.
@@ -192,7 +192,7 @@ Each row is just "export here, choose there." No control reaches across a space 
                           │       │       │                                                │ │
                           │       │       └────────► Anonymiser ──► anon TSV + mapping ───┐│ │
                           │       ▼                                                       ││ │
-                          │   Manifest Scaffolding ──► boilerplate manifest ZIP ────────┐ ││ │
+                          │   Data analysis recipe Scaffolding ──► boilerplate data analysis recipe ZIP ────────┐ ││ │
                           │                                                             │ ││ │
                           └─────────────────────────────────────────────────────────── │ ││ ┘
                                                                                         │ ││
@@ -203,7 +203,7 @@ Each row is just "export here, choose there." No control reaches across a space 
                                                                           │  build / preview │
                                                                           │  validate / save │
                                                                           └─────────┬────────┘
-                                                                                    │ save manifest
+                                                                                    │ save data analysis recipe
                                                                                     ▼
                                                                           ┌──────────────────┐
                                                                           │       HOME       │

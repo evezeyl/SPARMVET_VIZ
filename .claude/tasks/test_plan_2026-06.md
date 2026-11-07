@@ -126,9 +126,9 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 
 - [~] PRE-01 — App boots clean (no Python traceback); browser console had 1 real bug + 2 noise items, 1 fixed. → [20260810_testing_part1.md#pre-01](20260810_testing_part1.md#pre-01-console-errors-on-first-launch) — RETEST ↻
 - [ ] PRE-02 — Browser loads at :8000 with no red error banner on first paint.
-- [ ] PRE-03 — Default manifest **ST22 Dummy Dataset** loads; center theater shows analysis-group tabs (Quality Control · Curiosity · Results · Cat 🐱).
+- [ ] PRE-03 — Default data analysis recipe **ST22 Dummy Dataset** loads; center theater shows analysis-group tabs (Quality Control · Curiosity · Results · Cat 🐱).
 - [ ] PRE-04 — Relaunch pointing at `config/ui/templates/qa_template.yaml` → terminal shows `App features: config/ui/templates/qa_template.yaml`; app still boots clean. (qa's flags: everything on, `ghost_save: false`.)
-- [ ] PRE-05 — Switch manifest in the **Manifest Choice** sidebar dropdown to `2_test_data_ST22_dummy` → tabs change to AMR Profiling Insight · Plasmid Dynamics; plots reload, no traceback.
+- [ ] PRE-05 — Switch data analysis recipe in the **Data analysis recipe Choice** sidebar dropdown to `2_test_data_ST22_dummy` → tabs change to AMR Profiling Insight · Plasmid Dynamics; plots reload, no traceback.
 
 ---
 
@@ -184,7 +184,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ### 3a. Space loads
 - [ ] LAB-01 — Test Lab nav pill present (developer/qa); clicking it switches the center to the TEST_LAB toolbox; left sidebar shows the tool panels (one accordion per tool).
-- [ ] LAB-02 — Left sidebar lists the tool categories: Reformatter, ID Reconciliation, Manifest Scaffolding, Anonymiser, AquaSynthesizer (synthetic data). Note any that are missing/greyed.
+- [ ] LAB-02 — Left sidebar lists the tool categories: Reformatter, ID Reconciliation, Data Analysis Recipe Scaffolding, Anonymiser, AquaSynthesizer (synthetic data). Note any that are missing/greyed.
 - [ ] LAB-03 — Opening a tool panel and closing it resets it to empty (stateless). Open tool A, then tool B → A's inputs are not carried into B.
 
 ### 3b. Reformatter (XLSX/CSV → TSV)
@@ -201,11 +201,11 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 - [ ] LAB-12 — Many-to-many ID collisions are flagged (not silently joined).
 - [ ] LAB-13 — Boundary check: composite/multi-key reconciliation is **out of scope** here — confirm the tool only offers single-key (no composite-key UI). *(That belongs in BLUEPRINT Joint Designer.)*
 
-### 3d. Manifest Scaffolding (boilerplate ZIP)
-- [ ] LAB-14 — Upload one or more data files; tool infers structure and produces a **boilerplate manifest ZIP** (basename-mirroring dirs).
-- [ ] LAB-15 — Generated manifest has: `id`/`info`, `data_schemas` with inferred `input_fields` types, empty `tier1: []`/`tier2: []` stubs, `join_manifests: {}` stub, PK-candidate **hints as comments** (e.g. `# Candidate PK: sample_id (100% unique)`).
-- [ ] LAB-16 — Generated manifest does **NOT** invent `analysis_groups`, plot specs, or `final_contract` (those are BLUEPRINT's job). Confirm they're absent.
-- [ ] LAB-17 — The generated boilerplate **loads cleanly** (no ConfigManager error) when selected as a manifest in HOME, or via the import path. *(This is the key correctness gate — old Bootstrapper wrote `plotting:` instead of `analysis_groups:`; confirm that's fixed.)*
+### 3d. Data analysis recipe Scaffolding (boilerplate ZIP)
+- [ ] LAB-14 — Upload one or more data files; tool infers structure and produces a **boilerplate data analysis recipe ZIP** (basename-mirroring dirs).
+- [ ] LAB-15 — Generated data analysis recipe has: `id`/`info`, `data_schemas` with inferred `input_fields` types, empty `tier1: []`/`tier2: []` stubs, `joins: {}` stub, PK-candidate **hints as comments** (e.g. `# Candidate PK: sample_id (100% unique)`).
+- [ ] LAB-16 — Generated data analysis recipe does **NOT** invent `analysis_groups`, plot specs, or `final_contract` (those are BLUEPRINT's job). Confirm they're absent.
+- [ ] LAB-17 — The generated boilerplate **loads cleanly** (no ConfigManager error) when selected as a data analysis recipe in HOME, or via the import path. *(This is the key correctness gate — old Bootstrapper wrote `plotting:` instead of `analysis_groups:`; confirm that's fixed.)*
 - [ ] LAB-18 — If ID Reconciliation was run this session, Scaffolding offers an **opt-in checkbox** to bake those reconciliation steps into `tier1:`. With it off, scaffolding still works fully standalone.
 
 ### 3e. Anonymiser
@@ -215,10 +215,10 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ### 3f. AquaSynthesizer (synthetic data)
 - [ ] LAB-22 — Generate **demo** synthetic data from a schema → downloadable TSV + a `synthetic_data_config` YAML.
-- [ ] LAB-23 — The config YAML's first two lines are the mandatory header (`# NOT a pipeline manifest...`) and root key `synthetic_data_config:`. *(Firewall — it must not be mistaken for a manifest.)*
+- [ ] LAB-23 — The config YAML's first two lines are the mandatory header (`# NOT a pipeline data_analysis_recipe...`) and root key `synthetic_data_config:`. *(Firewall — it must not be mistaken for a data analysis recipe.)*
 - [ ] LAB-24 — **stress_test** mode injects errors (nulls/dupes/edge cases) per the config.
 - [ ] LAB-25 — Save a **named scenario** → reload it → all fields match (round-trip).
-- [ ] LAB-26 — Loading a synthetic config via the normal manifest path is **rejected/ignored** (not processed by the data engine).
+- [ ] LAB-26 — Loading a synthetic config via the normal data analysis recipe path is **rejected/ignored** (not processed by the data engine).
 
 ### 3g. TEST_LAB audit & isolation
 - [ ] LAB-27 — File-generation operations log what was produced (filename, schema, row count) to the notification/audit log.
@@ -226,11 +226,11 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ---
 
-## 4. BLUEPRINT (BLU) — visual manifest IDE (mostly new since Phase 26)
+## 4. BLUEPRINT (BLU) — visual data analysis recipe IDE (mostly new since Phase 26)
 
-> Config file: `developer_template.yaml` or `qa_template.yaml` (full edit mode); `project-independent_template.yaml` gives the non-edit subset (`manifest_edit_enabled: false`). Click **Blueprint Architect** nav pill.
+> Config file: `developer_template.yaml` or `qa_template.yaml` (full edit mode); `project-independent_template.yaml` gives the non-edit subset (`data_analysis_recipe_edit_enabled: false`). Click **Blueprint Architect** nav pill.
 > Design: `.claude/design/spaces/BLUEPRINT.md`. Feature lock: ADR-082. Rules: `rules_ui_dashboard.md §7`.
-> **Reality-check note:** BLUEPRINT had known build-gaps as of 2026-05-20 (add-node primitive UI, component/plot forms, group/meta/new-manifest/validate were YAML-only); several closed in Phase 32–33. Where a feature is simply **absent**, mark `[b]` and note it — discovering the doc/reality gap is itself a useful result, not a failure.
+> **Reality-check note:** BLUEPRINT had known build-gaps as of 2026-05-20 (add-node primitive UI, component/plot forms, group/meta/new-data_analysis_recipe/validate were YAML-only); several closed in Phase 32–33. Where a feature is simply **absent**, mark `[b]` and note it — discovering the doc/reality gap is itself a useful result, not a failure.
 
 ### 4a. Navigation layer (TubeMap + Lineage + contract viewer)
 - [ ] BLU-01 — Center switches to the **TubeMap** DAG; nodes render (Cytoscape, vendored — works offline).
@@ -261,17 +261,17 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 - [ ] BLU-20 — Preview uses real orchestrator execution (values are real, not placeholder).
 
 ### 4e. Helpers layer (escape hatch · undo · branch · AI agent)
-- [ ] BLU-21 — **YAML escape hatch** visible. For `developer_template.yaml`/`qa_template.yaml` it's an **editable** textarea (`manifest_edit_enabled: true`); for other config files it's **read-only**. Confirm the right mode for the file you launched.
+- [ ] BLU-21 — **YAML escape hatch** visible. For `developer_template.yaml`/`qa_template.yaml` it's an **editable** textarea (`data_analysis_recipe_edit_enabled: true`); for other config files it's **read-only**. Confirm the right mode for the file you launched.
 - [ ] BLU-22 — Editing YAML in the escape hatch and saving emits a change the rest of the IDE reflects (and, per design, a `developer_raw_yaml` node).
 - [ ] BLU-23 — **Undo**: make several node changes → undo steps back through them (up to 20). Redo if present.
-- [ ] BLU-24 — **Branch** (lineage bifurcation at a node): split a lineage so upstream stays shared and the child diverges as a new `!include` fragment. Confirm it does **not** duplicate the whole manifest. *(Canonical example: Summary vs Summary_quality.)*
+- [ ] BLU-24 — **Branch** (lineage bifurcation at a node): split a lineage so upstream stays shared and the child diverges as a new `!include` fragment. Confirm it does **not** duplicate the whole data analysis recipe. *(Canonical example: Summary vs Summary_quality.)*
 - [ ] BLU-25 — **AI agent** chat panel present (developer/qa). Send a plain-language request ("add a step to filter identity ≥ 90"). It responds; it **advises, never blocks**. Note backend status (it uses `claude_cli`; if not authed it should degrade gracefully to a disabled banner, not crash).
-- [ ] BLU-26 — Agent respects scope: it proposes manifest structure / actions that actually exist in the loaded libraries (doesn't hallucinate unregistered actions).
+- [ ] BLU-26 — Agent respects scope: it proposes data analysis recipe structure / actions that actually exist in the loaded libraries (doesn't hallucinate unregistered actions).
 
 ### 4f. Save / load
-- [ ] BLU-27 — Save the manifest → writes YAML to disk and/or downloads. The saved file is valid and reloads.
-- [ ] BLU-28 — A manifest saved from BLUEPRINT can be selected and **run in HOME** end-to-end.
-- [ ] BLU-30 **NEW (from issue [#9](https://github.com/evezeyl/SPARMVET_VIZ/issues/9), ADR-089)** — Edit a file of the manifest in BLUEPRINT (an included wrangling or recipe fragment), save, then reload Home: the new rows appear **without restarting the server** (Tier 1 parquet rebuilt when the change is in Tier 1; only Tier 2 recomputed when the change is in a Tier 2 step). Test while testing BLUEPRINT, together with BLU-09 and BLU-28. *(The cache rules are also covered by `app/tests/test_cache_chain.py`; the BLUEPRINT click-through is still yours.)*
+- [ ] BLU-27 — Save the data analysis recipe → writes YAML to disk and/or downloads. The saved file is valid and reloads.
+- [ ] BLU-28 — A data analysis recipe saved from BLUEPRINT can be selected and **run in HOME** end-to-end.
+- [ ] BLU-30 **NEW (from issue [#9](https://github.com/evezeyl/SPARMVET_VIZ/issues/9), ADR-089)** — Edit a file of the data analysis recipe in BLUEPRINT (an included wrangling or recipe fragment), save, then reload Home: the new rows appear **without restarting the server** (Tier 1 parquet rebuilt when the change is in Tier 1; only Tier 2 recomputed when the change is in a Tier 2 step). Test while testing BLUEPRINT, together with BLU-09 and BLU-28. *(The cache rules are also covered by `app/tests/test_cache_chain.py`; the BLUEPRINT click-through is still yours.)*
 - [ ] BLU-29 `[?]` — Join-component save: confirm the `on:` key is correctly quoted in saved YAML (known serialization risk — `on` is a YAML boolean trap). If a saved join reloads with `True` as a key, that's a `[!]`.
 
 ---
@@ -280,16 +280,16 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 > Config file: `developer_template.yaml`, `qa_template.yaml`, `project-independent_template.yaml`, or `pipeline-exploration-advanced_template.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
 > Most of this passed at Phase 26 but on a stale baseline — re-verify the core, then test the genuinely-new palette/cascade/apply-UX items (marked **NEW**).
-> EVE: user facing template for testing is `developer_template.yaml`, manifest choice is 1_test_data_ST22_dummy
+> EVE: user facing template for testing is `developer_template.yaml`, data analysis recipe choice is 1_test_data_ST22_dummy
 
 ### 5a. Tabs, plots, preview (core)
-- [x] HOM-01 — Group tabs = manifest `analysis_groups` (Quality Control · Curiosity · Results · Cat 🐱). No hardcoded tabs.
-  > EVE: ok - tested by changing manifest and observing changes in analyses groups
+- [x] HOM-01 — Group tabs = data analysis recipe `analysis_groups` (Quality Control · Curiosity · Results · Cat 🐱). No hardcoded tabs.
+  > EVE: ok - tested by changing data analysis recipe and observing changes in analyses groups
 - [x] HOM-02 — Each tab's plots render as static images; multi-plot groups expose plot **sub-tabs**.
   > EVE: ok
 - [x] HOM-03 — **Data Preview** accordion below the plot shows ~100 rows of the active plot's dataset; updates on sub-tab switch.
   > EVE: ok
-- [x] HOM-50 — The AMR heatmap (Results, `amr_heatmap`) draws, coloured by `predicted_phenotype`. Eve 2026-11-05. [#13](https://github.com/evezeyl/SPARMVET_VIZ/issues/13). *(Automated: all plots of the test manifests render, `app/tests/test_render_every_plot.py`.)*
+- [x] HOM-50 — The AMR heatmap (Results, `amr_heatmap`) draws, coloured by `predicted_phenotype`. Eve 2026-11-05. [#13](https://github.com/evezeyl/SPARMVET_VIZ/issues/13). *(Automated: all plots of the test data analysis recipes render, `app/tests/test_render_every_plot.py`.)*
 - [x] HOM-04 — (superseded, 2026-11-05) The old header strip (dataset label + tier radios) no longer exists: it is now the two-row strip of HOM-45 (ADR-086). The follow-ups it raised are HOM-40 to HOM-43, all done. → [20260810_testing_part1.md#hom-04-follow-ups](20260810_testing_part1.md#hom-04-follow-ups-tier-toggle--audit-scope-2026-08-10).
 - [x] HOM-37 — "All rows" toggle in Data Preview blanks the table entirely, no error shown. → [20260810_testing_part1.md#hom-37](20260810_testing_part1.md#hom-37--all-rows-toggle-blanks-the-data-preview-table-bug) — needs a terminal traceback to root-cause, see note. [#1](https://github.com/evezeyl/SPARMVET_VIZ/issues/1)
 > EVE: this was an error - all rows are showing correctly when toogle activated (can be delay if many rows). BUT the message is not clear - we need to know if it shows only a portion of the data or all the data. Would be nice to indicate data dimension of the full dataset that is shown (and when preview only - not all rows to know that is max first 100) 
@@ -327,9 +327,9 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 - [ ] HOM-21 `[~]` — **(carried, old §10)** Primary-key concept is unfamiliar to non-CS users. Add a short, plain-language hover/tooltip when filtering/removing a PK ("this is the column that links your tables; removing rows here changes what appears everywhere"). Confirm whether any such hint exists today; if not, mark `[~]` for me to add. Longer doc-page welcome too.
 
 ### 5e. NEW — palette / plot-config cascade / apply UX
-- [ ] HOM-22 **NEW** — If a manifest declares `plot_defaults.palette` or a per-plot `palette:`, plots render in that palette. Switching manifests changes palette accordingly.
+- [ ] HOM-22 **NEW** — If a data analysis recipe declares `plot_defaults.palette` or a per-plot `palette:`, plots render in that palette. Switching data analysis recipes changes palette accordingly.
 - [b] HOM-23 `[b]` **(blocked since 2026-11-05: the Plot Style panel is not shown in HOME, issue [#15](https://github.com/evezeyl/SPARMVET_VIZ/issues/15); no authoring path)** **NEW** — `aesthetic_override` (T3 plot colour/fill/alpha/shape), **if an authoring path exists**, actually changes the rendered plot (not just recorded). If there's no UI to author it yet, mark `[b]` (VIZFAC-T3-OVERRIDE-1 may still be pending).
-- [b] HOM-47 — **Plot Style panel: decided 2026-11-05.** The panel (right sidebar of HOME, added 2026-05-11, commit fa5a78d) is the authoring UI of the T3 `aesthetic_override` (ADR-082). Using it broke the plot, and letting users change in HOME what the manifest defines is too much for now. **Decision (Eve):** the panel is **not shown in HOME**; its code is kept, unused, with a pointer comment at the mount point (`home_theater.py`); BLUEPRINT and ADR-082 are unchanged. It stays an **eventual enhancement** ([#15](https://github.com/evezeyl/SPARMVET_VIZ/issues/15), task UX-PLOTSTYLE-1 deferred), when we will also find why it broke the plot. Plot style that belongs to the manifest is a separate, later BLUEPRINT matter. Related: HOM-23 (blocked: no authoring path). Check: no "Plot Style" in the right sidebar (verified in a browser on 2026-11-05).
+- [b] HOM-47 — **Plot Style panel: decided 2026-11-05.** The panel (right sidebar of HOME, added 2026-05-11, commit fa5a78d) is the authoring UI of the T3 `aesthetic_override` (ADR-082). Using it broke the plot, and letting users change in HOME what the data analysis recipe defines is too much for now. **Decision (Eve):** the panel is **not shown in HOME**; its code is kept, unused, with a pointer comment at the mount point (`home_theater.py`); BLUEPRINT and ADR-082 are unchanged. It stays an **eventual enhancement** ([#15](https://github.com/evezeyl/SPARMVET_VIZ/issues/15), task UX-PLOTSTYLE-1 deferred), when we will also find why it broke the plot. Plot style that belongs to the data analysis recipe is a separate, later BLUEPRINT matter. Related: HOM-23 (blocked: no authoring path). Check: no "Plot Style" in the right sidebar (verified in a browser on 2026-11-05).
 - [ ] HOM-24 **NEW** — Apply-button UX improvements (UX-APPLY-IMPROVE-1, Phase 34): confirm the apply/pending states read clearly (disabled reason, pending badge). Note anything confusing.
 - [ ] HOM-25 — Integer axis breaks: `year_distribution` x-axis shows whole years (`2018`…`2025`), no `.0`; survives T1↔T2 toggling; no `MaxNLocator` traceback.
 
@@ -343,8 +343,8 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 ### 5g. Export bundle
 - [ ] HOM-31 — Export panel: set a bundle label, pick format (PNG/SVG/PDF), pick scope (global / group / plot), click Export → `.zip` downloads.
 - [ ] HOM-32 — Bundle contains `plots/`, `data/` (T1+T2; T3 when advanced+T3 active), `recipes/`, `report.qmd` (with a **T3 Audit Trail** section when T3 nodes exist), `README.txt`. Filters present → `FILTERS.txt` included ("no trace, no export").
-- [ ] HOM-33 — `report.qmd` front-matter records manifest id + sha; methods text reads in plain English from active T3 nodes; PK-touching nodes carry the ⚠️ marker.
-- [ ] HOM-46 `[?]` **NEW (note from Eve, 2026-11-05)** — Export after an audit: the exported manifest must state **the data actually used**, not the default data. Check with a deployment that has `prefer_discovery: true` (data delivered into `raw_data`) and after a Data Import. Suspected gap: the bundle's `recipes/` holds a verbatim copy of the manifest, which still shows the default `source.path`, while the README/report list the data really used (`data_source_paths`). Decide how the bundle states which data was used. [ADR-088 point 5](../knowledge/architecture_decisions.md)
+- [ ] HOM-33 — `report.qmd` front-matter records data analysis recipe id + sha; methods text reads in plain English from active T3 nodes; PK-touching nodes carry the ⚠️ marker.
+- [ ] HOM-46 `[?]` **NEW (note from Eve, 2026-11-05)** — Export after an audit: the exported data analysis recipe must state **the data actually used**, not the default data. Check with a deployment that has `prefer_discovery: true` (data delivered into `raw_data`) and after a Data Import. Suspected gap: the bundle's `recipes/` holds a verbatim copy of the data analysis recipe, which still shows the default `source.path`, while the README/report list the data really used (`data_source_paths`). Decide how the bundle states which data was used. [ADR-088 point 5](../knowledge/architecture_decisions.md)
 
 ### 5h. Data Import (advanced+/independent)
 - [x] HOM-34 — **Files: [`assets/test_uploads/`](../../assets/test_uploads/README.md) (`FastP_valid_changed.tsv`); restore afterwards with `git restore assets/test_data/`.** Data Import accordion: upload a TSV matching a schema → assignment table appears with the right dataset id pre-selected → Apply → plots reload, no traceback.
@@ -363,11 +363,11 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 - [ ] GAL-01 — Gallery loads: recipe browser in center; left sidebar shows Recipe selector + collapsible taxonomy filters (Family / Data Pattern / Difficulty).
 - [ ] GAL-02 — Taxonomy filter choices come from `gallery_index.json` (not hardcoded); "Select all" toggles a group's checkboxes; "Apply" filters the recipe list.
 - [ ] GAL-03 — Click a recipe card → center shows its preview PNG + guidance (Visual Cookbook) panes; both accordions collapse/expand independently.
-- [ ] GAL-04 — Recipe shows: description, required columns, raw manifest YAML; YAML is copyable (the GALLERY→BLUEPRINT handoff is copy-paste, per design — no direct "send to").
+- [ ] GAL-04 — Recipe shows: description, required columns, raw data analysis recipe YAML; YAML is copyable (the GALLERY→BLUEPRINT handoff is copy-paste, per design — no direct "send to").
 - [ ] GAL-05 — Taxonomy tag strip renders (`📊 Family · 🔢 Pattern · 📈 Difficulty …`).
 - [ ] GAL-06 `[~]` — **(carried, old §12)** The recipe-title icons should use the **same** icon set as the taxonomy tag strip, fetched when the taxonomy auto-populates the sidebar (consistency). Confirm; if mismatched, `[~]`.
 - [ ] GAL-07 `[~]` — **(carried, old §12)** "Select all" row still has a slightly large gap below it. Low priority.
-- [ ] GAL-08 — Click Home → returns to plots; left sidebar tools reappear; selected manifest preserved.
+- [ ] GAL-08 — Click Home → returns to plots; left sidebar tools reappear; selected data analysis recipe preserved.
 - [ ] GAL-09 `[b]` — Search, community contribution/request, "Open in BLUEPRINT" — **not built** (per GALLERY.md). Confirm absent; don't fail.
 
 ---
@@ -376,10 +376,10 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 > Tests the file-based handoffs (export here → choose there). There are **no in-app "send to" buttons** by design — handoffs are deliberately file-based so spaces stay independently flag-gated. Use **developer/qa**.
 
-- [ ] XSP-01 — TEST_LAB Scaffolding ZIP → load that manifest in BLUEPRINT → it opens and is editable.
+- [ ] XSP-01 — TEST_LAB Scaffolding ZIP → load that data analysis recipe in BLUEPRINT → it opens and is editable.
 - [ ] XSP-02 — TEST_LAB Reformatter TSV → use it as input to ID Reconciliation (choose the file) → works as any standalone input.
 - [ ] XSP-03 — GALLERY recipe YAML (copied) → paste into BLUEPRINT escape hatch → it parses.
-- [ ] XSP-04 — BLUEPRINT saved manifest → appears in HOME's manifest selector → runs.
+- [ ] XSP-04 — BLUEPRINT saved data analysis recipe → appears in HOME's data analysis recipe selector → runs.
 - [ ] XSP-05 — Anonymiser anon-TSV + mapping-TSV → can be re-joined (de-anonymised) following the printed recipe.
 - [ ] XSP-06 — Confirm there is **no** cross-space coupling: disabling a space's flag never strands another space's output (the artifact is a file on disk).
 
@@ -397,7 +397,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 - [ ] REG-06 — Notification log (`🔔 Alerts (N)`) in right sidebar: actions append newest-first with timestamps + colour; max 20 kept; persists across nav within a session.
 - [ ] REG-07 — Sidebar collapse: hide left sidebar → content fills width → re-show works after several cycles. *(carried: old §12 sidebar — left untested at Phase 26.)*
 - [ ] REG-08 — **Critical (carried)**: hide **both** sidebars (advanced+) → both toggles remain clickable → each sidebar can be re-expanded independently.
-- [ ] REG-09 — Legacy-removal smoke: the default manifests load and render without `ConfigurationError`/`TransformationError` (Phase 34 removed flat `plots:`, `string`/`character` type aliases, flat `wrangling:` lists — none of the shipped manifests should trip these). *(Also covered by automated tests since 2026-11-05: `app/tests/test_render_every_plot.py` renders all 15 plots of 3 manifests, `test_manifest_validator.py`, `test_manifest_data_check.py`. The browser check is still yours.)*
+- [ ] REG-09 — Legacy-removal smoke: the default data analysis recipes load and render without `ConfigurationError`/`TransformationError` (Phase 34 removed flat `plots:`, `string`/`character` type aliases, flat `wrangling:` lists — none of the shipped data analysis recipes should trip these). *(Also covered by automated tests since 2026-11-05: `app/tests/test_render_every_plot.py` renders all 15 plots of 3 data analysis recipes, `test_data_analysis_recipe_validator.py`, `test_data_analysis_recipe_data_check.py`. The browser check is still yours.)*
 - [~] REG-10 — Duplicate Shiny IDs (`notification_log_accordion`/`notification_log_panel_ui`) at launch. → [20260810_testing_part1.md#reg-10](20260810_testing_part1.md#reg-10--duplicate-shiny-ids-notification_log_accordion--notification_log_panel_ui) — root-caused + fixed, RETEST ↻
 
 ---
@@ -413,13 +413,13 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 
 ---
 
-## 10. Re-check with a real manifest (REAL)
+## 10. Re-check with a real data analysis recipe (REAL)
 
-> The shipped test manifests use dummy data, so some plots look odd (for example after a valid Data Import, HOM-34). Repeat these checks with a real manifest and real data before the demo.
+> The shipped test data analysis recipes use dummy data, so some plots look odd (for example after a valid Data Import, HOM-34). Repeat these checks with a real data analysis recipe and real data before the demo.
 
 - [ ] REAL-01 — Repeat HOM-34 to HOM-36 (Data Import) and look at the redrawn plots: do they look right with real data?
 - [ ] REAL-02 — Check jitter plots (seed written as a number, then `random`), and the row order of axes and legends (ADR-090).
-- [ ] REAL-03 — Check the export (HOM-46): the manifest and the record state the data actually used.
+- [ ] REAL-03 — Check the export (HOM-46): the data analysis recipe and the record state the data actually used.
 - [b] REAL-04 — (was: check the Plot Style panel on a real plot.) The panel is off in HOME, so there is nothing to check until it is brought back (HOM-47, issue [#15](https://github.com/evezeyl/SPARMVET_VIZ/issues/15)).
 
 ---
@@ -429,9 +429,9 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/ui/templates/qa_template.yaml         
 These are designed-but-unbuilt or deferred; mark `[b]` if you wander into them:
 
 - GALLERY: search, community contribute/request, "Open in BLUEPRINT" (GALLERY.md).
-- BLUEPRINT: unified add-node form, full plot/component forms, inline validate, new-manifest-from-scratch UI, lineage isolation (v2) — some may have landed in Phase 32–33; report what you find.
+- BLUEPRINT: unified add-node form, full plot/component forms, inline validate, new-data-analysis-recipe-from-scratch UI, lineage isolation (v2) — some may have landed in Phase 32–33; report what you find.
 - HOME: T3 `aesthetic_override` render path (VIZFAC-T3-OVERRIDE-1), plot-panel collapse (THEATER-1).
-- Maps / flow / network chart types (deferred — MAP-A-* in progress, not in default manifests).
+- Maps / flow / network chart types (deferred — MAP-A-* in progress, not in default data analysis recipes).
 - Galaxy / IRIDA deployment paths (23-C/D/E — backlog).
 
 ## Appendix B — When something fails (reminder)

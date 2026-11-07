@@ -29,7 +29,7 @@ from pathlib import Path
 import polars as pl
 
 from transformer.metadata_validator import MetadataValidator
-from utils.errors import ManifestError
+from utils.errors import DataAnalysisRecipeError
 
 PASS = "✅ PASS"
 FAIL = "❌ FAIL"
@@ -61,7 +61,7 @@ def run(output_dir: Path) -> bool:
     except Exception as exc:
         results.append(("Happy path — valid TSV passes validate()", FAIL + f": {exc}"))
 
-    # ── 2. Missing mandatory column → ManifestError ──────────────────────────
+    # ── 2. Missing mandatory column → DataAnalysisRecipeError ──────────────────────────
     bad_contract = {
         "sample_id": {"type": "categorical"},
         "nonexistent_column": {"type": "categorical"},
@@ -70,11 +70,11 @@ def run(output_dir: Path) -> bool:
     tip_has_hint = False
     try:
         validator.validate(lf, bad_contract, context="[test]")
-    except ManifestError as exc:
+    except DataAnalysisRecipeError as exc:
         caught = True
         tip_has_hint = "nonexistent_column" in str(exc) or "Missing" in str(exc)
-    results.append(("Missing column → ManifestError raised", PASS if caught else FAIL))
-    results.append(("ManifestError message names the missing column",
+    results.append(("Missing column → DataAnalysisRecipeError raised", PASS if caught else FAIL))
+    results.append(("DataAnalysisRecipeError message names the missing column",
                     PASS if tip_has_hint else FAIL))
 
     # ── 3. Fuzzy suggestion for near-miss column name ────────────────────────
@@ -86,10 +86,10 @@ def run(output_dir: Path) -> bool:
     hint_present = False
     try:
         validator.validate(lf, fuzzy_contract, context="[test_fuzzy]")
-    except ManifestError as exc:
+    except DataAnalysisRecipeError as exc:
         caught_fuzzy = True
         hint_present = "Quality Module" in str(exc.tip) or "Did you mean" in str(exc.tip)
-    results.append(("Fuzzy near-miss → ManifestError raised", PASS if caught_fuzzy else FAIL))
+    results.append(("Fuzzy near-miss → DataAnalysisRecipeError raised", PASS if caught_fuzzy else FAIL))
     results.append(("Fuzzy hint names the close-match column",
                     PASS if hint_present else FAIL))
 

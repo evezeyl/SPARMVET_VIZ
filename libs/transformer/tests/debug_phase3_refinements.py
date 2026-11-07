@@ -5,7 +5,7 @@
 # consumed_by: manual Phase 3 persistence testing
 # doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
-from utils.errors import ManifestError
+from utils.errors import DataAnalysisRecipeError
 from transformer.metadata_validator import MetadataValidator
 from transformer.actions.persistence.anchor import action_sink_parquet
 from transformer.data_assembler import DataAssembler
@@ -64,13 +64,13 @@ def test_malformed_gatekeeping():
     # Data with 'sample_id'
     df = pl.DataFrame({"sample_id": ["S1"], "value": [10]}).lazy()
 
-    # Manifest with typo 'sample_idd'
+    # Data analysis recipe with typo 'sample_idd'
     contract = {"sample_idd": {"type": "categorical"}}
 
     validator = MetadataValidator()
     try:
         validator.validate(df, contract, context="TestDataset")
-    except ManifestError as e:
+    except DataAnalysisRecipeError as e:
         print(f"✅ Caught expected error: {e}")
         if "Hint: Did you mean ['sample_id']" in str(e.tip):
             print("✅ Typo suggestion verified!")

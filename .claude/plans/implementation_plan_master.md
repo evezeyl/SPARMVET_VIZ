@@ -6,31 +6,31 @@
 
 ## 1. Overview & Vision
 
-Transition from "Scaffolding" to "Functional Prototype" by implementing missing transformer logic and validating it via the modular Shiny frontend. We utilize a **'Decorator-First'** development cycle to align the Python execution engine with the active YAML manifest logic verified in `./config/manifests/pipelines/`.
+Transition from "Scaffolding" to "Functional Prototype" by implementing missing transformer logic and validating it via the modular Shiny frontend. We utilize a **'Decorator-First'** development cycle to align the Python execution engine with the active YAML data analysis recipe logic verified in `./config/data_analysis_recipes/pipelines/`.
 
-#### 🟢 Phase 19: Unified Manifest Standard & Hygiene (ADR-041) — COMPLETED 2026-04-20
+#### 🟢 Phase 19: Unified Data Analysis Recipe Standard & Hygiene (ADR-041) — COMPLETED 2026-04-20
 
 - [x] **Formal ADR-041**: Registered the "Keyed Schema / Ordered Logic" hybrid standard.
-- [x] **Standard Documentation**: Created `config/manifests/README.md` and updated `project_conventions.md`.
+- [x] **Standard Documentation**: Created `config/data_analysis_recipes/README.md` and updated `project_conventions.md`.
 - [x] **Schema Normalization**: Converted legacy simple dicts and redundant fragments to **Rich Dictionary** standard.
 - [x] **Wrangling Tiering**: Verified that all pipeline fragments adopt the `tier1`/`tier2` list structure.
 - [x] **Fragment Flatness**: Stripped top-level anchoring keys from included files for recursive compatibility.
 
-#### 🟢 Phase 20: Relational Manifest Stress Testing (COMPLETED 2026-03-07)
+#### 🟢 Phase 20: Relational Data Analysis Recipe Stress Testing (COMPLETED 2026-03-07)
 
-- [x] **Relational Audit**: Executed `debug_assembler.py` against the ST22 manifest.
+- [x] **Relational Audit**: Executed `debug_assembler.py` against the ST22 data analysis recipe.
 - [x] **Resilience Hardening**: Fixed 'bool' attribute error in `DataAssembler` and `DataWrangler`.
 - [x] **Contract Validation**: Unified Contract Guard projection to handle `original_name` mappings.
 - [x] **Full Pipeline Pass**: Verified all 3 major assemblies materiality (Anchor, AR1, Summary).
 
 ---
 
-**STATUS:** Manifest Structural Integrity Restored. 🏗️💎
+**STATUS:** Data analysis recipe Structural Integrity Restored. 🏗️💎
 
 ## 2. Architectural Principles
 
 - **Decorator-First:** Explicit decorator patterns for both Wrangling actions (`@register_action`) and Plotting factories (`@register_plot`).
-- **YAML Data Contract:** Pursue **YAML-ONLY** validation. Phase out JSON schema dependencies for the core manifest logic.
+- **YAML Data Contract:** Pursue **YAML-ONLY** validation. Phase out JSON schema dependencies for the core data analysis recipe logic.
 - **Polars-First:** Mandatory use of **Polars LazyFrames** for all heavy lifting. Materialize only at the Presentation or Export layers.
 - **Tidy Data Consistency:** Use **Plotnine** for the Presentation Layer to ensure seamless handoff from Polars-transformed dataframes.
 
@@ -40,7 +40,7 @@ Transition from "Scaffolding" to "Functional Prototype" by implementing missing 
 - **Modular package architecture:**
   - Each subdirectory in `libs/` (e.g., `libs/transformer`, `libs/viz_factory`) MUST be an independent package with its own `pyproject.toml`.
   - Installation in the root `.venv` MUST use the `-e` (editable) flag to maintain modularity and live-syncing of code changes.
-- **CLI-argparse for Testing:** Every library in `libs/` must include a CLI-compatible test script. Hardcoded paths inside test logic are forbidden. Use `argparse` to handle data inputs (TSV), configuration manifests (YAML), and output destinations.
+- **CLI-argparse for Testing:** Every library in `libs/` must include a CLI-compatible test script. Hardcoded paths inside test logic are forbidden. Use `argparse` to handle data inputs (TSV), configuration data analysis recipes (YAML), and output destinations.
 
 ## 4. Technical Roadmap
 
@@ -66,8 +66,8 @@ Transition from "Scaffolding" to "Functional Prototype" by implementing missing 
 ### Phase 4: The Assembly Factory (DONE)
 
 - [x] **DataAssembler Core:** Implement Layer 2 orchestrator script.
-- [x] **Multi-Source Loop:** Call the Wrangler for all datasets defined in the manifest.
-- [x] **Cross-Dataset Joins:** Execute Polars `.join()` logic using manifest-defined `join_on`.
+- [x] **Multi-Source Loop:** Call the Wrangler for all datasets defined in the data analysis recipe.
+- [x] **Cross-Dataset Joins:** Execute Polars `.join()` logic using data analysis recipe-defined `join_on`.
 - [x] **Final Stage Wrangling:** Support a global wrangling pass across the joined LazyFrame.
 - [x] **Relational Decorators:** Registered `join` and `join_filter` in the unified registry.
 
@@ -82,7 +82,7 @@ Transition from "Scaffolding" to "Functional Prototype" by implementing missing 
 - [x] Initialize library and `@register_plot_component` registry.
 - [x] Implement core `geoms/`, `facets/`, `coords/`, `positions/` subdirectories.
 - [x] Fully implement and verify `scales/` and `themes/` components with verification PNGs (35 components/86% verified).
-- [x] Create `bulk_test_runner.py` for automated manifest-to-PNG generation/verification.
+- [x] Create `bulk_test_runner.py` for automated data-analysis-recipe-to-PNG generation/verification.
 - [x] Resolve failed verifications (scale_color_cmap, facet_labeller, stat_ecdf, stat_function).
 - [x] Implement "Filter vs. Anchor" reactivity logic (ADR-024).
 
@@ -95,7 +95,7 @@ Transition from "Scaffolding" to "Functional Prototype" by implementing missing 
 ### Phase 8: Frontend Scaffolding (UI Heartbeat) (DONE)
 
 - [x] **Asset Integration:** Materialized via `Bootloader` (ADR-031).
-- [x] **UI Implementation (`app/src/ui.py`):** Sidebar for project/manifest discovery.
+- [x] **UI Implementation (`app/src/ui.py`):** Sidebar for project/data_analysis_recipe discovery.
 - [x] **Server Implementation (`app/src/server.py`):** Orchestrator materialization.
 
 ### Phase 9: Triple-Source AMR Integration (DONE)
@@ -114,21 +114,21 @@ Transition from "Scaffolding" to "Functional Prototype" by implementing missing 
 
 - [x] **Implementation of ADR-024:** Integrate `pl.sink_parquet` into `DataAssembler`. [DONE]
 - [x] **Checkpoint Logic:** Add a "Short-Circuit" to the Transformer to detect existing Parquet anchors.
-  - [x] **Automated Freshness Check:** Implemented `mtime` comparison between manifest directory and parquet to invalidate stale caches. [DONE] (Phase 14 refinement)
+  - [x] **Automated Freshness Check:** Implemented `mtime` comparison between data analysis recipe directory and parquet to invalidate stale caches. [DONE] (Phase 14 refinement)
 - [x] **Tier 2 Summarizer:** Implement `@register_action("summarize")` for row reduction. [DONE]
 
 ## 5. Governing Authority (Authority Matrix)
 
 This implementation plan is governed by the authoritative rulebooks and architectural decisions located in the project root. Refer to these files for the "How" and "Why" of any component implementation:
 
-### Phase 19: Unified Manifest Standard & Hygiene (ADR-041) ✅ COMPLETED 2026-04-20
+### Phase 19: Unified Data Analysis Recipe Standard & Hygiene (ADR-041) ✅ COMPLETED 2026-04-20
 
-**Objective:** Standardize manifest structures to resolve the disconnect between UI contract viewers and backend data engines.
+**Objective:** Standardize data analysis recipe structures to resolve the disconnect between UI contract viewers and backend data engines.
 
 - [x] **ADR-041 Registration:** Formally document the "Keyed-Schema & Ordered-Logic" standard.
-- [x] **Rules Synchronization:** Update `rules_data_engine.md` and `rules_manifest_structure.md`.
+- [x] **Rules Synchronization:** Update `rules_data_engine.md` and `rules_data_analysis_recipe_structure.md`.
 - [x] **Project Conventions Update:** Document the "Adequate Dictionary" format and fragment flatness.
-- [x] **Manifest README:** Create `config/manifests/README.md` for associated documentation.
+- [x] **Data analysis recipe README:** Create `config/data_analysis_recipes/README.md` for associated documentation.
 - [x] **Structural Hygiene:**
   - [x] Move all `input_fields` and `output_fields` to Rich Dictionary format.
   - [x] Ensure all `wrangling` blocks use mandatory tier nesting (`tier1`, `tier2`) as sequential lists.
@@ -161,13 +161,13 @@ This implementation plan is governed by the authoritative rulebooks and architec
 
 ### Phase 11-D: Dynamic Discovery & Interaction (DONE)
 
-- [x] **Discovery Engine:** Implement manifest-to-tab and Polars-schema-to-filter logic.
+- [x] **Discovery Engine:** Implement data-analysis-recipe-to-tab and Polars-schema-to-filter logic.
 - [x] **Interactivity:** Build the column-picker and collapsible sidebars.
 
 ### Phase 11-E: Ingestion, Persistence & Gallery (ACTIVE)
 
 - [x] **External Ingestion:** Build the YAML upload and Excel-to-TSV helper. [DONE]
-- [x] **Ghost Saving:** Implement automatic background manifest versioning. [DONE]
+- [x] **Ghost Saving:** Implement automatic background data analysis recipe versioning. [DONE]
 - [ ] **Gallery Engine**: Build UI browser pointing to Connector Location 5.
 - [x] **Join Preview Modal**: Implement PK validation check in WrangleStudio (ADR-012). [DONE]
 
@@ -188,7 +188,7 @@ This implementation plan is governed by the authoritative rulebooks and architec
 - [x] **Comparison Theater Base**: Dual-column layout setup. [DONE]
 - [x] **True 3-Column Navigation Shell (ADR-029a)**: Nested `layout_sidebar` structure with Left (Navigator), Center (Theater), and Right (Audit). [DONE]
 - [x] **Dynamic Layout Grid**: Implement logic to shift between grid modes and handle maximized panes. [DONE]
-- [x] **Analysis Theater Tabs**: Materialize manifest groups into dynamic tabsets with integrated controls. [DONE]
+- [x] **Analysis Theater Tabs**: Materialize data analysis recipe groups into dynamic tabsets with integrated controls. [DONE]
 - [x] **App features Reactivity Matrix Enforcement**: Link `app/src/ui.py` strictly to app features based masking. [DONE]
 - [x] **Visual vs Functional Pickers**: Connected schema pickers and column visibility controls. [DONE]
 
@@ -199,7 +199,7 @@ This implementation plan is governed by the authoritative rulebooks and architec
 - [ ] **Validation & Revert Protocol**: Add `btn_revert` to wipe the user sandbox and reset to the unmodified T2 blueprint. Implement disable toggles and deletion warnings.
 - [ ] **Comment Gatekeeper**: Tie `btn_apply` to validation of `comment_fields` across all active yellow/modified nodes.
 
-### Phase 12-C: Headless UI Manifest Verification
+### Phase 12-C: Headless UI Data Analysis Recipe Verification
 
 - [ ] **App features Gating Tests**: Implement headless test strategies (e.g., Shiny testing addons like `pytest-playwright`) to verify each app features's UI masking element by element, locking to one app features at a time per test suite.
 
@@ -226,7 +226,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] `_build_lineage_chain()` — ordered Rail node list for any selected component.
 - [x] `_load_fields_file()` — ADR-014-aware field file reader.
 - [x] `_component_ctx_map`, `_includes_map`, `_schema_registry` reactive values.
-- [x] `normalize_manifest_fields.py` moved to `app/assets/` with importable API; `btn_normalize_fields` handler.
+- [x] `normalize_data_analysis_recipe_fields.py` moved to `app/assets/` with importable API; `btn_normalize_fields` handler.
 - [x] `_parse_fields_safe` handles rich `{col: {type, label}}` dict format.
 
 ### Phase 18-B: Lineage Rail UI ✅ COMPLETED 2026-04-20
@@ -235,22 +235,22 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] `active_lineage_chain` reactive populated on every component load.
 - [x] `lineage_rail_ui` renders clickable `<button>` chain with role icons and active highlighting.
 - [x] JS Rail node clicks set hidden `lineage_node_rel` input → `handle_lineage_node_click` effect.
-- [x] **Rail node click full load**: `handle_lineage_node_click` triggers `btn_import_manifest` via `ui.js_eval`. Rail fully navigable.
+- [x] **Rail node click full load**: `handle_lineage_node_click` triggers `btn_import_data_analysis_recipe` via `ui.js_eval`. Rail fully navigable.
 - [ ] **Plot spec chain enrichment**: Prepend assembly node to plot_spec chain using `target_dataset`. *(DEFERRED)*
 - [ ] **Branch selector**: One assembly → N plots; show branch tabs on Rail. *(DEFERRED)*
 
 ### Phase 18-B-fixes: Live Testing Fixes ✅ COMPLETED 2026-04-20 (Session 2)
 
 - [x] **Sidebar display labels**: `_update_dataset_pipelines` shows `"{schema_id} — {role}"` instead of raw filenames.
-- [x] **Plot spec upstream resolution**: `target_dataset` lookup broadened — covers `data_schemas` entries, not only `assembly_manifests`.
-- [x] **Live View plot preview**: `active_manifest_path` reactive added; `architect_active_plot` uses full `ConfigManager` config; `active_viz_id` set on plot_spec load.
-- [x] **TubeMap node click → full load**: `_sync_selector_from_node_click` fires `btn_import_manifest` via `ui.js_eval`.
+- [x] **Plot spec upstream resolution**: `target_dataset` lookup broadened — covers `data_schemas` entries, not only `joins`.
+- [x] **Live View plot preview**: `active_data_analysis_recipe_path` reactive added; `architect_active_plot` uses full `ConfigManager` config; `active_viz_id` set on plot_spec load.
+- [x] **TubeMap node click → full load**: `_sync_selector_from_node_click` fires `btn_import_data_analysis_recipe` via `ui.js_eval`.
 
 ### Phase 18-C: 3-Column Interface Panel ✅ COMPLETED 2026-04-20
 
 - [x] Tab-3 rewritten: hidden `lineage_node_rel` input + `lineage_rail_ui` header + 3-column `layout_columns([4,4,4])`.
 - [x] 7 new render outputs: `lineage_rail_ui`, `upstream_label_ui`, `lineage_upstream_ui`, `component_label_ui`, `lineage_component_ui`, `downstream_label_ui`, `lineage_downstream_ui`.
-- [x] `_handle_manifest_import` full role dispatch: `input_fields`, `output_fields`, `wrangling`, `assembly`, `plot_spec`.
+- [x] `_handle_data_analysis_recipe_import` full role dispatch: `input_fields`, `output_fields`, `wrangling`, `assembly`, `plot_spec`.
 - [x] `wrangle_studio.define_server()` call extended with `get_schema_registry` and `get_includes_map` lambdas.
 
 ### Phase 18-D: Per-Plot Wrangling Support *(PENDING)*
@@ -268,7 +268,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 - [x] Clickable Cytoscape DAG nodes driving the Lineage Rail — **DONE** (implemented with Cytoscape + dagre, not Mermaid/SVG; `cy_tubemap` canvas, `initCyTubeMap` JS, node tap → lineage rail update).
 - [ ] Action Registry parity in IDE forms — form UI infrastructure is done (`schema_registry.py`, `_render_action_form`, `bp_action_form_ui`); only ~20 of 65 registered actions have `ui_schema` metadata. Remaining ~45 actions need `ui_schema` added to their `@register_action` decorator before they appear in the Blueprint form picker.
-- [x] Branch (node-level lineage bifurcation): select node → split lineage, shared upstream by `!include`, divergent downstream as new fragments. **DONE** (BP-BRANCH-NODE-1, 2026-05-21, ADR-082 Q3 — `generate_branch_plan()` in `manifest_navigator.py`; Branch UI in `blueprint_handlers.py`; "Branch Node" card; gated on `manifest_edit_enabled`; works WITH `!include` manifests). Supersedes the 2026-05-11 Visual Fork (`generate_fork_yaml`, append-into-manifest, refused `!include` manifests).
+- [x] Branch (node-level lineage bifurcation): select node → split lineage, shared upstream by `!include`, divergent downstream as new fragments. **DONE** (BP-BRANCH-NODE-1, 2026-05-21, ADR-082 Q3 — `generate_branch_plan()` in `data_analysis_recipe_navigator.py`; Branch UI in `blueprint_handlers.py`; "Branch Node" card; gated on `data_analysis_recipe_edit_enabled`; works WITH `!include` data analysis recipes). Supersedes the 2026-05-11 Visual Fork (`generate_fork_yaml`, append-into-data-analysis-recipe, refused `!include` data analysis recipes).
 
 ---
 
@@ -283,7 +283,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] Removed `"Viz"` / `"Analysis Theater"` branch and nav item.
 - [x] Removed `theater_state`, `btn_max_*`, `is_triple`/`triple_tier_mode`.
 
-### Phase 21-B: Manifest-Driven Tab Structure ✅ COMPLETED 2026-04-23
+### Phase 21-B: Data analysis recipe-Driven Tab Structure ✅ COMPLETED 2026-04-23
 
 - [x] Home renders exclusively from `analysis_groups` — no hardcoded tabs.
 - [x] `active_home_subtab` reactive; `_track_active_home_subtab` effect.
@@ -319,7 +319,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] `not_in` op added to VizFactory predicate pushdown.
 - [x] Column selector (`selectize`) above DataGrid, preview-only.
 - [ ] 21-F-5 (T3 Apply to recipe) — UI stub present; serialization deferred.
-- [ ] 21-F-7 (add `scale_x_discrete` to manifests) — deferred to user.
+- [ ] 21-F-7 (add `scale_x_discrete` to data analysis recipes) — deferred to user.
 
 ### Phase 21-G: App features Gated Right Sidebar Suppression ✅ COMPLETED 2026-04-30
 
@@ -330,7 +330,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 ### Phase 21-H: Headless Verification & @verify Gate ✅ COMPLETED 2026-04-30
 
 - [x] `app/tests/debug_home_theater.py` created — 10 sections, 76/76 checks PASS.
-- [x] Covers: app features feature flags, manifest tab structure, tier choices, sidebar suppression, comparison mode gating, PK extraction, session provenance SHA256, ghost round-trip, filter recipe schema, bootloader locations.
+- [x] Covers: app features feature flags, data analysis recipe tab structure, tier choices, sidebar suppression, comparison mode gating, PK extraction, session provenance SHA256, ghost round-trip, filter recipe schema, bootloader locations.
 - [x] Output artifact: `tmpAI/home_theater_verify/results.json`.
 
 ### Phase 21-I: Export Results Bundle ✅ COMPLETED 2026-04-23
@@ -347,16 +347,16 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 ## Phase 22: Server Decomposition (ADR-045) — COMPLETED 2026-04-23
 
-**Objective:** Split the 2,362-line `app/src/server.py` monolith into a thin orchestrator (228 lines) plus five focused Shiny handler modules (`app/handlers/`) and a pure manifest introspection module (`app/modules/manifest_navigator.py`). **Zero behaviour change** — structural refactor only.
+**Objective:** Split the 2,362-line `app/src/server.py` monolith into a thin orchestrator (228 lines) plus five focused Shiny handler modules (`app/handlers/`) and a pure data analysis recipe introspection module (`app/modules/data_analysis_recipe_navigator.py`). **Zero behaviour change** — structural refactor only.
 
 **Governing ADR:** ADR-045. **Completed:** 2026-04-23.
 
-### Phase 22-A: Create `app/modules/manifest_navigator.py`
+### Phase 22-A: Create `app/modules/data_analysis_recipe_navigator.py`
 
-- [x] Created `app/modules/manifest_navigator.py` (~280 lines).
+- [x] Created `app/modules/data_analysis_recipe_navigator.py` (~280 lines).
 - [x] Moved 5 pure functions, renamed to public API (dropped `_` prefix): `build_sibling_map`, `build_schema_registry`, `build_lineage_chain`, `load_fields_file`, `resolve_fields_for_schema`.
 - [x] Module docstring references ADR-045 and lists full public API.
-- [x] `blueprint_handlers.py` imports from `manifest_navigator`; `server.py` no longer needs these imports.
+- [x] `blueprint_handlers.py` imports from `data_analysis_recipe_navigator`; `server.py` no longer needs these imports.
 - [x] Import check passed.
 
 ### Phase 22-B: Create `app/handlers/` directory and `__init__.py`
@@ -382,7 +382,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 ### Phase 22-F: Extract `app/handlers/blueprint_handlers.py`
 
 - [x] Created with full keyword-only dependency injection signature.
-- [x] All Phase 18 Shiny wiring moved; imports updated to use `manifest_navigator`.
+- [x] All Phase 18 Shiny wiring moved; imports updated to use `data_analysis_recipe_navigator`.
 - [x] `_includes_map`, `_component_ctx_map`, `_schema_registry` injected as `reactive.Value` instances from `server.py`.
 
 ### Phase 22-G: Extract `app/handlers/home_theater.py`
@@ -417,8 +417,8 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 **Objective**: Institutionalize the development-phase audit requirements: mandatory Tier 1 visibility, biological typing standards, and precision renaming.
 
 - [x] **ADR-046**: Formalize the Scientific Audit Protocol (Tier 1 visibility, retention policy). [DONE]
-- [x] **Rulebook Sync**: Update `rules_data_engine.md` and `rules_manifest_structure.md` with whitelisting and typing laws. [DONE]
-- [ ] **Ingestor Diagnostics**: Implement non-breaking warnings for missing manifest columns in `DataIngestor`.
+- [x] **Rulebook Sync**: Update `rules_data_engine.md` and `rules_data_analysis_recipe_structure.md` with whitelisting and typing laws. [DONE]
+- [ ] **Ingestor Diagnostics**: Implement non-breaking warnings for missing data analysis recipe columns in `DataIngestor`.
 - [ ] **Audit Materialization**: Standardize the `debug_wrangler.py` and `debug_assembler.py` output paths to a unified `tmp/{date}/{lineage}/` folder structure.
 - [ ] **Lineage 2 (Plasmids)**: Apply new renaming precision standards (`predicted_phenotype`) and verify via Tier 1 audit.
 
@@ -470,7 +470,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 - [x] `dependency_index.md` regenerated via `assets/scripts/build_dep_graph.py`.
 - [x] `handoff_active.md` Session 13 entry appended.
 - [x] `audit_2026-05-01.md` written.
-- [x] `tasks_phase24.md` carries an executed-change manifest for each step.
+- [x] `tasks_phase24.md` carries an executed-change data analysis recipe for each step.
 
 ---
 
@@ -479,7 +479,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 **ADR:** ADR-052
 **Status:** COMPLETE. All 10 substeps (A–J) delivered. See `tasks_archive_phase25.md` and `audit_2026-05-01_phase25_complete.md`.
 **Design doc:** `EVE_WORK/daily/2026-05-01/app_features_functionality_side_bars_v3_clean.csv`
-**Change manifests:** `.claude/tasks/tasks_phase25.md`
+**Change data analysis recipes:** `.claude/tasks/tasks_phase25.md`
 
 ### Scope
 
@@ -501,7 +501,7 @@ Ten ordered substeps (A→J, risk-ascending):
 ### Key decisions (ADR-052)
 
 - **Right sidebar layout:** excluded at `ui.py` build time for pipeline app features files (Option A — reads `SPARMVET_APP_FEATURES` env var)
-- **New app features file fields:** `manifest_selector.visible/fixed_manifest` + `testing_mode`
+- **New app features file fields:** `data_analysis_recipe_selector.visible/fixed_data_analysis_recipe` + `testing_mode`
 - **Pipeline app features files always production:** `testing_mode=false` for static + simple — testing uses developer/advanced app features files
 - **Gallery for project-independent:** `gallery_enabled=true` added to template
 - **Test Lab:** renamed from Dev Studio
@@ -597,16 +597,16 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
   - Separate "Export Audit Report" button removed — audit trail is now part of the bundle.
   - `active_home_subtab` kwarg added to `define_export_server`.
 
-- **assembly_manifests → join_manifests rename (ADR-066):**
+- **joins → joins rename (ADR-066):**
   - YAML key, Python dict key, role string, TubeMap labels, UI labels all renamed.
   - ~35 files, ~65 occurrences across `app/`, `libs/`, `config/`.
   - Exception: `session_manager.py` + `debug_session_flow.py` Parquet path labels NOT renamed.
   - Variable name rule: never use bare `join` as Python variable; use `join_defs`, `join_block`.
 
-- **Manifest modularisation:**
+- **Data analysis recipe modularisation:**
   - `1_test_data_ST22_dummy.yaml`: 1334 → ~290 lines via `!include` fragments.
   - `figshare_integration.yaml`: 224 → 69 lines.
-  - Fragment threshold documented in `manifest_data_contract_rules.md` §6.
+  - Fragment threshold documented in `data_analysis_recipe_data_contract_rules.md` §6.
 
 ### Open / deferred
 
@@ -625,7 +625,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 - **`libs/blueprint_arch/`** — new dedicated lib for Blueprint Architect pure-Python logic:
   - `blueprint_mapper.py` moved from `libs/utils/src/utils/` → `libs/blueprint_arch/src/blueprint_arch/`
-  - `manifest_navigator.py` moved from `app/modules/` → `libs/blueprint_arch/src/blueprint_arch/`
+  - `data_analysis_recipe_navigator.py` moved from `app/modules/` → `libs/blueprint_arch/src/blueprint_arch/`
   - `debug_blueprint_mapper.py` moved to `libs/blueprint_arch/tests/`
   - `blueprint_handlers.py` imports updated; installed as editable lib
 
@@ -702,7 +702,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 ### Open / deferred
 
 - `ADR045-REFACTOR` (app/modules/ Two-Category Law violations) — deferred, needs separate scope discussion
-- `UI-TITLE-1` (manifest-driven title/subtitle) — decided, implementation pending
+- `UI-TITLE-1` (data analysis recipe-driven title/subtitle) — decided, implementation pending
 
 ---
 
@@ -716,13 +716,13 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 
 | Step | Task ID | Label | Model | Risk |
 |---|---|---|---|---|
-| 32-A | LINEAGE-NAV-1 | Add `build_plot_lineage` + `get_plot_ids_in_group` to `manifest_navigator.py` | sonnet | Med |
+| 32-A | LINEAGE-NAV-1 | Add `build_plot_lineage` + `get_plot_ids_in_group` to `data_analysis_recipe_navigator.py` | sonnet | Med |
 | 32-B | LINEAGE-EXPORT-1 | Export bundle gains `lineage/lineage_graph.json` (shared-node DAG, no per-plot duplication); `report.qmd` gets Mermaid flowchart + step summary table + JSON note | sonnet | Med |
 
 **Key decisions (ADR-074):**
-- Lineage functions live in `libs/blueprint_arch/manifest_navigator.py` — formally shared infrastructure
+- Lineage functions live in `libs/blueprint_arch/data_analysis_recipe_navigator.py` — formally shared infrastructure
 - One shared-node DAG per export scope; T1/T2 nodes deduplicated across plots
-- No lineage SVG in HOME export — documentation artifact; SVG/PNG of manifest DAG is BLUEPRINT-scoped (pipeline authors only)
+- No lineage SVG in HOME export — documentation artifact; SVG/PNG of data analysis recipe DAG is BLUEPRINT-scoped (pipeline authors only)
 - `report.qmd`: Mermaid flowchart + step summary table + JSON explanation note (not inline SVG)
 
 ### ADR-075 — BLUEPRINT IDE Build Mode
@@ -731,14 +731,14 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 |---|---|---|---|---|
 | 32-C | BP-SCHEMA-1 | `ui_schema` kwarg in `@register_action` + `@register_plot_component`; `schema_registry.py` in `blueprint_arch` | sonnet | Med |
 | 32-D | BP-FORMS-1 | BLUEPRINT form builder — 8 widget types rendered from `ui_schema` dicts | opus | High |
-| 32-E | BP-ESCAPE-1 | YAML escape hatch: read-only (`blueprint_enabled`); editable (`manifest_edit_enabled`) | sonnet | Med |
+| 32-E | BP-ESCAPE-1 | YAML escape hatch: read-only (`blueprint_enabled`); editable (`data_analysis_recipe_edit_enabled`) | sonnet | Med |
 | 32-F | BP-UNDO-1 | 20-step session undo deque for BLUEPRINT node edits | sonnet | Med |
 | 32-G | BP-HELP-1 | Python `__doc__` resolved at runtime via `importlib`; optional `doc_url` ("Open in browser", disabled in air-gapped deployments) | sonnet | Med |
 | 32-H | BP-COLOR-1 | Color widget: column mapping \| set literal (palette library \| project palette \| custom hex) | sonnet | ✅ |
 | 32-H2 | BP-COLOR-2 | Deployment palette registry `config/palettes.yaml`; `bootloader.get_palettes()`; color widget "Project palette" source | haiku | ✅ |
-| 32-H3 | BP-COLOR-3 | `plot_defaults.palette` in manifest → VizFactory scale injection at render time | sonnet | ✅ |
-| 32-I | BP-FLAG-1 | `manifest_edit_enabled` flag: add to all 6 app features files (false/false/false/false/true/true); cascade in bootloader | haiku | Low |
-| 32-J | ACTION-RENAME-1 | `scripts/migrate_manifests.py` — scan all YAML for renamed action names; report + `--apply` flag | haiku | Low |
+| 32-H3 | BP-COLOR-3 | `plot_defaults.palette` in data analysis recipe → VizFactory scale injection at render time | sonnet | ✅ |
+| 32-I | BP-FLAG-1 | `data_analysis_recipe_edit_enabled` flag: add to all 6 app features files (false/false/false/false/true/true); cascade in bootloader | haiku | Low |
+| 32-J | ACTION-RENAME-1 | `scripts/migrate_data_analysis_recipes.py` — scan all YAML for renamed action names; report + `--apply` flag | haiku | Low |
 
 **Key decisions (ADR-075):**
 - `ui_schema` dict embedded directly in `@register_action` / `@register_plot_component` kwargs — no separate schema files
@@ -750,7 +750,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 - Position rules enforced via `context` tag in `ui_schema`: `t1` / `t2` / `assembly` / `plot`
 - Apply gate: upstream schema propagates on Apply only (not continuously)
 - Edit/remove: (1) edit in-place + re-Apply, (2) 20-step undo deque, (3) YAML escape hatch
-- `manifest_edit_enabled`: default false all app features files; true for developer and qa only
+- `data_analysis_recipe_edit_enabled`: default false all app features files; true for developer and qa only
 
 **Key decisions (ADR-081 — Palette Registry):**
 - Project palettes live in `config/palettes.yaml` — operator config, not library code
@@ -769,7 +769,7 @@ Replace the hardcoded left/right sidebar accordion sequence with a declarative s
 
 ### Objective
 
-Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent interviews the user about their analytical goal, inspects the loaded schema, and proposes manifest fragments via `propose_manifest_diff`. All changes require user Apply — the agent never modifies the manifest directly.
+Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent interviews the user about their analytical goal, inspects the loaded schema, and proposes data analysis recipe fragments via `propose_data_analysis_recipe_diff`. All changes require user Apply — the agent never modifies the data analysis recipe directly.
 
 ### Substeps
 
@@ -791,7 +791,7 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 - `--output-format text` used (not `json`) — simpler content extraction; spec said `json` but implementation deviation is harmless
 - `--system` flag injects the Layer 1 system prompt on the first turn; `--continue` used for all subsequent turns
 - `build_system_prompt()` assembles: instructions file + compressed action registry + project context + fenced-block protocol spec
-- `build_turn_context()` emits Layer 3 context dict: workspace, active plot, manifest section, row counts, data visibility
+- `build_turn_context()` emits Layer 3 context dict: workspace, active plot, data analysis recipe section, row counts, data visibility
 - `bootloader.get_agent_adapter()` is the sole entry point — cached per Bootloader instance
 - `bootloader.get_agent_config()` returns the `blueprint_agent:` block from the app features file
 - `flock` single-flight on `lock` file in session dir — prevents concurrent subprocess calls
@@ -807,18 +807,18 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 
 ## Phase 34: Legacy Removal Sprint + TEST_LAB Scaffold (COMPLETE — 2026-05-22)
 
-**Goal:** Remove deprecated engine-level compatibility shims that accumulated from Phases 18–28, and complete the TEST_LAB Manifest Scaffolding panel.
+**Goal:** Remove deprecated engine-level compatibility shims that accumulated from Phases 18–28, and complete the TEST_LAB Data Analysis Recipe Scaffolding panel.
 
 | Step | Task ID | Label | Model | Status |
 |---|---|---|---|---|
 | 34-A | LEGACY-AUDIT-FLAG-1 | Remove `audit_report_enabled` flag from all templates, `AppFeaturesValidator`, `Bootloader` | haiku | ✅ |
 | 34-B | LEGACY-TYPE-ALIASES-1 | Remove `string`/`character` type aliases — engine raises `TransformationError` | sonnet | ✅ |
-| 34-C | LEGACY-FLAT-WRANGLING-1 | Remove flat `wrangling: []` tolerance — engine raises `ManifestError` | sonnet | ✅ |
-| 34-D | TL-UI-SCAFFOLD-1 | Manifest Scaffolding full panel in `test_lab_handlers.py` | sonnet | ✅ |
+| 34-C | LEGACY-FLAT-WRANGLING-1 | Remove flat `wrangling: []` tolerance — engine raises `DataAnalysisRecipeError` | sonnet | ✅ |
+| 34-D | TL-UI-SCAFFOLD-1 | Data analysis recipe Scaffolding full panel in `test_lab_handlers.py` | sonnet | ✅ |
 
 ### Key decisions (Phase 34)
 
-- Flat list rejection uses `ManifestError` (consistent with existing structural errors in `data_wrangler.py`) rather than `ConfigurationError` — keeps the error taxonomy homogeneous within the transformer layer.
+- Flat list rejection uses `DataAnalysisRecipeError` (consistent with existing structural errors in `data_wrangler.py`) rather than `ConfigurationError` — keeps the error taxonomy homogeneous within the transformer layer.
 - `_resolve_tier()` tip includes a literal migration snippet so authors can copy-paste the fix directly from the error message.
 - Scaffold panel bakes in reconciliation steps from the ID Reconciliation panel above via `recipes={dataset_key: recipe.steps}` — `TransformationRecipe.steps` is `list[dict]`, directly compatible with the scaffolder API.
 - Shell stability (Rule R4): `tl_scaffold_ui` renders widget shells only; `_scaffold_file_infos` / `_scaffold_meta_info` are `@reactive.Calc` so multiple consumers share the computed value without redundant input reads inside renders.
@@ -827,4 +827,4 @@ Embed a conversational AI helper in the BLUEPRINT right sidebar. The agent inter
 
 - `LEGACY-FLAT-WRANGLING-1` tombstone in `docs/appendix/Standards_yaml.qmd` and `rules_data_engine.md §3`
 - `LEGACY-AUDIT-FLAG-1` tombstone in `ui_implementation_contract.md §7.2/12f` and `rules_app_features_flags.md §Group A`
-- `LEGACY-TYPE-ALIASES-1` tombstone in `rules_manifest_structure.md §9`
+- `LEGACY-TYPE-ALIASES-1` tombstone in `rules_data_analysis_recipe_structure.md §9`

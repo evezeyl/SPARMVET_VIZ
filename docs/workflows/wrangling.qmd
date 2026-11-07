@@ -9,7 +9,7 @@ An independent module that takes raw data and transforms it into a standardized 
 `Polars` is massively parallel and memory efficient. When you run a `LazyFrame`, it builds an execution plan that is only executed when you trigger a `.collect()`. Polars breaks the data into "chunks" to process them across all your CPU cores simultaneously (concurrency). This makes it extremely fast for large datasets, but this also means that the order eg. your rows in the output might differ from the order in the input and the order can differ between runs (non-deterministic ordering).
 
 This layer allows: 
-    - **Staged Pipeline Architecture (ADR-013):** Manifests are structured in distinct parts: `input_fields` -> `wrangling` -> `output_fields`.
+    - **Staged Pipeline Architecture (ADR-013):** Data analysis recipes are structured in distinct parts: `input_fields` -> `wrangling` -> `output_fields`.
     - **Identity Transformation (ADR-014):** Supports datasets requiring no cleaning.
     - **Wide-to-Long Guard (Phase 12-B):** Automated defensive check in the `WrangleStudio` collection logic. If a transformation results in an empty dataset, the system triggers a "Null State" UI notification instead of a silent failure.
 
@@ -47,7 +47,7 @@ def action_fill_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
 ```
 
 ### 2. The Wrangling Pipeline (Sequential Execution)
-The **Wrangling Pipeline** defined in the YAML manifest is a **Sequential List of Dictionaries**. Using a list (identified by the dash `-` prefix) is mandatory for two reasons:
+The **Wrangling Pipeline** defined in the YAML data analysis recipe is a **Sequential List of Dictionaries**. Using a list (identified by the dash `-` prefix) is mandatory for two reasons:
 1.  **Deterministic Order:** Polars execution is dependent on the sequence of operations (e.g., you must `split_and_explode` before you can `summarize` the exploded values).
 2.  **Duplicate Actions:** A list allows the same action to be called multiple times with different parameters (e.g., filling nulls in `@AMR` with "Negative" and filling nulls in `species` with "Unknown").
 
@@ -66,7 +66,7 @@ wrangling:
     value: "None"
 ```
 
-## Manifest Construction Hacks & Hazards
+## Data analysis recipe Construction Hacks & Hazards
 
 During the complex relational refactoring of the ST22 pipeline, several critical nuances were discovered:
 
@@ -109,7 +109,7 @@ To maintain **Zero-Failure Integrity**, the Transformer uses an automated audit 
 
 ### Automated Verification Protocol
 - **Action Discovery**: Directly queries the `registry.py` for all decorated functions.
-- **Atomic Validation**: For every action, identifies the `{action}_manifest.yaml` and `{action}_test.tsv` triplet and executes via `debug_wrangler.py`.
+- **Atomic Validation**: For every action, identifies the `{action}_data_analysis_recipe.yaml` and `{action}_test.tsv` triplet and executes via `debug_wrangler.py`.
 - **Relational Validation**: Executes full assembly recipes (Layer 2) via `debug_assembler.py` and verifies successful joins.
 - **Materialized Evidence**: Every test generates a debug TSV in `tmp/transformer/` for human verification.
 - **Standardized Reporting**: Produces a `YYYY-MM-DD_transformer_integrity_report.txt` audit log.
@@ -206,7 +206,7 @@ Assembly-specific actions are defined in `libs/transformer/src/transformer/actio
 - **`join_filter`**: A specialized internal whitelisting tool. It performs an `inner` join against a reference table (e.g., filtering Virulence hits against a confirmed gene catalog).
 
 ### Assembly Recipes & Contracts
-Assemblies are defined in the `join_manifests` block (Key-as-ID pattern). An assembly "Recipe" is a sequential list of actions (Joins + Wrangling) that builds the final data grain. The `final_contract` acts as the ultimate guard, protecting the UI from "Column Drift" by selecting exactly the required plotting dimensions.
+Assemblies are defined in the `joins` block (Key-as-ID pattern). An assembly "Recipe" is a sequential list of actions (Joins + Wrangling) that builds the final data grain. The `final_contract` acts as the ultimate guard, protecting the UI from "Column Drift" by selecting exactly the required plotting dimensions.
 
 ---
 

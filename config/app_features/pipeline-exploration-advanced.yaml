@@ -11,10 +11,10 @@ flags:
   wrangle_studio_enabled: false
   # Does the user have access to the Gallery Browser?
   gallery_enabled: false
-  # Can the user access the Blueprint Architect (manifest IDE)?
+  # Can the user access the Blueprint Architect (data analysis recipe IDE)?
   blueprint_enabled: false
   # Can the user edit the YAML escape hatch in Blueprint IDE? (ADR-075; depends on blueprint_enabled)
-  manifest_edit_enabled: false
+  data_analysis_recipe_edit_enabled: false
   # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
   blueprint_agent_enabled: false
   # Can the user access the Test Lab (data utilities)?
@@ -38,9 +38,9 @@ flags:
   # Show active app features name in nav header
   show_app_features_badge: true
 
-manifest_selector:
+data_analysis_recipe_selector:
   visible: true
-  fixed_manifest: 1_test_data_ST22_dummy
+  fixed_data_analysis_recipe: 1_test_data_ST22_dummy
 
 testing_mode: true
 

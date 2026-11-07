@@ -2,7 +2,7 @@
 # @deps
 # provides: script:debug_wrangler
 # mirrors: app/modules/orchestrator.py (Tier 1 wrangling path)
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/utils/src/utils/config_loader.py (full-pipeline manifests only)
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)
 # consumed_by: libs/transformer/tests/transformer_integrity_suite.py
 # doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
@@ -37,17 +37,17 @@ except ImportError:
         sys.exit(1)
 
 
-def _load_manifest_raw(manifest_path: str) -> dict:
-    """Load a manifest as a raw dict, bypassing ConfigManager validation.
+def _load_data_analysis_recipe_raw(data_analysis_recipe_path: str) -> dict:
+    """Load a data analysis recipe as a raw dict, bypassing ConfigManager validation.
 
-    Used for standalone wrangling manifests (no analysis_groups) that would
+    Used for standalone wrangling data analysis recipes (no analysis_groups) that would
     fail ConfigManager's full-pipeline structural checks.
     """
-    with open(manifest_path, "r") as f:
+    with open(data_analysis_recipe_path, "r") as f:
         return yaml.safe_load(f) or {}
 
 
-def run_wrangler_debug(manifest_path: str, data_path_override: str = None, output_path: str = None, tier: str = "all"):
+def run_wrangler_debug(data_analysis_recipe_path: str, data_path_override: str = None, output_path: str = None, tier: str = "all"):
     """
     Consolidated Layer 1 Debugger & Universal Runner (ADR 005 / ADR 013-015).
     tier: 'tier1', 'tier2', or 'all' (default).
@@ -56,36 +56,36 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
     print(f" 🚀  LAYER 1 WRANGLER DEBUGGER (v2: Consolidated)")
     print(f"[{'='*60}]\n")
 
-    # 1. Load Manifest
-    if not os.path.exists(manifest_path):
-        print(f"  └── ❌ Manifest Error: File not found: {manifest_path}")
+    # 1. Load Data Analysis Recipe
+    if not os.path.exists(data_analysis_recipe_path):
+        print(f"  └── ❌ Data analysis recipe Error: File not found: {data_analysis_recipe_path}")
         sys.exit(1)
 
     try:
-        raw = _load_manifest_raw(manifest_path)
-        # Use ConfigManager only for full pipeline manifests (have analysis_groups).
-        # Standalone wrangling-only manifests skip ConfigManager to avoid the
-        # analysis_groups validation gate that fires for partial test manifests.
+        raw = _load_data_analysis_recipe_raw(data_analysis_recipe_path)
+        # Use ConfigManager only for full pipeline data analysis recipes (have analysis_groups).
+        # Standalone wrangling-only data analysis recipes skip ConfigManager to avoid the
+        # analysis_groups validation gate that fires for partial test data analysis recipes.
         if raw.get("analysis_groups"):
-            config_manager = ConfigManager(manifest_path)
-            manifest = config_manager.raw_config
+            config_manager = ConfigManager(data_analysis_recipe_path)
+            data_analysis_recipe = config_manager.raw_config
         else:
-            manifest = raw
+            data_analysis_recipe = raw
     except Exception as e:
-        print(f"  └── ❌ Load Error: Failed to parse manifest yaml. {e}")
+        print(f"  └── ❌ Load Error: Failed to parse data analysis recipe yaml. {e}")
         sys.exit(1)
 
     # 2. Extract Dataset Blocks
     dataset_blocks = {}
-    if "input_fields" in manifest or "wrangling" in manifest:
-        # Standalone Manifest
-        dataset_id = manifest.get("id") or manifest.get(
-            "name") or Path(manifest_path).stem
-        dataset_blocks[dataset_id] = manifest
+    if "input_fields" in data_analysis_recipe or "wrangling" in data_analysis_recipe:
+        # Standalone Data Analysis Recipe
+        dataset_id = data_analysis_recipe.get("id") or data_analysis_recipe.get(
+            "name") or Path(data_analysis_recipe_path).stem
+        dataset_blocks[dataset_id] = data_analysis_recipe
     else:
-        # Combined Pipeline Manifest (Searching for data_schemas, metadata_schema, etc.)
+        # Combined Pipeline Data Analysis Recipe (Searching for data_schemas, metadata_schema, etc.)
         for key in ["data_schemas", "metadata_schema", "additional_datasets_schemas"]:
-            group = manifest.get(key, {})
+            group = data_analysis_recipe.get(key, {})
             if isinstance(group, dict) and group:
                 if key == "metadata_schema" and "input_fields" in group:
                     dataset_blocks["metadata_schema"] = group
@@ -94,11 +94,11 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
 
     if not dataset_blocks:
         print(
-            f"  └── ❌ Manifest Error: No valid dataset blocks found in {manifest_path}")
+            f"  └── ❌ Data analysis recipe Error: No valid dataset blocks found in {data_analysis_recipe_path}")
         sys.exit(1)
 
     print(
-        f"  └── Found {len(dataset_blocks)} dataset(s) in manifest definitions.")
+        f"  └── Found {len(dataset_blocks)} dataset(s) in data analysis recipe definitions.")
 
     # 3. Initialize Ingestor (for source resolution)
     ingestor = DataIngestor(data_dir=str(project_root / "assets"))
@@ -110,7 +110,7 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
 
         print(f"\n[TARGET: {dataset_id}]")
 
-        # a) Ingestion Resolution (Override vs. Manifest Source)
+        # a) Ingestion Resolution (Override vs. Data analysis recipe Source)
         try:
             if data_path_override:
                 print(
@@ -123,10 +123,10 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
                 source_path = data_path_override
             else:
                 # Use source block resolution from DataIngestor (ADR-015)
-                # This works if the manifest has a 'source' block.
+                # This works if the data analysis recipe has a 'source' block.
                 lf, source_path = ingestor.ingest(dataset_id, schema)
                 print(
-                    f"  └── 📥 Load: Resolved from manifest source -> {source_path}")
+                    f"  └── 📥 Load: Resolved from data analysis recipe source -> {source_path}")
         except Exception as e:
             print(f"  └── ❌ Ingest Error: {e}")
             continue
@@ -219,7 +219,7 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
         elif output_path:
             mat_path = output_path
         else:
-            lineage_id = Path(manifest_path).stem
+            lineage_id = Path(data_analysis_recipe_path).stem
             date_str = datetime.now().strftime("%Y-%m-%d")
             dated_dir = project_root / f"tmpAI/{date_str}/{lineage_id}"
             dated_dir.mkdir(parents=True, exist_ok=True)
@@ -252,8 +252,8 @@ def run_wrangler_debug(manifest_path: str, data_path_override: str = None, outpu
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Consolidated Layer 1 Debugger/Runner (ADR 005/013/014/015)")
-    parser.add_argument("--manifest", required=True,
-                        help="Path to YAML manifest.")
+    parser.add_argument("--data-analysis-recipe", required=True,
+                        help="Path to YAML data analysis recipe.")
     parser.add_argument("--data", help="Optional CLI override for data path.")
     parser.add_argument(
         "--output", help="Optional CLI override for output path.")
@@ -262,4 +262,4 @@ if __name__ == "__main__":
         help="Which wrangling tier to execute: tier1, tier2, or all (default: all).")
 
     args = parser.parse_args()
-    run_wrangler_debug(args.manifest, args.data, args.output, args.tier)
+    run_wrangler_debug(args.data_analysis_recipe, args.data, args.output, args.tier)

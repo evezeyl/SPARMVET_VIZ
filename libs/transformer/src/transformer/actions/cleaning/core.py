@@ -5,7 +5,7 @@ from ...utils.naming import clean_column_header
 
 # @deps
 # provides: action:fill_nulls, action:drop_nulls, action:replace_values, action:rename, action:drop_duplicates, action:unique_rows, action:recode_values, action:sanitize_column_names, action:keep_columns, action:drop_columns, action:strip_whitespace, action:round_numeric, action:filter_range, action:add_constant, action:filter_eq, action:rename_columns, action:unique
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# consumed_by: any YAML data analysis recipe using these action names, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
 # doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
@@ -274,7 +274,7 @@ def action_recode_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame
 def action_sanitize_column_names(lf: pl.LazyFrame, spec: Dict[str, Any] = {}) -> pl.LazyFrame:
     """
     Sanitizes column names into safe snake_case using the project-standard utility.
-    Useful for ingesting raw data from external sources that don't match the manifest keys.
+    Useful for ingesting raw data from external sources that don't match the data analysis recipe keys.
     """
     columns = spec.get("columns", [])
     if not columns or columns == "all":

@@ -5,7 +5,7 @@
 
 ## App features Capability Matrix
 
-| App features | passive_exploration | t3_audit | Blueprint | Gallery | Session Mgmt | Export Bundle | Export Graph | Metadata Upload | Data Ingestion | Test Lab | testing_mode | manifest_selector.visible |
+| App features | passive_exploration | t3_audit | Blueprint | Gallery | Session Mgmt | Export Bundle | Export Graph | Metadata Upload | Data Ingestion | Test Lab | testing_mode | data_analysis_recipe_selector.visible |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `pipeline-static` | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | false | false |
 | `pipeline-exploration-simple` | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | false | false |
@@ -30,7 +30,7 @@ Single Graph Export accordion removed in 2026-05-04 export redesign — supersed
 
 | Accordion Panel | pipeline-static | pipeline-exploration-simple | pipeline-exploration-advanced | project-independent | developer | Gate Flag |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Manifest Choice** | HIDE (fixed by config) | HIDE (fixed by config) | SHOW | SHOW | SHOW | `manifest_selector.visible` |
+| **Data analysis recipe Choice** | HIDE (fixed by config) | HIDE (fixed by config) | SHOW | SHOW | SHOW | `data_analysis_recipe_selector.visible` |
 | **Data Import** | SHOW (read-only path display) | SHOW (read-only path display) | SHOW (active selector) | SHOW (active selector) | SHOW (active selector) | always_on; selector gated by testing_mode |
 | **Filters** | HIDE (static message) | SHOW (exploration disclaimer) | SHOW | SHOW | SHOW | `interactivity_enabled` |
 | **Export** (scope toggle) | SHOW | SHOW | SHOW | SHOW | SHOW | `export_enabled` |
@@ -75,12 +75,12 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 
 | UI Category | Element ID | Functionality / Rule |
 | :--- | :--- | :--- |
-| **Navigation** | `project_id` (→ Manifest Choice) | Manifest discovery and loading. Hidden for pipeline app features files — manifest fixed by config. |
+| **Navigation** | `project_id` (→ Data analysis recipe Choice) | Data analysis recipe discovery and loading. Hidden for pipeline app features files — data analysis recipe fixed by config. |
 | **Tier Toggle** | `tier_toggle` | T1 / T2 / T3. T3 hidden for `pipeline-static` (no interactivity) and `pipeline-exploration-simple` (passive exploration only — no T3 audit). |
 | **Comparison Mode** | `comparison_mode` | Toggle visible for t3_audit app features files only, AND only when tier == T3. Gate on `comparison_mode_enabled` flag. |
 | **Filters** | `sidebar_filters` | Recipe-builder row filter UI. In T3: `➜ Audit (N)` promotes rows to per-plot T3 audit stack. In T1/T2: `Apply (N)` commits transient `applied_filters` (passive exploration — plot updates, nothing saved). |
 | **Filters** | `home_col_selector_ui` | Column visibility for Data Preview. In T3: `➜ Audit drops (N)` promotes drops to `drop_column` audit nodes. |
-| **Theater** | `dynamic_tabs` | Manifest-driven: groups → `navset_pill`, plots → `navset_card_tab`. |
+| **Theater** | `dynamic_tabs` | Data analysis recipe-driven: groups → `navset_pill`, plots → `navset_card_tab`. |
 | **Theater** | `home_data_preview` | DataGrid scoped to active plot's `target_dataset`. Applies committed T3 filter/drop nodes. |
 | **Audit Stack** | `audit_nodes_tier2` | Violet read-only nodes (T2 blueprint steps). t3_audit app features files only. |
 | **Audit Stack** | `audit_nodes_tier3` | Per-plot Yellow nodes. Filtered to `home_state.active_plot_subtab`. Shows "Applied to N plots" badge and ⚠️ PK warning banner. |
@@ -90,7 +90,7 @@ Right sidebar is **excluded from the layout entirely** (not CSS-hidden) for `pip
 | **Session Mgmt** | `session_list_ui` | Lists all assembly/T3 ghosts. Restore + Export (.zip, Phase 25) + Delete per session. Visible for ≥ `pipeline-exploration-simple` (gate: `session_management_enabled`). |
 | **Export** | `export_bundle_download` | ZIP: plots (format selector: PNG/SVG/PDF) + T1/T2 TSVs + YAML recipes + Quarto `.qmd` + README. All app features files. |
 | **Export** | `export_audit_report` | HTML/PDF/DOCX audit report via Quarto (server-side, Phase 25). t3_audit app features files only. |
-| **Export** | `export_graph_download` | Single plot + data slice + manifest section + T3 modifications. t3_audit app features files. (Phase 25 BUILD_NEW.) |
+| **Export** | `export_graph_download` | Single plot + data slice + data analysis recipe section + T3 modifications. t3_audit app features files. (Phase 25 BUILD_NEW.) |
 
 ## Comparison Mode Detail (Phase 21-E)
 

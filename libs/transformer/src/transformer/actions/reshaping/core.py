@@ -4,7 +4,7 @@ from transformer.actions.base import register_action
 
 # @deps
 # provides: action:unpivot, action:explode, action:unnest, action:split_to_list, action:to_struct, action:pivot, action:split_column
-# consumed_by: any YAML manifest using these action names, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
+# consumed_by: any YAML data analysis recipe using these action names, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
 # doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 

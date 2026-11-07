@@ -134,7 +134,7 @@ Run the baseline unit test suite to catch regressions:
 After deployment, verify in the deployed app:
 
 1. **Home workspace loads** — click through analysis groups and plots
-2. **Sidebar panels render** — manifest choice, filters, export, etc.
+2. **Sidebar panels render** — data analysis recipe choice, filters, export, etc.
 3. **Help system works** (if docs were bundled) — click `?` button in workspace headers
 4. **Filter + Apply works** (if T3 enabled) — add a filter, click Apply, confirm plot updates
 

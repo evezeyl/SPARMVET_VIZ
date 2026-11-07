@@ -22,7 +22,7 @@ def prov(stage_keys, all_plots):
     return build_export_provenance(
         now=datetime.datetime(2026, 11, 6, 12, 0, 0), proj_id="tiny", safe_name="eve", app_features="qa",
         preset="web", dpi=300, active_tier="T2", scope_label="global", all_plots=all_plots,
-        tiers_exported=["T1"], manifest_sha="m" * 64, data_sha="d" * 64,
+        tiers_exported=["T1"], data_analysis_recipe_sha="m" * 64, data_sha="d" * 64,
         bootloader=SimpleNamespace(available_projects={}), stage_keys=stage_keys,
     )
 
@@ -38,7 +38,7 @@ def test_the_keys_of_the_export_are_recorded_per_dataset():
     p = prov(keys, [("p", {"target_dataset": "C"})])
     assert p["stage_keys"] == keys
     assert p["decision_hashes"] == {"C": T1}          # kept for older readers of the bundle
-    assert p["manifest_sha256"] == "m" * 64 and p["data_batch_hash"] == "d" * 64
+    assert p["data_analysis_recipe_sha256"] == "m" * 64 and p["data_batch_hash"] == "d" * 64
 
 
 def test_a_join_without_tier2_steps_has_an_empty_tier2_key():

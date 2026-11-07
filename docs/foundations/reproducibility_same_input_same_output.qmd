@@ -5,7 +5,7 @@ subtitle: "Where Polars and random scatter can change your results, and how to k
 
 ## The rule
 
-The same data and the same manifest must give the **same rows, in the same order, and the same picture**, every time (ADR-090). A report or an export that cannot be reproduced exactly cannot be trusted.
+The same data and the same data analysis recipe must give the **same rows, in the same order, and the same picture**, every time (ADR-090). A report or an export that cannot be reproduced exactly cannot be trusted.
 
 Two things can break this without any error message. Both are easy to miss, because the *content* of the data stays the same and only its **order** or its **random arrangement** changes.
 
@@ -28,7 +28,7 @@ Polars, the data engine, runs many operations on several threads at once. It pro
 | `value_counts` | the order of the values | first-appearance order |
 | `sample` | which rows are drawn | fixed default seed 0 |
 
-Real example (2026-11-05, manifest `1_test_data_ST22_dummy`): two builds of `ST22_Anchor` had identical rows but a different order. The first difference appeared at the join with `VirulenceFinder` (74 rows x 984 rows -> 1731 rows): the samples were in the same order, but the genes of one sample came in a different order on each run. `maintain_order="left"` alone did not fix it, only `"left_right"` did.
+Real example (2026-11-05, data analysis recipe `1_test_data_ST22_dummy`): two builds of `ST22_Anchor` had identical rows but a different order. The first difference appeared at the join with `VirulenceFinder` (74 rows x 984 rows -> 1731 rows): the samples were in the same order, but the genes of one sample came in a different order on each run. `maintain_order="left"` alone did not fix it, only `"left_right"` did.
 
 ### 2. Random scatter (jitter)
 
@@ -42,7 +42,7 @@ Jitter moves points by a small random amount so they do not overlap. Without a s
 
 ## How to control it
 
-### When you write a manifest
+### When you write a data analysis recipe
 
 - If you need a specific row order, **sort explicitly** (`action: sort`, all the columns that define the order). Do not rely on the order a join or a group happens to give.
 - To change the arrangement of a jitter, set the seed on the layer:
@@ -78,7 +78,7 @@ plotnine, the plotting library, treats `random_state=0` as **no seed** (it check
 
 ## Randomness on purpose
 
-The seed is a **default, never a rule**. Jitter can be useful to try again, and a fixed picture is only one possible choice. Today the choice is made in the manifest (`random_state`). Whether the user should be able to reshuffle an arrangement in the interface, and how that choice would be recorded so that an exported report can still be reproduced, is an open question for a later feature.
+The seed is a **default, never a rule**. Jitter can be useful to try again, and a fixed picture is only one possible choice. Today the choice is made in the data analysis recipe (`random_state`). Whether the user should be able to reshuffle an arrangement in the interface, and how that choice would be recorded so that an exported report can still be reproduced, is an open question for a later feature.
 
 ## Related
 

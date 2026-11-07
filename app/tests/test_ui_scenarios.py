@@ -40,7 +40,7 @@ class TestUIScenarios(unittest.TestCase):
         print("Testing Negative Scenarios (ADR-034)...")
         # 1. Missing Column Simulation
         df = pl.DataFrame({"sample_id": [1, 2], "growth": [0.5, 0.8]})
-        # Simulate a manifest with a typo 'growt'
+        # Simulate a data analysis recipe with a typo 'growt'
         bad_mapping = {"x": "sample_id", "y": "growt"}  # Typo!
 
         # We check if we can catch this (In a real UI this shows a modal)
@@ -78,7 +78,7 @@ class TestUIScenarios(unittest.TestCase):
             project_id="INTEGRITY_TEST",
             plot_path=None,
             tiers=tiers,
-            manifest={"info": {"name": "Test"}},
+            data_analysis_recipe={"info": {"name": "Test"}},
             audit_trail=["Step 1: Ingest"]
         )
 

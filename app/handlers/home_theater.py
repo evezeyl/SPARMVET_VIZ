@@ -41,7 +41,7 @@ from pathlib import Path
 
 import polars as pl
 from shiny import reactive, render, ui
-from app.modules.cache_keys import load_manifest
+from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.view_badge import has_tier2_steps, view_badge
 
 from app.modules.t3_recipe_engine import _apply_filter_rows
@@ -52,7 +52,7 @@ from app.handlers.filter_and_audit_handlers import define_filter_audit_server
 from app.handlers.data_import_handlers import define_data_import_server
 
 # ADR-036: Shiny input IDs must match ^[a-zA-Z0-9_]+$ — no spaces, emoji, or
-# punctuation. This sanitiser strips anything outside that set so manifest
+# punctuation. This sanitiser strips anything outside that set so data analysis recipe
 # group/plot labels can use any characters (including emoji) without breaking
 # the input wiring. Collapses runs of stripped chars into a single underscore,
 # trims leading/trailing underscores, lowercases, and falls back to "group" if
@@ -76,9 +76,9 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
     """
     seen = set()
     results = []
-    for proj_id, manifest_path in bootloader.available_projects.items():
+    for proj_id, data_analysis_recipe_path in bootloader.available_projects.items():
         try:
-            cfg = load_manifest(manifest_path).config
+            cfg = load_data_analysis_recipe(data_analysis_recipe_path).config
             # Collect from analysis_groups
             groups = cfg.raw_config.get("analysis_groups", {})
             for _gid, gspec in groups.items():
@@ -94,7 +94,7 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
                     results.append((p_id, plot_spec))
         except (Exception, SystemExit):
             # SystemExit from ConfigManager structural validation must not propagate
-            # into the Shiny connection handler — bad manifests are silently skipped here.
+            # into the Shiny connection handler — bad data analysis recipes are silently skipped here.
             pass
     return results
 
@@ -301,7 +301,7 @@ def define_server(input, output, session, *,
         return cols
 
     def _all_plot_subtab_ids() -> list[str]:
-        """Enumerate every plot subtab id available in the active manifest.
+        """Enumerate every plot subtab id available in the active data analysis recipe.
 
         Used by the propagation dialog to populate the "All plots except…"
         multiselect and to expand "All plots" intent at btn_apply commit.
@@ -403,7 +403,7 @@ def define_server(input, output, session, *,
             if spec is None:
                 return None
 
-            # Build synthetic manifest so viz_factory.render can be used.
+            # Build synthetic data analysis recipe so viz_factory.render can be used.
             # Phase 21-F-2: Inject committed filters into plot spec.
             # _apply_filter_rows handles coercion and eq/ne→in/not_in promotion for lists.
             # Here we just strip the 'dtype' key before passing to VizFactory
@@ -440,7 +440,7 @@ def define_server(input, output, session, *,
                         elif vf["op"] in ("ne", "not_in"):
                             vf["op"] = "not_in"
                 plot_spec["filters"] = vf_filters
-            synthetic_manifest = {
+            synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
             }
@@ -470,7 +470,7 @@ def define_server(input, output, session, *,
             )
 
             try:
-                return viz_factory.render(lf, synthetic_manifest, p_id,
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                           aesthetic_override=_t3_overrides)
             except Exception as e:
                 # Capture error for session_pipeline_errors without violating R1
@@ -530,7 +530,7 @@ def define_server(input, output, session, *,
             import copy
             plot_spec = copy.deepcopy(spec)
             # No exploration filters or T3 nodes — this is the T2 reference view
-            synthetic_manifest = {
+            synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
             }
@@ -545,7 +545,7 @@ def define_server(input, output, session, *,
                 return fig
 
             try:
-                return viz_factory.render(lf, synthetic_manifest, p_id)
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id)
             except Exception as e:
                 if session_pipeline_errors is not None:
                     from datetime import datetime
@@ -687,7 +687,7 @@ def define_server(input, output, session, *,
         """
         Routes to WrangleStudio, TestLab, Gallery, or the Unified Home Theater.
         ADR-043 / Phase 21-A: 'Analysis Theater / Viz' nav mode eliminated.
-        Home renders exclusively from manifest analysis_groups.
+        Home renders exclusively from data analysis recipe analysis_groups.
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
         p = current_app_features.get()
@@ -728,8 +728,8 @@ def define_server(input, output, session, *,
         cfg = active_cfg()
         groups = cfg.raw_config.get("analysis_groups", {})
 
-        # --- UI-TITLE-1: manifest title banner ---
-        # Resolution: app features ui_title.text override > manifest info.display_name > nothing.
+        # --- UI-TITLE-1: data analysis recipe title banner ---
+        # Resolution: app features ui_title.text override > data analysis recipe info.display_name > nothing.
         # If resolved title is empty or app features sets ui_title.visible=false: no banner.
         _ui_title_cfg = bootloader.config.get("ui_title", {})
         _title_visible = _ui_title_cfg.get("visible", True)
@@ -803,7 +803,7 @@ def define_server(input, output, session, *,
                 "T2": _tier_label(
                     "Result",
                     "T2 — Processed",
-                    "Plots show the T2 result produced by the manifest. "
+                    "Plots show the T2 result produced by the data analysis recipe. "
                     "If no processing steps are defined, T2 = T1.",
                 ),
                 "T3": _tier_label("My view", "T3 — Filtered / Dropped", _my_view_desc),
@@ -886,7 +886,7 @@ def define_server(input, output, session, *,
 
         # --- No groups: fallback to top-level plots or show guidance ---
         if not groups:
-            # Attempt to fall back to top-level plots in the manifest
+            # Attempt to fall back to top-level plots in the data analysis recipe
             top_plots = cfg.raw_config.get("plots", {})
             if top_plots:
                 # Wrap top-level plots in a synthetic single group
@@ -906,7 +906,7 @@ def define_server(input, output, session, *,
                 groups_nav = ui.div(plots_card, class_="spv-panel p-2")
             else:
                 groups_nav = ui.p(
-                    "Define analysis_groups (or top-level plots) in your manifest to populate this view.",
+                    "Define analysis_groups (or top-level plots) in your data analysis recipe to populate this view.",
                     class_="text-muted p-4"
                 )
             return ui.div(
@@ -1019,7 +1019,7 @@ def define_server(input, output, session, *,
     # Data change detection — runs as a side-effect separate from dynamic_tabs render.
     # Reads project_id to react when the user switches projects; computes source file
     # hashes, compares to stored data_batch_hash, warns if changed, and always writes
-    # manifest_sha256 + data_batch_hash into home_state for session_manager.
+    # data_analysis_recipe_sha256 + data_batch_hash into home_state for session_manager.
     @reactive.Effect
     def _sync_session_provenance():
         if home_state is None:
@@ -1032,31 +1032,31 @@ def define_server(input, output, session, *,
             from app.modules.session_manager import extract_primary_keys
             source_files = orchestrator.get_source_files(proj_id)
             new_dbh = _SM.compute_data_batch_hash(source_files) if source_files else ""
-            manifest_path = bootloader.get_location("manifests") / f"{proj_id}.yaml"
-            new_msig = _SM.compute_manifest_sha256(manifest_path) if manifest_path.exists() else ""
+            data_analysis_recipe_path = bootloader.get_location("data_analysis_recipes") / f"{proj_id}.yaml"
+            new_msig = _SM.compute_data_analysis_recipe_sha256(data_analysis_recipe_path) if data_analysis_recipe_path.exists() else ""
             new_pks = extract_primary_keys(active_cfg().raw_config)
 
             cur = home_state.get()
             prev_dbh = cur.get("data_batch_hash") or ""
-            prev_msig = cur.get("manifest_sha256") or ""
-            # Only warn if the SAME manifest's source files changed.
-            # A project switch (different manifest_sha256) naturally has a
+            prev_msig = cur.get("data_analysis_recipe_sha256") or ""
+            # Only warn if the SAME data analysis recipe's source files changed.
+            # A project switch (different data_analysis_recipe_sha256) naturally has a
             # different data_batch_hash — that's expected, not an alert.
-            same_manifest = prev_msig and prev_msig == new_msig
-            if same_manifest and prev_dbh and prev_dbh != new_dbh:
+            same_data_analysis_recipe = prev_msig and prev_msig == new_msig
+            if same_data_analysis_recipe and prev_dbh and prev_dbh != new_dbh:
                 _notify(
                     "⚠️ Source data files for this project have changed — re-assembling.",
                     type="warning", duration=8,
                 )
             needs_update = (
-                cur.get("manifest_sha256") != new_msig
+                cur.get("data_analysis_recipe_sha256") != new_msig
                 or cur.get("data_batch_hash") != new_dbh
                 or list(cur.get("primary_keys") or []) != list(new_pks)
             )
             if needs_update:
                 home_state.set({
                     **cur,
-                    "manifest_sha256": new_msig,
+                    "data_analysis_recipe_sha256": new_msig,
                     "data_batch_hash": new_dbh,
                     "primary_keys": new_pks,
                 })
@@ -1069,8 +1069,8 @@ def define_server(input, output, session, *,
                     session_key = _SM.compute_session_key(new_msig, new_dbh)
                     session_manager.write_assembly_ghost(
                         session_key=session_key,
-                        manifest_id=proj_id,
-                        manifest_sha256=new_msig,
+                        data_analysis_recipe_id=proj_id,
+                        data_analysis_recipe_sha256=new_msig,
                         data_batch_hash=new_dbh,
                         source_files={k: str(v) for k, v in source_files.items()},
                         parquet_paths={},
@@ -1337,7 +1337,7 @@ def define_server(input, output, session, *,
         )
         ui.modal_show(m)
 
-    # 4. Sidebar Tools (Contextual Manifest Workbench)
+    # 4. Sidebar Tools (Contextual Data analysis recipe Workbench)
     @output(id="sidebar_tools_ui")
     @render.ui
     def sidebar_tools_ui():
@@ -1356,26 +1356,26 @@ def define_server(input, output, session, *,
                 gallery_viewer.build_sidebar_ui(),
             )
 
-        # Manifest Workbench (Wrangle Studio)
+        # Data analysis recipe Workbench (Wrangle Studio)
         if active_sidebar == "Wrangle Studio":
             return ui.div(
                 ui.accordion(
                     ui.accordion_panel(
-                        "🗂️ Master Manifest",
-                        ui.input_select("stored_manifest_selector", None,
+                        "🗂️ Master Data Analysis Recipe",
+                        ui.input_select("stored_data_analysis_recipe_selector", None,
                                         choices=["Scanning config/..."]),
                         ui.input_action_button(
-                            "btn_bp_new_manifest", "+ New",
+                            "btn_bp_new_data_analysis_recipe", "+ New",
                             class_="btn-outline-primary btn-sm w-100 mt-1",
                         ),
                         ui.tags.small(
-                            "Select a project manifest. Click any node in the TubeMap to navigate.",
+                            "Select a project data analysis recipe. Click any node in the TubeMap to navigate.",
                             class_="text-muted d-block mt-1"),
                         ui.output_ui("bp_draft_status_ui"),
                         icon=ui.tags.i(class_="bi bi-diagram-3")
                     ),
                     ui.accordion_panel(
-                        "📝 Manifest Info",
+                        "📝 Data analysis recipe Info",
                         ui.output_ui("bp_meta_form_ui"),
                         icon=ui.tags.i(class_="bi bi-info-square")
                     ),
@@ -1386,14 +1386,14 @@ def define_server(input, output, session, *,
                     ),
                     ui.accordion_panel(
                         "📤 External Exchange",
-                        ui.input_file("manifest_uploader", "Select YAML...",
+                        ui.input_file("data_analysis_recipe_uploader", "Select YAML...",
                                       accept=[".yaml"], multiple=False),
                         ui.input_action_button("btn_upload_replace", "📥 Upload (Replace)",
                                                class_="btn-info btn-sm w-100 mb-1"),
                         ui.input_action_button("btn_upload_append", "➕ Upload & Append",
                                                class_="btn-outline-primary btn-sm w-100"),
                         ui.hr(),
-                        ui.download_button("btn_download_manifest", "💾 Download/Export",
+                        ui.download_button("btn_download_data_analysis_recipe", "💾 Download/Export",
                                            class_="btn-outline-primary w-100"),
                         icon=ui.tags.i(class_="bi bi-cloud-arrow-up")
                     ),
@@ -1414,7 +1414,7 @@ def define_server(input, output, session, *,
                 ui.div(
                     ui.input_select("dataset_pipeline_selector", None,
                                     choices=["Select a Master first"]),
-                    ui.input_action_button("btn_import_manifest", "Import",
+                    ui.input_action_button("btn_import_data_analysis_recipe", "Import",
                                            class_="btn-info btn-sm"),
                     ui.input_action_button("btn_save_internal", "Save",
                                            class_="btn-success btn-sm"),
@@ -1465,9 +1465,9 @@ def define_server(input, output, session, *,
                 icon=ui.tags.i(class_="bi bi-building")
             )
 
-        def _render_manifest_choice():
+        def _render_data_analysis_recipe_choice():
             return ui.accordion_panel(
-                "Manifest Choice",
+                "Data analysis recipe Choice",
                 ui.div(
                     ui.input_select("project_id", "Project Selection",
                                     choices=proj_choices,
@@ -1520,7 +1520,7 @@ def define_server(input, output, session, *,
         _home_panel_renderers = {
             "project_info":       _render_project_info,
             "deployment_info":    _render_deployment_info,
-            "manifest_choice":    _render_manifest_choice,
+            "data_analysis_recipe_choice":    _render_data_analysis_recipe_choice,
             "filters":            _render_filters,
             "data_import":        _render_data_import,
             "export":             _render_export,
@@ -1546,8 +1546,8 @@ def define_server(input, output, session, *,
             if panel is not None:
                 panels.append(panel)
 
-        _has_manifest = bootloader.get_manifest_selector().get("visible", True)
-        open_panels = ["Manifest Choice"] if _has_manifest else []
+        _has_data_analysis_recipe = bootloader.get_data_analysis_recipe_selector().get("visible", True)
+        open_panels = ["Data analysis recipe Choice"] if _has_data_analysis_recipe else []
         return ui.div(
             ui.accordion(
                 *panels,
@@ -1610,7 +1610,7 @@ def define_server(input, output, session, *,
                     ui.output_ui("bp_help_panel_ui"),
                     class_="mb-2 shadow-sm border-0"
                 ),
-                # VIZFAC-BLUEPRINT-FORM-1: plot_defaults editor (manifest root node)
+                # VIZFAC-BLUEPRINT-FORM-1: plot_defaults editor (data analysis recipe root node)
                 ui.card(
                     ui.card_header(
                         ui.div(ui.h5("Plot Defaults", class_="mb-0"),
@@ -1620,8 +1620,8 @@ def define_server(input, output, session, *,
                     class_="mb-2 shadow-sm border-0"
                 ),
             ]
-            # BP-BRANCH-NODE-1: Branch Node card (manifest_edit_enabled only)
-            if bootloader.is_enabled("manifest_edit_enabled"):
+            # BP-BRANCH-NODE-1: Branch Node card (data_analysis_recipe_edit_enabled only)
+            if bootloader.is_enabled("data_analysis_recipe_edit_enabled"):
                 parts.append(
                     ui.card(
                         ui.card_header(
@@ -1680,7 +1680,7 @@ def define_server(input, output, session, *,
                 ))
                 parts.append(ui.output_ui("audit_stack_tools_ui"))
                 # The "Plot Style" panel (aesthetic_style_panel_ui, defined in audit_stack.py) is NOT
-                # mounted: letting users change in HOME what the manifest defines is too much for
+                # mounted: letting users change in HOME what the data analysis recipe defines is too much for
                 # now, and using it broke the plot (test plan HOM-47). Its code is kept, unused, as
                 # an eventual enhancement (fork issue #15). To bring it back, add
                 # parts.append(ui.output_ui("aesthetic_style_panel_ui")) here, after fixing HOM-47.
@@ -1729,9 +1729,9 @@ def define_server(input, output, session, *,
                         icon=ui.tags.i(class_="bi bi-link-45deg"),
                     ),
                     ui.accordion_panel(
-                        "Manifest Scaffolding",
+                        "Data analysis recipe Scaffolding",
                         ui.tags.small(
-                            "Generate boilerplate pipeline manifest from uploaded files.",
+                            "Generate boilerplate pipeline data analysis recipe from uploaded files.",
                             class_="text-muted d-block p-1",
                         ),
                         icon=ui.tags.i(class_="bi bi-file-earmark-code"),

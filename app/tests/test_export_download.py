@@ -52,7 +52,7 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
     assert re.search(r"tier1_key=[0-9a-f]{64}", readme)
     assert re.search(r"tier2_key=([0-9a-f]{64}|none)", readme)
-    assert re.search(r"Manifest SHA256\s*: [0-9a-f]{64}", readme)
+    assert re.search(r"Data analysis recipe SHA256\s*: [0-9a-f]{64}", readme)
     assert re.search(r"Data batch hash\s*: [0-9a-f]{64}", readme)
     assert any(n.endswith("T1_data.tsv") for n in names)
     assert any("/plots/" in n and not n.endswith("_ERROR.txt") for n in names)

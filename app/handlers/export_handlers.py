@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, function:_build_methods_section
-# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, polars, shiny
+# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, polars, shiny
 #            reactive.Value:session_pipeline_errors (DIAG-RUNTIME-AUDIT-1 — included in report.qmd pipeline issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/design/export_specification.md
@@ -43,7 +43,7 @@ def build_export_provenance(
     scope_label: str,
     all_plots: list,
     tiers_exported: list,
-    manifest_sha: str,
+    data_analysis_recipe_sha: str,
     data_sha: str,
     bootloader,
     stage_keys: dict | None = None,
@@ -85,14 +85,14 @@ def build_export_provenance(
         except Exception:
             pass
 
-    # Manifest info (EXPORT-AUDIT-COMPLETE-1)
-    manifest_path_str = "n/a"
-    manifest_name = "n/a"
+    # Data analysis recipe info (EXPORT-AUDIT-COMPLETE-1)
+    data_analysis_recipe_path_str = "n/a"
+    data_analysis_recipe_name = "n/a"
     try:
         _mp = bootloader.available_projects.get(proj_id)
         if _mp:
-            manifest_path_str = str(_mp)
-            manifest_name = Path(str(_mp)).stem
+            data_analysis_recipe_path_str = str(_mp)
+            data_analysis_recipe_name = Path(str(_mp)).stem
     except Exception:
         pass
 
@@ -130,8 +130,8 @@ def build_export_provenance(
     return {
         "created_at": now.isoformat(),
         "project_id": proj_id,
-        "manifest_name": manifest_name,
-        "manifest_path": manifest_path_str,
+        "data_analysis_recipe_name": data_analysis_recipe_name,
+        "data_analysis_recipe_path": data_analysis_recipe_path_str,
         "app_features": app_features,
         "active_tier": active_tier,
         "export_scope": scope_label,
@@ -142,7 +142,7 @@ def build_export_provenance(
         "plot_height": plot_height,
         "plot_count": len(all_plots),
         "tiers_exported": tiers_exported,
-        "manifest_sha256": manifest_sha,
+        "data_analysis_recipe_sha256": data_analysis_recipe_sha,
         "data_batch_hash": data_sha,
         "decision_hashes": decision_hashes,
         "stage_keys": stage_keys or {},
@@ -156,19 +156,19 @@ def build_export_provenance(
 def changed_since_view(view_keys, current_keys) -> list[str]:
     """What changed between the keys the view was built on and the keys now (empty: nothing).
 
-    ADR-089 / EXPORT-KEYCHECK-1. The view is built once per session from the manifest files and
+    ADR-089 / EXPORT-KEYCHECK-1. The view is built once per session from the data analysis recipe files and
     the data files; the export recomputes the keys. A difference means a file changed on disk
     after the user opened the view, so what is on screen is not what an export would contain.
     """
     changes: list[str] = []
     if view_keys is None or current_keys is None:
         return changes
-    if view_keys.manifest_sha256 != current_keys.manifest_sha256:
-        changes.append("the manifest (the manifest file or a file it includes)")
+    if view_keys.data_analysis_recipe_sha256 != current_keys.data_analysis_recipe_sha256:
+        changes.append("the data analysis recipe (the data analysis recipe file or a file it includes)")
     if view_keys.data_batch_hash != current_keys.data_batch_hash:
         changes.append("the data files")
     if not changes and view_keys.tier1_key != current_keys.tier1_key:
-        changes.append("the processing rules (the engine version or the Tier 1 parts of the manifest)")
+        changes.append("the processing rules (the engine version or the Tier 1 parts of the data analysis recipe)")
     return changes
 
 
@@ -213,13 +213,13 @@ def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
         "  3. Export again.",
         "",
         "If you did not change any file yourself, find out what did (a pipeline writing new results, a",
-        "manifest edit, a data import) before you trust either version.",
+        "data analysis recipe edit, a data import) before you trust either version.",
         "",
         "Keys (for the record)",
-        f"  view  manifest {view_keys.manifest_sha256}",
+        f"  view  data analysis recipe {view_keys.data_analysis_recipe_sha256}",
         f"        data     {view_keys.data_batch_hash}",
         f"        tier1    {view_keys.tier1_key}",
-        f"  now   manifest {current_keys.manifest_sha256}",
+        f"  now   data analysis recipe {current_keys.data_analysis_recipe_sha256}",
         f"        data     {current_keys.data_batch_hash}",
         f"        tier1    {current_keys.tier1_key}",
     ]
@@ -239,7 +239,7 @@ def _embed_png_provenance(
             "sparmvet:plot_id": plot_id,
             "sparmvet:project_id": prov.get("project_id", ""),
             "sparmvet:app_features": prov.get("app_features", ""),
-            "sparmvet:manifest_sha256": prov.get("manifest_sha256", ""),
+            "sparmvet:data_analysis_recipe_sha256": prov.get("data_analysis_recipe_sha256", ""),
             "sparmvet:data_batch_hash": prov.get("data_batch_hash", ""),
             "sparmvet:decision_hash": prov.get("decision_hashes", {}).get(dataset_key, ""),
             "sparmvet:tier1_key": prov.get("stage_keys", {}).get(dataset_key, {}).get("tier1_key", ""),
@@ -270,7 +270,7 @@ def _embed_svg_provenance(
             f"sparmvet:plot_id={plot_id}",
             f"sparmvet:project_id={prov.get('project_id', '')}",
             f"sparmvet:app_features={prov.get('app_features', '')}",
-            f"sparmvet:manifest_sha256={prov.get('manifest_sha256', '')}",
+            f"sparmvet:data_analysis_recipe_sha256={prov.get('data_analysis_recipe_sha256', '')}",
             f"sparmvet:data_batch_hash={prov.get('data_batch_hash', '')}",
             f"sparmvet:decision_hash={prov.get('decision_hashes', {}).get(dataset_key, '')}",
             f"sparmvet:tier1_key={prov.get('stage_keys', {}).get(dataset_key, {}).get('tier1_key', '')}",
@@ -307,7 +307,7 @@ def _build_methods_section(
         "exclusion_row": "Rows were explicitly excluded",
         "drop_column": "Column was permanently removed",
         "aesthetic_override": "Plot aesthetics were adjusted",
-        "developer_raw_yaml": "A custom manifest fragment was applied",
+        "developer_raw_yaml": "A custom data analysis recipe fragment was applied",
     }
 
     prose_items: list[str] = []
@@ -453,7 +453,7 @@ def define_export_server(input, output, session, *,
                     title="Export everything in the active project",
                 )
             }
-            # Active group: only shown when manifest has groups AND active plot has a group
+            # Active group: only shown when data analysis recipe has groups AND active plot has a group
             if has_groups and active_gid is not None:
                 scope_choices["group"] = ui.span(
                     f"Active group ({active_gid})",
@@ -554,7 +554,7 @@ def define_export_server(input, output, session, *,
         - data/           T1 TSV for each dataset referenced by active plots
         - recipes/        YAML wrangling recipe(s) for the active project
         - report.qmd      Quarto source report embedding all plots and datasets
-        - README.txt      Bundle manifest (timestamp, project, app features, preset)
+        - README.txt      Bundle data analysis recipe (timestamp, project, app features, preset)
         """
         import io
         import zipfile
@@ -582,7 +582,7 @@ def define_export_server(input, output, session, *,
         # against it instead of being reused by file name.
         export_keys = orchestrator.compute_project_keys(proj_id)
 
-        # EXPORT-KEYCHECK-1: the keys of the open view must equal the keys now. If a manifest or
+        # EXPORT-KEYCHECK-1: the keys of the open view must equal the keys now. If a data analysis recipe or
         # data file changed after the view was opened, refuse: what is exported must be what the
         # user looked at.
         with reactive.isolate():
@@ -694,10 +694,10 @@ def define_export_server(input, output, session, *,
             bundle_dir = f"{ts}_{safe_name}"
 
             # ── Hashes + Provenance (before tmpdir so image embedding can use it) ──
-            # The keys of this export (ADR-089): the file-set hash of the manifest, the content
+            # The keys of this export (ADR-089): the file-set hash of the data analysis recipe, the content
             # hash of the data, and the chained key of every stored stage the export reads.
             from app.modules.cache_keys import tier2_key as _tier2_key, tier2_steps as _tier2_steps
-            manifest_sha = export_keys.manifest_sha256
+            data_analysis_recipe_sha = export_keys.data_analysis_recipe_sha256
             data_sha = export_keys.data_batch_hash
             stage_keys: dict[str, dict[str, str]] = {}
             for _p, _spec in all_plots:
@@ -725,7 +725,7 @@ def define_export_server(input, output, session, *,
                 scope_label=scope_label,
                 all_plots=all_plots,
                 tiers_exported=tiers_exported,
-                manifest_sha=manifest_sha,
+                data_analysis_recipe_sha=data_analysis_recipe_sha,
                 data_sha=data_sha,
                 bootloader=bootloader,
                 stage_keys=stage_keys,
@@ -768,7 +768,7 @@ def define_export_server(input, output, session, *,
                     _ds_key = spec.get("target_dataset") or "__anchor__"
                     _safe_ds = _safe_ds_name(_ds_key)
                     try:
-                        # Build synthetic manifest with applied filters
+                        # Build synthetic data analysis recipe with applied filters
                         plot_spec = copy.deepcopy(spec)
                         _rows = _audited_rows(p_id)
                         if _rows:
@@ -781,7 +781,7 @@ def define_export_server(input, output, session, *,
                                     vf["op"] = "in" if vf["op"] in ("eq", "in") else "not_in"
                             plot_spec["filters"] = vf_filters
 
-                        synthetic_manifest = {
+                        synthetic_data_analysis_recipe = {
                             "plots": {p_id: plot_spec},
                             "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
                         }
@@ -809,7 +809,7 @@ def define_export_server(input, output, session, *,
                         # VIZFAC-T3-EXPORT-1: pass L5 aesthetic_override so
                         # exported plots reflect analyst T3 overrides.
                         _plot_override = _t3_aesthetic_overrides.get(p_id)
-                        fig = viz_factory.render(lf, synthetic_manifest, p_id,
+                        fig = viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                                  aesthetic_override=_plot_override)
 
                         # Save user-chosen format → zip under {dataset}/plots/
@@ -947,21 +947,21 @@ def define_export_server(input, output, session, *,
                 # ── Copy YAML recipes (active project ONLY) ──────────────
                 # EXPORT-BUG-2 (2026-04-30): the previous code did
                 # proj_dir.rglob("*.yaml") on the parent directory, which
-                # scooped up EVERY other project's manifest + their include
+                # scooped up EVERY other project's data analysis recipe + their include
                 # fragments into the bundle (cross-project leak). Now we copy:
-                #   1. The active project's manifest itself
+                #   1. The active project's data analysis recipe itself
                 #   2. Its `!include` subdirectory if one exists (named
                 #      `{proj_id}/`) — that's where fragment files live per
                 #      the basename-mirroring convention.
                 try:
-                    proj_manifest_path = bootloader.available_projects.get(proj_id)
-                    if proj_manifest_path:
-                        manifest_p = Path(str(proj_manifest_path))
-                        proj_dir = manifest_p.parent
-                        # 1. The active manifest itself
-                        with open(manifest_p, "rb") as f:
+                    proj_data_analysis_recipe_path = bootloader.available_projects.get(proj_id)
+                    if proj_data_analysis_recipe_path:
+                        data_analysis_recipe_p = Path(str(proj_data_analysis_recipe_path))
+                        proj_dir = data_analysis_recipe_p.parent
+                        # 1. The active data analysis recipe itself
+                        with open(data_analysis_recipe_p, "rb") as f:
                             zf.writestr(
-                                f"{bundle_dir}/recipes/{manifest_p.name}",
+                                f"{bundle_dir}/recipes/{data_analysis_recipe_p.name}",
                                 f.read()
                             )
                         # 2. Includes subdirectory (if it exists for this project)
@@ -1007,7 +1007,7 @@ def define_export_server(input, output, session, *,
                     except Exception as e:
                         zf.writestr(f"{bundle_dir}/recipes/t3_steps_ERROR.txt", str(e))
 
-            # manifest_sha, data_sha, tiers_exported, prov — all computed before tmpdir block.
+            # data_analysis_recipe_sha, data_sha, tiers_exported, prov — all computed before tmpdir block.
 
             # ── Lineage graph (ADR-074) ───────────────────────────────────
             # Shared-node DAG: one lineage_graph.json per export scope.
@@ -1018,7 +1018,7 @@ def define_export_server(input, output, session, *,
             _lineage_per_plot: dict[str, list[str]] = {}
             _lineage_ok = False
             try:
-                from blueprint_arch.manifest_navigator import (
+                from blueprint_arch.data_analysis_recipe_navigator import (
                     build_plot_lineage as _bpl,
                 )
                 _mnf_path_obj = bootloader.available_projects.get(proj_id)
@@ -1172,7 +1172,7 @@ def define_export_server(input, output, session, *,
             for _ds_k, _k in prov.get("stage_keys", {}).items():
                 _dh_qmd_rows.append(
                     f"| Tier 1 key ({_ds_k}) | `{_k['tier1_key']}` | "
-                    "Chained key of the Tier 1 parquet: engine version, resolved manifest, data |"
+                    "Chained key of the Tier 1 parquet: engine version, resolved data analysis recipe, data |"
                 )
                 _dh_qmd_rows.append(
                     f"| Tier 2 key ({_ds_k}) | `{_k['tier2_key'] or 'none (T2 equals T1)'}` | "
@@ -1201,16 +1201,16 @@ def define_export_server(input, output, session, *,
                 f"**Git commit:** `{prov['git_commit']}`  ",
                 f"**Release:** `{prov['release_version']}`  ",
                 f"**Software:** {_sw_qmd_str}  ",
-                f"**Manifest:** `{prov['manifest_name']}` — `{prov['manifest_path']}`  ",
+                f"**Data analysis recipe:** `{prov['data_analysis_recipe_name']}` — `{prov['data_analysis_recipe_path']}`  ",
                 "",
                 "| Hash | Value | Meaning |",
                 "|------|-------|---------|",
-                f"| Manifest SHA256 | `{prov['manifest_sha256'] or 'n/a'}` | File-set hash: the manifest file and every file it includes |",
+                f"| Data analysis recipe SHA256 | `{prov['data_analysis_recipe_sha256'] or 'n/a'}` | File-set hash: the data analysis recipe file and every file it includes |",
                 f"| Data batch hash | `{prov['data_batch_hash'] or 'n/a'}` | SHA256 of all raw source file content (sorted by dataset id) |",
                 *_dh_qmd_rows,
                 "",
                 "> These hashes allow independent verification that this report was generated",
-                "> from the exact manifest, raw data, and wrangling recipe present at export time.",
+                "> from the exact data analysis recipe, raw data, and wrangling recipe present at export time.",
                 "> The Tier 1 and Tier 2 keys are stored in the metadata of the parquet files",
                 "> (`sparmvet_tier1_key`, `sparmvet_tier2_key`) and in the plot image metadata.",
                 "",
@@ -1221,7 +1221,7 @@ def define_export_server(input, output, session, *,
                 "| Tier | What it is |",
                 "|------|------------|",
                 "| **T1 — Raw data** | The original assembled dataset exactly as it came out of the analysis pipeline. Nothing has been changed. This is what you find in the `data/` folder. |",
-                "| **T2 — Result** | T1 with the processing steps of the manifest (tier 2) applied. The figures show the Result. A T2 file is included only when the dataset has tier 2 steps; without them T2 equals T1. |",
+                "| **T2 — Result** | T1 with the processing steps of the data analysis recipe (tier 2) applied. The figures show the Result. A T2 file is included only when the dataset has tier 2 steps; without them T2 equals T1. |",
                 "| **T3 — Audited data** | The Result with the steps the analyst sent to audit, each with a reason (for example excluding a sample that failed QC). Only audited steps are exported: filters tried while exploring are never included. The audited data of a plot is saved as `T3_data_<plot>.tsv` and its steps are listed under *T3 Audit Trail*. |",
                 "",
             ]
@@ -1398,7 +1398,7 @@ def define_export_server(input, output, session, *,
                 "> Report generated by SPARMVET-VIZ.",
                 f"> Git commit: `{prov['git_commit']}` | Release: `{prov['release_version']}`",
                 "> Recipes are in the `recipes/` folder.",
-                f"> Manifest SHA256 (file set): {prov['manifest_sha256'] or 'n/a'}",
+                f"> Data analysis recipe SHA256 (file set): {prov['data_analysis_recipe_sha256'] or 'n/a'}",
                 f"> Data batch hash (raw source files): {prov['data_batch_hash'] or 'n/a'}",
                 "> Decision hashes (wrangling recipe): see `sparmvet_decision_hash` in each Parquet metadata block.",
             ]
@@ -1489,8 +1489,8 @@ def define_export_server(input, output, session, *,
                 "=" * 40,
                 f"Timestamp        : {prov['created_at']}",
                 f"Project          : {prov['project_id']}",
-                f"Manifest name    : {prov['manifest_name']}",
-                f"Manifest path    : {prov['manifest_path']}",
+                f"Data analysis recipe name    : {prov['data_analysis_recipe_name']}",
+                f"Data analysis recipe path    : {prov['data_analysis_recipe_path']}",
                 f"User             : {prov['bundle_label']}",
                 f"App features     : {prov['app_features']}",
                 f"Preset           : {prov['preset']} (DPI={prov['dpi']}, {prov['plot_width']}×{prov['plot_height']} in)",
@@ -1507,8 +1507,8 @@ def define_export_server(input, output, session, *,
                 "",
                 "Reproducibility",
                 "-" * 40,
-                f"Manifest SHA256  : {prov['manifest_sha256'] or 'n/a'}",
-                f"  (file-set hash: the manifest file and every file it includes)",
+                f"Data analysis recipe SHA256  : {prov['data_analysis_recipe_sha256'] or 'n/a'}",
+                f"  (file-set hash: the data analysis recipe file and every file it includes)",
                 f"Data batch hash  : {prov['data_batch_hash'] or 'n/a'}",
                 f"  (SHA256 of all raw source file content, sorted by dataset id)",
                 "Stage keys (per dataset; Tier 1 and Tier 2 chained keys):",

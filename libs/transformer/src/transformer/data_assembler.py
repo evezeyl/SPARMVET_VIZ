@@ -3,7 +3,7 @@
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-ASSEMBLER-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
-# doc: .claude/rules/rules_manifest_structure.md#7
+# doc: .claude/rules/rules_data_analysis_recipe_structure.md#7
 # @end_deps
 import os
 from typing import Dict, List, Any
@@ -100,12 +100,12 @@ class DataAssembler:
                 component="DataAssembler",
                 problem="No recipe and no ingredients — cannot assemble.",
                 location="assemble() entry",
-                fix="Verify that the manifest declares at least one data_schema and a join_manifests recipe.",
-                who="manifest_author",
+                fix="Verify that the data analysis recipe declares at least one data_schema and a joins recipe.",
+                who="data_analysis_recipe_author",
                 category="assembly",
                 surface="plot_overlay",
                 severity="error",
-                reference="rules_manifest_structure.md §7",
+                reference="rules_data_analysis_recipe_structure.md §7",
             )
             print(pe.format())
             raise TransformationError(pe.problem, tip=pe.fix)
@@ -133,7 +133,7 @@ class DataAssembler:
                 path = step.get("path")
                 force = step.get("force_recompute", False)
                 if path and os.path.exists(path) and not force:
-                    # Verify if the logic (manifest) has changed since last materialization
+                    # Verify if the logic (data analysis recipe) has changed since last materialization
                     existing_hash = get_parquet_metadata_hash(path)
                     if existing_hash == decision_hash:
                         print(
@@ -159,7 +159,7 @@ class DataAssembler:
             # Resolve the right-hand ingredient if it's a join-type action
             right_id = step.get("right_ingredient")
             if right_id:
-                # Crash if ingredient is missing — the manifest's right_ingredient key is wrong.
+                # Crash if ingredient is missing — the data analysis recipe's right_ingredient key is wrong.
                 if right_id not in self.ingredients:
                     available = ", ".join(self.ingredients.keys())
                     pe = PipelineError(
@@ -167,12 +167,12 @@ class DataAssembler:
                         problem=f"Ingredient '{right_id}' required by '{action_name}' step is not available.",
                         location=f"assembly step {i}: action='{action_name}', right_ingredient='{right_id}'",
                         fix=f"Check right_ingredient spelling. Available ingredients: {available}",
-                        who="manifest_author",
+                        who="data_analysis_recipe_author",
                         category="assembly",
                         surface="plot_overlay",
                         severity="error",
                         evidence={"available_ingredients": available},
-                        reference="rules_manifest_structure.md §7",
+                        reference="rules_data_analysis_recipe_structure.md §7",
                     )
                     print(pe.format())
                     raise TransformationError(pe.problem, tip=pe.fix)
@@ -194,12 +194,12 @@ class DataAssembler:
                             "Add 'on': <column> to the join step (quoted — 'on' is a YAML boolean trap). "
                             f"Found keys in step: {actual_keys}"
                         ),
-                        who="manifest_author",
+                        who="data_analysis_recipe_author",
                         category="assembly",
                         surface="plot_overlay",
                         severity="error",
                         evidence={"step_keys_found": str(actual_keys)},
-                        reference="docs/appendix/manifest_structure.yaml §yaml_resilience",
+                        reference="docs/appendix/data_analysis_recipe_structure.yaml §yaml_resilience",
                     )
                     print(pe.format())
                     raise TransformationError(pe.problem, tip=pe.fix)
@@ -226,10 +226,10 @@ class DataAssembler:
                     problem=f"Unknown assembly action '{action_name}'.",
                     location=f"assembly step {i}",
                     fix=(
-                        f"'{action_name}' is not registered. Check the action name in the manifest recipe. "
+                        f"'{action_name}' is not registered. Check the action name in the data analysis recipe recipe. "
                         "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
@@ -249,7 +249,7 @@ class DataAssembler:
                         "Verify the column exists at this point in the recipe. "
                         "Columns from a joined ingredient are only available AFTER the join step."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
@@ -267,7 +267,7 @@ class DataAssembler:
                         "Join keys on both sides must share the same dtype. "
                         "Add a cast step before the join to normalise the mismatched column."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
@@ -282,7 +282,7 @@ class DataAssembler:
                     problem=f"Assembly step '{action_name}' raised an unexpected error: {type(exc).__name__}",
                     location=f"assembly step {i}: action='{action_name}'",
                     fix="Review the step parameters and the data state at this point in the recipe.",
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",

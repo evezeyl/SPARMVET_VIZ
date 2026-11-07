@@ -25,11 +25,11 @@ The very first time you upload a dataset, SPARMVET must "chop the onion." It con
 - **Normal Behavior:** The first upload takes up to 30-40 seconds.
 - **Normal Behavior:** Any subsequent visualization using that data will appear almost instantly.
 
-## 2. Manifest Triggers: Why things recalculate
+## 2. Data analysis recipe Triggers: Why things recalculate
 
-A **Manifest** dictates the baseline state of your data (Tier 2). It tells the system *how* the data should initially look before you start playing with it in the dashboard.
+A **Data analysis recipe** dictates the baseline state of your data (Tier 2). It tells the system *how* the data should initially look before you start playing with it in the dashboard.
 
-If you edit your `.yaml` manifest file and upload it...
+If you edit your `.yaml` data analysis recipe file and upload it...
 - **Normal Behavior**: The screen dims with an "In Calculation" overlay.
 - **Why?**: The system has to throw out the old "pre-chopped onions" and prepare new ones based on your new recipe. This wipes the Tier 2 cache and rebuilds it. It takes time, but ensures your visuals perfectly match your new rules.
 
@@ -41,7 +41,7 @@ If you edit your `.yaml` manifest file and upload it...
 
 While loading screens and dimming are normal, the following are *abnormal* and might require assistance:
 
-- **The "Red Error Box" loops indefinitely:** If the system catches a Malformed Manifest (e.g. you used a tab instead of a space in YAML), it will give you a tip (e.g. `SPARMVET_Error: Invalid whitespace`). If fixing the file and re-uploading still causes endless loops, contact support.
+- **The "Red Error Box" loops indefinitely:** If the system catches a Malformed Data Analysis Recipe (e.g. you used a tab instead of a space in YAML), it will give you a tip (e.g. `SPARMVET_Error: Invalid whitespace`). If fixing the file and re-uploading still causes endless loops, contact support.
 - **Visuals completely vanish:** If you apply a filter in the T3 Filters panel (e.g. filtering for `Meropenem`) and the plot completely vanishes without an error message, it is highly likely you made a typo (e.g. your data actually says `meropenem`). Check your spelling! (See Tidy Data guide).
 
 Understanding these mechanics ensures you spend less time panicking, and more time uncovering insights in your data.
@@ -50,11 +50,11 @@ Understanding these mechanics ensures you spend less time panicking, and more ti
 
 ## 4. The Unified Home Theater (v2.0 — Phase 21)
 
-SPARMVET's main results area — the **Home** view — is organized entirely by your project's manifest. There is no separate "Analysis Theater" mode; all analytical navigation happens in one place.
+SPARMVET's main results area — the **Home** view — is organized entirely by your project's data analysis recipe. There is no separate "Analysis Theater" mode; all analytical navigation happens in one place.
 
 ### How tabs are built
 
-Your manifest defines **Analysis Groups** (e.g., "Quality Control", "AMR Analysis"). Each group becomes a top-level tab. Within each tab, individual plots become **sub-tabs**. Everything is auto-generated from your YAML — if you add a new plot to your manifest, it appears immediately without changing any application code.
+Your data analysis recipe defines **Analysis Groups** (e.g., "Quality Control", "AMR Analysis"). Each group becomes a top-level tab. Within each tab, individual plots become **sub-tabs**. Everything is auto-generated from your YAML — if you add a new plot to your data analysis recipe, it appears immediately without changing any application code.
 
 ### What you are looking at: "Data to show" and "Plot to show"
 
@@ -65,7 +65,7 @@ Two small choices above the plot area control which layer you look at. They are 
 | Choice | What you see |
 |---|---|
 | **Raw (T1)** | The assembled data before the Tier 2 steps (read-only reference). |
-| **Result (T2)** | The data exactly as the manifest specifies (read-only reference). Equal to Raw when the dataset has no Tier 2 steps. |
+| **Result (T2)** | The data exactly as the data analysis recipe specifies (read-only reference). Equal to Raw when the dataset has no Tier 2 steps. |
 | **My view** | The Result with your own filters and column drops applied. |
 
 **Plot to show:**
@@ -109,7 +109,7 @@ The column selector for the data preview (above the table) lets you show or hide
 
 ### Exporting your results (Export panel)
 
-The **Export** accordion in the left sidebar contains an **Export Bundle** button. This produces a self-contained `.zip` file with everything you need to reproduce and share your results. The export is the Result plus the steps you sent to audit: Steps you sent to audit (with a reason, for example to remove poor quality data) are always applied to the exported plot and its data. Filters you only tried while exploring are never exported. If the manifest or the data changed after you opened the view, the export is refused and explains why (see [Understanding your export](understanding_your_export.qmd)).
+The **Export** accordion in the left sidebar contains an **Export Bundle** button. This produces a self-contained `.zip` file with everything you need to reproduce and share your results. The export is the Result plus the steps you sent to audit: Steps you sent to audit (with a reason, for example to remove poor quality data) are always applied to the exported plot and its data. Filters you only tried while exploring are never exported. If the data analysis recipe or the data changed after you opened the view, the export is refused and explains why (see [Understanding your export](understanding_your_export.qmd)).
 
 | Contents | What it contains |
 |----------|-----------------|
@@ -132,7 +132,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 
 If your app features grants sandbox access, a **Pipeline Audit** panel appears on the right side of the screen. It shows:
 
-- **Violet nodes** — the T2 blueprint steps (inherited from the manifest, read-only reference).
+- **Violet nodes** — the T2 blueprint steps (inherited from the data analysis recipe, read-only reference).
 - **Yellow nodes** — your personal T3 additions (filters, column selections, etc.).
 
 For simpler user deployments, this panel is hidden entirely and the plot area expands to fill the full screen width.

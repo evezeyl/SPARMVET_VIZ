@@ -4,14 +4,14 @@ Phase 21-H headless verification of Home Theater logic for all 5 app features fi
 
 Tests (no Shiny server required):
   1. App features feature flags — correct gating per app features
-  2. Manifest analysis_groups → tab structure
+  2. Data analysis recipe analysis_groups → tab structure
   3. Tier choices — T3 gated to advanced+ app features files only
   4. Right sidebar suppression — correct hidden_app_features set
   5. Comparison mode — advanced+ only, reads comparison_mode_enabled flag
-  6. Primary key extraction — extract_primary_keys from manifest
-  7. Plot ID discovery — all expected plot IDs present in manifest
+  6. Primary key extraction — extract_primary_keys from data analysis recipe
+  7. Plot ID discovery — all expected plot IDs present in data analysis recipe
   8. Filter recipe builder data model — _pending_filters schema shape
-  9. Session provenance — manifest sha256 computable from path
+  9. Session provenance — data analysis recipe sha256 computable from path
  10. Ghost restore schema — t3_recipe_by_plot structure correct after round-trip
 
 Run:
@@ -52,7 +52,7 @@ ADVANCED_APP_FEATURES = {"pipeline-exploration-advanced", "project-independent",
 HIDDEN_SIDEBAR_APP_FEATURES = {"pipeline-static", "pipeline-exploration-simple"}
 
 TEST_PROJECT_ID = "1_test_data_ST22_dummy"
-MANIFEST_REL = f"config/manifests/pipelines/{TEST_PROJECT_ID}.yaml"
+DATA_ANALYSIS_RECIPE_REL = f"config/data_analysis_recipes/pipelines/{TEST_PROJECT_ID}.yaml"
 
 results: list[dict] = []
 
@@ -123,19 +123,19 @@ def test_app_features_feature_flags():
 
 
 # ---------------------------------------------------------------------------
-# 2. Manifest analysis_groups → tab structure
+# 2. Data analysis recipe analysis_groups → tab structure
 # ---------------------------------------------------------------------------
 def test_tab_structure(project_root: Path):
-    section("2. Manifest analysis_groups → tab structure")
+    section("2. Data analysis recipe analysis_groups → tab structure")
     try:
         from utils.config_loader import ConfigManager
-        manifest_path = project_root / MANIFEST_REL
-        if not manifest_path.exists():
-            record("manifest_exists", False, f"not found: {manifest_path}")
+        data_analysis_recipe_path = project_root / DATA_ANALYSIS_RECIPE_REL
+        if not data_analysis_recipe_path.exists():
+            record("data_analysis_recipe_exists", False, f"not found: {data_analysis_recipe_path}")
             return
-        record("manifest_exists", True)
+        record("data_analysis_recipe_exists", True)
 
-        cm = ConfigManager(str(manifest_path))
+        cm = ConfigManager(str(data_analysis_recipe_path))
         groups = cm.raw_config.get("analysis_groups", {})
         record("analysis_groups_present", bool(groups), f"{len(groups)} group(s)")
 
@@ -267,12 +267,12 @@ def test_primary_keys(project_root: Path):
         from utils.config_loader import ConfigManager
         from app.modules.session_manager import extract_primary_keys
 
-        manifest_path = project_root / MANIFEST_REL
-        if not manifest_path.exists():
-            record("primary_keys_manifest_present", False)
+        data_analysis_recipe_path = project_root / DATA_ANALYSIS_RECIPE_REL
+        if not data_analysis_recipe_path.exists():
+            record("primary_keys_data_analysis_recipe_present", False)
             return
 
-        cm = ConfigManager(str(manifest_path))
+        cm = ConfigManager(str(data_analysis_recipe_path))
         pks = extract_primary_keys(cm.raw_config)
         record("primary_keys_extracted", isinstance(pks, (set, list, frozenset)),
                f"keys={sorted(pks)}")
@@ -283,24 +283,24 @@ def test_primary_keys(project_root: Path):
 
 
 # ---------------------------------------------------------------------------
-# 7. Session provenance — manifest sha256
+# 7. Session provenance — data analysis recipe sha256
 # ---------------------------------------------------------------------------
 def test_session_provenance(project_root: Path):
-    section("7. Session provenance — manifest sha256")
+    section("7. Session provenance — data analysis recipe sha256")
     try:
         from app.modules.session_manager import SessionManager
 
-        manifest_path = project_root / MANIFEST_REL
-        if not manifest_path.exists():
-            record("provenance_manifest_present", False)
+        data_analysis_recipe_path = project_root / DATA_ANALYSIS_RECIPE_REL
+        if not data_analysis_recipe_path.exists():
+            record("provenance_data_analysis_recipe_present", False)
             return
 
-        sha = SessionManager.compute_manifest_sha256(manifest_path)
-        record("manifest_sha256_computed", bool(sha) and len(sha) == 64, f"sha={sha[:12]}…")
+        sha = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_path)
+        record("data_analysis_recipe_sha256_computed", bool(sha) and len(sha) == 64, f"sha={sha[:12]}…")
 
         # Deterministic: same file → same hash
-        sha2 = SessionManager.compute_manifest_sha256(manifest_path)
-        record("manifest_sha256_deterministic", sha == sha2)
+        sha2 = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_path)
+        record("data_analysis_recipe_sha256_deterministic", sha == sha2)
     except Exception as e:
         record("session_provenance_error", False, str(e))
 
@@ -327,8 +327,8 @@ def test_ghost_roundtrip():
 
             path = sm.write_t3_ghost(
                 session_key=session_key,
-                manifest_id=TEST_PROJECT_ID,
-                manifest_sha256="abc123",
+                data_analysis_recipe_id=TEST_PROJECT_ID,
+                data_analysis_recipe_sha256="abc123",
                 data_batch_hash="def456",
                 tier_toggle="T3",
                 t3_recipe=[],
@@ -404,7 +404,7 @@ def test_bootloader_locations(project_root: Path):
         from app.src.bootloader import Bootloader
         bl = Bootloader(app_features="developer")
 
-        for loc_key in ("manifests", "user_data"):
+        for loc_key in ("data_analysis_recipes", "user_data"):
             try:
                 loc = bl.get_location(loc_key)
                 record(f"location_{loc_key}", True, str(loc))

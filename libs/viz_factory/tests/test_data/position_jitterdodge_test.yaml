@@ -1,5 +1,5 @@
 id: position_jitterdodge_test
-description: Test manifest for position_jitterdodge_test.yaml
+description: Test data analysis recipe for position_jitterdodge_test.yaml
 input_fields: []
 wrangling:
   tier1: []

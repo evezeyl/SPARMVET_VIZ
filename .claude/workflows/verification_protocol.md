@@ -18,7 +18,7 @@ Triggered for any **Polars** transformation (Wrangling) or **Plotnine** factory 
 
 All implementation work MUST follow the **Evidence Loop** defined in [rules_verification_testing.md](../rules/rules_verification_testing.md):
 
-1. **Contract Pre-definition** (Test data & manifest).
+1. **Contract Pre-definition** (Test data & data analysis recipe).
 2. **CLI Execution** via `argparse`.
 3. **Materialization** to `tmp/`.
 4. **Terminal Glimpse** via `.glimpse()`.

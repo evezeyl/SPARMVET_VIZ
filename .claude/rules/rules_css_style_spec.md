@@ -183,7 +183,7 @@ Add new buttons by finding the right type — never invent a new color.
 
 - **Color:** `#10a395` bg, `#0d8a7e` hover, white text
 - **Size:** `height: 32px`, `border-radius: 6px`, `font-weight: 600`
-- **IDs:** `#export_bundle_download`, `#filter_add_row`, `#btn_export`, `#btn_upload_replace`, `#btn_upload_append`, `#btn_import_manifest`, `#session_export_active`
+- **IDs:** `#export_bundle_download`, `#filter_add_row`, `#btn_export`, `#btn_upload_replace`, `#btn_upload_append`, `#btn_import_data_analysis_recipe`, `#session_export_active`
 
 ### Type 3 — Discard / Delete / Reset (Amber)
 

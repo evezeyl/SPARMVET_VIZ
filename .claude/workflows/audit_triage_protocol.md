@@ -124,7 +124,7 @@ If multiple reports are unprocessed, process them in this priority order:
 1. Any report with `❌` in its summary (conflicts, fatal cascade, test failures)
 2. `audit_cross_lib_*.md` — ADR-011 violations are blockers
 3. `audit_template_flags_*.md` — fatal cascades block app startup
-4. `audit_manifest_integrity_*.md` — broken manifests break the app
+4. `audit_data_analysis_recipe_integrity_*.md` — broken data analysis recipes break the app
 5. `audit_deps_verify_*.md`, `audit_task_drift_*.md` — hygiene
 6. `audit_phase_order_*.md`, `audit_changelog_sync_*.md` — documentation
 7. `audit_docs_sync_*.md`, `audit_library_tests_*.md`, `audit_package_deps_*.md` — lower urgency

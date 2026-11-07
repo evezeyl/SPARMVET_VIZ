@@ -23,7 +23,7 @@ export PYTHONPATH=$PYTHONPATH:. && ./.venv/bin/python libs/viz_gallery/assets/re
 
 Every gallery bundle folder MUST contain all four files:
 
-1. `recipe_manifest.yaml` — 6-axis taxonomy: family, pattern, difficulty, geom, show, sample_size
+1. `data_analysis_recipe.yaml` — 6-axis taxonomy: family, pattern, difficulty, geom, show, sample_size
 2. `example_data.tsv` — representative dataset
 3. `recipe_meta.md` — scientific guidance + author metadata
 4. `preview_plot.png` — pre-rendered evidence PNG

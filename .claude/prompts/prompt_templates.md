@@ -22,8 +22,8 @@ Please append - do not delete anything.
 handoff_active.md
 
 # Initialisation
-> Manifest helper 
-@Agent: @bioscientist - help me build a manifest for [Research Goal]
+> Data analysis recipe helper 
+@Agent: @bioscientist - help me build a data analysis recipe for [Research Goal]
 
 
 

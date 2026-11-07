@@ -25,7 +25,7 @@ This FAQ captures the strategic "Whys" and "How-To" patterns discovered during t
 - **Strategy**: By splitting them, we ensure that adding a new plot doesn't require re-cleaning the entire raw dataset.
 
 ### What is the "Short-Circuit" execution?
-**Answer**: If the engine finds a pre-computed `parquet` file for a Tier 1 or Tier 2 dataset, it compares the **chained key** stored in the file with the current one. The Tier 1 key covers the resolved manifest (every included file), the data content and the engine version; the Tier 2 key adds the dataset's Tier 2 steps. It only recomputes the stages whose key changed (a Tier 2 edit leaves the Tier 1 file untouched), ensuring cache integrity without manual clearing.
+**Answer**: If the engine finds a pre-computed `parquet` file for a Tier 1 or Tier 2 dataset, it compares the **chained key** stored in the file with the current one. The Tier 1 key covers the resolved data analysis recipe (every included file), the data content and the engine version; the Tier 2 key adds the dataset's Tier 2 steps. It only recomputes the stages whose key changed (a Tier 2 edit leaves the Tier 1 file untouched), ensuring cache integrity without manual clearing.
 
 ### How does the system handle malformed raw data?
 **Answer**: Via the **Metadata Gatekeeper**. The `MetadataValidator (metadata_validator.py)` proactively scans incoming raw files against the `input_fields` contract. If columns are missing, it uses a fuzzy matcher to suggest corrections (e.g., catching typos like `sample_idd` vs `sample_id`). It also checks that every value fits the declared type (text in a numeric column is rejected, and the message names the column and a few values; digits are fine as text in `categorical` and `utf8` columns), then enforces type-casting before data enters the wrangling engine.
@@ -41,9 +41,9 @@ This FAQ captures the strategic "Whys" and "How-To" patterns discovered during t
 - **Tip**: You can control the base of your assembly simply by changing the order of your ingredients.
 
 ### What is the "Mirror Strategy" for splitting data?
-**Strategy**: In SPARMVET, data flows linearly. To "split" a dataset and rejoin it later (e.g., to handle both Genotypes and Plasmids from the same source), you define the source **twice** in your manifest under different IDs.
+**Strategy**: In SPARMVET, data flows linearly. To "split" a dataset and rejoin it later (e.g., to handle both Genotypes and Plasmids from the same source), you define the source **twice** in your data analysis recipe under different IDs.
 1. Define **Mirror A** (Focus on Genotypes) and **Mirror B** (Focus on Plasmids).
-2. Use a `join` in the `join_manifests` to bring them back together.
+2. Use a `join` in the `joins` to bring them back together.
 - **Why**: This avoids "Row Explosion" (Cartesian products) and keeps your processing memory-safe and lazy.
 
 ### When should I use "Pruning Before Expansion"?
@@ -53,7 +53,7 @@ This FAQ captures the strategic "Whys" and "How-To" patterns discovered during t
 
 ### How do I audit for "Row Explosion" (Cartesian Products) in complex joins?
 **Answer**: Use the `debug_relational_audit.py` utility in `libs/transformer/tests/`.
-- **Reasoning**: In complex genomic assemblies (like the ST22 manifest), joining metadata (1:1) with Gene finds (1:Many) causes a controlled explosion. However, joining two 1:Many sets without grouping can cause a Cartesian Product (thousands of unwanted rows).
+- **Reasoning**: In complex genomic assemblies (like the ST22 data analysis recipe), joining metadata (1:1) with Gene finds (1:Many) causes a controlled explosion. However, joining two 1:Many sets without grouping can cause a Cartesian Product (thousands of unwanted rows).
 - **The Audit**: The audit script calculates the **Expansion Ratio** (Result Rows / Unique Sample IDs). If the ratio exceeds the known genomic density (usually <50 rows per sample), a relational integrity issue is flagged.
 
 ## 🔍 2b. Filtering & Exploration
@@ -80,11 +80,11 @@ Use the column selector (selectize multi-select) above the **Data Preview** tabl
 
 ### How do I export my results?
 
-Use the **Export Bundle** button in the **Export** panel (left sidebar). Enter a label (no spaces), choose a preset, and click the button. The download contains: plots (SVG or high-DPI PNG), data as TSV (T1; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view), YAML recipes, a Quarto `.qmd` report, and a README that records the fingerprints and keys of the manifest and data used.
+Use the **Export Bundle** button in the **Export** panel (left sidebar). Enter a label (no spaces), choose a preset, and click the button. The download contains: plots (SVG or high-DPI PNG), data as TSV (T1; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view), YAML recipes, a Quarto `.qmd` report, and a README that records the fingerprints and keys of the data analysis recipe and data used.
 
 The export shows what you see: the plots are the Result. Steps you sent to audit are always applied (and saved as `T3_data_<plot>.tsv`). Filters you only tried while exploring are never exported.
 
-If the manifest or a data file changed after you opened the view, the export is refused (`EXPORT_NOT_CREATED.txt` explains what changed). Reload the page (F5), check the plots, and export again.
+If the data analysis recipe or a data file changed after you opened the view, the export is refused (`EXPORT_NOT_CREATED.txt` explains what changed). Reload the page (F5), check the plots, and export again.
 
 ## 🎨 3. Visualization & Artist Pillar
 
@@ -106,14 +106,14 @@ Do not use `recode_values` with `default: "keep"` to mean "leave the other value
 :::
 
 ### How do I perform a "Gallery Audit" without the UI?
-**Strategy**: Use the `GalleryMaterializer (materialize_manifest_plots.py)` tool in `assets/scripts/`. 
+**Strategy**: Use the `GalleryMaterializer (materialize_data_analysis_recipe_plots.py)` tool in `assets/scripts/`. 
 ```bash
-./.venv/bin/python assets/scripts/materialize_manifest_plots.py --manifest path/to/manifest.yaml
+./.venv/bin/python assets/scripts/materialize_data_analysis_recipe_plots.py --data-analysis-recipe path/to/data_analysis_recipe.yaml
 ```
-This renders every plot in your manifest into Layer 3 high-resolution PNGs in the `tmp/` directory for bulk verification.
+This renders every plot in your data analysis recipe into Layer 3 high-resolution PNGs in the `tmp/` directory for bulk verification.
 
 ### How do I add Titles and Subtitles to my charts?
-**Answer**: Add a `labs` layer to your plot specification in the manifest:
+**Answer**: Add a `labs` layer to your plot specification in the data analysis recipe:
 ```yaml
 layers:
   - name: "labs"
@@ -125,7 +125,7 @@ layers:
 ### Can I switch app features while the app is running?
 **Answer**: No. An app features is chosen when the app starts (the `SPARMVET_APP_FEATURES` environment variable, or `default_app_features` in the deployment). Runtime switching was removed (ADR-053). To see the app as another app features, restart it with another value. The `Bootloader (bootloader.py)` keeps the parsed app features files in memory (`_app_features_cache`), so a template is read from disk once.
 
-## 📜 4. Manifest Logic (The Chain of Command)
+## 📜 4. Data analysis recipe Logic (The Chain of Command)
 
 ### Do I need to redefine types in `output_fields`?
 **Strategy**: No. Through the **Persistence Rule**, if you set `type: categorical` in the `input_fields`, it remains categorical throughout the entire pipeline. 

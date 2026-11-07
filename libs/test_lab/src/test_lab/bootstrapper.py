@@ -1,6 +1,6 @@
 # @deps
-# provides: ManifestBootstrapper class (bootstrap, id_cleaning_recipes) — infers TSV schemas
-#           and writes manifest YAML fragments (analysis_groups, join_manifests, tiered wrangling)
+# provides: DataAnalysisRecipeBootstrapper class (bootstrap, id_cleaning_recipes) — infers TSV schemas
+#           and writes data analysis recipe YAML fragments (analysis_groups, joins, tiered wrangling)
 # consumes: polars, pathlib, typing, yaml, re (stdlib/third-party)
 # consumed_by: libs/test_lab/tests/test_bootstrapper.py
 # @end_deps
@@ -25,9 +25,9 @@ def represent_include(dumper, data):
 yaml.add_representer(IncludeRef, represent_include)
 
 
-class ManifestBootstrapper:
+class DataAnalysisRecipeBootstrapper:
     """
-    Logic for inferring data schemas from TSVs and bootstrapping manifest YAMLs.
+    Logic for inferring data schemas from TSVs and bootstrapping data analysis recipe YAMLs.
     Follows the mandatory 3-block structure (input_fields, wrangling, output_fields).
     """
 
@@ -64,14 +64,14 @@ class ManifestBootstrapper:
         id_cleaning_recipes: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
         """
-        Creates a project folder and populates it with manifest fragments.
+        Creates a project folder and populates it with data analysis recipe fragments.
 
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
-            project_id: Manifest ID and output folder name.
+            project_id: Data analysis recipe ID and output folder name.
             out_dir: Root directory for output.
             metadata_path: Optional dedicated metadata TSV. When provided, a
-                ``metadata_schema`` block is added to the master manifest.
+                ``metadata_schema`` block is added to the master data analysis recipe.
             id_cleaning_recipes: Optional per-dataset wrangling steps to inject
                 into ``tier1:``. Keyed by dataset_id (sanitized stem). Valid
                 actions: ``strip_whitespace``, ``cast`` (String only),
@@ -147,8 +147,8 @@ class ManifestBootstrapper:
                 "output_fields": IncludeRef(f"{project_id}/{dataset_id}_output_fields.yaml")
             }
 
-        # Write Master Manifest
-        master_manifest: Dict[str, Any] = {
+        # Write Master Data Analysis Recipe
+        master_data_analysis_recipe: Dict[str, Any] = {
             "id": project_id,
             "type": "pipeline",
             "info": {
@@ -162,18 +162,18 @@ class ManifestBootstrapper:
         # metadata_schema only when a metadata file was explicitly supplied
         if metadata_path is not None:
             meta_id = self._sanitize_name(metadata_path.stem)
-            master_manifest["metadata_schema"] = {
+            master_data_analysis_recipe["metadata_schema"] = {
                 "source": {"type": "local_tsv", "path": str(metadata_path)},
                 "input_fields": IncludeRef(f"{project_id}/{meta_id}_input_fields.yaml"),
                 "wrangling": IncludeRef(f"{project_id}/{meta_id}_wrangling.yaml"),
                 "output_fields": IncludeRef(f"{project_id}/{meta_id}_output_fields.yaml"),
             }
 
-        master_manifest["join_manifests"] = {}
-        master_manifest["analysis_groups"] = {}
+        master_data_analysis_recipe["joins"] = {}
+        master_data_analysis_recipe["analysis_groups"] = {}
 
         master_file = project_dir / f"{project_id}.yaml"
         with open(master_file, 'w') as f:
-            yaml.dump(master_manifest, f, sort_keys=False)
+            yaml.dump(master_data_analysis_recipe, f, sort_keys=False)
 
         return master_file

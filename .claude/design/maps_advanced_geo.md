@@ -99,7 +99,7 @@ geo = ["geopandas>=1.0", "shapely>=2.0"]   # pyproj pulled transitively
 
 ---
 
-## 5. Manifest format design (B1)
+## 5. Data analysis recipe format design (B1)
 
 A map plot spec references a boundary asset and a join key, then maps `fill` to an analytical column:
 
@@ -166,7 +166,7 @@ This is one localized change at the existing single render call site — it comp
 
 If/when Solution A proves insufficient (need real projections or accurate boundaries beyond fortified polygons), implement **B1 (sidecar GeoDataFrame merged at render time)**:
 
-- smallest blast radius — one render branch + one optional dep extra + one manifest block;
+- smallest blast radius — one render branch + one optional dep extra + one data analysis recipe block;
 - the data engine and tier lifecycle are untouched;
 - it is the natural use of `geom_map`'s own `data=` design.
 

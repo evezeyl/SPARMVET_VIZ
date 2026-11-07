@@ -7,13 +7,13 @@ from pathlib import Path
 from viz_gallery.gallery_manager import GalleryManager
 
 
-def run_headless_audit(manifest_path: str, data_dir: str, output_root: str):
+def run_headless_audit(data_analysis_recipe_path: str, data_dir: str, output_root: str):
     """
     Headless Audit for Gallery Submission (ADR-033).
     Strictly calls other library 'Engines' via CLI to maintain isolation.
     """
     print("Starting Gallery Submission Audit...")
-    print(f"  - Manifest: {manifest_path}")
+    print(f"  - Data analysis recipe: {data_analysis_recipe_path}")
     print(f"  - Data Dir: {data_dir}")
 
     # 1. Pipeline Execution (Transformer Engine): debug_pipeline.py processes the data
@@ -26,7 +26,7 @@ def run_headless_audit(manifest_path: str, data_dir: str, output_root: str):
 
     cmd = [
         python_exe, pipeline_script,
-        "--manifest", manifest_path,
+        "--data-analysis-recipe", data_analysis_recipe_path,
         "--data-dir", data_dir,
         "--output", str(processed_parquet),
         "--glimpse",
@@ -41,26 +41,26 @@ def run_headless_audit(manifest_path: str, data_dir: str, output_root: str):
 
     print(result.stdout)
 
-    # 2. Extract the recipe from the manifest (ConfigManager resolves the !include files)
+    # 2. Extract the recipe from the data analysis recipe (ConfigManager resolves the !include files)
     from utils.config_loader import ConfigManager
-    manifest_data = ConfigManager(manifest_path).raw_config
+    data_analysis_recipe_data = ConfigManager(data_analysis_recipe_path).raw_config
 
     # Discovery logic for the recipe (ADR-024): the tier1 steps of the first join, or a
     # top-level 'wrangling' key.
     recipe = []
-    if "wrangling" in manifest_data:
-        recipe = manifest_data["wrangling"]
-    elif "join_manifests" in manifest_data:
-        first_key = list(manifest_data["join_manifests"].keys())[0]
-        recipe = manifest_data["join_manifests"][first_key].get("recipe", [])
+    if "wrangling" in data_analysis_recipe_data:
+        recipe = data_analysis_recipe_data["wrangling"]
+    elif "joins" in data_analysis_recipe_data:
+        first_key = list(data_analysis_recipe_data["joins"].keys())[0]
+        recipe = data_analysis_recipe_data["joins"][first_key].get("recipe", [])
 
     # 3. Load the processed data
     df = pl.read_parquet(processed_parquet)
 
     # 4. Mock metadata (in the app this comes from the markdown editor)
-    meta_md = f"""# Gallery Submission: {Path(manifest_path).stem}
+    meta_md = f"""# Gallery Submission: {Path(data_analysis_recipe_path).stem}
 ## Automated Audit Trace
-- **Source Manifest:** `{manifest_path}`
+- **Source Data analysis recipe:** `{data_analysis_recipe_path}`
 - **Source Data:** `{data_dir}`
 - **Status:** Verified via debug_gallery_submission.py
 """
@@ -70,7 +70,7 @@ def run_headless_audit(manifest_path: str, data_dir: str, output_root: str):
     manager = GalleryManager(gallery_dir=str(gallery_vault))
 
     bundle_path = manager.submit_recipe(
-        name=Path(manifest_path).stem,
+        name=Path(data_analysis_recipe_path).stem,
         recipe=recipe,
         data=df,
         meta_markdown=meta_md,
@@ -97,12 +97,12 @@ def run_headless_audit(manifest_path: str, data_dir: str, output_root: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Headless Gallery Submission Audit.")
-    parser.add_argument("--manifest", required=True,
-                        help="Path to the source manifest.")
+    parser.add_argument("--data-analysis-recipe", required=True,
+                        help="Path to the source data analysis recipe.")
     parser.add_argument("--data-dir", required=True,
                         help="Directory containing raw data.")
     parser.add_argument(
         "--output_root", default="tmpAI/gallery_audit", help="Results root (agent scratch by default).")
 
     args = parser.parse_args()
-    run_headless_audit(args.manifest, args.data_dir, args.output_root)
+    run_headless_audit(args.data_analysis_recipe, args.data_dir, args.output_root)

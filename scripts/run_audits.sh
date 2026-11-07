@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./scripts/run_audits.sh sunday       # @deps + cross-lib (23:00 Sun)
-#   ./scripts/run_audits.sh wednesday    # manifest integrity + coherence (22:00 Wed)
+#   ./scripts/run_audits.sh wednesday    # data analysis recipe integrity + coherence (22:00 Wed)
 #   ./scripts/run_audits.sh thursday     # phase order + changelog + template flags (21:00 Thu)
 #   ./scripts/run_audits.sh friday       # task drift (20:00 Fri)
 #   ./scripts/run_audits.sh all          # run every scheduled audit now
@@ -53,8 +53,8 @@ if [[ "${DAY}" == "sunday" || "${DAY}" == "all" ]]; then
 fi
 
 if [[ "${DAY}" == "wednesday" || "${DAY}" == "all" ]]; then
-  run_audit audit_manifest_integrity.py  audit_manifest
-  run_audit audit_manifest_coherence.py  audit_manifest_coherence
+  run_audit audit_data_analysis_recipe_integrity.py  audit_data_analysis_recipe
+  run_audit audit_data_analysis_recipe_coherence.py  audit_data_analysis_recipe_coherence
 fi
 
 if [[ "${DAY}" == "thursday" || "${DAY}" == "all" ]]; then

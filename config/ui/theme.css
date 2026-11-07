@@ -172,7 +172,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 /* Export / Add buttons: unified teal #10a395
    Includes filter "+ Add" and session export — same visual weight as bundle exports */
 #btn_export, #export_global, #export_bundle_download,
-#export_audit_report_download, #btn_download_manifest,
+#export_audit_report_download, #btn_download_data_analysis_recipe,
 #export_single_graph, #session_export_active, #filter_add_row {
     background-color: #10a395 !important; border-color: #0d8a7e !important;
     color: white !important; font-weight: 600 !important; height: 32px !important;
@@ -180,7 +180,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     border-radius: 6px !important;
 }
 #btn_export:hover, #export_global:hover, #export_bundle_download:hover,
-#export_audit_report_download:hover, #btn_download_manifest:hover,
+#export_audit_report_download:hover, #btn_download_data_analysis_recipe:hover,
 #export_single_graph:hover, #session_export_active:hover, #filter_add_row:hover {
     background-color: #0d8a7e !important; border-color: #0b7569 !important;
 }
@@ -200,13 +200,13 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 }
 [id^="session_delete_"]:hover { background-color: #e0a800 !important; border-color: #c79500 !important; }
 /* Blueprint Exchange: upload/import = export category → teal; save = primary action → blue */
-#btn_upload_replace, #btn_upload_append, #btn_import_manifest {
+#btn_upload_replace, #btn_upload_append, #btn_import_data_analysis_recipe {
     background-color: #10a395 !important; border-color: #0d8a7e !important;
     color: white !important; font-weight: 600 !important; height: 32px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
     border-radius: 6px !important;
 }
-#btn_upload_replace:hover, #btn_upload_append:hover, #btn_import_manifest:hover {
+#btn_upload_replace:hover, #btn_upload_append:hover, #btn_import_data_analysis_recipe:hover {
     background-color: #0d8a7e !important; border-color: #0b7569 !important;
 }
 #btn_save_internal {

@@ -85,7 +85,7 @@ The Microreact insight: every panel is a **view of the same isolates**, linked b
 ```mermaid
 flowchart LR
   KEY([shared key: sample_id / isolate])
-  subgraph DASH["Pathogen dashboard (one manifest)"]
+  subgraph DASH["Pathogen dashboard (one data analysis recipe)"]
     direction TB
     MAP[Map - where]
     EPI[Epicurve - when]
@@ -97,7 +97,7 @@ flowchart LR
 
 Two levels of ambition:
 
-- **Level 1 — static composite (achievable, near-term).** A manifest declares a multi-panel layout; each panel renders independently from the shared frame. No interaction between panels. This is "several plots on one page, sharing data" — a layout feature over the existing engine.
+- **Level 1 — static composite (achievable, near-term).** A data analysis recipe declares a multi-panel layout; each panel renders independently from the shared frame. No interaction between panels. This is "several plots on one page, sharing data" — a layout feature over the existing engine.
 - **Level 2 — linked / cross-filtering (the hard part, Microreact's signature).** Selecting a clade on the tree highlights those isolates on the map and filters the epicurve. This needs a **shared client-side selection state** and server round-trips per panel — a substantial new interactivity layer, and the static R renderers (PNG/SVG from Rscript) are not natively interactive, so linking with an R tree panel is genuinely hard. Honest call: Level 1 first; Level 2 is its own major project.
 
 ---
@@ -109,8 +109,8 @@ Two levels of ambition:
 | ingestion / connector | ✅ all of it | — |
 | transformer (Tier 1/2/3 assembly) | ✅ all of it | maybe a "multi-dataset bundle" notion |
 | viz_factory (plotnine charts) | ✅ all of it | render-backend dispatch |
-| blueprint_arch (manifest nav) | ✅ | composite-layout authoring |
-| Manifest contract | ✅ grammar | a `dashboard:` / `composite_layout:` block (panels + positions + per-panel plot ref) |
+| blueprint_arch (data analysis recipe nav) | ✅ | composite-layout authoring |
+| Data analysis recipe contract | ✅ grammar | a `dashboard:` / `composite_layout:` block (panels + positions + per-panel plot ref) |
 | **UI** | sidebars, theater shell patterns | **HOME2 space: panel grid layout, panel registry** |
 | **Render backends** | — | R (ggplot2 / ggtree) opt-in, geom_polygon maps |
 
@@ -118,7 +118,7 @@ So the spirit of your instinct is right: **add/rewrite UI for this part only, le
 
 ---
 
-## 6. Manifest sketch (composite layout)
+## 6. Data analysis recipe sketch (composite layout)
 
 ```yaml
 dashboard:                       # NEW top-level block (HOME2)
@@ -146,7 +146,7 @@ Each panel's `plot` is an ordinary plot spec — its `plot_type` / layers decide
 
 ## 7. Pathogen-specific dashboards
 
-Because the dashboard is just a manifest, a pathogen-specific view (e.g. *Campylobacter* vs *E. coli* vs *S. aureus*) is a **manifest, not code** — different panels, different annotation columns (serotype vs MLST vs resistance gene), same engine and same HOME2 shell. This matches the existing "Factory Pattern" in `dasharch.md §5` (species → metadata mapping). Gallery could even ship pathogen dashboard templates.
+Because the dashboard is just a data analysis recipe, a pathogen-specific view (e.g. *Campylobacter* vs *E. coli* vs *S. aureus*) is a **data analysis recipe, not code** — different panels, different annotation columns (serotype vs MLST vs resistance gene), same engine and same HOME2 shell. This matches the existing "Factory Pattern" in `dasharch.md §5` (species → metadata mapping). Gallery could even ship pathogen dashboard templates.
 
 ---
 
@@ -154,7 +154,7 @@ Because the dashboard is just a manifest, a pathogen-specific view (e.g. *Campyl
 
 1. **Decide the R-backend question** (`r_backend.md`) — gates tree/sf panels.
 2. **Solution A choropleths** (`MAP-A-*`) — gives the map panel with zero new deps; usable in HOME2 immediately.
-3. **HOME2 Level 1** — composite static layout over existing renderers (manifest `dashboard:` block + panel-grid UI). The first real "mixed dashboard."
+3. **HOME2 Level 1** — composite static layout over existing renderers (data analysis recipe `dashboard:` block + panel-grid UI). The first real "mixed dashboard."
 4. **R backends** (ggtree first per `bioinformatics_viz.md`) — adds tree and sf panels.
 5. **HOME2 Level 2** — linked cross-filtering. Major project; revisit only if the static dashboard proves the value.
 
@@ -189,7 +189,7 @@ The roadmaps "help each other" at the **trunk**, not the **renderer**:
 
 | Investment | Serves | Reusable across both forks? |
 |---|---|---|
-| Data engine + manifest + shared-key + **HOME2 composition shell** | everything | **YES — the common trunk. Build once, both forks ride it.** |
+| Data engine + data analysis recipe + shared-key + **HOME2 composition shell** | everything | **YES — the common trunk. Build once, both forks ride it.** |
 | **R static backend** (ggtree, sankey, sf maps) | publication figures, reports | static only — not interactive |
 | **JS interactive layer** (Leaflet, Plotly/Vega, Cytoscape) | live linked dashboards (true Microreact) | interactive only — cannot reuse plotnine/R renderers |
 
@@ -213,7 +213,7 @@ The clean reading: if the survey says **"publication figures + richer chart brea
 
 ## 12. Open questions
 
-1. Is HOME2 a new user space, or a manifest-driven mode of HOME? (Leaning: new space — distinct layout model.)
+1. Is HOME2 a new user space, or a data analysis recipe-driven mode of HOME? (Leaning: new space — distinct layout model.)
 2. Multi-dataset: does a dashboard ever need panels from *different* assembled frames, or always one shared frame? (Affects the engine's "bundle" notion.)
 3. Level 2 linking — worth the interactivity cost, or is static export-quality composition the actual need? (Microreact is interactive; a surveillance *report* may not need to be.)
 4. How do static R-rendered (PNG/SVG) panels coexist with interactive Python panels in one grid? (They can sit side by side statically; they cannot cross-link without an interactive R path.)

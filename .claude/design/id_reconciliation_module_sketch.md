@@ -297,15 +297,15 @@ class TestLabStudio:
         recipe.to_yaml(f"user_data/{session_id}/recipe_{source_file}_{target_file}.yaml")
 ```
 
-### BLUEPRINT (Manifest Scaffolding)
+### BLUEPRINT (Data analysis recipe Scaffolding)
 
 ```python
 from id_reconciliation import IDReconciliationEngine, TransformationRecipe
 
 class WrangleStudio:
-    def scaffold_manifest_from_files(self, uploaded_files: list[str]) -> str:
+    def scaffold_data_analysis_recipe_from_files(self, uploaded_files: list[str]) -> str:
         """
-        Generate a boilerplate manifest from uploaded data files.
+        Generate a boilerplate data analysis recipe from uploaded data files.
         
         Step 1: ID Reconciliation (PREREQUISITE)
         """
@@ -323,12 +323,12 @@ class WrangleStudio:
                    for recipe_file in self._find_saved_recipes(uploaded_files)]
         
         # Apply recipes to build join graph
-        join_manifests = self._build_join_recipes(recipes)
+        joins = self._build_join_recipes(recipes)
         
-        # Generate boilerplate manifest
-        manifest_yaml = self._generate_manifest_boilerplate(join_manifests)
+        # Generate boilerplate data analysis recipe
+        data_analysis_recipe_yaml = self._generate_data_analysis_recipe_boilerplate(joins)
         
-        return manifest_yaml
+        return data_analysis_recipe_yaml
 ```
 
 ---
@@ -456,5 +456,5 @@ def test_recode_workflow():
 
 5. **Recipe reuse caching** — when user imports the same file types again, should TEST_LAB auto-detect & suggest applying the saved recipe? Or always run fresh matching?
 
-6. **Integration with Manifest Scaffolding UI** — should recipes be generated inside TEST_LAB (standalone), or should BLUEPRINT call the engine inline & prompt user for verification? Currently assuming both are possible.
+6. **Integration with Data analysis recipe Scaffolding UI** — should recipes be generated inside TEST_LAB (standalone), or should BLUEPRINT call the engine inline & prompt user for verification? Currently assuming both are possible.
 

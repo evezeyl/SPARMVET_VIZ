@@ -28,11 +28,11 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 Every transformation component MUST consist of a triplet in `libs/transformer/tests/data/`:
 
 1. **Data (`{action}_test.tsv`)**: The raw data (Tab-Separated).
-2. **Manifest (`{action}_test.yaml`)**: The manifest defining the `wrangling` block and `output_fields` contract.
+2. **Data analysis recipe (`{action}_test.yaml`)**: The data analysis recipe defining the `wrangling` block and `output_fields` contract.
 3. **Artifact Generation**: Run the **Universal Wrangler Runner** (for Layer 1) or **Assembly Debugger** (for Layer 2):
 
     ```bash
-    ./.venv/bin/python libs/transformer/tests/debug_wrangler.py --data libs/transformer/tests/data/{action}_test.tsv --manifest libs/transformer/tests/data/{action}_test.yaml --output tmp/transformer/{action}_debug_view.tsv
+    ./.venv/bin/python libs/transformer/tests/debug_wrangler.py --data libs/transformer/tests/data/{action}_test.tsv --data-analysis-recipe libs/transformer/tests/data/{action}_test.yaml --output tmp/transformer/{action}_debug_view.tsv
     ```
 
 ## 4. Documentation & Persistence

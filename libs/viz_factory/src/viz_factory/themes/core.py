@@ -245,7 +245,7 @@ def handle_theme_xkcd(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 14},
         "base_family": {"widget": "string", "label": "Base font family", "required": False},
     },
-    "description": "SPARMVET custom dashboard theme tuned for app display; the default theme in SPARMVET manifests \u2014 omit for the platform default.",
+    "description": "SPARMVET custom dashboard theme tuned for app display; the default theme in SPARMVET data analysis recipes \u2014 omit for the platform default.",
     "yaml_example": "layers:\n  - name: theme_dashboard",
 })
 def handle_theme_dashboard(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -429,7 +429,7 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 # The duplicate here was removed (ACTION-RENAME-1) to eliminate the startup warning.
 
 # ── DECO-2: convenience label/annotation wrappers (added 2026-04-30) ──────────
-# Manifest authors often want one-line label setters rather than the full
+# Data analysis recipe authors often want one-line label setters rather than the full
 # labs(x=..., y=...) call. These wrap plotnine's single-axis helpers.
 
 @register_plot_component("xlab", ui_schema={

@@ -73,13 +73,13 @@ try:
     from app.src.bootloader import bootloader  # noqa: E402
 
     raw_data_dir = bootloader.get_location("raw_data")
-    manifests_dir = bootloader.get_location("manifests")
+    data_analysis_recipes_dir = bootloader.get_location("data_analysis_recipes")
     data_lookup = bootloader.data_lookup
 
     record("Bootloader initialised", PASS)
     record("data_lookup", PASS if data_lookup == "by_dataset_id" else FAIL, data_lookup)
     record("raw_data_dir", INFO, str(raw_data_dir))
-    record("manifests_dir", INFO, str(manifests_dir))
+    record("data_analysis_recipes_dir", INFO, str(data_analysis_recipes_dir))
     record("raw_data_dir exists", PASS if raw_data_dir.exists() else FAIL, str(raw_data_dir))
 except Exception as e:
     record("Bootloader initialised", FAIL, str(e))
@@ -104,18 +104,18 @@ try:
     from ingestion.ingestor import DataIngestor
     from utils.config_loader import ConfigManager
 
-    manifest_id = bootloader.get_manifest_selector().get("fixed_manifest", "1_test_data_ST22_dummy")
-    manifest_path = manifests_dir / f"{manifest_id}.yaml"
-    record("Manifest path", PASS if manifest_path.exists() else FAIL, str(manifest_path))
+    data_analysis_recipe_id = bootloader.get_data_analysis_recipe_selector().get("fixed_data_analysis_recipe", "1_test_data_ST22_dummy")
+    data_analysis_recipe_path = data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
+    record("Data analysis recipe path", PASS if data_analysis_recipe_path.exists() else FAIL, str(data_analysis_recipe_path))
 
     # ConfigManager resolves the !include files, like the app does (plain yaml cannot).
-    manifest = ConfigManager(str(manifest_path)).raw_config
+    data_analysis_recipe = ConfigManager(str(data_analysis_recipe_path)).raw_config
 
     all_schemas: dict = {}
-    all_schemas.update(manifest.get("data_schemas", {}))
-    if "metadata_schema" in manifest:
-        all_schemas["metadata_schema"] = manifest["metadata_schema"]
-    all_schemas.update(manifest.get("additional_datasets_schemas", {}))
+    all_schemas.update(data_analysis_recipe.get("data_schemas", {}))
+    if "metadata_schema" in data_analysis_recipe:
+        all_schemas["metadata_schema"] = data_analysis_recipe["metadata_schema"]
+    all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
 
     ingestor = DataIngestor(data_dir=str(raw_data_dir))
 
@@ -147,14 +147,14 @@ try:
         out_path = Path(tmpdir) / "anchor.parquet"
 
         orchestrator = DataOrchestrator(
-            manifests_dir=manifests_dir,
+            data_analysis_recipes_dir=data_analysis_recipes_dir,
             raw_data_dir=raw_data_dir,
             data_lookup=data_lookup,
         )
 
         lf = orchestrator.materialize_tier1(
-            project_id=manifest_id,
-            collection_id=list(manifest.get("join_manifests", {}).keys())[0],
+            project_id=data_analysis_recipe_id,
+            collection_id=list(data_analysis_recipe.get("joins", {}).keys())[0],
             output_path=out_path,
         )
 
@@ -177,9 +177,9 @@ try:
         del sys.modules["app.src.bootloader"]
     from app.src.bootloader import bootloader as bl2  # noqa: E402
 
-    ms = bl2.get_manifest_selector()
+    ms = bl2.get_data_analysis_recipe_selector()
     record("App features loaded", PASS, bl2.app_features_display_name)
-    record("manifest_selector.fixed_manifest", INFO, str(ms.get("fixed_manifest")))
+    record("data_analysis_recipe_selector.fixed_data_analysis_recipe", INFO, str(ms.get("fixed_data_analysis_recipe")))
     record("data_lookup", INFO, bl2.data_lookup)
     record("testing_mode", INFO, str(bl2.get_testing_mode()))
 except Exception as e:

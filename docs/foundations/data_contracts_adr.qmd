@@ -6,9 +6,9 @@ Instead of writing custom Python code for every new pipeline or species, you def
 
 ---
 
-## Step 1: The Anatomy of a Master Manifest
+## Step 1: The Anatomy of a Master Data Analysis Recipe
 
-Every master manifest file must start with a mandatory header block and declare a unique `id`.
+Every master data analysis recipe file must start with a mandatory header block and declare a unique `id`.
 
 ```yaml
 id: my_pipeline_v1
@@ -95,7 +95,7 @@ output_fields: {}
 
 The platform is designed to be resilient to partial data:
 
-- **Optional Metadata**: If `metadata_schema` is missing from the manifest or its file is not found, the `DataOrchestrator (orchestrator.py)` bypasses the metadata join and proceeds with the primary data sources.
+- **Optional Metadata**: If `metadata_schema` is missing from the data analysis recipe or its file is not found, the `DataOrchestrator (orchestrator.py)` bypasses the metadata join and proceeds with the primary data sources.
 - **Strict Assembly**: Any ingredient explicitly referenced in an assembly `recipe` step is a **strict requirement**. If the ingredient is missing, the `DataAssembler (data_assembler.py)` raises a descriptive error to prevent analyzing incomplete relational states.
 - **Identity Fallback**: If no assembly recipe is provided, the system returns the primary data source as-is.
 
@@ -133,16 +133,16 @@ input_fields:
 
 When different datasets use different names for the same concept (`SampleName`, `ID`, `sample_id`), each dataset declares its own `original_name` and the slugs become the common internal language for joins.
 
-`is_primary_key: true` is informational — it documents intent but does not drive automatic renaming across datasets. Join keys must be explicitly declared in the `join_manifests` recipe using `on` or `left_on`/`right_on`.
+`is_primary_key: true` is informational — it documents intent but does not drive automatic renaming across datasets. Join keys must be explicitly declared in the `joins` recipe using `on` or `left_on`/`right_on`.
 
 ---
 
 ## Step 5: Assembly Recipes (The Join Step)
 
-Once datasets are individually wrangled (Tier 1), they are joined in the `join_manifests` block.
+Once datasets are individually wrangled (Tier 1), they are joined in the `joins` block.
 
 ```yaml
-join_manifests:
+joins:
   AMR_Profile_Joint:
     ingredients:
       - dataset_id: resfinder_results
@@ -170,11 +170,11 @@ Key points:
 
 ## Step 6: Modularity with `!include`
 
-For large pipelines, fragment the manifest into separate files:
+For large pipelines, fragment the data analysis recipe into separate files:
 
 ```text
-config/manifests/pipelines/
-├── my_pipeline.yaml              ← master manifest (headers + !includes)
+config/data_analysis_recipes/pipelines/
+├── my_pipeline.yaml              ← master data analysis recipe (headers + !includes)
 └── my_pipeline/                  ← mirror directory for fragments
     ├── input_fields/
     │   └── resfinder_input_fields.yaml
@@ -215,7 +215,7 @@ input_fields:
     label: Sample ID
 ```
 
-`!include` paths are always **relative to the master manifest file's directory**.
+`!include` paths are always **relative to the master data analysis recipe file's directory**.
 
 ---
 
@@ -223,4 +223,4 @@ input_fields:
 
 - **YAML Reserved Words**: The word `on` is a reserved boolean in YAML. Always quote join key values when using `on:` as a mapping key, or use `left_on`/`right_on` instead.
 - **Numeric string columns**: Columns containing numeric-looking strings (e.g. `"90.5"`) are cast to `numeric` at ingestion if declared `type: numeric` in `input_fields`.
-- **`final_contract` vs `output_fields`**: `output_fields` in a `data_schemas` entry is a Rich Dictionary `{slug: {props}}` used for validation and column selection within that dataset. `final_contract` in `join_manifests` is a simpler `{column_name: type_string}` dict used as a final projection whitelist after joining — it does not need `original_name`.
+- **`final_contract` vs `output_fields`**: `output_fields` in a `data_schemas` entry is a Rich Dictionary `{slug: {props}}` used for validation and column selection within that dataset. `final_contract` in `joins` is a simpler `{column_name: type_string}` dict used as a final projection whitelist after joining — it does not need `original_name`.

@@ -15,17 +15,17 @@ Short answer: **technically very feasible, and the architecture fits more natura
 
 ---
 
-## 2. Why it fits unusually well: the manifest spec *is* ggplot2's grammar
+## 2. Why it fits unusually well: the data analysis recipe spec *is* ggplot2's grammar
 
 SPARMVET plot specs are already grammar-of-graphics: `mapping:`, `layers: [geom_*]`, `scale_*`, `theme_*`, `facet_by`. That is **ggplot2's own vocabulary** — plotnine is just the Python port of ggplot2. So a second backend is not a parallel authoring model; it is a **transpiler**:
 
 ```
                   ┌─► plotnine            (Python path, today)
-manifest spec ────┤
+data analysis recipe spec ────┤
                   └─► ggplot2 code string ─► R render ─► image   (R path, possible)
 ```
 
-One manifest, two possible renderers. `VizFactory` is already an abstraction (`render(df, plot_config) -> image`), so an `RVizFactory` honoring the same contract is conceivable without touching the authoring layer.
+One data analysis recipe, two possible renderers. `VizFactory` is already an abstraction (`render(df, plot_config) -> image`), so an `RVizFactory` honoring the same contract is conceivable without touching the authoring layer.
 
 ---
 
@@ -63,7 +63,7 @@ The data handoff is **already solved**: the engine materializes Tier 1/2/3 to **
 R renders **only** the chart families plotnine genuinely can't do well — Sankey/alluvial (ggalluvial/ggsankey), networks (ggraph), real projected maps (sf). plotnine remains the default for everything else.
 
 - **Pros:** R's mature geoms for free; no dual-renderer-of-the-same-plot provenance problem (R only renders what Python can't); R dependency only where opted in.
-- **Cons:** two renderers coexist (but for disjoint plot sets); a manifest may need both R and Python available if it mixes families.
+- **Cons:** two renderers coexist (but for disjoint plot sets); a data analysis recipe may need both R and Python available if it mixes families.
 - **Gated behind:** an app features/deployment flag (e.g. `r_backend_enabled`) so R is present only where wanted.
 
 ### Option B — Full alternate `RVizFactory` backend (transpile everything)
@@ -100,7 +100,7 @@ The two are **partial substitutes.** Deciding the R-backend direction should the
 ## 7. Costs & constraints (for the future discussion)
 
 - **Deployment footprint.** An R backend needs R + ggplot2 + arrow (+ ggalluvial/sf as used) wherever it runs. *Eve's steer (2026-05-22): R-in-container is routine in our environment — this is a smaller concern than first weighted. Parked as "another day" discussion.* Still worth a line in any eventual ADR for Galaxy/IRIDA portability expectations.
-- **Provenance / audit.** SPARMVET is a reproducibility tool. Any figure must record which backend rendered it (manifest already hashed; add a `render_backend` field to the export report). Option A avoids same-plot divergence; Option B does not.
+- **Provenance / audit.** SPARMVET is a reproducibility tool. Any figure must record which backend rendered it (data analysis recipe already hashed; add a `render_backend` field to the export report). Option A avoids same-plot divergence; Option B does not.
 - **Concurrency.** Confirms the rpy2-avoidance: use process/service isolation, not in-process embedding.
 - **Clear-Lines fit (ADR-011/016).** An R backend belongs to the Artist pillar. Cleanest placement: a `viz_factory` optional extra (`viz_factory[r]`) or a sibling lib `libs/viz_factory_r/`, with R deps lazily imported and a clear error when absent — never imported by the data engine.
 - **IDE introspection.** A transpiler backend (A/B) can still feed the Blueprint form catalog (the spec is the same grammar). A raw-snippet escape hatch (C) cannot — it is opaque to the form builder.

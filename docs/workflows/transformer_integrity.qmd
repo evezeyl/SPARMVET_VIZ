@@ -29,7 +29,7 @@ The suite discovers all actions registered in `AVAILABLE_WRANGLING_ACTIONS` and 
 |---|---|---|
 | **Phase 1 — Atomic Wrangler** | Every registered action via 1:1:1 test triplet | `debug_wrangler.py` |
 | **Phase 2 — Relational Audit** | Join / JoinFilter via `relational_audit.yaml` | `debug_assembler.py` |
-| **Phase 3 — Assembly Pipelines** | Full pipeline manifests in `assets/template_manifests/` | `debug_assembler.py` |
+| **Phase 3 — Assembly Pipelines** | Full pipeline data analysis recipes in `assets/template_data_analysis_recipes/` | `debug_assembler.py` |
 
 ### Current Status (2026-04-24)
 
@@ -72,35 +72,35 @@ Validates every component registered in `PLOT_COMPONENTS` against a test YAML in
 
 ## Individual Debug Scripts
 
-### `debug_wrangler.py` — Test a single manifest (Layer 1)
+### `debug_wrangler.py` — Test a single data analysis recipe (Layer 1)
 
-Runs the Tier 1 wrangling path from a manifest against a dataset. Mirrors the orchestrator's Layer 1 logic exactly.
+Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mirrors the orchestrator's Layer 1 logic exactly.
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --manifest libs/transformer/tests/data/strip_whitespace_manifest.yaml
+    --data-analysis-recipe libs/transformer/tests/data/strip_whitespace_data_analysis_recipe.yaml
 
 # Override data source
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --manifest config/manifests/pipelines/my_pipeline.yaml \
+    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml \
     --data assets/test_data/my_project/
 
 # Write output TSV
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --manifest libs/transformer/tests/data/derive_categories_manifest.yaml \
+    --data-analysis-recipe libs/transformer/tests/data/derive_categories_data_analysis_recipe.yaml \
     --output tmp/my_test_output.tsv
 
 # Run only tier1 or tier2
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --manifest my_manifest.yaml --tier tier1
+    --data-analysis-recipe my_data_analysis_recipe.yaml --tier tier1
 ```
 
 **Arguments:**
 
 | Argument | Required | Default | Description |
 |---|---|---|---|
-| `--manifest` | Yes | — | Path to YAML manifest |
-| `--data` | No | manifest `source.path` | Override data source directory |
+| `--data-analysis-recipe` | Yes | — | Path to YAML data analysis recipe |
+| `--data` | No | data analysis recipe `source.path` | Override data source directory |
 | `--output` | No | `tmp/` | Output path for the materialized TSV |
 | `--tier` | No | `all` | Which tier to run: `tier1`, `tier2`, `all` |
 
@@ -112,21 +112,21 @@ Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, 
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
-    --manifest config/manifests/pipelines/my_pipeline.yaml
+    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml
 
 # Override data directory
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
-    --manifest my_pipeline.yaml \
+    --data-analysis-recipe my_pipeline.yaml \
     --data assets/test_data/my_project/
 
 # Write output to a specific directory
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
-    --manifest my_pipeline.yaml \
+    --data-analysis-recipe my_pipeline.yaml \
     --output tmp/my_assembly_run/
 
 # --output also accepts a file path — the parent directory is used
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
-    --manifest my_pipeline.yaml \
+    --data-analysis-recipe my_pipeline.yaml \
     --output tmp/my_assembly_run/result.tsv
 ```
 
@@ -134,7 +134,7 @@ Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, 
 
 | Argument | Required | Default | Description |
 |---|---|---|---|
-| `--manifest` | Yes | — | Path to pipeline manifest YAML |
+| `--data-analysis-recipe` | Yes | — | Path to pipeline data analysis recipe YAML |
 | `--data` | No | `assets/test_data/` | Override source data directory |
 | `--output` | No | `tmp/` | Output directory (or file path — parent dir is used) |
 | `--tmp` | No | `tmp/` | Alias for `--output` |
@@ -149,11 +149,11 @@ Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, 
 
 ### `debug_runner.py` — Test a single viz component
 
-Tests one VizFactory component from a recipe manifest. Prints a data glimpse and saves the rendered plot.
+Tests one VizFactory component from a recipe data analysis recipe. Prints a data glimpse and saves the rendered plot.
 
 ```bash
 ./.venv/bin/python libs/viz_factory/tests/debug_runner.py \
-    --manifest libs/viz_factory/tests/test_data/geom_bar_test.yaml \
+    --data-analysis-recipe libs/viz_factory/tests/test_data/geom_bar_test.yaml \
     --output tmp/viz_test/geom_bar.png
 ```
 
@@ -161,7 +161,7 @@ Tests one VizFactory component from a recipe manifest. Prints a data glimpse and
 
 ### `debug_wrangler_errors.py` — Test error detection
 
-Verifies that DataWrangler raises correct, user-friendly errors when manifests reference non-existent columns (typo detection with fuzzy suggestions).
+Verifies that DataWrangler raises correct, user-friendly errors when data analysis recipes reference non-existent columns (typo detection with fuzzy suggestions).
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_wrangler_errors.py
@@ -205,7 +205,7 @@ Tests the expression-cleaning action module directly.
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_expressions.py \
-    --manifest libs/transformer/tests/data/label_if_manifest.yaml
+    --data-analysis-recipe libs/transformer/tests/data/label_if_data_analysis_recipe.yaml
 ```
 
 ---
@@ -216,7 +216,7 @@ Standalone relational join audit — verifies join integrity between two dataset
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_relational_audit.py \
-    --manifest libs/transformer/tests/data/relational_audit.yaml \
+    --data-analysis-recipe libs/transformer/tests/data/relational_audit.yaml \
     --output tmp/relational_audit/
 ```
 
@@ -224,7 +224,7 @@ Standalone relational join audit — verifies join integrity between two dataset
 
 ### `debug_decorator_suite.py` — Bulk decorator CI
 
-Scans `libs/transformer/tests/data/` for `*_manifest.yaml` triplets and runs each through `debug_wrangler.py`. Produces a PASS/FAIL table.
+Scans `libs/transformer/tests/data/` for `*_data_analysis_recipe.yaml` triplets and runs each through `debug_wrangler.py`. Produces a PASS/FAIL table.
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_decorator_suite.py
@@ -238,7 +238,7 @@ Tests the `PipelineExecutor` abstraction directly.
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_pipeline.py \
-    --manifest my_manifest.yaml \
+    --data-analysis-recipe my_data_analysis_recipe.yaml \
     --data-dir assets/test_data/my_project/
 ```
 
@@ -269,7 +269,7 @@ Audits the viz_factory component registry for coverage gaps relative to the task
 
 ### `debug_bulk_sync.py` — Gallery bulk sync
 
-Runs a bulk synchronization pass over `assets/gallery_data/` recipe manifests to ensure gallery components are in sync with the registry.
+Runs a bulk synchronization pass over `assets/gallery_data/` recipe data analysis recipes to ensure gallery components are in sync with the registry.
 
 ```bash
 ./.venv/bin/python libs/viz_factory/tests/debug_bulk_sync.py
@@ -284,7 +284,7 @@ Every registered transformer action **must** have a matching test triplet:
 | File | Path | Description |
 |---|---|---|
 | **Action** | `libs/transformer/src/transformer/actions/<module>/<action>.py` | The registered `@register_action` function |
-| **Manifest** | `libs/transformer/tests/data/<action>_manifest.yaml` | ADR-041 Rich Dict manifest for the action |
+| **Data analysis recipe** | `libs/transformer/tests/data/<action>_data_analysis_recipe.yaml` | ADR-041 Rich Dict data analysis recipe for the action |
 | **Data** | `libs/transformer/tests/data/<action>_test.tsv` | Minimal input TSV |
 
 An action is not considered complete until its triplet exists and the full integrity suite passes.

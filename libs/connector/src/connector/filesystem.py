@@ -20,7 +20,7 @@ from .base import BaseConnector
 
 # Paths that must exist on disk before the app can start.
 # cache and user_data are written by the app at runtime — created on demand.
-_REQUIRED_TO_EXIST = ("raw_data", "manifests", "gallery")
+_REQUIRED_TO_EXIST = ("raw_data", "data_analysis_recipes", "gallery")
 _REF = "ADR-048 — deployment 'locations:' block"
 
 

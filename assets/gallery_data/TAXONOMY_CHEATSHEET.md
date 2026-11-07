@@ -1,6 +1,6 @@
 # Gallery Taxonomy Cheatsheet
 
-Icons used consistently across all recipe manifests, recipe_meta.md tag strips, and the Gallery sidebar filter panels.
+Icons used consistently across all recipe data analysis recipes, recipe_meta.md tag strips, and the Gallery sidebar filter panels.
 
 ---
 
@@ -8,12 +8,12 @@ Icons used consistently across all recipe manifests, recipe_meta.md tag strips, 
 
 | Icon | Axis | Sidebar label | Where used |
 |------|------|--------------|-----------|
-| 📊 | **Family (Purpose)** | `📊 Family (Purpose)` | manifest `info.family`, meta `> 📊 …`, sidebar |
-| 🔢 | **Data Pattern** | `🔢 Data Pattern` | manifest `info.pattern`, meta `> … 🔢 …`, sidebar |
-| 📈 | **Difficulty** | `📈 Difficulty` | manifest `info.difficulty`, meta `> … 📈 …`, sidebar |
-| ⚙️ | **Primary Geom** | `⚙️ Primary Geom` | manifest `info.geom`, meta `> … ⚙️ …`, sidebar |
-| 🎯 | **What it Shows** | `🎯 What it Shows` | manifest `info.show`, meta `> … 🎯 …`, sidebar |
-| 📏 | **Sample Size** | `📏 Sample Size` | manifest `info.sample_size`, meta `> … 📏 …`, sidebar |
+| 📊 | **Family (Purpose)** | `📊 Family (Purpose)` | data analysis recipe `info.family`, meta `> 📊 …`, sidebar |
+| 🔢 | **Data Pattern** | `🔢 Data Pattern` | data analysis recipe `info.pattern`, meta `> … 🔢 …`, sidebar |
+| 📈 | **Difficulty** | `📈 Difficulty` | data analysis recipe `info.difficulty`, meta `> … 📈 …`, sidebar |
+| ⚙️ | **Primary Geom** | `⚙️ Primary Geom` | data analysis recipe `info.geom`, meta `> … ⚙️ …`, sidebar |
+| 🎯 | **What it Shows** | `🎯 What it Shows` | data analysis recipe `info.show`, meta `> … 🎯 …`, sidebar |
+| 📏 | **Sample Size** | `📏 Sample Size` | data analysis recipe `info.sample_size`, meta `> … 📏 …`, sidebar |
 
 ---
 
@@ -100,7 +100,7 @@ Example:
 
 ---
 
-## Manifest info block format
+## Data analysis recipe info block format
 
 ```yaml
 info:

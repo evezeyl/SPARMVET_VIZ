@@ -4,7 +4,7 @@ title: "The Audit Pipeline: Making Your Adjustments Defensible"
 
 When you run your data through SPARMVET, three "tiers" are presented:
 
-- **T1 — Assembled**: the raw data joined per your manifest. No analytical decisions made yet.
+- **T1 — Assembled**: the raw data joined per your data analysis recipe. No analytical decisions made yet.
 - **T2 — Analysis-ready**: the standard transformations that every plot in your project shares.
 - **T3 — My adjustments**: *your* decisions on top of T2. This is where you remove bad samples, drop unused columns, filter to the rows you want to publish.
 
@@ -38,7 +38,7 @@ Most adjustments only make sense on one plot. If you filter "value > 90" on a si
 When you author an audit decision that's eligible for propagation, SPARMVET shows you a small dialog with three choices:
 
 - **This plot only** — the default, fastest path. Applies just to the plot you're currently looking at.
-- **All plots** — the decision is copied into every plot's audit panel. New plots added to your manifest later will *not* automatically inherit this decision; you'd need to re-propagate.
+- **All plots** — the decision is copied into every plot's audit panel. New plots added to your data analysis recipe later will *not* automatically inherit this decision; you'd need to re-propagate.
 - **All plots except…** — pick which plots to skip. This is the "remove S2 everywhere except the QC contamination plot" case.
 
 Linked deletion: if you've propagated to multiple plots and later click 🗑 on the node in *any* of those plots, the node is removed from *all* of them. The audit pipeline thinks of a propagated node as one decision applied many places, not many independent decisions.
@@ -99,7 +99,7 @@ The reason isn't just for others — it's for you in six months when you're resp
 
 ## Primary keys — extra care needed
 
-A **primary key** is a column that links your tables together. In a typical SPARMVET project the primary key is `sample_id`; in long-format AMR data, gene identifiers can also serve as join keys. SPARMVET detects primary keys automatically from your manifest's join recipes.
+A **primary key** is a column that links your tables together. In a typical SPARMVET project the primary key is `sample_id`; in long-format AMR data, gene identifiers can also serve as join keys. SPARMVET detects primary keys automatically from your data analysis recipe's join recipes.
 
 When you target a primary key with an audit decision, SPARMVET applies extra rules:
 
@@ -109,7 +109,7 @@ You can't add a `drop_column` node for `sample_id` (or any other join key). The 
 
 > Column `sample_id` is a join key — cannot be dropped. Use a row filter or row exclusion instead.
 
-If your need is to *anonymize* the IDs in the published report (e.g. the journal asks you not to expose internal sample IDs), that is a different problem and currently outside SPARMVET's scope. For now, the report shows whatever IDs your manifest uses; consider relabelling samples *before* assembly if anonymization is a hard requirement.
+If your need is to *anonymize* the IDs in the published report (e.g. the journal asks you not to expose internal sample IDs), that is a different problem and currently outside SPARMVET's scope. For now, the report shows whatever IDs your data analysis recipe uses; consider relabelling samples *before* assembly if anonymization is a hard requirement.
 
 ### Filtering rows on a primary key is **allowed** (with a warning)
 
@@ -160,11 +160,11 @@ Your long-format table has rows like `(sample, gene, similarity)`. You want simi
 
 ## Saving and restoring your work
 
-Every time you click **Apply**, your committed audit decisions are saved to a **T3 ghost** file alongside the assembly results. If you close SPARMVET and come back later with the same manifest and the same data files, the ghost is restored automatically — your audit decisions reappear in their per-plot panels exactly as you left them.
+Every time you click **Apply**, your committed audit decisions are saved to a **T3 ghost** file alongside the assembly results. If you close SPARMVET and come back later with the same data analysis recipe and the same data files, the ghost is restored automatically — your audit decisions reappear in their per-plot panels exactly as you left them.
 
 If your data files have changed since the last session, SPARMVET notices and warns you: the assembly is rebuilt, but the audit decisions persist (a row filter on `sample_id == S2` keeps applying as long as `sample_id` exists in the new data; the audit pipeline doesn't care that the assembly was redone).
 
-If you restructure your manifest — rename a plot, remove a plot — any audit nodes that target the missing plot become **orphaned**. SPARMVET tells you about them at restore time and lists them in an "Orphaned" section so you can re-target or delete them. They never apply silently; you always make a deliberate choice.
+If you restructure your data analysis recipe — rename a plot, remove a plot — any audit nodes that target the missing plot become **orphaned**. SPARMVET tells you about them at restore time and lists them in an "Orphaned" section so you can re-target or delete them. They never apply silently; you always make a deliberate choice.
 
 ## The bottom line
 
@@ -206,7 +206,7 @@ If the user enters `lo > hi`, SPARMVET auto-swaps them rather than producing an 
 | `eq`      | `=`    | selectize multi-pick    | (auto-promoted to `in` when multiple values selected) |
 | `ne`      | `≠`    | selectize multi-pick    | (auto-promoted to `not_in` when multiple values selected) |
 
-Set-membership comparisons cast both sides to string, so a numeric column declared `discrete` (via `scale_x_discrete` in the manifest) still works with the selectize picker.
+Set-membership comparisons cast both sides to string, so a numeric column declared `discrete` (via `scale_x_discrete` in the data analysis recipe) still works with the selectize picker.
 
 ### Auto-promotion rules
 

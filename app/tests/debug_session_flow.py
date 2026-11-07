@@ -45,8 +45,8 @@ def run(output_dir: Path) -> bool:
         tmp = Path(tmpdir)
 
         # ── Fixture files ────────────────────────────────────────────────
-        manifest_file = tmp / "my_pipeline.yaml"
-        manifest_file.write_text("id: my_pipeline\nversion: 1\n")
+        data_analysis_recipe_file = tmp / "my_pipeline.yaml"
+        data_analysis_recipe_file.write_text("id: my_pipeline\nversion: 1\n")
         data_a = tmp / "metadata.tsv"
         data_b = tmp / "amr.tsv"
         data_a.write_text("sample_id\tspecies\nS1\tcat\nS2\tdog\n")
@@ -56,14 +56,14 @@ def run(output_dir: Path) -> bool:
         sm = SessionManager(tmp / "user_data")
 
         # ── Step 1: Compute hashes ───────────────────────────────────────
-        msig = SessionManager.compute_manifest_sha256(manifest_file)
+        msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
         dbh = SessionManager.compute_data_batch_hash(source_files)
         key = SessionManager.compute_session_key(msig, dbh)
         ok = len(msig) == 64 and len(dbh) == 64 and ":" in key
         results.append(("Compute session_key", PASS if ok else FAIL))
 
         # ── Step 2: T1/T2 restore — new session ─────────────────────────
-        r = sm.restore_t1t2(manifest_file, source_files)
+        r = sm.restore_t1t2(data_analysis_recipe_file, source_files)
         ok = r["status"] == "new_session"
         results.append(("restore_t1t2 new_session", PASS if ok else FAIL))
 
@@ -78,18 +78,18 @@ def run(output_dir: Path) -> bool:
             {"assembly": str(p1), "contracted": str(p2)},
         )
         ghost = sm.read_assembly_ghost(key)
-        ok = ghost is not None and ghost["manifest_id"] == "my_pipeline"
+        ok = ghost is not None and ghost["data_analysis_recipe_id"] == "my_pipeline"
         results.append(("Write/read assembly ghost", PASS if ok else FAIL))
 
         # ── Step 4: T1/T2 restore — fast path ───────────────────────────
-        r = sm.restore_t1t2(manifest_file, source_files)
+        r = sm.restore_t1t2(data_analysis_recipe_file, source_files)
         ok = r["status"] == "fast_path"
         results.append(("restore_t1t2 fast_path", PASS if ok else FAIL))
 
         # ── Step 5: T1/T2 restore — reassemble (Parquets deleted) ───────
         p1.unlink()
         p2.unlink()
-        r = sm.restore_t1t2(manifest_file, source_files)
+        r = sm.restore_t1t2(data_analysis_recipe_file, source_files)
         ok = r["status"] == "reassemble"
         results.append(("restore_t1t2 reassemble (Parquet missing)", PASS if ok else FAIL))
 

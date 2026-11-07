@@ -252,7 +252,7 @@ def define_server(input, output, session, *,
     def _active_target_ds() -> str:
         """Return the target_dataset for the currently active plot.
 
-        Falls back to active_collection_id() (first manifest collection) when
+        Falls back to active_collection_id() (first data analysis recipe collection) when
         home_state is absent or the active plot has no target_dataset — so the
         audit panel always shows something rather than going blank.
         """
@@ -924,7 +924,7 @@ def define_server(input, output, session, *,
 # ---------------------------------------------------------------------------
 
 def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None) -> None:
-    msig = state.get("manifest_sha256") or ""
+    msig = state.get("data_analysis_recipe_sha256") or ""
     dbh = state.get("data_batch_hash") or ""
     if not msig or not dbh:
         return
@@ -933,8 +933,8 @@ def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None)
     try:
         session_manager.write_t3_ghost(
             session_key=session_key,
-            manifest_id=state.get("manifest_id", ""),
-            manifest_sha256=msig,
+            data_analysis_recipe_id=state.get("data_analysis_recipe_id", ""),
+            data_analysis_recipe_sha256=msig,
             data_batch_hash=dbh,
             tier_toggle=state.get("tier_toggle", "T2"),
             t3_recipe_by_plot=state.get("t3_recipe_by_plot", {}),

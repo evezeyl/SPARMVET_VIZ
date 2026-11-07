@@ -7,7 +7,7 @@
 IridaConnector — connector for IRIDA REST API deployments (ADR-048 §5, §8).
 
 Full OAuth2 fetch implementation is Phase 23-D. This module provides:
-- The correct interface (resolve_paths, fetch_data, get_manifest_path).
+- The correct interface (resolve_paths, fetch_data, get_data_analysis_recipe_path).
 - Token validation (reads SPARMVET_IRIDA_TOKEN from env, fails early if absent).
 - Path resolution using irida.local_cache as effective project_root post-fetch.
 - A NotImplementedError from fetch_data() until Phase 23-D lands.

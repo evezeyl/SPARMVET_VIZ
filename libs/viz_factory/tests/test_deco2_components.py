@@ -8,7 +8,7 @@ the wrapper imports correctly, accepts the spec shape, and produces a
 composable plot object.
 
 This is the FAST automatic check (sub-second). The full Evidence Loop
-(YAML manifest → debug_runner → PNG materialisation in `tmp/viz_factory/`)
+(YAML data analysis recipe → debug_runner → PNG materialisation in `tmp/viz_factory/`)
 is run via `viz_factory_integrity_suite.py` and the matching
 `{component}_test.yaml` files in `tests/test_data/` — those exercise the
 end-to-end render pipeline through matplotlib.

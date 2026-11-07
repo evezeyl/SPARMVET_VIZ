@@ -188,7 +188,7 @@ class TestScenarioRoundtrip:
         cfg = s.propose_config(samples_tsv, n_rows=10)
         saved = s.save_config(cfg, "header_check", tmp_path)
         content = saved.read_text()
-        assert "NOT a pipeline manifest" in content
+        assert "NOT a pipeline data analysis recipe" in content
         assert "synthetic_data_config:" in content
 
     def test_yaml_root_key_is_synthetic_data_config(self, samples_tsv, tmp_path):
@@ -197,7 +197,7 @@ class TestScenarioRoundtrip:
         saved = s.save_config(cfg, "root_key_check", tmp_path)
         data = yaml.safe_load(saved.read_text())
         assert "synthetic_data_config" in data, "root key must be synthetic_data_config"
-        assert "id" not in data, "pipeline manifest 'id' key must NOT appear at root"
+        assert "id" not in data, "pipeline data analysis recipe 'id' key must NOT appear at root"
 
     def test_empty_scenarios_dir_returns_empty_list(self, tmp_path):
         s = AquaSynthesizer()

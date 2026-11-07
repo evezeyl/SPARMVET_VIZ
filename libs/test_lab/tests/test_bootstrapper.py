@@ -1,4 +1,4 @@
-"""Gate tests for TL-BOOTSTRAP-FIX-1 — ManifestBootstrapper correctness."""
+"""Gate tests for TL-BOOTSTRAP-FIX-1 — DataAnalysisRecipeBootstrapper correctness."""
 import pytest
 import yaml
 from pathlib import Path
@@ -30,16 +30,16 @@ class TestBootstrapperBugFixes:
     """Tests that cover the three bugs fixed by TL-BOOTSTRAP-FIX-1."""
 
     def test_uses_analysis_groups_not_plotting(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         master = bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         raw = master.read_text()
-        assert "analysis_groups" in raw, "master manifest must contain 'analysis_groups'"
+        assert "analysis_groups" in raw, "master data analysis recipe must contain 'analysis_groups'"
         assert "plotting" not in raw, "legacy 'plotting' key must not appear"
 
     def test_no_metadata_schema_by_default(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         master = bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         raw = master.read_text()
         # Check for the YAML key form (with colon) to avoid matching substrings
@@ -49,22 +49,22 @@ class TestBootstrapperBugFixes:
         )
 
     def test_metadata_schema_present_when_supplied(self, minimal_tsv, meta_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         master = bs.bootstrap([minimal_tsv], "test_proj", tmp_path, metadata_path=meta_tsv)
         raw = master.read_text()
         assert "metadata_schema" in raw
 
-    def test_join_manifests_stub_present(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+    def test_joins_stub_present(self, minimal_tsv, tmp_path):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         master = bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         raw = master.read_text()
-        assert "join_manifests" in raw
+        assert "joins" in raw
 
     def test_wrangling_fragment_is_tiered(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
         assert frag.exists(), f"Wrangling fragment not found at {frag}"
@@ -77,13 +77,13 @@ class TestIdCleaningRecipes:
     """Tests for the id_cleaning_recipes parameter."""
 
     def test_cleaning_steps_injected_into_tier1(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
         recipes = {
             "samples": [
                 {"action": "strip_whitespace", "columns": ["sample_id"]},
             ]
         }
-        bs = ManifestBootstrapper()
+        bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path, id_cleaning_recipes=recipes)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
         data = yaml.safe_load(frag.read_text().lstrip("# Candidate PK:").split("\n", 1)[-1])
@@ -96,8 +96,8 @@ class TestIdCleaningRecipes:
         assert data["tier1"][0]["action"] == "strip_whitespace"
 
     def test_no_cleaning_recipes_produces_empty_tier1(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
         yaml_lines = [l for l in frag.read_text().splitlines() if not l.startswith("#")]
@@ -106,18 +106,18 @@ class TestIdCleaningRecipes:
 
 
 class TestOutputStructure:
-    """Verify the generated file tree and master manifest keys."""
+    """Verify the generated file tree and master data analysis recipe keys."""
 
-    def test_master_manifest_id_matches_project(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+    def test_master_data_analysis_recipe_id_matches_project(self, minimal_tsv, tmp_path):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         master = bs.bootstrap([minimal_tsv], "my_pipeline", tmp_path)
         assert master.name == "my_pipeline.yaml"
         assert master.parent.name == "my_pipeline"
 
     def test_fragment_files_created(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frags = tmp_path / "test_proj" / "test_proj"
         assert (frags / "samples_input_fields.yaml").exists()
@@ -125,8 +125,8 @@ class TestOutputStructure:
         assert (frags / "samples_output_fields.yaml").exists()
 
     def test_input_fields_infers_sample_id_as_pk(self, minimal_tsv, tmp_path):
-        from test_lab.bootstrapper import ManifestBootstrapper
-        bs = ManifestBootstrapper()
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_input_fields.yaml"
         data = yaml.safe_load(frag.read_text())

@@ -1,0 +1,43 @@
+# RETEST: a dataset whose file has a renamed header (issue #18). The data analysis recipe declares the column
+# predicted_phenotype; the file genes_renamed_header.tsv calls it phenotype_renamed.
+# Expected in Home: a red "Data Assembly Failed" banner that names the dataset and the missing column.
+id: retest_broken_header
+type: species
+info:
+  display_name: RETEST broken header
+  description: The data file has a renamed column; the app must say so.
+  version: '1.0'
+
+data_schemas:
+  Genes:
+    source:
+      type: local_tsv
+      path: ./assets/test_data/retest/genes_renamed_header.tsv   # EDIT HERE (test 2): use genes.tsv, reload, it works
+    input_fields:
+      sample_id: {original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}
+      gene: {original_name: gene, type: categorical, label: Gene}
+      predicted_phenotype: {original_name: predicted_phenotype, type: categorical, label: Phenotype}
+    wrangling:
+      tier1: []
+      tier2: []
+
+joins:
+  Genes_joined:
+    ingredients:
+      - dataset_id: Genes
+    recipe:
+      tier1: []
+      tier2: []
+
+analysis_groups:
+  retest:
+    label: "Retest"
+    plots:
+      genes_bar:
+        label: "Genes"
+        spec:
+          target_dataset: Genes_joined
+          mapping: {x: gene}
+          layers:
+            - name: geom_bar
+              params: {}

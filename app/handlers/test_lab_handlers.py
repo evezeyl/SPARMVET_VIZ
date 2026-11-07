@@ -308,7 +308,7 @@ def define_server(
 
     # ── end TL-UI-RECONCILE-1 ────────────────────────────────────────────
 
-    # ── Manifest Scaffolding (TL-UI-SCAFFOLD-1) ──────────────────────────
+    # ── Data analysis recipe Scaffolding (TL-UI-SCAFFOLD-1) ──────────────────────────
 
     @output
     @render.ui
@@ -339,12 +339,12 @@ def define_server(
             ),
             ui.output_ui("tl_scaffold_recon_ui"),
             ui.input_action_button(
-                "tl_scaffold_run", "Scaffold Manifest",
+                "tl_scaffold_run", "Scaffold Data analysis recipe",
                 class_="btn btn-primary btn-sm mt-2",
             ),
             ui.output_ui("tl_scaffold_status_ui"),
             ui.download_button(
-                "tl_scaffold_download", "Download manifest ZIP",
+                "tl_scaffold_download", "Download data analysis recipe ZIP",
                 class_="btn btn-primary btn-sm mt-1",
             ),
             class_="p-2",
@@ -400,7 +400,7 @@ def define_server(
     @reactive.Calc
     @reactive.event(input.tl_scaffold_run)
     def _scaffold_result():
-        from test_lab.scaffolder import ManifestScaffolder
+        from test_lab.scaffolder import DataAnalysisRecipeScaffolder
 
         try:
             project_id = (input.tl_scaffold_project_id() or "").strip()
@@ -456,7 +456,7 @@ def define_server(
                     recipes = {dataset_key: recipe.steps}
                     with_recon_dataset = dataset_key
 
-        scaffolder = ManifestScaffolder(join_key=join_key)
+        scaffolder = DataAnalysisRecipeScaffolder(join_key=join_key)
         zip_bytes = scaffolder.scaffold(
             tsv_paths, project_id,
             recipes=recipes,
@@ -475,7 +475,7 @@ def define_server(
     def tl_scaffold_status_ui():
         if input.tl_scaffold_run() == 0:
             return ui.p(
-                "Fill in the form and click Scaffold Manifest.",
+                "Fill in the form and click Scaffold Data Analysis Recipe.",
                 class_="text-muted small mt-1",
             )
         result = _scaffold_result()
@@ -507,11 +507,11 @@ def define_server(
     def _scaffold_download_filename():
         result = _scaffold_result()
         if result is None or "error" in result:
-            return "manifest_scaffold.zip"
+            return "data_analysis_recipe_scaffold.zip"
         from datetime import datetime
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         pid = result.get("project_id", "scaffold")
-        return f"{ts}_{pid}_manifest.zip"
+        return f"{ts}_{pid}_data_analysis_recipe.zip"
 
     # ── end TL-UI-SCAFFOLD-1 ─────────────────────────────────────────────
 

@@ -29,7 +29,7 @@ def _deployment(tmp_path, name="dep.yaml", **extra):
     """Write a deployment file whose five locations are real folders under tmp_path."""
     root = tmp_path / name.replace(".yaml", "_data")
     locations = {}
-    for key in ("raw_data", "manifests", "cache", "user_data", "gallery"):
+    for key in ("raw_data", "data_analysis_recipes", "cache", "user_data", "gallery"):
         (root / key).mkdir(parents=True, exist_ok=True)
         locations[key] = str(root / key)
     body = {"deployment_type": "filesystem", "deployment_name": name, "locations": locations}
@@ -132,29 +132,29 @@ def test_missing_location_folder_stops_the_app(tmp_path, monkeypatch):
         Bootloader()
 
 
-def test_recipes_are_listed_from_the_manifests_folder(tmp_path, monkeypatch):
+def test_recipes_are_listed_from_the_data_analysis_recipes_folder(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path, **{"default_app_features": "qa"})
-    (root / "manifests" / "alpha.yaml").write_text("id: alpha\n")
-    (root / "manifests" / "beta.yaml").write_text("id: beta\n")
-    (root / "manifests" / "notes.txt").write_text("not a manifest\n")
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
+    (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\n")
+    (root / "data_analysis_recipes" / "notes.txt").write_text("not a manifest\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     assert sorted(Bootloader().available_projects) == ["alpha", "beta"]
 
 
 def test_CURRENT_GAP_template_fixed_manifest_wins_and_deployment_default_is_ignored(tmp_path, monkeypatch):
     """ADR-091 changes this: the deployment default takes effect and the template key is removed."""
-    dep, root = _deployment(tmp_path, **{"default_manifest": "beta", "default_app_features": "pipeline-static"})
-    (root / "manifests" / "beta.yaml").write_text("id: beta\n")
+    dep, root = _deployment(tmp_path, **{"default_data_analysis_recipe": "beta", "default_app_features": "pipeline-static"})
+    (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     b = Bootloader()
-    assert b.default_manifest == "beta"  # read from the deployment file ...
+    assert b.default_data_analysis_recipe == "beta"  # read from the deployment file ...
     assert b.get_default_project() == "1_test_data_ST22_dummy"  # ... but the template pin is used
 
 
 def test_CURRENT_GAP_without_any_pin_the_first_listed_recipe_opens(tmp_path, monkeypatch):
-    dep, root = _deployment(tmp_path, **{"default_manifest": "beta", "default_app_features": "qa"})
-    (root / "manifests" / "alpha.yaml").write_text("id: alpha\n")
-    (root / "manifests" / "beta.yaml").write_text("id: beta\n")
+    dep, root = _deployment(tmp_path, **{"default_data_analysis_recipe": "beta", "default_app_features": "qa"})
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
+    (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     b = Bootloader()
     assert b.get_default_project() == next(iter(b.available_projects))
@@ -193,7 +193,8 @@ def test_old_deployment_key_stops_the_app_and_names_the_new_one(tmp_path, monkey
     assert "default_persona" in err and "default_app_features" in err
 
 
-@pytest.mark.parametrize("old, new", [("persona_id", "name"), ("features", "flags")])
+@pytest.mark.parametrize("old, new", [("persona_id", "name"), ("features", "flags"),
+                                      ("manifest_selector", "data_analysis_recipe_selector")])
 def test_old_app_features_key_stops_the_app_and_names_the_new_one(tmp_path, monkeypatch, capsys, old, new):
     dep, _ = _deployment(tmp_path)
     source = yaml.safe_load((REPO / "config" / "app_features" / "qa.yaml").read_text().replace("!include ", ""))
@@ -209,7 +210,8 @@ def test_old_app_features_key_stops_the_app_and_names_the_new_one(tmp_path, monk
     assert f"'{old}'" in err and f"'{new}'" in err
 
 
-@pytest.mark.parametrize("old, new", [("curated_data", "cache"), ("user_sessions", "user_data")])
+@pytest.mark.parametrize("old, new", [("curated_data", "cache"), ("user_sessions", "user_data"),
+                                      ("manifests", "data_analysis_recipes")])
 def test_old_location_key_stops_the_app_and_names_the_new_one(tmp_path, monkeypatch, capsys, old, new):
     dep, root = _deployment(tmp_path, **{"default_app_features": "qa"})
     body = yaml.safe_load(dep.read_text())
@@ -222,7 +224,7 @@ def test_old_location_key_stops_the_app_and_names_the_new_one(tmp_path, monkeypa
     assert f"'{old}'" in err and f"'{new}'" in err
 
 
-@pytest.mark.parametrize("old", ["prefer_discovery", "data_ingestion_enabled"])
+@pytest.mark.parametrize("old", ["prefer_discovery", "data_ingestion_enabled", "default_manifest"])
 def test_old_deployment_switch_stops_the_app(tmp_path, monkeypatch, capsys, old):
     dep, _ = _deployment(tmp_path, **{"default_app_features": "qa", old: True})
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
@@ -248,7 +250,7 @@ def test_operator_lock_overrides_an_app_features_flag(tmp_path, monkeypatch):
     assert b.is_enabled("export_enabled") is True  # other flags untouched
 
 
-def test_data_lookup_defaults_to_manifest_paths(tmp_path, monkeypatch):
+def test_data_lookup_defaults_to_data_analysis_recipe_paths(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path, **{"default_app_features": "qa"})
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
-    assert Bootloader().data_lookup == "manifest_paths"
+    assert Bootloader().data_lookup == "data_analysis_recipe_paths"

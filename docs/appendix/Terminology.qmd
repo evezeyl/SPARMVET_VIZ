@@ -5,8 +5,8 @@ This document defines the authoritative nomenclature for the **SPARMVET_VIZ** pl
 
 ## Core Operational Units
 
-- **Project**: The top-level organizational unit (formerly *Species*). A project is defined by a central YAML manifest and may contain multiple data collections.
-- **Schema**: The structural definition of a dataset's fields and types. Schemas are defined in the `input_fields` and `output_fields` blocks of the project manifest.
+- **Project**: The top-level organizational unit (formerly *Species*). A project is defined by a central YAML data analysis recipe and may contain multiple data collections.
+- **Schema**: The structural definition of a dataset's fields and types. Schemas are defined in the `input_fields` and `output_fields` blocks of the project data analysis recipe.
 - **Collection**: A logical grouping of datasets (e.g., Genotypes + Phenotypes) assembled under a single project anchor.
 - **Record**: A single row of data (formerly *Sample*). A record is the atomic unit of analysis and visualization.
 - **Record ID**: The unique primary key (PK) identifying a record across multiple datasets within a collection.

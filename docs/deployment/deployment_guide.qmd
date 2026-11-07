@@ -23,7 +23,7 @@ SPARMVET_VIZ is packaged as a single Docker image that can run in any of four de
 | **Institutional server** | Shared server for a research group or institute; multiple pipelines available |
 | **Local machine** | Developer or admin running the app directly from the repository |
 
-In every case the same image runs. What changes is a single configuration file — the **deployment** — that tells the app where to find data, which manifest to load by default, and which user app features to activate.
+In every case the same image runs. What changes is a single configuration file — the **deployment** — that tells the app where to find data, which data analysis recipe to load by default, and which user app features to activate.
 
 ---
 
@@ -38,14 +38,14 @@ The deployment is a YAML file that fully describes one deployment instance. It r
 deployment_type: filesystem
 deployment_name: "AMR Surveillance — Institute Server"
 
-default_manifest: "manifests/amr/master.yaml"
+default_data_analysis_recipe: "data_analysis_recipes/amr/master.yaml"
 default_app_features: pipeline-static
 
 project_root: "/data/sparmvet/amr_pipeline/"
 
 locations:
   raw_data:      "inputs/"
-  manifests:     "manifests/"
+  data_analysis_recipes:     "data_analysis_recipes/"
   cache:  "parquet/"
   user_data: "sessions/"
   gallery:       "gallery/"
@@ -62,14 +62,14 @@ All paths under `locations` are **relative to `project_root`**. The app never us
 deployment_type: irida
 deployment_name: "AMR Pipeline — IRIDA"
 
-default_manifest: "manifests/amr/master.yaml"
+default_data_analysis_recipe: "data_analysis_recipes/amr/master.yaml"
 default_app_features: pipeline-static
 
 project_root: "/tmp/sparmvet_irida_cache/"
 
 locations:
   raw_data:      "inputs/"
-  manifests:     "manifests/"
+  data_analysis_recipes:     "data_analysis_recipes/"
   cache:  "parquet/"
   user_data: "sessions/"
   gallery:       "gallery/"
@@ -87,7 +87,7 @@ For IRIDA, the app downloads files from the IRIDA REST API into `local_cache` be
 
 | Field | Default if absent | Effect |
 |---|---|---|
-| `default_manifest` | None | Manifest selector is shown (flag-gated) |
+| `default_data_analysis_recipe` | None | Data analysis recipe selector is shown (flag-gated) |
 | `default_app_features` | From app features file selection | App features selector shown in UI |
 | `deployment_name` | — | Not shown; purely informational |
 | `irida` block | — | Required only when `deployment_type: irida` |
@@ -132,7 +132,7 @@ Galaxy wraps interactive tools using an XML tool definition. For each pipeline, 
 
 The same Docker image is used for all pipelines. Only the `SPARMVET_DEPLOYMENT` value differs between wrappers.
 
-**Result:** The scientist clicks "SPARMVET Visualizer" in their Galaxy history after a pipeline run, and the app opens pre-loaded with the correct manifest and their pipeline results — no manual configuration needed.
+**Result:** The scientist clicks "SPARMVET Visualizer" in their Galaxy history after a pipeline run, and the app opens pre-loaded with the correct data analysis recipe and their pipeline results — no manual configuration needed.
 
 ## 3.2 IRIDA
 
@@ -175,7 +175,7 @@ services:
       - ./deployments:/deployments:ro
 ```
 
-**One deployment, multiple pipelines** (single entry point, manifest selector shown): Set `default_manifest` absent from the deployment, point `locations.manifests` at a directory containing multiple pipeline manifests, and assign an app features that allows manifest selection (≥ `project-independent`). Scientists pick their pipeline from a dropdown in the UI.
+**One deployment, multiple pipelines** (single entry point, data analysis recipe selector shown): Set `default_data_analysis_recipe` absent from the deployment, point `locations.data_analysis_recipes` at a directory containing multiple pipeline data analysis recipes, and assign an app features that allows data analysis recipe selection (≥ `project-independent`). Scientists pick their pipeline from a dropdown in the UI.
 
 ## 3.4 Local Machine
 
@@ -194,11 +194,11 @@ Place a deployment at `~/.sparmvet/deployment.yaml` pointing at local data direc
 SPARMVET is designed to be deployed multiple times — once per pipeline — rather than as a single monolith serving all pipelines. Each deployment is independent:
 
 - Its own `project_root` (separate data directories).
-- Its own `default_manifest` (the YAML recipe for that pipeline).
+- Its own `default_data_analysis_recipe` (the YAML recipe for that pipeline).
 - Its own app features (which features are available to end users).
 - Its own `user_data` path (user exports and session saves are isolated).
 
-This isolation means that a bug in one pipeline's data or manifest cannot affect another pipeline's deployment. It also means that each pipeline can be updated (new manifest version, new data) without touching the others.
+This isolation means that a bug in one pipeline's data or data analysis recipe cannot affect another pipeline's deployment. It also means that each pipeline can be updated (new data analysis recipe version, new data) without touching the others.
 
 ---
 
@@ -209,7 +209,7 @@ Every deployment defines the same five locations. All paths are relative to `pro
 | Key | Purpose | Typical subdirectory |
 |---|---|---|
 | `raw_data` | Raw input files (TSV, Excel, VCF) before ingestion | `inputs/` |
-| `manifests` | Pipeline YAML manifests and wrangling recipes | `manifests/` |
+| `data_analysis_recipes` | Pipeline YAML data analysis recipes and wrangling recipes | `data_analysis_recipes/` |
 | `cache` | Tier 1 and Tier 2 Parquet caches (computed by the engine) | `parquet/` |
 | `user_data` | User exports (zip bundles), session saves, Tier 3 artifacts | `sessions/` |
 | `gallery` | Pre-rendered gallery examples and YAML recipe clones | `gallery/` |
@@ -218,7 +218,7 @@ Every deployment defines the same five locations. All paths are relative to `pro
 
 ---
 
-# 6. App features and Manifest — Two Independent Settings
+# 6. App features and Data analysis recipe — Two Independent Settings
 
 Two settings in the deployment control what the user sees:
 
@@ -229,13 +229,13 @@ Two settings in the deployment control what the user sees:
 | `pipeline-static` | End-user, fixed pipeline | View plots, export bundle. No wrangling. |
 | `pipeline-exploration-simple` | Scientist exploring results | Add filters, view tiers. No T3 sandbox. |
 | `pipeline-exploration-advanced` | Power user | Full T3 sandbox, comparison mode, audit trail. |
-| `project-independent` | Researcher managing their own data | Can select manifests, import data. |
+| `project-independent` | Researcher managing their own data | Can select data analysis recipes, import data. |
 | `developer` | Admin / developer | All features, gallery browser, dev studio. |
 
-**`default_manifest`** — controls *which pipeline/dataset* is loaded:
-This is the path to the YAML manifest that defines the analysis groups, plots, and data wrangling steps for a specific pipeline. Changing this (via a different deployment) switches the app to a completely different pipeline without any code change.
+**`default_data_analysis_recipe`** — controls *which pipeline/dataset* is loaded:
+This is the path to the YAML data analysis recipe that defines the analysis groups, plots, and data wrangling steps for a specific pipeline. Changing this (via a different deployment) switches the app to a completely different pipeline without any code change.
 
-These two settings are **orthogonal**: a `pipeline-static` app features can point at an AMR manifest or a Plasmid manifest. The app features controls access; the manifest controls content.
+These two settings are **orthogonal**: a `pipeline-static` app features can point at an AMR data analysis recipe or a Plasmid data analysis recipe. The app features controls access; the data analysis recipe controls content.
 
 ---
 
@@ -243,9 +243,9 @@ These two settings are **orthogonal**: a `pipeline-static` app features can poin
 
 For any deployment context, an admin must:
 
-1. **Write the deployment file** — copy the template, fill in paths, set `deployment_type`, `default_manifest`, and `default_app_features`.
+1. **Write the deployment file** — copy the template, fill in paths, set `deployment_type`, `default_data_analysis_recipe`, and `default_app_features`.
 2. **Ensure data directories exist** — create the five location paths under `project_root` and set appropriate permissions.
-3. **Place the initial manifest** — put the pipeline YAML manifest(s) in `locations.manifests`.
+3. **Place the initial data analysis recipe** — put the pipeline YAML data analysis recipe(s) in `locations.data_analysis_recipes`.
 4. **For IRIDA**: ensure `SPARMVET_IRIDA_TOKEN` is injected at container launch by IRIDA; do not put tokens in the deployment file.
 5. **For Galaxy**: bundle the deployment file inside the Docker image (or mount it), and reference it in the tool XML wrapper.
 
@@ -264,12 +264,12 @@ The app will validate the deployment at startup and log errors if required field
 
 # 9. Programmatic Lineage API (ADR-074)
 
-For operators and developers who need to programmatically query the manifest structure — e.g., to audit which plots consume which data sources, or to trace a plot's dependencies upstream to its raw inputs — the **Manifest Lineage API** provides headless access to the same graph logic used internally by the app.
+For operators and developers who need to programmatically query the data analysis recipe structure — e.g., to audit which plots consume which data sources, or to trace a plot's dependencies upstream to its raw inputs — the **Data analysis recipe Lineage API** provides headless access to the same graph logic used internally by the app.
 
 ## 9.1 Import
 
 ```python
-from blueprint_arch.manifest_navigator import (
+from blueprint_arch.data_analysis_recipe_navigator import (
     build_plot_lineage,
     get_plot_ids_in_group,
 )
@@ -281,7 +281,7 @@ from blueprint_arch.manifest_navigator import (
 
 ```python
 # Trace a plot backward to its raw data sources
-lineage = build_plot_lineage("amr_heatmap", "config/manifests/pipelines/master.yaml")
+lineage = build_plot_lineage("amr_heatmap", "config/data_analysis_recipes/pipelines/master.yaml")
 for step in lineage:
     print(f"{step['rel']} ({step['role']}) → {step['schema_id']}")
 # Output:
@@ -295,7 +295,7 @@ for step in lineage:
 
 ```python
 # List all plot IDs in a specific analysis group
-plot_ids = get_plot_ids_in_group("AMR_Resistance", "config/manifests/pipelines/master.yaml")
+plot_ids = get_plot_ids_in_group("AMR_Resistance", "config/data_analysis_recipes/pipelines/master.yaml")
 for plot_id in plot_ids:
     print(plot_id)
 # Output:

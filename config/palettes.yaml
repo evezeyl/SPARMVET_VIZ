@@ -1,9 +1,9 @@
 # SPARMVET Deployment Palette Registry
 #
-# Define named color palettes available to all manifests in this deployment.
+# Define named color palettes available to all data analysis recipes in this deployment.
 # Each palette is a list of hex color strings.
 #
-# Usage in a manifest:
+# Usage in a data analysis recipe:
 #   plot_defaults:
 #     palette: nvi_official
 #

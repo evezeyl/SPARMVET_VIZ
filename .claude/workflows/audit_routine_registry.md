@@ -2,7 +2,7 @@
 
 **Authority:** Operational workflow for automated hygiene checks across the SPARMVET_VIZ repository.
 
-**Purpose:** Define, schedule, and track recurring audit routines that verify code health, ADR compliance, manifest integrity, and documentation drift without manual intervention.
+**Purpose:** Define, schedule, and track recurring audit routines that verify code health, ADR compliance, data analysis recipe integrity, and documentation drift without manual intervention.
 
 **Last Updated:** 2026-05-09  
 **Execution Guide:** `.claude/workflows/schedule_commands.md` — how to run audits locally (session-end, cron, single-script, on-demand). Read that file before setting up any new routine.
@@ -17,7 +17,7 @@
 |---------|-----------|----------|--------|----------|----------|---|---|
 | @deps block verification | Weekly | Sundays 23:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-11 | — | Local (systemd) |
 | ADR-011 cross-lib violation scan | Weekly | Sundays 23:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-11 | — | Local (systemd) |
-| Manifest structure integrity | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ❌ (false positive — MANIFEST-INCLUDE-1: !include unsupported by debug_assembler) | 2026-05-27 | — | Local (systemd) |
+| Data analysis recipe structure integrity | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ❌ (false positive — DATA-ANALYSIS-RECIPE-INCLUDE-1: !include unsupported by debug_assembler) | 2026-05-27 | — | Local (systemd) |
 | Task-to-code drift check | Weekly | Fridays 20:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-16 | — | Local (systemd) |
 | App features file consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ | — | — | Local (manual) |
 | Phase ordering audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
@@ -29,11 +29,11 @@
 | Library test coverage | On-demand | Manual trigger (or pre-release) | `[x] Active` | 2026-05-09 ❌ | LIB-TESTS-BLUEPRINT-1, LIB-TESTS-VIZ-TIMEOUT-1 | 2026-05-09 | Local (manual) |
 | Package dependency health | On-demand | Manual trigger (or monthly) | `[x] Active` | 2026-05-09 ⚠️ | plotnine PATCH upgrade pending | 2026-05-09 | Local (manual) |
 | Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[x] Active` | 2026-05-09 ✅ | Fixed 2 stale → exclusions | 2026-05-09 | Local (manual) |
-| Manifest coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ✅ (6/6 PASS) | 2026-05-27 | — | Local (systemd) |
+| Data analysis recipe coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ✅ (6/6 PASS) | 2026-05-27 | — | Local (systemd) |
 | Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
 | **Semantic doc sync** (Agent §17) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ⚠️ — 4 STALE (generate_branch_plan sig, group_plot_manager returns, get_registered_tools return, Blueprint panel table). 3 fixed this session; DOC-BLUEPRINT-PANELS-1 deferred. | — | — | Agent (on-demand) |
 | **ADR behavioral compliance** (Agent §18) | On-demand | Manual trigger | `[x] Active` | 2026-11-06 ❌ then fixed the same day: ADR-045 render write in wrangle_studio.py (ADR-045-PLOTERR-1, guarded now by app/tests/test_render_purity.py); server.py 287 lines (ADR-045-SERVER-SIZE-1, dead code removed, 237 lines). ADR-053, ADR-011, ADR-071 PASS. | — | — | Agent (on-demand) |
-| **Three-source app features consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ✅ — all 8 app features files PASS runtime. 4 doc-gap warnings (wrangle_studio_enabled already in matrix; audit script updated for manifest_edit_enabled + blueprint_agent_enabled). | — | — | Agent (on-demand) |
+| **Three-source app features consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ✅ — all 8 app features files PASS runtime. 4 doc-gap warnings (wrangle_studio_enabled already in matrix; audit script updated for data_analysis_recipe_edit_enabled + blueprint_agent_enabled). | — | — | Agent (on-demand) |
 
 **Status codes:**
 - `[ ] Planned` — Routine designed but not yet created in [claude.ai/code/routines](https://claude.ai/code/routines)
@@ -229,15 +229,15 @@ Once manual test passes:
 
 ---
 
-### 3. Manifest Structure Integrity Check
+### 3. Data analysis recipe Structure Integrity Check
 
-- **Purpose:** Run all manifests in `config/manifests/pipelines/` through the assembler + gallery validator to detect structural errors before they surface at runtime.
+- **Purpose:** Run all data analysis recipes in `config/data_analysis_recipes/pipelines/` through the assembler + gallery validator to detect structural errors before they surface at runtime.
 - **Frequency:** Weekly
 - **Schedule:** Wednesdays 22:00 local time (cron: `0 22 * * 3`)
-- **Command:** `.venv/bin/python scripts/audit_manifest_integrity.py --output tmp/audit_manifests_$(date +%Y-%m-%d).md`
-- **Output:** `.claude/logs/audits/audit_manifests_YYYY-MM-DD.md`
+- **Command:** `.venv/bin/python scripts/audit_data_analysis_recipe_integrity.py --output tmp/audit_data_analysis_recipes_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_data_analysis_recipes_YYYY-MM-DD.md`
 - **Violations checked:**
-  - Manifest file format (valid YAML)
+  - Data analysis recipe file format (valid YAML)
   - Missing required keys (`input_fields`, `wrangling`, `output_fields`)
   - Broken `!include` references (file not found)
   - Undefined actions in wrangling steps (not in `@register_action` registry)
@@ -245,12 +245,12 @@ Once manual test passes:
   - Join key type mismatches (assembly `action: join` between mismatched column types)
   - `final_contract` whitelist mismatch (column declared but not produced)
 - **Owner:** Agent (scheduled)
-- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 6/6 manifests)
+- **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, 6/6 data analysis recipes)
 - **Next Run:** 2026-05-14
 
 **Implementation notes:**
-- Call `debug_assembler.py` on each manifest
-- Call `debug_gallery.py` on each manifest
+- Call `debug_assembler.py` on each data analysis recipe
+- Call `debug_gallery.py` on each data analysis recipe
 - Collect errors into a summary report
 
 ---
@@ -439,17 +439,17 @@ Once manual test passes:
 
 ---
 
-### 13. Manifest Coherence
+### 13. Data analysis recipe Coherence
 
-- **Purpose:** Static validation of all manifests in `config/manifests/pipelines/` without running the assembler. Checks four things: (1) TSV source column headers match `input_fields` slugs; (2) all wrangling `action:` names are registered; (3) all `layers: name:` values in plot specs are registered; (4) join `'on':` keys are valid (catches the YAML boolean trap: bare `on:` key). Uses `audit_exclusions.yaml` for known false positives (e.g. assembly-derived join keys not in `input_fields`).
-- **Frequency:** Weekly (Wednesdays 22:00) — same slot as Routine 3 (Manifest Structure Integrity).
+- **Purpose:** Static validation of all data analysis recipes in `config/data_analysis_recipes/pipelines/` without running the assembler. Checks four things: (1) TSV source column headers match `input_fields` slugs; (2) all wrangling `action:` names are registered; (3) all `layers: name:` values in plot specs are registered; (4) join `'on':` keys are valid (catches the YAML boolean trap: bare `on:` key). Uses `audit_exclusions.yaml` for known false positives (e.g. assembly-derived join keys not in `input_fields`).
+- **Frequency:** Weekly (Wednesdays 22:00) — same slot as Routine 3 (Data analysis recipe Structure Integrity).
 - **Schedule:** Wednesdays 22:00 local time (cron: `0 22 * * 3`)
-- **Command:** `.venv/bin/python scripts/audit_manifest_coherence.py --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md`
+- **Command:** `.venv/bin/python scripts/audit_data_analysis_recipe_coherence.py --output .claude/logs/audits/audit_data_analysis_recipe_coherence_$(date +%Y-%m-%d).md`
 - **Fast variants:**
   - `--skip-tsv` — skip TSV column vs input_fields check (faster if no source data changes)
   - `--skip-join` — skip join key validation
-  - `--manifest config/manifests/pipelines/foo.yaml` — single manifest only
-- **Output:** `.claude/logs/audits/audit_manifest_coherence_YYYY-MM-DD.md`
+  - `--data-analysis-recipe config/data_analysis_recipes/pipelines/foo.yaml` — single data analysis recipe only
+- **Output:** `.claude/logs/audits/audit_data_analysis_recipe_coherence_YYYY-MM-DD.md`
 - **Violations checked:**
   - `FIELD_MISSING` — `input_fields` slug not found in source TSV header
   - `FIELD_EXTRA` — TSV column has no corresponding `input_fields` declaration
@@ -457,7 +457,7 @@ Once manual test passes:
   - `COMPONENT_UNKNOWN` — `layers: name:` not in `@register_plot_component` registry
   - `JOIN_BARE_ON` — join step uses bare `on:` (YAML boolean trap) instead of quoted `'on':`
   - `JOIN_KEY_UNDECLARED` — join key not declared in any schema's `input_fields` (unless in exclusions)
-- **Exclusions:** `.claude/workflows/audit_exclusions.yaml` (key: `manifest_coherence`)
+- **Exclusions:** `.claude/workflows/audit_exclusions.yaml` (key: `data_analysis_recipe_coherence`)
 - **Owner:** Cloud (scheduled)
 - **Status:** `[x] Active` (first run: 2026-05-09 — ✅ PASS, false positive in old report; script already correct)
 
@@ -575,7 +575,7 @@ from what the code or docs actually do. No regex can replace this judgment.
     a module?
   - **ADR-053 No app features name comparisons:** Are there any `if app features == "..."` or
     `app features in (...)` control-flow checks outside bootloader that escaped the structural scan?
-  - **ADR-075 Blueprint IDE escape hatch gate:** Is `manifest_edit_enabled` gating done via
+  - **ADR-075 Blueprint IDE escape hatch gate:** Is `data_analysis_recipe_edit_enabled` gating done via
     `bootloader.is_enabled()` or is there a residual name check?
   - **ADR-078 Diagnostic Error Discipline:** Do new actions in `libs/transformer/` raise
     `SPARMVET_DiagnosticError` on invalid input rather than returning empty data?
@@ -638,7 +638,7 @@ from what the code or docs actually do. No regex can replace this judgment.
 ├── audit_deps_2026-05-12.md              ← @deps routine output
 ├── audit_cross_lib_2026-05-12.json       ← ADR-011 routine (machine)
 ├── audit_cross_lib_2026-05-12.md         ← ADR-011 routine (human)
-├── audit_manifests_2026-05-08.md         ← Manifest integrity routine
+├── audit_data_analysis_recipes_2026-05-08.md         ← Data analysis recipe integrity routine
 ├── audit_tasks_2026-05-10.md             ← Task drift routine
 └── audit_YYYY-MM-DD.md                   ← General session audit (existing pattern)
 ```
@@ -767,7 +767,7 @@ Follow these patterns for consistency:
 |------|---------|--------|-------|
 | Ensure @deps are current | @deps verification | Low | Agent (scheduled) |
 | Catch cross-lib violations early | ADR-011 scan | Low | Agent (scheduled) |
-| Catch manifest errors before runtime | Manifest integrity | Medium | Agent (scheduled) |
+| Catch data analysis recipe errors before runtime | Data analysis recipe integrity | Medium | Agent (scheduled) |
 | Detect orphaned tasks | Task drift check | Medium | Agent (scheduled) |
 | Verify app features consistency | App features file check | Low | Manual (CLI) or Agent |
 | Verify phase order in roadmap | Phase ordering audit | Medium | Agent (scheduled) |
@@ -815,7 +815,7 @@ chore: add audit routine for ADR-011 cross-lib violations
 | **Routine** | A saved Claude Code configuration (prompt + repos + triggers) that runs autonomously on Anthropic-managed cloud infrastructure. Managed at [claude.ai/code/routines](https://claude.ai/code/routines). |
 | **Trigger** | How a routine starts: Schedule (recurring or one-off), API (HTTP POST), or GitHub event. |
 | **Routine ID** | Identifier of the routine, visible on its detail page at [claude.ai/code/routines](https://claude.ai/code/routines). |
-| **Violation** | A check failure. Examples: missing @deps, cross-lib import, broken manifest. |
+| **Violation** | A check failure. Examples: missing @deps, cross-lib import, broken data analysis recipe. |
 | **Run** | A single execution of a routine. Each run is a full Claude Code session with a transcript, visible at [claude.ai/code/routines](https://claude.ai/code/routines). |
 | **Run now** | Trigger a routine immediately from its detail page, without waiting for the schedule. |
 | **Pause** | Temporarily disable a routine's schedule. The routine keeps its configuration but does not run until resumed. |

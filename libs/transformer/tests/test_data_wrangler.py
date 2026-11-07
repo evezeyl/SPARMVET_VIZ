@@ -7,31 +7,31 @@ Run from project root:
 import pytest
 
 from transformer.data_wrangler import DataWrangler
-from utils.errors import ManifestError
+from utils.errors import DataAnalysisRecipeError
 
 
 class TestResolveTierFlatListRejection:
-    """Flat wrangling list must raise ManifestError (LEGACY-FLAT-WRANGLING-1)."""
+    """Flat wrangling list must raise DataAnalysisRecipeError (LEGACY-FLAT-WRANGLING-1)."""
 
-    def test_flat_list_raises_manifest_error(self):
+    def test_flat_list_raises_data_analysis_recipe_error(self):
         steps = [{"action": "cast", "columns": ["Year"], "dtype": "String"}]
-        with pytest.raises(ManifestError):
+        with pytest.raises(DataAnalysisRecipeError):
             DataWrangler._resolve_tier(steps, "tier1")
 
     def test_flat_list_error_message_is_actionable(self):
         steps = [{"action": "cast", "columns": ["Year"], "dtype": "String"}]
-        with pytest.raises(ManifestError) as exc_info:
+        with pytest.raises(DataAnalysisRecipeError) as exc_info:
             DataWrangler._resolve_tier(steps, "tier1")
         assert "tier1" in str(exc_info.value).lower() or "tiered" in str(exc_info.value).lower()
 
     def test_flat_list_all_tier_also_rejected(self):
         steps = [{"action": "sort", "columns": ["Year"]}]
-        with pytest.raises(ManifestError):
+        with pytest.raises(DataAnalysisRecipeError):
             DataWrangler._resolve_tier(steps, "all")
 
     def test_flat_list_tier2_also_rejected(self):
         steps = [{"action": "sort", "columns": ["Year"]}]
-        with pytest.raises(ManifestError):
+        with pytest.raises(DataAnalysisRecipeError):
             DataWrangler._resolve_tier(steps, "tier2")
 
 

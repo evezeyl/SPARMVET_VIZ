@@ -5,7 +5,7 @@
 **Scope:** Wave 1 mechanical fixes from `audit_final_exhaustive_2026-05-03.md`.
 **Driver:** [.antigravity/logs/2026-05-03_solving_problems_detected_audit.md](.antigravity/logs/2026-05-03_solving_problems_detected_audit.md)
 
-> Phase 24 protocol's discipline (manifest → move → verify → cleanup → verify → commit) is generic. This document scopes it to the current audit-remediation refactors. Phase 24-specific text (LOC budgets, shiny smoke tests, public define_server signature) is dropped or replaced.
+> Phase 24 protocol's discipline (data analysis recipe → move → verify → cleanup → verify → commit) is generic. This document scopes it to the current audit-remediation refactors. Phase 24-specific text (LOC budgets, shiny smoke tests, public define_server signature) is dropped or replaced.
 
 ---
 
@@ -16,7 +16,7 @@
 | **R-A** | Strip `sys.path.*` insertions from 6 non-test/test debug files | Low | 6 files (one commit per file) | §3A |
 | **R-B** | Remove `ingestion.ingestor` import from `transformer/pipeline.py` | Medium | `libs/transformer/src/transformer/pipeline.py` + any caller that depended on the old surface | §2C Task A |
 
-Other Wave 1 tasks (Boolean Manifest Trap, Violet Law, terminology) are **not** part of this protocol — they are doc/manifest edits, not code refactors.
+Other Wave 1 tasks (Boolean Data analysis recipe Trap, Violet Law, terminology) are **not** part of this protocol — they are doc/data_analysis_recipe edits, not code refactors.
 
 ---
 
@@ -33,10 +33,10 @@ Other Wave 1 tasks (Boolean Manifest Trap, Violet Law, terminology) are **not** 
 | A5 | [app/tests/debug_session_flow.py:28](app/tests/debug_session_flow.py#L28) | `sys.path.insert(0, str(Path(__file__).parents[2]))` | insert |
 | A6 | [libs/viz_gallery/assets/generate_previews.py:26-27](libs/viz_gallery/assets/generate_previews.py#L26-L27) | two `sys.path.insert` | insert × 2 |
 
-### Per-file change manifest (post before each edit)
+### Per-file change data analysis recipe (post before each edit)
 
 ```
-CHANGE MANIFEST — R-A.<n> (<file>)
+CHANGE DATA ANALYSIS RECIPE — R-A.<n> (<file>)
 Lines being REMOVED: <line numbers + exact text>
 Imports kept (verify still resolvable via editable installs): <list>
 Adjacent dead code to remove: <import sys / Path-juggling-only-for-sys.path>
@@ -104,12 +104,12 @@ The answers determine whether step R-B is a **single move** (orchestration migra
 - **Case 1: pipeline.py is only called from `app/` modules** → migrate the orchestration logic up to `app/modules/orchestrator.py`. `pipeline.py` becomes a pure wrangling surface; `DataIngestor` instantiation moves to `app/`.
 - **Case 2: pipeline.py is called from tests or libs** → refactor `pipeline.py` to accept `ingestor` as a constructor/function argument (dependency injection). Tests/callers create the `DataIngestor` themselves.
 
-Document the chosen case in the change manifest before editing.
+Document the chosen case in the change data analysis recipe before editing.
 
-### Change manifest template
+### Change data analysis recipe template
 
 ```
-CHANGE MANIFEST — R-B
+CHANGE DATA ANALYSIS RECIPE — R-B
 Decision case: <1 or 2>
 Names being MOVED out of pipeline.py: [list]
 Names being KEPT in pipeline.py: [list]
@@ -185,7 +185,7 @@ grep -E "FAIL|ERROR" .antigravity/baselines/audit_2026-05-03_pre.txt > .antigrav
 1. **One file per commit for R-A.** No batching.
 2. **No mixing of R-A and R-B in the same commit.**
 3. **Never silence an ImportError by re-adding `sys.path`** — diagnose missing editable installs instead.
-4. **Never edit YAML manifests, READMEs, or `.qmd` files in a R-A or R-B commit.** Those are separate Wave 1 tasks with their own commits.
+4. **Never edit YAML data analysis recipes, READMEs, or `.qmd` files in a R-A or R-B commit.** Those are separate Wave 1 tasks with their own commits.
 5. **Never bypass `Verification gate`.** If gate fails, hard reset, do not patch on top.
 6. **Smoke test must remain at 10 passed, 2 skipped after every commit** (the Phase 25 baseline).
 7. **Do not edit `rules_runtime_environment.md` or any ADR file** without user confirmation.

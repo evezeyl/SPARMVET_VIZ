@@ -1,7 +1,7 @@
 # The BLUEPRINT Architect
 
-BLUEPRINT is the visual IDE for **building and editing SPARMVET pipeline manifests without
-writing YAML by hand**. Its output is an ordinary manifest file that loads directly into HOME.
+BLUEPRINT is the visual IDE for **building and editing SPARMVET pipeline data analysis recipes without
+writing YAML by hand**. Its output is an ordinary data analysis recipe file that loads directly into HOME.
 
 The whole design rests on one split:
 
@@ -13,7 +13,7 @@ why the AI agent advises rather than edits. Keep it in mind as you read.
 
 This page is the developer/architecture reference — it explains *how* each surface works and
 *why* it was built that way. For the step-by-step "I am a scientist authoring my first
-manifest" guide, see the user guide chapter on manifest authoring.
+data analysis recipe" guide, see the user guide chapter on data analysis recipe authoring.
 
 ---
 
@@ -30,8 +30,8 @@ the value of naming them together is that a new contributor can read one model e
 | **L4 — Helpers** | AI agent + YAML escape hatch + 20-step undo + node-level branching | ADR-075, ADR-076 |
 
 The capability set is gated by the `blueprint_enabled` app features flag. Two advanced helpers
-carry their own flags: the **editable** YAML escape hatch and any manifest-mutating action
-require `manifest_edit_enabled`; the AI agent requires `blueprint_agent_enabled`. Both child
+carry their own flags: the **editable** YAML escape hatch and any data analysis recipe-mutating action
+require `data_analysis_recipe_edit_enabled`; the AI agent requires `blueprint_agent_enabled`. Both child
 flags are *fatal-cascade* gated — if `blueprint_enabled` is false but a child flag is true, the
 app refuses to start rather than silently disabling the child (ADR-077). See the app features
 chapter for the full flag matrix.
@@ -46,9 +46,9 @@ stack flanked by a navigation sidebar (left) and a logic sidebar (right).
 ```mermaid
 graph TD
     subgraph Left["Left Sidebar — Navigation"]
-        Pick["Master Manifest picker + New manifest"]
+        Pick["Master Data Analysis Recipe picker + New data analysis recipe"]
         Groups["Groups & Plots inventory"]
-        Meta["Manifest Info (info: block)"]
+        Meta["Data Analysis Recipe Info (info: block)"]
         Validate["Validate panel"]
     end
 
@@ -74,9 +74,9 @@ graph TD
     style Glimpse fill:#ffffff,stroke:#10a395
 ```
 
-- **TubeMap (L1):** the manifest rendered as a directed graph — data schemas feed joins, joins
+- **TubeMap (L1):** the data analysis recipe rendered as a directed graph — data schemas feed joins, joins
   feed plots. It is the primary navigation surface and is collapsible to reclaim vertical space.
-  Rendered from `BlueprintMapper (blueprint_mapper.py)` via `ManifestNavigator (manifest_navigator.py)`.
+  Rendered from `BlueprintMapper (blueprint_mapper.py)` via `DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)`.
 - **Central stack:** TubeMap on top, the live plot in the middle, the live Data Glimpse at the
   bottom. The plot and glimpse recompute **on Apply** (not continuously — see §4).
 - **Right sidebar (L2/L4):** when you select a node in the TubeMap, the right sidebar shows that
@@ -91,7 +91,7 @@ The end-to-end flow for editing an existing pipeline:
 
 ```mermaid
 graph LR
-    A["Open manifest<br/>(picker) or<br/>Create new"] --> B["TubeMap renders<br/>the DAG"]
+    A["Open data analysis recipe<br/>(picker) or<br/>Create new"] --> B["TubeMap renders<br/>the DAG"]
     B --> C["Select a node"]
     C --> D["Logic stack +<br/>form open (right)"]
     D --> E["Add / edit step<br/>via 8-widget form"]
@@ -105,12 +105,12 @@ graph LR
 
 ### Open or create
 
-- **Open existing:** pick a manifest from the Master Manifest selector; the TubeMap renders the
+- **Open existing:** pick a data analysis recipe from the Master Data Analysis Recipe selector; the TubeMap renders the
   full DAG. (Functionality #1, DONE.)
-- **Create new:** the "New manifest" button opens a modal (slug / name / description / author),
+- **Create new:** the "New data analysis recipe" button opens a modal (slug / name / description / author),
   validates the slug is snake_case, and writes a minimal YAML stub
-  (`info:` / `data_schemas` / `join_manifests` / `analysis_groups`) to
-  `config/manifests/pipelines/{slug}.yaml`, then selects it. (BP-NEW-1.)
+  (`info:` / `data_schemas` / `joins` / `analysis_groups`) to
+  `config/data_analysis_recipes/pipelines/{slug}.yaml`, then selects it. (BP-NEW-1.)
 
 ### Select a node and fill its form
 
@@ -160,12 +160,12 @@ Apply does **not** touch disk. Two separate actions persist:
   a plot spec serialises to `mapping:` + `layers:`; wrangling nodes route back to their source
   tier (`tier1` / `tier2`). Save requires the component to have been loaded **from a file** —
   inline components must be edited via the YAML escape hatch (BP-PLOT-COMMIT-1).
-- **Download** (`btn_download_manifest`) emits the full multi-file manifest as a zip bundle —
+- **Download** (`btn_download_data_analysis_recipe`) emits the full multi-file data analysis recipe as a zip bundle —
   the master plus its mirrored `basename/` fragment tree.
 
 ::: {.callout-important}
 ### BLUEPRINT never writes Tier 3
-BLUEPRINT authors `input_fields`, `wrangling.tier1`, `wrangling.tier2`, `join_manifests`,
+BLUEPRINT authors `input_fields`, `wrangling.tier1`, `wrangling.tier2`, `joins`,
 `output_fields` / `final_contract`, `analysis_groups`, and plot specs. It **never** writes T3
 audit nodes (filters, exclusions, column drops, aesthetic overrides) — those are authored
 exclusively in HOME by the analyst (ADR-082 §4). An earlier bug dumped the logic stack into
@@ -181,7 +181,7 @@ Branching is the most misunderstood BLUEPRINT feature, so it gets the most detai
 
 ### What a branch *is*
 
-A "branch" in the manifest sense is a **lineage bifurcation at a chosen node** (ADR-082 Q3,
+A "branch" in the data analysis recipe sense is a **lineage bifurcation at a chosen node** (ADR-082 Q3,
 LOCKED). You pick a node; everything **upstream of it stays shared**, and a new **divergent
 downstream** is created. This is the *Bifurcation Point Rule* from `rules_data_engine.md` made
 interactive.
@@ -200,8 +200,8 @@ graph TD
 
 The canonical example is the `Summary` / `Summary_quality` pattern: both share the same
 `source` and `input_fields`, then diverge in their `wrangling` and `output_fields`. Physically,
-the branch is a new `!include` fragment wired into the master manifest — the same
-fragment-per-component structure the manifest already uses.
+the branch is a new `!include` fragment wired into the master data analysis recipe — the same
+fragment-per-component structure the data analysis recipe already uses.
 
 The runtime payoff: the shared upstream Tier 1 anchor is materialised **once** via
 `sink_parquet`; both branches read it via `scan_parquet`. **No recompute** for the shared
@@ -246,7 +246,7 @@ empty-wrangling with its own `output_fields`, so the seed matches the establishe
 
 **Plots are the exception.** A plot is a leaf — the whole spec *is* the branch unit, and an
 empty plot cannot render. So a plot branch seeds a **copy** of the original spec under the new
-ID. (See `generate_branch_plan` in `ManifestNavigator (manifest_navigator.py)`.)
+ID. (See `generate_branch_plan` in `DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)`.)
 
 ### Why text-level insertion (not a YAML round-trip)
 
@@ -265,9 +265,9 @@ The write path (`_write_branch_plan` in `blueprint_handlers.py`) is defensive:
    touching the master on disk.
 3. It **rolls back** any fragment files it created if the master write then fails.
 
-So a failed branch never leaves the manifest half-written.
+So a failed branch never leaves the data analysis recipe half-written.
 
-> **Not branching:** duplicating an *entire* manifest is a separate, rare path — used only when
+> **Not branching:** duplicating an *entire* data analysis recipe is a separate, rare path — used only when
 > adding genuinely new data, where you usually start from a boilerplate template instead. That is
 > tracked separately (BP-DUPLICATE-1, deferred) and is not what the Branch panel does.
 
@@ -320,7 +320,7 @@ Encountering a removed key is now a **loud, actionable failure**, not silent sug
 ::: {.callout-note}
 ### The render cascade
 At render time, plot configuration resolves through a five-tier priority cascade
-(`plot_config_cascade.md`): L1 built-ins < L2 manifest `plot_defaults` < L3 optimisation < L4
+(`plot_config_cascade.md`): L1 built-ins < L2 data analysis recipe `plot_defaults` < L3 optimisation < L4
 the plot spec (BLUEPRINT's output) < L5 HOME's session-only `aesthetic_override`. BLUEPRINT
 owns L4; HOME owns L5. Both work because they meet at the same canonical model.
 :::
@@ -355,7 +355,7 @@ Applying a join is audit-gated on a justification comment, like every other node
 The symmetric join key is the string `"on"`, which is a YAML reserved word — unquoted `on:`
 reloads as the boolean `True`. The save path must quote it (`'on':`). `parse_join_step` defends
 against the trap by looking up both `"on"` and `True`, and `DataAssembler` has a matching
-fallback (`rules_manifest_structure.md §7`). Always quote `on` in hand-authored manifests.
+fallback (`rules_data_analysis_recipe_structure.md §7`). Always quote `on` in hand-authored data analysis recipes.
 :::
 
 ---
@@ -363,14 +363,14 @@ fallback (`rules_manifest_structure.md §7`). Always quote `on` in hand-authored
 ## 7. The AI Agent (MVP-1 — advise-only)
 
 The BLUEPRINT right sidebar can host a conversational AI helper to lower the expertise floor for
-first-time manifest authors (ADR-076). It is gated by `blueprint_agent_enabled` and currently
+first-time data analysis recipe authors (ADR-076). It is gated by `blueprint_agent_enabled` and currently
 enabled for the `developer` and `qa` app features files only — a deliberate first rollout before exposing
 it to scientist app features files.
 
 ::: {.callout-important}
 ### MVP-1 is read-only and advises only
 The shipped MVP-1 (`adr076_mvp.md`) is a **single read-only conversational loop**. It does
-**not** modify the manifest. The `propose_manifest_diff` tool, the diff preview, and the
+**not** modify the data analysis recipe. The `propose_data_analysis_recipe_diff` tool, the diff preview, and the
 Apply/Reject gate described in the full ADR-076 are **deferred to MVP-2**. The agent's role today
 is to interview, inspect, and advise — never to edit. On an ill-advised choice it opens a
 Socratic discussion ("is there a better solution? why do you want this?") rather than refusing
@@ -386,7 +386,7 @@ What MVP-1 actually ships:
   `claude_api` and `local` backends are designed but deferred.
 - **Three read-only tools** (`agent_tools.py`): `get_available_actions`,
   `get_available_components`, `get_field_contract`. Each wraps an existing registry or
-  `ManifestNavigator` call and returns `{"status": "ok"/"error", ...}` — they never raise.
+  `DataAnalysisRecipeNavigator` call and returns `{"status": "ok"/"error", ...}` — they never raise.
 - **Tool-call protocol** (`agent_tool_parser.py`): the agent emits structured calls inside HTML
   comment markers (`<!-- AGENT_TOOL_CALL -->` … `<!-- /AGENT_TOOL_CALL -->`); the parser extracts
   and validates them. The handler runs a bounded tool-call loop (**max 3 rounds**) per turn to
@@ -404,13 +404,13 @@ What MVP-1 actually ships:
 | Surface | What it does | Task |
 |---|---|---|
 | **Groups & Plots inventory** | Sidebar list with create / delete / assign for `analysis_groups` and their plots. CRUD lives in `GroupPlotManager (group_plot_manager.py)`, decoupled from the sidebar so a future TubeMap context menu is purely additive. | BP-GROUPS-1 |
-| **Manifest Info** | Form for the manifest `info:` block (description / author / version / tags) — read-only for non-developer app features files, editable when `manifest_edit_enabled`. Writes back preserving `!include` directives. | BP-META-1 |
-| **Validate** | Runs `audit_manifest_coherence.py` as a subprocess and surfaces a PASS/FAIL badge with per-check rows — clean architectural separation, no `sys.path` hacking. | BP-VALIDATE-1 |
+| **Data analysis recipe Info** | Form for the data analysis recipe `info:` block (description / author / version / tags) — read-only for non-developer app features files, editable when `data_analysis_recipe_edit_enabled`. Writes back preserving `!include` directives. | BP-META-1 |
+| **Validate** | Runs `audit_data_analysis_recipe_coherence.py` as a subprocess and surfaces a PASS/FAIL badge with per-check rows — clean architectural separation, no `sys.path` hacking. | BP-VALIDATE-1 |
 | **Intent comments** | Every node / step / group / plot carries a free-text `comment:` field with a hover tooltip nudging "write your intent — *why*, not what." Stored as a data key, preserved through the form round-trip. | BP-COMMENTS-1 |
-| **YAML escape hatch** | Raw YAML view of the loaded fragment. Read-only for any `blueprint_enabled` app features; editable only when `manifest_edit_enabled`. | BP-ESCAPE-1 |
+| **YAML escape hatch** | Raw YAML view of the loaded fragment. Read-only for any `blueprint_enabled` app features; editable only when `data_analysis_recipe_edit_enabled`. | BP-ESCAPE-1 |
 | **Undo** | 20-step session undo deque for the DAG/logic-stack state. Session-only. | BP-UNDO-1 |
 | **Help** | Resolves an action's documentation from the installed library at runtime via Python `__doc__` (air-gap safe, always matches the installed version). | BP-HELP-1 |
-| **Draft autosave** | Persists the in-progress manifest draft + undo history to disk and restores it on reload/crash, modelled on HOME's ghost-save. SHA256-guarded — a draft is discarded if the manifest changed underneath it. Gated on `automation.ghost_save.enabled`. | BP-AUTOSAVE-1 |
+| **Draft autosave** | Persists the in-progress data analysis recipe draft + undo history to disk and restores it on reload/crash, modelled on HOME's ghost-save. SHA256-guarded — a draft is discarded if the data analysis recipe changed underneath it. Gated on `automation.ghost_save.enabled`. | BP-AUTOSAVE-1 |
 
 ---
 
@@ -418,7 +418,7 @@ What MVP-1 actually ships:
 
 | Concern | Module |
 |---|---|
-| Pure manifest introspection (sibling map, schema registry, lineage, **branch plan**) | `ManifestNavigator (manifest_navigator.py)` in `libs/blueprint_arch/` |
+| Pure data analysis recipe introspection (sibling map, schema registry, lineage, **branch plan**) | `DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)` in `libs/blueprint_arch/` |
 | TubeMap DAG generation | `BlueprintMapper (blueprint_mapper.py)` |
 | Form catalog from `ui_schema` | `schema_registry.py` |
 | Join key-match logic + canonical step (de)serialisation | `JoinDesigner (join_designer.py)` |

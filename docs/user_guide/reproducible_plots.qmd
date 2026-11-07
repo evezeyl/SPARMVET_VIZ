@@ -2,14 +2,14 @@
 title: "Reproducible Plots: the Seed and the Order"
 ---
 
-You can send your figures to a colleague, a reviewer or a journal. They (or you, in a year) should be able to produce **exactly the same picture** from the same data and the same manifest. Two things can quietly change a picture even when nothing else changes: **random scatter** and **row order**. This page explains both, and what to write in your manifest when you need an exact result.
+You can send your figures to a colleague, a reviewer or a journal. They (or you, in a year) should be able to produce **exactly the same picture** from the same data and the same data analysis recipe. Two things can quietly change a picture even when nothing else changes: **random scatter** and **row order**. This page explains both, and what to write in your data analysis recipe when you need an exact result.
 
 ## The short version
 
 - **By default, SPARMVET gives the same picture every time.** The random scatter uses a fixed starting number (a "seed"), and the rows are kept in a fixed order. This is on purpose: if you reopen the app tomorrow with the same data, you expect to see the same plot, not a surprise.
-- **If you need exactly the same picture later, write the number in your manifest.** Do not rely on the default.
+- **If you need exactly the same picture later, write the number in your data analysis recipe.** Do not rely on the default.
 - **If you choose "random", the picture changes every time** and cannot be reproduced. Use it to explore, not for the final figure.
-- Your export contains a **copy of your manifest** as you wrote it. What is written there is what a reader can reproduce.
+- Your export contains a **copy of your data analysis recipe** as you wrote it. What is written there is what a reader can reproduce.
 
 ## Random scatter ("jitter")
 
@@ -25,7 +25,7 @@ A fixed seed is the right default for reports, but one arrangement is only one p
 - **try other numbers** until you find an arrangement you like;
 - or ask for **"random"**, to see a new arrangement each time you open the plot.
 
-When you are happy, **write the number you liked** in the manifest.
+When you are happy, **write the number you liked** in the data analysis recipe.
 
 ### How to write it
 
@@ -48,23 +48,23 @@ Ask for a new arrangement every time (for exploring only):
 
 ## What your export contains
 
-The export bundle holds a **copy of your manifest** (the `recipes` folder). A reader can reproduce your picture from it:
+The export bundle holds a **copy of your data analysis recipe** (the `recipes` folder). A reader can reproduce your picture from it:
 
-| What the manifest says | Can a reader reproduce the exact picture? |
+| What the data analysis recipe says | Can a reader reproduce the exact picture? |
 |---|---|
 | `random_state: 123` (a number) | **Yes**, always. |
 | nothing about the seed | Yes, with the same SPARMVET version, because the program default (0) is fixed. A later version could change the default, so **write the number** for a final figure. |
 | `random_state: random` | **No.** The arrangement was different each time and nothing records which one you saw. Replace it with a number before you export. |
 
-SPARMVET does not yet record the arrangement you were looking at when you used "random". Until it does, **the number must be written in the manifest by you**.
+SPARMVET does not yet record the arrangement you were looking at when you used "random". Until it does, **the number must be written in the data analysis recipe by you**.
 
 ## The order of rows
 
 The rows of your data can come out in a different order if nothing says which order they should have. This matters because the order can change **how a plot looks**: the order of the bars on an axis, the order of the colours in a legend, and which rows appear first in the Data Preview.
 
-SPARMVET now keeps a fixed order: groups appear in the order they first show up in your data, ties keep their original order, and joined rows keep the order of your first table. The same data and the same manifest therefore give the same order every time.
+SPARMVET now keeps a fixed order: groups appear in the order they first show up in your data, ties keep their original order, and joined rows keep the order of your first table. The same data and the same data analysis recipe therefore give the same order every time.
 
-But that order is *a* fixed order, not necessarily the one **you want**. If you need a particular order (for example the bars sorted by size, or samples in the order of your lab sheet), **say it in the manifest with an explicit sort**. Do not rely on the order the data happen to arrive in.
+But that order is *a* fixed order, not necessarily the one **you want**. If you need a particular order (for example the bars sorted by size, or samples in the order of your lab sheet), **say it in the data analysis recipe with an explicit sort**. Do not rely on the order the data happen to arrive in.
 
 ## Checklist before you export a figure
 
@@ -74,6 +74,6 @@ But that order is *a* fixed order, not necessarily the one **you want**. If you 
 
 ## Coming later
 
-We are thinking about letting you reshuffle the arrangement directly in the app, with the number it used recorded for you in the export. This is not available yet; today the number is written in the manifest.
+We are thinking about letting you reshuffle the arrangement directly in the app, with the number it used recorded for you in the export. This is not available yet; today the number is written in the data analysis recipe.
 
 For the technical background (why the order can change, how the engine keeps it fixed, how to test it), see [Same input, same output](../foundations/reproducibility_same_input_same_output.qmd).

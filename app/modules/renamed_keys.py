@@ -16,6 +16,7 @@ RENAMED_ENV_VARS = {
 # keys of a deployment file: old -> new
 RENAMED_DEPLOYMENT_KEYS = {
     "default_persona": "default_app_features",
+    "default_manifest": "default_data_analysis_recipe",
     "prefer_discovery": "data_lookup (by_dataset_id or manifest_paths)",
     "data_ingestion_enabled": "app_features_override: {data_ingestion_enabled: ...}",
 }
@@ -24,17 +25,20 @@ RENAMED_DEPLOYMENT_KEYS = {
 RENAMED_LOCATION_KEYS = {
     "curated_data": "cache",
     "user_sessions": "user_data",
+    "manifests": "data_analysis_recipes",
 }
 
 # top-level keys of an app features file: old -> new
 RENAMED_APP_FEATURES_KEYS = {
     "persona_id": "name",
     "features": "flags",
+    "manifest_selector": "data_analysis_recipe_selector",
 }
 
 # keys inside the flags block of an app features file: old -> new
 RENAMED_FLAG_KEYS = {
     "show_persona_badge": "show_app_features_badge",
+    "manifest_edit_enabled": "data_analysis_recipe_edit_enabled",
 }
 
 _REF = "ADR-091 (configuration rename), issue evezeyl/SPARMVET_VIZ#27"

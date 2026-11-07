@@ -1331,7 +1331,7 @@ def handle_stat_function(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     fun = spec.get("fun")
     if isinstance(fun, str):
         try:
-            # Safe for developer-controlled manifests only
+            # Safe for developer-controlled data analysis recipes only
             spec["fun"] = eval(fun)
         except Exception as e:
             print(

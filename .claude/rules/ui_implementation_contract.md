@@ -15,22 +15,22 @@ Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Bl
   - **Trash (Permanent)**: A trash icon allows for removal. If the node is **Violet**, a modal triggers: _"CRITICAL: Removing a blueprint step may break the intended visualization. Are you sure?"_
 
 - **The Revert Protocol**: The **btn_revert** performs a **Full Wipe**. It clears all user nodes and restores the Tier 3 stack to the exact state of the Tier 2 blueprint.
-- **Direct Pass-Through**: If the T2 manifest contains zero transformation steps (T2=T1), the T3 recipe starts **Empty**.
+- **Direct Pass-Through**: If the T2 data analysis recipe contains zero transformation steps (T2=T1), the T3 recipe starts **Empty**.
 
 ## 2. Shell Architecture (The 3-Zone Navigator) — Updated ADR-043/ADR-044 (2026-04-23)
 
 The UI implements a high-density **3-column nested shell** to maximize screen real estate. The right column (Pipeline Audit) is **flag-gated** and suppressed entirely for lower app features files (see ADR-044):
 
-- **Left Sidebar**: Accordion of named panels: Manifest Choice, Data Import, Filters, Export (gated — scope toggle), Session Management (gated). Panels are context-reactive — filter widgets are scoped to the active plot sub-tab's `plot_spec` aesthetics. Uses a Dark Grey (#c0c0c0) background.
+- **Left Sidebar**: Accordion of named panels: Data analysis recipe Choice, Data Import, Filters, Export (gated — scope toggle), Session Management (gated). Panels are context-reactive — filter widgets are scoped to the active plot sub-tab's `plot_spec` aesthetics. Uses a Dark Grey (#c0c0c0) background.
 - **Home Theater (Center)**: The primary workspace. Structure (post-ADR-043):
-  - Top-level tabs are **exclusively** driven by manifest `analysis_groups` — no hardcoded tabs (Inspector removed).
+  - Top-level tabs are **exclusively** driven by data analysis recipe `analysis_groups` — no hardcoded tabs (Inspector removed).
   - Each group tab contains `navset_underline` sub-tabs (one per declared plot), wrapped in a **collapsible accordion panel**.
   - A **separate collapsible accordion panel** below shows the data preview (T1/T2 table or T3 sandbox table).
   - A header strip with two independent, labelled choices (ADR-086): **Data to show** (Raw T1 / Result T2 / My view) controls the data preview; **Plot to show** (Result T2 / My view / Compare Result vs My view) controls the plots.
   - Uses a Neutral Grey (#d1d1d1) background.
 - **Pipeline Audit (Right)**: Audit trail for T2 blueprint and T3 sandbox transitions. **Visible only for ≥ `pipeline-exploration-advanced`**. When hidden, the theater column expands to fill the full layout width — the layout element itself is excluded, not merely hidden via CSS. Uses a Dark Grey (#c0c0c0) background.
 
-**Manifest-Driven Tab Rule**: Home tabs and sub-tabs MUST derive exclusively from `analysis_groups` in the active manifest. No hardcoded tab names or fallback tabs are permitted (ADR-003/ADR-004 compliance).
+**Data analysis recipe-Driven Tab Rule**: Home tabs and sub-tabs MUST derive exclusively from `analysis_groups` in the active data analysis recipe. No hardcoded tab names or fallback tabs are permitted (ADR-003/ADR-004 compliance).
 
 **Header strip: "Data to show" and "Plot to show" (ADR-086, 2026-11-05).**
 
@@ -160,7 +160,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 - Active `t3_recipe` (all Yellow nodes and their comment fields)
 - `applied_filters` (committed filter rows)
 - Active sub-tab and tier toggle state
-- Reference to the active manifest and data source (so the session knows which pipeline run it belongs to)
+- Reference to the active data analysis recipe and data source (so the session knows which pipeline run it belongs to)
 - If metadata was replaced (see §9): reference to the uploaded metadata filename
 
 **Session model:**
@@ -196,11 +196,11 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 
 **Export rules (2026-11-06, issue #10, EXPORT-KEYCHECK-1, EXPORT-T3-1) — science must be correct. The export holds the Result plus what the user validated with an audit step; exploration is never exported.**
 
-1. **Key check.** The export compares the keys the open view was built on (`_project_keys`) with the keys computed now. If the manifest file set or the data changed, nothing is exported: an error notification explains it and the download holds only `EXPORT_NOT_CREATED.txt` (what changed, what it means, reload with F5, check, export again, both sets of keys). Never export silently from different files than the user looked at.
+1. **Key check.** The export compares the keys the open view was built on (`_project_keys`) with the keys computed now. If the data analysis recipe file set or the data changed, nothing is exported: an error notification explains it and the download holds only `EXPORT_NOT_CREATED.txt` (what changed, what it means, reload with F5, check, export again, both sets of keys). Never export silently from different files than the user looked at.
 2. **Data source.** T1, T2 and the plots are read through `DataOrchestrator.materialize_tier1/2` with the session keys (key-checked). Plots are rendered from T2 (plots never show T1, ADR-086), the same base as HOME. Reusing an anchor by file name is forbidden (ADR-089 point 7).
 3. **Build rule T3 > T2 > T1.** My view data is the stored T2 (T1 when the join has no tier2 steps) plus the plot's filter rows and column drops, built by `export_handlers.audited_frame`, the same steps and order as the HOME data preview.
 4. **The export is the Result plus the audited steps; exploration is never exported** (issue #25, Eve 2026-11-06). Audited T3 steps (`filter_row`, `exclusion_row`, `drop_column`, `aesthetic_override`, committed with a reason, for example to remove poor quality data) are the user's decision for the publication: they are ALWAYS applied to the exported plot of that plot and to its `T3_data_<plot>.tsv`, from any view, and recorded (T3 trail in the report, `recipes/t3_steps.yaml`). Exploration filters (`applied_filters`: what the user tries in T1, T2 or My view to understand the data, not sent to audit) are a sandbox and are NEVER exported, from any view; there is no checkbox to include them and no `FILTERS.txt`. A reminder tells the user so: under the Filters buttons in My view ("Sandbox: only steps sent to audit are exported.") and in the Export panel. The pure rule is `export_handlers.plot_content_rules(audited_rows, audited_drops)`: exploration is not even an argument.
-5. **Traceability.** README, `report.qmd` and PNG/SVG metadata record `manifest_sha256` (file set), `data_batch_hash`, and per dataset `tier1_key` and `tier2_key` (empty when T2 equals T1).
+5. **Traceability.** README, `report.qmd` and PNG/SVG metadata record `data_analysis_recipe_sha256` (file set), `data_batch_hash`, and per dataset `tier1_key` and `tier2_key` (empty when T2 equals T1).
 6. **Tests.** `app/tests/test_export_provenance.py`, `test_export_view_consistency.py` (headless) and `test_export_download.py` (real download, qa app features).
 
 **Scope detection at download time:** reads `safe_input(input, "export_scope", "global")` and `active_home_subtab.get()` to filter which plots are included. Scope label recorded in `t3_steps.yaml` and `README.txt`.
@@ -219,7 +219,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 | ~~`FILTERS.txt`~~ | Removed 2026-11-06: exploration filters are never exported, so there is no filter trace to write; the audit trail is `recipes/t3_steps.yaml` and the T3 Audit Trail of `report.qmd` |
 | `recipes/t3_steps.yaml` | T3 committed nodes (active only) — auto-included when T3 has committed nodes and `t3_sandbox_enabled` |
 | `report.qmd` | Quarto source: front-matter, filter table, figure includes, data section, **T3 Audit Trail** section (per-plot table of Step/Action/Details/Justification when T3 has active nodes) |
-| `README.txt` | Bundle manifest: timestamp, project, app features, scope, tiers, metadata source filename, counts |
+| `README.txt` | Bundle data analysis recipe: timestamp, project, app features, scope, tiers, metadata source filename, counts |
 
 **T3 Audit Trail in report.qmd:** Auto-generated `## T3 Audit Trail` section with one table per plot (Step / Action / Details / Justification). Deactivated nodes excluded. Only present when `t3_sandbox_enabled` and committed active nodes exist.
 
@@ -302,7 +302,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **Provenance obligation:** The original uploaded filename (not just its path) is stored in a sidecar file (e.g., `metadata_provenance.yaml` in Location 1) so that exports and session files can reference it. This filename is included in `README.txt` and `report.qmd` of any subsequent export bundle.
 
-**What is NOT replaced:** Raw instrument data (sequencing results, VCF files, etc.) — only the metadata source. The manifest's `input_fields` contract determines which file is considered "metadata" for validation purposes.
+**What is NOT replaced:** Raw instrument data (sequencing results, VCF files, etc.) — only the metadata source. The data analysis recipe's `input_fields` contract determines which file is considered "metadata" for validation purposes.
 
 **Status:** Deferred to Phase 22+. UI stub (greyed file input + label) present in Data Import panel when app features allows. Validation and rebuild flow designed here; implementation pending.
 
@@ -321,14 +321,14 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 - **Metadata** — sample annotation files (goes through MetadataValidator gate, same as §9)
 - **Extra data** — supplementary tables (e.g., reference databases, additional annotation layers)
 
-**Manifest association:** When uploading, the user must associate the file with a manifest schema (dropdown of known schemas from `locations.manifests`). This tells the DataOrchestrator which `input_fields` contract to validate against and which pipeline slot the file fills.
+**Data analysis recipe association:** When uploading, the user must associate the file with a data analysis recipe schema (dropdown of known schemas from `locations.data_analysis_recipes`). This tells the DataOrchestrator which `input_fields` contract to validate against and which pipeline slot the file fills.
 
 **Multi-file upload:** A `+` button allows queuing multiple files (e.g., one per schema). Each queued file shows its assigned schema and validation status before the user commits the ingestion.
 
 **Excel → TSV Converter (within Data Ingestion):**
 - Available as a sub-step when an `.xlsx` file is uploaded.
 - App reads sheet names from the workbook (via `ExcelHandler` — `libs/ingestion/src/ingestion/excel_handler.py`).
-- User assigns each sheet to a role: **raw data**, **metadata**, or **extra data**, and selects the target schema from the manifest dropdown.
+- User assigns each sheet to a role: **raw data**, **metadata**, or **extra data**, and selects the target schema from the data analysis recipe dropdown.
 - Converter writes TSVs to Location 1 (`raw_data`) in the user-accessible directory.
 - After conversion, the resulting TSVs are queued for ingestion as normal.
 - **Why here and not Test Lab:** Scientists receive Excel files from collaborators and pipelines — this is a practical data preparation step, not a developer concern. Test Lab (developer app features only) is for synthetic data generation (AquaSynthesizer).
@@ -361,7 +361,7 @@ workspaces:
       visible: true
       panels:
         - type: project_info
-        - type: manifest_choice
+        - type: data_analysis_recipe_choice
         - type: filters
         - type: data_import
         - type: export
@@ -401,9 +401,9 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 
 | Type | Gate flag | Workspace | Description |
 |---|---|---|---|
-| `project_info` | — | any | Manifest title, description, dataset summary |
+| `project_info` | — | any | Data analysis recipe title, description, dataset summary |
 | `deployment_info` | — | any | Branding: logo, contact, institution (params in template) |
-| `manifest_choice` | `manifest_selector.visible` | home | Manifest selector dropdown |
+| `data_analysis_recipe_choice` | `data_analysis_recipe_selector.visible` | home | Data analysis recipe selector dropdown |
 | `filters` | `interactivity_enabled` | home | Row filter recipe builder (§8) |
 | `data_import` | `metadata_ingestion_enabled` | home | Metadata upload + optional multi-file (§9/§10) |
 | `export` | `export_enabled` | home | Export bundle with 3-way scope toggle (§7.2) |
@@ -443,15 +443,15 @@ T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanen
 | `exclusion_row` | Explicit row exclusion (named sample / value) | **Mandatory** |
 | `drop_column` | Permanently drop a column from the exported data (not just hidden in preview) | **Mandatory** |
 | `aesthetic_override` | Plot colour / fill / alpha / shape changes (per plot sub-tab) | Optional — included in report |
-| `developer_raw_yaml` | Escape hatch: arbitrary manifest fragment (≥ `pipeline-exploration-advanced` / `developer` app features only) | **Mandatory** |
+| `developer_raw_yaml` | Escape hatch: arbitrary data analysis recipe fragment (≥ `pipeline-exploration-advanced` / `developer` app features only) | **Mandatory** |
 
-> **Plot Style panel not mounted (2026-11-05, fork issue #15).** The UI that authors `aesthetic_override` nodes (the "Plot Style" panel) is not shown in HOME for now: letting users change in HOME what the manifest defines is too much at this stage, and using it broke the plot (test plan HOM-47). The node type stays in this schema and the panel's code is kept, unused, in `audit_stack.py`. This does not change the T3 scope of ADR-082.
+> **Plot Style panel not mounted (2026-11-05, fork issue #15).** The UI that authors `aesthetic_override` nodes (the "Plot Style" panel) is not shown in HOME for now: letting users change in HOME what the data analysis recipe defines is too much at this stage, and using it broke the plot (test plan HOM-47). The node type stays in this schema and the panel's code is kept, unused, in `audit_stack.py`. This does not change the T3 scope of ADR-082.
 
 **Gatekeeper rule:** `btn_apply` is **locked** if any `filter_row`, `exclusion_row`, `drop_column`, or `developer_raw_yaml` node has an empty `reason` field. `aesthetic_override` nodes never block apply.
 
 **`drop_column` is permanent within the session:** it physically removes the column from the working frame — it does not merely hide it in the UI. This is the unambiguous truth the export reflects. There is no "column_visibility" toggle that hides without dropping; any column removal in T3 must be justified and is permanent until the node is deactivated.
 
-T3 never exposes an action-picker UI. Wrangling (rename, cast, derive, split, etc.) is always done in Tier 1/2 manifests — never in T3.
+T3 never exposes an action-picker UI. Wrangling (rename, cast, derive, split, etc.) is always done in Tier 1/2 data analysis recipes — never in T3.
 
 ### 12b. RecipeNode Schema
 
@@ -487,17 +487,17 @@ There is **no separate FILTERS.txt** for T3. The T3 YAML recipe is the complete 
 
 #### Session Identity
 
-A **session** is the combination of one manifest + one data batch. The same manifest run against different data batches (e.g., batch A vs. batch B of ST22 samples) produces different sessions. Two discriminators are combined:
+A **session** is the combination of one data analysis recipe + one data batch. The same data analysis recipe run against different data batches (e.g., batch A vs. batch B of ST22 samples) produces different sessions. Two discriminators are combined:
 
-- **`manifest_sha256`**: SHA256 of the pipeline manifest YAML. Changes if the manifest is edited (wrangling steps, field definitions, join recipe).
-- **`data_batch_hash`**: A single SHA256 derived by hashing all per-source-file SHA256s together in deterministic (sorted) order. Changes when any input file is replaced, even if the manifest is unchanged.
+- **`data_analysis_recipe_sha256`**: SHA256 of the pipeline data analysis recipe YAML. Changes if the data analysis recipe is edited (wrangling steps, field definitions, join recipe).
+- **`data_batch_hash`**: A single SHA256 derived by hashing all per-source-file SHA256s together in deterministic (sorted) order. Changes when any input file is replaced, even if the data analysis recipe is unchanged.
 
 ```
-session_key = manifest_sha256[:12] + ":" + data_batch_hash[:12]
+session_key = data_analysis_recipe_sha256[:12] + ":" + data_batch_hash[:12]
 # e.g. "a3f9c81b04e2:c4d29e1a3f80"
 ```
 
-Using content hashes (not IDs or names) means the key is invariant to manifest renames, path changes, or file moves — only content changes produce a new key. The `session_key` namespaces both ghost file directories and Parquet output paths so sessions for different manifests or different data batches never collide.
+Using content hashes (not IDs or names) means the key is invariant to data analysis recipe renames, path changes, or file moves — only content changes produce a new key. The `session_key` namespaces both ghost file directories and Parquet output paths so sessions for different data analysis recipes or different data batches never collide.
 
 ---
 
@@ -505,7 +505,7 @@ Using content hashes (not IDs or names) means the key is invariant to manifest r
 
 | Slot | File | Written when | Content |
 |---|---|---|---|
-| **T1/T2 Ghost** | `_sessions/{session_key}/assembly.json` | Once on first assembly; re-written when manifest or source data changes | Manifest ID + SHA256, source files + per-file SHA256, `data_batch_hash`, assembled Parquet paths, assembly timestamp |
+| **T1/T2 Ghost** | `_sessions/{session_key}/assembly.json` | Once on first assembly; re-written when data analysis recipe or source data changes | Data analysis recipe ID + SHA256, source files + per-file SHA256, `data_batch_hash`, assembled Parquet paths, assembly timestamp |
 | **T3 Ghost** | `_sessions/{session_key}/t3_{timestamp}.json` | On every `btn_apply`; on every panel switch away from Home | Full T3 recipe YAML + `t3_plot_overrides` + tier toggle + `session_key` + `saved_at` |
 
 Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files for a session are co-located, making it easy to archive, share, or delete a full session as a unit.
@@ -517,8 +517,8 @@ Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files f
 ```json
 {
   "session_key": "my_pipeline_v2:c4d29e1a3f80",
-  "manifest_id": "my_pipeline_v2",
-  "manifest_sha256": "a3f9...",
+  "data_analysis_recipe_id": "my_pipeline_v2",
+  "data_analysis_recipe_sha256": "a3f9...",
   "data_batch_hash": "c4d29e1a3f80...",
   "assembled_at": "2026-04-24T14:00:00",
   "source_files": {
@@ -534,12 +534,12 @@ Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files f
 
 #### T1/T2 Restore Logic (the "Prepped Chef" check at startup)
 
-1. Scan `_sessions/` for all `assembly.json` files. Compute the current `data_batch_hash` from the active manifest's source files.
-2. Find the matching session by `session_key` (manifest_id + data_batch_hash).
+1. Scan `_sessions/` for all `assembly.json` files. Compute the current `data_batch_hash` from the active data analysis recipe's source files.
+2. Find the matching session by `session_key` (data_analysis_recipe_id + data_batch_hash).
 3. **Match found AND Parquet files exist on disk** → short-circuit: load existing Parquet, skip re-assembly. Normal fast path.
 4. **Match found BUT Parquet files missing** (e.g., tmp/ cleared, server restart) → re-assemble silently from source files listed in the ghost. Rewrite Parquet paths after completion. No user action required.
-5. **No match** (new batch or new manifest) → full assembly, write new session ghost.
-6. **Source files missing from disk** (user moved data) → blocking UI error: *"Source data for '[dataset_id]' cannot be found at [path]. Please re-upload or update the manifest."* Assembly blocked until resolved.
+5. **No match** (new batch or new data analysis recipe) → full assembly, write new session ghost.
+6. **Source files missing from disk** (user moved data) → blocking UI error: *"Source data for '[dataset_id]' cannot be found at [path]. Please re-upload or update the data analysis recipe."* Assembly blocked until resolved.
 
 T1/T2 state is always self-healing: lost Parquet is recovered automatically from the ghost as long as source data is accessible.
 
@@ -550,8 +550,8 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
 ```json
 {
   "session_key": "my_pipeline_v2:c4d29e1a3f80",
-  "manifest_id": "my_pipeline_v2",
-  "manifest_sha256": "a3f9...",
+  "data_analysis_recipe_id": "my_pipeline_v2",
+  "data_analysis_recipe_sha256": "a3f9...",
   "data_batch_hash": "c4d29e1a3f80...",
   "saved_at": "2026-04-24T14:30:12",
   "label": "",
@@ -563,7 +563,7 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
 
 `label` is an optional user-supplied name (e.g., "batch-A final filters"). Empty by default; editable from the session panel.
 
-**Manifest SHA256 mismatch on restore:** If the saved `manifest_sha256` differs from the current manifest, the UI warns: *"This session was saved against a different manifest version. Recipe nodes referencing renamed or removed columns may fail. Proceed with caution."* The user can still restore but is not blocked.
+**Data analysis recipe SHA256 mismatch on restore:** If the saved `data_analysis_recipe_sha256` differs from the current data analysis recipe, the UI warns: *"This session was saved against a different data analysis recipe version. Recipe nodes referencing renamed or removed columns may fail. Proceed with caution."* The user can still restore but is not blocked.
 
 **Data batch mismatch on restore:** If `data_batch_hash` differs (user loaded a different data batch), the UI warns: *"This session was saved against a different data batch. Row filters and exclusions may match different or no rows."* Again, non-blocking — user confirms.
 
@@ -573,8 +573,8 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
 
 Accessible from the **Session Management** accordion panel in the left sidebar (gate: `session_management_enabled`; ≥ `pipeline-exploration-advanced`).
 
-**Session list view:** All sessions in `_sessions/` displayed as cards, grouped by `manifest_id`, sorted by most-recent T3 ghost `saved_at` within each group. Each card shows:
-- `manifest_id` + short `data_batch_hash` (first 8 chars)
+**Session list view:** All sessions in `_sessions/` displayed as cards, grouped by `data_analysis_recipe_id`, sorted by most-recent T3 ghost `saved_at` within each group. Each card shows:
+- `data_analysis_recipe_id` + short `data_batch_hash` (first 8 chars)
 - User `label` (editable inline)
 - Last saved timestamp
 - Number of T3 ghosts (saves) in that session
@@ -607,21 +607,21 @@ T3 ghost is never written on intermediate filter edits — only on apply or pane
 ```yaml
 title: "SPARMVET Audit Report"
 date: "2026-04-24"
-manifest_id: "my_pipeline_v2"
-manifest_sha256: "a3f9..."   # SHA256 of the pipeline manifest YAML at time of export
+data_analysis_recipe_id: "my_pipeline_v2"
+data_analysis_recipe_sha256: "a3f9..."   # SHA256 of the pipeline data analysis recipe YAML at time of export
 t3_recipe_sha256: "b7c1..."  # SHA256 of the serialized T3 recipe
 ```
 
 **Report sections:**
 
-1. **Study Context** — manifest `id`, `name`, deployment name, export timestamp.
+1. **Study Context** — data analysis recipe `id`, `name`, deployment name, export timestamp.
 2. **Data Summary** — dataset IDs, source paths, row counts post-assembly.
 3. **Methods** — auto-generated plain English from **active** T3 nodes only:
    - `filter_row`: *"Rows were filtered to include only [column] [op] [value]. Reason: [reason]."*
    - `exclusion_row`: *"The following [column] values were explicitly excluded: [value]. Reason: [reason]."*
    - `drop_column`: *"Column '[column]' was permanently removed from the exported dataset. Reason: [reason]."*
    - `aesthetic_override`: *"Plot aesthetics were adjusted for [plot_scope]: [params summary]."*
-   - `developer_raw_yaml`: *"A custom manifest fragment was applied to [plot_scope]. Reason: [reason]."*
+   - `developer_raw_yaml`: *"A custom data analysis recipe fragment was applied to [plot_scope]. Reason: [reason]."*
 4. **Figures** — embedded PNG outputs for each active plot sub-tab.
 5. **Appendix: Decisions Considered and Discarded** — lists any `active: false` nodes by type, params, and reason. Present only if deactivated nodes exist. Framed as transparency, not Methods.
 6. **Raw T3 Recipe** — full YAML (active nodes only) appended as a fenced code block for reproducibility.
@@ -660,7 +660,7 @@ Propagated nodes appear in multiple plot stacks but **share the same `id`**. Lin
 The "primary keys" set is the union of every join key declared in any assembly recipe:
 
 ```yaml
-join_manifests:
+joins:
   bigtable:
     recipe:
       - action: join
@@ -672,7 +672,7 @@ join_manifests:
         on: [sample_id, gene_id]  # → {sample_id, gene_id} added
 ```
 
-Both true primary keys (`sample_id`) and secondary/accessory keys used in long-format joins (`gene_id` in Resfinder-style tables) qualify. The set is computed once per session and recomputed on manifest reassembly.
+Both true primary keys (`sample_id`) and secondary/accessory keys used in long-format joins (`gene_id` in Resfinder-style tables) qualify. The set is computed once per session and recomputed on data analysis recipe reassembly.
 
 #### 12g.3. Authoring rules — column targeting
 
@@ -750,7 +750,7 @@ This keeps the pending area readable (one entry per user decision, not N entries
 
 T3 ghost format stores `t3_recipe_by_plot: {plot_scope: [nodes]}` directly. Backward-compat: if an old ghost contains a flat `t3_recipe: [...]`, treat all nodes as targeting `__legacy__` (orphaned bucket); show a notification on restore: "*Loaded a legacy T3 ghost — N nodes are orphaned and will not apply until you re-target them. Open the Audit panel to review.*"
 
-**Orphaned nodes after manifest restructure**: if a saved ghost has `plot_scope: "subtab_qc_box_v1"` but the current manifest only has `subtab_qc_box_v2`, those nodes are flagged at restore time and listed under an "Orphaned" section in each affected plot's audit panel. The user manually re-targets or deletes them.
+**Orphaned nodes after data analysis recipe restructure**: if a saved ghost has `plot_scope: "subtab_qc_box_v1"` but the current data analysis recipe only has `subtab_qc_box_v2`, those nodes are flagged at restore time and listed under an "Orphaned" section in each affected plot's audit panel. The user manually re-targets or deletes them.
 
 #### 12g.9. Aesthetic propagation
 
@@ -808,7 +808,7 @@ home_state = reactive.Value({
     "_pending_t3_nodes": [],           # pending nodes; each carries plot_scopes_intent (§12g.7)
     "primary_keys": [],                # list of column names — union of all assembly join keys (§12g.2)
 
-    # T3 session provenance (links state to ghost file and manifest)
+    # T3 session provenance (links state to ghost file and data analysis recipe)
     "t3_ghost_file": None,             # str: path to the ghost file this session was restored from (None if new)
     "t3_ghost_saved_at": None,         # ISO str: timestamp of last ghost write
 
@@ -816,7 +816,7 @@ home_state = reactive.Value({
     "t3_plot_overrides": {},           # {plot_subtab_id: {fill, colour, alpha, shape}}
 
     # Assembly provenance
-    "manifest_sha256": None,           # str: SHA256 of the active manifest at assembly time
+    "data_analysis_recipe_sha256": None,           # str: SHA256 of the active data analysis recipe at assembly time
     "assembly_timestamp": None,        # ISO str: when the last assembly completed
 })
 ```
@@ -868,7 +868,7 @@ def _sync_X():
 
 Without the guard, the effect re-fires every tick and produces an infinite reactive loop.
 
-**Lesson source:** Phase 22-H bug fix `_sync_session_provenance` (data_batch_hash + manifest_sha256 sync). First implementation placed the writes inside `dynamic_tabs` render; produced the three client-state errors above on every tab switch. Fix: extract to standalone `@reactive.Effect` with idempotent guard.
+**Lesson source:** Phase 22-H bug fix `_sync_session_provenance` (data_batch_hash + data_analysis_recipe_sha256 sync). First implementation placed the writes inside `dynamic_tabs` render; produced the three client-state errors above on every tab switch. Fix: extract to standalone `@reactive.Effect` with idempotent guard.
 
 **Rule R4 — Don't read an input inside the render that mounts it.**  If a `@render.ui` builds an `input_*` widget AND reads that same widget's value to compute part of the rendered output, every interaction with the widget invalidates the render. The widget is destroyed and re-mounted on every keystroke/click, wiping the user's transient state (cursor position, partial selection, scroll, focus).
 
@@ -898,7 +898,7 @@ Defined in deployment file. Resolution chain:
 3. `/etc/sparmvet/deployment.yaml`
 4. `config/deployment/local/local.yaml` (dev fallback)
 
-Deployment declares `default_manifest`, `default_app_features`, `project_root`, and the five `locations` keys.
+Deployment declares `default_data_analysis_recipe`, `default_app_features`, `project_root`, and the five `locations` keys.
 See `config/deployment/local/local.yaml` for the dev template.
 
 **Path resolution (2026-05-02, ADR-048 §11):** `bootloader.get_location(key)` returns paths from `connector.resolve_paths()` output (`self._resolved_locations`), not from the raw deployment dict. UI code must always call `bootloader.get_location(key)` — never read `locations` from the deployment file directly.

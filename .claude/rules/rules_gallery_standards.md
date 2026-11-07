@@ -6,14 +6,14 @@
 
 Every gallery bundle directory MUST contain exactly:
 
-- **`recipe_manifest.yaml`**: The executable logic (info, plots, wrangling).
+- **`data_analysis_recipe.yaml`**: The executable logic (info, plots, wrangling).
 - **`example_data.tsv`**: A representative dataset (tab-separated).
 - **`recipe_meta.md`**: High-density scientific guidance and author metadata.
 - **`preview_plot.png`**: The rendered evidence of the visualization.
 
 ## 2. Taxonomy Requirements (6-Axis, ADR-063)
 
-The `info:` block in `recipe_manifest.yaml` MUST define all 6 taxonomy fields:
+The `info:` block in `data_analysis_recipe.yaml` MUST define all 6 taxonomy fields:
 
 ```yaml
 info:
@@ -64,7 +64,7 @@ All `recipe_meta.md` files follow a 3-tier structure:
 
 ## 4. VizFactory Layer Format
 
-Recipes use the VizFactory manifest format. **Do NOT use `geom:` as a layer key** — use `name:`. Mapping belongs at the global `mapping:` key under the plot, not per-layer.
+Recipes use the VizFactory data analysis recipe format. **Do NOT use `geom:` as a layer key** — use `name:`. Mapping belongs at the global `mapping:` key under the plot, not per-layer.
 
 Correct:
 ```yaml
@@ -100,5 +100,5 @@ plots:
   ```bash
   .venv/bin/python libs/viz_gallery/assets/generate_previews.py [--only name] [--force]
   ```
-- The script reads `recipe_manifest.yaml` + `example_data.tsv`, renders the first `plot_id` via VizFactory, and writes `preview_plot.png`.
+- The script reads `data_analysis_recipe.yaml` + `example_data.tsv`, renders the first `plot_id` via VizFactory, and writes `preview_plot.png`.
 - Do NOT commit a bundle without a valid `preview_plot.png`.

@@ -23,7 +23,7 @@ To ensure user accessibility directly from terminal windows:
 It is critical to logically segregate the tools created in this specific layer:
 
 - **A. Functional Assistants (Bootstrappers)**
-  - *Definition*: Scripts that generate permanent manifest files (`create_manifest.py`) or apply standards (`debug_apply_manifest_standards.py`).
+  - *Definition*: Scripts that generate permanent data analysis recipe files (`create_data_analysis_recipe.py`) or apply standards (`debug_apply_data_analysis_recipe_standards.py`).
   - *Impact*: Direct modification or generation of foundational tracking and schema data (YAML/JSON).
 - **B. Suggestive Tools (Test Data / Synthesis)**
   - *Definition*: Scripts meant solely to create mock TSVs (`create_test_data.py`) or synthetic relational models for verifying schemas without real patient data.
@@ -34,5 +34,5 @@ It is critical to logically segregate the tools created in this specific layer:
 When resolving sources for a pipeline script located in `assets/scripts/`, the script MUST obey the following fallback hierarchy to determine target files:
 
 1. **CLI Override**: Always prioritized first (e.g., explicitly given via `--data /path/to/my_data.tsv`).
-2. **Manifest Key**: Secondary priority (e.g., retrieving the location through `parse(manifest_yaml)['source']`).
+2. **Data analysis recipe Key**: Secondary priority (e.g., retrieving the location through `parse(data_analysis_recipe_yaml)['source']`).
 3. **Default Skeleton/Fallback**: Lowest priority, mostly utilized when no variables are passed or during blind tests.

@@ -37,10 +37,10 @@ _TIER_RANK = {
 
 class BlueprintMapper:
     """
-    [ADR-039] Generates a DAG-based 'TubeMap' visualization for SPARMVET manifests.
+    [ADR-039] Generates a DAG-based 'TubeMap' visualization for SPARMVET data analysis recipes.
 
-    Parses the full manifest structure (data_schemas, additional_datasets_schemas,
-    metadata_schema, join_manifests, and plots flattened by ConfigManager from
+    Parses the full data analysis recipe structure (data_schemas, additional_datasets_schemas,
+    metadata_schema, joins, and plots flattened by ConfigManager from
     analysis_groups) and outputs:
       - generate_mermaid()      → Mermaid LR DAG string (legacy, kept for reference)
       - generate_cy_elements()  → Cytoscape.js elements JSON (primary, tube-map UI)
@@ -52,7 +52,7 @@ class BlueprintMapper:
     Node types:
       trunk    (blue)   — raw data source (data_schemas)
       wrangle  (yellow) — wrangling step
-      branch   (purple) — join_manifests join node
+      branch   (purple) — joins join node
       plot     (green)  — terminal plot node
       add      (grey)   — additional_datasets_schemas
       meta     (orange) — metadata_schema
@@ -153,8 +153,8 @@ class BlueprintMapper:
                           "wrangle", "metadata_schema")
                 _add_edge("metadata_schema", wrn_id)
 
-        # ── 4. Assembly Manifests ──────────────────────────────────────────────
-        join_defs = self.cfg.get("join_manifests", {})
+        # ── 4. Assembly Data Analysis Recipes ──────────────────────────────────────────────
+        join_defs = self.cfg.get("joins", {})
 
         def _upstream_node(parent_raw: str) -> str:
             """Return the last node in the parent schema's chain."""
@@ -200,7 +200,7 @@ class BlueprintMapper:
                 for pid in group_spec.get("plots", {}).keys():
                     plot_to_group[pid] = group_name
 
-        # Also pick up target_dataset from analysis_groups directly (inline manifests
+        # Also pick up target_dataset from analysis_groups directly (inline data analysis recipes
         # don't go through ConfigManager flattening so plots_flat may be empty)
         inline_plots: dict = {}
         for group_name, group_spec in analysis_groups.items():
@@ -381,8 +381,8 @@ class BlueprintMapper:
                 elements.append(_edge("metadata_schema", wid))
                 all_known.add(wid)
 
-        # ── 4. Assembly Manifests (tier 2) ─────────────────────────────────────
-        join_defs = self.cfg.get("join_manifests", {})
+        # ── 4. Assembly Data Analysis Recipes (tier 2) ─────────────────────────────────────
+        join_defs = self.cfg.get("joins", {})
 
         def _upstream(parent_raw: str) -> str:
             """Last node in a parent schema's chain (wrangling if present)."""
@@ -465,10 +465,10 @@ if __name__ == "__main__":
     from utils.config_loader import ConfigManager
 
     parser = argparse.ArgumentParser(
-        description="Generate a TubeMap (Mermaid) for a manifest.")
-    parser.add_argument("manifest", help="Path to the manifest YAML")
+        description="Generate a TubeMap (Mermaid) for a data analysis recipe.")
+    parser.add_argument("data_analysis_recipe", help="Path to the data analysis recipe YAML")
     args = parser.parse_args()
 
-    cm = ConfigManager(args.manifest)
+    cm = ConfigManager(args.data_analysis_recipe)
     mapper = BlueprintMapper(cm.raw_config)
     print(mapper.generate_mermaid())

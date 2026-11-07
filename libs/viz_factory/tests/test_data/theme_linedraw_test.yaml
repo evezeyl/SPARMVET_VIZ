@@ -1,5 +1,5 @@
 id: theme_linedraw_test
-description: Test manifest for theme_linedraw_test.yaml
+description: Test data analysis recipe for theme_linedraw_test.yaml
 input_fields: []
 wrangling:
   tier1: []

@@ -83,11 +83,11 @@ The export bundle includes `recipes/<proj>/` (all YAML files) and `t3_steps.yaml
 (T3 committed nodes). A reader can reconstruct the wrangling pipeline but must
 manually trace which join recipe produced the dataset for a given plot.
 
-**Data linkage pattern (from manifests):**
+**Data linkage pattern (from data analysis recipes):**
 Plot spec has `target_dataset: "legacy_results"`.
-The full manifest has:
+The full data analysis recipe has:
 - `data_schemas.legacy_results` — field contracts
-- `join_manifests.legacy_results` — the T1→T2 join recipe (join, wrangle steps)
+- `joins.legacy_results` — the T1→T2 join recipe (join, wrangle steps)
 
 **Proposed addition: `full_recipe.yaml` per in-scope plot:**
 
@@ -98,11 +98,11 @@ target_dataset: legacy_results
 
 # ── T1/T2 ──────────────────────────────────────────────────────────────────
 data_schema:
-  # from manifest data_schemas.{target_dataset}
+  # from data analysis recipe data_schemas.{target_dataset}
   fields: …
 
 join_recipe:
-  # from manifest join_manifests.{target_dataset}
+  # from data analysis recipe joins.{target_dataset}
   recipe: …
 
 # ── T3 (user session) ───────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ t3_nodes:
 
 # ── Plot spec ───────────────────────────────────────────────────────────────
 plot_spec:
-  # from manifest plots.{plot_id}
+  # from data analysis recipe plots.{plot_id}
   type: bar
   …
 ```
@@ -130,7 +130,7 @@ full_recipe = {
     "plot_id": p_id,
     "target_dataset": target_ds,
     "data_schema": raw.get("data_schemas", {}).get(target_ds, {}),
-    "join_recipe": raw.get("join_manifests", {}).get(target_ds, {}),
+    "join_recipe": raw.get("joins", {}).get(target_ds, {}),
     "t3_nodes": _active_plot_t3_nodes(subtab),
     "plot_spec": spec,
 }
@@ -139,7 +139,7 @@ zf.writestr(f"recipes/{p_id}_full_recipe.yaml", yaml.safe_dump(full_recipe, sort
 
 **Edge cases to resolve before implementing:**
 - What if `target_dataset` is absent from the plot spec? (fall back to empty join block)
-- What if `join_manifests` uses `!include` tags? (`raw_config` may not have resolved them)
+- What if `joins` uses `!include` tags? (`raw_config` may not have resolved them)
   → Check if `active_cfg().raw_config` returns resolved or raw YAML. If raw, the `!include`
     paths need to be resolved or the included file content inlined.
 - Multi-dataset plots? Check if the schema supports multiple `target_dataset` values.

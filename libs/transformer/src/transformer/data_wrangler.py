@@ -9,7 +9,7 @@ import polars as pl
 from typing import Dict, Any, List
 # Import the registry functions
 from transformer.registry import get_action_function
-from utils.errors import TransformationError, ManifestError
+from utils.errors import TransformationError, DataAnalysisRecipeError
 from utils.pipeline_error import PipelineError
 
 
@@ -63,7 +63,7 @@ class DataWrangler:
         if isinstance(wrangling_block, dict):
             # ADR-034: Heuristic check for tiered keys
             if "tier1" not in wrangling_block and "tier2" not in wrangling_block:
-                raise ManifestError(
+                raise DataAnalysisRecipeError(
                     f"Wrangling block uses dict format but is missing tiered keys ('tier1', 'tier2').",
                     tip="If using the nested structure, please wrap your actions under 'tier1:' or 'tier2:' keys. If you prefer a simple list, remove the dictionary wrapping."
                 )
@@ -73,7 +73,7 @@ class DataWrangler:
                 t2_actions = wrangling_block.get("tier2", [])
                 for act in t2_actions:
                     if act.get("action") in ("join", "join_filter"):
-                        raise ManifestError(
+                        raise DataAnalysisRecipeError(
                             f"Performance Alert: Action '{act.get('action')}' found in Tier 2.",
                             tip="Relational joins are foundational. Please move this step to 'tier1' (The Trunk) to ensure it is only computed once and shared across all dependent plots."
                         )
@@ -83,7 +83,7 @@ class DataWrangler:
             return wrangling_block.get(tier, [])
 
         # Flat list is no longer accepted — raise an actionable error.
-        raise ManifestError(
+        raise DataAnalysisRecipeError(
             "Flat 'wrangling:' list is no longer accepted. Use the tiered structure with 'tier1:' and 'tier2:' keys.",
             tip=(
                 "Replace 'wrangling: [...]' with:\n"
@@ -92,7 +92,7 @@ class DataWrangler:
                 "      - action: your_action\n"
                 "        ...\n"
                 "    tier2: []\n"
-                "See rules_data_engine.md §3 for the full tiered manifest standard."
+                "See rules_data_engine.md §3 for the full tiered data analysis recipe standard."
             )
         )
 
@@ -118,12 +118,12 @@ class DataWrangler:
                         "Every wrangling step must use the canonical 'action:' key format. "
                         "Shorthand like '- mutate: [...]' is silently ignored by the engine."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="wrangling",
                     surface="plot_overlay",
                     severity="error",
                     evidence={"step_keys": str(list(rule.keys()))},
-                    reference="rules_manifest_structure.md §7",
+                    reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix)
@@ -176,7 +176,7 @@ class DataWrangler:
                     problem=f"Action '{action_name}' — column(s) {missing} not found in current frame.",
                     location=f"wrangling step {step_idx}: action='{action_name}'",
                     fix=tip,
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="wrangling",
                     surface="plot_overlay",
                     severity="error",
@@ -185,7 +185,7 @@ class DataWrangler:
                         "near_match": str(suggestions) if suggestions else None,
                         "available_columns": all_cols[:20],
                     },
-                    reference="rules_manifest_structure.md §7",
+                    reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix)
@@ -207,7 +207,7 @@ class DataWrangler:
                         f"'{action_name}' is not a registered wrangling action. "
                         "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
                     ),
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="wrangling",
                     surface="plot_overlay",
                     severity="error",
@@ -224,12 +224,12 @@ class DataWrangler:
                     problem=f"Column not found during '{action_name}': {exc}",
                     location=f"wrangling step {step_idx}: action='{action_name}'",
                     fix="Verify the column name in the action spec matches the data schema exactly.",
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="wrangling",
                     surface="plot_overlay",
                     severity="error",
                     evidence={"polars_error": str(exc)},
-                    reference="rules_manifest_structure.md §7",
+                    reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix) from exc
@@ -239,7 +239,7 @@ class DataWrangler:
                     problem=f"Action '{action_name}' raised {type(exc).__name__}: {exc}",
                     location=f"wrangling step {step_idx}: action='{action_name}'",
                     fix="Review the action parameters and the data state at this step.",
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="wrangling",
                     surface="plot_overlay",
                     severity="error",

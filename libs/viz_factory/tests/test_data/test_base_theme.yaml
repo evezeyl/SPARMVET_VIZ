@@ -1,5 +1,5 @@
 id: test_base_theme
-description: Test manifest for test_base_theme.yaml
+description: Test data analysis recipe for test_base_theme.yaml
 input_fields: []
 wrangling:
   tier1: []

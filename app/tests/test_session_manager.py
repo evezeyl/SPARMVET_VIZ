@@ -41,8 +41,8 @@ def sm(tmp_location):
     return SessionManager(tmp_location)
 
 
-def _manifest_text(version: int) -> str:
-    """A minimal manifest that ConfigManager accepts (it requires analysis_groups, ADR-077)."""
+def _data_analysis_recipe_text(version: int) -> str:
+    """A minimal data analysis recipe that ConfigManager accepts (it requires analysis_groups, ADR-077)."""
     return (
         f"id: my_pipeline\nversion: {version}\n"
         "analysis_groups:\n  g:\n    label: G\n    plots:\n      p:\n        label: P\n"
@@ -52,9 +52,9 @@ def _manifest_text(version: int) -> str:
 
 
 @pytest.fixture()
-def manifest_file(tmp_path):
+def data_analysis_recipe_file(tmp_path):
     p = tmp_path / "my_pipeline.yaml"
-    p.write_text(_manifest_text(1))
+    p.write_text(_data_analysis_recipe_text(1))
     return p
 
 
@@ -68,24 +68,24 @@ def source_files(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# 22-A-2: compute_manifest_sha256
+# 22-A-2: compute_data_analysis_recipe_sha256
 # ---------------------------------------------------------------------------
 
-def test_manifest_sha256_stable(manifest_file):
-    h1 = SessionManager.compute_manifest_sha256(manifest_file)
-    h2 = SessionManager.compute_manifest_sha256(manifest_file)
+def test_data_analysis_recipe_sha256_stable(data_analysis_recipe_file):
+    h1 = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
+    h2 = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     assert h1 == h2
     assert len(h1) == 64
 
 
-def test_manifest_sha256_changes_on_edit(manifest_file):
-    h1 = SessionManager.compute_manifest_sha256(manifest_file)
-    manifest_file.write_text(_manifest_text(2))   # same size, written in the same clock tick
-    h2 = SessionManager.compute_manifest_sha256(manifest_file)
+def test_data_analysis_recipe_sha256_changes_on_edit(data_analysis_recipe_file):
+    h1 = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
+    data_analysis_recipe_file.write_text(_data_analysis_recipe_text(2))   # same size, written in the same clock tick
+    h2 = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     assert h1 != h2
 
 
-def test_manifest_sha256_covers_included_files(tmp_path):
+def test_data_analysis_recipe_sha256_covers_included_files(tmp_path):
     """The file-set hash changes when an INCLUDED file changes (ADR-089)."""
     inc = tmp_path / "frag.yaml"
     inc.write_text("label: G\n")
@@ -94,9 +94,9 @@ def test_manifest_sha256_covers_included_files(tmp_path):
         "id: x\nanalysis_groups:\n  g:\n    label: !include 'frag.yaml'\n    plots:\n      p:\n"
         "        label: P\n        spec:\n          target_dataset: C\n          mapping: {x: a}\n"
         "          layers:\n            - name: geom_bar\n")
-    h1 = SessionManager.compute_manifest_sha256(p)
+    h1 = SessionManager.compute_data_analysis_recipe_sha256(p)
     inc.write_text("label: H\n")
-    assert SessionManager.compute_manifest_sha256(p) != h1
+    assert SessionManager.compute_data_analysis_recipe_sha256(p) != h1
 
 
 # ---------------------------------------------------------------------------
@@ -145,22 +145,22 @@ def test_session_dir_created(sm):
 # 22-A-6/7: write and read assembly ghost
 # ---------------------------------------------------------------------------
 
-def test_write_read_assembly_ghost(sm, manifest_file, source_files):
-    msig = SessionManager.compute_manifest_sha256(manifest_file)
+def test_write_read_assembly_ghost(sm, data_analysis_recipe_file, source_files):
+    msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     dbh = SessionManager.compute_data_batch_hash(source_files)
     key = SessionManager.compute_session_key(msig, dbh)
 
     sm.write_assembly_ghost(
         session_key=key,
-        manifest_id="my_pipeline",
-        manifest_sha256=msig,
+        data_analysis_recipe_id="my_pipeline",
+        data_analysis_recipe_sha256=msig,
         data_batch_hash=dbh,
         source_files={k: str(v) for k, v in source_files.items()},
         parquet_paths={"assembly": "tmp/a.parquet", "contracted": "tmp/c.parquet"},
     )
     ghost = sm.read_assembly_ghost(key)
     assert ghost is not None
-    assert ghost["manifest_id"] == "my_pipeline"
+    assert ghost["data_analysis_recipe_id"] == "my_pipeline"
     assert ghost["session_key"] == key
     assert "metadata" in ghost["source_files"]
     assert "sha256" in ghost["source_files"]["metadata"]
@@ -174,20 +174,20 @@ def test_read_assembly_ghost_missing(sm):
 # 22-A-8: restore_t1t2
 # ---------------------------------------------------------------------------
 
-def test_restore_t1t2_missing_source(sm, manifest_file, tmp_path):
-    result = sm.restore_t1t2(manifest_file, {"missing": tmp_path / "gone.tsv"})
+def test_restore_t1t2_missing_source(sm, data_analysis_recipe_file, tmp_path):
+    result = sm.restore_t1t2(data_analysis_recipe_file, {"missing": tmp_path / "gone.tsv"})
     assert result["status"] == "missing_source"
     assert "missing" in result["missing"]
 
 
-def test_restore_t1t2_new_session(sm, manifest_file, source_files):
-    result = sm.restore_t1t2(manifest_file, source_files)
+def test_restore_t1t2_new_session(sm, data_analysis_recipe_file, source_files):
+    result = sm.restore_t1t2(data_analysis_recipe_file, source_files)
     assert result["status"] == "new_session"
     assert result["session_key"] != ""
 
 
-def test_restore_t1t2_fast_path(sm, manifest_file, source_files, tmp_path):
-    msig = SessionManager.compute_manifest_sha256(manifest_file)
+def test_restore_t1t2_fast_path(sm, data_analysis_recipe_file, source_files, tmp_path):
+    msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     dbh = SessionManager.compute_data_batch_hash(source_files)
     key = SessionManager.compute_session_key(msig, dbh)
 
@@ -198,29 +198,29 @@ def test_restore_t1t2_fast_path(sm, manifest_file, source_files, tmp_path):
     p2.write_bytes(b"PAR1")
 
     sm.write_assembly_ghost(
-        session_key=key, manifest_id="my_pipeline",
-        manifest_sha256=msig, data_batch_hash=dbh,
+        session_key=key, data_analysis_recipe_id="my_pipeline",
+        data_analysis_recipe_sha256=msig, data_batch_hash=dbh,
         source_files={k: str(v) for k, v in source_files.items()},
         parquet_paths={"assembly": str(p1), "contracted": str(p2)},
     )
-    result = sm.restore_t1t2(manifest_file, source_files)
+    result = sm.restore_t1t2(data_analysis_recipe_file, source_files)
     assert result["status"] == "fast_path"
     assert result["parquet_paths"]["assembly"] == str(p1)
 
 
-def test_restore_t1t2_reassemble(sm, manifest_file, source_files):
-    msig = SessionManager.compute_manifest_sha256(manifest_file)
+def test_restore_t1t2_reassemble(sm, data_analysis_recipe_file, source_files):
+    msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     dbh = SessionManager.compute_data_batch_hash(source_files)
     key = SessionManager.compute_session_key(msig, dbh)
 
     # Write ghost pointing to non-existent Parquets
     sm.write_assembly_ghost(
-        session_key=key, manifest_id="my_pipeline",
-        manifest_sha256=msig, data_batch_hash=dbh,
+        session_key=key, data_analysis_recipe_id="my_pipeline",
+        data_analysis_recipe_sha256=msig, data_batch_hash=dbh,
         source_files={k: str(v) for k, v in source_files.items()},
         parquet_paths={"assembly": "/tmp/gone.parquet", "contracted": "/tmp/also_gone.parquet"},
     )
-    result = sm.restore_t1t2(manifest_file, source_files)
+    result = sm.restore_t1t2(data_analysis_recipe_file, source_files)
     assert result["status"] == "reassemble"
 
 
@@ -245,8 +245,8 @@ def test_write_list_t3_ghosts(sm):
 # 22-A-11: list_all_sessions
 # ---------------------------------------------------------------------------
 
-def test_list_all_sessions(sm, manifest_file, source_files):
-    msig = SessionManager.compute_manifest_sha256(manifest_file)
+def test_list_all_sessions(sm, data_analysis_recipe_file, source_files):
+    msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     dbh = SessionManager.compute_data_batch_hash(source_files)
     key = SessionManager.compute_session_key(msig, dbh)
 
@@ -260,8 +260,8 @@ def test_list_all_sessions(sm, manifest_file, source_files):
 # 22-A-12/13: export and import zip
 # ---------------------------------------------------------------------------
 
-def test_export_import_roundtrip(sm, manifest_file, source_files, tmp_path):
-    msig = SessionManager.compute_manifest_sha256(manifest_file)
+def test_export_import_roundtrip(sm, data_analysis_recipe_file, source_files, tmp_path):
+    msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     dbh = SessionManager.compute_data_batch_hash(source_files)
     key = SessionManager.compute_session_key(msig, dbh)
 
@@ -278,7 +278,7 @@ def test_export_import_roundtrip(sm, manifest_file, source_files, tmp_path):
     assert restored_key == key
     ghost = sm2.read_assembly_ghost(key)
     assert ghost is not None
-    assert ghost["manifest_id"] == "my_pipeline"
+    assert ghost["data_analysis_recipe_id"] == "my_pipeline"
 
 
 def test_import_invalid_zip_raises(sm):
@@ -290,8 +290,8 @@ def test_import_invalid_zip_raises(sm):
 # 22-A-14: delete_session
 # ---------------------------------------------------------------------------
 
-def test_delete_session(sm, manifest_file, source_files):
-    msig = SessionManager.compute_manifest_sha256(manifest_file)
+def test_delete_session(sm, data_analysis_recipe_file, source_files):
+    msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     dbh = SessionManager.compute_data_batch_hash(source_files)
     key = SessionManager.compute_session_key(msig, dbh)
     sm.write_assembly_ghost(key, "my_pipeline", msig, dbh,
@@ -377,18 +377,18 @@ def test_set_get_label(sm):
 # ships a migration; these tests pin today's names so the change is deliberate.
 # ---------------------------------------------------------------------------
 
-def test_stored_assembly_ghost_key_names(sm, manifest_file, source_files):
+def test_stored_assembly_ghost_key_names(sm, data_analysis_recipe_file, source_files):
     import json
-    msig = SessionManager.compute_manifest_sha256(manifest_file)
+    msig = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
     dbh = SessionManager.compute_data_batch_hash(source_files)
     key = SessionManager.compute_session_key(msig, dbh)
     sm.write_assembly_ghost(
-        session_key=key, manifest_id="my_pipeline", manifest_sha256=msig, data_batch_hash=dbh,
+        session_key=key, data_analysis_recipe_id="my_pipeline", data_analysis_recipe_sha256=msig, data_batch_hash=dbh,
         source_files={k: str(v) for k, v in source_files.items()},
         parquet_paths={"assembly": "tmp/a.parquet", "contracted": "tmp/c.parquet"},
     )
     raw = json.loads(next((sm.session_dir(key)).glob("assembly.json")).read_text())
-    assert {"session_key", "manifest_id", "manifest_sha256", "data_batch_hash", "source_files"} <= set(raw)
+    assert {"session_key", "data_analysis_recipe_id", "data_analysis_recipe_sha256", "data_batch_hash", "source_files"} <= set(raw)
 
 
 def test_stored_t3_ghost_key_names(sm):
@@ -397,5 +397,5 @@ def test_stored_t3_ghost_key_names(sm):
     node = make_recipe_node("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")
     path = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", [node], {}, label="x")
     raw = json.loads(Path(path).read_text())
-    assert {"session_key", "manifest_id", "manifest_sha256", "data_batch_hash", "saved_at",
+    assert {"session_key", "data_analysis_recipe_id", "data_analysis_recipe_sha256", "data_batch_hash", "saved_at",
             "tier_toggle", "t3_recipe", "t3_plot_overrides"} <= set(raw)

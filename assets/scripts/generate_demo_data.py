@@ -51,7 +51,7 @@ def main():
         ground_truth_dir / "test_data_ResFinder_20260307_105756.tsv"
     ]
 
-    # Initialize Synthesizer (Anchoring on 'sample_id' as per Abromics manifest)
+    # Initialize Synthesizer (Anchoring on 'sample_id' as per Abromics data analysis recipe)
     synthesizer = AquaSynthesizer(anchor_key_name="sample_id", n_samples=args.n_samples)
 
     print(f"\n[2] GENERATING: {args.n_samples} synthesized samples with PK Anchoring...")

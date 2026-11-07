@@ -1,8 +1,8 @@
 # SPARMVET Pipeline Test Deployment
 # Simulates production connector behaviour: data is injected by the pipeline,
-# not read from manifest source.path entries.
+# not read from data analysis recipe source.path entries.
 #
-# data_lookup: by_dataset_id — orchestrator ignores manifest source.path and discovers
+# data_lookup: by_dataset_id — orchestrator ignores data analysis recipe source.path and discovers
 # files by schema ID name in raw_data. This exercises the same code path a real
 # Galaxy/IRIDA connector would use.
 #
@@ -14,7 +14,7 @@
 deployment_type: filesystem
 deployment_name: "SPARMVET_VIZ (Pipeline Test)"
 
-# data_lookup: by_dataset_id — ignore manifest source.path, discover files by schema
+# data_lookup: by_dataset_id — ignore data analysis recipe source.path, discover files by schema
 # ID name in raw_data. Mirrors production connector behaviour.
 data_lookup: by_dataset_id
 
@@ -23,7 +23,7 @@ locations:
   raw_data: "assets/test_data/duplicated_1_test_data_ST22_dummy/"
 
   # Standard locations — same as local dev
-  manifests: "config/manifests/pipelines/"
+  data_analysis_recipes: "config/data_analysis_recipes/pipelines/"
   cache: "tmp/pipeline_test/parquet_data/"
   user_data: "tmp/pipeline_test/user/"
   gallery: "assets/gallery_data/"

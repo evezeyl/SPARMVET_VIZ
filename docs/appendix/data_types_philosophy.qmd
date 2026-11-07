@@ -46,7 +46,7 @@ All **Wrangling Actions** (Layer 1) should operate on columns while they are sti
 2.  **Wrangling**: String-based cleaning (stripping, regex, replacements).
 3.  **Contract (TERMINAL)**: Columns are selected and **cast to `categorical`** for downstream joins and plotting.
 
-## 5. Usage in Manifests
+## 5. Usage in Data analysis recipes
 
 Every discrete metadata field in your `output_fields` contract should be explicitly cast to ensure this downstream consistency:
 

@@ -9,8 +9,8 @@ format:
     theme: cosmo
     code-fold: true
 params:
-  manifest_id: "{{manifest_id}}"
-  manifest_sha256: "{{manifest_sha256}}"
+  data_analysis_recipe_id: "{{data_analysis_recipe_id}}"
+  data_analysis_recipe_sha256: "{{data_analysis_recipe_sha256}}"
   t3_recipe_sha256: "{{t3_recipe_sha256}}"
   deployment: "{{deployment}}"
   export_timestamp: "{{export_timestamp}}"
@@ -26,8 +26,8 @@ report_data = json.loads(pathlib.Path("report_data.json").read_text())
 
 | Field | Value |
 |---|---|
-| **Manifest** | `{{manifest_id}}` |
-| **Manifest SHA256** | `{{manifest_sha256}}` |
+| **Data analysis recipe** | `{{data_analysis_recipe_id}}` |
+| **Data analysis recipe SHA256** | `{{data_analysis_recipe_sha256}}` |
 | **T3 Recipe SHA256** | `{{t3_recipe_sha256}}` |
 | **Deployment** | `{{deployment}}` |
 | **Exported** | `{{export_timestamp}}` |

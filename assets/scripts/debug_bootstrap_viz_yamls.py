@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # @deps
 # provides: script:debug_bootstrap_viz_yamls
-# consumes: libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test manifests)
+# consumes: libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data analysis recipes)
 # doc: .claude/knowledge/architecture_decisions.md#ADR-041
 # @end_deps
 """
 debug_bootstrap_viz_yamls.py
 =============================
-Bootstraps missing ADR-013 YAML test manifests for VizFactory components.
-Each generated manifest references a shared generic data file
+Bootstraps missing ADR-013 YAML test data analysis recipes for VizFactory components.
+Each generated data analysis recipe references a shared generic data file
 (geom_point_test.tsv) and includes a minimal plot definition.
 
 This is the authoritative source for regenerating test scaffolding
-if manifests are lost or missing.
+if data analysis recipes are lost or missing.
 
 Usage:
     ./.venv/bin/python assets/scripts/debug_bootstrap_viz_yamls.py
@@ -27,9 +27,9 @@ import yaml
 from pathlib import Path
 
 
-# Registry of components requiring bootstrapped manifests.
+# Registry of components requiring bootstrapped data analysis recipes.
 # Format: {component_name: {mapping: {...}, layers: [...]}}
-MISSING_MANIFESTS = {
+MISSING_DATA_ANALYSIS_RECIPES = {
     "scale_color_cmap": {
         "mapping": {"x": "x", "y": "y", "color": "category"},
         "layers": [{"name": "geom_point"}, {"name": "scale_color_cmap", "params": {"cmap_name": "viridis"}}],
@@ -128,20 +128,20 @@ MISSING_MANIFESTS = {
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
-            "SPARMVET_VIZ VizFactory Manifest Bootstrap. "
-            "Creates missing ADR-013 YAML test manifests for registered components. "
+            "SPARMVET_VIZ VizFactory Data Analysis Recipe Bootstrap. "
+            "Creates missing ADR-013 YAML test data analysis recipes for registered components. "
             "Only creates files that do not already exist on disk."
         )
     )
     parser.add_argument(
         "--test-dir",
         default="libs/viz_factory/tests/test_data",
-        help="Target directory for YAML manifests (default: libs/viz_factory/tests/test_data)",
+        help="Target directory for YAML data analysis recipes (default: libs/viz_factory/tests/test_data)",
     )
     parser.add_argument(
         "--data-path",
         default="./geom_point_test.tsv",
-        help="Relative data path for generic manifests (default: ./geom_point_test.tsv)",
+        help="Relative data path for generic data analysis recipes (default: ./geom_point_test.tsv)",
     )
     parser.add_argument(
         "--dry-run",
@@ -156,15 +156,15 @@ def main():
     created = 0
     skipped = 0
 
-    for name, plot_dict in MISSING_MANIFESTS.items():
+    for name, plot_dict in MISSING_DATA_ANALYSIS_RECIPES.items():
         dest = Path(args.test_dir) / f"{name}_test.yaml"
         if dest.exists():
             skipped += 1
             continue
 
-        manifest_data = {
+        data_analysis_recipe_data = {
             "id": f"{name}_test",
-            "description": f"Auto-bootstrapped test manifest for {name}",
+            "description": f"Auto-bootstrapped test data analysis recipe for {name}",
             "input_fields": [],
             "wrangling": [],
             "output_fields": [],
@@ -176,7 +176,7 @@ def main():
             print(f"[DRY RUN] Would create: {dest}")
         else:
             with open(dest, "w") as f:
-                yaml.dump(manifest_data, f, default_flow_style=False)
+                yaml.dump(data_analysis_recipe_data, f, default_flow_style=False)
             print(f"[CREATED] {dest}")
         created += 1
 

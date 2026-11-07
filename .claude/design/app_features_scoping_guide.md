@@ -37,7 +37,7 @@ See `functionality_dependency_map.md` for the complete dependency rules before c
 | `EXP` | Export | Bundle ZIP + scope toggle (project / group / plot) |
 | `ING` | Ingest | Metadata upload, full data import |
 | `DEV` | Developer tools | Gallery, Blueprint Architect, Test Lab |
-| `UI` | UI layout | Navigation (derived), sidebar branding, manifest selector |
+| `UI` | UI layout | Navigation (derived), sidebar branding, data analysis recipe selector |
 
 ---
 
@@ -47,7 +47,7 @@ See `functionality_dependency_map.md` for the complete dependency rules before c
 
 | Abbrev | Full flag | Notes |
 |---|---|---|
-| `DEF_TIER` | `default_tier` | **Always `T2`.** T2 is the manifest result. No app features defaults to T1. |
+| `DEF_TIER` | `default_tier` | **Always `T2`.** T2 is the data analysis recipe result. No app features defaults to T1. |
 | `TIER_T12` | `tier_toggle_t1t2_enabled` | Show T1↔T2 toggle. Configurable on/off. Required if T3 active. |
 | `TIER_T3` | `tier_toggle_t3_enabled` | Show T2↔T3 comparison toggle. Required if T3 active. Off otherwise. |
 
@@ -65,7 +65,7 @@ See `functionality_dependency_map.md` for the complete dependency rules before c
 - **Passive filter** (`PAS_FILT`) = user explores; view changes, nothing recorded, resets on reload
 - **Active filter** (`T3_SAND`) = user justifies and commits; T3 branch created, written to audit
 
-Passive filter state is **not** recorded in the audit trail — the three hashes (data_batch, manifest, decision) fully describe the reproducible data state.
+Passive filter state is **not** recorded in the audit trail — the three hashes (data_batch, data analysis recipe, decision) fully describe the reproducible data state.
 
 ---
 
@@ -100,7 +100,7 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 
 **Scope** (project / group / plot) is determined by the active context and scope toggle — not by separate flags. The old `EXP_BNDL` / `EXP_GROUP` / `EXP_GRF` flags are collapsed into `export_enabled`.
 
-**ADR-069 rule — hashes always on:** Every export always includes the full provenance set (data_batch_hash, manifest_sha256, decision_hash, git_commit, release_version, created_at, manifest_name, app_features_id, active_tier, software_versions, data_source_paths). No flag, no opt-out. Image files embed an 8-field subset in file metadata (PNG iTXt / SVG `<metadata>` / PDF XMP).
+**ADR-069 rule — hashes always on:** Every export always includes the full provenance set (data_batch_hash, data_analysis_recipe_sha256, decision_hash, git_commit, release_version, created_at, data_analysis_recipe_name, app_features_id, active_tier, software_versions, data_source_paths). No flag, no opt-out. Image files embed an 8-field subset in file metadata (PNG iTXt / SVG `<metadata>` / PDF XMP).
 
 ---
 
@@ -109,7 +109,7 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 | Abbrev | Full flag | Notes |
 |---|---|---|
 | `META_ING` | `metadata_ingestion_enabled` | Import UI shows metadata schema only |
-| `IMP_HLP` | `import_helper_enabled` | Import UI shows all manifest data sources (implies `META_ING`) |
+| `IMP_HLP` | `import_helper_enabled` | Import UI shows all data analysis recipe data sources (implies `META_ING`) |
 
 **UI:** Single browse + mapping panel. Panel auto-filters to allowed sources based on active flag. Import behavior: **overwrite** (not merge).
 
@@ -122,8 +122,8 @@ Passive filter state is **not** recorded in the audit trail — the three hashes
 | Abbrev | Full flag | Notes |
 |---|---|---|
 | `GALLERY` | `gallery_enabled` | Gallery browser (34 recipes, 6-axis taxonomy). Standalone — no cascade. |
-| `BLUEPRINT` | `blueprint_enabled` | Blueprint Architect (TubeMap, manifest navigator). Standalone. Sub-flags deferred. |
-| `TEST_LAB` | `test_lab_enabled` | Test Lab (synthetic data, manifest scaffolding). Standalone. Sub-flags deferred. |
+| `BLUEPRINT` | `blueprint_enabled` | Blueprint Architect (TubeMap, data analysis recipe navigator). Standalone. Sub-flags deferred. |
+| `TEST_LAB` | `test_lab_enabled` | Test Lab (synthetic data, data analysis recipe scaffolding). Standalone. Sub-flags deferred. |
 
 Each is a single on/off flag. Sub-flags (e.g. TUBE_MAP, WRNG_STU for Blueprint; DATA_PREP, CREATE_TEST_DATA for Test Lab) are deferred until components mature. When introduced, sub-flags will be additive and non-breaking.
 
@@ -134,10 +134,10 @@ Each is a single on/off flag. Sub-flags (e.g. TUBE_MAP, WRNG_STU for Blueprint; 
 | Abbrev | Full flag | Type | Notes |
 |---|---|---|---|
 | `PRS_BADGE` | `show_app_features_badge` | configurable | "Active: app features name" in nav header. Display preference, no functional dependency. |
-| `MAN_SEL` | `manifest_selector_visible: true` | configurable | User can switch manifests in sidebar. |
-| `MAN_FIX` | `manifest_selector_visible: false` | configurable | Manifest locked — selector hidden. Opposite of MAN_SEL; never both. |
-| `UI_TITLE` | `ui_title` (app features) / `info.display_name` (manifest) | configurable | Resolution: app features config override > manifest field > nothing. |
-| `UI_SUBT` | `ui_subtitle` (app features) / `info.subtitle` (manifest) | configurable | Same resolution as UI_TITLE. Hidden if UI_TITLE is off. `info.description` is long free-form text — NOT shown in header. |
+| `MAN_SEL` | `data_analysis_recipe_selector_visible: true` | configurable | User can switch data analysis recipes in sidebar. |
+| `MAN_FIX` | `data_analysis_recipe_selector_visible: false` | configurable | Data analysis recipe locked — selector hidden. Opposite of MAN_SEL; never both. |
+| `UI_TITLE` | `ui_title` (app features) / `info.display_name` (data analysis recipe) | configurable | Resolution: app features config override > data analysis recipe field > nothing. |
+| `UI_SUBT` | `ui_subtitle` (app features) / `info.subtitle` (data analysis recipe) | configurable | Same resolution as UI_TITLE. Hidden if UI_TITLE is off. `info.description` is long free-form text — NOT shown in header. |
 | `SHOW_NAV` | *(derived)* | **derived** | Auto-shown when any of `gallery_enabled` / `blueprint_enabled` / `test_lab_enabled` is true. No config field needed. |
 | `SDB_PROF` | `sidebar_deployment` | placeholder | String field, default `"default"`. Future: named sidebar layout modules (e.g. `"website"`, `"pipeline"`). Deferred. |
 

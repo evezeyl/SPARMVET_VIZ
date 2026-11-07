@@ -25,7 +25,7 @@ from connector import (
 
 MINIMAL_LOCATIONS = {
     "raw_data": "inputs/",
-    "manifests": "manifests/",
+    "data_analysis_recipes": "data_analysis_recipes/",
     "cache": "parquet/",
     "user_data": "sessions/",
     "gallery": "gallery/",
@@ -39,7 +39,7 @@ FS_DEPLOYMENT = {
 FS_DEPLOYMENT_WITH_ROOT = {
     "deployment_type": "filesystem",
     "project_root": "/data/pipeline/",
-    "default_manifest": "manifests/amr/master.yaml",
+    "default_data_analysis_recipe": "data_analysis_recipes/amr/master.yaml",
     "default_app_features": "pipeline-static",
     "deployment_name": "AMR Pipeline",
     "locations": MINIMAL_LOCATIONS,
@@ -72,7 +72,7 @@ def _make_locations(base: Path) -> dict:
     """Create standard location subdirs under base and return an absolute locations dict."""
     locs = {
         "raw_data": str(base / "inputs"),
-        "manifests": str(base / "manifests"),
+        "data_analysis_recipes": str(base / "data_analysis_recipes"),
         "cache": str(base / "parquet"),
         "user_data": str(base / "sessions"),
         "gallery": str(base / "gallery"),
@@ -98,7 +98,7 @@ class TestFilesystemConnector:
         c = FilesystemConnector({"deployment_type": "filesystem", "locations": locs})
         paths = c.resolve_paths()
         assert paths["raw_data"] == tmp_path / "inputs"
-        assert paths["manifests"] == tmp_path / "manifests"
+        assert paths["data_analysis_recipes"] == tmp_path / "data_analysis_recipes"
 
     def test_resolve_paths_with_root(self, tmp_path):
         # tmp_path acts as project_root; MINIMAL_LOCATIONS are relative and get joined
@@ -106,7 +106,7 @@ class TestFilesystemConnector:
         deployment = {
             "deployment_type": "filesystem",
             "project_root": str(tmp_path),
-            "default_manifest": "manifests/amr/master.yaml",
+            "default_data_analysis_recipe": "data_analysis_recipes/amr/master.yaml",
             "default_app_features": "pipeline-static",
             "deployment_name": "AMR Pipeline",
             "locations": MINIMAL_LOCATIONS,
@@ -114,7 +114,7 @@ class TestFilesystemConnector:
         c = FilesystemConnector(deployment)
         paths = c.resolve_paths()
         assert paths["raw_data"] == tmp_path / "inputs"
-        assert paths["manifests"] == tmp_path / "manifests"
+        assert paths["data_analysis_recipes"] == tmp_path / "data_analysis_recipes"
 
     def test_resolve_paths_absolute_not_prepended(self, tmp_path):
         # Verify: absolute location path is NOT prepended with project_root;
@@ -123,7 +123,7 @@ class TestFilesystemConnector:
         abs_data = tmp_path / "absolute" / "data"
         root_dir.mkdir()
         abs_data.mkdir(parents=True)
-        (root_dir / "manifests").mkdir()
+        (root_dir / "data_analysis_recipes").mkdir()
         (root_dir / "parquet").mkdir()
         (root_dir / "sessions").mkdir()
         (root_dir / "gallery").mkdir()
@@ -134,30 +134,30 @@ class TestFilesystemConnector:
         c = FilesystemConnector(deployment)
         paths = c.resolve_paths()
         assert paths["raw_data"] == abs_data
-        assert paths["manifests"] == root_dir / "manifests"
+        assert paths["data_analysis_recipes"] == root_dir / "data_analysis_recipes"
 
     def test_fetch_data_is_noop(self):
         c = FilesystemConnector(FS_DEPLOYMENT)
         c.fetch_data()  # must not raise
 
-    def test_get_manifest_path_none_when_absent(self):
+    def test_get_data_analysis_recipe_path_none_when_absent(self):
         c = FilesystemConnector(FS_DEPLOYMENT)
-        assert c.get_manifest_path() is None
+        assert c.get_data_analysis_recipe_path() is None
 
-    def test_get_manifest_path_with_root(self):
+    def test_get_data_analysis_recipe_path_with_root(self):
         c = FilesystemConnector(FS_DEPLOYMENT_WITH_ROOT)
-        mpath = c.get_manifest_path()
-        assert mpath == Path("/data/pipeline/manifests/amr/master.yaml")
+        mpath = c.get_data_analysis_recipe_path()
+        assert mpath == Path("/data/pipeline/data_analysis_recipes/amr/master.yaml")
 
-    def test_get_manifest_path_no_root(self):
-        deployment = {**FS_DEPLOYMENT, "default_manifest": "config/manifests/amr.yaml"}
+    def test_get_data_analysis_recipe_path_no_root(self):
+        deployment = {**FS_DEPLOYMENT, "default_data_analysis_recipe": "config/data_analysis_recipes/amr.yaml"}
         c = FilesystemConnector(deployment)
-        assert c.get_manifest_path() == Path("config/manifests/amr.yaml")
+        assert c.get_data_analysis_recipe_path() == Path("config/data_analysis_recipes/amr.yaml")
 
-    def test_get_manifest_path_absolute(self):
-        deployment = {**FS_DEPLOYMENT, "default_manifest": "/absolute/manifest.yaml"}
+    def test_get_data_analysis_recipe_path_absolute(self):
+        deployment = {**FS_DEPLOYMENT, "default_data_analysis_recipe": "/absolute/data_analysis_recipe.yaml"}
         c = FilesystemConnector(deployment)
-        assert c.get_manifest_path() == Path("/absolute/manifest.yaml")
+        assert c.get_data_analysis_recipe_path() == Path("/absolute/data_analysis_recipe.yaml")
 
     def test_get_default_app_features(self):
         c = FilesystemConnector(FS_DEPLOYMENT_WITH_ROOT)
@@ -245,7 +245,7 @@ class TestIridaConnector:
         c = IridaConnector(deployment)
         paths = c.resolve_paths()
         assert paths["raw_data"] == cache_root / "inputs"
-        assert paths["manifests"] == cache_root / "manifests"
+        assert paths["data_analysis_recipes"] == cache_root / "data_analysis_recipes"
 
     def test_resolve_paths_no_local_cache_falls_back(self, tmp_path):
         locs = _make_locations(tmp_path)

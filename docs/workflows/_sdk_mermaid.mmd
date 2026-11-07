@@ -28,8 +28,8 @@ graph LR
         end
 
         subgraph Ingress ["Stage B: Bootstrapping"]
-            B[ManifestBootstrapper]:::logic
-            M[YAML Manifest Template]:::output
+            B[DataAnalysisRecipeBootstrapper]:::logic
+            M[YAML Data Analysis Recipe Template]:::output
             TSV_RAW --> B --> M
         end
 

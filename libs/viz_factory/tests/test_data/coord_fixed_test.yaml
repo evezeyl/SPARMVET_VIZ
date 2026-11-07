@@ -1,5 +1,5 @@
 id: coord_fixed_test
-description: Test manifest for coord_fixed_test.yaml
+description: Test data analysis recipe for coord_fixed_test.yaml
 input_fields: []
 wrangling:
   tier1: []

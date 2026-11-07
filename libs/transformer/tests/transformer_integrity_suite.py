@@ -34,7 +34,7 @@ except ImportError as e:
 wrangler_runner = project_root / "libs/transformer/tests/debug_wrangler.py"
 assembler_runner = project_root / "libs/transformer/tests/debug_assembler.py"
 test_data_dir = project_root / "libs/transformer/tests/data"
-pipeline_dir = project_root / "assets/template_manifests"
+pipeline_dir = project_root / "assets/template_data_analysis_recipes"
 
 
 def run_suite(output_dir: Path = None):
@@ -95,10 +95,10 @@ def run_suite(output_dir: Path = None):
         if action in ["join", "join_filter"]:
             continue
 
-        manifest_path = test_data_dir / f"{action}_manifest.yaml"
+        data_analysis_recipe_path = test_data_dir / f"{action}_data_analysis_recipe.yaml"
         data_path = test_data_dir / f"{action}_test.tsv"
 
-        if not manifest_path.exists() or not data_path.exists():
+        if not data_analysis_recipe_path.exists() or not data_path.exists():
             status = "NO TEST"
             log(f"{action:<30} | 🟡 {status:<8} | Missing triplet in tests/data/")
             wrangler_results.append((action, status))
@@ -107,7 +107,7 @@ def run_suite(output_dir: Path = None):
         # Execute via wrangler_debug.py (with materialization)
         out_tsv = out_dir / f"{action}_test.tsv"
         cmd = [sys.executable, str(wrangler_runner),
-               "--manifest", str(manifest_path),
+               "--data-analysis-recipe", str(data_analysis_recipe_path),
                "--data", str(data_path),
                "--output", str(out_tsv)]
         try:
@@ -135,15 +135,15 @@ def run_suite(output_dir: Path = None):
 
     # 3. PHASE 2: RELATIONAL ACTION VERIFICATION (Special 1:1:1 Relational Audit)
     log("\n🔗 PHASE 2: RELATIONAL ACTION VERIFICATION")
-    log(f"{'Relational Manifest':<30} | {'Status':<10} | {'Details'}")
+    log(f"{'Relational Data analysis recipe':<30} | {'Status':<10} | {'Details'}")
     log("-" * 75)
 
-    relational_manifest = test_data_dir / "relational_audit.yaml"
-    if relational_manifest.exists():
+    relational_data_analysis_recipe = test_data_dir / "relational_audit.yaml"
+    if relational_data_analysis_recipe.exists():
         out_rel = out_dir / "relational_audit_result.tsv"
         # We pass --data pointing to the same tests/data dir
         cmd = [sys.executable, str(assembler_runner),
-               "--manifest", str(relational_manifest),
+               "--data-analysis-recipe", str(relational_data_analysis_recipe),
                "--data", str(test_data_dir),
                "--output", str(out_rel)]
         try:
@@ -159,9 +159,9 @@ def run_suite(output_dir: Path = None):
     else:
         log(f"{'relational_audit':<30} | 🟡 NO TEST  | Missing relational_audit.yaml in tests/data/")
 
-    # 4. PHASE 3: ASSEMBLY PIPELINE TESTS (assets/template_manifests)
-    log("\n🏗️  PHASE 3: ASSEMBLY PIPELINE TESTS (Template Manifests)")
-    log(f"{'Pipeline Manifest':<50} | {'Status'}")
+    # 4. PHASE 3: ASSEMBLY PIPELINE TESTS (assets/template_data_analysis_recipes)
+    log("\n🏗️  PHASE 3: ASSEMBLY PIPELINE TESTS (Template Data analysis recipes)")
+    log(f"{'Pipeline Data analysis recipe':<50} | {'Status'}")
     log("-" * 75)
 
     assembly_results = []
@@ -174,7 +174,7 @@ def run_suite(output_dir: Path = None):
 
             out_pipe = out_dir / f"EVE_assembly_{pipe.stem}.tsv"
             cmd = [sys.executable, str(
-                assembler_runner), "--manifest", str(pipe),
+                assembler_runner), "--data-analysis-recipe", str(pipe),
                 "--output", str(out_pipe)]
             try:
                 res = subprocess.run(

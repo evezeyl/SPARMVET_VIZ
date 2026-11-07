@@ -35,7 +35,7 @@ class TestLabStudio:
             ui.div(
                 ui.span("Test Lab", class_="banner-title"),
                 ui.span(
-                    "Data preparation utilities: ID reconciliation, manifest scaffolding, "
+                    "Data preparation utilities: ID reconciliation, data analysis recipe scaffolding, "
                     "synthetic data generation, anonymisation, and file reformatting.",
                     class_="banner-subtitle",
                 ),
@@ -48,7 +48,7 @@ class TestLabStudio:
                     icon=ui.tags.i(class_="bi bi-link-45deg"),
                 ),
                 ui.accordion_panel(
-                    "Manifest Scaffolding",
+                    "Data analysis recipe Scaffolding",
                     ui.output_ui("tl_scaffold_ui"),
                     icon=ui.tags.i(class_="bi bi-file-earmark-code"),
                 ),

@@ -102,13 +102,13 @@ gallery_enabled: true/false          ← INDEPENDENT (can enable without develop
 
 blueprint_enabled: true/false        ← GATE for Blueprint Architect
   │
-  ├─ manifest_edit_enabled           ← YAML escape hatch in Blueprint IDE (editable mode)
+  ├─ data_analysis_recipe_edit_enabled           ← YAML escape hatch in Blueprint IDE (editable mode)
   └─ blueprint_agent_enabled         ← BLUEPRINT AI Agent helper (ADR-076)
 ```
 
 `gallery_enabled` can be set independently — a `project-independent` app features has Gallery access without full developer mode (Phase 25-A flipped this to `true` for project-independent). It remains a policy choice rather than a technical constraint, so other app features files can enable Gallery without enabling `developer_mode_enabled`.
 
-`manifest_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer app features files), the escape hatch is **read-only** (visible but not editable, so the user can inspect the manifest fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §4 below.
+`data_analysis_recipe_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer app features files), the escape hatch is **read-only** (visible but not editable, so the user can inspect the data analysis recipe fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §4 below.
 
 `blueprint_agent_enabled` (ADR-076): enables the conversational AI agent panel in the BLUEPRINT right sidebar. The app features file also declares a `blueprint_agent:` config block (`backend`, `model`, `instructions_file`, etc.) which is read by the bootloader to instantiate the appropriate `AgentAdapter`. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §5 below. Default is `false` for all scientist app features files (static, simple, advanced, independent, demo-vetinst, web-demo) and `true` for `developer` and `qa` — Phase 1 rollout per ADR-076 §6.
 
@@ -136,21 +136,21 @@ Eight app features files exist (`config/ui/templates/`):
 | `gallery_enabled` | false | false | false | false | false | **true** | true | true |
 | `blueprint_enabled` | false | false | false | false | false | true | true | true |
 | `test_lab_enabled` | false | false | false | false | false | false | true | true |
-| `manifest_edit_enabled` | false | false | false | false | false | false | true | true |
+| `data_analysis_recipe_edit_enabled` | false | false | false | false | false | false | true | true |
 | `blueprint_agent_enabled` | false | false | false | false | false | false | true | true |
 
 **Phase 25 additions** (per ADR-052; not feature flags but app features template fields):
 
 | Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `manifest_selector.visible` | false | false | false | false | true | true | true | true |
+| `data_analysis_recipe_selector.visible` | false | false | false | false | true | true | true | true |
 | `testing_mode` | false | false | false | false | true | true | true | true |
 
 **Phase 31 additions** (per ADR-075):
 
 | Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `manifest_edit_enabled` | false | false | false | false | false | false | true | true |
+| `data_analysis_recipe_edit_enabled` | false | false | false | false | false | false | true | true |
 
 **Phase 31 additions** (per ADR-076 — BLUEPRINT AI Agent Helper):
 
@@ -185,8 +185,8 @@ All 8 app features files declare `data_import_panel_visible: true` (6 app featur
    - Override app features `data_ingestion_enabled` to `False` unconditionally.
    - Do NOT override `metadata_ingestion_enabled`.
 
-4. **FATAL — Group D cascade (ADR-077).** If `blueprint_enabled == False` and `manifest_edit_enabled == True`:
-   - `AppFeaturesValidator` Rule 7 raises a fatal error: `'manifest_edit_enabled=True' requires 'blueprint_enabled=True'`.
+4. **FATAL — Group D cascade (ADR-077).** If `blueprint_enabled == False` and `data_analysis_recipe_edit_enabled == True`:
+   - `AppFeaturesValidator` Rule 7 raises a fatal error: `'data_analysis_recipe_edit_enabled=True' requires 'blueprint_enabled=True'`.
    - **No silent suppression in the bootloader.** The flag passes through unchanged so the validator sees the user's actual intent.
    - App refuses to start until the template is corrected. Source: ADR-075 + ADR-077.
 
@@ -236,11 +236,11 @@ Should return zero hits (only docstrings/comments allowed).
 | `comparison_mode_enabled: true` with `interactivity_enabled: false` | Comparison Mode toggle absent (silently suppressed). No error shown to user. | Bootloader resolves and logs warning. Fix the template. |
 | `data_ingestion_enabled: true` with `import_helper_enabled: false` | Data ingestion UI absent. No Excel converter. | Bootloader resolves and logs warning. Fix the template. |
 | `blueprint_agent_enabled: true` with `blueprint_enabled: false` | **FATAL** — startup blocked. `AppFeaturesValidator` Rule 7 raises a clear error. The flag is NOT silently rewritten. | Fix the template — set `blueprint_agent_enabled: false` or enable `blueprint_enabled`. (ADR-077.) |
-| `manifest_edit_enabled: true` with `blueprint_enabled: false` | **FATAL** — startup blocked. Same as above. | Fix the template. (ADR-077.) |
+| `data_analysis_recipe_edit_enabled: true` with `blueprint_enabled: false` | **FATAL** — startup blocked. Same as above. | Fix the template. (ADR-077.) |
 | `blueprint_agent_enabled: true` but `blueprint_agent.backend` absent or `disabled` | Chat panel renders an "agent unavailable" banner (or hides entirely). | Add a `blueprint_agent:` block to the template, or accept that the app features is intentionally agent-free. |
 | `blueprint_agent.backend: claude_cli` with `claude` not installed / not logged in | Adapter init fails; bootloader falls back to `DisabledAdapter` and logs the cause. | Install Claude Code CLI and run `claude --status` to verify auth. |
 | `blueprint_agent.backend: claude_api` with `ANTHROPIC_API_KEY` env var unset | Adapter init fails; fall back to `DisabledAdapter`. | Set the env var, or switch backend to `claude_cli`. |
-| `default_manifest` absent in deployment AND app features hides selector | App fails to start with ConfigurationError: "No manifest source available." | Add `default_manifest` to deployment, or use an app features that shows the selector. |
+| `default_data_analysis_recipe` absent in deployment AND app features hides selector | App fails to start with ConfigurationError: "No data analysis recipe source available." | Add `default_data_analysis_recipe` to deployment, or use an app features that shows the selector. |
 | `data_ingestion_enabled: false` in deployment with `project-independent` app features | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
 | `SPARMVET_IRIDA_TOKEN` not set with `deployment_type: irida` | IridaConnector raises AuthenticationError at startup. | Ensure IRIDA injects the token at container launch. |
 
@@ -257,6 +257,6 @@ Should return zero hits (only docstrings/comments allowed).
 | `app/handlers/gallery_handlers.py` | Must use `bootloader.is_enabled()` for feature gating |
 | `app/handlers/export_handlers.py` | Must use `bootloader.is_enabled()` for feature gating |
 | `app/src/ui.py` | Must use `bootloader.is_enabled()` for feature gating |
-| `app/handlers/blueprint_handlers.py` | Must gate YAML escape hatch writability on `bootloader.is_enabled("manifest_edit_enabled")` |
+| `app/handlers/blueprint_handlers.py` | Must gate YAML escape hatch writability on `bootloader.is_enabled("data_analysis_recipe_edit_enabled")` |
 | `app/handlers/blueprint_handlers.py` | Must gate the AI Agent chat panel on `bootloader.is_enabled("blueprint_agent_enabled")` AND a non-`DisabledAdapter` backend (ADR-076) |
 | `config/ui/agents/*.md` | System prompt templates (referenced by `blueprint_agent.instructions_file`). Created by BP-AGENT-INSTRUCT-1. |

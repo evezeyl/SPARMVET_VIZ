@@ -29,7 +29,7 @@ The dev fallback deployment is at `config/deployment/local/local.yaml`. The sche
 A deployment is a single YAML file that describes one running instance of SPARMVET. It answers:
 
 - **Where** is data stored? (filesystem paths or API endpoint)
-- **Which** pipeline manifest loads at startup?
+- **Which** pipeline data analysis recipe loads at startup?
 - **Who** is the default user type (app features)?
 - **What kind** of system is this? (filesystem / Galaxy / IRIDA)
 
@@ -71,7 +71,7 @@ project_root: "/data/pipeline/amr/"    # absolute base; all locations resolve un
 
 locations:
   raw_data:      "inputs/"       # Location 1 — raw files (TSV, Excel, VCF); read-only
-  manifests:     "manifests/"    # Location 2 — YAML manifests and recipes; read-only
+  data_analysis_recipes:     "data_analysis_recipes/"    # Location 2 — YAML data analysis recipes and recipes; read-only
   cache:  "parquet/"      # Location 3 — Tier 1/2 Parquet caches; written by engine
   user_data: "sessions/"     # Location 4 — exports, session saves, T3 artifacts; user-writable
   gallery:       "gallery/"      # Location 5 — gallery assets; read-only
@@ -83,10 +83,10 @@ locations:
 # Human-readable label — shown in app footer for identification
 deployment_name: "AMR Pipeline — Galaxy EU"
 
-# Manifest to load at startup (relative to project_root/locations.manifests)
-# If ABSENT → manifest selector appears in UI (flag-gated)
-# If PRESENT → manifest is locked; lower app features files never see the selector
-default_manifest: "manifests/amr/master.yaml"
+# Data analysis recipe to load at startup (relative to project_root/locations.data_analysis_recipes)
+# If ABSENT → data analysis recipe selector appears in UI (flag-gated)
+# If PRESENT → data analysis recipe is locked; lower app features files never see the selector
+default_data_analysis_recipe: "data_analysis_recipes/amr/master.yaml"
 
 # App features to activate at startup
 # If ABSENT → app features selector shown (developer app features only) or falls back to pipeline-static
@@ -114,7 +114,7 @@ irida:
 |---|---|---|
 | API tokens / passwords | Security — never in files that may be committed | Env vars (`SPARMVET_IRIDA_TOKEN`) |
 | Feature flags (filter, export, T3…) | App features controls features, not deployment | App features file (`config/ui/templates/`) |
-| Wrangling logic / manifests | Manifest content belongs in `locations.manifests/` | Pipeline manifest YAML |
+| Wrangling logic / data analysis recipes | Data analysis recipe content belongs in `locations.data_analysis_recipes/` | Pipeline data analysis recipe YAML |
 | User preferences | Future: `user_data/user-preferences.yaml` | Deferred |
 | Absolute paths inside `locations` | All sub-paths must be relative to `project_root` | Use relative paths only |
 
@@ -127,8 +127,8 @@ Every deployment defines the same five named locations. All are relative to `pro
 | Key | Name | Written by | Read by | Notes |
 |---|---|---|---|---|
 | `raw_data` | Location 1 | Pipeline / admin / user upload | DataIngestor | Never modified by the app except via Data Ingestion feature |
-| `manifests` | Location 2 | Admin / developer | DataOrchestrator, ManifestNavigator | Contains master YAML and all `!include` fragments |
-| `cache` | Location 3 | DataOrchestrator (engine) | VizFactory, all tier reads | Created automatically on first run; deleted on manifest change (cache invalidation) |
+| `data_analysis_recipes` | Location 2 | Admin / developer | DataOrchestrator, DataAnalysisRecipeNavigator | Contains master YAML and all `!include` fragments |
+| `cache` | Location 3 | DataOrchestrator (engine) | VizFactory, all tier reads | Created automatically on first run; deleted on data analysis recipe change (cache invalidation) |
 | `user_data` | Location 4 | App (exports, saves) + user | Session restore, bundle download | Must be writable by app process; user has access to this location in Galaxy/IRIDA |
 | `gallery` | Location 5 | Admin / `refresh_gallery.py` | GalleryViewer | Read-only from app; indexed by `gallery_index.json` |
 
@@ -172,14 +172,14 @@ Startup print: `[Bootloader] Connector: FilesystemConnector — fetch_data()`
 **Optional field** (2026-05-02, ADR-048 §12; renamed from `prefer_discovery` by ADR-091):
 
 ```yaml
-data_lookup: by_dataset_id    # manifest_paths (default, when absent) | by_dataset_id
+data_lookup: by_dataset_id    # data_analysis_recipe_paths (default, when absent) | by_dataset_id
 ```
 
-With `by_dataset_id`, the orchestrator (`materialize_tier1`) strips the `source` block from each manifest schema entry before passing it to the ingestor. The ingestor then falls back to filename discovery in `raw_data_dir`, finding `*{schema_id}*.tsv` files.
+With `by_dataset_id`, the orchestrator (`materialize_tier1`) strips the `source` block from each data analysis recipe schema entry before passing it to the ingestor. The ingestor then falls back to filename discovery in `raw_data_dir`, finding `*{schema_id}*.tsv` files.
 
 This mirrors production connector behaviour: in Galaxy and IRIDA, pipeline output is delivered to `raw_data_dir` by the pipeline. The ingestor discovers files by schema ID name.
 
-**`source.path` in manifests is a development shortcut only.** It provides a concrete example data path so developers can run the manifest locally. In production, `source.path` is never used — data is always discovered in `raw_data_dir`. The field is ignored when `data_lookup: by_dataset_id`.
+**`source.path` in data analysis recipes is a development shortcut only.** It provides a concrete example data path so developers can run the data analysis recipe locally. In production, `source.path` is never used — data is always discovered in `raw_data_dir`. The field is ignored when `data_lookup: by_dataset_id`.
 
 **When to set `data_lookup: by_dataset_id`:**
 
@@ -254,7 +254,7 @@ deployment_type: filesystem
 deployment_name: "SPARMVET_VIZ (Local Dev)"
 locations:
   raw_data: "assets/test_data/"
-  manifests: "config/manifests/pipelines/"
+  data_analysis_recipes: "config/data_analysis_recipes/pipelines/"
   cache: "tmp/UI_TEST/parquet_data/"
   user_data: "tmp/UI_TEST/user/"
   gallery: "assets/gallery_data/"

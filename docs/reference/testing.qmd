@@ -26,13 +26,13 @@ Any failures here are summarized in `.txt` reports sent to `tmp/` and immediatel
 
 ### Fast Overview: Testing & Debugging Engines
 
-| Component Name (File) | Library | Primary Function | Target Manifest/Data |
+| Component Name (File) | Library | Primary Function | Target DataAnalysisRecipe/Data |
 | :--- | :--- | :--- | :--- |
-| **Pipeline (debug_pipeline.py)** | `libs/transformer` | End-to-end pipeline execution (Ingest -> Wrangle -> Assemble) | YAML Pipeline Manifests |
+| **Pipeline (debug_pipeline.py)** | `libs/transformer` | End-to-end pipeline execution (Ingest -> Wrangle -> Assemble) | YAML Pipeline Data Analysis Recipes |
 | **Expressions (debug_expressions.py)** | `libs/transformer` | Atomic cleaning logic verification (Cast, Coalesce, LabelIf) | Mock LazyFrames |
 | **Ingestor (debug_ingestor.py)** | `libs/ingestion` | Manual verification of schema enforcement and file I/O | Raw TSV/VCF Assets |
 | **Audit (debug_audit.py)** | `libs/viz_factory` | Integrity check between Tasks, Registry, and Evidence | `tasks.md` + Registry |
-| **Distiller (debug_distiller.py)** | `libs/viz_factory` | Plotnine Color Distiller scaling verification | Isolated scale manifests |
+| **Distiller (debug_distiller.py)** | `libs/viz_factory` | Plotnine Color Distiller scaling verification | Isolated scale data analysis recipes |
 | **Sync (debug_bulk_sync.py)** | `libs/viz_factory` | Automated task state synchronization (Test -> `tasks.md`) | `tasks.md` + PNG artifacts |
 
 **Testing Strategy:**

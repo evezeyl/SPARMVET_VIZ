@@ -2,7 +2,7 @@
 """
 generate_previews.py — Headless gallery preview generator.
 
-Reads each recipe_manifest.yaml + example_data.tsv under assets/gallery_data/
+Reads each data_analysis_recipe.yaml + example_data.tsv under assets/gallery_data/
 and renders a preview_plot.png using VizFactory.
 
 Usage (from project root, with .venv active):
@@ -10,7 +10,7 @@ Usage (from project root, with .venv active):
     .venv/bin/python libs/viz_gallery/assets/generate_previews.py --only beeswarm_sina ecdf
     .venv/bin/python libs/viz_gallery/assets/generate_previews.py --skip bar_simple
 
-The first plot_id found in each manifest is rendered (should be one per recipe).
+The first plot_id found in each data analysis recipe is rendered (should be one per recipe).
 """
 import argparse
 import sys
@@ -34,27 +34,27 @@ except ImportError as e:
 
 
 def render_recipe(recipe_dir: Path, factory: VizFactory) -> bool:
-    manifest_path = recipe_dir / "recipe_manifest.yaml"
+    data_analysis_recipe_path = recipe_dir / "data_analysis_recipe.yaml"
     data_path = recipe_dir / "example_data.tsv"
     out_path = recipe_dir / "preview_plot.png"
 
-    if not manifest_path.exists() or not data_path.exists():
-        print(f"  ⚠️  {recipe_dir.name}: missing manifest or data — skipped")
+    if not data_analysis_recipe_path.exists() or not data_path.exists():
+        print(f"  ⚠️  {recipe_dir.name}: missing data analysis recipe or data — skipped")
         return False
 
     try:
-        with open(manifest_path) as f:
-            manifest = yaml.safe_load(f)
+        with open(data_analysis_recipe_path) as f:
+            data_analysis_recipe = yaml.safe_load(f)
 
-        plots = manifest.get("plots", {})
+        plots = data_analysis_recipe.get("plots", {})
         if not plots:
-            print(f"  ⚠️  {recipe_dir.name}: no plots key in manifest — skipped")
+            print(f"  ⚠️  {recipe_dir.name}: no plots key in data analysis recipe — skipped")
             return False
 
         plot_id = next(iter(plots))
         df = pl.read_csv(data_path, separator="\t").lazy()
 
-        p = factory.render(df, manifest, plot_id)
+        p = factory.render(df, data_analysis_recipe, plot_id)
         p.save(out_path, width=8, height=5, dpi=120, verbose=False)
 
         thumb_path = recipe_dir / "preview_thumb.png"

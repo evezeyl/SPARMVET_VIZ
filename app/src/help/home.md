@@ -1,12 +1,12 @@
 ## Home — Quick Reference
 
-**Home** is the main analysis theater. Manifest-defined `analysis_groups` become tabs; each group's plots appear as sub-tabs.
+**Home** is the main analysis theater. Data analysis recipe-defined `analysis_groups` become tabs; each group's plots appear as sub-tabs.
 
 ### Tier Toggle
 | Button | What you see |
 |---|---|
 | **T1 Raw** | Assembled anchor data — no transformations |
-| **T2 Reference** | T1 + manifest-defined wrangling (read-only reference) |
+| **T2 Reference** | T1 + data analysis recipe-defined wrangling (read-only reference) |
 | **T3 Wrangling** | Your personal adjustments — filtered, excluded, or dropped columns |
 | **T3 Plot** | Same as T3 Wrangling with plot-level aesthetic changes |
 

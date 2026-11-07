@@ -100,15 +100,15 @@
 | Flag | pipeline-static | demo-vetinst | web-demo | pipeline-expl-simple | pipeline-expl-advanced | project-independent | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `show_app_features_badge` | Y | N | N | Y | Y | Y | Y | Y |
-| `manifest_selector_visible` | N | N | N | N | Y | Y | Y | Y |
-| `manifest_selector.fixed_manifest` | set | set | set | set | set | null | null | null |
+| `data_analysis_recipe_selector_visible` | N | N | N | N | Y | Y | Y | Y |
+| `data_analysis_recipe_selector.fixed_data_analysis_recipe` | set | set | set | set | set | null | null | null |
 | `ui_title` (app features override) | - | - | set | - | - | - | - | - |
 | `ui_subtitle` (app features override) | - | - | set | - | - | - | - | - |
 | `show_navigation` *(derived)* | N | N | N | N | N | Y | Y | Y |
 | `sidebar_deployment` | default | default | default | default | default | default | default | default |
 
 > `show_navigation` is derived — auto-shown when any of gallery / blueprint / test_lab enabled.
-> `ui_title` / `ui_subtitle`: app features override > manifest `info.display_name` / `info.subtitle` > nothing.
+> `ui_title` / `ui_subtitle`: app features override > data analysis recipe `info.display_name` / `info.subtitle` > nothing.
 > `sidebar_deployment`: placeholder string field. Only `"default"` exists currently. Future: named layout modules.
 
 ---
@@ -133,8 +133,8 @@
 | `blueprint_enabled` | N | N |
 | `test_lab_enabled` | N | N |
 | `show_app_features_badge` | N | N |
-| `manifest_selector_visible` | N | N |
-| `manifest_selector.fixed_manifest` | set | set |
+| `data_analysis_recipe_selector_visible` | N | N |
+| `data_analysis_recipe_selector.fixed_data_analysis_recipe` | set | set |
 | `ui_title` (app features override) | set | - |
 | `ui_subtitle` (app features override) | set | - |
 | `show_navigation` *(derived)* | N | N |

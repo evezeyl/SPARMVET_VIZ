@@ -1,5 +1,5 @@
 id: scale_y_reverse_test
-description: Test manifest for scale_y_reverse_test.yaml
+description: Test data analysis recipe for scale_y_reverse_test.yaml
 input_fields: []
 wrangling:
   tier1: []

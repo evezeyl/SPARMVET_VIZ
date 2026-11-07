@@ -21,7 +21,7 @@ flowchart LR
     subgraph ConfigDir ["config/ Directory (Infinite Subfolders)"]
         direction LR
         P["user_preferences/"]:::input 
-        M["manifests/"]:::input 
+        M["data analysis recipes/"]:::input 
         A["plot_archetypes/"]:::input
         D["deployments/"]:::input
         C["connectors/"]:::input
@@ -43,13 +43,13 @@ flowchart LR
         
         Meta --> Ingest["<b>Ingestion Layer</b>"]:::logic
         
-        CR -->|"Validates against Manifest Data Schema"| Ingest
+        CR -->|"Validates against Data analysis recipe Data Schema"| Ingest
         
         Ingest --> Merge["<b>Viz Factory</b><br>3-Tier Deep Merge"]:::logic
         
         CR -->|"Provides Plot Settings"| Merge
         
         Merge -->|"Priority 1"| UP["User Preferences"]:::output
-        Merge -->|"Priority 2"| MS["Manifest Specifics"]:::output
+        Merge -->|"Priority 2"| MS["Data Analysis Recipe Specifics"]:::output
         Merge -->|"Priority 3 (Base)"| PA["Plot Archetypes"]:::output
     end

@@ -13,7 +13,7 @@ a data mapping plus an ordered list of layers, where the primary geom is just th
 what `plotnine` itself models (`ggplot(df, aes(...)) + geom_*() + scale_*() + ...`), and it is already
 what the render resolver produces internally.
 
-The legacy manifest keys — `factory_id`, flat `x:`/`y:`/`fill:` — are **input sugar**, not part of the
+The legacy data analysis recipe keys — `factory_id`, flat `x:`/`y:`/`fill:` — are **input sugar**, not part of the
 model. A single seam, `normalise_plot_spec()`, converts sugar → canonical at the front door. Everything
 downstream (rendering today, BLUEPRINT authoring tomorrow) operates on the canonical model only.
 
@@ -26,8 +26,8 @@ and BLUEPRINT each use it.
 
 ## 1. Why this exists (the problem)
 
-Today a plot spec mixes two abstraction levels (verified in real manifests, e.g.
-`config/manifests/pipelines/1_test_data_ST22_dummy/plots/FastP_reads_boxplot.yaml`):
+Today a plot spec mixes two abstraction levels (verified in real data analysis recipes, e.g.
+`config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy/plots/FastP_reads_boxplot.yaml`):
 
 ```yaml
 factory_id: "boxplot_logic"   # primary geom HIDDEN behind a chart-type id
@@ -99,7 +99,7 @@ This mirrors `plotnine` exactly: `mapping` = `aes()`, `layers` = the `+ geom/sca
 ## 3. The shared seam — `normalise_plot_spec` / `serialise_plot_spec`
 
 One pair of pure functions in `libs/viz_factory/src/viz_factory/plot_config_resolver.py` is the **single
-source of truth** for "raw manifest spec ⇄ canonical model." Both the renderer and BLUEPRINT use it, so
+source of truth** for "raw data analysis recipe spec ⇄ canonical model." Both the renderer and BLUEPRINT use it, so
 they cannot diverge.
 
 ```python
@@ -131,7 +131,7 @@ def serialise_plot_spec(canonical: dict) -> dict:
 
 ## 4. How BLUEPRINT works (the authoring side)
 
-BLUEPRINT authors **L4** (the manifest plot spec) and **L2** (`plot_defaults`). It operates exclusively on
+BLUEPRINT authors **L4** (the data analysis recipe plot spec) and **L2** (`plot_defaults`). It operates exclusively on
 the canonical model via the seam.
 
 | Step | Mechanism |
@@ -144,7 +144,7 @@ the canonical model via the seam.
 | **Commit** | `serialise_plot_spec(canonical)` → write the plot spec file's `spec:` block (its `mapping:` + `layers:`). **Never `wrangling.tier3`** (that legacy dump is the bug fixed here — see §8). |
 
 **Starter templates (replaces `factory_id` UX).** "Pick a chart type to begin" survives as a BLUEPRINT
-*template*, not a stored manifest key: choosing "Bar chart" seeds `layers=[{name: geom_col}]` + empty
+*template*, not a stored data analysis recipe key: choosing "Bar chart" seeds `layers=[{name: geom_col}]` + empty
 mapping slots. The template is authoring-time sugar; what gets stored is the explicit canonical model.
 
 ---
@@ -154,7 +154,7 @@ mapping slots. The template is authoring-time sugar; what gets stored is the exp
 HOME does **not** author L4 layers. Per ADR-082 §4, HOME T3 is a *Publication Finisher*, locked to
 filters / exclusions / column-drops / `aesthetic_override`. It authors **L5** — a narrow, fixed-schema
 override (plot_config_cascade.md §6): `fill_color` ⊕ `fill_palette`, `color`, `alpha`, `shape`, `size`,
-`theme`. Session-only, never written to the manifest.
+`theme`. Session-only, never written to the data analysis recipe.
 
 The render cascade merges them: **L4 (BLUEPRINT, persistent) + L5 (HOME, session) → one layer list → one
 plot** (plot_config_cascade.md §2). They never compete for authorship; they layer.
@@ -202,7 +202,7 @@ A second representation that lingers "just in case" is exactly the kind of ambig
   place (renaming to `chart_type` would keep a non-grammar concept alive). Same for top-level flat
   aesthetics (`x:`/`y:`/`fill:` outside a `mapping:` block).
 - **The "pick a chart type" UX survives only as a BLUEPRINT authoring template** (§4) that seeds a geom
-  layer — never a stored manifest key.
+  layer — never a stored data analysis recipe key.
 
 ### 7a. Transition discipline (how we remove without cutting the branch)
 
@@ -210,8 +210,8 @@ The legacy reader is removed **last**, only after every *producer* emits canonic
 
 1. **Transitional read.** `normalise_plot_spec` initially still expands `factory_id` + promotes flat aes,
    so the app keeps working through migration. (This is the current `_normalise_spec` behaviour, promoted.)
-2. **Migrate every producer:** all data manifests (BP-PLOT-MIGRATE-1), the generators
-   (`create_manifest.py:281`, `debug_bootstrap_viz_yamls.py`), BLUEPRINT commit (BP-PLOT-COMMIT-1), and
+2. **Migrate every producer:** all data data analysis recipes (BP-PLOT-MIGRATE-1), the generators
+   (`create_data_analysis_recipe.py:281`, `debug_bootstrap_viz_yamls.py`), BLUEPRINT commit (BP-PLOT-COMMIT-1), and
    the format-authority docs/rules (BP-PLOT-DOCS-1).
 3. **Verify zero producers remain:** `grep -rn "factory_id" config/ assets/ app/ libs/ tests/` returns only
    the removal code itself + historical ADR text. Render parity checked before/after migration.
@@ -237,7 +237,7 @@ loud instead of silently rendering through a hidden path.
 
 ## 8. The tier3 commit bug (fixed by this model)
 
-Both `_handle_manifest_save_internal` (blueprint_handlers.py:826-828) and `btn_download_manifest`
+Both `_handle_data_analysis_recipe_save_internal` (blueprint_handlers.py:826-828) and `btn_download_data_analysis_recipe`
 (blueprint_handlers.py:971) currently wipe `tier1`/`tier2` and dump the whole logic stack into
 `wrangling.tier3`. This contradicts ADR-082 §4 ("BLUEPRINT never writes T3") and is meaningless for a
 geom node. It is legacy from when this class was the Test Lab "Wrangle Studio."
@@ -264,8 +264,8 @@ emit canonical. Dependencies are explicit so nothing is forgotten.
 | 3 | **BP-COMPONENT-FORMS-1** | `[opus/high]` | Component picker (context `plot`) + `search_components` helper + add/edit layer nodes via the shared 8-widget form. Node-kind discriminator (`{component}` vs `{action}`); branch in `bp_action_form_ui`, `_bp_apply_node_handler`, `logic_stack_ui`. | 1, 2, BP-COMPONENT-SCHEMA-1 (done) |
 | 4 | **BP-MAPPING-FORM-1** | `[sonnet/medium]` | Dedicated mapping form (x/y/fill/color/facet_by column pickers) — `aes()`, not a component. | 1 |
 | 5 | **BP-PLOT-COMMIT-1** | `[opus/high]` | `serialise_plot_spec` → write plot spec `layers:`; route wrangling nodes to their source tier; **kill the tier3 dump** (§8). BLUEPRINT emits canonical only (no factory_id). | 1 |
-| 6 | **BP-PLOT-MIGRATE-1** | `[sonnet/medium]` | `assets/scripts/migrate_plot_specs.py` (argparse) — rewrite the 19 legacy manifests (13 plot specs + 6 masters) to canonical: factory_id→explicit geom (bar y-check → geom_col/geom_bar; heatmap color→fill+geom_tile), flat aes→`mapping:`. Scan `tests/` fixtures too. Verify render parity before/after (debug_gallery). **Update generators**: `create_manifest.py:281`, `debug_bootstrap_viz_yamls.py` → emit canonical. | 1 |
-| 7 | **BP-PLOT-DOCS-1** | `[sonnet/medium]` | Rewrite plot-spec format authority to canonical, remove factory_id: `rules_manifest_structure.md §8` (the `factory_id` table + examples), `rules_agent_role_bioscientist.md §3-C`, `docs/appendix/manifest_structure.yaml`, `project_conventions.md`, `assets/template_manifests/1_test_data_ST22_dummy.yaml` (the §3 structural reference). Confirm `rules_gallery_standards.md` already canonical (it is). | — (do before 8) |
+| 6 | **BP-PLOT-MIGRATE-1** | `[sonnet/medium]` | `assets/scripts/migrate_plot_specs.py` (argparse) — rewrite the 19 legacy data analysis recipes (13 plot specs + 6 masters) to canonical: factory_id→explicit geom (bar y-check → geom_col/geom_bar; heatmap color→fill+geom_tile), flat aes→`mapping:`. Scan `tests/` fixtures too. Verify render parity before/after (debug_gallery). **Update generators**: `create_data_analysis_recipe.py:281`, `debug_bootstrap_viz_yamls.py` → emit canonical. | 1 |
+| 7 | **BP-PLOT-DOCS-1** | `[sonnet/medium]` | Rewrite plot-spec format authority to canonical, remove factory_id: `rules_data_analysis_recipe_structure.md §8` (the `factory_id` table + examples), `rules_agent_role_bioscientist.md §3-C`, `docs/appendix/data_analysis_recipe_structure.yaml`, `project_conventions.md`, `assets/template_data_analysis_recipes/1_test_data_ST22_dummy.yaml` (the §3 structural reference). Confirm `rules_gallery_standards.md` already canonical (it is). | — (do before 8) |
 | 8 | **BP-PLOT-LEGACY-REMOVE-1** | `[sonnet/high]` | Remove factory_id expansion + flat-aes promotion + `_FACTORY_GEOMS` + bar y-check + heatmap remap from `normalise_plot_spec`; replace with a hard helpful `PipelineError` (§7a.4). Update `test_plot_config_resolver.py`: drop expansion tests, add legacy-error tests. **Gate:** `grep -rn factory_id config/ assets/ app/ libs/ tests/` returns only this error code + historical ADRs. | 5, 6, 7 |
 
 Tasks 1–2 are behaviour-neutral for rendering. 3–5 are the authoring feature. 6–7 migrate all producers.
@@ -278,7 +278,7 @@ Tasks 1–2 are behaviour-neutral for rendering. 3–5 are the authoring feature
 - **Render-path changes** — the cascade (plot_config_cascade.md) is unchanged; this doc only adds the
   authoring seam and BLUEPRINT consumption.
 - **HOME authoring of layers** — locked out by ADR-082 §4; cascade accommodates it if a future ADR opens it.
-- **Forced manifest migration** — legacy reads forever; migration (task 6) is optional cleanup.
+- **Forced data analysis recipe migration** — legacy reads forever; migration (task 6) is optional cleanup.
 - **Joint Designer (BP-JOINT-1), Groups CRUD (BP-GROUPS-1)** — separate BLUEPRINT layers (ADR-082 §1).
 
 ---
@@ -290,4 +290,4 @@ Tasks 1–2 are behaviour-neutral for rendering. 3–5 are the authoring feature
 - ADR-036 — Artist Parity (component names match plotnine)
 - ADR-075 — 8-widget `ui_schema` form renderer
 - `libs/viz_factory/src/viz_factory/plot_config_resolver.py` — `_normalise_spec` (to be promoted), `_FACTORY_GEOMS`
-- `rules_manifest_structure.md §8` — `analysis_groups` + plot spec file structure
+- `rules_data_analysis_recipe_structure.md §8` — `analysis_groups` + plot spec file structure

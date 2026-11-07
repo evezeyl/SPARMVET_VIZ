@@ -40,15 +40,15 @@
 - **provides:** `rule:legacy_management`, `rule:deprecation_markers`, `rule:historical_preservation`
 - **consumed_by:** `.claude/rules/workspace_standard.md`
 
-## `.claude/rules/rules_manifest_structure.md`
+## `.claude/rules/rules_data_analysis_recipe_structure.md`
 - **Role:** `meta`
 - **provides:** `rule:canonical_recipe_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
 - **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
-- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/manifest_structure.yaml`, `.claude/knowledge/dependency_index.md`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_agent_role_bioscientist.md`
 - **Role:** `meta`
-- **provides:** `rule:manifest_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
+- **provides:** `rule:data_analysis_recipe_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
 - **consumes:** `rule:canonical_recipe_syntax`, `rule:analysis_groups_structure`
 - **documents:** `libs/transformer/src/transformer/actions/`, `libs/viz_factory/src/viz_factory/`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
 - **consumed_by:** `.claude/knowledge/dependency_index.md`
@@ -98,8 +98,8 @@
 
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts manifest rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — manifest info: block read/edit form)`, `effects:_handle_new_manifest_btn/_handle_new_manifest_submit (BP-NEW-1 — create manifest from scratch)`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — manifest coherence validation via subprocess)`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — manifest-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-manifest zip)`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data_analysis_recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data_analysis_recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data_analysis_recipe from scratch)`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — data_analysis_recipe coherence validation via subprocess)`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data-analysis-recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data-analysis-recipe zip)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -113,7 +113,7 @@
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `function:_build_methods_section`
-- **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`, `polars`, `shiny`
+- **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `polars`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/design/export_specification.md`
 
@@ -160,7 +160,7 @@
 
 ## `app/modules/cache_keys.py`
 - **Role:** `ref`
-- **provides:** `function:load_manifest`, `function:tier1_key`, `function:tier2_key`, `function:manifest_fileset_hash`, `function:project_keys`, `class:LoadedManifest`, `class:ProjectKeys`
+- **provides:** `function:load_data_analysis_recipe`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:project_keys`, `class:LoadedDataAnalysisRecipe`, `class:ProjectKeys`
 - **consumes:** `libs/utils/src/utils/config_loader.py`
 - **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/tests/test_cache_keys.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-089`, `docs/foundations/reproducibility_hash_schema.qmd`
@@ -192,11 +192,11 @@
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_data_engine.md`
 
-## `app/modules/manifest_validator.py`
+## `app/modules/data_analysis_recipe_validator.py`
 - **Role:** `ref`
-- **provides:** `function:validate_manifest`, `function:validate_manifest_data`, `function:find_manifests`, `class:ManifestProblem`
+- **provides:** `function:validate_data_analysis_recipe`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `class:DataAnalysisRecipeProblem`
 - **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/transformer/src/transformer/data_wrangler.py`
-- **consumed_by:** `app/tests/test_manifest_validator.py`, `app/tests/test_manifest_data_check.py`
+- **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`
 - **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1)`, `.claude/rules/rules_data_engine.md#3`
 
 ## `app/modules/notification_utils.py`
@@ -337,10 +337,10 @@
 - **consumed_by:** `CI`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`
 
-## `assets/scripts/SF_create_manifest.py`
+## `assets/scripts/SF_create_data_analysis_recipe.py`
 - **Role:** `info`
-- **provides:** `script:SF_create_manifest`
-- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_manifests/ (writes scaffolded YAML)`
+- **provides:** `script:SF_create_data_analysis_recipe`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
 
 ## `assets/scripts/build_dep_graph.py`
@@ -350,10 +350,10 @@
 - **consumed_by:** `assets/dep_graph.html`, `.claude/knowledge/dependency_index.md`
 - **doc:** `.claude/rules/workspace_standard.md#5`
 
-## `assets/scripts/create_manifest.py`
+## `assets/scripts/create_data_analysis_recipe.py`
 - **Role:** `info`
-- **provides:** `script:create_manifest`
-- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_manifests/ (writes scaffolded YAML)`
+- **provides:** `script:create_data_analysis_recipe`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `docs/reference/wrangling_guide.qmd`
 
 ## `assets/scripts/create_test_deployment.py`
@@ -362,16 +362,16 @@
 - **consumes:** `config/deployment/local/ (writes deployment file)`
 - **doc:** `docs/workflows/connector.qmd`, `.claude/knowledge/architecture_decisions.md#ADR-048`
 
-## `assets/scripts/debug_apply_manifest_standards.py`
+## `assets/scripts/debug_apply_data_analysis_recipe_standards.py`
 - **Role:** `info`
-- **provides:** `script:debug_apply_manifest_standards`
-- **consumes:** `libs/viz_factory/tests/test_data/ (YAML test manifests)`
+- **provides:** `script:debug_apply_data_analysis_recipe_standards`
+- **consumes:** `libs/viz_factory/tests/test_data/ (YAML test data_analysis_recipes)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
 
 ## `assets/scripts/debug_bootstrap_viz_yamls.py`
 - **Role:** `info`
 - **provides:** `script:debug_bootstrap_viz_yamls`
-- **consumes:** `libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test manifests)`
+- **consumes:** `libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data_analysis_recipes)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
 
 ## `assets/scripts/figshare_plot_integration.py`
@@ -393,40 +393,40 @@
 - **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
 - **doc:** `libs/test_lab/README.md`
 
-## `assets/scripts/materialize_manifest_plots.py`
+## `assets/scripts/materialize_data_analysis_recipe_plots.py`
 - **Role:** `info`
-- **provides:** `script:materialize_manifest_plots (DEPRECATED SHIM)`
+- **provides:** `script:materialize_data_analysis_recipe_plots (DEPRECATED SHIM)`
 - **consumes:** `libs/viz_factory/tests/debug_gallery.py (delegates all work)`
 - **doc:** `libs/viz_factory/tests/debug_gallery.py`
 
-## `assets/scripts/normalize_manifest_fields.py`
+## `assets/scripts/normalize_data_analysis_recipe_fields.py`
 - **Role:** `info`
-- **provides:** `script:normalize_manifest_fields`
-- **consumes:** `config/manifests/ (YAML files)`
+- **provides:** `script:normalize_data_analysis_recipe_fields`
+- **consumes:** `config/data_analysis_recipes/ (YAML files)`
 - **doc:** `.claude/rules/rules_data_engine.md#4`
 
-## `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`
+## `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
 - **Role:** `branch`
-- **provides:** `manifest:2_test_data_ST22_dummy`
-- **consumes:** `config/manifests/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)`, `config/manifests/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)`
+- **provides:** `data_analysis_recipe:2_test_data_ST22_dummy`
+- **consumes:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)`, `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)`
 - **consumed_by:** `app/src/server.py (via bootloader)`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
-- **doc:** `.claude/rules/rules_manifest_structure.md`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md`
 
-## `config/manifests/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml`
+## `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml`
 - **Role:** `branch`
 - **provides:** `assembly:AMR_Profile_Joint`
 - **consumes:** `action:mutate`, `action:join`, `action:cast`, `action:sort`, `dataset:amr_data`, `dataset:metadata_schema`
-- **include_parent:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`
-- **consumed_by:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
-- **doc:** `.claude/rules/rules_manifest_structure.md#7`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
 
-## `config/manifests/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml`
+## `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml`
 - **Role:** `branch`
 - **provides:** `assembly:Plasmid_Profile_Joint`
 - **consumes:** `action:join`, `action:cast`, `action:sort`, `dataset:plasmid_data`, `dataset:metadata_schema`
-- **include_parent:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`
-- **consumed_by:** `config/manifests/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
-- **doc:** `.claude/rules/rules_manifest_structure.md#7`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
 
 ## `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`
 - **Role:** `info`
@@ -470,9 +470,9 @@
 - **provides:** `join_designer:compute_key_match`, `join_designer:build_join_step`, `join_designer:parse_join_step`
 - **consumes:** `—`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/tests/test_join_designer.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_manifest_structure.md#7`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
 
-## `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py`
+## `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`
 - **Role:** `info`
 - **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`, `function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`
@@ -610,7 +610,7 @@
 
 ## `libs/test_lab/src/test_lab/bootstrapper.py`
 - **Role:** `info`
-- **provides:** `ManifestBootstrapper class (bootstrap`, `id_cleaning_recipes) — infers TSV schemas`
+- **provides:** `DataAnalysisRecipeBootstrapper class (bootstrap`, `id_cleaning_recipes) — infers TSV schemas`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/test_bootstrapper.py`
 
@@ -628,7 +628,7 @@
 
 ## `libs/test_lab/src/test_lab/scaffolder.py`
 - **Role:** `info`
-- **provides:** `ManifestScaffolder class (scaffold) — generates a project ZIP with manifest`
+- **provides:** `DataAnalysisRecipeScaffolder class (scaffold) — generates a project ZIP with data_analysis_recipe`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
 - **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`
 
@@ -642,33 +642,33 @@
 - **Role:** `wrangle`
 - **provides:** `action:split_and_explode`, `action:derive_categories`, `action:split_column_to_parts`, `action:divide_columns`
 - **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
+- **consumed_by:** `any YAML data_analysis_recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-078)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/analytical.py`
 - **Role:** `wrangle`
 - **provides:** `action:top_n_other`, `action:window_agg`, `action:shift`, `action:fill_nulls_direction`, `action:sort`, `action:sample`, `action:cum_sum`, `action:cum_count`, `action:date_extract`, `action:date_truncate`, `action:list_slice`, `action:list_join`, `action:is_in`, `action:z_score`, `action:percentile`, `action:value_counts`, `action:describe_stats`, `action:select_by_pattern`, `action:horizontal_stats`, `action:any_horizontal`, `action:all_horizontal`, `action:interpolate`
 - **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **consumed_by:** `any YAML data_analysis_recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/core.py`
 - **Role:** `wrangle`
 - **provides:** `action:fill_nulls`, `action:drop_nulls`, `action:replace_values`, `action:rename`, `action:drop_duplicates`, `action:unique_rows`, `action:recode_values`, `action:sanitize_column_names`, `action:keep_columns`, `action:drop_columns`, `action:strip_whitespace`, `action:round_numeric`, `action:filter_range`, `action:add_constant`, `action:filter_eq`, `action:rename_columns`, `action:unique`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **consumed_by:** `any YAML data_analysis_recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/cleaning/expressions.py`
 - **Role:** `wrangle`
 - **provides:** `action:regex_extract`, `action:cast`, `action:coalesce`, `action:label_if`, `action:mutate`, `action:regex_replace`, `action:null_if`
 - **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **consumed_by:** `any YAML data_analysis_recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
 
 ## `libs/transformer/src/transformer/actions/performance/aggregation.py`
 - **Role:** `wrangle`
 - **provides:** `action:summarize`, `action:sort`, `action:count_by_group`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
+- **consumed_by:** `any YAML data_analysis_recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`
 
 ## `libs/transformer/src/transformer/actions/persistence/anchor.py`
@@ -680,13 +680,13 @@
 ## `libs/transformer/src/transformer/actions/relational/joins.py`
 - **Role:** `wrangle`
 - **provides:** `action:join`, `action:join_filter`
-- **consumed_by:** `any YAML manifest using join steps`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **consumed_by:** `any YAML data_analysis_recipe using join steps`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/actions/reshaping/core.py`
 - **Role:** `wrangle`
 - **provides:** `action:unpivot`, `action:explode`, `action:unnest`, `action:split_to_list`, `action:to_struct`, `action:pivot`, `action:split_column`
-- **consumed_by:** `any YAML manifest using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
+- **consumed_by:** `any YAML data_analysis_recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/transformer/src/transformer/data_assembler.py`
@@ -694,7 +694,7 @@
 - **provides:** `class:DataAssembler`, `method:assemble`
 - **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
-- **doc:** `.claude/rules/rules_manifest_structure.md#7`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
 
 ## `libs/transformer/src/transformer/data_wrangler.py`
 - **Role:** `wrangle`
@@ -726,7 +726,7 @@
 ## `libs/transformer/tests/debug_assembler.py`
 - **Role:** `wrangle`
 - **provides:** `script:debug_assembler`
-- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/utils/src/utils/config_loader.py (full-pipeline manifests only)`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data_analysis_recipes only)`
 - **mirrors:** `app/modules/orchestrator.py`
 - **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/transformer_integrity_suite.py`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
@@ -769,7 +769,7 @@
 ## `libs/transformer/tests/debug_wrangler.py`
 - **Role:** `wrangle`
 - **provides:** `script:debug_wrangler`
-- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline manifests only)`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data_analysis_recipes only)`
 - **mirrors:** `app/modules/orchestrator.py (Tier 1 wrangling path)`
 - **consumed_by:** `libs/transformer/tests/transformer_integrity_suite.py`
 - **doc:** `.claude/rules/rules_data_engine.md#3`
@@ -793,7 +793,7 @@
 - **provides:** `class:ConfigManager`, `func:_normalise_yaml_boolean_keys`
 - **consumes:** `utils.deployment_error`
 - **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_manifest_structure.md#7`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
 
 ## `libs/utils/src/utils/deployment_error.py`
 - **Role:** `ref`
@@ -905,7 +905,7 @@
 - **Role:** `plot`
 - **provides:** `script:debug_gallery`
 - **consumes:** `libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
-- **consumed_by:** `config/manifests/pipelines/*/README.md`, `assets/scripts/materialize_manifest_plots.py`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/*/README.md`, `assets/scripts/materialize_data_analysis_recipe_plots.py`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
 
 ## `libs/viz_factory/tests/debug_runner.py`

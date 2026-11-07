@@ -1,5 +1,5 @@
 id: guides_group_test
-description: Test manifest for guides_group_test.yaml
+description: Test data analysis recipe for guides_group_test.yaml
 input_fields: []
 wrangling:
   tier1: []

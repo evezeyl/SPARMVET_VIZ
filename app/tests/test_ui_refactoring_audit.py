@@ -9,16 +9,16 @@ app/tests/test_ui_refactoring_audit.py
 --------------------------------------
 Headless UI Logic Audit. 
 Ensures the DataOrchestrator can handle the refactored relational 
-manifest structures (ADR-012b, ADR-024) without regression.
+data analysis recipe structures (ADR-012b, ADR-024) without regression.
 """
 
 
 class TestUIRefactoringAudit(unittest.TestCase):
     def setUp(self):
-        self.manifests_dir = Path("config/manifests/pipelines")
+        self.data_analysis_recipes_dir = Path("config/data_analysis_recipes/pipelines")
         self.raw_data_dir = Path("assets/test_data/1_test_data_ST22_dummy")
         self.orchestrator = DataOrchestrator(
-            self.manifests_dir, self.raw_data_dir)
+            self.data_analysis_recipes_dir, self.raw_data_dir)
         self.output_dir = Path("tmp/app_logic_audit")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 

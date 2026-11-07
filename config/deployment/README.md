@@ -1,6 +1,6 @@
 # config/deployment/ — Deployments (ADR-048)
 
-Deployments describe **how SPARMVET is deployed into a specific environment**: where data lives, which manifest loads at startup, which app features is active by default, and what type of system it is.
+Deployments describe **how SPARMVET is deployed into a specific environment**: where data lives, which data analysis recipe loads at startup, which app features is active by default, and what type of system it is.
 
 One Docker image + one deployment = one running SPARMVET instance.
 
@@ -38,7 +38,7 @@ Copy `templates/deployment_template.yaml`, fill in your paths and deployment typ
 ```yaml
 locations:
   raw_data:      "..."   # read-only input files
-  manifests:     "..."   # YAML manifests and recipes
+  data_analysis_recipes:     "..."   # YAML data analysis recipes and recipes
   cache:  "..."   # Parquet caches (app writes here)
   user_data: "..."   # exports, saves, T3 artifacts (user-writable)
   gallery:       "..."   # gallery assets (read-only)

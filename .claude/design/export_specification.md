@@ -38,7 +38,7 @@ When the user navigates away from a plot tab while a scoped option is selected,
 the toggle silently falls back to Global and the button exports globally.
 
 **Detection:** `group_id` is stored per plot in `ctx_map`. If `group_id is None`
-or the manifest has no `analysis_groups` (only a top-level `plots:` key), the
+or the data analysis recipe has no `analysis_groups` (only a top-level `plots:` key), the
 "Active group" option is hidden entirely, not just disabled.
 
 **App features gate:**
@@ -74,11 +74,11 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 
 | Path in ZIP | Included when | Notes |
 |---|---|---|
-| `plots/<plot_id>.<fmt>` | Always | All plots defined in active manifest |
+| `plots/<plot_id>.<fmt>` | Always | All plots defined in active data analysis recipe |
 | `data/<dataset>_T1.tsv` | Always | All datasets referenced by active plots |
 | `data/<dataset>_T2.tsv` | Always | |
 | `data/<dataset>_T3.tsv` | T3 active at export time | Advanced+ app features + T3 tier active |
-| `recipes/<manifest_files>` | Always | All YAML files from active manifest directory |
+| `recipes/<data_analysis_recipe_files>` | Always | All YAML files from active data analysis recipe directory |
 | `recipes/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
 | `report.<fmt>` | Always | Quarto-rendered report; includes T3 audit section when applicable (see §3) |
 | `README.txt` | Always | Timestamp, project, app features, preset, tiers, hash values (all 3 hashes) |
@@ -148,14 +148,14 @@ file that feeds it. The union of all lineage sets becomes the export contents.
 |---|---|---|
 | `plots/` | All plots in the active group | Only the active plot |
 | `data/` | Union of all upstream datasets for each plot in the group | Only datasets in the active plot's lineage |
-| `recipes/` | Union of all manifest files feeding each plot in the group | Only the manifest files that feed the active plot |
+| `recipes/` | Union of all data analysis recipe files feeding each plot in the group | Only the data analysis recipe files that feed the active plot |
 | `recipes/t3_steps.yaml` | T3 steps for all plots in the group | T3 steps for the active plot only |
 | `report.<fmt>` | Full report scoped to the group; T3 audit section per plot | Report for one plot; T3 audit section for that plot |
 
 **Lineage backtrace algorithm:**  
-`plot_id → spec.target_dataset → join_manifests[target].ingredients → data_schemas[*]`  
+`plot_id → spec.target_dataset → joins[target].ingredients → data_schemas[*]`  
 Recursive if an ingredient is itself an assembly. Already implemented in
-`manifest_navigator.py` / `_build_sibling_map`.
+`data_analysis_recipe_navigator.py` / `_build_sibling_map`.
 
 ---
 

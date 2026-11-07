@@ -1,0 +1,96 @@
+id: simple_project_demo
+type: project
+info:
+  display_name: Simple Demo Project
+  description: 'Minimal self-contained data analysis recipe: 1 dataset, 1 metadata, 1 assembly,
+    1 plot.'
+  version: '1.0'
+data_schemas:
+  primary_data:
+    source:
+      type: local_tsv
+      path: ./assets/test_data/simple_data.tsv
+    input_fields:
+      sample_id:
+        original_name: ID
+        type: categorical
+        is_primary_key: true
+      value:
+        original_name: Measurement
+        type: numeric
+        label: Measurement Value
+      group:
+        original_name: Group
+        type: categorical
+        label: Sample Group
+    wrangling:
+      tier1:
+      - action: strip_whitespace
+    output_fields:
+      sample_id:
+        original_name: sample_id
+        type: categorical
+        label: Sample ID
+      value:
+        original_name: value
+        type: numeric
+        label: Measurement Value
+      group:
+        original_name: group
+        type: categorical
+        label: Group
+metadata_schema:
+  source:
+    type: local_tsv
+    path: ./assets/test_data/simple_metadata.tsv
+  input_fields:
+    sample_id:
+      original_name: ID
+      type: categorical
+      is_primary_key: true
+    category:
+      original_name: Category
+      type: categorical
+      label: Biological Category
+  wrangling:
+    tier1: []
+  output_fields:
+    sample_id:
+      original_name: sample_id
+      type: categorical
+      label: Sample ID
+    category:
+      original_name: category
+      type: categorical
+      label: Biological Category
+joins:
+  main_collection:
+    description: Joins primary data with metadata.
+    ingredients:
+    - dataset_id: primary_data
+    - dataset_id: metadata_schema
+    recipe:
+      tier1:
+      - action: join
+        right_ingredient: metadata_schema
+        'on': sample_id
+        how: left
+analysis_groups:
+  Overview:
+    description: 📊 Summary overview
+    plots:
+      value_by_group:
+        info: Distribution of measurement values per group.
+        spec:
+          target_dataset: main_collection
+          title: Measurement Values by Group
+          family: Distribution
+          pattern: 1 Numeric, 2 Categorical
+          difficulty: Beginner
+          mapping:
+            x: group
+            y: value
+            fill: category
+          layers:
+          - name: geom_col
+            params: {}

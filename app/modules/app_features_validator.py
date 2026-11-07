@@ -26,7 +26,7 @@ _REQUIRED_FLAGS = [
     "export_enabled",
     "metadata_ingestion_enabled",
     "data_ingestion_enabled",
-    "manifest_edit_enabled",
+    "data_analysis_recipe_edit_enabled",
     "blueprint_agent_enabled",
 ]
 
@@ -48,10 +48,10 @@ _CASCADE_GATES: dict[str, list[str]] = {
 # error at startup if a template declares the child on while the master is off.
 # Reason: these flags gate advanced/IDE features where silent divergence between
 # YAML intent and runtime state is more harmful than a hard failure.
-# (ADR-075 manifest_edit_enabled, ADR-076 blueprint_agent_enabled.)
+# (ADR-075 data_analysis_recipe_edit_enabled, ADR-076 blueprint_agent_enabled.)
 _FATAL_CASCADE_GATES: dict[str, list[str]] = {
     "blueprint_enabled": [
-        "manifest_edit_enabled",
+        "data_analysis_recipe_edit_enabled",
         "blueprint_agent_enabled",
     ],
 }
@@ -97,14 +97,14 @@ class AppFeaturesValidator:
                     f"Feature flag '{flag}' missing from template '{template_path}' — defaulting to False"
                 )
 
-        # Rule 4: manifest_selector.visible=false → fixed_manifest should be non-null in production
-        ms = template.get("manifest_selector", {})
+        # Rule 4: data_analysis_recipe_selector.visible=false → fixed_data_analysis_recipe should be non-null in production
+        ms = template.get("data_analysis_recipe_selector", {})
         if ms.get("visible") is False:
-            if not ms.get("fixed_manifest"):
+            if not ms.get("fixed_data_analysis_recipe"):
                 # Warning only: null is the dev/template default; operators fill this at deployment
                 warnings.append(
-                    f"manifest_selector.visible=false in '{template_path}' "
-                    f"but fixed_manifest is null — operator must set a fixed_manifest path before deploying"
+                    f"data_analysis_recipe_selector.visible=false in '{template_path}' "
+                    f"but fixed_data_analysis_recipe is null — operator must set a fixed_data_analysis_recipe path before deploying"
                 )
 
         # Rule 5: child flags must not be True when their master gate is False

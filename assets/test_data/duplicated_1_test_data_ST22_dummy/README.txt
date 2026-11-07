@@ -5,16 +5,16 @@ the production connector path (data_lookup: by_dataset_id).
 
 In production, a pipeline (Galaxy, IRIDA) writes output files to a known location
 and the connector provides that location as raw_data_dir. The ingestor discovers
-files by schema ID name — it does NOT use source.path entries from the manifest.
+files by schema ID name — it does NOT use source.path entries from the data analysis recipe.
 
 This directory simulates "pipeline output landed here" by using clean filenames
 (schema ID as filename, no date suffix) so the ingestor's glob discovery works
 directly. The 1_test_data_ST22_dummy directory keeps the original timestamped
-filenames and source.path entries for development/manifest testing.
+filenames and source.path entries for development/data_analysis_recipe testing.
 
 Naming convention
 -----------------
-Files are named exactly as their schema ID in the manifest (+ .tsv), so that
+Files are named exactly as their schema ID in the data analysis recipe (+ .tsv), so that
 ingestor.find_file(schema_id) finds them by exact or glob match:
 
   Summary.tsv              ← schema: Summary
@@ -27,7 +27,7 @@ ingestor.find_file(schema_id) finds them by exact or glob match:
   ResFinder.tsv            ← schema: ResFinder
   MLST_results.tsv         ← schema: MLST  (glob *MLST*.tsv finds this)
   metadata_schema.tsv      ← schema: metadata_schema
-  PlasmidFinder.tsv        ← not in current ST22 manifest; kept for future use
+  PlasmidFinder.tsv        ← not in current ST22 data analysis recipe; kept for future use
 
 Schemas not represented (VirulenceFinder, APEC_STEC_virulence_genes) will fail
 gracefully with a warning — those schemas depend on external reference data not

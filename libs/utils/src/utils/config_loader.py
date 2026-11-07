@@ -2,7 +2,7 @@
 # provides: class:ConfigManager, func:_normalise_yaml_boolean_keys
 # consumes: utils.deployment_error
 # consumed_by: app/modules/orchestrator.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-041, ADR-078, .claude/rules/rules_manifest_structure.md#7
+# doc: .claude/knowledge/architecture_decisions.md#ADR-041, ADR-078, .claude/rules/rules_data_analysis_recipe_structure.md#7
 # @end_deps
 
 import yaml
@@ -11,15 +11,15 @@ from pathlib import Path
 
 from utils.deployment_error import DeploymentError, exit_if_errors
 
-_REF = "ADR-041 + .claude/rules/rules_manifest_structure.md"
+_REF = "ADR-041 + .claude/rules/rules_data_analysis_recipe_structure.md"
 
 
-def _normalise_yaml_boolean_keys(config, manifest_path: str) -> None:
+def _normalise_yaml_boolean_keys(config, data_analysis_recipe_path: str) -> None:
     """Recursively convert boolean True dict keys to the string 'on'.
 
     Unquoted 'on:' in YAML is parsed as Python True by SafeLoader (YAML boolean
-    trap — rules_manifest_structure.md §7). This post-load walk catches the mistake,
-    converts the key in place, and warns the manifest author. The DataAssembler has a
+    trap — rules_data_analysis_recipe_structure.md §7). This post-load walk catches the mistake,
+    converts the key in place, and warns the data analysis recipe author. The DataAssembler has a
     step.get(True) fallback, but correcting the loaded dict here means every downstream
     consumer (assembler, navigator, join_designer) sees a structurally correct config
     without needing their own guards.
@@ -27,17 +27,17 @@ def _normalise_yaml_boolean_keys(config, manifest_path: str) -> None:
     if isinstance(config, dict):
         if True in config:
             print(
-                f"  [ConfigManager] WARNING: Unquoted 'on:' key found in manifest "
+                f"  [ConfigManager] WARNING: Unquoted 'on:' key found in data analysis recipe "
                 f"(YAML boolean trap — always quote as '\"on\":'). "
                 f"Auto-corrected for this load; fix the YAML source. "
-                f"See rules_manifest_structure.md §7. ({manifest_path})"
+                f"See rules_data_analysis_recipe_structure.md §7. ({data_analysis_recipe_path})"
             )
             config["on"] = config.pop(True)
         for v in list(config.values()):
-            _normalise_yaml_boolean_keys(v, manifest_path)
+            _normalise_yaml_boolean_keys(v, data_analysis_recipe_path)
     elif isinstance(config, list):
         for item in config:
-            _normalise_yaml_boolean_keys(item, manifest_path)
+            _normalise_yaml_boolean_keys(item, data_analysis_recipe_path)
 
 
 class ConfigManager:
@@ -46,7 +46,7 @@ class ConfigManager:
         _include_errors: list[DeploymentError] = []
         # Every file read to build raw_config: the entry file first, then each !include
         # target in the order it was read. The cache chain (ADR-089) hashes this file set
-        # and checks it by size and modification time to detect a manifest changed on disk.
+        # and checks it by size and modification time to detect a data analysis recipe changed on disk.
         self.loaded_files: list[str] = [yaml_path]
 
         def include_constructor(loader, node):
@@ -66,7 +66,7 @@ class ConfigManager:
                     fix=(
                         f"Create the missing file at '{filename}' or correct the "
                         f"!include path. Verify the basename mirroring directory "
-                        f"exists (rules_manifest_structure.md §1)."
+                        f"exists (rules_data_analysis_recipe_structure.md §1)."
                     ),
                     who="developer",
                     reference=_REF,
@@ -82,7 +82,7 @@ class ConfigManager:
             #   where amr_data.yaml starts with  input_fields: {...}
             #   Without unnesting → data_schemas.amr_data.input_fields.input_fields: {...}  ← wrong
             #   With unnesting    → data_schemas.amr_data.input_fields: {...}               ← correct
-            # This is WHY manifests work even when fragment files have wrapper keys.
+            # This is WHY data analysis recipes work even when fragment files have wrapper keys.
             # The ingestor, MetadataValidator, and DataWrangler all rely on this
             # behaviour — do NOT remove it without updating those layers.
             redundant_keys = {"input_fields", "output_fields",
@@ -104,11 +104,11 @@ class ConfigManager:
         except FileNotFoundError:
             exit_if_errors([DeploymentError(
                 component="ConfigManager",
-                problem=f"Manifest file not found: '{yaml_path}'",
+                problem=f"Data analysis recipe file not found: '{yaml_path}'",
                 location=yaml_path,
                 fix=(
-                    "Verify the manifest path set in the deployment "
-                    "('default_manifest' key) or the manifest selector dropdown."
+                    "Verify the data analysis recipe path set in the deployment "
+                    "('default_data_analysis_recipe' key) or the data analysis recipe selector dropdown."
                 ),
                 who="operator",
                 reference=_REF,
@@ -117,10 +117,10 @@ class ConfigManager:
         except yaml.YAMLError as exc:
             exit_if_errors([DeploymentError(
                 component="ConfigManager",
-                problem=f"Malformed YAML in manifest: {exc}",
+                problem=f"Malformed YAML in data analysis recipe: {exc}",
                 location=yaml_path,
                 fix=(
-                    "Open the manifest in a YAML linter and fix the syntax error. "
+                    "Open the data analysis recipe in a YAML linter and fix the syntax error. "
                     "Common causes: unquoted 'on:' key (YAML boolean trap — use 'on':), "
                     "bad indentation, or a missing !include closing."
                 ),
@@ -149,7 +149,7 @@ class ConfigManager:
                 fix=(
                     "The flat 'plots:' root key was removed in Phase 21-B (LEGACY-FLAT-PLOTS-1). "
                     "Declare all plots inside 'analysis_groups:'. "
-                    "See rules_manifest_structure.md §8."
+                    "See rules_data_analysis_recipe_structure.md §8."
                 ),
                 who="developer",
                 reference=_REF,
@@ -158,11 +158,11 @@ class ConfigManager:
         if not self.raw_config.get("analysis_groups"):
             struct_errors.append(DeploymentError(
                 component="ConfigManager",
-                problem="Manifest is missing the required 'analysis_groups:' block.",
+                problem="Data analysis recipe is missing the required 'analysis_groups:' block.",
                 location=f"analysis_groups: key in {yaml_path}",
                 fix=(
                     "Add an 'analysis_groups:' block with at least one group containing "
-                    "at least one plot. See rules_manifest_structure.md §8 for the "
+                    "at least one plot. See rules_data_analysis_recipe_structure.md §8 for the "
                     "required structure."
                 ),
                 who="developer",

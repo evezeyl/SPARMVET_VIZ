@@ -75,7 +75,7 @@ ABSOLUTE_PATH_PATTERNS = [
 DIRECT_LOCATION_PATTERNS = [
     (re.compile(r'deployment\s*\[\s*["\']locations["\']'),
      "Direct deployment['locations'] read — use bootloader.get_location(key) instead"),
-    (re.compile(r'locations\s*\[\s*["\'](?:raw_data|manifests|cache|user_data|gallery)["\']'),
+    (re.compile(r'locations\s*\[\s*["\'](?:raw_data|data_analysis_recipes|cache|user_data|gallery)["\']'),
      "Direct locations[key] read — use bootloader.get_location(key) instead"),
     (re.compile(r'\.get\s*\(\s*["\']locations["\']'),
      "deployment.get('locations') read — use bootloader.get_location(key) instead"),

@@ -1,6 +1,6 @@
 """Characterization of the gallery bundle layout and its index (ADR-037, ADR-091).
 
-Written against the file names of 2026-11-07 (recipe_manifest.yaml, recipe_meta.md). The
+Written against the file names of 2026-11-07 (data_analysis_recipe.yaml, recipe_meta.md). The
 configuration rename (issue evezeyl/SPARMVET_VIZ#27) renames the bundle files and
 regenerates gallery_index.json, which stores the path of each bundle file.
 """
@@ -15,7 +15,7 @@ import yaml
 from viz_gallery.gallery_manager import GalleryManager
 
 SHIPPED = Path(__file__).resolve().parents[3] / "assets" / "gallery_data"
-BUNDLE_FILES = ("recipe_manifest.yaml", "example_data.tsv", "recipe_meta.md")
+BUNDLE_FILES = ("data_analysis_recipe.yaml", "example_data.tsv", "recipe_meta.md")
 TAXONOMY = {"family", "pattern", "difficulty", "geom", "show", "sample_size"}
 
 

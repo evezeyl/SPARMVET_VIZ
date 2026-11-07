@@ -144,14 +144,14 @@ The following fields are set inside the deployment file, not as environment vari
 ### `data_lookup`
 
 ```yaml
-data_lookup: by_dataset_id    # manifest_paths (default, when absent) | by_dataset_id
+data_lookup: by_dataset_id    # data_analysis_recipe_paths (default, when absent) | by_dataset_id
 ```
 
-With `by_dataset_id`, the orchestrator strips `source` blocks from manifest schema entries before ingest. The ingestor discovers data files in `raw_data_dir` by schema ID name (`*{schema_id}*.tsv`) instead of reading an explicit path.
+With `by_dataset_id`, the orchestrator strips `source` blocks from data analysis recipe schema entries before ingest. The ingestor discovers data files in `raw_data_dir` by schema ID name (`*{schema_id}*.tsv`) instead of reading an explicit path.
 
-Use this on any deployment that simulates or implements production connector delivery (pipeline delivers data to `raw_data_dir`). Do NOT set on the local dev fallback deployment — developers rely on `source.path` to run manifests against arbitrary test data.
+Use this on any deployment that simulates or implements production connector delivery (pipeline delivers data to `raw_data_dir`). Do NOT set on the local dev fallback deployment — developers rely on `source.path` to run data analysis recipes against arbitrary test data.
 
-The `source.path` field in manifest schema entries is a development shortcut only. It is never used when `data_lookup: by_dataset_id`, and is never used in production (Galaxy, IRIDA) with that setting.
+The `source.path` field in data analysis recipe schema entries is a development shortcut only. It is never used when `data_lookup: by_dataset_id`, and is never used in production (Galaxy, IRIDA) with that setting.
 
 See `docs/workflows/connector.qmd` for the full connector lifecycle and per-deployment guidance.
 

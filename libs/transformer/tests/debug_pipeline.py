@@ -21,15 +21,15 @@ def main():
         description="""
         🛡️ PIPELINE DEBUGGER (ADR-032)
         Executes an end-to-end data pipeline (Ingestion -> Wrangling -> Assembly)
-        based on a YAML manifest and materializes the result for verification.
+        based on a YAML data analysis recipe and materializes the result for verification.
         """
     )
-    parser.add_argument("--manifest", required=True,
-                        help="Path to the YAML pipeline manifest.")
+    parser.add_argument("--data-analysis-recipe", required=True,
+                        help="Path to the YAML pipeline data analysis recipe.")
     parser.add_argument("--data-dir", required=True,
                         help="Directory containing raw data files.")
     parser.add_argument(
-        "--assembly", help="Specific join ID (join_manifests key) to execute (optional).")
+        "--assembly", help="Specific join ID (joins key) to execute (optional).")
     parser.add_argument(
         "--output", help="Path to sink the result as Parquet (optional).")
     parser.add_argument("--glimpse", action="store_true",
@@ -38,7 +38,7 @@ def main():
     args = parser.parse_args()
 
     print(f"--- 🔍 Starting Pipeline Debug Run ---")
-    print(f" Manifest: {args.manifest}")
+    print(f" DataAnalysisRecipe: {args.data_analysis_recipe}")
     print(f" Data Dir: {args.data_dir}")
 
     ingestor = DataIngestor(data_dir=str(Path(args.data_dir)))
@@ -46,7 +46,7 @@ def main():
 
     try:
         final_lf = executor.run_pipeline(
-            manifest_path=Path(args.manifest),
+            data_analysis_recipe_path=Path(args.data_analysis_recipe),
             join_id=args.assembly
         )
 

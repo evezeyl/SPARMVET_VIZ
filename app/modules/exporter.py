@@ -41,7 +41,7 @@ class SubmissionExporter:
         except Exception:
             return str(md_path)  # Fallback to markdown if pandoc fails
 
-    def bundle_package(self, plot_path: str, data_df: pd.DataFrame, manifest: dict, audit_trail: list) -> str:
+    def bundle_package(self, plot_path: str, data_df: pd.DataFrame, data_analysis_recipe: dict, audit_trail: list) -> str:
         """Creates the final .zip Submission Package."""
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_path = self.export_dir / f"submission_{ts}.zip"
@@ -51,21 +51,21 @@ class SubmissionExporter:
         data_path = self.export_dir / "data_subset.csv"
         data_df.to_csv(data_path, index=False)
 
-        manifest_path = self.export_dir / "active_recipe.yaml"
-        with open(manifest_path, "w") as f:
-            yaml.dump(manifest, f)
+        data_analysis_recipe_path = self.export_dir / "active_recipe.yaml"
+        with open(data_analysis_recipe_path, "w") as f:
+            yaml.dump(data_analysis_recipe, f)
 
         # 2. Build the Zip
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(audit_path, arcname="audit_log.txt")
             zipf.write(data_path, arcname="data_subset.csv")
-            zipf.write(manifest_path, arcname="active_recipe.yaml")
+            zipf.write(data_analysis_recipe_path, arcname="active_recipe.yaml")
             if plot_path and Path(plot_path).exists():
                 zipf.write(plot_path, arcname="high_dpi_plot.png")
 
         return str(zip_path)
 
-    def bundle_global_export(self, project_id: str, plot_path: str, tiers: dict, manifest: dict, audit_trail: list) -> str:
+    def bundle_global_export(self, project_id: str, plot_path: str, tiers: dict, data_analysis_recipe: dict, audit_trail: list) -> str:
         """
         Bundles the full session state (Phase 14-C).
         Format: SPARMVET_EXPORT_{ISO_DATE}_{PROJECT_ID}.zip
@@ -80,11 +80,11 @@ class SubmissionExporter:
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(audit_path, arcname="audit_log.txt")
 
-            # YAML Manifest
-            manifest_path = self.export_dir / "session_manifest.yaml"
-            with open(manifest_path, "w") as f:
-                yaml.dump(manifest, f)
-            zipf.write(manifest_path, arcname="session_manifest.yaml")
+            # YAML Data Analysis Recipe
+            data_analysis_recipe_path = self.export_dir / "session_data_analysis_recipe.yaml"
+            with open(data_analysis_recipe_path, "w") as f:
+                yaml.dump(data_analysis_recipe, f)
+            zipf.write(data_analysis_recipe_path, arcname="session_data_analysis_recipe.yaml")
 
             # Tiers 1-3 Data
             for tier_name, df in tiers.items():
@@ -207,7 +207,7 @@ def generate_methods_text(t3_recipe: list) -> tuple:
             )
         elif nt == "developer_raw_yaml":
             methods.append(
-                f"{prefix}A custom manifest fragment was applied{scope_str}. "
+                f"{prefix}A custom data analysis recipe fragment was applied{scope_str}. "
                 f"Reason: {reason}."
             )
 
@@ -218,7 +218,7 @@ def render_audit_report(
     home_state: dict,
     session_key: str,
     output_dir,
-    manifest_id: str = "",
+    data_analysis_recipe_id: str = "",
     deployment: str = "local",
     figure_paths=None,
     dataset_summaries=None,
@@ -257,7 +257,7 @@ def render_audit_report(
     # Methods line.
     by_plot = home_state.get("t3_recipe_by_plot", {}) or {}
     t3_recipe = [n for nodes in by_plot.values() for n in nodes]
-    manifest_sha256 = home_state.get("manifest_sha256") or ""
+    data_analysis_recipe_sha256 = home_state.get("data_analysis_recipe_sha256") or ""
     tier_toggle = home_state.get("tier_toggle", "T2")
 
     active_recipe = [n for n in t3_recipe if n.get("active", True)]
@@ -271,8 +271,8 @@ def render_audit_report(
     date_str = now.strftime("%Y-%m-%d")
 
     report_data = {
-        "manifest_id": manifest_id,
-        "manifest_sha256": manifest_sha256,
+        "data_analysis_recipe_id": data_analysis_recipe_id,
+        "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
         "t3_recipe_sha256": t3_recipe_sha256,
         "session_key": session_key,
         "tier_toggle": tier_toggle,
@@ -292,8 +292,8 @@ def render_audit_report(
     filled = template
     for key, val in {
         "{{date}}": date_str,
-        "{{manifest_id}}": manifest_id or "—",
-        "{{manifest_sha256}}": (manifest_sha256[:16] + "…") if manifest_sha256 else "—",
+        "{{data_analysis_recipe_id}}": data_analysis_recipe_id or "—",
+        "{{data_analysis_recipe_sha256}}": (data_analysis_recipe_sha256[:16] + "…") if data_analysis_recipe_sha256 else "—",
         "{{t3_recipe_sha256}}": t3_recipe_sha256[:16] + "…",
         "{{deployment}}": deployment,
         "{{export_timestamp}}": export_ts,
@@ -326,7 +326,7 @@ date: "{{date}}"
 
 ## Study Context
 
-Manifest: {{manifest_id}} | SHA256: {{manifest_sha256}}
+Data Analysis Recipe: {{data_analysis_recipe_id}} | SHA256: {{data_analysis_recipe_sha256}}
 Exported: {{export_timestamp}}
 
 ## Methods

@@ -72,7 +72,7 @@ graph LR
     end
 
     %% Configuration Linkage
-    Config["YAML Manifests"]:::input
+    Config["YAML Data Analysis Recipes"]:::input
     Config -.->|"ADR-013 Contract"| InputContract
     Config -.->|"Action Registry"| WranglingPlan
     Config -.->|"Selection Contract"| OutputContract

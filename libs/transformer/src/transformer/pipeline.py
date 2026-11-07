@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 class PipelineExecutor:
     """
-    High-level orchestrator for executing full data pipelines defined in manifests.
+    High-level orchestrator for executing full data pipelines defined in data analysis recipes.
     Bridges Ingestion, Wrangling, and Assembly into a single execution unit.
 
     Produces the Tier 1 result (tier1 wrangling and tier1 recipe steps). Tier 2 is not applied.
@@ -35,33 +35,33 @@ class PipelineExecutor:
     def __init__(self, ingestor: "DataIngestor"):
         self.ingestor = ingestor
 
-    def run_pipeline(self, manifest_path: Path, join_id: str | None = None) -> pl.LazyFrame:
+    def run_pipeline(self, data_analysis_recipe_path: Path, join_id: str | None = None) -> pl.LazyFrame:
         """
-        Loads a manifest, ingests all components, wrangles them, and assembles the result.
+        Loads a data analysis recipe, ingests all components, wrangles them, and assembles the result.
 
         Args:
-            manifest_path: Path to the YAML pipeline manifest.
+            data_analysis_recipe_path: Path to the YAML pipeline data analysis recipe.
             join_id: Specific assembly to run. Defaults to the first one found if None.
 
         Returns:
             A Polars LazyFrame of the assembled data.
         """
-        cm = ConfigManager(str(manifest_path))
-        manifest = cm.raw_config
+        cm = ConfigManager(str(data_analysis_recipe_path))
+        data_analysis_recipe = cm.raw_config
 
         # 1. Ingredient Processing
         ingredients = {}
         all_schemas = {}
-        all_schemas.update(manifest.get("data_schemas", {}))
-        if "metadata_schema" in manifest:
-            all_schemas["metadata_schema"] = manifest["metadata_schema"]
-        all_schemas.update(manifest.get("additional_datasets_schemas", {}))
+        all_schemas.update(data_analysis_recipe.get("data_schemas", {}))
+        if "metadata_schema" in data_analysis_recipe:
+            all_schemas["metadata_schema"] = data_analysis_recipe["metadata_schema"]
+        all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
 
         for ds_id, ds_schema in all_schemas.items():
             lf, _ = self.ingestor.ingest(ds_id, ds_schema)
 
             # Atomic Wrangling (Layer 1)
-            # Tiered manifests (ADR-024): only the tier1 steps belong to the shared trunk.
+            # Tiered data analysis recipes (ADR-024): only the tier1 steps belong to the shared trunk.
             wrangling_rules = DataWrangler._resolve_tier(ds_schema.get("wrangling", []), "tier1")
             wrangler = DataWrangler(
                 data_schema=ds_schema.get("input_fields", {}))
@@ -71,17 +71,17 @@ class PipelineExecutor:
 
         # 2. Relational Assembly (Layer 2)
         if not join_id:
-            join_defs = manifest.get("join_manifests", {})
+            join_defs = data_analysis_recipe.get("joins", {})
             if not join_defs:
                 raise ValueError(
-                    f"No join_defs defined in manifest {manifest_path}")
+                    f"No join_defs defined in data analysis recipe {data_analysis_recipe_path}")
             join_id = list(join_defs.keys())[0]
 
-        assembly_spec = manifest.get(
-            "join_manifests", {}).get(join_id, {})
+        assembly_spec = data_analysis_recipe.get(
+            "joins", {}).get(join_id, {})
         if not assembly_spec:
             raise ValueError(
-                f"Assembly '{join_id}' not found in manifest.")
+                f"Assembly '{join_id}' not found in data analysis recipe.")
 
         recipe = DataWrangler._resolve_tier(assembly_spec.get("recipe", []), "tier1")
 

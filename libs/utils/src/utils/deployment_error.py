@@ -15,7 +15,7 @@ A `DeploymentError` is a structured error record for any failure surfaced at sta
 or configuration time. The fields are designed so an operator who has never opened
 the codebase can locate the problem and fix it without reading Python.
 
-Used by validators (app features, sidebar, manifest, ingestion) and bootloader / connector
+Used by validators (app features, sidebar, data analysis recipe, ingestion) and bootloader / connector
 init paths. Headless-safe — no Shiny imports.
 """
 from __future__ import annotations

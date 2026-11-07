@@ -18,7 +18,7 @@ To resolve 22-minute render bottlenecks and orchestrate Polars data hand-offs, t
 
 - **Definition:** Logic applied to a common data source (identified by ID or Path) that is shared by ALL plots dependent on that source. This guarantees the fully composed and joined dataset remains highly generic.
 - **Persistence:** Materialized to disk via `pl.sink_parquet("tmp/session_anchor.parquet")`.
-- **Cache key:** the Tier 1 parquet is valid only while its `tier1_key` matches (resolved manifest minus downstream-only parts, plus data hash and engine version; ADR-089). Never reuse an anchor by file name alone.
+- **Cache key:** the Tier 1 parquet is valid only while its `tier1_key` matches (resolved data analysis recipe minus downstream-only parts, plus data hash and engine version; ADR-089). Never reuse an anchor by file name alone.
 - **Instruction:** To minimize recalculation, always suggest a wrangling sequence that prioritizes shared transformations as early as possible (Tier 1) based on the common data source ID/Path.
 
 ### Tier 2 (The Branch): Plot-Specific Anchor
@@ -39,12 +39,12 @@ To resolve 22-minute render bottlenecks and orchestrate Polars data hand-offs, t
 - **Signature:** Actions accept exactly two arguments: `(lf: pl.LazyFrame, spec: Dict[str, Any])`.
 - **Atomicity:** Actions must be independent, extracting parameters entirely from `spec`.
 - **Determinism (ADR-090):** the same input gives the same rows in the same order. An action that can reorder rows (grouping, deduplication, joins, sorting, sampling) states its order rule in its description and has a test of that rule (`libs/transformer/tests/test_deterministic_order.py`). Polars promises no row order unless asked: use `maintain_order`, `keep="first"`, `maintain_order="left_right"` for joins, and a fixed default `seed` for anything random.
-- **1:1:1 Naming Law:** Logic: `@register_action("name")` -> Manifest: `name_manifest.yaml` -> Data: `name_test.tsv`.
-- **Documentation Standard (ADR-075 §1/§4):** All actions MUST carry `description` and `yaml_example` in their `ui_schema`. `description` is one developer-oriented sentence (when to use this, vs. alternatives). `yaml_example` is a minimal correct YAML snippet for copy-paste into a manifest `tier1:`/`tier2:` block. For 1:1 Polars wrappers, `wraps` MUST also be populated (points to the Polars `LazyFrame`/`Expr` method — `importlib`-resolved at runtime by the help panel). See ADR-075 §4 for the full resolution fallback chain.
+- **1:1:1 Naming Law:** Logic: `@register_action("name")` -> Data analysis recipe: `name_data_analysis_recipe.yaml` -> Data: `name_test.tsv`.
+- **Documentation Standard (ADR-075 §1/§4):** All actions MUST carry `description` and `yaml_example` in their `ui_schema`. `description` is one developer-oriented sentence (when to use this, vs. alternatives). `yaml_example` is a minimal correct YAML snippet for copy-paste into a data analysis recipe `tier1:`/`tier2:` block. For 1:1 Polars wrappers, `wraps` MUST also be populated (points to the Polars `LazyFrame`/`Expr` method — `importlib`-resolved at runtime by the help panel). See ADR-075 §4 for the full resolution fallback chain.
 
-## 3. The Tiered Manifest Mandate (ADR-024)
+## 3. The Tiered Data Analysis Recipe Mandate (ADR-024)
 
-To ensure consistency across the 3-Tier Lifecycle, all `wrangling` blocks in YAML manifests MUST adopt the tiered nesting structure.
+To ensure consistency across the 3-Tier Lifecycle, all `wrangling` blocks in YAML data analysis recipes MUST adopt the tiered nesting structure.
 
 ### Structure Requirement
 
@@ -59,11 +59,11 @@ wrangling:
 
 ### Flat List Rejection (LEGACY-FLAT-WRANGLING-1, Phase 34)
 
-The engine rejects flat `wrangling:` lists with a `ManifestError`. All manifests must use the tiered structure. If a legacy manifest is encountered with a flat list, migrate it before running.
+The engine rejects flat `wrangling:` lists with a `DataAnalysisRecipeError`. All data analysis recipes must use the tiered structure. If a legacy data analysis recipe is encountered with a flat list, migrate it before running.
 
-## 4. The Manifest Data Contract (ADR-013 & Identity Logic)
+## 4. The Data analysis recipe Data Contract (ADR-013 & Identity Logic)
 
-YAML manifests MUST contain:
+YAML data analysis recipes MUST contain:
 
 1. `input_fields`: Raw incoming schema. MUST be a Rich Dictionary (`slug: {props}`).
 2. `wrangling`: Tiered nesting of operational Sequential Lists for atomic processing.

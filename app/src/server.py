@@ -16,7 +16,7 @@ import polars as pl
 from app.src.bootloader import bootloader
 from app.modules.orchestrator import DataOrchestrator
 from app.modules.session_manager import SessionManager
-from app.modules.cache_keys import load_manifest
+from app.modules.cache_keys import load_data_analysis_recipe
 from viz_factory.viz_factory import VizFactory
 from app.modules.wrangle_studio import WrangleStudio
 from app.modules.test_lab_studio import TestLabStudio
@@ -56,26 +56,26 @@ def server(input, output, session):
 
     @reactive.Calc
     def active_collection_id():
-        """Agnostic Discovery: fetches the first collection in the manifest."""
+        """Agnostic Discovery: fetches the first collection in the data analysis recipe."""
         cfg = active_cfg()
-        collections = list(cfg.raw_config.get("join_manifests", {}).keys())
+        collections = list(cfg.raw_config.get("joins", {}).keys())
         if not collections:
             return "Untitled_Collection"
         return collections[0]
 
-    # 1. Reactive Manifest Authority (Universal Architecture)
+    # 1. Reactive Data Analysis Recipe Authority (Universal Architecture)
     @reactive.Calc
     def active_cfg():
-        # Use fixed_manifest when manifest selector is hidden (pipeline app features files);
+        # Use fixed_data_analysis_recipe when data analysis recipe selector is hidden (pipeline app features files);
         # fall back to the project_id widget only when the selector is visible.
         project_id = _safe_input(input, "project_id", bootloader.get_default_project())
-        # ADR-089: the parsed manifest stays in memory only while none of its files changed on
+        # ADR-089: the parsed data analysis recipe stays in memory only while none of its files changed on
         # disk (size and modification time are checked each time a session evaluates this).
-        path = bootloader.get_location("manifests") / f"{project_id}.yaml"
-        return load_manifest(path).config
+        path = bootloader.get_location("data_analysis_recipes") / f"{project_id}.yaml"
+        return load_data_analysis_recipe(path).config
 
     orchestrator = DataOrchestrator(
-        manifests_dir=bootloader.get_location("manifests"),
+        data_analysis_recipes_dir=bootloader.get_location("data_analysis_recipes"),
         raw_data_dir=bootloader.get_location("raw_data"),
         data_lookup=bootloader.data_lookup,
     )
@@ -116,7 +116,7 @@ def server(input, output, session):
     _includes_map: reactive.Value = reactive.Value({})      # rel_path → abs_path for !include files
     _component_ctx_map: reactive.Value = reactive.Value({}) # rel_path → {role, schema_id, ...}
     _schema_registry: reactive.Value = reactive.Value({})   # schema_id → structural entry
-    # BP-LINEAGE-NAV-1: shared signal — both lineage rail clicks and btn_import_manifest write
+    # BP-LINEAGE-NAV-1: shared signal — both lineage rail clicks and btn_import_data_analysis_recipe write
     # here; a single @reactive.Effect in blueprint_handlers calls _do_load_component() directly,
     # eliminating the js_eval → DOM click → input race condition.
     _selected_lineage_rel: reactive.Value = reactive.Value(None)
@@ -199,7 +199,7 @@ def server(input, output, session):
             session_pipeline_errors=session_pipeline_errors,
         )
 
-    # Blueprint Architect: manifest import, TubeMap, Lineage Rail, upload/save/download
+    # Blueprint Architect: data analysis recipe import, TubeMap, Lineage Rail, upload/save/download
     if bootloader.is_enabled("blueprint_enabled"):
         from app.handlers.blueprint_handlers import define_server as _define_blueprint_server
         _define_blueprint_server(

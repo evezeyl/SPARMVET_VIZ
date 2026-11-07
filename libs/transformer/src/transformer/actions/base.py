@@ -23,7 +23,7 @@ def register_action(name: str, ui_schema: Optional[Dict[str, Any]] = None):
     """
     Standard Plugin Decorator for Data Wrangling Actions.
     Any function decorated with `@register_action("action_name")`
-    will automatically become available to the YAML manifest executor.
+    will automatically become available to the YAML data analysis recipe executor.
 
     Optional `ui_schema` kwarg populates ACTION_SCHEMAS for BLUEPRINT IDE form generation
     (ADR-075). Schema format: {label, category, context, tags, params: {param: {widget, ...}}}.

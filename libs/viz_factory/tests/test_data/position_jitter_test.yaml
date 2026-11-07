@@ -1,5 +1,5 @@
 id: position_jitter_test
-description: Test manifest for position_jitter_test.yaml
+description: Test data analysis recipe for position_jitter_test.yaml
 input_fields: []
 wrangling:
   tier1: []

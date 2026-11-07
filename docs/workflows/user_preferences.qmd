@@ -6,9 +6,9 @@ User preferences are defined by the user during their session (e.g., "I want the
 
 The configuration loader handles User Preferences by performing a **deep merge/update** against the default Project Configuration. However, **it explicitly blocks any overrides applied to the `input_fields` or `output_fields`**, ensuring the core Data Contract remains immutable via visual preferences.
 
-### Ghost Manifest Persistence (Autosave)
+### Ghost Data Analysis Recipe Persistence (Autosave)
 Per **ADR-031**, the system implements a debounced "Ghost Save" mechanism (`ghost_save_trigger` in `app/src/server.py`). 
 
 1. **Frequency**: Every 2 minutes (derived from the App features configuration in `config/ui/`).
-2. **Location**: Saves the active manifest to **Location 4 (Autosave)**.
+2. **Location**: Saves the active data analysis recipe to **Location 4 (Autosave)**.
 3. **Recovery**: On initialization, the **Bootloader (bootloader.py)** detects the last saved state and offers a session restoration prompt.

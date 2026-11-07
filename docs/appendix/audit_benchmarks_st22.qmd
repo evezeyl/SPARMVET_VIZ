@@ -27,7 +27,7 @@ The **ST22_Anchor** serves as the master assembly for the SPARMVET platform. Due
 | **ST22_Anchor (Final)**| 42 | 617 | 14.69 | **PASSED** |
 
 > [!NOTE]
-> The final ratio of **14.69** is lower than the raw Virulence input (23.4) because the `join_filter` in the ST22 manifest correctly pruned the dataset to include ONLY high-priority APEC/STEC virulence markers.
+> The final ratio of **14.69** is lower than the raw Virulence input (23.4) because the `join_filter` in the ST22 data analysis recipe correctly pruned the dataset to include ONLY high-priority APEC/STEC virulence markers.
 
 ### Audit Conclusion
 The relational pipeline is **stable**. No 1:Many cross-joins were detected that would lead to memory-critical explosions.
@@ -57,7 +57,7 @@ Following the **Background Mandate (2026-04-17)**, all future script executions 
 
 ### Decision Metadata Hashing (Cache Integrity)
 
-> **Superseded (ADR-089, 2026-11-05):** the recipe hash `sparmvet_decision_hash` was replaced by chained keys: a `tier1_key` (engine version, resolved manifest, data content) and a `tier2_key` (Tier 1 key and the Tier 2 steps), stored in the Parquet metadata. A change in an included file, which the old hash missed, now rebuilds the stage.
+> **Superseded (ADR-089, 2026-11-05):** the recipe hash `sparmvet_decision_hash` was replaced by chained keys: a `tier1_key` (engine version, resolved data analysis recipe, data content) and a `tier2_key` (Tier 1 key and the Tier 2 steps), stored in the Parquet metadata. A change in an included file, which the old hash missed, now rebuilds the stage.
 
 - **Mechanism:** the orchestrator compares the key stored in the Tier 1 / Tier 2 Parquet file with the current key; a mismatch recomputes only the stages whose key changed.
 - **Verification:** `app/tests/test_cache_chain.py` and `app/tests/test_tier2_store.py`.
@@ -67,7 +67,7 @@ Following the **Background Mandate (2026-04-17)**, all future script executions 
 The diagnostic layer now proactively validates incoming raw data against the `input_fields` contract.
 
 - **Gatekeeper:** `MetadataValidator (metadata_validator.py)` traps missing columns and provides heuristic suggestions using Levenshtein distance.
-- **Example Fix:** A typo like `sample_idd` in the manifest now triggers a `ManifestError` with the hint: *"Did you mean ['sample_id']?"*
+- **Example Fix:** A typo like `sample_idd` in the data analysis recipe now triggers a `DataAnalysisRecipeError` with the hint: *"Did you mean ['sample_id']?"*
 
 ---
 

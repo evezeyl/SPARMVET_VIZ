@@ -1,0 +1,291 @@
+id: ST22_dummy_data_analysis_recipe
+type: species
+info:
+  display_name: ST22 Dummy Dataset
+  subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
+  category: AMR Research
+  description: Hyper-modular data analysis recipe structure with dedicated subdirectories and
+    annotated assembly recipes.
+  version: '1.8'
+
+# ── Data Schemas ──────────────────────────────────────────────────────────────
+# Fragment files: 1_test_data_ST22_dummy/{input_fields,wrangling,output_fields}/
+data_schemas:
+  Summary:
+    info:
+      category: Globally pipeline Summary
+      sub_category: Pipeline Summary
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Summary_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_output_fields.yaml'
+
+  Summary_quality:
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
+    wrangling:
+      tier1: []
+      tier2: []
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_quality_output_fields.yaml'
+
+  Quality_metrics:
+    info:
+      category: Quality Control
+      sub_category: Summary Quality metrics Reads and Assembly
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quality_metrics_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Quality_metrics_input_fields.yaml'
+    wrangling: []
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quality_metrics_output_fields.yaml'
+
+  Detailed_summary:
+    info:
+      category: Gene detection
+      sub_category: AMR gene / predicted phenotype detection  - summary
+      comments: Filtered by % identity > 90 and % overlap > 85 Reason and legnth ratio
+        > 0.8 assume true values
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Detailed_Summary_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Detailed_summary_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Detailed_summary_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Detailed_summary_output_fields.yaml'
+
+  FastP:
+    info:
+      category: Quality Control
+      sub_category: Reads Quality
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_FastP_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/FastP_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/FastP_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/FastP_output_fields.yaml'
+
+  Quast:
+    info:
+      category: Quality Control
+      sub_category: Assembly Quality
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quast_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Quast_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Quast_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quast_output_fields.yaml'
+
+  Bracken:
+    info:
+      category: Quality Control
+      sub_category: Reads Taxonomic classification
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Bracken_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Bracken_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Bracken_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Bracken_output_fields.yaml'
+
+  ResFinder:
+    info:
+      category: Gene detection
+      sub_category: AMR gene detection
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/ResFinder_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/ResFinder_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/ResFinder_output_fields.yaml'
+
+  MLST:
+    info:
+      category: Strain Classification
+      sub_category: Multilocus Typing
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
+
+# ── Additional Datasets ───────────────────────────────────────────────────────
+additional_datasets_schemas:
+  VirulenceFinder:
+    info:
+      category: Gene detection
+      sub_category: VirulenceFinder
+    source:
+      type: local_tsv
+      path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
+
+  APEC_STEC_virulence_genes:
+    info:
+      category: Gene detection
+      sub_category: VirulenceFinder Reference dataset
+      comments: Virulence types of interest for STEC
+    source:
+      type: local_tsv
+      path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/APEC_STEC_virulence_genes_input_fields.yaml'
+    wrangling:
+      tier1:
+        - action: strip_whitespace
+    output_fields: {}
+
+# ── Metadata Schema ───────────────────────────────────────────────────────────
+metadata_schema:
+  info:
+    category: Metadata
+    sub_category: Metadata
+  source:
+    type: local_tsv
+    path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
+  input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
+  wrangling: !include '1_test_data_ST22_dummy/wrangling/metadata_schema_wrangling.yaml'
+  output_fields: !include '1_test_data_ST22_dummy/output_fields/metadata_schema_output_fields.yaml'
+
+# ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
+# Simple joins: see wrangling/ for each recipe.
+# Complex assemblies (ST22_Anchor, AR1) also have final_contract in output_fields/.
+joins:
+  FastP_with_metadata:
+    ingredients:
+    - dataset_id: FastP
+    - dataset_id: metadata_schema
+    recipe: !include '1_test_data_ST22_dummy/wrangling/FastP_Metadata_wrangling.yaml'
+
+  Quast_with_metadata:
+    ingredients:
+    - dataset_id: Quast
+    - dataset_id: metadata_schema
+    recipe: !include '1_test_data_ST22_dummy/wrangling/Quast_Metadata_wrangling.yaml'
+
+  Bracken_with_metadata:
+    ingredients:
+    - dataset_id: Bracken
+    - dataset_id: metadata_schema
+    recipe: !include '1_test_data_ST22_dummy/wrangling/Bracken_Metadata_wrangling.yaml'
+
+  ResFinder_with_metadata:
+    ingredients:
+    - dataset_id: ResFinder
+    - dataset_id: metadata_schema
+    recipe: !include '1_test_data_ST22_dummy/wrangling/ResFinder_Metadata_wrangling.yaml'
+
+  MLST_with_metadata:
+    ingredients:
+    - dataset_id: MLST
+    - dataset_id: metadata_schema
+    recipe: !include '1_test_data_ST22_dummy/wrangling/MLST_Metadata_wrangling.yaml'
+
+  QC_Reads_Anchor:
+    ingredients:
+    - dataset_id: FastP
+    - dataset_id: Quast
+    - dataset_id: Bracken
+    - dataset_id: metadata_schema
+    recipe: !include '1_test_data_ST22_dummy/wrangling/QC_Reads_Anchor_wrangling.yaml'
+
+  Summary_phenotype_length_fragmentation:
+    info: 'Demo: Assembly to prepare plot attempting to link some predicted phenotype
+      categories to some quality metrics. in relation to genome length, and fragmentation
+      (higher number of contigs and lower N50 value)'
+    ingredients:
+    - dataset_id: Summary
+    - dataset_id: Summary_quality
+    recipe: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly_output_fields.yaml'
+
+  ST22_Anchor:
+    description: Primary joined dataset for ST22 Dummy analysis.
+    ingredients:
+    - dataset_id: metadata_schema
+    - dataset_id: FastP
+    - dataset_id: ResFinder
+    - dataset_id: MLST
+    - dataset_id: VirulenceFinder
+    - dataset_id: APEC_STEC_virulence_genes
+    recipe: !include '1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/output_fields/ST22_Anchor_final_output_fields.yaml'
+
+  AR1_MLST_Serotype_Virulence:
+    description: Production-grade Sample-to-Gene Mapping (Abromics Pilot).
+    ingredients:
+    - dataset_id: MLST
+    - dataset_id: metadata_schema
+    - dataset_id: VirulenceFinder
+    - dataset_id: APEC_STEC_virulence_genes
+    recipe: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
+
+# ── Analysis Groups ───────────────────────────────────────────────────────────
+# Plot specs: see plots/ for each spec file.
+analysis_groups:
+  Quality Control:
+    description: 📊 Quality Control
+    plots:
+      qc_reads_horizontal_barplot:
+        info: Provides a distribution of total reads per sample by taxonomy proportion.
+        spec: !include '1_test_data_ST22_dummy/plots/FastP_reads_horizontal_barplot.yaml'
+      assembly_quality_dotplot:
+        info: Provides a distribution of assembly quality metrics per sample.
+        spec: !include '1_test_data_ST22_dummy/plots/Quast_assembly_quality_barplot.yaml'
+
+  Curiosity:
+    description: ❓ Curiosity plots
+    plots:
+      phenotype_genome_length_fragmentation:
+        info: Provides a distribution of genome length per sample by phenotype.
+        spec: !include '1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml'
+
+  Results:
+    description: 💊 AMR and ☠️ Virulence
+    plots:
+      amr_heatmap:
+        info: Heatmap showing AMR gene presence across samples.
+        spec: !include '1_test_data_ST22_dummy/plots/ResFinder_genes_heatmap.yaml'
+      virulence_bar:
+        info: Bar chart counting selected virulence genes.
+        spec: !include '1_test_data_ST22_dummy/plots/VirulenceFinder_counts_bar.yaml'
+      mlst_bar:
+        info: Bar chart showing frequency of sequence types by territory.
+        spec: !include '1_test_data_ST22_dummy/plots/MLST_counts_bar.yaml'
+      year_distribution:
+        info: "T1/T2 tier-toggle test: T1 shows all years, T2 filters to 2023-2025 only. Missing bars prove the toggle works."
+        spec: !include '1_test_data_ST22_dummy/plots/year_distribution.yaml'
+      virulence_variants:
+        info: Integration plot showing AMR + Virulence + MLST.
+        spec: !include '1_test_data_ST22_dummy/plots/integration_plot.yaml'
+
+  Cat 🐱:
+    label: "🐱 Cat"
+    description: The boss's favourite — violin plots
+    plots:
+      miaou:
+        label: "Miaou 🐈"
+        info: Miaou! Distribution of assembly metrics across sources — the boss's
+          favourite shape.
+        spec: !include '1_test_data_ST22_dummy/plots/miaou.yaml'
+
+plot_defaults:
+  height: 450
+  theme: theme_minimal
+  show_legend: true
+  default_font_family: "Liberation Sans"
+
+wrangling:
+  tier1: []
+  tier2: []
+  tier3:
+  - action: join
+    params:
+      right_ingredient: metadata_schema
+      'on':
+      - sample_id
+    comment: MLST_Metadata_wrangling.yaml

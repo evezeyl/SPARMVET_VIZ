@@ -1,11 +1,11 @@
 # Automated Decorator Testing
 
-To maintain the architectural integrity of the "Decorator-First" pipeline, all new wrangling actions must be validated through the automated test suite. This ensures that every decorator correctly processes Polars LazyFrames and adheres to the manifest-defined data contracts.
+To maintain the architectural integrity of the "Decorator-First" pipeline, all new wrangling actions must be validated through the automated test suite. This ensures that every decorator correctly processes Polars LazyFrames and adheres to the data analysis recipe-defined data contracts.
 
 ## 1. The Test Suite Architecture
 The `libs/transformer/tests/debug_decorator_suite.py` is a wrapper script that serves as a lightweight Continuous Integration (CI) tool. It performs the following steps for each decorator:
-1.  **Discovery**: Scans `libs/transformer/tests/data/` for `*_manifest.yaml` files.
-2.  **Execution**: Calls the `debug_wrangler.py` runner with the specific manifest.
+1.  **Discovery**: Scans `libs/transformer/tests/data/` for `*_data_analysis_recipe.yaml` files.
+2.  **Execution**: Calls the `debug_wrangler.py` runner with the specific data analysis recipe.
 3.  **Validation**: Confirms the command executes successfully and produces a materialized `.tsv` outcome.
 4.  **Reporting**: Generates a Pass/Fail summary table in the terminal.
 
@@ -13,7 +13,7 @@ The `libs/transformer/tests/debug_decorator_suite.py` is a wrapper script that s
 According to the **Workspace Standard (Section 8)**, every registered action MUST follow this strict naming map for its test pair:
 
 - **Action Name**: `my_action`
-- **Manifest**: `libs/transformer/tests/data/my_action_manifest.yaml`
+- **Data analysis recipe**: `libs/transformer/tests/data/my_action_data_analysis_recipe.yaml`
 - **Data**: `libs/transformer/tests/data/my_action_test.tsv`
 
 This 1:1:1 mapping allows the automated `debug_decorator_suite.py` to crawl the registry and verify your logic instantly. 
@@ -24,8 +24,8 @@ Follow these steps whenever you register a new action (e.g., `@register_action("
 ### Step A: Create a Test Dataset
 Add a minimal TSV file at `./libs/transformer/tests/data/new_action_test.tsv`. 
 
-### Step B: Create a Test Manifest
-Create a corresponding YAML file at `./libs/transformer/tests/data/new_action_manifest.yaml` following the mandatory 3-block structure (ADR-013). Ensure the `source` block points to your new TSV file.
+### Step B: Create a Test Data Analysis Recipe
+Create a corresponding YAML file at `./libs/transformer/tests/data/new_action_data_analysis_recipe.yaml` following the mandatory 3-block structure (ADR-013). Ensure the `source` block points to your new TSV file.
 
 ```yaml
 id: "new_action_test"
@@ -69,6 +69,6 @@ Run the automated suite from the project root:
 
 ## 3. Mandatory Verification
 According to the **Workspace Standard (Section 8)**, a new decorator is not considered "Complete" until:
-1.  Its test manifest is created.
+1.  Its test data analysis recipe is created.
 2.  It passes the `debug_decorator_suite.py` without errors.
 3.  The results in `tmp/decorator_suite_results/` are manually verified at least once via `@verify`.

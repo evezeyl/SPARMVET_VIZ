@@ -13,7 +13,7 @@ TEST_LAB is a collection of small, focused utilities that help users prepare dat
 Primary audiences:
 - **Data stewards** who need to reformat, clean, or anonymise data before loading into HOME.
 - **Developers / testers** who need synthetic datasets (with controlled errors and edge cases) to validate the app's behaviour.
-- **Manifest authors** who want a boilerplate starting point generated from their actual file structure.
+- **Data analysis recipe authors** who want a boilerplate starting point generated from their actual file structure.
 
 ---
 
@@ -27,16 +27,16 @@ Primary audiences:
 | **CSV → TSV** | Reformat CSV files to TSV (standardise delimiter) |
 | **Bulk reformat** | Process a folder of files in one operation |
 
-### Manifest Scaffolding
+### Data analysis recipe Scaffolding
 
 | Functionality | What the user can do |
 |---|---|
-| **Boilerplate manifest from files** | Point TEST_LAB at a set of data files; it reads column names and types and generates a skeleton manifest YAML with correct column references, recognizing data types, ready to edit in BLUEPRINT |
-| **ID reconciliation + primary key selection** | After reconciling IDs across files, user selects which columns are primary keys (ID as join keys, must be unique). ID cleaning recipes are automatically baked into the boilerplate manifest as tier1 wrangling steps |
+| **Boilerplate data analysis recipe from files** | Point TEST_LAB at a set of data files; it reads column names and types and generates a skeleton data analysis recipe YAML with correct column references, recognizing data types, ready to edit in BLUEPRINT |
+| **ID reconciliation + primary key selection** | After reconciling IDs across files, user selects which columns are primary keys (ID as join keys, must be unique). ID cleaning recipes are automatically baked into the boilerplate data analysis recipe as tier1 wrangling steps |
 
 **Composite / secondary keys:** BLUEPRINT's Join Designer already supports composite keys (`"on": ["col1", "col2"]` or asymmetric `left_on` / `right_on`). TEST_LAB's ID Reconciliation Engine handles **single-key matching only** — composite key scenarios are defined directly in BLUEPRINT's Join Designer after boilerplate generation.
 
-**Boilerplate output format:** The boilerplate is a **ZIP archive** following the basename mirroring standard (`rules_manifest_structure.md §1`). Contents: a master YAML with `!include` tags + subdirectory fragments (`input_fields/`, `wrangling/`, `assembly/`). Structure is identical to the reference manifest `config/manifests/pipelines/1_test_data_ST22_dummy.yaml`. Single flat YAML is not used for manifests that include join recipes.
+**Boilerplate output format:** The boilerplate is a **ZIP archive** following the basename mirroring standard (`rules_data_analysis_recipe_structure.md §1`). Contents: a master YAML with `!include` tags + subdirectory fragments (`input_fields/`, `wrangling/`, `assembly/`). Structure is identical to the reference data analysis recipe `config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml`. Single flat YAML is not used for data analysis recipes that include join recipes.
 
 ### Anonymisation (PROCESS 1: Real Data → Reversible Mapping)
 
@@ -62,7 +62,7 @@ Synthetic data generation creates independent, fresh data matching a schema. No 
 | **Inject controlled errors / edge cases** | Error types: missing values (null, messy strings like "-", "N/A"), wrong types (string in numeric column), duplicate IDs, PK mismatches across files, out-of-range values, empty groups, single-row groups. Schema-level errors: missing column, wrong column name, extra column. All error types configurable by rate/column |
 | **Named error scenarios** | Save full generation config (schema + distributions + error injection) as named YAML file. Reload by name to reproduce exactly — regression test suite for the app |
 
-### ID Reconciliation Engine (for Manifest Scaffolding & Data Ingestion)
+### ID Reconciliation Engine (for Data analysis recipe Scaffolding & Data Ingestion)
 
 | Functionality | What the user can do |
 |---|---|
@@ -74,14 +74,14 @@ Synthetic data generation creates independent, fresh data matching a schema. No 
 | **Progressive processing** | Process full file using Polars LazyFrame streaming (memory-efficient); display results in manageable chunks sorted by certainty descending; verify button per chunk; user can bulk-accept 100% exact matches or review individually; engine re-runs pattern detection on remaining unmatched after each acceptance round |
 | **Many-to-many detection & suppression** | Flag true many-to-many (one source ID matches multiple distinct target IDs); offer option to suppress and continue — user must provide written reason for bypassing the warning |
 
-**Workflow modes:** Standalone tool (user starts from ID reconciliation and downloads recipe + outputs) or **continuation** (engine output feeds directly into Manifest Scaffolding boilerplate generation without re-upload).
+**Workflow modes:** Standalone tool (user starts from ID reconciliation and downloads recipe + outputs) or **continuation** (engine output feeds directly into Data analysis recipe Scaffolding boilerplate generation without re-upload).
 ---
 
 ## ID Reconciliation Engine — Detailed Design
 
 ### Purpose & Scope
 
-The ID Reconciliation Engine is the foundational tool for **Manifest Scaffolding**. Before TEST_LAB can generate a boilerplate manifest, join keys must be validated across all input files. The engine:
+The ID Reconciliation Engine is the foundational tool for **Data analysis recipe Scaffolding**. Before TEST_LAB can generate a boilerplate data analysis recipe, join keys must be validated across all input files. The engine:
 
 1. Analyzes ID formats across multiple files
 2. Suggests compatible file pairs and matching order
@@ -90,7 +90,7 @@ The ID Reconciliation Engine is the foundational tool for **Manifest Scaffolding
 5. Generates reusable transformation recipes
 6. Flags data quality issues (many-to-many relationships)
 
-**Integration point:** Manifest Scaffolding workflow calls the ID Reconciliation Engine as step 1 before boilerplate generation.
+**Integration point:** Data analysis recipe Scaffolding workflow calls the ID Reconciliation Engine as step 1 before boilerplate generation.
 
 ### Workflow: Pairwise Matching Example
 
@@ -310,9 +310,9 @@ RATIONALE: Start easy, build pattern understanding, tackle hardest last.
 
 ---
 
-## Manifest Scaffolding — Primary Key Selection & Recipe Integration
+## Data analysis recipe Scaffolding — Primary Key Selection & Recipe Integration
 
-### Workflow: From ID Reconciliation to Manifest Boilerplate
+### Workflow: From ID Reconciliation to Data analysis recipe Boilerplate
 
 After ID reconciliation is complete and user has verified matches, the scaffolding workflow:
 
@@ -328,27 +328,27 @@ After ID reconciliation is complete and user has verified matches, the scaffoldi
    - Check if columns have duplicate values before cleaning
    - Flag problematic duplicates (data quality warning)
 
-3. System generates boilerplate manifest ZIP (basename mirroring format)
-   - Master YAML: data_schemas, join_manifests stubs with !include tags
+3. System generates boilerplate data analysis recipe ZIP (basename mirroring format)
+   - Master YAML: data_schemas, joins stubs with !include tags
    - Fragment files: input_fields per schema (columns, types from actual data)
    - Fragment files: wrangling per schema (ID reconciliation recipes in tier1)
    - Fragment files: join wrangling file pre-filled with verified join keys
    - Validation checks in tier1: drop_duplicates, null_if + drop_nulls on join keys
 
-4. User downloads ZIP and opens master manifest in BLUEPRINT
+4. User downloads ZIP and opens master data analysis recipe in BLUEPRINT
    - Join key alignment already done (from ID reconciliation)
    - ID cleaning recipes in tier1 — ready to verify/extend
    - Stub join recipe already wired to the correct key
    - analysis_groups stub: user adds plots and groups in BLUEPRINT
 ```
 
-### Example Boilerplate Manifest (with recipes baked in)
+### Example Boilerplate Data Analysis Recipe (with recipes baked in)
 
-The boilerplate is downloaded as a **ZIP** containing a master manifest + fragment files.
-All paths follow the basename mirroring standard (`rules_manifest_structure.md §1`).
+The boilerplate is downloaded as a **ZIP** containing a master data analysis recipe + fragment files.
+All paths follow the basename mirroring standard (`rules_data_analysis_recipe_structure.md §1`).
 
 ```yaml
-# ── FILE: sample_amr_pipeline.yaml  (master manifest) ──────────────────────────
+# ── FILE: sample_amr_pipeline.yaml  (master data analysis recipe) ──────────────────────────
 
 id: sample_amr_pipeline
 type: sample
@@ -374,8 +374,8 @@ data_schemas:
     wrangling: !include 'sample_amr_pipeline/wrangling/amr_schema_wrangling.yaml'
     output_fields: {}
 
-# ── Join Manifests ──────────────────────────────────────────────────────────────
-join_manifests:
+# ── Join Data Analysis Recipes ──────────────────────────────────────────────────────────────
+joins:
   sample_amr_joint:
     description: "Metadata + AMR results — join key: sample_id (verified by TEST_LAB)"
     ingredients:
@@ -529,7 +529,7 @@ ANONYMISATION WORKFLOW:
   anonymised_metadata.tsv   (sample_id → ANON_0001, personal cols removed)
   anonymised_results.tsv    (sample_id → ANON_0001, personal cols removed)
   mapping_sample_id.tsv     (original_id | anon_id | name | address | phone)
-  anonymisation_config.yaml (audit record — NOT a pipeline manifest)
+  anonymisation_config.yaml (audit record — NOT a pipeline data analysis recipe)
                          ↓
   5. Share
   ────────────────────────────────────────────────────────
@@ -567,7 +567,7 @@ ANONYMISATION WORKFLOW:
      * anonymised_metadata.tsv
      * anonymised_results.tsv
      * mapping_sample_id.tsv (original_id + anon_id + personal columns)
-     * anonymisation_config.yaml (audit/transparency record, not a pipeline manifest)
+     * anonymisation_config.yaml (audit/transparency record, not a pipeline data analysis recipe)
 
 5. Access control
    - No system built in — user keeps mapping TSV, shares anonymised files only
@@ -579,7 +579,7 @@ ANONYMISATION WORKFLOW:
 
 ### Example Anonymisation Configuration
 
-**Note:** The YAML below is an **audit/transparency record only** — it is NOT a pipeline manifest and is never processed by the SPARMVET engine. It documents what was done, with what settings, on what date. Stored alongside the output files so the run can be understood or repeated months later.
+**Note:** The YAML below is an **audit/transparency record only** — it is NOT a pipeline data analysis recipe and is never processed by the SPARMVET engine. It documents what was done, with what settings, on what date. Stored alongside the output files so the run can be understood or repeated months later.
 
 **Input:** Files to anonymise with ID column
 - metadata.tsv (sample_id column)
@@ -631,7 +631,7 @@ JOIN anonymised_results ON anon_sample_id
 Generate fresh, independent data matching a schema. Used for:
 - Testing app behavior with edge cases
 - Safe sharing when true anonymity (not reversibility) is required
-- Developing & validating manifests without real data
+- Developing & validating data analysis recipes without real data
 
 ### Two Modes
 
@@ -675,18 +675,18 @@ Generate fresh, independent data matching a schema. Used for:
 
 ### Synthetic Data Config YAML — Purpose and Format
 
-> **This YAML is NOT a pipeline manifest.** It is an archive/transparency record saved
+> **This YAML is NOT a pipeline data analysis recipe.** It is an archive/transparency record saved
 > alongside the generated TSV. It is never loaded by the HOME or BLUEPRINT data engine
 > and never goes through the wrangling/ingestion pipeline. Its only purpose is to document
 > what was generated and how, so the generation can be reproduced exactly.
 >
-> This is distinct from the analysis manifests used in HOME and BLUEPRINT, which define
+> This is distinct from the analysis data analysis recipes used in HOME and BLUEPRINT, which define
 > data schemas, wrangling steps, and join recipes for actual data processing.
 
 ```yaml
 # synthetic_data_config.yaml
 # Archive record — saved alongside the generated TSV.
-# NOT a pipeline manifest. NOT processed by the SPARMVET data engine.
+# NOT a pipeline data analysis recipe. NOT processed by the SPARMVET data engine.
 
 metadata:
   generated_at: "2026-05-21T14:30:00"
@@ -784,7 +784,7 @@ the same TSV (identical structure and error patterns) for regression testing acr
 ## Non-Goals
 
 - TEST_LAB does not run the main analysis — that is HOME.
-- TEST_LAB does not build or edit manifests beyond generating a boilerplate scaffold — that is BLUEPRINT.
+- TEST_LAB does not build or edit data analysis recipes beyond generating a boilerplate scaffold — that is BLUEPRINT.
 - TEST_LAB does not curate or share recipes — that is GALLERY.
 - TEST_LAB does not permanently store anonymised data on behalf of the user — it produces files the user downloads. Session state (in-progress reconciliation, unsaved config) is held in memory for the duration of the browser session only. If the user closes the tab, work is lost. Named test scenarios are the exception — these are saved as YAML files and persist across sessions.
 
@@ -816,7 +816,7 @@ the same TSV (identical structure and error patterns) for regression testing acr
 - `test_lab_studio.py` exists as a module stub.
 - Synthetic data generation: early experiment exists (referenced in recent commits as "test lab for synthetic data generation").
 - Reformatting utilities: not yet built.
-- Manifest scaffolding: not yet built.
+- Data analysis recipe scaffolding: not yet built.
 - Pattern matching helper: not yet built.
 - Named test scenarios: not yet built.
 
@@ -868,24 +868,24 @@ Shared component; both `id_reconciliation` and `blueprint_arch` import from here
 - **TL-UTILS-PATTERN-1** `[sonnet/low]`: Extract ID pattern matching primitives (prefix/suffix detection, delimiter extraction, regex generalisation) into `libs/utils/src/utils/id_patterns.py`. Update `libs/id_reconciliation/` to import from there. Update `libs/blueprint_arch/` Join Designer (`join_designer.py`) to also use this helper where applicable. Gate: both libs import cleanly; no duplication of pattern logic between the two.  
   Depends: TL-IDLIB-PATTERN-1 (to know what to extract).
 
-### 34-C — ManifestBootstrapper Fixes (`libs/test_lab/`)
+### 34-C — DataAnalysisRecipeBootstrapper Fixes (`libs/test_lab/`)
 
 Three known bugs + new capability.
 
 - **TL-BOOTSTRAP-FIX-1** `[sonnet/low]`: Fix `libs/test_lab/src/test_lab/bootstrapper.py`:
   1. `"plotting"` key → `"analysis_groups"` (wrong key name)
   2. Remove hardcoded spurious `metadata_schema:` entry in output
-  3. Add `join_manifests: {}` stub (empty placeholder for BLUEPRINT)
+  3. Add `joins: {}` stub (empty placeholder for BLUEPRINT)
   4. Accept optional `id_cleaning_recipes: dict` param — when provided (from ID reconciliation output), bake valid cleaning actions (`regex_replace`, `mutate`, `drop_duplicates`, `null_if`, `drop_nulls`) into `tier1:` wrangling of the relevant `data_schemas:` entry.
-  Gate: `debug_sdk.py` (or new headless test) generates a valid manifest that matches the boilerplate example in this design doc. Verified by running `debug_assembler.py` on the output.  
+  Gate: `debug_sdk.py` (or new headless test) generates a valid data analysis recipe that matches the boilerplate example in this design doc. Verified by running `debug_assembler.py` on the output.  
   Depends: TL-IDLIB-RECIPE-1 (to know the recipe format to inject).
 
-### 34-D — Manifest Scaffolding ZIP
+### 34-D — Data analysis recipe Scaffolding ZIP
 
 End-to-end output from files → verified IDs → boilerplate ZIP.
 
-- **TL-SCAFFOLD-1** `[sonnet/medium]`: Implement manifest scaffolding ZIP output in `libs/test_lab/src/test_lab/bootstrapper.py` (or a new `scaffolder.py`). Input: list of TSV paths + `TransformationRecipe` objects from ID reconciliation. Output: ZIP archive following basename mirroring standard — master YAML with `!include` tags + `input_fields/`, `wrangling/`, `assembly/` fragment files. Master manifest: `data_schemas:` per file + `join_manifests:` with one entry per verified file pair (pre-filled join key from recipe) + `analysis_groups: {}`. Fragment `wrangling/` files include ID cleaning steps from recipe.
-  Gate: unzip output → `debug_assembler.py` runs without error on the generated manifest (no plot specs needed — `analysis_groups: {}` is valid). Verify `data_schemas:` key (not `input_schemas:`), `ingredients:` format (not `left_ingredient:`), quoted `'on':` join key.  
+- **TL-SCAFFOLD-1** `[sonnet/medium]`: Implement data analysis recipe scaffolding ZIP output in `libs/test_lab/src/test_lab/bootstrapper.py` (or a new `scaffolder.py`). Input: list of TSV paths + `TransformationRecipe` objects from ID reconciliation. Output: ZIP archive following basename mirroring standard — master YAML with `!include` tags + `input_fields/`, `wrangling/`, `assembly/` fragment files. Master data analysis recipe: `data_schemas:` per file + `joins:` with one entry per verified file pair (pre-filled join key from recipe) + `analysis_groups: {}`. Fragment `wrangling/` files include ID cleaning steps from recipe.
+  Gate: unzip output → `debug_assembler.py` runs without error on the generated data analysis recipe (no plot specs needed — `analysis_groups: {}` is valid). Verify `data_schemas:` key (not `input_schemas:`), `ingredients:` format (not `left_ingredient:`), quoted `'on':` join key.  
   Depends: TL-BOOTSTRAP-FIX-1, TL-IDLIB-CORE-1.
 
 ### 34-E — Synthetic Data Upgrade
@@ -893,11 +893,11 @@ End-to-end output from files → verified IDs → boilerplate ZIP.
 Upgrade `AquaSynthesizer` — do not rewrite; extend.
 
 - **TL-SYNTH-1** `[sonnet/high]`: Upgrade `libs/test_lab/src/test_lab/aqua_synthesizer.py`:
-  - **Two-step flow**: `propose_config(source)` → returns `SynthConfig` dict (inferred from schema or real data); `generate(config)` → produces TSV + `synthetic_data_config.yaml` (archive record, NOT a pipeline manifest — add prominent header comment).
+  - **Two-step flow**: `propose_config(source)` → returns `SynthConfig` dict (inferred from schema or real data); `generate(config)` → produces TSV + `synthetic_data_config.yaml` (archive record, NOT a pipeline data analysis recipe — add prominent header comment).
   - **Two modes**: `mode: demo` (clean output) vs `mode: stress_test` (with error injection block).
   - **Error injection block** (stress_test only): `missing_values` (per column, rate), `wrong_type` (per column, rate), `duplicate_ids` (column + rate), `pk_mismatches` (rate), `schema_errors` (missing_column / wrong_column_name / extra_column), `malformed_fields` (out-of-range, unparseable dates, rate).
   - **Named scenarios**: `save_scenario(config, name, description)` → writes to `libs/test_lab/scenarios/<name>.yaml`; `load_scenario(name)` → returns `SynthConfig`; `list_scenarios()` → list of names.
-  - **YAML config output**: saved alongside generated TSV. Add prominent comment header: `# synthetic_data_config.yaml — Archive record. NOT a pipeline manifest. NOT processed by the SPARMVET data engine.`
+  - **YAML config output**: saved alongside generated TSV. Add prominent comment header: `# synthetic_data_config.yaml — Archive record. NOT a pipeline data_analysis_recipe. NOT processed by the SPARMVET data engine.`
   Gate: demo mode generates clean TSV matching schema; stress_test injects stated error rate ±2%; scenario round-trip (save → load → generate produces same schema); `pytest libs/test_lab/tests/test_aqua_synthesizer.py -q` passes.
 
 ### 34-F — Anonymisation Tool
@@ -916,7 +916,7 @@ Upgrade `AquaSynthesizer` — do not rewrite; extend.
 
 ### 34-H — UI (gates on library tasks)
 
-- **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion with panels for each tool (ID Reconciliation, Manifest Scaffolding, Synthetic Data, Anonymisation, Reformatting). View title banner. Gated by `test_lab_enabled` app features flag (ADR-071). Sidebar slot type: `test_lab` — add to sidebar registry. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` shows no TEST_LAB nav.
+- **TL-UI-SHELL-1** `[sonnet/medium]`: TEST_LAB UI shell in `test_lab_studio.py` — left sidebar accordion with panels for each tool (ID Reconciliation, Data Analysis Recipe Scaffolding, Synthetic Data, Anonymisation, Reformatting). View title banner. Gated by `test_lab_enabled` app features flag (ADR-071). Sidebar slot type: `test_lab` — add to sidebar registry. Gate: app starts with `test_lab_enabled: true`; accordion panels render; `test_lab_enabled: false` shows no TEST_LAB nav.
 
 - **TL-UI-REFORMAT-1** `[haiku/low]`: Reformatting panel — file upload (XLSX/CSV), sheet assignment UI for XLSX (sheet → TSV name), convert button, download TSVs.  
   Depends: TL-REFORMAT-1, TL-UI-SHELL-1.
@@ -924,7 +924,7 @@ Upgrade `AquaSynthesizer` — do not rewrite; extend.
 - **TL-UI-RECONCILE-1** `[sonnet/high]`: ID Reconciliation panel — multi-file upload (2–6 files), PRE-CHECK result display (compatibility groups, suggested matching order), pairwise match table (side-by-side, sorted by certainty descending, chunked 50 rows, bulk-accept 100% button, per-row verify/reject), pattern suggestion panel (ranked suggestions with expected match count, apply button), recode workflow (action picker, cleaned ID preview, re-run matching), many-to-many flag dialog (mandatory written reason), recipe download (YAML).  
   Depends: TL-IDLIB-CORE-1, TL-UI-SHELL-1.
 
-- **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Manifest Scaffolding panel — file upload, "Continue from ID Reconciliation" mode (uses session-held reconciliation output), join key selection, boilerplate ZIP download. Displays what was baked in (ID cleaning steps, join keys, file count).  
+- **TL-UI-SCAFFOLD-1** `[sonnet/medium]`: Data analysis recipe Scaffolding panel — file upload, "Continue from ID Reconciliation" mode (uses session-held reconciliation output), join key selection, boilerplate ZIP download. Displays what was baked in (ID cleaning steps, join keys, file count).  
   Depends: TL-SCAFFOLD-1, TL-UI-RECONCILE-1.
 
 - **TL-UI-SYNTH-1** `[sonnet/medium]`: Synthetic Data panel — schema/file upload, proposed config review table (per-column editable params), mode toggle (Demo / Stress test), error injection config block (shown only in stress_test mode), n_rows input, generate button, scenario save/load controls, download TSV + YAML config.  

@@ -26,22 +26,22 @@ Every executable Python script within `./libs/` test folders and `./assets/scrip
 
 - **Rule:** Scripts must use the `argparse` standard library.
 - **Rule:** Scripts must provide an explicit docstring mapped to the `--help` argument, describing exactly what the script accomplishes.
-- **Rule:** Hardcoding paths in the execution blocks is strictly FORBIDDEN. All paths (data, manifest, output) must receive CLI arguments (with optional transparent defaults).
+- **Rule:** Hardcoding paths in the execution blocks is strictly FORBIDDEN. All paths (data, data analysis recipe, output) must receive CLI arguments (with optional transparent defaults).
 
 ## 3. The @verify Protocol & Phase-Gating (Evidence Loop)
 
 No task is considered [DONE] without passing the @verify gate, which creates a standalone proof-of-concept limit for operations.
 **Phase-Gating Mandate:** UI testing (`app/src/main.py`) is STRICTLY PROHIBITED until the corresponding Headless Audit has passed.
 
-1. **The Contract:** For a new function `[name]`, pre-define its dataset (`name_test.tsv`) and manifest (`name_manifest.yaml`).
+1. **The Contract:** For a new function `[name]`, pre-define its dataset (`name_test.tsv`) and data analysis recipe (`name_data_analysis_recipe.yaml`).
 2. **CLI Execution:** Execute test logic via the standard `argparse` CLI runner depending on the operational engine.
 3. **Evidence Generation & Path Standard:**
    - **For Automatic Library Testing (e.g. implementation of new decorator):** Results MUST be saved in `tmp/{lib}/`.
-   - **For Manifest Testing:** Headless results MUST be strictly routed to `tmp/Manifest_test/{manifest_basename}/`.
+   - **For Data analysis recipe Testing:** Headless results MUST be strictly routed to `tmp/data_analysis_recipe_test/{data_analysis_recipe_basename}/`.
    - Resulting tables are saved as `USER_debug_view.tsv` (via `.collect()`) and Plots to `USER_debug_{plot}.png`.
 4. **Console Glimpse (Proof of Life):** Output `df.glimpse()` to standard output, and present the plot PNG path.
 5. **The Halt:** Agents MUST halt autonomous execution and declare: "Data/Plot ready in tmp/... Waiting for @verify."
-6. **Transparency Mandate:** Every @verify result MUST list the exact file paths used for Data, Manifests, and Resulting Artifacts.
+6. **Transparency Mandate:** Every @verify result MUST list the exact file paths used for Data, Data Analysis Recipes, and Resulting Artifacts.
 
 ## 4. Active Visibility Protocol (Skeletal-Archive)
 
@@ -63,11 +63,11 @@ Two distinct temporary directories exist at the project root. Their purposes are
 | Directory | Owner | Purpose | Consent required? |
 | --- | --- | --- | --- |
 | `./tmpAI/` | Agent | Agent-internal testing, scratch scripts, intermediate logs, debug runs that the agent initiates autonomously. | **No** — agent may read and write freely without halting for user approval. |
-| `./tmp/` | User | Outputs the user must review: `@verify` evidence, `USER_debug_*.tsv/png` artifacts, Manifest test results. | **Yes** — agent must halt and declare paths per the `@verify` protocol before the user proceeds. |
+| `./tmp/` | User | Outputs the user must review: `@verify` evidence, `USER_debug_*.tsv/png` artifacts, Data analysis recipe test results. | **Yes** — agent must halt and declare paths per the `@verify` protocol before the user proceeds. |
 
 **Rules:**
 
-- Any test script, log, or artifact that is **agent-internal** (exploratory run, import check, intermediate debug, CI-style headless validation not yet ready for user review) MUST be written to `./tmpAI/`. Sub-directory structure mirrors `./tmp/`: `tmpAI/{lib}/` for library tests, `tmpAI/Manifest_test/{manifest_basename}/` for manifest tests.
+- Any test script, log, or artifact that is **agent-internal** (exploratory run, import check, intermediate debug, CI-style headless validation not yet ready for user review) MUST be written to `./tmpAI/`. Sub-directory structure mirrors `./tmp/`: `tmpAI/{lib}/` for library tests, `tmpAI/data_analysis_recipe_test/{data_analysis_recipe_basename}/` for data analysis recipe tests.
 - `./tmp/` is **reserved exclusively for `@verify` outputs** — results the agent declares to the user as ready for inspection. Writing agent-internal scratch to `./tmp/` is a protocol violation.
 - Both directories are persistent and git-ignored. Neither is scanned by the embedding engine.
 - When promoting an agent-internal result to user-review status (i.e., the test passed headlessly and is ready for `@verify`), the agent MUST copy the artifact from `./tmpAI/` to `./tmp/` and then declare the `./tmp/` path per section 3.
@@ -76,7 +76,7 @@ Two distinct temporary directories exist at the project root. Their purposes are
 
 To ensure the Diagnostic Layer remains robust, every significant component (Ingestion, Transformer, VizFactory) MUST include at least one "Automated Failure Test" in its integrity suite.
 
-- **Rule**: Developers must provide a "Malformed Manifest" that intentionally triggers a `SPARMVET_Error`.
+- **Rule**: Developers must provide a "Malformed Data analysis recipe" that intentionally triggers a `SPARMVET_Error`.
 - **Validation**: The test passes only if the system catches the specific error and returns the appropriate `tip` suggested in the diagnostic registry.
 
 ## 8. Shiny App Headless Testing (Playwright)

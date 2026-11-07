@@ -11,7 +11,7 @@ deps:
 **Authority:** @dasharch
 **Status:** FINALIZED / ARCHITECTURAL LOCK (2026-04-23)
 
-This rulebook governs the internal structure of the `app/` package. It enforces the decomposition of `app/src/server.py` into a thin orchestrator plus focused handler modules and a pure manifest introspection module.
+This rulebook governs the internal structure of the `app/` package. It enforces the decomposition of `app/src/server.py` into a thin orchestrator plus focused handler modules and a pure data analysis recipe introspection module.
 
 ---
 
@@ -21,11 +21,11 @@ All code in `app/` falls into exactly one of two categories. **Mixing them is a 
 
 | Category | Where it lives | Rule |
 |---|---|---|
-| **Pure manifest introspection** | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` (Phase 29 move — ADR-067) | Zero Shiny imports. Zero `input`/`output`/`session`. Pure Python functions — importable from headless scripts, test suites, CLI tools, and export handlers without side effects. Formally shared infrastructure (ADR-074). |
+| **Pure data analysis recipe introspection** | `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` (Phase 29 move — ADR-067) | Zero Shiny imports. Zero `input`/`output`/`session`. Pure Python functions — importable from headless scripts, test suites, CLI tools, and export handlers without side effects. Formally shared infrastructure (ADR-074). |
 | **Shiny reactive wiring** | `app/handlers/<concern>.py` | Contains `@render.*`, `@reactive.Effect`, `@reactive.Calc`. Receives shared state via explicit `define_server(...)` keyword arguments. **Never imported by non-Shiny contexts.** |
 
 **Violation examples:**
-- Adding a `@render.ui` decorator inside `manifest_navigator.py` → FORBIDDEN.
+- Adding a `@render.ui` decorator inside `data_analysis_recipe_navigator.py` → FORBIDDEN.
 - Importing from `app/handlers/blueprint_handlers.py` in a headless debug script → FORBIDDEN (handler files carry Shiny registration side-effects).
 - Calling `build_sibling_map()` directly inside `server.py` without going through a handler → ALLOWED (it is a pure function), but new callers in `server.py` should be delegated to handlers.
 
@@ -51,12 +51,12 @@ app/
 │   ├── __init__.py
 │   ├── home_theater.py         # Home mode: tabs, sidebar, filters, plots, tables.
 │   ├── audit_stack.py          # Pipeline Audit: T2/T3 nodes, Apply gate, Revert.
-│   ├── blueprint_handlers.py   # Blueprint Architect: manifest import, lineage, TubeMap.
+│   ├── blueprint_handlers.py   # Blueprint Architect: data analysis recipe import, lineage, TubeMap.
 │   ├── gallery_handlers.py     # Gallery: filtering, preview, clone, submission.
-│   └── ingestion_handlers.py   # Manifest file ingestion (btn_ingest).
+│   └── ingestion_handlers.py   # Data analysis recipe file ingestion (btn_ingest).
 │
 └── assets/                # Static/utility scripts (no Shiny).
-    └── normalize_manifest_fields.py
+    └── normalize_data_analysis_recipe_fields.py
 ```
 
 ---
@@ -76,25 +76,25 @@ app/
 
 ---
 
-## 4. `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` — Public API
+## 4. `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` — Public API
 
 **Moved to `libs/blueprint_arch/` in Phase 29 (ADR-067).** The module is formally shared infrastructure (ADR-074) — importable from any context without Shiny side-effects.
 
-The `ManifestNavigator (manifest_navigator.py)` module exports seven public functions (no leading underscore). Internal sub-helpers within those functions remain private.
+The `DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)` module exports seven public functions (no leading underscore). Internal sub-helpers within those functions remain private.
 
 | Public Function | Signature | Returns |
 |---|---|---|
-| `build_sibling_map(manifest_path_str)` | `str → dict` | `rel_path → {role, schema_id, schema_type, siblings, ingredients}` |
-| `build_schema_registry(manifest_path_str, includes_map)` | `str, dict → dict` | `schema_id → {schema_type, input_fields, wrangling, output_fields, …}` |
+| `build_sibling_map(data_analysis_recipe_path_str)` | `str → dict` | `rel_path → {role, schema_id, schema_type, siblings, ingredients}` |
+| `build_schema_registry(data_analysis_recipe_path_str, includes_map)` | `str, dict → dict` | `schema_id → {schema_type, input_fields, wrangling, output_fields, …}` |
 | `build_lineage_chain(selected_rel, ctx_map)` | `str, dict → list[dict]` | Ordered `[{rel, schema_id, role, label, is_active}]` |
 | `load_fields_file(abs_path)` | `Path → dict` | ADR-041 Rich Dict with ADR-014 unnesting |
 | `resolve_fields_for_schema(schema_id, ctx_map, inc_map)` | `str, dict, dict → dict` | ADR-041 Rich Dict, recursive with cycle guard |
-| `build_plot_lineage(plot_id, manifest_path)` | `str, str → list[dict]` | Backward trace from a plot to its T1 root (ADR-074). Used by export bundle lineage graph. |
-| `get_plot_ids_in_group(group_id, manifest_path)` | `str, str → list[str]` | Forward trace — all plot IDs declared in an analysis group (ADR-074). |
+| `build_plot_lineage(plot_id, data_analysis_recipe_path)` | `str, str → list[dict]` | Backward trace from a plot to its T1 root (ADR-074). Used by export bundle lineage graph. |
+| `get_plot_ids_in_group(group_id, data_analysis_recipe_path)` | `str, str → list[str]` | Forward trace — all plot IDs declared in an analysis group (ADR-074). |
 
 **Import pattern** (from any context):
 ```python
-from blueprint_arch.manifest_navigator import (
+from blueprint_arch.data_analysis_recipe_navigator import (
     build_sibling_map, build_schema_registry, build_lineage_chain,
     load_fields_file, resolve_fields_for_schema,
     build_plot_lineage, get_plot_ids_in_group
@@ -139,10 +139,10 @@ def define_server(input, output, session, *,
 | Data preview column selector | `app/handlers/home_theater.py` |
 | Export results bundle (zip / plots / data / Quarto) | `app/handlers/home_theater.py` |
 | The Pipeline Audit stack (Violet/Yellow nodes, Apply gate) | `app/handlers/audit_stack.py` |
-| Blueprint Architect manifest import / TubeMap / Lineage Rail | `app/handlers/blueprint_handlers.py` |
+| Blueprint Architect data analysis recipe import / TubeMap / Lineage Rail | `app/handlers/blueprint_handlers.py` |
 | Gallery filtering, preview, clone, submission | `app/handlers/gallery_handlers.py` |
 | Data ingestion (btn_ingest) | `app/handlers/ingestion_handlers.py` |
-| How manifests are parsed structurally (sibling map, registry, lineage) | `libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py` |
+| How data analysis recipes are parsed structurally (sibling map, registry, lineage) | `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` |
 | BLUEPRINT form catalog + `ui_schema` registry at startup | `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` (ADR-075) |
 | The static Shiny HTML shell / CSS | `app/src/ui.py` |
 | Path authority / app features bootstrap | `app/src/bootloader.py` |
@@ -197,5 +197,5 @@ Each filter row: `{column: str, op: str, value: str|list, dtype: str}`.
 The decomposition refactor (Phase 22) is **behaviour-neutral** — no logic changes, only structural relocation. Verification complete (2026-04-23):
 
 1. **Import check**: `python -c "from app.src.server import server"` — ✅ passed.
-2. **Navigator unit check**: `python -c "from blueprint_arch.manifest_navigator import build_sibling_map; print('OK')"` — ✅ passed (import path updated Phase 29, ADR-067).
+2. **Navigator unit check**: `python -c "from blueprint_arch.data_analysis_recipe_navigator import build_sibling_map; print('OK')"` — ✅ passed (import path updated Phase 29, ADR-067).
 3. **Live UI check**: UI smoke test by user — no major regressions detected. ✅

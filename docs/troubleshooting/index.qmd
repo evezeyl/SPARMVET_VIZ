@@ -41,13 +41,13 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 | [connector-filesystem-path-missing](#connector-filesystem-path-missing) | FilesystemConnector | operator | A required location directory is absent on disk |
 | [connector-irida-token-missing](#connector-irida-token-missing) | IridaConnector | operator | `SPARMVET_IRIDA_TOKEN` env var not set |
 | [connector-irida-block-missing](#connector-irida-block-missing) | IridaConnector | operator | `irida:` block absent from deployment |
-| [manifest-file-missing](#manifest-file-missing) | ConfigManager | operator | Manifest YAML file not found |
-| [manifest-yaml-parse-error](#manifest-yaml-parse-error) | ConfigManager | developer | Master manifest is syntactically invalid YAML |
-| [manifest-include-missing](#manifest-include-missing) | ConfigManager | developer | `!include` target in manifest not found on disk |
-| [manifest-no-analysis-groups](#manifest-no-analysis-groups) | ConfigManager | developer | Manifest lacks `analysis_groups:` block |
-| [manifest-data-schemas-not-dict](#manifest-data-schemas-not-dict) | ConfigManager | developer | `data_schemas:` is not a YAML mapping |
-| [manifest-schema-entry-not-dict](#manifest-schema-entry-not-dict) | ConfigManager | developer | A schema entry under `data_schemas:` is not a mapping |
-| [manifest-schema-missing-source](#manifest-schema-missing-source) | ConfigManager | developer | A schema entry is missing the `source:` block |
+| [data-analysis-recipe-file-missing](#data-analysis-recipe-file-missing) | ConfigManager | operator | Data analysis recipe YAML file not found |
+| [data-analysis-recipe-yaml-parse-error](#data-analysis-recipe-yaml-parse-error) | ConfigManager | developer | Master data analysis recipe is syntactically invalid YAML |
+| [data-analysis-recipe-include-missing](#data-analysis-recipe-include-missing) | ConfigManager | developer | `!include` target in data analysis recipe not found on disk |
+| [data-analysis-recipe-no-analysis-groups](#data-analysis-recipe-no-analysis-groups) | ConfigManager | developer | Data analysis recipe lacks `analysis_groups:` block |
+| [data-analysis-recipe-data-schemas-not-dict](#data-analysis-recipe-data-schemas-not-dict) | ConfigManager | developer | `data_schemas:` is not a YAML mapping |
+| [data-analysis-recipe-schema-entry-not-dict](#data-analysis-recipe-schema-entry-not-dict) | ConfigManager | developer | A schema entry under `data_schemas:` is not a mapping |
+| [data-analysis-recipe-schema-missing-source](#data-analysis-recipe-schema-missing-source) | ConfigManager | developer | A schema entry is missing the `source:` block |
 
 ---
 
@@ -130,7 +130,7 @@ missing quotes around keys that look like YAML booleans (`on`, `yes`, `true`).
 
 **Problem:** Deployment is missing required location keys: `[<keys>]`.
 
-The five required keys are: `raw_data`, `manifests`, `cache`,
+The five required keys are: `raw_data`, `data_analysis_recipes`, `cache`,
 `user_data`, `gallery`.
 
 **Fix:** Add the missing keys to the `locations:` block in your deployment.
@@ -140,7 +140,7 @@ Reference: `config/deployment/local/local.yaml`.
 ```yaml
 locations:
   raw_data: data/raw
-  manifests: config/manifests/pipelines
+  data_analysis_recipes: config/data_analysis_recipes/pipelines
   cache: data/curated
   user_data: data/sessions
   gallery: assets/gallery_data
@@ -280,7 +280,7 @@ features:
 **Problem:** `'<child>=True'` requires `'<parent>=True'`.
 
 This is a **fatal startup error** — the app will not start until the template is
-corrected. Group D flags (`manifest_edit_enabled`, `blueprint_agent_enabled`) depend
+corrected. Group D flags (`data_analysis_recipe_edit_enabled`, `blueprint_agent_enabled`) depend
 on `blueprint_enabled`. ADR-077 prohibits silent suppression of this dependency.
 
 **Fix:** Open the template and reconcile the flags:
@@ -289,12 +289,12 @@ on `blueprint_enabled`. ADR-077 prohibits silent suppression of this dependency.
 # Option A — disable the child
 features:
   blueprint_enabled: false
-  manifest_edit_enabled: false   # was true — now matches parent
+  data_analysis_recipe_edit_enabled: false   # was true — now matches parent
 
 # Option B — enable the parent
 features:
   blueprint_enabled: true
-  manifest_edit_enabled: true
+  data_analysis_recipe_edit_enabled: true
 ```
 
 **Source:** `app/modules/app_features_validator.py` Rule 7 — ADR-075, ADR-076, ADR-077.
@@ -446,7 +446,7 @@ panels:
 ```
 
 Known panel types (from `sidebar_registry.py`): `project_info`, `deployment_info`,
-`manifest_choice`, `filters`, `data_import`, `export`, `session_management`,
+`data_analysis_recipe_choice`, `filters`, `data_import`, `export`, `session_management`,
 `audit_stack`, `blueprint_nav`, `blueprint_logic`, `gallery_search`,
 `notification_log`.
 
@@ -460,7 +460,7 @@ Known panel types (from `sidebar_registry.py`): `project_info`, `deployment_info
 
 **Problem:** Required location `'<key>'` does not exist on disk: `<path>`.
 
-The three locations that must pre-exist on disk: `raw_data`, `manifests`, `gallery`.
+The three locations that must pre-exist on disk: `raw_data`, `data_analysis_recipes`, `gallery`.
 (`cache` and `user_data` are created at runtime by the assembler and
 session manager respectively — they are not checked here.)
 
@@ -518,28 +518,28 @@ irida:
 
 ---
 
-## E — Manifest Errors (ConfigManager)
+## E — Data analysis recipe Errors (ConfigManager)
 
-### `manifest-file-missing` {#manifest-file-missing}
+### `data-analysis-recipe-file-missing` {#data-analysis-recipe-file-missing}
 
-**Problem:** Manifest file not found: `'<path>'`.
+**Problem:** Data analysis recipe file not found: `'<path>'`.
 
-**Fix:** Verify the manifest path set in the deployment (`default_manifest`
-key) or the manifest selector dropdown. Manifests live under
-`config/manifests/pipelines/`.
+**Fix:** Verify the data analysis recipe path set in the deployment (`default_data_analysis_recipe`
+key) or the data analysis recipe selector dropdown. Data analysis recipes live under
+`config/data_analysis_recipes/pipelines/`.
 
 **Source:** `libs/utils/src/utils/config_loader.py → ConfigManager.__init__()` — ADR-041.
 
 ---
 
-### `manifest-yaml-parse-error` {#manifest-yaml-parse-error}
+### `data-analysis-recipe-yaml-parse-error` {#data-analysis-recipe-yaml-parse-error}
 
-**Problem:** Malformed YAML in manifest: `<parse error detail>`.
+**Problem:** Malformed YAML in data analysis recipe: `<parse error detail>`.
 
 **Fix:**
 
 ```bash
-python -c "import yaml; yaml.safe_load(open('<manifest_path>'))"
+python -c "import yaml; yaml.safe_load(open('<data_analysis_recipe_path>'))"
 ```
 
 The most common SPARMVET-specific cause is the YAML boolean trap:
@@ -558,21 +558,21 @@ The most common SPARMVET-specific cause is the YAML boolean trap:
 
 ---
 
-### `manifest-include-missing` {#manifest-include-missing}
+### `data-analysis-recipe-include-missing` {#data-analysis-recipe-include-missing}
 
 **Problem:** `!include` target not found: `'<file>'`.
 
 **Fix:** Create the missing fragment file at the reported path, or correct the
-`!include` path in the master manifest. Verify the basename mirroring directory
-exists (`rules_manifest_structure.md §1`).
+`!include` path in the master data analysis recipe. Verify the basename mirroring directory
+exists (`rules_data_analysis_recipe_structure.md §1`).
 
-A high-complexity manifest `main.yaml` must mirror its fragments in a `main/`
+A high-complexity data analysis recipe `main.yaml` must mirror its fragments in a `main/`
 directory at the same level:
 
 ```
-config/manifests/pipelines/
-  my_manifest.yaml
-  my_manifest/
+config/data_analysis_recipes/pipelines/
+  my_data_analysis_recipe.yaml
+  my_data_analysis_recipe/
     input_fields/
     wrangling/
     assembly/
@@ -583,9 +583,9 @@ config/manifests/pipelines/
 
 ---
 
-### `manifest-no-analysis-groups` {#manifest-no-analysis-groups}
+### `data-analysis-recipe-no-analysis-groups` {#data-analysis-recipe-no-analysis-groups}
 
-**Problem:** Manifest is missing the required `analysis_groups:` block.
+**Problem:** Data analysis recipe is missing the required `analysis_groups:` block.
 
 The app's Home Theater derives all tabs from `analysis_groups` — without it, there
 is nothing to render.
@@ -599,16 +599,16 @@ analysis_groups:
     plots:
       my_plot:
         label: "My Plot"
-        spec: !include my_manifest/plots/my_plot.yaml
+        spec: !include my_data_analysis_recipe/plots/my_plot.yaml
 ```
 
-See `rules_manifest_structure.md §8` for the full specification.
+See `rules_data_analysis_recipe_structure.md §8` for the full specification.
 
 **Source:** `libs/utils/src/utils/config_loader.py` — ADR-041, ADR-003.
 
 ---
 
-### `manifest-data-schemas-not-dict` {#manifest-data-schemas-not-dict}
+### `data-analysis-recipe-data-schemas-not-dict` {#data-analysis-recipe-data-schemas-not-dict}
 
 **Problem:** `data_schemas:` must be a YAML mapping, got `<type>`.
 
@@ -626,7 +626,7 @@ data_schemas:
 
 ---
 
-### `manifest-schema-entry-not-dict` {#manifest-schema-entry-not-dict}
+### `data-analysis-recipe-schema-entry-not-dict` {#data-analysis-recipe-schema-entry-not-dict}
 
 **Problem:** `data_schemas.<schema_id>` must be a mapping, got `<type>`.
 
@@ -637,7 +637,7 @@ least a `source:` block containing a `path:` key.
 
 ---
 
-### `manifest-schema-missing-source` {#manifest-schema-missing-source}
+### `data-analysis-recipe-schema-missing-source` {#data-analysis-recipe-schema-missing-source}
 
 **Problem:** `data_schemas.<schema_id>` is missing the required `source:` block.
 

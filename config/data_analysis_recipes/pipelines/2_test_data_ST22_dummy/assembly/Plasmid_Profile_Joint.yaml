@@ -1,0 +1,27 @@
+# @deps
+# provides: assembly:Plasmid_Profile_Joint
+# consumes: action:join, action:cast, action:sort, dataset:plasmid_data, dataset:metadata_schema
+# include_parent: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml
+# consumed_by: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml, libs/transformer/tests/debug_assembler.py
+# doc: .claude/rules/rules_data_analysis_recipe_structure.md#7
+# @end_deps
+recipe:
+  tier1:
+    # Step 1: Join metadata (Source, Year, Country) on sample_id
+    - action: join
+      right_ingredient: metadata_schema
+      'on': sample_id
+      how: inner
+
+    # Step 2: Cast Year: float → Int64 → String for clean discrete axis
+    - action: cast
+      columns: [Year]
+      dtype: Int64
+
+    - action: cast
+      columns: [Year]
+      dtype: String
+
+    # Step 3: Sort for reproducible output ordering
+    - action: sort
+      columns: [Year, Source, Country]

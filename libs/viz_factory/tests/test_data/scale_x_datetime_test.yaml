@@ -1,5 +1,5 @@
 id: scale_x_datetime_test
-description: Test manifest for scale_x_datetime_test.yaml
+description: Test data analysis recipe for scale_x_datetime_test.yaml
 input_fields: []
 wrangling:
   tier1: []

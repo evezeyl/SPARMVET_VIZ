@@ -45,7 +45,7 @@ DEFAULT_HOME_STATE: dict = {
     # T3 plot aesthetic overrides {plot_subtab_id: {fill, colour, alpha, shape}}
     "t3_plot_overrides": {},
     # Assembly provenance
-    "manifest_sha256": None,
+    "data_analysis_recipe_sha256": None,
     "assembly_timestamp": None,
     # Session ghost provenance
     "t3_ghost_file": None,

@@ -14,7 +14,7 @@ append a `> FIX:` line under the same heading, not in the checklist.
 
 ## PRE-01 — Console errors on first launch
 
-Manifest opened by default: `figshare_integration`. App features: developer ("Active:
+Data analysis recipe opened by default: `figshare_integration`. App features: developer ("Active:
 Workflow Developer"). Terminal: only `ConfigManager` auto-unnesting info lines, no
 traceback. Chrome console showed:
 
@@ -175,7 +175,7 @@ questions. Splitting them so the bug fix isn't blocked on the design discussion.
 **Confirmed by reading the code, not yet re-verified live in the browser** (worth
 doing after the fix). The tier toggle itself is fine — `_resolve_active_lf`
 (`app/handlers/home_theater.py:241`) correctly branches: T1 → raw T1 lazyframe,
-T2/T3 → T1 + the manifest's tier2 wrangling. That part works as designed.
+T2/T3 → T1 + the data analysis recipe's tier2 wrangling. That part works as designed.
 
 The bug is downstream: `_t3_filter_rows()` and `_t3_drop_columns()`
 (`home_theater.py:280`, `:328`) return the **committed** T3 audit nodes for the
@@ -343,7 +343,7 @@ tracked as CFG-02).
 > continuous as T2 (but that is not most urgent)."
 
 Not yet investigated. Likely candidate area: `viz_factory.render()`'s discrete-
-axis handling (`rules_manifest_structure.md §6` — "Biological Typing & Discrete
+axis handling (`rules_data_analysis_recipe_structure.md §6` — "Biological Typing & Discrete
 Plotting" mandates casting integer-year columns to `int`/`string` for discrete
 scales) combined with whatever wrangling step T3's "My view" pipeline applies
 that T2's doesn't — worth checking whether the T3 code path re-casts Year back

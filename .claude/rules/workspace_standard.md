@@ -25,8 +25,8 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 | :--- | :--- | :--- |
 | **Doc & Aesthetics** | Violet Law, Quarto/Mermaid, CSS Themes, Doc Sync | [rules_documentation_aesthetics.md](./.claude/rules/rules_documentation_aesthetics.md) |
 | **CSS Style Spec** | Color palette, typography scale, button catalog, panel/tab patterns — agent reference before writing any CSS | [rules_css_style_spec.md](./.claude/rules/rules_css_style_spec.md) |
-| **Manifest Standards** | Basename Mirroring, YAML Includes | [rules_manifest_structure.md](./.claude/rules/rules_manifest_structure.md) |
-| **Data Engine** | 3-Tier Tree Lifecycle (ADR-024), Decorators, Manifests | [rules_data_engine.md](./.claude/rules/rules_data_engine.md) |
+| **Data analysis recipe Standards** | Basename Mirroring, YAML Includes | [rules_data_analysis_recipe_structure.md](./.claude/rules/rules_data_analysis_recipe_structure.md) |
+| **Data Engine** | 3-Tier Tree Lifecycle (ADR-024), Decorators, Data Analysis Recipes | [rules_data_engine.md](./.claude/rules/rules_data_engine.md) |
 | **Validation & Test** | @verify Protocol, Global Wrappers, CLI Mandate | [rules_verification_testing.md](./.claude/rules/rules_verification_testing.md) |
 | **Runtime & Env** | VENV, No-Discovery, Pinned Versions, Library Autonomy | [rules_runtime_environment.md](./.claude/rules/rules_runtime_environment.md) |
 | **Asset Scripts** | Bootstrappers, Synthetic Data, Governance | [rules_asset_scripts.md](./.claude/rules/rules_asset_scripts.md) |
@@ -54,7 +54,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 - **Mandatory Halt:** Every significant transformation or rule change requires an explicit `@verify` from the user.
 - **Violet Law:** All component references in documentation must follow `ClassName (filename.py)` standard.
 - **Single Source of Truth:** Local workspace files (`./.claude/`) are the authoritative source over global IDE state.
-- **Relative Path Authority:** ALL file paths provided in manifests, rulebooks, and technical documentation MUST be relative to the project root. The use of absolute paths or symbolic links within the project structure is strictly FORBIDDEN.
+- **Relative Path Authority:** ALL file paths provided in data analysis recipes, rulebooks, and technical documentation MUST be relative to the project root. The use of absolute paths or symbolic links within the project structure is strictly FORBIDDEN.
 - Background Mandate: for any script execution (unless specified otherwise) you MUST use background execution flags to ensure the UI remains responsive.
 - **@sync Guardrail:** If the agent detects a discrepancy between what was discussed in chat and the actual state of files on disk (e.g., a rule says X but the code does Y, or a file referenced in chat no longer exists), the agent MUST stop and surface the discrepancy explicitly before continuing. Do not silently resolve ambiguity by choosing one side. The correct response is: "HALT: @sync required — [description of discrepancy]. Please confirm which is authoritative: the chat intent or the disk state."
 
@@ -104,8 +104,8 @@ grep -r "mirrors:.*orchestrator.py" . --include="*.py" --include="*.yaml" --incl
 # @deps
 # provides: assembly:AMR_Profile_Joint
 # consumes: action:mutate, action:join, action:cast, dataset:metadata_schema
-# include_parent: config/manifests/pipelines/2_test_data_ST22_dummy.yaml
-# consumed_by: config/manifests/pipelines/2_test_data_ST22_dummy.yaml
+# include_parent: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml
+# consumed_by: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml
 # @end_deps
 ```
 
@@ -116,7 +116,7 @@ trigger: always_on
 deps:
   provides: [rule:canonical_recipe_syntax, rule:analysis_groups_structure]
   documents: [libs/transformer/src/transformer/data_assembler.py]
-  consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/manifest_structure.yaml]
+  consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/data_analysis_recipe_structure.yaml]
 ---
 ```
 
@@ -130,14 +130,14 @@ deps:
 | `mirrors:` | Must stay behaviourally in sync with this file | Read both files together; any logic change in one must be reflected in the other |
 | `documents:` | This file is the human description of that file's contract | Update when the documented file's interface changes |
 | `doc:` | The rule/doc file that governs this file's interface | Read before changing; update after if the interface changed |
-| `include_parent:` | This file is `!include`-d by that manifest | Moving/renaming this file breaks that manifest |
+| `include_parent:` | This file is `!include`-d by that data analysis recipe | Moving/renaming this file breaks that data analysis recipe |
 | `consumed_by:` | Files that depend on this one (the backlink) | Grep these files when changing this one's interface |
 
 ### 5-E. Mandatory Maintenance Protocol (SESSION LAW)
 
 **This is a hard session-end obligation, not optional housekeeping.**
 
-At the end of every session in which code, rule files, or manifests were modified:
+At the end of every session in which code, rule files, or data analysis recipes were modified:
 
 1. **Verify** — for every file you touched, check that its `@deps` block is present and accurate.
 2. **Add** — if a qualifying file has no `@deps` block, add one before closing.
@@ -150,7 +150,7 @@ At the end of every session in which code, rule files, or manifests were modifie
 
 **Trigger conditions** (either is sufficient to require the full protocol):
 - Any `.py` file in `libs/` or `app/` was modified
-- Any `.yaml` file in `config/manifests/` was modified
+- Any `.yaml` file in `config/data_analysis_recipes/` was modified
 - Any `.md` file in `.claude/rules/` or `.claude/knowledge/` was modified
 
 **An agent that ends a session without completing this protocol is in violation of workspace standards.**

@@ -1,5 +1,5 @@
 id: theme_dark_test
-description: Test manifest for theme_dark_test.yaml
+description: Test data analysis recipe for theme_dark_test.yaml
 input_fields: []
 wrangling:
   tier1: []

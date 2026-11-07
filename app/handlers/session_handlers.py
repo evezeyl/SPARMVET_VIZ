@@ -35,7 +35,7 @@ def define_session_server(input, output, session, *,
     current_app_features : reactive.Value[str]
         Active launch app features (hyphen form, e.g. "pipeline-exploration-advanced").
     home_state : reactive.Value[dict] | None
-        Shared home dashboard state (manifest_sha256, t3_recipe_by_plot, etc.).
+        Shared home dashboard state (data_analysis_recipe_sha256, t3_recipe_by_plot, etc.).
     safe_input : callable | None
         safe_input(input, key, default) — used by the active-session export
         download to read project_id for the filename. Optional for back-compat.
@@ -66,7 +66,7 @@ def define_session_server(input, output, session, *,
         active_key = ""
         if home_state is not None:
             state = home_state.get()
-            msig = state.get("manifest_sha256") or ""
+            msig = state.get("data_analysis_recipe_sha256") or ""
             dbh = state.get("data_batch_hash") or ""
             if msig and dbh:
                 from app.modules.session_manager import SessionManager
@@ -101,15 +101,15 @@ def define_session_server(input, output, session, *,
                 ui.p("No saved sessions.", class_="text-muted small"),
             )
 
-        # Group sessions by manifest_sha256[:12]
+        # Group sessions by data_analysis_recipe_sha256[:12]
         groups: dict[str, list] = {}
         for s in sessions:
-            grp = s.get("manifest_sha256", "")[:12] or "unknown"
+            grp = s.get("data_analysis_recipe_sha256", "")[:12] or "unknown"
             groups.setdefault(grp, []).append(s)
 
         cards = []
         for grp_key, grp_sessions in groups.items():
-            manifest_id = grp_sessions[0].get("manifest_id", grp_key)
+            data_analysis_recipe_id = grp_sessions[0].get("data_analysis_recipe_id", grp_key)
             group_panels = []
             for s in grp_sessions:
                 sk = s["session_key"]
@@ -158,7 +158,7 @@ def define_session_server(input, output, session, *,
 
             cards.append(
                 ui.accordion_panel(
-                    f"📁 {manifest_id}",
+                    f"📁 {data_analysis_recipe_id}",
                     *group_panels,
                 )
             )
@@ -194,7 +194,7 @@ def define_session_server(input, output, session, *,
             yield b""
             return
         state = home_state.get()
-        msig = state.get("manifest_sha256") or ""
+        msig = state.get("data_analysis_recipe_sha256") or ""
         dbh = state.get("data_batch_hash") or ""
         if not (msig and dbh):
             _notify(
@@ -264,13 +264,13 @@ def define_session_server(input, output, session, *,
             _notify("❌ Session assembly record not found.", type="error", duration=6)
             return
 
-        # Check manifest SHA256 vs current
+        # Check data analysis recipe SHA256 vs current
         state = home_state.get()
-        current_msig = state.get("manifest_sha256") or ""
-        saved_msig = ghost.get("manifest_sha256", "")
+        current_msig = state.get("data_analysis_recipe_sha256") or ""
+        saved_msig = ghost.get("data_analysis_recipe_sha256", "")
         if current_msig and saved_msig and current_msig != saved_msig:
             _notify(
-                "⚠️ Session was saved against a different manifest version. "
+                "⚠️ Session was saved against a different data analysis recipe version. "
                 "Recipe nodes may not match current columns.",
                 type="warning", duration=8,
             )

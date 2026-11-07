@@ -23,11 +23,11 @@ deployment_type: filesystem
 deployment_name: "My Pipeline — Institution Name"
 
 # ─── Default startup state (both optional) ────────────────────────────────────
-# default_manifest: path to the pipeline manifest to load at startup.
+# default_data_analysis_recipe: path to the pipeline data analysis recipe to load at startup.
 #   - Relative to project_root (see below).
-#   - If ABSENT: manifest selector is shown in the UI (flag-gated).
-#   - If PRESENT: manifest is locked; lower app features files never see the selector.
-default_manifest: "manifests/pipeline_name/master.yaml"
+#   - If ABSENT: data analysis recipe selector is shown in the UI (flag-gated).
+#   - If PRESENT: data analysis recipe is locked; lower app features files never see the selector.
+default_data_analysis_recipe: "data_analysis_recipes/pipeline_name/master.yaml"
 
 # default_app_features: which UI app features to activate at startup.
 #   Options: pipeline-static | pipeline-exploration-simple |
@@ -45,9 +45,9 @@ locations:
   #   Populated by the pipeline or by an admin. Read-only from app perspective.
   raw_data: "inputs/"
 
-  # Location 2: Pipeline YAML manifests and wrangling recipes.
+  # Location 2: Pipeline YAML data analysis recipes and wrangling recipes.
   #   Contains the master.yaml and its !include fragments.
-  manifests: "manifests/"
+  data_analysis_recipes: "data_analysis_recipes/"
 
   # Location 3: Tier 1 & 2 Parquet caches.
   #   Written by the DataOrchestrator at first run; read on subsequent runs.
@@ -82,9 +82,9 @@ runtime:
 #
 # Multiple pipelines:
 #   Deploy one instance per pipeline (recommended), each with its own deployment
-#   pointing at different project_root + default_manifest values.
-#   Alternatively, omit default_manifest and point manifests/ at a directory
-#   containing multiple pipeline manifests — users pick from a dropdown.
+#   pointing at different project_root + default_data_analysis_recipe values.
+#   Alternatively, omit default_data_analysis_recipe and point data analysis recipes/ at a directory
+#   containing multiple pipeline data analysis recipes — users pick from a dropdown.
 #
 # Galaxy:
 #   Bundle this file inside the Docker image (or mount from a data library).

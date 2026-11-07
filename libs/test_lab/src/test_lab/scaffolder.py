@@ -1,9 +1,9 @@
 # @deps
-# provides: ManifestScaffolder class (scaffold) — generates a project ZIP with manifest
+# provides: DataAnalysisRecipeScaffolder class (scaffold) — generates a project ZIP with data analysis recipe
 #           fragments (input_fields, wrangling, output_fields, assembly) and a master YAML.
-#           join_manifests pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
+#           joins pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
 # consumes: polars, pathlib, typing, yaml, re, io, zipfile (stdlib/third-party)
-#           test_lab.bootstrapper (ManifestBootstrapper, IncludeRef, represent_include)
+#           test_lab.bootstrapper (DataAnalysisRecipeBootstrapper, IncludeRef, represent_include)
 #           id_reconciliation.data_structures (TransformationRecipe)
 # consumed_by: libs/test_lab/tests/test_scaffolder.py
 # @end_deps
@@ -16,7 +16,7 @@ from typing import Dict, List, Optional, Any
 import polars as pl
 import yaml
 
-from test_lab.bootstrapper import ManifestBootstrapper, IncludeRef, represent_include
+from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
 
 try:
     from id_reconciliation.data_structures import TransformationRecipe
@@ -27,18 +27,18 @@ except ImportError:
 yaml.add_representer(IncludeRef, represent_include)
 
 
-class ManifestScaffolder:
+class DataAnalysisRecipeScaffolder:
     """
     Generates a scaffolded project ZIP from TSVs and optional TransformationRecipe objects.
 
-    Builds on ManifestBootstrapper schema inference and adds:
-    - join_manifests pre-filled with ingredients: format
+    Builds on DataAnalysisRecipeBootstrapper schema inference and adds:
+    - joins pre-filled with ingredients: format
     - assembly stub YAML with quoted 'on:' key
     - ZIP packaging of all fragments and master YAML
     """
 
     def __init__(self, cardinality_threshold: int = 15, join_key: str = "sample_id"):
-        self._bs = ManifestBootstrapper(cardinality_threshold)
+        self._bs = DataAnalysisRecipeBootstrapper(cardinality_threshold)
         self.join_key = join_key
 
     def scaffold(
@@ -49,11 +49,11 @@ class ManifestScaffolder:
         metadata_path: Optional[Path] = None,
     ) -> bytes:
         """
-        Scaffold a project manifest ZIP from TSV paths.
+        Scaffold a project data analysis recipe ZIP from TSV paths.
 
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
-            project_id: Manifest ID and top-level folder name in the ZIP.
+            project_id: Data analysis recipe ID and top-level folder name in the ZIP.
             recipes: Optional mapping of sanitized dataset_id → TransformationRecipe.
                      Steps are injected into that dataset's tier1: wrangling block.
             metadata_path: Optional dedicated metadata TSV. When provided, a
@@ -99,7 +99,7 @@ class ManifestScaffolder:
             self._write_fragment(zf, f"{fragments_prefix}/{meta_id}_output_fields.yaml", meta_fields)
 
         # Assembly stub — one joint per primary dataset (each joined to metadata or the next)
-        join_manifests_config = {}
+        joins_config = {}
         all_ingredient_ids = list(dataset_ids)
         if metadata_path is not None:
             all_ingredient_ids.append(self._bs._sanitize_name(Path(metadata_path).stem))
@@ -109,16 +109,16 @@ class ManifestScaffolder:
             ingredients = [{"dataset_id": ds} for ds in all_ingredient_ids]
             assembly_path = f"{fragments_prefix}/assembly/{join_id}.yaml"
             self._write_assembly_stub(zf, assembly_path, all_ingredient_ids[1:])
-            join_manifests_config[join_id] = {
+            joins_config[join_id] = {
                 "ingredients": ingredients,
                 "recipe": IncludeRef(f"{project_id}/assembly/{join_id}.yaml"),
                 "final_contract": {},
             }
         else:
-            join_manifests_config = {}
+            joins_config = {}
 
         master = self._build_master(
-            project_id, tsv_paths, dataset_ids, metadata_path, join_manifests_config
+            project_id, tsv_paths, dataset_ids, metadata_path, joins_config
         )
         master_yaml = yaml.dump(master, sort_keys=False, allow_unicode=True)
         zf.writestr(f"{project_id}/{project_id}.yaml", master_yaml)
@@ -165,7 +165,7 @@ class ManifestScaffolder:
         recipe = {"recipe": {"tier1": join_steps, "tier2": []}}
         zf.writestr(arcname, yaml.dump(recipe, sort_keys=False, allow_unicode=True))
 
-    def _build_master(self, project_id, tsv_paths, dataset_ids, metadata_path, join_manifests_config):
+    def _build_master(self, project_id, tsv_paths, dataset_ids, metadata_path, joins_config):
         data_schemas = {}
         for tsv_p, dataset_id in zip(tsv_paths, dataset_ids):
             resolved = Path(tsv_p).resolve()
@@ -201,6 +201,6 @@ class ManifestScaffolder:
                 "output_fields": IncludeRef(f"{project_id}/{meta_id}_output_fields.yaml"),
             }
 
-        master["join_manifests"] = join_manifests_config
+        master["joins"] = joins_config
         master["analysis_groups"] = {}
         return master

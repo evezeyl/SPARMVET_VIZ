@@ -6,7 +6,7 @@ Entry point:
                   bootloader, wrangle_studio, orchestrator, safe_input,
                   includes_map, component_ctx_map, schema_registry)
 
-Concern: manifest import, TubeMap sync, Lineage Rail, upload/save/download,
+Concern: data analysis recipe import, TubeMap sync, Lineage Rail, upload/save/download,
          dataset pipeline selector, normalize fields, sync_blueprint_mapper.
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.*
 decorators only. It MUST NOT be imported by non-Shiny contexts.
@@ -17,19 +17,19 @@ from __future__ import annotations
 # @deps
 # provides: function:define_server (blueprint_handlers), output:blueprint_agent_panel_ui, output:bp_branch_ui, output:bp_branch_preview_ui, output:bp_groups_inventory_ui, effect:_bp_apply_node_handler, effect:_bp_save_yaml_hatch, effect:_load_component_from_selection, effect:_handle_branch_preview, effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation, replaces Visual Fork)
 # provides: effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)
-# provides: helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts manifest rebuild logic so CRUD Effects can call it after mutations)
-# provides: output:bp_meta_form_ui, effect:_handle_meta_save (BP-META-1 — manifest info: block read/edit form)
-# provides: effects:_handle_new_manifest_btn/_handle_new_manifest_submit (BP-NEW-1 — create manifest from scratch)
-# provides: output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — manifest coherence validation via subprocess)
-# provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — manifest-draft ghost save/restore)
-# consumes: libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
-# consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/manifest_navigator.py — BP-BRANCH-NODE-1)
+# provides: helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)
+# provides: output:bp_meta_form_ui, effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)
+# provides: effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)
+# provides: output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — data analysis recipe coherence validation via subprocess)
+# provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
+# consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
+# consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match, build_join_step, parse_join_step — BP-JOINT-1 Joint Designer pane)
 # consumes: libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots, create_group, delete_group, create_plot, delete_plot, assign_plot — BP-GROUPS-1)
 # provides: outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui, effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)
-# provides: function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit), helper:_bundle_filename (full-manifest zip)
+# provides: function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit), helper:_bundle_filename (full-data analysis recipe zip)
 # consumes: reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
@@ -54,7 +54,7 @@ import polars as pl
 import yaml
 from shiny import reactive, render, ui
 
-from blueprint_arch.manifest_navigator import (
+from blueprint_arch.data_analysis_recipe_navigator import (
     build_lineage_chain,
     build_schema_registry,
     build_sibling_map,
@@ -81,16 +81,16 @@ from utils.pipeline_error import PipelineError
 
 # ── BP-AUTOSAVE-1: pure draft ghost helpers ───────────────────────────────────
 
-def _draft_key(manifest_path: str) -> str:
-    """Filesystem-safe key for a manifest's draft ghost file."""
-    stem = Path(manifest_path).stem
-    h = hashlib.sha256(manifest_path.encode()).hexdigest()[:12]
+def _draft_key(data_analysis_recipe_path: str) -> str:
+    """Filesystem-safe key for a data analysis recipe's draft ghost file."""
+    stem = Path(data_analysis_recipe_path).stem
+    h = hashlib.sha256(data_analysis_recipe_path.encode()).hexdigest()[:12]
     return f"{h}_{stem}"
 
 
 def _write_bp_draft(
     draft_dir: Path,
-    manifest_path: str,
+    data_analysis_recipe_path: str,
     logic_stack: list,
     undo_list: list,
 ) -> None:
@@ -100,13 +100,13 @@ def _write_bp_draft(
     """
     try:
         draft_dir.mkdir(parents=True, exist_ok=True)
-        key = _draft_key(manifest_path)
-        manifest_sha = hashlib.sha256(
-            Path(manifest_path).read_bytes()
+        key = _draft_key(data_analysis_recipe_path)
+        data_analysis_recipe_sha = hashlib.sha256(
+            Path(data_analysis_recipe_path).read_bytes()
         ).hexdigest()
         data = {
-            "manifest_path": manifest_path,
-            "manifest_sha256": manifest_sha,
+            "data_analysis_recipe_path": data_analysis_recipe_path,
+            "data_analysis_recipe_sha256": data_analysis_recipe_sha,
             "saved_at": datetime.now().isoformat(timespec="seconds"),
             "logic_stack": logic_stack,
             "undo_stack": undo_list,
@@ -118,16 +118,16 @@ def _write_bp_draft(
         print(f"[BP-AUTOSAVE] write failed: {e}")
 
 
-def _read_bp_draft(draft_dir: Path, manifest_path: str) -> dict | None:
-    """Read a blueprint draft; returns None if absent or if manifest SHA256 changed."""
+def _read_bp_draft(draft_dir: Path, data_analysis_recipe_path: str) -> dict | None:
+    """Read a blueprint draft; returns None if absent or if data analysis recipe SHA256 changed."""
     try:
-        key = _draft_key(manifest_path)
+        key = _draft_key(data_analysis_recipe_path)
         draft_file = draft_dir / f"{key}.json"
         if not draft_file.exists():
             return None
         data = json.loads(draft_file.read_text(encoding="utf-8"))
-        current_sha = hashlib.sha256(Path(manifest_path).read_bytes()).hexdigest()
-        if data.get("manifest_sha256") != current_sha:
+        current_sha = hashlib.sha256(Path(data_analysis_recipe_path).read_bytes()).hexdigest()
+        if data.get("data_analysis_recipe_sha256") != current_sha:
             return None
         return data
     except Exception:
@@ -159,7 +159,7 @@ def define_server(input, output, session, *,
     schema_registry : reactive.Value[dict]
         Per-session schema registry: schema_id → structural entry.
     selected_lineage_rel : reactive.Value[str | None]
-        BP-LINEAGE-NAV-1: shared signal written by lineage rail clicks and btn_import_manifest.
+        BP-LINEAGE-NAV-1: shared signal written by lineage rail clicks and btn_import_data_analysis_recipe.
         _load_component_from_selection watches it and calls _do_load_component() directly.
     """
 
@@ -173,7 +173,7 @@ def define_server(input, output, session, *,
     # BP-VALIDATE-1: last validation result {pass, checks, violations, raw_text}
     _validate_result: reactive.Value = reactive.Value(None)
 
-    # BP-AUTOSAVE-1: manifest-draft ghost save
+    # BP-AUTOSAVE-1: data analysis recipe-draft ghost save
     _ghost_enabled = bootloader.get_automation_setting("ghost_save", "enabled") is not False
     _draft_dir = bootloader.get_location("user_data") / "_blueprint_drafts"
     _draft_save_time: reactive.Value[str] = reactive.Value("")
@@ -188,10 +188,10 @@ def define_server(input, output, session, *,
         if not _ghost_enabled:
             return
         with reactive.isolate():
-            manifest_path = wrangle_studio.active_manifest_path.get()
-            if not manifest_path or not Path(manifest_path).exists():
+            data_analysis_recipe_path = wrangle_studio.active_data_analysis_recipe_path.get()
+            if not data_analysis_recipe_path or not Path(data_analysis_recipe_path).exists():
                 return
-            _write_bp_draft(_draft_dir, manifest_path, stack, list(undo_stack))
+            _write_bp_draft(_draft_dir, data_analysis_recipe_path, stack, list(undo_stack))
             _draft_save_time.set(datetime.now().strftime("%H:%M:%S"))
 
     def _snapshot_state():
@@ -212,15 +212,15 @@ def define_server(input, output, session, *,
     def _do_refresh_blueprint(path: str) -> tuple[dict, dict]:
         """Rebuild includes_map/ctx_map/schema_registry and bump _groups_refresh.
 
-        Called on manifest load and after any group/plot CRUD mutation.
+        Called on data analysis recipe load and after any group/plot CRUD mutation.
         Returns (ctx_map, inc_map) for callers that need the data directly.
         """
         if not path or not Path(path).exists():
             return {}, {}
         try:
-            manifest_path = Path(path)
-            manifest_dir = manifest_path.parent
-            raw_text = manifest_path.read_text(encoding="utf-8")
+            data_analysis_recipe_path = Path(path)
+            data_analysis_recipe_dir = data_analysis_recipe_path.parent
+            raw_text = data_analysis_recipe_path.read_text(encoding="utf-8")
 
             rel_paths = re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text)
             inc_map: dict = {}
@@ -231,7 +231,7 @@ def define_server(input, output, session, *,
                 if rel_path in seen:
                     continue
                 seen.add(rel_path)
-                abs_path = (manifest_dir / rel_path).resolve()
+                abs_path = (data_analysis_recipe_dir / rel_path).resolve()
                 if not abs_path.exists():
                     print(f"[Blueprint] Included file not found: {abs_path}")
                     continue
@@ -267,8 +267,8 @@ def define_server(input, output, session, *,
                 for sid in raw.get("additional_datasets_schemas", {}):
                     inline_groups.setdefault(
                         "additional_datasets_schemas", {})[sid] = f"{sid} — wrangling"
-                for sid in raw.get("join_manifests", {}):
-                    inline_groups.setdefault("join_manifests", {})[sid] = f"{sid} — join"
+                for sid in raw.get("joins", {}):
+                    inline_groups.setdefault("joins", {})[sid] = f"{sid} — join"
                 ag = raw.get("analysis_groups", {})
                 for grp, gspec in ag.items():
                     if isinstance(gspec, dict):
@@ -294,7 +294,7 @@ def define_server(input, output, session, *,
 
     def _parse_logic_to_nodes(wrangling, source_name):
         """
-        Normalizes potentially flat manifest nodes into structured UI nodes.
+        Normalizes potentially flat data analysis recipe nodes into structured UI nodes.
         ADR-031: Supports both Structure (params: {}) and Flat (top-level keys) formats.
 
         BP-PLOT-COMMIT-1: each node is tagged with its source tier (``_tier``) so the
@@ -408,12 +408,12 @@ def define_server(input, output, session, *,
         )
 
     def _extract_wrangling_for_id(cfg, lid):
-        """Helper to find wrangling block in complex manifest."""
+        """Helper to find wrangling block in complex data analysis recipe."""
         target = cfg.raw_config.get("data_schemas", {}).get(lid)
         if not target:
             target = cfg.raw_config.get("additional_datasets_schemas", {}).get(lid)
         if not target:
-            target = cfg.raw_config.get("join_manifests", {}).get(lid)
+            target = cfg.raw_config.get("joins", {}).get(lid)
         if not target and lid == "metadata_schema":
             target = cfg.raw_config.get("metadata_schema")
         if not target:
@@ -423,7 +423,7 @@ def define_server(input, output, session, *,
     def _do_load_component(master_path: str, selected: str,
                            inc_map: dict, ctx_map: dict):
         """
-        Core import logic — shared by btn_import_manifest and TubeMap click.
+        Core import logic — shared by btn_import_data_analysis_recipe and TubeMap click.
 
         Mode A: `selected` is a rel_path that exists in inc_map → load the file.
         Mode B: `selected` is an inline schema_id → read directly from raw_config.
@@ -650,7 +650,7 @@ def define_server(input, output, session, *,
                 chain = build_lineage_chain(
                     selected, component_ctx_map.get(), target_ds_override=target_ds)
                 wrangle_studio.active_lineage_chain.set(chain)
-                wrangle_studio.active_manifest_path.set(master_path)
+                wrangle_studio.active_data_analysis_recipe_path.set(master_path)
 
                 try:
                     cfg_for_map = ConfigManager(master_path)
@@ -666,8 +666,8 @@ def define_server(input, output, session, *,
                     component="BlueprintHandlers",
                     problem=f"Failed to load component file: {type(e).__name__}: {e}",
                     location="_load_component_from_selection()",
-                    fix="Check that the selected manifest component file exists and contains valid YAML. Verify the !include path resolves correctly from the manifest root.",
-                    who="manifest_author",
+                    fix="Check that the selected data analysis recipe component file exists and contains valid YAML. Verify the !include path resolves correctly from the data analysis recipe root.",
+                    who="data_analysis_recipe_author",
                     category="blueprint_edit",
                     surface="blueprint_inline",
                     severity="error",
@@ -687,7 +687,7 @@ def define_server(input, output, session, *,
             schema_id = selected
             target = (raw.get("data_schemas", {}).get(selected)
                       or raw.get("additional_datasets_schemas", {}).get(selected)
-                      or raw.get("join_manifests", {}).get(selected))
+                      or raw.get("joins", {}).get(selected))
 
             plot_target_ds = None
             for grp_spec in raw.get("analysis_groups", {}).values():
@@ -730,7 +730,7 @@ def define_server(input, output, session, *,
                 for ing_id in ingredients_b:
                     ing_block = (raw.get("data_schemas", {}).get(ing_id)
                                  or raw.get("additional_datasets_schemas", {}).get(ing_id)
-                                 or raw.get("join_manifests", {}).get(ing_id))
+                                 or raw.get("joins", {}).get(ing_id))
                     fields = ing_block.get("output_fields", {}) \
                         if isinstance(ing_block, dict) else {}
                     ing_items_b.append({"id": ing_id, "fields": fields})
@@ -756,7 +756,7 @@ def define_server(input, output, session, *,
                 if plot_target_ds:
                     upstream_b = resolve_fields_for_schema(plot_target_ds, ctx_map_b, inc_map)
                 if not upstream_b:
-                    join_block = (raw.get("join_manifests") or {}).get(
+                    join_block = (raw.get("joins") or {}).get(
                         plot_target_ds or selected)
                     if isinstance(join_block, dict):
                         upstream_b = join_block.get("output_fields", {}) or {}
@@ -784,7 +784,7 @@ def define_server(input, output, session, *,
                 wrangle_studio.active_fields.set({"input": in_f_val, "output": out_f_val})
                 wrangle_studio.active_upstream.set(in_f_val)
                 wrangle_studio.active_downstream.set(out_f_val)
-            wrangle_studio.active_manifest_path.set(master_path)
+            wrangle_studio.active_data_analysis_recipe_path.set(master_path)
 
             wrangle_studio.active_component_info.set({
                 "role": role_b,
@@ -809,10 +809,10 @@ def define_server(input, output, session, *,
         except Exception as e:
             pe = PipelineError(
                 component="BlueprintHandlers",
-                problem=f"Manifest import failed: {type(e).__name__}: {e}",
+                problem=f"Data analysis recipe import failed: {type(e).__name__}: {e}",
                 location="_load_component_from_selection() Mode B",
-                fix="Verify the manifest YAML is well-formed and all !include paths resolve. Check that the selected component ID exists in the manifest.",
-                who="manifest_author",
+                fix="Verify the data analysis recipe YAML is well-formed and all !include paths resolve. Check that the selected component ID exists in the data analysis recipe.",
+                who="data_analysis_recipe_author",
                 category="blueprint_edit",
                 surface="blueprint_inline",
                 severity="error",
@@ -826,10 +826,10 @@ def define_server(input, output, session, *,
     # --- Blueprint Architect Visual Sync (ADR-039) ---
     @reactive.Effect
     def sync_blueprint_mapper():
-        """Syncs TubeMap from the Architect's own manifest selector."""
+        """Syncs TubeMap from the Architect's own data analysis recipe selector."""
         if safe_input(input, "sidebar_nav", "Home") != "Wrangle Studio":
             return
-        path_str = safe_input(input, "stored_manifest_selector", None)
+        path_str = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path_str:
             return
         if not Path(path_str).exists():
@@ -847,40 +847,40 @@ def define_server(input, output, session, *,
         except Exception as e:
             print(f"[sync_blueprint_mapper] Failed: {e}")
 
-    # --- Phase 18: Wrangle Studio Manifest Management ---
+    # --- Phase 18: Wrangle Studio Data Analysis Recipe Management ---
     @reactive.Effect
     @reactive.event(input.sidebar_nav)
-    def _init_wrangle_manifests():
-        """Auto-discovery of Master manifests in config/ directory."""
+    def _init_wrangle_data_analysis_recipes():
+        """Auto-discovery of Master data analysis recipes in config/ directory."""
         if input.sidebar_nav() != "Wrangle Studio":
             return
 
-        config_dir = Path("config/manifests/pipelines")
+        config_dir = Path("config/data_analysis_recipes/pipelines")
         if not config_dir.exists():
             config_dir = Path("config")
 
         all_yamls = list(config_dir.glob("*.yaml"))
-        master_manifests = [str(p) for p in all_yamls if p.is_file()]
-        master_manifests.sort()
-        ui.update_select("stored_manifest_selector",
-                         choices=master_manifests,
-                         selected=master_manifests[0] if master_manifests else None)
+        master_data_analysis_recipes = [str(p) for p in all_yamls if p.is_file()]
+        master_data_analysis_recipes.sort()
+        ui.update_select("stored_data_analysis_recipe_selector",
+                         choices=master_data_analysis_recipes,
+                         selected=master_data_analysis_recipes[0] if master_data_analysis_recipes else None)
 
     @reactive.Effect
-    @reactive.event(input.stored_manifest_selector)
+    @reactive.event(input.stored_data_analysis_recipe_selector)
     def _update_dataset_pipelines():
-        """Discovers all actual !include files referenced by the manifest.
+        """Discovers all actual !include files referenced by the data analysis recipe.
         Files are grouped by subdirectory type (wrangling/, plots/, input_fields/, ...).
         """
-        path = input.stored_manifest_selector()
+        path = input.stored_data_analysis_recipe_selector()
         if not path or not Path(path).exists():
             return
         ctx_map, inc_map = _do_refresh_blueprint(path)
-        # UX-NOTIF-3: Project-load notification — surface component count on manifest reload
-        manifest_name = Path(path).name
+        # UX-NOTIF-3: Project-load notification — surface component count on data analysis recipe reload
+        data_analysis_recipe_name = Path(path).name
         n_components = len(ctx_map) if ctx_map else len(inc_map)
 
-        # BP-AUTOSAVE-1: restore draft ghost if SHA256 matches the manifest on disk
+        # BP-AUTOSAVE-1: restore draft ghost if SHA256 matches the data analysis recipe on disk
         draft = _read_bp_draft(_draft_dir, path)
         if draft and draft.get("logic_stack"):
             wrangle_studio.logic_stack.set(draft["logic_stack"])
@@ -891,7 +891,7 @@ def define_server(input, output, session, *,
             _draft_save_time.set(saved_at)
             n_nodes = len(draft["logic_stack"])
             ui.notification_show(
-                f"Blueprint: {manifest_name} — draft restored "
+                f"Blueprint: {data_analysis_recipe_name} — draft restored "
                 f"({n_nodes} node(s), saved {saved_at})",
                 type="message",
                 duration=6,
@@ -899,7 +899,7 @@ def define_server(input, output, session, *,
         else:
             wrangle_studio.logic_stack.set([])
             ui.notification_show(
-                f"Blueprint: {manifest_name} ({n_components} component(s))",
+                f"Blueprint: {data_analysis_recipe_name} ({n_components} component(s))",
                 type="message",
                 duration=4,
             )
@@ -913,9 +913,9 @@ def define_server(input, output, session, *,
             if not node_id or str(node_id).startswith("INFO_"):
                 return
 
-            master_path = safe_input(input, "stored_manifest_selector", None)
+            master_path = safe_input(input, "stored_data_analysis_recipe_selector", None)
             if not master_path or not Path(master_path).exists():
-                ui.notification_show("⚠️ Select a Master Manifest first.", type="warning")
+                ui.notification_show("⚠️ Select a Master Data Analysis Recipe first.", type="warning")
                 return
 
             inc_map = includes_map.get()
@@ -958,15 +958,15 @@ def define_server(input, output, session, *,
             ui.notification_show(f"⚠️ Could not load node: {_e}", type="warning")
 
     @reactive.Effect
-    @reactive.event(input.btn_import_manifest)
-    def _handle_manifest_import():
+    @reactive.event(input.btn_import_data_analysis_recipe)
+    def _handle_data_analysis_recipe_import():
         """Write selected component to shared signal — _load_component_from_selection fires next.
 
-        BP-LINEAGE-NAV-1: btn_import_manifest no longer calls _do_load_component() directly.
+        BP-LINEAGE-NAV-1: btn_import_data_analysis_recipe no longer calls _do_load_component() directly.
         Both this effect and handle_lineage_node_click (wrangle_studio.py) write to
         selected_lineage_rel; _load_component_from_selection is the single call site.
         """
-        master_path = input.stored_manifest_selector()
+        master_path = input.stored_data_analysis_recipe_selector()
         selected    = input.dataset_pipeline_selector()
         if not master_path or not selected or selected_lineage_rel is None:
             return
@@ -977,7 +977,7 @@ def define_server(input, output, session, *,
     def _load_component_from_selection():
         """Single call site for _do_load_component — watches the shared lineage signal.
 
-        Fires when either btn_import_manifest or a lineage rail click writes a new rel path.
+        Fires when either btn_import_data_analysis_recipe or a lineage rail click writes a new rel path.
         Reads master_path directly from input (no race: selected_lineage_rel carries the
         chosen rel, bypassing the async ui.update_select lag).
         """
@@ -986,7 +986,7 @@ def define_server(input, output, session, *,
         rel = selected_lineage_rel.get()
         if not rel:
             return
-        master_path = safe_input(input, "stored_manifest_selector", None)
+        master_path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not master_path:
             return
         _do_load_component(
@@ -999,7 +999,7 @@ def define_server(input, output, session, *,
     @reactive.event(input.btn_normalize_fields)
     def _handle_normalize_fields():
         """Normalize legacy {column: type} input_fields/output_fields in the active file."""
-        from app.assets.normalize_manifest_fields import normalize_file as _normalize_file
+        from app.assets.normalize_data_analysis_recipe_fields import normalize_file as _normalize_file
 
         selected = safe_input(input, "dataset_pipeline_selector", None)
         inc_map = includes_map.get()
@@ -1039,7 +1039,7 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_upload_replace)
     def _handle_upload_replace():
-        file_info = input.manifest_uploader()
+        file_info = input.data_analysis_recipe_uploader()
         if not file_info:
             return
         try:
@@ -1054,7 +1054,7 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_upload_append)
     def _handle_upload_append():
-        file_info = input.manifest_uploader()
+        file_info = input.data_analysis_recipe_uploader()
         if not file_info:
             return
         try:
@@ -1069,11 +1069,11 @@ def define_server(input, output, session, *,
 
     @reactive.Effect
     @reactive.event(input.btn_save_internal)
-    def _handle_manifest_save_internal():
+    def _handle_data_analysis_recipe_save_internal():
         # BP-PLOT-COMMIT-1 (ADR-083 §8): write the LOADED component file in its native
         # shape — plot specs serialise mapping+layers; wrangling routes nodes to their
         # source tier. The legacy tier3 dump (which wiped tier1/tier2 of the master
-        # manifest) is removed: BLUEPRINT never authors T3 (ADR-082 §4).
+        # data analysis recipe) is removed: BLUEPRINT never authors T3 (ADR-082 §4).
         comp_path = wrangle_studio.active_component_path.get()
         if not comp_path:
             ui.notification_show(
@@ -1287,21 +1287,21 @@ def define_server(input, output, session, *,
 
     def _bundle_filename():
         try:
-            mp = wrangle_studio.active_manifest_path.get() or ""
+            mp = wrangle_studio.active_data_analysis_recipe_path.get() or ""
         except Exception:
             mp = ""
-        stem = Path(mp).stem if mp else "manifest"
+        stem = Path(mp).stem if mp else "data_analysis_recipe"
         return f"{stem}_bundle_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
 
     @render.download(filename=_bundle_filename)
-    def btn_download_manifest():
-        # BP-PLOT-COMMIT-1 (ADR-083 §8): emit the FULL multi-file manifest as a zip —
+    def btn_download_data_analysis_recipe():
+        # BP-PLOT-COMMIT-1 (ADR-083 §8): emit the FULL multi-file data analysis recipe as a zip —
         # the master .yaml plus its mirrored basename/ directory (all !include
         # fragments: input_fields/, wrangling/, output_fields/, assembly/, plots/).
         # Reflects the on-disk state, so the workflow is Save (commit fragment) ->
         # Download (bundle the tree). The old tier3 dump is removed.
-        master = (wrangle_studio.active_manifest_path.get()
-                  or safe_input(input, "stored_manifest_selector", None))
+        master = (wrangle_studio.active_data_analysis_recipe_path.get()
+                  or safe_input(input, "stored_data_analysis_recipe_selector", None))
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
             if master and Path(master).exists():
@@ -1321,9 +1321,9 @@ def define_server(input, output, session, *,
                     zf.write(Path(comp), arcname=Path(comp).name)
         yield buf.getvalue()
 
-    # ── BP-ESCAPE-1: YAML escape hatch Save (manifest_edit_enabled only) ──────
+    # ── BP-ESCAPE-1: YAML escape hatch Save (data_analysis_recipe_edit_enabled only) ──────
 
-    if bootloader.is_enabled("manifest_edit_enabled"):
+    if bootloader.is_enabled("data_analysis_recipe_edit_enabled"):
         @reactive.Effect
         @reactive.event(input.btn_bp_save_yaml)
         def _bp_save_yaml_hatch():
@@ -1340,12 +1340,12 @@ def define_server(input, output, session, *,
                     problem=f"YAML escape hatch parse error: {type(exc).__name__}: {exc}",
                     location="_bp_save_yaml_hatch()",
                     fix="Fix the YAML syntax error shown above. Common issues: wrong indentation, unquoted colons, missing closing brackets, or reserved word traps (e.g. 'on' must be quoted as 'on':).",
-                    who="manifest_author",
+                    who="data_analysis_recipe_author",
                     category="blueprint_edit",
                     surface="blueprint_inline",
                     severity="error",
                     evidence={"error_type": type(exc).__name__, "error_detail": str(exc)[:300]},
-                    reference="rules_manifest_structure.md §7",
+                    reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
                 ui.notification_show(
@@ -1354,17 +1354,17 @@ def define_server(input, output, session, *,
                 return
             wrangle_studio.active_raw_yaml.set(raw)
             wrangle_studio.data_ready_signal.set(wrangle_studio.data_ready_signal.get() + 1)
-            ui.notification_show("Manifest YAML updated and re-parsed.", type="message")
+            ui.notification_show("Data analysis recipe YAML updated and re-parsed.", type="message")
 
-    # ── BP-BRANCH-NODE-1: node-level lineage bifurcation (manifest_edit_enabled) ──
-    # Replaces the legacy Visual Fork (append-into-manifest). A branch splits one
+    # ── BP-BRANCH-NODE-1: node-level lineage bifurcation (data_analysis_recipe_edit_enabled) ──
+    # Replaces the legacy Visual Fork (append-into-data-analysis-recipe). A branch splits one
     # lineage at the selected node: shared upstream stays shared by !include
     # reference; the divergent downstream is written as new empty fragment files
     # wired into the master via fresh !include keys (ADR-082 Q3). Works WITH
-    # !include manifests — the master is edited by text-level insertion that
+    # !include data analysis recipes — the master is edited by text-level insertion that
     # leaves every existing !include tag untouched.
 
-    if bootloader.is_enabled("manifest_edit_enabled"):
+    if bootloader.is_enabled("data_analysis_recipe_edit_enabled"):
         _branch_plan: reactive.Value[dict] = reactive.Value({})
 
         def _yaml_parses_with_includes(text: str) -> tuple[bool, str]:
@@ -1388,11 +1388,11 @@ def define_server(input, output, session, *,
             if not plan or not plan.get("ok"):
                 return False, (plan or {}).get("error") or "No branch plan to write."
             master_path = (
-                (wrangle_studio.active_manifest_path.get() if wrangle_studio else "")
-                or safe_input(input, "stored_manifest_selector", None) or ""
+                (wrangle_studio.active_data_analysis_recipe_path.get() if wrangle_studio else "")
+                or safe_input(input, "stored_data_analysis_recipe_selector", None) or ""
             )
             if not master_path or not Path(master_path).exists():
-                return False, "No active manifest path."
+                return False, "No active data analysis recipe path."
 
             for frag in plan["fragments"]:
                 if Path(frag["abs_path"]).exists():
@@ -1419,7 +1419,7 @@ def define_server(input, output, session, *,
                     except OSError:
                         pass
                 return False, f"Write failed: {exc}"
-            return True, plan.get("summary") or "Branch written to manifest."
+            return True, plan.get("summary") or "Branch written to data analysis recipe."
 
         @output
         @render.ui
@@ -1539,8 +1539,8 @@ def define_server(input, output, session, *,
                 ui.notification_show("Enter a new branch ID first.", type="warning")
                 return
             master_path = (
-                (wrangle_studio.active_manifest_path.get() if wrangle_studio else "")
-                or safe_input(input, "stored_manifest_selector", None) or ""
+                (wrangle_studio.active_data_analysis_recipe_path.get() if wrangle_studio else "")
+                or safe_input(input, "stored_data_analysis_recipe_selector", None) or ""
             )
             plan = generate_branch_plan(master_path, schema_id, role, new_id)
             _branch_plan.set(plan)
@@ -1564,8 +1564,8 @@ def define_server(input, output, session, *,
                 _branch_plan.set({})
                 # Reload sibling map so the new branch node appears in the TubeMap.
                 master_path = (
-                    (wrangle_studio.active_manifest_path.get() if wrangle_studio else "")
-                    or safe_input(input, "stored_manifest_selector", None) or ""
+                    (wrangle_studio.active_data_analysis_recipe_path.get() if wrangle_studio else "")
+                    or safe_input(input, "stored_data_analysis_recipe_selector", None) or ""
                 )
                 try:
                     component_ctx_map.set(build_sibling_map(master_path))
@@ -1603,11 +1603,11 @@ def define_server(input, output, session, *,
 
     # ------------------------------------------------------------------
     # bp_plot_defaults_form_ui — VIZFAC-BLUEPRINT-FORM-1
-    # Shows editable plot_defaults for the active manifest (manifest root node).
+    # Shows editable plot_defaults for the active data analysis recipe (data analysis recipe root node).
     # Shown when no sub-component is selected (active_viz_id empty / None).
     # ------------------------------------------------------------------
 
-    # Allowed plot_defaults keys per rules_manifest_structure.md §10.
+    # Allowed plot_defaults keys per rules_data_analysis_recipe_structure.md §10.
     _PLOT_DEFAULT_KEYS = ["palette", "theme", "default_font_family",
                           "facet_panel_spacing", "legend_position"]
     _THEME_CHOICES = ["theme_light", "theme_bw", "theme_minimal",
@@ -1617,7 +1617,7 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def bp_plot_defaults_form_ui():
-        """Edit form for manifest-level plot_defaults (manifest root node). VIZFAC-BLUEPRINT-FORM-1."""
+        """Edit form for data analysis recipe-level plot_defaults (data analysis recipe root node). VIZFAC-BLUEPRINT-FORM-1."""
         # Only render when active_cfg is available and no sub-component is selected
         if active_cfg is None:
             return ui.div()
@@ -1639,7 +1639,7 @@ def define_server(input, output, session, *,
         legend_val = defaults.get("legend_position", "right")
 
         return ui.div(
-            ui.tags.small("Active manifest — plot_defaults", class_="text-muted d-block mb-2"),
+            ui.tags.small("Active data analysis recipe — plot_defaults", class_="text-muted d-block mb-2"),
             ui.input_text("bp_pd_palette", "Palette", value=palette_val,
                           placeholder="e.g. nvi_official or Blues"),
             ui.input_select("bp_pd_theme", "Theme",
@@ -1664,7 +1664,7 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.bp_pd_apply)
     def _bp_apply_plot_defaults():
-        """Write bp_plot_defaults form values into the active manifest raw_config (session-only)."""
+        """Write bp_plot_defaults form values into the active data analysis recipe raw_config (session-only)."""
         if active_cfg is None:
             return
         try:
@@ -1727,7 +1727,7 @@ def define_server(input, output, session, *,
         if not conversation:
             log_content = ui.div(
                 ui.p("Ask me about actions, components, or field contracts "
-                     "for the active manifest.",
+                     "for the active data analysis recipe.",
                      class_="text-muted small fst-italic p-2 mb-0"),
                 class_="bp-agent-log-empty"
             )
@@ -1884,7 +1884,7 @@ def define_server(input, output, session, *,
         out = {}
         for sid, entry in reg.items():
             stype = (entry.get("schema_type") or "").lower()
-            if stype in ("join_manifests", "join", "plots", "plot_spec"):
+            if stype in ("joins", "join", "plots", "plot_spec"):
                 continue
             try:
                 fields = resolve_fields_for_schema(sid, ctx, inc)
@@ -1897,9 +1897,9 @@ def define_server(input, output, session, *,
 
     @reactive.Effect
     def _jd_populate_ingredients():
-        """Populate ingredient selects from the active manifest's schemas.
+        """Populate ingredient selects from the active data analysis recipe's schemas.
 
-        Depends only on schema_registry / ctx_map (changes on manifest import) —
+        Depends only on schema_registry / ctx_map (changes on data analysis recipe import) —
         never on the ingredient inputs, so user picks are not clobbered.
         """
         ings = list(_jd_ingredients().keys())
@@ -1918,7 +1918,7 @@ def define_server(input, output, session, *,
         wrangle_studio.joint_request.get()
         if not _jd_ingredients():
             return ui.div(
-                "Import a manifest with at least one data source to design a join.",
+                "Import a data analysis recipe with at least one data source to design a join.",
                 class_="ultra-small text-muted fst-italic")
         if edit_idx is not None:
             return ui.div(
@@ -2081,11 +2081,11 @@ def define_server(input, output, session, *,
                 f"{len(right_keys)} right. Pick an equal number on each side.")})
             return
 
-        manifest_path = wrangle_studio.active_manifest_path.get()
-        if not manifest_path:
-            joint_preview.set({"error": "No active manifest — import one first."})
+        data_analysis_recipe_path = wrangle_studio.active_data_analysis_recipe_path.get()
+        if not data_analysis_recipe_path:
+            joint_preview.set({"error": "No active data analysis recipe — import one first."})
             return
-        project_id = Path(manifest_path).stem
+        project_id = Path(data_analysis_recipe_path).stem
 
         try:
             with ui.Progress(min=0, max=2) as p:
@@ -2228,14 +2228,14 @@ def define_server(input, output, session, *,
     def bp_groups_inventory_ui():
         """Inventory of analysis_groups/plots with CRUD affordances."""
         _groups_refresh.get()   # reactive dependency — re-render after mutations
-        path = safe_input(input, "stored_manifest_selector", None)
+        path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
-            return ui.div("Load a manifest first.",
+            return ui.div("Load a data analysis recipe first.",
                           class_="ultra-small text-muted p-2")
         try:
             groups = list_groups_plots(path)
         except Exception as e:
-            return ui.div(f"Error reading manifest: {e}",
+            return ui.div(f"Error reading data analysis recipe: {e}",
                           style="font-size:0.72rem;color:#d62828;padding:8px;")
 
         def _btn(label: str, action: str, style: str = "") -> ui.Tag:
@@ -2315,7 +2315,7 @@ def define_server(input, output, session, *,
         raw = safe_input(input, "bp_grp_action", None)
         if not raw:
             return
-        path = safe_input(input, "stored_manifest_selector", None)
+        path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
             return
 
@@ -2397,7 +2397,7 @@ def define_server(input, output, session, *,
     @reactive.event(input.btn_bp_create_group)
     def _handle_create_group_btn():
         """Open modal to create a new analysis group."""
-        path = safe_input(input, "stored_manifest_selector", None)
+        path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path:
             return
         _grp_modal_ctx.set({"path": path})
@@ -2467,18 +2467,18 @@ def define_server(input, output, session, *,
             _do_refresh_blueprint(path)
 
     # ══════════════════════════════════════════════════════════════════════
-    # BP-META-1 — Manifest info: block form (ADR-082 Q7)
-    # Reads/writes the top-level info: dict in the master manifest.
-    # Edit mode requires manifest_edit_enabled; read-only view always shown.
+    # BP-META-1 — Data analysis recipe info: block form (ADR-082 Q7)
+    # Reads/writes the top-level info: dict in the master data analysis recipe.
+    # Edit mode requires data_analysis_recipe_edit_enabled; read-only view always shown.
     # ══════════════════════════════════════════════════════════════════════
 
     @output
     @render.ui
     def bp_meta_form_ui():
-        """Read/edit form for manifest info: block. BP-META-1."""
-        path = safe_input(input, "stored_manifest_selector", None)
+        """Read/edit form for data analysis recipe info: block. BP-META-1."""
+        path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
-            return ui.div("Load a manifest first.", class_="ultra-small text-muted p-2")
+            return ui.div("Load a data analysis recipe first.", class_="ultra-small text-muted p-2")
         try:
             with open(path, encoding="utf-8") as f:
                 raw = yaml.load(f, Loader=_IncludeLoader) or {}
@@ -2486,7 +2486,7 @@ def define_server(input, output, session, *,
             return ui.div(f"Error: {e}", style="font-size:0.72rem;color:#d62828;padding:8px;")
 
         info = raw.get("info") or {}
-        can_edit = bootloader.is_enabled("manifest_edit_enabled")
+        can_edit = bootloader.is_enabled("data_analysis_recipe_edit_enabled")
 
         name_val    = info.get("name", "")
         desc_val    = info.get("description", "")
@@ -2527,7 +2527,7 @@ def define_server(input, output, session, *,
                           placeholder="e.g. 1.0.0"),
             ui.input_text("bp_meta_tags", "Tags (comma-separated)", value=tags_val,
                           placeholder="e.g. amr, salmonella, surveillance"),
-            ui.input_action_button("btn_bp_meta_save", "Save to manifest",
+            ui.input_action_button("btn_bp_meta_save", "Save to data analysis recipe",
                                    class_="btn-primary btn-sm w-100 mt-2"),
             class_="p-2",
         )
@@ -2535,10 +2535,10 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_bp_meta_save)
     def _handle_meta_save():
-        """Write info: block back to the manifest file on disk. BP-META-1."""
-        path = safe_input(input, "stored_manifest_selector", None)
+        """Write info: block back to the data analysis recipe file on disk. BP-META-1."""
+        path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
-            ui.notification_show("No manifest loaded.", type="warning")
+            ui.notification_show("No data analysis recipe loaded.", type="warning")
             return
         try:
             with open(path, encoding="utf-8") as f:
@@ -2570,37 +2570,37 @@ def define_server(input, output, session, *,
             with open(path, "w", encoding="utf-8") as f:
                 yaml.dump(raw, f, Dumper=_IncludeDumper,
                           default_flow_style=False, sort_keys=False, allow_unicode=True)
-            ui.notification_show("Manifest info saved.", type="message")
+            ui.notification_show("Data analysis recipe info saved.", type="message")
         except Exception as e:
             ui.notification_show(f"Save error: {e}", type="error")
 
     # ══════════════════════════════════════════════════════════════════════
-    # BP-NEW-1 — Create new manifest from scratch (ADR-082 Q2)
-    # Writes a minimal YAML stub to config/manifests/pipelines/ and
-    # refreshes the manifest selector so the user can start editing.
+    # BP-NEW-1 — Create new data analysis recipe from scratch (ADR-082 Q2)
+    # Writes a minimal YAML stub to config/data_analysis_recipes/pipelines/ and
+    # refreshes the data analysis recipe selector so the user can start editing.
     # ══════════════════════════════════════════════════════════════════════
 
     _SLUG_RE_NEW = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
     @reactive.Effect
-    @reactive.event(input.btn_bp_new_manifest)
-    def _handle_new_manifest_btn():
-        """Open the new-manifest modal. BP-NEW-1."""
+    @reactive.event(input.btn_bp_new_data_analysis_recipe)
+    def _handle_new_data_analysis_recipe_btn():
+        """Open the new-data analysis recipe modal. BP-NEW-1."""
         ui.modal_show(
             ui.modal(
-                ui.input_text("bp_new_slug", "Manifest ID (snake_case)",
+                ui.input_text("bp_new_slug", "Data analysis recipe ID (snake_case)",
                               placeholder="e.g. my_analysis_v2"),
                 ui.input_text("bp_new_display_name", "Display name",
                               placeholder="e.g. My Analysis V2"),
                 ui.input_text_area("bp_new_desc", "Description (optional)",
-                                   rows=2, placeholder="What this manifest analyses"),
+                                   rows=2, placeholder="What this data analysis recipe analyses"),
                 ui.input_text("bp_new_author", "Author (optional)",
                               placeholder="Your name or team"),
                 ui.tags.small(
-                    "Creates a minimal manifest stub in config/manifests/pipelines/.",
+                    "Creates a minimal data analysis recipe stub in config/data_analysis_recipes/pipelines/.",
                     class_="text-muted d-block mt-1",
                 ),
-                title="Create New Manifest",
+                title="Create New Data Analysis Recipe",
                 footer=ui.div(
                     ui.input_action_button("btn_bp_new_submit", "Create",
                                            class_="btn-primary btn-sm"),
@@ -2613,28 +2613,28 @@ def define_server(input, output, session, *,
 
     @reactive.Effect
     @reactive.event(input.btn_bp_new_cancel)
-    def _handle_new_manifest_cancel():
+    def _handle_new_data_analysis_recipe_cancel():
         ui.modal_remove()
 
     @reactive.Effect
     @reactive.event(input.btn_bp_new_submit)
-    def _handle_new_manifest_submit():
-        """Write minimal manifest stub and refresh the selector. BP-NEW-1."""
+    def _handle_new_data_analysis_recipe_submit():
+        """Write minimal data analysis recipe stub and refresh the selector. BP-NEW-1."""
         slug = (safe_input(input, "bp_new_slug", "") or "").strip()
         if not slug or not _SLUG_RE_NEW.match(slug):
             ui.notification_show(
-                "Manifest ID must be snake_case (letters/digits/underscores, "
+                "Data analysis recipe ID must be snake_case (letters/digits/underscores, "
                 "start with letter or underscore).",
                 type="warning",
             )
             return
 
-        config_dir = Path("config/manifests/pipelines")
+        config_dir = Path("config/data_analysis_recipes/pipelines")
         config_dir.mkdir(parents=True, exist_ok=True)
         dest = config_dir / f"{slug}.yaml"
         if dest.exists():
             ui.notification_show(
-                f"Manifest '{slug}.yaml' already exists. Choose a different ID.",
+                f"Data analysis recipe '{slug}.yaml' already exists. Choose a different ID.",
                 type="warning",
             )
             return
@@ -2654,7 +2654,7 @@ def define_server(input, output, session, *,
                 "tags": [],
             },
             "data_schemas": {},
-            "join_manifests": {},
+            "joins": {},
             "analysis_groups": {},
         }
 
@@ -2668,17 +2668,17 @@ def define_server(input, output, session, *,
 
         ui.modal_remove()
 
-        # Refresh the selector and select the new manifest
+        # Refresh the selector and select the new data analysis recipe
         all_yamls = sorted(config_dir.glob("*.yaml"))
         choices = [str(p) for p in all_yamls]
-        ui.update_select("stored_manifest_selector",
+        ui.update_select("stored_data_analysis_recipe_selector",
                          choices=choices,
                          selected=str(dest))
-        ui.notification_show(f"Manifest '{slug}.yaml' created.", type="message")
+        ui.notification_show(f"Data analysis recipe '{slug}.yaml' created.", type="message")
 
     # ══════════════════════════════════════════════════════════════════════
-    # BP-VALIDATE-1 — Inline manifest coherence validation (ADR-082 Q16)
-    # Runs scripts/audit_manifest_coherence.py as a subprocess and surfaces
+    # BP-VALIDATE-1 — Inline data analysis recipe coherence validation (ADR-082 Q16)
+    # Runs scripts/audit_data_analysis_recipe_coherence.py as a subprocess and surfaces
     # the result (PASS/FAIL + per-check counts) in the Blueprint sidebar.
     # The validator is a static check: no assembler, no data materialization.
     # ══════════════════════════════════════════════════════════════════════
@@ -2686,10 +2686,10 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def bp_validate_ui():
-        """Manifest coherence validation panel. BP-VALIDATE-1."""
-        path = safe_input(input, "stored_manifest_selector", None)
+        """Data analysis recipe coherence validation panel. BP-VALIDATE-1."""
+        path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
-            return ui.div("Load a manifest first.", class_="ultra-small text-muted p-2")
+            return ui.div("Load a data analysis recipe first.", class_="ultra-small text-muted p-2")
 
         result = _validate_result.get()
         btn = ui.input_action_button(
@@ -2724,7 +2724,7 @@ def define_server(input, output, session, *,
             ),
             *check_rows,
             ui.tags.small(
-                result.get("manifest_name", ""),
+                result.get("data_analysis_recipe_name", ""),
                 class_="text-muted d-block mt-1 mb-2",
             ),
             btn,
@@ -2734,21 +2734,21 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_bp_validate)
     def _handle_validate():
-        """Run audit_manifest_coherence.py and parse result into _validate_result. BP-VALIDATE-1."""
-        path = safe_input(input, "stored_manifest_selector", None)
+        """Run audit_data_analysis_recipe_coherence.py and parse result into _validate_result. BP-VALIDATE-1."""
+        path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
-            ui.notification_show("No manifest loaded.", type="warning")
+            ui.notification_show("No data analysis recipe loaded.", type="warning")
             return
 
         try:
             proc = subprocess.run(
-                [".venv/bin/python", "scripts/audit_manifest_coherence.py",
-                 "--manifest", path, "--skip-tsv"],
+                [".venv/bin/python", "scripts/audit_data_analysis_recipe_coherence.py",
+                 "--data-analysis-recipe", path, "--skip-tsv"],
                 capture_output=True, text=True, timeout=30,
             )
             stdout = proc.stdout or ""
         except Exception as e:
-            _validate_result.set({"pass": False, "checks": [], "manifest_name": path,
+            _validate_result.set({"pass": False, "checks": [], "data_analysis_recipe_name": path,
                                    "raw_text": str(e)})
             ui.notification_show(f"Validation error: {e}", type="error")
             return
@@ -2776,7 +2776,7 @@ def define_server(input, output, session, *,
         _validate_result.set({
             "pass": passed,
             "checks": checks,
-            "manifest_name": Path(path).name,
+            "data_analysis_recipe_name": Path(path).name,
             "raw_text": stdout,
         })
         status = "PASS" if passed else "FAIL"

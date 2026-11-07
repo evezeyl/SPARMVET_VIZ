@@ -1,11 +1,11 @@
-# Tier 2 Branch Test Manifest (ADR-024)
+# Tier 2 Branch Test Data Analysis Recipe (ADR-024)
 data_schemas:
   Trunk:
     source:
       type: "local_parquet"
       path: "tmp/session_anchor_test.parquet"
 
-join_manifests:
+joins:
   Tier2_Branch:
     ingredients:
       - dataset_id: "Trunk"

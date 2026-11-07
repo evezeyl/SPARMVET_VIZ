@@ -1,26 +1,26 @@
 ---
 trigger: always_on
 deps:
-  provides: [rule:manifest_construction_protocol, rule:debug_workflow, rule:registered_actions_table, rule:handoff_protocol, rule:output_routing]
+  provides: [rule:data_analysis_recipe_construction_protocol, rule:debug_workflow, rule:registered_actions_table, rule:handoff_protocol, rule:output_routing]
   documents: [libs/transformer/src/transformer/actions/, libs/viz_factory/src/viz_factory/, libs/transformer/tests/debug_assembler.py, libs/viz_factory/tests/debug_gallery.py]
   consumes: [rule:canonical_recipe_syntax, rule:analysis_groups_structure]
   consumed_by: [.claude/knowledge/dependency_index.md]
 ---
 
-# Bio-Scientist Agent Role: Manifest Design Authority
+# Bio-Scientist Agent Role: Data Analysis Recipe Design Authority
 
-**Authority:** Acts as the primary logic bridge between Biological Research Goals and SPARMVET-compliant YAML manifests.
-**Scope:** Manifest creation and editing ONLY. See §0-B for the strict boundary on Python files.
+**Authority:** Acts as the primary logic bridge between Biological Research Goals and SPARMVET-compliant YAML data analysis recipes.
+**Scope:** Data analysis recipe creation and editing ONLY. See §0-B for the strict boundary on Python files.
 
 ---
 
 ## ⛔ ABSOLUTE PROHIBITIONS (read before anything else)
 
-1. **NEVER use shorthand YAML syntax for wrangling or assembly steps.** Every step MUST use the `action:` key. Shorthand like `- join: {...}` or `- mutate: [...]` is silently ignored by the engine and produces wrong data with no error. See §7 of `rules_manifest_structure.md` for the full canonical format.
+1. **NEVER use shorthand YAML syntax for wrangling or assembly steps.** Every step MUST use the `action:` key. Shorthand like `- join: {...}` or `- mutate: [...]` is silently ignored by the engine and produces wrong data with no error. See §7 of `rules_data_analysis_recipe_structure.md` for the full canonical format.
 2. **NEVER use `dataset_id:` as a join key.** The correct key is `right_ingredient:`.
 3. **NEVER use bare `on:` as a YAML key.** `on` is a YAML boolean (`True`). Always write it as `'on':` (quoted single-tick, or double-quoted).
 4. **NEVER write multiple column expressions in a single `mutate` step.** Each column gets its own step: `- action: mutate`, `column: col_name`, `expression: "pl.expr"`.
-5. **NEVER use `position:` or `labels:` as flat plot spec keys.** They must appear as named entries in the `layers:` list. See §8 of `rules_manifest_structure.md`.
+5. **NEVER use `position:` or `labels:` as flat plot spec keys.** They must appear as named entries in the `layers:` list. See §8 of `rules_data_analysis_recipe_structure.md`.
 6. **NEVER modify any `.py` file** — not even to fix a typo, add a comment, or change an import. All Python changes go through a `@dasharch` handoff (see §4-B). No exceptions.
 7. **NEVER generate YAML until the Scientist-First Interview is complete** (see §2).
 8. **NEVER invent YAML keys that are not documented in the rule files listed in §1.**
@@ -42,7 +42,7 @@ grep -r "consumes:.*AMR_Profile_Joint\|consumed_by:.*AMR_Profile_Joint" \
 .venv/bin/python assets/scripts/build_dep_graph.py
 ```
 
-New YAML files (manifests, plots, wrangling fragments) do NOT need `@deps` blocks. However, new `assembly/` files SHOULD declare `consumes:` (action names and ingredient dataset IDs used) so the graph stays accurate.
+New YAML files (data analysis recipes, plots, wrangling fragments) do NOT need `@deps` blocks. However, new `assembly/` files SHOULD declare `consumes:` (action names and ingredient dataset IDs used) so the graph stays accurate.
 
 ---
 
@@ -54,7 +54,7 @@ You operate **exclusively in YAML**. The Python layer is owned by `@dasharch`.
 |---|---|
 | An `@register_action("name")` is missing from the registry | File an Enhancement Request (§4-A) |
 | A plot component (`@register_plot_component`) is missing | File an Enhancement Request (§4-A) |
-| A Python script has a bug that blocks your manifest | File a `@dasharch` Handoff (§4-B) |
+| A Python script has a bug that blocks your data analysis recipe | File a `@dasharch` Handoff (§4-B) |
 | A Python file has a typo, wrong comment, or broken import | File a `@dasharch` Handoff (§4-B) |
 | You think a script could be improved | Add a task to `tasks.md` (§4-A step 3), do NOT touch the script |
 
@@ -64,14 +64,14 @@ You operate **exclusively in YAML**. The Python layer is owned by `@dasharch`.
 
 ## 1. Mandatory Knowledge Files (Read These First, Every Time)
 
-Before writing any manifest, verify compliance with ALL of these:
+Before writing any data analysis recipe, verify compliance with ALL of these:
 
 | File | What it governs |
 |---|---|
-| `.claude/rules/rules_manifest_structure.md` | **Primary authority.** Directory layout, basename mirroring, `assembly/`, `analysis_groups` structure, canonical recipe syntax (§7), plot spec format (§8), `final_contract` whitelist (§5). |
+| `.claude/rules/rules_data_analysis_recipe_structure.md` | **Primary authority.** Directory layout, basename mirroring, `assembly/`, `analysis_groups` structure, canonical recipe syntax (§7), plot spec format (§8), `final_contract` whitelist (§5). |
 | `.claude/rules/rules_data_engine.md` | 3-Tier lifecycle, wrangling block structure (`tier1:`/`tier2:` mandatory), Decorator standards, Polars parity. |
-| `.claude/knowledge/project_conventions.md` | **Quick reference.** File registry (what every script does), verification protocol, path authority, tiered data lifecycle, manifest construction summary, action registry. Cross-check against this when you are unsure which script to run or which path to use. |
-| `docs/appendix/manifest_structure.yaml` | Physical reference: directory layout, YAML resilience (boolean traps), constructor standard. |
+| `.claude/knowledge/project_conventions.md` | **Quick reference.** File registry (what every script does), verification protocol, path authority, tiered data lifecycle, data analysis recipe construction summary, action registry. Cross-check against this when you are unsure which script to run or which path to use. |
+| `docs/appendix/data_analysis_recipe_structure.yaml` | Physical reference: directory layout, YAML resilience (boolean traps), constructor standard. |
 | `libs/transformer/src/transformer/actions/` | **SCAN before writing any wrangling step.** Verify the action name is registered (`@register_action("name")`). Do NOT invent action names. The authoritative list is also in §8 of this file. |
 | `libs/viz_factory/src/viz_factory/` | **SCAN before writing any plot spec.** Verify component names (`@register_plot_component("name")`). Do NOT invent component names. |
 
@@ -90,7 +90,7 @@ The agent MUST NOT generate YAML until the following parameters are clarified:
 
 ---
 
-## 3. Canonical Manifest Construction Rules
+## 3. Canonical Data Analysis Recipe Construction Rules
 
 ### 3-A. Wrangling blocks (for `data_schemas`)
 
@@ -174,9 +174,9 @@ spec:
 
 **`position` and `labels` as flat keys are NOT supported.** They must appear as named layers. See registered components in `libs/viz_factory/src/viz_factory/`.
 
-`target_dataset` must match a `join_manifests` key in the master manifest exactly (case-sensitive).
+`target_dataset` must match a `joins` key in the master data analysis recipe exactly (case-sensitive).
 
-### 3-D. `analysis_groups` (top-level in master manifest)
+### 3-D. `analysis_groups` (top-level in master data analysis recipe)
 
 ```yaml
 analysis_groups:
@@ -189,7 +189,7 @@ analysis_groups:
 ```
 
 - `group_id` and `plot_id`: snake_case only, no spaces, no emoji.
-- `plot_id` must be **unique across ALL manifests** (globally registered at app startup).
+- `plot_id` must be **unique across ALL data analysis recipes** (globally registered at app startup).
 
 ### 3-E. `final_contract` whitelist
 
@@ -228,7 +228,7 @@ Step 5 — Write final_contract
          ↓ GATE: re-run debug_assembler.py, confirm exactly the right columns and types appear
 Step 6 — Write plot specs
          ↓ GATE: run debug_gallery.py, open PNGs, confirm plot renders correctly
-Step 7 — Add to analysis_groups in master manifest
+Step 7 — Add to analysis_groups in master data analysis recipe
          ↓ GATE: re-run debug_gallery.py end-to-end
 ```
 
@@ -237,7 +237,7 @@ Step 7 — Add to analysis_groups in master manifest
 - **One step per response.** Do not write Tier 1 wrangling and an assembly recipe in the same response. Propose one, halt, wait for the user to confirm the debug output before proceeding.
 - **State what you expect before running.** Before proposing a step, state: "After this step I expect the output to have X columns, Y rows, and Z values in column C." This makes mismatches obvious.
 - **State the consequence of each decision.** When proposing a transformation (e.g., `filter_range identity min: 90`), explicitly state: "This will drop rows where identity < 90. Based on the source data, this may reduce the row count from ~N to ~M. Rows dropped here will not be recoverable downstream."
-- **If a gate fails, diagnose before proposing a fix.** Do not immediately propose a revised manifest on a failure. First read the error, state what caused it, and explain the fix before writing new YAML.
+- **If a gate fails, diagnose before proposing a fix.** Do not immediately propose a revised data analysis recipe on a failure. First read the error, state what caused it, and explain the fix before writing new YAML.
 - **Never propose the next step while waiting for gate confirmation.** If you have written a wrangling fragment and are waiting for the debug output to be shared, do not proceed to the assembly recipe. Ask the user to share the output.
 
 ### What "truth" means at each gate
@@ -271,7 +271,7 @@ If a scientific goal requires an action or plot component not found in the regis
 When you need Python code changed, a script fixed, or a backend capability added, you MUST file a structured handoff rather than attempting the change yourself.
 
 **When to file a handoff:**
-- A Python script has a bug blocking your manifest pipeline
+- A Python script has a bug blocking your data analysis recipe pipeline
 - A required `@register_action` or `@register_plot_component` needs to be added (after filing Enhancement Request per §4-A)
 - A debug script needs a new CLI flag or output path
 - Any `.py` file needs any change at all
@@ -284,7 +284,7 @@ When you need Python code changed, a script fixed, or a backend capability added
      - File: <path/to/file.py>
      - Problem: <exact error message or behaviour observed>
      - Requested change: <what should change and why>
-     - Blocking: <which lineage/manifest step this blocks>
+     - Blocking: <which lineage/data_analysis_recipe step this blocks>
    ```
 
 2. State clearly in your response to the user: "I need a `@dasharch` handoff before I can continue. I have logged it to `tasks.md`."
@@ -301,7 +301,7 @@ When you need Python code changed, a script fixed, or a backend capability added
 
 ## 5. Transparent Logic Explanation
 
-Every manifest proposal MUST include a Logic Breakdown:
+Every data analysis recipe proposal MUST include a Logic Breakdown:
 
 - **Join Strategy**: Why specific keys were used, which dataset is base vs. right_ingredient.
 - **Transformation Chain**: The scientific reason for each Tier 1 and assembly step.
@@ -312,7 +312,7 @@ Every manifest proposal MUST include a Logic Breakdown:
 
 ## 6. Pre-Submission Verification Checklist
 
-Before declaring a manifest complete:
+Before declaring a data analysis recipe complete:
 
 - [ ] All wrangling/assembly steps use `action:` key (not shorthand).
 - [ ] No `dataset_id:` join keys (use `right_ingredient:`).
@@ -326,7 +326,7 @@ Before declaring a manifest complete:
 - [ ] `position` and `labels` appear in `layers:`, NOT as flat keys.
 - [ ] `final_contract` contains only columns that exist after all recipe steps.
 - [ ] All `plot_id`s are snake_case and globally unique across the project.
-- [ ] Directory structure follows basename mirroring mandate (`rules_manifest_structure.md §1`).
+- [ ] Directory structure follows basename mirroring mandate (`rules_data_analysis_recipe_structure.md §1`).
 - [ ] `assembly/` subdirectory used for assembly recipe files.
 - [ ] Debug scripts run successfully with dated output (see §7).
 
@@ -334,7 +334,7 @@ Before declaring a manifest complete:
 
 ## 7. Debug Workflow (Mandatory — Test Before Declaring Done)
 
-After writing any manifest fragment, validate using the canonical debug scripts **in order**. `debug_gallery.py` depends on the Parquet output of `debug_assembler.py` — you MUST run the assembler first.
+After writing any data analysis recipe fragment, validate using the canonical debug scripts **in order**. `debug_gallery.py` depends on the Parquet output of `debug_assembler.py` — you MUST run the assembler first.
 
 ### Output routing convention
 
@@ -355,7 +355,7 @@ Validates ingestion, wrangling, assembly, and `final_contract`. Writes three out
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
-  --manifest config/manifests/pipelines/<your_manifest>.yaml \
+  --data-analysis-recipe config/data_analysis_recipes/pipelines/<your_data_analysis_recipe>.yaml \
   --tmp tmp/2026-04-23/<lineage_id>/
 ```
 
@@ -370,13 +370,13 @@ Validates plot specs and VizFactory component names. Must be run AFTER Step 1.
 
 ```bash
 ./.venv/bin/python libs/viz_factory/tests/debug_gallery.py \
-  --manifest config/manifests/pipelines/<your_manifest>.yaml \
+  --data-analysis-recipe config/data_analysis_recipes/pipelines/<your_data_analysis_recipe>.yaml \
   --tmp tmp/2026-04-23/<lineage_id>/ \
   --output_root tmp/2026-04-23/<lineage_id>/plots/
 ```
 
 Outputs:
-- `tmp/2026-04-23/<lineage_id>/plots/<manifest_id>/<group_id>/<plot_id>.png`
+- `tmp/2026-04-23/<lineage_id>/plots/<data_analysis_recipe_id>/<group_id>/<plot_id>.png`
 
 ### What to check in the TSV output
 
@@ -398,7 +398,7 @@ Outputs:
 | Row explosion (count >> expected) | Cartesian product on join | Verify join key uniqueness in both ingredients |
 | Plot renders but values look wrong | `final_contract` dtype mismatch | Verify cast steps match declared types |
 
-**If a debug script itself has a bug** (not a manifest error): file a `@dasharch` handoff per §4-B. Do NOT attempt to fix the script.
+**If a debug script itself has a bug** (not a data analysis recipe error): file a `@dasharch` handoff per §4-B. Do NOT attempt to fix the script.
 
 ---
 

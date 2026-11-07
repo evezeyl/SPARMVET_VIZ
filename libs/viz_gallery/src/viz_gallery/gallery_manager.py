@@ -39,8 +39,8 @@ class GalleryManager:
         target_dir = self.gallery_dir / folder_name
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Save recipe manifest (YAML)
-        manifest_bundle = {
+        # 1. Save recipe data analysis recipe (YAML)
+        data_analysis_recipe_bundle = {
             "info": {
                 "name": name,
                 "submission_date": datetime.now().strftime("%Y-%m-%d"),
@@ -61,8 +61,8 @@ class GalleryManager:
                 "tier3": recipe
             }
         }
-        with open(target_dir / "recipe_manifest.yaml", "w") as f:
-            yaml.dump(manifest_bundle, f, sort_keys=False)
+        with open(target_dir / "data_analysis_recipe.yaml", "w") as f:
+            yaml.dump(data_analysis_recipe_bundle, f, sort_keys=False)
 
         # 2. Save data sample (TSV) – limit to 100 rows for preview
         data.head(100).write_csv(
@@ -101,14 +101,14 @@ class GalleryManager:
 
         folders = [d for d in self.gallery_dir.iterdir() if d.is_dir()]
         for d in folders:
-            manifest_path = d / "recipe_manifest.yaml"
-            if not manifest_path.exists():
+            data_analysis_recipe_path = d / "data_analysis_recipe.yaml"
+            if not data_analysis_recipe_path.exists():
                 continue
 
-            # Integrity Check (ADR-037): manifest + data + meta required;
+            # Integrity Check (ADR-037): data analysis recipe + data + meta required;
             # preview_plot.png is optional (gallery UI shows a placeholder when absent)
             required = {
-                "manifest": manifest_path.exists(),
+                "data_analysis_recipe": data_analysis_recipe_path.exists(),
                 "data": (d / "example_data.tsv").exists(),
                 "meta": (d / "recipe_meta.md").exists(),
             }
@@ -120,16 +120,16 @@ class GalleryManager:
             if not (d / "preview_plot.png").exists():
                 print(f"ℹ️  {d.name}: no preview_plot.png — will show placeholder in gallery")
 
-            with open(manifest_path, "r") as f:
+            with open(data_analysis_recipe_path, "r") as f:
                 try:
-                    manifest = yaml.safe_load(f)
-                    info = manifest.get("info", {})
+                    data_analysis_recipe = yaml.safe_load(f)
+                    info = data_analysis_recipe.get("info", {})
                     recipe_id = d.name
 
                     # Store in Registry
                     registry[recipe_id] = {
                         "name": info.get("name", d.name),
-                        "path": str(manifest_path),
+                        "path": str(data_analysis_recipe_path),
                         "has_preview": (d / "preview_plot.png").exists(),
                         "has_thumb": (d / "preview_thumb.png").exists(),
                         "taxonomy": {

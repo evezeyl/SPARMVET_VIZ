@@ -9,10 +9,10 @@ deps:
 ## 1. UI Orchestration & Aesthetics (ADR-027–030)
 
 - **Library Sovereignty:** UI MUST NOT duplicate logic; it MUST call libraries in `./libs/`.
-- **Dynamic discovery:** Tabs and column filters MUST be derived from manifests and Polars schemas at runtime.
-- **T3 = Publication Finisher (§12, ui_implementation_contract.md):** Tier 3 scope is **permanently locked** to row filters, row exclusions, column visibility, and aesthetic overrides. It is NOT a wrangling sandbox — no action-picker UI. Wrangling belongs in T1/T2 manifests.
+- **Dynamic discovery:** Tabs and column filters MUST be derived from data analysis recipes and Polars schemas at runtime.
+- **T3 = Publication Finisher (§12, ui_implementation_contract.md):** Tier 3 scope is **permanently locked** to row filters, row exclusions, column visibility, and aesthetic overrides. It is NOT a wrangling sandbox — no action-picker UI. Wrangling belongs in T1/T2 data analysis recipes.
 - **T3 Recipe IS the Audit Trace:** There is no separate FILTERS.txt for T3. The T3 YAML recipe (list of RecipeNode dicts) is the complete audit trail. `aesthetic_override` nodes are stored separately as `t3_plot_overrides` but are included in the export report.
-- **Two Ghost Save Slots:** (1) T1/T2 Ghost (`_autosave_assembly.json`) — written on assembly, refreshed on manifest/data change. (2) T3 Ghost (`_autosave_t3.json`) — written on every `btn_apply` AND on every panel switch away from Home.
+- **Two Ghost Save Slots:** (1) T1/T2 Ghost (`_autosave_assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`_autosave_t3.json`) — written on every `btn_apply` AND on every panel switch away from Home.
 - **State Feedback:** When a plot is "In-Calculation" (recalc ONLY applies to Tier 3 since Tiers 1/2 are immutable Parquet caches), the UI must use a dimming overlay with a "recalculating" message.
 
 ## 2. Left vs Right Panel Behaviors (ADR-073)
@@ -23,7 +23,7 @@ deps:
 
 - **Left Sidebar**: Content is workspace-dependent. Switching workspaces physically replaces the left sidebar DOM (not CSS-hide). Panel content per workspace is declared in `workspaces.<ws>.left_sidebar.panels`. Panels are registered in `app/modules/sidebar_registry.py` (`PANEL_REGISTRY`).
 
-  **Available Home panel types** (gate flags in parentheses): `project_info` (none), `deployment_info` (none), `manifest_choice` (`manifest_selector.visible`), `filters` (`interactivity_enabled`), `data_import` (`metadata_ingestion_enabled`), `export` (`export_enabled`), `session_management` (`session_management_enabled`). See `ui_implementation_contract.md §11d` for complete table.
+  **Available Home panel types** (gate flags in parentheses): `project_info` (none), `deployment_info` (none), `data_analysis_recipe_choice` (`data_analysis_recipe_selector.visible`), `filters` (`interactivity_enabled`), `data_import` (`metadata_ingestion_enabled`), `export` (`export_enabled`), `session_management` (`session_management_enabled`). See `ui_implementation_contract.md §11d` for complete table.
 
   **Filter behavior unchanged:** `_pending_filters` / `applied_filters` state is preserved across workspace switches; filter widgets are only mounted when `workspaces.home.left_sidebar.panels` contains `filters` and the gate flag is on.
 
@@ -57,10 +57,10 @@ The UI dynamically alters component availability based on the templates in `conf
 **`qa` app features:** Mirrors `developer` flags but sets `automation.ghost_save: false` for deterministic Playwright runs (no background ghost writes during smoke tests). It is the recommended `SPARMVET_APP_FEATURES` for CI.
 
 **New flags (Phase 25 / ADR-052):**
-`manifest_selector.visible` — hides Manifest Choice dropdown for pipeline app features files (fixed_manifest path required when false).
-`testing_mode` — true = pre-fill data selector from manifest default paths; false = data injected by pipeline or chosen by user.
+`data_analysis_recipe_selector.visible` — hides Data analysis recipe Choice dropdown for pipeline app features files (fixed_data_analysis_recipe path required when false).
+`testing_mode` — true = pre-fill data selector from data analysis recipe default paths; false = data injected by pipeline or chosen by user.
 
-**Pipeline app features files are always production-mode**: `pipeline-static` and `pipeline-exploration-simple` always have `testing_mode=false` and `manifest_selector.visible=false`. Testing of pipeline integrations uses a more capable app features.
+**Pipeline app features files are always production-mode**: `pipeline-static` and `pipeline-exploration-simple` always have `testing_mode=false` and `data_analysis_recipe_selector.visible=false`. Testing of pipeline integrations uses a more capable app features.
 
 **Right sidebar layout (ADR-073):** Structural exclusion is now driven by `bootloader.get_sidebar_config("home", "right").visible` — set to `false` in `pipeline-static` and `pipeline-exploration-simple` app features files. This replaces the previous `SPARMVET_APP_FEATURES` env-var comparison in `ui.py` (ADR-053 violation, task 25-O, fixed in SIDEBAR-REGISTRY-1). The center column fills full width when the right sidebar is excluded.
 
@@ -68,9 +68,9 @@ The UI dynamically alters component availability based on the templates in `conf
 
 - **Home Module State Object** (`home_state`): A single `reactive.Value` dict holding navigation state, filter state, T3 recipe, pending T3 nodes, and plot overrides. Full schema in `ui_implementation_contract.md §13`. Survives all panel switches. `t3_recipe` (wrangling audit nodes) and `t3_plot_overrides` (aesthetic changes per plot sub-tab) are **separate fields** within it. Changes only apply upon `btn_apply`.
 - **The Pipeline Builder Scope**: `build_polars_pipeline(df, recipe)` must dynamically translate nodes. In simpler app features files, this relies on basic filter mappings. In **Developer/Advanced** app features files, this must proxy directly out to the unified `@register_action` registry defined in the Transformer layer to support any arbitrary Python execution payload.
-- **Unified Home Theater (ADR-043)**: The "Analysis Theater / Viz" nav mode is **eliminated**. Home is the sole results mode. Manifest-defined `analysis_groups` are the primary tab structure of Home. Plot sub-tabs (`navset_underline`) are wrapped in a **collapsible accordion panel**; data preview panes are in a **separate collapsible accordion panel below**. Both default to expanded. Collapse state is user-driven and must not reset on sub-tab navigation.
+- **Unified Home Theater (ADR-043)**: The "Analysis Theater / Viz" nav mode is **eliminated**. Home is the sole results mode. Data analysis recipe-defined `analysis_groups` are the primary tab structure of Home. Plot sub-tabs (`navset_underline`) are wrapped in a **collapsible accordion panel**; data preview panes are in a **separate collapsible accordion panel below**. Both default to expanded. Collapse state is user-driven and must not reset on sub-tab navigation.
 - **Plot vs data view (ADR-086)**: the Home header strip has two independent choices. "Data to show" (Raw / Result / My view) drives the data preview only; "Plot to show" (Result / My view / Compare Result vs My view) drives the plots only. Plots never show T1. Comparison Mode is always T2 (left) vs My view (right). Implemented 2026-11-05; see `ui_implementation_contract.md §2/§5`.
-- **Hierarchical Visualization**: Home MUST organize manifest-defined plots into **Sub-Tabs** (navset_underline) within their respective category tabs to prevent vertical scrolling clutter. These sub-tabs are wrapped in a collapsible accordion as per ADR-043.
+- **Hierarchical Visualization**: Home MUST organize data analysis recipe-defined plots into **Sub-Tabs** (navset_underline) within their respective category tabs to prevent vertical scrolling clutter. These sub-tabs are wrapped in a collapsible accordion as per ADR-043.
 - **CSS Layer (The High-Density Shell)**:
   - **Background**: Body and Theater background MUST use **Neutral Grey (#d1d1d1)** for premium white-card contrast.
   - **Sidebars**: MUST use **Dark Grey (#c0c0c0)** sidebar backgrounds for visual symmetry.
@@ -84,7 +84,7 @@ The UI dynamically alters component availability based on the templates in `conf
 ## 5. Architectural Invariants (Gallery & Caching)
 
 - **Gallery Isolation Boundary (TBD-03)**: The Gallery (`gallery_viewer.py`) MUST strictly operate as a static reference browser. It is explicitly forbidden from generating dynamic Polars materializations or calculating Plotnine objects at runtime.
-  - The Gallery MUST serve pre-rendered `.png` assets, YAML manifests, and JSON metadata exclusively from `assets/gallery_data/`.
+  - The Gallery MUST serve pre-rendered `.png` assets, YAML data analysis recipes, and JSON metadata exclusively from `assets/gallery_data/`.
   - The ONLY permitted interactive functionality is the transplantation (cloning) of a pure YAML string into the Tier 3 active sandbox.
 - **Hierarchical Asset Caching (TBD-02)**: The Bootloader MUST implement a single source of truth static dict for all materialized/parsed assets natively at runtime to prevent repetitive file-IO overhead.
   - Cache Hierarchy Contract: `_asset_cache[project_id][dataset_id][plot_id][asset_type]`
@@ -174,7 +174,7 @@ DOM state. See `config/ui/templates/qa_template.yaml`.
 
 ## 7. The Blueprint Architect Invariants (ADR-039, ADR-075, ADR-082)
 
-The Blueprint Architect provides a "Flight Deck" for manifest design.
+The Blueprint Architect provides a "Flight Deck" for data analysis recipe design.
 
 **Feature set lock (ADR-082).** BLUEPRINT is four composable layers; the full feature set, the MVP/v2/out-of-scope inventory, and the T1/T2-vs-T3 boundary are authoritative in ADR-082.
 
@@ -185,7 +185,7 @@ The Blueprint Architect provides a "Flight Deck" for manifest design.
 | L3 — Data view | Live Data Glimpse (on-Apply) | ADR-082 |
 | L4 — Helpers | AI agent + YAML escape hatch + undo + branch | ADR-075/076/082 |
 
-**Branching = lineage bifurcation at a node (ADR-082 Q3, LOCKED).** A "branch" splits one lineage in two **at a chosen node**: upstream stays **shared** (Tier 1 trunk materialized once, branches `scan_parquet` it — no recompute), child lineages diverge downstream. Physically it is the **fragment-per-component** `!include` structure (canonical: `Summary` / `Summary_quality`) — the Bifurcation Point Rule (`rules_data_engine.md`) made interactive. The TubeMap *fan-out* is the visual; the *manifest branch* is the lineage split. Whole-manifest duplication is a separate rare path (new data only). **BLUEPRINT never authors T3** — T3 is HOME-only (ADR-082 §4).
+**Branching = lineage bifurcation at a node (ADR-082 Q3, LOCKED).** A "branch" splits one lineage in two **at a chosen node**: upstream stays **shared** (Tier 1 trunk materialized once, branches `scan_parquet` it — no recompute), child lineages diverge downstream. Physically it is the **fragment-per-component** `!include` structure (canonical: `Summary` / `Summary_quality`) — the Bifurcation Point Rule (`rules_data_engine.md`) made interactive. The TubeMap *fan-out* is the visual; the *data analysis recipe branch* is the lineage split. Whole-data analysis recipe duplication is a separate rare path (new data only). **BLUEPRINT never authors T3** — T3 is HOME-only (ADR-082 §4).
 
 - **The Central Vertical Stack (The Theater)**:
   1. **Top Header**: The **Interactive TubeMap** (DAG). Must be collapsible to maximize workspace.
@@ -200,5 +200,5 @@ The Blueprint Architect provides a "Flight Deck" for manifest design.
 - **Action picker**: searchable by `tags`, filtered by `context` (`t1` / `t2` / `assembly` / `plot`) and `category`. Position rules are enforced by the `context` tag — the picker only shows actions valid for the current node position.
 - **Apply gate**: upstream schema propagates on Apply only (not continuously). The form reflects the last-applied schema state between Apply presses.
 - **Edit/remove after Apply**: three layers — (1) edit in place + re-Apply, (2) 20-step session undo deque (`BP-UNDO-1`), (3) YAML escape hatch.
-- **YAML escape hatch**: always visible for any app features with `blueprint_enabled: true` (read-only view). Becomes an editable textarea only when `manifest_edit_enabled: true` (developer and qa app features files). An editable escape hatch emits a `developer_raw_yaml` T3 node on save. Gate: `bootloader.is_enabled("manifest_edit_enabled")` — never an app features name check. See `rules_app_features_flags.md §Group D`.
+- **YAML escape hatch**: always visible for any app features with `blueprint_enabled: true` (read-only view). Becomes an editable textarea only when `data_analysis_recipe_edit_enabled: true` (developer and qa app features files). An editable escape hatch emits a `developer_raw_yaml` T3 node on save. Gate: `bootloader.is_enabled("data_analysis_recipe_edit_enabled")` — never an app features name check. See `rules_app_features_flags.md §Group D`.
 - Full ADR-075 spec (widget types, color widget model, help system, action naming) lives in `architecture_decisions.md`.

@@ -26,10 +26,10 @@
 
 ## 1. App features gating — what appears per app features
 
-Test each app features by changing the `app_features_id` in the active config YAML (or selecting in the UI if manifest selector is visible).
+Test each app features by changing the `app_features_id` in the active config YAML (or selecting in the UI if data analysis recipe selector is visible).
 
 ### 1a. `pipeline-static`
-- [x] Left sidebar: **no** manifest selector, **no** T3 mode toggle, no right sidebar audit panel.
+- [x] Left sidebar: **no** data analysis recipe selector, **no** T3 mode toggle, no right sidebar audit panel.
 - [x] Tier toggle shows only T1 / T2 (no T3).
 - [x] No "Gallery" or "Blueprint Architect" nav items in sidebar.
 - [x] No "Session Management" or "Single Graph Export" accordion panels.
@@ -42,7 +42,7 @@ Test each app features by changing the `app_features_id` in the active config YA
 - [x] Gallery NOT visible.
 
 ### 1c. `project-independent`
-- [x] Manifest selector accordion **visible**.
+- [x] Data analysis recipe selector accordion **visible**.
 - [x] Gallery nav item visible.
 - [x] Blueprint Architect (Wrangle Studio) nav item Not visible (app features updated).
 - [x] T3 tier present in tier toggle.
@@ -61,7 +61,7 @@ Test each app features by changing the `app_features_id` in the active config YA
 
 Using `project-independent` or `developer` app features throughout the following sections.
 
-- [x] **Manifest Choice** accordion opens/collapses cleanly. Project selection dropdown shows available projects.
+- [x] **Data analysis recipe Choice** accordion opens/collapses cleanly. Project selection dropdown shows available projects.
 - [x] Changing project selection reloads plots in the center theater (may take a moment).
 - [x] Switching to Gallery and back to Home preserves the selected project (does not reset to first on list). *(BUG fixed 2026-05-03: _last_project_id reactive.Value tracks selection; sidebar_tools_ui uses isolated read on re-render)*
 - [x] **Data Import** accordion shows the import UI (file upload or path selector depending on app features).
@@ -76,7 +76,7 @@ Using `project-independent` or `developer` app features throughout the following
 
 ## 3. Center theater — tabs and plot rendering
 
-- [x] Tabs at top of center panel correspond to analysis groups in the active manifest.
+- [x] Tabs at top of center panel correspond to analysis groups in the active data analysis recipe.
 - [x] Clicking each tab loads its plots (no Python traceback in terminal).
 - [x] Within a tab with multiple plots, sub-tabs navigate between individual plots.
 - [x] Plot renders as a static image (plotnine via `@render.plot`).
@@ -92,7 +92,7 @@ Using `project-independent` or `developer` app features throughout the following
 
 ### 4a. T1 → T2
 
-- [x] Switch to T2. Plot and data preview update (if T2 transforms are defined in the manifest — otherwise visually identical to T1 is expected). [Year Distribution plot for test]
+- [x] Switch to T2. Plot and data preview update (if T2 transforms are defined in the data analysis recipe — otherwise visually identical to T1 is expected). [Year Distribution plot for test]
 - [x] No flickering or duplicate renders in the terminal output.
 
 ### 4b. T1 / T2 → T3
@@ -269,7 +269,7 @@ SOLVED [Yes but we used tags icons on the left side bar in the recipe title rend
 
 - [x] Clicking a gallery card loads the recipe preview on the center pane.
 - [x] Click Home → center panel returns to plots, left sidebar tools re-appear.
-- [ ] *(Deferred)* Returning to Home from Gallery preserves the previously active manifest/plot state (THEATER-1 scope).
+- [ ] *(Deferred)* Returning to Home from Gallery preserves the previously active data_analysis_recipe/plot state (THEATER-1 scope).
 
 ---
 
@@ -345,7 +345,7 @@ Using `project-independent` or `developer` app features (the **Data Import** acc
 
 - [ ] Open **Data Import** accordion in left sidebar.
 - [ ] Click the file upload control and select a single TSV/CSV that matches a dataset schema (e.g. `metadata.tsv` for the `metadata` dataset ID).
-- [ ] An **assignment table** appears: one row per uploaded file, with a dropdown showing available dataset IDs from the manifest.
+- [ ] An **assignment table** appears: one row per uploaded file, with a dropdown showing available dataset IDs from the data analysis recipe.
 - [ ] The correct dataset ID is pre-selected (or selectable). Click **Apply**.
 - [ ] Terminal shows no Python traceback. A success notification appears.
 - [ ] The plots reload with the new data (parquet cache busted — first load may be slightly slower).
@@ -375,7 +375,7 @@ Using `project-independent` or `developer` app features (the **Data Import** acc
 
 Test with the `year_distribution` plot (uses `scale_x_continuous` with `breaks_integer: true`).
 
-- [ ] Navigate to the plot that shows year on the x-axis (e.g. "Year Distribution" in the test manifest).
+- [ ] Navigate to the plot that shows year on the x-axis (e.g. "Year Distribution" in the test data analysis recipe).
 - [ ] X-axis labels are whole integers (`2018`, `2019`, …) — no decimals (`2019.0`).
 - [ ] Toggle T1 → T2 → T1: axis labels remain integers throughout.
 - [ ] No Python traceback in terminal related to `MaxNLocator` or `breaks`.

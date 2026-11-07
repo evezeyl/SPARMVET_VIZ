@@ -1,0 +1,16 @@
+id: VIGAS_VirulenceFinder
+type: pipeline
+info:
+  display_name: Virulence Finder
+  category: Edited
+  tags:
+  - VIGAS-P
+  - STEC
+  - Escherichia coli
+  description: Data analysis recipe for Virulence Finder. Usable for STEC / E.coli.
+  version: '1.0'
+data_schemas:
+  VIGAS_VirulenceFinder:
+    input_fields: !include 'VIGAS_VirulenceFinder/input_fields/VIGAS_VirulenceFinder_input_fields.yaml'
+    wrangling: !include 'VIGAS_VirulenceFinder/wrangling/VIGAS_VirulenceFinder_wrangling.yaml'
+    output_fields: !include 'VIGAS_VirulenceFinder/output_fields/VIGAS_VirulenceFinder_output_fields.yaml'

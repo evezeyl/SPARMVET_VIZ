@@ -49,12 +49,12 @@ Leaf-to-root order: pure functions first, reactives last.
 
 ## Per-Step Discipline (mandatory for each step)
 
-### Before editing — write a change manifest
+### Before editing — write a change data analysis recipe
 
 Post to chat (and copy to `.antigravity/tasks/tasks_phase24.md` §step) before any edit:
 
 ```
-CHANGE MANIFEST — Step 24-X
+CHANGE DATA ANALYSIS RECIPE — Step 24-X
 Target new file: <path>
 Source lines in home_theater.py: L<start>–L<end>
 Names being MOVED: [list all def/class names]
@@ -107,7 +107,7 @@ failures unrelated to Phase 24 (app_features_selector not rendered in UI). Don't
 If any gate fails:
 1. `git reset --hard HEAD~1`
 2. Diagnose. Do not patch on top.
-3. Retry from the change manifest step.
+3. Retry from the change data analysis recipe step.
 4. If the same gate fails twice: STOP and post a failure report. Do not proceed.
 
 ---
@@ -147,7 +147,7 @@ Stop and post a blocker report if:
 - An extraction would require changing a function *signature* on the public surface of `define_server(...)` in `home_theater.py`.
 - Any `@reactive.Effect` / `@render.*` boundary becomes unclear (e.g., two reactives sharing a closure variable that can't be cleanly passed as kwargs).
 - Total LOC added to new files differs from LOC removed from `home_theater.py` by more than 5% after cleanup commits. (Indicates hidden logic drift.)
-- A new import dependency surfaces that wasn't listed in the change manifest.
+- A new import dependency surfaces that wasn't listed in the change data analysis recipe.
 
 ---
 

@@ -52,10 +52,10 @@ class SidebarValidator:
         features = template.get("flags", {})
         app_features_id = template.get("name", template_path)
 
-        if "manifest_selector_visible" not in features:
-            ms = template.get("manifest_selector", {})
+        if "data_analysis_recipe_selector_visible" not in features:
+            ms = template.get("data_analysis_recipe_selector", {})
             features = dict(features)
-            features["manifest_selector_visible"] = bool(ms.get("visible", True))
+            features["data_analysis_recipe_selector_visible"] = bool(ms.get("visible", True))
 
         for ws in _WORKSPACES:
             ws_cfg = workspaces.get(ws)

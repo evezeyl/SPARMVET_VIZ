@@ -55,7 +55,7 @@ ROLE_MAP = {
     "libs/ingestion":           "wrangle",
     "libs/viz_factory":         "plot",
     "libs/utils":               "ref",
-    "config/manifests":         "branch",
+    "config/data_analysis_recipes":         "branch",
     ".claude/rules":            "meta",
     ".claude/knowledge":   "meta",
     ".claude/plans":       "meta",

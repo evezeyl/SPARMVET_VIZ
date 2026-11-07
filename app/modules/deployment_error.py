@@ -8,7 +8,7 @@
 Backward-compat re-export shim (ADR-078 Phase C, DIAG-CONNECTOR-1).
 
 Canonical source moved to libs/utils/src/utils/deployment_error.py (Tier 1 base lib)
-so that connector and manifest-preflight libs can import it without violating ADR-011.
+so that connector and data analysis recipe-preflight libs can import it without violating ADR-011.
 
 All existing callers that import from app.modules.deployment_error continue to work
 unchanged — this module re-exports everything from the canonical location.

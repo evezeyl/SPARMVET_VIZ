@@ -54,15 +54,15 @@ Domain libraries in `libs/` are designed to be independently reusable — you ca
 
 **Rule:** Domain libs MUST NOT import from each other. `app/` is the only place that wires multiple libs together. If a shared utility is needed, add it to `libs/utils/` and declare the dependency in `pyproject.toml`.
 
-This is also where **manifest-driven** and **domain-agnostic at the import level** mean two different things:
+This is also where **data analysis recipe-driven** and **domain-agnostic at the import level** mean two different things:
 
-- _Manifest-driven_: the lib has no hardcoded knowledge of specific biological domains (species, gene families, resistance phenotypes). All domain-specific behaviour is injected at runtime via the manifest/config. The lib code works identically for AMR data, physics data, or any structured dataset.
+- _DataAnalysisRecipe-driven_: the lib has no hardcoded knowledge of specific biological domains (species, gene families, resistance phenotypes). All domain-specific behaviour is injected at runtime via the data_analysis_recipe/config. The lib code works identically for AMR data, physics data, or any structured dataset.
 - _Domain-agnostic at the import level_: the lib does not import from peer domain libs. You can install and use `libs/transformer/` standalone without pulling in `libs/ingestion/` or `libs/viz_factory/`.
 
 ### Import Strategy: Package-First Authority
 We use **Editable Mode** installations to treat our local libraries as first-class Python packages.
 - **Rule:** Always use `import ingestion` or `from transformer.data_wrangler import DataWrangler`.
-- **Rule:** Domain lib logic is **manifest-driven** — behaviour is determined by the manifest/config passed by the caller, not by hardcoded domain knowledge. Libs receive data as parameters; they never fetch data directly.
+- **Rule:** Domain lib logic is **data analysis recipe-driven** — behaviour is determined by the data_analysis_recipe/config passed by the caller, not by hardcoded domain knowledge. Libs receive data as parameters; they never fetch data directly.
 - **No Path Hacking:** The use of `sys.path.append` or `sys.path.insert` to locate internal modules is strictly forbidden.
 
 ### Do not start coding at once
@@ -92,10 +92,10 @@ For production: (when prototype advanced enough)
 
 All data must pass through `libs/ingestion/` validation rules before hitting the rest of the app.
 
-- If a new species is added, you **must** update the YAML manifest.   
-- The Ingestion Adapter `libs/ingestion/adapters_?.py` is responsible for catching "Dirty Data" before it reaches `libs/wrangling` (aka. it checks compliance to the data contract of the species defined in `config/manifests/species/species_X.yaml`).
+- If a new species is added, you **must** update the YAML data analysis recipe.   
+- The Ingestion Adapter `libs/ingestion/adapters_?.py` is responsible for catching "Dirty Data" before it reaches `libs/wrangling` (aka. it checks compliance to the data contract of the species defined in `config/data_analysis_recipes/species/species_X.yaml`).
 
-- [ ] What we here by dirty data : not conforming by the data contract defined in `config/manifests/species/`
+- [ ] What we here by dirty data : not conforming by the data contract defined in `config/data_analysis_recipes/species/`
 
 > in case of manual upload: the user is responsible of ensuring that the uploaded data conforms to the data contract of the species. 
 
@@ -113,10 +113,10 @@ We use a "Bottom-Up" testing approach:
 
 ::: {.callout-note}
 ### Standardized Wrangling Validation
-Before committing new manifest rules, you **must** use the Layer 2 debugger to verify ingestion and transformation independently of the Shiny UI:
+Before committing new data analysis recipe rules, you **must** use the Layer 2 debugger to verify ingestion and transformation independently of the Shiny UI:
 ```bash
 ./.venv/bin/python ./libs/transformer/tests/debug_wrangler.py \
---manifest ./config/manifests/pipelines/1_Abromics_general_pipeline.yaml
+--data-analysis-recipe ./config/data_analysis_recipes/pipelines/1_Abromics_general_pipeline.yaml
 ```
 :::
 
@@ -142,7 +142,7 @@ Assembly-specific actions are defined in `libs/transformer/src/transformer/actio
 
 ### Assembly Recipes & Contracts
 
-Assemblies are defined in the `join_manifests` block of the pipeline YAML.
+Assemblies are defined in the `joins` block of the pipeline YAML.
 
 - **Ingredients**: A list of `dataset_id`s that the assembler must fetch from the Ingestor before processing.
 - **Recipe**: A sequential list of actions. We use the **AR1 Example** (below) to build a sample-to-gene map:
@@ -156,7 +156,7 @@ Assemblies are defined in the `join_manifests` block of the pipeline YAML.
 Use the Assembly Debugger to verify multi-source logic with "EVE" traceability:
 ```bash
 ./.venv/bin/python ./libs/transformer/tests/debug_assembler.py \
---manifest ./config/manifests/pipelines/1_Abromics_general_pipeline.yaml
+--data-analysis-recipe ./config/data_analysis_recipes/pipelines/1_Abromics_general_pipeline.yaml
 ```
 Output results are materialized in `tmp/EVE_assembler_*.tsv` for audit.
 :::
@@ -184,14 +184,14 @@ This registry tracks the purpose, inputs/outputs, and core logic of the various 
 - **Key Logic**: Translates external formats utilizing standard `Adapter` classes.
 
 **`ingestion/src/ingestor.py`**
-- **Purpose**: Initiates the reading process from local data based on the explicit `source` block in YAML manifests.
+- **Purpose**: Initiates the reading process from local data based on the explicit `source` block in YAML data analysis recipes.
 - **Inputs/Outputs**: CSV/TSV source file paths → Polars `LazyFrames`.
 - **Key Logic**: Performs early validation checking for mandatory primary keys and fields (`Fail-Fast` ingestion).
 
 **`transformer/src/data_wrangler.py`**
-- **Purpose**: Core Layer 1 atomic cleaner. Loops through the `wrangling` list of the manifest applying registered wrapper transformations to independent datasets.
+- **Purpose**: Core Layer 1 atomic cleaner. Loops through the `wrangling` list of the data analysis recipe applying registered wrapper transformations to independent datasets.
 - **Inputs/Outputs**: Data schema dict & Raw dataset `LazyFrame` → Cleaned Tidy `LazyFrame`.
-- **Key Logic**: Action-agnostic dynamic dispatch (`.pipe()`) mapping manifest action strings directly to evaluated Python functions.
+- **Key Logic**: Action-agnostic dynamic dispatch (`.pipe()`) mapping data analysis recipe action strings directly to evaluated Python functions.
 
 **`transformer/src/data_assembler.py`**
 - **Purpose**: Core Layer 2 orchestration. Builds relational mapping from multiple atomic sources, performing sequential declarative join steps.
@@ -211,14 +211,14 @@ This registry tracks the purpose, inputs/outputs, and core logic of the various 
 - **Purpose**: Universal runner test script for headless, manual validation of all dictionaries independent of Shiny limits. 
 
 #### `assets/scripts/` (Orchestration & Asset Tooling)
-- **`create_manifest.py`**: Automates generation of compliant Hybrid Manifest boilerplate forms.
+- **`create_data_analysis_recipe.py`**: Automates generation of compliant Hybrid Data Analysis Recipe boilerplate forms.
 - **`debug_assembler.py`**: CLI executor to emulate Multi-source Relational Logic generating explicit `EVE_assembler...` artifacts in `.tmp/`.
 - **`debug_wrangler.py`**: A CLI harness to test isolated atomic transformations manually.
 - **`create_test_data.py` / `create_test_deployment.py`**: Utility script to populate the matrix files (`.tsv`) with synthetic inputs matching explicit contracts.
 
-#### `config/manifests/` (Declarative Configuration)
+#### `config/data_analysis_recipes/` (Declarative Configuration)
 - **`pipelines/1_Abromics_general_pipeline/*_fields.yaml` / `*_wrangling.yaml`**: Distributed schema chunks that act as individual boundary guards. Follows Dual-Validation concepts (input -> processing -> output).
-- **`pipelines/1_Abromics_general_pipeline.yaml`**: The overarching Orchestrator Source of Truth defining the `join_manifests` structure to pull all modules globally.
+- **`pipelines/1_Abromics_general_pipeline.yaml`**: The overarching Orchestrator Source of Truth defining the `joins` structure to pull all modules globally.
 
 ### Latent Rule Extraction (Systemic Code Behaviors)
 
@@ -235,5 +235,5 @@ This registry tracks the purpose, inputs/outputs, and core logic of the various 
 6. **`ui_schema` kwarg in `@register_action` and `@register_plot_component` (ADR-075)**:
    - Each decorator may carry an optional `ui_schema` keyword argument — a dict describing the BLUEPRINT IDE form for that action or component. The schema drives widget generation in the BLUEPRINT Architect without requiring separate schema files. Example: `@register_action("cast", ui_schema={"columns": {"widget": "column_selector", "multi": true}, "dtype": {"widget": "dtype_picker"}})`.
    - `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` reads all `ui_schema` dicts at startup and builds the action/component picker catalog used by the BLUEPRINT form builder.
-   - If `ui_schema` is absent from a decorator, the action is available in manifests but has no BLUEPRINT form (manual YAML only via the escape hatch).
+   - If `ui_schema` is absent from a decorator, the action is available in data analysis recipes but has no BLUEPRINT form (manual YAML only via the escape hatch).
    - Action `__doc__` strings serve as the help text displayed in the BLUEPRINT IDE; they are resolved at runtime via `importlib` (air-gap safe).

@@ -50,7 +50,7 @@ The wrapper `scripts/run_audits.sh` groups scripts by their scheduled day slot:
 cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 
 ./scripts/run_audits.sh sunday      # @deps + cross-lib
-./scripts/run_audits.sh wednesday   # manifest integrity + manifest coherence
+./scripts/run_audits.sh wednesday   # data analysis recipe integrity + data analysis recipe coherence
 ./scripts/run_audits.sh thursday    # phase order + changelog sync + template flags
 ./scripts/run_audits.sh friday      # task drift
 ./scripts/run_audits.sh all         # every scheduled audit in one go
@@ -72,12 +72,12 @@ DATE=$(date +%Y-%m-%d)
 # Pick the script you need:
 .venv/bin/python scripts/audit_cross_lib.py           --output .claude/logs/audits/audit_cross_lib_${DATE}.md
 .venv/bin/python scripts/audit_deps_verify.py         --output .claude/logs/audits/audit_deps_${DATE}.md
-.venv/bin/python scripts/audit_manifest_integrity.py  --output .claude/logs/audits/audit_manifest_${DATE}.md
+.venv/bin/python scripts/audit_data_analysis_recipe_integrity.py  --output .claude/logs/audits/audit_data_analysis_recipe_${DATE}.md
 .venv/bin/python scripts/audit_task_drift.py          --output .claude/logs/audits/audit_task_drift_${DATE}.md
 .venv/bin/python scripts/audit_template_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
 .venv/bin/python scripts/audit_phase_order.py         --output .claude/logs/audits/audit_phase_order_${DATE}.md
 .venv/bin/python scripts/audit_changelog_sync.py      --output .claude/logs/audits/audit_changelog_${DATE}.md
-.venv/bin/python scripts/audit_manifest_coherence.py  --output .claude/logs/audits/audit_manifest_coherence_${DATE}.md
+.venv/bin/python scripts/audit_data_analysis_recipe_coherence.py  --output .claude/logs/audits/audit_data_analysis_recipe_coherence_${DATE}.md
 
 # On-demand (slower — run after library updates or before a release):
 .venv/bin/python scripts/audit_package_deps.py        --output .claude/logs/audits/audit_package_deps_${DATE}.md
@@ -108,7 +108,7 @@ enables them, and prints a status table. Done.
 | Timer | When | Scripts |
 |-------|------|---------|
 | `sparmvet-audit-sunday.timer` | Sunday 23:00 | @deps + cross-lib |
-| `sparmvet-audit-wednesday.timer` | Wednesday 22:00 | manifest integrity + coherence |
+| `sparmvet-audit-wednesday.timer` | Wednesday 22:00 | data analysis recipe integrity + coherence |
 | `sparmvet-audit-thursday.timer` | Thursday 21:00 | phase order + changelog + template flags + CSS + hardcoded + palette |
 | `sparmvet-audit-friday.timer` | Friday 20:00 | task drift |
 
@@ -244,32 +244,32 @@ Exit codes: 0 = PASS or known debt only, 1 = new blockers found, 2 = script erro
 
 ---
 
-## Routine 3 — Manifest Structure Integrity
+## Routine 3 — Data analysis recipe Structure Integrity
 
 **Schedule:** Wednesdays at 22:00
 
 ```
 Create a weekly audit routine for the SPARMVET_VIZ project that runs every Wednesday at 22:00.
 
-Name: "SPARMVET: Manifest Integrity"
+Name: "SPARMVET: Data analysis recipe Integrity"
 
-Purpose: Run all pipeline manifests in config/manifests/pipelines/ through the assembler
+Purpose: Run all pipeline data analysis recipes in config/data_analysis_recipes/pipelines/ through the assembler
 (debug_assembler.py) to verify they produce valid Parquet output without errors.
 Catches broken wrangling steps, missing fields, YAML syntax issues, and action name typos.
 
 Command to run (from project root):
-  .venv/bin/python scripts/audit_manifest_integrity.py --output .claude/logs/audits/audit_manifest_$(date +%Y-%m-%d).md
+  .venv/bin/python scripts/audit_data_analysis_recipe_integrity.py --output .claude/logs/audits/audit_data_analysis_recipe_$(date +%Y-%m-%d).md
 
 After running:
-1. Read the generated report at .claude/logs/audits/audit_manifest_YYYY-MM-DD.md
-2. For each FAIL manifest:
+1. Read the generated report at .claude/logs/audits/audit_data_analysis_recipe_YYYY-MM-DD.md
+2. For each FAIL data analysis recipe:
    - Read the error output in the report carefully (assembler stderr)
    - Create a task in .claude/tasks/tasks.md:
-     - [ ] [AUDIT] Fix manifest `config/manifests/pipelines/NAME.yaml`: [brief error summary] [sonnet/medium]
-3. Assembler scratch artifacts are in tmpAI/audit_manifest_integrity/ — inspect TSV outputs
+     - [ ] [AUDIT] Fix data analysis recipe `config/data_analysis_recipes/pipelines/NAME.yaml`: [brief error summary] [sonnet/medium]
+3. Assembler scratch artifacts are in tmpAI/audit_data_analysis_recipe_integrity/ — inspect TSV outputs
    for data contract issues
 4. Update the status matrix in .claude/workflows/audit_routine_registry.md
-5. Commit with message: "audit: manifest integrity YYYY-MM-DD [PASS|FAIL N]"
+5. Commit with message: "audit: data analysis recipe integrity YYYY-MM-DD [PASS|FAIL N]"
 
 Exit codes: 0 = all pass, 1 = one or more failures, 2 = script/environment error.
 ```
@@ -330,7 +330,7 @@ After running:
    - Open config/ui/templates/<app features>_template.yaml
    - Fix the flagged issue (missing flag, wrong cascade, forbidden dependency)
    - Re-run validate_app_features_config.py --app-features <name> --strict to verify the fix
-3. Fatal cascade errors (ADR-077: manifest_edit_enabled or blueprint_agent_enabled without
+3. Fatal cascade errors (ADR-077: data_analysis_recipe_edit_enabled or blueprint_agent_enabled without
    blueprint_enabled) MUST be fixed before the app can start — treat as P0
 4. Update the status matrix in .claude/workflows/audit_routine_registry.md
 5. Commit with message: "audit: template consistency YYYY-MM-DD [PASS|FAIL N]"
@@ -658,7 +658,7 @@ After running:
 2. For each UNRESOLVED stale registration (❌ section):
    - Check the plotnine changelog: was the component renamed or removed?
    - If renamed: update the @register_plot_component("name") call to the new name
-   - If removed: delete the registration — file a task if any manifests use it
+   - If removed: delete the registration — file a task if any data analysis recipes use it
    - If a custom SPARMVET component: add it to audit_exclusions.yaml under custom_viz_components
    - Task format: - [ ] [PARITY ADR-036] Resolve stale: `<name>` — rename or remove [haiku/low]
 3. For each COVERAGE GAP (plotnine symbols with no registration):
@@ -676,19 +676,19 @@ Exit codes: 0 = no unresolved stale registrations, 1 = unresolved stale found.
 
 ---
 
-## Routine 13 — Manifest Coherence (Static Validation)
+## Routine 13 — Data analysis recipe Coherence (Static Validation)
 
-**Schedule:** Weekly, Wednesdays 22:00 (same slot as manifest integrity)
+**Schedule:** Weekly, Wednesdays 22:00 (same slot as data analysis recipe integrity)
 
-> Complements Routine 3 (manifest integrity) — Routine 3 checks "does it assemble?",
+> Complements Routine 3 (data analysis recipe integrity) — Routine 3 checks "does it assemble?",
 > this checks "are the pieces internally consistent?" without running the assembler.
 
 ```
 Create a weekly audit routine for the SPARMVET_VIZ project that runs every Wednesday at 22:00.
 
-Name: "SPARMVET: Manifest Coherence"
+Name: "SPARMVET: Data analysis recipe Coherence"
 
-Purpose: Static validation of all pipeline manifests in config/manifests/pipelines/ without
+Purpose: Static validation of all pipeline data analysis recipes in config/data_analysis_recipes/pipelines/ without
 running the assembler. Checks four structural contracts:
   1. Input field coverage — every input_fields slug must match an actual column
      in the source TSV (catches silent skip-on-mismatch bugs).
@@ -703,24 +703,24 @@ Known false positives (assembly-level join keys produced by wrangling steps) are
 managed via .claude/workflows/audit_exclusions.yaml — the script reads it automatically.
 
 Command to run (from project root):
-  .venv/bin/python scripts/audit_manifest_coherence.py --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md
+  .venv/bin/python scripts/audit_data_analysis_recipe_coherence.py --output .claude/logs/audits/audit_data_analysis_recipe_coherence_$(date +%Y-%m-%d).md
 
 For faster run without TSV column checks:
-  .venv/bin/python scripts/audit_manifest_coherence.py --skip-tsv --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md
+  .venv/bin/python scripts/audit_data_analysis_recipe_coherence.py --skip-tsv --output .claude/logs/audits/audit_data_analysis_recipe_coherence_$(date +%Y-%m-%d).md
 
-For a single manifest:
-  .venv/bin/python scripts/audit_manifest_coherence.py --manifest config/manifests/pipelines/NAME.yaml --output .claude/logs/audits/audit_manifest_coherence_$(date +%Y-%m-%d).md
+For a single data analysis recipe:
+  .venv/bin/python scripts/audit_data_analysis_recipe_coherence.py --data-analysis-recipe config/data_analysis_recipes/pipelines/NAME.yaml --output .claude/logs/audits/audit_data_analysis_recipe_coherence_$(date +%Y-%m-%d).md
 
 After running:
-1. Read the generated report at .claude/logs/audits/audit_manifest_coherence_YYYY-MM-DD.md
+1. Read the generated report at .claude/logs/audits/audit_data_analysis_recipe_coherence_YYYY-MM-DD.md
 2. For each ❌ Invalid Action Name:
    - Check rules_agent_role_bioscientist.md §8 for the correct action name
-   - Update the manifest YAML — fix the typo or rename
-   - Task: - [ ] [AUDIT] Fix invalid action `<name>` in `<manifest>` [haiku/low]
+   - Update the data analysis recipe YAML — fix the typo or rename
+   - Task: - [ ] [AUDIT] Fix invalid action `<name>` in `<data analysis recipe>` [haiku/low]
 3. For each ❌ Invalid Component Name:
    - Check libs/viz_factory/src/viz_factory/ for the registered name
    - Update the plot spec YAML
-   - Task: - [ ] [AUDIT] Fix invalid component `<name>` in `<manifest>` [haiku/low]
+   - Task: - [ ] [AUDIT] Fix invalid component `<name>` in `<data analysis recipe>` [haiku/low]
 4. For each ❌ Join Key Violation:
    - If `on:` boolean trap: add quotes — `'on': column_name`
    - If key genuinely missing from input_fields: either add the field or add to audit_exclusions.yaml
@@ -729,9 +729,9 @@ After running:
    - Run `head -1 <source.tsv>` to see actual column names
    - Update input_fields slugs to match exactly (case-sensitive)
 6. Update the status matrix in .claude/workflows/audit_routine_registry.md
-7. Commit with message: "audit: manifest coherence YYYY-MM-DD [PASS|FAIL N]"
+7. Commit with message: "audit: data analysis recipe coherence YYYY-MM-DD [PASS|FAIL N]"
 
-Exit codes: 0 = all manifests pass, 1 = one or more violations, 2 = configuration error.
+Exit codes: 0 = all data analysis recipes pass, 1 = one or more violations, 2 = configuration error.
 ```
 
 ---
@@ -745,7 +745,7 @@ Before scheduling a routine, verify the script works locally:
 DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_cross_lib.py           --output .claude/logs/audits/audit_cross_lib_${DATE}.md
 .venv/bin/python scripts/audit_deps_verify.py         --output .claude/logs/audits/audit_deps_${DATE}.md
-.venv/bin/python scripts/audit_manifest_integrity.py  --output .claude/logs/audits/audit_manifest_${DATE}.md
+.venv/bin/python scripts/audit_data_analysis_recipe_integrity.py  --output .claude/logs/audits/audit_data_analysis_recipe_${DATE}.md
 .venv/bin/python scripts/audit_task_drift.py          --output .claude/logs/audits/audit_task_drift_${DATE}.md
 .venv/bin/python scripts/audit_template_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
 .venv/bin/python scripts/audit_phase_order.py         --output .claude/logs/audits/audit_phase_order_${DATE}.md
@@ -759,8 +759,8 @@ DATE=$(date +%Y-%m-%d)
 # On-demand — run after Polars/Plotnine updates
 .venv/bin/python scripts/audit_parity_coverage.py     --output .claude/logs/audits/audit_parity_coverage_${DATE}.md
 
-# Weekly (same slot as manifest integrity) — fast static check
-.venv/bin/python scripts/audit_manifest_coherence.py  --output .claude/logs/audits/audit_manifest_coherence_${DATE}.md
+# Weekly (same slot as data analysis recipe integrity) — fast static check
+.venv/bin/python scripts/audit_data_analysis_recipe_coherence.py  --output .claude/logs/audits/audit_data_analysis_recipe_coherence_${DATE}.md
 
 # Weekly (Thursday slot) — palette registry validity (ADR-081)
 .venv/bin/python scripts/audit_palette_registry.py    --output .claude/logs/audits/audit_palette_${DATE}.md

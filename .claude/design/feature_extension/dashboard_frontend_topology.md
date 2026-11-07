@@ -25,7 +25,7 @@ So app2 is not a workaround — it is the designed-for case. The shared product 
 
 ```
 libs/ingestion · libs/transformer · libs/viz_factory · libs/connector · libs/blueprint_arch · libs/utils
-        (the engine + render + manifest contract — frontend-agnostic)
+        (the engine + render + data analysis recipe contract — frontend-agnostic)
               │                                   │
           app/ (app1)                         app2 (NEW)
        workbench / producer                viewer / dashboard / consumer
@@ -41,14 +41,14 @@ The two visions serve **different users with different mental models**:
 |---|---|---|
 | Role | Workbench / producer | Viewer / dashboard / consumer |
 | User | Bioinformatician building pipelines | Epidemiologist / surveillance team / decision-maker |
-| Activity | Wrangle, audit (T3), author manifests, explore | Read pre-built pathogen dashboards; explore interactively |
+| Activity | Wrangle, audit (T3), author data analysis recipes, explore | Read pre-built pathogen dashboards; explore interactively |
 | Journey | TEST_LAB → BLUEPRINT → GALLERY → HOME (`developer_workflow.md`) | Open a dashboard, interact, export/share |
 | Interactivity | L1 server-reactive (filter→re-render) | L2 client-live (linked selection) — the JS fork |
 | App features files | Full app features/flag system, T3 audit | Likely simpler (or none) — mostly read/explore |
 
 **Field precedent:** this is the NextStrain model — *augur* (the pipeline) and *auspice* (the interactive viewer) are separate tools sharing a data contract. Microreact is similarly a viewer, not a pipeline builder. Splitting producer from consumer is the norm in genomic surveillance, not the exception.
 
-The current app's whole architecture (app features masking, T3 audit gatekeeper, tier toggles, manifest authoring) is **producer machinery**. A consumer dashboard does not want most of it — bolting HOME2 into app1 means carrying all that weight for an audience that doesn't need it.
+The current app's whole architecture (app features masking, T3 audit gatekeeper, tier toggles, data analysis recipe authoring) is **producer machinery**. A consumer dashboard does not want most of it — bolting HOME2 into app1 means carrying all that weight for an audience that doesn't need it.
 
 ---
 
@@ -76,7 +76,7 @@ These are not exclusive: HOME2 could be a thin producer-side preview; app2 the p
 |---|---|---|
 | Ingestion, Tier 1/2/3 assembly, contracts | ✅ all | — |
 | VizFactory (render backends: plotnine / R / geom_polygon) | ✅ all | render-backend dispatch reuse |
-| Manifest grammar + `dashboard:` block | ✅ | dashboard layout consumer |
+| Data analysis recipe grammar + `dashboard:` block | ✅ | dashboard layout consumer |
 | Path authority / deployments | pattern reusable (`connector`) | own deployment set |
 | **Frontend shell** | — | **the new app — layout, panel grid, interactivity** |
 | App features / T3 audit / authoring | — | mostly **not needed** (simpler gating) |
@@ -111,7 +111,7 @@ Different audiences, different security postures, different uptime needs. One mo
 
 ## 8. Risks / constraints
 
-- **Two apps to maintain.** The shared-lib contract (manifest grammar, VizFactory API) must stay stable — version the libraries and treat their public APIs as contracts. (The `@deps` system already tracks cross-lib coupling.)
+- **Two apps to maintain.** The shared-lib contract (data analysis recipe grammar, VizFactory API) must stay stable — version the libraries and treat their public APIs as contracts. (The `@deps` system already tracks cross-lib coupling.)
 - **Duplicated app-level concerns** (config, deployments, gating). Mitigate by extracting genuinely shared app-level helpers into a small lib (e.g. `connector` already holds path authority) rather than copy-paste.
 - **The interactive (L2/JS) render path is new regardless** — app2 doesn't avoid it, it's the natural home for it (see `composite_dashboard_home2.md` §10). app2 decouples that JS investment from the producer app's stable server-reactive model.
 - **Scope creep** — app2 must stay a *viewer*; the moment it grows authoring/wrangling it is duplicating app1. Keep the producer/consumer line crisp.
@@ -120,7 +120,7 @@ Different audiences, different security postures, different uptime needs. One mo
 
 ## 9. How this composes the whole exploration
 
-- The **engine + manifest + shared-key** trunk serves app1, HOME2, and app2 alike — build/keep it solid.
+- The **engine + data analysis recipe + shared-key** trunk serves app1, HOME2, and app2 alike — build/keep it solid.
 - **R backend** (`r_backend.md`) and **ggtree** (`bioinformatics_viz.md`) produce static panels usable in *either* frontend.
 - The **interactive (JS) roadmap** (`composite_dashboard_home2.md` §10) finds its cleanest home in **app2**, away from app1's producer machinery.
 - **app2 is a way to satisfy "different needs/deployments" without overloading app1** — which is precisely the Clear Lines payoff.
@@ -146,7 +146,7 @@ All three honor the two-tier dependency model. The current state is **monorepo +
 ## 11. Open questions (survey-informed)
 
 1. Is the dashboard audience the **same** producers (→ HOME2) or a **different** consumer group (→ app2)? *The survey's most decision-relevant question.*
-2. Does app2 need authoring at all, or is it strictly a viewer fed by app1-produced manifests/data?
+2. Does app2 need authoring at all, or is it strictly a viewer fed by app1-produced data_analysis_recipes/data?
 3. Framework: Shiny+widgets (continuity) vs JS+FastAPI (polished public viewer)?
 4. Deployment target(s) for app2 — institutional intranet, public, Galaxy/IRIDA embed?
 5. Gating — does app2 need any app features system, or just per-dashboard access control?

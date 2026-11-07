@@ -1,5 +1,5 @@
 [Unit]
-Description=SPARMVET VIZ Audit — Wednesday (manifest integrity + coherence)
+Description=SPARMVET VIZ Audit — Wednesday (data analysis recipe integrity + coherence)
 
 [Timer]
 OnCalendar=Wed *-*-* 22:00:00

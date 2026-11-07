@@ -11,12 +11,12 @@ Display rules
 -------------
 - testing_mode == False  (pipeline-static, pipeline-exploration-simple):
     Read-only display of the configured/injected data paths derived from
-    the active manifest's data_schemas. The user cannot override paths;
+    the active data analysis recipe's data_schemas. The user cannot override paths;
     they are fixed by the deployment configuration.
 - testing_mode == True   (developer, qa, pipeline-exploration-advanced,
     project-independent):
     Same listing but framed as the *current default* and accompanied by
-    the manifest replacement upload (gated by metadata_ingestion_enabled)
+    the data analysis recipe replacement upload (gated by metadata_ingestion_enabled)
     and the multi-file ingestion slot (gated by data_ingestion_enabled).
 
 Reactive value passed in: active_cfg (so the listing refreshes on project
@@ -125,7 +125,7 @@ def define_data_import_server(input, output, session, *,
                 )
             else:
                 files_block = ui.tags.small(
-                    "No source files resolved for this manifest.",
+                    "No source files resolved for this data analysis recipe.",
                     class_="text-muted px-2 d-block spv-text-meta",
                 )
 
@@ -152,7 +152,7 @@ def define_data_import_server(input, output, session, *,
             hint = (
                 "💡 Hold Ctrl (Windows/Linux) or ⌘ Cmd (Mac) to select multiple files."
                 if multi else
-                "Select a TSV/CSV metadata file to replace the active manifest source."
+                "Select a TSV/CSV metadata file to replace the active data analysis recipe source."
             )
             upload_blocks.append(
                 ui.div(

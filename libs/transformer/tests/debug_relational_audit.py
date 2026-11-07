@@ -27,34 +27,34 @@ except ImportError as e:
     sys.exit(1)
 
 
-def perform_relational_audit(manifest_path: str, output_dir: str):
+def perform_relational_audit(data_analysis_recipe_path: str, output_dir: str):
     print(f"\n{'='*80}")
     print(f" 🛡️  RELATIONAL ROW-EXPLOSION AUDIT")
-    print(f" Target: {manifest_path}")
+    print(f" Target: {data_analysis_recipe_path}")
     print(f"{'='*80}\n")
 
-    # 1. Load Manifest
-    cm = ConfigManager(manifest_path)
-    manifest = cm.raw_config
+    # 1. Load Data Analysis Recipe
+    cm = ConfigManager(data_analysis_recipe_path)
+    data_analysis_recipe = cm.raw_config
 
     # 2. Setup Components
     data_dir = str(project_root / "assets/test_data")
     ingestor = DataIngestor(data_dir)
 
     all_schemas = {}
-    all_schemas.update(manifest.get("data_schemas", {}))
-    if "metadata_schema" in manifest:
-        all_schemas["metadata_schema"] = manifest["metadata_schema"]
-    all_schemas.update(manifest.get("additional_datasets_schemas", {}))
+    all_schemas.update(data_analysis_recipe.get("data_schemas", {}))
+    if "metadata_schema" in data_analysis_recipe:
+        all_schemas["metadata_schema"] = data_analysis_recipe["metadata_schema"]
+    all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
 
-    assemblies = manifest.get("join_manifests", {})
+    assemblies = data_analysis_recipe.get("joins", {})
 
     os.makedirs(output_dir, exist_ok=True)
     report_path = os.path.join(output_dir, "relational_audit_report.txt")
 
     with open(report_path, "w") as report:
         report.write(f"Relational Row-Explosion Audit Report\n")
-        report.write(f"Manifest: {manifest_path}\n")
+        report.write(f"DataAnalysisRecipe: {data_analysis_recipe_path}\n")
         report.write(f"{'-'*40}\n\n")
 
         for assembly_id, info in assemblies.items():
@@ -138,7 +138,7 @@ def perform_relational_audit(manifest_path: str, output_dir: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Relational Audit Tool")
-    parser.add_argument("--manifest", required=True)
-    parser.add_argument("--output", default="tmp/Manifest_test/ST22_audit/")
+    parser.add_argument("--data-analysis-recipe", required=True)
+    parser.add_argument("--output", default="tmp/data_analysis_recipe_test/ST22_audit/")
     args = parser.parse_args()
-    perform_relational_audit(args.manifest, args.output)
+    perform_relational_audit(args.data_analysis_recipe, args.output)

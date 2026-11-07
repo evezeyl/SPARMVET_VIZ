@@ -81,11 +81,11 @@ def _load_project(page: Page, base_url: str, project_id: str = "1_test_data_ST22
 def _navigate_to_mlst_plot(page: Page) -> None:
     """Navigate to the AMR/Virulence group → mlst_bar plot (has 'year' numeric column).
 
-    Group label: "💊 AMR and ☠️ Virulence" (from manifest description field).
+    Group label: "💊 AMR and ☠️ Virulence" (from data analysis recipe description field).
     Plot tab: "Mlst Bar" (from p_id.replace("_"," ").title() in dynamic_tabs).
     If navigation fails the caller should skip — this is dataset-specific.
     """
-    # Group tab label comes from manifest description field (home_theater.py L709)
+    # Group tab label comes from data analysis recipe description field (home_theater.py L709)
     # Use :has-text for emoji-containing labels (role matching can fail on emoji)
     amr_tab = page.locator(".nav-link:has-text('AMR')")
     if amr_tab.count() == 0:
@@ -109,7 +109,7 @@ def _no_render_error(page: Page) -> None:
 def _open_filters_panel(page: Page) -> None:
     """Expand the Filters accordion panel in the left sidebar.
 
-    The accordion initialises with only 'Manifest Choice' open (home_theater.py).
+    The accordion initialises with only 'Data analysis recipe Choice' open (home_theater.py).
     The 'Filters' panel only renders when interactivity_enabled=true (developer/qa
     app features) and is collapsed by default — clicking the header expands it so
     #filter_add_row becomes visible.
@@ -299,21 +299,21 @@ class TestPhase25Panels:
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in ("pipeline-static", "pipeline-exploration-simple"),
-        reason="Manifest Choice only absent for pipeline app features files"
+        reason="Data analysis recipe Choice only absent for pipeline app features files"
     )
-    def test_manifest_choice_hidden_for_pipeline_static(
+    def test_data_analysis_recipe_choice_hidden_for_pipeline_static(
         self, page: Page, shiny_app: ShinyAppProc
     ):
-        """pipeline-static/simple: Manifest Choice panel excluded from accordion DOM.
+        """pipeline-static/simple: Data analysis recipe Choice panel excluded from accordion DOM.
 
-        manifest_selector.visible=false means the panel is never added to the
+        data_analysis_recipe_selector.visible=false means the panel is never added to the
         accordion panels list — it is structurally absent, not just CSS-hidden.
         """
         page.goto(shiny_app.url)
         page.wait_for_selector("#nav_accordion", timeout=15_000)
         accordion = page.locator("#nav_accordion")
-        assert accordion.get_by_text("Manifest Choice").count() == 0, \
-            "Manifest Choice panel should be absent from accordion for pipeline app features files"
+        assert accordion.get_by_text("Data analysis recipe Choice").count() == 0, \
+            "Data analysis recipe Choice panel should be absent from accordion for pipeline app features files"
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,

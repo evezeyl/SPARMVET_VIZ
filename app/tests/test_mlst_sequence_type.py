@@ -10,21 +10,21 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from app.modules.manifest_validator import find_manifests
+from app.modules.data_analysis_recipe_validator import find_data_analysis_recipes
 from app.modules.orchestrator import DataOrchestrator
 from utils.config_loader import ConfigManager
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFESTS_DIR = ROOT / "config" / "manifests" / "pipelines"
+DATA_ANALYSIS_RECIPES_DIR = ROOT / "config" / "data_analysis_recipes" / "pipelines"
 RAW = ROOT / "assets" / "test_data" / "1_test_data_ST22_dummy" / "test_data_MLST_results_20260307_105756.tsv"
-# The ingestion step turns these into nulls (libs/ingestion DataSanitizer); the manifest labels them.
+# The ingestion step turns these into nulls (libs/ingestion DataSanitizer); the data analysis recipe labels them.
 UNDETERMINED = "Non Determined"
 
 
 @pytest.fixture(scope="module")
 def mlst():
-    raw = ConfigManager(str(MANIFESTS_DIR / "1_test_data_ST22_dummy.yaml")).raw_config
-    orchestrator = DataOrchestrator(MANIFESTS_DIR, ROOT / "assets" / "test_data")
+    raw = ConfigManager(str(DATA_ANALYSIS_RECIPES_DIR / "1_test_data_ST22_dummy.yaml")).raw_config
+    orchestrator = DataOrchestrator(DATA_ANALYSIS_RECIPES_DIR, ROOT / "assets" / "test_data")
     return orchestrator.prepare_ingredient("MLST", raw["data_schemas"]["MLST"]).collect()
 
 
@@ -45,7 +45,7 @@ def test_there_are_several_sequence_types_and_no_nulls(mlst):
 
 
 def _recode_rules(node):
-    """Yield the rules list of every recode_values step found anywhere in a manifest."""
+    """Yield the rules list of every recode_values step found anywhere in a data analysis recipe."""
     if isinstance(node, dict):
         if node.get("action") == "recode_values":
             yield node.get("rules") or []
@@ -56,8 +56,8 @@ def _recode_rules(node):
             yield from _recode_rules(item)
 
 
-@pytest.mark.parametrize("path", find_manifests(MANIFESTS_DIR), ids=lambda p: p.name)
-def test_no_manifest_uses_default_keep_in_recode_values(path):
+@pytest.mark.parametrize("path", find_data_analysis_recipes(DATA_ANALYSIS_RECIPES_DIR), ids=lambda p: p.name)
+def test_no_data_analysis_recipe_uses_default_keep_in_recode_values(path):
     raw = ConfigManager(str(path)).raw_config
     bad = [
         rule for rules in _recode_rules(raw) for rule in rules

@@ -8,13 +8,13 @@ Run:
 
 Tests are grouped into four tiers:
   T1-BP — Navigation into the Blueprint workspace (Wrangle Studio sidebar)
-  T2-BP — Manifest loading and sidebar panel rendering
+  T2-BP — Data analysis recipe loading and sidebar panel rendering
   T3-BP — YAML escape hatch round-trip and Validate panel (BP-ESCAPE-1, BP-VALIDATE-1)
-  T4-BP — Groups & Plots + Manifest Info panels (BP-GROUPS-1, BP-META-1)
+  T4-BP — Groups & Plots + Data analysis recipe Info panels (BP-GROUPS-1, BP-META-1)
 
 Notes:
-  - qa app features: blueprint_enabled=true, manifest_edit_enabled=true, ghost_save=false.
-  - All tests require the app to render the Blueprint sidebar after loading a manifest.
+  - qa app features: blueprint_enabled=true, data_analysis_recipe_edit_enabled=true, ghost_save=false.
+  - All tests require the app to render the Blueprint sidebar after loading a data analysis recipe.
   - `_wait_shiny` must follow every Shiny-reactive interaction to avoid DOM race conditions.
   - Emoji in accordion headers require :has-text selectors (role-based matching fails).
 """
@@ -50,7 +50,7 @@ def _no_render_error(page: Page) -> None:
 def _navigate_to_blueprint(page: Page, base_url: str) -> None:
     """Navigate to the Wrangle Studio (Blueprint) workspace.
 
-    Selects the first available manifest in the dropdown, waits for the
+    Selects the first available data analysis recipe in the dropdown, waits for the
     Blueprint sidebar accordion to render.  Skips the navigation if the
     accordion is already visible (so tests sharing a module-scoped page
     don't each trigger a full re-mount).
@@ -67,19 +67,19 @@ def _navigate_to_blueprint(page: Page, base_url: str) -> None:
     page.locator("#sidebar_nav").get_by_text("Blueprint Architect").first.click()
     _wait_shiny(page)
 
-    # Wait for the manifest selector to populate (auto-discovery runs on nav)
+    # Wait for the data analysis recipe selector to populate (auto-discovery runs on nav)
     page.wait_for_function(
         "() => {"
-        "  var sel = document.querySelector('#stored_manifest_selector');"
+        "  var sel = document.querySelector('#stored_data_analysis_recipe_selector');"
         "  return sel && sel.options.length > 1;"
         "}",
         timeout=15_000,
     )
 
-    # Select the first real manifest (index 1 — index 0 is the placeholder)
+    # Select the first real data analysis recipe (index 1 — index 0 is the placeholder)
     page.evaluate(
         "() => {"
-        "  var sel = document.querySelector('#stored_manifest_selector');"
+        "  var sel = document.querySelector('#stored_data_analysis_recipe_selector');"
         "  if (sel && sel.options.length > 1) {"
         "    sel.selectedIndex = 1;"
         "    sel.dispatchEvent(new Event('change', {bubbles: true}));"
@@ -137,33 +137,33 @@ class TestBlueprintNavigation:
 
 
 # ---------------------------------------------------------------------------
-# T2-BP — Manifest loading and sidebar panel rendering
+# T2-BP — Data analysis recipe loading and sidebar panel rendering
 # ---------------------------------------------------------------------------
 
-class TestBlueprintManifestLoad:
+class TestBlueprintDataAnalysisRecipeLoad:
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa app features",
     )
-    def test_manifest_selector_has_options(self, page: Page, shiny_app: ShinyAppProc):
-        """The manifest selector populates with at least one YAML option."""
+    def test_data_analysis_recipe_selector_has_options(self, page: Page, shiny_app: ShinyAppProc):
+        """The data analysis recipe selector populates with at least one YAML option."""
         _navigate_to_blueprint(page, shiny_app.url)
         count_js = (
             "() => {"
-            "  var sel = document.querySelector('#stored_manifest_selector');"
+            "  var sel = document.querySelector('#stored_data_analysis_recipe_selector');"
             "  return sel ? Array.from(sel.options)"
             "      .filter(o => o.value.endsWith('.yaml')).length : 0;"
             "}"
         )
         count = page.evaluate(count_js)
-        assert count >= 1, "No .yaml manifests found in stored_manifest_selector"
+        assert count >= 1, "No .yaml data analysis recipes found in stored_data_analysis_recipe_selector"
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa app features",
     )
     def test_groups_plots_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
-        """After manifest load, Groups & Plots panel renders without error."""
+        """After data analysis recipe load, Groups & Plots panel renders without error."""
         _navigate_to_blueprint(page, shiny_app.url)
         _expand_accordion(page, "Groups")
         content = page.locator("#bp_groups_inventory_ui")
@@ -174,10 +174,10 @@ class TestBlueprintManifestLoad:
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa app features",
     )
-    def test_manifest_info_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
-        """After manifest load, Manifest Info panel renders without error."""
+    def test_data_analysis_recipe_info_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
+        """After data analysis recipe load, Data analysis recipe Info panel renders without error."""
         _navigate_to_blueprint(page, shiny_app.url)
-        _expand_accordion(page, "Manifest Info")
+        _expand_accordion(page, "Data analysis recipe Info")
         content = page.locator("#bp_meta_form_ui")
         expect(content).to_be_visible(timeout=8_000)
         _no_render_error(page)
@@ -193,7 +193,7 @@ class TestBlueprintEscapeAndValidate:
         reason="Blueprint requires developer or qa app features",
     )
     def test_escape_hatch_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
-        """YAML Escape Hatch panel renders with content after manifest load."""
+        """YAML Escape Hatch panel renders with content after data analysis recipe load."""
         _navigate_to_blueprint(page, shiny_app.url)
         _expand_accordion(page, "YAML Escape")
         content = page.locator("#bp_yaml_escape_ui")
@@ -207,7 +207,7 @@ class TestBlueprintEscapeAndValidate:
     def test_escape_hatch_shows_yaml_content(self, page: Page, shiny_app: ShinyAppProc):
         """The escape hatch textarea/pre contains YAML text (not empty).
 
-        (a) Validates that the escape hatch surface is populated after loading a manifest.
+        (a) Validates that the escape hatch surface is populated after loading a data analysis recipe.
         For read-round-trip correctness: content must include at least one YAML keyword.
         """
         _navigate_to_blueprint(page, shiny_app.url)
@@ -240,7 +240,7 @@ class TestBlueprintEscapeAndValidate:
                 return el.innerText;
             }
         """)
-        yaml_keywords = ["data_schemas", "info", "analysis_groups", "join_manifests"]
+        yaml_keywords = ["data_schemas", "info", "analysis_groups", "joins"]
         found = any(kw in content_text for kw in yaml_keywords)
         assert found, (
             f"Escape hatch does not contain expected YAML content. "
@@ -252,7 +252,7 @@ class TestBlueprintEscapeAndValidate:
         reason="Blueprint requires developer or qa app features",
     )
     def test_validate_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
-        """Validate panel renders the 'Run validation' button after manifest load."""
+        """Validate panel renders the 'Run validation' button after data analysis recipe load."""
         _navigate_to_blueprint(page, shiny_app.url)
         _expand_accordion(page, "Validate")
         expect(page.locator("#btn_bp_validate")).to_be_visible(timeout=8_000)

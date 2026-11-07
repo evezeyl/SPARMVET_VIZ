@@ -4,19 +4,19 @@ SPARMVET (SP-Analytical AMR Visualization Engine) is a modular, declarative fram
 
 ## 🚀 Core Philosophy
 
-1. **Strict Data Contracts (ADR-013)**: Data enters through an ingestion layer where it is immediately validated against a manifest.
+1. **Strict Data Contracts (ADR-013)**: Data enters through an ingestion layer where it is immediately validated against a data analysis recipe.
 2. **3-Tier Data Lifecycle (ADR-024)**:
     - **Tier 1 (The Trunk)**: Foundations. Cleaning, joining, and relational tidy-up.
     - **Tier 2 (The Branch)**: Specifics. Reshaping and aggregation for a particular plot.
     - **Tier 3 (The Leaf)**: Transient. Reactive filtering in the UI via Predicate Pushdown.
 3. **Electronic Artist Pillar (VizFactory)**: A declarative Plotnine/ggplot abstraction that decouples "what to plot" from "how to plot."
 
-## 📜 Declarative Manifest Syntax
+## 📜 Declarative Data Analysis Recipe Syntax
 
 Wrangling logic is separated into logical tiers to promote reuse and clarity:
 
 ```yaml
-id: "example_manifest"
+id: "example_data_analysis_recipe"
 wrangling:
   tier1: # Relational Foundations
     - action: "rename"
@@ -43,10 +43,10 @@ Each library is independently installable and usable without the UI layer. If yo
 - [**transformer**](./libs/transformer/): The central wrangling and assembly engine (DataWrangler, DataAssembler).
 - [**viz_factory**](./libs/viz_factory/): Graphical composition and Plotnine orchestration.
 - [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, recipe governance.
-- [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, manifest bootstrapping, and reconciliation.
+- [**test_lab**](./libs/test_lab/): AquaSynthesizer for synthetic test data, data analysis recipe bootstrapping, and reconciliation.
 - [**utils**](./libs/utils/): Configuration loading, hashing, and shared utilities. **Base layer** — may be imported by any domain lib.
 - [**connector**](./libs/connector/): Deployment resolution and data-source adapters (ADR-048, Phase 23).
-- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, manifest navigator). Headless-safe — usable in CLI tools and export handlers without Shiny.
+- [**blueprint_arch**](./libs/blueprint_arch/): Blueprint Architect pure-Python logic (TubeMap mapper, data analysis recipe navigator). Headless-safe — usable in CLI tools and export handlers without Shiny.
 
 ## 🚀 Deployment Configuration
 
@@ -60,14 +60,14 @@ SPARMVET is designed to be deployed in different contexts — from a read-only p
 | **Passive filter** | Explore data ephemerally — no audit trail |
 | **T3 audit** | Justify and commit data decisions — creates permanent audit branch |
 | **Export** | Download reproducible bundle with full provenance |
-| **Import** | Upload metadata or full data mapped to the manifest |
+| **Import** | Upload metadata or full data mapped to the data analysis recipe |
 | **Gallery** | Browse chart recipe templates |
-| **Blueprint Architect** | Inspect and design manifest lineage |
-| **Test Lab** | Generate synthetic data and scaffold manifests |
+| **Blueprint Architect** | Inspect and design data analysis recipe lineage |
+| **Test Lab** | Generate synthetic data and scaffold data analysis recipes |
 
 ### Non-negotiable rule: full audit trail in every export
 
-Every export — regardless of configuration — includes a complete provenance record: data hashes, manifest hash, wrangling recipe hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_app_features.qmd).
+Every export — regardless of configuration — includes a complete provenance record: data hashes, data analysis recipe hash, wrangling recipe hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_app_features.qmd).
 
 ### Quick start
 
@@ -81,9 +81,9 @@ Available deployments: `pipeline-static`, `pipeline-exploration-simple`, `pipeli
 
 **Institutional / project color palettes** can be defined in `config/palettes.yaml` (optional). Named palettes defined there are available in:
 - The BLUEPRINT IDE color widget ("Project palette" source), and
-- Manifest `plot_defaults: palette: <name>` for automatic fill/colour scale injection at render time.
+- Data analysis recipe `plot_defaults: palette: <name>` for automatic fill/colour scale injection at render time.
 
-The built-in `sparmvet_brand` palette is always available even without this file. See [Manifest Structure Appendix](./docs/appendix/manifest_structure.yaml) for the format and resolution rules (ADR-081).
+The built-in `sparmvet_brand` palette is always available even without this file. See [Data analysis recipe Structure Appendix](./docs/appendix/data_analysis_recipe_structure.yaml) for the format and resolution rules (ADR-081).
 
 **Validate app features configs before deploying:**
 ```bash
@@ -128,12 +128,12 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 |---|---|
 | `scripts/install_libs.sh` | Install all 8 editable libs in one command (`VENV=.my_venv ./scripts/install_libs.sh`) |
 
-### `assets/scripts/` — manifest and deployment authoring
+### `assets/scripts/` — data analysis recipe and deployment authoring
 
 | Script | Purpose |
 |---|---|
-| `normalize_manifest_fields.py` | Sanitize manifests to ADR-041 Rich Dict standard |
-| `create_manifest.py` | Scaffold a new pipeline manifest from a dataset |
+| `normalize_data_analysis_recipe_fields.py` | Sanitize data analysis recipes to ADR-041 Rich Dict standard |
+| `create_data_analysis_recipe.py` | Scaffold a new pipeline data analysis recipe from a dataset |
 | `create_test_deployment.py` | Generate a dev deployment (ADR-048) |
 | `build_dep_graph.py` | Rebuild the `@deps` dependency graph |
 | `generate_demo_data.py` | Generate synthetic demo data via AquaSynthesizer |

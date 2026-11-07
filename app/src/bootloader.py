@@ -105,9 +105,9 @@ class Bootloader:
         # ADR-048 deployment fields (all optional in local dev deployment)
         project_root_str = self.deployment_config.get("project_root")
         self.project_root: Path | None = Path(project_root_str) if project_root_str else None
-        self.default_manifest: str | None = self.deployment_config.get("default_manifest")
+        self.default_data_analysis_recipe: str | None = self.deployment_config.get("default_data_analysis_recipe")
         self.default_app_features: str | None = self.deployment_config.get("default_app_features")
-        self.data_lookup: str = self.deployment_config.get("data_lookup", "manifest_paths")
+        self.data_lookup: str = self.deployment_config.get("data_lookup", "data_analysis_recipe_paths")
         self.deployment_name: str = self.deployment_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
         self.deployment_type: str = self.deployment_config.get("deployment_type", "filesystem")
 
@@ -168,7 +168,7 @@ class Bootloader:
         self.set_app_features(self.app_features)
 
         # 3. Project Authority (Agnostic Discovery)
-        self.project_dir = self.get_location("manifests")
+        self.project_dir = self.get_location("data_analysis_recipes")
         self.available_projects = self._discover_projects()
 
     def _resolve_deployment_path(self) -> tuple[Path, int]:
@@ -246,17 +246,17 @@ class Bootloader:
     def _validate_deployment(self) -> None:
         """Exit with DeploymentError if required location keys are missing from resolved paths."""
         errors = []
-        if self.data_lookup not in ("manifest_paths", "by_dataset_id"):
+        if self.data_lookup not in ("data_analysis_recipe_paths", "by_dataset_id"):
             errors.append(DeploymentError(
                 component="Bootloader",
                 problem=f"data_lookup '{self.data_lookup}' is not a valid choice",
                 location=f"data_lookup in {self.deployment_path}",
-                fix="Use manifest_paths (data from the source.path of the data analysis recipe) or by_dataset_id (data delivered into raw_data as <dataset id>.tsv).",
+                fix="Use data_analysis_recipe_paths (data from the source.path of the data analysis recipe) or by_dataset_id (data delivered into raw_data as <dataset id>.tsv).",
                 who="operator",
                 reference=_BOOT_REF,
             ))
         exit_if_errors(errors)
-        required = {"raw_data", "manifests", "cache", "user_data", "gallery"}
+        required = {"raw_data", "data_analysis_recipes", "cache", "user_data", "gallery"}
         missing = required - set(self._resolved_locations.keys())
         if missing:
             exit_if_errors([DeploymentError(
@@ -268,7 +268,7 @@ class Bootloader:
                 location=str(self.deployment_path),
                 fix=(
                     f"Add the missing keys to the 'locations:' block in {self.deployment_path}. "
-                    f"Required keys: raw_data, manifests, cache, user_data, gallery. "
+                    f"Required keys: raw_data, data analysis recipes, cache, user_data, gallery. "
                     f"See config/deployment/local/local.yaml for reference values."
                 ),
                 who="operator",
@@ -319,13 +319,13 @@ class Bootloader:
         )
 
     def _discover_projects(self) -> Dict[str, str]:
-        """Scans the project directory for YAML manifests."""
+        """Scans the project directory for YAML data analysis recipes."""
         mf_files = list(self.project_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
     def get_default_project(self) -> str:
-        """Returns the fixed_manifest project ID if set, else the first available project."""
-        fixed = self.get_manifest_selector().get("fixed_manifest")
+        """Returns the fixed_data_analysis_recipe project ID if set, else the first available project."""
+        fixed = self.get_data_analysis_recipe_selector().get("fixed_data_analysis_recipe")
         if fixed:
             return fixed
         if not self.available_projects:
@@ -375,7 +375,7 @@ class Bootloader:
           - import_helper_enabled=False suppresses data_ingestion_enabled
           - Deployment data_ingestion_enabled:false is an absolute override
 
-        Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are NOT
+        Group D cascades (data_analysis_recipe_edit_enabled, blueprint_agent_enabled) are NOT
         silently suppressed here — they are fatal validator errors raised by
         AppFeaturesValidator at startup (Rule 7). If you wrote them on while
         blueprint_enabled=False, the app refuses to start. See
@@ -452,10 +452,10 @@ class Bootloader:
             features.pop("export_bundle_enabled", None)
             features.pop("export_graph_enabled", None)
 
-        # FLAG-2: mirror manifest_selector.visible into features for is_enabled() access.
-        ms = config.get("manifest_selector", {})
-        if "manifest_selector_visible" not in features:
-            features["manifest_selector_visible"] = bool(ms.get("visible", True))
+        # FLAG-2: mirror data_analysis_recipe_selector.visible into features for is_enabled() access.
+        ms = config.get("data_analysis_recipe_selector", {})
+        if "data_analysis_recipe_selector_visible" not in features:
+            features["data_analysis_recipe_selector_visible"] = bool(ms.get("visible", True))
 
         # Group B: interactivity_enabled=False suppresses all interactive child flags.
         if not features.get("interactivity_enabled", False):
@@ -477,7 +477,7 @@ class Bootloader:
                 )
                 features["data_ingestion_enabled"] = False
 
-        # NOTE: Group D cascades (manifest_edit_enabled, blueprint_agent_enabled) are
+        # NOTE: Group D cascades (data_analysis_recipe_edit_enabled, blueprint_agent_enabled) are
         # intentionally NOT silently suppressed here. AppFeaturesValidator Rule 7 raises a
         # fatal error at startup if a template declares them on while blueprint_enabled=False.
         # The flag value passes through this loader unchanged so the validator sees the
@@ -514,9 +514,9 @@ class Bootloader:
         """Returns ui_banner config dict {logo_url, title, subtitle} or None if not set."""
         return self.config.get("ui_banner") or None
 
-    def get_manifest_selector(self) -> dict:
-        """Returns the manifest_selector block: {visible: bool, fixed_manifest: str|None}."""
-        return self.config.get("manifest_selector", {"visible": True, "fixed_manifest": None})
+    def get_data_analysis_recipe_selector(self) -> dict:
+        """Returns the data_analysis_recipe_selector block: {visible: bool, fixed_data_analysis_recipe: str|None}."""
+        return self.config.get("data_analysis_recipe_selector", {"visible": True, "fixed_data_analysis_recipe": None})
 
     def get_sidebar_config(self, workspace: str, side: str) -> "SidebarConfig":
         """Returns the resolved sidebar configuration for the given workspace and side.
@@ -537,7 +537,7 @@ class Bootloader:
         )
 
     def get_testing_mode(self) -> bool:
-        """Returns testing_mode flag (true = pre-fill data selector from manifest defaults)."""
+        """Returns testing_mode flag (true = pre-fill data selector from data analysis recipe defaults)."""
         return bool(self.config.get("testing_mode", True))
 
     def get_automation_setting(self, key: str, subkey: str) -> Any:

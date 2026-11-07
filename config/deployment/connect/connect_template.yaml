@@ -20,10 +20,10 @@
 deployment_type: filesystem
 deployment_name: "SPARMVET — Production (Posit Connect)"
 
-# The manifest to load at startup.
+# The data analysis recipe to load at startup.
 # Relative to project_root below.
-# If absent, the manifest selector appears in the UI (flag-gated).
-default_manifest: "manifests/my_pipeline/master.yaml"
+# If absent, the data analysis recipe selector appears in the UI (flag-gated).
+default_data_analysis_recipe: "data_analysis_recipes/my_pipeline/master.yaml"
 
 # App features to activate. For a locked pipeline deployment use pipeline-static.
 # See config/ui/templates/ for the full list.
@@ -38,9 +38,9 @@ locations:
   # The pipeline writes TSV/CSV here; the app reads it at T1 materialisation.
   raw_data: "inputs/"
 
-  # Location 2 — Pipeline YAML manifests.
+  # Location 2 — Pipeline YAML data analysis recipes.
   # Contains master.yaml and its !include fragments.
-  manifests: "manifests/"
+  data_analysis_recipes: "data_analysis_recipes/"
 
   # Location 3 — Tier 1 & 2 Parquet caches.
   # App writes here on first run; reads on subsequent runs.

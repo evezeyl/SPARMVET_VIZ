@@ -17,9 +17,9 @@ as the one merge point, then walks the returned dict to emit plotnine objects.
 
 Tier order (highest wins per key):
   L5 — T3 aesthetic_override for the active plot  (analyst)
-  L4 — plot spec (analysis_groups.<grp>.plots.<id>.spec)  (manifest author)
+  L4 — plot spec (analysis_groups.<grp>.plots.<id>.spec)  (data analysis recipe author)
   L3 — optimisation layer (computed from data + spec)  (VizFactory)
-  L2 — manifest plot_defaults block  (manifest author)
+  L2 — data analysis recipe plot_defaults block  (data analysis recipe author)
   L1 — VizFactory built-in defaults  (developer)
 
 The `layers` list uses append-then-deduplicate rather than winner-takes-all.
@@ -208,7 +208,7 @@ def normalise_plot_spec(raw_spec: dict) -> dict:
 def serialise_plot_spec(canonical: dict) -> dict:
     """Serialise a canonical (normalised) plot spec to a YAML-ready dict.
 
-    The inverse of normalise_plot_spec for BLUEPRINT authoring and manifest emission:
+    The inverse of normalise_plot_spec for BLUEPRINT authoring and data analysis recipe emission:
     - Emits explicit ``mapping:`` (never flat x/y/fill).
     - Emits explicit ``layers:`` (geom is layers[0]).
     - Never emits ``factory_id`` — the canonical form is geom-first.
@@ -365,7 +365,7 @@ def resolve_plot_config(
     raw_spec : dict
         The plot spec from analysis_groups.<grp>.plots.<id>.spec (L4).
     plot_defaults : dict
-        Manifest-level plot_defaults block (L2).
+        Data analysis recipe-level plot_defaults block (L2).
     df_collected : pd.DataFrame | None
         Materialised DataFrame used by the L3 optimisation layer.
         Pass None to skip optimisation (testing / headless contexts).

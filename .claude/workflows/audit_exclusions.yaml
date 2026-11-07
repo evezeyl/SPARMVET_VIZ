@@ -126,36 +126,36 @@ parity_coverage:
 
     - name: scale_color_viridis_c
       reason: "Renamed to scale_color_continuous_viridis in newer plotnine. Kept for backwards compat."
-      review_trigger: "Remove after confirming no manifests use the old name."
+      review_trigger: "Remove after confirming no data analysis recipes use the old name."
 
     - name: scale_color_viridis_d
       reason: "Renamed to scale_color_discrete_viridis in newer plotnine."
-      review_trigger: "Remove after confirming no manifests use the old name."
+      review_trigger: "Remove after confirming no data analysis recipes use the old name."
 
     - name: scale_fill_viridis_c
       reason: "Renamed to scale_fill_continuous_viridis in newer plotnine."
-      review_trigger: "Remove after confirming no manifests use the old name."
+      review_trigger: "Remove after confirming no data analysis recipes use the old name."
 
     - name: scale_fill_viridis_d
       reason: "Renamed to scale_fill_discrete_viridis in newer plotnine."
-      review_trigger: "Remove after confirming no manifests use the old name."
+      review_trigger: "Remove after confirming no data analysis recipes use the old name."
 
-# ── audit_manifest_coherence.py ───────────────────────────────────────────────
+# ── audit_data_analysis_recipe_coherence.py ───────────────────────────────────────────────
 
-manifest_coherence:
+data_analysis_recipe_coherence:
 
   # Join keys that are legitimately used in assembly recipes but are produced
   # by wrangling steps rather than declared as top-level input_fields slugs.
   # The static checker cannot trace column provenance through assembly steps,
   # so these are accepted as known-good.
   known_assembly_keys:
-    - manifest: "2_test_data_ST22_dummy.yaml"
+    - data_analysis_recipe: "2_test_data_ST22_dummy.yaml"
       key: "sample_id"
       reason: >
         sample_id is renamed/cast from a source column in Tier 1 wrangling
         and is available by the time the assembly join runs.  The static
         checker cannot trace through rename chains.
-      review_trigger: "If input_fields for this manifest are changed or sample_id rename is removed."
+      review_trigger: "If input_fields for this data analysis recipe are changed or sample_id rename is removed."
 
 # ── audit_cross_lib.py ────────────────────────────────────────────────────────
 # (KNOWN_VIOLATIONS is maintained inside the script itself for this audit,

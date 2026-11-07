@@ -4,7 +4,7 @@ This directory contains visual validation tests for the Electronic Artist Pillar
 
 ## Tiered Data Integration (ADR-024)
 
-The test runner (`debug_runner.py`) has been synchronized to support the tiered data lifecycle. While VizFactory primarily focuses on Tier 3 (Plot Layers), it can now execute upstream wrangling defined in the manifest:
+The test runner (`debug_runner.py`) has been synchronized to support the tiered data lifecycle. While VizFactory primarily focuses on Tier 3 (Plot Layers), it can now execute upstream wrangling defined in the data analysis recipe:
 
 ```yaml
 id: "geom_point_test"
@@ -22,7 +22,7 @@ plots:
 ## Test Runners
 
 - **debug_runner.py**: Single-plot renderer. Generates comparison plots (Baseline vs. Applied) for geoms and positions.
-  - usage: `python debug_runner.py path/to/manifest.yaml --output_dir tmp/viz/`
+  - usage: `python debug_runner.py path/to/data_analysis_recipe.yaml --output_dir tmp/viz/`
 - **viz_factory_integrity_suite.py**: Batch processor that renders every registered plot component and generates an integrity report.
 
 ## Baseline Comparisons
@@ -30,7 +30,7 @@ plots:
 For geoms and positions, the runner automatically generates a side-by-side comparison:
 
 - **Left**: Default (Identity) state.
-- **Right**: Applied manifest state.
+- **Right**: Applied data analysis recipe state.
 Artifacts are saved as PNG files in `tmp/viz_factory/`.
 
 ## Pytest — fast component contract check

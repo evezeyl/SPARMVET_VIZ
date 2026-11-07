@@ -5,14 +5,14 @@ This protocol is MANDATORY for any Polars transformation (Wrangling) or Plotnine
 ## 1. The Contract (Pre-Implementation)
 Before writing core logic, the Developer MUST:
 1. **Generate Test Data:** Create a specific subset TSV in `libs/transformer/tests/data/{{ACTION_NAME}}_test.tsv`.
-2. **Draft Test Manifest:** Create a minimal YAML file `libs/transformer/tests/data/{{ACTION_NAME}}_manifest.yaml` describing the expected transformation.
+2. **Draft Test Data Analysis Recipe:** Create a minimal YAML file `libs/transformer/tests/data/{{ACTION_NAME}}_data_analysis_recipe.yaml` describing the expected transformation.
 3. **Contract Halt:** STOP and wait for `@confirm_contract` review.
 
 ## 2. Evidence Loop (Mandatory Steps)
 1. **Implementation:** Write the logic in the source files.
 2. **CLI-First Testing:** 
     - All test scripts (e.g., `debug_wrangler.py`) MUST use `argparse` for manual execution.
-    - Execution Command: `python test_script.py --data path/to/data.tsv --manifest path/to/config.yaml`.
+    - Execution Command: `python test_script.py --data path/to/data.tsv --data-analysis-recipe path/to/config.yaml`.
     - The script must have sensible defaults but allow full manual overrides for all arguments.
 3. **Evidence Generation:**
     - **For Data:** 

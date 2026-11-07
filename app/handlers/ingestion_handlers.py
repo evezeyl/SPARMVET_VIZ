@@ -3,7 +3,7 @@ Ingestion Shiny wiring (ADR-045).
 
 Entry point: define_server(input, output, session, *, bootloader, current_app_features, safe_input)
 
-Concern: manifest file ingestion (btn_ingest).
+Concern: data analysis recipe file ingestion (btn_ingest).
 Two-Category Law (ADR-045): This file contains @reactive.* decorators only.
 It MUST NOT be imported by non-Shiny contexts.
 """
@@ -42,12 +42,12 @@ def define_server(input, output, session, *, bootloader, current_app_features, s
         if not files:
             return
         ui.notification_show("⏳ Ingesting...", type="message")
-        manifest_dir = bootloader.get_location("manifests")
+        data_analysis_recipe_dir = bootloader.get_location("data_analysis_recipes")
         for f in files:
             name = f['name']
             path = Path(f['datapath'])
             if name.endswith(".yaml"):
-                shutil.copy(path, manifest_dir / name)
+                shutil.copy(path, data_analysis_recipe_dir / name)
         bootloader.__init__(app_features=current_app_features.get())
         ui.update_select("project_id", choices=list(
             bootloader.available_projects.keys()))

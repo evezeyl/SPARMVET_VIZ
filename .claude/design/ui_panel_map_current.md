@@ -28,7 +28,7 @@
 
 | Proposed element | Controlled by | Notes |
 |---|---|---|
-| Sidebar project title | `[P] ui_branding.title` | Title shown in sidebar instead of (or above) manifest selector |
+| Sidebar project title | `[P] ui_branding.title` | Title shown in sidebar instead of (or above) data analysis recipe selector |
 | Hide nav pills entirely | `[P] show_navigation: false` | Hides Home · Blueprint · etc. pill strip |
 | T1/T2 toggle visibility | `[P] tier_toggle_enabled` | Theater header strip — hide the radio buttons |
 | Default tier on load | `[P] default_tier` | T1 or T2 shown without user action |
@@ -74,7 +74,7 @@
 │ ╚═══════════════════════╝ │ ┌───────────────────────────────────────┐ │ │  ── card-header ──│ │
 │                           │ │  Groups Pill Nav (direct, no wrapper) │ │ │  "Pipeline Audit" │ │
 │ ┌───────────────────────┐ │ │  div.spv-panel (padding 8px 10px 0)   │ │ │  .card-header     │ │
-│ │  Manifest Choice      │ │ │  ui.navset_pill  #home_groups_nav     │ │ │                   │ │
+│ │  Data analysis recipe Choice      │ │ │  ui.navset_pill  #home_groups_nav     │ │ │                   │ │
 │ │  accordion panel      │ │ │                                       │ │ │  ⏳ Pending       │ │
 │ │  .accordion-button    │ │ │  ┌─────────────────────────────────┐  │ │ │  .recipe-pending- │ │
 │ │  .accordion-body      │ │ │  │  Active Group Tab               │  │ │ │  badge            │ │
@@ -147,7 +147,7 @@
 │ ╚═══════════════════════╝ │ │  div.view-title-banner                │ │ │  card             │ │
 │                           │ │  "👣 Blueprint Architect Flight Deck" │ │ │  ── card-header ──│ │
 │ ┌───────────────────────┐ │ └───────────────────────────────────────┘ │ │  "Blueprint       │ │
-│ │  Master Manifest      │ │ ┌───────────────────────────────────────┐ │ │   Surgeon"        │ │
+│ │  Master Data Analysis Recipe      │ │ ┌───────────────────────────────────────┐ │ │   Surgeon"        │ │
 │ │  accordion panel      │ │ │  TubeMap                              │ │ │                   │ │
 │ │  #wrangle_sidebar_    │ │ │  div.spv-panel.mb-3 (outer wrapper)   │ │ │  🔬 Focused node  │ │
 │ │  accordion            │ │ │    #blueprint_tubemap_accordion       │ │ │  info             │ │
