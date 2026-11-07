@@ -84,6 +84,7 @@ pairs:
   - [canonical_recipe_syntax, canonical_steps_syntax]
   - [figshare_triple_join_recipe, figshare_triple_join_steps]
   - [master_collection_recipe, master_collection_steps]
+  - [Master_Collection_recipe, Master_Collection_steps]
   - [master_recipe, master_steps]
   - [join_recipe, join_steps]
   - [clean_recipe, clean_steps]
@@ -206,3 +207,69 @@ forms:
 protect_phrases:
   - vendor manifest
   - vendor-manifest
+
+# ---- the bare word "recipe": phrases first, then a noun by file --------------------------------
+# Regex phrases for prose (applied to any span, case-insensitive, first letter case kept).
+recipe_phrases:
+  - ['data analysis recipe recipes?', 'data analysis recipe']
+  - ['\bwithin the data analysis recipe, the recipe\b', 'within the data analysis recipe, the steps']
+  - ['\braw T3 recipe\b', 'raw audit steps']
+  - ['\bT3 recipes?\b', 'audit steps']
+  - ['\bfilter recipe builder\b', 'filter builder']
+  - ['\brow filter recipe builder\b', 'row filter builder']
+  - ['\brecipe nodes?\b', 'audit step']
+  - ['\b(assembly|join|wrangling|wrangle|tier1|tier2|tiered) recipes?\b', '\\1 steps']
+  - ['\bcanonical recipe syntax\b', 'canonical steps syntax']
+  - ['\bgallery recipes?\b', 'gallery examples']
+  - ['\b(id )?(transformation|reconciliation) recipes?\b', 'id transformation']
+  - ['\bFilter Recipe Builder\b', 'Filter builder']
+
+# Default meaning of the bare word, by file (first prefix wins; anything else means steps).
+#   steps: a list of wrangling or join steps in a data analysis recipe
+#   audit: the T3 audit steps of the user (audit stack, ghosts, export)
+#   example: a gallery bundle (data, text, preview and its data analysis recipe)
+#   id_transformation: a saved set of id transformations (libs/id_reconciliation)
+recipe_nouns:
+  - {prefix: libs/id_reconciliation/, noun: id_transformation}
+  - {prefix: app/handlers/test_lab_handlers.py, noun: id_transformation}
+  - {prefix: docs/workflows/test_lab_sdk.qmd, noun: id_transformation}
+  - {prefix: .claude/design/id_reconciliation_module_sketch.md, noun: id_transformation}
+  - {prefix: .claude/design/spaces/TEST_LAB.md, noun: id_transformation}
+  - {prefix: .claude/rules/rules_test_lab.md, noun: id_transformation}
+  - {prefix: libs/viz_gallery/, noun: example}
+  - {prefix: assets/gallery_data/, noun: example}
+  - {prefix: app/handlers/gallery_handlers.py, noun: example}
+  - {prefix: app/modules/gallery_viewer.py, noun: example}
+  - {prefix: app/tests/test_gallery, noun: example}
+  - {prefix: docs/user_guide/viz_gallery.qmd, noun: example}
+  - {prefix: docs/vision/, noun: example}
+  - {prefix: .claude/rules/rules_gallery_standards.md, noun: example}
+  - {prefix: .claude/design/spaces/GALLERY.md, noun: example}
+  - {prefix: app/handlers/audit_stack.py, noun: audit}
+  - {prefix: app/handlers/filter_and_audit_handlers.py, noun: audit}
+  - {prefix: app/handlers/home_theater.py, noun: audit}
+  - {prefix: app/handlers/export_handlers.py, noun: audit}
+  - {prefix: app/handlers/session_handlers.py, noun: audit}
+  - {prefix: app/modules/session_manager.py, noun: audit}
+  - {prefix: app/modules/exporter.py, noun: audit}
+  - {prefix: app/modules/orchestrator_helpers.py, noun: audit}
+  - {prefix: app/modules/t3_audit_engine.py, noun: audit}
+  - {prefix: app/tests/test_session, noun: audit}
+  - {prefix: app/tests/test_export, noun: audit}
+  - {prefix: app/tests/test_t3, noun: audit}
+  - {prefix: app/tests/test_filter, noun: audit}
+  - {prefix: .claude/rules/ui_implementation_contract.md, noun: audit}
+  - {prefix: .claude/rules/rules_ui_dashboard.md, noun: audit}
+  - {prefix: .claude/design/design_t3_export_threading.md, noun: audit}
+  - {prefix: docs/user_guide/system_transparency.qmd, noun: audit}
+  - {prefix: docs/user_guide/understanding_your_export.qmd, noun: audit}
+
+nouns:
+  steps:    {snake: steps, snake_pl: steps, prose: step list, prose_pl: step lists, title: Step list, title_pl: Step lists}
+  audit:    {snake: audit_steps, snake_pl: audit_steps, prose: audit trail, prose_pl: audit trails, title: Audit trail, title_pl: Audit trails}
+  example:  {snake: example, snake_pl: examples, prose: example, prose_pl: examples, title: Example, title_pl: Examples}
+  id_transformation: {snake: id_transformation, snake_pl: id_transformations, prose: id transformation, prose_pl: id transformations, title: Id transformation, title_pl: Id transformations}
+
+# Paths whose new name depends on the area of the bare word (decided by hand).
+paths_exact:
+  libs/id_reconciliation/src/id_reconciliation/recipe.py: libs/id_reconciliation/src/id_reconciliation/id_transformation.py

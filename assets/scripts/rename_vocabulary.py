@@ -164,6 +164,8 @@ def move_files(paths, pairs, keep, rules, dry_run: bool):
 
 
 def new_path_subset(path: str, pairs, keep, rules):
+    if path in (rules.get("paths_exact") or {}):
+        return rules["paths_exact"][path]
     parts = path.split("/")
     out = "/".join(transform(seg, pairs, keep)[0] if RETIRED.search(seg) else seg for seg in parts)
     if out.startswith("config/deployment/"):
@@ -257,6 +259,10 @@ def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool =
         if any(c in core for c in "_./") or _CAMEL.search(core):
             new, status = transform(core, pairs, keep)
             return ("--" if flag else "") + (new if status == "auto" else core)
+        if "-" in core:
+            as_snake, status0 = transform(core.replace("-", "_"), pairs, keep)
+            if status0 == "auto" and as_snake != core.replace("-", "_"):
+                return ("--" if flag else "") + as_snake.replace("_", "-")
         parts = core.split("-")
         eff = "code" if len(parts) >= 3 else ctx  # error codes and ids such as manifest-file-missing
         out = []
@@ -272,21 +278,23 @@ def fix_span(seg: str, ctx: str, words, pairs, keep, forms, whole_string: bool =
                 out.append(part)
                 continue
             if eff == "code" or flag or (whole_string and case == "lower"):
-                snake = f["snake"] + ("s" if plural else "")
+                snake = f.get("snake_pl", f["snake"] + "s") if plural else f["snake"]
                 if case == "upper":
                     snake = snake.upper()
                 elif case == "title":
                     snake = "".join(p.capitalize() for p in snake.split("_"))
                 out.append(snake.replace("_", "-") if (flag or len(parts) > 1) else snake)
             else:
+                prose = f.get("prose_pl", f["prose"] + "s") if plural else f["prose"]
+                title = f.get("title_pl", f["title"] + "s") if plural else f["title"]
                 if case == "upper":
-                    word = f["prose"].upper()
+                    word = prose.upper()
                 elif case == "title":
                     prev = seg[max(0, m.start() - 40):m.start()].rstrip().split(" ")[-1:]
-                    word = f["title"] if prev and prev[0][:1].isupper() and prev[0] not in ("The", "A", "An") else f["prose"].capitalize()
+                    word = title if prev and prev[0][:1].isupper() and prev[0] not in ("The", "A", "An") else prose[:1].upper() + prose[1:]
                 else:
-                    word = f["prose"]
-                out.append(word + ("s" if plural else ""))
+                    word = prose
+                out.append(word)
         return ("--" if flag else "") + "-".join(out) if eff == "code" or flag else "-".join(out)
 
     out = _SEP_ID.sub(repl, seg)
@@ -317,19 +325,51 @@ def _yaml_like_line(line: str, fix):
     if km:
         pre, key, post, val = km.groups()
         val_ctx = "prose" if re.search(r"[A-Za-z]+\s+[A-Za-z]+", val.strip().strip("\"'")) else "code"
-        code = pre + fix(key, "code") + post + fix(val, val_ctx)
+        code = pre + fix(key, "code", True) + post + fix(val, val_ctx)
     else:
         ctx = "prose" if re.search(r"[A-Za-z]+\s+[A-Za-z]+", code.strip()) else "code"
         code = fix(code, ctx)
     return code + (fix(comment, "prose") if comment else "")
 
 
-def rewrite_context(path: str, words, pairs, keep, forms, dry_run: bool) -> bool:
+def _recipe_forms(path: str, forms: dict, rules: dict):
+    """Forms for the bare word recipe in this file: the noun of its area, steps for keys."""
+    nouns = rules["nouns"]
+    chosen = "steps"
+    for entry in rules.get("recipe_nouns", []):
+        if path.startswith(entry["prefix"]):
+            chosen = entry["noun"]
+            break
+    return {**forms, "recipe": nouns[chosen]}, nouns["steps"]
+
+
+def _apply_phrases(text: str, rules: dict) -> str:
+    for rx, repl in rules.get("recipe_phrases", []):
+        lower_literal = re.sub(r"^(\\b|\(\?:)+", "", rx)[:1].islower()
+
+        def cb(m, repl=repl, lower_literal=lower_literal):
+            out = m.expand(repl)
+            return out[:1].upper() + out[1:] if lower_literal and m.group(0)[:1].isupper() else out
+        text = re.sub(rx, cb, text, flags=re.I)
+    return text
+
+
+def rewrite_context(path: str, words, pairs, keep, forms, dry_run: bool, rules: dict | None = None) -> bool:
     src = Path(path).read_text(encoding="utf-8")
     suffix = Path(path).suffix
     words = [w.lower() for w in words]
-    PROTECT_PHRASES[:] = RULES_PROTECT
-    fix = lambda seg, ctx, whole=False: fix_span(seg, ctx, words, pairs, keep, forms, whole)
+    PROTECT_PHRASES[:] = RULES_PROTECT + (["data analysis recipe", "data-analysis-recipe"] if "recipe" in words else [])
+    key_forms = forms
+    if "recipe" in words and rules:
+        forms, steps_noun = _recipe_forms(path, forms, rules)
+        key_forms = {**forms, "recipe": steps_noun}
+    phrase = (lambda s: _apply_phrases(s, rules)) if ("recipe" in words and rules) else (lambda s: s)
+
+    def fix(seg, ctx, whole=False):
+        seg = phrase(seg) if ctx == "prose" or " " in seg else seg
+        # a whole string or a key that is the bare word is a key: always steps
+        use = key_forms if whole else forms
+        return fix_span(seg, ctx, words, pairs, keep, use, whole)
     if suffix == ".py":
         out = _rewrite_py(src, fix)
     elif suffix in (".md", ".qmd", ".txt", ".mmd"):
@@ -353,7 +393,7 @@ def _rewrite_markdown(src: str, fix) -> str:
             continue
         pieces = []
         for seg, is_code in _split_backticks(line):
-            pieces.append(fix(seg, "code") if is_code else fix(seg, "prose"))
+            pieces.append(fix(seg, "code", True) if is_code else fix(seg, "prose"))
         out.append("".join(pieces))
     return "\n".join(out)
 
@@ -370,8 +410,12 @@ def _rewrite_py(src: str, fix) -> str:
             body = text.lstrip("rbfuRBFU")
             inner = body.strip("\"'")
             multiline = "\n" in text
-            ctx = "prose" if (re.search(r"\s", inner.strip()) or multiline) else "code"
-            new = fix(text, ctx, whole=(ctx == "code"))
+            if multiline:
+                # embedded YAML or a docstring: key lines are code, sentences are prose
+                new = "\n".join(_yaml_like_line(l, fix) for l in text.split("\n"))
+            else:
+                ctx = "prose" if re.search(r"\s", inner.strip()) else "code"
+                new = fix(text, ctx, whole=(ctx == "code"))
         elif tok.type == getattr(tokenize, "FSTRING_MIDDLE", -1):
             new = fix(text, "prose" if re.search(r"\s", text.strip()) else "code")
         elif tok.type == tokenize.NAME:
@@ -419,7 +463,7 @@ def cmd_apply(args) -> int:
             if f in TEXT_SKIP or Path(f).suffix not in TEXT_EXT:
                 continue
             try:
-                if rewrite_context(f, args.words, pairs, keep, forms, args.dry_run):
+                if rewrite_context(f, args.words, pairs, keep, forms, args.dry_run, rules):
                     n_files += 1
                     print(f"context  {f}")
             except (UnicodeDecodeError, tokenize.TokenError, IndentationError) as exc:

@@ -79,3 +79,52 @@ def test_markdown_inline_code_and_fence(tmp_path):
     out = f.read_text()
     assert "Set `data_analysis_recipe` in the data analysis recipe file." in out
     assert "data_analysis_recipe: x  # the data analysis recipe" in out
+
+
+# --- the bare word recipe (phase 8) ---
+
+def _recipe_rewrite(tmp_path, name, content, area_prefix=None):
+    f = tmp_path / name
+    f.write_text(content)
+    rules = dict(RULES)
+    if area_prefix:
+        rules = {**RULES, "recipe_nouns": [{"prefix": str(f), "noun": area_prefix}]}
+    rv.rewrite_context(str(f), ["recipe"], PAIRS, KEEP, FORMS, False, rules)
+    return f.read_text()
+
+
+def test_recipe_key_in_yaml_is_steps(tmp_path):
+    out = _recipe_rewrite(tmp_path, "a.yaml", "recipe:\n  - action: cast\n")
+    assert out.startswith("steps:\n")
+
+
+def test_recipe_phrases_become_their_new_names(tmp_path):
+    out = _recipe_rewrite(tmp_path, "a.md", "The T3 recipe, the filter recipe builder and a data analysis recipe recipe.\n")
+    assert out == "The audit steps, the filter builder and a data analysis recipe.\n"
+
+
+def test_bare_word_follows_the_area(tmp_path):
+    src = "def f(recipe):\n    \"\"\"Apply the recipe.\"\"\"\n    return recipe\n"
+    audit = _recipe_rewrite(tmp_path, "audit.py", src, "audit")
+    assert "def f(audit_steps):" in audit and "Apply the audit trail." in audit
+    ex = _recipe_rewrite(tmp_path, "gal.py", src, "example")
+    assert "def f(example):" in ex and "Apply the example." in ex
+    default = _recipe_rewrite(tmp_path, "other.py", src)
+    assert "def f(steps):" in default
+
+
+def test_python_dict_key_recipe_is_steps_even_in_an_audit_file(tmp_path):
+    out = _recipe_rewrite(tmp_path, "audit.py", 'x = spec.get("recipe")\nrecipe = []\n', "audit")
+    assert 'spec.get("steps")' in out and "audit_steps = []" in out
+
+
+def test_compound_ids_use_their_pairs(tmp_path):
+    out = _recipe_rewrite(tmp_path, "a.py", "t3_recipe_by_plot = {}\nTransformationRecipe()\nmake_recipe_node()\n")
+    assert "t3_audit_steps_by_plot" in out and "IdTransformation()" in out and "make_audit_step()" in out
+
+
+def test_yaml_embedded_in_a_python_string_keeps_its_keys(tmp_path):
+    src = 'TEXT = f"""id: tiny\njoins:\n  C:\n    recipe: !include \'x.yaml\'\n# the recipe note\n"""\n'
+    out = _recipe_rewrite(tmp_path, "emb.py", src)
+    assert "    steps: !include 'x.yaml'" in out
+    assert "# the step list note" in out
