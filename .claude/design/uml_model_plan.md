@@ -6,7 +6,7 @@
 
 ## 1. Scope (Eve, 2026-11-07)
 
-The model describes the app as it runs today, on one machine; Galaxy and IRIDA are not implemented for now. It goes from wide to narrow: the whole app first, then each user space, HOME first, then GALLERY, BLUEPRINT and TEST_LAB.
+The model describes the app, on one machine today; Galaxy, IRIDA and a container are shown as not implemented yet. It goes from wide to narrow: the whole app first, then each user space, HOME first, then GALLERY, BLUEPRINT and TEST_LAB.
 
 ## 1b. Goals, for now
 
@@ -17,9 +17,9 @@ Documentation is a side effect, not the aim. A diagram exists only if it answers
 
 ## 2. Decisions
 
-- **D1. All diagrams are in StarUML; the model file is the single source of truth.** One element appears in many diagrams and is renamed once. The file is JSON, so a script can read it without StarUML. No Mermaid: the existing Mermaid diagrams in 8 `docs/` pages render badly and are replaced by StarUML images later (TOOLS-UML-4, after the licence, because of the trial watermark).
-- **D2. The model shows the current truth only.** What exists and what is in force today. No history: no superseded ADRs, no old designs, nothing planned. The ADR log keeps the history as text. An intended thing that is not built is not drawn: it is a finding.
-- **D3. Elements carry tags that a script can check:** `code` (file and symbol), `adr` (only the ADR that governs it today), `rule`, `test`, `flag`. Names are the code's names. Views hide the tags, so diagrams stay readable. Vocabulary follows `CLAUDE.md` section 1.
+- **D1. All diagrams are in StarUML, built as native elements; the model file is the single source of truth.** One element appears in many diagrams and is renamed once; for example the lifelines of the sequence diagrams point to the elements of the architecture diagrams. The Mermaid importer is not used, because it makes separate copies. The file is JSON, so a script can read it without StarUML. No Mermaid: the existing Mermaid diagrams in 8 `docs/` pages render badly and are replaced by StarUML images later (TOOLS-UML-4, after the licence, because of the trial watermark).
+- **D2. The model shows what the app does today and what it is supposed to do, with a status. No history.** Every element has a `status` tag: `implemented`, `partial` or `planned`. Anything not `implemented` is grey in the diagrams and says so. No superseded ADRs and no old designs: the ADR log keeps the history as text.
+- **D3. Elements carry tags that a script can check:** `status`, `code` (file and symbol), `adr` (only the ADR that governs it today), `rule`, `test`, `flag`. Names are the code's names. Views hide the tags, so diagrams stay readable. Vocabulary follows `CLAUDE.md` section 1.
 - **D4. Requirements only where they prevent a wrong result.** Drafted from current ADRs and rules, each naming its source. Eve is asked only when sources conflict or none exists.
 
 ## 3. Diagrams, first set
@@ -38,7 +38,7 @@ Order is wide to narrow, and the table is in working order: context and containe
 | C4-COMP-HOME | Which handler and module owns what on HOME? | C4 component | logical |
 | UC-HOME | What can a user do, under which flag? | Use case | scenarios |
 | UI-HOME | What is on the screen, what is each panel called in the code, and which flag shows it? | Wireframe | scenarios, for users and developers |
-| COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug) | Communication | process |
+| COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug). Direct reads found by a scan of the code | Flowchart | process |
 | SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process |
 | SEQ-OPEN | Data analysis recipe to Tier 1, Tier 2, plot, with the cache keys | Sequence | process |
 | STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process |
