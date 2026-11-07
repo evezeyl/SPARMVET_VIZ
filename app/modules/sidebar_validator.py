@@ -1,6 +1,6 @@
 # @deps
 # provides: class:SidebarValidator
-# consumes: app/modules/sidebar_registry.py, app/modules/deployment_error.py, config/ui/templates/*.yaml, config/ui/sidebars/*.yaml
+# consumes: app/modules/sidebar_registry.py, app/modules/deployment_error.py, config/app_features/*.yaml, config/ui/sidebars/*.yaml
 # consumed_by: app/src/server.py, scripts/validate_persona_config.py
 # doc: .claude/rules/ui_implementation_contract.md §11, .claude/rules/rules_ui_dashboard.md §2
 # @end_deps

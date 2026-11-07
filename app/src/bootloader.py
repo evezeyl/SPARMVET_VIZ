@@ -259,21 +259,21 @@ class Bootloader:
             )])
 
     def set_app_features(self, app_features: str):
-        """Load persona config from a file path or legacy shortname.
+        """Load an app features file from a path or a short name.
 
         Accepts:
-          - Absolute path: /path/to/my_persona.yaml
-          - Relative path: config/ui/templates/developer_template.yaml
-          - Legacy shortname: developer  →  config/ui/templates/developer_template.yaml
+          - Absolute path: /path/to/my_app_features.yaml
+          - Relative path: config/app_features/developer.yaml
+          - Short name: developer  →  config/app_features/developer.yaml
         """
         self.app_features = app_features
         p = Path(app_features)
         if "/" in app_features or "\\" in app_features or app_features.endswith(".yaml"):
             self.app_features_path = p.resolve()
         else:
-            # Legacy shortname — backward compatible
+            # Short name: a file in config/app_features/
             self.app_features_path = Path(
-                f"config/ui/templates/{app_features}_template.yaml").resolve()
+                f"config/app_features/{app_features}.yaml").resolve()
 
         cache_key = str(self.app_features_path)
         if cache_key not in self._app_features_cache:
@@ -368,17 +368,17 @@ class Bootloader:
         if not path.exists():
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Persona template not found: {path}",
+                problem=f"App features file not found: {path}",
                 location=str(path),
                 fix=(
-                    f"Ensure the template file exists at {path}. "
-                    f"Valid persona IDs (with templates in config/ui/templates/): "
+                    f"Ensure the app features file exists at {path}. "
+                    f"Valid names (files in config/app_features/): "
                     f"pipeline-static, pipeline-exploration-simple, pipeline-exploration-advanced, "
                     f"project-independent, developer, qa. "
                     f"Check SPARMVET_PERSONA env var or default_persona in the deployment profile."
                 ),
                 who="operator",
-                reference="ADR-026 + config/ui/templates/",
+                reference="ADR-026 + config/app_features/",
             )])
             return {}  # unreachable
 
@@ -413,7 +413,7 @@ class Bootloader:
                     f"config/ui/sidebars/."
                 ),
                 who="operator",
-                reference="ADR-026 + config/ui/templates/",
+                reference="ADR-026 + config/app_features/",
             )])
             return {}  # unreachable
 

@@ -25,7 +25,7 @@ def _load(path):
     return yaml.load(path.read_text(encoding="utf-8"), Loader=_Loader) or {}
 
 
-FEATURE_FILES = sorted((REPO / "config" / "ui" / "templates").glob("*_template.yaml"))
+FEATURE_FILES = sorted((REPO / "config" / "app_features").glob("*.yaml"))
 DEPLOYMENT_FILES = sorted((REPO / "config" / "deployment").glob("*/*.yaml"))
 
 

@@ -5,7 +5,7 @@ Runs the existing PersonaValidator + SidebarValidator against all 8 persona
 templates in --strict mode, treating warnings as errors. Produces a structured
 markdown report suitable for the audit log.
 
-This wraps `scripts/validate_persona_config.py` behavior using the same validator
+This wraps `scripts/validate_app_features_config.py` behavior using the same validator
 classes, but outputs a report to .claude/logs/audits/ with full results.
 
 Usage:
@@ -19,8 +19,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-TEMPLATES_GLOB = "config/ui/templates/*_template.yaml"
-VALIDATE_SCRIPT = "scripts/validate_persona_config.py"
+APP_FEATURES_GLOB = "config/app_features/*.yaml"
+VALIDATE_SCRIPT = "scripts/validate_app_features_config.py"
 
 
 def find_project_root(start: Path) -> Path:
@@ -31,14 +31,14 @@ def find_project_root(start: Path) -> Path:
 
 
 def list_templates(project_root: Path) -> list[Path]:
-    return sorted((project_root / "config/ui/templates").glob("*_template.yaml"))
+    return sorted((project_root / "config/app_features").glob("*.yaml"))
 
 
 def validate_template(python_bin: Path, validate_script: Path, template_path: Path) -> tuple[int, str]:
-    """Run validate_persona_config.py for one template; return (exit_code, output)."""
-    app_features_id = template_path.stem.replace("_template", "")
+    """Run validate_app_features_config.py for one template; return (exit_code, output)."""
+    app_features_id = template_path.stem
     result = subprocess.run(
-        [str(python_bin), str(validate_script), "--persona", app_features_id, "--strict"],
+        [str(python_bin), str(validate_script), "--app-features", app_features_id, "--strict"],
         capture_output=True,
         text=True,
     )
@@ -93,8 +93,8 @@ def render_report(
     lines += [
         "## References",
         "- `.claude/rules/rules_persona_feature_flags.md` — authoritative flag matrix",
-        "- `scripts/validate_persona_config.py` — validator CLI",
-        "- `config/ui/templates/` — all persona template files",
+        "- `scripts/validate_app_features_config.py` — validator CLI",
+        "- `config/app_features/` — all app features files",
         "- Routine 8 (Template flag completeness) in `.claude/workflows/audit_routine_registry.md`",
     ]
 
@@ -126,12 +126,12 @@ def main() -> int:
 
     templates = list_templates(project_root)
     if not templates:
-        print("ERROR: No persona templates found in config/ui/templates/", file=sys.stderr)
+        print("ERROR: No app features files found in config/app_features/", file=sys.stderr)
         return 2
 
     results = []
     for template_path in templates:
-        app_features_id = template_path.stem.replace("_template", "")
+        app_features_id = template_path.stem
         exit_code, output = validate_template(python_bin, validate_script, template_path)
         results.append((app_features_id, exit_code, output))
 

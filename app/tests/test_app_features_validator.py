@@ -20,9 +20,9 @@ _FULL_FEATURES = {
 }
 
 
-def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, app_features_id=None, path="developer_template"):
+def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, app_features_id=None, path="developer"):
     t = {
-        "persona_id": app_features_id or path.replace("_template", ""),
+        "persona_id": app_features_id or path,
         "features": {**_FULL_FEATURES, **(overrides or {})},
         "manifest_selector": {"visible": ms_visible, "fixed_manifest": ms_fixed},
         "testing_mode": testing_mode,
@@ -33,14 +33,14 @@ def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, app
 # --- Rule 1: persona_id must match filename ---
 
 def test_app_features_id_matches_filename_valid():
-    t, path = _tmpl(path="developer_template", app_features_id="developer")
+    t, path = _tmpl(path="developer", app_features_id="developer")
     assert V.validate(t, path) == []
 
 
 def test_app_features_id_mismatch_no_longer_raises_error():
     # ADR-054 (2026-05-02) removed Rule 1: persona_id/filename coupling dropped
     # so persona configs can live anywhere and be referenced by absolute path.
-    t, path = _tmpl(path="developer_template", app_features_id="qa")
+    t, path = _tmpl(path="developer", app_features_id="qa")
     errors = V.validate(t, path)
     assert not any("does not match filename" in e for e in errors)
 
@@ -48,14 +48,14 @@ def test_app_features_id_mismatch_no_longer_raises_error():
 # --- Rule 2: persona_id must use hyphens ---
 
 def test_app_features_id_underscore_raises_error():
-    t, path = _tmpl(path="pipeline_exploration_advanced_template",
+    t, path = _tmpl(path="pipeline_exploration_advanced",
                     app_features_id="pipeline_exploration_advanced")
     errors = V.validate(t, path)
     assert any("underscores" in e.problem for e in errors)
 
 
 def test_app_features_id_hyphen_is_valid():
-    t, path = _tmpl(path="pipeline-exploration-advanced_template",
+    t, path = _tmpl(path="pipeline-exploration-advanced",
                     app_features_id="pipeline-exploration-advanced")
     assert V.validate(t, path) == []
 
@@ -69,7 +69,7 @@ def test_missing_flag_no_error(capsys):
         "manifest_selector": {"visible": True, "fixed_manifest": None},
         "testing_mode": True,
     }
-    errors = V.validate(t, "developer_template")
+    errors = V.validate(t, "developer")
     assert errors == []
     captured = capsys.readouterr()
     assert "WARNING" in captured.out
@@ -78,7 +78,7 @@ def test_missing_flag_no_error(capsys):
 # --- Rule 4: manifest_selector.visible=false requires fixed_manifest ---
 
 def test_manifest_selector_hidden_no_fixed_manifest_warns(capsys):
-    t, path = _tmpl(path="pipeline-static_template",
+    t, path = _tmpl(path="pipeline-static",
                     app_features_id="pipeline-static",
                     ms_visible=False, ms_fixed=None)
     errors = V.validate(t, path)
@@ -88,14 +88,14 @@ def test_manifest_selector_hidden_no_fixed_manifest_warns(capsys):
 
 
 def test_manifest_selector_hidden_with_fixed_manifest_ok():
-    t, path = _tmpl(path="pipeline-static_template",
+    t, path = _tmpl(path="pipeline-static",
                     app_features_id="pipeline-static",
                     ms_visible=False, ms_fixed="/data/manifests/project.yaml")
     assert V.validate(t, path) == []
 
 
 def test_manifest_selector_visible_no_fixed_manifest_ok():
-    t, path = _tmpl(path="developer_template", app_features_id="developer",
+    t, path = _tmpl(path="developer", app_features_id="developer",
                     ms_visible=True, ms_fixed=None)
     assert V.validate(t, path) == []
 
@@ -103,23 +103,23 @@ def test_manifest_selector_visible_no_fixed_manifest_ok():
 # --- validate_file: real template files ---
 
 def test_validate_real_developer_template():
-    errors = V.validate_file("config/ui/templates/developer_template.yaml")
-    assert errors == [], f"developer_template errors: {errors}"
+    errors = V.validate_file("config/app_features/developer.yaml")
+    assert errors == [], f"developer errors: {errors}"
 
 
 def test_validate_real_pipeline_static_template():
     # fixed_manifest is set in the template, so no fixed_manifest warning expected
-    errors = V.validate_file("config/ui/templates/pipeline-static_template.yaml")
-    assert errors == [], f"pipeline-static_template errors: {errors}"
+    errors = V.validate_file("config/app_features/pipeline-static.yaml")
+    assert errors == [], f"pipeline-static errors: {errors}"
 
 
 def test_validate_real_qa_template():
-    errors = V.validate_file("config/ui/templates/qa_template.yaml")
-    assert errors == [], f"qa_template errors: {errors}"
+    errors = V.validate_file("config/app_features/qa.yaml")
+    assert errors == [], f"qa errors: {errors}"
 
 
 def test_validate_missing_file():
-    errors = V.validate_file("config/ui/templates/nonexistent_template.yaml")
+    errors = V.validate_file("config/app_features/nonexistent.yaml")
     assert any("not found" in e.problem for e in errors)
 
 

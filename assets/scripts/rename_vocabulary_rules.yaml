@@ -9,6 +9,9 @@
 
 pairs:
   # --- persona: retired for the application (ADR-091 point 5) ---
+  - [rules_persona_feature_flags, rules_app_features_flags]
+  - [rules_persona_bioscientist, rules_agent_role_bioscientist]
+  - [audit_template_flags, audit_app_features_flags]
   - [personas, app_features]
   - [persona, app_features]
 

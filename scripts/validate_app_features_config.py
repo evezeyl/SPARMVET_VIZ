@@ -28,7 +28,7 @@ from app.modules.app_features_validator import AppFeaturesValidator
 from app.modules.sidebar_validator import SidebarValidator
 from app.modules.deployment_error import format_errors_block
 
-_TEMPLATES_DIR = _project_root / "config" / "ui" / "templates"
+_TEMPLATES_DIR = _project_root / "config" / "app_features"
 
 # ── Thin warning collector ────────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ def _discover_templates() -> list[Path]:
     if not _TEMPLATES_DIR.exists():
         print(f"Templates directory not found: {_TEMPLATES_DIR}", file=sys.stderr)
         sys.exit(1)
-    return sorted(_TEMPLATES_DIR.glob("*_template.yaml"))
+    return sorted(_TEMPLATES_DIR.glob("*.yaml"))
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ def main():
     )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        "--persona", "-p",
+        "--app-features", "-p",
         metavar="ID",
         help="Validate a single persona by ID (e.g. developer) or path to a template YAML.",
     )
@@ -105,7 +105,7 @@ def main():
         "--all", "-a",
         action="store_true",
         dest="all_templates",
-        help="Validate all templates found in config/ui/templates/.",
+        help="Validate all templates found in config/app_features/.",
     )
     parser.add_argument(
         "--strict",
@@ -125,7 +125,7 @@ def main():
         if candidate.exists():
             templates = [candidate.resolve()]
         else:
-            templates = [_TEMPLATES_DIR / f"{args.app_features}_template.yaml"]
+            templates = [_TEMPLATES_DIR / f"{args.app_features}.yaml"]
             if not templates[0].exists():
                 print(
                     f"Template not found: {templates[0]}\n"

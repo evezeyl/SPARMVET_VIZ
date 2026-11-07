@@ -1,10 +1,10 @@
-# UI Persona: Pipeline Exploration Simple
-persona_id: "pipeline-exploration-simple"
-display_name: "Pipeline Exploration - Simple"
+# UI Persona: Pipeline Exploration Advanced
+persona_id: "pipeline-exploration-advanced"
+display_name: "Pipeline Exploration - Advanced"
 theme_css: "config/ui/theme.css"
 
 features:
-  # Can the user interact with the Tier 3 View? (Toggleable/Collapsible)
+  # Can the user interact with the Tier 3 View?
   interactivity_enabled: true
   # Does the user have access to the Developer Studio / Wrangle Studio tools?
   developer_mode_enabled: false
@@ -19,43 +19,39 @@ features:
   blueprint_agent_enabled: false
   # Can the user access the Test Lab (data utilities)?
   test_lab_enabled: false
-  # Comparison Theater (Phase 12-A) — requires t3_sandbox_enabled to be meaningful
+  # Comparison Theater (Phase 12-A)
   comparison_mode_enabled: true
   # Session Management visibility
-  session_management_enabled: false
+  session_management_enabled: true
   # External Import helper visibility
   import_helper_enabled: false
   # Can the user access T3 sandbox (wrangling + right sidebar audit panel)?
-  t3_sandbox_enabled: false
+  t3_sandbox_enabled: true
   # Can the user export results (bundle zip + scope toggle)?
   export_enabled: true
   # Can the user export the consolidated audit report (HTML/PDF/DOCX)?
   # Can the user upload replacement metadata (triggers T1 rebuild)?
-  metadata_ingestion_enabled: false
+  metadata_ingestion_enabled: true
   # Can the user ingest raw data files / Excel uploads?
   data_ingestion_enabled: false
   # Show/hide sidebar accordion panels
   # Show active persona name in nav header
   show_persona_badge: true
 
-# Manifest selection — false: manifest fixed by deployment config (operator must set fixed_manifest)
 manifest_selector:
-  visible: false
+  visible: true
   fixed_manifest: 1_test_data_ST22_dummy
 
-# testing_mode — false: data injected by pipeline; true: pre-fill data selector from manifest defaults
-testing_mode: false
+testing_mode: true
 
 automation:
   ghost_save:
-    enabled: false
+    enabled: true
 
 workspaces:
   home:
-    left_sidebar: !include ../sidebars/home_standard_left.yaml
-    right_sidebar:
-      visible: false
-      panels: []
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/home_standard_right.yaml
   blueprint:
     left_sidebar:
       visible: false

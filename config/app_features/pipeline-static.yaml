@@ -1,13 +1,14 @@
-# UI Persona: Pipeline Exploration Advanced
-persona_id: "pipeline-exploration-advanced"
-display_name: "Pipeline Exploration - Advanced"
+# UI Persona: Pipeline Static
+persona_id: "pipeline-static"
+display_name: "Automated Pipeline - Static"
 theme_css: "config/ui/theme.css"
 
 features:
   # Can the user interact with the Tier 3 View?
-  interactivity_enabled: true
+  interactivity_enabled: false
   # Does the user have access to the Developer Studio / Wrangle Studio tools?
   developer_mode_enabled: false
+  # Does the user have access to the Wrangle Studio (T2 reference wrangling)?
   wrangle_studio_enabled: false
   # Does the user have access to the Gallery Browser?
   gallery_enabled: false
@@ -19,39 +20,43 @@ features:
   blueprint_agent_enabled: false
   # Can the user access the Test Lab (data utilities)?
   test_lab_enabled: false
-  # Comparison Theater (Phase 12-A)
-  comparison_mode_enabled: true
-  # Session Management visibility
-  session_management_enabled: true
-  # External Import helper visibility
+  # Comparison Theater
+  comparison_mode_enabled: false
+  # Session Save / Import / ghost save
+  session_management_enabled: false
+  # External Import helper (multi-file data ingestion + Excel converter)
   import_helper_enabled: false
   # Can the user access T3 sandbox (wrangling + right sidebar audit panel)?
-  t3_sandbox_enabled: true
+  t3_sandbox_enabled: false
   # Can the user export results (bundle zip + scope toggle)?
   export_enabled: true
   # Can the user export the consolidated audit report (HTML/PDF/DOCX)?
   # Can the user upload replacement metadata (triggers T1 rebuild)?
-  metadata_ingestion_enabled: true
+  metadata_ingestion_enabled: false
   # Can the user ingest raw data files / Excel uploads?
   data_ingestion_enabled: false
   # Show/hide sidebar accordion panels
   # Show active persona name in nav header
   show_persona_badge: true
 
+# Manifest selection — false: manifest fixed by deployment config (operator must set fixed_manifest)
 manifest_selector:
-  visible: true
+  visible: false
   fixed_manifest: 1_test_data_ST22_dummy
 
-testing_mode: true
+# testing_mode — false: data injected by pipeline; true: pre-fill data selector from manifest defaults
+testing_mode: false
 
 automation:
   ghost_save:
-    enabled: true
+    enabled: false
 
 workspaces:
   home:
-    left_sidebar: !include ../sidebars/home_standard_left.yaml
-    right_sidebar: !include ../sidebars/home_standard_right.yaml
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
+    right_sidebar:
+      visible: false
+      panels: []
   blueprint:
     left_sidebar:
       visible: false

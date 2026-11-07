@@ -1,7 +1,7 @@
 """
 @deps
 provides: class:PersonaValidator
-consumes: config/ui/templates/*.yaml, app/modules/deployment_error.py
+consumes: config/app_features/*.yaml, app/modules/deployment_error.py
 consumed_by: app/src/server.py
 doc: .claude/knowledge/architecture_decisions.md#adr-077, #adr-078
 """
@@ -190,7 +190,7 @@ class AppFeaturesValidator:
                     "Set SPARMVET_PERSONA to an existing template id "
                     "(e.g. 'developer', 'pipeline-static') OR provide an absolute "
                     "path to your custom template file. Available built-in templates "
-                    "live under config/ui/templates/."
+                    "live under config/app_features/."
                 ),
                 who="operator",
                 reference=".claude/rules/rules_persona_feature_flags.md (persona resolution)",

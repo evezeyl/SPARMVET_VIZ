@@ -1280,7 +1280,7 @@ def define_server(input, output, session, *,
         # via bootloader.is_enabled(...) instead of hardcoded persona names. This
         # matches the design intent of .claude/rules/rules_persona_feature_flags.md
         # — flags like gallery_enabled are documented as INDEPENDENT and can be
-        # flipped per-persona in config/ui/templates/ without touching code here.
+        # flipped per app features file in config/app_features/ without touching code here.
         if bootloader.is_enabled("wrangle_studio_enabled"):
             nav_items.append(ui.nav_panel("Blueprint Architect", value="Wrangle Studio"))
 

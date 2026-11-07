@@ -45,8 +45,8 @@ class DeploymentError:
 
     location: str
     """Where the problem was detected. File path (preferably relative to project
-    root) plus key/line if available. e.g. 'config/ui/templates/foo.yaml:23' or
-    'features.blueprint_agent_enabled in config/ui/templates/foo.yaml'."""
+    root) plus key/line if available. e.g. 'config/app_features/foo.yaml:23' or
+    'features.blueprint_agent_enabled in config/app_features/foo.yaml'."""
 
     fix: str
     """Concrete remediation. Should be actionable without further investigation:

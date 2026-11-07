@@ -26,7 +26,7 @@ import yaml
 
 SOURCES = {
     "deployment": ("config/deployment", "*.yaml"),
-    "app features": ("config/ui/templates", "*_template.yaml"),
+    "app features": ("config/app_features", "*.yaml"),
 }
 CODE_DIRS = ("app", "libs", "assets/scripts", "scripts")
 # Files that only declare or check keys; they do not act on them.

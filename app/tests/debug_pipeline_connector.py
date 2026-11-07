@@ -31,8 +31,8 @@ INFO = "   "
 PIPELINE_TEST_PROFILE = ROOT / "config/deployment/pipeline_test/pipeline_test_profile.yaml"
 
 APP_FEATURES = {
-    "pipeline-static":             ROOT / "config/ui/templates/pipeline-static_template.yaml",
-    "pipeline-exploration-simple": ROOT / "config/ui/templates/pipeline-exploration-simple_template.yaml",
+    "pipeline-static":             ROOT / "config/app_features/pipeline-static.yaml",
+    "pipeline-exploration-simple": ROOT / "config/app_features/pipeline-exploration-simple.yaml",
 }
 
 results: list[tuple[str, str, str]] = []  # (test_name, status, detail)

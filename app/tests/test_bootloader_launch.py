@@ -69,7 +69,7 @@ def test_app_features_variable_accepts_a_short_name(tmp_path, monkeypatch):
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     monkeypatch.setenv("SPARMVET_PERSONA", "qa")
     b = Bootloader()
-    assert b.app_features_path.name == "qa_template.yaml"
+    assert b.app_features_path.name == "qa.yaml"
     assert b.is_enabled("export_enabled") is True
     assert b.is_enabled("test_lab_enabled") is True
 
@@ -77,9 +77,9 @@ def test_app_features_variable_accepts_a_short_name(tmp_path, monkeypatch):
 def test_app_features_variable_accepts_a_path(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path)
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
-    monkeypatch.setenv("SPARMVET_PERSONA", "config/ui/templates/pipeline-static_template.yaml")
+    monkeypatch.setenv("SPARMVET_PERSONA", "config/app_features/pipeline-static.yaml")
     b = Bootloader()
-    assert b.app_features_path.name == "pipeline-static_template.yaml"
+    assert b.app_features_path.name == "pipeline-static.yaml"
     assert b.is_enabled("interactivity_enabled") is False
     assert b.is_enabled("test_lab_enabled") is False
 
@@ -100,13 +100,13 @@ def test_variable_beats_the_deployment_default(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path, **{"default_persona": "pipeline-static"})
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     monkeypatch.setenv("SPARMVET_PERSONA", "qa")
-    assert Bootloader().app_features_path.name == "qa_template.yaml"
+    assert Bootloader().app_features_path.name == "qa.yaml"
 
 
 def test_deployment_default_is_used_without_a_variable(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path, **{"default_persona": "pipeline-static"})
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
-    assert Bootloader().app_features_path.name == "pipeline-static_template.yaml"
+    assert Bootloader().app_features_path.name == "pipeline-static.yaml"
 
 
 def test_no_choice_anywhere_stops_the_app(tmp_path, monkeypatch):
@@ -120,7 +120,7 @@ def test_keyword_beats_the_variable(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path)
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     monkeypatch.setenv("SPARMVET_PERSONA", "qa")
-    assert Bootloader(app_features="pipeline-static").app_features_path.name == "pipeline-static_template.yaml"
+    assert Bootloader(app_features="pipeline-static").app_features_path.name == "pipeline-static.yaml"
 
 
 def test_missing_location_folder_stops_the_app(tmp_path, monkeypatch):

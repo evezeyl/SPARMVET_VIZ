@@ -44,7 +44,7 @@ ui_banner:
 
 workspaces:
   home:
-    left_sidebar: !include ../sidebars/home_standard_left.yaml
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
     right_sidebar:
       visible: false
       panels: []
