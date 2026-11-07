@@ -4,7 +4,11 @@
 **Model file:** `docs/UML/app.mdj` (StarUML). **Tool:** `OBSWORK/_bin/staruml/` (usage: `OBSWORK/_HELP/7_StarUML_Modeling_Workflow.md`).
 **Findings:** `.claude/tasks/uml_findings.md`.
 
-## 1. Goals, for now
+## 1. The demo (Eve, 2026-11-07)
+
+The demo runs on Eve's laptop. No Galaxy or IRIDA for now. It explains to the people of the research project what the app can do for them, and aims to recruit interest for further development and cooperation, reviewers of code and documentation before official deployment, and developers for new modules and data analysis recipes. HOME must be polished first. Then GALLERY, BLUEPRINT and TEST_LAB, if they can be included.
+
+## 1b. Goals, for now
 
 1. Understand the key points: how the app is built and what a user does on HOME.
 2. Find discrepancies between code, rules and documents, so the fixes before the demo are the right ones.
@@ -28,9 +32,10 @@ Order follows the common practice: context and containers first, then the key ru
 | CTX-1 | Who and what does the app talk to? | C4 context | scenarios, logical |
 | C4-CONT | What runs, and which files and folders does it use? | C4 container | logical, physical |
 | PKG-TIERS | Which library may import which? | Package | development |
-| DEP-DEMO | How does the demo run? | Deployment | physical |
+| DEP-DEMO | How does the demo run on the laptop: process, folders, launch variables? | Deployment | physical |
 | **HOME** | | | |
 | UC-HOME | What can a user do, under which flag? | Use case | scenarios |
+| UI-HOME | What is on the screen, what is each panel called in the code, and which flag shows it? | Wireframe | scenarios, for users and developers |
 | C4-COMP-HOME | Which handler and module owns what? | C4 component | logical |
 | COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug) | Communication | process |
 | SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process |
@@ -44,7 +49,9 @@ Order follows the common practice: context and containers first, then the key ru
 
 Three text pages go with them, because no diagram shows them well: **quality goals** (correct science and reproducibility first), **cross-cutting concepts** (configuration, error handling, provenance, security) and **risks and technical debt**. They live next to the model in `docs/UML/`.
 
-**After the demo, if still useful:** BLUEPRINT, GALLERY and TEST_LAB use cases and components, class diagrams of the core, data analysis recipe data model, other platforms. Only if the demo shows those user spaces do they move up.
+**Next, in this order, if the demo includes them:** GALLERY, BLUEPRINT, TEST_LAB (use case, wireframe, components). **Later:** class diagrams of the core, data analysis recipe data model, other platforms.
+
+UI-HOME uses StarUML's wireframe diagrams (panels, buttons, tabs as model elements). Each widget carries its Shiny id in `code` and its gate in `flag`, so the script can check it. It replaces the hand-drawn picture in `ui_panel_map_current.md`, which is already out of date (it still shows a T1/T2/T3 toggle).
 
 ## 4. Outside check of this plan
 
@@ -64,6 +71,7 @@ Compared with arc42 (12 sections), the C4 model, and Kruchten's 4+1 views with I
 | Every `test` tag resolves | A claim of proof with nothing behind it |
 | Every `adr` tag exists and is not superseded | Model built on an old decision |
 | Every `flag` tag is a real flag | UI promises a flag does not gate |
+| Every widget id in UI-HOME exists in the code | Screen and code disagree |
 | Library arrows in PKG-TIERS equal the real imports | Forbidden imports, a rule that no longer matches |
 
 It checks names and links. It does not prove that the code runs in the order a sequence diagram shows; the tests do that.
