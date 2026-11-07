@@ -275,7 +275,7 @@ Once manual test passes:
 
 ### 5. App features Template Consistency
 
-- **Purpose:** Verify all 8 app features files (`config/app_features/*_template.yaml`) have the same structure, matching the authoritative flag matrix in `rules_app_features_flags.md`.
+- **Purpose:** Verify all 8 app features files (`config/app_features/*.yaml`) have the same structure, matching the authoritative flag matrix in `rules_app_features_flags.md`.
 - **Frequency:** On-demand (or can be scheduled daily)
 - **Schedule:** Manual trigger via CLI
 - **Command:** `.venv/bin/python scripts/validate_app_features_config.py --all`
@@ -605,7 +605,7 @@ from what the code or docs actually do. No regex can replace this judgment.
   files, and the bootloader cascade rules are semantically consistent. Catch divergences that
   no single script can find because the truth lives across three sources:
   1. `design/app_features_capability_matrix.md` — design intent (what app features files should be able to do)
-  2. `config/app_features/*_template.yaml` — declared flag values per app features
+  2. `config/app_features/*.yaml` — declared flag values per app features
   3. `.claude/rules/rules_app_features_flags.md` — cascade rules and bootloader behavior
   If an app features is documented as having Gallery access but its template has `gallery_enabled: false`,
   or if the cascade doc says flag X depends on Y but the template has X enabled and Y disabled —

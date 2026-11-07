@@ -42,7 +42,7 @@ The UI dynamically alters component availability based on the templates in `conf
 | App features | passive_exploration | t3_audit | Filters | Right Sidebar | Gallery | Test Lab | Sessions | Export Bundle | Export Graph |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1. pipeline-static** | ❌ | ❌ | Hidden (static msg) | **Excluded from layout** | ❌ | ❌ | ❌ | ✅ | ❌ |
-| **2. pipeline-exploration-simple** | ✅ | ❌ | Exploration disclaimer | **Excluded from layout** | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **2. pipeline-exploration-simple** | ✅ | ❌ | Exploration disclaimer | **Excluded from layout** | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **3. pipeline-exploration-advanced** | ✅ | ✅ | Full + T3 audit | **Visible** | ❌ | ❌ | ✅ | ✅ | ✅ |
 | **4. standalone** | ✅ | ✅ | Full + T3 audit | **Visible** | ✅ | ❌ | ✅ | ✅ | ✅ |
 | **5. developer** | ✅ | ✅ | Full + T3 audit | **Visible** | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -51,7 +51,7 @@ The UI dynamically alters component availability based on the templates in `conf
 **passive_exploration**: T1/T2 filter + column-drop scratchpad — plot updates temporarily, nothing saved, no audit trail.
 **t3_audit**: promotes filters/drops to T3 audit pipeline (right sidebar, propagation modal, reason gatekeeper, audit trail export).
 
-**App features file flags** (in `config/app_features/<app features>_template.yaml`):
+**App features file flags** (in `config/app_features/<app features>.yaml`):
 `interactivity_enabled`, `blueprint_enabled`, `test_lab_enabled`, `gallery_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `import_helper_enabled`, `export_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`.
 
 **`qa` app features:** Mirrors `developer` flags but sets `automation.ghost_save: false` for deterministic Playwright runs (no background ghost writes during smoke tests). It is the recommended `SPARMVET_APP_FEATURES` for CI.

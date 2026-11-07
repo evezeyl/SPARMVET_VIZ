@@ -110,18 +110,18 @@ blueprint_enabled: true/false        ← GATE for Blueprint Architect
 
 `data_analysis_recipe_edit_enabled` (ADR-075): enables the YAML escape hatch in the BLUEPRINT IDE in **editable** mode. When `false` (all non-developer app features files), the escape hatch is **read-only** (visible but not editable, so the user can inspect the data analysis recipe fragment). When `true`, the YAML panel becomes an editable textarea that emits a `developer_raw_yaml` T3 node on save. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §4 below.
 
-`blueprint_agent_enabled` (ADR-076): enables the conversational AI agent panel in the BLUEPRINT right sidebar. The app features file also declares a `blueprint_agent:` config block (`backend`, `model`, `instructions_file`, etc.) which is read by the bootloader to instantiate the appropriate `AgentAdapter`. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §5 below. Default is `false` for all scientist app features files (static, simple, advanced, independent, demo-vetinst, web-demo) and `true` for `developer` and `qa` — Phase 1 rollout per ADR-076 §6.
+`blueprint_agent_enabled` (ADR-076): enables the conversational AI agent panel in the BLUEPRINT right sidebar. The app features file also declares a `blueprint_agent:` config block (`backend`, `model`, `instructions_file`, etc.) which is read by the bootloader to instantiate the appropriate `AgentAdapter`. **Dependency:** suppressed (silently set to `false`) when `blueprint_enabled: false`. See Cascade Enforcement §5 below. Default is `false` for all scientist app features files (static, simple, advanced, standalone, demo-vetinst, web-demo) and `true` for `developer` and `qa` — Phase 1 rollout per ADR-076 §6.
 
 ---
 
 ## Full Flag Matrix (Authoritative Values)
 
 Eight app features files exist (`config/app_features/`):
-- **Six standard app features files:** static, simple, advanced, independent, developer, qa.
+- **Six standard app features files:** static, simple, advanced, standalone, developer, qa.
 - **Two demo app features files:** demo-vetinst (disabled reference), web-demo (minimal interaction).
 - **Note:** `qa` is a CI/headless-test app features with the same gates as `developer` plus `automation.ghost_save: false` for deterministic Playwright runs.
 
-| Flag | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+| Flag | static | demo-vetinst | simple | web-demo | advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `interactivity_enabled` | false | false | true | true | true | true | true | true |
 | `t3_sandbox_enabled` | false | false | false | false | true | true | true | true |
@@ -139,20 +139,20 @@ Eight app features files exist (`config/app_features/`):
 
 **Phase 25 additions** (per ADR-052; not feature flags but app features template fields):
 
-| Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+| Field | static | demo-vetinst | simple | web-demo | advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `data_analysis_recipe_selector.visible` | false | false | false | false | true | true | true | true |
 | `testing_mode` | false | false | false | false | true | true | true | true |
 
 **Phase 31 additions** (per ADR-075):
 
-| Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+| Field | static | demo-vetinst | simple | web-demo | advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `data_analysis_recipe_edit_enabled` | false | false | false | false | false | false | true | true |
 
 **Phase 31 additions** (per ADR-076 — BLUEPRINT AI Agent Helper):
 
-| Field | static | demo-vetinst | simple | web-demo | advanced | independent | developer | qa |
+| Field | static | demo-vetinst | simple | web-demo | advanced | standalone | developer | qa |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `blueprint_agent_enabled` | false | false | false | false | false | false | true | true |
 | `blueprint_agent.backend` | — | — | — | — | — | — | `claude_cli` | `disabled` |
@@ -248,7 +248,7 @@ Should return zero hits (only docstrings/comments allowed).
 
 | File | Governed aspect |
 |---|---|
-| `config/app_features/*_template.yaml` | Flag values per app features |
+| `config/app_features/*.yaml` | Flag values per app features |
 | `app/src/bootloader.py` | Flag resolution logic (dependency enforcement, cascade, `is_enabled()`) |
 | `app/src/bootloader.py` | App features loading, deployment resolution |
 | `app/handlers/home_theater.py` | Must use `bootloader.is_enabled()` — app features name checks are prohibited |

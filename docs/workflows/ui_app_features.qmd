@@ -213,7 +213,7 @@ config/app_features/
 ## Full flag reference
 
 ```yaml
-# config/app_features/<app features>_template.yaml
+# config/app_features/<app features>.yaml
 
 app_features_name: "pipeline-static"      # internal ID — must match filename prefix
 app_features_id: "pipeline-static"        # used by Bootloader — must match filename prefix
@@ -290,7 +290,7 @@ The app features is resolved at startup in this order (first match wins):
 
 In production deployments (Galaxy, IRIDA, server), the deployment always sets `default_app_features`, so the selector is never shown. In development, the developer template allows switching app features files from the UI for testing.
 
-The active app features is loaded by `Bootloader` (`app/src/bootloader.py`) at bootload time and cached for the session. The resolved template path is printed to the terminal at startup: `[Bootloader] App features: <id> → <absolute/path/to/_template.yaml>`. Changing app features requires a page reload.
+The active app features is loaded by `Bootloader` (`app/src/bootloader.py`) at bootload time and cached for the session. The resolved template path is printed to the terminal at startup: `[Bootloader] App features: <id> → <absolute/path/to/name.yaml>`. Changing app features requires a page reload.
 
 ---
 

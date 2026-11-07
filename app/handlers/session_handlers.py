@@ -50,10 +50,7 @@ def define_session_server(input, output, session, *,
     def session_management_ui():
         """Session Management panel — gated by session_management_enabled flag.
 
-        Fix APP_FEATURES-1: replaced hardcoded advanced_app_features set with
-        bootloader.is_enabled('session_management_enabled'). pipeline-exploration-simple
-        has session_management_enabled=true in its template and now correctly sees
-        this panel.
+        Gated by the flag, never by an app features name (ADR-053).
         """
         if not bootloader.is_enabled("session_management_enabled"):
             return ui.div()

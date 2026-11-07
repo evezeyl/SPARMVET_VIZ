@@ -127,7 +127,7 @@ The Data analysis recipe Bootstrapper generates **boilerplate only**.
 
 | Output element | Generated? | Notes |
 |---|---|---|
-| `id:` / `type:` / `info:` block | Yes | Inferred from file metadata |
+| `id:` / `info:` block | Yes | `id:` equals the file name (ADR-092); no `type:` key |
 | `data_schemas:` entries | Yes | One per uploaded file |
 | `source: type:` and `source: path:` | Yes | |
 | `input_fields:` with inferred types | Yes | From TSV headers + sampling |

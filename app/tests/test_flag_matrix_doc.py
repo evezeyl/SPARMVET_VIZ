@@ -10,7 +10,7 @@ import yaml
 
 REPO = Path(__file__).resolve().parents[2]
 COLUMN_TO_FILE = {"static": "pipeline-static", "demo-vetinst": "demo-vetinst", "simple": "pipeline-exploration-simple",
-                  "web-demo": "web-demo", "advanced": "pipeline-exploration-advanced", "independent": "standalone",
+                  "web-demo": "web-demo", "advanced": "pipeline-exploration-advanced", "standalone": "standalone",
                   "developer": "developer", "qa": "qa"}
 
 

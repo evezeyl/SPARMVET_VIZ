@@ -35,7 +35,7 @@ WORDS = {
     "recipe": r"(?<!data_analysis_)(?<!data analysis )(?<!data-analysis-)(?<!DataAnalysis)recipe",
     "profile": r"profile",
     "project": r"(?<![a-z])projects?(?![a-z])|project_(?:id|info|dir|keys)\b",
-    "app features template": r"ui/templates|(?:developer|qa|pipeline-[a-z-]+|project-independent|demo-vetinst|web-demo)_template",
+    "app features template": r"ui/templates|(?:developer|qa|pipeline-[a-z-]+|standalone|project-independent|demo-vetinst|web-demo|<app[ _]features(?:_id)?>|\*)_template\.yaml|(?:developer|qa|pipeline-[a-z-]+|project-independent|demo-vetinst|web-demo)_template",
     "connector (deployment file)": r"connector_(?:config|path|template|cache)|sparmvet_connector|local_connector",
 }
 

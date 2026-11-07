@@ -327,7 +327,7 @@ Command to run (from project root):
 After running:
 1. Read the generated report at .claude/logs/audits/audit_templates_YYYY-MM-DD.md
 2. For each failing template:
-   - Open config/app_features/<app features>_template.yaml
+   - Open config/app_features/<app features>.yaml
    - Fix the flagged issue (missing flag, wrong cascade, forbidden dependency)
    - Re-run validate_app_features_config.py --app-features <name> --strict to verify the fix
 3. Fatal cascade errors (ADR-077: data_analysis_recipe_edit_enabled or blueprint_agent_enabled without
