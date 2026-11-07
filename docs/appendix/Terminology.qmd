@@ -30,5 +30,6 @@ This document defines the authoritative nomenclature for the **SPARMVET_VIZ** pl
 
 - **Home**: The central dashboard workspace where plots and data tables are rendered. All analytical navigation happens here; the former "Analysis Theater" nav mode was eliminated by ADR-043 (Phase 21); there is no separate Viz mode.
 - **Info panel**: The left sidebar panel `data_analysis_recipe_info`. It shows whatever is written under `info:` in the open data analysis recipe.
-- **Wrangle Studio**: The visual builder SDK for constructing and modifying step lists (available within the Test Lab to `developer` app features files).
-- **Test Lab**: The developer-facing environment for record synthesis, environment auditing, and pipeline testing (formerly "Dev Studio").
+- **Blueprint Architect ("Wrangle Studio")**: The visual builder for constructing and modifying step lists — its own user space, gated by `blueprint_enabled`. "Wrangle Studio" is the internal/historical name still used for the Python class (`WrangleStudio`) and the `sidebar_nav` value; the UI tab reads "Blueprint Architect". Not part of Test Lab — they are separate, independently gated user spaces.
+- **Test Lab**: The developer-facing environment for record synthesis, environment auditing, and pipeline testing (formerly "Dev Studio"), gated by `test_lab_enabled`.
+- **Gallery**: The static reference browser of worked example data analysis recipes, gated by `gallery_enabled`.

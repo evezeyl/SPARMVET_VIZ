@@ -9,12 +9,12 @@ An independent, data-agnostic library that takes tidy Polars data and a declarat
 3.  **Artist Law Evidence**: No implementation without a test triplet: `{geom}_test.tsv`, `{geom}_test.yaml`, and a materialized PNG.
 4.  **Integrity Suite Mandate**: Automated discovery of all registered components via `viz_factory_integrity_suite.py` guarantees 1:1:1 evidence loops for every class.
 5.  **Predicate Pushdown (Tier 3)**: UI-driven filters are applied as late as possible (at the VizFactory gate) to minimize memory footprint during materialization.
-6.  **Comparison Theater Support**: Native integration with the dual-pane UI that enables side-by-side verification of Tier 2 (Reference) and Tier 3 (Active) configurations.
+6.  **Comparison Mode Support** (ADR-086, "Compare Result vs My view"): Native integration with the dual-pane UI that enables side-by-side verification of the T2 Result (left, always pure) and My view (right, T3 exploration + audited steps).
 7.  **Gated Reactivity**: Implementation of the `btn_apply` logic to prevent redundant re-renders of complex `ggplot` objects.
 8.  **Annotation Gate (Phase 12-B)**: Mandatory justification modals for all Tier 3 transformations, utilizing the **Soft Note aesthetic** (`#fff9c4`) for transparent audit trails.
 9.  **Educational Split-Pane (ADR-033/Phase 14-B)**: Governance of the Gallery dual-output, pairing the **Technical Preview** (Plot/Data/YAML) with a **Visual Cookbook** (Markdown guidance) to maximize visual literacy.
 
-For a non-technical guide on how the Comparison Theater and Data Tiers interact, see: [Data Lifecycle & Theater Guide](../appendix/data_lifecycle_theater.qmd).
+For a non-technical guide on how Comparison Mode and Data Tiers interact, see: [The Audit Pipeline](../user_guide/audit_pipeline.qmd).
 
 
 

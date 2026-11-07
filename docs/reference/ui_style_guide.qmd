@@ -319,7 +319,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 | 7 | 237 | Ingest & Upload UI | `.upload-row`, `#nav_sidebar .input-group` |
 | 8 | 300 | Header Controls | `.active-view-btn`, `.control-btn`, `.ultra-small` |
 | 9 | 309 | Wrangle Studio | `#architect_internal_tabs`, `#blueprint_tubemap_accordion`, `#glimpse_body` |
-| 10 | 333 | Comparison Theater | `.reference-pane`, `.active-pane` |
+| 10 | 333 | Comparison Mode (ADR-086, "Compare Result vs My view") | `.reference-pane`, `.active-pane` |
 | 11 | 339 | Column Picker | `.column-picker-container`, `#acc_home_data .accordion-body` |
 | 12 | 362 | Structural Gaps & Layout | `.bslib-sidebar-layout`, `.theater-header-strip`, `.view-title-banner` |
 | 13 | 415 | Gallery Sidebar & Filter UI | `.gallery-filter-title`, `.gallery-sidebar-group` |

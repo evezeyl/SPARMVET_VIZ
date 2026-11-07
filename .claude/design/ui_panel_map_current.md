@@ -21,7 +21,7 @@
 | Groups pill nav | `#home_groups_nav` | "plot group nav" |
 | Session Management accordion | accordion inside `#nav_sidebar` | "session panel" |
 | Filters accordion | accordion inside `#nav_sidebar` | "filter panel" |
-| Global Export accordion | accordion inside `#nav_sidebar` | "export panel" |
+| Export accordion (renamed from "Global Export" in the 2026-05-04 export redesign) | accordion inside `#nav_sidebar` | "export panel" |
 | Data Import accordion | accordion inside `#nav_sidebar` | "data import panel" |
 
 **Proposed elements (not yet implemented — see app_features_scoping_guide.md):**

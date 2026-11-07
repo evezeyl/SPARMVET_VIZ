@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# DEPRECATED (naming-standard migration to rules_verification_testing.md §1,
+# date not recorded — found undated/untasked 2026-11-07, DOC-RECHECK-2):
+# use libs/viz_factory/tests/debug_gallery.py instead.
+# Removal task: LEGACY-MATERIALIZE-SHIM-REMOVE-1
 # @deps
 # provides: script:materialize_data_analysis_recipe_plots (DEPRECATED SHIM)
 # consumes: libs/viz_factory/tests/debug_gallery.py (delegates all work)
@@ -12,6 +16,8 @@ The canonical headless art audit tool is now:
 
 This script is a thin forwarding shim kept for backward compatibility
 with any documented commands. It delegates all work to debug_gallery.py.
+
+Removal task: LEGACY-MATERIALIZE-SHIM-REMOVE-1 (.claude/tasks/tasks.md).
 
 Usage (preferred):
   .venv/bin/python libs/viz_factory/tests/debug_gallery.py --data-analysis-recipe <path>
