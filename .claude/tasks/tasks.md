@@ -110,7 +110,7 @@ Names agreed: `deployment` (`SPARMVET_DEPLOYMENT`), `app features` (`SPARMVET_AP
 
 ### LAB-WORKFLOW follow-up
 
-- [ ] **LAB-WORKFLOW-QMD-1** `[sonnet/low]` `[doc-sync]`: User-facing Quarto mirror of `developer_workflow.md` in `docs/workflows/` — explains the *logic* of the producer workflow for end users (DRY: link, do not duplicate per `rules_documentation_aesthetics.md §4`). Focus on workflow logic + module independence, not app mechanics. Can be written now (logic is settled).
+- [x] **LAB-WORKFLOW-QMD-1** `[sonnet/low]` `[doc-sync]` (done 2026-11-07): `docs/workflows/developer_workflow.qmd` — the four-stage producer journey (TEST_LAB prepare/scaffold → GALLERY inspiration → BLUEPRINT build → HOME run), recommended (never enforced) orderings, the export-then-choose linking model, and why cross-space handoffs stay file-based (independent app features flags). Links back to `.claude/design/developer_workflow.md` for the full design record rather than duplicating it, per `rules_documentation_aesthetics.md §4`. Added to `docs/_quarto.yml` Chapter 2 nav, between `workflows/wrangling.qmd` and `user_guide/system_transparency.qmd`. Verified: `check_doc_links.py` clean, `quarto render --no-execute` builds without error.
 
 ### Maps — Solution A (choropleth via geom_polygon, no new deps)
 

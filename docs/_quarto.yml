@@ -65,6 +65,7 @@ book:
       - workflows/user_preferences.qmd # Changing layout without breaking it
       - workflows/ingestion.qmd # "The Border Control" analogy
       - workflows/wrangling.qmd # "The Assembly Line" analogy
+      - workflows/developer_workflow.qmd # The producer's journey: TEST_LAB -> GALLERY -> BLUEPRINT -> HOME
       - user_guide/system_transparency.qmd # Architectural Transparency: Normal vs Abnormal & Caching
       - user_guide/audit_pipeline.qmd # T3 audit trail: per-plot scoping, primary-key rules, propagation
       - user_guide/understanding_your_export.qmd # What the SHA256 hashes in your README mean and why they matter
