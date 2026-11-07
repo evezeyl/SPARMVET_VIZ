@@ -23,11 +23,13 @@ deployment_type: filesystem
 deployment_name: "My Pipeline — Institution Name"
 
 # ─── Default startup state (both optional) ────────────────────────────────────
-# default_data_analysis_recipe: path to the pipeline data analysis recipe to load at startup.
-#   - Relative to project_root (see below).
-#   - If ABSENT: data analysis recipe selector is shown in the UI (flag-gated).
-#   - If PRESENT: data analysis recipe is locked; lower app features files never see the selector.
-default_data_analysis_recipe: "data_analysis_recipes/pipeline_name/master.yaml"
+# default_data_analysis_recipe: the data analysis recipe that opens at startup, by file name
+#   without .yaml, found in the recipes location (SPARMVET_DATA_ANALYSIS_RECIPE overrides it).
+#   - If ABSENT and the app features show the selector: the user chooses.
+#   - If ABSENT and the app features hide the selector: the app stops with a message (a static
+#     page must say which recipe it shows).
+#   - If PRESENT: it opens first; with the selector hidden the user cannot change it.
+default_data_analysis_recipe: "pipeline_name"   # file name without .yaml in the recipes folder
 
 # default_app_features: which UI app features to activate at startup.
 #   Options: pipeline-static | pipeline-exploration-simple |

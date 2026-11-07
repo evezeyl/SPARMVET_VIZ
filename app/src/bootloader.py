@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from app.modules.deployment_error import DeploymentError, exit_if_errors
+from utils.path_expansion import expand_deployment_paths
 from app.modules.renamed_keys import (
     renamed_app_features_key_errors,
     renamed_deployment_key_errors,
@@ -170,6 +171,7 @@ class Bootloader:
         # 3. Project Authority (Agnostic Discovery)
         self.project_dir = self.get_location("data_analysis_recipes")
         self.available_projects = self._discover_projects()
+        self.default_data_analysis_recipe_name = self._resolve_default_recipe()
 
     def _resolve_deployment_path(self) -> tuple[Path, int]:
         """
@@ -323,11 +325,44 @@ class Bootloader:
         mf_files = list(self.project_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
+    def _resolve_default_recipe(self) -> str | None:
+        """SPARMVET_DATA_ANALYSIS_RECIPE, then default_data_analysis_recipe of the deployment.
+
+        A named recipe that is not in the recipes folder, or a hidden selector with nothing
+        named, is an operator mistake and stops the app (ADR-077, ADR-091)."""
+        source, name = None, None
+        if os.environ.get("SPARMVET_DATA_ANALYSIS_RECIPE"):
+            source, name = "SPARMVET_DATA_ANALYSIS_RECIPE", os.environ["SPARMVET_DATA_ANALYSIS_RECIPE"]
+        elif self.default_data_analysis_recipe:
+            source, name = "default_data_analysis_recipe", str(self.default_data_analysis_recipe)
+        if name:
+            if name not in self.available_projects:
+                exit_if_errors([DeploymentError(
+                    component="Bootloader",
+                    problem=f"The data analysis recipe '{name}' named by {source} was not found.",
+                    location=f"{source} (recipes folder: {self.project_dir})",
+                    fix=("Use the file name without .yaml of a recipe in the recipes folder. "
+                         f"Found: {sorted(self.available_projects) or 'none'}."),
+                    who="operator", reference=_BOOT_REF,
+                )])
+            return name
+        if not self.get_data_analysis_recipe_selector().get("visible", True):
+            exit_if_errors([DeploymentError(
+                component="Bootloader",
+                problem="The app features hide the data analysis recipe selector but no recipe is named.",
+                location="default_data_analysis_recipe in the deployment file and SPARMVET_DATA_ANALYSIS_RECIPE",
+                fix="Name the recipe that opens: set default_data_analysis_recipe in the deployment file "
+                    "(or SPARMVET_DATA_ANALYSIS_RECIPE for one run).",
+                who="operator", reference=_BOOT_REF,
+            )])
+        return None
+
     def get_default_project(self) -> str:
-        """Returns the fixed_data_analysis_recipe project ID if set, else the first available project."""
-        fixed = self.get_data_analysis_recipe_selector().get("fixed_data_analysis_recipe")
-        if fixed:
-            return fixed
+        """The data analysis recipe that opens at startup (ADR-091): the launch variable, then the
+        deployment default, otherwise the first available one (the user chooses when the
+        selector is shown)."""
+        if self.default_data_analysis_recipe_name:
+            return self.default_data_analysis_recipe_name
         if not self.available_projects:
             raise FileNotFoundError("No projects found in Location 2.")
         return list(self.available_projects.keys())[0]
@@ -337,7 +372,7 @@ class Bootloader:
         if not self.deployment_path.exists():
             exit_if_errors([DeploymentError(
                 component="Bootloader",
-                problem=f"Deployment deployment file not found: {self.deployment_path}",
+                problem=f"Deployment file not found: {self.deployment_path}",
                 location=str(self.deployment_path),
                 fix=(
                     "Ensure the deployment file exists at the resolved path. "
@@ -351,7 +386,10 @@ class Bootloader:
 
         try:
             with open(self.deployment_path, "r") as f:
-                return yaml.safe_load(f) or {}
+                data = yaml.safe_load(f) or {}
+            # ~ and ${VAR} in the folders of the deployment (ADR-091); an unset variable stops the app
+            exit_if_errors(expand_deployment_paths(data, str(self.deployment_path)))
+            return data
         except Exception as e:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
@@ -507,16 +545,16 @@ class Bootloader:
 
     def get_theme_css_path(self) -> Path:
         """Returns the CSS theme file for this app features (theme_css key, defaults to config/ui/theme.css)."""
-        css_rel = self.config.get("theme_css", "config/ui/theme.css")
+        css_rel = (self.deployment_config.get("branding") or {}).get("theme_css", "config/ui/theme.css")
         return Path(css_rel)
 
     def get_ui_banner(self) -> dict | None:
-        """Returns ui_banner config dict {logo_url, title, subtitle} or None if not set."""
-        return self.config.get("ui_banner") or None
+        """Returns the banner dict {logo_url, title, subtitle} of the deployment's branding, or None."""
+        return (self.deployment_config.get("branding") or {}).get("banner") or None
 
     def get_data_analysis_recipe_selector(self) -> dict:
-        """Returns the data_analysis_recipe_selector block: {visible: bool, fixed_data_analysis_recipe: str|None}."""
-        return self.config.get("data_analysis_recipe_selector", {"visible": True, "fixed_data_analysis_recipe": None})
+        """Returns the data_analysis_recipe_selector block: {visible: bool}."""
+        return self.config.get("data_analysis_recipe_selector", {"visible": True})
 
     def get_sidebar_config(self, workspace: str, side: str) -> "SidebarConfig":
         """Returns the resolved sidebar configuration for the given workspace and side.

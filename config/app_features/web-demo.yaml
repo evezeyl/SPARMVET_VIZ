@@ -3,7 +3,6 @@
 # App features badge hidden. Suitable for demos and public-facing presentations.
 name: "web-demo"
 display_name: "Web Demo"
-theme_css: "assets/demo/web_demo.css"
 
 flags:
   interactivity_enabled: true
@@ -29,18 +28,12 @@ flags:
 
 data_analysis_recipe_selector:
   visible: false
-  fixed_data_analysis_recipe: 1_test_data_ST22_dummy
 
 testing_mode: false
 
 automation:
   ghost_save:
     enabled: false
-
-ui_banner:
-  logo_url: "assets/demo/logo-no.svg"
-  title: ""        # set to a string to show a title next to the logo
-  subtitle: ""
 
 workspaces:
   home:

@@ -16,7 +16,6 @@
 # Launch: `SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m shiny run app/src/main.py`
 name: "qa"
 display_name: "QA / Test Harness"
-theme_css: "config/ui/theme.css"
 
 flags:
   # All feature flags ON — tests need access to every UI surface
@@ -45,7 +44,6 @@ flags:
 
 data_analysis_recipe_selector:
   visible: true
-  fixed_data_analysis_recipe: null
 
 testing_mode: true
 

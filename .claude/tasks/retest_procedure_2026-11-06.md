@@ -132,7 +132,7 @@ Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Ex
   (**5** rows), `steps/t3_steps.yaml` with your reason, the plot `value_by_group.png` filtered (values below 20), the README
   section "Audited T3 steps (always applied...)" naming `value_by_group: 1 step(s)`, and the T3 Audit Trail with your reason in
   `report.html`. No `FILTERS.txt`. (Checked in a real browser run on 2026-11-06, except the picture.)
-- [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static_template.yaml` instead (deployment B): export still works
+- [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static.yaml` instead (deployment B) and `SPARMVET_DATA_ANALYSIS_RECIPE=retest_tier2` (a static page must name its recipe): export still works
   and holds the Result.
 
 ## 3. Issue #23: `top_n_other` — project `retest_top_n_other`

@@ -24,7 +24,7 @@ def _tmpl(overrides=None, ms_visible=True, ms_fixed=None, testing_mode=True, app
     t = {
         "name": app_features_id or path,
         "flags": {**_FULL_FEATURES, **(overrides or {})},
-        "data_analysis_recipe_selector": {"visible": ms_visible, "fixed_data_analysis_recipe": ms_fixed},
+        "data_analysis_recipe_selector": {"visible": ms_visible},
         "testing_mode": testing_mode,
     }
     return t, path
@@ -66,7 +66,7 @@ def test_missing_flag_no_error(capsys):
     t = {
         "name": "developer",
         "flags": {},  # all missing
-        "data_analysis_recipe_selector": {"visible": True, "fixed_data_analysis_recipe": None},
+        "data_analysis_recipe_selector": {"visible": True},
         "testing_mode": True,
     }
     errors = V.validate(t, "developer")
@@ -75,29 +75,12 @@ def test_missing_flag_no_error(capsys):
     assert "WARNING" in captured.out
 
 
-# --- Rule 4: data_analysis_recipe_selector.visible=false requires fixed_data_analysis_recipe ---
+# --- Rule 4 (removed, ADR-091): a hidden selector needs no recipe name in the app features file ---
 
-def test_data_analysis_recipe_selector_hidden_no_fixed_data_analysis_recipe_warns(capsys):
-    t, path = _tmpl(path="pipeline-static",
-                    app_features_id="pipeline-static",
-                    ms_visible=False, ms_fixed=None)
+def test_hidden_selector_is_fine_in_the_app_features_file():
+    t, path = _tmpl(path="pipeline-static", app_features_id="pipeline-static", ms_visible=False)
     errors = V.validate(t, path)
-    assert errors == [], "null fixed_data_analysis_recipe is a warning, not an error (dev/template default)"
-    captured = capsys.readouterr()
-    assert "fixed_data_analysis_recipe" in captured.out
-
-
-def test_data_analysis_recipe_selector_hidden_with_fixed_data_analysis_recipe_ok():
-    t, path = _tmpl(path="pipeline-static",
-                    app_features_id="pipeline-static",
-                    ms_visible=False, ms_fixed="/data/data_analysis_recipes/project.yaml")
-    assert V.validate(t, path) == []
-
-
-def test_data_analysis_recipe_selector_visible_no_fixed_data_analysis_recipe_ok():
-    t, path = _tmpl(path="developer", app_features_id="developer",
-                    ms_visible=True, ms_fixed=None)
-    assert V.validate(t, path) == []
+    assert errors == []
 
 
 # --- validate_file: real template files ---
@@ -108,7 +91,7 @@ def test_validate_real_developer_template():
 
 
 def test_validate_real_pipeline_static_template():
-    # fixed_data_analysis_recipe is set in the template, so no fixed_data_analysis_recipe warning expected
+    # the app features file names no recipe (the deployment does) expected
     errors = V.validate_file("config/app_features/pipeline-static.yaml")
     assert errors == [], f"pipeline-static errors: {errors}"
 

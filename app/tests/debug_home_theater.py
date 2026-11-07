@@ -74,7 +74,9 @@ def section(title: str):
 # ---------------------------------------------------------------------------
 def test_app_features_feature_flags():
     section("1. App features feature flags")
-    from app.src.bootloader import Bootloader
+    import os
+os.environ.setdefault("SPARMVET_DATA_ANALYSIS_RECIPE", "1_test_data_ST22_dummy")  # pipeline app features hide the selector
+from app.src.bootloader import Bootloader
 
     expected = {
         "pipeline-static": {

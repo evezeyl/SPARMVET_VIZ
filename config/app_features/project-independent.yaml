@@ -1,7 +1,6 @@
 # UI App features: Project Independent
 name: "project-independent"
 display_name: "Project Independent User"
-theme_css: "config/ui/theme.css"
 
 flags:
   # Can the user interact with the Tier 3 View?
@@ -40,7 +39,6 @@ flags:
 
 data_analysis_recipe_selector:
   visible: true
-  fixed_data_analysis_recipe: null
 
 testing_mode: true
 

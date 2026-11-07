@@ -93,7 +93,7 @@ absolute path to your deployment file.
 
 ### `boot-deployment-file-missing` {#boot-deployment-file-missing}
 
-**Problem:** Deployment deployment file not found at `<path>`.
+**Problem:** Deployment file not found at `<path>`.
 
 This error fires from `_load_deployment_config()` after a deployment path has been
 resolved. It means the file existed when the path was resolved (or was provided

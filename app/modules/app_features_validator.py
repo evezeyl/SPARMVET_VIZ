@@ -97,15 +97,8 @@ class AppFeaturesValidator:
                     f"Feature flag '{flag}' missing from template '{template_path}' — defaulting to False"
                 )
 
-        # Rule 4: data_analysis_recipe_selector.visible=false → fixed_data_analysis_recipe should be non-null in production
-        ms = template.get("data_analysis_recipe_selector", {})
-        if ms.get("visible") is False:
-            if not ms.get("fixed_data_analysis_recipe"):
-                # Warning only: null is the dev/template default; operators fill this at deployment
-                warnings.append(
-                    f"data_analysis_recipe_selector.visible=false in '{template_path}' "
-                    f"but fixed_data_analysis_recipe is null — operator must set a fixed_data_analysis_recipe path before deploying"
-                )
+        # Rule 4 (removed, ADR-091): an app features file names no recipe; the deployment does,
+        # and the bootloader stops the app if the selector is hidden and no recipe is named.
 
         # Rule 5: child flags must not be True when their master gate is False
         # (Soft cascade — bootloader will silently suppress at runtime; warn so operator knows.)

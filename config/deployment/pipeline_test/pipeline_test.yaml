@@ -2,7 +2,10 @@
 # Simulates production connector behaviour: data is injected by the pipeline,
 # not read from data analysis recipe source.path entries.
 #
-# data_lookup: by_dataset_id — orchestrator ignores data analysis recipe source.path and discovers
+# data_lookup: by_dataset_id
+
+# pipeline-static hides the recipe selector, so the deployment names the recipe that opens
+default_data_analysis_recipe: 1_test_data_ST22_dummy — orchestrator ignores data analysis recipe source.path and discovers
 # files by schema ID name in raw_data. This exercises the same code path a real
 # Galaxy/IRIDA connector would use.
 #

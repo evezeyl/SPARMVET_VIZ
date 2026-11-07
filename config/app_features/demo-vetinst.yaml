@@ -3,7 +3,6 @@
 # No data import, no export panel, no app features badge — clean presentation layer.
 name: "demo-vetinst"
 display_name: "VetInst Demo"
-theme_css: "assets/demo/demo_vetinst.css"
 
 flags:
   interactivity_enabled: false
@@ -31,24 +30,12 @@ flags:
 
 data_analysis_recipe_selector:
   visible: false
-  fixed_data_analysis_recipe: 1_test_data_ST22_dummy
 
 testing_mode: false
 
 automation:
   ghost_save:
     enabled: false
-
-# ── Banner ────────────────────────────────────────────────────────────────────
-# Displayed as a strip above the main 3-zone layout.
-# logo_url: point to a local static file (app/static/logo.png) or a public URL.
-#   Local file example : "static/vetinst_logo.png"
-#                        (place the file under app/static/ and serve via Shiny)
-#   Remote URL example : copy the logo URL from https://www.vetinst.no/
-ui_banner:
-  logo_url: "assets/demo/logo-no.svg"
-  title: "AMR Surveillance — Overview"
-  subtitle: "Norwegian Veterinary Institute"
 
 workspaces:
   home:

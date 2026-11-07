@@ -1,0 +1,25 @@
+# SPARMVET demo deployment: the web-demo app features with the branding that used to sit in
+# the app features file (ADR-091: branding belongs to the deployment).
+# Start with: SPARMVET_DEPLOYMENT=config/deployment/demo/web-demo.yaml
+deployment_type: filesystem
+deployment_name: "SPARMVET demo (web-demo)"
+default_app_features: "web-demo"
+default_data_analysis_recipe: "1_test_data_ST22_dummy"
+
+locations:
+  raw_data: "assets/test_data/"
+  data_analysis_recipes: "config/data_analysis_recipes/pipelines/"
+  cache: "tmp/DEMO/parquet_data/"
+  user_data: "tmp/DEMO/user/"
+  gallery: "assets/gallery_data/"
+
+branding:
+  # the default stylesheet always loads; this one holds only the differences
+  theme_css: "assets/demo/web_demo.css"
+  banner:
+    logo_url: "assets/demo/logo-no.svg"
+    title: ""
+    subtitle: ""
+
+runtime:
+  python_interpreter: "./.venv/bin/python"

@@ -104,7 +104,7 @@ try:
     from ingestion.ingestor import DataIngestor
     from utils.config_loader import ConfigManager
 
-    data_analysis_recipe_id = bootloader.get_data_analysis_recipe_selector().get("fixed_data_analysis_recipe", "1_test_data_ST22_dummy")
+    data_analysis_recipe_id = bootloader.get_default_project()
     data_analysis_recipe_path = data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
     record("Data analysis recipe path", PASS if data_analysis_recipe_path.exists() else FAIL, str(data_analysis_recipe_path))
 
@@ -179,7 +179,7 @@ try:
 
     ms = bl2.get_data_analysis_recipe_selector()
     record("App features loaded", PASS, bl2.app_features_display_name)
-    record("data_analysis_recipe_selector.fixed_data_analysis_recipe", INFO, str(ms.get("fixed_data_analysis_recipe")))
+    record("default recipe", INFO, bl2.get_default_project())
     record("data_lookup", INFO, bl2.data_lookup)
     record("testing_mode", INFO, str(bl2.get_testing_mode()))
 except Exception as e:

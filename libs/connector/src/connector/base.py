@@ -24,7 +24,7 @@ class BaseConnector(ABC):
     Abstract base for SPARMVET deployment connectors (ADR-048 §5).
 
     Subclasses must implement resolve_paths() and fetch_data().
-    get_data_analysis_recipe_path() and get_default_app_features() have default implementations
+    get_default_app_features() has a default implementation
     that read directly from the deployment dict.
     """
 
@@ -56,24 +56,6 @@ class BaseConnector(ABC):
 
         Called once at startup, before resolve_paths() is used by the rest of the app.
         """
-
-    def get_data_analysis_recipe_path(self) -> Path | None:
-        """
-        Return the default data analysis recipe Path, or None if not set in the deployment.
-
-        default_data_analysis_recipe in the deployment is relative to project_root (or CWD if
-        project_root is absent). Returns an absolute or CWD-relative Path.
-        """
-        dm = self._deployment.get("default_data_analysis_recipe")
-        if not dm:
-            return None
-        p = Path(dm)
-        if p.is_absolute():
-            return p
-        project_root_str = self._deployment.get("project_root")
-        if project_root_str:
-            return Path(project_root_str) / p
-        return p
 
     def get_default_app_features(self) -> str | None:
         """Return the default app features ID from the deployment, or None if not set."""

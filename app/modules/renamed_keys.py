@@ -33,6 +33,8 @@ RENAMED_APP_FEATURES_KEYS = {
     "persona_id": "name",
     "features": "flags",
     "manifest_selector": "data_analysis_recipe_selector",
+    "theme_css": "branding.theme_css in the deployment file",
+    "ui_banner": "branding.banner in the deployment file",
 }
 
 # keys inside the flags block of an app features file: old -> new
@@ -112,6 +114,17 @@ def renamed_app_features_key_errors(config: dict, where: str) -> list[Deployment
                 fix=f"Rename the key '{old}' to '{new}' in {where}.",
                 who="operator",
                 reference=_REF,
+            ))
+    selector = config.get("data_analysis_recipe_selector") or {}
+    for old in ("fixed_data_analysis_recipe", "fixed_manifest"):
+        if old in selector:
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=f"The key '{old}' no longer exists: an app features file names no recipe.",
+                location=f"data_analysis_recipe_selector.{old} in {where}",
+                fix="Delete it and set default_data_analysis_recipe in the deployment file "
+                    "(or SPARMVET_DATA_ANALYSIS_RECIPE for one run).",
+                who="operator", reference=_REF,
             ))
     flags = config.get("flags", config.get("features", {})) or {}
     for old, new in RENAMED_FLAG_KEYS.items():

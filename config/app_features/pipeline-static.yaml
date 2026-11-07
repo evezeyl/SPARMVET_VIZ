@@ -1,7 +1,6 @@
 # UI App features: Pipeline Static
 name: "pipeline-static"
 display_name: "Automated Pipeline - Static"
-theme_css: "config/ui/theme.css"
 
 flags:
   # Can the user interact with the Tier 3 View?
@@ -39,10 +38,9 @@ flags:
   # Show active app features name in nav header
   show_app_features_badge: true
 
-# Data analysis recipe selection — false: data analysis recipe fixed by deployment config (operator must set fixed_data_analysis_recipe)
+# Data analysis recipe selection — false: data analysis recipe fixed by deployment config (the operator names it with default_data_analysis_recipe in the deployment file)
 data_analysis_recipe_selector:
   visible: false
-  fixed_data_analysis_recipe: 1_test_data_ST22_dummy
 
 # testing_mode — false: data injected by pipeline; true: pre-fill data selector from data analysis recipe defaults
 testing_mode: false

@@ -18,14 +18,15 @@ REPO = Path(__file__).resolve().parents[2]
 @pytest.fixture(autouse=True)
 def clean_launch_env(monkeypatch, tmp_path):
     """Start every test with no launch variable and an empty home (no ~/.sparmvet file)."""
-    for var in ("SPARMVET_DEPLOYMENT", "SPARMVET_APP_FEATURES", "SPARMVET_PERSONA", "SPARMVET_PROFILE", "SPARMVET_CONNECTOR"):
+    for var in ("SPARMVET_DEPLOYMENT", "SPARMVET_APP_FEATURES", "SPARMVET_PERSONA", "SPARMVET_PROFILE", "SPARMVET_CONNECTOR",
+                "SPARMVET_DATA_ANALYSIS_RECIPE"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     (tmp_path / "home").mkdir()
     monkeypatch.chdir(REPO)
 
 
-def _deployment(tmp_path, name="dep.yaml", **extra):
+def _deployment(tmp_path, name="dep.yaml", recipe=None, **extra):
     """Write a deployment file whose five locations are real folders under tmp_path."""
     root = tmp_path / name.replace(".yaml", "_data")
     locations = {}
@@ -33,6 +34,9 @@ def _deployment(tmp_path, name="dep.yaml", **extra):
         (root / key).mkdir(parents=True, exist_ok=True)
         locations[key] = str(root / key)
     body = {"deployment_type": "filesystem", "deployment_name": name, "locations": locations}
+    if recipe:  # a recipe that exists in the recipes folder and is the deployment default
+        (root / "data_analysis_recipes" / f"{recipe}.yaml").write_text(f"id: {recipe}\n")
+        body["default_data_analysis_recipe"] = recipe
     body.update(extra)
     path = tmp_path / name
     path.write_text(yaml.safe_dump(body))
@@ -75,7 +79,7 @@ def test_app_features_variable_accepts_a_short_name(tmp_path, monkeypatch):
 
 
 def test_app_features_variable_accepts_a_path(tmp_path, monkeypatch):
-    dep, _ = _deployment(tmp_path)
+    dep, _ = _deployment(tmp_path, recipe="alpha")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     monkeypatch.setenv("SPARMVET_APP_FEATURES", "config/app_features/pipeline-static.yaml")
     b = Bootloader()
@@ -86,7 +90,7 @@ def test_app_features_variable_accepts_a_path(tmp_path, monkeypatch):
 
 def test_features_differ_between_two_launches_of_the_same_deployment(tmp_path, monkeypatch):
     """The same deployment file with two feature sets: the point of keeping them separate."""
-    dep, _ = _deployment(tmp_path)
+    dep, _ = _deployment(tmp_path, recipe="alpha")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     monkeypatch.setenv("SPARMVET_APP_FEATURES", "qa")
     full = Bootloader()
@@ -104,7 +108,7 @@ def test_variable_beats_the_deployment_default(tmp_path, monkeypatch):
 
 
 def test_deployment_default_is_used_without_a_variable(tmp_path, monkeypatch):
-    dep, _ = _deployment(tmp_path, **{"default_app_features": "pipeline-static"})
+    dep, _ = _deployment(tmp_path, recipe="alpha", **{"default_app_features": "pipeline-static"})
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     assert Bootloader().app_features_path.name == "pipeline-static.yaml"
 
@@ -117,7 +121,7 @@ def test_no_choice_anywhere_stops_the_app(tmp_path, monkeypatch):
 
 
 def test_keyword_beats_the_variable(tmp_path, monkeypatch):
-    dep, _ = _deployment(tmp_path)
+    dep, _ = _deployment(tmp_path, recipe="alpha")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     monkeypatch.setenv("SPARMVET_APP_FEATURES", "qa")
     assert Bootloader(app_features="pipeline-static").app_features_path.name == "pipeline-static.yaml"
@@ -141,23 +145,99 @@ def test_recipes_are_listed_from_the_data_analysis_recipes_folder(tmp_path, monk
     assert sorted(Bootloader().available_projects) == ["alpha", "beta"]
 
 
-def test_CURRENT_GAP_template_fixed_manifest_wins_and_deployment_default_is_ignored(tmp_path, monkeypatch):
-    """ADR-091 changes this: the deployment default takes effect and the template key is removed."""
-    dep, root = _deployment(tmp_path, **{"default_data_analysis_recipe": "beta", "default_app_features": "pipeline-static"})
-    (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\n")
-    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
-    b = Bootloader()
-    assert b.default_data_analysis_recipe == "beta"  # read from the deployment file ...
-    assert b.get_default_project() == "1_test_data_ST22_dummy"  # ... but the template pin is used
-
-
-def test_CURRENT_GAP_without_any_pin_the_first_listed_recipe_opens(tmp_path, monkeypatch):
-    dep, root = _deployment(tmp_path, **{"default_data_analysis_recipe": "beta", "default_app_features": "qa"})
+def test_deployment_default_recipe_opens_first(tmp_path, monkeypatch):
+    dep, root = _deployment(tmp_path, recipe="beta", **{"default_app_features": "qa"})
     (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
-    (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\n")
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    assert Bootloader().get_default_project() == "beta"
+
+
+def test_launch_variable_beats_the_deployment_default_recipe(tmp_path, monkeypatch):
+    dep, root = _deployment(tmp_path, recipe="beta", **{"default_app_features": "qa"})
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    monkeypatch.setenv("SPARMVET_DATA_ANALYSIS_RECIPE", "alpha")
+    assert Bootloader().get_default_project() == "alpha"
+
+
+def test_a_named_recipe_that_does_not_exist_stops_the_app(tmp_path, monkeypatch, capsys):
+    dep, _ = _deployment(tmp_path, recipe="beta", **{"default_app_features": "qa"})
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    monkeypatch.setenv("SPARMVET_DATA_ANALYSIS_RECIPE", "nope")
+    with pytest.raises(SystemExit):
+        Bootloader()
+    err = capsys.readouterr().err
+    assert "nope" in err and "SPARMVET_DATA_ANALYSIS_RECIPE" in err
+
+
+def test_hidden_selector_without_a_named_recipe_stops_the_app(tmp_path, monkeypatch, capsys):
+    dep, _ = _deployment(tmp_path, **{"default_app_features": "pipeline-static"})
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    with pytest.raises(SystemExit):
+        Bootloader()
+    err = capsys.readouterr().err
+    assert "default_data_analysis_recipe" in err and "SPARMVET_DATA_ANALYSIS_RECIPE" in err
+
+
+def test_visible_selector_without_a_named_recipe_opens_the_first_one(tmp_path, monkeypatch):
+    dep, root = _deployment(tmp_path, **{"default_app_features": "qa"})
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     b = Bootloader()
-    assert b.get_default_project() == next(iter(b.available_projects))
+    assert b.get_default_project() == "alpha"
+
+
+def test_a_preset_naming_a_recipe_stops_the_app(tmp_path, monkeypatch, capsys):
+    dep, _ = _deployment(tmp_path)
+    body = yaml.safe_load((REPO / "config" / "app_features" / "qa.yaml").read_text().replace("!include ", ""))
+    body = {k: v for k, v in body.items() if k != "workspaces"}
+    body["data_analysis_recipe_selector"] = {"visible": False, "fixed_data_analysis_recipe": "x"}
+    f = tmp_path / "fixed.yaml"
+    f.write_text(yaml.safe_dump(body))
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    monkeypatch.setenv("SPARMVET_APP_FEATURES", str(f))
+    with pytest.raises(SystemExit):
+        Bootloader()
+    assert "default_data_analysis_recipe" in capsys.readouterr().err
+
+
+def test_home_and_variables_are_expanded_in_deployment_paths(tmp_path, monkeypatch):
+    dep, root = _deployment(tmp_path, **{"default_app_features": "qa"})
+    body = yaml.safe_load(dep.read_text())
+    monkeypatch.setenv("MY_DATA", str(root))
+    body["locations"]["cache"] = "${MY_DATA}/cache"
+    dep.write_text(yaml.safe_dump(body))
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    assert str(Bootloader().get_location("cache")) == str(root / "cache")
+
+
+def test_an_unset_variable_in_a_path_stops_the_app(tmp_path, monkeypatch, capsys):
+    dep, _ = _deployment(tmp_path, **{"default_app_features": "qa"})
+    body = yaml.safe_load(dep.read_text())
+    body["locations"]["cache"] = "${NOT_SET_ANYWHERE}/cache"
+    dep.write_text(yaml.safe_dump(body))
+    monkeypatch.delenv("NOT_SET_ANYWHERE", raising=False)
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    with pytest.raises(SystemExit):
+        Bootloader()
+    assert "NOT_SET_ANYWHERE" in capsys.readouterr().err
+
+
+def test_branding_comes_from_the_deployment(tmp_path, monkeypatch):
+    dep, _ = _deployment(tmp_path, **{"default_app_features": "qa",
+                                      "branding": {"theme_css": "assets/demo/web_demo.css",
+                                                   "banner": {"title": "Hello"}}})
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    b = Bootloader()
+    assert b.get_theme_css_path().name == "web_demo.css"
+    assert b.get_ui_banner() == {"title": "Hello"}
+
+
+def test_default_branding_is_the_base_stylesheet_and_no_banner(tmp_path, monkeypatch):
+    dep, _ = _deployment(tmp_path, **{"default_app_features": "qa"})
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+    b = Bootloader()
+    assert str(b.get_theme_css_path()) == "config/ui/theme.css" and b.get_ui_banner() is None
 
 
 # --- old names stop the app with a message that names the new one (ADR-091) ---

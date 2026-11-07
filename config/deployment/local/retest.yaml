@@ -18,7 +18,7 @@ locations:
   # Location 4: User specific artifacts, sessions, and Tier 3 outputs
   user_data: "tmp/RETEST/user/"
   
-  # Location 5: Gallery examples and examples
+  # Location 5: Gallery examples
   gallery: "assets/gallery_data/"
 
 

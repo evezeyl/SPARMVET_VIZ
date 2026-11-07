@@ -66,7 +66,7 @@ def server(input, output, session):
     # 1. Reactive Data Analysis Recipe Authority (Universal Architecture)
     @reactive.Calc
     def active_cfg():
-        # Use fixed_data_analysis_recipe when data analysis recipe selector is hidden (pipeline app features files);
+        # When the selector is hidden the deployment (or SPARMVET_DATA_ANALYSIS_RECIPE) names the recipe;
         # fall back to the project_id widget only when the selector is visible.
         project_id = _safe_input(input, "project_id", bootloader.get_default_project())
         # ADR-089: the parsed data analysis recipe stays in memory only while none of its files changed on

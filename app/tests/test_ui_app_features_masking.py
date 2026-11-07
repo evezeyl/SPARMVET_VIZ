@@ -13,6 +13,10 @@ Ensures feature gating logic correctly masks restricted components for each depl
 
 class TestUIAppFeaturesMasking(unittest.TestCase):
     def setUp(self):
+        # pipeline app features hide the selector, so a recipe must be named (ADR-091)
+        import os
+        os.environ["SPARMVET_DATA_ANALYSIS_RECIPE"] = "1_test_data_ST22_dummy"
+        self.addCleanup(os.environ.pop, "SPARMVET_DATA_ANALYSIS_RECIPE", None)
         self.bootloader = Bootloader()
 
     def test_pipeline_static_masking(self):

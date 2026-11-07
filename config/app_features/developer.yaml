@@ -1,7 +1,6 @@
 # UI App features: Developer Mode
 name: "developer"
 display_name: "Workflow Developer"
-theme_css: "config/ui/theme.css"
 
 flags:
   # Can the user interact with the Tier 3 View?
@@ -40,7 +39,6 @@ flags:
 
 data_analysis_recipe_selector:
   visible: true
-  fixed_data_analysis_recipe: null
 
 testing_mode: true
 

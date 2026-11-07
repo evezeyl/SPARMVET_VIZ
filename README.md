@@ -118,7 +118,7 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 - [Wrangling Guide](./docs/reference/wrangling_guide.qmd): Tier 1/2/3 lifecycle and assembly logic.
 - [Deployment Configuration](./docs/user_guide/deployment_app_features.qmd): User functionalities, dependency rules, and available deployments.
 - [Deployment Guide](./docs/deployment/deployment_guide.qmd): Galaxy, IRIDA, server, and local deployment (ADR-048).
-- [Connector / Deployment Schema](./docs/workflows/connector.qmd): Deployment deployment file schema reference.
+- [Connector / Deployment Schema](./docs/workflows/connector.qmd): Deployment file schema reference.
 
 ## 🔧 Developer Scripts
 

@@ -140,25 +140,6 @@ class TestFilesystemConnector:
         c = FilesystemConnector(FS_DEPLOYMENT)
         c.fetch_data()  # must not raise
 
-    def test_get_data_analysis_recipe_path_none_when_absent(self):
-        c = FilesystemConnector(FS_DEPLOYMENT)
-        assert c.get_data_analysis_recipe_path() is None
-
-    def test_get_data_analysis_recipe_path_with_root(self):
-        c = FilesystemConnector(FS_DEPLOYMENT_WITH_ROOT)
-        mpath = c.get_data_analysis_recipe_path()
-        assert mpath == Path("/data/pipeline/data_analysis_recipes/amr/master.yaml")
-
-    def test_get_data_analysis_recipe_path_no_root(self):
-        deployment = {**FS_DEPLOYMENT, "default_data_analysis_recipe": "config/data_analysis_recipes/amr.yaml"}
-        c = FilesystemConnector(deployment)
-        assert c.get_data_analysis_recipe_path() == Path("config/data_analysis_recipes/amr.yaml")
-
-    def test_get_data_analysis_recipe_path_absolute(self):
-        deployment = {**FS_DEPLOYMENT, "default_data_analysis_recipe": "/absolute/data_analysis_recipe.yaml"}
-        c = FilesystemConnector(deployment)
-        assert c.get_data_analysis_recipe_path() == Path("/absolute/data_analysis_recipe.yaml")
-
     def test_get_default_app_features(self):
         c = FilesystemConnector(FS_DEPLOYMENT_WITH_ROOT)
         assert c.get_default_app_features() == "pipeline-static"
