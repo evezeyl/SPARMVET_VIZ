@@ -12,7 +12,7 @@ deps:
 - **Dynamic discovery:** Tabs and column filters MUST be derived from data analysis recipes and Polars schemas at runtime.
 - **T3 = Publication Finisher (§12, ui_implementation_contract.md):** Tier 3 scope is **permanently locked** to row filters, row exclusions, column visibility, and aesthetic overrides. It is NOT a wrangling sandbox — no action-picker UI. Wrangling belongs in T1/T2 data analysis recipes.
 - **audit steps IS the Audit Trace:** There is no separate FILTERS.txt for T3. The T3 YAML audit trail (list of AuditStep dicts) is the complete audit trail. `aesthetic_override` nodes are stored separately as `t3_plot_overrides` but are included in the export report.
-- **Two Ghost Save Slots:** (1) T1/T2 Ghost (`_autosave_assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`_autosave_t3.json`) — written on every `btn_apply` AND on every panel switch away from Home.
+- **Two Ghost Save Slots** (per `session_key`, under `{location_4}/_sessions/{session_key}/` — see `ui_implementation_contract.md §12d`): (1) T1/T2 Ghost (`assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply` AND on every panel switch away from Home.
 - **State Feedback:** When a plot is "In-Calculation" (recalc ONLY applies to Tier 3 since Tiers 1/2 are immutable Parquet caches), the UI must use a dimming overlay with a "recalculating" message.
 
 ## 2. Left vs Right Panel Behaviors (ADR-073)

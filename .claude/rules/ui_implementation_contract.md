@@ -164,14 +164,14 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 - If metadata was replaced (see §9): reference to the uploaded metadata filename
 
 **Session model:**
-- Each session is a named `.json` file stored in a subdirectory of Location 4 (`user_data/sessions/<session_id>.json`).
+- Each session lives under `{location_4}/_sessions/{session_key}/` (`session_key` = `data_analysis_recipe_sha256[:12] + ":" + data_batch_hash[:12]`, see §12d).
 - Multiple sessions are allowed per user — users can switch between sessions (different pipeline runs, different dates).
-- Sessions are **named at save time** — the UI prompts for a session label (e.g., "AMR_run_Jan2025").
+- Sessions carry an optional user-supplied `label` (e.g., "AMR_run_Jan2025"), editable from the session panel.
 
-**Ghost save:**
-- Automatic background save on every `btn_apply` press and on every filter commit.
-- Stored as `user_data/sessions/_autosave.json` — single slot, always overwritten.
-- Restored automatically if the app detects an autosave newer than the last explicit session save.
+**Ghost save (see §12d for the authoritative two-slot spec):**
+- T1/T2 Ghost (`assembly.json`) — written once per assembly, rewritten when data analysis recipe or source data changes.
+- T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply` press and on every panel switch away from Home. Each save is a new timestamped file, not an overwrite — the session panel lets the user pick which T3 snapshot to restore.
+- Restored automatically via the T1/T2 "Prepped Chef" check at startup, matching on `session_key`.
 
 **Save location:** `user_data` (Location 4) from the active deployment. This path is deployment-specific — on Galaxy it maps to a Galaxy-accessible path; on a local machine it is a local directory. Users only have write access to Location 4 — they cannot choose an arbitrary path.
 
