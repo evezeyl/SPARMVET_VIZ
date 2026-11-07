@@ -417,7 +417,10 @@ def _rewrite_py(src: str, fix) -> str:
                 ctx = "prose" if re.search(r"\s", inner.strip()) else "code"
                 new = fix(text, ctx, whole=(ctx == "code"))
         elif tok.type == getattr(tokenize, "FSTRING_MIDDLE", -1):
-            new = fix(text, "prose" if re.search(r"\s", text.strip()) else "code")
+            if "\n" in text:
+                new = "\n".join(_yaml_like_line(l, fix) for l in text.split("\n"))
+            else:
+                new = fix(text, "prose" if re.search(r"\s", text.strip()) else "code")
         elif tok.type == tokenize.NAME:
             new = fix(text, "code")
         else:
