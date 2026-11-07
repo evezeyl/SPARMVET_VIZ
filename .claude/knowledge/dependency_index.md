@@ -509,13 +509,6 @@
 - **consumes:** `class:FilesystemConnector`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
 
-## `libs/connector/src/connector/galaxy_connector.py`
-- **Role:** `info`
-- **provides:** `class:GalaxyConnector (BioBlend-based; fetch_history_dataset`, `list_histories)`
-- **consumes:** `os`, `requests`, `typing (stdlib/third-party); bioblend.galaxy (optional`, `commented out)`
-- **consumed_by:** `libs/connector/src/connector/__init__.py`, `app/src/bootloader.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-031`
-
 ## `libs/connector/src/connector/irida.py`
 - **Role:** `info`
 - **provides:** `class:IridaConnector`

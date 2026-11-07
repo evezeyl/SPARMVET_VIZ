@@ -1316,10 +1316,6 @@ class WrangleStudio:
                 *cards,
             )
 
-        # Keep _fields_table as alias for backward compat with assembly accordion
-        def _fields_table(fields, slot_name="fields"):
-            return _fields_cards(fields, slot_name)
-
         @output
         @render.ui
         def lineage_rail_ui():
@@ -1930,46 +1926,6 @@ class WrangleStudio:
                     )
                 )
             return ui.div(*ui_nodes)
-
-    def _parse_fields_safe(self, fields):
-        """Safely normalises input_fields/output_fields from either dict or list format.
-        Returns (rows: list[dict], is_legacy: bool).
-        is_legacy=True when the file uses a non-standard dict format (simple or rich).
-        Standard format is a list [{name, dtype, description}].
-        """
-        is_legacy = False
-        if isinstance(fields, dict):
-            if not fields:
-                return [], False
-            is_legacy = True
-            rows = []
-            for k, v in fields.items():
-                if isinstance(v, dict):
-                    # Rich metadata: {original_name, type/dtype, label, ...}
-                    rows.append({
-                        "field": k,
-                        "type": v.get("type", v.get("dtype", "?")),
-                        "description": v.get("label", v.get("description", ""))
-                    })
-                else:
-                    rows.append({"field": k, "type": str(v), "description": ""})
-        elif isinstance(fields, list):
-            rows = []
-            for item in fields:
-                if isinstance(item, dict):
-                    rows.append({
-                        "field": item.get("name", item.get("field", "?")),
-                        "type": item.get("dtype", item.get("type", "?")),
-                        "description": item.get("description", ""),
-                    })
-                else:
-                    # Scalar string — legacy flat list
-                    rows.append(
-                        {"field": str(item), "type": "?", "description": ""})
-                    is_legacy = True
-        else:
-            rows = []
-        return rows, is_legacy
 
     def _render_yaml_tree(self, yaml_obj, path="root"):
         """Recursively renders a YAML dict as nested Bootstrap accordion panels.

@@ -192,22 +192,6 @@ class DataIngestor:
             print(pe.format())
             raise IngestionError(pe.problem, tip=pe.fix) from e
 
-    def validate_schema(self, lf: pl.LazyFrame, dataset_schema: Dict[str, Any]) -> bool:
-        """
-        Validates that the physical loaded LazyFrame contains all the mandatory 
-        columns defined in the formal _fields.yaml dictionary.
-        ADR-013: Uses 'input_fields' for raw validation.
-        """
-        fields_data = dataset_schema.get(
-            "input_fields") or dataset_schema.get("fields") or {}
-        if not fields_data:
-            return True  # Nothing to validate against
-
-        # For now, simply confirming we can read the raw columns
-        # Strict validation of names/types will occur here.
-        raw_columns = lf.columns
-        return len(raw_columns) > 0
-
 
 if __name__ == "__main__":
     import argparse
