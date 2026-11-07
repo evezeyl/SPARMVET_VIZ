@@ -55,7 +55,14 @@ first, each goal backed by a `REQ-CORE` requirement), [`cross_cutting_concepts.m
 flag-driven gating, the Two-Category Law, tier isolation, security deferred) and
 [`risks_and_technical_debt.md`](risks_and_technical_debt.md) (the findings register, sorted by cost).
 
-**Next, in this order:** GALLERY, BLUEPRINT, TEST_LAB (use case, wireframe, components). **Later:** class diagrams of the core, data analysis recipe data model, other platforms.
+**Done (2026-11-07):** GALLERY, BLUEPRINT, TEST_LAB use case diagrams (UC-GALLERY, UC-BLUEPRINT,
+UC-TESTLAB) and C4 component diagrams (C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB),
+same level of detail as C4-COMP-HOME. **Still open:** wireframes (UI-GALLERY, UI-BLUEPRINT,
+UI-TESTLAB) — not started. **Later:** class diagrams of the core, data analysis recipe data
+model, other platforms.
+
+**Diagram export:** all 23 diagrams exported to `docs/UML/diagrams/*.png` via
+`staruml_export_diagrams` (re-run after any diagram change; PNGs are not auto-synced).
 
 UI-HOME uses StarUML's wireframe diagrams (panels, buttons, tabs as model elements). Each widget carries its Shiny id in `code` and its gate in `flag`, so the script can check it. It replaces the hand-drawn picture in `ui_panel_map_current.md`, which is already out of date (it still shows a T1/T2/T3 toggle).
 
