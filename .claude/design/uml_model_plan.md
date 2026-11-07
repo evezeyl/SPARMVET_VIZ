@@ -1,12 +1,12 @@
 # UML model of SPARMVET_VIZ: plan (TOOLS-UML-3)
 
-**Status:** in use (Eve, 2026-11-07). Scope is limited by time: 10 work days for fixes, testing and a demo.
+**Status:** in use (Eve, 2026-11-07). The UML is for the app.
 **Model file:** `docs/UML/app.mdj` (StarUML). **Tool:** `OBSWORK/_bin/staruml/` (usage: `OBSWORK/_HELP/7_StarUML_Modeling_Workflow.md`).
 **Findings:** `.claude/tasks/uml_findings.md`.
 
 ## 1. Scope (Eve, 2026-11-07)
 
-The model describes the app, not a demo. It describes the app as it runs today, on one machine; Galaxy and IRIDA are not implemented for now. HOME is the priority because it must be polished first; then GALLERY, BLUEPRINT and TEST_LAB.
+The model describes the app as it runs today, on one machine; Galaxy and IRIDA are not implemented for now. It goes from wide to narrow: the whole app first, then each user space, HOME first, then GALLERY, BLUEPRINT and TEST_LAB.
 
 ## 1b. Goals, for now
 
@@ -24,7 +24,7 @@ Documentation is a side effect, not the aim. A diagram exists only if it answers
 
 ## 3. Diagrams, first set
 
-Order follows the common practice: context and containers first, then the key runtime flows, components only where needed, code level left out.
+Order is wide to narrow, and the table is in working order: context and containers, then how it is built and run, then the parts, then the key flows. Code level is left out.
 
 | ID | Question | Type | View |
 |---|---|---|---|
@@ -33,10 +33,11 @@ Order follows the common practice: context and containers first, then the key ru
 | C4-CONT | What runs, and which files and folders does it use? | C4 container | logical, physical |
 | PKG-TIERS | Which library may import which? | Package | development |
 | DEP-APP | How does the app run on one machine: process, folders, launch variables? | Deployment | physical |
+| C4-COMP-APP | Inside the Shiny app: which handler and module serves which user space? | C4 component | logical |
 | **HOME** | | | |
+| C4-COMP-HOME | Which handler and module owns what on HOME? | C4 component | logical |
 | UC-HOME | What can a user do, under which flag? | Use case | scenarios |
 | UI-HOME | What is on the screen, what is each panel called in the code, and which flag shows it? | Wireframe | scenarios, for users and developers |
-| C4-COMP-HOME | Which handler and module owns what? | C4 component | logical |
 | COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug) | Communication | process |
 | SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process |
 | SEQ-OPEN | Data analysis recipe to Tier 1, Tier 2, plot, with the cache keys | Sequence | process |
