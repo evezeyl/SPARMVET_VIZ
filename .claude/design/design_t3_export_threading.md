@@ -79,7 +79,7 @@ so all three paths are consistent.
 ## Problem 2 — No lineage audit trail in the export bundle
 
 **Current state:**
-The export bundle includes `steps/<proj>/` (all YAML files) and `t3_steps.yaml`
+The export bundle includes `data_analysis_recipes/<proj>/` (all YAML files) and `t3_steps.yaml`
 (T3 committed nodes). A reader can reconstruct the wrangling pipeline but must
 manually trace which join steps produced the dataset for a given plot.
 
@@ -134,7 +134,7 @@ full_steps = {
     "t3_nodes": _active_plot_t3_nodes(subtab),
     "plot_spec": spec,
 }
-zf.writestr(f"audit_steps/{p_id}_full_steps.yaml", yaml.safe_dump(full_steps, sort_keys=False))
+zf.writestr(f"data_analysis_recipes/{p_id}_full_steps.yaml", yaml.safe_dump(full_steps, sort_keys=False))
 ```
 
 **Edge cases to resolve before implementing:**

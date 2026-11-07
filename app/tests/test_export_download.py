@@ -50,6 +50,10 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     names = z.namelist()
     assert not any(n.endswith("EXPORT_NOT_CREATED.txt") for n in names), "the export was refused"
     readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
+    # the folder with the YAML files of the data analysis recipe (ADR-091: not steps/, not audit_steps/)
+    assert any("/data_analysis_recipes/" in n for n in names)
+    assert not any("/audit_steps/" in n or "/steps/" in n for n in names)
+    assert "data_analysis_recipes/" in readme
     assert re.search(r"tier1_key=[0-9a-f]{64}", readme)
     assert re.search(r"tier2_key=([0-9a-f]{64}|none)", readme)
     assert re.search(r"Data analysis recipe SHA256\s*: [0-9a-f]{64}", readme)

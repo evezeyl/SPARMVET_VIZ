@@ -339,7 +339,7 @@ Full design rationale in ADR-040 (`architecture_decisions.md`). Replaces the fla
 
 - [x] `system_tools_ui`: user-name field, preset radio (web/publication), filter warning, download button.
 - [x] `@render.download export_bundle_download`: async generator yielding zip bytes.
-- [x] Bundle: `plots/` (SVG/PNG), `data/` (T1+T2 always; T3 for advanced+T3), `steps/`, `FILTERS.txt` (No Trace No Export), `report.qmd` (Quarto source), `README.txt`.
+- [x] Bundle: `plots/` (SVG/PNG), `data/` (T1+T2 always; T3 for advanced+T3), `data_analysis_recipes/`, `FILTERS.txt` (No Trace No Export), `report.qmd` (Quarto source), `README.txt`.
 - [ ] Ghost save to `user_data` — deferred.
 - [ ] Per-plot checkbox selection — deferred (all plots always exported).
 

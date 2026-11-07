@@ -101,7 +101,7 @@ Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Ex
 
 - [ ] **RT-10 Content.** `Result/plots/value_by_group.png`, `All_samples/plots/samples_per_year.png`,
   `Result/T1_data.tsv` (**12** rows), `Result/T2_data.tsv` (**8** rows), `All_samples/T1_data.tsv`
-  (and **no** `All_samples/T2_data.tsv`), `steps/`, `lineage/`, `report.qmd`, `report.html`, `README.txt`. No `*_ERROR.txt`.
+  (and **no** `All_samples/T2_data.tsv`), `data_analysis_recipes/`, `lineage/`, `report.qmd`, `report.html`, `README.txt`. No `*_ERROR.txt`.
 - [ ] **RT-11 Plot = screen.** The exported `value_by_group.png` is the same picture as the Result plot on screen
   (8 values, nothing below 10, groups A B C).
 - [ ] **RT-12 Keys.** In `README.txt` (section Reproducibility): Data Analysis Recipe SHA256, Data batch hash, and per dataset
@@ -129,7 +129,7 @@ Left panel Export: bundle label `retest`, scope "Global project", PNG, click "Ex
 - [ ] **RT-17 Audited steps are always exported** (issue #25; your rule: only what is sent to audit is exported, and it is recorded).
   "Data to show" = My view. Filters: `value < 20`, "Add row", "Send to Audit", "Add to audit pipeline" ("This plot only"), write a
   reason in the right panel, "Apply". Then put **both** views back on **Result**, export. Expected: `Result/T3_data_value_by_group.tsv`
-  (**5** rows), `steps/t3_steps.yaml` with your reason, the plot `value_by_group.png` filtered (values below 20), the README
+  (**5** rows), `data_analysis_recipes/t3_steps.yaml` with your reason, the plot `value_by_group.png` filtered (values below 20), the README
   section "Audited T3 steps (always applied...)" naming `value_by_group: 1 step(s)`, and the T3 Audit Trail with your reason in
   `report.html`. No `FILTERS.txt`. (Checked in a real browser run on 2026-11-06, except the picture.)
 - [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static.yaml` instead (deployment B) and `SPARMVET_DATA_ANALYSIS_RECIPE=retest_tier2` (a static page must name its data analysis recipe): export still works

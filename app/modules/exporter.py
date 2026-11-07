@@ -51,7 +51,7 @@ class SubmissionExporter:
         data_path = self.export_dir / "data_subset.csv"
         data_df.to_csv(data_path, index=False)
 
-        data_analysis_recipe_path = self.export_dir / "active_steps.yaml"
+        data_analysis_recipe_path = self.export_dir / "active_data_analysis_recipe.yaml"
         with open(data_analysis_recipe_path, "w") as f:
             yaml.dump(data_analysis_recipe, f)
 
@@ -59,7 +59,7 @@ class SubmissionExporter:
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(audit_path, arcname="audit_log.txt")
             zipf.write(data_path, arcname="data_subset.csv")
-            zipf.write(data_analysis_recipe_path, arcname="active_steps.yaml")
+            zipf.write(data_analysis_recipe_path, arcname="active_data_analysis_recipe.yaml")
             if plot_path and Path(plot_path).exists():
                 zipf.write(plot_path, arcname="high_dpi_plot.png")
 
@@ -98,7 +98,7 @@ class SubmissionExporter:
                 zipf.write(plot_path, arcname="preview_plot.png")
 
             # Educational Metadata Template (ADR-033/Phase 14-C)
-            meta_template = f"""# Audit trail Metadata: {project_id}
+            meta_template = f"""# Example Metadata: {project_id}
 ## Family (Purpose): [Distribution | Correlation | Comparison | Ranking]
 ## Data Pattern: [1 Numeric | 2 Numeric | 1 Numeric, 1 Categorical]
 ## Difficulty: [Simple | Intermediate | Advanced]

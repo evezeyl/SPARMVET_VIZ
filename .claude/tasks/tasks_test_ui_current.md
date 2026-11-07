@@ -303,7 +303,7 @@ Should the save take as much as 2 minutes - it should not be possible to export 
 - [ ] Open **Global Project Export** accordion.
 - [ ] Click the export button.
 - [ ] A `.zip` bundle downloads (or a path is reported in the terminal).
-- [ ] Bundle contains at minimum: the assembled data, a steps/filter trace, and a plot export.
+- [ ] Bundle contains at minimum: the assembled data, the data analysis recipe files, and a plot export.
 - [ ] *(EXPORT-2/EXPORT-3 selective export and Quarto report polish are open items — don't test those specifics here.)*
 
 ---

@@ -58,6 +58,7 @@ EXCLUDED_PREFIXES = (
     "app/tests/test_audit_old_words.py",
     "app/tests/test_rename_context.py",
     "app/tests/test_dead_config_keys.py",
+    "app/tests/test_shipped_deployments.py",
     "app/tests/test_bootloader_launch.py",
     "assets/scripts/rename_vocabulary.py",
     "assets/scripts/rename_vocabulary_rules.yaml",

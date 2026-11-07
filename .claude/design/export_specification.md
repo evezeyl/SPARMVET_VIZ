@@ -78,11 +78,11 @@ ZIP filename: `YYYYMMDD_HHMMSS_<label>_results.zip`
 | `data/<dataset>_T1.tsv` | Always | All datasets referenced by active plots |
 | `data/<dataset>_T2.tsv` | Always | |
 | `data/<dataset>_T3.tsv` | T3 active at export time | Advanced+ app features + T3 tier active |
-| `steps/<data_analysis_recipe_files>` | Always | All YAML files from active data analysis recipe directory |
-| `steps/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
+| `data_analysis_recipes/<data_analysis_recipe_files>` | Always | All YAML files from active data analysis recipe directory |
+| `data_analysis_recipes/t3_steps.yaml` | T3 active AND T3 has committed changes | Serialised T3 wrangling steps (see §4) |
 | `report.<fmt>` | Always | Quarto-rendered report; includes T3 audit section when applicable (see §3) |
 | `README.txt` | Always | Timestamp, project, app features, preset, tiers, hash values (all 3 hashes) |
-| `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`steps/t3_steps.yaml`, T3 Audit Trail in `report.qmd`) is the trace |
+| `FILTERS.txt` | (removed 2026-11-06) | Exploration filters are never exported; the audit trail (`data_analysis_recipes/t3_steps.yaml`, T3 Audit Trail in `report.qmd`) is the trace |
 
 ---
 
@@ -117,7 +117,7 @@ For each plot that has T3 modifications:
 
 ## 4. audit steps serialisation into step lists/
 
-`steps/t3_steps.yaml` structure (one file, all plots):
+`data_analysis_recipes/t3_steps.yaml` structure (one file, all plots):
 
 ```yaml
 # audit steps — user-committed modifications
@@ -148,8 +148,8 @@ file that feeds it. The union of all lineage sets becomes the export contents.
 |---|---|---|
 | `plots/` | All plots in the active group | Only the active plot |
 | `data/` | Union of all upstream datasets for each plot in the group | Only datasets in the active plot's lineage |
-| `steps/` | Union of all data analysis recipe files feeding each plot in the group | Only the data analysis recipe files that feed the active plot |
-| `steps/t3_steps.yaml` | T3 steps for all plots in the group | T3 steps for the active plot only |
+| `data_analysis_recipes/` | Union of all data analysis recipe files feeding each plot in the group | Only the data analysis recipe files that feed the active plot |
+| `data_analysis_recipes/t3_steps.yaml` | T3 steps for all plots in the group | T3 steps for the active plot only |
 | `report.<fmt>` | Full report scoped to the group; T3 audit section per plot | Report for one plot; T3 audit section for that plot |
 
 **Lineage backtrace algorithm:**  

@@ -1347,7 +1347,7 @@ def define_server(input, output, session, *,
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
-        # Gallery (ADR-057: filter + audit trail selector moved here from internal sidebar)
+        # Gallery (ADR-057: filter + example selector moved here from internal sidebar)
         # notification_log lives in the RIGHT sidebar only (ADR-073 slot registry) —
         # do not also mount it here, it duplicates the id and races with the right
         # sidebar's copy (REG-10).
@@ -1699,8 +1699,8 @@ def define_server(input, output, session, *,
                 ui.card(
                     ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
                     ui.div(
-                        ui.p("📚 Browse visual audit trails.", class_="text-muted small p-2"),
-                        ui.p("Select an audit trail to copy its YAML into the Architect sandbox.",
+                        ui.p("📚 Browse visual examples.", class_="text-muted small p-2"),
+                        ui.p("Select an example to copy its YAML into the Architect sandbox.",
                              class_="text-muted small px-2"),
                         class_="p-1"
                     ),

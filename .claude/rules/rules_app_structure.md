@@ -188,7 +188,7 @@ Each filter row: `{column: str, op: str, value: str|list, dtype: str}`.
 | `export_bundle_download` | `@render.download` (async) | Generates and yields zip bundle bytes |
 | `_export_bundle_filename()` | helper | Reactive-safe filename: `YYYYMMDD_HHMMSS_<name>_results.zip` |
 
-**Bundle contents**: `plots/` (SVG or PNG), `data/` (T1; T2 when the join has tier2 steps; `T3_data_<plot>.tsv` per plot with audited steps), `steps/` (project YAMLs), `report.qmd` (Quarto source), `README.txt`. Exploration filters are never exported (no `FILTERS.txt` since 2026-11-06).
+**Bundle contents**: `plots/` (SVG or PNG), `data/` (T1; T2 when the join has tier2 steps; `T3_data_<plot>.tsv` per plot with audited steps), `data_analysis_recipes/` (project YAMLs), `report.qmd` (Quarto source), `README.txt`. Exploration filters are never exported (no `FILTERS.txt` since 2026-11-06).
 
 ---
 

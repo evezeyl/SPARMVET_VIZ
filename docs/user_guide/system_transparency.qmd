@@ -115,7 +115,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 |----------|-----------------|
 | `plots/` | All plots as SVG (web) or PNG ≥600 DPI (publication) |
 | `data/` | T1 as TSV; T2 when the dataset has Tier 2 steps; `T3_data_<plot>.tsv` for each plot when you export your own view |
-| `steps/` | The YAML wrangling/assembly files for your project |
+| `data_analysis_recipes/` | The YAML wrangling/assembly files for your project |
 | `report.qmd` | A Quarto source file — run `quarto render report.qmd` to produce an HTML or PDF report |
 | `T3_data_<plot>.tsv` | The data of a plot with the steps you sent to audit (only for plots that have such steps) |
 | `README.txt` | Summary of what is in the bundle |
@@ -126,7 +126,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 2. Choose a preset: **Web / Presentation** (SVG, smaller file) or **Publication** (PNG, ≥600 DPI).
 3. Click **📦 Export Bundle** and save the file.
 
-> **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `steps/t3_steps.yaml`. Your results are always traceable.
+> **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `data_analysis_recipes/t3_steps.yaml`. Your results are always traceable.
 
 ### The Audit Stack (advanced app features files only)
 
