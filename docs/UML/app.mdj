@@ -1,7 +1,7 @@
 {
 	"_type": "Project",
 	"_id": "AAAAAAFF+h6SjaM2Hec=",
-	"name": "Untitled",
+	"name": "SPARMVET_VIZ",
 	"ownedElements": [
 		{
 			"_type": "UMLModel",
@@ -19,6 +19,2850 @@
 					},
 					"name": "Main",
 					"defaultDiagram": true
+				}
+			]
+		},
+		{
+			"_type": "C4Model",
+			"_id": "AAAAAAGhty/3NcD9a6I=",
+			"_parent": {
+				"$ref": "AAAAAAFF+h6SjaM2Hec="
+			},
+			"name": "Architecture",
+			"ownedElements": [
+				{
+					"_type": "C4Person",
+					"_id": "AAAAAAGhty/3SMEAqzM=",
+					"_parent": {
+						"$ref": "AAAAAAGhty/3NcD9a6I="
+					},
+					"name": "Scientist",
+					"ownedElements": [
+						{
+							"_type": "C4Relationship",
+							"_id": "AAAAAAGhty/5KsGiHvQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3SMEAqzM="
+							},
+							"source": {
+								"$ref": "AAAAAAGhty/3SMEAqzM="
+							},
+							"target": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"description": "explores, audits, exports"
+						},
+						{
+							"_type": "C4Relationship",
+							"_id": "AAAAAAGhty/6lsJessk=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3SMEAqzM="
+							},
+							"source": {
+								"$ref": "AAAAAAGhty/3SMEAqzM="
+							},
+							"target": {
+								"$ref": "AAAAAAGhty/3u8EeQ5w="
+							},
+							"technology": "browser, WebSocket",
+							"description": "uses"
+						}
+					],
+					"description": "Opens a data analysis recipe on HOME, explores, sends decisions to audit, exports the results."
+				},
+				{
+					"_type": "C4Person",
+					"_id": "AAAAAAGhty/3WMED5fg=",
+					"_parent": {
+						"$ref": "AAAAAAGhty/3NcD9a6I="
+					},
+					"name": "Data analysis recipe author",
+					"ownedElements": [
+						{
+							"_type": "C4Relationship",
+							"_id": "AAAAAAGhty/5SMGvLoI=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3WMED5fg="
+							},
+							"source": {
+								"$ref": "AAAAAAGhty/3WMED5fg="
+							},
+							"target": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"description": "writes data analysis recipes"
+						}
+					],
+					"description": "Writes data analysis recipes, in YAML or in BLUEPRINT."
+				},
+				{
+					"_type": "C4Person",
+					"_id": "AAAAAAGhty/3ZcEGiMc=",
+					"_parent": {
+						"$ref": "AAAAAAGhty/3NcD9a6I="
+					},
+					"name": "Operator",
+					"ownedElements": [
+						{
+							"_type": "C4Relationship",
+							"_id": "AAAAAAGhty/5aMG8KA0=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3ZcEGiMc="
+							},
+							"source": {
+								"$ref": "AAAAAAGhty/3ZcEGiMc="
+							},
+							"target": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"description": "configures and starts"
+						},
+						{
+							"_type": "C4Relationship",
+							"_id": "AAAAAAGhty/6wMJrChM=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3ZcEGiMc="
+							},
+							"source": {
+								"$ref": "AAAAAAGhty/3ZcEGiMc="
+							},
+							"target": {
+								"$ref": "AAAAAAGhty/378En8QU="
+							},
+							"description": "edits"
+						}
+					],
+					"description": "Chooses the deployment and the app features, and starts the app."
+				},
+				{
+					"_type": "C4SoftwareSystem",
+					"_id": "AAAAAAGhty/3b8EJZaQ=",
+					"_parent": {
+						"$ref": "AAAAAAGhty/3NcD9a6I="
+					},
+					"name": "SPARMVET_VIZ",
+					"ownedElements": [
+						{
+							"_type": "C4Container",
+							"_id": "AAAAAAGhty/3u8EeQ5w=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "Shiny app",
+							"ownedElements": [
+								{
+									"_type": "C4Relationship",
+									"_id": "AAAAAAGhty/66sJ4/t4=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"source": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhty/378En8QU="
+									},
+									"description": "reads at startup, stops on an error"
+								},
+								{
+									"_type": "C4Relationship",
+									"_id": "AAAAAAGhty/7EsKFtY4=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"source": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhty/3isESQwk="
+									},
+									"technology": "subprocess",
+									"description": "asks"
+								},
+								{
+									"_type": "C4Relationship",
+									"_id": "AAAAAAGhty/7PcKS1Ug=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"source": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhty/4OcEwJ0o="
+									},
+									"description": "reads; BLUEPRINT writes"
+								},
+								{
+									"_type": "C4Relationship",
+									"_id": "AAAAAAGhty/7acKf3+k=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"source": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhty/4X8E5dd4="
+									},
+									"description": "reads; Data Import writes"
+								},
+								{
+									"_type": "C4Relationship",
+									"_id": "AAAAAAGhty/7tMKsEQk=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"source": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhty/4dcE/Ux8="
+									},
+									"description": "reads, writes, removes when stale"
+								},
+								{
+									"_type": "C4Relationship",
+									"_id": "AAAAAAGhty/75MK5VYM=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"source": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhty/4l8FIwpE="
+									},
+									"description": "reads, writes"
+								},
+								{
+									"_type": "C4Relationship",
+									"_id": "AAAAAAGhty/8IsLGS5w=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"source": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhty/4rcFOJkY="
+									},
+									"description": "reads"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/3xcEhUK8=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/src/main.py"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/308EkUTg=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-045"
+								}
+							],
+							"technology": "Python, Shiny for Python, Polars, plotnine",
+							"description": "One server process. Each browser tab is a session. The libraries in libs/ run inside this process.",
+							"kind": "server-webapp"
+						},
+						{
+							"_type": "C4Container",
+							"_id": "AAAAAAGhty/378En8QU=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "Configuration files",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4DMEqktI=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/378En8QU="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/src/bootloader.py:Bootloader"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4K8Etv2E=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/378En8QU="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-091"
+								}
+							],
+							"technology": "YAML",
+							"description": "Deployment file, app features file, sidebar panels, palettes. Read at startup.",
+							"kind": "filesystem"
+						},
+						{
+							"_type": "C4Container",
+							"_id": "AAAAAAGhty/4OcEwJ0o=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "Data analysis recipes",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4QsEzw48=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4OcEwJ0o="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "libs/utils/src/utils/config_loader.py:ConfigManager"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4T8E2T/Q=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4OcEwJ0o="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-092"
+								}
+							],
+							"technology": "YAML with !include",
+							"description": "Location data_analysis_recipes. Inputs, tier steps, joins, plots.",
+							"kind": "filesystem"
+						},
+						{
+							"_type": "C4Container",
+							"_id": "AAAAAAGhty/4X8E5dd4=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "Raw data",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4aME8iEo=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4X8E5dd4="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "libs/ingestion/src/ingestion/ingestor.py"
+								}
+							],
+							"technology": "TSV, Excel",
+							"description": "Location raw_data. Result tables and metadata.",
+							"kind": "filesystem"
+						},
+						{
+							"_type": "C4Container",
+							"_id": "AAAAAAGhty/4dcE/Ux8=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "Stored stages",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4f8FCiVg=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4dcE/Ux8="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/orchestrator.py:DataOrchestrator"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4jMFFUEY=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4dcE/Ux8="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-089"
+								}
+							],
+							"technology": "Parquet",
+							"description": "Tier 1 and Tier 2 of each join, under user_data/anchors, valid only while their keys match.",
+							"kind": "filesystem"
+						},
+						{
+							"_type": "C4Container",
+							"_id": "AAAAAAGhty/4l8FIwpE=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "Sessions",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4ocFLfOk=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4l8FIwpE="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/session_manager.py:SessionManager"
+								}
+							],
+							"technology": "JSON",
+							"description": "user_data/_sessions/{session_key}: assembly.json and t3_{timestamp}.json with the audit steps.",
+							"kind": "filesystem"
+						},
+						{
+							"_type": "C4Container",
+							"_id": "AAAAAAGhty/4rcFOJkY=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "Gallery",
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4tsFRk50=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4rcFOJkY="
+									},
+									"name": "code",
+									"kind": "string",
+									"value": "libs/viz_gallery/src/viz_gallery/gallery_manager.py"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhty/4xMFU25M=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/4rcFOJkY="
+									},
+									"name": "adr",
+									"kind": "string",
+									"value": "ADR-037"
+								}
+							],
+							"technology": "YAML, PNG, JSON index",
+							"description": "Location gallery. Static examples, never computed at run time.",
+							"kind": "filesystem"
+						},
+						{
+							"_type": "C4Relationship",
+							"_id": "AAAAAAGhty/5p8HWG6M=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"source": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhty/3isESQwk="
+							},
+							"technology": "subprocess",
+							"description": "asks"
+						},
+						{
+							"_type": "C4Diagram",
+							"_id": "AAAAAAGhty/50cHjUYQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "C4-CONT Containers",
+							"ownedViews": [
+								{
+									"_type": "C4PersonView",
+									"_id": "AAAAAAGhty/5/MHngzk=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/3ZcEGiMc="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/5/MHomOA=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/5/MHngzk="
+											},
+											"fillColor": "#38bcff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 48,
+											"top": 113,
+											"width": 214,
+											"height": 13,
+											"text": "Operator",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/5/cHpCcU=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/5/MHngzk="
+											},
+											"fillColor": "#38bcff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 48,
+											"top": 128,
+											"width": 214,
+											"height": 13,
+											"text": "[Person]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/5/cHq+Kw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/5/MHngzk="
+											},
+											"fillColor": "#38bcff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 48,
+											"top": 151,
+											"width": 214,
+											"height": 26,
+											"text": "Chooses the deployment and the app features, and starts the app.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 40,
+									"top": 20,
+									"width": 230,
+									"height": 243,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/5/MHomOA="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/5/cHpCcU="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/5/cHq+Kw="
+									}
+								},
+								{
+									"_type": "C4PersonView",
+									"_id": "AAAAAAGhty/6A8HzjfI=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/3SMEAqzM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6A8H0HzM=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6A8HzjfI="
+											},
+											"fillColor": "#38bcff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 568,
+											"top": 113,
+											"width": 214,
+											"height": 13,
+											"text": "Scientist",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6A8H1fvE=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6A8HzjfI="
+											},
+											"fillColor": "#38bcff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 568,
+											"top": 128,
+											"width": 214,
+											"height": 13,
+											"text": "[Person]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6A8H2MMc=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6A8HzjfI="
+											},
+											"fillColor": "#38bcff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 568,
+											"top": 151,
+											"width": 214,
+											"height": 39,
+											"text": "Opens a data analysis recipe on HOME, explores, sends decisions to audit, exports the results.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 560,
+									"top": 20,
+									"width": 230,
+									"height": 308,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6A8H0HzM="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6A8H1fvE="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6A8H2MMc="
+									}
+								},
+								{
+									"_type": "C4ContainerView",
+									"_id": "AAAAAAGhty/6DcH/qXY=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/378En8QU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6DcIAtms=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6DcH/qXY="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 48,
+											"top": 428,
+											"width": 214,
+											"height": 13,
+											"text": "Configuration files",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6DcIB07A=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6DcH/qXY="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 48,
+											"top": 443,
+											"width": 214,
+											"height": 13,
+											"text": "[Container: YAML]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6DcICQsw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6DcH/qXY="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 48,
+											"top": 466,
+											"width": 214,
+											"height": 39,
+											"text": "Deployment file, app features file, sidebar panels, palettes. Read at startup.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#a3e0ff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 40,
+									"top": 420,
+									"width": 230,
+									"height": 171,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6DcIAtms="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6DcIB07A="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6DcICQsw="
+									}
+								},
+								{
+									"_type": "C4ContainerView",
+									"_id": "AAAAAAGhty/6GMILxXQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/3u8EeQ5w="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6GMIMYKU=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6GMILxXQ="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 568,
+											"top": 428,
+											"width": 214,
+											"height": 13,
+											"text": "Shiny app",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6GMINHvI=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6GMILxXQ="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 568,
+											"top": 443,
+											"width": 214,
+											"height": 26,
+											"text": "[Container: Python, Shiny for Python, Polars, plotnine]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6GMIOGEo=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6GMILxXQ="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 568,
+											"top": 479,
+											"width": 214,
+											"height": 39,
+											"text": "One server process. Each browser tab is a session. The libraries in libs/ run inside this process.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#a3e0ff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 560,
+									"top": 420,
+									"width": 230,
+									"height": 275,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6GMIMYKU="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6GMINHvI="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6GMIOGEo="
+									}
+								},
+								{
+									"_type": "C4SoftwareSystemView",
+									"_id": "AAAAAAGhty/6IcIXXx0=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/3isESQwk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6IcIY1dQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6IcIXXx0="
+											},
+											"fillColor": "#6dceff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 1088,
+											"top": 428,
+											"width": 214,
+											"height": 13,
+											"text": "Claude Code CLI",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6IcIZWLA=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6IcIXXx0="
+											},
+											"fillColor": "#6dceff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1088,
+											"top": 443,
+											"width": 214,
+											"height": 13,
+											"text": "[Software System: subprocess]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6IcIaoug=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6IcIXXx0="
+											},
+											"fillColor": "#6dceff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1088,
+											"top": 466,
+											"width": 214,
+											"height": 39,
+											"text": "Answers the BLUEPRINT agent. Only when blueprint_agent_enabled is on.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#6dceff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1080,
+									"top": 420,
+									"width": 230,
+									"height": 132,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6IcIY1dQ="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6IcIZWLA="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6IcIaoug="
+									}
+								},
+								{
+									"_type": "C4ContainerView",
+									"_id": "AAAAAAGhty/6LMIjCoU=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/4OcEwJ0o="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6LMIk6Qo=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6LMIjCoU="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 48,
+											"top": 808,
+											"width": 214,
+											"height": 13,
+											"text": "Data analysis recipes",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6LMIll3Y=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6LMIjCoU="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 48,
+											"top": 823,
+											"width": 214,
+											"height": 13,
+											"text": "[Container: YAML with !include]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6LMImBlw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6LMIjCoU="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 48,
+											"top": 846,
+											"width": 214,
+											"height": 26,
+											"text": "Location data_analysis_recipes. Inputs, tier steps, joins, plots.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#a3e0ff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 40,
+									"top": 800,
+									"width": 230,
+									"height": 132,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6LMIk6Qo="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6LMIll3Y="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6LMImBlw="
+									}
+								},
+								{
+									"_type": "C4ContainerView",
+									"_id": "AAAAAAGhty/6RcIvt/I=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/4X8E5dd4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6RcIwL6c=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6RcIvt/I="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 338,
+											"top": 808,
+											"width": 214,
+											"height": 13,
+											"text": "Raw data",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6RcIxEWg=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6RcIvt/I="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 338,
+											"top": 823,
+											"width": 214,
+											"height": 13,
+											"text": "[Container: TSV, Excel]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6RcIyBxc=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6RcIvt/I="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 338,
+											"top": 846,
+											"width": 214,
+											"height": 26,
+											"text": "Location raw_data. Result tables and metadata.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#a3e0ff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 330,
+									"top": 800,
+									"width": 230,
+									"height": 145,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6RcIwL6c="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6RcIxEWg="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6RcIyBxc="
+									}
+								},
+								{
+									"_type": "C4ContainerView",
+									"_id": "AAAAAAGhty/6acI78kQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/4dcE/Ux8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6asI80r8=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6acI78kQ="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 628,
+											"top": 808,
+											"width": 214,
+											"height": 13,
+											"text": "Stored stages",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6asI9wbQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6acI78kQ="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 628,
+											"top": 823,
+											"width": 214,
+											"height": 13,
+											"text": "[Container: Parquet]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6asI+yP0=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6acI78kQ="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 628,
+											"top": 846,
+											"width": 214,
+											"height": 39,
+											"text": "Tier 1 and Tier 2 of each join, under user_data/anchors, valid only while their keys match.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#a3e0ff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 620,
+									"top": 800,
+									"width": 230,
+									"height": 132,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6asI80r8="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6asI9wbQ="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6asI+yP0="
+									}
+								},
+								{
+									"_type": "C4ContainerView",
+									"_id": "AAAAAAGhty/6esJHGtE=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/4l8FIwpE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6esJIbcw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6esJHGtE="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 918,
+											"top": 808,
+											"width": 214,
+											"height": 13,
+											"text": "Sessions",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6esJJu1U=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6esJHGtE="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 918,
+											"top": 823,
+											"width": 214,
+											"height": 13,
+											"text": "[Container: JSON]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6esJKAzI=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6esJHGtE="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 918,
+											"top": 846,
+											"width": 214,
+											"height": 52,
+											"text": "user_data/_sessions/{session_key}: assembly.json and t3_{timestamp}.json with the audit steps.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#a3e0ff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 910,
+									"top": 800,
+									"width": 230,
+									"height": 130,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6esJIbcw="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6esJJu1U="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6esJKAzI="
+									}
+								},
+								{
+									"_type": "C4ContainerView",
+									"_id": "AAAAAAGhty/6iMJTDvM=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/4rcFOJkY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6iMJU8vM=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6iMJTDvM="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 1208,
+											"top": 808,
+											"width": 214,
+											"height": 13,
+											"text": "Gallery",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6iMJVhSw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6iMJTDvM="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1208,
+											"top": 823,
+											"width": 214,
+											"height": 26,
+											"text": "[Container: YAML, PNG, JSON index]",
+											"wordWrap": true
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhty/6iMJWQYM=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6iMJTDvM="
+											},
+											"fillColor": "#a3e0ff",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1208,
+											"top": 859,
+											"width": 214,
+											"height": 26,
+											"text": "Location gallery. Static examples, never computed at run time.",
+											"wordWrap": true
+										}
+									],
+									"fillColor": "#a3e0ff",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1200,
+									"top": 800,
+									"width": 230,
+									"height": 210,
+									"nameLabel": {
+										"$ref": "AAAAAAGhty/6iMJU8vM="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6iMJVhSw="
+									},
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6iMJWQYM="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/6lsJgmR0=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/6lsJessk="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/6lsJhJDc=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6lsJgmR0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/6lsJessk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 676,
+											"top": 367,
+											"width": 27.4599609375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/6lsJgmR0="
+											},
+											"edgePosition": 1,
+											"text": "uses",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/6lsJiMfk=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6lsJgmR0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/6lsJessk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 626,
+											"top": 361,
+											"width": 69.849609375,
+											"height": 26,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/6lsJgmR0="
+											},
+											"edgePosition": 1,
+											"text": "[browser, WebSocket]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6A8HzjfI="
+									},
+									"lineStyle": 1,
+									"points": "675:329;675:419",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6lsJhJDc="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6lsJiMfk="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/6wMJtHr0=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/6wMJrChM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/6wMJuFR8=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6wMJtHr0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/6wMJrChM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 156,
+											"top": 334,
+											"width": 27.4599609375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/6wMJtHr0="
+											},
+											"edgePosition": 1,
+											"text": "edits",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/6wMJv7II=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/6wMJtHr0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/6wMJrChM="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 137,
+											"top": 335,
+											"width": 7.2236328125,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/6wMJtHr0="
+											},
+											"edgePosition": 1,
+											"text": "[]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6DcH/qXY="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/5/MHngzk="
+									},
+									"lineStyle": 1,
+									"points": "155:264;155:419",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/6wMJuFR8="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/6wMJv7II="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/66sJ6Jk0=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/66sJ4/t4="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/66sJ7Dnw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/66sJ6Jk0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/66sJ4/t4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 392,
+											"top": 506,
+											"width": 43.3544921875,
+											"height": 78,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/66sJ6Jk0="
+											},
+											"edgePosition": 1,
+											"text": "reads at startup, stops on an error",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/66sJ8to0=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/66sJ6Jk0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/66sJ4/t4="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 413,
+											"top": 510,
+											"width": 7.2236328125,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/66sJ6Jk0="
+											},
+											"edgePosition": 1,
+											"text": "[]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6DcH/qXY="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"lineStyle": 1,
+									"points": "559:545;271:517",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/66sJ7Dnw="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/66sJ8to0="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/7EsKHLVs=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/7EsKFtY4="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7E8KIoPw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7EsKHLVs="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7EsKFtY4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 920,
+											"top": 500,
+											"width": 26.72998046875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7EsKHLVs="
+											},
+											"edgePosition": 1,
+											"text": "asks",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7E8KJkRk=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7EsKHLVs="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7EsKFtY4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 900,
+											"top": 529,
+											"width": 73.70263671875,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7EsKHLVs="
+											},
+											"edgePosition": 1,
+											"text": "[subprocess]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6IcIXXx0="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"lineStyle": 1,
+									"points": "791:541;1079:502",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/7E8KIoPw="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/7E8KJkRk="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/7PcKUJ3A=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/7PcKS1Ug="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7PcKVwtk=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7PcKUJ3A="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7PcKS1Ug="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 384,
+											"top": 705,
+											"width": 72.9599609375,
+											"height": 39,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7PcKUJ3A="
+											},
+											"edgePosition": 1,
+											"text": "reads; BLUEPRINT writes",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7PcKWcnk=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7PcKUJ3A="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7PcKS1Ug="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 402,
+											"top": 693,
+											"width": 7.2236328125,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7PcKUJ3A="
+											},
+											"edgePosition": 1,
+											"text": "[]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6LMIjCoU="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"lineStyle": 1,
+									"points": "559:626;268:799",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/7PcKVwtk="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/7PcKWcnk="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/7acKhrBg=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/7acKf3+k="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7acKi5hQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7acKhrBg="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7acKf3+k="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 530,
+											"top": 729,
+											"width": 36.841796875,
+											"height": 52,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7acKhrBg="
+											},
+											"edgePosition": 1,
+											"text": "reads; Data Import writes",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7acKj5Uw=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7acKhrBg="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7acKf3+k="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 520,
+											"top": 732,
+											"width": 7.2236328125,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7acKhrBg="
+											},
+											"edgePosition": 1,
+											"text": "[]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6RcIvt/I="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"lineStyle": 1,
+									"points": "574:696;498:799",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/7acKi5hQ="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/7acKj5Uw="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/7tMKuWaI=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/7tMKsEQk="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7tMKvegU=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7tMKuWaI="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7tMKsEQk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 702,
+											"top": 712,
+											"width": 49.84814453125,
+											"height": 65,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7tMKuWaI="
+											},
+											"edgePosition": 1,
+											"text": "reads, writes, removes when stale",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/7tcKwIAg=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/7tMKuWaI="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/7tMKsEQk="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 694,
+											"top": 743,
+											"width": 7.2236328125,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/7tMKuWaI="
+											},
+											"edgePosition": 1,
+											"text": "[]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6acI78kQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"lineStyle": 1,
+									"points": "702:696;722:799",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/7tMKvegU="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/7tcKwIAg="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/75MK7wzY=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/75MK5VYM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/75MK8alM=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/75MK7wzY="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/75MK5VYM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 861,
+											"top": 704,
+											"width": 36.130859375,
+											"height": 26,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/75MK7wzY="
+											},
+											"edgePosition": 1,
+											"text": "reads, writes",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/75MK9HUQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/75MK7wzY="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/75MK5VYM="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 857,
+											"top": 734,
+											"width": 7.2236328125,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/75MK7wzY="
+											},
+											"edgePosition": 1,
+											"text": "[]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6esJHGtE="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"lineStyle": 1,
+									"points": "791:659;950:799",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/75MK8alM="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/75MK9HUQ="
+									}
+								},
+								{
+									"_type": "C4RelationshipView",
+									"_id": "AAAAAAGhty/8IsLIHGI=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/50cHjUYQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/8IsLGS5w="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/8IsLJmcU=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/8IsLIHGI="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/8IsLGS5w="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 986,
+											"top": 711,
+											"width": 32.51904296875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/8IsLIHGI="
+											},
+											"edgePosition": 1,
+											"text": "reads",
+											"wordWrap": true
+										},
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhty/8IsLKlAI=",
+											"_parent": {
+												"$ref": "AAAAAAGhty/8IsLIHGI="
+											},
+											"model": {
+												"$ref": "AAAAAAGhty/8IsLGS5w="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 984,
+											"top": 738,
+											"width": 7.2236328125,
+											"height": 13,
+											"alpha": -1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhty/8IsLIHGI="
+											},
+											"edgePosition": 1,
+											"text": "[]",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhty/6iMJTDvM="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhty/6GMILxXQ="
+									},
+									"lineStyle": 1,
+									"points": "791:620;1199:842",
+									"descriptionLabel": {
+										"$ref": "AAAAAAGhty/8IsLJmcU="
+									},
+									"technologyLabel": {
+										"$ref": "AAAAAAGhty/8IsLKlAI="
+									}
+								}
+							]
+						}
+					],
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhty/3dsEMI3Y=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-091"
+						}
+					],
+					"technology": "Python",
+					"description": "Turns pipeline result tables into plots with an audit trail, driven by a data analysis recipe."
+				},
+				{
+					"_type": "C4SoftwareSystem",
+					"_id": "AAAAAAGhty/3gsEPqq0=",
+					"_parent": {
+						"$ref": "AAAAAAGhty/3NcD9a6I="
+					},
+					"name": "Analysis pipeline",
+					"ownedElements": [
+						{
+							"_type": "C4Relationship",
+							"_id": "AAAAAAGhty/5hcHJRZQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3gsEPqq0="
+							},
+							"source": {
+								"$ref": "AAAAAAGhty/3gsEPqq0="
+							},
+							"target": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"technology": "files",
+							"description": "delivers result tables"
+						}
+					],
+					"technology": "outside this system",
+					"description": "Produces the result tables (for example Abromics, VIGAS-P) as files. No API between the two."
+				},
+				{
+					"_type": "C4SoftwareSystem",
+					"_id": "AAAAAAGhty/3isESQwk=",
+					"_parent": {
+						"$ref": "AAAAAAGhty/3NcD9a6I="
+					},
+					"name": "Claude Code CLI",
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhty/3ksEVNIg=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3isESQwk="
+							},
+							"name": "flag",
+							"kind": "string",
+							"value": "blueprint_agent_enabled"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhty/3osEYwn8=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3isESQwk="
+							},
+							"name": "adr",
+							"kind": "string",
+							"value": "ADR-076"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhty/3sMEb3tw=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/3isESQwk="
+							},
+							"name": "code",
+							"kind": "string",
+							"value": "libs/blueprint_arch/src/blueprint_arch/agent_adapter.py:ClaudeCliAdapter"
+						}
+					],
+					"technology": "subprocess",
+					"description": "Answers the BLUEPRINT agent. Only when blueprint_agent_enabled is on."
+				},
+				{
+					"_type": "C4Diagram",
+					"_id": "AAAAAAGhty/4z8FXpzY=",
+					"_parent": {
+						"$ref": "AAAAAAGhty/3NcD9a6I="
+					},
+					"name": "CTX-1 System context",
+					"ownedViews": [
+						{
+							"_type": "C4PersonView",
+							"_id": "AAAAAAGhty/438FbggI=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/3SMEAqzM="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/438FcL10=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/438FbggI="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;1",
+									"parentStyle": true,
+									"left": 48,
+									"top": 123,
+									"width": 214,
+									"height": 13,
+									"text": "Scientist",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/44MFdMrk=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/438FbggI="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 48,
+									"top": 138,
+									"width": 214,
+									"height": 13,
+									"text": "[Person]",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/44MFe5+8=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/438FbggI="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 48,
+									"top": 161,
+									"width": 214,
+									"height": 39,
+									"text": "Opens a data analysis recipe on HOME, explores, sends decisions to audit, exports the results.",
+									"wordWrap": true
+								}
+							],
+							"fillColor": "#38bcff",
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 40,
+							"top": 30,
+							"width": 230,
+							"height": 308,
+							"nameLabel": {
+								"$ref": "AAAAAAGhty/438FcL10="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/44MFdMrk="
+							},
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/44MFe5+8="
+							}
+						},
+						{
+							"_type": "C4PersonView",
+							"_id": "AAAAAAGhty/45cFnUAY=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/3WMED5fg="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/45cFonlw=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/45cFnUAY="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;1",
+									"parentStyle": true,
+									"left": 388,
+									"top": 123,
+									"width": 214,
+									"height": 13,
+									"text": "Data analysis recipe author",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/45cFplBA=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/45cFnUAY="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 388,
+									"top": 138,
+									"width": 214,
+									"height": 13,
+									"text": "[Person]",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/45cFqY+U=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/45cFnUAY="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 388,
+									"top": 161,
+									"width": 214,
+									"height": 26,
+									"text": "Writes data analysis recipes, in YAML or in BLUEPRINT.",
+									"wordWrap": true
+								}
+							],
+							"fillColor": "#38bcff",
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 380,
+							"top": 30,
+							"width": 230,
+							"height": 243,
+							"nameLabel": {
+								"$ref": "AAAAAAGhty/45cFonlw="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/45cFplBA="
+							},
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/45cFqY+U="
+							}
+						},
+						{
+							"_type": "C4PersonView",
+							"_id": "AAAAAAGhty/47cFzzjM=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/3ZcEGiMc="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/47cF0RDI=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/47cFzzjM="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;1",
+									"parentStyle": true,
+									"left": 728,
+									"top": 123,
+									"width": 214,
+									"height": 13,
+									"text": "Operator",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/47cF1+pw=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/47cFzzjM="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 728,
+									"top": 138,
+									"width": 214,
+									"height": 13,
+									"text": "[Person]",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/47cF27k8=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/47cFzzjM="
+									},
+									"fillColor": "#38bcff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 728,
+									"top": 161,
+									"width": 214,
+									"height": 26,
+									"text": "Chooses the deployment and the app features, and starts the app.",
+									"wordWrap": true
+								}
+							],
+							"fillColor": "#38bcff",
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 720,
+							"top": 30,
+							"width": 230,
+							"height": 243,
+							"nameLabel": {
+								"$ref": "AAAAAAGhty/47cF0RDI="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/47cF1+pw="
+							},
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/47cF27k8="
+							}
+						},
+						{
+							"_type": "C4SoftwareSystemView",
+							"_id": "AAAAAAGhty/49sF/E7E=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/3b8EJZaQ="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/498GA11o=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/49sF/E7E="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;1",
+									"parentStyle": true,
+									"left": 388,
+									"top": 428,
+									"width": 214,
+									"height": 13,
+									"text": "SPARMVET_VIZ",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/498GBJvU=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/49sF/E7E="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 388,
+									"top": 443,
+									"width": 214,
+									"height": 13,
+									"text": "[Software System: Python]",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/498GCoug=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/49sF/E7E="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 388,
+									"top": 466,
+									"width": 214,
+									"height": 39,
+									"text": "Turns pipeline result tables into plots with an audit trail, driven by a data analysis recipe.",
+									"wordWrap": true
+								}
+							],
+							"fillColor": "#6dceff",
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 380,
+							"top": 420,
+							"width": 230,
+							"height": 150,
+							"nameLabel": {
+								"$ref": "AAAAAAGhty/498GA11o="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/498GBJvU="
+							},
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/498GCoug="
+							}
+						},
+						{
+							"_type": "C4SoftwareSystemView",
+							"_id": "AAAAAAGhty/5BsGLQkE=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/3gsEPqq0="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/5BsGM5bQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5BsGLQkE="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;1",
+									"parentStyle": true,
+									"left": 48,
+									"top": 708,
+									"width": 214,
+									"height": 13,
+									"text": "Analysis pipeline",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/5BsGNUw8=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5BsGLQkE="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 48,
+									"top": 723,
+									"width": 214,
+									"height": 26,
+									"text": "[Software System: outside this system]",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/5BsGOy0g=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5BsGLQkE="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 48,
+									"top": 759,
+									"width": 214,
+									"height": 39,
+									"text": "Produces the result tables (for example Abromics, VIGAS-P) as files. No API between the two.",
+									"wordWrap": true
+								}
+							],
+							"fillColor": "#6dceff",
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 40,
+							"top": 700,
+							"width": 230,
+							"height": 262,
+							"nameLabel": {
+								"$ref": "AAAAAAGhty/5BsGM5bQ="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/5BsGNUw8="
+							},
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/5BsGOy0g="
+							}
+						},
+						{
+							"_type": "C4SoftwareSystemView",
+							"_id": "AAAAAAGhty/5EcGXPY8=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/3isESQwk="
+							},
+							"subViews": [
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/5EcGY9ik=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5EcGXPY8="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;1",
+									"parentStyle": true,
+									"left": 728,
+									"top": 708,
+									"width": 214,
+									"height": 13,
+									"text": "Claude Code CLI",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/5EcGZ/rk=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5EcGXPY8="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 728,
+									"top": 723,
+									"width": 214,
+									"height": 13,
+									"text": "[Software System: subprocess]",
+									"wordWrap": true
+								},
+								{
+									"_type": "LabelView",
+									"_id": "AAAAAAGhty/5EcGaxWY=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5EcGXPY8="
+									},
+									"fillColor": "#6dceff",
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 728,
+									"top": 746,
+									"width": 214,
+									"height": 39,
+									"text": "Answers the BLUEPRINT agent. Only when blueprint_agent_enabled is on.",
+									"wordWrap": true
+								}
+							],
+							"fillColor": "#6dceff",
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"left": 720,
+							"top": 700,
+							"width": 230,
+							"height": 132,
+							"nameLabel": {
+								"$ref": "AAAAAAGhty/5EcGY9ik="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/5EcGZ/rk="
+							},
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/5EcGaxWY="
+							}
+						},
+						{
+							"_type": "C4RelationshipView",
+							"_id": "AAAAAAGhty/5KsGkDwU=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/5KsGiHvQ="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5KsGlrcA=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5KsGkDwU="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5KsGiHvQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 325,
+									"top": 323,
+									"width": 52.7490234375,
+									"height": 39,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5KsGkDwU="
+									},
+									"edgePosition": 1,
+									"text": "explores, audits, exports",
+									"wordWrap": true
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5KsGm++w=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5KsGkDwU="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5KsGiHvQ="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 327,
+									"top": 359,
+									"width": 7.2236328125,
+									"height": 13,
+									"alpha": -1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5KsGkDwU="
+									},
+									"edgePosition": 1,
+									"text": "[]",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGhty/49sF/E7E="
+							},
+							"tail": {
+								"$ref": "AAAAAAGhty/438FbggI="
+							},
+							"lineStyle": 1,
+							"points": "271:290;412:419",
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/5KsGlrcA="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/5KsGm++w="
+							}
+						},
+						{
+							"_type": "C4RelationshipView",
+							"_id": "AAAAAAGhty/5SMGxY7I=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/5SMGvLoI="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5SMGyTJ8=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5SMGxY7I="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5SMGvLoI="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 486,
+									"top": 319,
+									"width": 46.96630859375,
+									"height": 52,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5SMGxY7I="
+									},
+									"edgePosition": 1,
+									"text": "writes data analysis recipes",
+									"wordWrap": true
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5SMGzPxo=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5SMGxY7I="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5SMGvLoI="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 477,
+									"top": 340,
+									"width": 7.2236328125,
+									"height": 13,
+									"alpha": -1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5SMGxY7I="
+									},
+									"edgePosition": 1,
+									"text": "[]",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGhty/49sF/E7E="
+							},
+							"tail": {
+								"$ref": "AAAAAAGhty/45cFnUAY="
+							},
+							"lineStyle": 1,
+							"points": "495:274;495:419",
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/5SMGyTJ8="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/5SMGzPxo="
+							}
+						},
+						{
+							"_type": "C4RelationshipView",
+							"_id": "AAAAAAGhty/5aMG+FUc=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/5aMG8KA0="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5aMG/KlM=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5aMG+FUc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5aMG8KA0="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 625,
+									"top": 340,
+									"width": 59.97900390625,
+									"height": 26,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5aMG+FUc="
+									},
+									"edgePosition": 1,
+									"text": "configures and starts",
+									"wordWrap": true
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5aMHAyas=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5aMG+FUc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5aMG8KA0="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 630,
+									"top": 326,
+									"width": 7.2236328125,
+									"height": 13,
+									"alpha": -1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5aMG+FUc="
+									},
+									"edgePosition": 1,
+									"text": "[]",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGhty/49sF/E7E="
+							},
+							"tail": {
+								"$ref": "AAAAAAGhty/47cFzzjM="
+							},
+							"lineStyle": 1,
+							"points": "719:268;570:419",
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/5aMG/KlM="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/5aMHAyas="
+							}
+						},
+						{
+							"_type": "C4RelationshipView",
+							"_id": "AAAAAAGhty/5hcHLPCc=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/5hcHJRZQ="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5hcHMQiU=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5hcHLPCc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5hcHJRZQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 311,
+									"top": 613,
+									"width": 44.79541015625,
+									"height": 39,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5hcHLPCc="
+									},
+									"edgePosition": 1,
+									"text": "delivers result tables",
+									"wordWrap": true
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5hcHNE24=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5hcHLPCc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5hcHJRZQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 339,
+									"top": 647,
+									"width": 30.341796875,
+									"height": 13,
+									"alpha": -1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5hcHLPCc="
+									},
+									"edgePosition": 1,
+									"text": "[files]",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGhty/49sF/E7E="
+							},
+							"tail": {
+								"$ref": "AAAAAAGhty/5BsGLQkE="
+							},
+							"lineStyle": 1,
+							"points": "271:716;418:571",
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/5hcHMQiU="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/5hcHNE24="
+							}
+						},
+						{
+							"_type": "C4RelationshipView",
+							"_id": "AAAAAAGhty/5p8HYnRU=",
+							"_parent": {
+								"$ref": "AAAAAAGhty/4z8FXpzY="
+							},
+							"model": {
+								"$ref": "AAAAAAGhty/5p8HWG6M="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5p8HZVt8=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5p8HYnRU="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5p8HWG6M="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 666,
+									"top": 617,
+									"width": 26.72998046875,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5p8HYnRU="
+									},
+									"edgePosition": 1,
+									"text": "asks",
+									"wordWrap": true
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhty/5p8HaRVc=",
+									"_parent": {
+										"$ref": "AAAAAAGhty/5p8HYnRU="
+									},
+									"model": {
+										"$ref": "AAAAAAGhty/5p8HWG6M="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 624,
+									"top": 640,
+									"width": 73.70263671875,
+									"height": 13,
+									"alpha": -1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhty/5p8HYnRU="
+									},
+									"edgePosition": 1,
+									"text": "[subprocess]",
+									"wordWrap": true
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGhty/5EcGXPY8="
+							},
+							"tail": {
+								"$ref": "AAAAAAGhty/49sF/E7E="
+							},
+							"lineStyle": 1,
+							"points": "590:571;751:699",
+							"descriptionLabel": {
+								"$ref": "AAAAAAGhty/5p8HZVt8="
+							},
+							"technologyLabel": {
+								"$ref": "AAAAAAGhty/5p8HaRVc="
+							}
+						}
+					]
 				}
 			]
 		}
