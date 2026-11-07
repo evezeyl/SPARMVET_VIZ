@@ -247,6 +247,46 @@ Tasks requiring user decision, user action, or explicit discussion before implem
 
 Context and status notes from recent sessions. Add here instead of inside active task sections.
 
+- **2026-11-07 (continued autonomous session, Eve resting)** — Picked up from the UML findings
+  pass (F-01 through F-21 all resolved) and continued per Eve's request: build out the rest of
+  the UML model, verify app logic end-to-end (code vs ADR vs UML vs docs vs tests vs audits vs
+  READMEs), fix what's fixable, log what needs her. ~20 commits, all pushed to `dev`.
+  **UML:** added C4 component diagrams + use case diagrams for GALLERY, BLUEPRINT, TEST_LAB
+  (same detail level as the existing HOME ones) — `.claude/design/uml_model_plan.md` updated.
+  Reviewed all 23 diagrams for layout problems: found and fixed a real content bug in CTX-1 (two
+  relationships pointed at IRIDA/Galaxy but neither node had a view — invisible, contradicting
+  the model's own "shown as not implemented" scope decision), fixed real overlaps in
+  C4-COMP-APP via auto-layout, tried auto-layout on DEP-APP (broke the nested containment,
+  reverted via `app.repository.undo()`). Exported all 23 diagrams to `docs/UML/diagrams/*.png`.
+  **F-22 (biggest find):** `GALLERY.md` claimed the Gallery→T3 transplant was "removed", with
+  "copy YAML → open in BLUEPRINT" as the real handoff — backwards. The transplant
+  (`handle_gallery_clone`, "Clone to Sandbox") is alive and working; there is no
+  GALLERY→BLUEPRINT path at all. Fixed `GALLERY.md`, `developer_workflow.md`, and its Quarto
+  mirror (which I'd written earlier this same session and had faithfully mirrored the wrong
+  claim). Cross-checked against the archived LAB-SEND-TO-1/LAB-OPEN-BLUEPRINT-1 decisions
+  (`archives/tasks_archive_2026-05-22.md`) — those were about TEST_LAB→BLUEPRINT, a different,
+  correctly-dropped feature; no conflict with this fix.
+  **Dead code removed** (DEAD-CODE-REVIEW-1, re-verified every item by grep rather than trusting
+  the 2026-11-06 scan): `_fields_table`/`_parse_fields_safe` (wrangle_studio.py, superseded),
+  `validate_schema` (ingestor.py, unused and incomplete), `galaxy_connector.py` (a second, fake
+  `GalaxyConnector` class nothing imports). Opened `UNDO-WIRE-1` and `PIPELINE-ERROR-WIRE-1` for
+  two features whose capture/producer side is real and built but whose trigger/consumer side
+  was never wired — not deleted, needs Eve's call on wire-it-up vs. drop-the-design.
+  **Also:** `AUDIT-GATE-UI-1` (new Playwright test for the Apply gate), `CONFIG-BLUEPRINT-ID-DISPLAY-1`
+  (Blueprint selector showed paths, now shows ids), `DOC-RECHECK-2` (7-point doc sync),
+  `LAB-WORKFLOW-QMD-1` (new user-facing workflow guide), `TEST_LAB.md` status line and its whole
+  stale "Build Tasks (Phase 34)" section marked HISTORICAL (described 6 tools as unbuilt; all 6
+  are built, tested, wired), `libs/test_lab/README.md` (was missing 3 of 6 tools). Full audit
+  suite (`run_audits.sh all`, 10 routines) run twice, clean both times. Headless suite steady at
+  1444 passed throughout; full browser suite green (47 passed, 3 skipped) after every batch of
+  UI-touching changes.
+  **Still open, needs Eve:** `STM-NODE`, `PIPELINE-ERROR-WIRE-1`, `UNDO-WIRE-1`,
+  `TEST-INGESTION-1`, the Gallery/Blueprint sidebar-registry-bypass question (part of
+  `CONFIG-TESTLAB-DATA-ANALYSIS-RECIPE-CHOICE-1`), UI wireframes for GALLERY/BLUEPRINT/TEST_LAB
+  (not started), `VALIDATE-UI-1`, `EXPORT-CHECK-1` (needs a human at the keyboard), the Maps
+  tasks (need external boundary data sourced). `BLUEPRINT-AGENT-API-1` reminder set for
+  ~2026-11-14 when Claude API credits are available.
+
 - **2026-05-21 (@sync — Phase 33 / BP-BRANCH-NODE-1)** — BP-BRANCH-NODE-1 completed and committed (`99e6b19`). Also discovered all 6 Phase 33 tasks (BP-AGENT-PARSER-1 through BP-AGENT-CSS-1) were already fully implemented (shipped 2026-05-09, tasks not marked done). Verified headless: all agent modules import OK, 3 tools dispatch (51 actions at runtime), sidebar registration + app features files + CSS all in place. Marked done. Added BP-BRANCH-UX-1 (data_schema branch guidance callout).
 - **2026-05-21 (BP-JOINT-1 — Joint Designer pane)** — Implemented the dedicated Joint Designer (ADR-082 Q5). New pure stdlib module `libs/blueprint_arch/src/blueprint_arch/join_designer.py` (`compute_key_match` real-overlap stats incl. composite keys + dtype-family advisory; `build_join_step` sym `on` / asym `left_on`+`right_on`, scalar-vs-list; `parse_join_step` inverse w/ YAML boolean-trap guard) + 26 unit tests (all pass). New `4. Joint Designer` nav_panel in `wrangle_studio.render_ui`. Wiring in `blueprint_handlers.define_server`: R4-safe ingredient/key pickers, **real-data** preview (materialises each ingredient via `orchestrator.materialize_tier1`, String-cast key overlap mirroring the assembler), comment-gated Apply → logic_stack append/replace, edit pre-fill on join-node select. Removed the fabricated `show_join_modal`/`confirm_join`/`update_secondary_datasets` + dead picker selectors (clean break, no orphaned refs). Verified: 26/26 logic tests, both app modules import clean. Decisions taken with Eve: center pane · real-data overlap · composite/multi-key · edit+create. **Follow-up:** join-component Save (`_serialise_component_for_save` role `join`) must quote `on:` (pre-existing gap — join-role save not yet implemented). **Live UI smoke pending → BP-SMOKE-1** (no BLUEPRINT Playwright infra yet). Session triage: 3 audit reports PROCESSED (coherence PASS 6/6, integrity FAIL = known DATA-ANALYSIS-RECIPE-INCLUDE-1 false positive, 1 narrative log).
 - **2026-05-20 (BLUEPRINT feature lock)** — Verified BP-FORMS-1 against the running implementation: all 60 transformer action forms render headless (zero failures, all 8 widget types). Found the form layer is half-built (add-node primitive vs edit-node rich; no component form path; 7/191 components schemed) + 2 ADR-075 widget gaps (enum preview, expression editor). Authored **ADR-082 (BLUEPRINT Full Feature Set & Build-Mode Contract)** — locked 4-layer model, 7 decision points, MVP/v2 inventory, T1/T2-vs-T3 boundary. Key decision with Eve: **branch = node-level lineage bifurcation** (shared upstream by reference, divergent downstream fragment-per-component `!include`) — NOT whole-data analysis recipe duplication; terminology fix (graph fan-out ≠ data analysis recipe branch). Spawned 12 Phase 32 (cont.) tasks. Research draft → RESOLVED.
