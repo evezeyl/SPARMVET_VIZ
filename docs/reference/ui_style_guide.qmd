@@ -155,7 +155,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 ```
 LEFT SIDEBAR (#nav_sidebar)
 │  Nav Pills Strip
-│  ├── Master Data Analysis Recipe       (#wrangle_sidebar_accordion)
+│  ├── Master data analysis recipe       (#wrangle_sidebar_accordion)
 │  └── External Exchange
 │
 CENTRAL THEATER (.wrangle-studio-container)

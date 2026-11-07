@@ -46,7 +46,7 @@ stack flanked by a navigation sidebar (left) and a logic sidebar (right).
 ```mermaid
 graph TD
     subgraph Left["Left Sidebar — Navigation"]
-        Pick["Master Data Analysis Recipe picker + New data analysis recipe"]
+        Pick["Master data analysis recipe picker + New data analysis recipe"]
         Groups["Groups & Plots inventory"]
         Meta["Data Analysis Recipe Info (info: block)"]
         Validate["Validate panel"]
@@ -105,7 +105,7 @@ graph LR
 
 ### Open or create
 
-- **Open existing:** pick a data analysis recipe from the Master Data Analysis Recipe selector; the TubeMap renders the
+- **Open existing:** pick a data analysis recipe from the Master data analysis recipe selector; the TubeMap renders the
   full DAG. (Functionality #1, DONE.)
 - **Create new:** the "New data analysis recipe" button opens a modal (slug / name / description / author),
   validates the slug is snake_case, and writes a minimal YAML stub

@@ -915,7 +915,7 @@ def define_server(input, output, session, *,
 
             master_path = safe_input(input, "stored_data_analysis_recipe_selector", None)
             if not master_path or not Path(master_path).exists():
-                ui.notification_show("⚠️ Select a Master Data Analysis Recipe first.", type="warning")
+                ui.notification_show("⚠️ Select a Master data analysis recipe first.", type="warning")
                 return
 
             inc_map = includes_map.get()
@@ -2600,7 +2600,7 @@ def define_server(input, output, session, *,
                     "Creates a minimal data analysis recipe stub in config/data_analysis_recipes/pipelines/.",
                     class_="text-muted d-block mt-1",
                 ),
-                title="Create New Data Analysis Recipe",
+                title="Create new data analysis recipe",
                 footer=ui.div(
                     ui.input_action_button("btn_bp_new_submit", "Create",
                                            class_="btn-primary btn-sm"),

@@ -17,7 +17,7 @@ means the identifier, it says "recipe id".
 | Messages | "Project 'x' loaded", "Project data analysis recipe not found", "active project", "Project: x" | "Data analysis recipe ..." |
 | test_lab field | "Project ID (snake_case)", `my_project` | "Data analysis recipe ID", `my_data_analysis_recipe` |
 | Export folder | `data_analysis_recipes/<proj>/` | `data_analysis_recipes/<data_analysis_recipe_id>/` |
-| Export scope | "Global project" | "All plots" |
+| Export scope | "Global project" | "Global" |
 | Blueprint text | "Select a project to view its TubeMap" | "Select a data analysis recipe ..." |
 
 ## 2. Info panel

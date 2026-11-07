@@ -449,7 +449,7 @@ def define_export_server(input, output, session, *,
 
             scope_choices: dict = {
                 "global": ui.span(
-                    "All plots",
+                    "Global",
                     title="Export everything in the active data analysis recipe",
                 )
             }

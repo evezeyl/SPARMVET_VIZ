@@ -1387,7 +1387,7 @@ def define_server(input, output, session, *,
             return ui.div(
                 ui.accordion(
                     ui.accordion_panel(
-                        "🗂️ Master Data Analysis Recipe",
+                        "🗂️ Master data analysis recipe",
                         ui.input_select("stored_data_analysis_recipe_selector", None,
                                         choices=["Scanning config/..."]),
                         ui.input_action_button(

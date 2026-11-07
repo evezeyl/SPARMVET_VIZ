@@ -147,7 +147,7 @@
 │ ╚═══════════════════════╝ │ │  div.view-title-banner                │ │ │  card             │ │
 │                           │ │  "👣 Blueprint Architect Flight Deck" │ │ │  ── card-header ──│ │
 │ ┌───────────────────────┐ │ └───────────────────────────────────────┘ │ │  "Blueprint       │ │
-│ │  Master Data Analysis Recipe      │ │ ┌───────────────────────────────────────┐ │ │   Surgeon"        │ │
+│ │  Master data analysis recipe      │ │ ┌───────────────────────────────────────┐ │ │   Surgeon"        │ │
 │ │  accordion panel      │ │ │  TubeMap                              │ │ │                   │ │
 │ │  #wrangle_sidebar_    │ │ │  div.spv-panel.mb-3 (outer wrapper)   │ │ │  🔬 Focused node  │ │
 │ │  accordion            │ │ │    #blueprint_tubemap_accordion       │ │ │  info             │ │

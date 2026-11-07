@@ -475,7 +475,7 @@ def define_server(
     def tl_scaffold_status_ui():
         if input.tl_scaffold_run() == 0:
             return ui.p(
-                "Fill in the form and click Scaffold Data Analysis Recipe.",
+                "Fill in the form and click Scaffold data analysis recipe.",
                 class_="text-muted small mt-1",
             )
         result = _scaffold_result()

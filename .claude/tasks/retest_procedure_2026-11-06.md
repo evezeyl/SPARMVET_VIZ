@@ -97,7 +97,7 @@ tier2 step: keep `value >= 10`. The join **All_samples** has no tier2 step.
 
 ## 2. Export (EXPORT-CHECK-1) — data analysis recipe `retest_tier2`, original files
 
-Left panel Export: bundle label `retest`, scope "All plots", PNG, click "Export Bundle". Unzip it.
+Left panel Export: bundle label `retest`, scope "Global", PNG, click "Export Bundle". Unzip it.
 
 - [ ] **RT-10 Content.** `Result/plots/value_by_group.png`, `All_samples/plots/samples_per_year.png`,
   `Result/T1_data.tsv` (**12** rows), `Result/T2_data.tsv` (**8** rows), `All_samples/T1_data.tsv`

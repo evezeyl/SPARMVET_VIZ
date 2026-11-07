@@ -13,12 +13,12 @@ One accordion panel labelled **"Export"** replaces the previous two-panel layout
 ### 1.1 Scope toggle (3-way)
 
 ```
-[ All plots ●  |  Active group ○  |  Active plot ○ ]
+[ Global ●  |  Active group ○  |  Active plot ○ ]
 ```
 
 | Option | Scope | Tooltip shown on hover |
 |---|---|---|
-| **All plots** | All plots, all data, full step lists | "Export everything in the active data analysis recipe" |
+| **Global** | All plots, all data, full step lists | "Export everything in the active data analysis recipe" |
 | **Active group** | All plots in the group the current tab belongs to; lineage backtraced per plot | "Export all plots in the current group (e.g., all Quality Control plots)" |
 | **Active plot** | The single plot currently displayed; its lineage backtraced | "Export only the plot you are currently viewing" |
 

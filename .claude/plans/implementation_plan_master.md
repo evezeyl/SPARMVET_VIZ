@@ -591,7 +591,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 
 - **Export redesign (EXPORT-REDESIGN-1, EXPORT-REDESIGN-2):**
   - Single "Export" accordion panel replaces "Global Export" + "Single Graph Export".
-  - 3-way scope toggle `[All plots | Active group | Active plot]` gated on `export_enabled`.
+  - 3-way scope toggle `[Global | Active group | Active plot]` gated on `export_enabled`.
   - `t3_steps.yaml` auto-included in bundle when T3 has committed nodes.
   - T3 Audit Trail auto-generated section in `report.qmd`.
   - Separate "Export Audit Report" button removed — audit trail is now part of the bundle.
