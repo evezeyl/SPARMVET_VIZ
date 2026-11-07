@@ -64,6 +64,16 @@ Done 2026-11-06 (issue #10): export reads T1 and T2 through the key-checked orch
 
 - [x] **EXPORT-T3-UX-1** (decided 2026-11-06, Eve): no message about left-out T3 steps is needed, because audited steps are never left out. What is not audited is a sandbox: a reminder says so (Export panel, and under the filter buttons in My view). Done in issue #25.
 
+### Configuration vocabulary and launch variables (ADR-091, proposed 2026-11-07, waiting for Eve's review of the issue drafts)
+
+Names agreed: `deployment` (`SPARMVET_DEPLOYMENT`), `app features` (`SPARMVET_APP_FEATURES`), `data analysis recipe` (`SPARMVET_DATA_ANALYSIS_RECIPE`). "Persona" is retired for the application; it stays only for the two AI agent files. Drafts: `issue-drafts/config-vocabulary-and-launch-variables.md` (pass 1), `issue-drafts/rename-manifest-to-data-analysis-recipe.md` (pass 2). Nothing is created on GitHub until Eve says so.
+
+- [ ] **CONFIG-VOCAB-REVIEW-1** `[opus/high]`: Eve reviews ADR-091 and the two issue drafts; decides open points 1 to 5 of the ADR (key renames, launcher, operator lock, "agent role" wording, IRIDA check). Then the issues are created on the fork.
+- [ ] **CONFIG-INVENTORY-1** `[sonnet/medium]`: read-only inventory of every key in `config/deployment/*` and `config/ui/templates/*`, each marked used / unused / wrong home with the line that reads it. Output in `.claude/logs/`. Eve reviews before any deletion. Depends: CONFIG-VOCAB-REVIEW-1.
+- [ ] **CONFIG-RENAME-1** `[sonnet/high]`: pass 1, scripted rename (mapping table approved, dry run, `git mv`), startup errors for old variables and keys, `default_manifest` takes effect, `fixed_manifest` leaves the features files, `~` and `${VAR}` expansion, delete `logic_access`, `persona_name`, `data_import_panel_visible` (absorbs LEGACY-DATAIMPORT-FLAG-1). Depends: CONFIG-INVENTORY-1.
+- [ ] **CONFIG-RECIPE-RENAME-1** `[sonnet/high]`: pass 2, manifest to data analysis recipe, free the word "recipe", migration script for files and sessions. Depends: CONFIG-RENAME-1.
+- [ ] **CONFIG-IRIDA-CHECK-1** `[opus/medium]`: check ADR-048's IRIDA token assumption with someone who knows IRIDA before the IRIDA connector is built.
+
 ### LAB-WORKFLOW follow-up
 
 - [ ] **LAB-WORKFLOW-QMD-1** `[sonnet/low]` `[doc-sync]`: User-facing Quarto mirror of `developer_workflow.md` in `docs/workflows/` — explains the *logic* of the producer workflow for end users (DRY: link, do not duplicate per `rules_documentation_aesthetics.md §4`). Focus on workflow logic + module independence, not app mechanics. Can be written now (logic is settled).

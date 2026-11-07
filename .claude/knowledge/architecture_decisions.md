@@ -4100,6 +4100,7 @@ separate "Compare T2 vs T3" switch (visible only in My view) split the plots in 
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl). Authority: @dasharch, decided with @evezeyl after reviewing ADR-048, ADR-052 and the deployment docs against the code.
 **Amends:** ADR-048 (deployment profile schema, §7 manifest selection), ADR-052 (`manifest_selector`), and the use of the word "persona" for configuration (ADR-030, ADR-052, ADR-053, ADR-073). Builds on ADR-077 and ADR-087.
+**Amended by ADR-091 (2026-11-07):** final names (`deployment`, `app features`, `data analysis recipe`), the launch variables (`SPARMVET_DEPLOYMENT`, `SPARMVET_APP_FEATURES`, `SPARMVET_DATA_ANALYSIS_RECIPE`, which replace `SPARMVET_DEPLOYMENT_PROFILE` in the table below) and where each setting lives.
 **Implementation status:** NOT YET IMPLEMENTED. Tracked in fork issues for the vocabulary rename, the manifest selection, and the data hash check.
 
 **Context.** Review found four mismatches between design, documentation and code:
@@ -4220,3 +4221,79 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 - Row order of anchors is now defined, so "first 100 rows", factor levels, legends and exported data hashes no longer change between sessions.
 - A manifest author who wants another jitter arrangement sets `random_state` on the layer.
 - Performance: stable sort, ordered `group_by` and ordered joins are slightly slower than their unordered forms; correctness comes first. `maintain_order: false` remains available for `drop_duplicates`.
+
+---
+
+## ADR-091: Final configuration names, launch variables, and where each setting lives (2026-11-07)
+
+**Status:** PROPOSED (2026-11-07). The names were agreed with @evezeyl in chat on 2026-11-07; the entry becomes ACCEPTED when Eve has reviewed it together with the two issue drafts (`issue-drafts/config-vocabulary-and-launch-variables.md`, `issue-drafts/rename-manifest-to-data-analysis-recipe.md`). Authority: @dasharch.
+**Amends:** ADR-088 (the environment variable names of its vocabulary table, and the word "manifest"), ADR-048 (deployment profile becomes "deployment"; its IRIDA token assumption is flagged below), ADR-052 (`manifest_selector.fixed_manifest` leaves the app features files).
+**Implementation status:** NOT IMPLEMENTED. Pass 1 and pass 2 are tracked by the two issue drafts above. Until pass 1 ships, the launch commands in `retest_procedure_2026-11-06.md` and `test_plan_2026-06.md` keep the old names (`SPARMVET_PROFILE`, `SPARMVET_PERSONA`).
+
+**Context.** ADR-088 fixed the three kinds of configuration but left three problems:
+1. Several settings sit in the wrong file (verified in code, 2026-11-07):
+
+   | Setting | Where it is | Problem |
+   |---|---|---|
+   | `default_manifest` | deployment profile | read in `bootloader.py:103`, never used |
+   | `fixed_manifest` | each app features template | the code uses it (`get_default_project`), so a preset names a project; `pipeline-static` pins `1_test_data_ST22_dummy`, so a real pipeline deployment opens the test data unless the template is edited |
+   | `data_ingestion_enabled` | deployment profile | a feature switch in the system file, as a one-off key |
+   | `logic_access`, `persona_name` | app features templates | no code reads them |
+   | branding | `deployment_name` in the profile, `theme_css` in the template | split over two files |
+
+2. The words "profile" and "persona" are ambiguous. "Profile" means three different things in the field (Nextflow: the settings of where a run happens; Snakemake: a folder of default command-line options; Docker Compose: which optional services start). "Persona" is a UX design term for a fictional type of user, not a configuration (sources below).
+3. The word "manifest" is overloaded outside the project (Kubernetes and Docker manifests, package manifests) and no replacement is free of collisions inside it (counts below).
+
+**Decision.**
+
+1. **Three kinds of configuration, final names.**
+
+   | What it answers | Name | Environment variable | Folder (file = `<name>.yaml`) | Old name |
+   |---|---|---|---|---|
+   | Where and how it runs, folders, how data arrives, the operator's defaults | **deployment** | `SPARMVET_DEPLOYMENT` | `config/deployment/` | deployment profile, connector config, `SPARMVET_PROFILE` |
+   | What the user may do | **app features** (a named set of **feature flags**) | `SPARMVET_APP_FEATURES` | `config/app_features/` (the `_template` suffix is dropped: a template is copied, these are selected as they are) | persona, app features template, `SPARMVET_PERSONA`, `config/ui/templates/` |
+   | The data-to-plots definition | **data analysis recipe** | `SPARMVET_DATA_ANALYSIS_RECIPE` | decided in pass 2 | manifest |
+
+   "App features", not "features": a feature is a data column in machine learning and a genomic annotation in bioinformatics.
+2. **Variable values.** A bare name is a file in the folder of that concept; anything with a `/` or ending in `.yaml` is a path (the convention `SPARMVET_PERSONA` already has, and the one Snakemake uses for `--profile`). The prefix `SPARMVET` is a single constant in the bootloader, so renaming the application changes one line. An old variable (`SPARMVET_PROFILE`, `SPARMVET_PERSONA`, `SPARMVET_DEPLOYMENT_PROFILE`) or an old profile key (`default_persona`) stops the app at startup with a message naming the new one. There is no silent alias (ADR-077, ADR-088).
+3. **Where each setting lives, and the precedence.** One home per setting. A launch variable overrides the file default for that one choice and nothing else, so the three choices stay independent (twelve-factor "granular, orthogonal controls"; Hydra overrides one config group on the command line).
+
+   | Choice | Order, first match wins |
+   |---|---|
+   | deployment file | `SPARMVET_DEPLOYMENT`, then `~/.sparmvet/deployment.yaml`, then `/etc/sparmvet/deployment.yaml`, then the development fallback (ADR-048 chain, file names updated) |
+   | app features | `SPARMVET_APP_FEATURES`, then `default_app_features` in the deployment file, otherwise a fatal startup error |
+   | data analysis recipe | `SPARMVET_DATA_ANALYSIS_RECIPE`, then `default_manifest` (pass 2: `default_data_analysis_recipe`) in the deployment file, then the selector when the app features show it, then the empty state (ADR-087), otherwise a fatal startup error naming both keys |
+
+   `fixed_manifest` leaves the app features files: a preset names no project. A features file that still carries a non-null `fixed_manifest` stops the app at startup with the migration message. The deployment file's `default_manifest` finally takes effect (ADR-088 point 4). Whether the user may choose a recipe (the selector) stays an app features flag, because it describes a type of user.
+4. **Path expansion.** Every path in the deployment file accepts `~` and `${VAR}`. After expansion, a path that still contains `$` stops the app at startup with the name of the unset variable (Python's `os.path.expandvars` leaves an unset reference unchanged, so without this check a typo would become a folder called `${HOMEE}`). This solves "each person starts their own copy on their own computer". It does not give one web user a folder of their own on a shared server: the server process has one home directory, and Shiny for Python has no built-in login. That needs the system to supply the identity (Galaxy offers the user id and e-mail to the tool, Posit Connect a username in the session). It is a connector task for later, not a configuration key.
+5. **"Persona" is retired for the application.** In code, configuration, rules, docs and tests the word is replaced by "app features"; in prose that describes a type of user, "user type" is used. `PersonaValidator` becomes `AppFeaturesValidator` and `persona_manager`-style names follow the table in the issue. The word stays only for the two AI agent role files under `.claude/rules/` (`dasharch.md`, `rules_persona_bioscientist.md`), written "AI agent persona" so the two meanings cannot be confused. Claude Code's own documentation calls such a definition a "subagent" (a Markdown file whose body is the system prompt), not a persona; ours are role instructions read as rules, so "agent role" is the better word. Renaming them is optional and left to Eve (open point 4).
+6. **Dead and vestigial keys are deleted, not renamed.** `logic_access`, `persona_name` and the vestigial `data_import_panel_visible` (task LEGACY-DATAIMPORT-FLAG-1) go now. An inventory of every key in the deployment files and the app features files, each marked used, unused or in the wrong home, is produced first (read-only) and reviewed by Eve before any deletion.
+7. **The data analysis recipe rename is a separate second pass** because it changes stored formats: the `join_manifests:` key (14 YAML files), `manifest_sha256` in sessions and exports (about 190 references to these keys), the `config/manifests/` folder, and saved sessions and audit files. The inner uses of "recipe" are renamed in the same pass so the file name cannot be shortened into a collision: the `recipe:` step list becomes `steps:`, the T3 "recipe" becomes audit steps, the "Filter Recipe Builder" becomes the filter builder, the gallery's `recipe_manifest.yaml` becomes `recipe.yaml`. A migration script and an error that names the fix follow the ADR-083 precedent (`migrate_plot_specs.py --apply`). Counts of the current words (2026-11-07, rough, comments and plurals included): manifest 2414 (one meaning), recipe 791 (four meanings), pipeline 912, project 570, workflow 183, blueprint 719.
+8. **Mechanics.** As ADR-088 point 2: a script lists every use, the mapping table is approved before any change, files move with `git mv`, replacements run as a dry run first, and a check proves that no old word is left outside the exclusions (AI agent persona files, immutable history, `docs/_freeze/`).
+
+**Names considered and rejected.**
+
+| Name | Why not |
+|---|---|
+| one variable that names everything (a profile that contains the features) | a copy of the profile for each feature set on the same machine; the combinatorial explosion twelve-factor warns about |
+| a third "project" file | the recipe already is the project file: it names its datasets and data paths |
+| a launch file that composes the other three (Hydra style) | one more layer; named setups belong in a launcher outside the configuration |
+| `profile`, `persona`, `template`, `environment` | see Context 2; "environment" is also the Python environment, and twelve-factor discourages named bundles |
+| `features`, `feature set` alone | a data column or genomic feature in this field |
+| `recipe` alone, `project`, `pipeline`, `workflow`, `blueprint`, `study` | four internal meanings; `project_root` and IRIDA's `project_id`; the upstream program; Galaxy's term; a user space; ENA/ISA metadata object (not checked) |
+| `data_processing_recipe`, `analysis_recipe` | the first leaves the plots out; the second may collide with IRIDA analysis objects (not checked) |
+
+**External checks (2026-11-07).** Confirmed: twelve-factor config (12factor.net/config); Hydra config groups and command-line overrides (hydra.cc); Galaxy tool XML `<environment_variables>` reach the container (Galaxy training material); `os.path.expandvars` leaves unset references unchanged (docs.python.org); `profile` in Nextflow, Snakemake and Docker Compose; persona as a UX design term; Kubernetes ConfigMap and manifests. **Not confirmed:** that IRIDA injects an OAuth2 token into the container at launch (the IRIDA documentation found describes the password grant for command-line tools and the `authorization_code` flow for web services; ADR-048's `SPARMVET_IRIDA_TOKEN` design must be checked with someone who knows IRIDA before the IRIDA connector is built); which Galaxy reserved variables reach the container environment; how Shiny for Python shares module-level variables across sessions of one process.
+
+**Open points (parked by Eve, to decide when reviewing the issues).**
+1. Key renames inside the files: `curated_data` to `cache`, `user_sessions` to `user_data`, `prefer_discovery` to a named choice (for example `data_lookup: by_dataset_id | manifest_paths`), the `features:` block to `flags:`, `show_persona_badge` to `show_app_features_badge`, one `name` instead of `persona_name` and `persona_id`.
+2. A launcher with named launch configurations (`./launch dev`, `./launch retest`), the VS Code `launch.json` convention. It sits outside the configuration model.
+3. A general operator lock (a block of feature overrides in the deployment file) instead of the one-off `data_ingestion_enabled`.
+4. "Agent role" instead of "AI agent persona" for the two agent files.
+5. The IRIDA connector assumption above.
+
+**Consequences.**
+- A deployment is one file; a Galaxy tool wrapper sets one variable. A developer can start the same deployment with other app features by setting one more variable.
+- The words in the UI, the code and the docs mean one thing each; the retired words fail early instead of working silently.
+- About 51 Python files, 43 lines in the app features templates and 87 documentation and rule files mention "persona". The rename is large but mechanical; the tests (1215 headless, 37 browser) are the safety net.
+- Memory notes and the project instruction file that use "persona" are updated in pass 1.
