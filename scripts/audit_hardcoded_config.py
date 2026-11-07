@@ -82,7 +82,7 @@ DIRECT_LOCATION_PATTERNS = [
 ]
 
 # 3. Persona name string comparisons in runtime code (ADR-053)
-PERSONA_NAME_PATTERNS = [
+APP_FEATURES_NAME_PATTERNS = [
     (re.compile(r'\bpersona\s*==\s*["\']'),
      "Persona name string comparison — use bootloader.is_enabled(flag) instead (ADR-053)"),
     (re.compile(r'\bpersona\s+in\s*\('),
@@ -160,7 +160,7 @@ def scan_file(path: Path, project_root: Path) -> list[dict]:
     all_pattern_groups = [
         ("absolute_path",   ABSOLUTE_PATH_PATTERNS,   "BLOCKER"),
         ("direct_location", DIRECT_LOCATION_PATTERNS, "BLOCKER"),
-        ("persona_name",    PERSONA_NAME_PATTERNS,     "BLOCKER"),
+        ("persona_name",    APP_FEATURES_NAME_PATTERNS,     "BLOCKER"),
         ("env_var",         ENV_VAR_PATTERNS,          "BLOCKER"),
         ("interpreter",     INTERPRETER_PATTERNS,      "BLOCKER"),
     ]

@@ -159,13 +159,13 @@ class TestFilesystemConnector:
         c = FilesystemConnector(profile)
         assert c.get_manifest_path() == Path("/absolute/manifest.yaml")
 
-    def test_get_default_persona(self):
+    def test_get_default_app_features(self):
         c = FilesystemConnector(FS_PROFILE_WITH_ROOT)
-        assert c.get_default_persona() == "pipeline-static"
+        assert c.get_default_app_features() == "pipeline-static"
 
-    def test_get_default_persona_none(self):
+    def test_get_default_app_features_none(self):
         c = FilesystemConnector(FS_PROFILE)
-        assert c.get_default_persona() is None
+        assert c.get_default_app_features() is None
 
     def test_get_deployment_name(self):
         c = FilesystemConnector(FS_PROFILE_WITH_ROOT)

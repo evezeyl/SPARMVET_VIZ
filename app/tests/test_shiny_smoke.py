@@ -26,7 +26,7 @@ from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 
-_LAUNCH_PERSONA = os.environ.get("SPARMVET_PERSONA", "developer")
+_LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_PERSONA", "developer")
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ class TestStartup:
 # T2 — Persona masking (tests the LAUNCH persona only — no runtime switching)
 # ---------------------------------------------------------------------------
 
-class TestPersonaMasking:
+class TestAppFeaturesMasking:
     def test_sidebar_nav_renders(self, page: Page, shiny_app: ShinyAppProc):
         """sidebar_nav_ui renders and shows the Home tab for any persona."""
         page.goto(shiny_app.url)
@@ -157,7 +157,7 @@ class TestPersonaMasking:
         expect(page.locator("#sidebar_nav")).to_be_visible()
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in ("developer", "qa"),
+        _LAUNCH_APP_FEATURES not in ("developer", "qa"),
         reason="Gallery only visible for developer/qa persona"
     )
     def test_developer_sees_gallery(self, page: Page, shiny_app: ShinyAppProc):
@@ -167,7 +167,7 @@ class TestPersonaMasking:
         expect(page.get_by_text("Gallery")).to_be_visible()
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in ("pipeline-static",),
+        _LAUNCH_APP_FEATURES not in ("pipeline-static",),
         reason="Right sidebar hidden only for pipeline-static"
     )
     def test_static_hides_right_sidebar(self, page: Page, shiny_app: ShinyAppProc):
@@ -179,7 +179,7 @@ class TestPersonaMasking:
             "Right sidebar container (#audit_sidebar) should be absent from DOM for pipeline-static"
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in ("pipeline-exploration-simple", "pipeline-static"),
+        _LAUNCH_APP_FEATURES not in ("pipeline-exploration-simple", "pipeline-static"),
         reason="Gallery/DevStudio visible for advanced+ personas"
     )
     def test_simple_hides_gallery_and_devstudio(self, page: Page, shiny_app: ShinyAppProc):
@@ -262,8 +262,8 @@ class TestFilterPipeline:
 # T5 — Phase 25 sidebar panels (accordion structure, ADR-052)
 # ---------------------------------------------------------------------------
 
-_PIPELINE_PERSONAS = {"pipeline-static", "pipeline-exploration-simple"}
-_INTERACTIVE_PERSONAS = {"pipeline-exploration-advanced", "project-independent",
+_PIPELINE_APP_FEATURES = {"pipeline-static", "pipeline-exploration-simple"}
+_INTERACTIVE_APP_FEATURES = {"pipeline-exploration-advanced", "project-independent",
                          "developer", "qa"}
 
 
@@ -274,7 +274,7 @@ class TestPhase25Panels:
         page.wait_for_selector("#nav_accordion", timeout=15_000)
         expect(page.locator("#nav_accordion")).to_be_visible()
 
-    def test_data_import_panel_visible_for_exploration_personas(
+    def test_data_import_panel_visible_for_exploration_app_features(
         self, page: Page, shiny_app: ShinyAppProc
     ):
         """Data Import accordion panel is present for interactive/exploration personas.
@@ -283,7 +283,7 @@ class TestPhase25Panels:
         the panel shows upload controls in addition to the source-file listing.
         Phase 25-F wiring: data_import_ui output is registered and renders.
         """
-        if _LAUNCH_PERSONA in _PIPELINE_PERSONAS:
+        if _LAUNCH_APP_FEATURES in _PIPELINE_APP_FEATURES:
             pytest.skip("Data Import upload controls absent for pipeline personas")
         page.goto(shiny_app.url)
         page.wait_for_selector("#nav_accordion", timeout=15_000)
@@ -298,7 +298,7 @@ class TestPhase25Panels:
         expect(accordion.get_by_text("Export")).to_be_visible()
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in ("pipeline-static", "pipeline-exploration-simple"),
+        _LAUNCH_APP_FEATURES not in ("pipeline-static", "pipeline-exploration-simple"),
         reason="Manifest Choice only absent for pipeline personas"
     )
     def test_manifest_choice_hidden_for_pipeline_static(
@@ -316,7 +316,7 @@ class TestPhase25Panels:
             "Manifest Choice panel should be absent from accordion for pipeline personas"
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _INTERACTIVE_PERSONAS,
+        _LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
         reason="Session Management panel only present for interactive personas"
     )
     def test_session_management_panel_visible(self, page: Page, shiny_app: ShinyAppProc):

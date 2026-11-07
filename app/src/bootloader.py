@@ -56,7 +56,7 @@ class Bootloader:
     See project_conventions.md §"Deployment Profile Resolution" for full details.
     """
     # ADR-031: Static Cache Layer
-    _persona_cache: Dict[str, Dict[str, Any]] = {}
+    _app_features_cache: Dict[str, Dict[str, Any]] = {}
     _connector_cache: Dict[str, Dict[str, Any]] = {}          # keyed by resolved profile path string
     _resolved_locations_cache: Dict[str, Dict[str, Path]] = {}  # keyed by resolved profile path string
 
@@ -78,9 +78,9 @@ class Bootloader:
             self._asset_cache[project_id][dataset_id][plot_id] = {}
         self._asset_cache[project_id][dataset_id][plot_id][asset_type] = asset
 
-    def __init__(self, persona: str | None = None, connector: str | None = None):
+    def __init__(self, app_features: str | None = None, connector: str | None = None):
         # Persona resolved after profile load — see step 2 below
-        self._persona_kwarg = persona
+        self._app_features_kwarg = app_features
         # connector kwarg kept for backward compatibility; used only in level-4 fallback path
         self.connector = connector or os.environ.get("SPARMVET_CONNECTOR", "local")
 
@@ -101,7 +101,7 @@ class Bootloader:
         project_root_str = self.connector_config.get("project_root")
         self.project_root: Path | None = Path(project_root_str) if project_root_str else None
         self.default_manifest: str | None = self.connector_config.get("default_manifest")
-        self.default_persona: str | None = self.connector_config.get("default_persona")
+        self.default_app_features: str | None = self.connector_config.get("default_persona")
         self.deployment_name: str = self.connector_config.get("deployment_name", "SPARMVET_VIZ (Local Dev)")
         self.deployment_type: str = self.connector_config.get("deployment_type", "filesystem")
 
@@ -139,12 +139,12 @@ class Bootloader:
         self._validate_profile()
 
         # 2. Persona Logic — resolution order: kwarg > env var > profile default_persona > error
-        self.persona = (
-            self._persona_kwarg
+        self.app_features = (
+            self._app_features_kwarg
             or os.environ.get("SPARMVET_PERSONA")
-            or self.default_persona
+            or self.default_app_features
         )
-        if not self.persona:
+        if not self.app_features:
             exit_if_errors([DeploymentError(
                 component="Bootloader",
                 problem="No persona configured — cannot determine which feature flags to load.",
@@ -159,7 +159,7 @@ class Bootloader:
                 who="operator",
                 reference=_BOOT_REF,
             )])
-        self.set_persona(self.persona)
+        self.set_app_features(self.app_features)
 
         # 3. Project Authority (Agnostic Discovery)
         self.project_dir = self.get_location("manifests")
@@ -258,7 +258,7 @@ class Bootloader:
                 reference=_BOOT_REF,
             )])
 
-    def set_persona(self, persona: str):
+    def set_app_features(self, app_features: str):
         """Load persona config from a file path or legacy shortname.
 
         Accepts:
@@ -266,26 +266,26 @@ class Bootloader:
           - Relative path: config/ui/templates/developer_template.yaml
           - Legacy shortname: developer  →  config/ui/templates/developer_template.yaml
         """
-        self.persona = persona
-        p = Path(persona)
-        if "/" in persona or "\\" in persona or persona.endswith(".yaml"):
-            self.persona_path = p.resolve()
+        self.app_features = app_features
+        p = Path(app_features)
+        if "/" in app_features or "\\" in app_features or app_features.endswith(".yaml"):
+            self.app_features_path = p.resolve()
         else:
             # Legacy shortname — backward compatible
-            self.persona_path = Path(
-                f"config/ui/templates/{persona}_template.yaml").resolve()
+            self.app_features_path = Path(
+                f"config/ui/templates/{app_features}_template.yaml").resolve()
 
-        cache_key = str(self.persona_path)
-        if cache_key not in self._persona_cache:
-            self._persona_cache[cache_key] = self._load_persona_config()
+        cache_key = str(self.app_features_path)
+        if cache_key not in self._app_features_cache:
+            self._app_features_cache[cache_key] = self._load_app_features_config()
 
-        self.config = self._persona_cache[cache_key]
-        print(f"[Bootloader] Persona: {self.persona} → {self.persona_path}")
+        self.config = self._app_features_cache[cache_key]
+        print(f"[Bootloader] Persona: {self.app_features} → {self.app_features_path}")
         self.features = self.config.get("features", {})
         self.automation = self.config.get("automation", {})
 
     @property
-    def persona_display_name(self) -> str:
+    def app_features_display_name(self) -> str:
         """Human-readable persona name from the template's display_name field.
 
         Falls back to persona_id, then to the raw persona value (path or shortname).
@@ -294,7 +294,7 @@ class Bootloader:
         return (
             self.config.get("display_name")
             or self.config.get("persona_id")
-            or self.persona
+            or self.app_features
         )
 
     def _discover_projects(self) -> Dict[str, str]:
@@ -346,7 +346,7 @@ class Bootloader:
             )])
             return {}  # unreachable
 
-    def _load_persona_config(self) -> Dict[str, Any]:
+    def _load_app_features_config(self) -> Dict[str, Any]:
         """Loads UI feature toggles from the persona template and applies dependency cascade.
 
         Cascade rules (rules_persona_feature_flags.md §107–127):
@@ -364,7 +364,7 @@ class Bootloader:
         Supports !include in persona templates (paths relative to the template file).
         Uses a subclass of SafeLoader to avoid polluting the global constructor registry.
         """
-        path = self.persona_path
+        path = self.app_features_path
         if not path.exists():
             exit_if_errors([DeploymentError(
                 component="Bootloader",

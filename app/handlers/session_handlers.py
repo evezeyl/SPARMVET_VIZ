@@ -23,7 +23,7 @@ from app.src.bootloader import bootloader
 
 
 def define_session_server(input, output, session, *,
-                          session_manager, current_persona, home_state,
+                          session_manager, current_app_features, home_state,
                           safe_input=None,
                           notification_log=None):
     """Register session-management UI + import/restore/delete reactive handlers.

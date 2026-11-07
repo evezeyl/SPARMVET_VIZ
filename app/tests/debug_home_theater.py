@@ -38,7 +38,7 @@ PASS = "✅ PASS"
 FAIL = "❌ FAIL"
 SKIP = "⏭  SKIP"
 
-ALL_PERSONAS = [
+ALL_APP_FEATURES = [
     "pipeline-static",
     "pipeline-exploration-simple",
     "pipeline-exploration-advanced",
@@ -47,9 +47,9 @@ ALL_PERSONAS = [
 ]
 
 # Personas that should see T3 tier option and right sidebar
-ADVANCED_PERSONAS = {"pipeline-exploration-advanced", "project-independent", "developer"}
+ADVANCED_APP_FEATURES = {"pipeline-exploration-advanced", "project-independent", "developer"}
 # Personas where right sidebar should be suppressed
-HIDDEN_SIDEBAR_PERSONAS = {"pipeline-static", "pipeline-exploration-simple"}
+HIDDEN_SIDEBAR_APP_FEATURES = {"pipeline-static", "pipeline-exploration-simple"}
 
 TEST_PROJECT_ID = "1_test_data_ST22_dummy"
 MANIFEST_REL = f"config/manifests/pipelines/{TEST_PROJECT_ID}.yaml"
@@ -72,7 +72,7 @@ def section(title: str):
 # ---------------------------------------------------------------------------
 # 1. Persona feature flags
 # ---------------------------------------------------------------------------
-def test_persona_feature_flags():
+def test_app_features_feature_flags():
     section("1. Persona feature flags")
     from app.src.bootloader import Bootloader
 
@@ -111,12 +111,12 @@ def test_persona_feature_flags():
         },
     }
 
-    for persona, checks in expected.items():
-        bl = Bootloader(persona=persona)
+    for app_features, checks in expected.items():
+        bl = Bootloader(app_features=app_features)
         for feature, want in checks.items():
             got = bl.is_enabled(feature)
             record(
-                f"{persona}.{feature}",
+                f"{app_features}.{feature}",
                 got == want,
                 f"want={want} got={got}",
             )
@@ -171,15 +171,15 @@ def test_tab_structure(project_root: Path):
 # ---------------------------------------------------------------------------
 def test_tier_choices():
     section("3. Tier choices per persona")
-    for persona in ALL_PERSONAS:
+    for app_features in ALL_APP_FEATURES:
         tier_choices = {"T1": "Assembled", "T2": "Analysis-ready"}
-        if persona in ADVANCED_PERSONAS:
+        if app_features in ADVANCED_APP_FEATURES:
             tier_choices["T3"] = "My adjustments"
 
         has_t3 = "T3" in tier_choices
-        should_have_t3 = persona in ADVANCED_PERSONAS
+        should_have_t3 = app_features in ADVANCED_APP_FEATURES
         record(
-            f"tier_T3_visible_{persona}",
+            f"tier_T3_visible_{app_features}",
             has_t3 == should_have_t3,
             f"has_T3={has_t3}",
         )
@@ -190,11 +190,11 @@ def test_tier_choices():
 # ---------------------------------------------------------------------------
 def test_sidebar_suppression():
     section("4. Right sidebar suppression")
-    for persona in ALL_PERSONAS:
-        suppressed = persona in HIDDEN_SIDEBAR_PERSONAS
-        should_suppress = persona in {"pipeline-static", "pipeline-exploration-simple"}
+    for app_features in ALL_APP_FEATURES:
+        suppressed = app_features in HIDDEN_SIDEBAR_APP_FEATURES
+        should_suppress = app_features in {"pipeline-static", "pipeline-exploration-simple"}
         record(
-            f"sidebar_suppressed_{persona}",
+            f"sidebar_suppressed_{app_features}",
             suppressed == should_suppress,
             f"suppressed={suppressed}",
         )
@@ -211,7 +211,7 @@ def test_sidebar_suppression():
             found_set = ast.literal_eval(literal)
             record(
                 "hidden_personas_set_in_code",
-                found_set == HIDDEN_SIDEBAR_PERSONAS,
+                found_set == HIDDEN_SIDEBAR_APP_FEATURES,
                 f"found={found_set}",
             )
         else:
@@ -402,7 +402,7 @@ def test_bootloader_locations(project_root: Path):
     section("10. Bootloader location resolution")
     try:
         from app.src.bootloader import Bootloader
-        bl = Bootloader(persona="developer")
+        bl = Bootloader(app_features="developer")
 
         for loc_key in ("manifests", "user_sessions"):
             try:
@@ -439,7 +439,7 @@ def main():
     print(f"  Output dir   : {out_dir}")
     print(f"{'='*60}")
 
-    test_persona_feature_flags()
+    test_app_features_feature_flags()
     test_tab_structure(project_root)
     test_tier_choices()
     test_sidebar_suppression()

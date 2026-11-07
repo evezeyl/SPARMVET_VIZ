@@ -36,7 +36,7 @@ from shiny import reactive, render, ui
 
 def define_server(input, output, session, *,
                   bootloader, safe_input,
-                  current_persona=None, home_state=None):
+                  current_app_features=None, home_state=None):
     """Register all Gallery reactive handlers.
 
     Parameters

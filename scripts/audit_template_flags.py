@@ -36,9 +36,9 @@ def list_templates(project_root: Path) -> list[Path]:
 
 def validate_template(python_bin: Path, validate_script: Path, template_path: Path) -> tuple[int, str]:
     """Run validate_persona_config.py for one template; return (exit_code, output)."""
-    persona_id = template_path.stem.replace("_template", "")
+    app_features_id = template_path.stem.replace("_template", "")
     result = subprocess.run(
-        [str(python_bin), str(validate_script), "--persona", persona_id, "--strict"],
+        [str(python_bin), str(validate_script), "--persona", app_features_id, "--strict"],
         capture_output=True,
         text=True,
     )
@@ -131,9 +131,9 @@ def main() -> int:
 
     results = []
     for template_path in templates:
-        persona_id = template_path.stem.replace("_template", "")
+        app_features_id = template_path.stem.replace("_template", "")
         exit_code, output = validate_template(python_bin, validate_script, template_path)
-        results.append((persona_id, exit_code, output))
+        results.append((app_features_id, exit_code, output))
 
     report = render_report(results, project_root)
     print(report)

@@ -261,7 +261,7 @@ class GalleryViewer:
             class_="d-flex flex-column"
         )
 
-    def autofill_meta_from_audit(self, audit_stack, persona="Standard User"):
+    def autofill_meta_from_audit(self, audit_stack, app_features="Standard User"):
         """
         Helper to generate the mandatory Markdown headers from session audit data.
         ADR-033/035: Axis-Based Taxonomy (Purpose/Pattern/Difficulty).
@@ -275,7 +275,7 @@ class GalleryViewer:
             "## Difficulty: [Simple | Intermediate | Advanced]",
             "",
             "## Author & License",
-            f"- **Author**: {persona}",
+            f"- **Author**: {app_features}",
             f"- **License**: Creative Commons Attribution 4.0 International (CC-BY 4.0)",
             "",
             "## 1. Suitability (When to Use)",

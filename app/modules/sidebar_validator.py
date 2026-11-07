@@ -50,7 +50,7 @@ class SidebarValidator:
             return errors
 
         features = template.get("features", {})
-        persona_id = template.get("persona_id", template_path)
+        app_features_id = template.get("persona_id", template_path)
 
         if "manifest_selector_visible" not in features:
             ms = template.get("manifest_selector", {})
@@ -74,7 +74,7 @@ class SidebarValidator:
                     errors.append(DeploymentError(
                         component="SidebarValidator",
                         problem=(
-                            f"[{persona_id}] {loc_key} must be a mapping dict "
+                            f"[{app_features_id}] {loc_key} must be a mapping dict "
                             f"(got {type(sb).__name__}) — likely a broken !include path."
                         ),
                         location=loc,
@@ -94,7 +94,7 @@ class SidebarValidator:
                 if not isinstance(panels, list):
                     errors.append(DeploymentError(
                         component="SidebarValidator",
-                        problem=f"[{persona_id}] {loc_key}.panels must be a list.",
+                        problem=f"[{app_features_id}] {loc_key}.panels must be a list.",
                         location=f"{loc_key}.panels in {template_path}",
                         fix=(
                             f"Edit {template_path}: set {loc_key}.panels to a YAML sequence. "
@@ -114,7 +114,7 @@ class SidebarValidator:
                         errors.append(DeploymentError(
                             component="SidebarValidator",
                             problem=(
-                                f"[{persona_id}] {loc_key}: panel entry must be a dict "
+                                f"[{app_features_id}] {loc_key}: panel entry must be a dict "
                                 f"with a 'type' key, got {slot!r}."
                             ),
                             location=f"{loc_key}.panels[] in {template_path}",
@@ -132,7 +132,7 @@ class SidebarValidator:
                     if not ptype:
                         errors.append(DeploymentError(
                             component="SidebarValidator",
-                            problem=f"[{persona_id}] {loc_key}: panel entry missing 'type' key.",
+                            problem=f"[{app_features_id}] {loc_key}: panel entry missing 'type' key.",
                             location=f"{loc_key}.panels[] in {template_path}",
                             fix=(
                                 f"Edit {template_path}: add 'type: <panel_type>' to the "
@@ -146,7 +146,7 @@ class SidebarValidator:
 
                     if ptype not in PANEL_REGISTRY:
                         print(
-                            f"[SidebarValidator] WARNING: [{persona_id}] "
+                            f"[SidebarValidator] WARNING: [{app_features_id}] "
                             f"{loc_key} contains unknown panel type '{ptype}'. "
                             f"Known types: {list(PANEL_REGISTRY.keys())}"
                         )
@@ -158,7 +158,7 @@ class SidebarValidator:
 
                     if not visible and panels:
                         print(
-                            f"[SidebarValidator] NOTE: [{persona_id}] "
+                            f"[SidebarValidator] NOTE: [{app_features_id}] "
                             f"{loc_key} has visible:false but "
                             f"declares {len(panels)} panel(s) — they will not be rendered."
                         )

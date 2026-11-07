@@ -11,13 +11,13 @@ Ensures feature gating logic correctly masks restricted components for each prof
 """
 
 
-class TestUIPersonaMasking(unittest.TestCase):
+class TestUIAppFeaturesMasking(unittest.TestCase):
     def setUp(self):
         self.bootloader = Bootloader()
 
     def test_pipeline_static_masking(self):
         """Audit: Does 'pipeline-static' correctly hide restricted features?"""
-        self.bootloader.__init__(persona="pipeline-static")
+        self.bootloader.__init__(app_features="pipeline-static")
 
         restricted = [
             "developer_mode_enabled",      # Tabs Gated?
@@ -34,7 +34,7 @@ class TestUIPersonaMasking(unittest.TestCase):
 
     def test_developer_access(self):
         """Audit: Does 'developer' have full-spectrum access?"""
-        self.bootloader.__init__(persona="developer")
+        self.bootloader.__init__(app_features="developer")
 
         enabled_items = [
             "developer_mode_enabled",
@@ -48,7 +48,7 @@ class TestUIPersonaMasking(unittest.TestCase):
 
     def test_advanced_exploration_access(self):
         """Audit: Does 'pipeline-exploration-advanced' have correct subset?"""
-        self.bootloader.__init__(persona="pipeline-exploration-advanced")
+        self.bootloader.__init__(app_features="pipeline-exploration-advanced")
 
         self.assertTrue(self.bootloader.is_enabled("comparison_mode_enabled"),
                         "Advanced Exploration MUST include comparison mode.")

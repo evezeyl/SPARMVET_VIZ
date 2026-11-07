@@ -17,10 +17,10 @@ print("--- LOADING UI VERSION V5.1 (Aggressive Centering) ---")
 # — no @import required (which wouldn't resolve when injected as a string).
 _BASE_THEME = Path("config/ui/theme.css")
 _base_css = _BASE_THEME.read_text(encoding="utf-8")
-_persona_theme_path = bootloader.get_theme_css_path()
-_persona_extra_css = (
-    _persona_theme_path.read_text(encoding="utf-8")
-    if _persona_theme_path.resolve() != _BASE_THEME.resolve()
+_app_features_theme_path = bootloader.get_theme_css_path()
+_app_features_extra_css = (
+    _app_features_theme_path.read_text(encoding="utf-8")
+    if _app_features_theme_path.resolve() != _BASE_THEME.resolve()
     else ""
 )
 
@@ -49,7 +49,7 @@ def _resolve_logo_src(logo_url: str) -> str:
 app_ui = ui.page_fillable(
     ui.head_content(
         ui.tags.style(_base_css),
-        *([ui.tags.style(_persona_extra_css)] if _persona_extra_css else []),
+        *([ui.tags.style(_app_features_extra_css)] if _app_features_extra_css else []),
         # Vendored locally — air-gap / restricted-network safe (DEPLOY-CDN-1).
         # Source: app/src/www/vendor/ — pinned versions, no CDN dependency.
         ui.tags.link(

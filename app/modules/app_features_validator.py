@@ -57,7 +57,7 @@ _FATAL_CASCADE_GATES: dict[str, list[str]] = {
 }
 
 
-class PersonaValidator:
+class AppFeaturesValidator:
     """Validates persona template completeness at startup.
 
     Call validate() before define_server(). Errors are fatal; warnings are logged.
@@ -73,15 +73,15 @@ class PersonaValidator:
         errors: list[DeploymentError] = []
         warnings: list[str] = []
 
-        persona_id = template.get("persona_id", "")
+        app_features_id = template.get("persona_id", "")
 
         # Rule 1 (removed 2026-05-02, ADR-054): persona_id must match filename.
 
         # Rule 2: persona_id must use hyphens, never underscores
-        if "_" in persona_id and persona_id not in (""):
+        if "_" in app_features_id and app_features_id not in (""):
             errors.append(DeploymentError(
                 component="PersonaValidator",
-                problem=f"persona_id '{persona_id}' contains underscores",
+                problem=f"persona_id '{app_features_id}' contains underscores",
                 location=f"persona_id in {template_path}",
                 fix="Replace underscores with hyphens. e.g. 'pipeline_static' → 'pipeline-static'.",
                 who="operator",

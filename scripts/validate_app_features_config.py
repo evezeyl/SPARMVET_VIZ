@@ -24,7 +24,7 @@ _project_root = Path(__file__).resolve().parent.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
-from app.modules.persona_validator import PersonaValidator
+from app.modules.app_features_validator import AppFeaturesValidator
 from app.modules.sidebar_validator import SidebarValidator
 from app.modules.deployment_error import format_errors_block
 
@@ -65,7 +65,7 @@ class _WarningCollector:
 
 def _validate_template(path: Path, strict: bool) -> tuple[int, int]:
     """Validate one template. Returns (error_count, warning_count)."""
-    pv = PersonaValidator()
+    pv = AppFeaturesValidator()
     sv = SidebarValidator()
 
     with _WarningCollector() as wc:
@@ -121,15 +121,15 @@ def main():
             sys.exit(1)
     else:
         # Accept path or shortname
-        candidate = Path(args.persona)
+        candidate = Path(args.app_features)
         if candidate.exists():
             templates = [candidate.resolve()]
         else:
-            templates = [_TEMPLATES_DIR / f"{args.persona}_template.yaml"]
+            templates = [_TEMPLATES_DIR / f"{args.app_features}_template.yaml"]
             if not templates[0].exists():
                 print(
                     f"Template not found: {templates[0]}\n"
-                    f"(Also tried: {args.persona})",
+                    f"(Also tried: {args.app_features})",
                     file=sys.stderr,
                 )
                 sys.exit(1)

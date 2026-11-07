@@ -75,7 +75,7 @@ def main():
             "gallery":      "assets/gallery_data/",
         },
         "default_manifest": f"{args.manifest_id}.yaml",
-        "default_persona": args.persona,
+        "default_persona": args.app_features,
         "runtime": {
             "python_interpreter": "./.venv/bin/python",
         },
@@ -86,7 +86,7 @@ def main():
 
     print(f"Deployment profile written: {out_path}")
     print(f"  manifest  : {args.manifest_id}")
-    print(f"  persona   : {args.persona}")
+    print(f"  persona   : {args.app_features}")
     print(f"  project   : {args.project_root}")
     print()
     print("To use: set SPARMVET_PROFILE env var, or place at ~/.sparmvet/profile.yaml.")

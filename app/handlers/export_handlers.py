@@ -34,7 +34,7 @@ def build_export_provenance(
     now,
     proj_id: str,
     safe_name: str,
-    persona: str,
+    app_features: str,
     preset: str,
     dpi: int,
     plot_width: float = 8.0,
@@ -132,7 +132,7 @@ def build_export_provenance(
         "project_id": proj_id,
         "manifest_name": manifest_name,
         "manifest_path": manifest_path_str,
-        "persona_id": persona,
+        "persona_id": app_features,
         "active_tier": active_tier,
         "export_scope": scope_label,
         "bundle_label": safe_name,
@@ -383,7 +383,7 @@ def _build_methods_section(
 
 def define_export_server(input, output, session, *,
                          bootloader, orchestrator, viz_factory,
-                         current_persona, active_cfg,
+                         current_app_features, active_cfg,
                          tier1_anchor,
                          tier_toggle,
                          home_state, safe_input,
@@ -573,7 +573,7 @@ def define_export_server(input, output, session, *,
         report_fmt = safe_input(input, "export_report_format", "html")
         plot_width  = float(safe_input(input, "export_plot_width",  8))
         plot_height = float(safe_input(input, "export_plot_height", 5))
-        persona = current_persona.get()
+        app_features = current_app_features.get()
         dpi = 300 if preset == "web" else 600
 
         cfg = active_cfg()
@@ -716,7 +716,7 @@ def define_export_server(input, output, session, *,
                 now=now,
                 proj_id=proj_id,
                 safe_name=safe_name,
-                persona=persona,
+                app_features=app_features,
                 preset=preset,
                 dpi=dpi,
                 plot_width=plot_width,
@@ -1152,7 +1152,7 @@ def define_export_server(input, output, session, *,
                 "## Overview",
                 "",
                 f"Project: **{proj_id}**  ",
-                f"Persona: **{persona}**  ",
+                f"Persona: **{app_features}**  ",
                 f"Export preset: **{preset}**  ",
                 f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}  ",
                 "",

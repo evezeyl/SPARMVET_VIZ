@@ -75,7 +75,7 @@ class BaseConnector(ABC):
             return Path(project_root_str) / p
         return p
 
-    def get_default_persona(self) -> str | None:
+    def get_default_app_features(self) -> str | None:
         """Return the default persona ID from the profile, or None if not set."""
         return self._profile.get("default_persona")
 

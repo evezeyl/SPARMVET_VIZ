@@ -17,9 +17,11 @@ Examples:
 
 import argparse
 import importlib.util
+import io
 import re
 import subprocess
 import sys
+import tokenize
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -116,11 +118,95 @@ def new_path(path: str, pairs, keep, rules):
     return p
 
 
+def subset_pairs(pairs, words):
+    """Keep only the pairs whose old spelling contains one of the requested words."""
+    words = [w.lower() for w in words]
+    return [(o, n) for o, n in pairs if any(w in o.lower() for w in words)]
+
+
+def rewrite_python_identifiers(path: str, pairs, keep, dry_run: bool):
+    """Rename NAME tokens (identifiers, attributes, keyword arguments, import names) only.
+
+    Strings, comments and docstrings are not touched: file formats, configuration keys and
+    messages change in their own phases. Returns the number of tokens renamed.
+    """
+    src = Path(path).read_text(encoding="utf-8")
+    lines = src.split("\n")
+    edits = []
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(src).readline):
+            if tok.type == tokenize.NAME and RETIRED.search(tok.string):
+                new, status = transform(tok.string, pairs, keep)
+                if status in ("auto", "CONTEXT") and new != tok.string and CONTEXT not in new:
+                    edits.append((tok.start, tok.end, new))
+    except tokenize.TokenError as exc:
+        raise SystemExit(f"cannot tokenize {path}: {exc}")
+    for (sr, sc), (er, ec), new in sorted(edits, reverse=True):
+        assert sr == er, f"multi-line name token in {path}"
+        line = lines[sr - 1]
+        lines[sr - 1] = line[:sc] + new + line[ec:]
+    if edits and not dry_run:
+        Path(path).write_text("\n".join(lines), encoding="utf-8")
+    return len(edits)
+
+
+def move_files(paths, pairs, keep, rules, dry_run: bool):
+    """git mv every path whose new name (from the pairs) differs."""
+    moved = []
+    for f in paths:
+        new = new_path_subset(f, pairs, keep, rules)
+        if new != f:
+            moved.append((f, new))
+            if not dry_run:
+                Path(new).parent.mkdir(parents=True, exist_ok=True)
+                subprocess.run(["git", "mv", f, new], check=True)
+    return moved
+
+
+def new_path_subset(path: str, pairs, keep, rules):
+    parts = path.split("/")
+    return "/".join(transform(seg, pairs, keep)[0] if RETIRED.search(seg) else seg for seg in parts)
+
+
+def cmd_apply(args) -> int:
+    pairs_all, rules = load_pairs()
+    keep = [k.lower() for k in rules["keep_substrings"]]
+    pairs = subset_pairs(pairs_all, args.words)
+    files = [f for f in tracked_files() if f.endswith(".py")]
+    total = 0
+    if args.what in ("moves", "all"):
+        py_with_word = [f for f in files if any(w in f.lower() for w in args.words)]
+        for old, new in move_files(py_with_word, pairs, keep, rules, args.dry_run):
+            print(f"move  {old} -> {new}")
+        if not args.dry_run:
+            files = [f for f in tracked_files() if f.endswith(".py")]
+    if args.what in ("identifiers", "all"):
+        for f in files:
+            if not Path(f).exists():
+                continue
+            n = rewrite_python_identifiers(f, pairs, keep, args.dry_run)
+            if n:
+                total += n
+                print(f"{n:>4}  {f}")
+        print(f"identifier tokens {'to rename' if args.dry_run else 'renamed'}: {total}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", metavar="PATH", help="write the Markdown mapping table here")
     ap.add_argument("--unmapped", action="store_true", help="print only the UNMAPPED tokens and exit 1 if any")
+    ap.add_argument("--apply", choices=["identifiers", "moves", "all"],
+                    help="change files: rename Python identifiers and/or git mv Python files")
+    ap.add_argument("--words", nargs="+", default=[], help="with --apply: retired words to rename, e.g. persona")
+    ap.add_argument("--dry-run", action="store_true", help="with --apply: only print what would change")
     args = ap.parse_args()
+
+    if args.apply:
+        args.what = args.apply
+        if not args.words:
+            ap.error("--apply needs --words")
+        return cmd_apply(args)
 
     pairs, rules = load_pairs()
     keep = [k.lower() for k in rules["keep_substrings"]]

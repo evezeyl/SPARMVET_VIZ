@@ -20,7 +20,7 @@ STEPS = [{"action": "filter_eq", "column": "group", "value": "A"}]
 
 def prov(stage_keys, all_plots):
     return build_export_provenance(
-        now=datetime.datetime(2026, 11, 6, 12, 0, 0), proj_id="tiny", safe_name="eve", persona="qa",
+        now=datetime.datetime(2026, 11, 6, 12, 0, 0), proj_id="tiny", safe_name="eve", app_features="qa",
         preset="web", dpi=300, active_tier="T2", scope_label="global", all_plots=all_plots,
         tiers_exported=["T1"], manifest_sha="m" * 64, data_sha="d" * 64,
         bootloader=SimpleNamespace(available_projects={}), stage_keys=stage_keys,

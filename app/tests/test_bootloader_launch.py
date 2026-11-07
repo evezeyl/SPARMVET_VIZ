@@ -40,7 +40,7 @@ def _deployment(tmp_path, name="dep.yaml", **extra):
 
 
 def test_profile_variable_selects_the_deployment_file(tmp_path, monkeypatch):
-    dep, _ = _deployment(tmp_path, default_persona="qa")
+    dep, _ = _deployment(tmp_path, **{"default_persona": "qa"})
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     b = Bootloader()
     assert b.connector_path == dep
@@ -55,7 +55,7 @@ def test_profile_variable_pointing_nowhere_stops_the_app(tmp_path, monkeypatch):
 
 
 def test_user_file_is_used_when_no_variable_is_set(tmp_path, monkeypatch):
-    dep, _ = _deployment(tmp_path, default_persona="qa")
+    dep, _ = _deployment(tmp_path, **{"default_persona": "qa"})
     user_dir = tmp_path / "home" / ".sparmvet"
     user_dir.mkdir()
     (user_dir / "profile.yaml").write_text(dep.read_text())
@@ -64,22 +64,22 @@ def test_user_file_is_used_when_no_variable_is_set(tmp_path, monkeypatch):
     assert b.connector_path == user_dir / "profile.yaml"
 
 
-def test_persona_variable_accepts_a_short_name(tmp_path, monkeypatch):
+def test_app_features_variable_accepts_a_short_name(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path)
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     monkeypatch.setenv("SPARMVET_PERSONA", "qa")
     b = Bootloader()
-    assert b.persona_path.name == "qa_template.yaml"
+    assert b.app_features_path.name == "qa_template.yaml"
     assert b.is_enabled("export_enabled") is True
     assert b.is_enabled("test_lab_enabled") is True
 
 
-def test_persona_variable_accepts_a_path(tmp_path, monkeypatch):
+def test_app_features_variable_accepts_a_path(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path)
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     monkeypatch.setenv("SPARMVET_PERSONA", "config/ui/templates/pipeline-static_template.yaml")
     b = Bootloader()
-    assert b.persona_path.name == "pipeline-static_template.yaml"
+    assert b.app_features_path.name == "pipeline-static_template.yaml"
     assert b.is_enabled("interactivity_enabled") is False
     assert b.is_enabled("test_lab_enabled") is False
 
@@ -97,16 +97,16 @@ def test_features_differ_between_two_launches_of_the_same_deployment(tmp_path, m
 
 
 def test_variable_beats_the_deployment_default(tmp_path, monkeypatch):
-    dep, _ = _deployment(tmp_path, default_persona="pipeline-static")
+    dep, _ = _deployment(tmp_path, **{"default_persona": "pipeline-static"})
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     monkeypatch.setenv("SPARMVET_PERSONA", "qa")
-    assert Bootloader().persona_path.name == "qa_template.yaml"
+    assert Bootloader().app_features_path.name == "qa_template.yaml"
 
 
 def test_deployment_default_is_used_without_a_variable(tmp_path, monkeypatch):
-    dep, _ = _deployment(tmp_path, default_persona="pipeline-static")
+    dep, _ = _deployment(tmp_path, **{"default_persona": "pipeline-static"})
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
-    assert Bootloader().persona_path.name == "pipeline-static_template.yaml"
+    assert Bootloader().app_features_path.name == "pipeline-static_template.yaml"
 
 
 def test_no_choice_anywhere_stops_the_app(tmp_path, monkeypatch):
@@ -120,11 +120,11 @@ def test_keyword_beats_the_variable(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path)
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     monkeypatch.setenv("SPARMVET_PERSONA", "qa")
-    assert Bootloader(persona="pipeline-static").persona_path.name == "pipeline-static_template.yaml"
+    assert Bootloader(app_features="pipeline-static").app_features_path.name == "pipeline-static_template.yaml"
 
 
 def test_missing_location_folder_stops_the_app(tmp_path, monkeypatch):
-    dep, root = _deployment(tmp_path, default_persona="qa")
+    dep, root = _deployment(tmp_path, **{"default_persona": "qa"})
     (root / "gallery").rmdir()
     (root / "raw_data").rmdir()
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
@@ -133,7 +133,7 @@ def test_missing_location_folder_stops_the_app(tmp_path, monkeypatch):
 
 
 def test_recipes_are_listed_from_the_manifests_folder(tmp_path, monkeypatch):
-    dep, root = _deployment(tmp_path, default_persona="qa")
+    dep, root = _deployment(tmp_path, **{"default_persona": "qa"})
     (root / "manifests" / "alpha.yaml").write_text("id: alpha\n")
     (root / "manifests" / "beta.yaml").write_text("id: beta\n")
     (root / "manifests" / "notes.txt").write_text("not a manifest\n")
@@ -143,7 +143,7 @@ def test_recipes_are_listed_from_the_manifests_folder(tmp_path, monkeypatch):
 
 def test_CURRENT_GAP_template_fixed_manifest_wins_and_deployment_default_is_ignored(tmp_path, monkeypatch):
     """ADR-091 changes this: the deployment default takes effect and the template key is removed."""
-    dep, root = _deployment(tmp_path, default_manifest="beta", default_persona="pipeline-static")
+    dep, root = _deployment(tmp_path, **{"default_manifest": "beta", "default_persona": "pipeline-static"})
     (root / "manifests" / "beta.yaml").write_text("id: beta\n")
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))
     b = Bootloader()
@@ -152,7 +152,7 @@ def test_CURRENT_GAP_template_fixed_manifest_wins_and_deployment_default_is_igno
 
 
 def test_CURRENT_GAP_without_any_pin_the_first_listed_recipe_opens(tmp_path, monkeypatch):
-    dep, root = _deployment(tmp_path, default_manifest="beta", default_persona="qa")
+    dep, root = _deployment(tmp_path, **{"default_manifest": "beta", "default_persona": "qa"})
     (root / "manifests" / "alpha.yaml").write_text("id: alpha\n")
     (root / "manifests" / "beta.yaml").write_text("id: beta\n")
     monkeypatch.setenv("SPARMVET_PROFILE", str(dep))

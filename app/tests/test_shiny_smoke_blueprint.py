@@ -26,8 +26,8 @@ from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 
-_LAUNCH_PERSONA = os.environ.get("SPARMVET_PERSONA", "developer")
-_BLUEPRINT_PERSONA_REQUIRED = {"developer", "qa"}
+_LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_PERSONA", "developer")
+_BLUEPRINT_APP_FEATURES_REQUIRED = {"developer", "qa"}
 
 
 # ---------------------------------------------------------------------------
@@ -115,7 +115,7 @@ class TestBlueprintNavigation:
         expect(page.locator("#sidebar_nav").get_by_text("Blueprint Architect")).to_be_visible()
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_navigate_to_blueprint_renders_sidebar(
@@ -127,7 +127,7 @@ class TestBlueprintNavigation:
         _no_render_error(page)
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_no_startup_errors_in_blueprint(self, page: Page, shiny_app: ShinyAppProc):
@@ -142,7 +142,7 @@ class TestBlueprintNavigation:
 
 class TestBlueprintManifestLoad:
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_manifest_selector_has_options(self, page: Page, shiny_app: ShinyAppProc):
@@ -159,7 +159,7 @@ class TestBlueprintManifestLoad:
         assert count >= 1, "No .yaml manifests found in stored_manifest_selector"
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_groups_plots_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
@@ -171,7 +171,7 @@ class TestBlueprintManifestLoad:
         _no_render_error(page)
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_manifest_info_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
@@ -189,7 +189,7 @@ class TestBlueprintManifestLoad:
 
 class TestBlueprintEscapeAndValidate:
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_escape_hatch_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
@@ -201,7 +201,7 @@ class TestBlueprintEscapeAndValidate:
         _no_render_error(page)
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_escape_hatch_shows_yaml_content(self, page: Page, shiny_app: ShinyAppProc):
@@ -248,7 +248,7 @@ class TestBlueprintEscapeAndValidate:
         )
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_validate_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
@@ -259,7 +259,7 @@ class TestBlueprintEscapeAndValidate:
         _no_render_error(page)
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_validate_runs_and_shows_result(self, page: Page, shiny_app: ShinyAppProc):
@@ -287,7 +287,7 @@ class TestBlueprintEscapeAndValidate:
 
 class TestBlueprintRoundTrip:
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_save_internal_does_not_crash(self, page: Page, shiny_app: ShinyAppProc):
@@ -309,7 +309,7 @@ class TestBlueprintRoundTrip:
         _no_render_error(page)
 
     @pytest.mark.skipif(
-        _LAUNCH_PERSONA not in _BLUEPRINT_PERSONA_REQUIRED,
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa persona",
     )
     def test_blueprint_switch_back_to_home_no_error(

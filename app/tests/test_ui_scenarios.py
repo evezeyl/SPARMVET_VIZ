@@ -15,25 +15,25 @@ class TestUIScenarios(unittest.TestCase):
         self.export_dir.mkdir(parents=True, exist_ok=True)
         self.exporter = SubmissionExporter(str(self.export_dir))
 
-    def run_persona_check(self, persona_name, expected_features):
+    def run_app_features_check(self, app_features_name, expected_features):
         """Helper to verify feature gating for a persona."""
-        print(f"Checking Persona: {persona_name}...")
-        loader = Bootloader(persona=persona_name)
+        print(f"Checking Persona: {app_features_name}...")
+        loader = Bootloader(app_features=app_features_name)
         for feature, expected in expected_features.items():
             actual = loader.is_enabled(feature)
             self.assertEqual(actual, expected,
-                             f"Feature {feature} mismatch for {persona_name}")
-        print(f"  [PASS] {persona_name} gating verified.")
+                             f"Feature {feature} mismatch for {app_features_name}")
+        print(f"  [PASS] {app_features_name} gating verified.")
 
-    def test_persona_sweep(self):
+    def test_app_features_sweep(self):
         """Objective 1: Full Simulation Run for personas."""
-        personas = {
+        app_features = {
             "project-independent": {"developer_mode_enabled": False, "gallery_enabled": True},
             "developer": {"developer_mode_enabled": True, "gallery_enabled": True},
             "qa": {"developer_mode_enabled": True, "comparison_mode_enabled": True},
         }
-        for name, features in personas.items():
-            self.run_persona_check(name, features)
+        for name, features in app_features.items():
+            self.run_app_features_check(name, features)
 
     def test_negative_scenarios_adr034(self):
         """Objective 2: Error-Gate Audit (Heuristic check)."""

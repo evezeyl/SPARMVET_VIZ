@@ -21,7 +21,7 @@ from viz_factory.viz_factory import VizFactory
 from app.modules.wrangle_studio import WrangleStudio
 from app.modules.test_lab_studio import TestLabStudio
 from app.modules.gallery_viewer import gallery_viewer
-from app.modules.persona_validator import PersonaValidator
+from app.modules.app_features_validator import AppFeaturesValidator
 from app.modules.sidebar_validator import SidebarValidator
 from app.modules.deployment_error import DeploymentError, exit_if_errors
 from app.modules.orchestrator_helpers import (
@@ -48,9 +48,9 @@ def server(input, output, session):
     # with a non-zero code. The operator sees a single readable summary instead
     # of a stack trace.
     _all_errors: list[DeploymentError] = []
-    _all_errors.extend(PersonaValidator().validate_file(str(bootloader.persona_path)))
+    _all_errors.extend(AppFeaturesValidator().validate_file(str(bootloader.app_features_path)))
 
-    _all_errors.extend(SidebarValidator().validate_file(str(bootloader.persona_path)))
+    _all_errors.extend(SidebarValidator().validate_file(str(bootloader.app_features_path)))
 
     exit_if_errors(_all_errors, header="SPARMVET startup blocked — persona configuration is invalid")
 
@@ -121,8 +121,8 @@ def server(input, output, session):
     # eliminating the js_eval → DOM click → input race condition.
     _selected_lineage_rel: reactive.Value = reactive.Value(None)
 
-    print(f"DEBUG: Initializing Server with Persona: {bootloader.persona_display_name}")
-    current_persona = reactive.Value(bootloader.persona_display_name)
+    print(f"DEBUG: Initializing Server with Persona: {bootloader.app_features_display_name}")
+    current_app_features = reactive.Value(bootloader.app_features_display_name)
 
     # Dependency Resolution: Data Tiers
     @reactive.Calc
@@ -167,7 +167,7 @@ def server(input, output, session):
         orchestrator=orchestrator,
         viz_factory=viz_factory,
         gallery_viewer=gallery_viewer,
-        current_persona=current_persona,
+        current_app_features=current_app_features,
         anchor_path=anchor_path,
         tier1_anchor=tier1_anchor,
         active_cfg=active_cfg,
@@ -222,7 +222,7 @@ def server(input, output, session):
             input, output, session,
             bootloader=bootloader,
             safe_input=_safe_input,
-            current_persona=current_persona,
+            current_app_features=current_app_features,
             home_state=home_state,
         )
 
@@ -231,6 +231,6 @@ def server(input, output, session):
     _define_ingestion_server(
         input, output, session,
         bootloader=bootloader,
-        current_persona=current_persona,
+        current_app_features=current_app_features,
         safe_input=_safe_input,
     )

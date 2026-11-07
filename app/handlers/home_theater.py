@@ -102,7 +102,7 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
 def define_server(input, output, session, *,
                   bootloader, wrangle_studio, dev_studio,
                   orchestrator, viz_factory, gallery_viewer,
-                  current_persona, anchor_path, tier1_anchor,
+                  current_app_features, anchor_path, tier1_anchor,
                   active_cfg,
                   active_collection_id, safe_input,
                   active_home_subtab, tier_toggle,
@@ -690,7 +690,7 @@ def define_server(input, output, session, *,
         Home renders exclusively from manifest analysis_groups.
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
-        p = current_persona.get()
+        p = current_app_features.get()
 
         # 1. Module Routing (ADR-031 Compliance)
         if active_sidebar == "Wrangle Studio":
@@ -1271,7 +1271,7 @@ def define_server(input, output, session, *,
 
     @render.ui
     def sidebar_nav_ui():
-        perm = current_persona.get()
+        perm = current_app_features.get()
         print(f"DEBUG: Rendering sidebar_nav_ui for Persona: {perm}")
 
         nav_items = [ui.nav_panel("Home", value="Home")]
@@ -1920,7 +1920,7 @@ def define_server(input, output, session, *,
         bootloader=bootloader,
         orchestrator=orchestrator,
         viz_factory=viz_factory,
-        current_persona=current_persona,
+        current_app_features=current_app_features,
         active_cfg=active_cfg,
         tier1_anchor=tier1_anchor,
         tier_toggle=tier_toggle,
@@ -1941,7 +1941,7 @@ def define_server(input, output, session, *,
     define_session_server(
         input, output, session,
         session_manager=session_manager,
-        current_persona=current_persona,
+        current_app_features=current_app_features,
         home_state=home_state,
         safe_input=safe_input,
         notification_log=notification_log,

@@ -22,7 +22,7 @@ from pathlib import Path
 from shiny import reactive, ui
 
 
-def define_server(input, output, session, *, bootloader, current_persona, safe_input):
+def define_server(input, output, session, *, bootloader, current_app_features, safe_input):
     """Register ingestion and persona reactive handlers.
 
     Parameters
@@ -48,7 +48,7 @@ def define_server(input, output, session, *, bootloader, current_persona, safe_i
             path = Path(f['datapath'])
             if name.endswith(".yaml"):
                 shutil.copy(path, manifest_dir / name)
-        bootloader.__init__(persona=current_persona.get())
+        bootloader.__init__(app_features=current_app_features.get())
         ui.update_select("project_id", choices=list(
             bootloader.available_projects.keys()))
         ui.notification_show("✅ Ingestion complete.", type="success")

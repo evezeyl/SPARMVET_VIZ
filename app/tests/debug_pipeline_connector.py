@@ -30,7 +30,7 @@ INFO = "   "
 
 PIPELINE_TEST_PROFILE = ROOT / "config/deployment/pipeline_test/pipeline_test_profile.yaml"
 
-PERSONAS = {
+APP_FEATURES = {
     "pipeline-static":             ROOT / "config/ui/templates/pipeline-static_template.yaml",
     "pipeline-exploration-simple": ROOT / "config/ui/templates/pipeline-exploration-simple_template.yaml",
 }
@@ -64,7 +64,7 @@ else:
 section("2. Bootloader")
 
 os.environ["SPARMVET_PROFILE"] = str(PIPELINE_TEST_PROFILE)
-os.environ["SPARMVET_PERSONA"] = str(PERSONAS["pipeline-static"])
+os.environ["SPARMVET_PERSONA"] = str(APP_FEATURES["pipeline-static"])
 
 try:
     # Re-import fresh (clear module-level singleton)
@@ -171,14 +171,14 @@ except Exception as e:
 # ── 6. Repeat for pipeline-exploration-simple ─────────────────────────────
 section("6. Persona: pipeline-exploration-simple (same profile)")
 
-os.environ["SPARMVET_PERSONA"] = str(PERSONAS["pipeline-exploration-simple"])
+os.environ["SPARMVET_PERSONA"] = str(APP_FEATURES["pipeline-exploration-simple"])
 try:
     if "app.src.bootloader" in sys.modules:
         del sys.modules["app.src.bootloader"]
     from app.src.bootloader import bootloader as bl2  # noqa: E402
 
     ms = bl2.get_manifest_selector()
-    record("Persona loaded", PASS, bl2.persona_display_name)
+    record("Persona loaded", PASS, bl2.app_features_display_name)
     record("manifest_selector.fixed_manifest", INFO, str(ms.get("fixed_manifest")))
     record("prefer_discovery", INFO, str(bl2.connector_config.get("prefer_discovery", False)))
     record("testing_mode", INFO, str(bl2.get_testing_mode()))
