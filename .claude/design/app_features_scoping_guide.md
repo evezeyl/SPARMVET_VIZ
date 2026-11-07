@@ -15,7 +15,7 @@
 
 ## Core concept
 
-SPARMVET is deployed with a **configuration deployment** that defines which user functionalities are available. The term "app features" is used for named example deployments (e.g. `pipeline-static`, `developer`), but an app features is just a label for a specific combination of flags.
+SPARMVET is deployed with **app features** that define which user functionalities are available. The name "app features" is used for named example sets (e.g. `pipeline-static`, `developer`), but an app features is just a label for a specific combination of flags.
 
 **The right way to think about deployment:**
 > "What do I want my users to be able to do?" → pick the functionalities → validate dependencies → name it.

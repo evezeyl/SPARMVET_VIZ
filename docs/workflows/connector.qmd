@@ -215,9 +215,10 @@ The data ingestion feature (System Tools) can be **disabled at the deployment le
 Add to the deployment:
 
 ```yaml
-# Overrides app features level data_ingestion_enabled for this deployment
-# Default: true (app features controls it)
-data_ingestion_enabled: false
+# Operator lock: these flags are set whatever the app features file says
+# Default: absent (the app features file controls every flag)
+app_features_override:
+  data_ingestion_enabled: false
 ```
 
 When `false`: the Data Ingestion section in System Tools is suppressed entirely, regardless of the active app features. This allows deploying a `project-independent` app features for a scientist who can do everything *except* upload new data (because the pipeline handles that).

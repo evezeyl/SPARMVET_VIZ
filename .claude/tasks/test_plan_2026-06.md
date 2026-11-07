@@ -136,13 +136,13 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 
 Relaunch once per file below and confirm the surfaces it produces. This is fast (just "is it there or not") and catches positive-inclusion (ADR-071) regressions. Authoritative flag matrix: `rules_app_features_flags.md`. This section replaced the old app features framed "PER" checklist on 2026-08-10 — same content, reframed around the actual driver (the file), see the note in §1.
 
-**Launch commands** (paste directly, only the file path changes):
+**Launch commands** (paste directly). Since ADR-091 the four app features that hide the data analysis recipe selector need a named data analysis recipe: `pipeline-static` and `pipeline-exploration-simple` get it from `SPARMVET_DATA_ANALYSIS_RECIPE`; the two demos start from their demo deployment (`config/deployment/demo/`), which names the data analysis recipe and carries the banner and stylesheet:
 
 ```bash
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-static.yaml               ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/demo-vetinst.yaml                  ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-exploration-simple.yaml   ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/web-demo.yaml                      ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-static.yaml SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/demo/demo-vetinst.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-exploration-simple.yaml SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy ./.venv/bin/shiny run app/src/main.py --reload --port 8000
+PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/demo/web-demo.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/pipeline-exploration-advanced.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/project-independent.yaml           ./.venv/bin/shiny run app/src/main.py --reload --port 8000
 PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml                     ./.venv/bin/shiny run app/src/main.py --reload --port 8000
@@ -175,6 +175,19 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/qa.yaml                  
 - [ ] CFG-10 `[?]` **NEW** — Point `SPARMVET_APP_FEATURES` at a **custom** YAML (copy `developer.yaml`, flip one flag, e.g. `gallery_enabled: false`, save under a new name) and confirm the app respects it correctly with no code changes. This is the actual proof that behaviour is config-driven, not app features enum-driven — worth doing once.
 
 ---
+
+### 2b. Names, launch rules and old files (ADR-091, issue evezeyl/SPARMVET_VIZ#27)
+
+Most of this is already checked by automatic tests (`app/tests/test_bootloader_launch.py`, `test_legacy_formats.py`, `libs/utils/tests/test_path_expansion.py`); the items below are what a person must see once.
+
+- [ ] CFG-11 — Start `pipeline-static` **without** `SPARMVET_DATA_ANALYSIS_RECIPE` (remove it from the command): the terminal shows a `[FATAL]` block that names both `default_data_analysis_recipe` (deployment file) and `SPARMVET_DATA_ANALYSIS_RECIPE`, and the app does not start. Readable?
+- [ ] CFG-12 — Start with the old variable (`SPARMVET_PERSONA=qa` or `SPARMVET_PROFILE=...`): the app stops and the message names the new variable. <!-- audit:allow-old-word -->
+- [ ] CFG-13 — Demo deployments (`config/deployment/demo/web-demo.yaml`, `demo-vetinst.yaml`): the banner (logo, title) and the demo colours appear; with `developer.yaml` they do not. The data analysis recipe selector is absent.
+- [ ] CFG-14 — `SPARMVET_DATA_ANALYSIS_RECIPE=2_test_data_ST22_dummy` with `developer.yaml`: that data analysis recipe is the one open at start; the selector (visible) still lets you switch.
+- [ ] CFG-15 — A wrong data analysis recipe name (`SPARMVET_DATA_ANALYSIS_RECIPE=nope`): `[FATAL]` naming the name and the data analysis recipes that exist.
+- [ ] CFG-16 — `~` in a deployment folder: copy `config/deployment/local/local.yaml`, set `cache: "~/sparmvet_test/cache"`, start with `SPARMVET_DEPLOYMENT=<copy>`: the folder is created under your home. Then write `${NOT_SET}/x` instead: the app stops and names `NOT_SET`.
+- [ ] CFG-17 — Session panel with an old session (one written before the rename; your `tmp/UI_TEST` has some): it is listed with a red message and the conversion command, not hidden. After `python assets/scripts/migrate_config_vocabulary.py --sessions tmp/UI_TEST/user --apply` it restores normally.
+- [ ] CFG-18 — Labels in the user interface read well: the left panel says "Data analysis recipe" (not "Manifest"), the gallery says "Example" (not "Recipe"), the audit panel says audit steps. Note any awkward wording (`[~]`). <!-- audit:allow-old-word -->
 
 ## 3. TEST_LAB (LAB) — **new in Phase 34, highest priority**
 

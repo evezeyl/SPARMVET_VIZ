@@ -305,7 +305,7 @@ This is the most common source of confusion. The rule is simple:
 | What can this user do? | App features file (`config/app_features/`) |
 | Which pipeline/data is loaded? | Deployment (`config/connectors/` or `SPARMVET_DEPLOYMENT`) |
 | Where is data stored on disk? | Deployment (`locations` block) |
-| Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment (`data_ingestion_enabled: false` overrides app features) |
+| Is data ingestion available at all? | **Both** — app features flag (`data_ingestion_enabled`) AND deployment (`app_features_override: {data_ingestion_enabled: false}` overrides app features) |
 | What data analysis recipe is loaded at startup? | Deployment (`default_data_analysis_recipe`) |
 | Can the user switch data analysis recipes? | App features (`import_helper_enabled` + `developer_mode_enabled`) |
 
@@ -414,7 +414,7 @@ workspaces:
     right_sidebar: !include sidebars/home_advanced_right.yaml
 ```
 
-Changing a shared sidebar file propagates to all app features files that `!include` it. Custom deployments override only the file they need — no Python changes required.
+Changing a shared sidebar file propagates to all app features files that `!include` it. Custom app features files override only the file they need — no Python changes required.
 
 ## Built-in panel types
 

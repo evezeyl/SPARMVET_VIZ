@@ -53,6 +53,7 @@ SKIP_FILES = {
     "galaxy_connector.py", # Galaxy connector variant
     "irida.py",            # IRIDA connector implementation
     "base.py",             # connector base class — may read deployment dict
+    "renamed_keys.py",     # inspects the raw deployment keys on purpose, to refuse old names (ADR-091)
 }
 
 # ── Detection patterns ────────────────────────────────────────────────────────

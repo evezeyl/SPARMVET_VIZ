@@ -2,10 +2,7 @@
 # Simulates production connector behaviour: data is injected by the pipeline,
 # not read from data analysis recipe source.path entries.
 #
-# data_lookup: by_dataset_id
-
-# pipeline-static hides the data analysis recipe selector, so the deployment names the data analysis recipe that opens
-default_data_analysis_recipe: 1_test_data_ST22_dummy — orchestrator ignores data analysis recipe source.path and discovers
+# data_lookup: by_dataset_id — orchestrator ignores data analysis recipe source.path and discovers
 # files by schema ID name in raw_data. This exercises the same code path a real
 # Galaxy/IRIDA connector would use.
 #
@@ -20,6 +17,9 @@ deployment_name: "SPARMVET_VIZ (Pipeline Test)"
 # data_lookup: by_dataset_id — ignore data analysis recipe source.path, discover files by schema
 # ID name in raw_data. Mirrors production connector behaviour.
 data_lookup: by_dataset_id
+
+# pipeline-static hides the data analysis recipe selector, so the deployment names the data analysis recipe that opens
+default_data_analysis_recipe: 1_test_data_ST22_dummy
 
 locations:
   # Raw data dir — points at ST22 duplicate with clean names, simulating pipeline output

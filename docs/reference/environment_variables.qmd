@@ -116,10 +116,10 @@ default_app_features: /deployments/amr_app_features.yaml
 ```bash
 export PYTHONPATH=$PYTHONPATH:.
 
-# Using shortnames (backward compat — resolves to config/app_features/<id>_template.yaml)
+# Using short names (a file name in config/app_features/, without .yaml)
 SPARMVET_APP_FEATURES=developer            ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 SPARMVET_APP_FEATURES=project-independent  ./.venv/bin/python -m shiny run app/src/main.py --port 8001
-SPARMVET_APP_FEATURES=pipeline-static      ./.venv/bin/python -m shiny run app/src/main.py --port 8001
+SPARMVET_APP_FEATURES=pipeline-static SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy ./.venv/bin/python -m shiny run app/src/main.py --port 8001
 
 # Using a file path (recommended for custom/production app features files)
 SPARMVET_APP_FEATURES=/my/configs/amr_app_features.yaml \

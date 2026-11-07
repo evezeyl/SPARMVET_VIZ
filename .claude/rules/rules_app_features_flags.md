@@ -84,7 +84,7 @@ metadata_ingestion_enabled: true/false   ← SEMI-INDEPENDENT (see below)
 - When `import_helper_enabled: true` AND `metadata_ingestion_enabled: true`: metadata upload is nested above the multi-file ingestion control inside the Data Import panel.
 - When both are `false`: no ingestion controls shown.
 
-**Deployment override:** The deployment can set `data_ingestion_enabled: false` to suppress the entire data ingestion section regardless of app features flags. This is for automated-pipeline deployments where data is always pushed by the pipeline. `metadata_ingestion_enabled` is **not** overridden by the deployment — correcting metadata is always a legitimate user action.
+**Deployment override:** The deployment can lock a flag in its `app_features_override:` block, for example `app_features_override: {data_ingestion_enabled: false}`, to suppress the entire data ingestion section regardless of app features flags. This is for automated-pipeline deployments where data is always pushed by the pipeline. `metadata_ingestion_enabled` is **not** overridden by the deployment — correcting metadata is always a legitimate user action.
 
 ---
 
@@ -181,7 +181,7 @@ All 8 app features files declare `data_import_panel_visible: true` (6 app featur
    - Force `data_ingestion_enabled = False`
    - Print `[Bootloader] WARNING: data_ingestion_enabled=True ignored — import_helper_enabled=False`.
 
-3. If deployment sets `data_ingestion_enabled: false` (explicit `False`, not absent):
+3. If the deployment's `app_features_override` lists `data_ingestion_enabled: false` (explicit `False`, not absent):
    - Override app features `data_ingestion_enabled` to `False` unconditionally.
    - Do NOT override `metadata_ingestion_enabled`.
 
@@ -241,7 +241,7 @@ Should return zero hits (only docstrings/comments allowed).
 | `blueprint_agent.backend: claude_cli` with `claude` not installed / not logged in | Adapter init fails; bootloader falls back to `DisabledAdapter` and logs the cause. | Install Claude Code CLI and run `claude --status` to verify auth. |
 | `blueprint_agent.backend: claude_api` with `ANTHROPIC_API_KEY` env var unset | Adapter init fails; fall back to `DisabledAdapter`. | Set the env var, or switch backend to `claude_cli`. |
 | `default_data_analysis_recipe` absent in deployment AND app features hides selector | App fails to start with ConfigurationError: "No data analysis recipe source available." | Add `default_data_analysis_recipe` to deployment, or use an app features that shows the selector. |
-| `data_ingestion_enabled: false` in deployment with `project-independent` app features | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
+| `app_features_override: {data_ingestion_enabled: false}` in deployment with `project-independent` app features | Multi-file ingestion section suppressed inside the Data Import panel. Metadata upload still available (not overridden). | Expected behaviour for auto-pipeline deployments. |
 | `SPARMVET_IRIDA_TOKEN` not set with `deployment_type: irida` | IridaConnector raises AuthenticationError at startup. | Ensure IRIDA injects the token at container launch. |
 
 ---

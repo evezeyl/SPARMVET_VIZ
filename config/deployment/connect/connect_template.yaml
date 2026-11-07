@@ -14,7 +14,7 @@
 #   SPARMVET_APP_FEATURES=pipeline-static   (or whichever app features this deployment shows)
 #
 # If the pipeline produces data via an automated script (not user upload):
-#   Set data_ingestion_enabled: false  in the app features file
+#   Lock it in this deployment: app_features_override: {data_ingestion_enabled: false}
 #   so the Data Import panel is suppressed and data is always pipeline-provided.
 
 deployment_type: filesystem
@@ -61,6 +61,7 @@ runtime:
   python_interpreter: "python"
 
 # Deployment-level feature overrides (applied on top of app features file flags).
-# Set data_ingestion_enabled: false when data is always pushed by the pipeline.
+# Lock data_ingestion_enabled to false when data is always pushed by the pipeline.
 # metadata_ingestion_enabled remains user-controllable and is NOT overridden here.
-# data_ingestion_enabled: false
+# app_features_override:
+#   data_ingestion_enabled: false

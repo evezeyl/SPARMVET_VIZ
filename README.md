@@ -50,7 +50,7 @@ Each library is independently installable and usable without the UI layer. If yo
 
 ## 🚀 Deployment Configuration
 
-SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. Deployment is controlled by a **configuration deployment** (called an app features) that defines which user functionalities are available.
+SPARMVET is designed to be deployed in different contexts — from a read-only pipeline display to a full interactive research workbench. What the user may do is set by the **app features** (a named set of feature flags, one file per set in `config/app_features/`); where the app runs, which folders it uses and which data analysis recipe opens are set by the **deployment** (`config/deployment/`).
 
 ### User functionalities
 
@@ -72,10 +72,10 @@ Every export — regardless of configuration — includes a complete provenance 
 ### Quick start
 
 ```bash
-SPARMVET_APP_FEATURES=pipeline-exploration-simple .venv/bin/python -m shiny run app/src/main.py
+SPARMVET_APP_FEATURES=pipeline-exploration-simple SPARMVET_DATA_ANALYSIS_RECIPE=1_test_data_ST22_dummy .venv/bin/python -m shiny run app/src/main.py
 ```
 
-Available deployments: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom deployments can be created in `config/app_features/`.
+Available app features: `pipeline-static`, `pipeline-exploration-simple`, `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`, `demo-vetinst`, `web-demo`. Custom app features files can be created in `config/app_features/`. A static page (`pipeline-static`, `pipeline-exploration-simple`) hides the data analysis recipe selector, so it must name its data analysis recipe: `SPARMVET_DATA_ANALYSIS_RECIPE=<name>` or `default_data_analysis_recipe` in the deployment.
 
 **Sidebar layout is configurable per app features and per workspace** (Home, Blueprint, Gallery, Test Lab). Each app features file declares its sidebar panel slots under a `workspaces:` key. Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!include`. See [Deployment Configuration](./docs/workflows/ui_app_features.qmd#sidebar-configuration-adr-073) for the full guide and built-in panel type reference.
 
@@ -90,7 +90,7 @@ The built-in `sparmvet_brand` palette is always available even without this file
 .venv/bin/python scripts/validate_app_features_config.py --all --strict
 ```
 
-See [Deployment Configuration](./docs/user_guide/deployment_app_features.qmd) for the full guide, dependency rules, and how to create a custom deployment.
+See [App features](./docs/workflows/ui_app_features.qmd) for the feature flags and their dependency rules, and the [Deployment guide](./docs/deployment/deployment_guide.qmd) for deployments.
 
 ### Posit Connect deployment
 
@@ -116,7 +116,8 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 
 - [Developer Preface & Architecture](./docs/index.qmd): Vision, integrity status, and filter message flow.
 - [Wrangling Guide](./docs/reference/wrangling_guide.qmd): Tier 1/2/3 lifecycle and assembly logic.
-- [Deployment Configuration](./docs/user_guide/deployment_app_features.qmd): User functionalities, dependency rules, and available deployments.
+- [App features](./docs/workflows/ui_app_features.qmd): user functionalities, dependency rules and the available app features files.
+- [Deployment guide](./docs/deployment/deployment_guide.qmd): deployments for Galaxy, IRIDA, servers and a local machine.
 - [Deployment Guide](./docs/deployment/deployment_guide.qmd): Galaxy, IRIDA, server, and local deployment (ADR-048).
 - [Connector / Deployment Schema](./docs/workflows/connector.qmd): Deployment file schema reference.
 

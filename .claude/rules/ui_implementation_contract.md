@@ -314,7 +314,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **Panel:** `Data Import` accordion panel in the left sidebar. Multi-file ingestion section is nested inside when `import_helper_enabled: true`.
 
-**App features gate:** `import_helper_enabled: true` in app features file. Available to ≥ `project-independent` and `developer`. Hidden for lower app features files. Also deactivatable at the deployment level (deployment sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
+**App features gate:** `import_helper_enabled: true` in app features file. Available to ≥ `project-independent` and `developer`. Hidden for lower app features files. Also deactivatable at the deployment level (the deployment's `app_features_override` sets `data_ingestion_enabled: false`) for deployments where data is always pushed automatically by a pipeline — the Data Import ingestion section is suppressed entirely (metadata upload remains available, see §9).
 
 **Supported ingestion types:**
 - **Raw data** — TSV/CSV instrument output
