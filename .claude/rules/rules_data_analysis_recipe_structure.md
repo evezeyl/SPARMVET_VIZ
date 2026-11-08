@@ -264,18 +264,75 @@ Deployment palettes are defined in `config/palettes.yaml` and loaded by `bootloa
 
 ---
 
-## 11. Data analysis recipe Load Errors (ADR-087)
+## 11. Data analysis recipe Load Errors (ADR-087, extended by ADR-094)
 
-> **Implementation status:** target behaviour. `ConfigManager` still exits on a data analysis recipe error until the fork issue for data analysis recipe error handling is done.
+> **Implementation status (2026-11-08):** HOME's automatic load gate (below) is implemented
+> and is how ADR-087's promise is actually kept today. `ConfigManager` itself is unchanged —
+> it still calls `exit_if_errors` (`sys.exit`) on a broken data analysis recipe. What changed
+> is that HOME never hands it one: every recipe is checked once at `Bootloader` startup, and a
+> recipe that fails never reaches `ConfigManager` through HOME's normal path. BLUEPRINT's own
+> recipe-load path is intentionally untouched — BLUEPRINT is meant to show you the error, not
+> hide it (see §11a).
 
-- A problem in a data analysis recipe (missing `analysis_groups:`, missing `!include` file, bad step list shape) raises `DeploymentFailure` carrying the same `DeploymentError` records and operator-readable block as before (ADR-078). It never calls `sys.exit`.
-- Code that loads a data analysis recipe catches it, shows the data analysis recipe name, location and fix to the user (notification/alerts panel), leaves that data analysis recipe out of the project list, and keeps running.
-- Command-line scripts and audits catch it, print the block and exit non-zero themselves.
-- Zero valid data analysis recipes is a valid state: the app starts with an empty state, and `default_data_analysis_recipe` in the deployment is optional.
-- Deployment configuration errors (deployment, connector, app features file) stay fatal at startup (ADR-077).
-- To check a data analysis recipe without loading it into the app, use `validate_data_analysis_recipe()` (`app/modules/data_analysis_recipe_validator.py`).
-- `validate_data_analysis_recipe_data(path, raw_data_dir)` (same module) also reads the data files and reports a dataset that cannot be loaded and an `output_fields` entry that matches no column after tier-1 wrangling, with a "did you mean" hint (issue #18). The engine does not apply `output_fields` of a data schema, so a wrong name there is otherwise silent. `app/tests/test_data_analysis_recipe_data_check.py` runs it on every shipped data analysis recipe.
-- A dataset that the requested collection needs and that cannot be loaded makes `materialize_tier1` raise `IngestionError` naming the dataset and the reason. Before issue #18 it was dropped and the join steps that used it were skipped with a console line.
+### 11a. HOME's automatic load gate (ADR-094) — different rule for HOME than for BLUEPRINT
+
+HOME and BLUEPRINT need opposite failure behaviour, not the same one: HOME runs an
+already-built recipe for a user who may not be able to fix it; BLUEPRINT is where errors are
+the expected, normal state while building one.
+
+- **HOME — automatic, blocking, no button to press.** `Bootloader` (module-level singleton,
+  created once per app process) runs `validate_data_analysis_recipe()` (structure) and
+  `validate_data_analysis_recipe_data()` (data vs. declared contract) against every discovered
+  recipe once at startup. A recipe that fails either check is excluded from
+  `bootloader.available_data_analysis_recipes` — it can never be selected, never becomes the
+  default — and recorded in `bootloader.rejected_data_analysis_recipes` with its problems and a
+  resolved contact. HOME's "Data analysis recipe Choice" panel shows rejected recipes beneath
+  the selector. The app never crashes because of a bad recipe; a bad recipe is simply not an
+  option, with a visible reason.
+- **BLUEPRINT — manual, advisory, unchanged.** The "Validate" action (`btn_bp_validate`,
+  BP-VALIDATE-1 / VALIDATE-UI-1) runs the same two checks on demand. Nothing is excluded or
+  blocked — BLUEPRINT's job is to help you see and fix the problem, not hide the recipe from you.
+- **Contact resolution, two tiers, no fabrication.** `resolve_contact()`
+  (`data_analysis_recipe_validator.py`): the rejected recipe's own `info.contact` first, else
+  the deployment's `branding.contact` (`config/deployment/.../*.yaml`), else nothing shown.
+  `info.contact` is a recommended (not required) field in a recipe's `info:` block — the only
+  way a HOME user can reach a real contact when BLUEPRINT is not part of that deployment
+  (`blueprint_enabled: false`, e.g. `pipeline-static`, `pipeline-exploration-simple`).
+  `read_data_analysis_recipe_header(path)` reads `info.contact` via a bare `yaml.safe_load` —
+  no `ConfigManager`, no engine — so it survives a recipe broken badly enough to fail every
+  other check.
+- **The operator-named default gets the same gate, not a bypass.** If
+  `default_data_analysis_recipe` names a recipe that exists but fails the gate: selector
+  visible → HOME falls through to the first recipe that passes, never silently opens the broken
+  one; selector hidden (no escape hatch for the user) → still fatal at startup, same as a
+  genuine "not found" typo, but the message names the real cause and the contact instead of
+  suggesting a spelling fix.
+- **Scope boundary:** if literally every recipe fails the gate, `get_default_data_analysis_recipe()`
+  still raises (unchanged exception type, improved message) rather than a new graceful
+  empty-state screen — building that is separate, larger, future work. The common case (some
+  recipes valid, some not) is what the gate makes safe.
+- **Pre-release deployment testing is a separate, earlier line of defense**, not replaced by
+  this gate — the gate is the second line, for drift after release.
+
+### 11b. The underlying checks
+
+- A problem in a data analysis recipe's own shape (missing `analysis_groups:`, missing
+  `!include` file, bad step list shape) raises `DeploymentFailure` inside
+  `validate_data_analysis_recipe()` (caught internally — `ConfigManager`'s own `sys.exit` on
+  this path is intercepted and turned into a reported problem, never propagates).
+- Command-line scripts and audits catch load problems directly, print the block and exit
+  non-zero themselves — unchanged.
+- To check a data analysis recipe without loading it into the app, use
+  `validate_data_analysis_recipe()` (`app/modules/data_analysis_recipe_validator.py`).
+- `validate_data_analysis_recipe_data(path, raw_data_dir)` (same module) also reads the data
+  files and reports a dataset that cannot be loaded and an `output_fields` entry that matches
+  no column after tier-1 wrangling, with a "did you mean" hint (issue #18). The engine does not
+  apply `output_fields` of a data schema, so a wrong name there is otherwise silent.
+  `app/tests/test_data_analysis_recipe_data_check.py` runs it on every shipped data analysis
+  recipe; `app/tests/test_data_analysis_recipe_load_gate.py` runs the full gate.
+- A dataset that the requested collection needs and that cannot be loaded makes
+  `materialize_tier1` raise `IngestionError` naming the dataset and the reason. Before issue #18
+  it was dropped and the join steps that used it were skipped with a console line.
 
 ---
 

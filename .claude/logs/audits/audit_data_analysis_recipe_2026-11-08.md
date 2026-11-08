@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (UI wireframes sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (ADR-094 HOME load gate sweep)
 
 # Audit Report: Data Analysis Recipe Structure Integrity
-Generated: 2026-11-08T09:47:10
+Generated: 2026-11-08T10:44:54
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Assembler: libs/transformer/tests/debug_assembler.py
 Scratch output: tmpAI/audit_data_analysis_recipe_integrity

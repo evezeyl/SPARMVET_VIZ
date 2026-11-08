@@ -35,7 +35,14 @@ def _deployment(tmp_path, name="dep.yaml", recipe=None, **extra):
         locations[key] = str(root / key)
     body = {"deployment_type": "filesystem", "deployment_name": name, "locations": locations}
     if recipe:  # a recipe that exists in the recipes folder and is the deployment default
-        (root / "data_analysis_recipes" / f"{recipe}.yaml").write_text(f"id: {recipe}\n")
+        # Minimal but valid (ADR-094 load gate): a non-empty analysis_groups with one group
+        # and one plot clears ConfigManager's own "analysis_groups required" check (an empty
+        # dict is falsy, so {} alone is not enough); no data_schemas means nothing for
+        # validate_data_analysis_recipe_data() to check. These tests are about launch-variable
+        # resolution, not recipe content, so the fixture only needs to clear the gate.
+        (root / "data_analysis_recipes" / f"{recipe}.yaml").write_text(
+            f"id: {recipe}\nanalysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {{}}\n"
+        )
         body["default_data_analysis_recipe"] = recipe
     body.update(extra)
     path = tmp_path / name
@@ -138,8 +145,8 @@ def test_missing_location_folder_stops_the_app(tmp_path, monkeypatch):
 
 def test_recipes_are_listed_from_the_data_analysis_recipes_folder(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path, **{"default_app_features": "qa"})
-    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
-    (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\n")
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\nanalysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {}\n")
+    (root / "data_analysis_recipes" / "beta.yaml").write_text("id: beta\nanalysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {}\n")
     (root / "data_analysis_recipes" / "notes.txt").write_text("not a manifest\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     assert sorted(Bootloader().available_data_analysis_recipes) == ["alpha", "beta"]
@@ -147,14 +154,14 @@ def test_recipes_are_listed_from_the_data_analysis_recipes_folder(tmp_path, monk
 
 def test_deployment_default_recipe_opens_first(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path, recipe="beta", **{"default_app_features": "qa"})
-    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\nanalysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {}\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     assert Bootloader().get_default_data_analysis_recipe() == "beta"
 
 
 def test_launch_variable_beats_the_deployment_default_recipe(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path, recipe="beta", **{"default_app_features": "qa"})
-    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\nanalysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {}\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     monkeypatch.setenv("SPARMVET_DATA_ANALYSIS_RECIPE", "alpha")
     assert Bootloader().get_default_data_analysis_recipe() == "alpha"
@@ -181,7 +188,7 @@ def test_hidden_selector_without_a_named_recipe_stops_the_app(tmp_path, monkeypa
 
 def test_visible_selector_without_a_named_recipe_opens_the_first_one(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path, **{"default_app_features": "qa"})
-    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\n")
+    (root / "data_analysis_recipes" / "alpha.yaml").write_text("id: alpha\nanalysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {}\n")
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     b = Bootloader()
     assert b.get_default_data_analysis_recipe() == "alpha"

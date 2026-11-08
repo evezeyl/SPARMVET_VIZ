@@ -1,9 +1,9 @@
 """
 @deps
-provides: function:validate_data_analysis_recipe, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, class:DataAnalysisRecipeProblem
+provides: function:validate_data_analysis_recipe, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/transformer/src/transformer/data_wrangler.py, app/modules/orchestrator.py
-consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1)
-doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3
+consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
+doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
 
 Data analysis recipe validator (headless, no Shiny).
@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional, Union
 
+import yaml
 from transformer.data_wrangler import DataWrangler
 from utils.config_loader import ConfigManager
 
@@ -180,3 +181,33 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
             problems.append(DataAnalysisRecipeProblem(
                 name, f"{location}.output_fields.{slug}", f"declared column '{slug}' matches no column of the dataset", tip))
     return problems
+
+
+def read_data_analysis_recipe_header(path: Union[str, Path]) -> Optional[dict]:
+    """Read just the `id:`/`info:` keys of a data analysis recipe, tolerant of a broken body.
+
+    HOME's load gate (ADR-094) rejects a data analysis recipe whose structure or data fails
+    validation — but the rejection message still needs to show *who to contact*, and the
+    `info.contact` convention (data_analysis_recipe_info.py) lives in the same file as the
+    broken part. A plain `yaml.safe_load` (no `!include` resolution, no ConfigManager, no
+    engine involvement) reads what it can; a YAML file broken badly enough that even this
+    fails returns None rather than raising — the caller falls back to the deployment contact.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = yaml.safe_load(f)
+    except Exception:
+        return None
+    if not isinstance(raw, dict):
+        return None
+    return {"id": raw.get("id"), "info": raw.get("info") if isinstance(raw.get("info"), dict) else {}}
+
+
+def resolve_contact(info: Optional[dict], deployment_contact: Optional[str]) -> Optional[str]:
+    """Two-tier contact resolution (ADR-094): the data analysis recipe's own `info.contact`,
+    else the deployment's own contact, else None (never a fabricated placeholder)."""
+    if info:
+        recipe_contact = info.get("contact")
+        if recipe_contact:
+            return str(recipe_contact)
+    return deployment_contact or None

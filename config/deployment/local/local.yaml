@@ -5,6 +5,11 @@ deployment_type: filesystem
 deployment_name: "SPARMVET_VIZ (Local Dev)"
 default_app_features: "developer"
 
+# ADR-094: fallback contact HOME shows when a data analysis recipe's own info.contact is
+# absent and it fails the load gate. Dev deployment points at the repo's own issue tracker.
+branding:
+  contact: "https://github.com/evezeyl/SPARMVET_VIZ/issues"
+
 locations:
   # Location 1: Raw ingestion data
   raw_data: "assets/test_data/"

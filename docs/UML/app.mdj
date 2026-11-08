@@ -42560,9 +42560,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 362,
+													"left": 284,
 													"top": 593,
-													"width": 506.62548828125,
+													"width": 662.77783203125,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -42570,7 +42570,7 @@
 														"$ref": "AAAAAAGht1v6RGhwDPQ="
 													},
 													"edgePosition": 1,
-													"text": "11 : _resolve_default_data_analysis_recipe, hidden selector and no name stops the app"
+													"text": "11 : discover + validate every recipe (ADR-094), resolve default: hidden selector and no usable name stops the app"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -43038,7 +43038,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1vysGawOmM="
 									},
-									"name": "_resolve_default_data_analysis_recipe, hidden selector and no name stops the app",
+									"name": "discover + validate every recipe (ADR-094), resolve default: hidden selector and no usable name stops the app",
 									"source": {
 										"$ref": "AAAAAAGht1v0Lmb/Mg4="
 									},

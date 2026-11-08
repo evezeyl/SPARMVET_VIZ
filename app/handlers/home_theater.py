@@ -33,7 +33,7 @@ from __future__ import annotations
 # consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_audit_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
+# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
 # @end_deps
 
 import re
@@ -43,6 +43,7 @@ import polars as pl
 from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.view_badge import has_tier2_steps, view_badge
+from utils.pipeline_error import PipelineError
 
 from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
@@ -448,6 +449,37 @@ def define_server(input, output, session, *,
             try:
                 lf = _resolve_active_lf(spec, tier="T2")
             except Exception as e:
+                # ADR-094: data materialization (ingestion/assembly) failures get the same
+                # session_pipeline_errors capture the VizFactory render path already has
+                # (below) — same deferred-write pattern (R1-safe), same "Pipeline Issues"
+                # panel (audit_stack.py:pipeline_issues_ui). A PipelineError's own fields
+                # are used when the failure is one (component/problem/who/fix); a plain
+                # exception falls back to its message, same as before this change.
+                if session_pipeline_errors is not None:
+                    from datetime import datetime
+                    if isinstance(e, PipelineError):
+                        _entry = {
+                            "timestamp": datetime.now().isoformat(),
+                            "component": e.component,
+                            "problem": e.problem[:200],
+                            "severity": e.severity,
+                            "location": e.location,
+                            "fix": e.fix,
+                            "who": e.who,
+                        }
+                    else:
+                        _entry = {
+                            "timestamp": datetime.now().isoformat(),
+                            "component": "DataOrchestrator",
+                            "problem": str(e)[:200],
+                            "severity": "error",
+                            "location": f"materialize(plot_id='{p_id}')",
+                        }
+                    def _append_data_error(entry=_entry):
+                        current = session_pipeline_errors.get()
+                        if len(current) < 50:
+                            session_pipeline_errors.set(current + [entry])
+                    session.on_flushed(_append_data_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Data error: {e}", ha="center", va="center",
@@ -1488,12 +1520,40 @@ def define_server(input, output, session, *,
             )
 
         def _render_data_analysis_recipe_choice():
+            rejected = bootloader.rejected_data_analysis_recipes
+            rejected_block = None
+            if rejected:
+                rejected_block = ui.div(
+                    ui.tags.small(
+                        f"{len(rejected)} recipe(s) unavailable — failed data or structure check:",
+                        class_="text-muted d-block mt-2 mb-1",
+                        style="font-size: 0.68rem;",
+                    ),
+                    *[
+                        ui.div(
+                            ui.tags.div(name, style="font-size: 0.72rem; font-weight: 600; color: #d62828;"),
+                            ui.tags.div(
+                                "; ".join(r["problems"][:2]) + (" ..." if len(r["problems"]) > 2 else ""),
+                                style="font-size: 0.68rem;",
+                            ),
+                            ui.tags.div(
+                                f"Contact: {r['contact']}" if r.get("contact") else
+                                "Contact: not configured for this deployment",
+                                style="font-size: 0.68rem; color: #6c757d;",
+                            ),
+                            style="margin: 2px 0 6px 0; padding: 4px 6px; "
+                                  "background: #ffe0e0; border-radius: 3px;",
+                        )
+                        for name, r in sorted(rejected.items())
+                    ],
+                )
             return ui.accordion_panel(
                 "Data analysis recipe Choice",
                 ui.div(
                     ui.input_select("data_analysis_recipe_id", "Data analysis recipe",
                                     choices=data_analysis_recipe_choices,
                                     selected=_current_data_analysis_recipe),
+                    rejected_block,
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")

@@ -64,8 +64,22 @@ different checks (recipe structure vs. data-vs-contract), where to run them, and
 engine does with a mismatched column when nobody runs the check (silent skip). Prompted by Eve
 asking for the "process of failures" to be explained from the user's perspective; writing it
 surfaced that `validate_data_analysis_recipe_data()` (the data-vs-contract check) was built and
-tested but called from nowhere in the running app — fixed the same day (`VALIDATE-UI-1`, ADR-093)
-rather than documented as a known gap. Backed by a new `REQ-VIZ-DATA-02` in `REQ-CORE`.
+tested but called from nowhere in the running app — fixed the same day (`VALIDATE-UI-1`). Backed
+by a new `REQ-VIZ-DATA-02` in `REQ-CORE`.
+
+**Extended (2026-11-08, ADR-094):** Eve's follow-up clarified HOME and BLUEPRINT need opposite
+failure behaviour (HOME automatic/blocking, BLUEPRINT manual/advisory) and surfaced a real gap —
+no deployment had anywhere to declare a contact for a HOME user who hits a broken recipe with no
+BLUEPRINT available. `data_contract_and_failures.md` rewritten to describe the final state;
+`quality_goals.md`'s `REQ-VIZ-DATA-02` wording unchanged (already generic enough); `SEQ-LAUNCH`'s
+`_resolve_default_data_analysis_recipe` message renamed to name the new discover+validate step
+(the gate itself has no dedicated diagram — `data_contract_and_failures.md`'s prose covers it
+better than a sequence diagram would, same reasoning as D1/D3's "no diagram shows this well" cases).
+While wiring ADR-079 alongside this, found its own implementation was further along than its
+status line or `tasks.md` said: `session_pipeline_errors` capture and the `report.qmd` "Pipeline
+Issues During Session" section already existed (one catch point, VizFactory render failures) —
+corrected both the ADR-079 status line and the stale `PIPELINE-ERROR-WIRE-1` task description
+rather than re-building what was already there.
 
 **Done (2026-11-07):** GALLERY, BLUEPRINT, TEST_LAB use case diagrams (UC-GALLERY, UC-BLUEPRINT,
 UC-TESTLAB) and C4 component diagrams (C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB),

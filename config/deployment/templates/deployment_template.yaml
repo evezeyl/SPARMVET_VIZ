@@ -37,6 +37,17 @@ default_data_analysis_recipe: "pipeline_name"   # file name without .yaml in the
 #   If absent: app features selector is shown (or defaults to pipeline-static).
 default_app_features: pipeline-static
 
+# ─── Branding (ADR-094) ────────────────────────────────────────────────────────
+# branding.contact: shown to a HOME user when a data analysis recipe fails the automatic
+#   load gate (structure + data-vs-contract check) and its own info.contact is absent or
+#   unreadable. Strongly recommended for any deployment that hides the recipe selector
+#   (pipeline-static, pipeline-exploration-simple) — in that case a broken default recipe
+#   is the ONLY thing a user sees, and this is their only way to know who to ask.
+# branding.banner: optional {logo_url, title, subtitle} shown in the Deployment info panel.
+# branding.theme_css: optional path to a CSS file loaded after the default stylesheet.
+branding:
+  contact: "team@example.org"   # email, issue tracker URL, or any short contact string
+
 # ─── Filesystem locations ─────────────────────────────────────────────────────
 # project_root: absolute base path for this deployment.
 #   All sub-paths under 'locations' are relative to this.

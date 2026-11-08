@@ -20,6 +20,10 @@ branding:
     logo_url: "assets/demo/logo-no.svg"
     title: "AMR Surveillance — Overview"
     subtitle: "Norwegian Veterinary Institute"
+  # ADR-094: this deployment hides the data analysis recipe selector (static/pipeline style) —
+  # a user here has no BLUEPRINT and no way to pick a different recipe, so if the one recipe
+  # this deployment names fails the load gate, this is the only contact they can be shown.
+  contact: "amr-surveillance@vetinst.no"
 
 runtime:
   python_interpreter: "./.venv/bin/python"

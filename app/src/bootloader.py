@@ -1,8 +1,8 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes
-# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import)
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)
+# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, read_data_analysis_recipe_header, resolve_contact — ADR-094)
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
-# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, project_conventions.md §"Deployment Resolution"
+# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094, project_conventions.md §"Deployment Resolution"
 # @end_deps
 # app/src/bootloader.py
 #
@@ -24,6 +24,12 @@ from pathlib import Path
 from typing import Dict, Any
 
 from app.modules.deployment_error import DeploymentError, exit_if_errors
+from app.modules.data_analysis_recipe_validator import (
+    read_data_analysis_recipe_header,
+    resolve_contact,
+    validate_data_analysis_recipe,
+    validate_data_analysis_recipe_data,
+)
 from utils.path_expansion import expand_deployment_paths
 from app.modules.renamed_keys import (
     renamed_app_features_key_errors,
@@ -168,9 +174,15 @@ class Bootloader:
             )])
         self.set_app_features(self.app_features)
 
-        # 3. Data analysis recipes folder (agnostic discovery)
+        # 3. Data analysis recipes folder (agnostic discovery) + HOME load gate (ADR-094).
+        # Every discovered recipe is checked once at startup (structure + data vs. contract);
+        # a recipe that fails either check never reaches HOME's selector or its default slot —
+        # it is reported, with a contact, and the app keeps running on the recipes that pass.
         self.data_analysis_recipes_dir = self.get_location("data_analysis_recipes")
-        self.available_data_analysis_recipes = self._discover_data_analysis_recipes()
+        self._all_data_analysis_recipes = self._discover_data_analysis_recipes()
+        self.available_data_analysis_recipes, self.rejected_data_analysis_recipes = (
+            self._validate_data_analysis_recipes(self._all_data_analysis_recipes)
+        )
         self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
 
     def _resolve_deployment_path(self) -> tuple[Path, int]:
@@ -325,27 +337,84 @@ class Bootloader:
         mf_files = list(self.data_analysis_recipes_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
+    def _validate_data_analysis_recipes(self, candidates: Dict[str, str]) -> tuple[Dict[str, str], Dict[str, dict]]:
+        """HOME load gate (ADR-094): split discovered recipes into usable and rejected.
+
+        Runs once at startup (this is the module-level bootloader singleton, not per-session).
+        Two checks, same functions BLUEPRINT's own Validate action uses (VALIDATE-UI-1):
+        structure (`validate_data_analysis_recipe`) and data vs. declared contract
+        (`validate_data_analysis_recipe_data`). A recipe failing either never reaches
+        `available_data_analysis_recipes` — HOME must never silently run, or silently fail to
+        run, on a recipe that does not match its own contract.
+        """
+        available: Dict[str, str] = {}
+        rejected: Dict[str, dict] = {}
+        raw_data_dir = self.get_location("raw_data")
+        for name, path in candidates.items():
+            problems = validate_data_analysis_recipe(path)
+            if not problems:
+                try:
+                    problems = validate_data_analysis_recipe_data(path, raw_data_dir, data_lookup=self.data_lookup)
+                except Exception as e:
+                    problems = [f"data-vs-contract check could not run: {e}"]
+            if problems:
+                header = read_data_analysis_recipe_header(path)
+                info = header.get("info") if header else None
+                rejected[name] = {
+                    "problems": [str(p) for p in problems],
+                    "contact": resolve_contact(info, self.get_contact()),
+                }
+            else:
+                available[name] = path
+        return available, rejected
+
+    def get_contact(self) -> str | None:
+        """The deployment's own contact (ADR-094 fallback tier), or None if not configured."""
+        return (self.deployment_config.get("branding") or {}).get("contact") or None
+
     def _resolve_default_data_analysis_recipe(self) -> str | None:
         """SPARMVET_DATA_ANALYSIS_RECIPE, then default_data_analysis_recipe of the deployment.
 
-        A named data analysis recipe that is not in the data analysis recipes folder, or a hidden selector with nothing
-        named, is an operator mistake and stops the app (ADR-077, ADR-091)."""
+        A named data analysis recipe that does not exist on disk at all, or a hidden selector
+        with nothing named, is an operator mistake and stops the app (ADR-077, ADR-091) — same
+        as before. A named data analysis recipe that exists but failed the load gate (ADR-094)
+        is different: the operator did not make a typo, the recipe's content is wrong. With the
+        selector visible, fall through to the first *valid* recipe (the user can pick another);
+        with the selector hidden there is no user-facing way to pick differently, so it is still
+        fatal, but the message says why (and who to contact) instead of suggesting a spelling fix.
+        """
         source, name = None, None
         if os.environ.get("SPARMVET_DATA_ANALYSIS_RECIPE"):
             source, name = "SPARMVET_DATA_ANALYSIS_RECIPE", os.environ["SPARMVET_DATA_ANALYSIS_RECIPE"]
         elif self.default_data_analysis_recipe:
             source, name = "default_data_analysis_recipe", str(self.default_data_analysis_recipe)
         if name:
-            if name not in self.available_data_analysis_recipes:
+            if name in self.available_data_analysis_recipes:
+                return name
+            if name not in self._all_data_analysis_recipes:
                 exit_if_errors([DeploymentError(
                     component="Bootloader",
                     problem=f"The data analysis recipe '{name}' named by {source} was not found.",
                     location=f"{source} (data analysis recipes folder: {self.data_analysis_recipes_dir})",
                     fix=("Use the file name without .yaml of a data analysis recipe in the data analysis recipes folder. "
-                         f"Found: {sorted(self.available_data_analysis_recipes) or 'none'}."),
+                         f"Found: {sorted(self._all_data_analysis_recipes) or 'none'}."),
                     who="operator", reference=_BOOT_REF,
                 )])
-            return name
+            # Exists on disk, but failed the load gate (ADR-094).
+            rejection = self.rejected_data_analysis_recipes.get(name, {})
+            if not self.get_data_analysis_recipe_selector().get("visible", True):
+                exit_if_errors([DeploymentError(
+                    component="Bootloader",
+                    problem=f"The data analysis recipe '{name}' named by {source} failed validation.",
+                    location=f"{source} ({self.data_analysis_recipes_dir / (name + '.yaml')})",
+                    fix=("Fix the recipe's structure or data, or point " + source + " at a different recipe. "
+                         f"Problems: {'; '.join(rejection.get('problems', [])) or 'see validation output'}. "
+                         f"Contact: {rejection.get('contact') or 'not configured for this deployment'}."),
+                    who="operator", reference=_BOOT_REF,
+                )])
+            # Selector visible: do not crash, do not silently use a broken recipe — fall through
+            # to "pick the first valid one" / "no valid recipe" below, same as if none was named.
+            return None
         if not self.get_data_analysis_recipe_selector().get("visible", True):
             exit_if_errors([DeploymentError(
                 component="Bootloader",
@@ -360,11 +429,18 @@ class Bootloader:
     def get_default_data_analysis_recipe(self) -> str:
         """The data analysis recipe that opens at startup (ADR-091): the launch variable, then the
         deployment default, otherwise the first available one (the user chooses when the
-        selector is shown)."""
+        selector is shown). "Available" means it passed the ADR-094 load gate — a rejected
+        recipe is never silently picked, including as this fallback."""
         if self.default_data_analysis_recipe_name:
             return self.default_data_analysis_recipe_name
         if not self.available_data_analysis_recipes:
-            raise FileNotFoundError("No data analysis recipes found in Location 2.")
+            if self.rejected_data_analysis_recipes:
+                names = ", ".join(sorted(self.rejected_data_analysis_recipes))
+                raise FileNotFoundError(
+                    f"No usable data analysis recipe in {self.data_analysis_recipes_dir}: "
+                    f"{len(self.rejected_data_analysis_recipes)} found but failed the load gate ({names})."
+                )
+            raise FileNotFoundError(f"No data analysis recipes found in {self.data_analysis_recipes_dir}.")
         return list(self.available_data_analysis_recipes.keys())[0]
 
     def _load_deployment_config(self) -> Dict[str, Any]:

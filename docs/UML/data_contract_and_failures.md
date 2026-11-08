@@ -4,7 +4,7 @@ Written for the person running an analysis, not for a developer. It answers the 
 scientist actually asks: "how do I know the plot in front of me is built from the data I think it
 is, in the shape the recipe expects?" Backed by `REQ-VIZ-DATA-02` in `REQ-CORE`
 (`.claude/design/uml_model_plan.md` section 3); see `quality_goals.md` section 3 for the sibling
-goal about stale results.
+goal about stale results. ADR-094 is the decision behind this page.
 
 ## The two different things "my data is wrong" can mean
 
@@ -15,17 +15,38 @@ goal about stale results.
    called `sample_id`; your file has `Sample_ID`. The recipe expects a numeric `Year`; your file
    has text in that column. This is specific to the file you loaded today.
 
-These need two different checks, and until 2026-11-08 only the first one actually ran anywhere in
-the app.
+Both are checked by the same two functions everywhere in the app — but **HOME and BLUEPRINT use
+them differently, on purpose**, because the two spaces have opposite jobs (ADR-094).
 
-## Where to run the check
+## HOME: automatic, before you ever see a broken recipe
 
-BLUEPRINT's left sidebar has a **Validate** panel with one button, "Run validation". Click it with
-a data analysis recipe loaded. It runs both checks and shows one combined result:
+HOME is where you run an already-built recipe. You likely did not write it, and in some
+deployments there is no BLUEPRINT at all to fix it in. So HOME's check is not a button — it runs
+by itself:
+
+- Once, when the app starts (not per session, not per click), every recipe the app can find is
+  checked: structure, then data-vs-contract.
+- A recipe that fails either check **never appears in HOME's recipe selector** and can never be
+  the one that opens automatically. It is simply not an option.
+- The "Data analysis recipe Choice" panel in the left sidebar shows, beneath the selector, which
+  recipes were left out and why — the problem, and who to contact about it.
+- **The app never crashes because of a bad recipe.** Excluding it is not treated as a fatal
+  error; everything that did pass the check works normally.
+
+This is deliberately stricter than BLUEPRINT. You cannot "run anyway and see what happens" in
+HOME — a recipe that fails the check is not run at all, not run with a warning.
+
+## BLUEPRINT: manual, because errors are the normal state while building
+
+BLUEPRINT is the IDE for building and editing recipes. While you are building one, it being
+broken is expected, not exceptional — the whole point is to see what is wrong and fix it. So
+BLUEPRINT's left sidebar has a **Validate** panel with a button, "Run validation", that you press
+when you want to check. It runs the same two checks as HOME's automatic gate and shows one
+combined result:
 
 - **Recipe structure** (four rows: parse errors, invalid action names, invalid component names,
-  join key violations) — always ran.
-- **Data vs contract** (one row, plus a detail card per problem) — wired in 2026-11-08.
+  join key violations).
+- **Data vs contract** (one row, plus a detail card per problem).
 
 A data-vs-contract problem shows you exactly where it is and, when the app can guess, what you
 probably meant:
@@ -36,21 +57,42 @@ declared column 'Sample_ID' matches no column of the dataset
 Did you mean 'sample_id'?
 ```
 
-## What you must know before trusting a result
+**This check is still manual inside BLUEPRINT.** It runs only when you press the button — not
+automatically on load or on data swap. That is correct for BLUEPRINT: you are iterating, and a
+recipe is not finished yet.
 
-**This check is not automatic.** It runs only when you press the button. Loading a data analysis
-recipe, uploading data, or running an analysis in HOME does **not** trigger it. If you never click
-Validate, a mismatched column can still slip through silently — see the next section for exactly
-what "silently" means.
+## If a recipe fails and there is nobody to fix it
 
-**Run it after every data swap, not just once.** The check reads the file that is currently
-assigned to each dataset. If you replace the underlying TSV without re-running Validate, the old
-result stays unchecked.
+Some deployments have no BLUEPRINT at all (`blueprint_enabled: false` — a static or
+exploration-only deployment). If the one recipe such a deployment names fails the check, a HOME
+user genuinely cannot fix it themselves. For that case the rejection message names a contact,
+resolved in two steps:
 
-## What happens if you skip the check and a column is wrong
+1. The recipe's own `info.contact` field, if the recipe author set one.
+2. Otherwise the deployment's own `branding.contact` field.
+3. If neither is set, nothing is shown — the app never invents a contact.
 
-This is the part worth knowing even if you always remember to click Validate: what does the engine
-itself do with a mismatched column name, with no check running at all?
+Contact resolution works even when the recipe is too badly broken to load normally — it reads
+just the `id:`/`info:` part of the file directly, separately from the part that failed.
+
+**This does not replace testing a deployment before release.** Catching a bad recipe during
+deployment testing, before any user sees it, is still the first and better line of defense. This
+gate is the second line, for drift after release — a data file that changes shape on disk, a
+recipe hand-edited on the server after the fact.
+
+## What happens if a recipe gets past both checks and still goes wrong while running
+
+Passing the load gate does not mean nothing can go wrong — a file can disappear between the check
+and the moment a plot actually renders, for instance. When that happens during an active HOME
+session, the failure is now captured into the session's own "Pipeline Issues" log (visible in the
+right sidebar) with what broke and which component it was, instead of only a plain red error on
+the plot itself. This is a first, partial step — not every kind of runtime failure is covered yet
+(see "What is still open" below).
+
+## What the underlying engine does with a mismatched column, with no check at all
+
+Worth knowing regardless of which check you rely on: what does the engine itself do with a
+mismatched column name, with nothing checking at all?
 
 - An `input_fields` slug that matches no real column in your TSV is **silently skipped** — no
   error, no warning, anywhere in the app. The wrangling step that referenced it simply does
@@ -62,8 +104,8 @@ itself do with a mismatched column name, with no check running at all?
 Neither of these stops the app or changes the plot's shape in an obviously wrong way — the rest of
 the pipeline runs normally on whatever columns *did* match, and you get a plot. It can look
 completely plausible while quietly missing or misusing the field you thought it was using. This is
-why the data-vs-contract check matters more than it might first appear: it is the only thing
-standing between a renamed column and a published figure built on the wrong data.
+why the data-vs-contract check matters more than it might first appear, and why HOME's gate runs
+automatically rather than waiting for someone to remember to press a button.
 
 ## How this relates to reproducibility
 
@@ -76,12 +118,11 @@ wrong — the two checks exist for different failure modes and neither one cover
 
 ## What is still open
 
-- The check is manual, not automatic. Auto-running it on every data analysis recipe load or data
-  upload was considered and deliberately left out of the 2026-11-08 fix: the recipe-structure half
-  runs as a subprocess and can take up to 30 seconds, so firing it on every upload would make the
-  app feel slow. If this becomes a real problem in practice, it is a separate, smaller follow-up —
-  not a reason to distrust the check that exists today.
-- There is no equivalent check inside HOME itself (only in BLUEPRINT) — a HOME user who did not
-  build the recipe has no button of their own to confirm the data matches. Today the expectation
-  is that whoever builds or imports a recipe in BLUEPRINT validates it before handing it to a HOME
-  user; there is no enforcement of that handoff.
+- If literally every recipe in a deployment fails the gate, the app still stops with an error at
+  startup rather than showing a polished empty state — a real, separate, larger piece of work for
+  later. The common case this page describes — some recipes valid, some not — is fully safe today;
+  this is about the rare, all-fail edge.
+- Runtime capture ("What happens if a recipe gets past both checks" above) is wired for the most
+  common path (a plot's underlying data failing to materialize) but not yet for every kind of
+  mid-session failure (a plot component itself failing to render, a T3 audit-apply failing, an
+  upload being rejected). Tracked as `PIPELINE-ERROR-WIRE-2`.
