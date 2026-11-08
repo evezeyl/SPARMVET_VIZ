@@ -44,9 +44,10 @@ BLUEPRINT implements the "Flight Deck" layout (`rules_ui_dashboard.md §7`): a c
 stack flanked by a navigation sidebar (left) and a logic sidebar (right).
 
 ::: {.lightbox}
-![UI-BLUEPRINT: the screen, panel by panel, each one tagged with the code that owns it and the
-flag that gates it. Source: `docs/UML/app.mdj`, package `BLUEPRINT` (ADR-096 — StarUML trial mode
-watermarks this image; a clean re-export follows once licensed,
+![UI-BLUEPRINT: the screen, panel by panel, in plain language — redrawn 2026-11-08 to describe
+what a user actually sees, not the code or flag behind each panel (those are in the prose
+below). Source: `docs/UML/app.mdj`, package `BLUEPRINT` (ADR-096 — StarUML trial mode watermarks
+this image; a clean re-export follows once licensed,
 `.claude/design/uml_model_plan.md`).](../UML/diagrams/UI-BLUEPRINT_The_screen.png)
 :::
 
@@ -73,9 +74,10 @@ The end-to-end flow for editing an existing pipeline:
 6. **Save** to disk, or download the bundle.
 
 ::: {.lightbox}
-![UC-BLUEPRINT: what a user can do, and under which flag. Source: `docs/UML/app.mdj`, package
-`BLUEPRINT` (ADR-096 — StarUML trial mode watermarks this image; a clean re-export follows once
-licensed).](../UML/diagrams/UC-BLUEPRINT_What_a_user_does.png)
+![UC-BLUEPRINT: what a user can do, and under which flag — updated 2026-11-08 to add branching
+(ADR-082 §Q3), which the screen diagram above already showed but this one was missing. Source:
+`docs/UML/app.mdj`, package `BLUEPRINT` (ADR-096 — StarUML trial mode watermarks this image; a
+clean re-export follows once licensed).](../UML/diagrams/UC-BLUEPRINT_What_a_user_does.png)
 :::
 
 ### Open or create

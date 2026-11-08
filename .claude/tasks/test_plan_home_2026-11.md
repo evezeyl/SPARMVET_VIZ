@@ -47,6 +47,18 @@ directly against the real repo instead. One subagent's otherwise-good `app/src/h
 (committed as `1964c9c`) needed one correction for the same reason (a stale "Clone to Sandbox"
 reference to a feature ADR-093 already removed).
 
+**Diagram re-draw, 2026-11-08:** the 4 remaining HOME/BLUEPRINT diagrams redrawn in plain
+language via the StarUML bridge — SEQ-OPEN and SEQ-AUDIT (lifelines/messages renamed off
+code/function names, type suffixes suppressed, current "Raw/Result/My view" vocabulary per
+ADR-085/086), UI-BLUEPRINT (stray flowchart shape and an "Undo" box describing a button that
+doesn't actually exist on screen both removed; all 19 panel labels reworded to plain language,
+no more L1–L4 layer tags), UC-BLUEPRINT (added the missing "Branch the lineage at a node" use
+case, ADR-082 §Q3 — UI-BLUEPRINT already showed the Branch designer panel but the use-case
+diagram didn't have it). All 29 diagrams re-exported to `docs/UML/diagrams/`; the 3 Quarto pages
+that embed these 4 re-rendered clean (`quarto render --no-execute`, images resolve, no
+warnings — also fixed a pre-existing unrelated orphan `:::` in `data_lifecycle_theater.qmd` hit
+during the render check); `audit_uml_model.py` passes with 0 violations.
+
 ## 0. Launch
 
 ```bash

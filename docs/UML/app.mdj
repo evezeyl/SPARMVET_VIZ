@@ -15701,7 +15701,7 @@
 											"font": "Arial;13;1",
 											"parentStyle": true,
 											"left": 631,
-											"top": 500,
+											"top": 547.5,
 											"width": 170.06982421875,
 											"height": 13,
 											"text": "Data analysis recipe author"
@@ -15735,7 +15735,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": true,
 									"left": 626,
-									"top": 493,
+									"top": 540.5,
 									"width": 180.06982421875,
 									"height": 25,
 									"stereotypeLabel": {
@@ -15816,7 +15816,7 @@
 							"parentStyle": false,
 							"containerChangeable": true,
 							"left": 626,
-							"top": 438,
+							"top": 485.5,
 							"width": 179.06982421875,
 							"height": 80,
 							"nameCompartment": {
@@ -16124,8 +16124,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 682,
-									"top": 409,
+									"left": 684,
+									"top": 457,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -16146,8 +16146,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 669,
-									"top": 410,
+									"left": 670,
+									"top": 458,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -16168,8 +16168,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 710,
-									"top": 406,
+									"left": 712,
+									"top": 455,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -16281,7 +16281,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "704:437;601:48;469:48",
+							"points": "705:485;601:48;469:48",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+Rvp6xrLDw="
@@ -16605,8 +16605,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 678,
-									"top": 411,
+									"left": 681,
+									"top": 458,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -16627,8 +16627,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 665,
-									"top": 413,
+									"left": 667,
+									"top": 459,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -16649,8 +16649,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 706,
-									"top": 406,
+									"left": 708,
+									"top": 454,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -16762,7 +16762,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "701:437;601:134;469:134",
+							"points": "703:485;601:134;469:134",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+RwU6zuzYM="
@@ -17086,8 +17086,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 672,
-									"top": 413,
+									"left": 676,
+									"top": 459,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -17108,8 +17108,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 659,
-									"top": 416,
+									"left": 663,
+									"top": 462,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -17130,8 +17130,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 699,
-									"top": 406,
+									"left": 704,
+									"top": 454,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -17243,7 +17243,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "697:437;601:220;551:220",
+							"points": "700:485;601:220;551:220",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+RxQq2P0bc="
@@ -17567,8 +17567,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 661,
-									"top": 417,
+									"left": 668,
+									"top": 462,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -17589,8 +17589,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 648,
-									"top": 423,
+									"left": 655,
+									"top": 466,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -17611,8 +17611,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 686,
-									"top": 406,
+									"left": 695,
+									"top": 454,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -17724,7 +17724,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "688:437;601:306;481:306",
+							"points": "694:485;601:306;481:306",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+Rx7q5O4As="
@@ -18048,8 +18048,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 631,
-									"top": 427,
+									"left": 651,
+									"top": 468,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -18070,8 +18070,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 621,
-									"top": 436,
+									"left": 640,
+									"top": 475,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -18092,8 +18092,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 651,
-									"top": 408,
+									"left": 675,
+									"top": 454,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -18205,7 +18205,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "661:437;601:392;427:392",
+							"points": "680:485;601:392;427:392",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+Rypq8rkBs="
@@ -18529,8 +18529,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 599,
-									"top": 486,
+									"left": 595,
+									"top": 485,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -18551,8 +18551,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 596,
-									"top": 500,
+									"left": 588,
+									"top": 497,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -18573,8 +18573,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 603,
-									"top": 459,
+									"left": 609,
+									"top": 462,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -18686,7 +18686,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "625:478;601:478;447:478",
+							"points": "625:488;601:478;447:478",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+Rzd7AmQw0="
@@ -19013,8 +19013,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 655,
-									"top": 541,
+									"left": 606,
+									"top": 580,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -19035,8 +19035,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 662,
-									"top": 552,
+									"left": 609,
+									"top": 593,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -19057,8 +19057,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 641,
-									"top": 517,
+									"left": 600,
+									"top": 553,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -19170,7 +19170,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "666:519;601:573;577:573",
+							"points": "625:563;601:573;577:573",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+R0QLFBpcI="
@@ -19505,8 +19505,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 689,
-									"top": 542,
+									"left": 677,
+									"top": 590,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -19527,8 +19527,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 699,
-									"top": 551,
+									"left": 686,
+									"top": 600,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -19549,8 +19549,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 668,
-									"top": 525,
+									"left": 658,
+									"top": 570,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -19662,7 +19662,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "690:519;601:668;399:668",
+							"points": "682:567;601:668;399:668",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+R1ArKjYX0="
@@ -20000,8 +20000,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 703,
-									"top": 542,
+									"left": 697,
+									"top": 590,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -20022,8 +20022,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 714,
-									"top": 549,
+									"left": 708,
+									"top": 598,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -20044,8 +20044,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 679,
-									"top": 528,
+									"left": 674,
+									"top": 575,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -20157,7 +20157,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "699:519;601:763;507:763",
+							"points": "695:567;601:763;507:763",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+R1y7Qrad4="
@@ -20481,8 +20481,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 709,
-									"top": 542,
+									"left": 706,
+									"top": 590,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -20503,8 +20503,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 721,
-									"top": 548,
+									"left": 718,
+									"top": 596,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -20525,8 +20525,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 684,
-									"top": 530,
+									"left": 682,
+									"top": 577,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -20638,7 +20638,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "703:519;601:858;434:858",
+							"points": "701:567;601:858;434:858",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+R2lLWe1G4="
@@ -20962,8 +20962,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 713,
-									"top": 541,
+									"left": 711,
+									"top": 590,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -20984,8 +20984,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 725,
-									"top": 547,
+									"left": 723,
+									"top": 595,
 									"height": 13,
 									"alpha": 0.7853981633974483,
 									"distance": 40,
@@ -21006,8 +21006,8 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 687,
-									"top": 531,
+									"left": 686,
+									"top": 578,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 25,
@@ -21119,7 +21119,7 @@
 								"$ref": "AAAAAAGht+RvVqwPC3g="
 							},
 							"lineStyle": 3,
-							"points": "705:519;601:944;499:944",
+							"points": "704:567;601:944;499:944",
 							"showVisibility": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGht+R3Xbcv6dc="
@@ -21154,6 +21154,482 @@
 							},
 							"headQualifiersCompartment": {
 								"$ref": "AAAAAAGht+R3Xbc5w0o="
+							}
+						},
+						{
+							"_type": "UMLUseCaseView",
+							"_id": "AAAAAAGhu+nb3PUPml8=",
+							"_parent": {
+								"$ref": "AAAAAAGht+Ruv6v5F0s="
+							},
+							"model": {
+								"$ref": "AAAAAAGhu+nb2/UN82s="
+							},
+							"subViews": [
+								{
+									"_type": "UMLNameCompartmentView",
+									"_id": "AAAAAAGhu+nb3PUQlhA=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+nb3PUPml8="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+nb2/UN82s="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhu+nb3fURTfI=",
+											"_parent": {
+												"$ref": "AAAAAAGhu+nb3PUQlhA="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"height": 13
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhu+nb3fUSOmQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhu+nb3PUQlhA="
+											},
+											"font": "Arial;13;1",
+											"parentStyle": true,
+											"left": 210,
+											"top": 1014,
+											"width": 176,
+											"height": 13,
+											"text": "Branch the lineage at a node"
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhu+nb3fUTqUg=",
+											"_parent": {
+												"$ref": "AAAAAAGhu+nb3PUQlhA="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"width": 111.22998046875,
+											"height": 13,
+											"text": "(from BLUEPRINT)"
+										},
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhu+nb3fUUPR0=",
+											"_parent": {
+												"$ref": "AAAAAAGhu+nb3PUQlhA="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"height": 13,
+											"horizontalAlignment": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"left": 205,
+									"top": 1007,
+									"width": 186.9853515625,
+									"height": 25,
+									"stereotypeLabel": {
+										"$ref": "AAAAAAGhu+nb3fURTfI="
+									},
+									"nameLabel": {
+										"$ref": "AAAAAAGhu+nb3fUSOmQ="
+									},
+									"namespaceLabel": {
+										"$ref": "AAAAAAGhu+nb3fUTqUg="
+									},
+									"propertyLabel": {
+										"$ref": "AAAAAAGhu+nb3fUUPR0="
+									}
+								},
+								{
+									"_type": "UMLAttributeCompartmentView",
+									"_id": "AAAAAAGhu+nb3fUVE0I=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+nb3PUPml8="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+nb2/UN82s="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"width": 10,
+									"height": 10
+								},
+								{
+									"_type": "UMLOperationCompartmentView",
+									"_id": "AAAAAAGhu+nb3fUW584=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+nb3PUPml8="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+nb2/UN82s="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"width": 10,
+									"height": 10
+								},
+								{
+									"_type": "UMLReceptionCompartmentView",
+									"_id": "AAAAAAGhu+nb3fUXf0Q=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+nb3PUPml8="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+nb2/UN82s="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"width": 10,
+									"height": 10
+								},
+								{
+									"_type": "UMLTemplateParameterCompartmentView",
+									"_id": "AAAAAAGhu+nb3fUYazA=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+nb3PUPml8="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+nb2/UN82s="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"width": 10,
+									"height": 10
+								},
+								{
+									"_type": "UMLExtensionPointCompartmentView",
+									"_id": "AAAAAAGhu+nb3fUZ76c=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+nb3PUPml8="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+nb2/UN82s="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"width": 10,
+									"height": 10
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"containerChangeable": true,
+							"left": 166,
+							"top": 1002,
+							"width": 264,
+							"height": 35,
+							"nameCompartment": {
+								"$ref": "AAAAAAGhu+nb3PUQlhA="
+							},
+							"suppressAttributes": true,
+							"suppressOperations": true,
+							"attributeCompartment": {
+								"$ref": "AAAAAAGhu+nb3fUVE0I="
+							},
+							"operationCompartment": {
+								"$ref": "AAAAAAGhu+nb3fUW584="
+							},
+							"receptionCompartment": {
+								"$ref": "AAAAAAGhu+nb3fUXf0Q="
+							},
+							"templateParameterCompartment": {
+								"$ref": "AAAAAAGhu+nb3fUYazA="
+							},
+							"extensionPointCompartment": {
+								"$ref": "AAAAAAGhu+nb3fUZ76c="
+							}
+						},
+						{
+							"_type": "UMLAssociationView",
+							"_id": "AAAAAAGhu+n2OfU5IC4=",
+							"_parent": {
+								"$ref": "AAAAAAGht+Ruv6v5F0s="
+							},
+							"model": {
+								"$ref": "AAAAAAGhu+n2OPU1gTo="
+							},
+							"subViews": [
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfU6t1s=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU1gTo="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 600,
+									"top": 1028,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"edgePosition": 1
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfU7GlI=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU1gTo="
+									},
+									"visible": null,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 600,
+									"top": 1043,
+									"height": 13,
+									"alpha": 1.5707963267948966,
+									"distance": 30,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"edgePosition": 1
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfU8fIU=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU1gTo="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 601,
+									"top": 999,
+									"height": 13,
+									"alpha": -1.5707963267948966,
+									"distance": 15,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"edgePosition": 1
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfU9UBc=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU2Z9I="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 713,
+									"top": 589,
+									"height": 13,
+									"alpha": 0.5235987755982988,
+									"distance": 30,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"edgePosition": 2
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfU+CcM=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU2Z9I="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 726,
+									"top": 594,
+									"height": 13,
+									"alpha": 0.7853981633974483,
+									"distance": 40,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"edgePosition": 2
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfU/Ais=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU2Z9I="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 687,
+									"top": 579,
+									"height": 13,
+									"alpha": -0.5235987755982988,
+									"distance": 25,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"edgePosition": 2
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfVAJ58=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU3YZ8="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 456,
+									"top": 1028,
+									"height": 13,
+									"alpha": -0.5235987755982988,
+									"distance": 30,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									}
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfVBclQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU3YZ8="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 459,
+									"top": 1041,
+									"height": 13,
+									"alpha": -0.7853981633974483,
+									"distance": 40,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									}
+								},
+								{
+									"_type": "EdgeLabelView",
+									"_id": "AAAAAAGhu+n2OfVCXIc=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU3YZ8="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 452,
+									"top": 1000,
+									"height": 13,
+									"alpha": 0.5235987755982988,
+									"distance": 25,
+									"hostEdge": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									}
+								},
+								{
+									"_type": "UMLQualifierCompartmentView",
+									"_id": "AAAAAAGhu+n2OfVDsu8=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU2Z9I="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"width": 10,
+									"height": 10
+								},
+								{
+									"_type": "UMLQualifierCompartmentView",
+									"_id": "AAAAAAGhu+n2OfVE8jM=",
+									"_parent": {
+										"$ref": "AAAAAAGhu+n2OfU5IC4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhu+n2OPU3YZ8="
+									},
+									"visible": false,
+									"font": "Arial;13;0",
+									"parentStyle": true,
+									"width": 10,
+									"height": 10
+								}
+							],
+							"font": "Arial;13;0",
+							"parentStyle": false,
+							"head": {
+								"$ref": "AAAAAAGhu+nb3PUPml8="
+							},
+							"tail": {
+								"$ref": "AAAAAAGht+RvVqwPC3g="
+							},
+							"lineStyle": 3,
+							"points": "705:567;601:1020;431:1019",
+							"showVisibility": true,
+							"nameLabel": {
+								"$ref": "AAAAAAGhu+n2OfU6t1s="
+							},
+							"stereotypeLabel": {
+								"$ref": "AAAAAAGhu+n2OfU7GlI="
+							},
+							"propertyLabel": {
+								"$ref": "AAAAAAGhu+n2OfU8fIU="
+							},
+							"showEndOrder": "hide",
+							"tailRoleNameLabel": {
+								"$ref": "AAAAAAGhu+n2OfU9UBc="
+							},
+							"tailPropertyLabel": {
+								"$ref": "AAAAAAGhu+n2OfU+CcM="
+							},
+							"tailMultiplicityLabel": {
+								"$ref": "AAAAAAGhu+n2OfU/Ais="
+							},
+							"headRoleNameLabel": {
+								"$ref": "AAAAAAGhu+n2OfVAJ58="
+							},
+							"headPropertyLabel": {
+								"$ref": "AAAAAAGhu+n2OfVBclQ="
+							},
+							"headMultiplicityLabel": {
+								"$ref": "AAAAAAGhu+n2OfVCXIc="
+							},
+							"tailQualifiersCompartment": {
+								"$ref": "AAAAAAGhu+n2OfVDsu8="
+							},
+							"headQualifiersCompartment": {
+								"$ref": "AAAAAAGhu+n2OfVE8jM="
 							}
 						}
 					]
@@ -21460,6 +21936,33 @@
 								},
 								"reference": {
 									"$ref": "AAAAAAGht+R3ArZj0P0="
+								}
+							}
+						},
+						{
+							"_type": "UMLAssociation",
+							"_id": "AAAAAAGhu+n2OPU1gTo=",
+							"_parent": {
+								"$ref": "AAAAAAGht+RvFawLiyI="
+							},
+							"end1": {
+								"_type": "UMLAssociationEnd",
+								"_id": "AAAAAAGhu+n2OPU2Z9I=",
+								"_parent": {
+									"$ref": "AAAAAAGhu+n2OPU1gTo="
+								},
+								"reference": {
+									"$ref": "AAAAAAGht+RvFawLiyI="
+								}
+							},
+							"end2": {
+								"_type": "UMLAssociationEnd",
+								"_id": "AAAAAAGhu+n2OPU3YZ8=",
+								"_parent": {
+									"$ref": "AAAAAAGhu+n2OPU1gTo="
+								},
+								"reference": {
+									"$ref": "AAAAAAGhu+nb2/UN82s="
 								}
 							}
 						}
@@ -27453,8 +27956,8 @@
 											"left": 26,
 											"top": 76,
 											"width": 208,
-											"height": 39,
-											"text": "Blueprint nav: data analysis recipe selector, TubeMap node picker, Lineage Rail",
+											"height": 26,
+											"text": "Recipe picker: choose the data analysis recipe and the step to view",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27515,7 +28018,7 @@
 											"top": 146,
 											"width": 208,
 											"height": 26,
-											"text": "Data edit: normalize fields, upload replace/append, save internal",
+											"text": "Edit data: fix column names, replace or add data",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27576,7 +28079,7 @@
 											"top": 206,
 											"width": 208,
 											"height": 26,
-											"text": "Data analysis recipe Info: info: block read/edit form",
+											"text": "Recipe details: name, description, contact",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27637,7 +28140,7 @@
 											"top": 256,
 											"width": 208,
 											"height": 26,
-											"text": "Groups/Plots inventory: CRUD for analysis_groups",
+											"text": "Groups and plots list: add, rename, remove",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27697,8 +28200,8 @@
 											"left": 26,
 											"top": 306,
 											"width": 208,
-											"height": 39,
-											"text": "Validate: structure + data-vs-contract checks, Run validation button",
+											"height": 26,
+											"text": "Check recipe: find problems before saving",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27758,8 +28261,8 @@
 											"left": 26,
 											"top": 376,
 											"width": 208,
-											"height": 26,
-											"text": "Draft autosave status (BP-AUTOSAVE-1)",
+											"height": 13,
+											"text": "Draft saved automatically",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27820,7 +28323,7 @@
 											"top": 26,
 											"width": 428,
 											"height": 13,
-											"text": "TubeMap: interactive DAG, collapsible (L1 Navigation)",
+											"text": "Map of the recipe: steps and how they connect",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27881,7 +28384,7 @@
 											"top": 206,
 											"width": 428,
 											"height": 13,
-											"text": "Live Visualization: the active component's plot (L3 Data view)",
+											"text": "Preview: the plot for the selected step",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27942,7 +28445,7 @@
 											"top": 456,
 											"width": 428,
 											"height": 13,
-											"text": "Live Data Glimpse: table, on-Apply (L3 Data view)",
+											"text": "Preview: the data table for the selected step",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28003,7 +28506,7 @@
 											"top": 26,
 											"width": 268,
 											"height": 26,
-											"text": "Right sidebar: action/component picker, ui_schema-generated form, Apply (L2 Forms)",
+											"text": "Step editor: pick an action, fill in its form, Apply",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28064,7 +28567,7 @@
 											"top": 186,
 											"width": 268,
 											"height": 26,
-											"text": "Joint Designer: left+right schema, key pickers, live preview, Apply (L2 Forms)",
+											"text": "Join designer: match columns between two datasets, preview, Apply",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28125,7 +28628,7 @@
 											"top": 316,
 											"width": 268,
 											"height": 26,
-											"text": "Branch Designer: lineage bifurcation at a node, preview, write",
+											"text": "Branch designer: split the recipe into two paths from a step",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28185,8 +28688,8 @@
 											"left": 726,
 											"top": 416,
 											"width": 268,
-											"height": 13,
-											"text": "Plot Defaults form: palette, theme, layout",
+											"height": 26,
+											"text": "Plot defaults: colours, style, layout for every plot",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28247,7 +28750,7 @@
 											"top": 496,
 											"width": 268,
 											"height": 26,
-											"text": "YAML escape hatch: read-only or editable textarea (L4 Helpers)",
+											"text": "Recipe as text: view the raw recipe; edit directly if allowed",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28308,7 +28811,7 @@
 											"top": 616,
 											"width": 268,
 											"height": 13,
-											"text": "AI Agent chat panel (L4 Helpers)",
+											"text": "Ask the AI agent for help (if enabled)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28369,7 +28872,7 @@
 											"top": 466,
 											"width": 208,
 											"height": 26,
-											"text": "Export: download data analysis recipe ZIP",
+											"text": "Export: download the recipe as a file",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28429,8 +28932,8 @@
 											"left": 26,
 											"top": 416,
 											"width": 208,
-											"height": 26,
-											"text": "New data analysis recipe: create from scratch",
+											"height": 13,
+											"text": "New recipe: create from scratch",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28447,67 +28950,6 @@
 									"height": 91,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYFitlemBk="
-									}
-								},
-								{
-									"_type": "WFPanelView",
-									"_id": "AAAAAAGhulYGS9lmJmU=",
-									"_parent": {
-										"$ref": "AAAAAAGhulX2e9gcguc="
-									},
-									"model": {
-										"$ref": "AAAAAAGhulYGS9lj5Bo="
-									},
-									"containerView": {
-										"$ref": "AAAAAAGhulX3NtgjXS4="
-									},
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"containerChangeable": true,
-									"left": 720,
-									"top": 710,
-									"width": 280,
-									"height": 60
-								},
-								{
-									"_type": "WFTextView",
-									"_id": "AAAAAAGhulYGstlsuIw=",
-									"_parent": {
-										"$ref": "AAAAAAGhulX2e9gcguc="
-									},
-									"model": {
-										"$ref": "AAAAAAGhulYGstlqsW8="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhulYGstlteVA=",
-											"_parent": {
-												"$ref": "AAAAAAGhulYGstlsuIw="
-											},
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 726,
-											"top": 716,
-											"width": 268,
-											"height": 39,
-											"text": "Undo: 20-step session deque — not wired to a visible button yet (STM-NODE-adjacent gap, UNDO-WIRE-1)",
-											"horizontalAlignment": 0,
-											"wordWrap": true
-										}
-									],
-									"containerView": {
-										"$ref": "AAAAAAGhulYGS9lmJmU="
-									},
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"containerChangeable": true,
-									"left": 726,
-									"top": 716,
-									"width": 268,
-									"height": 48,
-									"nameLabel": {
-										"$ref": "AAAAAAGhulYGstlteVA="
 									}
 								},
 								{
@@ -28551,8 +28993,8 @@
 											"left": 26,
 											"top": 516,
 											"width": 208,
-											"height": 26,
-											"text": "Import error (inline, blueprint_inline surface, ADR-094)",
+											"height": 13,
+											"text": "Import error message",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28612,8 +29054,8 @@
 											"left": 726,
 											"top": 566,
 											"width": 268,
-											"height": 26,
-											"text": "YAML hatch error (inline, blueprint_inline surface, ADR-094)",
+											"height": 13,
+											"text": "Recipe-as-text error message",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -28631,50 +29073,8 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhurAqnNxSauo="
 									}
-								},
-								{
-									"_type": "FCPredefinedProcessView",
-									"_id": "AAAAAAGhuw8DaPHgwtY=",
-									"_parent": {
-										"$ref": "AAAAAAGhulX2e9gcguc="
-									},
-									"model": {
-										"$ref": "AAAAAAGhuw8DaPHeImY="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhuw8DaPHhcfY=",
-											"_parent": {
-												"$ref": "AAAAAAGhuw8DaPHgwtY="
-											},
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 15,
-											"top": 10,
-											"width": 112.06982421875,
-											"height": 13,
-											"text": "PredefinedProcess1",
-											"wordWrap": true
-										}
-									],
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"width": 137.06982421875,
-									"height": 33,
-									"nameLabel": {
-										"$ref": "AAAAAAGhuw8DaPHhcfY="
-									}
 								}
 							]
-						},
-						{
-							"_type": "FCPredefinedProcess",
-							"_id": "AAAAAAGhuw8DaPHeImY=",
-							"_parent": {
-								"$ref": "AAAAAAGhulX2e9gbiPA="
-							},
-							"name": "PredefinedProcess1"
 						}
 					]
 				},
@@ -28726,7 +29126,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Blueprint nav: data analysis recipe selector, TubeMap node picker, Lineage Rail",
+							"name": "Recipe picker: choose the data analysis recipe and the step to view",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28734,7 +29134,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX4Zdg4+yI="
 									},
-									"name": "Blueprint nav: data analysis recipe selector, TubeMap node picker, Lineage Rail"
+									"name": "Recipe picker: choose the data analysis recipe and the step to view"
 								}
 							],
 							"tags": [
@@ -28767,7 +29167,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Data edit: normalize fields, upload replace/append, save internal",
+							"name": "Edit data: fix column names, replace or add data",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28775,7 +29175,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX5GNhLQuA="
 									},
-									"name": "Data edit: normalize fields, upload replace/append, save internal"
+									"name": "Edit data: fix column names, replace or add data"
 								}
 							],
 							"tags": [
@@ -28801,7 +29201,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Data analysis recipe Info: info: block read/edit form",
+							"name": "Recipe details: name, description, contact",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28809,7 +29209,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX5ythc1go="
 									},
-									"name": "Data analysis recipe Info: info: block read/edit form"
+									"name": "Recipe details: name, description, contact"
 								}
 							],
 							"tags": [
@@ -28835,7 +29235,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Groups/Plots inventory: CRUD for analysis_groups",
+							"name": "Groups and plots list: add, rename, remove",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28843,7 +29243,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX6edhtSq8="
 									},
-									"name": "Groups/Plots inventory: CRUD for analysis_groups"
+									"name": "Groups and plots list: add, rename, remove"
 								}
 							],
 							"tags": [
@@ -28869,7 +29269,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Validate: structure + data-vs-contract checks, Run validation button",
+							"name": "Check recipe: find problems before saving",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28877,7 +29277,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX7ONh+uWs="
 									},
-									"name": "Validate: structure + data-vs-contract checks, Run validation button"
+									"name": "Check recipe: find problems before saving"
 								}
 							],
 							"tags": [
@@ -28903,7 +29303,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Draft autosave status (BP-AUTOSAVE-1)",
+							"name": "Draft saved automatically",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28911,7 +29311,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX7/NiPDsM="
 									},
-									"name": "Draft autosave status (BP-AUTOSAVE-1)"
+									"name": "Draft saved automatically"
 								}
 							],
 							"tags": [
@@ -28937,7 +29337,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "TubeMap: interactive DAG, collapsible (L1 Navigation)",
+							"name": "Map of the recipe: steps and how they connect",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28945,7 +29345,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX8vNigMvM="
 									},
-									"name": "TubeMap: interactive DAG, collapsible (L1 Navigation)"
+									"name": "Map of the recipe: steps and how they connect"
 								}
 							],
 							"tags": [
@@ -28978,7 +29378,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Live Visualization: the active component's plot (L3 Data view)",
+							"name": "Preview: the plot for the selected step",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -28986,7 +29386,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX9k9izJOs="
 									},
-									"name": "Live Visualization: the active component's plot (L3 Data view)"
+									"name": "Preview: the plot for the selected step"
 								}
 							],
 							"tags": [
@@ -29012,7 +29412,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Live Data Glimpse: table, on-Apply (L3 Data view)",
+							"name": "Preview: the data table for the selected step",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29020,7 +29420,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX+StjEVg0="
 									},
-									"name": "Live Data Glimpse: table, on-Apply (L3 Data view)"
+									"name": "Preview: the data table for the selected step"
 								}
 							],
 							"tags": [
@@ -29046,7 +29446,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Right sidebar: action/component picker, ui_schema-generated form, Apply (L2 Forms)",
+							"name": "Step editor: pick an action, fill in its form, Apply",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29054,7 +29454,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX/GtjVFEs="
 									},
-									"name": "Right sidebar: action/component picker, ui_schema-generated form, Apply (L2 Forms)"
+									"name": "Step editor: pick an action, fill in its form, Apply"
 								}
 							],
 							"tags": [
@@ -29087,7 +29487,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Joint Designer: left+right schema, key pickers, live preview, Apply (L2 Forms)",
+							"name": "Join designer: match columns between two datasets, preview, Apply",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29095,7 +29495,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulX/7tjoTcI="
 									},
-									"name": "Joint Designer: left+right schema, key pickers, live preview, Apply (L2 Forms)"
+									"name": "Join designer: match columns between two datasets, preview, Apply"
 								}
 							],
 							"tags": [
@@ -29121,7 +29521,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Branch Designer: lineage bifurcation at a node, preview, write",
+							"name": "Branch designer: split the recipe into two paths from a step",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29129,7 +29529,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYAt9j5JGw="
 									},
-									"name": "Branch Designer: lineage bifurcation at a node, preview, write"
+									"name": "Branch designer: split the recipe into two paths from a step"
 								}
 							],
 							"tags": [
@@ -29155,7 +29555,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Plot Defaults form: palette, theme, layout",
+							"name": "Plot defaults: colours, style, layout for every plot",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29163,7 +29563,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYBhtkKhKk="
 									},
-									"name": "Plot Defaults form: palette, theme, layout"
+									"name": "Plot defaults: colours, style, layout for every plot"
 								}
 							],
 							"tags": [
@@ -29189,7 +29589,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "YAML escape hatch: read-only or editable textarea (L4 Helpers)",
+							"name": "Recipe as text: view the raw recipe; edit directly if allowed",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29197,7 +29597,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYCUNkboNQ="
 									},
-									"name": "YAML escape hatch: read-only or editable textarea (L4 Helpers)"
+									"name": "Recipe as text: view the raw recipe; edit directly if allowed"
 								}
 							],
 							"tags": [
@@ -29230,7 +29630,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "AI Agent chat panel (L4 Helpers)",
+							"name": "Ask the AI agent for help (if enabled)",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29238,7 +29638,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYDcNkumJE="
 									},
-									"name": "AI Agent chat panel (L4 Helpers)"
+									"name": "Ask the AI agent for help (if enabled)"
 								}
 							],
 							"tags": [
@@ -29271,7 +29671,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Export: download data analysis recipe ZIP",
+							"name": "Export: download the recipe as a file",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29279,7 +29679,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYEUNlBPIk="
 									},
-									"name": "Export: download data analysis recipe ZIP"
+									"name": "Export: download the recipe as a file"
 								}
 							],
 							"tags": [
@@ -29305,7 +29705,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "New data analysis recipe: create from scratch",
+							"name": "New recipe: create from scratch",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29313,7 +29713,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulYFItlSQT0="
 									},
-									"name": "New data analysis recipe: create from scratch"
+									"name": "New recipe: create from scratch"
 								}
 							],
 							"tags": [
@@ -29335,38 +29735,11 @@
 						},
 						{
 							"_type": "WFPanel",
-							"_id": "AAAAAAGhulYGS9lj5Bo=",
-							"_parent": {
-								"$ref": "AAAAAAGhulX3NdggWVw="
-							},
-							"name": "Undo: 20-step session deque — not wired to a visible button yet (STM-NODE-adjacent gap, UNDO-WIRE-1)",
-							"ownedElements": [
-								{
-									"_type": "WFText",
-									"_id": "AAAAAAGhulYGstlqsW8=",
-									"_parent": {
-										"$ref": "AAAAAAGhulYGS9lj5Bo="
-									},
-									"name": "Undo: 20-step session deque — not wired to a visible button yet (STM-NODE-adjacent gap, UNDO-WIRE-1)"
-								}
-							],
-							"tags": [
-								{
-									"_type": "Tag",
-									"_id": "AAAAAAGhulYGS9lkXFY=",
-									"name": "status",
-									"kind": "string",
-									"value": "implemented"
-								}
-							]
-						},
-						{
-							"_type": "WFPanel",
 							"_id": "AAAAAAGhurAoD9wzXmU=",
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "Import error (inline, blueprint_inline surface, ADR-094)",
+							"name": "Import error message",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29374,7 +29747,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhurAoD9wzXmU="
 									},
-									"name": "Import error (inline, blueprint_inline surface, ADR-094)"
+									"name": "Import error message"
 								}
 							],
 							"tags": [
@@ -29400,7 +29773,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulX3NdggWVw="
 							},
-							"name": "YAML hatch error (inline, blueprint_inline surface, ADR-094)",
+							"name": "Recipe-as-text error message",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -29408,7 +29781,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhurApwdxEBTE="
 									},
-									"name": "YAML hatch error (inline, blueprint_inline surface, ADR-094)"
+									"name": "Recipe-as-text error message"
 								}
 							],
 							"tags": [
@@ -29497,6 +29870,14 @@
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
 					"name": "yaml hatch error block (in bp_yaml_escape_ui)"
+				},
+				{
+					"_type": "UMLUseCase",
+					"_id": "AAAAAAGhu+nb2/UN82s=",
+					"_parent": {
+						"$ref": "AAAAAAGht+RueKvnUGY="
+					},
+					"name": "Branch the lineage at a node"
 				}
 			]
 		},
@@ -50730,9 +51111,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 29.72998046875,
+													"left": 27.55908203125,
 													"top": 10,
-													"width": 39,
+													"width": 38.2763671875,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -50746,7 +51127,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 13.72998046875,
+													"width": 11.55908203125,
 													"height": 13,
 													"text": "sd"
 												}
@@ -53846,7 +54227,7 @@
 															"top": 47,
 															"width": 181,
 															"height": 13,
-															"text": "User: Scientist"
+															"text": "User"
 														},
 														{
 															"_type": "LabelView",
@@ -53916,6 +54297,7 @@
 											"top": 40,
 											"width": 190,
 											"height": 1100,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1v9TGjsM6I="
 											},
@@ -53966,7 +54348,7 @@
 															"top": 47,
 															"width": 189.43896484375,
 															"height": 13,
-															"text": "home_theater: home_theater"
+															"text": "HOME screen"
 														},
 														{
 															"_type": "LabelView",
@@ -54036,6 +54418,7 @@
 											"top": 40,
 											"width": 198.43896484375,
 											"height": 1100,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1v9yGkMmGw="
 											},
@@ -54084,9 +54467,9 @@
 															"parentStyle": true,
 															"left": 485,
 															"top": 47,
-															"width": 181,
+															"width": 186.6015625,
 															"height": 13,
-															"text": "cache_keys: cache_keys"
+															"text": "Change tracker"
 														},
 														{
 															"_type": "LabelView",
@@ -54118,7 +54501,7 @@
 													"parentStyle": true,
 													"left": 480,
 													"top": 40,
-													"width": 191,
+													"width": 196.6015625,
 													"height": 40,
 													"stereotypeLabel": {
 														"$ref": "AAAAAAGht1v+RGktjhc="
@@ -54144,7 +54527,7 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 575,
+													"left": 578,
 													"top": 81,
 													"width": 1,
 													"height": 1059
@@ -54154,8 +54537,9 @@
 											"parentStyle": false,
 											"left": 480,
 											"top": 40,
-											"width": 190,
+											"width": 195.6015625,
 											"height": 1100,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1v+RGkslbM="
 											},
@@ -54206,7 +54590,7 @@
 															"top": 47,
 															"width": 232.79345703125,
 															"height": 13,
-															"text": "DataOrchestrator: DataOrchestrator"
+															"text": "Data engine"
 														},
 														{
 															"_type": "LabelView",
@@ -54276,6 +54660,7 @@
 											"top": 40,
 											"width": 241.79345703125,
 											"height": 1100,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1v+wGlM4ew="
 											},
@@ -54326,7 +54711,7 @@
 															"top": 47,
 															"width": 294.15625,
 															"height": 13,
-															"text": "ingestion, transformer: transformer, ingestion"
+															"text": "Data loader"
 														},
 														{
 															"_type": "LabelView",
@@ -54396,6 +54781,7 @@
 											"top": 40,
 											"width": 303.15625,
 											"height": 1100,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1v/P2lseWI="
 											},
@@ -54446,7 +54832,7 @@
 															"top": 47,
 															"width": 190.88623046875,
 															"height": 13,
-															"text": "Stored stages: Stored stages"
+															"text": "Stored stages"
 														},
 														{
 															"_type": "LabelView",
@@ -54516,6 +54902,7 @@
 											"top": 40,
 											"width": 199.88623046875,
 											"height": 1100,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1v/vmmMVng="
 											},
@@ -54566,7 +54953,7 @@
 															"top": 47,
 															"width": 181,
 															"height": 13,
-															"text": "VizFactory: VizFactory"
+															"text": "Plot renderer"
 														},
 														{
 															"_type": "LabelView",
@@ -54636,6 +55023,7 @@
 											"top": 40,
 											"width": 190,
 											"height": 1100,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1wAP2mscnw="
 											},
@@ -54674,7 +55062,7 @@
 														"$ref": "AAAAAAGht1wAvmnKBv0="
 													},
 													"edgePosition": 1,
-													"text": "1 : select data_analysis_recipe_id"
+													"text": "1 : choose a data analysis recipe"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -54780,7 +55168,7 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 209,
+													"left": 210,
 													"top": 142,
 													"width": 500.779296875,
 													"height": 13,
@@ -54790,7 +55178,7 @@
 														"$ref": "AAAAAAGht1wBBmnflCI="
 													},
 													"edgePosition": 1,
-													"text": "2 : active_cfg, load_data_analysis_recipe, kept in memory while its files are unchanged"
+													"text": "2 : load the recipe (kept in memory while its files don't change)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -54804,7 +55192,7 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 459,
+													"left": 460,
 													"top": 127,
 													"height": 13,
 													"alpha": 1.5707963267948966,
@@ -54826,7 +55214,7 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 459,
+													"left": 460,
 													"top": 162,
 													"height": 13,
 													"alpha": -1.5707963267948966,
@@ -54847,7 +55235,7 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 568,
+													"left": 571,
 													"top": 158,
 													"width": 14,
 													"height": 28
@@ -54861,7 +55249,7 @@
 											"tail": {
 												"$ref": "AAAAAAGht1v9yGkRG4E="
 											},
-											"points": "350:158;568:158",
+											"points": "350:158;571:158",
 											"nameLabel": {
 												"$ref": "AAAAAAGht1wBBmngR9c="
 											},
@@ -54906,7 +55294,7 @@
 														"$ref": "AAAAAAGht1wBTWn0yiA="
 													},
 													"edgePosition": 1,
-													"text": "3 : _data_analysis_recipe_keys, compute_data_analysis_recipe_keys"
+													"text": "3 : compute a fingerprint of the recipe and the data"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55022,7 +55410,7 @@
 														"$ref": "AAAAAAGht1wBlmoJv78="
 													},
 													"edgePosition": 1,
-													"text": "4 : DataAnalysisRecipeKeys, hash of the data and of the files"
+													"text": "4 : fingerprint (hash of the data and the recipe files)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55139,7 +55527,7 @@
 														"$ref": "AAAAAAGht1wB4GoetdM="
 													},
 													"edgePosition": 1,
-													"text": "5 : dynamic_tabs, groups and plots from analysis_groups"
+													"text": "5 : build the tabs from the recipe's groups and plots"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55362,9 +55750,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 491,
+													"left": 453,
 													"top": 382,
-													"width": 192.1943359375,
+													"width": 268.08056640625,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -55372,7 +55760,7 @@
 														"$ref": "AAAAAAGht1wCcWpIwJ4="
 													},
 													"edgePosition": 1,
-													"text": "7 : materialize_tier2 with the keys"
+													"text": "7 : ask for the Result stage, with the fingerprint"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55478,9 +55866,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 815,
+													"left": 796,
 													"top": 449,
-													"width": 113.43896484375,
+													"width": 151.01708984375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -55488,7 +55876,7 @@
 														"$ref": "AAAAAAGht1wCuWpd50w="
 													},
 													"edgePosition": 1,
-													"text": "8 : materialize_tier1"
+													"text": "8 : first, get the Raw stage"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55594,9 +55982,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 927,
+													"left": 903,
 													"top": 478,
-													"width": 241.3759765625,
+													"width": 288.31689453125,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -55604,7 +55992,7 @@
 														"$ref": "AAAAAAGht1wDBWpycpE="
 													},
 													"edgePosition": 1,
-													"text": "9 : read tier1_key in the parquet metadata"
+													"text": "9 : check the fingerprint stored with the Raw stage"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55710,9 +56098,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 920,
+													"left": 862,
 													"top": 546,
-													"width": 260.380859375,
+													"width": 377.9140625,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -55720,7 +56108,7 @@
 														"$ref": "AAAAAAGht1wDU2qHX4o="
 													},
 													"edgePosition": 1,
-													"text": "10 : [key matches] scan_parquet, go to Tier 2"
+													"text": "10 : [fingerprint matches] reuse the Raw stage, move on to Result"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55827,9 +56215,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 865,
+													"left": 856,
 													"top": 574,
-													"width": 365.60595703125,
+													"width": 383.96337890625,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -55837,7 +56225,7 @@
 														"$ref": "AAAAAAGht1wDnmqcwwA="
 													},
 													"edgePosition": 1,
-													"text": "11 : [missing or different] remove the stale Tier 1 and Tier 2 files"
+													"text": "11 : [missing or different] drop the outdated Raw and Result stages"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -55943,9 +56331,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 801,
+													"left": 772,
 													"top": 622,
-													"width": 314.08837890625,
+													"width": 372.962890625,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -55953,7 +56341,7 @@
 														"$ref": "AAAAAAGht1wD+2qx8/I="
 													},
 													"edgePosition": 1,
-													"text": "12 : [missing or different] load, wrangle tier1, join steps"
+													"text": "12 : [missing or different] load the data and run the recipe's steps"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56069,7 +56457,7 @@
 														"$ref": "AAAAAAGht1wEgGrGG4I="
 													},
 													"edgePosition": 1,
-													"text": "13 : frame"
+													"text": "13 : table"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56176,9 +56564,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 896,
+													"left": 865,
 													"top": 718,
-													"width": 303.24658203125,
+													"width": 364.65380859375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -56186,7 +56574,7 @@
 														"$ref": "AAAAAAGht1wE02rbOio="
 													},
 													"edgePosition": 1,
-													"text": "14 : [missing or different] sink_parquet with tier1_key"
+													"text": "14 : [missing or different] save the Raw stage with its fingerprint"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56292,9 +56680,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 411,
+													"left": 348,
 													"top": 786,
-													"width": 356.47802734375,
+													"width": 482.701171875,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -56302,7 +56690,7 @@
 														"$ref": "AAAAAAGht1wFH2rwa+4="
 													},
 													"edgePosition": 1,
-													"text": "15 : [no tier2 steps] Tier 1 frame, T2 equals T1, nothing stored"
+													"text": "15 : [recipe has no Result steps] Raw stage is the Result too — nothing extra stored"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56409,9 +56797,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 940,
+													"left": 892,
 													"top": 834,
-													"width": 220.4033203125,
+													"width": 316.50048828125,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -56419,7 +56807,7 @@
 														"$ref": "AAAAAAGht1wFbmsFEgQ="
 													},
 													"edgePosition": 1,
-													"text": "16 : [tier2_key matches] scan_parquet"
+													"text": "16 : [fingerprint matches] reuse the stored Result stage"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56526,9 +56914,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 896,
+													"left": 860,
 													"top": 862,
-													"width": 303.24658203125,
+													"width": 375.49560546875,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -56536,7 +56924,7 @@
 														"$ref": "AAAAAAGht1wFwmsaRX0="
 													},
 													"edgePosition": 1,
-													"text": "17 : [missing or different] sink_parquet with tier2_key"
+													"text": "17 : [missing or different] save the Result stage with its fingerprint"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56652,7 +57040,7 @@
 														"$ref": "AAAAAAGht1wGKmsvTtI="
 													},
 													"edgePosition": 1,
-													"text": "18 : Tier 2 frame"
+													"text": "18 : Result table"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56759,9 +57147,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 808,
+													"left": 776,
 													"top": 958,
-													"width": 222.57421875,
+													"width": 286.8505859375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -56769,7 +57157,7 @@
 														"$ref": "AAAAAAGht1wG22tEq9Y="
 													},
 													"edgePosition": 1,
-													"text": "19 : render frame and spec, seed fixed"
+													"text": "19 : draw the plot (same random seed every time)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -56981,7 +57369,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "select data_analysis_recipe_id",
+									"name": "choose a data analysis recipe",
 									"source": {
 										"$ref": "AAAAAAGht1v9TGjq8hE="
 									},
@@ -56995,7 +57383,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "active_cfg, load_data_analysis_recipe, kept in memory while its files are unchanged",
+									"name": "load the recipe (kept in memory while its files don't change)",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -57009,7 +57397,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "_data_analysis_recipe_keys, compute_data_analysis_recipe_keys",
+									"name": "compute a fingerprint of the recipe and the data",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -57023,7 +57411,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "DataAnalysisRecipeKeys, hash of the data and of the files",
+									"name": "fingerprint (hash of the data and the recipe files)",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57038,7 +57426,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "dynamic_tabs, groups and plots from analysis_groups",
+									"name": "build the tabs from the recipe's groups and plots",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -57067,7 +57455,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "materialize_tier2 with the keys",
+									"name": "ask for the Result stage, with the fingerprint",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -57081,7 +57469,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "materialize_tier1",
+									"name": "first, get the Raw stage",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57095,7 +57483,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "read tier1_key in the parquet metadata",
+									"name": "check the fingerprint stored with the Raw stage",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57109,7 +57497,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[key matches] scan_parquet, go to Tier 2",
+									"name": "[fingerprint matches] reuse the Raw stage, move on to Result",
 									"source": {
 										"$ref": "AAAAAAGht1v/vmmKTVQ="
 									},
@@ -57124,7 +57512,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] remove the stale Tier 1 and Tier 2 files",
+									"name": "[missing or different] drop the outdated Raw and Result stages",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57138,7 +57526,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] load, wrangle tier1, join steps",
+									"name": "[missing or different] load the data and run the recipe's steps",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57152,7 +57540,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "frame",
+									"name": "table",
 									"source": {
 										"$ref": "AAAAAAGht1v/PmlqLac="
 									},
@@ -57167,7 +57555,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] sink_parquet with tier1_key",
+									"name": "[missing or different] save the Raw stage with its fingerprint",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57181,7 +57569,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[no tier2 steps] Tier 1 frame, T2 equals T1, nothing stored",
+									"name": "[recipe has no Result steps] Raw stage is the Result too — nothing extra stored",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57196,7 +57584,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[tier2_key matches] scan_parquet",
+									"name": "[fingerprint matches] reuse the stored Result stage",
 									"source": {
 										"$ref": "AAAAAAGht1v/vmmKTVQ="
 									},
@@ -57211,7 +57599,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "[missing or different] sink_parquet with tier2_key",
+									"name": "[missing or different] save the Result stage with its fingerprint",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57225,7 +57613,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "Tier 2 frame",
+									"name": "Result table",
 									"source": {
 										"$ref": "AAAAAAGht1v+wGlKpUE="
 									},
@@ -57240,7 +57628,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "render frame and spec, seed fixed",
+									"name": "draw the plot (same random seed every time)",
 									"source": {
 										"$ref": "AAAAAAGht1v9yGkK6Js="
 									},
@@ -57283,7 +57671,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "home_theater",
+									"name": "HOME screen",
 									"represent": {
 										"$ref": "AAAAAAGht1v9yGkJkRE="
 									},
@@ -57295,7 +57683,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "cache_keys",
+									"name": "Change tracker",
 									"represent": {
 										"$ref": "AAAAAAGht1v+RGkpD7o="
 									},
@@ -57307,7 +57695,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "DataOrchestrator",
+									"name": "Data engine",
 									"represent": {
 										"$ref": "AAAAAAGht1v+wGlJ5kw="
 									},
@@ -57319,7 +57707,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "ingestion, transformer",
+									"name": "Data loader",
 									"represent": {
 										"$ref": "AAAAAAGht1v/Pmlp/aI="
 									},
@@ -57343,7 +57731,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1v8w2jb7+I="
 									},
-									"name": "VizFactory",
+									"name": "Plot renderer",
 									"represent": {
 										"$ref": "AAAAAAGht1wAPmmpJQM="
 									},
@@ -57621,6 +58009,7 @@
 											"top": 40,
 											"width": 190,
 											"height": 908,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1wIw2uBAn4="
 											},
@@ -57741,6 +58130,7 @@
 											"top": 40,
 											"width": 344.35888671875,
 											"height": 908,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1wJQ2uh/zM="
 											},
@@ -57861,6 +58251,7 @@
 											"top": 40,
 											"width": 190,
 											"height": 908,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1wJw2vBllQ="
 											},
@@ -57981,6 +58372,7 @@
 											"top": 40,
 											"width": 190,
 											"height": 908,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1wKR2vgig4="
 											},
@@ -58101,6 +58493,7 @@
 											"top": 40,
 											"width": 234.56982421875,
 											"height": 908,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1wKyGwAdak="
 											},
@@ -58221,6 +58614,7 @@
 											"top": 40,
 											"width": 198.43896484375,
 											"height": 908,
+											"showType": false,
 											"nameCompartment": {
 												"$ref": "AAAAAAGht1wLVmwgSUw="
 											},
@@ -60098,7 +60492,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "filter_add_row",
+									"name": "add a filter row",
 									"source": {
 										"$ref": "AAAAAAGht1wIwmt/WjI="
 									},
@@ -60112,7 +60506,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "_pending_filters",
+									"name": "staged filter rows",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -60126,7 +60520,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "[exploration] filter_apply",
+									"name": "[exploration] Apply — updates My view only",
 									"source": {
 										"$ref": "AAAAAAGht1wIwmt/WjI="
 									},
@@ -60140,7 +60534,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "applied_filters",
+									"name": "filters now showing in My view",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -60154,7 +60548,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "only My view changes, nothing recorded, never exported",
+									"name": "My view updates; nothing is recorded or exported",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -60169,7 +60563,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "[My view and t3_sandbox_enabled] filter_send_to_audit",
+									"name": "[My view, audit sandbox on] Send to Audit",
 									"source": {
 										"$ref": "AAAAAAGht1wIwmt/WjI="
 									},
@@ -60183,7 +60577,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "primary_key_warning when a join key is filtered",
+									"name": "warn: this filters a join key (primary-key warning)",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -60197,7 +60591,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "_open_propagation_modal, this plot, all plots, all except",
+									"name": "ask: apply to this plot, all plots, or all except...",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -60212,7 +60606,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "propagation_confirm",
+									"name": "confirm the choice",
 									"source": {
 										"$ref": "AAAAAAGht1wIwmt/WjI="
 									},
@@ -60226,7 +60620,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "_pending_t3_nodes, one copy per plot, same id",
+									"name": "stage one audit step per chosen plot (linked by id)",
 									"source": {
 										"$ref": "AAAAAAGht1wJQ2ufihY="
 									},
@@ -60240,7 +60634,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "reason in t3_reason_id",
+									"name": "type the reason",
 									"source": {
 										"$ref": "AAAAAAGht1wIwmt/WjI="
 									},
@@ -60254,7 +60648,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "btn_apply",
+									"name": "press Apply",
 									"source": {
 										"$ref": "AAAAAAGht1wIwmt/WjI="
 									},
@@ -60268,7 +60662,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "[a reason is missing] blocked, names the missing reasons",
+									"name": "[a reason is missing] Apply stays blocked, names what's missing",
 									"source": {
 										"$ref": "AAAAAAGht1wKRmve7RI="
 									},
@@ -60283,7 +60677,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "[all reasons given] t3_audit_steps_by_plot",
+									"name": "[all reasons given] record the audited steps, per plot",
 									"source": {
 										"$ref": "AAAAAAGht1wKRmve7RI="
 									},
@@ -60297,7 +60691,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "_write_t3_ghost, t3_timestamp.json",
+									"name": "save this state to disk (a timestamped snapshot)",
 									"source": {
 										"$ref": "AAAAAAGht1wKRmve7RI="
 									},
@@ -60340,7 +60734,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "filter_and_audit_handlers",
+									"name": "Filters panel",
 									"represent": {
 										"$ref": "AAAAAAGht1wJQ2ueyRQ="
 									},
@@ -60352,7 +60746,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "home_state",
+									"name": "Session state",
 									"represent": {
 										"$ref": "AAAAAAGht1wJw2u+7Xc="
 									},
@@ -60364,7 +60758,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "audit_stack",
+									"name": "Audit trail panel",
 									"represent": {
 										"$ref": "AAAAAAGht1wKRmvdYMg="
 									},
@@ -60376,7 +60770,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "SessionManager",
+									"name": "Saved sessions",
 									"represent": {
 										"$ref": "AAAAAAGht1wKyGv9+g8="
 									},
@@ -60388,7 +60782,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wIN2twOS8="
 									},
-									"name": "home_theater",
+									"name": "HOME screen",
 									"represent": {
 										"$ref": "AAAAAAGht1wLVmwd92g="
 									},
@@ -60506,9 +60900,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 29.72998046875,
+													"left": 27.55908203125,
 													"top": 10,
-													"width": 39,
+													"width": 38.2763671875,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -60522,7 +60916,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 13.72998046875,
+													"width": 11.55908203125,
 													"height": 13,
 													"text": "sd"
 												}
@@ -73266,7 +73660,7 @@
 								"reference": {
 									"$ref": "AAAAAAGhuug+V+Od5XI="
 								},
-								"navigable": true,
+								"navigable": "navigable",
 								"multiplicity": "0..*"
 							}
 						},
@@ -73297,7 +73691,7 @@
 								"reference": {
 									"$ref": "AAAAAAGhuug+tePg3zg="
 								},
-								"navigable": true,
+								"navigable": "navigable",
 								"multiplicity": "0..*"
 							}
 						},
@@ -73328,7 +73722,7 @@
 								"reference": {
 									"$ref": "AAAAAAGhuug/EOQexYQ="
 								},
-								"navigable": true,
+								"navigable": "navigable",
 								"multiplicity": "0..*"
 							}
 						}
@@ -77075,7 +77469,7 @@
 								"reference": {
 									"$ref": "AAAAAAGhuuhAHOSQTJY="
 								},
-								"navigable": true,
+								"navigable": "navigable",
 								"multiplicity": "0..*"
 							}
 						}
@@ -77186,7 +77580,7 @@
 								"reference": {
 									"$ref": "AAAAAAGhuuhAHOSQTJY="
 								},
-								"navigable": true,
+								"navigable": "navigable",
 								"multiplicity": "1..*"
 							}
 						}
@@ -77288,7 +77682,7 @@
 								"reference": {
 									"$ref": "AAAAAAGhuug/i+RXVfY="
 								},
-								"navigable": true,
+								"navigable": "navigable",
 								"multiplicity": "1..*"
 							}
 						}
@@ -77885,7 +78279,7 @@
 													"left": 2403,
 													"top": 885,
 													"width": 219,
-													"height": 39,
+													"height": 26,
 													"text": "Per session: shared reactive state, creates the modules, calls each define_server.",
 													"wordWrap": true
 												}
@@ -78021,7 +78415,7 @@
 													"left": 1618,
 													"top": 641,
 													"width": 219,
-													"height": 26,
+													"height": 13,
 													"text": "[Component: home_theater + 6 handlers]",
 													"wordWrap": true
 												},
@@ -78035,7 +78429,7 @@
 													"font": "Arial;13;0",
 													"parentStyle": true,
 													"left": 1618,
-													"top": 677,
+													"top": 664,
 													"width": 219,
 													"height": 26,
 													"text": "Tabs, plots, data preview, filters, audit, sessions, export, data import.",
@@ -78325,7 +78719,7 @@
 													"left": 1353,
 													"top": 420,
 													"width": 219,
-													"height": 26,
+													"height": 13,
 													"text": "[Component: orchestrator, cache_keys]",
 													"wordWrap": true
 												},
@@ -78339,7 +78733,7 @@
 													"font": "Arial;13;0",
 													"parentStyle": true,
 													"left": 1353,
-													"top": 456,
+													"top": 443,
 													"width": 219,
 													"height": 26,
 													"text": "Builds and reads Tier 1 and Tier 2, checks the chained keys.",
@@ -78949,7 +79343,7 @@
 													"left": 293,
 													"top": 124.5,
 													"width": 219,
-													"height": 39,
+													"height": 26,
 													"text": "Deployment file, app features file, sidebar panels, palettes. Read at startup.",
 													"wordWrap": true
 												}
@@ -79253,7 +79647,7 @@
 													"left": 823,
 													"top": 150,
 													"width": 219,
-													"height": 52,
+													"height": 39,
 													"text": "user_data/_sessions/{session_key}: assembly.json and t3_{timestamp}.json with the audit steps.",
 													"wordWrap": true
 												}
@@ -79397,9 +79791,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 414,
+													"left": 413,
 													"top": 327,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -79474,9 +79868,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 679,
+													"left": 678,
 													"top": 326,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -79549,9 +79943,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1739,
+													"left": 1738,
 													"top": 808,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -79626,9 +80020,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2136,
+													"left": 2135,
 													"top": 808,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -79703,9 +80097,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2799,
+													"left": 2798,
 													"top": 808,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -79780,9 +80174,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2534,
+													"left": 2533,
 													"top": 808,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -79857,9 +80251,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1076,
+													"left": 1075,
 													"top": 601,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -79932,9 +80326,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 944,
+													"left": 943,
 													"top": 586,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80007,9 +80401,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1739,
+													"left": 1738,
 													"top": 586,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80084,9 +80478,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1877,
+													"left": 1876,
 													"top": 597,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80137,9 +80531,9 @@
 													"font": "Arial;13;0",
 													"parentStyle": false,
 													"left": 1552,
-													"top": 571,
+													"top": 577,
 													"width": 44.79541015625,
-													"height": 65,
+													"height": 52,
 													"alpha": 1.5707963267948966,
 													"distance": 15,
 													"hostEdge": {
@@ -80161,9 +80555,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1592,
+													"left": 1591,
 													"top": 576,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80236,9 +80630,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2269,
+													"left": 2268,
 													"top": 586,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80311,9 +80705,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2122,
+													"left": 2121,
 													"top": 576,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80388,9 +80782,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2799,
+													"left": 2798,
 													"top": 587,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80463,9 +80857,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2534,
+													"left": 2533,
 													"top": 586,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80538,9 +80932,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1209,
+													"left": 1208,
 													"top": 326,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80615,9 +81009,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1474,
+													"left": 1473,
 													"top": 326,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80692,9 +81086,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1739,
+													"left": 1738,
 													"top": 326,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80769,9 +81163,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 2004,
+													"left": 2003,
 													"top": 326,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80846,9 +81240,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 944,
+													"left": 943,
 													"top": 326,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -80931,7 +81325,7 @@
 													"left": 2148,
 													"top": 144,
 													"width": 214,
-													"height": 52,
+													"height": 39,
 													"text": "Should deliver samples and metadata. The connector exists; fetch_data raises NotImplementedError.",
 													"wordWrap": true
 												}
@@ -83238,9 +83632,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 518,
+													"left": 517,
 													"top": 152,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83315,9 +83709,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 813,
+													"left": 812,
 													"top": 178,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83390,9 +83784,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 939,
+													"left": 938,
 													"top": 172,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83467,9 +83861,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 266,
+													"left": 265,
 													"top": 318,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83544,9 +83938,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 389,
+													"left": 388,
 													"top": 331,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83621,9 +84015,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 531,
+													"left": 530,
 													"top": 343,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83698,9 +84092,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 669,
+													"left": 668,
 													"top": 344,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83773,9 +84167,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 944,
+													"left": 943,
 													"top": 256,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83848,9 +84242,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 805,
+													"left": 804,
 													"top": 343,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -83923,9 +84317,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 941,
+													"left": 940,
 													"top": 345,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84000,9 +84394,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 523,
+													"left": 522,
 													"top": 429,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84077,9 +84471,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 666,
+													"left": 665,
 													"top": 433,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84152,9 +84546,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 802,
+													"left": 801,
 													"top": 434,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84227,9 +84621,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 125,
+													"left": 124,
 													"top": 510,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84302,9 +84696,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 265,
+													"left": 264,
 													"top": 523,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84377,9 +84771,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 389,
+													"left": 388,
 													"top": 511,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84452,9 +84846,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 666,
+													"left": 665,
 													"top": 408,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84527,9 +84921,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1067,
+													"left": 1066,
 													"top": 430,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84602,9 +84996,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 399,
+													"left": 398,
 													"top": 497,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84679,9 +85073,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 659,
+													"left": 658,
 													"top": 511,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84756,9 +85150,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 801,
+													"left": 800,
 													"top": 523,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84833,9 +85227,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 939,
+													"left": 938,
 													"top": 525,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -84908,9 +85302,9 @@
 													"visible": false,
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 1339,
+													"left": 1338,
 													"top": 498,
-													"width": 7.2236328125,
+													"width": 8.658203125,
 													"height": 13,
 													"alpha": -1.5707963267948966,
 													"distance": 15,
@@ -89715,9 +90109,9 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 137,
+											"left": 136,
 											"top": 335,
-											"width": 7.2236328125,
+											"width": 8.658203125,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -89792,9 +90186,9 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 413,
+											"left": 412,
 											"top": 510,
-											"width": 7.2236328125,
+											"width": 8.658203125,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -89945,9 +90339,9 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 402,
+											"left": 401,
 											"top": 693,
-											"width": 7.2236328125,
+											"width": 8.658203125,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -90022,9 +90416,9 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 520,
+											"left": 519,
 											"top": 732,
-											"width": 7.2236328125,
+											"width": 8.658203125,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -90099,9 +90493,9 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 694,
+											"left": 693,
 											"top": 743,
-											"width": 7.2236328125,
+											"width": 8.658203125,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -90176,9 +90570,9 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 857,
+											"left": 856,
 											"top": 734,
-											"width": 7.2236328125,
+											"width": 8.658203125,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -90253,9 +90647,9 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 984,
+											"left": 983,
 											"top": 738,
-											"width": 7.2236328125,
+											"width": 8.658203125,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -90941,9 +91335,9 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 388,
+									"left": 387,
 									"top": 644,
-									"width": 7.2236328125,
+									"width": 8.658203125,
 									"height": 13,
 									"alpha": -1.5707963267948966,
 									"distance": 15,
@@ -91018,9 +91412,9 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 541,
+									"left": 540,
 									"top": 617,
-									"width": 7.2236328125,
+									"width": 8.658203125,
 									"height": 13,
 									"alpha": -1.5707963267948966,
 									"distance": 15,
@@ -91095,9 +91489,9 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 652,
+									"left": 651,
 									"top": 606,
-									"width": 7.2236328125,
+									"width": 8.658203125,
 									"height": 13,
 									"alpha": -1.5707963267948966,
 									"distance": 15,
@@ -91173,7 +91567,7 @@
 									"parentStyle": false,
 									"left": 749,
 									"top": 601,
-									"width": 30.341796875,
+									"width": 31.0400390625,
 									"height": 13,
 									"alpha": -1.5707963267948966,
 									"distance": 15,
@@ -91415,9 +91809,9 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 687,
+									"left": 686,
 									"top": 374,
-									"width": 7.2236328125,
+									"width": 8.658203125,
 									"height": 13,
 									"alpha": -1.5707963267948966,
 									"distance": 15,
@@ -91568,9 +91962,9 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 778,
+									"left": 777,
 									"top": 334,
-									"width": 7.2236328125,
+									"width": 8.658203125,
 									"height": 13,
 									"alpha": -1.5707963267948966,
 									"distance": 15,

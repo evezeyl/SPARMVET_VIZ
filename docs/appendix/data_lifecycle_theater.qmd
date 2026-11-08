@@ -20,13 +20,13 @@ Imagine you are a Chef in a high-pressure kitchen:
 ## 2. The 3-Tier Workflow
 
 ::: {.lightbox}
-![SEQ-AUDIT: exploration filter against Send to Audit and Apply — the real current flow this
-diagram's "Comparison Theater" / "Reference Pane" / "Active Pane" terms describe. Source:
-`docs/UML/app.mdj`, package `HOME` (ADR-096 — StarUML trial mode watermarks this image; a clean
-re-export follows once licensed). Naming note: this page's own "Tier 3 / Active Pane" terms predate
-ADR-085/ADR-086's current naming ("My view", the Plot-to-show/Data-to-show
-strip).](../UML/diagrams/SEQ-AUDIT_Exploration_and_audit.png)
-:::
+![SEQ-AUDIT: exploration filters against Send to Audit and Apply — the real current flow,
+redrawn 2026-11-08 in plain language and current naming (ADR-085/ADR-086: "My view", not "Tier 3"
+or "Active Pane"). Source: `docs/UML/app.mdj`, package `HOME` (ADR-096 — StarUML trial mode
+watermarks this image; a clean re-export follows once licensed). Naming note: this page's own
+prose below still uses the older "Tier 3 / Active Pane / Comparison Theater" terms — not yet
+refreshed (`DOC-TIER-PROSE-REFRESH-1`); the
+diagram is the current source for the vocabulary.](../UML/diagrams/SEQ-AUDIT_Exploration_and_audit.png)
 :::
 
 ### Tier 1: The Anchor (The Giant Library)

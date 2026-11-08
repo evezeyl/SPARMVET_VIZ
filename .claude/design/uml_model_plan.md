@@ -63,8 +63,8 @@ section, so a planned-but-not-built diagram would show here, not in the "Later" 
 | C4-COMP-HOME | Which handler and module owns what on HOME? | C4 component | logical | ✅ |
 | COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug). Direct reads found by a scan of the code | Flowchart | process | ✅ |
 | SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process | ✅ |
-| SEQ-OPEN | Data analysis recipe to Tier 1, Tier 2, plot, with the cache keys | Sequence | process | ✅ |
-| SEQ-AUDIT | Exploration filter against send to audit and Apply | Sequence | process | ✅ |
+| SEQ-OPEN | Data analysis recipe to Raw stage, Result stage, plot, with the fingerprint checks — plain language, redrawn 2026-11-08 | Sequence | process, for users | ✅ |
+| SEQ-AUDIT | Exploration filter against Send to Audit and Apply, current ADR-085/086 naming ("My view") — plain language, redrawn 2026-11-08 | Sequence | process, for users | ✅ |
 | SEQ-EXPORT | From click to bundle, with the key check | Sequence | process | ✅ |
 | STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process | ✅ |
 | **GALLERY** — what the user does, then the screen, then how it works | | | | |
@@ -73,8 +73,8 @@ section, so a planned-but-not-built diagram would show here, not in the "Later" 
 | C4-COMP-GALLERY | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
 | COM-REACTIVE-GALLERY | Which output reads which reactive value, in GALLERY? | Flowchart | process | ✅ |
 | **BLUEPRINT** — what the user does, then the screen, then how it works | | | | |
-| UC-BLUEPRINT | What can a user do, under which flag? | Use case | scenarios | ✅ |
-| UI-BLUEPRINT | What is on the screen, same detail as UI-HOME | Wireframe | scenarios, for users and developers | ✅ |
+| UC-BLUEPRINT | What can a user do, under which flag? Includes branching (ADR-082 §Q3), added 2026-11-08 | Use case | scenarios | ✅ |
+| UI-BLUEPRINT | What is on the screen, in plain language — redrawn 2026-11-08 for users, unlike UI-HOME it carries no code/flag tags | Wireframe | scenarios, for users | ✅ |
 | C4-COMP-BLUEPRINT | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
 | COM-REACTIVE-BLUEPRINT | Which output reads which reactive value, in BLUEPRINT? | Flowchart | process | ✅ |
 | **TEST_LAB** — what the user does, then the screen, then how it works | | | | |
