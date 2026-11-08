@@ -59,12 +59,24 @@ def server(input, output, session):
 
     @reactive.Calc
     def active_collection_id():
-        """Agnostic Discovery: fetches the first collection in the data analysis recipe."""
+        """Agnostic Discovery: fetches the first collection (join) in the data analysis recipe.
+
+        Issue #24 (Eve, 2026-11-08): if there is no join in the recipe, there is just no
+        join — plots can be made directly from a data schema that isn't joined with
+        anything else (materialize_tier1's "Path A"). So when `joins:` is empty, fall back
+        to the first plot's bare `target_dataset` instead of the placeholder
+        "Untitled_Collection", which Path A doesn't recognise as a real dataset id.
+        """
         cfg = active_cfg()
         collections = list(cfg.raw_config.get("joins", {}).keys())
-        if not collections:
-            return "Untitled_Collection"
-        return collections[0]
+        if collections:
+            return collections[0]
+        for group_spec in cfg.raw_config.get("analysis_groups", {}).values():
+            for plot_entry in group_spec.get("plots", {}).values():
+                target = (plot_entry.get("spec") or {}).get("target_dataset")
+                if target:
+                    return target
+        return "Untitled_Collection"  # no joins and no plot has a target_dataset either
 
     # 1. Reactive Data Analysis Recipe Authority (Universal Architecture)
     @reactive.Calc

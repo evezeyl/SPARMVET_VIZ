@@ -1,0 +1,43 @@
+id: 3_test_no_joins
+info:
+  display_name: No-Joins Regression Test
+  contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
+  subtitle: A single data schema with no joins at all — issue #24 regression
+  category: Regression Test
+  description: >
+    Minimal recipe with one data schema and no joins: block, to cover HOME building
+    plots directly from a bare data schema (materialize_tier1 Path A) instead of
+    failing with "No assembly or data_schema 'Untitled_Collection' found".
+  version: '1.0'
+
+# Reuses the MLST data schema's real files from 1_test_data_ST22_dummy — same source
+# TSV, same input_fields/wrangling fragments — just with no joins: block anywhere.
+data_schemas:
+  MLST:
+    info:
+      category: Strain Classification
+      sub_category: Multilocus Typing
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
+
+analysis_groups:
+  no_join_group:
+    label: No Joins
+    plots:
+      sequence_type_counts:
+        label: Sequence Type Counts
+        spec:
+          target_dataset: MLST
+          mapping:
+            x: sequence_type
+          layers:
+            - name: geom_bar
+              params: {}
+            - name: labs
+              params:
+                title: "Sequence Type Counts (no join)"
+                x: "Sequence Type"
