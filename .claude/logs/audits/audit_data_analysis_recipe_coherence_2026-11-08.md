@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (blueprint_inline wiring sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (doc/UML sync sweep for ADR-094 + blueprint_inline)
 
 # Audit Report: Data Analysis Recipe Coherence
-Generated: 2026-11-08T11:16:29
+Generated: 2026-11-08T11:27:29
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-013 (Data analysis recipe Data Contract), ADR-041 (Unified Data analysis recipe Standard), rules_data_analysis_recipe_structure.md §7
 

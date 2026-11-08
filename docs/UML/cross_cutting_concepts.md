@@ -29,10 +29,15 @@ are fatal.
 
 ## Error handling at runtime
 
-Separate from startup configuration errors: a `PipelineError` raised while a session is already
-running (a bad step in a data analysis recipe, a column that does not exist) is caught, shown in the
-notification/alerts panel with the data analysis recipe name and a tip, and the session keeps running
-(ADR-078, ADR-079). It never calls `sys.exit` once the app has started.
+Separate from startup configuration errors: a `PipelineError` carries what broke, where, the fix,
+and who should apply it (ADR-078, ADR-079). It is raised at all 7 production sites that can fail
+mid-session, but as of 2026-11-08 (ADR-094) only two of those sites actually show it to the user:
+data materialization in HOME (`DataOrchestrator`, surfaced in the "Pipeline Issues" panel) and
+BLUEPRINT's three recipe-load/YAML-parse failures (shown inline, with the fix text, right where
+the error happened — not just a generic toast). The other five raise points (VizFactory render
+failures beyond the one wired path, T3 Apply, Data Import panel) still only reach Shiny's generic
+error handling — tracked as `PIPELINE-ERROR-WIRE-2`. None of this ever calls `sys.exit` once the
+app has started — that part has always held.
 
 ## Provenance
 

@@ -81,6 +81,19 @@ Issues During Session" section already existed (one catch point, VizFactory rend
 corrected both the ADR-079 status line and the stale `PIPELINE-ERROR-WIRE-1` task description
 rather than re-building what was already there.
 
+**Extended again (2026-11-08, same day):** Eve asked specifically about BLUEPRINT's own error
+display ("are errors reported in blueprint... the detection and guidance text need to reach the
+screen") — found all 3 BLUEPRINT catch points built a full `PipelineError` (problem + fix + who)
+but only printed it server-side; the user only ever saw a generic toast. Wired `render_blueprint_inline()`
+to actually render, and extended that renderer itself to include the fix text (it previously showed
+only the problem). `UI-BLUEPRINT` gets two new panels (`bp_import_error_ui`, the YAML-hatch inline
+error block) so the wireframe keeps matching the real screen; `COM-REACTIVE-BLUEPRINT` gets the new
+`wrangle_studio.inline_errors` state and its two read edges. `cross_cutting_concepts.md`'s "Error
+handling at runtime" section and `project_conventions.md`'s `pipeline_error.py` row were both still
+describing the pre-ADR-094 (and in cross_cutting_concepts.md's case, pre-dating even that — it had
+never been accurate) state — corrected both to name exactly which of the 7 raise points are wired
+and which 4 remain open under `PIPELINE-ERROR-WIRE-2`.
+
 **Done (2026-11-07):** GALLERY, BLUEPRINT, TEST_LAB use case diagrams (UC-GALLERY, UC-BLUEPRINT,
 UC-TESTLAB) and C4 component diagrams (C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB),
 same level of detail as C4-COMP-HOME.
