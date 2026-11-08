@@ -187,7 +187,7 @@ Verifies every registered component imports correctly, accepts realistic specs, 
 ```
 
 Test modules:
-- `libs/viz_factory/tests/test_deco2_components.py` — DECO-2 wrappers (38 cases)
+- `libs/viz_factory/tests/test_deco2_components.py` — DECO-2 wrappers (42 cases)
 
 ### 2. Integrity suite — end-to-end PNG materialisation
 
@@ -286,7 +286,7 @@ plot_comps = get_components_for_context("plot")
 
 Component schema tests:
 - `libs/viz_factory/tests/test_component_schemas.py` — structure, param coverage, semantic rules
-- `libs/viz_factory/tests/test_deco2_components.py` — runtime handler tests (38 cases)
+- `libs/viz_factory/tests/test_deco2_components.py` — runtime handler tests (42 cases)
 
 ```bash
 PYTHONPATH=. .venv/bin/python -m pytest libs/viz_factory/tests/ -v

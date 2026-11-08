@@ -253,21 +253,7 @@ scalars (`theme`, `facet_by`, `palette`, `target_dataset`), `labels`, `guides`, 
 passthrough for gallery taxonomy / author notes.
 
 ```yaml
-spec:
-  target_dataset: AMR_Profile_Joint
-  mapping:
-    x: Year
-    fill: Multiresistant
-    facet_by: Country
-  theme: theme_light
-  layers:
-    - name: geom_bar
-      params: {}
-    - name: position_dodge
-      params: {}
-    - name: labs
-      params:
-        title: "Multi-Resistance by Country"
+{{< include ../../config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml >}}
 ```
 
 ### Why `factory_id` was removed cleanly

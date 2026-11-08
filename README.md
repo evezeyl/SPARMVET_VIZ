@@ -67,7 +67,7 @@ SPARMVET is designed to be deployed in different contexts — from a read-only p
 
 ### Non-negotiable rule: full audit trail in every export
 
-Every export — regardless of configuration — includes a complete provenance record: data hashes, data analysis recipe hash, wrangling steps hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [Deployment Configuration Guide](./docs/user_guide/deployment_app_features.qmd).
+Every export — regardless of configuration — includes a complete provenance record: data hashes, data analysis recipe hash, wrangling steps hash, git commit, software versions, and creation timestamp. This cannot be disabled. See [ADR-069](./.claude/knowledge/architecture_decisions.md) and the [App features guide](./docs/workflows/ui_app_features.qmd).
 
 ### Quick start
 

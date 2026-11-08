@@ -77,20 +77,11 @@ The flagship gallery entry is the **Phase 9 Triple-Source Integration**, which p
 ### Data analysis recipe
 
 ```yaml
-# Assembly steps: config/data_analysis_recipes/pipelines/figshare_integration/
-#   wrangling/figshare_triple_join_steps.yaml, !include-d by the join block
-#   in figshare_integration.yaml. Canonical action: syntax
-#   (rules_data_analysis_recipe_structure.md §7) — note the quoted 'on':.
-tier1:
-  - action: join
-    right_ingredient: fg_phenotypes
-    'on': sample_id
-    how: left
-  - action: join
-    right_ingredient: fg_genotypes
-    'on': sample_id
-    how: left
+{{< include ../../config/data_analysis_recipes/pipelines/figshare_integration/wrangling/figshare_triple_join_steps.yaml >}}
 ```
+
+This is the exact `steps` fragment `!include`-d by the join block in `figshare_integration.yaml` —
+canonical `action:` syntax (`rules_data_analysis_recipe_structure.md §7`), note the quoted `'on':`.
 
 ### Plot Examples (Stage 3)
 

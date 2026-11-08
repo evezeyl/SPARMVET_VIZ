@@ -19,6 +19,12 @@ The gallery requires a pre-computed index for UI efficiency. Run the following c
 export PYTHONPATH=$PYTHONPATH:. && ./.venv/bin/python libs/viz_gallery/assets/refresh_gallery.py
 ```
 
+After adding or changing an example's data analysis recipe or data, regenerate its `preview_plot.png` before rebuilding the index (`rules_gallery_standards.md §6`):
+
+```bash
+./.venv/bin/python libs/viz_gallery/assets/generate_previews.py [--only <name> ...] [--force]
+```
+
 ## Governance (Mandatory Triplet — ADR-061, ADR-063)
 
 Every gallery bundle folder MUST contain all four files:

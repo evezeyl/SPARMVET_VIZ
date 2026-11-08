@@ -91,13 +91,7 @@ If the data analysis recipe or a data file changed after you opened the view, th
 ### How do I handle placeholders like `-` or `NA`?
 **Strategy**: Ingestion already turns the common placeholders (`-`, `NA`, `N/A`, `None`, `null`, `NaN` and empty cells) into real nulls before your wrangling runs. Use the `fill_nulls` action to give them a human-readable label. Placeholders that are *not* in that list (for example `unknown`) are replaced with `replace_values`; other values stay as they are.
 ```yaml
-- action: "replace_values"
-  columns: ["sequence_type"]
-  to_replace: ["unknown"]
-  new_value: "Non Determined"
-- action: "fill_nulls"
-  columns: ["sequence_type"]
-  value: "Non Determined"
+{{< include ../../config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml >}}
 ```
 This ensures that untyped isolates appear correctly in your legends and bar charts rather than being hidden as nulls.
 

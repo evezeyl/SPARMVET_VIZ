@@ -28,8 +28,10 @@ from blueprint_arch.data_analysis_recipe_navigator import (
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 
-mapper = BlueprintMapper()
-cy_elements = mapper.generate_cy_elements(sibling_map, component_ctx_map)
+# raw_config is the data analysis recipe's ConfigManager-resolved raw_config
+# (!include tags resolved, analysis_groups plots flattened) — not yaml.safe_load.
+mapper = BlueprintMapper(raw_config, active_node=schema_id)
+cy_elements = mapper.generate_cy_elements()
 ```
 
 ## Design Constraints
@@ -145,12 +147,14 @@ In test files, place these imports at module level so all test functions see a p
 
 ```python
 from blueprint_arch.group_plot_manager import (
-    list_groups_plots,  # (data_analysis_recipe_path) -> dict[group_id, list[plot_id]]
+    list_groups_plots,  # (data_analysis_recipe_path) -> the full analysis_groups dict
+                         # (group_id -> {label, plots: {plot_id: {...}}})
     create_group,       # (data_analysis_recipe_path, group_id, label) -> tuple[bool, str]
     delete_group,       # (data_analysis_recipe_path, group_id) -> tuple[bool, str]
     create_plot,        # (data_analysis_recipe_path, group_id, plot_id, label) -> tuple[bool, str]
     delete_plot,        # (data_analysis_recipe_path, group_id, plot_id) -> tuple[bool, str]
-    assign_plot,        # (data_analysis_recipe_path, group_id, plot_id, spec_path) -> tuple[bool, str]
+    assign_plot,        # (data_analysis_recipe_path, plot_id, from_group, to_group) -> tuple[bool, str]
+                         # — moves an existing plot entry from one group to another
 )
 ```
 
@@ -227,7 +231,7 @@ PYTHONPATH=. .venv/bin/python -m pytest libs/blueprint_arch/tests/ -v
 
 | Test file | Covers |
 |---|---|
-| `test_schema_registry.py` | Catalog loading, all 19 transformer actions and 7 viz components present, structural field validation, filtering and search correctness |
+| `test_schema_registry.py` | Catalog loading (floor checks: at least 19 transformer actions and 7 viz components present — the real catalog is larger and grows as more actions/components gain a `ui_schema`), structural field validation, filtering and search correctness |
 | `test_lineage_nav.py` | `build_sibling_map`, `build_lineage_chain`, `build_schema_registry`, `generate_branch_plan` against fixture data analysis recipes |
 | `test_join_designer.py` | `compute_key_match` overlap logic, `build_join_step` output shape, `parse_join_step` boolean-trap handling |
 | `test_group_plot_manager.py` | CRUD round-trips for groups and plots, error cases for duplicates and missing IDs |
