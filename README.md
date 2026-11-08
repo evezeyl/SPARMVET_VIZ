@@ -2,6 +2,47 @@
 
 SPARMVET (SP-Analytical AMR Visualization Engine) is a modular, declarative framework for building high-integrity visualizations from genomic and AMR surveillance data.
 
+> [!IMPORTANT]
+> **AI-assisted development, not yet manually code-reviewed.** This project is built with Claude
+> Code. Automated rules, audits and tests govern every change (see below), but **no human has
+> manually read and verified the generated source code line by line**. Treat this as a research
+> prototype under active development, not production-audited software, until a manual code-review
+> pass has been completed (planned: one module at a time, before any deployment handling real data).
+
+## 🤖 How This Project Is Built
+
+An AI coding agent (Claude Code) does the implementation; the project owner directs the work,
+reviews the agent's plans and findings, and makes every product/scope decision. An earlier design
+phase (through February 2026) used Gemini — see
+[AI usage during the development process](./docs/appendix/AI_and_development_process.qmd) for that
+history. All current development is Claude Code.
+
+- **Rules:** `CLAUDE.md` is the entry point; `.claude/rules/*.md` govern architecture, path
+  authority, the UI contract, naming, deprecation handling and more. The agent reads them every
+  session and is expected to follow them without exception, or stop and ask.
+- **Architecture decisions:** every significant design choice is logged as a dated, numbered ADR
+  in `.claude/knowledge/architecture_decisions.md` — the single source of truth for *why* the code
+  looks the way it does, not just *what* it does.
+- **Automated audits:** scheduled scripts (`scripts/audit_*.py`, see
+  `.claude/workflows/audit_routine_registry.md`) check things a human reviewer would otherwise have
+  to catch by hand — dependency health, documentation-vs-code drift, task-vs-code drift, config
+  consistency, UML-model-vs-code consistency, and more. Reports land in `.claude/logs/audits/` and
+  are triaged (fixed or explicitly accepted) before being marked processed — nothing is left
+  silently unresolved.
+- **Tests:** a headless suite (`pytest`, ~1,500 tests) and a browser suite (Playwright, driving the
+  real running app) are run before any fix is considered done. New fixes get a new regression test,
+  and that test is **mutation-tested** — the fix is temporarily reverted to confirm the new test
+  actually fails without it, then restored — so a test that would never have caught the bug isn't
+  mistaken for coverage.
+- **Documentation:** a Quarto book (`docs/`) is the human-facing reference, kept in sync with the
+  code deliberately (not automatically) — doc-vs-code drift is itself an audited, tracked category
+  of bug, not an afterthought.
+- **Issues and commits:** real bugs and gaps are filed as GitHub issues (not just fixed silently)
+  and closed with the evidence once resolved, so there's a trace. Commits follow
+  [Conventional Commits](https://www.conventionalcommits.org/).
+- **What's still manual:** scope and priority decisions, product direction, and — not yet done —
+  a line-by-line human code review before this is treated as audited, production-ready software.
+
 ## 🚀 Core Philosophy
 
 1. **Strict Data Contracts (ADR-013)**: Data enters through an ingestion layer where it is immediately validated against a data analysis recipe.

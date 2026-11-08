@@ -1,24 +1,56 @@
 # AI usage during the development process
 
-Gemini was used extensively during the development process, for both architectural design and code generation.
+**Current state (since Phase 4, see below): all active development is done with Claude Code.**
+Earlier phases used Gemini for the initial design and tooling work, kept below as historical
+record — not because it's still in use.
 
-Gemini Pro (personal abonment - via google one 2T) was used in web-browser (Brave / Google chrome). 
+## Early phases (Gemini)
 
-Chats and Specialized assistant chats were exported as markdown files (not always working perfectly) using the browser extension `AI Chat Exporter`
+Gemini Pro (personal subscription, via Google One 2T) was used in-browser (Brave / Google Chrome).
+Chats were exported as markdown files (not always working perfectly) using the browser extension
+`AI Chat Exporter`. Both Fast and Thinking models were used, depending on the need.
 
-Both Fast and Thinking models were used, depending on the needs.
+1. **Phase 1** — Gaining general knowledge about dashboard development. First architectural design
+   thinking.
+2. **Phase 2** — Development of a specialized agent for development: see
+   [DashBoard_Architect_v1](./DashBoard_Architect_v1.qmd) (February 2026). Used iteratively to
+   refine requirements and design understanding, review notes, ask clarifying questions, create
+   the basic architectural structure and boilerplate, and design the repository structure so it
+   reflects the intended architecture and stays maintainable.
+3. **Phase 3** — Full agentic integration (March 2026+): execution and active code development
+   were driven by the **Antigravity** framework with full agentic integration with Gemini Pro.
+   The agent directly managed workspace standards (ADRs), created test data schemas, refactored
+   codebase architecture, and enforced data contracts.
 
-1. Phase 1: Gaining general knowledge about Dashboard development. First Architectural Design thinking
+## Current phase: Claude Code
 
-2. Phase 2: Development of specialized agent for development: See [DashBoard_Architect_v1](./DashBoard_Architect_v1.qmd) (February 2026)
-- iteratively to refine requirements and design understanding 
-- reviewing notes and asking new questions, clarification, details, reviewing strategy
-- used to create basic architectural structure and broiler plates. 
-- creating repository structure: role of the structure to reflect intended architecture, and to make it easier to maintain and scale.
+4. **Phase 4** — All active development since (the whole second half of this project's history —
+   roughly a third of all commits are Claude-co-authored, and climbing) is done with
+   **Claude Code**, replacing the Antigravity/Gemini workflow entirely. The project owner directs
+   the work, reviews the agent's plans and findings, and makes every product/scope decision; the
+   agent implements, tests and documents within rules the owner has written down:
 
-3. Phase 3: Full Agentic Integration (March 2026+)
-- While initial planning was done as written above, execution and active code development are now driven by the **Antigravity** framework using full agentic integration with Gemini Pro AI.
-- The agent directly manages workspace standards (ADRs), creates test data schemas, refactors codebase architecture, and enforces data contracts.
+   - **Rules first.** `CLAUDE.md` plus `.claude/rules/*.md` govern architecture, path authority,
+     the UI contract, naming conventions, and how to handle deprecation — read every session, not
+     optional guidance.
+   - **Decisions are logged, not just made.** Every significant architectural choice becomes a
+     dated, numbered entry in `.claude/knowledge/architecture_decisions.md` — the record of *why*,
+     not just *what*.
+   - **Audits replace ad-hoc review for the mechanical parts.** Scheduled scripts
+     (`scripts/audit_*.py`) check dependency health, documentation-vs-code drift,
+     task-vs-code drift, config consistency and UML-model-vs-code consistency — the things a human
+     reviewer would otherwise have to re-derive from scratch every time. Findings are triaged
+     (fixed or explicitly accepted) rather than left to accumulate silently.
+   - **Every fix gets a test, and the test gets tested.** New regression tests are
+     mutation-tested: the fix is temporarily reverted to confirm the new test actually fails
+     without it, then restored — a test that could never have caught the bug isn't mistaken for
+     real coverage.
+   - **Real bugs become GitHub issues**, filed before or alongside the fix and closed with the
+     evidence once resolved, so there is a trace — not just a silently-fixed local note.
+   - **What AI-assisted does *not* yet mean here: human-code-reviewed.** See the notice at the top
+     of the project [README](../../README.md) — no one has yet manually read and verified the
+     generated source line by line. That review is planned, one module at a time, before any
+     deployment handling real data.
 
 <!-- For Eventual Trolls
 If you are being upset about carbon usage: 
