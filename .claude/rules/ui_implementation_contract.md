@@ -402,6 +402,7 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 | Type | Gate flag | Workspace | Description |
 |---|---|---|---|
 | `data_analysis_recipe_info` | — | any | Data analysis recipe title, description, dataset summary |
+| `test_lab_info` | — | test_lab | Test Lab's own Info panel — static placeholder text, never the open data analysis recipe's `info:` block (issue #33, 2026-11-08: Test Lab tools don't operate on an open recipe, so showing recipe content there is actively wrong, not just unused). Content TBD once Test Lab's own panels are finished. |
 | `deployment_info` | — | any | Branding: logo, contact, institution (params in template) |
 | `data_analysis_recipe_choice` | `data_analysis_recipe_selector.visible` | home | Data analysis recipe selector dropdown |
 | `filters` | `interactivity_enabled` | home | Row filter builder (§8) |
@@ -412,7 +413,9 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 | `blueprint_nav` | `blueprint_enabled` | blueprint | Pipeline selector + TubeMap node selector |
 | `blueprint_logic` | `blueprint_enabled` | blueprint right | Active component logic stack |
 | `gallery_search` | `gallery_enabled` | gallery | Focus mode: search and filter (ADR-038) |
-| `notification_log` | — | any right | Alert log accordion (ADR-060) |
+| `notification_log` | — | any left | Alert log accordion (ADR-060). **Moved from right to left for every workspace (Home, Gallery, Blueprint, Test Lab), 2026-11-08, issue #33**: the right sidebar is structurally absent for some app features (Home: `pipeline-static`/`pipeline-exploration-simple`) or for an entire workspace (Test Lab: `testlab_standard_right.yaml` is `visible: false`), which made alerts unreachable there. Home, Gallery, and Blueprint keep their right sidebars — now reserved for future modules, not removed (Eve: "I am pretty sure we will need the space in further developments"). |
+
+**Note on Gallery/Blueprint's left-sidebar construction (finding F-01, `.claude/tasks/uml_findings.md`):** Gallery and Blueprint build their left sidebars via hardcoded functions in `home_theater.py`'s `sidebar_tools_ui()`, not through the slot registry/YAML path above — only Home and Test Lab's left sidebars go through `_build_left_sidebar()`. This split is deliberate, not a bug: Eve (2026-11-08), on Blueprint specifically — "The blueprint left and right panels have their own specificity and they are individual so I do not see what is the problem." `gallery_focus_left.yaml` and `blueprint_standard_left.yaml` exist on disk but are not read for the left side (only their `*_right.yaml` counterparts are consumed); no migration to the registry is planned for either workspace's left sidebar.
 
 ### 11e. Implementation notes
 

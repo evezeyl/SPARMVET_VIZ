@@ -458,6 +458,56 @@ class TestPhase25Panels:
         expect(accordion.get_by_text("Session Management", exact=True)).not_to_be_visible()
         expect(accordion.get_by_text("Data analysis recipe Choice", exact=True)).not_to_be_visible()
 
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in ("developer", "qa"),
+        reason="Test Lab is only enabled for developer and qa app features",
+    )
+    def test_test_lab_info_panel_shows_a_placeholder_not_a_recipe(self, page: Page, shiny_app: ShinyAppProc):
+        """Test Lab's Info panel (test_lab_info, not data_analysis_recipe_info) must show its own
+        placeholder text and never the open data analysis recipe's info: block (issue #33, Eve,
+        2026-11-08: "it should be empty because we can fill it with instructions later, but it
+        should not display the recipe instructions as there are no recipes in the test lab")."""
+        _load_data_analysis_recipe(page, shiny_app.url)
+        page.locator("#sidebar_nav").get_by_text("Test Lab").first.click()
+        page.wait_for_selector("#nav_accordion", timeout=15_000)
+        accordion = page.locator("#nav_accordion")
+        accordion.get_by_text("Info", exact=True).first.click()
+        expect(accordion).to_contain_text("instructions coming soon")
+        expect(accordion).not_to_contain_text("ST22 Dummy Dataset")
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in ("developer", "qa"),
+        reason="Gallery only visible for developer/qa app features",
+    )
+    def test_gallery_left_sidebar_shows_alerts(self, page: Page, shiny_app: ShinyAppProc):
+        """Alerts (notification_log) moved to Gallery's LEFT sidebar, 2026-11-08 (issue #33):
+        Gallery's right sidebar is mostly empty/reserved for future modules, and alerts must
+        stay reachable there regardless (same reasoning as Home's earlier fix)."""
+        page.goto(shiny_app.url)
+        page.wait_for_selector("#sidebar_nav", timeout=15_000)
+        page.locator("#sidebar_nav").get_by_text("Gallery", exact=True).first.click()
+        page.wait_for_selector("#gallery_sidebar_accordion", timeout=15_000)
+        expect(page.locator("#sidebar_tools_ui #notification_log_panel_ui")).to_be_visible()
+        assert page.locator("#audit_sidebar #notification_log_panel_ui").count() == 0, \
+            "Alerts must not also render in the right sidebar (no duplicate DOM id, REG-10)"
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in ("developer", "qa"),
+        reason="Blueprint only visible for developer/qa app features",
+    )
+    def test_blueprint_left_sidebar_shows_alerts(self, page: Page, shiny_app: ShinyAppProc):
+        """Alerts (notification_log) moved to Blueprint's LEFT sidebar, 2026-11-08 (issue #33):
+        Blueprint's own left/right panels keep their existing, distinct layout (Eve: "they have
+        their own specificity... I do not see what is the problem") — only the alerts placement
+        changed, matching Home/Gallery/Test Lab."""
+        page.goto(shiny_app.url)
+        page.wait_for_selector("#sidebar_nav", timeout=15_000)
+        page.locator("#sidebar_nav").get_by_text("Blueprint Architect").first.click()
+        page.wait_for_selector("#wrangle_sidebar_accordion", timeout=20_000)
+        expect(page.locator("#sidebar_tools_ui #notification_log_panel_ui")).to_be_visible()
+        assert page.locator("#audit_sidebar #notification_log_panel_ui").count() == 0, \
+            "Alerts must not also render in the right sidebar (no duplicate DOM id, REG-10)"
+
     def test_global_export_panel_visible(self, page: Page, shiny_app: ShinyAppProc):
         """Export accordion panel is always present (renamed from 'Global Export' in export redesign 2026-05-04)."""
         page.goto(shiny_app.url)

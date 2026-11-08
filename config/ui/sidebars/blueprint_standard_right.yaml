@@ -2,4 +2,5 @@ visible: true
 panels:
   - type: blueprint_logic
   - type: blueprint_agent_chat
-  - type: notification_log
+# Alerts moved to the left sidebar, 2026-11-08 (Eve: same reachability fix as Home,
+# ui_reachability_map.md §5).

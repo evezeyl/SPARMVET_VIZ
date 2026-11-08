@@ -24,6 +24,10 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": None,
         "label": "Info",
     },
+    "test_lab_info": {
+        "gate_flag": None,
+        "label": "Info",
+    },
     "deployment_info": {
         "gate_flag": None,
         "label": "Deployment Info",

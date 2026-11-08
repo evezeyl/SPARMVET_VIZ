@@ -1,3 +1,8 @@
 visible: true
-panels:
-  - type: notification_log
+panels: []
+# Alerts moved to the left sidebar, 2026-11-08 (Eve: same reachability fix as Home,
+# ui_reachability_map.md §5). The right sidebar stays structurally present (visible:
+# true, empty slot list) and still shows the hardcoded "Gallery Explorer" static card
+# (right_sidebar_content_ui's Gallery branch) -- reserved for future modules (Eve:
+# "not so useful right now, but I am pretty sure we will need the space in further
+# developments"), not removed.

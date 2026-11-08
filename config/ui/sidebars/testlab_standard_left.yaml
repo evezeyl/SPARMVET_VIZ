@@ -1,3 +1,9 @@
 visible: true
 panels:
-  - type: data_analysis_recipe_info
+  - type: notification_log
+  - type: test_lab_info
+# Eve, 2026-11-08: test_lab_info, not data_analysis_recipe_info -- Test Lab tools don't
+# use the open data analysis recipe at all, so the recipe's info: block has no place
+# here (see _render_test_lab_info in home_theater.py). notification_log moved here from
+# the (always-absent) right sidebar -- Test Lab's right sidebar is visible: false, so
+# alerts were completely unreachable there before this move.

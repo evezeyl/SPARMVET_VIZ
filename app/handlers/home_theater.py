@@ -1433,17 +1433,25 @@ def define_server(input, output, session, *,
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
         # Gallery (ADR-057: filter + example selector moved here from internal sidebar)
-        # notification_log lives in the RIGHT sidebar only (ADR-073 slot registry) —
-        # do not also mount it here, it duplicates the id and races with the right
-        # sidebar's copy (REG-10).
+        # Eve, 2026-11-08: Alerts moved to the left sidebar here, same reasoning as
+        # Home's move (ui_reachability_map.md §5) — removed from gallery_focus_right.yaml
+        # at the same time so it is mounted in exactly one place (REG-10 was a real
+        # duplicate-id bug from having it in two places at once; moving, not copying,
+        # avoids repeating that).
         if active_sidebar == "Gallery":
             return ui.div(
+                ui.output_ui("notification_log_panel_ui"),
                 gallery_viewer.build_sidebar_ui(),
             )
 
         # Data analysis recipe Workbench (Wrangle Studio)
         if active_sidebar == "Wrangle Studio":
             return ui.div(
+                # Eve, 2026-11-08: Alerts moved here from the right sidebar, same move
+                # as Home and Gallery (ui_reachability_map.md §5) — removed from
+                # blueprint_standard_right.yaml at the same time, mounted in exactly
+                # one place (see the Gallery branch above for the REG-10 note).
+                ui.output_ui("notification_log_panel_ui"),
                 ui.accordion(
                     ui.accordion_panel(
                         "🗂️ Master data analysis recipe",
@@ -1507,7 +1515,6 @@ def define_server(input, output, session, *,
                     style="display:none;",
                     id="blueprint_hidden_controls"
                 ),
-                # notification_log lives in the RIGHT sidebar only (ADR-073) — see REG-10.
             )
 
         # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
@@ -1530,6 +1537,20 @@ def define_server(input, output, session, *,
             return ui.accordion_panel(
                 "Info",
                 ui.output_ui("data_analysis_recipe_info_ui"),
+                icon=ui.tags.i(class_="bi bi-info-circle-fill")
+            )
+
+        def _render_test_lab_info():
+            """Test Lab's own Info panel — Eve, 2026-11-08: deliberately distinct from
+            data_analysis_recipe_info. Test Lab tools don't operate on an open data
+            analysis recipe at all, so showing recipe info: content here is actively
+            wrong, not just unused. Empty placeholder for now — Test Lab's own panels
+            aren't finished yet either, so this isn't filled in prematurely; reserved
+            for Test-Lab-specific instructions once that's decided."""
+            return ui.accordion_panel(
+                "Info",
+                ui.p("Test Lab tools — instructions coming soon.",
+                     class_="text-muted small p-2 mb-0"),
                 icon=ui.tags.i(class_="bi bi-info-circle-fill")
             )
 
@@ -1629,6 +1650,7 @@ def define_server(input, output, session, *,
 
         _left_panel_renderers = {
             "data_analysis_recipe_info":       _render_data_analysis_recipe_info,
+            "test_lab_info":      _render_test_lab_info,
             "deployment_info":    _render_deployment_info,
             "data_analysis_recipe_choice":    _render_data_analysis_recipe_choice,
             "filters":            _render_filters,
@@ -1777,8 +1799,9 @@ def define_server(input, output, session, *,
                         class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto"
                     )
                 )
-            # REG-10 fix: notification_log sourced from the slot registry here
-            # (blueprint_standard_right.yaml) — no longer hardcoded in the left sidebar.
+            # Alerts moved to the left sidebar, 2026-11-08 (see the Wrangle Studio
+            # left-sidebar branch above) — blueprint_standard_right.yaml no longer
+            # lists notification_log, so this naturally stays empty here now.
             blueprint_right_cfg = bootloader.get_sidebar_config("blueprint", "right")
             blueprint_right_types = {s.get("type", "") for s in blueprint_right_cfg.panels}
             if "notification_log" in blueprint_right_types:
@@ -1841,8 +1864,9 @@ def define_server(input, output, session, *,
                     class_="mb-2 shadow-sm border-0"
                 ),
             ]
-            # REG-10 fix: notification_log sourced from the slot registry here
-            # (gallery_focus_right.yaml) — no longer hardcoded in the left sidebar.
+            # Alerts moved to the left sidebar, 2026-11-08 (see the Gallery left-sidebar
+            # branch above) — gallery_focus_right.yaml no longer lists notification_log,
+            # so this naturally stays empty here now.
             gallery_right_cfg = bootloader.get_sidebar_config("gallery", "right")
             gallery_right_types = {s.get("type", "") for s in gallery_right_cfg.panels}
             if "notification_log" in gallery_right_types:
