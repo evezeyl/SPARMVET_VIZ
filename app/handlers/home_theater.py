@@ -813,6 +813,16 @@ def define_server(input, output, session, *,
         )
         tier_choices["T3"] = _tier_label("My view", "T3 — Filtered / Dropped", _my_view_desc)
 
+        # HOM-08 (Eve, 2026-11-08): dynamic_tabs rebuilds this strip for reasons unrelated to
+        # the tier choice itself (e.g. a workspace switch, Home -> Gallery -> Home), and a
+        # hardcoded selected="T2" silently discarded whatever the user had actually picked.
+        # Isolated read of the current input value (not the input.plot_view/input.tier_toggle
+        # live subscription, which would reintroduce the "re-renders on every tier flip"
+        # problem below) — same pattern as the active-tab restoration above.
+        with reactive.isolate():
+            _cur_plot_view = safe_input(input, "plot_view", "T2")
+            _cur_data_view = safe_input(input, "tier_toggle", "T2")
+
         # STATIC-VIEW-1a: static app features files (interactivity_enabled=false) have no tier
         # switching — hide the strip entirely. T2 is the implicit default via the
         # _track_tier_toggle fallback (safe_input returns "T2" when input absent).
@@ -845,10 +855,10 @@ def define_server(input, output, session, *,
                         "plot_view",
                         label=None,
                         choices=plot_choices,
-                        # Static default, as for tier_toggle: plot_view is read by the
-                        # plot cells and handlers, never here, so changing it does not
-                        # re-render dynamic_tabs.
-                        selected="T2",
+                        # HOM-08: restore the isolated-read current value (falls back to "T2"
+                        # if it's not a valid choice here, e.g. a saved "CMP" on a config
+                        # without comparison_mode_enabled) — not a static default, see above.
+                        selected=_cur_plot_view if _cur_plot_view in plot_choices else "T2",
                         inline=True,
                     ),
                     class_="d-flex align-items-center",
@@ -862,12 +872,11 @@ def define_server(input, output, session, *,
                         "tier_toggle",
                         label=None,
                         choices=tier_choices,
-                        # Default T2: in most data analysis recipes T2 = T1 so there is no cost,
-                        # and data analysis recipes with processing steps show the intended result.
-                        # Use static default — tier_toggle reactive value is NOT read here
-                        # so that tier changes do NOT invalidate/re-render dynamic_tabs DOM.
-                        # The _track_tier_toggle effect keeps tier_toggle reactive in sync.
-                        selected="T2",
+                        # HOM-08: restore the isolated-read current value (falls back to "T2"
+                        # if it's not a valid choice here) — not a static default, see above.
+                        # The _track_tier_toggle effect keeps the tier_toggle reactive.Value
+                        # in sync, separately, for server.py's own calcs.
+                        selected=_cur_data_view if _cur_data_view in tier_choices else "T2",
                         inline=True,
                     ),
                     class_="d-flex align-items-center",

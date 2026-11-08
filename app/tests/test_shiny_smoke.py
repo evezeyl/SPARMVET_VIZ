@@ -307,6 +307,32 @@ class TestAuditGate:
 
 
 # ---------------------------------------------------------------------------
+# T4-C — HOM-08 (Eve, 2026-11-08): the "Plot to show" / "Data to show" strip
+# used a hardcoded selected="T2" default every time dynamic_tabs re-rendered
+# for any reason — including a workspace switch — silently discarding
+# whatever the user had actually picked. Fixed with an isolated read of the
+# current input value (same pattern as the existing active-tab restoration).
+# ---------------------------------------------------------------------------
+
+class TestTierPersistence:
+    def test_tier_survives_a_workspace_switch(self, page: Page, shiny_app: ShinyAppProc):
+        _load_data_analysis_recipe(page, shiny_app.url)
+        page.wait_for_selector("#tier_toggle", timeout=15_000)
+
+        page.locator("#tier_toggle input[value=T3]").check(force=True)
+        _wait_shiny(page)
+        expect(page.locator("#tier_toggle input[value=T3]")).to_be_checked()
+
+        page.get_by_text("Gallery", exact=True).click()
+        _wait_shiny(page)
+        page.get_by_text("Home", exact=True).click()
+        _wait_shiny(page)
+
+        page.wait_for_selector("#tier_toggle", timeout=15_000)
+        expect(page.locator("#tier_toggle input[value=T3]")).to_be_checked(timeout=8_000)
+
+
+# ---------------------------------------------------------------------------
 # T5 — Phase 25 sidebar panels (accordion structure, ADR-052)
 # ---------------------------------------------------------------------------
 
