@@ -1,4 +1,10 @@
 visible: true
 panels:
-  - type: data_analysis_recipe_info
-  - type: gallery_search
+  - type: notification_log
+  - type: gallery_main
+# Eve/issue #42, 2026-11-08: gallery_main is a freestanding panel (sidebar_registry.py
+# PANEL_REGISTRY, _build_left_sidebar in home_theater.py) -- its renderer calls
+# gallery_viewer.build_sidebar_ui() directly, so this file now actually describes what
+# renders (it didn't before: the old data_analysis_recipe_info/gallery_search entries
+# were validated at startup but never read -- see the superseded note in
+# ui_implementation_contract.md §11d).

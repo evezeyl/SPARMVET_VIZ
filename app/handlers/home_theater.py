@@ -1432,17 +1432,9 @@ def define_server(input, output, session, *,
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
-        # Gallery (ADR-057: filter + example selector moved here from internal sidebar)
-        # Eve, 2026-11-08: Alerts moved to the left sidebar here, same reasoning as
-        # Home's move (ui_reachability_map.md §5) — removed from gallery_focus_right.yaml
-        # at the same time so it is mounted in exactly one place (REG-10 was a real
-        # duplicate-id bug from having it in two places at once; moving, not copying,
-        # avoids repeating that).
-        if active_sidebar == "Gallery":
-            return ui.div(
-                ui.output_ui("notification_log_panel_ui"),
-                gallery_viewer.build_sidebar_ui(),
-            )
+        # Gallery's left sidebar is now built via _build_left_sidebar("gallery", ...)
+        # further down (issue #42, "gallery_main" freestanding panel type) — see the
+        # `if active_sidebar == "Gallery":` branch below the registry helper.
 
         # Data analysis recipe Workbench (Wrangle Studio)
         if active_sidebar == "Wrangle Studio":
@@ -1659,15 +1651,25 @@ def define_server(input, output, session, *,
             "session_management": _render_session_management,
         }
 
-        def _build_left_sidebar(workspace_key: str, open_panels: list[str]):
-            """Build the left sidebar accordion from a workspace's slot list (ADR-073).
+        def _render_gallery_main():
+            return gallery_viewer.build_sidebar_ui()
 
-            Shared by Home and Test Lab. Blueprint and Gallery still build their own
-            sidebar directly (above) rather than going through the slot registry — see
-            finding F-01 in .claude/tasks/uml_findings.md: that split is not yet settled.
-            """
+        # Freestanding panel types (issue #42): the renderer returns a complete,
+        # already-formed UI block (its own accordion, its own id) rather than a
+        # single ui.accordion_panel() to merge into the shared nav_accordion. Needed
+        # for workspaces whose sidebar content is itself one cohesive, bespoke unit
+        # (Gallery's taxonomy/search, Blueprint's recipe editor) rather than a list of
+        # independent generic panels.
+        _left_freestanding_renderers = {
+            "gallery_main": _render_gallery_main,
+        }
+
+        def _build_left_sidebar(workspace_key: str, open_panels: list[str]):
+            """Build the left sidebar from a workspace's slot list (ADR-073, extended
+            issue #42 to cover every workspace, not just Home/Test Lab)."""
             sidebar_cfg = bootloader.get_sidebar_config(workspace_key, "left")
             panels = []
+            freestanding = []
             include_notification_log = False
             include_processing_issues = False
             for slot in sidebar_cfg.panels:
@@ -1679,6 +1681,11 @@ def define_server(input, output, session, *,
                     include_processing_issues = True
                     continue
                 if not is_panel_active(ptype, bootloader):
+                    continue
+                if ptype in _left_freestanding_renderers:
+                    block = _left_freestanding_renderers[ptype]()
+                    if block is not None:
+                        freestanding.append(block)
                     continue
                 renderer = _left_panel_renderers.get(ptype)
                 if renderer is None:
@@ -1700,7 +1707,8 @@ def define_server(input, output, session, *,
                     id="nav_accordion",
                     multiple=True,
                     open=open_panels,
-                ),
+                ) if panels else ui.div(),
+                *freestanding,
                 # F-26 / PROCESSING-ISSUES-RENAME-1: left sidebar, not right — the right
                 # sidebar is structurally absent in pipeline-static/pipeline-exploration-simple
                 # (ui_reachability_map.md §2), the left sidebar never is.
@@ -1709,6 +1717,9 @@ def define_server(input, output, session, *,
 
         if active_sidebar == "Test Lab":
             return _build_left_sidebar("test_lab", open_panels=[])
+
+        if active_sidebar == "Gallery":
+            return _build_left_sidebar("gallery", open_panels=[])
 
         _has_data_analysis_recipe = bootloader.get_data_analysis_recipe_selector().get("visible", True)
         open_panels = ["Data analysis recipe Choice"] if _has_data_analysis_recipe else []

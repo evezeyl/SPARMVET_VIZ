@@ -72,6 +72,10 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": "gallery_enabled",
         "label": "Gallery Search",
     },
+    "gallery_main": {
+        "gate_flag": "gallery_enabled",
+        "label": "Gallery Explorer",
+    },
     "test_lab": {
         "gate_flag": "test_lab_enabled",
         "label": "Test Lab Tools",
