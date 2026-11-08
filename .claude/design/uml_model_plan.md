@@ -44,6 +44,9 @@ Order is wide to narrow, and the table is in working order: context and containe
 | STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process |
 | SEQ-AUDIT | Exploration filter against send to audit and Apply | Sequence | process |
 | SEQ-EXPORT | From click to bundle, with the key check | Sequence | process |
+| COM-REACTIVE-GALLERY | Which output reads which reactive value, in GALLERY? | Flowchart | process |
+| COM-REACTIVE-BLUEPRINT | Which output reads which reactive value, in BLUEPRINT? | Flowchart | process |
+| COM-REACTIVE-TESTLAB | Which output reads which reactive value, in TEST_LAB? | Flowchart | process |
 | **Data** | | | |
 | DM-CONFIG | Deployment, app features, launch variables, precedence | Class | logical |
 | REQ-CORE | Quality goals and the requirements that protect a correct result | SysML requirement | all |
@@ -57,7 +60,20 @@ flag-driven gating, the Two-Category Law, tier isolation, security deferred) and
 
 **Done (2026-11-07):** GALLERY, BLUEPRINT, TEST_LAB use case diagrams (UC-GALLERY, UC-BLUEPRINT,
 UC-TESTLAB) and C4 component diagrams (C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB),
-same level of detail as C4-COMP-HOME. **Still open:** wireframes (UI-GALLERY, UI-BLUEPRINT,
+same level of detail as C4-COMP-HOME.
+
+**Done (2026-11-08):** COM-REACTIVE for the other three spaces, same purpose as COM-REACTIVE-HOME
+(which output reads which reactive value, by direct code scan). COM-REACTIVE-GALLERY (18 nodes,
+small — one Calc, four render outputs, the clone-to-T3 handoff shown as two arrows into/out of
+`home_state`). COM-REACTIVE-BLUEPRINT (46 nodes, grouped by concern — 2800-line handler, so
+individual buttons/handlers inside each concern area are counted in the node label rather than
+drawn one-by-one; `wrangle_studio` state is the visible hairball, every concern reads or writes
+it, which is the honest picture of that file). COM-REACTIVE-TESTLAB (17 nodes) — confirms by the
+total *absence* of edges between its five tool clusters that `rules_test_lab.md §1`'s stateless
+tool principle holds in the real wiring, not just in the rule text. Building COM-REACTIVE-GALLERY
+surfaced F-23 (`.claude/tasks/uml_findings.md`) — open, needs Eve.
+
+**Still open:** wireframes (UI-GALLERY, UI-BLUEPRINT,
 UI-TESTLAB) — tried for UI-GALLERY, blocked: `app.factory.createViewOf` for a `WFWebFrame`
 throws (`Cannot read properties of null (reading 'getViewType')`,
 `wireframe-factory.js:58` inside `defaultViewOnDiagramFn`) when called headlessly through the
