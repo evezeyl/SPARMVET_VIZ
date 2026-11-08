@@ -13,6 +13,9 @@
 id: 2_test_data_ST22_dummy
 description: "Improved ST22 Analysis Lineage - Sequential Build"
 
+info:
+  contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
+
 metadata_schema:
   source:
     type: "local_tsv"

@@ -1,6 +1,7 @@
 id: figshare_integration
 info:
   display_name: Figshare AMR Triple-Source Integration
+  contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   category: Integration Demo
   tags:
   - figshare

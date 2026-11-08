@@ -1,7 +1,8 @@
 # app/modules/wrangle_studio.py
 
 # @deps
-# provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc
+# provides: class:WrangleStudio, method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc, reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)
+# consumes: app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)
 # provides: function:_enum_preview_legend (BP-ENUM-PREVIEW-1), constants:_LINETYPE_DASHARRAY/_POSITION_DESC
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog, search_actions, get_actions_for_context; get_component_catalog, search_components, get_components_for_context — BP-COMPONENT-FORMS-1)
@@ -19,6 +20,7 @@
 
 from pathlib import Path
 from shiny import ui, reactive, render
+from app.src.render.pipeline_error_renderers import render_blueprint_inline
 import polars as pl
 import yaml
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
@@ -121,6 +123,13 @@ class WrangleStudio:
         self.active_raw_yaml = reactive.Value("")
         self.active_fields = reactive.Value({"input": [], "output": []})
         self.active_viz_spec = reactive.Value({})
+
+        # ADR-079/ADR-094: structured inline error display, "blueprint_inline" surface.
+        # Keyed by scope ("import" | "yaml_hatch") -> make_render_payload() dict | None.
+        # Set by blueprint_handlers.py catch points; read by this module's render functions
+        # so the detection and guidance a PipelineError already carries actually reach the
+        # screen, instead of only being printed to the server console (PIPELINE-ERROR-WIRE-2).
+        self.inline_errors = reactive.Value({})
 
         # [ADR-040] Lineage Contract Viewer state
         # Component metadata for the currently loaded file
@@ -1827,6 +1836,10 @@ class WrangleStudio:
                         "Save & Re-parse",
                         class_="btn btn-primary btn-sm w-100 mt-2"
                     ),
+                    # ADR-079/ADR-094 (PIPELINE-ERROR-WIRE-2): the parse error's structured
+                    # detection + fix text, rendered inline instead of console-only.
+                    render_blueprint_inline(self.inline_errors.get().get("yaml_hatch"))
+                    if self.inline_errors.get().get("yaml_hatch") else ui.div(),
                     class_="bp-escape-container p-2"
                 )
 

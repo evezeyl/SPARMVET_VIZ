@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (ADR-094 HOME load gate sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (blueprint_inline wiring sweep)
 
 # Audit Report: Phase Ordering in implementation_plan_master.md
-Generated: 2026-11-08T10:44:55
+Generated: 2026-11-08T11:16:30
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Plan file: .claude/plans/implementation_plan_master.md
 Rule: Within each h2 section, phases must appear in ascending numeric order

@@ -1430,6 +1430,7 @@ def define_server(input, output, session, *,
                             "Select a data analysis recipe. Click any node in the TubeMap to navigate.",
                             class_="text-muted d-block mt-1"),
                         ui.output_ui("bp_draft_status_ui"),
+                        ui.output_ui("bp_import_error_ui"),
                         icon=ui.tags.i(class_="bi bi-diagram-3")
                     ),
                     ui.accordion_panel(

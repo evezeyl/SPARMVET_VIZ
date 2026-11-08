@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (ADR-094 HOME load gate sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (blueprint_inline wiring sweep)
 
 # Audit Report: ADR-011 Cross-Lib Violation Scan
-Generated: 2026-11-08T10:44:50
+Generated: 2026-11-08T11:16:24
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-011 / ADR-016 — Two-Tier Dependency Model
 

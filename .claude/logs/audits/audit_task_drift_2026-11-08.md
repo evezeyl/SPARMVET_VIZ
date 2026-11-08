@@ -1,12 +1,12 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (ADR-094 HOME load gate sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (blueprint_inline wiring sweep)
 
 # Audit Report: Task-to-Code Drift Check
-Generated: 2026-11-08T10:44:56
+Generated: 2026-11-08T11:16:31
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Tasks file: .claude/tasks/tasks.md
 Rule: Open task file references must point to existing files
 
-- Distinct file paths referenced in open tasks: 13
+- Distinct file paths referenced in open tasks: 12
 - Missing files (drift): 0
 
 ## Result: ✅ PASS

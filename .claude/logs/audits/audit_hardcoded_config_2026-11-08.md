@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (ADR-094 HOME load gate sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (blueprint_inline wiring sweep)
 
 # Audit Report: Hardcoded Configuration & Path Violations
-Generated: 2026-11-08T10:44:55
+Generated: 2026-11-08T11:16:31
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-048 (deployment), ADR-031 (bootloader), ADR-053 (no app features name checks)
 

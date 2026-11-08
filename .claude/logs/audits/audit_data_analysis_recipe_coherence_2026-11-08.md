@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (ADR-094 HOME load gate sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (blueprint_inline wiring sweep)
 
 # Audit Report: Data Analysis Recipe Coherence
-Generated: 2026-11-08T10:44:54
+Generated: 2026-11-08T11:16:29
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-013 (Data analysis recipe Data Contract), ADR-041 (Unified Data analysis recipe Standard), rules_data_analysis_recipe_structure.md §7
 

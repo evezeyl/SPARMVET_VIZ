@@ -1,6 +1,7 @@
 id: demo_abromics
 info:
   display_name: 'Demo: Abromics Pipeline (High Integrity)'
+  contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   description: Synchronized test data for Phase 4/5 demonstration.
   version: '1.2'
 data_schemas:

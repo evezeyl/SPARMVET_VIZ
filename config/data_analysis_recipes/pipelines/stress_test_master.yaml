@@ -1,6 +1,7 @@
 id: stress_test_master
 info:
   display_name: 'STRESS: Master Performance Baseline'
+  contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   description: Bulletproof stress test data analysis recipe for verifying Tier 3 responsiveness
     and Comparison Theater.
 data_schemas:

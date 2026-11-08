@@ -5,8 +5,8 @@
 # consumes: shiny.ui
 # consumed_by: app/src/server.py, app/handlers/home_theater.py,
 #              app/handlers/audit_stack.py, app/handlers/blueprint_handlers.py,
-#              app/handlers/ingestion_handlers.py
-# doc: .claude/knowledge/architecture_decisions.md#adr-079
+#              app/handlers/ingestion_handlers.py, app/modules/wrangle_studio.py
+# doc: .claude/knowledge/architecture_decisions.md#adr-079, .claude/knowledge/architecture_decisions.md#adr-094
 # @end_deps
 """
 Shiny UI renderers for PipelineError payloads (ADR-079).
@@ -158,7 +158,9 @@ def render_data_import_panel(payload: dict) -> ui.Tag:
 def render_blueprint_inline(payload: dict) -> ui.Tag:
     """Inline message in the Blueprint IDE (surface='blueprint_inline').
 
-    Displayed below the affected YAML form section or node card.
+    Displayed below the affected YAML form section or node card. Includes the fix text,
+    not just the problem — BLUEPRINT's whole point is helping you find and fix errors while
+    building (ADR-094), so "what's wrong" without "how to fix it" is half the job.
     """
     bg, fg = _severity_classes(payload["severity"])
     return ui.div(
@@ -170,6 +172,10 @@ def render_blueprint_inline(payload: dict) -> ui.Tag:
             payload["body_md"].split("\n")[0],
             style="font-size: 0.78rem;",
         ),
+        ui.div(
+            ui.markdown(payload["fix_md"]),
+            style="font-size: 0.72rem; color: #6c757d; margin-top: 2px;",
+        ) if payload.get("fix_md") else ui.span(),
         style=(
             f"background: {bg}; border-left: 3px solid {fg}; border-radius: 3px; "
             "padding: 4px 8px; margin-top: 4px;"

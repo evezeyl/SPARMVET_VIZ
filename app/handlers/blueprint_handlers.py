@@ -32,7 +32,8 @@ from __future__ import annotations
 # provides: function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit), helper:_bundle_filename (full-data analysis recipe zip)
 # consumes: reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
-# consumes: libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-BLUEPRINT-1)
+# consumes: libs/utils/src/utils/pipeline_error.py (PipelineError, make_render_payload — DIAG-RUNTIME-BLUEPRINT-1, wired to screen 2026-11-08 ADR-094), app/src/render/pipeline_error_renderers.py (render_blueprint_inline)
+# provides: output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_branch_ui"), ui.output_ui("bp_groups_inventory_ui"), ui.output_ui("bp_meta_form_ui"))
 # doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076, .claude/knowledge/architecture_decisions.md#ADR-082
@@ -77,7 +78,8 @@ from blueprint_arch.agent_context import build_system_prompt
 from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from utils.config_loader import ConfigManager
-from utils.pipeline_error import PipelineError
+from utils.pipeline_error import PipelineError, make_render_payload
+from app.src.render.pipeline_error_renderers import render_blueprint_inline
 
 
 # ── BP-AUTOSAVE-1: pure draft ghost helpers ───────────────────────────────────
@@ -431,6 +433,9 @@ def define_server(input, output, session, *,
         """
         if not master_path or not selected:
             return
+        # ADR-079/ADR-094: clear any previous inline error at the start of each attempt —
+        # a retry that succeeds should not leave a stale error card on screen.
+        wrangle_studio.inline_errors.set({**wrangle_studio.inline_errors.get(), "import": None})
         if selected in inc_map:
             abs_file = Path(inc_map[selected])
             target_ds = None
@@ -675,6 +680,9 @@ def define_server(input, output, session, *,
                     evidence={"error_type": type(e).__name__, "error_detail": str(e)[:200]},
                 )
                 print(pe.format())
+                wrangle_studio.inline_errors.set(
+                    {**wrangle_studio.inline_errors.get(), "import": make_render_payload(pe)}
+                )
                 ui.notification_show(f"❌ Failed to load file: {e}", type="error")
             return
 
@@ -820,6 +828,9 @@ def define_server(input, output, session, *,
                 evidence={"error_type": type(e).__name__, "error_detail": str(e)[:200]},
             )
             print(pe.format())
+            wrangle_studio.inline_errors.set(
+                {**wrangle_studio.inline_errors.get(), "import": make_render_payload(pe)}
+            )
             ui.notification_show(f"❌ Import failed: {e}", type="error")
 
     # ── Shiny reactive handlers ───────────────────────────────────────────────
@@ -1330,6 +1341,8 @@ def define_server(input, output, session, *,
         def _bp_save_yaml_hatch():
             """Re-parse edited YAML from the escape hatch and update active_raw_yaml."""
             raw = input.bp_yaml_raw_edit()
+            # ADR-079/ADR-094: clear any previous inline error at the start of each attempt.
+            wrangle_studio.inline_errors.set({**wrangle_studio.inline_errors.get(), "yaml_hatch": None})
             if not raw or not raw.strip():
                 ui.notification_show("YAML escape hatch is empty.", type="warning")
                 return
@@ -1349,6 +1362,9 @@ def define_server(input, output, session, *,
                     reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
+                wrangle_studio.inline_errors.set(
+                    {**wrangle_studio.inline_errors.get(), "yaml_hatch": make_render_payload(pe)}
+                )
                 ui.notification_show(
                     f"YAML parse error: {exc}", type="error", duration=8
                 )
@@ -2834,3 +2850,15 @@ def define_server(input, output, session, *,
             class_="text-muted d-block",
             style="font-size:0.65rem;padding:2px 4px;",
         )
+
+    @output
+    @render.ui
+    def bp_import_error_ui():
+        """Inline 'blueprint_inline' surface for component/recipe import failures
+        (ADR-079/ADR-094, PIPELINE-ERROR-WIRE-2). The detection and the fix text a
+        PipelineError already carries, rendered here instead of only printed to the
+        server console."""
+        payload = wrangle_studio.inline_errors.get().get("import")
+        if not payload:
+            return ui.div()
+        return render_blueprint_inline(payload)

@@ -1,6 +1,7 @@
 id: 1_test_data_ST22_dummy
 info:
   display_name: ST22 Dummy Dataset
+  contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
   category: AMR Research
   description: Hyper-modular data analysis recipe structure with dedicated subdirectories and

@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (ADR-094 HOME load gate sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (blueprint_inline wiring sweep)
 
 # Audit: Palette Registry Format Validity
-Generated: 2026-11-08T10:44:55
+Generated: 2026-11-08T11:16:31
 File checked: `config/palettes.yaml`
 Rule: `.claude/rules/rules_viz_factory.md §6` | ADR-081
 

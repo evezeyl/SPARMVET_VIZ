@@ -274,6 +274,34 @@ class TestBlueprintEscapeAndValidate:
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa app features",
     )
+    def test_escape_hatch_parse_error_reaches_the_screen(self, page: Page, shiny_app: ShinyAppProc):
+        """A YAML syntax error in the escape hatch shows the structured inline card
+        (problem + fix + who), not just a generic toast (ADR-079/ADR-094,
+        PIPELINE-ERROR-WIRE-2). The PipelineError was already built and printed to the
+        server console before this was wired — this proves it now reaches the screen.
+        """
+        _navigate_to_blueprint(page, shiny_app.url)
+        _expand_accordion(page, "YAML Escape")
+        page.wait_for_selector("#bp_yaml_escape_ui", timeout=8_000)
+        _wait_shiny(page)
+        textarea = page.locator("#bp_yaml_escape_ui textarea")
+        expect(textarea).to_be_visible(timeout=8_000)
+        textarea.fill("id: broken\n  bad indent: [unclosed")
+        page.locator("#btn_bp_save_yaml").click()
+        _wait_shiny(page, timeout=15_000)
+        content_text = page.locator("#bp_yaml_escape_ui").inner_text(timeout=8_000)
+        assert "YAML escape hatch parse error" in content_text, (
+            f"Inline error card not found. Got: {content_text[:300]!r}"
+        )
+        assert "Fix" in content_text, (
+            f"Fix guidance not shown inline. Got: {content_text[:300]!r}"
+        )
+        _no_render_error(page)
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
     def test_validate_panel_renders(self, page: Page, shiny_app: ShinyAppProc):
         """Validate panel renders the 'Run validation' button after data analysis recipe load."""
         _navigate_to_blueprint(page, shiny_app.url)
