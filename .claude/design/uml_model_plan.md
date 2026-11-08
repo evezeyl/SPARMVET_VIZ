@@ -187,13 +187,26 @@ registers the new object in the repository, so the push is lost on the next read
 error is raised. Fix: build the operation explicitly — `const ob = app.repository.getOperationBuilder(); ob.begin(...); ob.insert(tag); ob.fieldInsert(model, "tags", tag); ob.end(); app.repository.doOperation(ob.getOperation());` — `ob.insert(tag)` is what actually registers the
 new element; `fieldInsert` alone only pushes a reference StarUML can't resolve later.
 
-**Export gotcha (open, not chased down):** re-running `staruml_export_diagrams` after these
-edits did not refresh `UI-TESTLAB_The_screen.png` (or the other three wireframes) — same file
-size and mtime as before the edit, across two separate export calls. The `.mdj` model itself is
-correct (confirmed by direct script introspection and a clean `audit_uml_model.py` run) — this
-is a stale-bitmap/caching issue in the export path specifically, not a model-data bug. If the
-PNGs under `docs/UML/diagrams/` are needed for a visual review, regenerate them from a live
-StarUML session rather than trusting the bridge export immediately after a same-session edit.
+**Export gotcha (worked around, not fixed):** `staruml_export_diagrams` reliably fails to
+refresh a diagram's PNG after a same-session edit — confirmed across 4 separate export calls on
+4 diagrams, always returning the exact pre-edit file (same byte size, same mtime). The `.mdj`
+model itself is correct (confirmed by direct script introspection and a clean
+`audit_uml_model.py` run) — this is a stale-bitmap/caching bug in the export path, not a
+model-data bug. Workaround: call `staruml_diagram_image` (returns a live render as a tool-result
+image, bypassing whatever cache `staruml_export_diagrams` reads from) and copy that blob over the
+stale PNG in `docs/UML/diagrams/` by hand.
+
+**Position-vs-label desync gotcha (new, real bug this session):** when reflowing `WFPanelView`
+positions in bulk (shifting several panels down to make room for an inserted one), the loop that
+locates each panel's companion `WFTextView` (the visible label — see the "one `WFPanel` ... with
+one untagged `WFText` child" line above) matched on `v.left === 20`, but the text views sit
+*inset* from their panel (`panel.left + 6`, i.e. `26`, not `20`). Every text match silently
+missed, so the panel rectangles moved to their new positions but every visible label stayed
+exactly where it was — Eve caught this immediately ("the alerts are at the wrong place... nice
+if visually it looks like the app, because for us it's how we detect"). Fix: match
+panel-to-text pairs by `model.name` (unique per diagram here), not by `left`, and re-snap each
+text to `panel.left+6, panel.top+6, panel.width-12, panel.height-12` after any bulk reposition —
+don't try to preserve each panel's original bespoke inset, just standardize on 6px.
 
 UI-HOME uses StarUML's wireframe diagrams (panels, buttons, tabs as model elements). Each widget carries its Shiny id in `code` and its gate in `flag`, so the script can check it. It replaces the hand-drawn picture in `ui_panel_map_current.md`, which is already out of date (it still shows a T1/T2/T3 toggle).
 

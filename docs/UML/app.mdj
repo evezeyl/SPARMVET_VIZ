@@ -8433,7 +8433,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 130,
+									"top": 180,
 									"width": 320,
 									"height": 60
 								},
@@ -8458,7 +8458,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 200,
+									"top": 250,
 									"width": 320,
 									"height": 50
 								},
@@ -8483,7 +8483,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 260,
+									"top": 310,
 									"width": 320,
 									"height": 100
 								},
@@ -8508,7 +8508,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 370,
+									"top": 420,
 									"width": 320,
 									"height": 50
 								},
@@ -8533,7 +8533,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 430,
+									"top": 480,
 									"width": 320,
 									"height": 90
 								},
@@ -8558,7 +8558,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 530,
+									"top": 580,
 									"width": 320,
 									"height": 70
 								},
@@ -8808,7 +8808,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 690,
+									"top": 130,
 									"width": 320,
 									"height": 40
 								},
@@ -8874,7 +8874,7 @@
 									"left": 26,
 									"top": 56,
 									"width": 308,
-									"height": 104,
+									"height": 58,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xSd3yFHwU="
 									}
@@ -8898,7 +8898,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 136,
+											"top": 186,
 											"width": 308,
 											"height": 13,
 											"text": "Info: the info block of the data analysis recipe",
@@ -8913,9 +8913,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 136,
+									"top": 186,
 									"width": 308,
-									"height": 117,
+									"height": 48,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xSxXyN8UQ="
 									}
@@ -8939,7 +8939,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 206,
+											"top": 256,
 											"width": 308,
 											"height": 13,
 											"text": "Data analysis recipe Choice",
@@ -8954,9 +8954,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 206,
+									"top": 256,
 									"width": 308,
-									"height": 52,
+									"height": 38,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xTFHyVaEY="
 									}
@@ -8980,7 +8980,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 266,
+											"top": 316,
 											"width": 308,
 											"height": 26,
 											"text": "Filters: column, operator, value; Add row, Apply, Send to Audit, Reset",
@@ -8995,9 +8995,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 266,
+									"top": 316,
 									"width": 308,
-									"height": 143,
+									"height": 88,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xTWHydUgA="
 									}
@@ -9021,7 +9021,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 376,
+											"top": 426,
 											"width": 308,
 											"height": 13,
 											"text": "Data Import",
@@ -9036,7 +9036,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 376,
+									"top": 426,
 									"width": 308,
 									"height": 38,
 									"nameLabel": {
@@ -9062,7 +9062,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 436,
+											"top": 486,
 											"width": 308,
 											"height": 26,
 											"text": "Export: label, scope Global, group or plot, format, Export Bundle",
@@ -9077,9 +9077,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 436,
+									"top": 486,
 									"width": 308,
-									"height": 130,
+									"height": 78,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xT6nyt0Dc="
 									}
@@ -9103,7 +9103,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 536,
+											"top": 586,
 											"width": 308,
 											"height": 13,
 											"text": "Session Management: export, import, restore, delete",
@@ -9118,9 +9118,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 536,
+									"top": 586,
 									"width": 308,
-									"height": 78,
+									"height": 58,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xULny1PEE="
 									}
@@ -9161,7 +9161,7 @@
 									"left": 356,
 									"top": 56,
 									"width": 798,
-									"height": 91,
+									"height": 38,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xUdHy9Bok="
 									}
@@ -9202,7 +9202,7 @@
 									"left": 356,
 									"top": 116,
 									"width": 798,
-									"height": 104,
+									"height": 33,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xUxXzFXVs="
 									}
@@ -9243,7 +9243,7 @@
 									"left": 356,
 									"top": 166,
 									"width": 798,
-									"height": 104,
+									"height": 33,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xVFHzNwE8="
 									}
@@ -9284,7 +9284,7 @@
 									"left": 356,
 									"top": 221,
 									"width": 798,
-									"height": 52,
+									"height": 33,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xVY3zVTFU="
 									}
@@ -9325,7 +9325,7 @@
 									"left": 356,
 									"top": 271,
 									"width": 798,
-									"height": 65,
+									"height": 33,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xWHnzd7hk="
 									}
@@ -9512,9 +9512,9 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 1176,
-											"top": 556,
-											"width": 318,
+											"left": 26,
+											"top": 136,
+											"width": 308,
 											"height": 13,
 											"text": "Alerts",
 											"horizontalAlignment": 0,
@@ -9528,7 +9528,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 696,
+									"top": 136,
 									"width": 308,
 									"height": 28,
 									"nameLabel": {
@@ -9571,7 +9571,7 @@
 									"left": 1176,
 									"top": 626,
 									"width": 318,
-									"height": 65,
+									"height": 58,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xXtH0NHu0="
 									}
@@ -9592,7 +9592,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 610,
+									"top": 660,
 									"width": 320,
 									"height": 70
 								},
@@ -9615,7 +9615,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 616,
+											"top": 666,
 											"width": 308,
 											"height": 26,
 											"text": "Processing Issues: last 10 errors, fix/who guidance (F-26)",
@@ -9630,9 +9630,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 616,
+									"top": 666,
 									"width": 308,
-									"height": 104,
+									"height": 58,
 									"nameLabel": {
 										"$ref": "AAAAAAGhuxDA//OeYgo="
 									}
@@ -14821,7 +14821,7 @@
 									"left": 26,
 									"top": 26,
 									"width": 308,
-									"height": 91,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOXNtXfdKs="
 									}
@@ -14842,7 +14842,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 70,
+									"top": 120,
 									"width": 320,
 									"height": 50
 								},
@@ -14865,7 +14865,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 76,
+											"top": 126,
 											"width": 308,
 											"height": 13,
 											"text": "Example: selector (gallery_example_select)",
@@ -14880,7 +14880,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 76,
+									"top": 126,
 									"width": 308,
 									"height": 38,
 									"nameLabel": {
@@ -14903,7 +14903,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 130,
+									"top": 180,
 									"width": 320,
 									"height": 160
 								},
@@ -14926,7 +14926,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 136,
+											"top": 186,
 											"width": 308,
 											"height": 26,
 											"text": "Gallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply",
@@ -14941,9 +14941,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 136,
+									"top": 186,
 									"width": 308,
-									"height": 130,
+									"height": 148,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOYl9YDx0g="
 									}
@@ -15004,7 +15004,7 @@
 									"left": 366,
 									"top": 26,
 									"width": 368,
-									"height": 52,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOZSdYUBuE="
 									}
@@ -15065,7 +15065,7 @@
 									"left": 366,
 									"top": 76,
 									"width": 368,
-									"height": 40,
+									"height": 128,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOaDtYlhVo="
 									}
@@ -15126,7 +15126,7 @@
 									"left": 366,
 									"top": 226,
 									"width": 368,
-									"height": 52,
+									"height": 88,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulObNtY2wmk="
 									}
@@ -15187,7 +15187,7 @@
 									"left": 366,
 									"top": 336,
 									"width": 168,
-									"height": 40,
+									"height": 108,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOb+9ZHCI4="
 									}
@@ -15248,7 +15248,7 @@
 									"left": 556,
 									"top": 336,
 									"width": 178,
-									"height": 40,
+									"height": 108,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOcq9ZY9S0="
 									}
@@ -15269,7 +15269,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 300,
+									"top": 350,
 									"width": 320,
 									"height": 60
 								},
@@ -15292,7 +15292,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 306,
+											"top": 356,
 											"width": 308,
 											"height": 26,
 											"text": "No interactive handoff into any other space (ADR-093)",
@@ -15307,9 +15307,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 306,
+									"top": 356,
 									"width": 308,
-									"height": 91,
+									"height": 48,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOdY9ZnDyw="
 									}
@@ -15327,7 +15327,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 370,
+									"top": 70,
 									"width": 320,
 									"height": 40
 								},
@@ -15349,14 +15349,20 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"horizontalAlignment": 0
+											"left": 26,
+											"top": 76,
+											"width": 308,
+											"height": 13,
+											"text": "Alerts",
+											"horizontalAlignment": 0,
+											"wordWrap": true
 										}
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 376,
+									"top": 76,
 									"width": 308,
 									"height": 28,
 									"nameLabel": {
@@ -27997,7 +28003,7 @@
 									"left": 26,
 									"top": 26,
 									"width": 208,
-									"height": 91,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX4D9gzZvE="
 									}
@@ -28018,7 +28024,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 70,
+									"top": 120,
 									"width": 220,
 									"height": 60
 								},
@@ -28041,7 +28047,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 76,
+											"top": 126,
 											"width": 208,
 											"height": 26,
 											"text": "Recipe picker: choose the data analysis recipe and the step to view",
@@ -28056,9 +28062,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 76,
+									"top": 126,
 									"width": 208,
-									"height": 143,
+									"height": 48,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX4vdhGKRc="
 									}
@@ -28079,7 +28085,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 140,
+									"top": 190,
 									"width": 220,
 									"height": 50
 								},
@@ -28102,7 +28108,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 146,
+											"top": 196,
 											"width": 208,
 											"height": 26,
 											"text": "Edit data: fix column names, replace or add data",
@@ -28117,9 +28123,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 146,
+									"top": 196,
 									"width": 208,
-									"height": 65,
+									"height": 38,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX5bthXzq0="
 									}
@@ -28140,7 +28146,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 200,
+									"top": 250,
 									"width": 220,
 									"height": 40
 								},
@@ -28163,7 +28169,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 206,
+											"top": 256,
 											"width": 208,
 											"height": 26,
 											"text": "Recipe details: name, description, contact",
@@ -28178,9 +28184,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 206,
+									"top": 256,
 									"width": 208,
-									"height": 104,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX6Ithoa84="
 									}
@@ -28201,7 +28207,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 250,
+									"top": 300,
 									"width": 220,
 									"height": 40
 								},
@@ -28224,7 +28230,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 256,
+											"top": 306,
 											"width": 208,
 											"height": 26,
 											"text": "Groups and plots list: add, rename, remove",
@@ -28239,9 +28245,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 256,
+									"top": 306,
 									"width": 208,
-									"height": 52,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX61dh5NS0="
 									}
@@ -28262,7 +28268,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 300,
+									"top": 350,
 									"width": 220,
 									"height": 60
 								},
@@ -28285,7 +28291,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 306,
+											"top": 356,
 											"width": 208,
 											"height": 26,
 											"text": "Check recipe: find problems before saving",
@@ -28300,9 +28306,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 306,
+									"top": 356,
 									"width": 208,
-									"height": 78,
+									"height": 48,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX7ltiKSK8="
 									}
@@ -28323,7 +28329,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 370,
+									"top": 420,
 									"width": 220,
 									"height": 30
 								},
@@ -28346,7 +28352,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 376,
+											"top": 426,
 											"width": 208,
 											"height": 13,
 											"text": "Draft saved automatically",
@@ -28361,9 +28367,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 376,
+									"top": 426,
 									"width": 208,
-									"height": 39,
+									"height": 18,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX8WNibh+E="
 									}
@@ -28424,7 +28430,7 @@
 									"left": 266,
 									"top": 26,
 									"width": 428,
-									"height": 78,
+									"height": 158,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX9L9iuDrw="
 									}
@@ -28485,7 +28491,7 @@
 									"left": 266,
 									"top": 206,
 									"width": 428,
-									"height": 78,
+									"height": 228,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX97ti/hvc="
 									}
@@ -28546,7 +28552,7 @@
 									"left": 266,
 									"top": 456,
 									"width": 428,
-									"height": 91,
+									"height": 138,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX+p9jQlgM="
 									}
@@ -28607,7 +28613,7 @@
 									"left": 726,
 									"top": 26,
 									"width": 268,
-									"height": 78,
+									"height": 138,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulX/hdjjChk="
 									}
@@ -28668,7 +28674,7 @@
 									"left": 726,
 									"top": 186,
 									"width": 268,
-									"height": 143,
+									"height": 108,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYAVNj0RdU="
 									}
@@ -28729,7 +28735,7 @@
 									"left": 726,
 									"top": 316,
 									"width": 268,
-									"height": 91,
+									"height": 78,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYBH9kFtNQ="
 									}
@@ -28790,7 +28796,7 @@
 									"left": 726,
 									"top": 416,
 									"width": 268,
-									"height": 78,
+									"height": 58,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYB6tkWZds="
 									}
@@ -28851,7 +28857,7 @@
 									"left": 726,
 									"top": 496,
 									"width": 268,
-									"height": 117,
+									"height": 58,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYCvtkpLHQ="
 									}
@@ -28912,7 +28918,7 @@
 									"left": 726,
 									"top": 616,
 									"width": 268,
-									"height": 60,
+									"height": 78,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYD39k8lIA="
 									}
@@ -28933,7 +28939,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 460,
+									"top": 510,
 									"width": 220,
 									"height": 40
 								},
@@ -28956,7 +28962,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 466,
+											"top": 516,
 											"width": 208,
 											"height": 26,
 											"text": "Export: download the recipe as a file",
@@ -28971,9 +28977,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 466,
+									"top": 516,
 									"width": 208,
-									"height": 78,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYEudlN2Ik="
 									}
@@ -28994,7 +29000,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 410,
+									"top": 460,
 									"width": 220,
 									"height": 40
 								},
@@ -29017,7 +29023,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 416,
+											"top": 466,
 											"width": 208,
 											"height": 13,
 											"text": "New recipe: create from scratch",
@@ -29032,9 +29038,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 416,
+									"top": 466,
 									"width": 208,
-									"height": 91,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulYFitlemBk="
 									}
@@ -29055,7 +29061,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 510,
+									"top": 560,
 									"width": 220,
 									"height": 50
 								},
@@ -29078,7 +29084,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 516,
+											"top": 566,
 											"width": 208,
 											"height": 13,
 											"text": "Import error message",
@@ -29093,9 +29099,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 516,
+									"top": 566,
 									"width": 208,
-									"height": 78,
+									"height": 38,
 									"nameLabel": {
 										"$ref": "AAAAAAGhurAo2tw/OsU="
 									}
@@ -29156,7 +29162,7 @@
 									"left": 726,
 									"top": 566,
 									"width": 268,
-									"height": 91,
+									"height": 38,
 									"nameLabel": {
 										"$ref": "AAAAAAGhurAqnNxSauo="
 									}
@@ -29174,7 +29180,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 560,
+									"top": 70,
 									"width": 220,
 									"height": 40
 								},
@@ -29196,14 +29202,20 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"horizontalAlignment": 0
+											"left": 26,
+											"top": 76,
+											"width": 208,
+											"height": 13,
+											"text": "Alerts",
+											"horizontalAlignment": 0,
+											"wordWrap": true
 										}
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 566,
+									"top": 76,
 									"width": 208,
 									"height": 28,
 									"nameLabel": {
@@ -34737,7 +34749,7 @@
 									"left": 26,
 									"top": 26,
 									"width": 208,
-									"height": 91,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWGpNcSuU0="
 									}
@@ -34758,7 +34770,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 70,
+									"top": 120,
 									"width": 220,
 									"height": 60
 								},
@@ -34781,7 +34793,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 76,
+											"top": 126,
 											"width": 208,
 											"height": 39,
 											"text": "Info: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)",
@@ -34796,9 +34808,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 76,
+									"top": 126,
 									"width": 208,
-									"height": 78,
+									"height": 48,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWHj9cl6f4="
 									}
@@ -34859,7 +34871,7 @@
 									"left": 266,
 									"top": 26,
 									"width": 318,
-									"height": 65,
+									"height": 178,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWIRNc2bsU="
 									}
@@ -34920,7 +34932,7 @@
 									"left": 616,
 									"top": 26,
 									"width": 298,
-									"height": 130,
+									"height": 178,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWI+NdH4rI="
 									}
@@ -34981,7 +34993,7 @@
 									"left": 266,
 									"top": 236,
 									"width": 318,
-									"height": 78,
+									"height": 138,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWKGNdYAc4="
 									}
@@ -35042,7 +35054,7 @@
 									"left": 616,
 									"top": 236,
 									"width": 298,
-									"height": 104,
+									"height": 138,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWK+ddp/eA="
 									}
@@ -35103,7 +35115,7 @@
 									"left": 266,
 									"top": 406,
 									"width": 318,
-									"height": 91,
+									"height": 108,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWLvtd65KA="
 									}
@@ -35124,7 +35136,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 140,
+									"top": 190,
 									"width": 220,
 									"height": 80
 								},
@@ -35147,7 +35159,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 146,
+											"top": 196,
 											"width": 208,
 											"height": 39,
 											"text": "Stateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)",
@@ -35162,9 +35174,9 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 146,
+									"top": 196,
 									"width": 208,
-									"height": 78,
+									"height": 68,
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWMzteJ5yI="
 									}
@@ -35182,7 +35194,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 20,
-									"top": 220,
+									"top": 70,
 									"width": 220,
 									"height": 40
 								},
@@ -35205,7 +35217,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 26,
-											"top": 226,
+											"top": 76,
 											"width": 208,
 											"height": 13,
 											"text": "Alerts",
@@ -35217,7 +35229,7 @@
 									"parentStyle": false,
 									"containerChangeable": true,
 									"left": 26,
-									"top": 226,
+									"top": 76,
 									"width": 208,
 									"height": 28,
 									"nameLabel": {
