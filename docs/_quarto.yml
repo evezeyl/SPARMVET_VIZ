@@ -42,6 +42,7 @@ book:
       - foundations/core_architecture_code.qmd # Deep dive into the physical codebase layout 
       - foundations/data_contracts_adr.qmd # ADR-013 explaining YAML dict data analysis recipes
       - foundations/data_tiering_adr.qmd # ADR-024 explaining Tier 1 vs Tier 2
+      - appendix/data_lifecycle_theater.qmd # The HOME comparison theater built on the same tiers (found orphaned from the book's chapter list, wired in 2026-11-08)
       - foundations/reproducibility_hash_schema.qmd # ADR-066: three-hash schema (decision_hash, data_analysis_recipe_sha256, data_batch_hash)
       - foundations/reproducibility_same_input_same_output.qmd # ADR-090: row order (Polars), jitter seed, how to keep results the same
       - foundations/verification_protocol.qmd # The @verify gate and explicit evidence testing

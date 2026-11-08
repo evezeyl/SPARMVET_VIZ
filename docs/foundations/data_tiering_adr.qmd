@@ -1,22 +1,12 @@
-```mermaid
-graph TD
-    subgraph "Tier 1: The Trunk"
-        RawSources["Raw Data Sources (TSV)"] -->|"DataAssembler (data_assembler.py)"| Anchor["Relational Anchor (Parquet)"]
-    end
-    
-    subgraph "Tier 2: The Branch"
-        Anchor -->|"Summarizer (performance/aggregation.py)"| Branch["Plot-Specific Branch (Parquet)"]
-    end
-    
-    subgraph "Tier 3: The Leaf"
-        Branch -->|"VizFactory (viz_factory.py)"| Leaf["Dynamic View (Plotnine)"]
-    end
-
-    style RawSources fill:#fefefe,stroke:#333
-    style Anchor fill:#e1f5fe,stroke:#01579b
-    style Branch fill:#fff8e1,stroke:#ff8f00
-    style Leaf fill:#f1f8e9,stroke:#33691e
-```
+::: {.lightbox}
+![SEQ-OPEN: data analysis recipe to Tier 1, Tier 2, plot — the real current mechanism, with the
+cache-key checks that decide whether anything is recomputed at all, and where the heavy work
+(Polars, not the UI) actually happens. Source: `docs/UML/app.mdj`, package `HOME` (ADR-096 —
+StarUML trial mode watermarks this image; a clean re-export follows once licensed). The module
+names below (`Summarizer`, `persistence/anchor.py`) predate the current `DataOrchestrator` /
+`DataAssembler` naming — this diagram reflects what the code is called
+today.](../UML/diagrams/SEQ-OPEN_From_data_analysis_recipe_to_plot.png)
+:::
 ## How it Works: The "Prepped Chef" Analogy
 To understand why SPARMVET_VIZ is so fast, imagine a professional kitchen preparing a complex dish:
 

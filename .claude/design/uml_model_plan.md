@@ -277,6 +277,29 @@ It checks names and links. It does not prove that the code runs in the order a s
 - Every difference found goes into the findings register. Findings that need work become issues.
 - Tags: `[opus/high]` for this plan and the architecture diagrams, `[sonnet/high]` for the HOME diagrams read from code, `[sonnet/medium]` for the script.
 
+### 6a. Embedding a diagram in the Quarto book (ADR-096, 2026-11-08)
+
+No live fetch exists or is planned — StarUML has no headless/CLI export; the bridge needs the GUI
+app running. The workflow is manual, same as any other diagram change: export via
+`staruml_export_diagrams` after a model change (already routine, §3's "Diagram export" note),
+commit the PNG to `docs/UML/diagrams/`, then reference it from the `.qmd` page with:
+
+```markdown
+::: {.lightbox}
+![<diagram id>: <one-line question it answers>. Source: `docs/UML/app.mdj`, package `<space>`
+(ADR-096 — StarUML trial mode watermarks this image; a clean re-export follows once
+licensed).](../UML/diagrams/<filename>.png)
+:::
+```
+
+The `::: {.lightbox}` wrapper matches the project's existing Mermaid convention
+(`rules_documentation_aesthetics.md §5`) so the image gets the same click-to-zoom. Used this way
+2026-11-08 to replace all 4 Mermaid blocks across 3 `.qmd` pages — Mermaid was not merely
+"rendering poorly" as first reported, it was not rendering at all in this Quarto book config (0
+SVGs produced, raw `graph TD` source dumped as visible text; confirmed by inspecting the rendered
+HTML directly). One block (BLUEPRINT's lineage-branching diagram) had no 1:1 UML match and became
+a plain table instead of a forced-fit diagram.
+
 ## Sources
 
 [arc42 sections](https://examples.arc42.org/sections/), [C4 model](https://c4model.com/), [C4 modelling guide](https://barkingiguana.com/writing/the-workshop-c4-modelling/), [Kruchten 4+1](https://arxiv.org/pdf/2006.04975), [views and viewpoints](https://btabok.iasaglobal.org/btabok_3/capability-descriptions/views-and-viewpoints/).

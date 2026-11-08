@@ -20,25 +20,13 @@ Imagine you are a Chef in a high-pressure kitchen:
 ## 2. The 3-Tier Workflow
 
 ::: {.lightbox}
-```mermaid
-graph TD
-    T1[<b>Tier 1: The Anchor</b><br/>Raw wide-format data]
-    
-    T1 -->|Professional Prep| T2[<b>Tier 2: The Reference</b><br/>Long-format / Aggregated]
-    
-    T1 -.->|Fork/Copy| T3[<b>Tier 3: The Active Pane</b>]
-    
-    subgraph "The Comparison Theater"
-        T2_V[Reference Plot / Table]
-        T3_V[Active Plot / Table]
-    end
-    
-    T2 --- T2_V
-    T3 --- T3_V
-    
-    U[User Interaction] -->|Filter/Select| T3
-    U -->|Apply Changes| T3_V
-```
+![SEQ-AUDIT: exploration filter against Send to Audit and Apply — the real current flow this
+diagram's "Comparison Theater" / "Reference Pane" / "Active Pane" terms describe. Source:
+`docs/UML/app.mdj`, package `HOME` (ADR-096 — StarUML trial mode watermarks this image; a clean
+re-export follows once licensed). Naming note: this page's own "Tier 3 / Active Pane" terms predate
+ADR-085/ADR-086's current naming ("My view", the Plot-to-show/Data-to-show
+strip).](../UML/diagrams/SEQ-AUDIT_Exploration_and_audit.png)
+:::
 :::
 
 ### Tier 1: The Anchor (The Giant Library)

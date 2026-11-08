@@ -43,36 +43,12 @@ chapter for the full flag matrix.
 BLUEPRINT implements the "Flight Deck" layout (`rules_ui_dashboard.md §7`): a central vertical
 stack flanked by a navigation sidebar (left) and a logic sidebar (right).
 
-```mermaid
-graph TD
-    subgraph Left["Left Sidebar — Navigation"]
-        Pick["Master data analysis recipe picker + New data analysis recipe"]
-        Groups["Groups & Plots inventory"]
-        Meta["Data Analysis Recipe Info (info: block)"]
-        Validate["Validate panel"]
-    end
-
-    subgraph Center["Central Theater (top → bottom)"]
-        Tube["TubeMap DAG (collapsible)"]
-        Plot["Live Visualisation (plot)"]
-        Glimpse["Live Data Glimpse (table)"]
-    end
-
-    subgraph Right["Right Sidebar — Logic"]
-        Stack["Logic Stack — selected node's steps"]
-        Form["8-widget form for the active node"]
-        Agent["AI Agent chat (gated)"]
-    end
-
-    Tube -->|"select a node"| Stack
-    Stack -->|"edit / add"| Form
-    Form -->|"Apply"| Plot
-    Form -->|"Apply"| Glimpse
-
-    style Tube fill:#f8f9fa,stroke:#345beb
-    style Plot fill:#ffffff,stroke:#10a395
-    style Glimpse fill:#ffffff,stroke:#10a395
-```
+::: {.lightbox}
+![UI-BLUEPRINT: the screen, panel by panel, each one tagged with the code that owns it and the
+flag that gates it. Source: `docs/UML/app.mdj`, package `BLUEPRINT` (ADR-096 — StarUML trial mode
+watermarks this image; a clean re-export follows once licensed,
+`.claude/design/uml_model_plan.md`).](../UML/diagrams/UI-BLUEPRINT_The_screen.png)
+:::
 
 - **TubeMap (L1):** the data analysis recipe rendered as a directed graph — data schemas feed joins, joins
   feed plots. It is the primary navigation surface and is collapsible to reclaim vertical space.
@@ -89,19 +65,18 @@ graph TD
 
 The end-to-end flow for editing an existing pipeline:
 
-```mermaid
-graph LR
-    A["Open data analysis recipe<br/>(picker) or<br/>Create new"] --> B["TubeMap renders<br/>the DAG"]
-    B --> C["Select a node"]
-    C --> D["Logic stack +<br/>form open (right)"]
-    D --> E["Add / edit step<br/>via 8-widget form"]
-    E --> F["Apply<br/>(schema propagates,<br/>plot + glimpse recompute)"]
-    F --> G["Save to disk<br/>or Download bundle"]
+1. **Open** a data analysis recipe (picker) or **create** a new one.
+2. The **TubeMap** renders the DAG.
+3. **Select a node** — the logic stack and its form open on the right.
+4. **Add or edit a step** via the 8-widget form.
+5. **Apply** — the schema propagates, the plot and glimpse recompute.
+6. **Save** to disk, or download the bundle.
 
-    style A fill:#f8f9fa,stroke:#345beb
-    style F fill:#fff3cd,stroke:#e0a800
-    style G fill:#e6f7f5,stroke:#10a395
-```
+::: {.lightbox}
+![UC-BLUEPRINT: what a user can do, and under which flag. Source: `docs/UML/app.mdj`, package
+`BLUEPRINT` (ADR-096 — StarUML trial mode watermarks this image; a clean re-export follows once
+licensed).](../UML/diagrams/UC-BLUEPRINT_What_a_user_does.png)
+:::
 
 ### Open or create
 
@@ -186,17 +161,12 @@ LOCKED). You pick a node; everything **upstream of it stays shared**, and a new 
 downstream** is created. This is the *Bifurcation Point Rule* from `rules_data_engine.md` made
 interactive.
 
-```mermaid
-graph TD
-    Raw["Raw source + input_fields<br/>(SHARED)"] --> Trunk["Tier 1 anchor<br/>materialised once<br/>(sink_parquet)"]
-    Trunk -->|"scan_parquet — no recompute"| BranchA["Summary<br/>(original downstream)"]
-    Trunk -->|"scan_parquet — no recompute"| BranchB["Summary_quality<br/>(new divergent downstream)"]
-
-    style Raw fill:#f8f9fa,stroke:#345beb
-    style Trunk fill:#eef0fb,stroke:#345beb
-    style BranchA fill:#ffffff,stroke:#10a395
-    style BranchB fill:#fff3cd,stroke:#e0a800
-```
+| Stage | What happens |
+|---|---|
+| Raw source + `input_fields` | **Shared** by every branch |
+| Tier 1 anchor | Materialised **once** (`sink_parquet`) |
+| `Summary` (original downstream) | Reads the anchor via `scan_parquet` — no recompute |
+| `Summary_quality` (new divergent downstream) | Also reads the anchor via `scan_parquet` — no recompute |
 
 The canonical example is the `Summary` / `Summary_quality` pattern: both share the same
 `source` and `input_fields`, then diverge in their `wrangling` and `output_fields`. Physically,
