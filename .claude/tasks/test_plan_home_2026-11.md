@@ -68,7 +68,7 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml ./.venv/bi
 Open <http://127.0.0.1:8000>. Chrome, dev console open, network cache disabled (per your usual setup).
 `--reload` restarts the server on code edits during a fix round.
 
-- [x] PRE-01 — App boots clean. Eve, 2026-11-08: many `[ConfigManager] Auto-unnesting redundant key...` lines but no traceback — confirmed expected/benign (documented behaviour in `config_loader.py`, not an error). Original console-error finding closed.
+- [x] PRE-01 — App boots clean. Eve, 2026-11-08: many `[ConfigManager] Auto-unnesting redundant key...` lines but no traceback — confirmed expected/benign (documented behaviour in `config_loader.py`, not an error). Original console-error finding closed. **Follow-up fixed, 2026-11-08** ([#37](https://github.com/evezeyl/SPARMVET_VIZ/issues/37)): edited first-party/vendored scripts weren't picked up on reload (browser cache, URL never changed) — fixed with mtime-based cache-busting on every script/link tag served from `app/src/www/`.
 - [x] PRE-02 — Browser loads at :8000 with no red error banner on first paint. Eve, 2026-11-08: ok.
 - [x] PRE-03 — Default data analysis recipe **ST22 Dummy Dataset** (`1_test_data_ST22_dummy`) loads with its tabs. Eve, 2026-11-08: yes.
 - [x] PRE-05 — Switch data analysis recipe → tabs change, plots reload, no traceback. Eve, 2026-11-08: seems ok.
