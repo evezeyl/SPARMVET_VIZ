@@ -7,12 +7,14 @@ Usage:
     .venv/bin/python libs/id_reconciliation/tests/id_reconciliation_integrity_suite.py
     .venv/bin/python libs/id_reconciliation/tests/id_reconciliation_integrity_suite.py --module matcher
     .venv/bin/python libs/id_reconciliation/tests/id_reconciliation_integrity_suite.py --verbose
+    .venv/bin/python libs/id_reconciliation/tests/id_reconciliation_integrity_suite.py --output_dir tmpAI/id_reconciliation
 """
 from __future__ import annotations
 
 import argparse
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 TESTS_DIR = Path(__file__).parent
@@ -60,6 +62,15 @@ def main() -> None:
         action="store_true",
         help="Pass -v to pytest for full test output.",
     )
+    parser.add_argument(
+        "--output_dir", "--output", type=str, default=None, dest="output_dir",
+        help=(
+            "Directory to write id_reconciliation_integrity_report.md to. "
+            "Matches the other libraries' integrity suites so the scheduled "
+            "audit_library_tests.py harness (which always passes --output) can "
+            "run this suite like any other (issue #41)."
+        ),
+    )
     args = parser.parse_args()
 
     targets = (
@@ -73,6 +84,23 @@ def main() -> None:
     passed = sum(results.values())
     total = len(results)
     print(f"\n{passed}/{total} modules passed")
+
+    if args.output_dir:
+        out_dir = Path(args.output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        report_path = out_dir / "id_reconciliation_integrity_report.md"
+        lines = [
+            "# id_reconciliation Integrity Report",
+            f"Generated: {datetime.now().isoformat()}",
+            "",
+            "| Module | Result |",
+            "|---|---|",
+        ]
+        lines += [f"| {name} | {'PASS' if ok else 'FAIL'} |" for name, ok in results.items()]
+        lines += ["", f"**{passed}/{total} modules passed**"]
+        report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print(f"Report written to: {report_path}")
+
     sys.exit(0 if passed == total else 1)
 
 
