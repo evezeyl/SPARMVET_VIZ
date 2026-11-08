@@ -1,23 +1,21 @@
 ## Test Lab — Quick Reference
 
-**Test Lab** is a developer sandbox for validating pipeline components in isolation — no UI, no Shiny reactivity.
+**Test Lab** is a toolbox of stateless data-preparation utilities — each tool runs to completion and returns a downloadable result. Closing a tool resets it; nothing persists between runs except files you explicitly save.
 
-### AquaSynthesizer
-Generate synthetic test data matching a schema. Outputs to `tmp/` for immediate inspection with debug scripts.
+### ID Reconciliation
+Match two ID sets from different files (exact + fuzzy matching, pattern-based transformation suggestions), then save the result as a named ID transformation. One key column per run — composite keys belong in Blueprint's Joint Designer.
 
-### Wrangler Debug
-Run the Tier 1 and Tier 2 wrangling steps from a data analysis recipe fragment against a TSV file without the full app. Outputs a `USER_debug_view.tsv` in `tmp/` for manual review.
+### Data analysis recipe Scaffolding
+Generate a boilerplate data analysis recipe from uploaded files: inferred field types, primary-key candidate hints, and empty wrangling/plot stubs for you to fill in. Optionally bakes in ID Reconciliation steps produced above.
 
-### Assembler Debug
-Run the full assembly steps (joins + derived columns + `final_contract`) against source data. Produces pre-contract and contracted Parquet + TSV files.
+### Synthetic Data
+Generate synthetic test data matching a schema (AquaSynthesizer), including named error scenarios, for testing data analysis recipes without real data.
 
-### Gallery Debug
-Render all plots from a data analysis recipe into PNG files. Requires the Assembler to have been run first (needs Parquet in `tmp/`).
+### Anonymisation
+Anonymise a column in an uploaded file, producing an anonymised output plus a mapping file for later de-anonymisation (join the mapping back in Blueprint).
 
-### Usage pattern
-1. Select the data analysis recipe and data source
-2. Click the stage you want to test (Wrangler → Assembler → Gallery)
-3. Inspect the TSV output in `tmp/` before proceeding to the next stage
-4. Use `@verify` in your agent session to confirm the output matches expectations
+### File Reformatting
+Upload an XLSX/XLS/CSV/TSV file and convert it to TSV. For XLSX, pick which sheet(s) to extract; each becomes its own TSV.
 
-This is the `[DEVELOPMENT ONLY]` app features area — not visible to scientist or pipeline app features files.
+### Access
+Test Lab is gated by `test_lab_enabled` — available in developer and qa app features only, not visible to scientist-facing app features files.

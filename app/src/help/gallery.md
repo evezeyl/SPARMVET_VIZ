@@ -3,20 +3,22 @@
 **Gallery** is a curated browser of visualization examples — pre-built plot templates you can adapt to your data.
 
 ### Browsing
-Use the **Family**, **Pattern**, **Geom**, and **Difficulty** filter chips to narrow the example list. The search box filters by name.
+Use the **Family**, **Data Pattern**, **Difficulty**, **Primary Geom**, **What it Shows**, and **Sample Size** taxonomy filter panels (checkbox groups, with a "Select all" toggle each) to narrow the choices in the **Select an Example** dropdown.
 
-### Example Card
-Each card shows:
-- **Preview image** — rendered with the example's example data
-- **Taxonomy tags** — family, data pattern, primary geom, sample size
-- **YAML snippet** — the exact VizFactory plot spec
+### Example View
+Once an example is selected, the top pane shows three tabs:
+- **Plot Preview** — the rendered example plot
+- **Data Sample** — the example's sample data
+- **YAML Example** — the raw data analysis recipe fragment, to copy by hand
 
-### Cloning to Blueprint
-Click **Send to Blueprint** on any example to transplant its plot spec into the Blueprint Architect's active node. The example is inserted as a T3 `developer_raw_yaml` node and requires a justification before Apply.
+The bottom pane ("Visual Cookbook: Guidance") shows the example's educational metadata.
+
+### Using an example elsewhere
+Gallery has no in-app handoff into any other space — it's a pure static reference browser (ADR-093). To use an example as a starting point in Blueprint or anywhere else, copy the YAML from the **YAML Example** tab by hand, same as any other file-based handoff in this app.
 
 ### Difficulty guide
 | Level | Meaning |
 |---|---|
-| Simple | 1–2 aesthetics, single geom, no facets |
-| Intermediate | Facets, position adjustments, or secondary statistics |
-| Advanced | Multi-layer, custom scales, or complex reshaping required |
+| Simple | Single geom, direct mapping, no wrangling |
+| Intermediate | Multiple geoms or position adjustments; may need pre-aggregation |
+| Advanced | Non-trivial wrangling, derived columns, or specialised geoms |
