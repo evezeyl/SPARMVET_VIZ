@@ -4524,7 +4524,7 @@
 									"_type": "C4Diagram",
 									"_id": "AAAAAAGht1V699lBFc0=",
 									"_parent": {
-										"$ref": "AAAAAAGhty/3u8EeQ5w="
+										"$ref": "AAAAAAGht1V6z9k+p4w="
 									},
 									"name": "C4-COMP-HOME Inside HOME",
 									"ownedViews": [
@@ -8365,7 +8365,7 @@
 									"_type": "C4Diagram",
 									"_id": "AAAAAAGht92y5J6BM0s=",
 									"_parent": {
-										"$ref": "AAAAAAGhty/3u8EeQ5w="
+										"$ref": "AAAAAAGht+OPHqE+rU8="
 									},
 									"name": "C4-COMP-GALLERY Inside GALLERY",
 									"ownedViews": [
@@ -9109,7 +9109,7 @@
 									"_type": "C4Diagram",
 									"_id": "AAAAAAGht94aSZ9N2eg=",
 									"_parent": {
-										"$ref": "AAAAAAGhty/3u8EeQ5w="
+										"$ref": "AAAAAAGht+RueKvnUGY="
 									},
 									"name": "C4-COMP-BLUEPRINT Inside BLUEPRINT",
 									"ownedViews": [
@@ -10561,7 +10561,7 @@
 									"_type": "C4Diagram",
 									"_id": "AAAAAAGht95S6aCT04E=",
 									"_parent": {
-										"$ref": "AAAAAAGhty/3u8EeQ5w="
+										"$ref": "AAAAAAGht+Tsy7rVSMU="
 									},
 									"name": "C4-COMP-TESTLAB Inside TEST_LAB",
 									"ownedViews": [
@@ -29107,7 +29107,7 @@
 							"_type": "WFWireframeDiagram",
 							"_id": "AAAAAAGht1l62kuo/R0=",
 							"_parent": {
-								"$ref": "AAAAAAGht1l62kunOxA="
+								"$ref": "AAAAAAGht1V6z9k+p4w="
 							},
 							"name": "UI-HOME The screen",
 							"ownedViews": [
@@ -40459,7 +40459,7 @@
 									"_type": "UMLSequenceDiagram",
 									"_id": "AAAAAAGht1vy7WazE38=",
 									"_parent": {
-										"$ref": "AAAAAAGht1vysGawOmM="
+										"$ref": "AAAAAAGht1V6z9k+p4w="
 									},
 									"name": "SEQ-LAUNCH Startup",
 									"ownedViews": [
@@ -43498,7 +43498,7 @@
 									"_type": "UMLSequenceDiagram",
 									"_id": "AAAAAAGht1v9AGjeHic=",
 									"_parent": {
-										"$ref": "AAAAAAGht1v8w2jb7+I="
+										"$ref": "AAAAAAGht1V6z9k+p4w="
 									},
 									"name": "SEQ-OPEN From data analysis recipe to plot",
 									"ownedViews": [
@@ -47203,7 +47203,7 @@
 									"_type": "UMLSequenceDiagram",
 									"_id": "AAAAAAGht1wIeWtzV6o=",
 									"_parent": {
-										"$ref": "AAAAAAGht1wIN2twOS8="
+										"$ref": "AAAAAAGht1V6z9k+p4w="
 									},
 									"name": "SEQ-AUDIT Exploration and audit",
 									"ownedViews": [
@@ -50235,7 +50235,7 @@
 									"_type": "UMLSequenceDiagram",
 									"_id": "AAAAAAGht1wSBG2T7BM=",
 									"_parent": {
-										"$ref": "AAAAAAGht1wRxW2QTJ8="
+										"$ref": "AAAAAAGht1V6z9k+p4w="
 									},
 									"name": "SEQ-EXPORT Export",
 									"ownedViews": [
@@ -52321,7 +52321,7 @@
 							"_type": "UMLStatechartDiagram",
 							"_id": "AAAAAAGht1wa1nAVIHQ=",
 							"_parent": {
-								"$ref": "AAAAAAGht1wa1nATmPg="
+								"$ref": "AAAAAAGht1V6z9k+p4w="
 							},
 							"name": "STM-STAGE A stored stage",
 							"ownedViews": [
@@ -54031,7 +54031,7 @@
 							"_type": "FCFlowchartDiagram",
 							"_id": "AAAAAAGht1w9cHp4W+I=",
 							"_parent": {
-								"$ref": "AAAAAAGht1w9cHp3KAU="
+								"$ref": "AAAAAAGht1V6z9k+p4w="
 							},
 							"name": "COM-REACTIVE Reactive wiring of HOME",
 							"ownedViews": [
@@ -70091,7 +70091,7 @@
 							"_type": "FCFlowchartDiagram",
 							"_id": "AAAAAAGhuifk78gEBSY=",
 							"_parent": {
-								"$ref": "AAAAAAGhuifk78gDR24="
+								"$ref": "AAAAAAGht+OPHqE+rU8="
 							},
 							"name": "COM-REACTIVE-GALLERY Reactive wiring of GALLERY",
 							"ownedViews": [
@@ -71523,7 +71523,7 @@
 							"_type": "WFWireframeDiagram",
 							"_id": "AAAAAAGhulOV49XIHV4=",
 							"_parent": {
-								"$ref": "AAAAAAGhulOV49XHb0I="
+								"$ref": "AAAAAAGht+OPHqE+rU8="
 							},
 							"name": "UI-GALLERY The screen",
 							"ownedViews": [
@@ -78495,7 +78495,7 @@
 							"_type": "FCFlowchartDiagram",
 							"_id": "AAAAAAGhuing0sm3xEg=",
 							"_parent": {
-								"$ref": "AAAAAAGhuing0sm2GqI="
+								"$ref": "AAAAAAGht+RueKvnUGY="
 							},
 							"name": "COM-REACTIVE-BLUEPRINT Reactive wiring of BLUEPRINT",
 							"ownedViews": [
@@ -84109,7 +84109,7 @@
 							"_type": "WFWireframeDiagram",
 							"_id": "AAAAAAGhulX2e9gcguc=",
 							"_parent": {
-								"$ref": "AAAAAAGhulX2e9gbiPA="
+								"$ref": "AAAAAAGht+RueKvnUGY="
 							},
 							"name": "UI-BLUEPRINT The screen",
 							"ownedViews": [
@@ -89132,7 +89132,7 @@
 							"_type": "FCFlowchartDiagram",
 							"_id": "AAAAAAGhui5yTM2XpNY=",
 							"_parent": {
-								"$ref": "AAAAAAGhui5yTM2WMPU="
+								"$ref": "AAAAAAGht+Tsy7rVSMU="
 							},
 							"name": "COM-REACTIVE-TESTLAB Reactive wiring of TEST_LAB",
 							"ownedViews": [
@@ -90884,7 +90884,7 @@
 							"_type": "WFWireframeDiagram",
 							"_id": "AAAAAAGhulWFKNb7mKQ=",
 							"_parent": {
-								"$ref": "AAAAAAGhulWFJ9b6wMU="
+								"$ref": "AAAAAAGht+Tsy7rVSMU="
 							},
 							"name": "UI-TESTLAB The screen",
 							"ownedViews": [

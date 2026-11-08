@@ -24,7 +24,23 @@ Documentation is a side effect, not the aim. A diagram exists only if it answers
 
 ## 3. Diagrams, first set
 
-Order is wide to narrow, and the table is in working order: context and containers, then how it is built and run, then the parts, then the key flows. Code level is left out.
+Order is wide to narrow, and the table is in working order: context and containers, then how it is
+built and run, then the parts, then the key flows. Code level is left out.
+
+**Reordered 2026-11-08 (Eve: make the order human-navigable, not just complete)** — both the table
+below and the live model (`docs/UML/app.mdj`) now follow the same logic: general functioning first
+(Architecture — nothing user-space-specific belongs here), then one block per user space, each
+internally ordered **what the user does → the screen → how it works**: use case, then wireframe,
+then the component/reactive/sequence/state diagrams that explain the mechanism behind what was
+just shown. The live StarUML project previously grouped diagrams by *diagram type* (every C4
+diagram under one "Shiny app" folder, every wireframe under one "Wireframe1" folder, every
+flowchart under one "Flowchart1" folder, every sequence under its own single-diagram folder) —
+structurally accurate but not how a person looks for "everything about HOME." Each space's
+diagrams are now reparented into that space's own top-level package in the model (`HOME`,
+`GALLERY`, `BLUEPRINT`, `TEST_LAB`), so opening one node in the Model Explorer shows everything
+about that space together. Diagram content, tags and exported filenames are unchanged — confirmed
+diagram-by-diagram after reparenting (render check) and via `audit_uml_model.py` (0 violations)
+after saving.
 
 **Status column:** ✅ built and in `docs/UML/app.mdj` today (verified against the live project,
 2026-11-08 — every diagram listed below exists; `GALLERY`/`BLUEPRINT`/`TEST_LAB` use case and
@@ -41,24 +57,32 @@ section, so a planned-but-not-built diagram would show here, not in the "Later" 
 | PKG-TIERS | Which library may import which? | Package | development | ✅ |
 | DEP-APP | How does the app run on one machine: process, folders, launch variables? | Deployment | physical | ✅ |
 | C4-COMP-APP | Inside the Shiny app: which handler and module serves which user space? | C4 component | logical | ✅ |
-| **HOME** | | | | |
-| C4-COMP-HOME | Which handler and module owns what on HOME? | C4 component | logical | ✅ |
+| **HOME** — what the user does, then the screen, then how it works | | | | |
 | UC-HOME | What can a user do, under which flag? | Use case | scenarios | ✅ |
 | UI-HOME | What is on the screen, what is each panel called in the code, and which flag shows it? | Wireframe | scenarios, for users and developers | ✅ |
+| C4-COMP-HOME | Which handler and module owns what on HOME? | C4 component | logical | ✅ |
 | COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug). Direct reads found by a scan of the code | Flowchart | process | ✅ |
 | SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process | ✅ |
 | SEQ-OPEN | Data analysis recipe to Tier 1, Tier 2, plot, with the cache keys | Sequence | process | ✅ |
-| STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process | ✅ |
 | SEQ-AUDIT | Exploration filter against send to audit and Apply | Sequence | process | ✅ |
 | SEQ-EXPORT | From click to bundle, with the key check | Sequence | process | ✅ |
-| **GALLERY / BLUEPRINT / TEST_LAB** | | | | |
-| C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
-| UC-GALLERY, UC-BLUEPRINT, UC-TESTLAB | What can a user do, under which flag? | Use case | scenarios | ✅ |
-| UI-GALLERY, UI-BLUEPRINT, UI-TESTLAB | What is on the screen, same detail as UI-HOME | Wireframe | scenarios, for users and developers | ✅ |
+| STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process | ✅ |
+| **GALLERY** — what the user does, then the screen, then how it works | | | | |
+| UC-GALLERY | What can a user do, under which flag? | Use case | scenarios | ✅ |
+| UI-GALLERY | What is on the screen, same detail as UI-HOME | Wireframe | scenarios, for users and developers | ✅ |
+| C4-COMP-GALLERY | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
 | COM-REACTIVE-GALLERY | Which output reads which reactive value, in GALLERY? | Flowchart | process | ✅ |
+| **BLUEPRINT** — what the user does, then the screen, then how it works | | | | |
+| UC-BLUEPRINT | What can a user do, under which flag? | Use case | scenarios | ✅ |
+| UI-BLUEPRINT | What is on the screen, same detail as UI-HOME | Wireframe | scenarios, for users and developers | ✅ |
+| C4-COMP-BLUEPRINT | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
 | COM-REACTIVE-BLUEPRINT | Which output reads which reactive value, in BLUEPRINT? | Flowchart | process | ✅ |
+| **TEST_LAB** — what the user does, then the screen, then how it works | | | | |
+| UC-TESTLAB | What can a user do, under which flag? | Use case | scenarios | ✅ |
+| UI-TESTLAB | What is on the screen, same detail as UI-HOME | Wireframe | scenarios, for users and developers | ✅ |
+| C4-COMP-TESTLAB | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
 | COM-REACTIVE-TESTLAB | Which output reads which reactive value, in TEST_LAB? | Flowchart | process | ✅ |
-| **Data** | | | | |
+| **Data** — cross-cutting, not tied to one space | | | | |
 | DM-CONFIG | Deployment, app features, launch variables, precedence | Class | logical | ✅ |
 | DM-RECIPE | The data analysis recipe's own data model — Data schema, Join, Analysis group, Plot, Wrangling step | Class | logical | ✅ |
 | REQ-CORE | Quality goals and the requirements that protect a correct result | SysML requirement | all | ✅ |
