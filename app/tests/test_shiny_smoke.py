@@ -332,6 +332,39 @@ class TestTierPersistence:
         expect(page.locator("#tier_toggle input[value=T3]")).to_be_checked(timeout=8_000)
 
 
+class TestRecipeSwitchPlotRender:
+    """A data analysis recipe switch leaves the first plot sub-tab blank until clicked (found by
+    Eve, 2026-11-08): `plots_card`'s selected= passed the OLD recipe's saved sub-tab id
+    unconditionally, even when it matches none of the new recipe's plot_ids — so Bootstrap/Shiny
+    never marks any pane genuinely active server-side. Fixed by guarding it the same way the
+    outer group-level selected=_saved_group was already guarded."""
+
+    def test_first_plot_renders_without_a_click_after_recipe_switch(
+        self, page: Page, shiny_app: ShinyAppProc
+    ):
+        # Deliberately NOT using _load_data_analysis_recipe's shared-session reuse — this
+        # test needs a known-clean starting state (no stale active_plot_subtab from
+        # whatever an earlier test in this module-scoped page left behind), so it does
+        # its own fresh page.goto() regardless of where it runs in the file.
+        page.goto(shiny_app.url)
+        page.wait_for_selector("#data_analysis_recipe_id", timeout=20_000)
+        page.locator("#data_analysis_recipe_id").select_option("1_test_data_ST22_dummy")
+        page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=20_000)
+        _wait_shiny(page)
+        page.get_by_text("Qc Reads Horizontal Barplot", exact=False).first.click()
+        _wait_shiny(page)
+
+        page.locator("#data_analysis_recipe_id").select_option("1_Abromics_general_pipeline")
+        _wait_shiny(page)
+        # No tab click here — the bug was that the plot stayed blank indefinitely without one.
+        expect(page.locator(".shiny-plot-output img").first).to_be_visible(timeout=8_000)
+
+        # Leave the shared page back on the suite's default recipe so later tests in
+        # this module aren't affected by this test's recipe switch.
+        page.locator("#data_analysis_recipe_id").select_option("1_test_data_ST22_dummy")
+        _wait_shiny(page)
+
+
 # ---------------------------------------------------------------------------
 # T5 — Phase 25 sidebar panels (accordion structure, ADR-052)
 # ---------------------------------------------------------------------------

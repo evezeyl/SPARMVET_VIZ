@@ -991,10 +991,17 @@ def define_server(input, output, session, *,
                 )
 
             # navset_card_tab: gives the card border + built-in tab header — no extra label needed
-            # selected= restores the previously active plot after a Gallery/Blueprint nav round-trip
+            # selected= restores the previously active plot after a Gallery/Blueprint nav round-trip.
+            # Eve, 2026-11-08: guard it the same way _saved_group is guarded above (line ~964) —
+            # on a data analysis recipe switch, _saved_subtab is the OLD recipe's plot id and will
+            # not match any of THIS group's plot_ids. Passing it anyway hands Bootstrap/Shiny a
+            # selected= value matching no real nav_panel: the first tab's header still looks active
+            # (default styling) but no pane is genuinely marked shown server-side, so the plot output
+            # never fires and stays blank until the user clicks a tab (forcing a real selection event).
+            _subtab_valid = _saved_subtab in {f"subtab_{p}" for p in plot_ids}
             plots_card = (
                 ui.navset_card_tab(*plot_subtabs, id=f"subtabs_{safe_sub_id}",
-                                   selected=_saved_subtab)
+                                   selected=_saved_subtab if _subtab_valid else None)
                 if plot_subtabs
                 else ui.card(ui.p("No plots defined for this group.", class_="text-muted p-3"))
             )

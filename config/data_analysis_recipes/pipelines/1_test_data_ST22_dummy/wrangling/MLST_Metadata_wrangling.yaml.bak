@@ -1,5 +1,0 @@
-tier1:
-  - action: "join"
-    right_ingredient: "metadata_schema"
-    "on": ["sample_id"]
-# tier2: not needed — joined wide format ready for tabular display
