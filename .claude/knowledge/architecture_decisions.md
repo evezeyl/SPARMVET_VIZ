@@ -2432,6 +2432,16 @@ A `PANEL_REGISTRY` dict in `app/modules/sidebar_registry.py` maps panel type nam
 
 New panel types are registered by adding an entry to `PANEL_REGISTRY` — no sidebar wiring changes needed.
 
+> **Amendment (2026-11-08, issue #33):** `notification_log` moved from the right sidebar slot
+> to the left for every workspace (Home, Gallery, Blueprint, Test Lab) — the right sidebar is
+> structurally absent for some app features (`pipeline-static`/`pipeline-exploration-simple`
+> for Home) or for an entire workspace (Test Lab's right sidebar is always `visible: false`),
+> which made alerts unreachable there. The table row above is kept as the original 2026-05-09
+> decision record; current placement is `any left` in `ui_implementation_contract.md §11d`.
+> Also added that session: a new `test_lab_info` panel type (gate: none), a Test-Lab-only
+> static placeholder, deliberately distinct from `data_analysis_recipe_info` (formerly
+> `project_info` in this table) since Test Lab tools never operate on an open recipe.
+
 ### Rule 5 — Sidebar visibility and structural exclusion
 
 `left_sidebar.visible: false` hides the sidebar entirely (DOM excluded, not CSS hidden). This replaces the current implicit "nearly empty sidebar for static personas" with an explicit choice.

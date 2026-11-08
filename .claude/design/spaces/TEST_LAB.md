@@ -82,6 +82,14 @@ Synthetic data generation creates independent, fresh data matching a schema. No 
 
 ## ID Reconciliation Engine — Detailed Design
 
+**In plain terms (Eve, 2026-11-08):** "when people are trying to match different data to
+make join - each dataset has a column that will be used for the join but the match is not
+exact, its to try to help get the instructions that will allow to correct the id registered
+in those column to be able to match those, and there is a manual step where people have to
+confirm or not." That is exactly what §"Purpose & Scope" and §"Workflow: Pairwise Matching
+Example" below describe — recorded here in Eve's own words as the standing answer, so this
+doesn't need re-explaining.
+
 ### Purpose & Scope
 
 The ID Reconciliation Engine is the foundational tool for **Data analysis recipe Scaffolding**. Before TEST_LAB can generate a boilerplate data analysis recipe, join keys must be validated across all input files. The engine:

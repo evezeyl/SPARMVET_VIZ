@@ -8807,10 +8807,10 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"containerChangeable": true,
-									"left": 1170,
-									"top": 550,
-									"width": 330,
-									"height": 60
+									"left": 20,
+									"top": 690,
+									"width": 320,
+									"height": 40
 								},
 								{
 									"_type": "WFPanelView",
@@ -9527,10 +9527,10 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"containerChangeable": true,
-									"left": 1176,
-									"top": 556,
-									"width": 318,
-									"height": 48,
+									"left": 26,
+									"top": 696,
+									"width": 308,
+									"height": 28,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xXbn0F+6A="
 									}
@@ -15313,6 +15313,55 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhulOdY9ZnDyw="
 									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhvLqbBPpv6xQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhvLqbA/ptOZk="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 370,
+									"width": 320,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhvLtCVPp9/Fk=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhvLtCVPp7Qsg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhvLtCVPp+ZPc=",
+											"_parent": {
+												"$ref": "AAAAAAGhvLtCVPp9/Fk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"horizontalAlignment": 0
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 376,
+									"width": 308,
+									"height": 28,
+									"nameLabel": {
+										"$ref": "AAAAAAGhvLtCVPp+ZPc="
+									}
 								}
 							]
 						}
@@ -15642,6 +15691,44 @@
 							"value": "implemented"
 						}
 					]
+				},
+				{
+					"_type": "WFPanel",
+					"_id": "AAAAAAGhvLqbA/ptOZk=",
+					"_parent": {
+						"$ref": "AAAAAAGht+OPHqE+rU8="
+					},
+					"name": "Alerts",
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhvL1V0frfhrw=",
+							"_parent": {
+								"$ref": "AAAAAAGhvLqbA/ptOZk="
+							},
+							"name": "status",
+							"kind": "string",
+							"value": "implemented"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhvL1V9PrjbOw=",
+							"_parent": {
+								"$ref": "AAAAAAGhvLqbA/ptOZk="
+							},
+							"name": "code",
+							"kind": "string",
+							"value": "app/handlers/home_theater.py:notification_log_panel_ui"
+						}
+					]
+				},
+				{
+					"_type": "WFText",
+					"_id": "AAAAAAGhvLtCVPp7Qsg=",
+					"_parent": {
+						"$ref": "AAAAAAGht+OPHqE+rU8="
+					},
+					"name": "Alerts"
 				}
 			]
 		},
@@ -29073,6 +29160,55 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhurAqnNxSauo="
 									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhvLtCcPqGqss=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhvLtCcPqEhuM="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 560,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhvLtCiPqMy80=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhvLtCiPqKmak="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhvLtCiPqNEns=",
+											"_parent": {
+												"$ref": "AAAAAAGhvLtCiPqMy80="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"horizontalAlignment": 0
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 566,
+									"width": 208,
+									"height": 28,
+									"nameLabel": {
+										"$ref": "AAAAAAGhvLtCiPqNEns="
+									}
 								}
 							]
 						}
@@ -29878,6 +30014,44 @@
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
 					"name": "Branch the lineage at a node"
+				},
+				{
+					"_type": "WFPanel",
+					"_id": "AAAAAAGhvLtCcPqEhuM=",
+					"_parent": {
+						"$ref": "AAAAAAGht+RueKvnUGY="
+					},
+					"name": "Alerts",
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhvL1WBvrnrrg=",
+							"_parent": {
+								"$ref": "AAAAAAGhvLtCcPqEhuM="
+							},
+							"name": "status",
+							"kind": "string",
+							"value": "implemented"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhvL1WKPrrBz8=",
+							"_parent": {
+								"$ref": "AAAAAAGhvLtCcPqEhuM="
+							},
+							"name": "code",
+							"kind": "string",
+							"value": "app/handlers/home_theater.py:notification_log_panel_ui"
+						}
+					]
+				},
+				{
+					"_type": "WFText",
+					"_id": "AAAAAAGhvLtCiPqKmak=",
+					"_parent": {
+						"$ref": "AAAAAAGht+RueKvnUGY="
+					},
+					"name": "Alerts"
 				}
 			]
 		},
@@ -34610,7 +34784,7 @@
 											"top": 76,
 											"width": 208,
 											"height": 39,
-											"text": "Data analysis recipe Info (only left-sidebar panel; no filters/import/export here)",
+											"text": "Info: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -34994,6 +35168,61 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhulWMzteJ5yI="
 									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhvLtCovqVolQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhvLtCovqToIQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 220,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhvLtC0fqbxl4=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhvLtC0fqZiNg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhvLtC0fqca3A=",
+											"_parent": {
+												"$ref": "AAAAAAGhvLtC0fqbxl4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 226,
+											"width": 208,
+											"height": 13,
+											"text": "Alerts",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 226,
+									"width": 208,
+									"height": 28,
+									"nameLabel": {
+										"$ref": "AAAAAAGhvLtC0fqca3A="
+									}
 								}
 							]
 						}
@@ -35047,7 +35276,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhulWGBdb/u8g="
 							},
-							"name": "Data analysis recipe Info (only left-sidebar panel; no filters/import/export here)",
+							"name": "Info: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)",
 							"ownedElements": [
 								{
 									"_type": "WFText",
@@ -35055,7 +35284,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGhulWHHdcX43A="
 									},
-									"name": "Data analysis recipe Info (only left-sidebar panel; no filters/import/export here)"
+									"name": "Info: Test Lab's own placeholder (test_lab_info) -- never the open recipe's info: block (issue #33)"
 								}
 							],
 							"tags": [
@@ -35289,6 +35518,44 @@
 							"value": "implemented"
 						}
 					]
+				},
+				{
+					"_type": "WFPanel",
+					"_id": "AAAAAAGhvLtCovqToIQ=",
+					"_parent": {
+						"$ref": "AAAAAAGht+Tsy7rVSMU="
+					},
+					"name": "Alerts",
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhvL1WUPrv2tI=",
+							"_parent": {
+								"$ref": "AAAAAAGhvLtCovqToIQ="
+							},
+							"name": "status",
+							"kind": "string",
+							"value": "implemented"
+						},
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhvL1WfPrzcNE=",
+							"_parent": {
+								"$ref": "AAAAAAGhvLtCovqToIQ="
+							},
+							"name": "code",
+							"kind": "string",
+							"value": "app/handlers/home_theater.py:notification_log_panel_ui"
+						}
+					]
+				},
+				{
+					"_type": "WFText",
+					"_id": "AAAAAAGhvLtC0fqZiNg=",
+					"_parent": {
+						"$ref": "AAAAAAGht+Tsy7rVSMU="
+					},
+					"name": "Alerts"
 				}
 			]
 		},
@@ -51111,9 +51378,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 27.55908203125,
+													"left": 29.72998046875,
 													"top": 10,
-													"width": 38.2763671875,
+													"width": 39,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -51127,7 +51394,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 11.55908203125,
+													"width": 13.72998046875,
 													"height": 13,
 													"text": "sd"
 												}
@@ -57939,7 +58206,7 @@
 															"top": 47,
 															"width": 181,
 															"height": 13,
-															"text": "User: Scientist"
+															"text": "User"
 														},
 														{
 															"_type": "LabelView",
@@ -58060,7 +58327,7 @@
 															"top": 47,
 															"width": 335.35888671875,
 															"height": 13,
-															"text": "filter_and_audit_handlers: filter_and_audit_handlers"
+															"text": "Filters panel"
 														},
 														{
 															"_type": "LabelView",
@@ -58181,7 +58448,7 @@
 															"top": 47,
 															"width": 181,
 															"height": 13,
-															"text": "home_state"
+															"text": "Session state"
 														},
 														{
 															"_type": "LabelView",
@@ -58302,7 +58569,7 @@
 															"top": 47,
 															"width": 181,
 															"height": 13,
-															"text": "audit_stack: audit_stack"
+															"text": "Audit trail panel"
 														},
 														{
 															"_type": "LabelView",
@@ -58423,7 +58690,7 @@
 															"top": 47,
 															"width": 225.56982421875,
 															"height": 13,
-															"text": "SessionManager: SessionManager"
+															"text": "Saved sessions"
 														},
 														{
 															"_type": "LabelView",
@@ -58544,7 +58811,7 @@
 															"top": 47,
 															"width": 189.43896484375,
 															"height": 13,
-															"text": "home_theater: home_theater"
+															"text": "HOME screen"
 														},
 														{
 															"_type": "LabelView",
@@ -58643,9 +58910,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 216,
+													"left": 214,
 													"top": 94,
-													"width": 99.7216796875,
+													"width": 103.3271484375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -58653,7 +58920,7 @@
 														"$ref": "AAAAAAGht1wL4Gw+u5s="
 													},
 													"edgePosition": 1,
-													"text": "1 : filter_add_row"
+													"text": "1 : add a filter row"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -58759,9 +59026,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 192,
+													"left": 135,
 													"top": 190,
-													"width": 155.365234375,
+													"width": 269.521484375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -58769,7 +59036,7 @@
 														"$ref": "AAAAAAGht1wMk2xomHs="
 													},
 													"edgePosition": 1,
-													"text": "3 : [exploration] filter_apply"
+													"text": "3 : [exploration] Apply — updates My view only"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -58875,9 +59142,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 408,
+													"left": 404,
 													"top": 161,
-													"width": 109.8525390625,
+													"width": 116.3271484375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -58885,7 +59152,7 @@
 														"$ref": "AAAAAAGht1wMPWxT3Zk="
 													},
 													"edgePosition": 1,
-													"text": "2 : _pending_filters"
+													"text": "2 : staged filter rows"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59001,7 +59268,7 @@
 														"$ref": "AAAAAAGht1wNkGynZco="
 													},
 													"edgePosition": 1,
-													"text": "6 : [My view and t3_sandbox_enabled] filter_send_to_audit"
+													"text": "6 : [My view, audit sandbox on] Send to Audit"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59107,9 +59374,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 413,
+													"left": 366,
 													"top": 257,
-													"width": 98.28076171875,
+													"width": 192.181640625,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -59117,7 +59384,7 @@
 														"$ref": "AAAAAAGht1wM4mx9Xo0="
 													},
 													"edgePosition": 1,
-													"text": "4 : applied_filters"
+													"text": "4 : filters now showing in My view"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59233,7 +59500,7 @@
 														"$ref": "AAAAAAGht1wNNmySn/8="
 													},
 													"edgePosition": 1,
-													"text": "5 : only My view changes, nothing recorded, never exported"
+													"text": "5 : My view updates; nothing is recorded or exported"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59340,9 +59607,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 317,
+													"left": 314,
 													"top": 401,
-													"width": 290.46875,
+													"width": 296.20068359375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -59350,7 +59617,7 @@
 														"$ref": "AAAAAAGht1wN32y86PY="
 													},
 													"edgePosition": 1,
-													"text": "7 : primary_key_warning when a join key is filtered"
+													"text": "7 : warn: this filters a join key (primary-key warning)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59466,7 +59733,7 @@
 														"$ref": "AAAAAAGht1wOLGzRXLI="
 													},
 													"edgePosition": 1,
-													"text": "8 : _open_propagation_modal, this plot, all plots, all except"
+													"text": "8 : ask: apply to this plot, all plots, or all except..."
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59583,7 +59850,7 @@
 														"$ref": "AAAAAAGht1wOf2zm3ow="
 													},
 													"edgePosition": 1,
-													"text": "9 : propagation_confirm"
+													"text": "9 : confirm the choice"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59699,7 +59966,7 @@
 														"$ref": "AAAAAAGht1wPLm0QywA="
 													},
 													"edgePosition": 1,
-													"text": "11 : reason in t3_reason_id"
+													"text": "11 : type the reason"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59805,9 +60072,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 346,
+													"left": 339,
 													"top": 526,
-													"width": 299.2158203125,
+													"width": 312.19677734375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -59815,7 +60082,7 @@
 														"$ref": "AAAAAAGht1wO0Gz79H0="
 													},
 													"edgePosition": 1,
-													"text": "10 : _pending_t3_nodes, one copy per plot, same id"
+													"text": "10 : stage one audit step per chosen plot (linked by id)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -59921,9 +60188,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 417,
+													"left": 411,
 													"top": 622,
-													"width": 81.67529296875,
+													"width": 93.21533203125,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -59931,7 +60198,7 @@
 														"$ref": "AAAAAAGht1wPhG0l9lM="
 													},
 													"edgePosition": 1,
-													"text": "12 : btn_apply"
+													"text": "12 : press Apply"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -60037,9 +60304,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 281,
+													"left": 261,
 													"top": 690,
-													"width": 357.67138671875,
+													"width": 396.26513671875,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -60047,7 +60314,7 @@
 														"$ref": "AAAAAAGht1wP1m06tA8="
 													},
 													"edgePosition": 1,
-													"text": "13 : [a reason is missing] blocked, names the missing reasons"
+													"text": "13 : [a reason is missing] Apply stays blocked, names what's missing"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -60154,9 +60421,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 559,
+													"left": 531,
 													"top": 738,
-													"width": 267.4013671875,
+													"width": 323.74951171875,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -60164,7 +60431,7 @@
 														"$ref": "AAAAAAGht1wQKG1PSfM="
 													},
 													"edgePosition": 1,
-													"text": "14 : [all reasons given] t3_audit_steps_by_plot"
+													"text": "14 : [all reasons given] record the audited steps, per plot"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -60270,9 +60537,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 814,
+													"left": 777,
 													"top": 766,
-													"width": 229.79150390625,
+													"width": 303.4814453125,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -60280,7 +60547,7 @@
 														"$ref": "AAAAAAGht1wQfG1k+OE="
 													},
 													"edgePosition": 1,
-													"text": "15 : _write_t3_ghost, t3_timestamp.json"
+													"text": "15 : save this state to disk (a timestamped snapshot)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -60900,9 +61167,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 27.55908203125,
+													"left": 29.72998046875,
 													"top": 10,
-													"width": 38.2763671875,
+													"width": 39,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -60916,7 +61183,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 11.55908203125,
+													"width": 13.72998046875,
 													"height": 13,
 													"text": "sd"
 												}
@@ -78279,7 +78546,7 @@
 													"left": 2403,
 													"top": 885,
 													"width": 219,
-													"height": 26,
+													"height": 39,
 													"text": "Per session: shared reactive state, creates the modules, calls each define_server.",
 													"wordWrap": true
 												}
@@ -78415,7 +78682,7 @@
 													"left": 1618,
 													"top": 641,
 													"width": 219,
-													"height": 13,
+													"height": 26,
 													"text": "[Component: home_theater + 6 handlers]",
 													"wordWrap": true
 												},
@@ -78429,7 +78696,7 @@
 													"font": "Arial;13;0",
 													"parentStyle": true,
 													"left": 1618,
-													"top": 664,
+													"top": 677,
 													"width": 219,
 													"height": 26,
 													"text": "Tabs, plots, data preview, filters, audit, sessions, export, data import.",
@@ -78719,7 +78986,7 @@
 													"left": 1353,
 													"top": 420,
 													"width": 219,
-													"height": 13,
+													"height": 26,
 													"text": "[Component: orchestrator, cache_keys]",
 													"wordWrap": true
 												},
@@ -78733,7 +79000,7 @@
 													"font": "Arial;13;0",
 													"parentStyle": true,
 													"left": 1353,
-													"top": 443,
+													"top": 456,
 													"width": 219,
 													"height": 26,
 													"text": "Builds and reads Tier 1 and Tier 2, checks the chained keys.",
@@ -79343,7 +79610,7 @@
 													"left": 293,
 													"top": 124.5,
 													"width": 219,
-													"height": 26,
+													"height": 39,
 													"text": "Deployment file, app features file, sidebar panels, palettes. Read at startup.",
 													"wordWrap": true
 												}
@@ -79647,7 +79914,7 @@
 													"left": 823,
 													"top": 150,
 													"width": 219,
-													"height": 39,
+													"height": 52,
 													"text": "user_data/_sessions/{session_key}: assembly.json and t3_{timestamp}.json with the audit steps.",
 													"wordWrap": true
 												}
@@ -80531,9 +80798,9 @@
 													"font": "Arial;13;0",
 													"parentStyle": false,
 													"left": 1552,
-													"top": 577,
+													"top": 571,
 													"width": 44.79541015625,
-													"height": 52,
+													"height": 65,
 													"alpha": 1.5707963267948966,
 													"distance": 15,
 													"hostEdge": {
@@ -81325,7 +81592,7 @@
 													"left": 2148,
 													"top": 144,
 													"width": 214,
-													"height": 39,
+													"height": 52,
 													"text": "Should deliver samples and metadata. The connector exists; fetch_data raises NotImplementedError.",
 													"wordWrap": true
 												}

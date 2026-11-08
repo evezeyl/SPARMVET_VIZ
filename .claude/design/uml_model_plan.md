@@ -172,6 +172,29 @@ below).
 **Diagram export:** all 30 diagrams exported to `docs/UML/diagrams/*.png` via
 `staruml_export_diagrams` (re-run after any diagram change; PNGs are not auto-synced).
 
+**Done (2026-11-08, issue #33):** moved UI-HOME's "Alerts" panel+text from the right sidebar
+(x=1170) to the left (x=20,y=690) — it had drifted: the actual code fix (notification_log moved
+left) happened earlier the same session but the wireframe was never updated, which is exactly
+what the new UML & ADR Sync Law (`workspace_standard.md §3`) now exists to catch. Added a new
+"Alerts" `WFPanel`/`WFText` pair to UI-GALLERY, UI-BLUEPRINT, and UI-TESTLAB's left sidebars
+(same `code`/`status` tags as Home's). Updated UI-TESTLAB's Info panel text to describe the new
+`test_lab_info` placeholder, not the shared recipe-info panel. `audit_uml_model.py` clean
+(0 violations) after each save.
+
+**Tagging gotcha (new):** `app.engine.addItem(model, "tags", tag)` alone silently no-ops for a
+tag created via `new type.Tag()` on an element created in the same script session — it never
+registers the new object in the repository, so the push is lost on the next read even though no
+error is raised. Fix: build the operation explicitly — `const ob = app.repository.getOperationBuilder(); ob.begin(...); ob.insert(tag); ob.fieldInsert(model, "tags", tag); ob.end(); app.repository.doOperation(ob.getOperation());` — `ob.insert(tag)` is what actually registers the
+new element; `fieldInsert` alone only pushes a reference StarUML can't resolve later.
+
+**Export gotcha (open, not chased down):** re-running `staruml_export_diagrams` after these
+edits did not refresh `UI-TESTLAB_The_screen.png` (or the other three wireframes) — same file
+size and mtime as before the edit, across two separate export calls. The `.mdj` model itself is
+correct (confirmed by direct script introspection and a clean `audit_uml_model.py` run) — this
+is a stale-bitmap/caching issue in the export path specifically, not a model-data bug. If the
+PNGs under `docs/UML/diagrams/` are needed for a visual review, regenerate them from a live
+StarUML session rather than trusting the bridge export immediately after a same-session edit.
+
 UI-HOME uses StarUML's wireframe diagrams (panels, buttons, tabs as model elements). Each widget carries its Shiny id in `code` and its gate in `flag`, so the script can check it. It replaces the hand-drawn picture in `ui_panel_map_current.md`, which is already out of date (it still shows a T1/T2/T3 toggle).
 
 **Done (2026-11-08):** DM-RECIPE, the "Later" class diagram this section had deferred (data
