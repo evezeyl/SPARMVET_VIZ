@@ -70,7 +70,7 @@ def action_drop_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     },
     "description": "Replace a specific set of values across one or more columns with a single replacement; use `recode_values` for rule-based conditional remapping.",
     "yaml_example": "- action: replace_values\n  columns: [species]\n  to_replace: [Calf, calf]\n  new_value: Bovine_calf",
-    "wraps": [{"lib": "polars", "attr_path": ["Expr", "replace"]}],
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "replace_strict"]}],
 })
 def action_replace_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     """
@@ -86,7 +86,7 @@ def action_replace_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
             f"'replace_values' action requires 'to_replace' to be a list. Spec: {spec}")
 
     mapping = {old_val: new_value for old_val in to_replace}
-    return lf.with_columns(pl.col(columns).replace(mapping, default=pl.col(columns)))
+    return lf.with_columns(pl.col(columns).replace_strict(mapping, default=pl.col(columns)))
 
 
 # --- From renaming.py ---
