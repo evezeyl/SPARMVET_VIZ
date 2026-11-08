@@ -60,7 +60,11 @@ These operators are the UI contract between the Filter builder (`home_theater.py
 
 ## 4. Concrete User Step lists (Registry)
 
-The registry actively maintains 120+ components. Below is the full inventory of implemented elements:
+The registry actively maintains a large and growing set of components (see
+`libs/viz_factory/src/viz_factory/` for the current count —
+`grep -c '^@register_plot_component(' libs/viz_factory/src/viz_factory/**/*.py` — it grows as
+the registry expands per the Artist Parity Mandate, ADR-036). Below is the full inventory of
+implemented elements:
 
 ### Geoms (geoms/core.py)
 - `geom_point`: Basic scatter plots.

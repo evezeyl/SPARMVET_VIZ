@@ -64,13 +64,19 @@ Sanitizes YAML data analysis recipes to comply with the **ADR-041 Rich Dictionar
 
 **Script:** `assets/scripts/create_data_analysis_recipe.py`
 
-Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Inspects column headers and infers a starting Rich Dictionary `input_fields` block.
+Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Inspects column headers and infers a starting Rich Dictionary `input_fields` block. The flags use underscores, not hyphens, and `--primary_key_data` is required — the engine needs at least one primary-key column name to generate PK hints.
 
 ```bash
 ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \
-    --data-dir assets/test_data/my_data_analysis_recipe/ \
-    --output config/data_analysis_recipes/pipelines/my_data_analysis_recipe.yaml
+    --data_dir assets/test_data/my_data_analysis_recipe/ \
+    --primary_key_data sample_id \
+    --out_file config/data_analysis_recipes/pipelines/my_data_analysis_recipe.yaml
 ```
+
+**Arguments:** `--data_dir` (a directory of TSV/CSV files) or `--data_files` (explicit file list) —
+one of the two; `--metadata_file` (optional); `--primary_key_data` (**required**, one or more column
+names, checked against each file in turn); `--primary_key_metadata` (optional); `--out_file` (alias
+`--outfile`, optional — defaults to a timestamped file under `assets/template_data_analysis_recipes/`).
 
 ---
 
@@ -78,11 +84,11 @@ Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Ins
 
 **Script:** `assets/scripts/SF_create_data_analysis_recipe.py`
 
-Variant of `create_data_analysis_recipe.py` tailored for Figshare and other external dataset structures.
+Variant of `create_data_analysis_recipe.py` tailored for Figshare and other external dataset structures. The required flag is `--data` (a file path), not `--data-dir`.
 
 ```bash
 ./.venv/bin/python assets/scripts/SF_create_data_analysis_recipe.py \
-    --data-dir assets/test_data/figshare.21737288/ \
+    --data assets/test_data/figshare.21737288/amr_results.tsv \
     --output config/data_analysis_recipes/pipelines/figshare_amr.yaml
 ```
 
@@ -92,18 +98,21 @@ Variant of `create_data_analysis_recipe.py` tailored for Figshare and other exte
 
 **Script:** `assets/scripts/create_test_deployment.py`
 
-Generates an **ADR-048 compliant** deployment file for local testing. The deployment is written to `config/connectors/local/`.
+Generates an **ADR-048 compliant** deployment file for local testing. The deployment is written to `config/deployment/local/` (singular `deployment`, not `connectors`). Flags use underscores except `--app-features`, and `--deployment_file` (the output filename) and `--description` are both required alongside `--data_analysis_recipe_id`.
 
 ```bash
 ./.venv/bin/python assets/scripts/create_test_deployment.py \
-    --data-analysis-recipe-id 1_test_data_ST22_dummy \
+    --data_analysis_recipe_id 1_test_data_ST22_dummy \
+    --deployment_file local_test.yaml \
     --description "ST22 AMR local test" \
     --app-features developer
 
 # Custom project root (e.g. for a mounted path)
 ./.venv/bin/python assets/scripts/create_test_deployment.py \
-    --data-analysis-recipe-id my_pipeline \
-    --project-root /mnt/data/sparmvet
+    --data_analysis_recipe_id my_pipeline \
+    --deployment_file custom.yaml \
+    --description "Custom test" \
+    --project_root /mnt/data/sparmvet
 ```
 
 The deployment defines `deployment_type`, `locations` (raw data, data analysis recipes, curated data, gallery), `default_data_analysis_recipe`, and `default_app_features`.
@@ -128,11 +137,19 @@ Output is written to `assets/test_data/demo_high_integrity/`. Verifies join inte
 
 ### `debug_apply_data_analysis_recipe_standards.py`
 
-Applies ADR-041 formatting standards to a data analysis recipe file — adds missing header blocks and corrects structural issues.
+Applies ADR-041 header structure (missing `id`, `description`, `input_fields`, `wrangling`,
+`output_fields` blocks) to the **VizFactory test fixtures** in `libs/viz_factory/tests/test_data/`
+only — it is a test-data maintenance script, not a general-purpose fixer for arbitrary pipeline data
+analysis recipes. Real flags are `--test-dir` (default `libs/viz_factory/tests/test_data`) and
+`--dry-run` (preview without writing).
 
 ```bash
+# Dry-run against the default VizFactory test fixtures directory
+./.venv/bin/python assets/scripts/debug_apply_data_analysis_recipe_standards.py --dry-run
+
+# Apply, or point at a different test-data directory
 ./.venv/bin/python assets/scripts/debug_apply_data_analysis_recipe_standards.py \
-    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml
+    --test-dir libs/viz_factory/tests/test_data
 ```
 
 ### `debug_bootstrap_viz_yamls.py`
@@ -177,5 +194,10 @@ These scripts are for the multi-stage Figshare AMR dataset integration pipeline.
 **Script:** `assets/scripts/materialize_data_analysis_recipe_plots.py`
 
 ::: {.callout-warning}
-This script is a deprecated compatibility shim. Use `debug_assembler.py` directly for data analysis recipe plot materialization. See [Developer CLI Tools](../reference/developer_how_to.qmd).
+This script is a deprecated compatibility shim (removal task `LEGACY-MATERIALIZE-SHIM-REMOVE-1`) that
+forwards every argument to its real replacement: `libs/viz_factory/tests/debug_gallery.py` (the
+canonical headless art-audit tool), not `debug_assembler.py` — `debug_assembler.py` validates the
+data/assembly layer, `debug_gallery.py` is the one that renders plots. Use
+`libs/viz_factory/tests/debug_gallery.py --data-analysis-recipe <path>` directly. See
+[Developer CLI Tools](../reference/developer_how_to.qmd).
 :::

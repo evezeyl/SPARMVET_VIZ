@@ -5,9 +5,15 @@ title: "Startup Error Catalog (ADR-078)"
 # Startup Error Catalog
 
 Every error the app emits at startup is a structured `DeploymentError` record (ADR-078).
-The terminal output always includes the **slug** — look it up here for the canonical fix.
+The terminal output does **not** print a lookup slug — `DeploymentError` has no `slug` field.
+Instead, find the matching entry below by the **component** name and **problem** text the
+app actually prints (both appear in the `[FATAL]` block: `Component:` and the problem line),
+or by the `reference:` field when the error carries one (it points straight at the matching
+anchor in this file).
 
-Error slugs follow the pattern `<component>-<trigger>`.
+The `<component>-<trigger>` slug naming pattern is a documentation-authoring convention only
+— used to pick a stable anchor name when adding a new catalog entry (see "Adding New Errors
+to This Catalog" below) — not something the running app ever outputs.
 This catalog covers only **startup / deployment-configuration** errors.
 Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked under ADR-079.
 
@@ -23,14 +29,14 @@ Runtime errors (ingestion, wrangling, assembly, plot rendering) are tracked unde
 | [boot-deployment-parse-error](#boot-deployment-parse-error) | Bootloader | operator | Deployment YAML is syntactically invalid |
 | [boot-deployment-missing-locations](#boot-deployment-missing-locations) | Bootloader | operator | One or more of 5 required `locations:` keys absent |
 | [boot-connector-init-failed](#boot-connector-init-failed) | Bootloader | operator | Connector `fetch_data()` or `resolve_paths()` crashed |
-| [boot-app features not-configured](#boot-app features not-configured) | Bootloader | operator | No app features from kwarg, env var, or deployment |
-| [boot-app features template-missing](#boot-app features template-missing) | Bootloader | operator | App features file file not found |
-| [boot-app features template-parse-error](#boot-app features template-parse-error) | Bootloader | operator | App features file YAML invalid |
-| [app features id-underscore](#app features id-underscore) | AppFeaturesValidator | operator | `app_features_id` uses `_` instead of `-` |
-| [app features t3-companions-missing](#app features t3-companions-missing) | AppFeaturesValidator | operator | `t3_sandbox_enabled` without required companion flags |
-| [app features cascade-d-fatal](#app features cascade-d-fatal) | AppFeaturesValidator | operator | Group D child flag enabled, parent flag disabled |
-| [app features template-not-found](#app features template-not-found) | AppFeaturesValidator | operator | Template file absent (via `validate_file`) |
-| [app features template-parse-error](#app features template-parse-error) | AppFeaturesValidator | operator | Template YAML parse failure |
+| [boot-app-features-not-configured](#boot-app-features-not-configured) | Bootloader | operator | No app features from kwarg, env var, or deployment |
+| [boot-app-features-template-missing](#boot-app-features-template-missing) | Bootloader | operator | App features file file not found |
+| [boot-app-features-template-parse-error](#boot-app-features-template-parse-error) | Bootloader | operator | App features file YAML invalid |
+| [app-features-id-underscore](#app-features-id-underscore) | AppFeaturesValidator | operator | `app_features_id` uses `_` instead of `-` |
+| [app-features-t3-companions-missing](#app-features-t3-companions-missing) | AppFeaturesValidator | operator | `t3_sandbox_enabled` without required companion flags |
+| [app-features-cascade-d-fatal](#app-features-cascade-d-fatal) | AppFeaturesValidator | operator | Group D child flag enabled, parent flag disabled |
+| [app-features-template-not-found](#app-features-template-not-found) | AppFeaturesValidator | operator | Template file absent (via `validate_file`) |
+| [app-features-template-parse-error](#app-features-template-parse-error) | AppFeaturesValidator | operator | Template YAML parse failure |
 | [sidebar-template-not-found](#sidebar-template-not-found) | SidebarValidator | operator | Template file absent (via `validate_file`) |
 | [sidebar-template-parse-error](#sidebar-template-parse-error) | SidebarValidator | operator | Template YAML parse failure |
 | [sidebar-include-missing](#sidebar-include-missing) | SidebarValidator | operator | `!include` target for a sidebar block not found |
@@ -169,7 +175,7 @@ This wraps any exception raised during `connector.fetch_data()` or
 
 ---
 
-### `boot-app features not-configured` {#boot-app features not-configured}
+### `boot-app-features-not-configured` {#boot-app-features-not-configured}
 
 **Problem:** No app features configured — cannot determine which feature flags to load.
 
@@ -193,7 +199,7 @@ Valid app features IDs: `pipeline-static`, `pipeline-exploration-simple`,
 
 ---
 
-### `boot-app features template-missing` {#boot-app features template-missing}
+### `boot-app-features-template-missing` {#boot-app-features-template-missing}
 
 **Problem:** App features file not found: `<path>`.
 
@@ -209,7 +215,7 @@ path, not a shortname that doesn't match any template file.
 
 ---
 
-### `boot-app features template-parse-error` {#boot-app features template-parse-error}
+### `boot-app-features-template-parse-error` {#boot-app-features-template-parse-error}
 
 **Problem:** Failed to parse app features file `'<path>'`.
 
@@ -228,7 +234,7 @@ Also verify that all `!include` paths under `workspaces:` exist in
 
 ## B — AppFeaturesValidator Errors
 
-### `app features id-underscore` {#app features id-underscore}
+### `app-features-id-underscore` {#app-features-id-underscore}
 
 **Problem:** `app_features_id '<id>'` contains underscores.
 
@@ -249,7 +255,7 @@ app_features_id: pipeline-static
 
 ---
 
-### `app features t3-companions-missing` {#app features t3-companions-missing}
+### `app-features-t3-companions-missing` {#app-features-t3-companions-missing}
 
 **Problem:** `t3_sandbox_enabled=True` but required companion flags are False:
 `<list of flags>`.
@@ -275,7 +281,7 @@ features:
 
 ---
 
-### `app features cascade-d-fatal` {#app features cascade-d-fatal}
+### `app-features-cascade-d-fatal` {#app-features-cascade-d-fatal}
 
 **Problem:** `'<child>=True'` requires `'<parent>=True'`.
 
@@ -301,20 +307,20 @@ features:
 
 ---
 
-### `app features template-not-found` {#app features template-not-found}
+### `app-features-template-not-found` {#app-features-template-not-found}
 
 **Problem:** App features file file not found: `<path>`.
 
 Raised by `AppFeaturesValidator.validate_file()` when the file is absent before
 validation even begins.
 
-**Fix:** Same as [`boot-app features template-missing`](#boot-app features template-missing).
+**Fix:** Same as [`boot-app-features-template-missing`](#boot-app-features-template-missing).
 
 **Source:** `app/modules/app_features_validator.py → validate_file()`.
 
 ---
 
-### `app features template-parse-error` {#app features template-parse-error}
+### `app-features-template-parse-error` {#app-features-template-parse-error}
 
 **Problem:** Failed to parse app features file YAML.
 
@@ -336,7 +342,7 @@ Common causes: tab indentation, unquoted `@` or `#` characters, mismatched brack
 
 **Problem:** App features file file not found: `<path>`.
 
-**Fix:** Same as [`boot-app features template-missing`](#boot-app features template-missing).
+**Fix:** Same as [`boot-app-features-template-missing`](#boot-app-features-template-missing).
 
 **Source:** `app/modules/sidebar_validator.py → validate_file()`.
 

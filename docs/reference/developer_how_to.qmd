@@ -116,7 +116,7 @@ For full CLI reference and current integrity suite results, see [Transformer & V
 - **Many-to-many detection**
   `detect_many_to_many(results)` returns a dict of ref_id → [target_ids] for cases where one ref matched multiple targets (requires manual resolution).
   
-- **`test_sdk.py`**  
+- **`test_synthesizer.py` / `test_extractor.py`** *(`libs/test_lab/tests/`)*
   **Purpose:** Automated Pytest validation covering the Synthesizer and Extractor logic.
 
 ---
@@ -125,7 +125,7 @@ For full CLI reference and current integrity suite results, see [Transformer & V
 *Location: `libs/viz_factory/tests/`*
 
 - **`viz_factory_integrity_suite.py`** *(Master Suite)*
-  Validates all 172 registered components against their test YAMLs. Saves a report to `tmp/viz_factory/`.
+  Validates all registered components against their test YAMLs. Saves a report to `tmp/viz_factory/`.
   ```bash
   ./.venv/bin/python libs/viz_factory/tests/viz_factory_integrity_suite.py
   ```

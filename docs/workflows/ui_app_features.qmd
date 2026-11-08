@@ -53,13 +53,12 @@ The five **production app features files** (1, 3, 5, 6, 7) are ordered — highe
 | T3 sandbox (wrangling) | — | ✅ | ✅ | ✅ | ✅ |
 | Comparison mode | — | ✅ | ✅ | ✅ | ✅ |
 | Right sidebar (audit trail) | — | — | ✅ | ✅ | ✅ |
-| Export active graph | — | — | ✅ | ✅ | ✅ |
 | Metadata ingestion | — | — | ✅ | ✅ | ✅ |
 | Session save / restore | — | — | ✅ | ✅ | ✅ |
 | Data ingestion + Excel | — | — | — | ✅ | ✅ |
 | Data analysis recipe selector | — | — | — | ✅ | ✅ |
 | Gallery browser | — | — | — | — | ✅ |
-| Test Lab (Wrangle Studio) | — | — | — | — | ✅ |
+| Test Lab | — | — | — | — | ✅ |
 
 ## Right Sidebar Visibility
 
@@ -80,10 +79,17 @@ The left sidebar content changes depending on which top-level panel is active. W
 | Tool | pipeline-static | pipeline-simple | pipeline-advanced | standalone | developer |
 |---|:---:|:---:|:---:|:---:|:---:|
 | Export Results Bundle | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Export Active Graph | — | — | ✅ | ✅ | ✅ |
 | Metadata Ingestion | — | — | ✅ | ✅ | ✅ |
 | Session Save / Import | — | — | ✅ | ✅ | ✅ |
 | Data Ingestion + Excel | — | — | — | ✅ | ✅ |
+
+> **Export scope, not a separate feature.** There is no standalone "Export Active Graph" feature
+> any more — it was removed in the 2026-05-04 export redesign. The Export panel (gated by
+> `export_enabled`, same flag as Export Results Bundle, so available to every app features above)
+> offers a 3-way scope toggle instead: **global** (all plots), **group** (active analysis-group
+> tab), or **plot** (active plot sub-tab only). Selecting "plot" and downloading the bundle
+> produces what used to be a separate single-graph export. See `ui_implementation_contract.md`
+> §7.2/§7.3 (agent rules) for the full spec.
 
 ---
 
@@ -100,19 +106,43 @@ These features are always available regardless of app features. They require onl
 - Export Results Bundle
 - Data Preview with column selector
 
-## Group B — T3 Sandbox (requires `interactivity_enabled: true`)
+## Group B — T3 Sandbox / "My view" (ADR-085, ADR-086)
 
-All T3 features depend on `interactivity_enabled`. If this is false, all features in this group are silently unavailable regardless of their individual flags.
+The HOME header strip is **not** a single combined T1/T2/T3 toggle. It is two independent
+choices:
+
+- **"Data to show"** (drives the data preview): Raw (T1) / Result (T2) / My view
+- **"Plot to show"** (drives the plots): Result (T2) / My view / Compare Result vs My view
+
+`interactivity_enabled` is the master gate for the Filters panel and for the "My view" option
+on both selectors. If it is `false`, the Filters panel and the entire header strip are absent —
+there is no partial state where the strip exists without "My view".
+
+`t3_sandbox_enabled` is a **separate, decoupled** flag (ADR-085) — it does not gate "My view"
+itself. "My view" is available whenever the Filters panel exists, i.e. whenever
+`interactivity_enabled` is true, regardless of `t3_sandbox_enabled`. `t3_sandbox_enabled` only
+gates the capability to make a change permanent: the "Send to Audit" button, the propagation
+modal, and the right sidebar Pipeline Audit panel. Without it, "My view" is a pure scratchpad —
+filters apply and render there for the session, but there is no way to write them to an audit
+trail.
 
 ```
 interactivity_enabled: true
-  └─ T3 tier toggle options (T3-Wrangle, T3-Plot)
-  └─ comparison_mode_enabled: true   → Comparison Mode toggle in theater
+  └─ Filters panel + "My view" option on both "Data to show" and "Plot to show"
+  └─ comparison_mode_enabled: true    → "Compare Result vs My view" option on "Plot to show"
   └─ session_management_enabled: true → Session Save/Import + ghost save
-  └─ export_enabled: true       → Export Active Graph (requires T3 context)
+  (export_enabled is independent — Group A — even a read-only app features can export)
+
+t3_sandbox_enabled: true   (independent of interactivity_enabled — see ADR-085)
+  └─ "Send to Audit" button + propagation modal
+  └─ Right sidebar Pipeline Audit panel (audit_stack)
 ```
 
-**Effect if `interactivity_enabled: false`:** T3 tier toggle buttons are hidden. `comparison_mode_enabled`, `session_management_enabled`, and `export_enabled` have no effect even if set to `true`.
+**Effect if `interactivity_enabled: false`:** The Filters panel and the whole header strip are
+absent — no T1/T2/"My view" selectors at all. `comparison_mode_enabled` and
+`session_management_enabled` have no effect even if set to `true` (soft cascade — the
+bootloader silently forces them to `false` and logs a warning). `export_enabled` is unaffected
+(Group A).
 
 ## Group C — Right Sidebar (requires `interactivity_enabled: true`)
 
@@ -184,8 +214,7 @@ If the `blueprint_agent:` block is missing or `backend: disabled`, the Bootloade
 | `interactivity_enabled` | Nothing | ✅ | — |
 | `comparison_mode_enabled` | `interactivity_enabled` | — | Soft |
 | `session_management_enabled` | `interactivity_enabled` | — | Soft |
-| `export_enabled` | `interactivity_enabled` | — | Soft |
-| `export_enabled` | Nothing (Group A — always safe) | ✅ | — |
+| `export_enabled` | Nothing (Group A — always safe, even a read-only app features can export) | ✅ | — |
 | `metadata_ingestion_enabled` | Nothing (semi-standalone) | ✅ | — |
 | `import_helper_enabled` | Nothing | ✅ | — |
 | `data_ingestion_enabled` | `import_helper_enabled` | — | Soft |
@@ -225,15 +254,16 @@ features:
   # (no dependencies; always meaningful)
   export_enabled: true        # Export Results Bundle (zip) in Export
 
-  # ── Group B: T3 Sandbox ───────────────────────────────────────────────────
-  interactivity_enabled: false       # Master gate for all T3 features
-  comparison_mode_enabled: false     # Comparison Mode toggle (requires interactivity)
+  # ── Group B: T3 Sandbox / "My view" ───────────────────────────────────────
+  interactivity_enabled: false       # Master gate for the Filters panel + "My view" option
+  comparison_mode_enabled: false     # "Compare Result vs My view" option (requires interactivity)
   session_management_enabled: false  # Session Save/Import + ghost save (requires interactivity)
-  export_enabled: false        # Export Active Graph (requires interactivity)
+  t3_sandbox_enabled: false          # "Send to Audit" + propagation modal + right sidebar
+                                      # (decoupled from interactivity_enabled, ADR-085)
 
   # ── Group C: Right Sidebar ────────────────────────────────────────────────
-  # Controlled by interactivity_enabled + app features level (advanced+)
-  # No separate flag — suppression is structural (layout element excluded)
+  # Visibility driven by bootloader.get_sidebar_config("home", "right").visible (ADR-073),
+  # gated in practice on t3_sandbox_enabled above — not a separate flag.
 
   # ── Group D: Data Ingestion ───────────────────────────────────────────────
   metadata_ingestion_enabled: false  # Upload replacement metadata → T1 rebuild

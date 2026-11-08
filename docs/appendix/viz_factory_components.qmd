@@ -54,7 +54,10 @@ plot_comps = get_components_for_context("plot")
 
 ### Annotated components (BP-SCHEMA-1)
 
-7 components carry `ui_schema` dicts and appear in the Blueprint IDE picker:
+Virtually every registered plot component carries a `ui_schema` dict and appears in the Blueprint IDE
+picker — 191 components registered (`grep -c '^@register_plot_component(' libs/viz_factory/src/viz_factory/**/*.py`),
+essentially all of them annotated (`grep -rc ui_schema` on the same files returns almost exactly one
+hit per component, give or take a docstring mention). A handful of frequently-used examples:
 
 | Component | Category | Core params |
 |---|---|---|
@@ -66,7 +69,10 @@ plot_comps = get_components_for_context("plot")
 | `geom_tile` | `correlation` | alpha, fill, colour, width, height, linejoin |
 | `labs` | `annotation` | title, subtitle, caption, x, y, fill, colour, size, shape, alpha |
 
-All other registered components still work from YAML data analysis recipes — the `ui_schema` only controls IDE visibility.
+The count will drift as the registry grows (ADR-035/036 parity mandate) — treat the number above as
+"essentially all of them," not a fixed total, and re-run the `grep` above if you need the exact figure.
+The `ui_schema` only controls IDE discoverability; every registered component, annotated or not, works
+from YAML data analysis recipes.
 
 ### Why `allow_extra_params: True`?
 
@@ -112,117 +118,144 @@ def handle_mygeom(p, spec):
 
 ## 1. Anatomy of a Plot Data Analysis Recipe
 
-Every plot in the dashboard is built from a YAML dictionary that follows this exact skeleton:
+Every plot spec in the dashboard follows this exact skeleton (ADR-083 grammar-of-graphics format;
+canonical reference: `.claude/rules/rules_data_analysis_recipe_structure.md §8`). Aesthetics live under
+`mapping:`; visual layers live in an ordered `layers:` list, each a `{name, params}` pair:
 
 ```yaml
-scatter_example_plot:
+spec:
+  target_dataset: AMR_Profile_Joint
   mapping:
-    x: "collection_year"
-    y: "resistance_score"
-    color: "species"
-  components:
-    - type: "geom_point"
-      alpha: 0.7
-    - type: "theme_minimal"
+    x: collection_year
+    y: resistance_score
+    color: species
+  layers:
+    - name: geom_point
+      params:
+        alpha: 0.7
+    - name: theme_minimal
+      params: {}
 ```
-The `components` list acts as a painter's canvas. Layers are painted exactly in the order they are listed.
+
+The `layers` list acts as a painter's canvas. Layers are painted exactly in the order they are listed.
+`VizFactory.render()` reads each entry's `name` key to look up the registered component — it has never
+read a `components:` list or a `type:` key (see `libs/viz_factory/src/viz_factory/viz_factory.py`,
+`layer_spec.get("name")`). The old `components: [{type: "geom_point", ...}]` / flat-kwargs shape shown
+in earlier revisions of this file is **not** read by the engine; a data analysis recipe written that
+way renders nothing for those layers, with no error.
 
 ---
 
 ## 2. Geometries (Data Shapes)
 
+Every example below is a single entry in a plot spec's `layers:` list (see §1 for the full skeleton).
+
 ### `geom_point` (Scatter Plot)
 Used for creating scatter plots mapping X and Y coordinates.
 ```yaml
-- type: "geom_point"
-  size: 3
-  alpha: 0.6
-  shape: "o"
+- name: geom_point
+  params:
+    size: 3
+    alpha: 0.6
+    shape: "o"
 ```
 
 ### `geom_bar` (Bar Charts)
 Used for counting occurrences or plotting raw values.
 ```yaml
-- type: "geom_bar"
-  stat: "identity"  # Use "identity" if your Y-value is already calculated
-  position: "dodge" # Use "dodge" to place bars side-by-side, or "stack"
-  alpha: 0.8
+- name: geom_bar
+  params:
+    stat: "identity"  # Use "identity" if your Y-value is already calculated
+    position: "dodge" # Use "dodge" to place bars side-by-side, or "stack"
+    alpha: 0.8
 ```
 
 ### `geom_boxplot` (Distributions)
 Visualizes data quartiles and outliers.
 ```yaml
-- type: "geom_boxplot"
-  fill: "#E0E0E0"
-  outlier_color: "red"
-  outlier_size: 2
+- name: geom_boxplot
+  params:
+    fill: "#E0E0E0"
+    outlier_colour: "red"
+    outlier_size: 2
 ```
 
 ### `geom_smooth` (Trend Lines / Regressions)
 Adds an automatic trendline with an optional confidence ribbon.
 ```yaml
-- type: "geom_smooth"
-  method: "lm"      # Linear model
-  se: true          # Show confidence interval
-  color: "black"
-  linetype: "dashed"
+- name: geom_smooth
+  params:
+    method: "lm"      # Linear model
+    se: true          # Show confidence interval
+    colour: "black"
+    linetype: "dashed"
 ```
 
 ### `geom_text` (Labels)
 Draws text directly onto the plot coordinates. Make sure `label` is defined in the main `mapping`.
 ```yaml
-- type: "geom_text"
-  size: 10
-  nudge_y: 0.5      # Push the text slightly above the point
-  check_overlap: true
+- name: geom_text
+  params:
+    size: 10
+    nudge_y: 0.5      # Push the text slightly above the point
+    check_overlap: true
 ```
 
 ### `geom_density_2d` (2D Density)
 Visualizes the density of a 2D distribution with contours.
 ```yaml
-- type: "geom_density_2d"
-  color: "blue"
+- name: geom_density_2d
+  params:
+    colour: "blue"
 ```
 
 ### `geom_pointdensity` (Density-Colored Scatter)
 Colors points by local density.
 ```yaml
-- type: "geom_pointdensity"
+- name: geom_pointdensity
+  params: {}
 ```
 
 ### `geom_sina` (Sina Plot)
 A combination of a violin plot and jittered points.
 ```yaml
-- type: "geom_sina"
-  alpha: 0.5
+- name: geom_sina
+  params:
+    alpha: 0.5
 ```
 
 ### Reference Lines (`geom_hline`, `geom_vline`, `geom_abline`)
 Used to add static reference boundaries or diagonal thresholds.
 ```yaml
-- type: "geom_hline" # Horizontal
-  yintercept: 10
-  color: "red"
-- type: "geom_vline" # Vertical
-  xintercept: 5
-  linetype: "dashed"
-- type: "geom_abline" # Slope/Intercept
-  slope: 1
-  intercept: 0
+layers:
+  - name: geom_hline     # Horizontal
+    params:
+      yintercept: 10
+      colour: "red"
+  - name: geom_vline     # Vertical
+    params:
+      xintercept: 5
+      linetype: "dashed"
+  - name: geom_abline    # Slope/Intercept
+    params:
+      slope: 1
+      intercept: 0
 ```
 
 ### `geom_errorbar` (Uncertainty)
 Draws vertical error bars for confidence intervals.
 ```yaml
-- type: "geom_errorbar"
-  width: 0.2
+- name: geom_errorbar
+  params:
+    width: 0.2
 ```
 
 ### `geom_segment` (Lollipops / Connections)
 Draws straight lines between points. Requires `xend` and `yend` in mapping.
 ```yaml
-- type: "geom_segment"
-  alpha: 0.5
+- name: geom_segment
+  params:
+    alpha: 0.5
 ```
 
 ---
@@ -232,171 +265,214 @@ Draws straight lines between points. Requires `xend` and `yend` in mapping.
 ### `stat_ellipse` (Clustering)
 Calculates and draws a multivariate normal confidence ellipse.
 ```yaml
-- type: "stat_ellipse"
-  level: 0.95
-  geom: "polygon"
-  alpha: 0.2
+- name: stat_ellipse
+  params:
+    level: 0.95
+    geom: "polygon"
+    alpha: 0.2
 ```
 
 ### `stat_hull` (Convex Hull)
 Draws a boundary around the outermost points of a group. Great for PCA/UMAP clusters.
 ```yaml
-- type: "stat_hull"
-  fill: "lightblue"
-  alpha: 0.3
+- name: stat_hull
+  params:
+    fill: "lightblue"
+    alpha: 0.3
 ```
 
 ### `stat_summary` (Aggregations)
 Automatically calculates and plots mean, median, or custom summaries without pre-wrangling.
 ```yaml
-- type: "stat_summary"
-  fun_data: "mean_cl_boot" # 95% Confidence Interval
-  geom: "errorbar"
-  width: 0.1
+- name: stat_summary
+  params:
+    fun_data: "mean_cl_boot" # 95% Confidence Interval
+    geom: "errorbar"
+    width: 0.1
 ```
 
 ---
 
-## 3. Scales (Colors & Axes)
+## 4. Scales (Colors & Axes)
 
 Scales translate your raw data categories into physical attributes like hex colors or axis limits.
 
 ### `scale_color_manual` (Custom Target Colors)
 Forces specific colors onto specific categories.
 ```yaml
-- type: "scale_color_manual"
-  values:
-    "E. coli": "#E41A1C"
-    "Salmonella": "#377EB8"
+- name: scale_color_manual
+  params:
+    values:
+      "E. coli": "#E41A1C"
+      "Salmonella": "#377EB8"
 ```
 
 ### `scale_fill_viridis_d` (Colorblind Safe Palettes)
 Automatically applies the highly readable Viridis palette to categorical fills.
 ```yaml
-- type: "scale_fill_viridis_d"
-  option: "plasma"  # Options: magma, inferno, plasma, viridis
-  alpha: 0.9
+- name: scale_fill_viridis_d
+  params:
+    option: "plasma"  # Options: magma, inferno, plasma, viridis
+    alpha: 0.9
 ```
 
 ### `scale_x_continuous` (Numeric Axis Controls)
 Used to format quantitative axes.
 ```yaml
-- type: "scale_x_continuous"
-  limits: [1990, 2025]
-  breaks: [1990, 2000, 2010, 2020]
+- name: scale_x_continuous
+  params:
+    limits: [1990, 2025]
+    breaks: [1990, 2000, 2010, 2020]
 ```
 
 ### `scale_y_log10` (Logarithmic Transformation)
 Transforms the axis scaling mathematically without needing to mutate the raw dataframe.
 ```yaml
-- type: "scale_y_log10"
+- name: scale_y_log10
+  params: {}
 ```
 
 ### `scale_x_sqrt` (Square Root)
 Compresses large spreads in quantitative data.
 ```yaml
-- type: "scale_x_sqrt"
+- name: scale_x_sqrt
+  params: {}
 ```
 
 ### `scale_x_symlog` (Symmetric Log)
 Handles both positive and negative values on a logarithmic scale.
 ```yaml
-- type: "scale_x_symlog"
+- name: scale_x_symlog
+  params: {}
 ```
 
 ### `scale_x_date` (Timeline Control)
 Formatting for date-based axes.
 ```yaml
-- type: "scale_x_date"
-  date_labels: "%b %Y"
-  date_breaks: "6 months"
+- name: scale_x_date
+  params:
+    date_labels: "%b %Y"
+    date_breaks: "6 months"
 ```
 
 ### `scale_stroke_continuous` (Outline Scaling)
 Dynamically size the outlines of shapes based on quantitative data.
 ```yaml
-- type: "scale_stroke_continuous"
-  range: [1, 5]
+- name: scale_stroke_continuous
+  params:
+    range: [1, 5]
 ```
 
 ---
 
-## 4. Facets (Multi-Panel Splitters)
+## 5. Facets (Multi-Panel Splitters)
 
 Facets split a single large dataset into a grid of smaller, identical plots based on a column variable.
+(A single grouping variable can also be set directly via `mapping: {facet_by: <column>}` — see
+`rules_data_analysis_recipe_structure.md §8` — which is equivalent to a `facet_wrap` layer.)
 
 ### `facet_wrap`
 Wraps panels sequentially like reading a book. Best for 1 variable.
 ```yaml
-- type: "facet_wrap"
-  facets: "species"
-  ncol: 3
-  scales: "free_y" # Allows each subplot to have its own dynamic Y-axis
+- name: facet_wrap
+  params:
+    facets: species
+    ncol: 3
+    scales: "free_y" # Allows each subplot to have its own dynamic Y-axis
 ```
 
 ### `facet_grid`
 Creates a strict 2D matrix of plots. Best for crossing 2 variables.
 ```yaml
-- type: "facet_grid"
-  facets: "source_type ~ species" # Rows ~ Columns
+- name: facet_grid
+  params:
+    rows: source_type
+    cols: species
 ```
 
 ---
 
-## 5. Themes & Aesthetics
+## 6. Themes & Aesthetics
 
 Themes control the non-data ink (backgrounds, gridlines, fonts, legend positions).
 
 ### `theme_minimal`
 Removes the grey background and cleans up heavy gridlines.
 ```yaml
-- type: "theme_minimal"
+- name: theme_minimal
+  params: {}
 ```
 
 ### `theme_bw`
 Classic scientific black-and-white framing.
 ```yaml
-- type: "theme_bw"
+- name: theme_bw
+  params: {}
 ```
 
 ### `theme_seaborn` (Statistical Aesthetic)
 Mimics the default styling of the Python Seaborn library.
 ```yaml
-- type: "theme_seaborn"
+- name: theme_seaborn
+  params: {}
 ```
 
 ### `theme_538` (Data Journalism Style)
 Inspired by FiveThirtyEight's distinct data visualizations.
 ```yaml
-- type: "theme_538"
+- name: theme_538
+  params: {}
 ```
 
 ### `theme_xkcd` (Hand-Drawn Style)
 For "sketch" style plots (uses internal font mapping).
 ```yaml
-- type: "theme_xkcd"
+- name: theme_xkcd
+  params: {}
 ```
 
 ### `theme_tufte` (Minimalist)
 Based on Edward Tufte's principles of maximizing data-ink ratio.
 ```yaml
-- type: "theme_tufte"
+- name: theme_tufte
+  params: {}
 ```
 
-### Legend Management (Nested inside custom `theme`)
-You can pass custom parameters directly into the `theme` component to tweak fine details.
+### Legend Management (via `theme_custom`)
+`theme_custom` is the registered "arbitrary theme override" component — there is no generic
+`type: "theme"` component in the registry. Use it to pass any plotnine `theme()` kwarg directly, or
+nest an `element_text`/`element_line`/`element_rect`/`element_blank` block for a specific element:
 ```yaml
-- type: "theme"
-  legend_position: "bottom"
-  legend_title: "blank"     # Hides the legend title
-  axis_text_x:
-    angle: 45               # Rotates bottom text for easy reading
+- name: theme_custom
+  params:
+    legend_position: "bottom"
+    legend_title: {name: element_blank}     # Hides the legend title
+    axis_text_x:
+      name: element_text
+      params:
+        angle: 45               # Rotates bottom text for easy reading
+        hjust: 1
+```
+For a single named axis/strip text tweak, `element_text` can also be used directly as its own layer
+(see `libs/viz_factory/src/viz_factory/themes/core.py`):
+```yaml
+- name: element_text
+  params:
+    target: axis_text_x
+    angle: 45
     hjust: 1
+```
+And for the common case of only moving the legend, `theme_legend_position` is a lighter-weight
+dedicated component:
+```yaml
+- name: theme_legend_position
+  params:
+    position: bottom
 ```
 
 ---
 
-## 6. Gallery Taxonomy (6-Axis Classification)
+## 7. Gallery Taxonomy (6-Axis Classification)
 
 Every example in the Viz Gallery is tagged across **six axes** that drive the sidebar filter panels in the Gallery tab. Authors must populate all six fields in the `info` block of their `data_analysis_recipe.yaml` before a submission is accepted.
 

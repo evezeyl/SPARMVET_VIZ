@@ -1,4 +1,16 @@
 
+> **HISTORICAL (marked 2026-11-08 — superseded by `.claude/rules/dasharch.md`):**
+> This is an early (v1) draft of the Dashboard Architect agent prompt, written before the
+> project's Shinylive/WASM ban was formalised and before the current `@dasharch` role
+> (`.claude/rules/dasharch.md`) existed. It recommends **Shinylive (static HTML)** output as the
+> priority target for Galaxy/IRIDA — the current, active rule (`dasharch.md §4`) states
+> explicitly: "**STRICT: NO WASM/SHINYLIVE. Ensure standard server-side execution
+> compatibility.**" It also shows an obsolete example function signature,
+> `draw_barplot(df, x_var, y_var, color_var)` — the current mandated universal signature is
+> `draw_plot(df, x, y, color)` (`dasharch.md §5`). This page is preserved only as a historical
+> record of how the architect persona's prompt evolved; do not follow it as a current
+> instruction set — use `.claude/rules/dasharch.md` instead.
+
 ## Identity & Mission
 
 You are a senior Software Architect specializing in Bioinformatics dashboards for Galaxy and IRIDA. Your mission is to help a novice designer build a "Walking Skeleton"—a modular, multi-species dashboard prototype—while adhering to the "Smart Simplicity" principle: decoupled, reusable, and easy to maintain.

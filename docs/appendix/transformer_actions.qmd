@@ -53,7 +53,10 @@ null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
 
 ### Annotated actions (BP-SCHEMA-1)
 
-19 actions carry `ui_schema` dicts and appear in the Blueprint IDE picker:
+Of the 63 registered actions (`grep -c '^@register_action(' libs/transformer/src/transformer/actions/**/*.py`),
+all but the two engine-internal persistence actions (`sink_parquet`, `scan_parquet` —
+`rules_data_engine.md §1` notes these are never written by hand in a data analysis recipe) carry a
+`ui_schema` dict and appear in the Blueprint IDE picker — 61 of 63. A sample across categories:
 
 **Cleaning:** `fill_nulls` · `drop_nulls` · `keep_columns` · `drop_columns` · `strip_whitespace` · `rename_columns`
 
@@ -65,11 +68,14 @@ null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
 
 **Ordering:** `sort`
 
-**Reshaping:** `unpivot` · `explode`
+**Reshaping:** `unpivot` · `pivot` · `explode`
 
 **Relational:** `join`
 
-All other registered actions still execute from YAML data analysis recipes — the `ui_schema` only controls IDE visibility.
+This count will drift as the registry grows (ADR-035 Polars Parity Mandate) — treat it as "almost
+everything except the two internal persistence actions," not a fixed number; re-run the `grep` above
+for the current figure. All registered actions, annotated or not, still execute from YAML data
+analysis recipes — the `ui_schema` only controls IDE visibility.
 
 ### Adding a `ui_schema` to a new action (developer guide)
 
@@ -109,11 +115,13 @@ def action_my_action(lf, spec):
 ## 1. Reshaping Actions
 
 ### 1.1 `unpivot` (Wide-to-Long)
-Converts 'wide' format columns (like multiple antibiotics) into 'long' rows.
+Converts 'wide' format columns (like multiple antibiotics) into 'long' rows. The real params are
+`index` (columns kept as-is) and `'on'` (columns to melt) — quote `'on'` or YAML parses it as the
+boolean `True` (the YAML boolean trap, `rules_data_analysis_recipe_structure.md §7`).
 ```yaml
-- action: "unpivot"
-  id_vars: ["sample_id", "species"]
-  value_vars: ["AMP_phenotype", "CTX_phenotype"]
+- action: unpivot
+  index: ["sample_id", "species"]
+  'on': ["AMP_phenotype", "CTX_phenotype"]
   variable_name: "antibiotic"
   value_name: "resistance_phenotype"
 ```
@@ -143,12 +151,14 @@ Breaks delimited strings into multiple new columns (`A_B` -> `A`, `B`).
 ```
 
 ### 1.5 `pivot` (Long-to-Wide)
-Converts 'long' metrics tables into 'wide' column structures.
+Converts 'long' metrics tables into 'wide' column structures. `'on'` is the single column whose
+*values* become new column headers — not a list, and not `columns:`. For example, pivoting a long
+AMR table (one row per sample/antibiotic) so each antibiotic becomes its own column:
 ```yaml
-- action: "pivot"
+- action: pivot
   index: ["sample_id"]
-  columns: ["antibiotic"]
-  values: ["resistance_phenotype"]
+  'on': antibiotic
+  values: "resistance_phenotype"
   aggregate_function: "first"
 ```
 

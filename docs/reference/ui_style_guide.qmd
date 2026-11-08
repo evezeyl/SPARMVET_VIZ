@@ -104,9 +104,11 @@ LEFT SIDEBAR (#nav_sidebar)
 │  └── Session Management   (accordion, collapsed at startup)
 │
 CENTRAL THEATER (.theater-container-main)
-│  Theater Header Strip      (.theater-header-strip)
+│  Theater Header Strip      (.theater-header-strip, two independent rows — ADR-086)
+│  │  "Plot to show:"        (ui.tags.span, inline colour #345beb)
+│  │  Result / My view / Compare toggle   (radio buttons, input id "plot_view")
 │  │  "Data to show:"        (ui.tags.span, inline colour #345beb)
-│  │  T1 / T2 / T3 toggle   (radio buttons)
+│  │  Raw / Result / My view toggle       (radio buttons, input id "tier_toggle")
 │  Groups Pill Nav           (#home_groups_nav, navset_pill)
 │  └── Active Group Tab
 │       └── Plot Subtab Card (#subtabs_{group_id}, navset_card_tab)
@@ -131,8 +133,10 @@ RIGHT SIDEBAR (#audit_sidebar)
 | Any sidebar accordion header | `#nav_sidebar .accordion-button` | bg `#a0a0a0`, 0.85rem/700 | Yes — §3 |
 | Any sidebar accordion body | `#nav_sidebar .accordion-body` | bg `#c0c0c0` | Yes — §3 |
 | Theater header strip | `.theater-header-strip` | white bg, rounded 10px | Yes — §12 |
+| "Plot to show:" label | Python inline `style=` on `ui.tags.span` | `#345beb`, 0.85rem | **Python only** — no CSS selector |
 | "Data to show:" label | Python inline `style=` on `ui.tags.span` | `#345beb`, 0.85rem | **Python only** — no CSS selector |
-| T1/T2/T3 radio (checked bg) | `#nav_sidebar .shiny-input-container .radio input:checked` | `#345beb` | Partial — §3; see Shiny note above |
+| Plot-view radio (checked bg, `plot_view`: Result/My view/Compare) | `#nav_sidebar .shiny-input-container .radio input:checked` | `#345beb` | Partial — §3; see Shiny note above |
+| Data-view radio (checked bg, `tier_toggle`: Raw/Result/My view) | `#nav_sidebar .shiny-input-container .radio input:checked` | `#345beb` | Partial — §3; see Shiny note above |
 | Groups pill nav bar | `.theater-container-main .nav-pills .nav-link` | `#345beb` text/bg | Yes — §6 |
 | Plot subtab card header | `#subtabs_{group_id} .card-header` | `.card-header` default | Yes — §5 / §18 |
 | Data Preview accordion header | `#acc_home_data .accordion-button` | `#345beb`, 0.85rem/700 | Yes — §16 |

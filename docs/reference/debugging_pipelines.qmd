@@ -50,11 +50,17 @@ If a single reference ID matches multiple targets, `detect_many_to_many(results)
 
 ## 3. Materializing Proof
 
-Always verify the schema and first few rows of the reconciled set in a terminal using:
+`format_match_table()` returns an in-memory Polars DataFrame only — nothing is written to
+disk. Inspect it directly in the same session, the same way as the Python API example above:
 
 ```python
-import polars as pl
-print(pl.read_csv("tmp/reconciler/full_audit_map.tsv", separator='\t').head(10))
+df = format_match_table(results)
+print(df.schema)
+print(df.head(10))
 ```
+
+If you need a persistent artifact for `@verify`, write it yourself to `tmpAI/` (agent scratch)
+or `tmp/` (user-review evidence) following the Dual-Directory Output Segregation rule
+(`rules_verification_testing.md §6`), e.g. `df.write_csv("tmpAI/id_reconciliation/audit_map.tsv", separator="\t")`.
 
 HALT for `@verify` before committing any data analysis recipe updates based on these audit files.

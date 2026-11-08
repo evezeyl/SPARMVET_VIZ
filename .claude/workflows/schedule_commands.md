@@ -26,7 +26,7 @@ DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_cross_lib.py       --output .claude/logs/audits/audit_cross_lib_${DATE}.md
 .venv/bin/python scripts/audit_deps_verify.py     --output .claude/logs/audits/audit_deps_${DATE}.md
 .venv/bin/python scripts/audit_task_drift.py      --output .claude/logs/audits/audit_task_drift_${DATE}.md
-.venv/bin/python scripts/audit_template_flags.py  --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_app_features_flags.py  --output .claude/logs/audits/audit_templates_${DATE}.md
 ```
 
 Then check for unprocessed reports (the session-start triage hook):
@@ -38,7 +38,7 @@ grep -rL "^Status: PROCESSED" .claude/logs/audits/*.md 2>/dev/null
 - `audit_cross_lib` — catches new ADR-011 blockers (peer lib imports)
 - `audit_deps_verify` — catches missing `@deps` blocks from the session
 - `audit_task_drift` — catches tasks referencing files you renamed or deleted
-- `audit_template_flags` — catches fatal cascade misconfigs in app features files
+- `audit_app_features_flags` — catches fatal cascade misconfigs in app features files
 
 ---
 
@@ -74,7 +74,7 @@ DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_deps_verify.py         --output .claude/logs/audits/audit_deps_${DATE}.md
 .venv/bin/python scripts/audit_data_analysis_recipe_integrity.py  --output .claude/logs/audits/audit_data_analysis_recipe_${DATE}.md
 .venv/bin/python scripts/audit_task_drift.py          --output .claude/logs/audits/audit_task_drift_${DATE}.md
-.venv/bin/python scripts/audit_template_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_app_features_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
 .venv/bin/python scripts/audit_phase_order.py         --output .claude/logs/audits/audit_phase_order_${DATE}.md
 .venv/bin/python scripts/audit_changelog_sync.py      --output .claude/logs/audits/audit_changelog_${DATE}.md
 .venv/bin/python scripts/audit_data_analysis_recipe_coherence.py  --output .claude/logs/audits/audit_data_analysis_recipe_coherence_${DATE}.md
@@ -322,7 +322,7 @@ Ensures all templates declare every required flag from rules_app_features_flags.
 and that cascade enforcement rules (ADR-052, ADR-077) are satisfied.
 
 Command to run (from project root):
-  .venv/bin/python scripts/audit_template_flags.py --output .claude/logs/audits/audit_templates_$(date +%Y-%m-%d).md
+  .venv/bin/python scripts/audit_app_features_flags.py --output .claude/logs/audits/audit_templates_$(date +%Y-%m-%d).md
 
 After running:
 1. Read the generated report at .claude/logs/audits/audit_templates_YYYY-MM-DD.md
@@ -425,7 +425,7 @@ added since the last manual validation. Complements Routine 5 (on-demand) by pro
 a regular automated gate.
 
 Command to run (from project root):
-  .venv/bin/python scripts/audit_template_flags.py --output .claude/logs/audits/audit_templates_weekly_$(date +%Y-%m-%d).md
+  .venv/bin/python scripts/audit_app_features_flags.py --output .claude/logs/audits/audit_templates_weekly_$(date +%Y-%m-%d).md
 
 After running:
 1. Read the generated report at .claude/logs/audits/audit_templates_weekly_YYYY-MM-DD.md
@@ -747,7 +747,7 @@ DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_deps_verify.py         --output .claude/logs/audits/audit_deps_${DATE}.md
 .venv/bin/python scripts/audit_data_analysis_recipe_integrity.py  --output .claude/logs/audits/audit_data_analysis_recipe_${DATE}.md
 .venv/bin/python scripts/audit_task_drift.py          --output .claude/logs/audits/audit_task_drift_${DATE}.md
-.venv/bin/python scripts/audit_template_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_app_features_flags.py      --output .claude/logs/audits/audit_templates_${DATE}.md
 .venv/bin/python scripts/audit_phase_order.py         --output .claude/logs/audits/audit_phase_order_${DATE}.md
 .venv/bin/python scripts/audit_changelog_sync.py      --output .claude/logs/audits/audit_changelog_${DATE}.md
 .venv/bin/python scripts/audit_docs_sync.py           --output .claude/logs/audits/audit_docs_sync_${DATE}.md

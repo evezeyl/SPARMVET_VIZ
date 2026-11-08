@@ -10,7 +10,7 @@ The `libs/transformer/tests/debug_decorator_suite.py` is a wrapper script that s
 4.  **Reporting**: Generates a Pass/Fail summary table in the terminal.
 
 ## 2. The 1:1:1 Naming Law
-According to the **Workspace Standard (Section 8)**, every registered action MUST follow this strict naming map for its test pair:
+According to **`rules_data_engine.md §2`**, every registered action MUST follow this strict naming map for its test pair:
 
 - **Action Name**: `my_action`
 - **Data analysis recipe**: `libs/transformer/tests/data/my_action_data_analysis_recipe.yaml`
@@ -68,7 +68,7 @@ Run the automated suite from the project root:
 ```
 
 ## 3. Mandatory Verification
-According to the **Workspace Standard (Section 8)**, a new decorator is not considered "Complete" until:
+According to **`rules_data_engine.md §2`**, a new decorator is not considered "Complete" until:
 1.  Its test data analysis recipe is created.
 2.  It passes the `debug_decorator_suite.py` without errors.
-3.  The results in `tmp/decorator_suite_results/` are manually verified at least once via `@verify`.
+3.  The results in `tmp/wrapper/` are manually verified at least once via `@verify`.

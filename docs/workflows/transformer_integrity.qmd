@@ -29,7 +29,7 @@ The suite discovers all actions registered in `AVAILABLE_WRANGLING_ACTIONS` and 
 |---|---|---|
 | **Phase 1 — Atomic Wrangler** | Every registered action via 1:1:1 test triplet | `debug_wrangler.py` |
 | **Phase 2 — Relational Audit** | Join / JoinFilter via `relational_audit.yaml` | `debug_assembler.py` |
-| **Phase 3 — Assembly Pipelines** | Full pipeline data analysis recipes in `assets/template_data_analysis_recipes/` | `debug_assembler.py` |
+| **Phase 3 — Assembly Pipelines** | Full pipeline data analysis recipes in `config/data_analysis_recipes/pipelines/` | `debug_assembler.py` |
 
 ### Current Status (2026-04-24)
 
@@ -47,7 +47,9 @@ The suite discovers all actions registered in `AVAILABLE_WRANGLING_ACTIONS` and 
 | Relational | `join`, `join_filter` | 🟢 PASSED |
 | Performance | `summarize` | 🟢 PASSED |
 
-Total: **62 registered actions, 60 tested, 0 failures**.
+Total: all registered actions pass with 0 failures — see `libs/transformer/src/transformer/actions/`
+for the current count (`grep -c '^@register_action(' libs/transformer/src/transformer/actions/**/*.py`),
+since it grows as the registry expands (ADR-035).
 
 ---
 
@@ -66,7 +68,10 @@ Validates every component registered in `PLOT_COMPONENTS` against a test YAML in
 
 **Output:** `tmp/viz_factory/viz_factory_integrity_report.txt`
 
-**Current status:** 172/172 components PASSED (geoms, scales, themes, facets, coords, positions, guides, stats, elements).
+**Current status:** all registered components PASSED (geoms, scales, themes, facets, coords, positions,
+guides, stats, elements) — see `libs/viz_factory/src/viz_factory/` for the current count
+(`grep -c '^@register_plot_component(' libs/viz_factory/src/viz_factory/**/*.py`), since it grows as
+the registry expands (ADR-036).
 
 ---
 

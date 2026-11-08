@@ -41,7 +41,7 @@ If you edit your `.yaml` data analysis recipe file and upload it...
 
 While loading screens and dimming are normal, the following are *abnormal* and might require assistance:
 
-- **The "Red Error Box" loops indefinitely:** If the system catches a Malformed Data Analysis Recipe (e.g. you used a tab instead of a space in YAML), it will give you a tip (e.g. `SPARMVET_Error: Invalid whitespace`). If fixing the file and re-uploading still causes endless loops, contact support.
+- **A data analysis recipe you expect to see is missing from the selector:** SPARMVET checks every data analysis recipe once at startup. A malformed one (e.g. a tab instead of a space in YAML, or a column that doesn't match its declared contract) is never offered — it is excluded from the selector entirely and listed underneath it with its specific problem and, if one is configured, a contact to reach. There is no re-upload loop to get stuck in: fix the underlying `.yaml` file (or the data it points at) and the recipe reappears in the selector the next time the app restarts. If no contact is shown and you can't fix the file yourself, that is when to ask a developer for help.
 - **Visuals completely vanish:** If you apply a filter in the T3 Filters panel (e.g. filtering for `Meropenem`) and the plot completely vanishes without an error message, it is highly likely you made a typo (e.g. your data actually says `meropenem`). Check your spelling! (See Tidy Data guide).
 
 Understanding these mechanics ensures you spend less time panicking, and more time uncovering insights in your data.
@@ -105,7 +105,7 @@ The **Filters** accordion in the left sidebar lets you narrow down what is plott
 
 The column selector for the data preview (above the table) lets you show or hide columns in the preview only — this does not affect the plot.
 
-> **Note:** If you are an advanced user with T3 active, an "Apply to audit trail" button will appear — this saves the filters as a step in your wrangling steps (feature in progress).
+> **Note:** If "Plot to show" is set to **My view** and your deployment has the audit sandbox enabled, a **"➜ Send to Audit (N)"** button appears next to Apply. This is a shipped feature, not in progress: it promotes your staged rows into reason-gated audit nodes (not "wrangling steps" — T3 never authors wrangling, only filters, exclusions, column drops, and aesthetic overrides). See [The Audit Pipeline](audit_pipeline.qmd) for the full propagation workflow.
 
 ### Exporting your results (Export panel)
 

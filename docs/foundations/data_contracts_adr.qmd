@@ -150,7 +150,7 @@ joins:
     steps:
       - action: join
         right_ingredient: metadata_schema
-        on: sample_id
+        'on': sample_id
         how: left
     final_contract:
       sample_id: string

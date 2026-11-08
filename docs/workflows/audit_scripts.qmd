@@ -18,7 +18,7 @@ DATE=$(date +%Y-%m-%d)
 .venv/bin/python scripts/audit_deps_verify.py        --output .claude/logs/audits/audit_deps_${DATE}.md
 .venv/bin/python scripts/audit_data_analysis_recipe_integrity.py --output .claude/logs/audits/audit_data_analysis_recipe_${DATE}.md
 .venv/bin/python scripts/audit_task_drift.py         --output .claude/logs/audits/audit_task_drift_${DATE}.md
-.venv/bin/python scripts/audit_template_flags.py     --output .claude/logs/audits/audit_templates_${DATE}.md
+.venv/bin/python scripts/audit_app_features_flags.py     --output .claude/logs/audits/audit_templates_${DATE}.md
 .venv/bin/python scripts/audit_phase_order.py        --output .claude/logs/audits/audit_phase_order_${DATE}.md
 .venv/bin/python scripts/audit_changelog_sync.py     --output .claude/logs/audits/audit_changelog_${DATE}.md
 .venv/bin/python scripts/audit_docs_sync.py          --output .claude/logs/audits/audit_docs_sync_${DATE}.md
@@ -160,13 +160,13 @@ Only open tasks (`- [ ]` lines) are scanned. Paths starting with `libs/`, `app/`
 
 ---
 
-### `audit_template_flags.py` — App features Template Flag Completeness
+### `audit_app_features_flags.py` — App features Template Flag Completeness
 
 Runs `AppFeaturesValidator` and `SidebarValidator` in `--strict` mode (warnings treated as errors) against all 8 app features files in `config/app_features/`. Wraps `scripts/validate_app_features_config.py` and consolidates results into a single report.
 
 ```bash
-.venv/bin/python scripts/audit_template_flags.py
-.venv/bin/python scripts/audit_template_flags.py --output .claude/logs/audits/audit_templates_2026-05-12.md
+.venv/bin/python scripts/audit_app_features_flags.py
+.venv/bin/python scripts/audit_app_features_flags.py --output .claude/logs/audits/audit_templates_2026-05-12.md
 ```
 
 **What it catches:**
@@ -366,7 +366,7 @@ If you are adding a new domain library, wrangling action, data analysis recipe, 
 | New `libs/<name>/` | `audit_cross_lib.py`, `audit_deps_verify.py` |
 | New `@register_action` | `audit_deps_verify.py`, `audit_data_analysis_recipe_integrity.py` |
 | New pipeline data analysis recipe | `audit_data_analysis_recipe_integrity.py` |
-| New / modified app features file | `audit_template_flags.py` |
+| New / modified app features file | `audit_app_features_flags.py` |
 | New phase in the roadmap | `audit_phase_order.py` |
 | Closing a major phase | `audit_changelog_sync.py` |
 | Renaming / deleting a file | `audit_task_drift.py`, `audit_docs_sync.py` |
@@ -395,7 +395,7 @@ These scripts back the cloud-hosted audit routines managed at [claude.ai/code/ro
 | `audit_cross_lib.py` | Weekly | Sundays 23:00 |
 | `audit_data_analysis_recipe_integrity.py` | Weekly | Wednesdays 22:00 |
 | `audit_task_drift.py` | Weekly | Fridays 20:00 |
-| `audit_template_flags.py` | Weekly | Thursdays 21:00 |
+| `audit_app_features_flags.py` | Weekly | Thursdays 21:00 |
 | `audit_phase_order.py` | Weekly | Thursdays 21:00 |
 | `audit_changelog_sync.py` | Weekly | Thursdays 21:00 |
 | `audit_docs_sync.py` | On-demand | Before releases / after refactors |

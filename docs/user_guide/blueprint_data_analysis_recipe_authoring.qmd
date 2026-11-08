@@ -309,13 +309,19 @@ BLUEPRINT lets you **branch** any node to create two independent downstream path
 When in doubt, branch at the join or plot level — it is faster and simpler.
 :::
 
-To create a branch, select a node in the TubeMap, then click **Branch Node**. Give the new branch a unique ID. The new fragment will be pre-filled with shared source information (same TSV, same `input_fields`) but an empty wrangling block — ready for your new processing logic.
+To create a branch, select a branchable node in the TubeMap (a data schema, assembly/join,
+or plot). The right sidebar's **Branch** panel appears with a **New branch ID** field and two
+buttons: **Preview branch** (shows the planned fragment before anything is written) and
+**Create branch** (writes it and wires it in). There is no single "Branch Node" button — the
+form only appears once a branchable node is selected. The new fragment will be pre-filled with
+shared source information (same TSV, same `input_fields`) but an empty wrangling block — ready
+for your new processing logic.
 
 ---
 
 ## Validation — checking your data analysis recipe
 
-After making changes, click the **Validate** button in the BLUEPRINT sidebar. You will see:
+After making changes, click the **Run validation** button in the BLUEPRINT sidebar. You will see:
 
 - **PASS** — the data analysis recipe is structurally sound
 - **FAIL** — specific violations listed with the relevant section
@@ -358,15 +364,21 @@ Suppose you have a working data analysis recipe and want to add a bar chart of r
    - `mapping.fill` → `Multiresistant`
    - Add layer `geom_bar`
 6. Click **Apply**, then **Save**
-7. Click **Validate** to confirm no errors
+7. Click **Run validation** to confirm no errors
 8. Switch to HOME and reload the data analysis recipe — your new tab appears
 
 ---
 
 ## Example: adding a data schema from scratch
 
+There is no toolbar button for this today — the TubeMap toolbar's buttons (**+ Plot**, **Del**,
+**Move**, **Go**, **Del grp**) are for plots and groups only. Adding a new `data_schema` node
+goes through the YAML escape hatch panel:
+
 1. In BLUEPRINT, open your data analysis recipe
-2. Click **+ Schema** in the TubeMap toolbar (or use the data analysis recipe `data_schemas:` section in the YAML panel)
+2. Open the **3. YAML (Raw Source)** panel and add a new entry under `data_schemas:`
+   (this panel is editable only under `data_analysis_recipe_edit_enabled` app features files —
+   `developer` and `qa`; otherwise it is read-only and you'll need a developer to make the edit)
 3. Set the `source.path` to your TSV file
 4. Add `input_fields` matching your TSV column headers exactly
 5. Add any `tier1` cleaning steps needed

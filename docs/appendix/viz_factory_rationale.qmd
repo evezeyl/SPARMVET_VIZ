@@ -16,7 +16,7 @@ Linetype was missing from the initial task skeleton but was identified as a **Co
 
 ### C. Deferral of Binned Scales
 Binned scales (`scale_color_binned`, `scale_size_binned`) were deferred to a later phase. 
-- **Reasoning**: These are newer features in `Plotnine` 0.16.x and are primarily used for quantization of continuous variables into discrete legend chunks. For the current MVP (Minimum Viable Product), discrete categorical and direct continuous scales provide higher immediate value.
+- **Reasoning**: These are newer features in `Plotnine` 0.16.x (not yet released against this project's pinned 0.15.x) and are primarily used for quantization of continuous variables into discrete legend chunks. For the current MVP (Minimum Viable Product), discrete categorical and direct continuous scales provide higher immediate value.
 
 ## 3. Deferred Task List (Future Implementation)
 The following components were part of the initial plan but have been deferred to ensure stability of the core engine:
@@ -34,7 +34,7 @@ The following components were part of the initial plan but have been deferred to
 Every implemented scale (Color, Fill, Axis, Size, Shape, Alpha, Identity) has been verified using the **Unified Test Runner** and individual YAML data analysis recipes, ensuring that any future implementation of the deferred tasks follows the same verified registry pattern.
 
 ## 5. Faceting Lifecycle: Root Cause & Resolution
-During the transition to Plotnine 0.16.x, we encountered a visual failure where facets were registered but did not render correctly in 2D grid layouts.
+During the transition across Plotnine 0.15.x point releases (pinned `>=0.15.4,<0.16.0` in pyproject.toml), we encountered a visual failure where facets were registered but did not render correctly in 2D grid layouts.
 
 ### A. Root Cause: Signature Drift
 - **Issue**: Standard `facet_grid` formerly accepted a formula-style positional argument (`rows ~ cols`). In later versions, the component registry prefers explicit keyword arguments (`rows=None, cols=None`).
@@ -54,7 +54,7 @@ We implemented the coordinate layer with a "Silent Default" policy to maintain t
 
 ### B. Polar System Deferral
 - **Deviation**: `coord_polar` has been deferred.
-- **Reason**: The current Plotnine build (0.16.x) in the environment does not expose the `coord_polar` component. To maintain stability, we have logged this as a Phase 3 requirement once the underlying library is updated or patched.
+- **Reason**: The current Plotnine build (0.15.x, pinned `>=0.15.4,<0.16.0`) in the environment does not expose the `coord_polar` component. To maintain stability, we have logged this as a Phase 3 requirement once the underlying library is updated or patched.
 
 ### C. Strict Limits (`coord_lims`)
 - **Pattern**: Implemented `coord_lims` as a registered alias for `coord_cartesian(xlim=..., ylim=...)`. 
@@ -72,20 +72,29 @@ The `VizFactory (viz_factory.py)` now supports **partial data analysis recipes**
 | **Stat** | `stat_identity` | ggplot2 geom-level default; no VizFactory injection needed |
 | **Geom** | *(none)* | **No default geom.** Every data analysis recipe MUST define at least one geom. |
 
-**Rationale**: This simplifies data analysis recipe authoring significantly. A minimal valid data analysis recipe is:
+**Rationale**: This simplifies data analysis recipe authoring significantly. A minimal valid data analysis recipe is (root-level `plots:` was removed, LEGACY-FLAT-PLOTS-1 — every plot must live inside
+`analysis_groups:`, see `rules_data_analysis_recipe_structure.md §8`):
 ```yaml
-plots:
-  minimal_scatter:
-    mapping:
-      x: column_a
-      y: column_b
-    layers:
-      - name: geom_point
+analysis_groups:
+  quick_look:
+    label: "Quick Look"
+    plots:
+      minimal_scatter:
+        label: "Minimal Scatter"
+        spec:
+          target_dataset: my_dataset
+          mapping:
+            x: column_a
+            y: column_b
+          layers:
+            - name: geom_point
+              params: {}
 ```
 The factory will automatically apply `theme_bw`, `coord_cartesian`, and `facet_null`.
 
 ## 8. Components Deferred: Feature Not Yet Implemented in Plotnine
-The following components are confirmed absent from the installed Plotnine source build (`/home/evezeyl/Downloads/plotnine/`) and cannot be registered until the library is updated:
+The following components are confirmed absent from the installed Plotnine source build (pinned
+`plotnine>=0.15.4,<0.16.0` in `pyproject.toml`) and cannot be registered until the library is updated:
 
 | Component | Category | Note |
 | :--- | :--- | :--- |
@@ -109,8 +118,16 @@ This philosophy data analysis recipes in three ways:
 
 ## 10. The Gallery & Example Pattern (ADR-025)
 
-::: {.callout-note}
-**Status:** PROPOSED — next development sprint.
+::: {.callout-warning}
+**HISTORICAL:** this section describes a plan that did not ship this way. The Gallery that actually
+shipped is a file-based, pre-rendered bundle system (`assets/gallery_data/`, one
+`data_analysis_recipe.yaml` + `example_data.tsv` + `example_meta.md` + `preview_plot.png` per example,
+indexed by `gallery_index.json` and regenerated via `libs/viz_gallery/assets/refresh_gallery.py`) — not a
+`--gallery` flag on `viz_factory_integrity_suite.py` auto-generating a `gallery_report.md`. No such
+flag exists on that script today. See `.claude/rules/rules_gallery_standards.md` for the authoritative
+spec of what shipped, and `docs/user_guide/viz_gallery.qmd` for the user-facing Gallery tab. The
+rationale below (why a visual cookbook is useful) still holds; the delivery mechanism it describes does
+not.
 :::
 
 Each VizFactory component will be documented as a 3-part **Step list**:
@@ -134,5 +151,9 @@ This serves as the reference implementation for future multi-source gallery entr
 
 ### Gallery Generation
 
-The `viz_factory_integrity_suite.py` runner will support a `--gallery` flag to auto-generate `gallery_report.md` for all registered components, streamlining documentation maintenance.
+> **HISTORICAL**, continued from the banner above: `viz_factory_integrity_suite.py` never gained a
+> `--gallery` flag (confirmed — its only CLI argument is `--output_dir`). Gallery bundle generation and
+> indexing is done per `rules_gallery_standards.md §5/§6`: author the bundle's four files by hand, run
+> `libs/viz_gallery/assets/generate_previews.py` to render `preview_plot.png`, then
+> `libs/viz_gallery/assets/refresh_gallery.py` to rebuild `gallery_index.json`.
 

@@ -11,7 +11,7 @@
 - **Example:** `DataWrangler (data_wrangler.py)`
 - **Forbidden:** Using the violet prefix in functional variables, dictionaries, or execution files within `./libs/`.
 
-### 2. The Integrity Suite Mandate (Section 10)
+### 2. The Integrity Suite Mandate (`rules_verification_testing.md`)
 **Scope:** The `./libs/` ecosystem.
 **Mandate:** Every library must contain a `tests/{lib}_integrity_suite.py` runner script.
 The runner MUST programmatically parse the `@register...` component registry dictionary and execute the **1:1:1 Evidence Loop** over every single listed function, publishing a standardized `tmp/{lib}_integrity_report.txt` stating [PASSED], [FAILED], or [NO TEST DATA]. Any failure immediately breaches the build contract.
@@ -81,9 +81,9 @@ consistency of purpose checking,
 
 Because `libs/` must remain independent of `app/` (Shiny), the library code **cannot** use Shiny UI alerts directly.
 
-1. **In `libs/`**: Raise specific, readable exceptions if a data contract fails. (e.g., `raise DataContractError("Missing 'ST' column in uploaded data.")`).
+1. **In `libs/`**: Raise specific, readable exceptions if a data contract fails. (e.g., `raise IngestionError("Missing 'ST' column in uploaded data.")`). The real exception hierarchy is `SPARMVET_Error` → `IngestionError` / `TransformationError` / `VisualizationError` / `DataAnalysisRecipeError` (`libs/utils/src/utils/errors.py`) — pick the subclass matching the pipeline stage where the contract was violated.
 2. **In `app/`**: Wrap library calls in `try...except` blocks. When an error is caught, the app catches the safe message and formats it into a user-facing Shiny alert or notification.
-3. **Observability**: Unhandled exceptions within `libs/` must be logged to a standard `dashboard.log` file using Python's built-in `logging` module so developers can diagnose crashes that occur in production or automated pipelines.
+3. **Observability**: There is no `dashboard.log` file or `logging`-module sink. Structured startup/configuration failures use the `DeploymentError` record (`libs/utils/src/utils/deployment_error.py`) — component/problem/location/fix/who — collected and printed via `exit_if_errors`/`format_errors_block`. Runtime errors inside a reactive handler are caught and surfaced to the user via `make_notifier()` (`app/modules/notification_utils.py`), which calls `ui.notification_show(...)` and appends the message to the in-session Alerts log (`notification_log`, last 20 entries) — there is no separate persisted log file.
 
 
 ### The "Fail-Fast" Ingestion Rule
@@ -93,7 +93,7 @@ For production: (when prototype advanced enough)
 All data must pass through `libs/ingestion/` validation rules before hitting the rest of the app.
 
 - If a new organism or dataset is added, you **must** update the YAML data analysis recipe.   
-- The Ingestion Adapter `libs/ingestion/adapters_?.py` is responsible for catching "Dirty Data" before it reaches `libs/wrangling` (aka. it checks compliance to the data contract of the data analysis recipe, for example `config/data_analysis_recipes/pipelines/<data_analysis_recipe_id>.yaml`).
+- The Ingestion Adapter `libs/ingestion/adapters_?.py` is responsible for catching "Dirty Data" before it reaches `libs/transformer` (aka. it checks compliance to the data contract of the data analysis recipe, for example `config/data_analysis_recipes/pipelines/<data_analysis_recipe_id>.yaml`).
 
 - [ ] What we here by dirty data : not conforming by the data contract defined in the data analysis recipe (`config/data_analysis_recipes/`)
 
@@ -162,8 +162,8 @@ Output results are materialized in `tmp/EVE_assembler_*.tsv` for audit.
 :::
 
 1. **Run Library Tests:** `pytest libs/` (Check the engine).
-2. **Run App Tests:** `pytest app/src/` (Check the glue).
-3. **Run Integration:** `pytest tests/` (Check the whole skeleton).
+2. **Run App Tests:** `pytest app/tests/` (Check the glue).
+3. **Run Everything:** there is no separate top-level `tests/` directory — `app/tests/` and each `libs/*/tests/` together are the whole suite (exact commands: `rules_verification_testing.md §8`).
 
 
 |**Level**|**Location**|**Purpose**|
@@ -171,7 +171,7 @@ Output results are materialized in `tmp/EVE_assembler_*.tsv` for audit.
 |**Unit Tests**|`libs/*/tests/`|Does the bio-math work? Does the plot generate?|
 |**Component Tests**|`app/tests/`|Does the UI layout load without crashing?|
 |**Adapter Tests**|`libs/ingestion/tests/`|Can we successfully "talk" to the Galaxy API?|
-|**Global/E2E**|`tests/`|If I pick "E. coli" in the UI, do I see a Bar Plot?|
+|**Global/E2E**|`app/tests/test_shiny_smoke.py`|If I pick a data analysis recipe in the UI, do I see its `analysis_groups` tabs and plots render?|
 
 ### Detailed File Registry
 

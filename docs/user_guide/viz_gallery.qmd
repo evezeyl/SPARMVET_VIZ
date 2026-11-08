@@ -14,17 +14,43 @@ The Gallery serves two massive purposes for the community (be it biologists, eco
 
 If you build a plot in the dashboard that you are proud of, we emphatically encourage you to submit it to the Gallery. If the gallery grows and is useful for people, it will ultimately benefit everybody using it to make it even better.
 
-### Requirements for Submission
-Before you submit, your Data analysis recipe must contain specific metadata to ensure you are credited and the context is preserved:
+The Gallery is a **static reference browser** — there is no in-app upload button or admin
+review queue. Submitting an example is a file-based, repository convention: you add files
+under `assets/gallery_data/` and regenerate the gallery's index.
 
-1. **Authors & Citations:** Provide your name, your team's name, or the publication citation if this plot was used in a manuscript. This allows the community to acknowledge and cite your work.
-2. **Clear Node Comments:** In the "Wrangle Studio", every action node you created MUST have a comment explaining *why* you did it (e.g. "Filtered out calves because they skewed the baseline"). This teaches others how to think about their data.
+### Requirements for Submission
+Before you submit, your bundle must contain specific metadata to ensure you are credited and the context is preserved:
+
+1. **Authors & Citations:** Provide your name, your team's name, or the publication citation if this plot was used in a manuscript. This allows the community to acknowledge and cite your work. This goes in `example_meta.md`.
+2. **A documented transformation chain:** `example_meta.md` should explain *why* the data analysis recipe's wrangling steps do what they do (e.g. "Filtered out calves because they skewed the baseline"). This teaches others how to think about their data. (This is a Gallery authoring convention, separate from HOME's mandatory per-node `reason` field in the Tier 3 audit trail — see [The Audit Pipeline](audit_pipeline.qmd) for that mechanism.)
 3. **Data Agnostic Aim:** Try to label your plots in a way that others can understand, even if they aren't studying the exact same pathogen or economic model.
 
 ### Submission Process
-1. Use the SPARMVET Dashboard's **Upload Data/DataAnalysisRecipes** section.
-2. Upload your finished data analysis recipe.
-3. An administrator or backend automation will validate that the metadata rules are followed, and append your visualization to the global `VizFactory (viz_factory.py)` library, making it permanently accessible to the entire organization in the gallery tab!
+
+Every gallery entry is a directory under `assets/gallery_data/` containing the **Scientific
+Triplet** (plus its rendered preview) — four files, exactly named:
+
+1. **`data_analysis_recipe.yaml`** — the executable data analysis recipe (`info:` block with
+   all six taxonomy fields below, plus the `analysis_groups`/plot spec).
+2. **`example_data.tsv`** — a representative, tab-separated dataset.
+3. **`example_meta.md`** — the authorship, citation, and transformation-logic write-up
+   (3-tier structure: `##` name, a `>` taxonomy tag-strip, then `###` content sections).
+4. **`preview_plot.png`** — the rendered evidence of the visualization.
+
+To submit:
+
+1. Create your bundle directory under `assets/gallery_data/` with the four files above.
+2. Generate the preview image (overwrites `preview_plot.png`):
+   ```bash
+   .venv/bin/python libs/viz_gallery/assets/generate_previews.py --only <your_bundle_name>
+   ```
+3. Regenerate the Gallery's pivot index so the UI picks up your bundle:
+   ```bash
+   .venv/bin/python libs/viz_gallery/assets/refresh_gallery.py
+   ```
+4. Open a pull request with your new bundle directory. A bundle missing a required taxonomy
+   field is excluded from the index automatically — fix any warnings `refresh_gallery.py` reports
+   before submitting.
 
 ---
 

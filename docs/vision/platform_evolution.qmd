@@ -108,6 +108,26 @@ See `assets/scripts/figshare_plot_integration.py` for the plot script.
 
 ## 5. The Platform Roadmap (Next Sprint)
 
+> **HISTORICAL (superseded by later phases, documented 2026-11-08):**
+> This roadmap was written at the end of Phase 9. The repository has since moved well past
+> Phase 34, and several items below shipped as something very different from what was
+> predicted here:
+>
+> - The "Interactive data analysis recipe editor (future) — Shiny UI YAML text area" row
+>   became the **Blueprint Architect**: a full form-driven IDE with a TubeMap DAG,
+>   Joint Designer (join authoring), node-level branching, an AI agent helper, and a
+>   YAML escape hatch for advanced users (ADR-075/076/082). See
+>   [Blueprint Architect](../workflows/blueprint_architect.qmd) for what actually shipped.
+> - The "Quarto gallery page (planned, not written yet)" row became an **in-app Shiny
+>   Gallery browser** with a 6-axis taxonomy (family, data pattern, difficulty, geom,
+>   what-it-shows, sample size) and a pre-computed pivot index (ADR-037/038/063), not a
+>   static Quarto page. See [Visualization Gallery](../user_guide/viz_gallery.qmd) for
+>   what actually shipped.
+>
+> The table below is kept as a historical record of the Phase 9 plan — it is not a
+> current task list. For current work, see `.claude/tasks/tasks.md` and
+> `.claude/plans/implementation_plan_master.md`.
+
 The shift from tool to platform requires a short, focused sprint:
 
 | Priority | Task | Deliverable |

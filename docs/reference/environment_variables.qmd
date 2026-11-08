@@ -76,7 +76,7 @@ If none of the three is set, the app raises `ValueError` at startup and refuses 
 | `config/app_features/developer.yaml` | Loaded from that relative path |
 | `developer` | Shortname → `config/app_features/developer.yaml` (backward compat) |
 
-The app features config file can be placed **anywhere** — there is no filename convention requirement. The file's `display_name` field is used in the UI header; the `app_features_id` field is an internal identifier within the file. Neither needs to match the filename.
+The app features config file can be placed **anywhere** — there is no filename convention requirement. The file's `display_name` field is used in the UI header; the `name` field is an internal identifier within the file. Neither needs to match the filename.
 
 **To create and use a custom app features:**
 
@@ -84,7 +84,7 @@ The app features config file can be placed **anywhere** — there is no filename
 # 1. Copy any existing template as a starting point
 cp config/app_features/standalone.yaml /my/configs/amr_pipeline_app_features.yaml
 
-# 2. Edit display_name, app_features_id, and feature flags in the new file
+# 2. Edit display_name, name, and feature flags in the new file
 # 3. Launch with the path
 SPARMVET_APP_FEATURES=/my/configs/amr_pipeline_app_features.yaml \
   ./.venv/bin/python -m shiny run app/src/main.py --port 8001

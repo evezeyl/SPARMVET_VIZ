@@ -19,7 +19,7 @@ Before pushing any components or architectural changes, you MUST run the Integri
 # Validating Layer 1 and 2 DataFrame construction:
 .venv/bin/python libs/transformer/tests/transformer_integrity_suite.py
 
-# Validating the 120+ Graph Factory components:
+# Validating all registered Graph Factory components:
 .venv/bin/python libs/viz_factory/tests/viz_factory_integrity_suite.py
 ```
 Any failures here are summarized in `.txt` reports sent to `tmp/` and immediately breach the build contract.
@@ -36,19 +36,25 @@ Any failures here are summarized in `.txt` reports sent to `tmp/` and immediatel
 | **Sync (debug_bulk_sync.py)** | `libs/viz_factory` | Automated task state synchronization (Test -> `tasks.md`) | `tasks.md` + PNG artifacts |
 
 **Testing Strategy:**
-* **`libs/utils/`**: Test the ConfigRegistry to ensure it can recursively find and merge YAML files.
-* **`libs/wrangling/`**: Test that the Polars transformations correctly reshape the data according to a mocked data contract.
+* **`libs/utils/`**: Test `ConfigManager` to ensure it can recursively find and merge `!include`-d YAML files.
+* **`libs/transformer/`**: Test that the Polars transformations correctly reshape the data according to a mocked data contract.
 * **`libs/viz_factory/`**: Test that passing a mocked Tidy DataFrame and a mocked Plot Configuration returns a valid `plotnine` Figure object without crashing.
 
 ## 2. Ingestion & Adapter Tests
 These tests verify that external data is handled securely and that "dirty data" is caught early.
 
-Run command: `pytest libs/ingestion/`
+`libs/ingestion/tests/` has no `pytest` tests of its own today — only the headless
+`ingestion_integrity_suite.py` and `debug_ingestor.py` CLI runners (`./.venv/bin/python
+libs/ingestion/tests/ingestion_integrity_suite.py`). The pytest-collected ingestion check is
+`app/tests/test_import_test_files.py`, which exercises `DataIngestor`/`MetadataValidator`
+against the shipped test uploads:
+
+Run command: `PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_import_test_files.py`
 
 **Testing Strategy:**
 * **File Uploads**: Test the file extension verification and size limit enforcer.
 * **Galaxy API Mocking**: Do **not** make live calls to Galaxy during automated tests. Instead, mock the `requests.get` responses to return sample JSON payloads simulating a Galaxy history. [DEFER - JSON MIGHT BE NEEDED WHEN USING GALAXY - DEFER UNTIL ACTUAL GALAXY INTEGRATION]
-* **Fail-Fast Concept**: Intentionally pass a DataFrame missing a mandatory column (e.g., `'ST'`) and assert that a `DataContractError` is raised.
+* **Fail-Fast Concept**: Intentionally pass a DataFrame missing a mandatory column (e.g., `'ST'`) and assert that an `IngestionError` is raised (`SPARMVET_Error` → `IngestionError`, `libs/utils/src/utils/errors.py`).
 
 ## 3. App Tests (Component Testing)
 These tests verify the UI and the server logic.
@@ -57,8 +63,8 @@ Run command: `pytest app/tests/`
 
 **Testing Strategy:**
 * Use Shiny's testing framework (`from shiny.pytest import ...`).
-* Test that UI elements (like the Species Dropdown) populate correctly based on the loaded ConfigRegistry.
-* Test the Error Handling Contract: If a mocked library call raises a `DataContractError`, test that the Shiny Server catches it and displays a UI Notification instead of crashing the app.
+* Test that UI elements (like the data analysis recipe selector and the `analysis_groups`-driven tabs) populate correctly based on the loaded data analysis recipe.
+* Test the Error Handling Contract: If a mocked library call raises an `IngestionError`/`TransformationError`, test that the Shiny Server catches it and displays a UI Notification instead of crashing the app.
 
 ## Using Synthetic Test Data
 

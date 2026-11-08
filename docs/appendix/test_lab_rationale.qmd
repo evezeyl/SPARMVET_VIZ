@@ -1,19 +1,51 @@
-# Test Lab: A No-Code Staging Area
+# Test Lab: A Stateless Data-Prep Toolbox
 
-## 🧩 The Analogy: Building Blocks
+## 🧰 The Analogy: A Workbench, Not a Sandbox
 
-The **Test Lab** (Wrangle Studio) is designed to be your research "Playground." Instead of writing complex code, you interact with **Building Blocks**.
+The **Test Lab** is a workbench of independent tools, not an interactive wrangling sandbox. There is no
+action-picker UI, no stacked pipeline you build node by node, and no persistent working state between
+tools (`.claude/rules/rules_test_lab.md §1`, ADR-084). Each tool runs to completion and hands you back a
+downloadable file. Close the panel and the tool resets to empty — nothing is remembered except the named
+files you explicitly save.
 
-- Each block represents a specific transformation (e.g., "Clean Whitespace" or "Fill Missing Data").
-- You stack these blocks in the **Audit Stack** to build a pipeline.
-- If a block doesn't work, you simply remove it and try another.
+This is a deliberate contrast with **Blueprint Architect** (nicknamed "Wrangle Studio" elsewhere in this
+book — see `Terminology.qmd`), which *is* the space where wrangling, joins, and plot authoring happen as a
+persistent, saved recipe. Test Lab never authors `tier1`/`tier2` wrangling logic or plot specs; it only
+prepares the raw files a scientist hands to that pipeline. The "Audit Stack" (the T3 right-sidebar panel
+in HOME that records row filters, exclusions, and column drops with a mandatory reason) is a real feature
+of a different space entirely — it has no connection to Test Lab.
 
-## 🛠️ Purpose: Facilitating Research
+## 🛠️ Purpose: Removing Data-Prep Friction Before the Pipeline Runs
 
-This area is aimed at facilitating research by removing the "syntax barrier." You don't need to be a developer to prep your data.
+Scientists routinely hit a handful of unglamorous blockers before their data analysis recipe can even be
+written: files arrive as multi-sheet Excel workbooks, two collaborators' files disagree on sample ID
+formatting, a pipeline needs a shareable dataset that doesn't expose real identities, and a new data
+source needs a first-pass schema sketch before anyone touches BLUEPRINT. Test Lab exists to clear these
+blockers, each with its own tool, each independent of the others:
 
-1. **Experimental Freedom**: Try "Long-to-Wide" or "Pivot" operations without fear of breaking the original data.
-2. **Immediate Feedback**: The **Triple-Tier Grid** shows you exactly how each block changes your data in real-time.
-3. **Ghost-Loading**: You can "ghost-load" examples from the Gallery into this staging area to see how professional analysts handle similar datasets.
+1. **AquaSynthesizer** — reads a real TSV and emits a structurally identical *synthetic* TSV: same column
+   names, same value distributions and levels, different values. Safe to share, and also used to generate
+   controlled-error datasets for exercising pipeline edge cases without ever touching real data.
+2. **Data Analysis Recipe Bootstrapper/Scaffolder** — infers column types and cardinalities from a TSV and
+   writes a boilerplate `input_fields` YAML fragment (Bootstrapper), or turns a batch of prepared TSVs
+   into a boilerplate data analysis recipe ZIP with structure, inferred types, and PK hints
+   (Scaffolder) — eliminating manual schema typing when onboarding a new data source. Neither one writes
+   `analysis_groups`, plots, or join strategy; that remains BLUEPRINT's job
+   (`.claude/rules/rules_test_lab.md §4`).
+3. **ID Reconciliation** (`libs/id_reconciliation/`) — matches a single primary-key column between two
+   files (exact, pattern-based, then fuzzy matching) when two collaborators' sample IDs don't line up, and
+   produces a reusable id-transformation YAML. Scoped to one key column per pairwise run; composite or
+   n-way key matching belongs in BLUEPRINT's Join Designer (`rules_test_lab.md §5`).
+4. **Anonymiser** — strips identifying columns and replaces an ID column with a sequential, hash-based, or
+   custom-prefix anonymous id, writing an original-id-to-anon-id mapping alongside so the substitution can
+   be traced (but not reversed by a reader who only has the anonymised file).
+5. **Reformatter / Extractor** — converts XLSX/CSV files to TSV, including multi-sheet Excel workbooks
+   split one sheet per output TSV — the practical first step for data that arrives in spreadsheet form.
 
-The Test Lab is the bridge between raw, messy data and professional, publication-ready visualizations. It is your space to experiment, learn, and refine your analytical intuition.
+Each tool is reached independently from the Test Lab panel (gated by `test_lab_enabled`, developer/qa
+app features only) and leaves no trace once you move on — only a file you chose to download or a named
+scenario you chose to save persists. There is no "ghost-loading" of Gallery examples into Test Lab:
+Gallery has no interactive handoff into any other space, Test Lab included (ADR-093).
+
+Test Lab is the bridge between raw, messy files and a data source BLUEPRINT can actually build a recipe
+from — not a place to explore or iterate on the analysis itself.

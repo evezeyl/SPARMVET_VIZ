@@ -344,8 +344,8 @@ Once manual test passes:
 - **Purpose:** Strict version of Routine 5. Verify all 8 app features files declare all flags in the authoritative flag matrix (`rules_app_features_flags.md`). Detects missing flags before they become deployment issues.
 - **Frequency:** Weekly
 - **Schedule:** Thursdays 21:00 local time (cron: `0 21 * * 4`)
-- **Command:** `.venv/bin/python scripts/audit_template_flags.py --output tmp/audit_template_flags_$(date +%Y-%m-%d).md`
-- **Output:** `.claude/logs/audits/audit_template_flags_YYYY-MM-DD.md`
+- **Command:** `.venv/bin/python scripts/audit_app_features_flags.py --output tmp/audit_app_features_flags_$(date +%Y-%m-%d).md`
+- **Output:** `.claude/logs/audits/audit_app_features_flags_YYYY-MM-DD.md`
 - **Violations checked:**
   - Template missing a flag that matrix declares (per app features file)
   - Template has a flag not in the matrix (stale or incorrect)

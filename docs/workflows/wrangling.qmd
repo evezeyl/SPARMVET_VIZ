@@ -36,7 +36,7 @@ The **Registry** is a Python dictionary (located in `libs/transformer/src/transf
 Actions are registered using a standard decorator:
 
 ```python
-from libs.transformer.src.actions.base import register_action
+from transformer.actions.base import register_action
 
 @register_action("fill_nulls")
 def action_fill_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
@@ -58,12 +58,19 @@ The **Wrangling Pipeline** defined in the YAML data analysis recipe is a **Seque
 4. **Primary Key Preservation:** Column selection actions (`keep_columns`) automatically preserve primary keys to prevent pipeline breakage.
 
 **Standard YAML Format:**
+
+The engine requires the tiered nesting structure (ADR-024) — a flat `wrangling:` list is
+rejected with a `DataAnalysisRecipeError` (`LEGACY-FLAT-WRANGLING-1`). `tier1:` is mandatory
+(even if empty); `tier2:` is optional.
+
 ```yaml
 wrangling:
-  - action: "strip_whitespace" # Action 1 runs first
-  - action: "fill_nulls"      # Action 2 runs second
-    columns: ["@AMR"]
-    value: "None"
+  tier1:
+    - action: "strip_whitespace" # Action 1 runs first
+    - action: "fill_nulls"      # Action 2 runs second
+      columns: ["@AMR"]
+      value: "None"
+  tier2: []   # Optional; omit if empty
 ```
 
 ## Data analysis recipe Construction Hacks & Hazards
@@ -121,7 +128,9 @@ To maintain **Zero-Failure Integrity**, the Transformer uses an automated audit 
 
 ## Verified Decorator Registry
 
-The full list of 25+ atomic decorators has been aggressively verified via the Integrity Suite. Below is a rapid overview:
+The full list of atomic decorators (see `libs/transformer/src/transformer/actions/` for the
+current count — it grows as the registry expands, ADR-035) has been aggressively verified via
+the Integrity Suite. Below is a rapid overview:
 
 ### Reshaping
 | Action Name | Description |

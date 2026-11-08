@@ -51,7 +51,7 @@ graph LR
 :::
 
 1.  **Data analysis recipe navigator (Dark Grey #c0c0c0):** Data analysis recipe selection, context-reactive **Filter builder** (add/remove filter rows, Apply commits to plots and data preview), and **System Tools** (Export Bundle — zip with plots, data, step lists, Quarto report).
-2.  **Home Theater (Neutral Grey #d1d1d1):** Unified results mode (ADR-043). Top-level groups from the data analysis recipe as pill tabs; each group's plots in a `navset_card_tab`; a **Tier Toggle** strip (T1/T2/T3) above; an independent collapsible Data Preview below with a column selector.
+2.  **Home Theater (Neutral Grey #d1d1d1):** Unified results mode (ADR-043). Top-level groups from the data analysis recipe as pill tabs; each group's plots in a `navset_card_tab`. The header strip above is **two independent selectors** (ADR-085/086), not a single combined T1/T2/T3 toggle: **"Data to show"** (Raw T1 / Result T2 / My view) drives the collapsible Data Preview below (with its column selector); **"Plot to show"** (Result T2 / My view / Compare Result vs My view) drives the plots independently.
 3.  **Pipeline Audit (Dark Grey #c0c0c0):** App features gated — **hidden entirely** for `pipeline-static` and `pipeline-exploration-simple` (theater expands full width); visible for ≥ `pipeline-exploration-advanced` showing Violet (T2) and Yellow (T3) audit nodes.
 
 ---

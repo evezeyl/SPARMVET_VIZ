@@ -1,6 +1,6 @@
 # Test Lab SDK & Scaffolding Layer (formerly `generator_utils`)
 
-The **Test Lab SDK** (`libs/test_lab`, renamed from `generator_utils` in ADR-084) is the architectural engine responsible for bootstrapping new pipelines and generating high-integrity synthetic data. It acts as a headless precursor to the future **Visual Pipeline Designer**.
+The **Test Lab SDK** (`libs/test_lab`, renamed from `generator_utils` in ADR-084) is the architectural engine responsible for bootstrapping new pipelines and generating high-integrity synthetic data. It is a headless library whose classes are wired directly into the Test Lab Shiny UI (`app/handlers/test_lab_handlers.py`) — see below under "GUI Integration". The visual, drag-and-drop pipeline designer this page once anticipated as future work has since shipped, separately, as the **Blueprint Architect** (ADR-039/040/074/075/082) — see [`blueprint_architect.qmd`](blueprint_architect.qmd) for that tool. Blueprint Architect does not depend on this SDK.
 
 
 ## The A -> B -> C Strategy
@@ -42,12 +42,20 @@ To ensure a seamless developer experience, the SDK follows a linear automation p
 - **Boundary Protection**: `suggest_regex` in `libs/utils/src/utils/id_patterns.py` uses non-alphanumeric boundary guards `(?:^|[^a-zA-Z0-9])` to prevent partial ID collisions (e.g., `x100w2` does not match `x100w20`).
 - **Overlap Summary**: `engine.precheck_compatibility(ref_ids, target_ids)` returns overlap count, percentage, and top-3 pattern suggestions before running a full reconciliation.
 
-## GUI Forward-Compatibility
+## GUI Integration (shipped)
 
-While currently implemented as a CLI toolset, the logic within `test_lab` is strictly **UI-Agnostic**. 
+The logic within `test_lab` is strictly **UI-Agnostic** — no UI dependencies are permitted in
+the library core (`rules_test_lab.md` Absolute Prohibition #1). That headless design pays off
+in `app/handlers/test_lab_handlers.py` (990 lines), which already imports and wires the SDK
+classes directly into the Test Lab Shiny panel, gated by `test_lab_enabled`:
 
 - **Headless Engine**: No UI dependencies are permitted in the library core.
-- **Future Integration**: The `AquaSynthesizer` and `Bootstrapper` classes are designed to be imported directly into the Shiny `server.py` to power a drag-and-drop Visual Join/Wrangling Designer.
+- **Shipped wiring**: `DataAnalysisRecipeScaffolder` (data analysis recipe scaffolding form),
+  `AquaSynthesizer` (synthetic data generation form), `Anonymiser`, and `DataReformatter` are
+  each imported and instantiated directly inside `test_lab_handlers.py` reactive handlers —
+  there is no intermediate adapter layer. Each tool runs to completion and returns a
+  downloadable artifact (ADR-084 §1, stateless-tool principle) rather than persisting session
+  state.
 
 ## Operational Standards
 

@@ -56,8 +56,12 @@ input_fields:
 | `date` | Calendar dates or timestamps | Sampling dates, submission dates |
 | `boolean` | True/False, presence/absence | Resistance flags, pass/fail status |
 
-> **DEPRECATED (removal task: LEGACY-TYPE-ALIASES-1):** `character` and `string` as type values are deprecated aliases for `categorical`.
-> New data analysis recipes MUST use `categorical`. Existing data analysis recipes using these aliases should be migrated. Engine acceptance of aliases will be removed.
+> **REMOVED (LEGACY-TYPE-ALIASES-1, Phase 34, 2026-05-22):** `character` and `string` are no longer
+> accepted anywhere a `type:` is declared (`input_fields`, `output_fields`, `final_contract`). The
+> engine raises `TransformationError` the moment one is encountered — this was never a soft warning
+> and it has been enforced for several months now, not a future change.
+> Use `categorical` (identifiers, repeating values — gene names, species, countries, Year-as-category)
+> or `utf8` (high-cardinality free text) instead. See `rules_data_analysis_recipe_structure.md §9`.
 
 ---
 
@@ -202,11 +206,13 @@ Splits a string column into two new columns on a delimiter.
 ```
 
 ### `join` (Assembly steps only)
-Joins a right ingredient into the base frame.
+Joins a right ingredient into the base frame. Quote `'on'` — unquoted, YAML parses it as the boolean
+`True` rather than the string key (the YAML boolean trap, see §1 above and
+`rules_data_analysis_recipe_structure.md §7`).
 ```yaml
 - action: join
   right_ingredient: metadata_schema
-  on: sample_id          # symmetric join key
+  'on': sample_id        # symmetric join key
   how: left              # left | inner | outer
 ```
 Asymmetric keys:
@@ -222,7 +228,7 @@ Asymmetric keys:
 Maps values in a column against an external reference file to derive a new category column.
 ```yaml
 - action: derive_categories
-  source_column: predicted_phenotype
+  columns: predicted_phenotype
   target_column: amr_class
   separator: ", "
   reference_file: "config/references/amr_phenotypes/amr_categories.tsv"
@@ -245,11 +251,11 @@ joins:
       - dataset_id: metadata_schema
     steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
     final_contract:
-      sample_id: string
-      gene: string
-      predicted_phenotype_clean: string
-      Country: string
-      Year: string
+      sample_id: categorical
+      gene: categorical
+      predicted_phenotype_clean: categorical
+      Country: categorical
+      Year: categorical
 ```
 
 - `ingredients` is a **list of dicts** with `dataset_id` keys (not a flat list of strings).

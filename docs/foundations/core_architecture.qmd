@@ -13,13 +13,13 @@ The application is split into distinct layers:
 
 | Term | Architectural Term | Responsibility |
 |------------------------|------------------------|------------------------|
-| Connection to External World | Data **Connector** (BioBlend/API) | The "Bridge." It handles authentication and fetches raw data. **It maintains Path Authority**, resolving all system/hardware endpoints via `config/connectors/`. |
+| Connection to External World | Data **Connector** (BioBlend/API) | The "Bridge." It handles authentication and fetches raw data. **It maintains Path Authority**, resolving all system/hardware endpoints via the active deployment file (`config/deployment/*.yaml`). |
 | **Ingestion Layer** | Data Ingress | The "Gatekeeper." It reads TSV/YAML/VCF and ensures the file isn't corrupted. Uses paths resolved by the Connector layer. |
 | Data Wrangling | **Transformer** (Tidy Layer) | The "Cleaner." Converts raw data and metadata into a tidy format following a data contract. Uses **Polars** and executes declarative rules validated by the **Action Registry**. Manages the **3-Tier Data Lifecycle**. |
 | **Configuration Layer** | Configuration YAMLs | The "Brain." A file that tells the dashboard: "For this data/species, look at column X." **Contains the data contract**, data wrangling rules, and plotting defaults. |
 | Orchestrator Logic | _The Controller_ (app server)| This is the shiny server logic that **reacts** to user input and calls the right functions. |
 | **Visualization Factory** | Plotting Library (Data Agnostic) | The "Artist." Functions that take a dataframe and return a Plotnine plot object. Plotting defaults are passed via configuration files. |
-| Display & Interaction | _Presentation Layer (UI)_ (app ui) | The "Face." The HTML/CSS layout and the sliders/dropdowns. **UI App features files** (`config/ui/`) strictly control functional masking (Developer Mode, Gallery, etc.) and MUST NOT store system paths. |
+| Display & Interaction | _Presentation Layer (UI)_ (app ui) | The "Face." The HTML/CSS layout and the sliders/dropdowns. **App features files** (`config/app_features/*.yaml`) strictly control functional masking (Test Lab, Gallery, etc., see `rules_app_features_flags.md`) and MUST NOT store system paths. `config/ui/` holds presentation assets only (`theme.css`, sidebar layouts, agent prompt templates) — not feature flags. |
 
 <br/>
 
@@ -62,7 +62,7 @@ Contains `@render.*` and `@reactive.*` decorators only. Each module exposes `def
 | `home_theater.py` | Home mode tabs, sidebar nav, filters, plots, tables. |
 | `audit_stack.py` | Pipeline Audit: T2/T3 nodes, Apply gate, Revert. |
 | `blueprint_handlers.py` | Blueprint Architect: data analysis recipe import, TubeMap, Lineage Rail. |
-| `gallery_handlers.py` | Gallery: filtering, preview, clone, submission. |
+| `gallery_handlers.py` | Gallery: filtering, preview. |
 | `ingestion_handlers.py` | Data analysis recipe file ingestion (`btn_ingest`). |
 | `export_handlers.py` | Export results bundle (ZIP): plots, data tiers, step lists, lineage graph, Quarto report. |
 
@@ -86,18 +86,23 @@ Contains `@render.*` and `@reactive.*` decorators only. Each module exposes `def
 
 ### Launch Context & Data Sourcing
 
-The data source is defined by the **Application Launch Context** (`config/deployments/`):
-- **Mode A (General Dashboard):** The UI presents an "Upload CSV" button for both data and metadata, and a dropdown for available species.
-- **Mode B (Fixed Pipeline):** A `run_config.yaml` automatically binds the app to a specific API/Connector (e.g., Galaxy History) to fetch the main analysis data automatically in the background. However, the UI still provides an option for the user to manually upload a custom metadata file to merge with this automated data.
+The data source and feature set are defined by the **deployment file** (`config/deployment/*.yaml`), resolved at startup through a fallback chain implemented in `app/src/bootloader.py` (ADR-048):
+
+1. `SPARMVET_DEPLOYMENT` env var — explicit path; used by Galaxy/IRIDA/Docker launch contexts.
+2. `~/.sparmvet/deployment.yaml` — user-level, for a local machine without the env var.
+3. `/etc/sparmvet/deployment.yaml` — system-level, admin-placed on a server.
+4. `config/deployment/local/local.yaml` — repo dev fallback.
+
+The deployment file names the default data analysis recipe and app features, plus the five `locations` paths (raw data, data analysis recipes, user data, etc.) that `libs/connector/` resolves for the rest of the app. Whether the UI shows an upload control, pre-selects data, or masks developer-only panels is a separate, independent choice driven by the **app features file** (`config/app_features/*.yaml`) the deployment names — see `rules_app_features_flags.md` for the full flag matrix and cascade rules.
 
 ### Displaying the Visualisation
 
 When the user selects (or the pipeline pre-selects) a type of data, e.g., species: "E. coli" and "AMR" in the Shiny UI, the server performs the following logic:
 
-1.  **Lookup:** Find the config based on its `id` in the Python Configuration Registry.
-2.  **Retrieve:** Get the required columns from the data contract (e.g., `["bla_CTX-M", "ndm-1", "tetA"]`).
-3.  **Wrangle:** Tell Polars to select those specific columns from the main dataset. Ensure tidy transformation (e.g., long format).
-4.  **Deep Merge & Plot:** The registry merges the specific E. coli plot requests with the generic defaults from the `plot_archetypes` library (and any user UI preferences). The merged configuration is passed to a Plotnine function designed to handle the viz logic.
+1.  **Lookup:** `ConfigManager` loads the data analysis recipe YAML by its `id`, which equals the file name (ADR-092).
+2.  **Retrieve:** The data analysis recipe's `input_fields`/`output_fields` Rich Dictionaries declare the required columns (e.g., `["bla_CTX-M", "ndm-1", "tetA"]`) for the data contract.
+3.  **Wrangle:** `DataOrchestrator.materialize_tier1()`/`materialize_tier2()` (`app/modules/orchestrator.py`) run the tiered Polars wrangling/assembly steps declared in the data analysis recipe, producing a tidy (often long-format) Parquet dataset — short-circuited by the chained cache keys when nothing relevant has changed (see `reproducibility_hash_schema.qmd`).
+4.  **Plot:** `VizFactory.render()` takes the plot spec (`mapping:`/`layers:` under `analysis_groups`) together with the data analysis recipe's `plot_defaults` and the deployment's palette registry, resolves them through the plot configuration cascade (ADR-081), and renders the Plotnine object.
 
 ### Automated plotting in selected pipelines
 

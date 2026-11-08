@@ -12,17 +12,17 @@ Polars `Categorical` type (equivalent to R's `factor` or Pandas' `category`) rep
 | :--- | :--- | :--- | :--- |
 | **Storage** | Integer index | 32-bit (or 64-bit) index | Integer index |
 | **Ordering** | Level-based (manual) | Logical (physical vs lexical) | Manual categories |
-| **Join Safety**| Automatic (Factors) | Required: **Global String Cache** | Automatic |
+| **Join Safety**| Automatic (Factors) | Requires matching dtypes | Automatic |
 | **Plot Scale**| Native (Discrete) | Native (Discrete) | Native (Discrete) |
 | **Performance**| High | **Ultra-High** (Fast-track joins) | High |
 
-## 2. The Global String Cache Quirk
+## 2. The Join-Key Dtype Quirk
 
-A major technical requirement when joining multiple `Categorical` datasets in Polars is the use of a **Global String Cache**. 
+A major technical requirement when joining datasets in Polars is that **both sides of the join key must share the same dtype**.
 
-Without this cache, two `Categorical` columns from different datasets might have different integer indices for the same physical string (e.g., 'E. coli' = index 0 in File A, index 5 in File B). This leads to **silent join failures** or incorrect results.
+If the key is a numeric ID in one source and a string in another (or one side was cast to `Categorical`/`String` differently from the other), the join can fail with a `SchemaError`, or — worse — silently produce no matches: two columns that *look* like the same identifier (e.g., `'2'` vs `2`) are not equal across dtypes, so Polars treats them as different keys.
 
-**Critical Rule**: All `DataAssembler` joins MUST occur within a `pl.StringCache()` context to ensure that every categorical value shares a project-wide index.
+**Critical Rule**: this is not handled by any global cache or context manager — there is no such mechanism in SPARMVET_VIZ. The engine handles most cases automatically, but when a join key mismatch is detected (typically surfaced as a `SchemaError`), add an explicit `cast` step **before the join**, on whichever side needs normalisation, so both ingredients present the same dtype for that column (see `.claude/rules/rules_agent_role_bioscientist.md §3-B`).
 
 ## 3. Visualization Benefits (Plotnine)
 

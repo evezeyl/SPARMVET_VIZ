@@ -2,13 +2,21 @@
 title: "The Audit Pipeline: Making Your Adjustments Defensible"
 ---
 
-When you run your data through SPARMVET, three "tiers" are presented:
+When you run your data through SPARMVET, there are three underlying tiers — **T1 — Assembled**
+(the raw data joined per your data analysis recipe, no analytical decisions made yet),
+**T2 — Result** (the standard transformations every plot in your data analysis recipe shares),
+and **T3 — My view** (*your* decisions on top of T2) — but the Home header gives you **two
+independent choices**, not one combined toggle:
 
-- **T1 — Assembled**: the raw data joined per your data analysis recipe. No analytical decisions made yet.
-- **T2 — Analysis-ready**: the standard transformations that every plot in your data analysis recipe shares.
-- **T3 — My adjustments**: *your* decisions on top of T2. This is where you remove bad samples, drop unused columns, filter to the rows you want to publish.
+- **"Data to show"** (Raw / Result / My view) — controls what the **data preview table** shows.
+- **"Plot to show"** (Result / My view / Compare Result vs My view) — controls what the
+  **plots** show. Plots never show T1 — only Result (T2) or My view.
 
-The audit pipeline is what records every T3 decision so your final figures are reproducible and defensible. Every change you make in T3 mode is captured as an **audit node** — a small record that says *what* you changed, *which plots* it applies to, and (mandatory) *why* you made the change. Together, the audit nodes form your audit trail.
+**My view** is where you remove bad samples, drop unused columns, and filter to the rows you
+want to publish. The audit pipeline is what records every decision you commit in My view so
+your final figures are reproducible and defensible. Every change you commit is captured as an
+**audit node** — a small record that says *what* you changed, *which plots* it applies to, and
+(mandatory) *why* you made the change. Together, the audit nodes form your audit trail.
 
 ## Why this matters for publication
 
@@ -20,9 +28,9 @@ Every removal is named, dated, and justified. You take responsibility for the de
 
 ## How to author audit decisions
 
-In **T3 ("My adjustments")** mode, the left sidebar is your only authoring surface:
+With **"Plot to show"** set to **My view**, the left sidebar is your only authoring surface:
 
-- The **filter builder** (Apply button labelled "➜ Audit (N)" in orange) — turn the rows you've staged into audit nodes.
+- The **filter builder** (button labelled "➜ Send to Audit (N)") — turn the rows you've staged into audit nodes.
 - The **column selector above the data preview** ("➜ Audit drops (N)" button) — turn deselected columns into `drop_column` audit nodes.
 
 The right sidebar is the **audit panel**: it shows the audit decisions for the *currently active plot*. Every decision lives there with its reason text-box. Until you fill in a reason, the bottom **Apply** button stays locked. Once you Apply, the decisions move from "pending" to "committed" and the change is reflected in the data.
@@ -68,7 +76,7 @@ Before you click *Add to audit pipeline*, the modal shows a per-plot preview of 
 This is the recommended sequence for building a clean audit trail:
 
 1. **Stage one filter** in the Filters accordion. Don't stage others yet.
-2. **Click "➜ Audit (1)"**. The propagation modal opens.
+2. **Click "➜ Send to Audit (1)"**. The propagation modal opens.
 3. **Read the preview**. Check which plots show ✅, which show ⚠️ (column absent). If a plot you expected to be affected shows ⚠️, that means the column name differs in that plot's dataset — fix the source data or author the filter separately for that plot with the correct column name.
 4. **Choose scope** — "This plot only", "All plots", or "All plots except…". When in doubt, start with "This plot only" and expand scope once you've confirmed the effect.
 5. **Fill in the reason** in the right sidebar audit panel (see [Writing good reasons](#writing-good-reasons) below). The Apply button stays locked until a reason is entered.

@@ -47,7 +47,7 @@ The dashboard is organized into three distinct operational zones to ensure a hig
 
 ### The Left Panel (The Navigator 🗺️)
 - **Purpose**: Global context and data analysis recipe management.
-- **Controls**: Data analysis recipe selection, App features Switching, and Global Agnostic Filters.
+- **Controls**: Data analysis recipe selection and Global Agnostic Filters. (Runtime app features switching does not exist — the app features is chosen at launch via the `SPARMVET_APP_FEATURES` environment variable or the deployment default, ADR-053.)
 - **Rules**: Persist across all modules but are collapsible to maximize theater space.
 
 ### The Central Theater (The Map & Canvas 🎨)

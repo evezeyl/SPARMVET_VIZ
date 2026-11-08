@@ -9,11 +9,11 @@ When navigating the documentation or talking to developers, learning the SPARMVE
 Here are the core terms you will encounter. If you ever see these words highlighted in the documentation, you can hover over them for a quick definition!
 
 *   **Data analysis recipe**: A YAML file containing the blueprints for your data. It explicitly lists where your data lives, how to clean it, and what plots to build.
-*   **Anchor**: The central piece of data. If you are studying *E. coli* infections in pigs, the spreadsheet listing the pigs is your Anchor.
-*   **Leaf**: Supplemental data. Continuing the example, if you have a separate spreadsheet defining the weather in the cities where those pigs live, that is a Leaf. We attach (join) Leaves to the Anchor.
+*   **Anchor**: The central piece of data — the Tier 1 trunk, shared by every plot in your data analysis recipe. If you are studying *E. coli* infections in pigs, the spreadsheet listing the pigs is your Anchor.
+*   **Ingredient**: Supplemental data joined onto the Anchor (the data analysis recipe calls this a `right_ingredient`). Continuing the example, if you have a separate spreadsheet defining the weather in the cities where those pigs live, that is an Ingredient. We attach (join) Ingredients to the Anchor.
 *   **Tier 1**: The initial stage. It takes your raw Excel/CSV data and converts it into a super-fast Parquet file.
-*   **Tier 2**: The blueprint stage (Pre-computation). It applies the basic rules written in your Data analysis recipe to combine your Anchor and Leaf data together into one unified table *before* you view it in the app.
-*   **Tier 3**: An in-session audit and aesthetic layer applied on top of T2 results. Scoped strictly to row filters and aesthetic overrides (color, shape, fill). Does not modify the data analysis recipe. App features gated — not all users see it.
+*   **Tier 2**: The blueprint stage (Pre-computation). It applies the basic rules written in your Data analysis recipe to combine your Anchor and Ingredient data together into one unified table *before* you view it in the app.
+*   **Tier 3 ("Leaf")**: An in-session audit layer applied on top of T2 results — the transient, predicate-pushdown UI view also called "My view". Scoped strictly to five node types: row filters, row exclusions, column drops, aesthetic overrides (color, shape, fill), and (gated) a YAML escape hatch. Does not modify the data analysis recipe. App features gated — not all users see it.
 *   **App features**: An app features that changes how the Dashboard looks. Some app features files lock down all editing features, while other app features files (like *Developer*) give you access to the advanced Test Lab and Wrangle Studio.
 
 ## Submitting Feedback and Feature Requests

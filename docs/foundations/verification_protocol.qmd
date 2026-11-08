@@ -14,15 +14,15 @@ Before writing core logic, the Developer MUST:
     - All test scripts (e.g., `debug_wrangler.py`) MUST use `argparse` for manual execution.
     - Execution Command: `python test_script.py --data path/to/data.tsv --data-analysis-recipe path/to/config.yaml`.
     - The script must have sensible defaults but allow full manual overrides for all arguments.
-3. **Evidence Generation:**
-    - **For Data:** 
-        - Materialize LazyFrame to `tmp/{{ACTION_NAME}}_debug_view.tsv`.
-        - Materialize LazyFrame to `tmp/USER_debug_view.tsv` (via `.collect()`).
-    - **For Plots:** 
-        - Save Plotnine object to `tmp/{{PLOT_NAME}}_debug_plot.png`.
-        - Save Plotnine object to `tmp/USER_debug_plot.png`.
+3. **Evidence Generation (agent scratch — `tmpAI/`):** agent-internal debug runs are not yet user-review evidence, so they are written to `tmpAI/` first, never directly to `tmp/` (`rules_verification_testing.md` §6).
+    - **For Data:**
+        - Materialize LazyFrame to `tmpAI/{{ACTION_NAME}}_debug_view.tsv`.
+        - Materialize LazyFrame to `tmpAI/USER_debug_view.tsv` (via `.collect()`).
+    - **For Plots:**
+        - Save Plotnine object to `tmpAI/{{PLOT_NAME}}_debug_plot.png`.
+        - Save Plotnine object to `tmpAI/USER_debug_plot.png`.
 4. **Console Glimpse:** Print the first 10 rows and schema using `df.glimpse()`.
-5. **The @verify Gate (HALT):**
+5. **Promote and halt (The @verify Gate):** once the evidence above looks correct, copy it from `tmpAI/` to `tmp/` — `tmp/` is reserved exclusively for evidence the user is being asked to review.
     - **Data Case:** Provide message: "Data is ready in `tmp/{{ACTION_NAME}}_debug_view.tsv`. Use Excel Viewer to verify. Waiting for @verify."
     - **Plot Case:** Provide message: "Plot is ready in `tmp/{{PLOT_NAME}}_debug_plot.png`. Please open image to verify. Waiting for @verify."
 

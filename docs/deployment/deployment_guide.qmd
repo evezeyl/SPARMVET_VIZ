@@ -236,7 +236,7 @@ Two settings in the deployment control what the user sees:
 | `pipeline-exploration-simple` | Scientist exploring results | Add filters, view tiers. No T3 sandbox. |
 | `pipeline-exploration-advanced` | Power user | Full T3 sandbox, comparison mode, audit trail. |
 | `standalone` | Researcher managing their own data | Can select data analysis recipes, import data. |
-| `developer` | Admin / developer | All features, gallery browser, dev studio. |
+| `developer` | Admin / developer | All features, gallery browser, Test Lab. |
 
 **`default_data_analysis_recipe`** — controls *which pipeline/dataset* is loaded:
 This is the file name (without `.yaml`) of the data analysis recipe in the data analysis recipes location. It defines the analysis groups, plots, and data wrangling steps for a specific pipeline. Changing this (via a different deployment) switches the app to a completely different pipeline without any code change.
