@@ -25,6 +25,29 @@ _app_features_extra_css = (
 )
 
 
+_WWW_DIR = Path(__file__).parent / "www"
+
+
+def _versioned(served_path: str) -> str:
+    """Append ?v=<mtime> to a /-rooted static asset path served from app/src/www/.
+
+    Issue #37 (Eve): an edited first-party or vendored script kept running the
+    old version after a hard refresh — Shiny's static_assets mount serves the current
+    file from disk every request, but the browser can still treat the URL itself as
+    cacheable. Appending the file's own mtime makes the URL change whenever the file
+    does, forcing a real fetch — no cache-busting needed when nothing changed either.
+    Falls back to the bare path if the file can't be stat'd (e.g. missing at import
+    time) rather than raising — a missing script is a 404 either way.
+    """
+    local_path = _WWW_DIR / served_path.lstrip("/")
+    try:
+        mtime = int(local_path.stat().st_mtime)
+    except OSError:
+        return served_path
+    sep = "&" if "?" in served_path else "?"
+    return f"{served_path}{sep}v={mtime}"
+
+
 def _resolve_logo_src(logo_url: str) -> str:
     """Return a usable <img src> value for logo_url from app features config.
 
@@ -53,14 +76,16 @@ app_ui = ui.page_fillable(
         # Vendored locally — air-gap / restricted-network safe (DEPLOY-CDN-1).
         # Source: app/src/www/vendor/ — pinned versions, no CDN dependency.
         ui.tags.link(
-            rel="stylesheet", href="/vendor/bootstrap-icons.css"),
+            rel="stylesheet", href=_versioned("/vendor/bootstrap-icons.css")),
         # [BP-EXPR-EDITOR-1] Expression widget column autocomplete — vanilla JS, no CDN.
-        ui.tags.script(src="/bp_expr_editor.js"),
+        # Cache-busted by mtime (issue #37) so an edit during development is always
+        # picked up on reload, without needing "Disable cache" in DevTools.
+        ui.tags.script(src=_versioned("/bp_expr_editor.js")),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
-        ui.tags.script(src="/vendor/cytoscape.min.js"),
-        ui.tags.script(src="/vendor/dagre.min.js"),
-        ui.tags.script(src="/vendor/cytoscape-dagre.js"),
+        ui.tags.script(src=_versioned("/vendor/cytoscape.min.js")),
+        ui.tags.script(src=_versioned("/vendor/dagre.min.js")),
+        ui.tags.script(src=_versioned("/vendor/cytoscape-dagre.js")),
         ui.tags.script("""
 // ── [ADR-039] Cytoscape TubeMap Bridge ──────────────────────────────────────
 //
