@@ -13,7 +13,7 @@ from __future__ import annotations
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, function:_build_methods_section
 # consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, polars, shiny
-#            reactive.Value:session_pipeline_errors (DIAG-RUNTIME-AUDIT-1 — included in report.qmd pipeline issues section)
+#            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/design/export_specification.md
 # @end_deps
@@ -389,7 +389,7 @@ def define_export_server(input, output, session, *,
                          home_state, safe_input,
                          active_home_subtab=None,
                          notification_log=None,
-                         session_pipeline_errors=None,
+                         session_processing_issues=None,
                          t3_filter_rows=None,
                          t3_drop_columns=None,
                          view_keys=None):
@@ -1315,13 +1315,13 @@ def define_export_server(input, output, session, *,
                         )
                     qmd_lines.append("")
 
-            # ── Pipeline Issues section ───────────────────────────────────
+            # ── Processing Issues section ───────────────────────────────────
             _pe_entries = (
-                session_pipeline_errors.get()
-                if session_pipeline_errors is not None else []
+                session_processing_issues.get()
+                if session_processing_issues is not None else []
             )
             if _pe_entries:
-                qmd_lines += ["## Pipeline Issues During Session", ""]
+                qmd_lines += ["## Processing Issues During Session", ""]
                 qmd_lines.append(
                     "> The following runtime errors or warnings occurred during this session. "
                     "Review these before publishing results."

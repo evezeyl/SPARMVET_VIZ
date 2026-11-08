@@ -7,3 +7,4 @@ panels:
   - type: data_import
   - type: export
   - type: session_management
+  - type: processing_issues

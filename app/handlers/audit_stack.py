@@ -18,11 +18,11 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:pipeline_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
+# provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
 # consumes: app/modules/wrangle_studio.py, app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1)
 # consumed_by: app/src/server.py
-# doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, pipeline_issues_ui shows fix/who)
+# doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
 # @end_deps
 
 from shiny import reactive, render, ui
@@ -107,7 +107,7 @@ def define_server(input, output, session, *,
                   active_cfg, active_collection_id,
                   home_state=None, session_manager=None,
                   notification_log=None, bootloader=None,
-                  session_pipeline_errors=None):
+                  session_processing_issues=None):
     """Register all Pipeline Audit reactive handlers."""
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -879,15 +879,15 @@ def define_server(input, output, session, *,
         )
 
     # ------------------------------------------------------------------
-    # pipeline_issues_ui — DIAG-RUNTIME-AUDIT-1 structured error log
+    # processing_issues_ui — DIAG-RUNTIME-AUDIT-1 structured error log
     # ------------------------------------------------------------------
 
     @output
     @render.ui
-    def pipeline_issues_ui():
-        if session_pipeline_errors is None:
+    def processing_issues_ui():
+        if session_processing_issues is None:
             return ui.div()
-        entries = session_pipeline_errors.get()
+        entries = session_processing_issues.get()
         if not entries:
             return ui.div()
 
@@ -926,12 +926,12 @@ def define_server(input, output, session, *,
 
         return ui.div(
             ui.div(
-                ui.tags.strong(f"Runtime issues ({len(errors)})", class_="spv-text-xs text-danger"),
+                ui.tags.strong(f"Processing issues ({len(errors)})", class_="spv-text-xs text-danger"),
                 class_="mb-1",
             ),
             *items,
             class_="p-2",
-            id="pipeline_issues_panel",
+            id="processing_issues_panel",
         )
 
 

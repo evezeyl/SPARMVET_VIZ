@@ -1,6 +1,6 @@
-Status: PROCESSED (all-pass, 2026-11-08 UML drift-detection review)
+Status: PROCESSED (all-pass, 2026-11-08 Processing Issues rename/remount review)
 # Audit Report: Data Analysis Recipe Coherence
-Generated: 2026-11-08T12:29:42
+Generated: 2026-11-08T13:16:10
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-013 (Data analysis recipe Data Contract), ADR-041 (Unified Data analysis recipe Standard), rules_data_analysis_recipe_structure.md §7
 

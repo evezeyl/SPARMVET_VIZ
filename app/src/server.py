@@ -104,7 +104,7 @@ def server(input, output, session):
     gallery_refresh_trigger = reactive.Value(0)
     data_refresh_trigger = reactive.Value(0)   # incremented after data import to bust plot cache
     notification_log = reactive.Value([])      # UX-NOTIF-1: persistent alert log (last 20)
-    session_pipeline_errors = reactive.Value([])  # DIAG-RUNTIME-AUDIT-1: structured PipelineError log
+    session_processing_issues = reactive.Value([])  # DIAG-RUNTIME-AUDIT-1: structured PipelineError log
 
     # §13 Home Module State Object — see orchestrator_helpers.DEFAULT_HOME_STATE for schema
     home_state = reactive.Value(dict(DEFAULT_HOME_STATE))
@@ -185,7 +185,7 @@ def server(input, output, session):
         session_manager=session_manager,
         data_refresh_trigger=data_refresh_trigger,
         notification_log=notification_log,
-        session_pipeline_errors=session_pipeline_errors,
+        session_processing_issues=session_processing_issues,
     )
 
     # Pipeline Audit: T2/T3 nodes, btn_apply, audit_pending_badge (requires t3_sandbox_enabled)
@@ -202,7 +202,7 @@ def server(input, output, session):
             session_manager=session_manager,
             notification_log=notification_log,
             bootloader=bootloader,
-            session_pipeline_errors=session_pipeline_errors,
+            session_processing_issues=session_processing_issues,
         )
 
     # Blueprint Architect: data analysis recipe import, TubeMap, Lineage Rail, upload/save/download

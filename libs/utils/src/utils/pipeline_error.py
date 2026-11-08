@@ -173,7 +173,7 @@ class PipelineError:
         """Return a copy of this error with `timestamp` set to now (ISO-8601).
 
         Intended for use at the UI boundary where the error is caught and appended
-        to `session_pipeline_errors`. Library code raises without a timestamp;
+        to `session_processing_issues`. Library code raises without a timestamp;
         the handler adds it on receipt.
         """
         return PipelineError(
@@ -249,7 +249,7 @@ def make_render_payload(error: PipelineError) -> dict:
 
 
 def capture_entry(exc: Exception, fallback_component: str, fallback_location: str) -> dict:
-    """Build a `session_pipeline_errors` entry from any caught exception (ADR-094).
+    """Build a `session_processing_issues` entry from any caught exception (ADR-094).
 
     Added 2026-11-08 (PIPELINE-ERROR-WIRE-2): every library raise site already builds a full
     `PipelineError` and discards it in favour of a plain `SPARMVET_Error` subclass carrying only

@@ -1,6 +1,6 @@
-Status: PROCESSED (all-pass, 2026-11-08 UML drift-detection review)
+Status: PROCESSED (all-pass, 2026-11-08 Processing Issues rename/remount review)
 # Audit: Palette Registry Format Validity
-Generated: 2026-11-08T12:29:43
+Generated: 2026-11-08T13:16:11
 File checked: `config/palettes.yaml`
 Rule: `.claude/rules/rules_viz_factory.md §6` | ADR-081
 

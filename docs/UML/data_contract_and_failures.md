@@ -84,7 +84,7 @@ recipe hand-edited on the server after the fact.
 
 Passing the load gate does not mean nothing can go wrong — a file can disappear between the check
 and the moment a plot actually renders, for instance. When that happens during an active HOME
-session, the failure is now captured into the session's own "Pipeline Issues" log (visible in the
+session, the failure is now captured into the session's own "Processing Issues" log (visible in the
 right sidebar) with what broke and which component it was, instead of only a plain red error on
 the plot itself. This is a first, partial step — not every kind of runtime failure is covered yet
 (see "What is still open" below).

@@ -76,6 +76,10 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": None,
         "label": "Notification Log",
     },
+    "processing_issues": {
+        "gate_flag": None,
+        "label": "Processing Issues",
+    },
 }
 
 

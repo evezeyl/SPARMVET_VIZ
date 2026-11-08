@@ -37,7 +37,7 @@ message instead (`errors.py`; found 2026-11-08, ADR-095, while closing `PIPELINE
 `SPARMVET_Error` now carries the original `PipelineError` through the raise (an optional
 constructor kwarg, no breaking change to any existing catch site), and a shared `capture_entry()`
 helper reads it back. As of 2026-11-08 this reaches the user at every production site that can
-raise: HOME's "Pipeline Issues" panel (data materialization and VizFactory render, including the
+raise: HOME's "Processing Issues" panel (data materialization and VizFactory render, including the
 Comparison Mode reference plot) shows `fix`/`who`, not just the problem; BLUEPRINT's three
 recipe-load/YAML-parse failures show inline, right where the error happened; T3 Apply's
 gatekeeper-blocked message and a failed session-ghost-save both now include the fix text (the

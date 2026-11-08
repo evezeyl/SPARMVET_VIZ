@@ -110,7 +110,7 @@ def define_server(input, output, session, *,
                   home_state=None, session_manager=None,
                   data_refresh_trigger=None,
                   notification_log=None,
-                  session_pipeline_errors=None):
+                  session_processing_issues=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -148,7 +148,7 @@ def define_server(input, output, session, *,
         Contains t3_audit_steps, applied_filters, tier_toggle, and navigation state.
     session_manager : SessionManager | None
         §12d Session ghost save/restore manager.
-    session_pipeline_errors : reactive.Value[list] | None
+    session_processing_issues : reactive.Value[list] | None
         DIAG-RUNTIME-AUDIT-1: accumulates structured runtime error entries.
     """
 
@@ -450,18 +450,18 @@ def define_server(input, output, session, *,
                 lf = _resolve_active_lf(spec, tier="T2")
             except Exception as e:
                 # ADR-094: data materialization (ingestion/assembly) failures get the same
-                # session_pipeline_errors capture the VizFactory render path already has
-                # (below) — same deferred-write pattern (R1-safe), same "Pipeline Issues"
-                # panel (audit_stack.py:pipeline_issues_ui). capture_entry() reads the real
+                # session_processing_issues capture the VizFactory render path already has
+                # (below) — same deferred-write pattern (R1-safe), same "Processing Issues"
+                # panel (audit_stack.py:processing_issues_ui). capture_entry() reads the real
                 # PipelineError the library already built (errors.py's pipeline_error= carry
                 # kwarg, PIPELINE-ERROR-WIRE-2) when the exception has one; falls back to the
                 # exception's own message otherwise — same as before this change.
-                if session_pipeline_errors is not None:
+                if session_processing_issues is not None:
                     _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}')")
                     def _append_data_error(entry=_entry):
-                        current = session_pipeline_errors.get()
+                        current = session_processing_issues.get()
                         if len(current) < 50:
-                            session_pipeline_errors.set(current + [entry])
+                            session_processing_issues.set(current + [entry])
                     session.on_flushed(_append_data_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
@@ -488,16 +488,16 @@ def define_server(input, output, session, *,
                 return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                           aesthetic_override=_t3_overrides)
             except Exception as e:
-                # Capture error for session_pipeline_errors without violating R1
+                # Capture error for session_processing_issues without violating R1
                 # (cannot call reactive.Value.set inside @render.*). ADR-094/
                 # PIPELINE-ERROR-WIRE-2: capture_entry() now uses VizFactory's real
                 # PipelineError (fix/who) when the exception carries one, not just its message.
-                if session_pipeline_errors is not None:
+                if session_processing_issues is not None:
                     _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}')")
                     def _append_render_error(entry=_entry):
-                        current = session_pipeline_errors.get()
+                        current = session_processing_issues.get()
                         if len(current) < 50:
-                            session_pipeline_errors.set(current + [entry])
+                            session_processing_issues.set(current + [entry])
                     session.on_flushed(_append_render_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
@@ -547,15 +547,15 @@ def define_server(input, output, session, *,
             try:
                 lf = _resolve_active_lf(spec, tier="T2")  # reference = T2 (ADR-086)
             except Exception as e:
-                # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_pipeline_errors
+                # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_processing_issues
                 # capture at all) — the comparison-mode twin of _group_plot_handler's
                 # already-fixed first except block, previously missed.
-                if session_pipeline_errors is not None:
+                if session_processing_issues is not None:
                     _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}', mode='cmp_base')")
                     def _append_cmp_data_error(entry=_entry):
-                        current = session_pipeline_errors.get()
+                        current = session_processing_issues.get()
                         if len(current) < 50:
-                            session_pipeline_errors.set(current + [entry])
+                            session_processing_issues.set(current + [entry])
                     session.on_flushed(_append_cmp_data_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
@@ -569,12 +569,12 @@ def define_server(input, output, session, *,
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
                 # real fix/who, same as _group_plot_handler's render catch.
-                if session_pipeline_errors is not None:
+                if session_processing_issues is not None:
                     _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
                     def _append_cmp_error(entry=_entry):
-                        current = session_pipeline_errors.get()
+                        current = session_processing_issues.get()
                         if len(current) < 50:
-                            session_pipeline_errors.set(current + [entry])
+                            session_processing_issues.set(current + [entry])
                     session.on_flushed(_append_cmp_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
@@ -1603,10 +1603,14 @@ def define_server(input, output, session, *,
             sidebar_cfg = bootloader.get_sidebar_config(workspace_key, "left")
             panels = []
             include_notification_log = False
+            include_processing_issues = False
             for slot in sidebar_cfg.panels:
                 ptype = slot.get("type", "")
                 if ptype == "notification_log":
                     include_notification_log = True
+                    continue
+                if ptype == "processing_issues":
+                    include_processing_issues = True
                     continue
                 if not is_panel_active(ptype, bootloader):
                     continue
@@ -1625,6 +1629,10 @@ def define_server(input, output, session, *,
                     open=open_panels,
                 ),
                 ui.output_ui("notification_log_panel_ui") if include_notification_log else ui.div(),
+                # F-26 / PROCESSING-ISSUES-RENAME-1: left sidebar, not right — the right
+                # sidebar is structurally absent in pipeline-static/pipeline-exploration-simple
+                # (ui_reachability_map.md §2), the left sidebar never is.
+                ui.output_ui("processing_issues_ui") if include_processing_issues else ui.div(),
             )
 
         if active_sidebar == "Test Lab":
@@ -2004,7 +2012,7 @@ def define_server(input, output, session, *,
         safe_input=safe_input,
         active_home_subtab=active_home_subtab,
         notification_log=notification_log,
-        session_pipeline_errors=session_pipeline_errors,
+        session_processing_issues=session_processing_issues,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
         view_keys=_data_analysis_recipe_keys,

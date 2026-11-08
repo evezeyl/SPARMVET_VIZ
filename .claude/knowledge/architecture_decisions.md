@@ -3473,22 +3473,22 @@ Each renderer has a fallback: if `evidence` is `None`, the panel hides the "Insp
 A new app-level reactive value:
 
 ```python
-session_pipeline_errors = reactive.Value([])   # list[PipelineError]
+session_processing_issues = reactive.Value([])   # list[PipelineError]
 ```
 
 Lives in `app/src/server.py` alongside the other shared reactive values; passed as a kwarg to handlers that emit or render pipeline errors.
 
 **Capture rule:** every `PipelineError` instance, at the moment it is raised and caught at a UI boundary, is appended to this list (with `timestamp` populated). Errors raised inside library code (no Shiny context) are caught by the handler that called the library, which adds `timestamp` and appends.
 
-**Rendering rule:** the `audit_panel` surface always includes the live tail of `session_pipeline_errors` filtered by the active analysis group. The right sidebar audit panel shows a sub-section "Pipeline Issues" beneath the T3 audit trail when this list is non-empty.
+**Rendering rule:** the `audit_panel` surface always includes the live tail of `session_processing_issues` filtered by the active analysis group. The right sidebar audit panel shows a sub-section "Processing Issues" beneath the T3 audit trail when this list is non-empty.
 
 **Export rule** (extends ADR-069 §report.qmd):
 
-- `report.qmd` gains a new section `## Pipeline Issues During Session` after the T3 Audit Trail section.
+- `report.qmd` gains a new section `## Processing Issues During Session` after the T3 Audit Trail section.
 - One sub-section per affected plot (or "Session-wide" for un-scoped errors).
 - Each error rendered as: severity icon · timestamp · `problem` · `who` chip · collapsible `evidence` table · `fix` blockquote.
-- Section is omitted from `report.qmd` if `session_pipeline_errors` is empty for the export scope.
-- The bundle's `README.txt` reports a count: `Pipeline issues captured: N (M errors, K warnings)`.
+- Section is omitted from `report.qmd` if `session_processing_issues` is empty for the export scope.
+- The bundle's `README.txt` reports a count: `Processing issues captured: N (M errors, K warnings)`.
 
 **Cleared on session restore.** Each session has its own log; restoring an older session loads that session's captured errors as part of the ghost (extends T3 Ghost format with `pipeline_errors:` list).
 
@@ -3521,8 +3521,8 @@ Existing `SPARMVET_Error` subclasses (`IngestionError`, `TransformationError`, `
 
 | Deliverable | Task |
 |---|---|
-| `session_pipeline_errors` reactive value in `server.py`; pass to handlers that emit / render | `DIAG-RUNTIME-AUDIT-1` `[sonnet/medium]` |
-| Audit panel "Pipeline Issues" sub-section render | bundled with `DIAG-RUNTIME-AUDIT-1` |
+| `session_processing_issues` reactive value in `server.py`; pass to handlers that emit / render | `DIAG-RUNTIME-AUDIT-1` `[sonnet/medium]` |
+| Audit panel "Processing Issues" sub-section render | bundled with `DIAG-RUNTIME-AUDIT-1` |
 | Export bundle `report.qmd` extension (new section after T3 Audit Trail) | bundled with `DIAG-RUNTIME-AUDIT-1` |
 | T3 Ghost format extension (`pipeline_errors:` list) | bundled with `DIAG-RUNTIME-AUDIT-1` |
 | Plot-overlay renderer wired into `home_theater.py` plot renders (replace bare exception traces) | bundled with each Phase-2 task that affects plots |
@@ -3555,12 +3555,12 @@ Existing `SPARMVET_Error` subclasses (`IngestionError`, `TransformationError`, `
 | `libs/utils/src/utils/pipeline_error.py` | Authoritative dataclass + helpers + render-payload converter. Do not duplicate. |
 | `libs/utils/src/utils/errors.py` | Existing `SPARMVET_Error` subclasses gain `to_pipeline_error()` adapter; otherwise unchanged. |
 | `app/src/render/pipeline_error_renderers.py` | Per-surface renderers; consumed by handlers via `make_render_payload()`. |
-| `app/src/server.py` | Owns `session_pipeline_errors` reactive value; passes to relevant handlers. |
-| `app/handlers/home_theater.py` | `plot_overlay` surface; reads `session_pipeline_errors` for plot card overlays. |
+| `app/src/server.py` | Owns `session_processing_issues` reactive value; passes to relevant handlers. |
+| `app/handlers/home_theater.py` | `plot_overlay` surface; reads `session_processing_issues` for plot card overlays. |
 | `app/handlers/audit_stack.py` | `audit_panel` surface; T3 Apply error capture. |
 | `app/handlers/blueprint_handlers.py` | `blueprint_inline` surface. |
 | `app/handlers/ingestion_handlers.py` | `data_import_panel` surface. |
-| `app/handlers/export_handlers.py` | Reads `session_pipeline_errors`; writes "Pipeline Issues During Session" section into `report.qmd`. |
+| `app/handlers/export_handlers.py` | Reads `session_processing_issues`; writes "Pipeline Issues During Session" section into `report.qmd`. |
 | `libs/ingestion/**`, `libs/transformer/**`, `libs/viz_factory/**` | Phase 2 retrofit targets — raise existing exceptions; UI boundary converts. |
 | `.claude/rules/rules_persona_bioscientist.md` | §7 (Debug Workflow) error-diagnosis table is the canonical reference for `fix:` text on `who: manifest_author` errors — keep aligned. |
 
@@ -4515,7 +4515,7 @@ The fix built on a false premise about what the library layer actually raises.
    (data materialization + VizFactory render) and the previously-unwired `_cmp_baseline_handler`
    (Comparison Mode's T2 reference plot — same two failure points, found to have the data-
    materialization capture missing entirely and the render capture still using the old
-   hand-rolled dict). `audit_stack.py`'s `pipeline_issues_ui` now shows `fix`/`who` when present,
+   hand-rolled dict). `audit_stack.py`'s `processing_issues_ui` now shows `fix`/`who` when present,
    not just `component`/`problem`. `export_handlers.py`'s per-plot export error stub
    (`{p_id}_ERROR.txt`) now includes the fix text when the caught exception carries a
    `PipelineError` — a file nobody can ask a follow-up question about needs the guidance in the
@@ -4564,7 +4564,7 @@ The fix built on a false premise about what the library layer actually raises.
 `libs/utils/src/utils/pipeline_error.py` (`capture_entry()`), `libs/ingestion/src/ingestion/ingestor.py`,
 `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`,
 `libs/viz_factory/src/viz_factory/viz_factory.py` (19 raise sites), `app/handlers/home_theater.py`
-(3 catch points), `app/handlers/audit_stack.py` (`pipeline_issues_ui`, `handle_apply`,
+(3 catch points), `app/handlers/audit_stack.py` (`processing_issues_ui`, `handle_apply`,
 `_write_t3_ghost`), `app/handlers/export_handlers.py` (export error stub). Tests:
 `libs/utils/tests/test_pipeline_error.py` (carry-through + `capture_entry`, mutation-proven),
 `app/tests/test_write_t3_ghost_warning.py` (new, mutation-proven).

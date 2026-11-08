@@ -1,6 +1,6 @@
-Status: PROCESSED (all-pass, 2026-11-08 UML drift-detection review)
+Status: PROCESSED (all-pass, 2026-11-08 Processing Issues rename/remount review)
 # Audit Report: Data Analysis Recipe Structure Integrity
-Generated: 2026-11-08T12:29:41
+Generated: 2026-11-08T13:16:10
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Assembler: libs/transformer/tests/debug_assembler.py
 Scratch output: tmpAI/audit_data_analysis_recipe_integrity

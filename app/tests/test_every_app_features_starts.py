@@ -63,6 +63,12 @@ def test_app_features_renders_home_without_server_error(page: Page, tmp_path, ap
             page.goto(url)
             # the data analysis recipe title banner or a plot group tab proves that Home was built
             expect(page.locator(".view-title-banner, .nav-link").first).to_be_visible(timeout=40_000)
+            # F-26 / PROCESSING-ISSUES-RENAME-1: the regression this guards against is a real one —
+            # processing_issues_ui (then pipeline_issues_ui) was defined but never mounted in any
+            # app features, for every app features, since the original commit. Left sidebar, not
+            # right, so this must hold even for pipeline-static (no right sidebar at all).
+            assert page.locator("#processing_issues_ui").count() == 1, \
+                "Processing Issues output must be mounted in every app features (left sidebar, never gated)"
             time.sleep(4)
             tab = page.get_by_text("Blueprint Architect", exact=True)
             if app_features in WITH_BLUEPRINT:

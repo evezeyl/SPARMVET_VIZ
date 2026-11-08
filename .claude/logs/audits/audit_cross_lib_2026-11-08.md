@@ -1,6 +1,6 @@
-Status: PROCESSED (all-pass, 2026-11-08 UML drift-detection review)
+Status: PROCESSED (all-pass, 2026-11-08 Processing Issues rename/remount review)
 # Audit Report: ADR-011 Cross-Lib Violation Scan
-Generated: 2026-11-08T12:29:37
+Generated: 2026-11-08T13:16:05
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-011 / ADR-016 — Two-Tier Dependency Model
 

@@ -17,7 +17,7 @@ imports PipelineError directly — surface decoupling per ADR-079 §Render.
 Each renderer handles one surface value:
   plot_overlay       — overlaid card on a failed plot
   notification       — transient toast (ui.notification_show, side-effect only)
-  audit_panel        — row card in the Pipeline Issues panel (notification_log)
+  audit_panel        — row card in the Processing Issues panel (notification_log)
   data_import_panel  — inline banner in the Data Import panel
   blueprint_inline   — inline message in the Blueprint IDE
 
@@ -106,11 +106,11 @@ def render_plot_overlay(payload: dict) -> ui.Tag:
 
 
 def render_audit_panel_row(payload: dict) -> ui.Tag:
-    """Card row for the Pipeline Issues section in the notification log
+    """Card row for the Processing Issues section in the notification log
     (surface='audit_panel').
 
     Returns a self-contained div suitable for appending to a list of
-    session_pipeline_errors rendered in the right sidebar.
+    session_processing_issues rendered in the right sidebar.
     """
     bg, fg = _severity_classes(payload["severity"])
     ts = payload.get("timestamp", "")

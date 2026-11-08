@@ -1,6 +1,6 @@
-Status: PROCESSED (all-pass, 2026-11-08 UML drift-detection review)
+Status: PROCESSED (all-pass, 2026-11-08 Processing Issues rename/remount review)
 # Audit Report: Hardcoded Configuration & Path Violations
-Generated: 2026-11-08T12:29:43
+Generated: 2026-11-08T13:16:11
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-048 (deployment), ADR-031 (bootloader), ADR-053 (no app features name checks)
 

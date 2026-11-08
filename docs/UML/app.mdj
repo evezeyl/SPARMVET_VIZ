@@ -30371,6 +30371,67 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGht1xXtH0NHu0="
 									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhuxCO6vMlSQY=",
+									"_parent": {
+										"$ref": "AAAAAAGht1l62kuo/R0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhuxCO6vMhry0="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGht1l7nEuuuO8="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 610,
+									"width": 320,
+									"height": 70
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhuxDA//Od3Qk=",
+									"_parent": {
+										"$ref": "AAAAAAGht1l62kuo/R0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhuxDA//ObtCg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhuxDA//OeYgo=",
+											"_parent": {
+												"$ref": "AAAAAAGhuxDA//Od3Qk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 616,
+											"width": 308,
+											"height": 26,
+											"text": "Processing Issues: last 10 errors, fix/who guidance (F-26)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhuxCO6vMlSQY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 616,
+									"width": 308,
+									"height": 104,
+									"nameLabel": {
+										"$ref": "AAAAAAGhuxDA//OeYgo="
+									}
 								}
 							]
 						},
@@ -30381,6 +30442,48 @@
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
 							"name": "HOME",
+							"ownedElements": [
+								{
+									"_type": "WFPanel",
+									"_id": "AAAAAAGhuxCO6vMhry0=",
+									"_parent": {
+										"$ref": "AAAAAAGht1l7nEusbS0="
+									},
+									"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)",
+									"ownedElements": [
+										{
+											"_type": "WFText",
+											"_id": "AAAAAAGhuxDA//ObtCg=",
+											"_parent": {
+												"$ref": "AAAAAAGhuxCO6vMhry0="
+											},
+											"name": "Processing Issues: last 10 errors, fix/who guidance (F-26)"
+										}
+									],
+									"tags": [
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGhuxCO6vMi7AQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhuxCO6vMhry0="
+											},
+											"name": "status",
+											"kind": "string",
+											"value": "implemented"
+										},
+										{
+											"_type": "Tag",
+											"_id": "AAAAAAGhuxCO6vMj3oE=",
+											"_parent": {
+												"$ref": "AAAAAAGhuxCO6vMhry0="
+											},
+											"name": "code",
+											"kind": "string",
+											"value": "app/handlers/audit_stack.py:processing_issues_ui"
+										}
+									]
+								}
+							],
 							"tags": [
 								{
 									"_type": "Tag",
@@ -85304,8 +85407,50 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhurAqnNxSauo="
 									}
+								},
+								{
+									"_type": "FCPredefinedProcessView",
+									"_id": "AAAAAAGhuw8DaPHgwtY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhuw8DaPHeImY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhuw8DaPHhcfY=",
+											"_parent": {
+												"$ref": "AAAAAAGhuw8DaPHgwtY="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 15,
+											"top": 10,
+											"width": 112.06982421875,
+											"height": 13,
+											"text": "PredefinedProcess1",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"width": 137.06982421875,
+									"height": 33,
+									"nameLabel": {
+										"$ref": "AAAAAAGhuw8DaPHhcfY="
+									}
 								}
 							]
+						},
+						{
+							"_type": "FCPredefinedProcess",
+							"_id": "AAAAAAGhuw8DaPHeImY=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX2e9gbiPA="
+							},
+							"name": "PredefinedProcess1"
 						}
 					]
 				},

@@ -93,7 +93,7 @@ BLUEPRINT available. `data_contract_and_failures.md` rewritten to describe the f
 (the gate itself has no dedicated diagram — `data_contract_and_failures.md`'s prose covers it
 better than a sequence diagram would, same reasoning as D1/D3's "no diagram shows this well" cases).
 While wiring ADR-079 alongside this, found its own implementation was further along than its
-status line or `tasks.md` said: `session_pipeline_errors` capture and the `report.qmd` "Pipeline
+status line or `tasks.md` said: `session_processing_issues` capture and the `report.qmd` "Pipeline
 Issues During Session" section already existed (one catch point, VizFactory render failures) —
 corrected both the ADR-079 status line and the stale `PIPELINE-ERROR-WIRE-1` task description
 rather than re-building what was already there.
