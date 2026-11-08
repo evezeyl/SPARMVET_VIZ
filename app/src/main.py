@@ -12,14 +12,20 @@ from app.src.server import server
 # Vendored static assets (JS/CSS) served locally — no CDN dependency (air-gap safe).
 # www/ contains: vendor/{cytoscape,dagre,cytoscape-dagre,bootstrap-icons} at pinned versions.
 _www = Path(__file__).parent / "www"
-app = App(app_ui, server, static_assets=_www)
 
-# HELP-DOCS-1: Conditional docs bundling (ADR-061)
-# Pre-deployment: run `quarto render docs/` to generate docs/_site/
-# When docs/_site exists, it is mounted as static content accessible at /docs/
-# and a "Full documentation" link is shown in help modals (handlers use docs_available flag).
+# ADR-096: Conditional docs bundling. Pre-deployment: `quarto render docs/` writes
+# docs/_site/ (project.output-dir in docs/_quarto.yml). When present, it's mounted as
+# static content at /docs/ and the "Full Documentation" link in sidebar_nav_ui (gated
+# on docs_available) opens /docs/index.html in a new tab. A deployment that skips the
+# render simply shows no link — fails closed, never a broken link.
 _docs_site = Path(__file__).parent.parent.parent / "docs" / "_site"
 docs_available = _docs_site.exists()
+
+_static_assets = {"/": _www}
+if docs_available:
+    _static_assets["/docs"] = _docs_site
+
+app = App(app_ui, server, static_assets=_static_assets)
 
 if __name__ == "__main__":
     # Internal execution hook

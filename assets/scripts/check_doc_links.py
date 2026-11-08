@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 SKIP_PREFIXES = (".claude/tasks/config_rename_", ".claude/knowledge/architecture_decisions.md", "docs/_freeze/", ".claude/logs/", ".claude/tasks/archives/", ".claude/conversations/",
-                 ".claude/baselines/", "_book/", "tmp/", "tmpAI/")
+                 ".claude/baselines/", "_book/", "docs/_site/", "tmp/", "tmpAI/")
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 TICK = re.compile(r"`([A-Za-z0-9_.\-/]+\.[A-Za-z0-9]{1,5})`")
 ROOTS = ("app/", "libs/", "config/", "docs/", ".claude/", "assets/", "scripts/")

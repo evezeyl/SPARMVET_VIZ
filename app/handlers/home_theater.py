@@ -52,6 +52,11 @@ from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
 from app.handlers.data_import_handlers import define_data_import_server
 
+# ADR-096: same check as main.py's docs_available — duplicated here, not imported, to
+# avoid a circular import (main.py imports server, which imports this module).
+_DOCS_AVAILABLE = (Path(__file__).parent.parent.parent / "docs" / "_site").exists()
+_GITHUB_REPO_URL = "https://github.com/evezeyl/SPARMVET_VIZ"
+
 # ADR-036: Shiny input IDs must match ^[a-zA-Z0-9_]+$ — no spaces, emoji, or
 # punctuation. This sanitiser strips anything outside that set so data analysis recipe
 # group/plot labels can use any characters (including emoji) without breaking
@@ -1342,6 +1347,29 @@ def define_server(input, output, session, *,
             class_="btn btn-outline-secondary btn-sm w-100 mt-2",
             style="font-size:0.75rem;",
         )
+        # ADR-096: separate from the quick-reference modal above — gated independently on
+        # whether `quarto render docs/` was run for this deployment, so the short help
+        # keeps working even when the book wasn't built. Opens the book root, new tab.
+        docs_link = (
+            ui.tags.a(
+                "📖 Full Documentation",
+                href="/docs/index.html", target="_blank",
+                class_="btn btn-outline-secondary btn-sm w-100 mt-1",
+                style="font-size:0.75rem;",
+            )
+            if _DOCS_AVAILABLE else None
+        )
+        # Eve, 2026-11-08: left stack with Help/Docs, not the right sidebar — same
+        # reachability reasoning (ui_reachability_map.md), always visible regardless of
+        # deployment. Links to Eve's fork (where issues are actually filed), not the
+        # upstream org docs/_quarto.yml's repo-url points at.
+        github_link = ui.tags.a(
+            ui.tags.i(class_="bi bi-github me-1"), "GitHub",
+            href=_GITHUB_REPO_URL, target="_blank",
+            title="SPARMVET_VIZ on GitHub — file an issue, browse the source",
+            class_="btn btn-outline-secondary btn-sm w-100 mt-1",
+            style="font-size:0.75rem;",
+        )
         return ui.div(
             ui.navset_pill(
                 *nav_items,
@@ -1349,6 +1377,8 @@ def define_server(input, output, session, *,
                 header=badge,
             ),
             help_btn,
+            docs_link,
+            github_link,
         )
 
     # HELP-INLINE-1: workspace help modal

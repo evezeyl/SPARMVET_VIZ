@@ -1,6 +1,8 @@
 project:
   type: book
-  output-dir: ../_book
+  # ADR-096: output-dir is inside docs/, not the repo root (../_book) — the app serves
+  # this directory directly as a static mount (main.py's docs_available check).
+  output-dir: _site
 
 
 

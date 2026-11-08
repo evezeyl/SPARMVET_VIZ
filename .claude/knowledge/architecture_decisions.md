@@ -4568,3 +4568,69 @@ The fix built on a false premise about what the library layer actually raises.
 `_write_t3_ghost`), `app/handlers/export_handlers.py` (export error stub). Tests:
 `libs/utils/tests/test_pipeline_error.py` (carry-through + `capture_entry`, mutation-proven),
 `app/tests/test_write_t3_ghost_warning.py` (new, mutation-proven).
+
+## ADR-096: Ship the full Quarto book with the app — one book, one link, built at release time (2026-11-08)
+
+**Status:** IMPLEMENTED (2026-11-08)
+
+**Context:** The `? Help` button (HELP-INLINE-1) shows a short, per-workspace markdown
+quick-reference in a modal — useful, but not the full documentation. `docs/` is already a Quarto
+**book** (sidebar navigation + full-text search already configured in `docs/_quarto.yml`), built
+separately from the app and never shipped with it. A half-built stub for bundling it already
+existed in `app/src/main.py`: a `docs_available` flag computed by checking whether `docs/_site`
+exists, with a comment describing the intended mechanism — but never wired to anything. Found
+while planning this with Eve (2026-11-08):
+
+- The flag was computed but never read anywhere — `static_assets=_www` in `App(...)` never
+  conditionally added a second mount, and the help modal never checked the flag or showed a link.
+- **Path mismatch**: `docs/_quarto.yml`'s `project.output-dir` was `../_book` (repo-root `_book/`),
+  but `main.py` checked for `docs/_site/` — these never pointed at the same place, so the flag
+  would always resolve `False` even after a real `quarto render docs/`.
+- The stub's own comment cited "ADR-061" as the governing decision. ADR-061 is about Gallery
+  Theater collapsible panes — unrelated. A dangling citation, the same bug class as F-21
+  (`ADR-037`) and F-25 (34 mis-headed ADRs) found earlier this session: a citation with nothing
+  real behind it. This ADR is that missing decision, written for real this time.
+
+**Decision:**
+
+1. **One book, not deep-linked pages.** The "Full Documentation" link always opens the book's
+   root (`index.html`), in a new tab. Simpler than tracking a per-workspace → doc-page mapping,
+   and Quarto's own sidebar + search (already configured) get the user to the right chapter from
+   there — building a second navigation layer on top would duplicate what the book already does.
+2. **Two buttons, not one modal with two tabs.** `? Help` (left, existing) stays the short
+   per-workspace quick reference. A second button/link, shown only when `docs_available` is
+   `True`, opens the book. Kept as two separate, independently-gated affordances rather than
+   merging them — the short help has zero build dependency and must keep working even when the
+   book hasn't been rendered for this deployment; conflating them would make the quick reference's
+   availability depend on a Quarto build existing, which defeats its purpose as the always-there
+   fallback.
+3. **Built at release time, not at runtime.** `quarto render docs/` runs as a build/release step
+   (Docker image build, or a pre-deploy script — folds into the already-pending `DOCKER-RELEASE-1`
+   task), not inside the running app. Each shipped version carries the docs snapshot that matches
+   its own code, the way the walking-skeleton's other build artifacts work. A deployment that
+   skips the render simply doesn't show the link (`docs_available = False`) — fails closed, not
+   with a broken link.
+4. **Fix the path mismatch by changing the Quarto output, not the app's check.** `output-dir` in
+   `docs/_quarto.yml` changes to `_site` (so Quarto writes to `docs/_site/`, inside the project,
+   next to the source) rather than changing `main.py`'s check to match `../_book`. Keeps the built
+   output inside the same project subtree it documents, consistent with how `docs/_site/` was
+   already the name the stub's own comment used — the comment was right, the config just never
+   matched it.
+
+**Consequences:**
+
+- `app = App(app_ui, server, static_assets={...})` becomes a dict mount: `_www` at `/`, and
+  `docs/_site` at `/docs` only when `docs_available` is `True` — Shiny's `static_assets` already
+  accepts a `Mapping[str, Path]`, so this needed no new serving infrastructure, only using what
+  was already imported.
+- `check_doc_links.py`'s ignore list already excludes `_book/`; add `docs/_site/` to it too, so the
+  rendered HTML output is never scanned as if it were source markdown.
+- Does not touch the short-help content staleness (separate, already logged — `home.md` still
+  describes the pre-ADR-086 tier toggle, `gallery.md` still describes the ADR-093-removed Gallery→
+  Blueprint clone). That is a content fix, independent of this plumbing.
+- `DOCKER-RELEASE-1` gains a concrete sub-step: run `quarto render docs/` as part of the image
+  build, before the app starts.
+
+**Files touched:** `app/src/main.py` (dict `static_assets`), `docs/_quarto.yml` (`output-dir`),
+`app/handlers/home_theater.py` (the second link, `sidebar_nav_ui`), `assets/scripts/check_doc_links.py`
+(ignore list).
