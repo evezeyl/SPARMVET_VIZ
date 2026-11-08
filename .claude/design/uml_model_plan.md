@@ -49,6 +49,7 @@ Order is wide to narrow, and the table is in working order: context and containe
 | COM-REACTIVE-TESTLAB | Which output reads which reactive value, in TEST_LAB? | Flowchart | process |
 | **Data** | | | |
 | DM-CONFIG | Deployment, app features, launch variables, precedence | Class | logical |
+| DM-RECIPE | The data analysis recipe's own data model — Data schema, Join, Analysis group, Plot, Wrangling step | Class | logical |
 | REQ-CORE | Quality goals and the requirements that protect a correct result | SysML requirement | all |
 
 **Written (2026-11-07):** three text pages that go with the diagrams, because no diagram shows them
@@ -127,10 +128,37 @@ pattern to replicate: one `WFPanel` (tagged `status`/`code`/`flag`) per UI regio
 untagged `WFText` child carrying the same name as the visible label. **Later:** class diagrams of
 the core, data analysis recipe data model, other platforms.
 
-**Diagram export:** all 23 diagrams exported to `docs/UML/diagrams/*.png` via
+**Diagram export:** all 30 diagrams exported to `docs/UML/diagrams/*.png` via
 `staruml_export_diagrams` (re-run after any diagram change; PNGs are not auto-synced).
 
 UI-HOME uses StarUML's wireframe diagrams (panels, buttons, tabs as model elements). Each widget carries its Shiny id in `code` and its gate in `flag`, so the script can check it. It replaces the hand-drawn picture in `ui_panel_map_current.md`, which is already out of date (it still shows a T1/T2/T3 toggle).
+
+**Done (2026-11-08):** DM-RECIPE, the "Later" class diagram this section had deferred (data
+analysis recipe data model — Eve asked, when picking the next task, whether this and REQ-CORE
+were actually finished; both were, but this specific "Later" item was not). Five new classes
+(Data schema, Join, Analysis group, Plot, Wrangling step) plus the existing "Data analysis
+recipe" class reused from DM-CONFIG (D1 — one element, renamed once, shown on both diagrams).
+Code tags point at the real class that owns each shape (`ConfigManager` for data_schemas and the
+analysis_groups→plots flatten, `DataAssembler` for joins, `DataWrangler` for the canonical
+`action:` step format, `VizFactory` for plot specs); `adr` tags needed a detour first — ADR-041,
+ADR-012, ADR-024 all resolved, but trying `adr: ADR-014`/`ADR-013`/`ADR-024` on early drafts
+would have failed `audit_uml_model.py`'s own check: ADR-001 through ADR-034 were all headed
+`## ADR NNN:` (space) instead of `## ADR-NNN:` (hyphen), the only 34 headings in the whole file
+not matching the hyphenated convention every citation elsewhere already uses. Fixed first (F-25,
+pure rename, confirmed nothing parses the old form), then built DM-RECIPE on top of working
+citations.
+
+**Gotcha (2026-11-08):** a freshly created `UMLClassView` defaults `showProperty: true`, which
+renders every tag as a visible `{code="...", adr="...", status="..."}` line under the class name
+— directly contradicting D3 ("views hide the tags, so diagrams stay readable"). DM-CONFIG's
+existing classes don't show this only because someone (or an earlier session) had already set
+`showProperty: false` on each view; it is a per-view property, not a model-level or diagram-level
+default, and is not touched by `createModelAndView`'s other options. Any new `UMLClass` added to
+any diagram needs `app.engine.setProperty(classView, "showProperty", false)` as a follow-up step,
+or it silently breaks D3 for that one element. Diagnosed by comparing `nameCompartment.subViews`
+between a known-good DM-CONFIG view and a new one — the fourth `LabelView` (the tag line) existed
+identically in both, differing only in `visible`, which turned out to be computed from
+`showProperty`, not independently settable.
 
 ## 4. Outside check of this plan
 
