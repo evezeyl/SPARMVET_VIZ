@@ -1670,104 +1670,72 @@ def define_server(input, output, session, *,
     @render.ui
     def right_sidebar_content_ui():
         """
-        Context-sensitive right sidebar (ADR-039).
-        Switches content based on the active module.
+        Context-sensitive right sidebar (ADR-039, extended issue #42 Phase 3: every
+        workspace's right sidebar now goes through a shared panel registry, same
+        mechanism as the left side (ADR-073). Not identical wrapping, though — each
+        workspace's outer CSS class and empty-state fallback differ today and that
+        difference is preserved exactly, not unified away; see _build_right_sidebar.
         """
         active_sidebar = safe_input(input, "sidebar_nav", "Home")
 
-        # --- Blueprint Architect (Wrangle Studio) ---
-        if active_sidebar == "Wrangle Studio":
-            selected_node = safe_input(input, "blueprint_node_clicked", None)
-            stack = wrangle_studio.logic_stack.get()
-            step_count = len(stack)
-
-            node_info = ui.div(
-                ui.p("No node selected. Click a TubeMap node to begin surgical focus.",
-                     class_="text-muted small italic"),
-                class_="p-2"
+        def _render_blueprint_surgeon():
+            return ui.card(
+                ui.card_header(
+                    ui.div(ui.h5("Blueprint Surgeon", class_="mb-0"),
+                           class_="d-flex justify-content-center w-100")
+                ),
+                ui.div(
+                    ui.output_ui("bp_action_form_ui"),
+                    class_="p-2"
+                ),
+                class_="mb-2 shadow-sm border-0"
             )
-            if selected_node:
-                node_info = ui.div(
-                    ui.div(
-                        ui.span("🔬 ", class_="me-1"),
-                        ui.span(f"Focused: {selected_node}", class_="fw-bold"),
-                        class_="mb-1"
-                    ),
-                    ui.div(f"Logic stack: {step_count} step(s)", class_="text-muted small"),
-                    class_="p-2 bg-white border rounded shadow-sm mb-2"
-                )
 
-            parts = [
-                ui.card(
-                    ui.card_header(
-                        ui.div(ui.h5("Blueprint Surgeon", class_="mb-0"),
-                               class_="d-flex justify-content-center w-100")
-                    ),
-                    ui.div(
-                        ui.output_ui("bp_action_form_ui"),
-                        class_="p-2"
-                    ),
-                    class_="mb-2 shadow-sm border-0"
+        def _render_blueprint_action_help():
+            return ui.card(
+                ui.card_header(
+                    ui.div(ui.h5("Action Help", class_="mb-0"),
+                           class_="d-flex justify-content-center w-100")
                 ),
-                ui.card(
-                    ui.card_header(
-                        ui.div(ui.h5("Action Help", class_="mb-0"),
-                               class_="d-flex justify-content-center w-100")
-                    ),
-                    ui.output_ui("bp_help_panel_ui"),
-                    class_="mb-2 shadow-sm border-0"
-                ),
-                # VIZFAC-BLUEPRINT-FORM-1: plot_defaults editor (data analysis recipe root node)
-                ui.card(
-                    ui.card_header(
-                        ui.div(ui.h5("Plot Defaults", class_="mb-0"),
-                               class_="d-flex justify-content-center w-100")
-                    ),
-                    ui.output_ui("bp_plot_defaults_form_ui"),
-                    class_="mb-2 shadow-sm border-0"
-                ),
-            ]
-            # BP-BRANCH-NODE-1: Branch Node card (data_analysis_recipe_edit_enabled only)
-            if bootloader.is_enabled("data_analysis_recipe_edit_enabled"):
-                parts.append(
-                    ui.card(
-                        ui.card_header(
-                            ui.div(ui.h5("Branch Node", class_="mb-0"),
-                                   class_="d-flex justify-content-center w-100")
-                        ),
-                        ui.output_ui("bp_branch_ui"),
-                        class_="mb-2 shadow-sm border-0"
-                    )
-                )
-            if bootloader.is_enabled("blueprint_agent_enabled"):
-                parts.append(
-                    ui.card(
-                        ui.card_header(
-                            ui.div(ui.h5("Blueprint Agent", class_="mb-0"),
-                                   class_="d-flex justify-content-center w-100")
-                        ),
-                        ui.output_ui("blueprint_agent_panel_ui"),
-                        class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto"
-                    )
-                )
-            # Alerts moved to the left sidebar, 2026-11-08 (see the Wrangle Studio
-            # left-sidebar branch above) — blueprint_standard_right.yaml no longer
-            # lists notification_log, so this naturally stays empty here now.
-            blueprint_right_cfg = bootloader.get_sidebar_config("blueprint", "right")
-            blueprint_right_types = {s.get("type", "") for s in blueprint_right_cfg.panels}
-            if "notification_log" in blueprint_right_types:
-                parts.append(ui.output_ui("notification_log_panel_ui"))
-            return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")
+                ui.output_ui("bp_help_panel_ui"),
+                class_="mb-2 shadow-sm border-0"
+            )
 
-        # --- Home Theater (ADR-043 / ADR-044 / ADR-073) ---
-        if active_sidebar in ("Home", None, ""):
-            # Iterate right sidebar slot list for Home workspace.
-            right_cfg = bootloader.get_sidebar_config("home", "right")
-            right_types = {s.get("type", "") for s in right_cfg.panels}
+        def _render_blueprint_plot_defaults():
+            # VIZFAC-BLUEPRINT-FORM-1: plot_defaults editor (data analysis recipe root node)
+            return ui.card(
+                ui.card_header(
+                    ui.div(ui.h5("Plot Defaults", class_="mb-0"),
+                           class_="d-flex justify-content-center w-100")
+                ),
+                ui.output_ui("bp_plot_defaults_form_ui"),
+                class_="mb-2 shadow-sm border-0"
+            )
 
-            parts = []
-            if "audit_stack" in right_types and is_panel_active("audit_stack", bootloader):
-                parts.append(ui.card(
+        def _render_blueprint_branch_node():
+            # BP-BRANCH-NODE-1
+            return ui.card(
+                ui.card_header(
+                    ui.div(ui.h5("Branch Node", class_="mb-0"),
+                           class_="d-flex justify-content-center w-100")
+                ),
+                ui.output_ui("bp_branch_ui"),
+                class_="mb-2 shadow-sm border-0"
+            )
+
+        def _render_blueprint_agent_chat():
+            return ui.card(
+                ui.card_header(
+                    ui.div(ui.h5("Blueprint Agent", class_="mb-0"),
+                           class_="d-flex justify-content-center w-100")
+                ),
+                ui.output_ui("blueprint_agent_panel_ui"),
+                class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto"
+            )
+
+        def _render_audit_stack():
+            return ui.TagList(
+                ui.card(
                     ui.card_header(
                         ui.div(ui.h5("Pipeline Audit", class_="mb-0 fw-bold"),
                                class_="d-flex justify-content-center w-100"),
@@ -1785,97 +1753,130 @@ def define_server(input, output, session, *,
                         class_="p-2 spv-scroll-flex",
                     ),
                     class_="mb-2 shadow-sm border-0 d-flex flex-column spv-flex-1-auto",
-                ))
-                parts.append(ui.output_ui("audit_stack_tools_ui"))
+                ),
+                ui.output_ui("audit_stack_tools_ui"),
                 # The "Plot Style" panel (aesthetic_style_panel_ui, defined in audit_stack.py) is NOT
                 # mounted: letting users change in HOME what the data analysis recipe defines is too much for
                 # now, and using it broke the plot (test plan HOM-47). Its code is kept, unused, as
                 # an eventual enhancement (fork issue #15). To bring it back, add
-                # parts.append(ui.output_ui("aesthetic_style_panel_ui")) here, after fixing HOM-47.
+                # ui.output_ui("aesthetic_style_panel_ui") here, after fixing HOM-47.
+            )
 
-            if "notification_log" in right_types:
-                parts.append(ui.output_ui("notification_log_panel_ui"))
+        def _render_gallery_right_info():
+            return ui.card(
+                ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
+                ui.div(
+                    ui.p("📚 Browse visual examples.", class_="text-muted small p-2"),
+                    ui.p("Select an example to copy its YAML into the Architect sandbox.",
+                         class_="text-muted small px-2"),
+                    class_="p-1"
+                ),
+                class_="mb-2 shadow-sm border-0"
+            )
 
+        def _render_test_lab_right_info():
+            return ui.accordion(
+                ui.accordion_panel(
+                    "ID Reconciliation",
+                    ui.tags.small(
+                        "Match and align ID columns across related files before "
+                        "assembling a pipeline.",
+                        class_="text-muted d-block p-1",
+                    ),
+                    icon=ui.tags.i(class_="bi bi-link-45deg"),
+                ),
+                ui.accordion_panel(
+                    "Data analysis recipe Scaffolding",
+                    ui.tags.small(
+                        "Generate boilerplate pipeline data analysis recipe from uploaded files.",
+                        class_="text-muted d-block p-1",
+                    ),
+                    icon=ui.tags.i(class_="bi bi-file-earmark-code"),
+                ),
+                ui.accordion_panel(
+                    "Synthetic Data",
+                    ui.tags.small(
+                        "Generate demo or stress-test datasets from a schema or "
+                        "example file.",
+                        class_="text-muted d-block p-1",
+                    ),
+                    icon=ui.tags.i(class_="bi bi-table"),
+                ),
+                ui.accordion_panel(
+                    "Anonymisation",
+                    ui.tags.small(
+                        "Replace real IDs with consistent synthetic equivalents. "
+                        "Reversible via BLUEPRINT join.",
+                        class_="text-muted d-block p-1",
+                    ),
+                    icon=ui.tags.i(class_="bi bi-person-lock"),
+                ),
+                ui.accordion_panel(
+                    "File Reformatting",
+                    ui.tags.small(
+                        "Convert XLSX (multi-sheet) and CSV files to TSV.",
+                        class_="text-muted d-block p-1",
+                    ),
+                    icon=ui.tags.i(class_="bi bi-arrow-left-right"),
+                ),
+                id="test_lab_sidebar_accordion",
+                open=False,
+            )
+
+        _right_panel_renderers = {
+            "audit_stack":             _render_audit_stack,
+            "blueprint_surgeon":       _render_blueprint_surgeon,
+            "blueprint_action_help":   _render_blueprint_action_help,
+            "blueprint_plot_defaults": _render_blueprint_plot_defaults,
+            "blueprint_branch_node":   _render_blueprint_branch_node,
+            "blueprint_agent_chat":    _render_blueprint_agent_chat,
+            "gallery_right_info":      _render_gallery_right_info,
+            "test_lab_right_info":     _render_test_lab_right_info,
+        }
+
+        def _build_right_sidebar(workspace_key: str) -> list:
+            """Build the right sidebar's flat part list from a workspace's slot list
+            (ADR-073, issue #42 Phase 3). Returns a list for the caller to wrap --
+            each workspace keeps its own outer class and empty-state fallback, which
+            differ today (Home/Blueprint: flex-column h-100; Gallery/Test Lab: plain)
+            and are preserved exactly, not unified away."""
+            sidebar_cfg = bootloader.get_sidebar_config(workspace_key, "right")
+            parts = []
+            for slot in sidebar_cfg.panels:
+                ptype = slot.get("type", "")
+                if ptype == "notification_log":
+                    parts.append(ui.output_ui("notification_log_panel_ui"))
+                    continue
+                if not is_panel_active(ptype, bootloader):
+                    continue
+                renderer = _right_panel_renderers.get(ptype)
+                if renderer is None:
+                    print(f"[home_theater] No right-sidebar renderer for panel type '{ptype}' — skipping.")
+                    continue
+                block = renderer()
+                if block is not None:
+                    parts.append(block)
+            return parts
+
+        # --- Blueprint Architect (Wrangle Studio) ---
+        if active_sidebar == "Wrangle Studio":
+            return ui.div(*_build_right_sidebar("blueprint"),
+                           class_="sidebar-content p-0 d-flex flex-column h-100")
+
+        # --- Home Theater (ADR-043 / ADR-044 / ADR-073) ---
+        if active_sidebar in ("Home", None, ""):
+            parts = _build_right_sidebar("home")
             if not parts:
                 return ui.div(class_="sidebar-content p-0")
-
             return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")
 
         # --- Gallery ---
         if active_sidebar == "Gallery":
-            gallery_parts = [
-                ui.card(
-                    ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
-                    ui.div(
-                        ui.p("📚 Browse visual examples.", class_="text-muted small p-2"),
-                        ui.p("Select an example to copy its YAML into the Architect sandbox.",
-                             class_="text-muted small px-2"),
-                        class_="p-1"
-                    ),
-                    class_="mb-2 shadow-sm border-0"
-                ),
-            ]
-            # Alerts moved to the left sidebar, 2026-11-08 (see the Gallery left-sidebar
-            # branch above) — gallery_focus_right.yaml no longer lists notification_log,
-            # so this naturally stays empty here now.
-            gallery_right_cfg = bootloader.get_sidebar_config("gallery", "right")
-            gallery_right_types = {s.get("type", "") for s in gallery_right_cfg.panels}
-            if "notification_log" in gallery_right_types:
-                gallery_parts.append(ui.output_ui("notification_log_panel_ui"))
-            return ui.div(*gallery_parts, class_="sidebar-content p-0")
+            return ui.div(*_build_right_sidebar("gallery"), class_="sidebar-content p-0")
 
         # --- Test Lab ---
         if active_sidebar == "Test Lab":
-            return ui.div(
-                ui.accordion(
-                    ui.accordion_panel(
-                        "ID Reconciliation",
-                        ui.tags.small(
-                            "Match and align ID columns across related files before "
-                            "assembling a pipeline.",
-                            class_="text-muted d-block p-1",
-                        ),
-                        icon=ui.tags.i(class_="bi bi-link-45deg"),
-                    ),
-                    ui.accordion_panel(
-                        "Data analysis recipe Scaffolding",
-                        ui.tags.small(
-                            "Generate boilerplate pipeline data analysis recipe from uploaded files.",
-                            class_="text-muted d-block p-1",
-                        ),
-                        icon=ui.tags.i(class_="bi bi-file-earmark-code"),
-                    ),
-                    ui.accordion_panel(
-                        "Synthetic Data",
-                        ui.tags.small(
-                            "Generate demo or stress-test datasets from a schema or "
-                            "example file.",
-                            class_="text-muted d-block p-1",
-                        ),
-                        icon=ui.tags.i(class_="bi bi-table"),
-                    ),
-                    ui.accordion_panel(
-                        "Anonymisation",
-                        ui.tags.small(
-                            "Replace real IDs with consistent synthetic equivalents. "
-                            "Reversible via BLUEPRINT join.",
-                            class_="text-muted d-block p-1",
-                        ),
-                        icon=ui.tags.i(class_="bi bi-person-lock"),
-                    ),
-                    ui.accordion_panel(
-                        "File Reformatting",
-                        ui.tags.small(
-                            "Convert XLSX (multi-sheet) and CSV files to TSV.",
-                            class_="text-muted d-block p-1",
-                        ),
-                        icon=ui.tags.i(class_="bi bi-arrow-left-right"),
-                    ),
-                    id="test_lab_sidebar_accordion",
-                    open=False,
-                ),
-                class_="sidebar-content p-0",
-            )
+            return ui.div(*_build_right_sidebar("test_lab"), class_="sidebar-content p-0")
 
         # --- Default fallback ---
         return ui.div(

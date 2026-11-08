@@ -80,6 +80,30 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": "blueprint_enabled",
         "label": "Blueprint Recipe Editor",
     },
+    "blueprint_surgeon": {
+        "gate_flag": "blueprint_enabled",
+        "label": "Blueprint Surgeon",
+    },
+    "blueprint_action_help": {
+        "gate_flag": "blueprint_enabled",
+        "label": "Action Help",
+    },
+    "blueprint_plot_defaults": {
+        "gate_flag": "blueprint_enabled",
+        "label": "Plot Defaults",
+    },
+    "blueprint_branch_node": {
+        "gate_flag": "data_analysis_recipe_edit_enabled",
+        "label": "Branch Node",
+    },
+    "gallery_right_info": {
+        "gate_flag": "gallery_enabled",
+        "label": "Gallery Explorer",
+    },
+    "test_lab_right_info": {
+        "gate_flag": "test_lab_enabled",
+        "label": "Test Lab Tools (right)",
+    },
     "test_lab": {
         "gate_flag": "test_lab_enabled",
         "label": "Test Lab Tools",

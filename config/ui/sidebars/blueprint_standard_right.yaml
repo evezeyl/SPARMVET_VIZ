@@ -1,6 +1,15 @@
 visible: true
 panels:
-  - type: blueprint_logic
+  - type: blueprint_surgeon
+  - type: blueprint_action_help
+  - type: blueprint_plot_defaults
+  - type: blueprint_branch_node
   - type: blueprint_agent_chat
-# Alerts moved to the left sidebar, 2026-11-08 (Eve: same reachability fix as Home,
-# ui_reachability_map.md §5).
+# Eve/issue #42, 2026-11-08: corrected to the real panel set. The previous
+# [blueprint_logic, blueprint_agent_chat] never matched what rendered -- "blueprint_logic"
+# was not a real panel type, and right_sidebar_content_ui()'s Wrangle Studio branch
+# ignored this file entirely (same bypass pattern as the left sidebar, fixed in the
+# same issue). blueprint_branch_node is gated by data_analysis_recipe_edit_enabled,
+# blueprint_agent_chat by blueprint_agent_enabled -- both resolved via PANEL_REGISTRY
+# at render time, same as any other panel. Alerts stay on the left sidebar (moved
+# 2026-11-08, ui_reachability_map.md §5).

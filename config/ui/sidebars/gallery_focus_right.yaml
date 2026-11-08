@@ -1,8 +1,9 @@
 visible: true
-panels: []
-# Alerts moved to the left sidebar, 2026-11-08 (Eve: same reachability fix as Home,
-# ui_reachability_map.md §5). The right sidebar stays structurally present (visible:
-# true, empty slot list) and still shows the hardcoded "Gallery Explorer" static card
-# (right_sidebar_content_ui's Gallery branch) -- reserved for future modules (Eve:
-# "not so useful right now, but I am pretty sure we will need the space in further
-# developments"), not removed.
+panels:
+  - type: gallery_right_info
+# Eve/issue #42, 2026-11-08: corrected to the real panel -- the static "Gallery
+# Explorer" card always rendered here regardless of this file's content (panels: []
+# previously), same bypass pattern fixed on the left sidebar. Alerts stay on the left
+# sidebar (moved 2026-11-08, ui_reachability_map.md §5). Still reserved for future
+# modules beyond this one card (Eve: "not so useful right now, but I am pretty sure we
+# will need the space in further developments").

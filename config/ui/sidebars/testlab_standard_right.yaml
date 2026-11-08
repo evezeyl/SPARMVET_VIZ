@@ -1,2 +1,11 @@
 visible: false
 panels: []
+# Eve/issue #42, 2026-11-08: still visible:false, panels: [] -- SidebarValidator warns
+# if visible:false declares panels that can never render, so this stays empty (same
+# convention as other visible:false slots, e.g. standalone.yaml's test_lab left_sidebar).
+# test_lab_right_info is registered in PANEL_REGISTRY and has a renderer in
+# right_sidebar_content_ui() (what would show if this were ever flipped to visible:true),
+# but is deliberately not declared here while the side stays hidden. The
+# right_sidebar_content_ui() Test Lab branch that builds this accordion appears
+# structurally unreachable right now; that is a separate, smaller finding, out of
+# scope for issue #42.

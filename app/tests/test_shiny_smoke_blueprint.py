@@ -130,6 +130,24 @@ class TestBlueprintNavigation:
         _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
         reason="Blueprint requires developer or qa app features",
     )
+    def test_blueprint_right_sidebar_shows_its_panels(
+        self, page: Page, shiny_app: ShinyAppProc
+    ):
+        """Blueprint's right sidebar renders its real panel set (issue #42 Phase 3:
+        blueprint_standard_right.yaml used to declare [blueprint_logic,
+        blueprint_agent_chat] -- neither matched what actually rendered, since the
+        branch that built this sidebar ignored the file entirely). Checks the two
+        panels present in every developer/qa run regardless of gated flags."""
+        _navigate_to_blueprint(page, shiny_app.url)
+        right = page.locator("#audit_sidebar")
+        expect(right.get_by_text("Blueprint Surgeon", exact=True)).to_be_visible(timeout=8_000)
+        expect(right.get_by_text("Action Help", exact=True)).to_be_visible()
+        expect(right.get_by_text("Plot Defaults", exact=True)).to_be_visible()
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
     def test_no_startup_errors_in_blueprint(self, page: Page, shiny_app: ShinyAppProc):
         """No render errors or tracebacks after navigating to Blueprint."""
         _navigate_to_blueprint(page, shiny_app.url)
