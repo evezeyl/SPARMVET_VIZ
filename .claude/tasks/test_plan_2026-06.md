@@ -4,7 +4,7 @@
 **Created:** 2026-06-19
 **Baseline:** `dev` branch @ Phase 34 (TEST_LAB built, BLUEPRINT full feature set, legacy removals, 8 app features files)
 **Supersedes:** [`tasks_test_ui_current.md`](tasks_test_ui_current.md) (pinned to Phase 26 — stale; its still-open items are folded in here, see each `(carried)` tag)
-**Scope:** All four user spaces (HOME · BLUEPRINT · GALLERY · TEST_LAB) + configuration-file gating + cross-space workflow + regressions. Comprehensive, but **prioritised** — see §0.4.
+**Scope:** **Phase 2** — BLUEPRINT · GALLERY · TEST_LAB + configuration-file gating + cross-space workflow + the regression/CSS items not specific to HOME. **HOME itself was split out on 2026-11-08** into [`test_plan_home_2026-11.md`](test_plan_home_2026-11.md) (Eve: test what you actually see on launch, in that order, by itself, before anything else) — do that file first, then come back here. Comprehensive, but **prioritised** — see §0.4.
 
 > EVE: testing in google chrome - developper console - network - cache deactivated 
 ---
@@ -65,15 +65,17 @@ Rules of the loop: I never mark `[x]` (only you confirm a pass). You never edit 
 
 ### 0.4 Suggested testing order (priority — highest risk first)
 
-You don't have to do it all at once. Recommended path:
+**2026-11-08: HOME moved to its own file** (`test_plan_home_2026-11.md`) and goes first, by itself,
+end to end — that file has its own launch section and its own copy of the relevant REG/CSS items.
+Once it's done, this file picks up where it left off:
 
-1. **§1 Launch** (must pass before anything else)
-2. **§3 TEST_LAB** — brand new in Phase 34, never live-tested → highest payoff
-3. **§4 BLUEPRINT** — mostly new since Phase 26 (forms, joint designer, escape hatch, undo, branch, AI agent)
-4. **§5 HOME** — mature but on a stale baseline; re-verify core + new palette/cascade/apply UX
-5. **§6 GALLERY** — mature; lighter re-verify
-6. **§2 Configuration-file gating** — quick, can be done any time
-7. **§7 Cross-space**, **§8 Regression**, **§9 CSS backlog** — last
+1. **§3 TEST_LAB** — brand new in Phase 34, never live-tested → highest payoff
+2. **§4 BLUEPRINT** — mostly new since Phase 26 (forms, joint designer, escape hatch, undo, branch, AI agent)
+3. **§6 GALLERY** — mature; lighter re-verify
+4. **§2 Configuration-file gating** — quick, can be done any time; this is where HOME's own
+   *limitations* under `pipeline-static` etc. get checked, now that you've seen it at full capability
+5. **§7 Cross-space**, remaining **§8 Regression**/**§9 CSS backlog** (nothing HOME-specific left
+   here — see `test_plan_home_2026-11.md` §9/§10 for those) — last
 
 ### 0.5 Grep commands (self-serve at any time)
 
@@ -102,6 +104,10 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 
 ## 1. Launch & environment (PRE)
 
+> **PRE-01/02/03/05 moved to `test_plan_home_2026-11.md` §0** (first launch, default recipe,
+> switching recipe — all observed from inside HOME, tested there first). Only the config-file-switch
+> check stays here, since it's about a *different* config file, not HOME itself.
+
 > **Architecture note (2026-08-10 — read this before §2):** "App features" is not a fixed
 > enum the app understands — it's just a naming convention for a config file. The
 > `SPARMVET_APP_FEATURES` env var is passed straight to `Bootloader.set_app_features()`, which
@@ -114,22 +120,9 @@ grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 > do (`bootloader.is_enabled(flag)`, never an app features name check) — the test process
 > should mirror that, not contradict it.
 
-> **Verified working launch command** (boots to HTTP 200; checked 2026-06-19):
->
-> ```bash
-> cd /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
-> PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml ./.venv/bin/shiny run app/src/main.py --reload --port 8000
-> ```
-> Then open <http://127.0.0.1:8000>. `--reload` auto-restarts on code edits (useful during fix rounds).
-> **Note:** `python app/src/main.py` does **not** start a server (that file only prints banners) — the old checklist's launch line was wrong. Use `shiny run`.
-
 > **Switching config file = relaunch** pointing `SPARMVET_APP_FEATURES` at a different file. There is **no** in-app selector. All 8 files live in `config/app_features/` — full launch command per file in §2.
 
-- [~] PRE-01 — App boots clean (no Python traceback); browser console had 1 real bug + 2 noise items, 1 fixed. → [20260810_testing_part1.md#pre-01](20260810_testing_part1.md#pre-01-console-errors-on-first-launch) — RETEST ↻
-- [ ] PRE-02 — Browser loads at :8000 with no red error banner on first paint.
-- [ ] PRE-03 — Default data analysis recipe **ST22 Dummy Dataset** loads; center theater shows analysis-group tabs (Quality Control · Curiosity · Results · Cat 🐱).
 - [ ] PRE-04 — Relaunch pointing at `config/app_features/qa.yaml` → terminal shows `App features: config/app_features/qa.yaml`; app still boots clean. (qa's flags: everything on, `ghost_save: false`.)
-- [ ] PRE-05 — Switch data analysis recipe in the **Data analysis recipe Choice** sidebar dropdown to `2_test_data_ST22_dummy` → tabs change to AMR Profiling Insight · Plasmid Dynamics; plots reload, no traceback.
 
 ---
 
@@ -293,84 +286,10 @@ Most of this is already checked by automatic tests (`app/tests/test_bootloader_l
 
 ---
 
-## 5. HOME (HOM) — analysis space (re-verify + new)
+## 5. HOME — moved to its own file
 
-> Config file: `developer.yaml`, `qa.yaml`, `standalone.yaml`, or `pipeline-exploration-advanced.yaml` for full surface (all four set `t3_sandbox_enabled: true`).
-> Most of this passed at Phase 26 but on a stale baseline — re-verify the core, then test the genuinely-new palette/cascade/apply-UX items (marked **NEW**).
-> EVE: user facing template for testing is `developer.yaml`, data analysis recipe choice is 1_test_data_ST22_dummy
-
-### 5a. Tabs, plots, preview (core)
-- [x] HOM-01 — Group tabs = data analysis recipe `analysis_groups` (Quality Control · Curiosity · Results · Cat 🐱). No hardcoded tabs.
-  > EVE: ok - tested by changing data analysis recipe and observing changes in analyses groups
-- [x] HOM-02 — Each tab's plots render as static images; multi-plot groups expose plot **sub-tabs**.
-  > EVE: ok
-- [x] HOM-03 — **Data Preview** accordion below the plot shows ~100 rows of the active plot's dataset; updates on sub-tab switch.
-  > EVE: ok
-- [x] HOM-50 — The AMR heatmap (Results, `amr_heatmap`) draws, coloured by `predicted_phenotype`. Eve 2026-11-05. [#13](https://github.com/evezeyl/SPARMVET_VIZ/issues/13). *(Automated: all plots of the test data analysis recipes render, `app/tests/test_render_every_plot.py`.)*
-- [x] HOM-04 — (superseded, 2026-11-05) The old header strip (dataset label + tier radios) no longer exists: it is now the two-row strip of HOM-45 (ADR-086). The follow-ups it raised are HOM-40 to HOM-43, all done. → [20260810_testing_part1.md#hom-04-follow-ups](20260810_testing_part1.md#hom-04-follow-ups-tier-toggle--audit-scope-2026-08-10).
-- [x] HOM-37 — "All rows" toggle in Data Preview blanks the table entirely, no error shown. → [20260810_testing_part1.md#hom-37](20260810_testing_part1.md#hom-37--all-rows-toggle-blanks-the-data-preview-table-bug) — needs a terminal traceback to root-cause, see note. [#1](https://github.com/evezeyl/SPARMVET_VIZ/issues/1)
-> EVE: this was an error - all rows are showing correctly when toogle activated (can be delay if many rows). BUT the message is not clear - we need to know if it shows only a portion of the data or all the data. Would be nice to indicate data dimension of the full dataset that is shown (and when preview only - not all rows to know that is max first 100) 
-  > Merged into HOM-39 — same underlying ask (row-count clarity).
-- [x] HOM-38 — The word "Plot" in the plot panel header is blanked (redundant). Retested by Eve 2026-11-05 (open and collapse, single and Compare). [#16](https://github.com/evezeyl/SPARMVET_VIZ/issues/16) → [20260810_testing_part1.md#hom-38](20260810_testing_part1.md#hom-38--redundant-plot-accordion-title-above-each-plot)
-- [x] HOM-39 — Data Preview doesn't make the 100-row cap clear to the user; the total row count of the underlying table isn't shown anywhere, and (per HOM-37) it should also be clear whether "All rows" is showing a portion or everything. → [20260810_testing_part1.md#hom-39](20260810_testing_part1.md#hom-39--data-preview-100-row-cap-not-communicated) [#1](https://github.com/evezeyl/SPARMVET_VIZ/issues/1)
-- [x] HOM-41 — **FIXED**: committed T3 audit filters/column-drops no longer leak into T1/T2. → [20260810_testing_part1.md#hom-41](20260810_testing_part1.md#hom-41--t3-audit-nodes-leak-into-t1t2-reference-views-confirmed-bug)
-- [x] HOM-40 — A "Viewing: Raw / Result / My view" badge shows above each plot and in the Data Preview header, with "T2=T1" and "T3=T2" notes (the badge is not in the plot image, so not exported). Retested by Eve 2026-11-05. [#17](https://github.com/evezeyl/SPARMVET_VIZ/issues/17) → [20260810_testing_part1.md#hom-40](20260810_testing_part1.md#hom-40--no-explicit-viewing-tier-x-indicator)
-- [x] HOM-42 — **DECIDED**: covered by the "Compare" choice of **Plot to show** (T2 on the left, My view on the right), ADR-086, [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3). A one-line My view summary under the plot may follow later. — RETEST ↻
-- [x] HOM-43 — **FIXED**: Apply (exploration, every tier) and Send to Audit (T3-only, permanent) are now two distinct buttons instead of one that changed meaning by tier. → [20260810_testing_part1.md#hom-43](20260810_testing_part1.md#hom-43--t3-mode-has-no-exploration-only-filter-path) — RETEST ↻
-
-### 5b. Tier toggle
-- [x] HOM-05 — **Data to show** Raw → Result on `year_distribution` (AMR and Virulence group): the data preview shows all years on Raw and only 2023–2025 on Result. The plot does not change when you switch Raw/Result (plots never show T1, ADR-086). [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
-- [x] HOM-06 — My view (advanced+): Apply always explores; **"Send to Audit" appears when either "Plot to show" or "Data to show" is on My view** (and `t3_sandbox_enabled`); right sidebar Pipeline Audit shows Tier 2 (inherited) + Tier 3 (my adjustments) once something is committed. See HOM-43, ADR-085/086. [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
-- [ ] HOM-07 — Changing **Data to show** (T1→My view→T1) keeps the active plot sub-tab. *(carried: old §4c.)*
-- [ ] HOM-08 — Home→Gallery→Home **restores** the previously active group tab + sub-tab + tier. *(carried: old §4c had two boxes left unchecked — verify on current build.)*
-- [ ] HOM-44 `[!]` — On `year_distribution` (data analysis recipe "1_test_data_ST22_dummy", AMR and Virulence group), the Year axis renders discrete on T2 but continuous on T3/My view — same data, should look the same. → [20260810_testing_part1.md#hom-44](20260810_testing_part1.md#hom-44--year-axis-discrete-on-t2-but-continuous-on-t3my-view) — low urgency per EVE. Reproduced 2026-11-05: the axis turns continuous when the filter is on the year column itself (draft `issue-drafts/003_year-axis-continuous-in-my-view.md`).
-- [x] HOM-45 **NEW** — Header strip (ADR-086): two labelled rows "Plot to show" (Result / My view / Compare) and "Data to show" (Raw / Result / My view), defaults both Result. Plot choice affects only plots, data choice only the data preview/table. Compare absent when `comparison_mode_enabled` is false. Strip absent when `interactivity_enabled` is false. [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
-
-### 5c. Filters (T1/T2)
-- [ ] HOM-09 — String column: operators are `=` / `≠` / `∈ any of` / `∉ none of` (no `between`). Add row → staged; Apply → preview + plot update; Reset clears.
-- [ ] HOM-10 — Numeric column: operators include `↔ between` → two lo/hi inputs; inclusivity radios read `≤ inclusive` / `< exclusive` (single symbol).
-- [ ] HOM-11 — Int column shows integer default (`2022` not `2022.0`), step = 1.
-- [ ] HOM-12 — Multiple staged rows AND together; removing one updates the count and result.
-- [ ] HOM-13 `[?]` — **(carried, old §5b)** Filter selectize choices are **not** refreshed after Apply (excluded values still show in the picker). Decision: refresh choices from filtered data (cleaner) vs keep all so you can add filters back without Reset. Your call.
-
-### 5d. T3 audit (advanced+) — the reproducibility core
-- [ ] HOM-14 — Build a filter on a non-key column → `➜ Audit (1)` → **propagation modal** ("choose scope", no PK warning). Pick "This plot only" → pending yellow node with required reason input.
-- [ ] HOM-15 — Apply is **blocked** until the reason is non-empty; once filled, Apply commits; notification confirms; plot + preview reflect it; **other sub-tabs unaffected** (per-plot scoping).
-- [ ] HOM-16 — Filter on a **primary-key** column → modal shows ⚠️ PK warning; node renders with the PK-warning banner; operator is preserved verbatim (no silent flip to exclusion).
-- [ ] HOM-17 — "All plots" scope → node copied to every plot's stack (same id); "All plots except…" → multiselect excludes chosen plots.
-- [ ] HOM-18 — Drop a non-key column via the Data-Preview column selector → `➜ Audit drops (1)` → drop_column node; reason required; applies; column gone for this plot only.
-- [ ] HOM-19 — Attempt to drop a **join-key** column → blocked with a red "cannot drop join key" notification; no node added.
-- [ ] HOM-20 — Delete a committed node (🗑) → removed across all plots it was propagated to; data reverts.
-- [ ] HOM-21 `[~]` — **(carried, old §10)** Primary-key concept is unfamiliar to non-CS users. Add a short, plain-language hover/tooltip when filtering/removing a PK ("this is the column that links your tables; removing rows here changes what appears everywhere"). Confirm whether any such hint exists today; if not, mark `[~]` for me to add. Longer doc-page welcome too.
-
-### 5e. NEW — palette / plot-config cascade / apply UX
-- [ ] HOM-22 **NEW** — If a data analysis recipe declares `plot_defaults.palette` or a per-plot `palette:`, plots render in that palette. Switching data analysis recipes changes palette accordingly.
-- [b] HOM-23 `[b]` **(blocked since 2026-11-05: the Plot Style panel is not shown in HOME, issue [#15](https://github.com/evezeyl/SPARMVET_VIZ/issues/15); no authoring path)** **NEW** — `aesthetic_override` (T3 plot colour/fill/alpha/shape), **if an authoring path exists**, actually changes the rendered plot (not just recorded). If there's no UI to author it yet, mark `[b]` (VIZFAC-T3-OVERRIDE-1 may still be pending).
-- [b] HOM-47 — **Plot Style panel: decided 2026-11-05.** The panel (right sidebar of HOME, added 2026-05-11, commit fa5a78d) is the authoring UI of the T3 `aesthetic_override` (ADR-082). Using it broke the plot, and letting users change in HOME what the data analysis recipe defines is too much for now. **Decision (Eve):** the panel is **not shown in HOME**; its code is kept, unused, with a pointer comment at the mount point (`home_theater.py`); BLUEPRINT and ADR-082 are unchanged. It stays an **eventual enhancement** ([#15](https://github.com/evezeyl/SPARMVET_VIZ/issues/15), task UX-PLOTSTYLE-1 deferred), when we will also find why it broke the plot. Plot style that belongs to the data analysis recipe is a separate, later BLUEPRINT matter. Related: HOM-23 (blocked: no authoring path). Check: no "Plot Style" in the right sidebar (verified in a browser on 2026-11-05).
-- [ ] HOM-24 **NEW** — Apply-button UX improvements (UX-APPLY-IMPROVE-1, Phase 34): confirm the apply/pending states read clearly (disabled reason, pending badge). Note anything confusing.
-- [ ] HOM-25 — Integer axis breaks: `year_distribution` x-axis shows whole years (`2018`…`2025`), no `.0`; survives T1↔T2 toggling; no `MaxNLocator` traceback.
-
-### 5f. Session management (advanced+)
-- [ ] HOM-26 — Open Session Management; commit ≥2 T3 nodes across plots; save a named session.
-- [ ] HOM-27 — Restart app → session ghost auto-restores (or via "Restore"); committed T3 nodes reappear in their per-plot panels.
-- [ ] HOM-28 — Export Active Session (.zip) downloads the full session dir.
-- [ ] HOM-29 `[~]` — **(carried, old §14)** Show "Last auto-save: <timestamp>" in the Session Management panel so the user knows the ghost-save fired. Confirm if present; if not, `[~]`.
-- [ ] HOM-30 `[?]` — **(carried, old §14)** During the auto-save window, "Export Active Session" should either be disabled or trigger a save first (avoid exporting a stale/partial session). Decide the behaviour.
-
-### 5g. Export bundle
-- [ ] HOM-31 — Export panel: set a bundle label, pick format (PNG/SVG/PDF), pick scope (global / group / plot), click Export → `.zip` downloads.
-- [ ] HOM-32 — Bundle contains `plots/`, `data/` (T1+T2; T3 when advanced+T3 active), `data_analysis_recipes/`, `report.qmd` (with a **T3 Audit Trail** section when T3 nodes exist), `README.txt`. Filters present → `FILTERS.txt` included ("no trace, no export").
-- [ ] HOM-33 — `report.qmd` front-matter records data analysis recipe id + sha; methods text reads in plain English from active T3 nodes; PK-touching nodes carry the ⚠️ marker.
-- [ ] HOM-46 `[?]` **NEW (note from Eve, 2026-11-05)** — Export after an audit: the exported data analysis recipe must state **the data actually used**, not the default data. Check with a deployment that has `prefer_discovery: true` (data delivered into `raw_data`) and after a Data Import. Suspected gap: the bundle's `data_analysis_recipes/` holds a verbatim copy of the data analysis recipe, which still shows the default `source.path`, while the README/report list the data really used (`data_source_paths`). Decide how the bundle states which data was used. [ADR-088 point 5](../knowledge/architecture_decisions.md)
-
-### 5h. Data Import (advanced+/independent)
-- [x] HOM-34 — **Files: [`assets/test_uploads/`](../../assets/test_uploads/README.md) (`FastP_valid_changed.tsv`); restore afterwards with `git restore assets/test_data/`.** Data Import accordion: upload a TSV matching a schema → assignment table appears with the right dataset id pre-selected → Apply → plots reload, no traceback.
-- [x] HOM-35 — **Files: `assets/test_uploads/FastP_error_*.tsv` (4 files, expected result for each in its README).** Upload a file with wrong columns → per-file validation error (missing/mistyped columns); no data written, cache not busted.
-- [x] HOM-36 — **Files: `FastP_valid_changed.tsv` + `Bracken_valid_changed.tsv`.** Multi-file (Ctrl/⌘-select two) → independent dataset dropdowns; both apply.
-- [x] HOM-48 — **Files: `FastP_gap_text_in_numeric_column.tsv`.** Text in a numeric column is rejected at import with the column and the value named ("column 'total_reads' (numeric): 'abc'"); nothing is written; valid files still import. Eve 2026-11-05. [#11](https://github.com/evezeyl/SPARMVET_VIZ/issues/11)
-- [x] HOM-49 — The message for a rejected import file is readable (banner, normal text size, hint on its own line). Eve 2026-11-05. [#14](https://github.com/evezeyl/SPARMVET_VIZ/issues/14)
-- [x] HOM-51 — Rename a column header of a test data file (then `git restore assets/test_data/`) and open Home: it says "Data Assembly Failed" with the dataset and the reason, not a silently wrong plot. Eve 2026-11-05. [#18](https://github.com/evezeyl/SPARMVET_VIZ/issues/18)
-- [ ] HOM-52 **NEW (2026-11-08, never live-tested)** — A new **"Processing Issues"** panel now sits at the bottom of the left sidebar, in **every** config file including `pipeline-static` (it has no gate flag — this was a real bug: the panel existed since an earlier phase but was never actually mounted anywhere until now, see finding F-26 in `uml_findings.md`). It's empty when nothing has failed this session. Repeat HOM-51 (rename a column, open Home) and confirm: (a) the panel shows a red-bordered entry with component, timestamp, and problem text; (b) a "Fix (<who>): …" line appears below it with plain guidance, not just the problem restated; (c) the panel stays empty if you haven't triggered a failure yet, and empty again after `git restore`-ing the test data and relaunching. Also check it on `pipeline-static` specifically — that's the whole point of moving it left instead of right.
+See [`test_plan_home_2026-11.md`](test_plan_home_2026-11.md). Tested first, by itself, before
+anything in this file. All `HOM-*`, and the HOME-relevant `REG-*`/`CSS-*` items, live there now.
 
 ---
 
@@ -403,31 +322,20 @@ Most of this is already checked by automatic tests (`app/tests/test_bootloader_l
 
 ---
 
-## 8. Regression & legacy guards (REG)
+## 8. Regression & legacy guards — HOME items moved
 
-> Quick confirmations that previously-fixed bugs stay fixed and Phase-34 legacy removals didn't break the happy path.
-
-- [ ] REG-01 — STATE-1: no plot flicker on T3 toggle / panel switch.
-- [ ] REG-02 — STATE-2 / AUDIT-4: comparison T2/T3 toggle stays on the correct plot after a sub-tab switch.
-- [ ] REG-03 — UX-1 / BUG-PERF-1: plot rendering is reasonably fast; terminal shows `materialize_tier1` only on cache miss, not repeatedly. *(Also covered by automated tests since 2026-11-05: `app/tests/test_cache_chain.py`, `test_cache_keys.py`. The browser check is still yours.)*
-- [ ] REG-04 `[~]` — **(carried, old §17 UX-2)** "Visible columns" multiselect in Data Preview is narrower than its panel. Confirm; `[~]` if still present.
-- [x] REG-05 — **Plot to show** → Compare (advanced+): two panes, left labelled "T2 — Result (Reference)", right "My view"; on `year_distribution` both show only the T2 years (2023–2024) until a filter is applied. Back to Result → single plot. No stale compare state after leaving My view. [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
-- [ ] REG-06 — Notification log (`🔔 Alerts (N)`) in right sidebar: actions append newest-first with timestamps + colour; max 20 kept; persists across nav within a session.
-- [ ] REG-07 — Sidebar collapse: hide left sidebar → content fills width → re-show works after several cycles. *(carried: old §12 sidebar — left untested at Phase 26.)*
-- [ ] REG-08 — **Critical (carried)**: hide **both** sidebars (advanced+) → both toggles remain clickable → each sidebar can be re-expanded independently.
-- [ ] REG-09 — Legacy-removal smoke: the default data analysis recipes load and render without `ConfigurationError`/`TransformationError` (Phase 34 removed flat `plots:`, `string`/`character` type aliases, flat `wrangling:` lists — none of the shipped data analysis recipes should trip these). *(Also covered by automated tests since 2026-11-05: `app/tests/test_render_every_plot.py` renders all 15 plots of 3 data analysis recipes, `test_data_analysis_recipe_validator.py`, `test_data_analysis_recipe_data_check.py`. The browser check is still yours.)*
-- [~] REG-10 — Duplicate Shiny IDs (`notification_log_accordion`/`notification_log_panel_ui`) at launch. → [20260810_testing_part1.md#reg-10](20260810_testing_part1.md#reg-10--duplicate-shiny-ids-notification_log_accordion--notification_log_panel_ui) — root-caused + fixed, RETEST ↻
+All of `REG-01` through `REG-10` were HOME-observed and moved to
+[`test_plan_home_2026-11.md`](test_plan_home_2026-11.md) §9. Non-HOME regression items (if any
+surface while testing TEST_LAB/BLUEPRINT/GALLERY) get added here as they're found.
 
 ---
 
-## 9. Aesthetic / CSS homogenisation backlog (CSS)
+## 9. Aesthetic / CSS homogenisation backlog — HOME items moved
 
-> Eve's carried-over styling consistency items. Low urgency, batch-fixable. Authoritative palette/scale: `rules_css_style_spec.md` — I'll fix against that, not invent values.
-
-- [ ] CSS-01 `[~]` — **(carried, old §6/§10)** Trash/bin button in **filter** staged rows must match the trash/bin in the **audit** panel (same `btn-link` red style). Re-confirm they're identical on the current build.
-- [ ] CSS-05 — Free-find: while testing, note any colour/spacing/font that looks off-palette (Bootstrap blue `#0d6efd`, success green, etc.) with the panel name — I'll reconcile against the style spec.
-- [x] CSS-06 — "All rows" switch not aligned with "Data Preview" label in the Data Preview accordion header. → [20260810_testing_part1.md#css-06](20260810_testing_part1.md#css-06--all-rows-switch-not-aligned-with-data-preview-label) [#2](https://github.com/evezeyl/SPARMVET_VIZ/issues/2).
-- [x] CSS-07 — **Covered** by the "Compare" choice (sub-label "Result vs My view") in the **Plot to show** row, ADR-086, [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3). Check that the strip reads well: two aligned rows, labels not truncated. — RETEST ↻
+All of `CSS-01`, `CSS-05`, `CSS-06`, `CSS-07` were HOME-observed and moved to
+[`test_plan_home_2026-11.md`](test_plan_home_2026-11.md) §10. `GAL-06`/`GAL-07` (Gallery's own CSS
+carries) stay in §6 below, unaffected by the split. Authoritative palette/scale:
+`rules_css_style_spec.md`.
 
 ---
 
