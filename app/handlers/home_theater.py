@@ -1342,33 +1342,33 @@ def define_server(input, output, session, *,
             if bootloader.is_enabled("show_app_features_badge")
             else None
         )
+        # Eve, 2026-11-08: one compact icon row, not three stacked full-width buttons.
+        # Tooltips (title=) carry the label instead of button text.
         help_btn = ui.input_action_button(
-            "btn_help_ws", "? Help",
-            class_="btn btn-outline-secondary btn-sm w-100 mt-2",
-            style="font-size:0.75rem;",
+            "btn_help_ws", ui.tags.i(class_="bi bi-question-circle"),
+            class_="btn btn-outline-secondary btn-sm flex-fill",
+            title="Quick help for this workspace",
         )
-        # ADR-096: separate from the quick-reference modal above — gated independently on
-        # whether `quarto render docs/` was run for this deployment, so the short help
-        # keeps working even when the book wasn't built. Opens the book root, new tab.
+        # ADR-096: gated independently of the modal above — on whether `quarto render
+        # docs/` was run for this deployment, so quick help keeps working even when the
+        # book wasn't built. Opens the book root, new tab.
         docs_link = (
             ui.tags.a(
-                "📖 Full Documentation",
+                ui.tags.i(class_="bi bi-book"),
                 href="/docs/index.html", target="_blank",
-                class_="btn btn-outline-secondary btn-sm w-100 mt-1",
-                style="font-size:0.75rem;",
+                title="Full documentation (opens in a new tab)",
+                class_="btn btn-outline-secondary btn-sm flex-fill",
             )
             if _DOCS_AVAILABLE else None
         )
-        # Eve, 2026-11-08: left stack with Help/Docs, not the right sidebar — same
-        # reachability reasoning (ui_reachability_map.md), always visible regardless of
-        # deployment. Links to Eve's fork (where issues are actually filed), not the
-        # upstream org docs/_quarto.yml's repo-url points at.
+        # Left Navigation stack, not the right sidebar — same reachability reasoning as
+        # ui_reachability_map.md. Links to Eve's fork (where issues are actually filed),
+        # not the upstream org docs/_quarto.yml's repo-url points at.
         github_link = ui.tags.a(
-            ui.tags.i(class_="bi bi-github me-1"), "GitHub",
+            ui.tags.i(class_="bi bi-github"),
             href=_GITHUB_REPO_URL, target="_blank",
             title="SPARMVET_VIZ on GitHub — file an issue, browse the source",
-            class_="btn btn-outline-secondary btn-sm w-100 mt-1",
-            style="font-size:0.75rem;",
+            class_="btn btn-outline-secondary btn-sm flex-fill",
         )
         return ui.div(
             ui.navset_pill(
@@ -1376,9 +1376,7 @@ def define_server(input, output, session, *,
                 id="sidebar_nav",
                 header=badge,
             ),
-            help_btn,
-            docs_link,
-            github_link,
+            ui.div(help_btn, docs_link, github_link, class_="d-flex gap-1 mt-2"),
         )
 
     # HELP-INLINE-1: workspace help modal
