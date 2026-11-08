@@ -82,16 +82,23 @@ total *absence* of edges between its five tool clusters that `rules_test_lab.md 
 tool principle holds in the real wiring, not just in the rule text. Building COM-REACTIVE-GALLERY
 surfaced F-23 (`.claude/tasks/uml_findings.md`) — open, needs Eve.
 
-**Still open:** wireframes (UI-GALLERY, UI-BLUEPRINT,
-UI-TESTLAB) — tried for UI-GALLERY, blocked: `app.factory.createViewOf` for a `WFWebFrame`
-throws (`Cannot read properties of null (reading 'getViewType')`,
-`wireframe-factory.js:58` inside `defaultViewOnDiagramFn`) when called headlessly through the
-bridge's `staruml_run_script` — the wireframe factory functions appear to need an active
-StarUML editor/canvas context that scripted creation doesn't have, unlike the C4/UseCase
-factories which worked fine the same way. UI-HOME (the one existing wireframe) was built in an
-earlier session, possibly through the StarUML GUI directly rather than the bridge script API —
-worth checking how, before trying again. **Later:** class diagrams of the core, data analysis
-recipe data model, other platforms.
+**Done (2026-11-08):** wireframes UI-GALLERY (9 panels), UI-TESTLAB (8 panels), UI-BLUEPRINT (19
+panels, the 3-column layout of `ui_implementation_contract.md §7` — left sidebar / central
+theater / right sidebar, with the L1-L4 layer labels), same purpose as UI-HOME ("what is on the
+screen, what is each panel called in the code, and which flag shows it"). The earlier blocker is
+solved: `app.factory.createViewOf` on an existing model still throws the same
+`getViewType`/`wireframe-factory.js:58` error headlessly, but a single
+`app.factory.createModelAndView` call does not — use that, not the two-step
+create-model-then-create-view pattern, for any wireframe element. Second gotcha: the `x`/`y`/
+`width`/`height` options passed to `createModelAndView` are silently ignored for `WFPanel`/
+`WFText` (they land at `0,0`, size `16x16`, `containerView: null`, all stacked on top of each
+other) — position them in a second pass after creation by mutating `view.left`/`.top`/`.width`/
+`.height`/`.containerView` directly on the view objects, then re-render; no `staruml_layout_diagram`
+call (its generic auto-layout pulls wireframe children out of their frame entirely — tried once on
+UI-GALLERY, `app.repository.undo()` reverted it). UI-HOME's existing structure confirmed the
+pattern to replicate: one `WFPanel` (tagged `status`/`code`/`flag`) per UI region, with one
+untagged `WFText` child carrying the same name as the visible label. **Later:** class diagrams of
+the core, data analysis recipe data model, other platforms.
 
 **Diagram export:** all 23 diagrams exported to `docs/UML/diagrams/*.png` via
 `staruml_export_diagrams` (re-run after any diagram change; PNGs are not auto-synced).

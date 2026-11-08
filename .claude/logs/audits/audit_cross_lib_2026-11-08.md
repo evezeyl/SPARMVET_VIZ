@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (VALIDATE-UI-1 wiring sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (UI wireframes sweep)
 
 # Audit Report: ADR-011 Cross-Lib Violation Scan
-Generated: 2026-11-08T09:41:19
+Generated: 2026-11-08T09:47:06
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-011 / ADR-016 — Two-Tier Dependency Model
 

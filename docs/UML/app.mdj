@@ -67511,6 +67511,914 @@
 						"$ref": "AAAAAAGht+OPHqE+rU8="
 					},
 					"name": "gallery_browser_anchor (placeholder)"
+				},
+				{
+					"_type": "WFWireframe",
+					"_id": "AAAAAAGhulOV49XHb0I=",
+					"_parent": {
+						"$ref": "AAAAAAGht+OPHqE+rU8="
+					},
+					"name": "Wireframe1",
+					"ownedElements": [
+						{
+							"_type": "WFWireframeDiagram",
+							"_id": "AAAAAAGhulOV49XIHV4=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOV49XHb0I="
+							},
+							"name": "UI-GALLERY The screen",
+							"ownedViews": [
+								{
+									"_type": "WFWebFrameView",
+									"_id": "AAAAAAGhulOWmNXPH3A=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOWmNXMH10="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"width": 760,
+									"height": 620
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOW59XXDz0=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOW59XTUqU="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 20,
+									"width": 320,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOXNtXeWhw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOXNtXcX00="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOXNtXfdKs=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOXNtXeWhw="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 26,
+											"width": 308,
+											"height": 26,
+											"text": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOW59XXDz0="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 26,
+									"width": 308,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOXNtXfdKs="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOXiNXoZaM=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOXh9XkMo8="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 70,
+									"width": 320,
+									"height": 50
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOX39XvkdM=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOX39XtOI8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOX39Xwuas=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOX39XvkdM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 76,
+											"width": 308,
+											"height": 13,
+											"text": "Example: selector (gallery_example_select)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOXiNXoZaM="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 76,
+									"width": 308,
+									"height": 38,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOX39Xwuas="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOYOdX6IZ4=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOYOdX1ew4="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 130,
+									"width": 320,
+									"height": 160
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOYl9YCrnU=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOYl9YAqQI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOYl9YDx0g=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOYl9YCrnU="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 136,
+											"width": 308,
+											"height": 26,
+											"text": "Gallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOYOdX6IZ4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 136,
+									"width": 308,
+									"height": 130,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOYl9YDx0g="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOY8NYMbls=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOY8NYI+b0="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 360,
+									"top": 20,
+									"width": 380,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOZSdYTL+g=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOZSdYRuWM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOZSdYUBuE=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOZSdYTL+g="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 366,
+											"top": 26,
+											"width": 368,
+											"height": 13,
+											"text": "Title banner: 'Gallery Inspiration'",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOY8NYMbls="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 366,
+									"top": 26,
+									"width": 368,
+									"height": 52,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOZSdYUBuE="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOZtNYduhE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOZtNYZ2aM="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 360,
+									"top": 70,
+									"width": 380,
+									"height": 140
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOaDtYkpYo=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOaDdYiXQ8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOaDtYlhVo=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOaDtYkpYo="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 366,
+											"top": 76,
+											"width": 368,
+											"height": 13,
+											"text": "Preview, collapsible (gallery_preview_img)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOZtNYduhE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 366,
+									"top": 76,
+									"width": 368,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOaDtYlhVo="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOaY9Yu4mI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOaYtYqnYw="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 360,
+									"top": 220,
+									"width": 380,
+									"height": 100
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulObNtY1f08=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulObNtYzG0s="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulObNtY2wmk=",
+											"_parent": {
+												"$ref": "AAAAAAGhulObNtY1f08="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 366,
+											"top": 226,
+											"width": 368,
+											"height": 13,
+											"text": "Guidance (example_meta.md rendered) (gallery_md_content)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOaY9Yu4mI="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 366,
+									"top": 226,
+									"width": 368,
+									"height": 52,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulObNtY2wmk="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulObldY/b34=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulObldY7E+g="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 360,
+									"top": 330,
+									"width": 180,
+									"height": 120
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOb+9ZGHV8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOb+9ZE3qA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOb+9ZHCI4=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOb+9ZGHV8="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 366,
+											"top": 336,
+											"width": 168,
+											"height": 26,
+											"text": "Example data table (gallery_static_data)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulObldY/b34="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 366,
+									"top": 336,
+									"width": 168,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOb+9ZHCI4="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOcUdZQ0PY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOcUdZMnuE="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 550,
+									"top": 330,
+									"width": 190,
+									"height": 120
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOcq9ZXa3w=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOcq9ZVpwI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOcq9ZY9S0=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOcq9ZXa3w="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 556,
+											"top": 336,
+											"width": 178,
+											"height": 26,
+											"text": "Raw YAML preview, copy by hand (gallery_yaml_preview)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOcUdZQ0PY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 556,
+									"top": 336,
+									"width": 178,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOcq9ZY9S0="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulOdB9ZgdkI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOdBtZdDL4="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulOWmNXPH3A="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 300,
+									"width": 320,
+									"height": 60
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulOdY9Zm0yI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOV49XIHV4="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulOdYtZkTuU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulOdY9ZnDyw=",
+											"_parent": {
+												"$ref": "AAAAAAGhulOdY9Zm0yI="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 306,
+											"width": 308,
+											"height": 26,
+											"text": "No interactive handoff into any other space (ADR-093)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulOdB9ZgdkI="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 306,
+									"width": 308,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulOdY9ZnDyw="
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"_type": "WFWebFrame",
+					"_id": "AAAAAAGhulOWmNXMH10=",
+					"_parent": {
+						"$ref": "AAAAAAGht+OPHqE+rU8="
+					},
+					"name": "GALLERY",
+					"ownedElements": [
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOW59XTUqU=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOXNtXcX00=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOW59XTUqU="
+									},
+									"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOW59XU9AY=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOW59XVwxg=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:sidebar_nav_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOXh9XkMo8=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Example: selector (gallery_example_select)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOX39XtOI8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOXh9XkMo8="
+									},
+									"name": "Example: selector (gallery_example_select)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOXh9XllD4=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOXiNXmYgE=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/gallery_viewer.py:build_sidebar_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOYOdX1ew4=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Gallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOYl9YAqQI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOYOdX1ew4="
+									},
+									"name": "Gallery Taxonomy: Family, Pattern, Difficulty, Geom, Show, Sample size; Apply"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOYOdX2BOc=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOYOdX3Yh8=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/gallery_handlers.py:_update_gallery_options"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOYOdX4zzk=",
+									"name": "flag",
+									"kind": "string",
+									"value": "gallery_enabled"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOY8NYI+b0=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Title banner: 'Gallery Inspiration'",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOZSdYRuWM=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOY8NYI+b0="
+									},
+									"name": "Title banner: 'Gallery Inspiration'"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOY8NYJJb4=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOY8NYKdt0=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/gallery_viewer.py:render_explorer_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOZtNYZ2aM=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Preview, collapsible (gallery_preview_img)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOaDdYiXQ8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOZtNYZ2aM="
+									},
+									"name": "Preview, collapsible (gallery_preview_img)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOZtNYaRIY=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOZtNYbYKA=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/gallery_handlers.py:gallery_preview_img"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOaYtYqnYw=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Guidance (example_meta.md rendered) (gallery_md_content)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulObNtYzG0s=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOaYtYqnYw="
+									},
+									"name": "Guidance (example_meta.md rendered) (gallery_md_content)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOaYtYrRIk=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOaY9YsbIM=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/gallery_handlers.py:gallery_md_content"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulObldY7E+g=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Example data table (gallery_static_data)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOb+9ZE3qA=",
+									"_parent": {
+										"$ref": "AAAAAAGhulObldY7E+g="
+									},
+									"name": "Example data table (gallery_static_data)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulObldY8iic=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulObldY9O1s=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/gallery_handlers.py:gallery_static_data"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOcUdZMnuE=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "Raw YAML preview, copy by hand (gallery_yaml_preview)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOcq9ZVpwI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOcUdZMnuE="
+									},
+									"name": "Raw YAML preview, copy by hand (gallery_yaml_preview)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOcUdZNuH4=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOcUdZONUE=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/gallery_handlers.py:gallery_yaml_preview"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulOdBtZdDL4=",
+							"_parent": {
+								"$ref": "AAAAAAGhulOWmNXMH10="
+							},
+							"name": "No interactive handoff into any other space (ADR-093)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulOdYtZkTuU=",
+									"_parent": {
+										"$ref": "AAAAAAGhulOdBtZdDL4="
+									},
+									"name": "No interactive handoff into any other space (ADR-093)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulOdBtZe+tQ=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							]
+						}
+					],
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhulOWmNXN/oo=",
+							"name": "status",
+							"kind": "string",
+							"value": "implemented"
+						}
+					]
 				}
 			]
 		},
@@ -78867,6 +79775,1892 @@
 						"$ref": "AAAAAAGht+RueKvnUGY="
 					},
 					"name": "bp_draft_status_ui"
+				},
+				{
+					"_type": "WFWireframe",
+					"_id": "AAAAAAGhulX2e9gbiPA=",
+					"_parent": {
+						"$ref": "AAAAAAGht+RueKvnUGY="
+					},
+					"name": "Wireframe1",
+					"ownedElements": [
+						{
+							"_type": "WFWireframeDiagram",
+							"_id": "AAAAAAGhulX2e9gcguc=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX2e9gbiPA="
+							},
+							"name": "UI-BLUEPRINT The screen",
+							"ownedViews": [
+								{
+									"_type": "WFWebFrameView",
+									"_id": "AAAAAAGhulX3NtgjXS4=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX3NdggWVw="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"width": 1020,
+									"height": 800
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX3utgruD4=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX3utgnDWk="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 20,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX4D9gyWXs=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX4D9gwzHY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX4D9gzZvE=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX4D9gyWXs="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 26,
+											"width": 208,
+											"height": 26,
+											"text": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX3utgruD4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 26,
+									"width": 208,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX4D9gzZvE="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX4Ztg9oTQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX4Zdg4+yI="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 70,
+									"width": 220,
+									"height": 60
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX4vdhF4rE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX4vdhDI3M="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX4vdhGKRc=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX4vdhF4rE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 76,
+											"width": 208,
+											"height": 39,
+											"text": "Blueprint nav: data analysis recipe selector, TubeMap node picker, Lineage Rail",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX4Ztg9oTQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 76,
+									"width": 208,
+									"height": 143,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX4vdhGKRc="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX5GNhPqfI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX5GNhLQuA="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 140,
+									"width": 220,
+									"height": 50
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX5bthWOTQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX5bthUWQY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX5bthXzq0=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX5bthWOTQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 146,
+											"width": 208,
+											"height": 26,
+											"text": "Data edit: normalize fields, upload replace/append, save internal",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX5GNhPqfI="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 146,
+									"width": 208,
+									"height": 65,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX5bthXzq0="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX5ythghsw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX5ythc1go="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 200,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX6IdhnJVY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX6IdhlKwg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX6Ithoa84=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX6IdhnJVY="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 206,
+											"width": 208,
+											"height": 26,
+											"text": "Data analysis recipe Info: info: block read/edit form",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX5ythghsw="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 206,
+									"width": 208,
+									"height": 104,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX6Ithoa84="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX6edhxJIY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX6edhtSq8="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 250,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX61dh4G38=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX61dh2x4o="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX61dh5NS0=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX61dh4G38="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 256,
+											"width": 208,
+											"height": 26,
+											"text": "Groups/Plots inventory: CRUD for analysis_groups",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX6edhxJIY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 256,
+									"width": 208,
+									"height": 52,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX61dh5NS0="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX7ONiCRsE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX7ONh+uWs="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 300,
+									"width": 220,
+									"height": 60
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX7ltiJzP8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX7ltiHATI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX7ltiKSK8=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX7ltiJzP8="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 306,
+											"width": 208,
+											"height": 39,
+											"text": "Validate: structure + data-vs-contract checks, Run validation button",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX7ONiCRsE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 306,
+									"width": 208,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX7ltiKSK8="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX7/NiT0SY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX7/NiPDsM="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 370,
+									"width": 220,
+									"height": 30
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX8WNia81w=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX8WNiYHrE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX8WNibh+E=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX8WNia81w="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 376,
+											"width": 208,
+											"height": 26,
+											"text": "Draft autosave status (BP-AUTOSAVE-1)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX7/NiT0SY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 376,
+									"width": 208,
+									"height": 39,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX8WNibh+E="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX8vNilTYQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX8vNigMvM="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 260,
+									"top": 20,
+									"width": 440,
+									"height": 170
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX9L9iteUc=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX9L9irInY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX9L9iuDrw=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX9L9iteUc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 266,
+											"top": 26,
+											"width": 428,
+											"height": 13,
+											"text": "TubeMap: interactive DAG, collapsible (L1 Navigation)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX8vNilTYQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 266,
+									"top": 26,
+									"width": 428,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX9L9iuDrw="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX9k9i3vCQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX9k9izJOs="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 260,
+									"top": 200,
+									"width": 440,
+									"height": 240
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX97ti+ejM=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX97ti8XLE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX97ti/hvc=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX97ti+ejM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 266,
+											"top": 206,
+											"width": 428,
+											"height": 13,
+											"text": "Live Visualization: the active component's plot (L3 Data view)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX9k9i3vCQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 266,
+									"top": 206,
+									"width": 428,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX97ti/hvc="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX+StjIQvY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX+StjEVg0="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 260,
+									"top": 450,
+									"width": 440,
+									"height": 150
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX+p9jPMwI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX+p9jNZKw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX+p9jQlgM=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX+p9jPMwI="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 266,
+											"top": 456,
+											"width": 428,
+											"height": 13,
+											"text": "Live Data Glimpse: table, on-Apply (L3 Data view)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX+StjIQvY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 266,
+									"top": 456,
+									"width": 428,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX+p9jQlgM="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX/GtjaiO0=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX/GtjVFEs="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 720,
+									"top": 20,
+									"width": 280,
+									"height": 150
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulX/hdjiiUQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX/hdjgeyw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulX/hdjjChk=",
+											"_parent": {
+												"$ref": "AAAAAAGhulX/hdjiiUQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 726,
+											"top": 26,
+											"width": 268,
+											"height": 26,
+											"text": "Right sidebar: action/component picker, ui_schema-generated form, Apply (L2 Forms)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX/GtjaiO0="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 726,
+									"top": 26,
+									"width": 268,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulX/hdjjChk="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulX/7tjsnKY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulX/7tjoTcI="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 720,
+									"top": 180,
+									"width": 280,
+									"height": 120
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYAVNjzlqk=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYAVNjx/vI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYAVNj0RdU=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYAVNjzlqk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 726,
+											"top": 186,
+											"width": 268,
+											"height": 26,
+											"text": "Joint Designer: left+right schema, key pickers, live preview, Apply (L2 Forms)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulX/7tjsnKY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 726,
+									"top": 186,
+									"width": 268,
+									"height": 143,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYAVNj0RdU="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulYAt9j9jKY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYAt9j5JGw="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 720,
+									"top": 310,
+									"width": 280,
+									"height": 90
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYBH9kEznE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYBH9kC11E="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYBH9kFtNQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYBH9kEznE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 726,
+											"top": 316,
+											"width": 268,
+											"height": 26,
+											"text": "Branch Designer: lineage bifurcation at a node, preview, write",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulYAt9j9jKY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 726,
+									"top": 316,
+									"width": 268,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYBH9kFtNQ="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulYBh9kOLgU=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYBhtkKhKk="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 720,
+									"top": 410,
+									"width": 280,
+									"height": 70
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYB6tkVnt4=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYB6tkTIyI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYB6tkWZds=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYB6tkVnt4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 726,
+											"top": 416,
+											"width": 268,
+											"height": 13,
+											"text": "Plot Defaults form: palette, theme, layout",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulYBh9kOLgU="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 726,
+									"top": 416,
+									"width": 268,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYB6tkWZds="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulYCUNkgvIU=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYCUNkboNQ="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 720,
+									"top": 490,
+									"width": 280,
+									"height": 70
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYCvtkorCk=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYCvtkm9fA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYCvtkpLHQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYCvtkorCk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 726,
+											"top": 496,
+											"width": 268,
+											"height": 26,
+											"text": "YAML escape hatch: read-only or editable textarea (L4 Helpers)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulYCUNkgvIU="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 726,
+									"top": 496,
+									"width": 268,
+									"height": 117,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYCvtkpLHQ="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulYDcdkzWmQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYDcNkumJE="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 720,
+									"top": 570,
+									"width": 280,
+									"height": 90
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYD39k7IJI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYD39k5iH8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYD39k8lIA=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYD39k7IJI="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 726,
+											"top": 576,
+											"width": 268,
+											"height": 13,
+											"text": "AI Agent chat panel (L4 Helpers)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulYDcdkzWmQ="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 726,
+									"top": 576,
+									"width": 268,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYD39k8lIA="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulYEUNlF0qI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYEUNlBPIk="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 460,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYEudlMQ50=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYEudlK5cc="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYEudlN2Ik=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYEudlMQ50="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 466,
+											"width": 208,
+											"height": 26,
+											"text": "Export: download data analysis recipe ZIP",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulYEUNlF0qI="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 466,
+									"width": 208,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYEudlN2Ik="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulYFItlW6g8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYFItlSQT0="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 410,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYFitld18Y=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYFitlbSUI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYFitlemBk=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYFitld18Y="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 416,
+											"width": 208,
+											"height": 26,
+											"text": "New data analysis recipe: create from scratch",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulYFItlW6g8="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 416,
+									"width": 208,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYFitlemBk="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulYGS9lmJmU=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYGS9lj5Bo="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulX3NtgjXS4="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 720,
+									"top": 670,
+									"width": 280,
+									"height": 60
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulYGstlsuIw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX2e9gcguc="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulYGstlqsW8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulYGstlteVA=",
+											"_parent": {
+												"$ref": "AAAAAAGhulYGstlsuIw="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 726,
+											"top": 676,
+											"width": 268,
+											"height": 39,
+											"text": "Undo: 20-step session deque — not wired to a visible button yet (STM-NODE-adjacent gap, UNDO-WIRE-1)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulYGS9lmJmU="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 726,
+									"top": 676,
+									"width": 268,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulYGstlteVA="
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"_type": "WFWebFrame",
+					"_id": "AAAAAAGhulX3NdggWVw=",
+					"_parent": {
+						"$ref": "AAAAAAGht+RueKvnUGY="
+					},
+					"name": "BLUEPRINT",
+					"ownedElements": [
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX3utgnDWk=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX4D9gwzHY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX3utgnDWk="
+									},
+									"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX3utgo9OU=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX3utgpXsw=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:sidebar_nav_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX4Zdg4+yI=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Blueprint nav: data analysis recipe selector, TubeMap node picker, Lineage Rail",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX4vdhDI3M=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX4Zdg4+yI="
+									},
+									"name": "Blueprint nav: data analysis recipe selector, TubeMap node picker, Lineage Rail"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX4Zdg5e1I=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX4Ztg64vo=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_init_wrangle_data_analysis_recipes"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX4Ztg71u8=",
+									"name": "flag",
+									"kind": "string",
+									"value": "blueprint_enabled"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX5GNhLQuA=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Data edit: normalize fields, upload replace/append, save internal",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX5bthUWQY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX5GNhLQuA="
+									},
+									"name": "Data edit: normalize fields, upload replace/append, save internal"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX5GNhM7LY=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX5GNhNCoI=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_handle_data_analysis_recipe_save_internal"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX5ythc1go=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Data analysis recipe Info: info: block read/edit form",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX6IdhlKwg=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX5ythc1go="
+									},
+									"name": "Data analysis recipe Info: info: block read/edit form"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX5ythds58=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX5ytheqJU=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:bp_meta_form_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX6edhtSq8=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Groups/Plots inventory: CRUD for analysis_groups",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX61dh2x4o=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX6edhtSq8="
+									},
+									"name": "Groups/Plots inventory: CRUD for analysis_groups"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX6edhuYsQ=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX6edhvZ/s=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:bp_groups_inventory_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX7ONh+uWs=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Validate: structure + data-vs-contract checks, Run validation button",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX7ltiHATI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX7ONh+uWs="
+									},
+									"name": "Validate: structure + data-vs-contract checks, Run validation button"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX7ONh/ejI=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX7ONiAwmM=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:bp_validate_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX7/NiPDsM=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Draft autosave status (BP-AUTOSAVE-1)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX8WNiYHrE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX7/NiPDsM="
+									},
+									"name": "Draft autosave status (BP-AUTOSAVE-1)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX7/NiQmno=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX7/NiR+bM=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:bp_draft_status_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX8vNigMvM=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "TubeMap: interactive DAG, collapsible (L1 Navigation)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX9L9irInY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX8vNigMvM="
+									},
+									"name": "TubeMap: interactive DAG, collapsible (L1 Navigation)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX8vNihkco=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX8vNiipsw=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_sync_selector_from_node_click"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX8vNijc1M=",
+									"name": "flag",
+									"kind": "string",
+									"value": "blueprint_enabled"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX9k9izJOs=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Live Visualization: the active component's plot (L3 Data view)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX97ti8XLE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX9k9izJOs="
+									},
+									"name": "Live Visualization: the active component's plot (L3 Data view)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX9k9i0W3k=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX9k9i1ifg=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_bp_apply_node_handler"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX+StjEVg0=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Live Data Glimpse: table, on-Apply (L3 Data view)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX+p9jNZKw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX+StjEVg0="
+									},
+									"name": "Live Data Glimpse: table, on-Apply (L3 Data view)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX+StjFkYU=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX+StjGZsc=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_bp_apply_node_handler"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX/GtjVFEs=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Right sidebar: action/component picker, ui_schema-generated form, Apply (L2 Forms)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulX/hdjgeyw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX/GtjVFEs="
+									},
+									"name": "Right sidebar: action/component picker, ui_schema-generated form, Apply (L2 Forms)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX/GtjW0fc=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX/GtjXGwI=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_bp_apply_node_handler"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX/GtjYVPo=",
+									"name": "flag",
+									"kind": "string",
+									"value": "blueprint_enabled"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulX/7tjoTcI=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Joint Designer: left+right schema, key pickers, live preview, Apply (L2 Forms)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYAVNjx/vI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulX/7tjoTcI="
+									},
+									"name": "Joint Designer: left+right schema, key pickers, live preview, Apply (L2 Forms)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX/7tjpBJ8=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulX/7tjq/iI=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:joint_designer_status_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulYAt9j5JGw=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Branch Designer: lineage bifurcation at a node, preview, write",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYBH9kC11E=",
+									"_parent": {
+										"$ref": "AAAAAAGhulYAt9j5JGw="
+									},
+									"name": "Branch Designer: lineage bifurcation at a node, preview, write"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYAt9j6xAM=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYAt9j7p3k=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:bp_branch_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulYBhtkKhKk=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Plot Defaults form: palette, theme, layout",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYB6tkTIyI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulYBhtkKhKk="
+									},
+									"name": "Plot Defaults form: palette, theme, layout"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYBhtkL0U8=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYBhtkMuR4=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:bp_plot_defaults_form_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulYCUNkboNQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "YAML escape hatch: read-only or editable textarea (L4 Helpers)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYCvtkm9fA=",
+									"_parent": {
+										"$ref": "AAAAAAGhulYCUNkboNQ="
+									},
+									"name": "YAML escape hatch: read-only or editable textarea (L4 Helpers)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYCUNkcTNM=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYCUNkdSwA=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_bp_save_yaml_hatch"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYCUNkeuA4=",
+									"name": "flag",
+									"kind": "string",
+									"value": "data_analysis_recipe_edit_enabled"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulYDcNkumJE=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "AI Agent chat panel (L4 Helpers)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYD39k5iH8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulYDcNkumJE="
+									},
+									"name": "AI Agent chat panel (L4 Helpers)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYDcNkvuPc=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYDcNkwKPE=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:blueprint_agent_panel_ui"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYDcNkx8Pc=",
+									"name": "flag",
+									"kind": "string",
+									"value": "blueprint_agent_enabled"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulYEUNlBPIk=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Export: download data analysis recipe ZIP",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYEudlK5cc=",
+									"_parent": {
+										"$ref": "AAAAAAGhulYEUNlBPIk="
+									},
+									"name": "Export: download data analysis recipe ZIP"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYEUNlCZGg=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYEUNlDnUs=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:btn_download_data_analysis_recipe"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulYFItlSQT0=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "New data analysis recipe: create from scratch",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYFitlbSUI=",
+									"_parent": {
+										"$ref": "AAAAAAGhulYFItlSQT0="
+									},
+									"name": "New data analysis recipe: create from scratch"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYFItlTMVk=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYFItlU1DE=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/blueprint_handlers.py:_handle_new_data_analysis_recipe_btn"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulYGS9lj5Bo=",
+							"_parent": {
+								"$ref": "AAAAAAGhulX3NdggWVw="
+							},
+							"name": "Undo: 20-step session deque — not wired to a visible button yet (STM-NODE-adjacent gap, UNDO-WIRE-1)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulYGstlqsW8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulYGS9lj5Bo="
+									},
+									"name": "Undo: 20-step session deque — not wired to a visible button yet (STM-NODE-adjacent gap, UNDO-WIRE-1)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulYGS9lkXFY=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							]
+						}
+					],
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhulX3Ndghyi0=",
+							"name": "status",
+							"kind": "string",
+							"value": "implemented"
+						}
+					]
 				}
 			]
 		},
@@ -83465,6 +86259,819 @@
 						"$ref": "AAAAAAGht+Tsy7rVSMU="
 					},
 					"name": "Reformat: outputs (ui, reformatted download)"
+				},
+				{
+					"_type": "WFWireframe",
+					"_id": "AAAAAAGhulWFJ9b6wMU=",
+					"_parent": {
+						"$ref": "AAAAAAGht+Tsy7rVSMU="
+					},
+					"name": "Wireframe1",
+					"ownedElements": [
+						{
+							"_type": "WFWireframeDiagram",
+							"_id": "AAAAAAGhulWFKNb7mKQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWFJ9b6wMU="
+							},
+							"name": "UI-TESTLAB The screen",
+							"ownedViews": [
+								{
+									"_type": "WFWebFrameView",
+									"_id": "AAAAAAGhulWGBdcCSqE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWGBdb/u8g="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"width": 940,
+									"height": 540
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWGVtcKQNw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWGVtcG05g="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 20,
+									"width": 220,
+									"height": 40
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWGpNcRfEA=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWGpNcPQRk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWGpNcSuU0=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWGpNcRfEA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 26,
+											"width": 208,
+											"height": 26,
+											"text": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWGVtcKQNw="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 26,
+									"width": 208,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWGpNcSuU0="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWHHdccpz8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWHHdcX43A="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 70,
+									"width": 220,
+									"height": 60
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWHjtcknR4=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWHjtciXK8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWHj9cl6f4=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWHjtcknR4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 76,
+											"width": 208,
+											"height": 39,
+											"text": "Data analysis recipe Info (only left-sidebar panel; no filters/import/export here)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWHHdccpz8="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 76,
+									"width": 208,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWHj9cl6f4="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWH6dcu48w=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWH6dcquVE="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 260,
+									"top": 20,
+									"width": 330,
+									"height": 190
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWIRNc1msU=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWIRNcz7S8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWIRNc2bsU=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWIRNc1msU="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 266,
+											"top": 26,
+											"width": 318,
+											"height": 26,
+											"text": "ID Reconciliation: upload x2, precheck, run, match table, download id_transformation.yaml",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWH6dcu48w="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 266,
+									"top": 26,
+									"width": 318,
+									"height": 65,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWIRNc2bsU="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWIntc/pmU=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWIntc7MlA="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 610,
+									"top": 20,
+									"width": 310,
+									"height": 190
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWI+NdGenA=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWI+NdEKgw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWI+NdH4rI=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWI+NdGenA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 616,
+											"top": 26,
+											"width": 298,
+											"height": 26,
+											"text": "Data analysis recipe Scaffolding: upload files + meta, run, download boilerplate recipe",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWIntc/pmU="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 616,
+									"top": 26,
+									"width": 298,
+									"height": 130,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWI+NdH4rI="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWJVddQSQc=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWJVddMEWI="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 260,
+									"top": 230,
+									"width": 330,
+									"height": 150
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWKGNdXpp0=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWKGNdVE9M="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWKGNdYAc4=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWKGNdXpp0="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 266,
+											"top": 236,
+											"width": 318,
+											"height": 26,
+											"text": "AquaSynthesizer: upload schema, generate, preview, download synthetic TSV",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWJVddQSQc="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 266,
+									"top": 236,
+									"width": 318,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWKGNdYAc4="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWKlddheUY=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWKldddW1c="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 610,
+									"top": 230,
+									"width": 310,
+									"height": 150
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWK+ddodzA=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWK+ddmCwM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWK+ddp/eA=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWK+ddodzA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 616,
+											"top": 236,
+											"width": 298,
+											"height": 26,
+											"text": "Anonymiser: upload, pick columns, run, preview, download anon TSV + mapping",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWKlddheUY="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 616,
+									"top": 236,
+									"width": 298,
+									"height": 104,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWK+ddp/eA="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWLYddyX+c=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWLYNduWCc="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 260,
+									"top": 400,
+									"width": 330,
+									"height": 120
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWLvtd5I8E=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWLvtd3Y/U="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWLvtd65KA=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWLvtd5I8E="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 266,
+											"top": 406,
+											"width": 318,
+											"height": 26,
+											"text": "Reformatter: upload (xlsx/csv), sheet role assignment, download TSV",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWLYddyX+c="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 266,
+									"top": 406,
+									"width": 318,
+									"height": 91,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWLvtd65KA="
+									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhulWMQteCM2c=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWMQtd/u4I="
+									},
+									"containerView": {
+										"$ref": "AAAAAAGhulWGBdcCSqE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 20,
+									"top": 140,
+									"width": 220,
+									"height": 80
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhulWMzteI9oE=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhulWMzteGDy8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhulWMzteJ5yI=",
+											"_parent": {
+												"$ref": "AAAAAAGhulWMzteI9oE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 26,
+											"top": 146,
+											"width": 208,
+											"height": 39,
+											"text": "Stateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)",
+											"horizontalAlignment": 0,
+											"wordWrap": true
+										}
+									],
+									"containerView": {
+										"$ref": "AAAAAAGhulWMQteCM2c="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 26,
+									"top": 146,
+									"width": 208,
+									"height": 78,
+									"nameLabel": {
+										"$ref": "AAAAAAGhulWMzteJ5yI="
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"_type": "WFWebFrame",
+					"_id": "AAAAAAGhulWGBdb/u8g=",
+					"_parent": {
+						"$ref": "AAAAAAGht+Tsy7rVSMU="
+					},
+					"name": "TEST_LAB",
+					"ownedElements": [
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWGVtcG05g=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWGpNcPQRk=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWGVtcG05g="
+									},
+									"name": "Navigation: Home, Blueprint Architect, Test Lab, Gallery, Help"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWGVtcHRB0=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWGVtcIaT8=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/home_theater.py:sidebar_nav_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWHHdcX43A=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "Data analysis recipe Info (only left-sidebar panel; no filters/import/export here)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWHjtciXK8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWHHdcX43A="
+									},
+									"name": "Data analysis recipe Info (only left-sidebar panel; no filters/import/export here)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWHHdcYDls=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWHHdcZCsY=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/modules/test_lab_studio.py:render_ui"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWHHdcacYo=",
+									"name": "flag",
+									"kind": "string",
+									"value": "test_lab_enabled"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWH6dcquVE=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "ID Reconciliation: upload x2, precheck, run, match table, download id_transformation.yaml",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWIRNcz7S8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWH6dcquVE="
+									},
+									"name": "ID Reconciliation: upload x2, precheck, run, match table, download id_transformation.yaml"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWH6dcrXCo=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWH6dcsuAc=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/test_lab_handlers.py:tl_reconcile_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWIntc7MlA=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "Data analysis recipe Scaffolding: upload files + meta, run, download boilerplate recipe",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWI+NdEKgw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWIntc7MlA="
+									},
+									"name": "Data analysis recipe Scaffolding: upload files + meta, run, download boilerplate recipe"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWIntc8+uo=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWIntc9kLA=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/test_lab_handlers.py:tl_scaffold_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWJVddMEWI=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "AquaSynthesizer: upload schema, generate, preview, download synthetic TSV",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWKGNdVE9M=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWJVddMEWI="
+									},
+									"name": "AquaSynthesizer: upload schema, generate, preview, download synthetic TSV"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWJVddNHdg=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWJVddOaFQ=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/test_lab_handlers.py:tl_synth_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWKldddW1c=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "Anonymiser: upload, pick columns, run, preview, download anon TSV + mapping",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWK+ddmCwM=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWKldddW1c="
+									},
+									"name": "Anonymiser: upload, pick columns, run, preview, download anon TSV + mapping"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWKlddetpY=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWKlddf7Rg=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/test_lab_handlers.py:tl_anon_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWLYNduWCc=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "Reformatter: upload (xlsx/csv), sheet role assignment, download TSV",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWLvtd3Y/U=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWLYNduWCc="
+									},
+									"name": "Reformatter: upload (xlsx/csv), sheet role assignment, download TSV"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWLYddvvYg=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWLYddwyVI=",
+									"name": "code",
+									"kind": "string",
+									"value": "app/handlers/test_lab_handlers.py:tl_reformat_ui"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhulWMQtd/u4I=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "Stateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhulWMzteGDy8=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWMQtd/u4I="
+									},
+									"name": "Stateless tools: each runs to completion, holds no session state (rules_test_lab.md §1)"
+								}
+							],
+							"tags": [
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhulWMQteAyT8=",
+									"name": "status",
+									"kind": "string",
+									"value": "implemented"
+								}
+							]
+						}
+					],
+					"tags": [
+						{
+							"_type": "Tag",
+							"_id": "AAAAAAGhulWGBdcA1NA=",
+							"name": "status",
+							"kind": "string",
+							"value": "implemented"
+						}
+					]
 				}
 			]
 		}
