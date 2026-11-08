@@ -167,8 +167,19 @@ is exception plumbing inside handlers already drawn in `COM-REACTIVE-HOME`/`COM-
 | Every `flag` tag is a real flag or field in a shipped app features file | UI promises a flag does not gate |
 | Every `status` tag is `implemented`, `partial` or `planned` | A typo in the model's own status convention |
 
-Not yet checked (left for a later pass if it turns out to matter): widget ids in `UI-HOME` beyond what a `code` tag already names; whether `PKG-TIERS` dependency arrows still match a fresh scan of real imports.
-| Library arrows in PKG-TIERS equal the real imports | Forbidden imports, a rule that no longer matches |
+| Every `UMLDependency` edge in PKG-TIERS matches a live `from X import` / `import X` scan of the directory its `code` tag names, in both directions | A stale arrow (import since removed) or a missing arrow (real import never drawn) |
+
+**Built (2026-11-08):** the PKG-TIERS check above, closing the gap this section itself had
+flagged as "not yet checked". First real run found F-24 (`.claude/tasks/uml_findings.md`): one
+stale edge (`test_lab -> id_reconciliation`, drawn but no longer imported — matches
+`rules_test_lab.md §8`'s own claim the permission is unused) and two missing edges (`app ->
+viz_gallery`, `assets/scripts -> app`, both real imports never drawn). Mutation-tested on a
+synthetic two-package project before trusting it against the real repo: planted a stale edge and
+a missing edge, confirmed both caught, confirmed clean after restoring. Fixed all three edges in
+the live model via the StarUML bridge, re-ran — 0 violations.
+
+Not yet checked (left for a later pass if it turns out to matter): widget ids in `UI-HOME` beyond
+what a `code` tag already names.
 
 It checks names and links. It does not prove that the code runs in the order a sequence diagram shows; the tests do that.
 
