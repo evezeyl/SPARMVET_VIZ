@@ -26,31 +26,47 @@ Documentation is a side effect, not the aim. A diagram exists only if it answers
 
 Order is wide to narrow, and the table is in working order: context and containers, then how it is built and run, then the parts, then the key flows. Code level is left out.
 
-| ID | Question | Type | View |
-|---|---|---|---|
-| **Architecture** | | | |
-| CTX-1 | Who and what does the app talk to? | C4 context | scenarios, logical |
-| C4-CONT | What runs, and which files and folders does it use? | C4 container | logical, physical |
-| PKG-TIERS | Which library may import which? | Package | development |
-| DEP-APP | How does the app run on one machine: process, folders, launch variables? | Deployment | physical |
-| C4-COMP-APP | Inside the Shiny app: which handler and module serves which user space? | C4 component | logical |
-| **HOME** | | | |
-| C4-COMP-HOME | Which handler and module owns what on HOME? | C4 component | logical |
-| UC-HOME | What can a user do, under which flag? | Use case | scenarios |
-| UI-HOME | What is on the screen, what is each panel called in the code, and which flag shows it? | Wireframe | scenarios, for users and developers |
-| COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug). Direct reads found by a scan of the code | Flowchart | process |
-| SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process |
-| SEQ-OPEN | Data analysis recipe to Tier 1, Tier 2, plot, with the cache keys | Sequence | process |
-| STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process |
-| SEQ-AUDIT | Exploration filter against send to audit and Apply | Sequence | process |
-| SEQ-EXPORT | From click to bundle, with the key check | Sequence | process |
-| COM-REACTIVE-GALLERY | Which output reads which reactive value, in GALLERY? | Flowchart | process |
-| COM-REACTIVE-BLUEPRINT | Which output reads which reactive value, in BLUEPRINT? | Flowchart | process |
-| COM-REACTIVE-TESTLAB | Which output reads which reactive value, in TEST_LAB? | Flowchart | process |
-| **Data** | | | |
-| DM-CONFIG | Deployment, app features, launch variables, precedence | Class | logical |
-| DM-RECIPE | The data analysis recipe's own data model — Data schema, Join, Analysis group, Plot, Wrangling step | Class | logical |
-| REQ-CORE | Quality goals and the requirements that protect a correct result | SysML requirement | all |
+**Status column:** ✅ built and in `docs/UML/app.mdj` today (verified against the live project,
+2026-11-08 — every diagram listed below exists; `GALLERY`/`BLUEPRINT`/`TEST_LAB` use case and
+component diagrams and their `COM-REACTIVE-*` counterparts were added 2026-11-07/08, after this
+table was first drafted, and are included here even though they weren't in the original row set).
+⬜ not built — none currently; the table only lists diagrams that answer a question from this
+section, so a planned-but-not-built diagram would show here, not in the "Later" prose below.
+
+| ID | Question | Type | View | Status |
+|---|---|---|---|---|
+| **Architecture** | | | | |
+| CTX-1 | Who and what does the app talk to? | C4 context | scenarios, logical | ✅ |
+| C4-CONT | What runs, and which files and folders does it use? | C4 container | logical, physical | ✅ |
+| PKG-TIERS | Which library may import which? | Package | development | ✅ |
+| DEP-APP | How does the app run on one machine: process, folders, launch variables? | Deployment | physical | ✅ |
+| C4-COMP-APP | Inside the Shiny app: which handler and module serves which user space? | C4 component | logical | ✅ |
+| **HOME** | | | | |
+| C4-COMP-HOME | Which handler and module owns what on HOME? | C4 component | logical | ✅ |
+| UC-HOME | What can a user do, under which flag? | Use case | scenarios | ✅ |
+| UI-HOME | What is on the screen, what is each panel called in the code, and which flag shows it? | Wireframe | scenarios, for users and developers | ✅ |
+| COM-REACTIVE | Which output reads which reactive value? (cause of the blank page and the sidebar bug). Direct reads found by a scan of the code | Flowchart | process | ✅ |
+| SEQ-LAUNCH | How are deployment, app features and data analysis recipe resolved, and what stops the app? | Sequence | process | ✅ |
+| SEQ-OPEN | Data analysis recipe to Tier 1, Tier 2, plot, with the cache keys | Sequence | process | ✅ |
+| STM-STAGE | When is a stored stage valid, rebuilt or removed? | State machine | process | ✅ |
+| SEQ-AUDIT | Exploration filter against send to audit and Apply | Sequence | process | ✅ |
+| SEQ-EXPORT | From click to bundle, with the key check | Sequence | process | ✅ |
+| **GALLERY / BLUEPRINT / TEST_LAB** | | | | |
+| C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
+| UC-GALLERY, UC-BLUEPRINT, UC-TESTLAB | What can a user do, under which flag? | Use case | scenarios | ✅ |
+| UI-GALLERY, UI-BLUEPRINT, UI-TESTLAB | What is on the screen, same detail as UI-HOME | Wireframe | scenarios, for users and developers | ✅ |
+| COM-REACTIVE-GALLERY | Which output reads which reactive value, in GALLERY? | Flowchart | process | ✅ |
+| COM-REACTIVE-BLUEPRINT | Which output reads which reactive value, in BLUEPRINT? | Flowchart | process | ✅ |
+| COM-REACTIVE-TESTLAB | Which output reads which reactive value, in TEST_LAB? | Flowchart | process | ✅ |
+| **Data** | | | | |
+| DM-CONFIG | Deployment, app features, launch variables, precedence | Class | logical | ✅ |
+| DM-RECIPE | The data analysis recipe's own data model — Data schema, Join, Analysis group, Plot, Wrangling step | Class | logical | ✅ |
+| REQ-CORE | Quality goals and the requirements that protect a correct result | SysML requirement | all | ✅ |
+
+**Later, not yet in this table** (from §3's original prose, still open): class diagrams of "the
+core" and of other platforms (Galaxy/IRIDA) — deferred when UI-HOME's wireframe pattern was
+worked out, not picked up since. Not rows here yet because no concrete question has been drafted
+for either; add the row only once one is.
 
 **Written (2026-11-07):** three text pages that go with the diagrams, because no diagram shows them
 well, in `docs/UML/`: [`quality_goals.md`](quality_goals.md) (correct science and reproducibility
@@ -126,7 +142,8 @@ call (its generic auto-layout pulls wireframe children out of their frame entire
 UI-GALLERY, `app.repository.undo()` reverted it). UI-HOME's existing structure confirmed the
 pattern to replicate: one `WFPanel` (tagged `status`/`code`/`flag`) per UI region, with one
 untagged `WFText` child carrying the same name as the visible label. **Later:** class diagrams of
-the core, data analysis recipe data model, other platforms.
+the core and of other platforms (DM-RECIPE, the data analysis recipe data model, done 2026-11-08
+below).
 
 **Diagram export:** all 30 diagrams exported to `docs/UML/diagrams/*.png` via
 `staruml_export_diagrams` (re-run after any diagram change; PNGs are not auto-synced).
@@ -192,6 +209,7 @@ is exception plumbing inside handlers already drawn in `COM-REACTIVE-HOME`/`COM-
 | Every `code` tag resolves (file and symbol via `ast`, or a string literal for a Shiny widget id) | Renamed or deleted code |
 | Every `test` tag resolves | A claim of proof with nothing behind it |
 | Every `adr` tag exists and is not marked historical/removed/superseded | Model built on an old or missing decision |
+| Every `rule` tag's file exists under `.claude/rules/` (anchor not verified — formats vary too much) | A renamed or deleted rule file |
 | Every `flag` tag is a real flag or field in a shipped app features file | UI promises a flag does not gate |
 | Every `status` tag is `implemented`, `partial` or `planned` | A typo in the model's own status convention |
 
@@ -206,8 +224,25 @@ synthetic two-package project before trusting it against the real repo: planted 
 a missing edge, confirmed both caught, confirmed clean after restoring. Fixed all three edges in
 the live model via the StarUML bridge, re-ran — 0 violations.
 
+**Built (2026-11-08):** the `rule` tag check above. Scoped intentionally to file existence only —
+a `rule` value like `rules_test_lab.md §8` or `rules_runtime_environment.md#4` mixes `§N` and
+`#N` anchor conventions across rule files inconsistently, so verifying the anchor itself would
+need per-file heuristics; checking the filename catches the same class of bug the `adr` check
+catches (a citation surviving a rename or deletion) without that fragility. First real run against
+the live model: 0 violations (all 12 existing `rule` tags resolve).
+
 Not yet checked (left for a later pass if it turns out to matter): widget ids in `UI-HOME` beyond
-what a `code` tag already names.
+what a `code` tag already names — scoping this one needs a decision first, see the open question
+below.
+
+**Open question (2026-11-08):** the UI-HOME widget-coverage check would need to pick what counts
+as "coverage" for a *wireframe*, which is deliberately not exhaustive — it draws panels, not every
+micro-widget (a filter row's individual input, for instance). A real scan of `home_theater.py` and
+its sibling handlers (`filter_and_audit_handlers.py`, `audit_stack.py`, `session_handlers.py`,
+`export_handlers.py`, `data_import_handlers.py`) for every `ui.input_*`/`ui.output_*`/
+`ui.nav_panel`/`ui.accordion_panel` id, diffed against what UI-HOME's `code` tags already name,
+would likely be noisy — most individual inputs were never meant to be drawn. Needs a decision on
+scope (panel-level ids only? nav/accordion structure only?) before building it, so it isn't done.
 
 It checks names and links. It does not prove that the code runs in the order a sequence diagram shows; the tests do that.
 

@@ -11,9 +11,15 @@ Checks:
   - test      same as code, for a test file; symbol may use :: (pytest style)
   - adr       the ADR exists in architecture_decisions.md and its heading is not marked
               HISTORICAL or REMOVED
+  - rule      the rule file named before any '#'/'§' anchor exists under .claude/rules/
+              (the anchor itself is not verified — section numbering formats vary too much
+              to check mechanically; this catches a renamed or deleted rule file)
   - flag      the flag name is a real key in the flags: block of a shipped app features file
               (or a top-level field, for a dotted name like data_analysis_recipe_selector.visible)
   - status    is one of implemented, partial, planned
+
+Also (not a per-element tag check):
+  - PKG-TIERS every UMLDependency edge matches a live import scan, both directions
 
 Usage:
   .venv/bin/python assets/scripts/audit_uml_model.py
@@ -35,6 +41,7 @@ except ImportError:
 
 MODEL_FILE = "docs/UML/app.mdj"
 ADR_FILE = ".claude/knowledge/architecture_decisions.md"
+RULES_DIR = ".claude/rules"
 APP_FEATURES_DIR = "config/app_features"
 VALID_STATUS = {"implemented", "partial", "planned"}
 # code/test paths that are not Python files: existence is the only check
@@ -129,6 +136,16 @@ def adr_errors(project_root: Path, adr_id: str) -> str | None:
     section = text[start:nxt if nxt != -1 else len(text)]
     if re.search(r"\*\*(HISTORICAL|REMOVED|SUPERSEDED)", section):
         return f"{adr_id} is marked historical/removed/superseded"
+    return None
+
+
+def rule_error(project_root: Path, ref: str) -> str | None:
+    """`ref` is e.g. 'rules_test_lab.md §8' or 'rules_runtime_environment.md#4'. Only the
+    file is checked — section numbering formats vary too much to verify mechanically."""
+    filename = re.split(r"[#§]", ref, maxsplit=1)[0].strip()
+    path = project_root / RULES_DIR / filename
+    if not path.exists():
+        return f"'{filename}' not found under {RULES_DIR}/"
     return None
 
 
@@ -262,7 +279,7 @@ def run_checks(project_root: Path):
     """Return (violations: list[dict], counts: dict)."""
     model_path = project_root / MODEL_FILE
     violations = []
-    counts = {"elements_with_tags": 0, "code": 0, "test": 0, "adr": 0, "flag": 0, "status": 0}
+    counts = {"elements_with_tags": 0, "code": 0, "test": 0, "adr": 0, "rule": 0, "flag": 0, "status": 0}
 
     if not model_path.exists():
         violations.append({"check": "MODEL_MISSING", "detail": f"{MODEL_FILE} not found"})
@@ -320,6 +337,18 @@ def run_checks(project_root: Path):
             if err:
                 violations.append({"check": "ADR_BROKEN", "element": name, "type": etype, "detail": err})
 
+        rule = tags.get("rule")
+        if rule:
+            counts["rule"] += 1
+            cache_key = f"rule:{rule}"
+            if cache_key in seen_refs:
+                err = seen_refs[cache_key]
+            else:
+                err = rule_error(project_root, rule)
+                seen_refs[cache_key] = err
+            if err:
+                violations.append({"check": "RULE_BROKEN", "element": name, "type": etype, "detail": err})
+
         flag = tags.get("flag")
         if flag:
             counts["flag"] += 1
@@ -348,6 +377,7 @@ def render_report(violations, counts, project_root: Path) -> tuple[str, int]:
         f"- code tags checked: {counts.get('code', 0)}",
         f"- test tags checked: {counts.get('test', 0)}",
         f"- adr tags checked: {counts.get('adr', 0)}",
+        f"- rule tags checked: {counts.get('rule', 0)}",
         f"- flag tags checked: {counts.get('flag', 0)}",
         f"- status tags checked: {counts.get('status', 0)}",
         f"- PKG-TIERS packages scanned: {counts.get('pkg_tiers_packages', 0)}, "
