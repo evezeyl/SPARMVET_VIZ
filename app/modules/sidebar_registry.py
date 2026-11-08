@@ -56,21 +56,9 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": "t3_sandbox_enabled",
         "label": "Pipeline Audit",
     },
-    "blueprint_nav": {
-        "gate_flag": "blueprint_enabled",
-        "label": "Blueprint Navigator",
-    },
-    "blueprint_logic": {
-        "gate_flag": "blueprint_enabled",
-        "label": "Blueprint Logic",
-    },
     "blueprint_agent_chat": {
         "gate_flag": "blueprint_agent_enabled",
         "label": "Blueprint Agent",
-    },
-    "gallery_search": {
-        "gate_flag": "gallery_enabled",
-        "label": "Gallery Search",
     },
     "gallery_main": {
         "gate_flag": "gallery_enabled",
@@ -104,6 +92,9 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": "test_lab_enabled",
         "label": "Test Lab Tools (right)",
     },
+    # "test_lab" below is not referenced by any shipped config/ui/sidebars/*.yaml (checked
+    # 2026-11-08, issue #42 cleanup pass) -- pre-existing, unrelated to #42's panel set,
+    # left as-is rather than pulled into this issue's scope.
     "test_lab": {
         "gate_flag": "test_lab_enabled",
         "label": "Test Lab Tools",

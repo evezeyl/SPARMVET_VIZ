@@ -2442,6 +2442,40 @@ New panel types are registered by adding an entry to `PANEL_REGISTRY` — no sid
 > static placeholder, deliberately distinct from `data_analysis_recipe_info` (formerly
 > `project_info` in this table) since Test Lab tools never operate on an open recipe.
 
+> **Amendment (2026-11-08, issue #42, same day as the one above):** the registry stopped
+> being optional. Until this point, Gallery's and Blueprint's sidebars — both sides — bypassed
+> `PANEL_REGISTRY`/`_build_left_sidebar` entirely via hardcoded branches in
+> `sidebar_tools_ui()`/`right_sidebar_content_ui()`, while their yaml files (`gallery_focus_left.yaml`,
+> `blueprint_standard_left.yaml`, `blueprint_standard_right.yaml`) were validated at startup by
+> `SidebarValidator` and had zero effect on what rendered. That was treated as settled, intentional
+> design in the amendment above and in `ui_implementation_contract.md §11d`'s note on finding F-01. It
+> wasn't: `blueprint_standard_right.yaml` declared `[blueprint_logic, blueprint_agent_chat]` —
+> `blueprint_logic` was never a real panel type, and the actual branch always built five different
+> cards regardless. `gallery_focus_right.yaml` declared `panels: []` while a "Gallery Explorer" card
+> always rendered anyway. Eve, walking through why this bothered her: "still somewhat its bother me a
+> bit that we have 2 different mechanisms in the app that differ." Decision, after the tradeoffs were
+> laid out: unify rather than keep documenting the split as acceptable.
+>
+> Every workspace, both sides, now goes through `_build_left_sidebar(workspace_key, open_panels)` /
+> `_build_right_sidebar(workspace_key)` (both in `home_theater.py`). A new **freestanding panel**
+> category (left side only) lets a panel type's renderer return a complete, already-formed UI block
+> (its own accordion, its own id) instead of one `ui.accordion_panel()` to merge into the shared
+> `nav_accordion` — needed because Gallery's and Blueprint's sidebar content is each one cohesive
+> bespoke unit, not a list of independent panels; forcing a real decomposition would have been fake
+> consistency, not real separation of concerns. `gallery_main` and `blueprint_main` are the two
+> freestanding types; Blueprint's inline UI (previously ~140 lines living in `home_theater.py`) moved
+> into `WrangleStudio.build_sidebar_ui()`, mirroring `GalleryViewer.build_sidebar_ui()`, consistent with
+> `rules_app_structure.md`'s "handlers wire, modules own UI" rule. The right sidebar needed no
+> freestanding concept — there's no shared outer accordion there to merge into, so every right panel
+> (generic or bespoke) is already just one block appended to a flat list; Blueprint's five cards became
+> five real registered panel types (`blueprint_surgeon`, `blueprint_action_help`,
+> `blueprint_plot_defaults`, `blueprint_branch_node`, reusing `blueprint_agent_chat`). Full panel table
+> in `ui_implementation_contract.md §11d`. No visible behaviour changed — same widgets, same DOM
+> structure, same CSS classes per workspace — proven by the full Playwright/headless suites passing
+> unchanged plus mutation-testing each new wiring. `blueprint_nav`, `blueprint_logic`, `gallery_search`
+> removed from `PANEL_REGISTRY` as genuinely superseded; `test_lab` (a fourth, older unused entry, not
+> created by either amendment) was checked and left alone as out of scope.
+
 ### Rule 5 — Sidebar visibility and structural exclusion
 
 `left_sidebar.visible: false` hides the sidebar entirely (DOM excluded, not CSS hidden). This replaces the current implicit "nearly empty sidebar for static personas" with an explicit choice.
