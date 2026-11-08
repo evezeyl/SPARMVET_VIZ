@@ -1437,77 +1437,10 @@ def define_server(input, output, session, *,
         # `if active_sidebar == "Gallery":` branch below the registry helper.
 
         # Data analysis recipe Workbench (Wrangle Studio)
-        if active_sidebar == "Wrangle Studio":
-            return ui.div(
-                # Eve, 2026-11-08: Alerts moved here from the right sidebar, same move
-                # as Home and Gallery (ui_reachability_map.md §5) — removed from
-                # blueprint_standard_right.yaml at the same time, mounted in exactly
-                # one place (see the Gallery branch above for the REG-10 note).
-                ui.output_ui("notification_log_panel_ui"),
-                ui.accordion(
-                    ui.accordion_panel(
-                        "🗂️ Master data analysis recipe",
-                        ui.input_select("stored_data_analysis_recipe_selector", None,
-                                        choices=["Scanning config/..."]),
-                        ui.input_action_button(
-                            "btn_bp_new_data_analysis_recipe", "+ New",
-                            class_="btn-outline-primary btn-sm w-100 mt-1",
-                        ),
-                        ui.tags.small(
-                            "Select a data analysis recipe. Click any node in the TubeMap to navigate.",
-                            class_="text-muted d-block mt-1"),
-                        ui.output_ui("bp_draft_status_ui"),
-                        ui.output_ui("bp_import_error_ui"),
-                        icon=ui.tags.i(class_="bi bi-diagram-3")
-                    ),
-                    ui.accordion_panel(
-                        "📝 Data analysis recipe Info",
-                        ui.output_ui("bp_meta_form_ui"),
-                        icon=ui.tags.i(class_="bi bi-info-square")
-                    ),
-                    ui.accordion_panel(
-                        "📋 Groups & Plots",
-                        ui.output_ui("bp_groups_inventory_ui"),
-                        icon=ui.tags.i(class_="bi bi-collection")
-                    ),
-                    ui.accordion_panel(
-                        "📤 External Exchange",
-                        ui.input_file("data_analysis_recipe_uploader", "Select YAML...",
-                                      accept=[".yaml"], multiple=False),
-                        ui.input_action_button("btn_upload_replace", "📥 Upload (Replace)",
-                                               class_="btn-info btn-sm w-100 mb-1"),
-                        ui.input_action_button("btn_upload_append", "➕ Upload & Append",
-                                               class_="btn-outline-primary btn-sm w-100"),
-                        ui.hr(),
-                        ui.download_button("btn_download_data_analysis_recipe", "💾 Download/Export",
-                                           class_="btn-outline-primary w-100"),
-                        icon=ui.tags.i(class_="bi bi-cloud-arrow-up")
-                    ),
-                    ui.accordion_panel(
-                        "🔍 Validate",
-                        ui.output_ui("bp_validate_ui"),
-                        icon=ui.tags.i(class_="bi bi-check-circle")
-                    ),
-                    ui.accordion_panel(
-                        "🔤 YAML Escape Hatch",
-                        ui.output_ui("bp_yaml_escape_ui"),
-                        icon=ui.tags.i(class_="bi bi-code-slash")
-                    ),
-                    id="wrangle_sidebar_accordion"
-                ),
-                # Hidden controls — kept in DOM so Shiny bridge can programmatically
-                # update the selection and fire the import trigger via js_eval.
-                ui.div(
-                    ui.input_select("dataset_pipeline_selector", None,
-                                    choices=["Select a Master first"]),
-                    ui.input_action_button("btn_import_data_analysis_recipe", "Import",
-                                           class_="btn-info btn-sm"),
-                    ui.input_action_button("btn_save_internal", "Save",
-                                           class_="btn-success btn-sm"),
-                    style="display:none;",
-                    id="blueprint_hidden_controls"
-                ),
-            )
+        # Blueprint's left sidebar is now built via _build_left_sidebar("blueprint", ...)
+        # further down (issue #42, "blueprint_main" freestanding panel type, content
+        # moved to WrangleStudio.build_sidebar_ui()) — see the
+        # `if active_sidebar == "Wrangle Studio":` branch below the registry helper.
 
         # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
         # Build data analysis recipe state needed by some panel renderers.
@@ -1654,6 +1587,9 @@ def define_server(input, output, session, *,
         def _render_gallery_main():
             return gallery_viewer.build_sidebar_ui()
 
+        def _render_blueprint_main():
+            return wrangle_studio.build_sidebar_ui()
+
         # Freestanding panel types (issue #42): the renderer returns a complete,
         # already-formed UI block (its own accordion, its own id) rather than a
         # single ui.accordion_panel() to merge into the shared nav_accordion. Needed
@@ -1662,6 +1598,7 @@ def define_server(input, output, session, *,
         # independent generic panels.
         _left_freestanding_renderers = {
             "gallery_main": _render_gallery_main,
+            "blueprint_main": _render_blueprint_main,
         }
 
         def _build_left_sidebar(workspace_key: str, open_panels: list[str]):
@@ -1720,6 +1657,9 @@ def define_server(input, output, session, *,
 
         if active_sidebar == "Gallery":
             return _build_left_sidebar("gallery", open_panels=[])
+
+        if active_sidebar == "Wrangle Studio":
+            return _build_left_sidebar("blueprint", open_panels=[])
 
         _has_data_analysis_recipe = bootloader.get_data_analysis_recipe_selector().get("visible", True)
         open_panels = ["Data analysis recipe Choice"] if _has_data_analysis_recipe else []

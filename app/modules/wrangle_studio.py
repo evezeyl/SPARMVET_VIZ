@@ -167,6 +167,80 @@ class WrangleStudio:
         self.joint_request = reactive.Value(0)
         self.joint_edit_idx = reactive.Value(None)
 
+    def build_sidebar_ui(self):
+        """Blueprint's left sidebar (issue #42): moved here from home_theater.py's
+        sidebar_tools_ui(), mirroring GalleryViewer.build_sidebar_ui(). Registered as
+        the "blueprint_main" freestanding panel type (sidebar_registry.py,
+        _build_left_sidebar in home_theater.py) — mechanical move, same markup, same
+        ui.output_ui() string references to the separately-defined outputs that carry
+        the actual reactive content (bp_draft_status_ui, bp_meta_form_ui, etc.), so no
+        closure dependency on input/session was lost in the move."""
+        return ui.div(
+            ui.accordion(
+                ui.accordion_panel(
+                    "🗂️ Master data analysis recipe",
+                    ui.input_select("stored_data_analysis_recipe_selector", None,
+                                    choices=["Scanning config/..."]),
+                    ui.input_action_button(
+                        "btn_bp_new_data_analysis_recipe", "+ New",
+                        class_="btn-outline-primary btn-sm w-100 mt-1",
+                    ),
+                    ui.tags.small(
+                        "Select a data analysis recipe. Click any node in the TubeMap to navigate.",
+                        class_="text-muted d-block mt-1"),
+                    ui.output_ui("bp_draft_status_ui"),
+                    ui.output_ui("bp_import_error_ui"),
+                    icon=ui.tags.i(class_="bi bi-diagram-3")
+                ),
+                ui.accordion_panel(
+                    "📝 Data analysis recipe Info",
+                    ui.output_ui("bp_meta_form_ui"),
+                    icon=ui.tags.i(class_="bi bi-info-square")
+                ),
+                ui.accordion_panel(
+                    "📋 Groups & Plots",
+                    ui.output_ui("bp_groups_inventory_ui"),
+                    icon=ui.tags.i(class_="bi bi-collection")
+                ),
+                ui.accordion_panel(
+                    "📤 External Exchange",
+                    ui.input_file("data_analysis_recipe_uploader", "Select YAML...",
+                                  accept=[".yaml"], multiple=False),
+                    ui.input_action_button("btn_upload_replace", "📥 Upload (Replace)",
+                                           class_="btn-info btn-sm w-100 mb-1"),
+                    ui.input_action_button("btn_upload_append", "➕ Upload & Append",
+                                           class_="btn-outline-primary btn-sm w-100"),
+                    ui.hr(),
+                    ui.download_button("btn_download_data_analysis_recipe", "💾 Download/Export",
+                                       class_="btn-outline-primary w-100"),
+                    icon=ui.tags.i(class_="bi bi-cloud-arrow-up")
+                ),
+                ui.accordion_panel(
+                    "🔍 Validate",
+                    ui.output_ui("bp_validate_ui"),
+                    icon=ui.tags.i(class_="bi bi-check-circle")
+                ),
+                ui.accordion_panel(
+                    "🔤 YAML Escape Hatch",
+                    ui.output_ui("bp_yaml_escape_ui"),
+                    icon=ui.tags.i(class_="bi bi-code-slash")
+                ),
+                id="wrangle_sidebar_accordion"
+            ),
+            # Hidden controls — kept in DOM so Shiny bridge can programmatically
+            # update the selection and fire the import trigger via js_eval.
+            ui.div(
+                ui.input_select("dataset_pipeline_selector", None,
+                                choices=["Select a Master first"]),
+                ui.input_action_button("btn_import_data_analysis_recipe", "Import",
+                                       class_="btn-info btn-sm"),
+                ui.input_action_button("btn_save_internal", "Save",
+                                       class_="btn-success btn-sm"),
+                style="display:none;",
+                id="blueprint_hidden_controls"
+            ),
+        )
+
     def render_ui(self):
         actions = list(AVAILABLE_WRANGLING_ACTIONS.keys())
 

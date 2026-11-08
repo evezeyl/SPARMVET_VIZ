@@ -1,4 +1,10 @@
 visible: true
 panels:
-  - type: data_analysis_recipe_info
-  - type: blueprint_nav
+  - type: notification_log
+  - type: blueprint_main
+# Eve/issue #42, 2026-11-08: blueprint_main is a freestanding panel (sidebar_registry.py
+# PANEL_REGISTRY, _build_left_sidebar in home_theater.py) -- its renderer calls
+# wrangle_studio.build_sidebar_ui(), moved there from home_theater.py's inline
+# construction. This file now actually describes what renders (it didn't before: the
+# old data_analysis_recipe_info/blueprint_nav entries were validated at startup but
+# never read -- see the superseded note in ui_implementation_contract.md §11d).

@@ -76,6 +76,10 @@ PANEL_REGISTRY: dict[str, dict] = {
         "gate_flag": "gallery_enabled",
         "label": "Gallery Explorer",
     },
+    "blueprint_main": {
+        "gate_flag": "blueprint_enabled",
+        "label": "Blueprint Recipe Editor",
+    },
     "test_lab": {
         "gate_flag": "test_lab_enabled",
         "label": "Test Lab Tools",
