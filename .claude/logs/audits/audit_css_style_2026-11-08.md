@@ -1,6 +1,6 @@
-Status: PROCESSED (all-pass, 2026-11-08 Phase 5 review)
+Status: PROCESSED (all-pass, 2026-11-08 UML drift-detection review)
 # Audit Report: CSS Design Token Compliance
-Generated: 2026-11-08T11:51:51
+Generated: 2026-11-08T12:29:42
 Scanned: config/ui/theme.css
 Rule: rules_css_style_spec.md | ADR-055
 
