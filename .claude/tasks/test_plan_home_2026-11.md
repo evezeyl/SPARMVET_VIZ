@@ -23,6 +23,22 @@ hand-editing markdown while also looking at the browser. Use whichever is easier
 
 ---
 
+## Round log (heartbeat — I maintain this)
+
+**Round 1, 2026-11-08:** PRE-01/02/03/05, HOM-07 passed. HOM-08 is `[~]` (tier resets to Result
+on Home→Gallery→Home; plot sub-tab itself is restored correctly). Fixed live: Alerts moved to the
+left sidebar (same reachability fix as Processing Issues, F-26), 28 stale test sessions cleared.
+Built live, not originally part of this round: ADR-096 — the app now ships and links to the full
+Quarto book (`? Help` / `📖 Full Documentation` / `GitHub`, all three in the left Navigation stack,
+HOM-56). Found and logged, not fixed yet: HOM-53 (session list doesn't refresh after delete),
+HOM-54 (want bulk session delete), HOM-55 (`? Help` modal content stale across all 4 workspaces —
+`gallery.md` actively describes a removed feature), `CONFIG-PIPELINE-RENAME-1` in `tasks.md` (the
+`pipeline-*` app features names collide with `CTX-1`'s "Analysis pipeline," same shape as the
+Processing Issues rename — scoped to Phase 2, not fixed mid-HOME-testing). A reported "duplicate
+Shiny ID" error during this round was a stale-server artifact (`--reload` doesn't watch YAML),
+not a real regression — confirmed via the fresh-process `test_every_app_features_starts.py` suite
+passing clean both before and after.
+
 ## 0. Launch
 
 ```bash
@@ -32,10 +48,10 @@ PYTHONPATH=. SPARMVET_APP_FEATURES=config/app_features/developer.yaml ./.venv/bi
 Open <http://127.0.0.1:8000>. Chrome, dev console open, network cache disabled (per your usual setup).
 `--reload` restarts the server on code edits during a fix round.
 
-- [~] PRE-01 — App boots clean (no Python traceback); browser console had 1 real bug + 2 noise items, 1 fixed. → [20260810_testing_part1.md#pre-01](20260810_testing_part1.md#pre-01-console-errors-on-first-launch) — RETEST ↻
-- [ ] PRE-02 — Browser loads at :8000 with no red error banner on first paint.
-- [ ] PRE-03 — Default data analysis recipe **ST22 Dummy Dataset** loads; center theater shows analysis-group tabs (Quality Control · Curiosity · Results · Cat 🐱).
-- [ ] PRE-05 — Switch data analysis recipe in the **Data analysis recipe Choice** sidebar dropdown to `2_test_data_ST22_dummy` → tabs change to AMR Profiling Insight · Plasmid Dynamics; plots reload, no traceback.
+- [x] PRE-01 — App boots clean. Eve, 2026-11-08: many `[ConfigManager] Auto-unnesting redundant key...` lines but no traceback — confirmed expected/benign (documented behaviour in `config_loader.py`, not an error). Original console-error finding closed.
+- [x] PRE-02 — Browser loads at :8000 with no red error banner on first paint. Eve, 2026-11-08: ok.
+- [x] PRE-03 — Default data analysis recipe **ST22 Dummy Dataset** (`1_test_data_ST22_dummy`) loads with its tabs. Eve, 2026-11-08: yes.
+- [x] PRE-05 — Switch data analysis recipe → tabs change, plots reload, no traceback. Eve, 2026-11-08: seems ok.
 
 ---
 
@@ -63,8 +79,8 @@ Open <http://127.0.0.1:8000>. Chrome, dev console open, network cache disabled (
 
 - [x] HOM-05 — **Data to show** Raw → Result on `year_distribution` (AMR and Virulence group): the data preview shows all years on Raw and only 2023–2025 on Result. The plot does not change when you switch Raw/Result (plots never show T1, ADR-086). [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
 - [x] HOM-06 — My view (advanced+): Apply always explores; **"Send to Audit" appears when either "Plot to show" or "Data to show" is on My view** (and `t3_sandbox_enabled`); right sidebar Pipeline Audit shows Tier 2 (inherited) + Tier 3 (my adjustments) once something is committed. See HOM-43, ADR-085/086. [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
-- [ ] HOM-07 — Changing **Data to show** (T1→My view→T1) keeps the active plot sub-tab. *(carried: old §4c.)*
-- [ ] HOM-08 — Home→Gallery→Home **restores** the previously active group tab + sub-tab + tier. *(carried: old §4c had two boxes left unchecked — verify on current build.)* **Phase-2 note:** Gallery nav isn't in scope this round, but you can still check the "leave Home and come back" half by switching data analysis recipe and back, or revisit this once Gallery is tested.
+- [x] HOM-07 — Changing **Data to show** (T1→My view→T1) keeps the active plot sub-tab. Eve, 2026-11-08: ok.
+- [~] HOM-08 — Home→Gallery→Home **restores** the previously active group tab + sub-tab + tier. Eve, 2026-11-08: the plot sub-tab is restored correctly, but the tier/header-strip choice resets to "Result" instead of staying on whatever it was before leaving. Eve: annoying, not critical.
 - [ ] HOM-44 `[!]` — On `year_distribution` (data analysis recipe "1_test_data_ST22_dummy", AMR and Virulence group), the Year axis renders discrete on T2 but continuous on T3/My view — same data, should look the same. → [20260810_testing_part1.md#hom-44](20260810_testing_part1.md#hom-44--year-axis-discrete-on-t2-but-continuous-on-t3my-view) — low urgency per EVE. Reproduced 2026-11-05: the axis turns continuous when the filter is on the year column itself (draft `issue-drafts/003_year-axis-continuous-in-my-view.md`).
 - [x] HOM-45 **NEW** — Header strip (ADR-086): two labelled rows "Plot to show" (Result / My view / Compare) and "Data to show" (Raw / Result / My view), defaults both Result. Plot choice affects only plots, data choice only the data preview/table. Compare absent when `comparison_mode_enabled` is false. Strip absent when `interactivity_enabled` is false. [#3](https://github.com/evezeyl/SPARMVET_VIZ/issues/3) — RETEST ↻
 
@@ -104,6 +120,8 @@ Open <http://127.0.0.1:8000>. Chrome, dev console open, network cache disabled (
 - [ ] HOM-30 `[?]` — **(carried, old §14)** During the auto-save window, "Export Active Session" should either be disabled or trigger a save first (avoid exporting a stale/partial session). Decide the behaviour.
 - [!] HOM-53 **NEW (Eve, 2026-11-08, live-found while testing)** — Deleting a session in the Session Management panel doesn't update the list; the deleted session stays visible until the page is reloaded. (We'd previously decided a page refresh could help for other things too — see if this is the same underlying "list doesn't re-render" cause or a separate one.)
 - [ ] HOM-54 `[?]` **NEW (Eve, 2026-11-08)** — Add a "Delete all sessions" option to Session Management, for faster test cleanup (28 old test sessions had accumulated in `tmp/UI_TEST/user/_sessions/`, cleared by hand 2026-11-08). Decide: a button in the panel, or is a CLI/script enough? If a button, needs the same confirm-before-destroy treatment as the single-session delete.
+- [~] HOM-55 **NEW (Eve, 2026-11-08, live-found)** — The `? Help` modal works, but its content (`app/src/help/home.md`) is stale: still describes the pre-ADR-086 tier toggle (T1 Raw / T2 Reference / T3 Wrangling / T3 Plot buttons), which no longer exists — the real UI is the "Plot to show"/"Data to show" strip (HOM-45). **Found to be worse than just HOME's file while checking the other three**: `blueprint.md`/`test_lab.md` use old "pipeline" vocabulary, `test_lab.md` lists only 4 of the 8 real Test Lab tools (missing Reformatter, ID Reconciliation, Scaffolding, Anonymiser), and `gallery.md` actively describes **"Send to Blueprint"** — a feature removed this session (ADR-093). All 4 files need rewriting to match current reality; not done yet, logged.
+- [ ] HOM-56 **NEW (2026-11-08, never live-tested)** — Three new buttons under Navigation, left sidebar, in every config file: "? Help", "📖 Full Documentation" (opens the Quarto book root in a new tab — only shown once `quarto render docs/` has been run for this deployment), "GitHub" (opens your fork, bootstrap-icons GitHub glyph). Confirm all three render, the Documentation link actually opens a working page, and (if you relaunch without having rendered the book) the Documentation link correctly disappears rather than 404ing.
 
 ## 7. Export bundle
 
