@@ -429,6 +429,105 @@ class TestPhase25Panels:
 
 
 # ---------------------------------------------------------------------------
+# HOM-53/HOM-54 — Session list refresh without reload + bulk delete
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(
+    _LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
+    reason="Session Management panel only present for interactive app features files"
+)
+class TestSessionListRefresh:
+    """Seeds real session ghosts under the same `user_data` location the test app's
+    own local-dev deployment resolves to (tmp/UI_TEST/user/), then drives the panel
+    through the browser. Matches the production path: app/src/server.py builds
+    SessionManager(bootloader.get_location("user_data"))."""
+
+    def _make_session_manager(self):
+        from app.src.bootloader import bootloader
+        from app.modules.session_manager import SessionManager
+        return SessionManager(bootloader.get_location("user_data"))
+
+    def _seed_session(self, sm, tmp_path, label: str):
+        from app.modules.session_manager import SessionManager
+        recipe = tmp_path / f"{label}.yaml"
+        recipe.write_text(
+            f"id: {label}\n"
+            "analysis_groups:\n  g:\n    label: G\n    plots:\n      p:\n        label: P\n"
+            "        spec:\n          target_dataset: C\n          mapping: {x: a}\n"
+            "          layers:\n            - name: geom_bar\n"
+        )
+        data = tmp_path / f"{label}.tsv"
+        data.write_text("a\tb\n1\t2\n")
+        msig = SessionManager.compute_data_analysis_recipe_sha256(recipe)
+        dbh = SessionManager.compute_data_batch_hash({"d": data})
+        key = SessionManager.compute_session_key(msig, dbh)
+        sm.write_assembly_ghost(key, label, msig, dbh, {"d": str(data)}, {})
+        return key
+
+    def _open_session_group(self, page: Page, label: str) -> None:
+        """Sessions are grouped by data_analysis_recipe_id in a nested accordion
+        (session_groups_accordion, 📁 {id}) — expand the group our seeded session
+        belongs to before looking for its Delete button."""
+        page.wait_for_selector("#session_groups_accordion", timeout=10_000)
+        group_header = page.locator("#session_groups_accordion").get_by_text(f"📁 {label}", exact=False).first
+        group_header.click()
+        _wait_shiny(page)
+
+    def test_delete_one_session_refreshes_without_reload(self, page: Page, shiny_app: ShinyAppProc, tmp_path):
+        sm = self._make_session_manager()
+        key = self._seed_session(sm, tmp_path, "hom53_single")
+        try:
+            page.goto(shiny_app.url)
+            page.wait_for_selector("#nav_accordion", timeout=15_000)
+            page.locator("#nav_accordion").get_by_text("Session Management").first.click()
+            _wait_shiny(page)
+            self._open_session_group(page, "hom53_single")
+
+            safe_sk = key.replace(":", "_")
+            delete_btn = page.locator(f"#session_delete_{safe_sk}")
+            expect(delete_btn).to_be_visible(timeout=10_000)
+
+            delete_btn.click()
+            _wait_shiny(page)
+
+            # No page.reload() — the fix is that the panel re-renders on its own.
+            expect(page.locator(f"#session_delete_{safe_sk}")).to_have_count(0, timeout=8_000)
+        finally:
+            sm.delete_session(key)
+
+    def test_delete_all_sessions_requires_confirm_then_clears_list(self, page: Page, shiny_app: ShinyAppProc, tmp_path):
+        sm = self._make_session_manager()
+        key_a = self._seed_session(sm, tmp_path, "hom54_a")
+        key_b = self._seed_session(sm, tmp_path, "hom54_b")
+        try:
+            page.goto(shiny_app.url)
+            page.wait_for_selector("#nav_accordion", timeout=15_000)
+            page.locator("#nav_accordion").get_by_text("Session Management").first.click()
+            _wait_shiny(page)
+            self._open_session_group(page, "hom54_a")
+            self._open_session_group(page, "hom54_b")
+
+            expect(page.locator(f"#session_delete_{key_a.replace(':', '_')}")).to_be_visible(timeout=10_000)
+            expect(page.locator(f"#session_delete_{key_b.replace(':', '_')}")).to_be_visible(timeout=10_000)
+
+            page.locator("#session_delete_all_btn").click()
+            _wait_shiny(page)
+
+            # Confirm modal must appear — delete-all is gated, not immediate.
+            confirm_btn = page.locator("#session_delete_all_confirm")
+            expect(confirm_btn).to_be_visible(timeout=8_000)
+
+            confirm_btn.click()
+            _wait_shiny(page)
+
+            expect(page.locator(f"#session_delete_{key_a.replace(':', '_')}")).to_have_count(0, timeout=8_000)
+            expect(page.locator(f"#session_delete_{key_b.replace(':', '_')}")).to_have_count(0, timeout=8_000)
+        finally:
+            sm.delete_session(key_a)
+            sm.delete_session(key_b)
+
+
+# ---------------------------------------------------------------------------
 # T4 — Data preview
 # ---------------------------------------------------------------------------
 

@@ -302,6 +302,40 @@ def test_delete_session(sm, data_analysis_recipe_file, source_files):
 
 
 # ---------------------------------------------------------------------------
+# HOM-54: delete_all_sessions
+# ---------------------------------------------------------------------------
+
+def test_delete_all_sessions_removes_every_session(sm, data_analysis_recipe_file, source_files):
+    msig1 = SessionManager.compute_data_analysis_recipe_sha256(data_analysis_recipe_file)
+    dbh1 = SessionManager.compute_data_batch_hash(source_files)
+    key1 = SessionManager.compute_session_key(msig1, dbh1)
+    sm.write_assembly_ghost(key1, "my_pipeline", msig1, dbh1,
+                            {k: str(v) for k, v in source_files.items()}, {})
+
+    # A second, distinct session (different data analysis recipe version -> different sha256).
+    recipe2 = data_analysis_recipe_file.parent / "my_pipeline_v2.yaml"
+    recipe2.write_text(_data_analysis_recipe_text(2))
+    msig2 = SessionManager.compute_data_analysis_recipe_sha256(recipe2)
+    key2 = SessionManager.compute_session_key(msig2, dbh1)
+    sm.write_assembly_ghost(key2, "my_pipeline", msig2, dbh1,
+                            {k: str(v) for k, v in source_files.items()}, {})
+
+    assert len(sm.list_all_sessions()) == 2
+
+    deleted_count = sm.delete_all_sessions()
+
+    assert deleted_count == 2
+    assert sm.list_all_sessions() == []
+    assert not (sm.root / key1).exists()
+    assert not (sm.root / key2).exists()
+
+
+def test_delete_all_sessions_on_empty_store_is_a_noop(sm):
+    assert sm.delete_all_sessions() == 0
+    assert sm.list_all_sessions() == []
+
+
+# ---------------------------------------------------------------------------
 # AuditStep helpers
 # ---------------------------------------------------------------------------
 

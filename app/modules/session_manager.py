@@ -487,6 +487,16 @@ class SessionManager:
         if d.exists():
             shutil.rmtree(d)
 
+    def delete_all_sessions(self) -> int:
+        """Delete every session — HOM-54 (Eve, 2026-11-08): faster test cleanup than
+        deleting one by one. Reuses delete_session() per key rather than rmtree-ing the
+        root directly, so a legacy/malformed session entry can't abort the whole sweep.
+        Returns the number of sessions deleted."""
+        keys = [s["session_key"] for s in self.list_all_sessions()]
+        for sk in keys:
+            self.delete_session(sk)
+        return len(keys)
+
     # ------------------------------------------------------------------
     # Utilities
     # ------------------------------------------------------------------

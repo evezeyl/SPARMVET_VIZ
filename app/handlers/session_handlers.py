@@ -43,6 +43,13 @@ def define_session_server(input, output, session, *,
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
+    # HOM-53 (Eve, 2026-11-08): session_management_ui had no reactive dependency on
+    # anything that changes after a delete — list_all_sessions() was a plain filesystem
+    # scan, so the panel never re-rendered until the page reloaded. Read (R1-safe, a
+    # plain .get()) at the top of the render to create the dependency; bumped by the
+    # delete and delete-all handlers below.
+    _session_list_version = reactive.Value(0)
+
     # ── 22-D: Session Management Panel ────────────────────────────────────────
 
     @output
@@ -58,6 +65,7 @@ def define_session_server(input, output, session, *,
         if session_manager is None:
             return ui.div(ui.p("Session manager unavailable.", class_="text-muted small"))
 
+        _session_list_version.get()  # HOM-53: subscribe, re-render after delete/delete-all
         sessions = session_manager.list_all_sessions()
 
         active_key = ""
@@ -167,6 +175,15 @@ def define_session_server(input, output, session, *,
         return ui.div(
             header,
             ui.accordion(*cards, id="session_groups_accordion", multiple=True),
+            # HOM-54: unlike the per-session Delete, this is confirm-gated (a modal) since
+            # it removes every session at once — matches the ui.modal/modal_button pattern
+            # already used elsewhere (e.g. the propagation modal in
+            # filter_and_audit_handlers.py), not the single-delete's immediate-click.
+            ui.input_action_button(
+                "session_delete_all_btn", "🗑 Delete All Sessions",
+                class_="btn-outline-danger btn-sm w-100 mt-2",
+                style="font-size:0.72em;",
+            ),
         )
 
     # Session import handler
@@ -248,12 +265,44 @@ def define_session_server(input, output, session, *,
                 clicks = getattr(input, delete_id)()
                 if clicks and clicks > 0:
                     session_manager.delete_session(sk)
+                    _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
                     _notify(
                         f"🗑 Session deleted: {sk[:24]}…",
                         type="message", duration=4,
                     )
             except Exception:
                 pass
+
+    # HOM-54: confirm-before-destroy, same ui.modal/modal_button/modal_show/modal_remove
+    # pattern as the propagation modal in filter_and_audit_handlers.py.
+    @reactive.Effect
+    @reactive.event(input.session_delete_all_btn)
+    def _show_delete_all_confirm():
+        if session_manager is None:
+            return
+        count = len(session_manager.list_all_sessions())
+        ui.modal_show(ui.modal(
+            f"This permanently deletes all {count} saved session(s). This cannot be undone.",
+            title="Delete all sessions?",
+            easy_close=True,
+            footer=ui.TagList(
+                ui.modal_button("Cancel"),
+                ui.input_action_button(
+                    "session_delete_all_confirm", "Delete All",
+                    class_="btn btn-outline-danger btn-sm",
+                ),
+            ),
+        ))
+
+    @reactive.Effect
+    @reactive.event(input.session_delete_all_confirm)
+    def _handle_delete_all_confirmed():
+        if session_manager is None:
+            return
+        n = session_manager.delete_all_sessions()
+        _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
+        ui.modal_remove()
+        _notify(f"🗑 Deleted {n} session(s).", type="message", duration=4)
 
     def _restore_session(session_key: str) -> None:
         """Run T1/T2 restore + open T3 ghost picker notification."""
