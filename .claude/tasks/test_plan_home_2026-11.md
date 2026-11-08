@@ -102,6 +102,8 @@ Open <http://127.0.0.1:8000>. Chrome, dev console open, network cache disabled (
 - [ ] HOM-28 — Export Active Session (.zip) downloads the full session dir.
 - [ ] HOM-29 `[~]` — **(carried, old §14)** Show "Last auto-save: <timestamp>" in the Session Management panel so the user knows the ghost-save fired. Confirm if present; if not, `[~]`.
 - [ ] HOM-30 `[?]` — **(carried, old §14)** During the auto-save window, "Export Active Session" should either be disabled or trigger a save first (avoid exporting a stale/partial session). Decide the behaviour.
+- [!] HOM-53 **NEW (Eve, 2026-11-08, live-found while testing)** — Deleting a session in the Session Management panel doesn't update the list; the deleted session stays visible until the page is reloaded. (We'd previously decided a page refresh could help for other things too — see if this is the same underlying "list doesn't re-render" cause or a separate one.)
+- [ ] HOM-54 `[?]` **NEW (Eve, 2026-11-08)** — Add a "Delete all sessions" option to Session Management, for faster test cleanup (28 old test sessions had accumulated in `tmp/UI_TEST/user/_sessions/`, cleared by hand 2026-11-08). Decide: a button in the panel, or is a CLI/script enough? If a button, needs the same confirm-before-destroy treatment as the single-session delete.
 
 ## 7. Export bundle
 

@@ -1,4 +1,6 @@
 visible: true
 panels:
   - type: audit_stack
-  - type: notification_log
+  # notification_log moved to home_standard_left.yaml, 2026-11-08 — between Navigation
+  # and the accordion, reachable even where this right sidebar doesn't exist at all
+  # (pipeline-static/pipeline-exploration-simple). See ui_reachability_map.md §5.

@@ -1622,13 +1622,19 @@ def define_server(input, output, session, *,
                 if panel is not None:
                     panels.append(panel)
             return ui.div(
+                # Eve, 2026-11-08: Alerts sits between Navigation (above this whole block,
+                # see ui.py) and the accordion, not after it — so it's seen first, not
+                # buried under everything else. Moved here from Home's right sidebar
+                # config at the same time (ui_reachability_map.md §5), same reasoning as
+                # F-26/Processing Issues: the right sidebar doesn't exist at all in
+                # pipeline-static/pipeline-exploration-simple.
+                ui.output_ui("notification_log_panel_ui") if include_notification_log else ui.div(),
                 ui.accordion(
                     *panels,
                     id="nav_accordion",
                     multiple=True,
                     open=open_panels,
                 ),
-                ui.output_ui("notification_log_panel_ui") if include_notification_log else ui.div(),
                 # F-26 / PROCESSING-ISSUES-RENAME-1: left sidebar, not right — the right
                 # sidebar is structurally absent in pipeline-static/pipeline-exploration-simple
                 # (ui_reachability_map.md §2), the left sidebar never is.
@@ -1956,7 +1962,10 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def notification_log_panel_ui():
-        """Render the last-20 notifications as a collapsible accordion in the right sidebar."""
+        """Render the last-20 notifications as a collapsible accordion in the left sidebar,
+        between Navigation and the panel accordion (moved from the right sidebar 2026-11-08 —
+        Eve: the right sidebar doesn't exist at all in pipeline-static/pipeline-exploration-simple,
+        see ui_reachability_map.md §5)."""
         _type_color = {
             "success": "#10a395",
             "warning": "#ca6f00",

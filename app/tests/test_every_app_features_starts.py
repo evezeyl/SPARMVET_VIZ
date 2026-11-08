@@ -69,6 +69,11 @@ def test_app_features_renders_home_without_server_error(page: Page, tmp_path, ap
             # right, so this must hold even for pipeline-static (no right sidebar at all).
             assert page.locator("#processing_issues_ui").count() == 1, \
                 "Processing Issues output must be mounted in every app features (left sidebar, never gated)"
+            # 2026-11-08: Alerts moved from the right sidebar to the left (between Navigation
+            # and the accordion) for the same reason — pipeline-static/pipeline-exploration-simple
+            # have no right sidebar at all.
+            assert page.locator("#notification_log_panel_ui").count() == 1, \
+                "Alerts output must be mounted in every app features (left sidebar, never gated)"
             time.sleep(4)
             tab = page.get_by_text("Blueprint Architect", exact=True)
             if app_features in WITH_BLUEPRINT:

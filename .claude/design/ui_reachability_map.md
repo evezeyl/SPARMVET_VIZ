@@ -47,7 +47,7 @@ about the app features's DOM, not about a genuinely static page with no reactive
 |---|---|---|---|
 | Filters, Export, Session Management, Data Import panels | Left sidebar (gated per-panel by their own flag, per `ui_implementation_contract.md §11d`) | Reachable wherever their own flag is on | Correct pattern already — gated by *feature* flag, not by container absence. |
 | Pipeline Audit / T3 audit stack | Right sidebar, gated `t3_sandbox_enabled` | No, by design | Correct: T3 audit genuinely doesn't exist as a concept in `pipeline-static`/`pipeline-exploration-simple` (no T3 sandbox there at all per the flag matrix), so the container absence matches the feature absence. Not a bug. |
-| Alerts (`notification_log_panel_ui`) — persistent notification history | Right sidebar | Toasts: yes (native, see above). Persistent log: no, in `pipeline-static`/`pipeline-exploration-simple` | A real but narrower gap than it first looks: nothing is silently lost — the toast still fires everywhere — only the scroll-back history is unreachable in those two app features. Not evaluated further here; flagging it as the same shape of issue for awareness, not fixing it in this pass. |
+| Alerts (`notification_log_panel_ui`) — persistent notification history | **Fixed, 2026-11-08: left sidebar**, between Navigation and the panel accordion. Moved off Home's right-sidebar slot (`home_standard_right.yaml`) onto its left-sidebar slot (`home_standard_left.yaml`), ahead of `data_analysis_recipe_info` — Eve's call, so it's seen before anything else, not buried below the accordion | **Yes, everywhere** — same `test_every_app_features_starts.py` assertion pattern as Processing Issues, mutation-tested the same way | Found live while testing (not a design-time guess) — same shape of gap as Processing Issues, fixed the same way, same day. Scoped to Home only; BLUEPRINT/GALLERY/TEST_LAB keep their own right-sidebar Alerts unchanged (those spaces' app features all have a right sidebar, so no reachability gap exists there). |
 | Processing Issues (`processing_issues_ui`, was "Pipeline Issues" / `pipeline_issues_ui` — renamed, F-26) | **Fixed, 2026-11-08: left sidebar**, new `processing_issues` panel type (`sidebar_registry.py`), `gate_flag: None`, added to the shared `home_standard_left.yaml` used by all 8 app features | **Yes, everywhere** — proven by `test_every_app_features_starts.py`'s per-app-features assertion, mutation-tested (removed the slot, confirmed `pipeline-static` fails, restored, confirmed it passes) | The finding that prompted this map. Previously built for the right sidebar and never mounted at all; also renamed throughout (code, UI label, ADRs, docs) to resolve the collision with `CTX-1`'s "Analysis pipeline" external actor. |
 
 ## 4. The rule to apply when building the next cross-cutting surface
@@ -64,6 +64,6 @@ about the app features's DOM, not about a genuinely static page with no reactive
 
 ## 5. Open, not resolved here
 
-- The Alerts persistent-log gap (§3) — same shape of issue, not evaluated for a fix in this pass.
-- Whether `notification_log` (ADR-060) should itself move, or gain a left-sidebar fallback for the
-  two app features that lack it. Left as a question for whoever picks it up next.
+- Nothing currently — both surfaces this map was built to fix (Processing Issues, Alerts) are
+  done (§3). Re-add an entry here the next time a cross-cutting surface is found in the wrong
+  container.

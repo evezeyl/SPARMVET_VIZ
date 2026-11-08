@@ -1,5 +1,6 @@
 visible: true
 panels:
+  - type: notification_log
   - type: data_analysis_recipe_info
   - type: deployment_info
   - type: data_analysis_recipe_choice
