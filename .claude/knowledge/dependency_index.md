@@ -168,9 +168,9 @@
 ## `app/modules/data_analysis_recipe_validator.py`
 - **Role:** `ref`
 - **provides:** `function:validate_data_analysis_recipe`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `class:DataAnalysisRecipeProblem`
-- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/transformer/src/transformer/data_wrangler.py`
-- **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`
-- **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1)`, `.claude/rules/rules_data_engine.md#3`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/transformer/src/transformer/data_wrangler.py`, `app/modules/orchestrator.py`
+- **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`, `app/tests/test_retest_data_analysis_recipes.py`, `app/handlers/blueprint_handlers.py (_handle_validate`, `BP-VALIDATE-1/VALIDATE-UI-1)`
+- **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1`, `VALIDATE-UI-1)`, `.claude/rules/rules_data_engine.md#3`
 
 ## `app/modules/deployment_error.py`
 - **Role:** `ref`

@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (post Gallery-clone-removal sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (VALIDATE-UI-1 wiring sweep)
 
 # Audit: Palette Registry Format Validity
-Generated: 2026-11-08T09:24:54
+Generated: 2026-11-08T09:41:25
 File checked: `config/palettes.yaml`
 Rule: `.claude/rules/rules_viz_factory.md §6` | ADR-081
 

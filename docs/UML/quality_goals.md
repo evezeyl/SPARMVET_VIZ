@@ -30,6 +30,11 @@ The same data and the same data analysis recipe give the same picture, every tim
 - **REQ-VIZ-DATA-01** A stored stage (Tier 1 or Tier 2 parquet) is served only while its chained
   content key matches the data analysis recipe and the data it was built from (ADR-089). A key
   mismatch removes the stale file rather than serving it — see `STM-STAGE`.
+- **REQ-VIZ-DATA-02** Data must match the data analysis recipe's declared contract before the
+  engine trusts it, and the user is told exactly where it does not — a renamed or missing column
+  is never silently dropped from the result without a visible warning somewhere a user will see
+  it before publishing (ADR-093, 2026-11-08). Full explanation, written for a scientist, not a
+  developer: `data_contract_and_failures.md`.
 
 ## 4. An audit decision is never silent
 

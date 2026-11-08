@@ -58,6 +58,15 @@ first, each goal backed by a `REQ-CORE` requirement), [`cross_cutting_concepts.m
 flag-driven gating, the Two-Category Law, tier isolation, security deferred) and
 [`risks_and_technical_debt.md`](risks_and_technical_debt.md) (the findings register, sorted by cost).
 
+**Written (2026-11-08):** a fourth text page, written for the scientist running an analysis rather
+than a developer: [`data_contract_and_failures.md`](data_contract_and_failures.md) — the two
+different checks (recipe structure vs. data-vs-contract), where to run them, and plainly, what the
+engine does with a mismatched column when nobody runs the check (silent skip). Prompted by Eve
+asking for the "process of failures" to be explained from the user's perspective; writing it
+surfaced that `validate_data_analysis_recipe_data()` (the data-vs-contract check) was built and
+tested but called from nowhere in the running app — fixed the same day (`VALIDATE-UI-1`, ADR-093)
+rather than documented as a known gap. Backed by a new `REQ-VIZ-DATA-02` in `REQ-CORE`.
+
 **Done (2026-11-07):** GALLERY, BLUEPRINT, TEST_LAB use case diagrams (UC-GALLERY, UC-BLUEPRINT,
 UC-TESTLAB) and C4 component diagrams (C4-COMP-GALLERY, C4-COMP-BLUEPRINT, C4-COMP-TESTLAB),
 same level of detail as C4-COMP-HOME.

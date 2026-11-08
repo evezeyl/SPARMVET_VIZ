@@ -1,17 +1,19 @@
 """
 @deps
 provides: function:validate_data_analysis_recipe, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, class:DataAnalysisRecipeProblem
-consumes: libs/utils/src/utils/config_loader.py, libs/transformer/src/transformer/data_wrangler.py
-consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py
-doc: .claude/tasks/tasks.md (BP-VALIDATE-1), .claude/rules/rules_data_engine.md#3
+consumes: libs/utils/src/utils/config_loader.py, libs/transformer/src/transformer/data_wrangler.py, app/modules/orchestrator.py
+consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1)
+doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3
 @end_deps
 
 Data analysis recipe validator (headless, no Shiny).
 
-Checks that every wrangling block and every assembly steps of a data analysis recipe is in a shape the
-engine accepts (tiered, with tier1/tier2 keys), by running the same resolver the engine uses
-(DataWrangler._resolve_tier). One rule, shared by the contract test, the weekly audit and,
-later, the BLUEPRINT "Validate data analysis recipe" action (BP-VALIDATE-1).
+`validate_data_analysis_recipe` checks that every wrangling block and every assembly steps of a
+data analysis recipe is in a shape the engine accepts (tiered, with tier1/tier2 keys), by running
+the same resolver the engine uses (DataWrangler._resolve_tier). `validate_data_analysis_recipe_data`
+goes further: it reads the real data and checks it against the declared contract. Both are wired
+into the BLUEPRINT "Validate" action (BP-VALIDATE-1 / VALIDATE-UI-1, 2026-11-08) — before that date
+the data-contract half was written and tested but never called from the running app.
 
 Lives in the app layer on purpose: only this layer may combine utils (ConfigManager) and
 transformer (DataWrangler); the libraries stay isolated (ADR-011/016).

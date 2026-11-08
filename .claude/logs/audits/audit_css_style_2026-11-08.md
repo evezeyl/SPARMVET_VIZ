@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (post Gallery-clone-removal sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (VALIDATE-UI-1 wiring sweep)
 
 # Audit Report: CSS Design Token Compliance
-Generated: 2026-11-08T09:24:53
+Generated: 2026-11-08T09:41:24
 Scanned: config/ui/theme.css
 Rule: rules_css_style_spec.md | ADR-055
 

@@ -63,6 +63,7 @@ from blueprint_arch.data_analysis_recipe_navigator import (
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
+from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe_data
 from blueprint_arch.join_designer import (
     compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
 )
@@ -2716,6 +2717,19 @@ def define_server(input, output, session, *,
             for label, ok, count in checks
         ]
 
+        # Data-vs-contract problems get their own detail list (location + tip) — a count alone
+        # is not actionable; the scientist needs to know *which* column and what to do about it.
+        data_problems = result.get("data_problems", [])
+        detail_rows = [
+            ui.tags.div(
+                ui.tags.div(p["location"], style="font-size:0.72rem;font-weight:600;color:#d62828;"),
+                ui.tags.div(p["problem"], style="font-size:0.72rem;"),
+                ui.tags.div(p["tip"], style="font-size:0.72rem;color:#6c757d;") if p.get("tip") else None,
+                style="margin:2px 0 6px 0;padding:4px 6px;background:#fff3cd;border-radius:3px;",
+            )
+            for p in data_problems
+        ]
+
         return ui.div(
             ui.div(
                 ui.tags.strong(status_label),
@@ -2723,6 +2737,7 @@ def define_server(input, output, session, *,
                        "border-radius:4px;padding:4px 8px;margin-bottom:6px;"),
             ),
             *check_rows,
+            *detail_rows,
             ui.tags.small(
                 result.get("data_analysis_recipe_name", ""),
                 class_="text-muted d-block mt-1 mb-2",
@@ -2734,7 +2749,16 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_bp_validate)
     def _handle_validate():
-        """Run audit_data_analysis_recipe_coherence.py and parse result into _validate_result. BP-VALIDATE-1."""
+        """Run audit_data_analysis_recipe_coherence.py (structure) and validate_data_analysis_recipe_data
+        (data vs. contract) and merge both into _validate_result. BP-VALIDATE-1 / VALIDATE-UI-1.
+
+        Two checks, because they catch different things: the subprocess below checks the data
+        analysis recipe's own shape (parse errors, action/component names, join keys) without
+        touching any data file (--skip-tsv). validate_data_analysis_recipe_data reads the real
+        data and checks it against the declared contract (input_fields/output_fields) — the only
+        check that would catch a renamed column, which the engine otherwise skips silently
+        (rules_agent_role_bioscientist.md §3-A "Silent Skip Warning").
+        """
         path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
             ui.notification_show("No data analysis recipe loaded.", type="warning")
@@ -2749,12 +2773,12 @@ def define_server(input, output, session, *,
             stdout = proc.stdout or ""
         except Exception as e:
             _validate_result.set({"pass": False, "checks": [], "data_analysis_recipe_name": path,
-                                   "raw_text": str(e)})
+                                   "raw_text": str(e), "data_problems": []})
             ui.notification_show(f"Validation error: {e}", type="error")
             return
 
         # Parse pass/fail and violation counts from the markdown output
-        passed = "## Result: ✅ PASS" in stdout
+        structure_passed = "## Result: ✅ PASS" in stdout
 
         def _count(label: str) -> tuple[str, bool, int]:
             for line in stdout.splitlines():
@@ -2773,11 +2797,27 @@ def define_server(input, output, session, *,
             _count("join key violations"),
         ]
 
+        try:
+            data_problems = validate_data_analysis_recipe_data(
+                path, bootloader.get_location("raw_data"), data_lookup=bootloader.data_lookup,
+            )
+        except Exception as e:
+            data_problems = []
+            checks.append(("data vs contract", False, 1))
+            ui.notification_show(f"Data-contract check could not run: {e}", type="warning", duration=8)
+        else:
+            checks.append(("data vs contract", len(data_problems) == 0, len(data_problems)))
+
+        passed = structure_passed and not data_problems
+
         _validate_result.set({
             "pass": passed,
             "checks": checks,
             "data_analysis_recipe_name": Path(path).name,
             "raw_text": stdout,
+            "data_problems": [
+                {"location": p.location, "problem": p.problem, "tip": p.tip} for p in data_problems
+            ],
         })
         status = "PASS" if passed else "FAIL"
         ui.notification_show(f"Validation {status}: {Path(path).name}", type="message")

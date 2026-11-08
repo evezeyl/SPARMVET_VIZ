@@ -288,8 +288,8 @@ class TestBlueprintEscapeAndValidate:
     def test_validate_runs_and_shows_result(self, page: Page, shiny_app: ShinyAppProc):
         """Clicking 'Run validation' shows PASS or FAIL result within 30 s.
 
-        This is the BP-VALIDATE-1 smoke verification — the subprocess-based validator
-        must complete without crashing and render a result badge.
+        This is the BP-VALIDATE-1 smoke verification — the subprocess-based structure
+        validator must complete without crashing and render a result badge.
         """
         _navigate_to_blueprint(page, shiny_app.url)
         _expand_accordion(page, "Validate")
@@ -300,6 +300,28 @@ class TestBlueprintEscapeAndValidate:
         result_text = result_el.inner_text(timeout=30_000)
         assert "PASS" in result_text or "FAIL" in result_text, (
             f"Validation result badge not found. Got: {result_text[:300]!r}"
+        )
+        _no_render_error(page)
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
+    def test_validate_runs_the_data_contract_check(self, page: Page, shiny_app: ShinyAppProc):
+        """'Run validation' also runs validate_data_analysis_recipe_data (VALIDATE-UI-1, 2026-11-08).
+
+        Before this date the data-vs-contract check (reads real data, catches a renamed column
+        the engine would otherwise silently skip) was written and tested but never called from
+        the running app. This asserts the 'data vs contract' check row is actually rendered —
+        not just that the older structure-only checks still pass.
+        """
+        _navigate_to_blueprint(page, shiny_app.url)
+        _expand_accordion(page, "Validate")
+        page.locator("#btn_bp_validate").click()
+        _wait_shiny(page, timeout=35_000)
+        result_text = page.locator("#bp_validate_ui").inner_text(timeout=30_000)
+        assert "data vs contract" in result_text, (
+            f"Data-contract check row not found in validation result. Got: {result_text[:300]!r}"
         )
         _no_render_error(page)
 

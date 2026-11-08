@@ -1,7 +1,7 @@
-Status: PROCESSED 2026-11-08 — all clean, no action needed (post Gallery-clone-removal sweep)
+Status: PROCESSED 2026-11-08 — all clean, no action needed (VALIDATE-UI-1 wiring sweep)
 
 # Audit Report: Hardcoded Configuration & Path Violations
-Generated: 2026-11-08T09:24:54
+Generated: 2026-11-08T09:41:24
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-048 (deployment), ADR-031 (bootloader), ADR-053 (no app features name checks)
 
