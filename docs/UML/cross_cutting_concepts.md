@@ -30,13 +30,22 @@ are fatal.
 ## Error handling at runtime
 
 Separate from startup configuration errors: a `PipelineError` carries what broke, where, the fix,
-and who should apply it (ADR-078, ADR-079). It is raised at all 7 production sites that can fail
-mid-session, but as of 2026-11-08 (ADR-094) only two of those sites actually show it to the user:
-data materialization in HOME (`DataOrchestrator`, surfaced in the "Pipeline Issues" panel) and
-BLUEPRINT's three recipe-load/YAML-parse failures (shown inline, with the fix text, right where
-the error happened — not just a generic toast). The other five raise points (VizFactory render
-failures beyond the one wired path, T3 Apply, Data Import panel) still only reach Shiny's generic
-error handling — tracked as `PIPELINE-ERROR-WIRE-2`. None of this ever calls `sys.exit` once the
+and who should apply it (ADR-078, ADR-079). It is built at all 7 production sites that can fail
+mid-session — but every one of them used to throw the rich version away before it reached a
+catcher, raising a plain `TransformationError`/`IngestionError`/`VisualizationError` with only a
+message instead (`errors.py`; found 2026-11-08, ADR-095, while closing `PIPELINE-ERROR-WIRE-2`).
+`SPARMVET_Error` now carries the original `PipelineError` through the raise (an optional
+constructor kwarg, no breaking change to any existing catch site), and a shared `capture_entry()`
+helper reads it back. As of 2026-11-08 this reaches the user at every production site that can
+raise: HOME's "Pipeline Issues" panel (data materialization and VizFactory render, including the
+Comparison Mode reference plot) shows `fix`/`who`, not just the problem; BLUEPRINT's three
+recipe-load/YAML-parse failures show inline, right where the error happened; T3 Apply's
+gatekeeper-blocked message and a failed session-ghost-save both now include the fix text (the
+ghost-save one is a real, previously-silent gap: it used to fail with zero warning, meaning T3
+state was lost on refresh without the user ever knowing); export bundle error stubs include the
+fix too. Not done: the 4 `severity="warning"` constructions that never raise (`ingestor.py`,
+`viz_factory.py`) still only print to the console — no exception to catch means a different
+mechanism is needed (`PIPELINE-WARNING-SURFACE-1`). None of this ever calls `sys.exit` once the
 app has started — that part has always held.
 
 ## Provenance

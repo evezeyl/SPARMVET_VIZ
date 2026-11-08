@@ -3,7 +3,7 @@
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-ASSEMBLER-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
-# doc: .claude/rules/rules_data_analysis_recipe_structure.md#7
+# doc: .claude/rules/rules_data_analysis_recipe_structure.md#7, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
 import os
 from typing import Dict, List, Any
@@ -108,7 +108,7 @@ class DataAssembler:
                 reference="rules_data_analysis_recipe_structure.md §7",
             )
             print(pe.format())
-            raise TransformationError(pe.problem, tip=pe.fix)
+            raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
         # --- Decision Metadata Hash Calculation (ADR-024 refinement) ---
         # ADR-016: We hash a clean copy of the step list to avoid mutation-induced invalidation.
@@ -175,7 +175,7 @@ class DataAssembler:
                         reference="rules_data_analysis_recipe_structure.md §7",
                     )
                     print(pe.format())
-                    raise TransformationError(pe.problem, tip=pe.fix)
+                    raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
                 # DEFENSIVE: Skip if join keys are missing (ADR-012)
                 # We check multiple possible keys to be extremely robust
@@ -202,7 +202,7 @@ class DataAssembler:
                         reference="docs/appendix/data_analysis_recipe_structure.yaml §yaml_resilience",
                     )
                     print(pe.format())
-                    raise TransformationError(pe.problem, tip=pe.fix)
+                    raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
                 step["__right_df__"] = self.ingredients[right_id]
 
@@ -236,7 +236,7 @@ class DataAssembler:
                     reference="rules_agent_role_bioscientist.md §8",
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix) from exc
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
 
             try:
                 consolidated_lf = action_func(consolidated_lf, step)
@@ -257,7 +257,7 @@ class DataAssembler:
                     reference="rules_agent_role_bioscientist.md §3-B",
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix) from exc
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
             except pl.exceptions.SchemaError as exc:
                 pe = PipelineError(
                     component="DataAssembler",
@@ -275,7 +275,7 @@ class DataAssembler:
                     reference="rules_agent_role_bioscientist.md §3-B",
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix) from exc
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
             except Exception as exc:
                 pe = PipelineError(
                     component="DataAssembler",
@@ -289,6 +289,6 @@ class DataAssembler:
                     evidence={"error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix) from exc
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
 
         return consolidated_lf

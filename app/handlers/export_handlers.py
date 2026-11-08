@@ -15,7 +15,7 @@ from __future__ import annotations
 # consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, polars, shiny
 #            reactive.Value:session_pipeline_errors (DIAG-RUNTIME-AUDIT-1 — included in report.qmd pipeline issues section)
 # consumed_by: app/handlers/home_theater.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/design/export_specification.md
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/design/export_specification.md
 # @end_deps
 
 from pathlib import Path
@@ -841,10 +841,18 @@ def define_export_server(input, output, session, *,
                             qmd_plot_bytes[p_id] = raw
 
                     except Exception as e:
-                        # Write error stub so bundle is still complete
+                        # Write error stub so bundle is still complete. ADR-094/
+                        # PIPELINE-ERROR-WIRE-2: include the library's real fix text when
+                        # the exception carries one (errors.py pipeline_error= kwarg) --
+                        # detection without guidance in a file nobody can ask a follow-up
+                        # question about is worse than in a live UI.
+                        _pe = getattr(e, "pipeline_error", None)
+                        _stub = f"Plot render failed:\n{e}"
+                        if _pe is not None:
+                            _stub += f"\n\nFix ({_pe.who}): {_pe.fix}"
                         zf.writestr(
                             f"{bundle_dir}/{_safe_ds}/plots/{p_id}_ERROR.txt",
-                            f"Plot render failed:\n{e}"
+                            _stub,
                         )
 
                 # ── Export data by tier ───────────────────────────────────

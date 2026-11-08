@@ -1,7 +1,7 @@
 # @deps
-# provides: class:PipelineError, function:make_render_payload
+# provides: class:PipelineError, function:make_render_payload, function:capture_entry (ADR-094)
 # consumes: -
-# consumed_by: app/src/render/pipeline_error_renderers.py, app/src/server.py, libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/data_wrangler.py, libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/audit_stack.py, app/handlers/blueprint_handlers.py
+# consumed_by: app/src/render/pipeline_error_renderers.py, app/src/server.py, libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/data_wrangler.py, libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/audit_stack.py, app/handlers/blueprint_handlers.py, app/handlers/home_theater.py (capture_entry), app/handlers/ingestion_handlers.py (capture_entry)
 # doc: .claude/knowledge/architecture_decisions.md#adr-079
 # @end_deps
 """
@@ -245,6 +245,30 @@ def make_render_payload(error: PipelineError) -> dict:
         "who_label": who_label,
         "category": error.category,
         "component": error.component,
+    }
+
+
+def capture_entry(exc: Exception, fallback_component: str, fallback_location: str) -> dict:
+    """Build a `session_pipeline_errors` entry from any caught exception (ADR-094).
+
+    Added 2026-11-08 (PIPELINE-ERROR-WIRE-2): every library raise site already builds a full
+    `PipelineError` and discards it in favour of a plain `SPARMVET_Error` subclass carrying only
+    `message`/`tip` — `errors.py`'s `SPARMVET_Error.__init__` now accepts an optional
+    `pipeline_error=` kwarg so the original instance survives the raise. This is the one place
+    that reads it back: if `exc.pipeline_error` is set, use its real fields (component, problem,
+    fix, who, severity) via `to_audit_row()`; otherwise fall back to a minimal entry built from
+    the exception's own string — the same shape, so every caller (`home_theater.py`,
+    `audit_stack.py`, `ingestion_handlers.py`) stays identical regardless of which case applies.
+    """
+    pe = getattr(exc, "pipeline_error", None)
+    if isinstance(pe, PipelineError):
+        return pe.with_timestamp().to_audit_row()
+    return {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "component": fallback_component,
+        "problem": str(exc)[:200],
+        "severity": "error",
+        "location": fallback_location,
     }
 
 

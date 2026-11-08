@@ -4461,3 +4461,110 @@ A real gap made this concrete, not hypothetical: *"the user might not be able to
 - `info.contact` goes from an undocumented convention to a documented, recommended field (`rules_data_analysis_recipe_structure.md §11`).
 
 **Files touched:** `app/src/bootloader.py` (`_validate_data_analysis_recipes`, `get_contact`, `_resolve_default_data_analysis_recipe`, `get_default_data_analysis_recipe`), `app/modules/data_analysis_recipe_validator.py` (`read_data_analysis_recipe_header`, `resolve_contact`), `app/handlers/home_theater.py` (`_render_data_analysis_recipe_choice`), `app/modules/orchestrator.py` (ADR-079 catch point), `config/deployment/templates/deployment_template.yaml`, `config/deployment/local/local.yaml`, `config/deployment/demo/demo-vetinst.yaml`, `.claude/rules/rules_data_analysis_recipe_structure.md §11`, `docs/UML/data_contract_and_failures.md`, `docs/UML/quality_goals.md`.
+
+## ADR-095: `PipelineError` survives the raise — `SPARMVET_Error` carries the original instance instead of discarding it (2026-11-08)
+
+**Status:** ACCEPTED and IMPLEMENTED (Eve, 2026-11-08: "if it is built then it should be wired").
+**Found while completing:** `PIPELINE-ERROR-WIRE-2` (ADR-094). **Corrects an unstated assumption in:** ADR-079.
+
+**Context.** Finishing `PIPELINE-ERROR-WIRE-2`'s remaining three targets (VizFactory beyond the
+one wired path, T3 Apply, Data Import) surfaced something more fundamental than a missing catch
+point. Every one of the 24 `PipelineError(...)` construction sites across the 4 library files
+(`ingestor.py` ×4, `data_assembler.py` ×7, `data_wrangler.py` ×5, `viz_factory.py` ×8) follows the
+identical pattern:
+
+```python
+pe = PipelineError(component=..., problem=..., fix=..., who=..., ...)
+print(pe.format())
+raise TransformationError(pe.problem, tip=pe.fix)   # <- the rich pe is discarded here
+```
+
+A full `PipelineError` is built, printed to the server console, and then thrown away in favour of
+a plain `SPARMVET_Error` subclass (`IngestionError`/`TransformationError`/`VisualizationError`)
+carrying only `message`+`tip`. ADR-079's own migration section anticipated this exact problem —
+"New `to_pipeline_error()` adapter is opt-in; library code can keep raising the existing
+exceptions" — but that adapter was never built anywhere (`grep -rn "to_pipeline_error" libs/ app/`
+returns nothing). The practical consequence: `home_theater.py`'s `isinstance(e, PipelineError)`
+check, added earlier today while wiring the HOME data-materialization catch point, could **never
+actually be true** for a real library failure — the exception reaching that `except` block is
+always `TransformationError`/`IngestionError`/`VisualizationError`, never a bare `PipelineError`.
+The fix built on a false premise about what the library layer actually raises.
+
+**Decision.**
+1. **`SPARMVET_Error.__init__` gains an optional `pipeline_error: PipelineError | None = None`
+   kwarg** (`libs/utils/src/utils/errors.py`), stored as `self.pipeline_error`. Every subclass
+   (`IngestionError`, `TransformationError`, `VisualizationError`, `DataAnalysisRecipeError`)
+   forwards it. **No breaking change**: the kwarg is optional, every existing call site that
+   doesn't pass it keeps working exactly as before, `self.message`/`self.tip`/`self.context` are
+   unchanged.
+2. **Not the ADR-079 adapter-method design — a carried instance instead.** `to_pipeline_error()`
+   as originally specified would reconstruct a `PipelineError` from `message`+`tip`+`context`
+   alone, which loses `who`, `category`, `evidence`, and `severity` — information the raise site
+   already computed once and would otherwise be rebuilt worse. Carrying the original `pe` object
+   directly is strictly more information, for the same one-line change at each raise site.
+3. **All 24 raise sites updated**: `raise TransformationError(pe.problem, tip=pe.fix)` becomes
+   `raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)` (mechanical, bulk-applied,
+   verified by diff count matching the construction count per file).
+4. **New shared helper `capture_entry(exc, fallback_component, fallback_location) -> dict`**
+   (`libs/utils/src/utils/pipeline_error.py`): `getattr(exc, "pipeline_error", None)` — if present,
+   `pe.with_timestamp().to_audit_row()` (the real fields); otherwise a minimal fallback entry from
+   the exception's own string, same shape either way. Replaces the hand-rolled
+   `isinstance(e, PipelineError)` check (which could never fire) and the duplicated
+   construct-a-dict code that existed at each catch point.
+5. **Every catch point updated to use it**: `home_theater.py`'s two `_group_plot_handler` blocks
+   (data materialization + VizFactory render) and the previously-unwired `_cmp_baseline_handler`
+   (Comparison Mode's T2 reference plot — same two failure points, found to have the data-
+   materialization capture missing entirely and the render capture still using the old
+   hand-rolled dict). `audit_stack.py`'s `pipeline_issues_ui` now shows `fix`/`who` when present,
+   not just `component`/`problem`. `export_handlers.py`'s per-plot export error stub
+   (`{p_id}_ERROR.txt`) now includes the fix text when the caught exception carries a
+   `PipelineError` — a file nobody can ask a follow-up question about needs the guidance in the
+   file itself.
+6. **T3 Apply's two existing-but-silent `PipelineError` constructions, found along the way, also
+   fixed:** the gatekeeper-blocked notification (`handle_apply()`) showed only "N node(s) require
+   a reason" — the `pe.fix` text ("Fill in the Reason text field...") was built, printed, and
+   discarded exactly like the library pattern above; now included in the toast and
+   `notification_log`. **Caveat, stated plainly:** this path is effectively unreachable through
+   normal browser interaction today — `btn_apply` renders with the real HTML `disabled` attribute
+   while blocked (`audit_stack.py` `btn_apply_ui`), so a user cannot click it into firing this
+   branch. Fixed anyway as defensive depth (dev tools, a race between render and click), not
+   because it closes a reachable gap. `_write_t3_ghost()` (session ghost save failure — T3 state
+   silently not surviving a page refresh) previously printed to console only and returned nothing;
+   now returns a warning string the caller shows via `_notify()`. This one **is** reachable (a
+   read-only or missing session directory at the wrong moment).
+7. **Not done, scoped out deliberately:** the "warning" (non-raising) `PipelineError` constructions
+   in `ingestor.py` and `viz_factory.py` (4 sites total — e.g. ingestion's documented "Silent Skip
+   Warning", `rules_agent_role_bioscientist.md §3-A`) print to console and nothing else, same as
+   before. These don't raise, so there's no exception to carry a `pipeline_error` through — fixing
+   them needs a different mechanism (a return value or collected-warnings list from
+   `DataIngestor.ingest()`/`VizFactory.render()`), a distinct, smaller piece of work, not a mechanical
+   extension of this fix. Tracked as `PIPELINE-WARNING-SURFACE-1`.
+
+**Consequences.**
+- `PIPELINE-ERROR-WIRE-2`'s three remaining targets are now closed: VizFactory (both call sites in
+  `home_theater.py` now wired, the second one — `_cmp_baseline_handler` — was the literal "beyond
+  the one existing catch point" gap), T3 Apply, Data Import. The originally-scoped "Data Import
+  panel (`ingestion_handlers.py`)" target turned out to be based on an imprecise premise: real
+  `IngestionError` failures from `DataIngestor.ingest()` already flow through
+  `DataOrchestrator.prepare_ingredient()` → `materialize_tier1`, the same path the HOME
+  data-materialization catch point already covers — there was no separate unwired catch point in
+  `ingestion_handlers.py` to wire. `data_import_handlers.py`'s own per-file upload-assignment flow
+  (a different, already-reasonable mechanism, generic exceptions with `.tip` shown inline via the
+  existing `import_error_block()`) is a separate concern, not touched here.
+- The outstanding items from `PIPELINE-ERROR-WIRE-1`/`-2` are now: reconciling
+  `pipeline_error_renderers.py`'s `dispatch_pipeline_error()` with the dict-shape capture pattern
+  now used consistently everywhere (a real design choice — are these renderers the intended future,
+  or should they be retired in favour of the pattern actually in production use); the full
+  audit-trail/ghost-format capture (T3 Ghost's `pipeline_errors:` list) from ADR-079 Phase 3; and
+  the new `PIPELINE-WARNING-SURFACE-1` for the 4 non-raising warning sites.
+- No change to any existing exception's public shape (`message`, `tip`, `context` unchanged) — a
+  caller matching on `except TransformationError` or reading `.tip` today is unaffected.
+
+**Files touched:** `libs/utils/src/utils/errors.py` (the carry-through kwarg),
+`libs/utils/src/utils/pipeline_error.py` (`capture_entry()`), `libs/ingestion/src/ingestion/ingestor.py`,
+`libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`,
+`libs/viz_factory/src/viz_factory/viz_factory.py` (19 raise sites), `app/handlers/home_theater.py`
+(3 catch points), `app/handlers/audit_stack.py` (`pipeline_issues_ui`, `handle_apply`,
+`_write_t3_ghost`), `app/handlers/export_handlers.py` (export error stub). Tests:
+`libs/utils/tests/test_pipeline_error.py` (carry-through + `capture_entry`, mutation-proven),
+`app/tests/test_write_t3_ghost_warning.py` (new, mutation-proven).

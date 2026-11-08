@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from utils.pipeline_error import PipelineError, make_render_payload, _format_evidence_md
+from utils.pipeline_error import PipelineError, make_render_payload, capture_entry, _format_evidence_md
+from utils.errors import TransformationError
 
 
 # ---------------------------------------------------------------------------
@@ -340,3 +341,43 @@ class TestFormatEvidenceMd:
         md = _format_evidence_md({"my_custom_key": 42})
         assert "my_custom_key" in md
         assert "42" in md
+
+
+# ---------------------------------------------------------------------------
+# SPARMVET_Error pipeline_error carry-through + capture_entry (ADR-094, 2026-11-08)
+#
+# Found while wiring PIPELINE-ERROR-WIRE-2: every library raise site built a full
+# PipelineError, printed it, then discarded it in favour of a plain SPARMVET_Error
+# subclass carrying only message+tip — nothing catching that exception could ever
+# reach the richer fields. errors.py's SPARMVET_Error now accepts an optional
+# pipeline_error= kwarg so the original instance survives the raise.
+# ---------------------------------------------------------------------------
+
+class TestPipelineErrorCarryThrough:
+    def test_sparmvet_error_carries_the_pipeline_error(self):
+        pe = _minimal()
+        exc = TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+        assert exc.pipeline_error is pe
+        assert exc.tip == pe.fix  # unchanged existing behaviour — not a breaking change
+
+    def test_sparmvet_error_without_pipeline_error_defaults_to_none(self):
+        exc = TransformationError("plain message")
+        assert exc.pipeline_error is None
+
+    def test_capture_entry_uses_the_real_fields_when_present(self):
+        pe = _minimal()
+        exc = TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+        entry = capture_entry(exc, fallback_component="X", fallback_location="Y")
+        assert entry["component"] == pe.component
+        assert entry["problem"] == pe.problem
+        assert entry["fix"] == pe.fix
+        assert entry["who"] == pe.who
+        assert entry["timestamp"]  # with_timestamp() populated it
+
+    def test_capture_entry_falls_back_for_a_plain_exception(self):
+        exc = ValueError("something broke")
+        entry = capture_entry(exc, fallback_component="DataOrchestrator", fallback_location="render(plot_id='p1')")
+        assert entry["component"] == "DataOrchestrator"
+        assert entry["location"] == "render(plot_id='p1')"
+        assert "something broke" in entry["problem"]
+        assert "fix" not in entry  # fallback shape has no fix/who — matches the real one's optional display

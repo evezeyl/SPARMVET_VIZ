@@ -140,6 +140,21 @@ Compared with arc42 (12 sections), the C4 model, and Kruchten's 4+1 views with I
 - The first plan was missing, against arc42: quality goals, constraints, cross-cutting concepts and risks. Added above. Security was missing entirely and already gave a finding (F-13).
 - All four 4+1 views are covered by the set above; scenarios are UC-HOME and CTX-1.
 
+**Fixed (2026-11-08, ADR-095, no new diagram nodes):** continuing `PIPELINE-ERROR-WIRE-2`
+("keep going please") found the root cause the previous round's 2-of-7 count was built on: every
+library raise site built a full `PipelineError` and then discarded it, raising a message-only
+`SPARMVET_Error` instead — so the 5 remaining catch sites had nothing structured to show even if
+wired. Fixed at the library contract (`SPARMVET_Error` now carries the original `PipelineError`
+through the raise; `capture_entry()` reads it back), not by re-wiring symptoms. All 7 raise points
+now surface fix/who: VizFactory render (both the normal and Comparison Mode paths — the latter was
+found missing capture entirely, not just using an old pattern), T3 Apply's gatekeeper message and
+a session-ghost-save failure that used to fail silently, and the export bundle's error stub. This
+is exception plumbing inside handlers already drawn in `COM-REACTIVE-HOME`/`COM-REACTIVE-BLUEPRINT`
+— no new reactive wiring topology, so no diagram edits this round. `cross_cutting_concepts.md` and
+`project_conventions.md`'s `pipeline_error.py` row corrected again to the closed state;
+`PIPELINE-ERROR-WIRE-2` closed, `PIPELINE-WARNING-SURFACE-1` opened for the 4 non-raising
+`severity="warning"` sites (console-only, needs a different mechanism — not started).
+
 ## 5. Discrepancy checks
 
 **Built (2026-11-07):** `assets/scripts/audit_uml_model.py`. Run manually (`./.venv/bin/python assets/scripts/audit_uml_model.py --project-root .`) and from `scripts/run_audits.sh ondemand`. No StarUML needed: it reads `docs/UML/app.mdj` as JSON. Each check below was proven with a planted error (one mutation per check: break a code/test reference, an ADR id, a flag name, a status value) and confirmed it fails, then confirmed it recovers once the model is restored. Its first real run against the finished model caught F-21 (a 4-file citation of an ADR, "ADR-037", that was never actually written).

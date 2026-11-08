@@ -12,7 +12,7 @@ import difflib
 # provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE
 # consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
-# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090)
+# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094)
 # @end_deps
 
 # Default seed of every random plot component (jitter). With a fixed default the same data and the
@@ -141,7 +141,7 @@ class VizFactory:
                 evidence={"plot_id": plot_id, "available_plots": list(data_analysis_recipe.get("plots", {}).keys())},
             )
             print(pe.format())
-            raise VisualizationError(pe.problem, tip=pe.fix)
+            raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
         plot_defaults = data_analysis_recipe.get('plot_defaults') or {}
 
@@ -295,7 +295,7 @@ class VizFactory:
                     reference="rules_data_analysis_recipe_structure.md §8",
                 )
                 print(pe.format())
-                raise VisualizationError(pe.problem, tip=pe.fix)
+                raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
         # 6. Build the ggplot object.
         p = ggplot(df_pandas, aes(**mapping_spec))
@@ -340,7 +340,7 @@ class VizFactory:
                     reference="rules_viz_factory.md §1",
                 )
                 print(pe.format())
-                raise VisualizationError(pe.problem, tip=pe.fix) from exc
+                raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
             try:
                 p = component_func(p, layer_params)
             except Exception as exc:
@@ -356,7 +356,7 @@ class VizFactory:
                     evidence={"layer_name": layer_name, "params": str(layer_params)[:200], "error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
                 )
                 print(pe.format())
-                raise VisualizationError(pe.problem, tip=pe.fix) from exc
+                raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
             print(f"Applied layer: {layer_name}")
 
         # Apply batched element_text axis overrides (L3 optimisation + any L4/L5).

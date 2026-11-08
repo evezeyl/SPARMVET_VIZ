@@ -94,7 +94,7 @@
 - **provides:** `function:define_server (audit_stack)`, `output:audit_nodes_header_ui`, `output:audit_nodes_tier2`, `output:audit_nodes_tier3`, `output:pipeline_issues_ui`, `output:aesthetic_style_panel_ui (22-J-10)`
 - **consumes:** `app/modules/wrangle_studio.py`, `app/modules/session_manager.py`, `libs/transformer/src/transformer/data_wrangler.py`
 - **consumed_by:** `app/src/server.py`
-- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen`, `pipeline_issues_ui shows fix/who)`
 
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
@@ -115,7 +115,7 @@
 - **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `function:_build_methods_section`
 - **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `polars`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/design/export_specification.md`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/design/export_specification.md`
 
 ## `app/handlers/filter_and_audit_handlers.py`
 - **Role:** `ref`
@@ -556,7 +556,7 @@
 - **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
 - **consumes:** `libs/ingestion/src/ingestion/sanitizer.py`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `libs/ingestion/src/ingestion/sanitizer.py`
 - **Role:** `wrangle`
@@ -662,14 +662,14 @@
 - **provides:** `class:DataAssembler`, `method:assemble`
 - **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
-- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `libs/transformer/src/transformer/data_wrangler.py`
 - **Role:** `wrangle`
 - **provides:** `class:DataWrangler`, `method:_resolve_tier`, `method:run`
 - **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
-- **doc:** `.claude/rules/rules_data_engine.md`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `libs/transformer/src/transformer/metadata_validator.py`
 - **Role:** `wrangle`
@@ -772,8 +772,10 @@
 
 ## `libs/utils/src/utils/errors.py`
 - **Role:** `ref`
-- **provides:** `class:SPARMVET_Error`, `class:IngestionError`, `class:TransformationError`, `class:VisualizationError`
-- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **provides:** `class:SPARMVET_Error`, `class:IngestionError`, `class:TransformationError`, `class:VisualizationError`, `class:DataAnalysisRecipeError`
+- **consumes:** `libs/utils/src/utils/pipeline_error.py (PipelineError — type hint + optional carried instance`, `ADR-079/ADR-094)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/ingestion/src/ingestion/ingestor.py`, `app/handlers/home_theater.py (reads .pipeline_error)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-079`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `libs/utils/src/utils/hashing.py`
 - **Role:** `ref`
@@ -788,9 +790,9 @@
 
 ## `libs/utils/src/utils/pipeline_error.py`
 - **Role:** `ref`
-- **provides:** `class:PipelineError`, `function:make_render_payload`
+- **provides:** `class:PipelineError`, `function:make_render_payload`, `function:capture_entry (ADR-094)`
 - **consumes:** `-`
-- **consumed_by:** `app/src/render/pipeline_error_renderers.py`, `app/src/server.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/audit_stack.py`, `app/handlers/blueprint_handlers.py`
+- **consumed_by:** `app/src/render/pipeline_error_renderers.py`, `app/src/server.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/audit_stack.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py (capture_entry)`, `app/handlers/ingestion_handlers.py (capture_entry)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`
 
 ## `libs/viz_factory/src/viz_factory/coords/core.py`
@@ -853,7 +855,7 @@
 - **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
-- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094)`
 
 ## `libs/viz_factory/tests/debug_audit.py`
 - **Role:** `plot`

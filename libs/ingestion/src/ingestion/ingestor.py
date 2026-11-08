@@ -3,7 +3,7 @@
 # consumes: libs/ingestion/src/ingestion/sanitizer.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-INGESTION-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-013
+# doc: .claude/knowledge/architecture_decisions.md#ADR-013, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
 import polars as pl
 from pathlib import Path
@@ -39,7 +39,7 @@ class DataIngestor:
                 evidence={"path": str(self.data_dir)},
             )
             print(pe.format())
-            raise IngestionError(pe.problem, tip=pe.fix)
+            raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
     def find_file(self, dataset_name: str) -> Optional[Path]:
         """
@@ -99,7 +99,7 @@ class DataIngestor:
                     evidence={"dataset_name": dataset_name, "search_context": str(search_context)},
                 )
                 print(pe.format())
-                raise IngestionError(pe.problem, tip=pe.fix)
+                raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
         try:
             # ADR-013: Use 'input_fields' for raw ingestion mapping
@@ -190,7 +190,7 @@ class DataIngestor:
                 evidence={"file": str(resolved_path), "error_type": type(e).__name__, "error_detail": str(e)[:200]},
             )
             print(pe.format())
-            raise IngestionError(pe.problem, tip=pe.fix) from e
+            raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe) from e
 
 
 if __name__ == "__main__":

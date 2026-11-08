@@ -43,7 +43,7 @@ import polars as pl
 from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.view_badge import has_tier2_steps, view_badge
-from utils.pipeline_error import PipelineError
+from utils.pipeline_error import capture_entry
 
 from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
@@ -452,29 +452,12 @@ def define_server(input, output, session, *,
                 # ADR-094: data materialization (ingestion/assembly) failures get the same
                 # session_pipeline_errors capture the VizFactory render path already has
                 # (below) — same deferred-write pattern (R1-safe), same "Pipeline Issues"
-                # panel (audit_stack.py:pipeline_issues_ui). A PipelineError's own fields
-                # are used when the failure is one (component/problem/who/fix); a plain
-                # exception falls back to its message, same as before this change.
+                # panel (audit_stack.py:pipeline_issues_ui). capture_entry() reads the real
+                # PipelineError the library already built (errors.py's pipeline_error= carry
+                # kwarg, PIPELINE-ERROR-WIRE-2) when the exception has one; falls back to the
+                # exception's own message otherwise — same as before this change.
                 if session_pipeline_errors is not None:
-                    from datetime import datetime
-                    if isinstance(e, PipelineError):
-                        _entry = {
-                            "timestamp": datetime.now().isoformat(),
-                            "component": e.component,
-                            "problem": e.problem[:200],
-                            "severity": e.severity,
-                            "location": e.location,
-                            "fix": e.fix,
-                            "who": e.who,
-                        }
-                    else:
-                        _entry = {
-                            "timestamp": datetime.now().isoformat(),
-                            "component": "DataOrchestrator",
-                            "problem": str(e)[:200],
-                            "severity": "error",
-                            "location": f"materialize(plot_id='{p_id}')",
-                        }
+                    _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}')")
                     def _append_data_error(entry=_entry):
                         current = session_pipeline_errors.get()
                         if len(current) < 50:
@@ -506,16 +489,11 @@ def define_server(input, output, session, *,
                                           aesthetic_override=_t3_overrides)
             except Exception as e:
                 # Capture error for session_pipeline_errors without violating R1
-                # (cannot call reactive.Value.set inside @render.*).
+                # (cannot call reactive.Value.set inside @render.*). ADR-094/
+                # PIPELINE-ERROR-WIRE-2: capture_entry() now uses VizFactory's real
+                # PipelineError (fix/who) when the exception carries one, not just its message.
                 if session_pipeline_errors is not None:
-                    from datetime import datetime
-                    _entry = {
-                        "timestamp": datetime.now().isoformat(),
-                        "component": "VizFactory",
-                        "problem": str(e)[:200],
-                        "severity": "error",
-                        "location": f"render(plot_id='{p_id}')",
-                    }
+                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}')")
                     def _append_render_error(entry=_entry):
                         current = session_pipeline_errors.get()
                         if len(current) < 50:
@@ -569,6 +547,16 @@ def define_server(input, output, session, *,
             try:
                 lf = _resolve_active_lf(spec, tier="T2")  # reference = T2 (ADR-086)
             except Exception as e:
+                # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_pipeline_errors
+                # capture at all) — the comparison-mode twin of _group_plot_handler's
+                # already-fixed first except block, previously missed.
+                if session_pipeline_errors is not None:
+                    _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}', mode='cmp_base')")
+                    def _append_cmp_data_error(entry=_entry):
+                        current = session_pipeline_errors.get()
+                        if len(current) < 50:
+                            session_pipeline_errors.set(current + [entry])
+                    session.on_flushed(_append_cmp_data_error, once=True)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Data error: {e}", ha="center", va="center",
@@ -579,15 +567,10 @@ def define_server(input, output, session, *,
             try:
                 return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id)
             except Exception as e:
+                # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
+                # real fix/who, same as _group_plot_handler's render catch.
                 if session_pipeline_errors is not None:
-                    from datetime import datetime
-                    _entry = {
-                        "timestamp": datetime.now().isoformat(),
-                        "component": "VizFactory",
-                        "problem": str(e)[:200],
-                        "severity": "error",
-                        "location": f"render(plot_id='{p_id}', mode='cmp_base')",
-                    }
+                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
                     def _append_cmp_error(entry=_entry):
                         current = session_pipeline_errors.get()
                         if len(current) < 50:

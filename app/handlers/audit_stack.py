@@ -22,7 +22,7 @@ from __future__ import annotations
 # consumes: app/modules/wrangle_studio.py, app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1)
 # consumed_by: app/src/server.py
-# doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044
+# doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, pipeline_issues_ui shows fix/who)
 # @end_deps
 
 from shiny import reactive, render, ui
@@ -188,9 +188,12 @@ def define_server(input, output, session, *,
                 evidence={"blocked_count": len(blocked), "node_types": blocked_types},
             )
             print(pe.format())
+            # ADR-094/PIPELINE-ERROR-WIRE-2: the fix text was already built (above) and
+            # printed to console but never shown — detection without guidance. Now both
+            # reach the screen via the same toast + notification_log entry.
             _notify(
-                f"⛔ {len(blocked)} node(s) require a reason before applying.",
-                type="error", duration=6,
+                f"⛔ {len(blocked)} node(s) require a reason before applying. {pe.fix}",
+                type="error", duration=8,
             )
             # Persist reason edits even on block so user keeps their typing.
             home_state.set({
@@ -216,8 +219,11 @@ def define_server(input, output, session, *,
         home_state.set(new_state)
 
         if session_manager is not None and _ghost_save_enabled:
-            _write_t3_ghost(new_state, session_manager,
-                            notif_log=notification_log.get() if notification_log is not None else [])
+            ghost_warning = _write_t3_ghost(
+                new_state, session_manager,
+                notif_log=notification_log.get() if notification_log is not None else [])
+            if ghost_warning:
+                _notify(ghost_warning, type="warning", duration=8)
 
         snapshot_steps.set(wrangle_studio.logic_stack.get())
         audit_pending.set(False)
@@ -895,6 +901,8 @@ def define_server(input, output, session, *,
             ts = e.get("timestamp", "")[:19].replace("T", " ")
             comp = e.get("component", "?")
             prob = e.get("problem", "Unknown error")
+            fix = e.get("fix")
+            who = e.get("who")
             items.append(
                 ui.div(
                     ui.div(
@@ -903,6 +911,14 @@ def define_server(input, output, session, *,
                         class_="d-flex justify-content-between",
                     ),
                     ui.div(prob[:120], class_="spv-text-xs"),
+                    # ADR-094/PIPELINE-ERROR-WIRE-2: fix/who are only present when the
+                    # exception carried the library's real PipelineError (capture_entry()) —
+                    # a plain exception's fallback entry has neither, so this stays empty.
+                    ui.div(
+                        f"Fix ({who}): {fix}" if who else f"Fix: {fix}",
+                        class_="spv-text-xs text-muted",
+                        style="margin-top:2px;",
+                    ) if fix else ui.span(),
                     class_="spv-audit-issue-entry mb-1 p-1",
                     style="background:#fff0f0;border-radius:3px;border-left:3px solid #d62828;",
                 )
@@ -923,7 +939,14 @@ def define_server(input, output, session, *,
 # Private helpers
 # ---------------------------------------------------------------------------
 
-def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None) -> None:
+def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None) -> str | None:
+    """Write the T3 ghost; returns a user-facing warning string on failure, None on success.
+
+    Module-level helper (no closure over `_notify`) — the caller shows the warning.
+    ADR-094/PIPELINE-ERROR-WIRE-2: previously printed the built PipelineError's fix text
+    to the console only; a failed ghost save (T3 state lost on refresh) was invisible to
+    the user it actually matters to.
+    """
     msig = state.get("data_analysis_recipe_sha256") or ""
     dbh = state.get("data_batch_hash") or ""
     if not msig or not dbh:
@@ -955,3 +978,4 @@ def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None)
             evidence={"session_key": session_key, "error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
         )
         print(pe.format())
+        return f"⚠️ {pe.problem} {pe.fix}"

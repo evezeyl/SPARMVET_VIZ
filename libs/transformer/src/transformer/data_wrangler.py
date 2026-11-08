@@ -3,7 +3,7 @@
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-WRANGLER-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/debug_wrangler.py
-# doc: .claude/rules/rules_data_engine.md
+# doc: .claude/rules/rules_data_engine.md, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
 import polars as pl
 from typing import Dict, Any, List
@@ -126,7 +126,7 @@ class DataWrangler:
                     reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix)
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
             # 1. Resolve targets (inject back into rule for standard spec compliance)
             raw_selectors = rule.get("columns", rule.get(
@@ -188,7 +188,7 @@ class DataWrangler:
                     reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix)
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
             # 2. Resolve primary keys for safety
             pks = [col for col, props in self.data_schema.items()
@@ -214,7 +214,7 @@ class DataWrangler:
                     reference="rules_agent_role_bioscientist.md §8",
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix) from exc
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
 
             try:
                 transformed_lf = action_func(transformed_lf, rule)
@@ -232,7 +232,7 @@ class DataWrangler:
                     reference="rules_data_analysis_recipe_structure.md §7",
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix) from exc
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
             except Exception as exc:
                 pe = PipelineError(
                     component="DataWrangler",
@@ -246,7 +246,7 @@ class DataWrangler:
                     evidence={"error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
                 )
                 print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix) from exc
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
 
         return transformed_lf
 
