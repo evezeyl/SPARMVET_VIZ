@@ -8,7 +8,7 @@
 >
 > all paths must be provided relative to the project root. Absolute paths or symlinks are not allowed.
 
-## ADR 001: Decorator-Based Action Registry
+## ADR-001: Decorator-Based Action Registry
 
 **Status:** IMPLEMENTED
 **Context:** The Transformer module required a way to execute declarative YAML-based wrangling rules without a monolithic `registry.py`.
@@ -20,7 +20,7 @@
 - **Multi-Column Support:** All registered actions MUST support a `columns` argument that accepts either a single string or a List[str].
 - **Polars Implementation:** Actions must use `pl.col(columns)` to enable parallel execution across the target list.
 
-## ADR 002: Tidy Data Contract (Long Format)
+## ADR-002: Tidy Data Contract (Long Format)
 
 **Status:** ENFORCED
 **Context:** Multi-species dashboards with variable gene counts (AMR) require a data format that remains stable even if species columns change.
@@ -28,7 +28,7 @@
 
 - **Transformer Implementation:** Actions like `split_and_explode` and `derive_categories` are designed specifically to operate on or produce long-format Polars LazyFrames.
 
-## ADR 003: "Thin" Shiny Frontend & Project-Agnostic Mandate
+## ADR-003: "Thin" Shiny Frontend & Project-Agnostic Mandate
 
 **Status:** IMPLEMENTED (April 9, 2026)
 **Context:** Heavy data processing (Polars) should not slow down the UI rendering, and the system must be applicable to any project schema.
@@ -37,7 +37,7 @@
 - **Rule:** No raw data wrangling or complex plotting logic allowed inside the `server.py` reactive blocks; all logic must be deferred to `libs/`.
 - **Agnostic Mandate:** The system MUST NOT assume domain-specific column names (e.g., 'species', 'sample_id'). All UI elements and logic chains must derive their structure from manifest introspection (**ADR-004**) or Polars schema discovery (**ADR-029b**).
 
-## ADR 004: YAML-Only Configuration & Registry Recognition
+## ADR-004: YAML-Only Configuration & Registry Recognition
 
 **Status:** ENFORCED
 **Context:** The "Four-Pillar Strategy" originally mentioned JSON Schema, but the current code architecture is strictly **YAML-driven**.
@@ -47,20 +47,20 @@
 - **Mapping**: The YAML `action` key acts as the look-up token. There is no intermediate JSON schema; the YAML is parsed directly into Python dictionaries for processing.
 - **Manifest Schema:** The YAML `wrangling` block for any action should prefer the key `columns: []` to allow batch processing.
 
-## ADR 005: Universal Wrangler Runner
+## ADR-005: Universal Wrangler Runner
 
 - **Agnostic Logic:** `libs/transformer/tests/debug_wrangler.py` must not contain decorator-specific hardcoding.
 - **Dynamic Dispatch:** It must initialize the `DataWrangler`, parse the provided `--manifest`, and apply whatever rules are defined therein to the `--data` TSV.
 - **CLI Standard:** It must always support `--data`, `--manifest`, and `--output` arguments via `argparse` to ensure manual reproducibility.
 
-## ADR 006: Asset-Driven Prototyping Strategy
+## ADR-006: Asset-Driven Prototyping Strategy
 
 **Status:** DEPRECATED (Moved to ADR-032)
 **Context:** For the "Walking Skeleton" to be interactive without real Galaxy data, we required a robust synthetic data layer.
 **Decision:** Use the `./assets/` layer to drive the prototype lifecycle.
 **Note:** This strategy has been superseded by the "Library Autonomy" logic in ADR-032.
 
-## ADR 007: Minimal Dataset & Manual UI Deferral
+## ADR-007: Minimal Dataset & Manual UI Deferral
 
 **Status:** ENFORCED
 **Context:** To achieve a functional prototype by March 21st, we must reduce implementation debt.
@@ -70,7 +70,7 @@
 - **Manual UI Deferral**: The dashboard will initially support manual file loading and sidebar selection of synthetic assets, avoiding the immediate need for the BioBlend/Galaxy API Mode B.
 - **Pillar 4 Shift**: Formal JSON Schema validation is deferred in favor of direct YAML manifest interpretation.
 
-## ADR 008: Visualisation Library - Plotnine Primary
+## ADR-008: Visualisation Library - Plotnine Primary
 
 **Status:** ENFORCED
 **Context:** Previous ADR prioritized Plotly. After re-evaluating the "Artist" pillar, Plotnine is chosen for consistency with the Tidy data logic.
@@ -79,7 +79,7 @@
 - **Plotly Status**: Moved to **[DEFERRED]** list.
 - **Implementation**: Factory functions will return `ggplot` objects. Interactivity is sacrificed for Phase 1 to ensure standard "walking skeleton" data-visual flow.
 
-## ADR 009: Multi-Source Ingestion
+## ADR-009: Multi-Source Ingestion
 
 **Status:** PROPOSED
 **Context:** Multi-species dashboards require combining core analytical data (e.g., ResFinder, MLST) with metadata and other additional datasets.
@@ -90,7 +90,7 @@
 - **Primary Key Rule:** The field referenced by `join_on` MUST be defined in the fields manifest with `is_primary_key: true`.
 - **Implementation:** The `DataWrangler` or an Orchestrator must loop through all defined sources, apply respective wrangling rules, and perform Polars-based joins before handing off to the visualization factory.
 
-## ADR 010: Polars as the Universal Engine
+## ADR-010: Polars as the Universal Engine
 
 **Status:** ENFORCED
 **Context:** To maintain scalability, the entire transformation chain must remain in **Polars**.
@@ -99,7 +99,7 @@
 - **Legacy Rule**: No Pandas calls allowed in `libs/transformer/` or `libs/ingestion/`.
 - **Hand-off Rule**: Conversion to Pandas is only permitted at the final moment inside the `viz_factory` for Plotnine compatibility.
 
-## ADR 011: Modular Monorepo & Independent Package Management
+## ADR-011: Modular Monorepo & Independent Package Management
 
 **Status:** ENFORCED
 **Context:** The project is a monorepo where each subdirectory in `libs/` and the main `app/` are designed to be independent Python packages.
@@ -118,7 +118,7 @@
 - **TYPE_CHECKING guard (clarified 2026-05-11):** A domain lib may reference another domain lib's type **for static analysis only** if guarded by `if TYPE_CHECKING:`. The annotated type must never be instantiated at runtime in the domain lib — the instance is injected by the Tier 3 orchestration layer (caller). Documented in `@deps` with `consumes_typeonly:` keyword. This is NOT a violation of the Clear Lines policy.
 - **Compliance status (2026-05-11):** All previously tracked violations resolved. `transformer→ingestion` was TYPE_CHECKING-only (not a runtime violation). All `"libs/utils"` pyproject entries corrected to `"utils"`.
 
-## ADR 012: Staged Data Assembly
+## ADR-012: Staged Data Assembly
 
 **Status:** PROPOSED
 **Context:** Multi-source data ingestion and complex joins can lead to monolithic, hard-to-maintain code if handled within a single class.
@@ -133,7 +133,7 @@
   - Applying final cross-dataset wrangling rules (e.g., calculated fields across joined tables).
 - **Benefit:** Decouples cleaning logic from assembly logic, enabling independent testing and reuse of atomic wrangling actions.
 
-## ADR 013: Dual-Validation Manifests
+## ADR-013: Dual-Validation Manifests
 
 **Status:** ENFORCED
 **Context:** To maintain robust data lineage between raw ingestion and final presentation, we must track schema state at two distinct points.
@@ -144,7 +144,7 @@
 **Wrangling Rule:** The `wrangling` block remains the operational bridge between these two states.
 - **`input_fields`** -> **`wrangling`** -> **`output_fields`**.
 
-## ADR 014: Identity Logic for Wrangling
+## ADR-014: Identity Logic for Wrangling
 
 **Status:** ENFORCED
 **Context:** Some reference datasets (e.g., APEC Virulence) should be imported "as-is" without transformations or column filtering.
@@ -157,7 +157,7 @@
 - **Implementation:** Codified in [Data Engine Protocol — §4 "The Manifest Data Contract"](./.claude/rules/rules_data_engine.md) (Identity Transformations section).
 - **The Contract Guard:** The `output_fields` block is a strict Polars `.select()` contract, protecting the `DataAssembler` from Column Drift.
 
-## ADR 015: Flexible Source Resolution (Manifest-First)
+## ADR-015: Flexible Source Resolution (Manifest-First)
 
 **Status:** IMPLEMENTED
 **Context:** Multi-source ingestion required explicit path resolution.
@@ -167,7 +167,7 @@
 - **Implementation:** Prototyped in `DataIngestor` and finalized via `wrangle_debug.py`.
 - **Reference:** See Section 3 (Manifest Data Contract) of the [Data Engine Protocol](./.claude/rules/rules_data_engine.md).
 
-## ADR 016: Package-First Authority (Editable Mode)
+## ADR-016: Package-First Authority (Editable Mode)
 
 **Status:** IMPLEMENTED
 **Context:** Fragmented library imports required a standard, reusable interface.
@@ -177,7 +177,7 @@
 - **Standard:** All execution locked to root `.venv` ([Runtime Environment — §1 & §5](./.claude/rules/rules_runtime_environment.md)).
 - **Execution:** Validated via `assets/scripts/wrangle_debug.py` acting as an orchestration layer.
 
-## ADR 018: Unified Transformer Model (Shared Registry)
+## ADR-018: Unified Transformer Model (Shared Registry)
 
 **Status:** IMPLEMENTED
 **Context:** The expansion from atomic cleaning (Layer 1) to multi-source assembly (Layer 2) required consistent transformation logic across both stages without code duplication.
@@ -187,7 +187,7 @@
 - **Homogeneity:** Any atomic decorator (e.g., `strip_whitespace`, `split_column`) is natively available as an operation within an assembly recipe.
 - **Benefit:** Simplifies library maintenance and ensures that "Wrangling" is treated as a single unified discipline across all pipeline layers.
 
-## ADR 019: Decorator-Based Plot Component Registry
+## ADR-019: Decorator-Based Plot Component Registry
 
 **Status:** PROPOSED
 **Context:** The Viz Factory requires a modular way to build plots without a monolithic plotting script.
@@ -197,7 +197,7 @@
 - **Categories:** Components are registered by type: `geoms`, `scales`, `themes`, `facets`, and `coords`.
 - **Benefits:** Allows the UI to dynamically list available "Plot Layers" for user selection.
 
-## ADR 020: Data-Agnostic Plotting Manifest
+## ADR-020: Data-Agnostic Plotting Manifest
 
 **Status:** PROPOSED
 **Context:** Plots must be reusable across different datasets (e.g., boxplots for different species).
@@ -207,7 +207,7 @@
 - **Layers Block:** An ordered list of dictionaries defining the plot construction.
 - **Example:** A `geom_boxplot` layer is a dictionary of parameters passed to the registered function.
 
-## ADR 021: Reactive State Management (Anchor vs. Filter)
+## ADR-021: Reactive State Management (Anchor vs. Filter)
 
 **Status:** PROPOSED
 **Context:** Users need to explore data by filtering without losing the "Master" view.
@@ -217,7 +217,7 @@
 - **The Filtered View:** A temporary LazyFrame created by the Transformer for exploration.
 - **Reactivity:** The Viz Factory re-renders the *same* manifest against whichever state is active (Unmodified vs. Filtered).
 
-## ADR 022: The Violet Law (Documentation Standard)
+## ADR-022: The Violet Law (Documentation Standard)
 
 **Status:** ENFORCED
 **Context:** Consistent verbal and written communication is necessary when identifying core architectural classes and files.
@@ -227,7 +227,7 @@
 - **Strict Boundary:** This format is strictly DOCUMENTATION-ONLY. It MUST NOT be used for functional class names, variables, filenames, or high-level docstrings in the actual codebase logic.
 - **Reference:** Workspace Rules `rules_aesthetic.md` (The Violet Law).
 
-## ADR 023: Statistical Transformations (Stats) Delegation
+## ADR-023: Statistical Transformations (Stats) Delegation
 
 **Status:** ENFORCED
 **Context:** The `stat_*` layer logic in Plotnine often mimics or operates directly on geometric layers. Creating an entirely separate complex abstract registry mechanism for `stats` components would needlessly complicate the declarative YAML manifest structure.
@@ -236,7 +236,7 @@
 - **Benefit:** Simplifies the manifest structure by injecting stats logic as parameter arguments into existing geom factories (e.g. `geom_bar` handling `stat="count"`).
 - **Compliance:** This explicitly preserves the ggplot2 (R) "Grammar of Graphics" while eliminating overhead from maintaining disjointed duplicate state.
 
-## ADR 024: Tiered Wrangling & Data Lifecycle (ADR-024 Refinement)
+## ADR-024: Tiered Wrangling & Data Lifecycle (ADR-024 Refinement)
 
 **Status:** IMPLEMENTED (April 10, 2026)
 **Context:** Plotnine's 22-minute render time for >200k rows necessitates a data reduction strategy. Users require "instant" UI filtering without re-running heavy Layer 1/2 joins.
@@ -261,7 +261,7 @@ All `wrangling` blocks in YAML manifests MUST use nested tier keys to separate l
 - The `DataWrangler` uses `_resolve_tier()` to extract the correct sequence, ensuring structural homogeneity.
 - **Enforcement (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** Flat list `wrangling: [...]` is now **rejected** by `_resolve_tier()` with a `ManifestError`. All manifests must use the tiered structure. Two legacy manifests were migrated (`demo_abromics.yaml`, `1_Abromics_general_pipeline.yaml`). Test coverage added: `libs/transformer/tests/test_data_wrangler.py`.
 
-## ADR 025: The Gallery & Recipe Pattern (Visual Cookbook)
+## ADR-025: The Gallery & Recipe Pattern (Visual Cookbook)
 
 **Status:** PROPOSED --- Target: Next Session
 **Context:** Users without deep ggplot2 knowledge need a way to discover, understand, and adapt plot manifests for their own AMR datasets. Static documentation is insufficient --- examples must be executable and inspectable.
@@ -282,7 +282,7 @@ All `wrangling` blocks in YAML manifests MUST use nested tier keys to separate l
 
 **Low-Level Coding Design Note:** This pattern is explicitly designed to support **Low-Level Coding** --- a practice where domain scientists (veterinary epidemiologists, microbiologists) interact with the system at the YAML abstraction layer rather than the Python layer. The YAML manifest *is* the code. A user who can edit a text file can produce a custom AMR visualisation. The Gallery provides the examples needed to make this self-teaching.
 
-## ADR 026: Reactive State, Persona Logic & Reporting
+## ADR-026: Reactive State, Persona Logic & Reporting
 
 **Status:** ENFORCED (April 7, 2026)
 **Context:** Decoupling production rigidity from developer flexibility while maintaining sub-5s responsiveness for 200k+ rows.
@@ -293,7 +293,7 @@ All `wrangling` blocks in YAML manifests MUST use nested tier keys to separate l
 - **Immutable Audit**: "No Trace, No Export" rule. Manual exclusions require a mandatory 'User Note'.
 - **Persistence**: YAML is the authoritative format for all saved 'Recipes' to ensure human-readability and Git compatibility.
 
-## ADR 027: Multi-Module UI Orchestration & Aesthetics
+## ADR-027: Multi-Module UI Orchestration & Aesthetics
 
 **Status:** PROPOSED (April 8, 2026)
 **Context:** Need a scalable UI supporting different Personas (User/Developer) while adhering to the "Thin Frontend" rule.
@@ -309,7 +309,7 @@ All `wrangling` blocks in YAML manifests MUST use nested tier keys to separate l
   - **Tooltips/Help**: Light Yellow (#fff9c4) or Light Green (#e8f5e9).
   - **Prohibition**: No "Deep Violet" themes in the UI (Documentation only).
 
-## ADR 028: Gallery Content & Logic Separation
+## ADR-028: Gallery Content & Logic Separation
 
 **Status:** PROPOSED (April 8, 2026)
 **Context:** Need an expandable gallery with proper attribution and licensing.
@@ -357,7 +357,7 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 
 - **Right Sidebar (Audit Stack):** Logic Color-Coding differentiates Inherited Tier 2 steps (Light violet background `#f3e5f5`) from User-added Tier 3 steps (Light Yellow background `#fffde7`). User steps must include a mandatory comment field. Each step has a trash icon (Remove). Removing Tier 2 steps requires warning + confirmation. Restore button (**Reset Sync**) is blue (`#0d6efd`) and resets Tier 3 state to match Tier 2. Centered header alignment is mandatory for all sidebar categories.
 
-## ADR 029b: Dynamic Discovery & Interaction Logic
+## ADR-029b: Dynamic Discovery & Interaction Logic
 
 **Status:** PROPOSED (April 8, 2026)
 **Decision:** Implement manifest-driven discovery and standardized interactivity.
@@ -366,7 +366,7 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 - **Auto-Discovery:** UI MUST introspect the Polars schema to identify all columns; all columns (except Primary Keys) must be hideable via a picker and include top-level filter boxes.
 - **Persistence:** Sidebars are open by default but must be collapsible to allow 100% theater width.
 
-## ADR 029c: Interaction & Visibility Logic
+## ADR-029c: Interaction & Visibility Logic
 
 **Status:** PROPOSED (April 8, 2026)
 **Decision:** Standardize how users hide/show data and outliers.
@@ -375,7 +375,7 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
   - Search/Filter boxes at the top of every column directly affect the Tier 3 (Leaf) view.
 - **Sidebar Persistence:** Sidebars must be "Collapsible" (Open by default on Desktop) to allow the Theater to occupy 100% of the width during visualization.
 
-## ADR 030: Manifest & External Data Ingestion
+## ADR-030: Manifest & External Data Ingestion
 
 **Status:** PROPOSED (April 8, 2026)
 **Decision:** Expand `DataConnector (ingestor.py)` to handle custom user inputs beyond standard pipelines.
@@ -383,7 +383,7 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 - **Manifest Upload:** Support uploading predefined YAML manifests to override default pipeline logic.
 - **External Data Joins:** Allow adding "Additional Data" files. The UI MUST provide a joining helper that uses `libs/transformer` relational logic to verify Primary Key matching before merging. (eg.can reuse parts of scripts in .assets/scripts)
 
-## ADR 031: Data Tier, Session Persistence & Path Authority
+## ADR-031: Data Tier, Session Persistence & Path Authority
 
 **Status:** IMPLEMENTED (April 9, 2026)
 **Context:** Need a configurable, reliable way to handle session recovery and multi-location data storage.
@@ -396,7 +396,7 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 - **Location 4 (User & Tiers 3):** User-accessible directory for session states, active UI leaf interaction, and ghost saves.
 - **Location 5 (Gallery):** Assets gallery for cloned/submitted recipes (`assets/gallery_data/`).
 
-## ADR 032: Library Autonomy & Script Internalization
+## ADR-032: Library Autonomy & Script Internalization
 
 **Status:** IMPLEMENTED (April 9, 2026) — scope clarified 2026-04-24
 **Decision:** All core utility scripts (Synthetic Data Generation, Excel Parsing) MUST reside within their respective library `src/` directories to ensure package self-sufficiency (**ADR-011**).
@@ -407,7 +407,7 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 
 **Scope clarification (2026-04-24):** The deletion mandate applies only to scripts that duplicated library-internal logic during early prototyping. `assets/scripts/` is **not deprecated** as a location — it is the designated home for **user-facing workspace helper scripts** (manifest creation, manifest validation, data verification, deployment debugging). These are not library functions and must not be moved into `libs/`. Library-internal test/debug runners belong inside their respective `libs/` packages. Cross-library dev utilities with no clear library owner may go in `libs/utils/`.
 
-## ADR 033: Educational Gallery & Structured Metadata
+## ADR-033: Educational Gallery & Structured Metadata
 
 **Status:** IMPLEMENTED (April 18, 2026)
 **Context:** Users need more than just technical recipes; they need context on *how* and *why* to use specific visualizations.
@@ -424,7 +424,7 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 - **Governance:** High-density analysis "Theaters" focus on discovery, while the Gallery focuses on "Visual Literacy."
 - **Visual Polish**: Centering of the Guidance pane content using `mx-auto` and `text-center` is required for all recipes.
 
-## ADR 034: Unified Diagnostic Layer & Aesthetic Error Handling
+## ADR-034: Unified Diagnostic Layer & Aesthetic Error Handling
 
 **Status:** IMPLEMENTED (April 10, 2026)
 **Context:** Silent failures in large Polars pipelines lead to user frustration and "Black Box" analytical profiles.
