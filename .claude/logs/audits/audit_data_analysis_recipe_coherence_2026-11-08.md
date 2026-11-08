@@ -1,10 +1,10 @@
-Status: PROCESSED (all-pass, 2026-11-08 Processing Issues rename/remount review)
+Status: PROCESSED 2026-11-08 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (PASS, re-verified as part of issue #32's closure; audit_task_drift.py and audit_changelog_sync.py specifically mutation-tested, not just read)
 # Audit Report: Data Analysis Recipe Coherence
-Generated: 2026-11-08T13:16:10
+Generated: 2026-11-08T19:59:31
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Rule: ADR-013 (Data analysis recipe Data Contract), ADR-041 (Unified Data analysis recipe Standard), rules_data_analysis_recipe_structure.md §7
 
-- Data analysis recipes assessed: 6
+- Data analysis recipes assessed: 7
 - Parse errors: 0
 - Data analysis recipes with input_fields/TSV mismatches: 0
 - Data analysis recipes with invalid action names: 0
@@ -21,6 +21,7 @@ Rule: ADR-013 (Data analysis recipe Data Contract), ADR-041 (Unified Data analys
 | `1_Abromics_general_pipeline.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `1_test_data_ST22_dummy.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `2_test_data_ST22_dummy.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `3_test_no_joins.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `demo_abromics.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `figshare_integration.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `stress_test_master.yaml` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |

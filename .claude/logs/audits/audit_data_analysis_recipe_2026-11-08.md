@@ -1,13 +1,13 @@
-Status: PROCESSED (all-pass, 2026-11-08 Processing Issues rename/remount review)
+Status: PROCESSED 2026-11-08 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (PASS, re-verified as part of issue #32's closure; audit_task_drift.py and audit_changelog_sync.py specifically mutation-tested, not just read)
 # Audit Report: Data Analysis Recipe Structure Integrity
-Generated: 2026-11-08T13:16:10
+Generated: 2026-11-08T19:59:30
 Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
 Assembler: libs/transformer/tests/debug_assembler.py
 Scratch output: tmpAI/audit_data_analysis_recipe_integrity
 Rule: All pipeline data analysis recipes must assemble without error (ADR-041, ADR-024)
 
-- Data analysis recipes checked: 6
-- Passed: 6
+- Data analysis recipes checked: 7
+- Passed: 7
 - Failed: 0
 
 ## Result: ✅ PASS
@@ -19,6 +19,7 @@ All pipeline data analysis recipes assemble successfully.
 - `config/data_analysis_recipes/pipelines/1_Abromics_general_pipeline.yaml`
 - `config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml`
 - `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- `config/data_analysis_recipes/pipelines/3_test_no_joins.yaml`
 - `config/data_analysis_recipes/pipelines/demo_abromics.yaml`
 - `config/data_analysis_recipes/pipelines/figshare_integration.yaml`
 - `config/data_analysis_recipes/pipelines/stress_test_master.yaml`
