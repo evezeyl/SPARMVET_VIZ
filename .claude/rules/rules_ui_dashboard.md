@@ -10,7 +10,7 @@ deps:
 
 - **Library Sovereignty:** UI MUST NOT duplicate logic; it MUST call libraries in `./libs/`.
 - **Dynamic discovery:** Tabs and column filters MUST be derived from data analysis recipes and Polars schemas at runtime.
-- **T3 = Publication Finisher (§12, ui_implementation_contract.md):** Tier 3 scope is **permanently locked** to row filters, row exclusions, column visibility, and aesthetic overrides. It is NOT a wrangling sandbox — no action-picker UI. Wrangling belongs in T1/T2 data analysis recipes.
+- **T3 = Publication Finisher (§12, ui_implementation_contract.md):** Tier 3 scope is **permanently locked** to row filters, row exclusions, column visibility, aesthetic overrides, and BLUEPRINT's own YAML escape hatch (`developer_raw_yaml`, written only via `data_analysis_recipe_edit_enabled` — never from any other source, see ADR-093). It is NOT a wrangling sandbox — no action-picker UI, and no importing of recipe content from elsewhere (not even Gallery, ADR-093). Wrangling belongs in T1/T2 data analysis recipes.
 - **audit steps IS the Audit Trace:** There is no separate FILTERS.txt for T3. The T3 YAML audit trail (list of AuditStep dicts) is the complete audit trail. `aesthetic_override` nodes are stored separately as `t3_plot_overrides` but are included in the export report.
 - **Two Ghost Save Slots** (per `session_key`, under `{location_4}/_sessions/{session_key}/` — see `ui_implementation_contract.md §12d`): (1) T1/T2 Ghost (`assembly.json`) — written on assembly, refreshed on data_analysis_recipe/data change. (2) T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply` AND on every panel switch away from Home.
 - **State Feedback:** When a plot is "In-Calculation" (recalc ONLY applies to Tier 3 since Tiers 1/2 are immutable Parquet caches), the UI must use a dimming overlay with a "recalculating" message.
@@ -83,9 +83,9 @@ The UI dynamically alters component availability based on the templates in `conf
 
 ## 5. Architectural Invariants (Gallery & Caching)
 
-- **Gallery Isolation Boundary (TBD-03)**: The Gallery (`gallery_viewer.py`) MUST strictly operate as a static reference browser. It is explicitly forbidden from generating dynamic Polars materializations or calculating Plotnine objects at runtime.
+- **Gallery Isolation Boundary (TBD-03, no exceptions as of ADR-093, 2026-11-08)**: The Gallery (`gallery_viewer.py`) MUST strictly operate as a static reference browser. It is explicitly forbidden from generating dynamic Polars materializations or calculating Plotnine objects at runtime, and has no interactive handoff into any other user space — not T3, not BLUEPRINT.
   - The Gallery MUST serve pre-rendered `.png` assets, YAML data analysis recipes, and JSON metadata exclusively from `assets/gallery_data/`.
-  - The ONLY permitted interactive functionality is the transplantation (cloning) of a pure YAML string into the Tier 3 active sandbox.
+  - A user who wants to reuse a recipe fragment copies the YAML by hand (`gallery_yaml_preview` output), same as any other file-based handoff (`developer_workflow.md §7`).
 - **Hierarchical Asset Caching (TBD-02)**: The Bootloader MUST implement a single source of truth static dict for all materialized/parsed assets natively at runtime to prevent repetitive file-IO overhead.
   - Cache Hierarchy Contract: `_asset_cache[data_analysis_recipe_id][dataset_id][plot_id][asset_type]`
 - **Gallery Taxonomy & Indexing (ADR-037)**: The Gallery UI MUST NOT perform direct filesystem scans or YAML parsing for filtering.

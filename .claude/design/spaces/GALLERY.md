@@ -2,19 +2,18 @@
 
 **Type:** User space  
 **Status:** Partial build (`gallery_viewer.py` exists; community/contribution features not yet built)  
-**Last updated:** 2026-05-05
+**Last updated:** 2026-11-08
 
-> **Correction (2026-11-07):** this page said the Gallery→T3 transplant was "removed (dead code
-> cleaned up 2026-05-05)" and that the handoff path is "copy YAML → open in BLUEPRINT". Checked
-> against the live code (`gallery_handlers.py::handle_gallery_clone`, the "Clone to Sandbox"
-> button) and `ui_implementation_contract.md §12e` ("Gallery → T3 Transplant Rules", described
-> there as current and detailed): the transplant is alive today — clicking "Clone to Sandbox"
-> inserts a `developer_raw_yaml` T3 node (empty `reason`, blocking apply) directly into HOME,
-> gated on `t3_sandbox_enabled` and the app features (`pipeline-exploration-advanced` and
-> `developer`). There is no "Open in BLUEPRINT" button and no copy-to-BLUEPRINT path anywhere
-> in the code. The sections below (Non-Goals, Key Design Constraints, Current State, Open
-> Questions) are corrected to match; `developer_workflow.md`/`developer_workflow.qmd` were also
-> fixed (both repeated this page's stale claim).
+> **History (kept for context, not current):** this page went through two corrections before
+> landing on today's design. It originally said the Gallery→T3 transplant was "removed, replaced
+> by copy-YAML→BLUEPRINT" — checked 2026-11-07 (`uml_findings.md` F-22) and found backwards: the
+> transplant (`handle_gallery_clone`, "Clone to Sandbox") was alive and working, and a
+> BLUEPRINT handoff had never been built. That fact-check was correct, but Eve then clarified
+> (2026-11-08, F-23, `ADR-093`) that the transplant itself was wrong regardless: T3 is audited
+> modifications a HOME user makes to their own running analysis, never a place to import recipe
+> content from anywhere — Gallery included. **The transplant is now removed** (ADR-093), and no
+> Gallery→BLUEPRINT handoff was built to replace it — GALLERY has no interactive handoff into any
+> other space at all. The sections below describe that final state.
 
 ---
 
@@ -25,7 +24,7 @@ GALLERY is a browsable collection of plot examples. It serves two roles:
 1. **Inspiration**: the user can browse existing examples, see rendered previews, and understand what kind of visualisations are possible — before committing to building a data analysis recipe.
 2. **Community**: users can contribute examples they have developed, request examples based on articles or needs, and discover what others have shared.
 
-GALLERY is read-only from the analysis perspective — it does not run analyses or modify data. It feeds HOME (indirectly, via data analysis recipes) and BLUEPRINT (as inspiration for data analysis audit step).
+GALLERY is read-only from the analysis perspective — it does not run analyses or modify data, and has no interactive handoff into HOME or BLUEPRINT. It feeds both only indirectly, as inspiration: a user who wants to reuse a recipe fragment copies the YAML by hand into a text file or into BLUEPRINT (ADR-093).
 
 ---
 
@@ -56,6 +55,7 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 - GALLERY does not run the analysis — that is HOME.
 - GALLERY does not build or edit data analysis recipes — that is BLUEPRINT.
 - GALLERY does not store user data.
+- GALLERY does not write into any other space's state at runtime — not T3, not BLUEPRINT (ADR-093, 2026-11-08). The only "handoff" is a human copying YAML text by hand.
 
 ---
 
@@ -64,7 +64,7 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 - **Read-only data path**: GALLERY never modifies session state or data analysis recipes. It only provides YAML to copy.
 - **Local-first**: the bundled gallery (shipped with the app) works fully offline. Community features (search GitHub, submit issues/PRs) require network access and are gracefully degraded when unavailable.
 - **Positive inclusion** (ADR-071): GALLERY panel is only mounted when `gallery_enabled` is true in app features config.
-- **Gallery→HOME (T3) is the implemented handoff path**: "Clone to Sandbox" sends the example's `wrangling` block straight into HOME's T3 sandbox as a `developer_raw_yaml` audit node (empty `reason`, blocking apply until filled in), gated on `t3_sandbox_enabled` and app features (`ui_implementation_contract.md §12e`). There is no GALLERY→BLUEPRINT handoff of any kind — copying a data analysis recipe fragment into BLUEPRINT (e.g. as a starting point) would be a manual copy-paste of the YAML text, same as any other file.
+- **No interactive handoff, anywhere (ADR-093, 2026-11-08)**: GALLERY has zero runtime coupling to HOME or BLUEPRINT. Reusing a recipe fragment is always a manual copy-paste of the YAML text (`gallery_yaml_preview` output) into a separate file or into BLUEPRINT's editor, same as any other file-based handoff (`developer_workflow.md §7`). A prior "Clone to Sandbox" button that wrote directly into HOME's T3 was removed — see ADR-093 for why.
 
 ---
 
@@ -73,7 +73,7 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 | Code module | Role |
 |---|---|
 | `gallery_viewer.py` | Browse UI, example list, preview rendering |
-| `gallery_handlers.py` | Server-side handlers: example loading, index, clone |
+| `gallery_handlers.py` | Server-side handlers: example loading, taxonomy filtering, preview rendering |
 
 ---
 
@@ -82,7 +82,7 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 - Example browsing and preview: built and working.
 - Search: not yet built (`RESEARCH-HELP-1` in `.claude/tasks/tasks.md`).
 - Community contribution / request workflow: not yet built — `GalleryViewer.submission_modal_ui()` is defined but called from nowhere (no wired button).
-- Gallery→T3 transplant ("Clone to Sandbox"): built and working (`gallery_handlers.py::handle_gallery_clone`, `ui_implementation_contract.md §12e`).
+- Gallery→T3 transplant ("Clone to Sandbox"): removed 2026-11-08 (ADR-093). GALLERY is now a pure read-only browser.
 
 ---
 
@@ -92,4 +92,4 @@ GALLERY is read-only from the analysis perspective — it does not run analyses 
 - **Contribution workflow**: full PR via GitHub API (complex) vs. "copy this YAML template and open an issue with it" (simple, manual merge). Start simple.
 - **Gallery index format**: current `gallery_index.json` registry — sufficient for local browsing; will need tags and search fields added.
 - **Sample data for previews**: each example needs bundled sample data to render a preview. How is this managed? Stored per-example in the gallery dir, or a shared synthetic sample dataset?
-- **"Clone to Sandbox" is architecturally wrong as built, not just undocumented (reopened 2026-11-08, F-23 in `.claude/tasks/uml_findings.md`).** The clone button sends the example's whole `wrangling` block into HOME's T3 as a `developer_raw_yaml` node. Eve's clarification (2026-11-08): T3 is audited modifications a HOME user makes to *their own running analysis* — never a place to import new recipe content from anywhere. BLUEPRINT has no T3 and no audit stack at all; it is the IDE for building T1/T2 recipes. So this button is recipe-authoring wearing a T3 costume, one level deeper than the already-decided `ADR-082 §4` ("BLUEPRINT never authors T3 — T3 is HOME-only"). Not decided yet: remove the button entirely, or build a real Gallery→BLUEPRINT handoff (recipe-building help — matching what BLUEPRINT is actually for) to replace it. Eve will decide after testing real usage, not now. See F-23 for the full history.
+- **Resolved 2026-11-08 (was open, F-23/ADR-093):** "Clone to Sandbox" removed outright. Eve declined a Gallery→BLUEPRINT handoff too, to keep the user spaces independent with no special case to maintain — GALLERY is inspiration only, reuse is manual copy-paste. If a machine-assisted "start a new recipe from this example" need emerges later, it is a new BLUEPRINT feature decided on its own, not a revival of this path.

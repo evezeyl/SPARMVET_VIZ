@@ -24,7 +24,7 @@
 | `app/handlers/home_theater.py` | Home Theater Shiny wiring (ADR-043/045/047) | Reactive hooks → Home UI | `dynamic_tabs`, `sidebar_nav_ui`, `sidebar_tools_ui`, `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `home_data_preview`, `home_col_selector_ui`, `system_tools_ui`, `export_bundle_download`, `plot_group_{p_id}` |
 | `app/handlers/audit_stack.py` | Pipeline Audit Shiny wiring (ADR-044/045) | Reactive hooks → Audit UI | `audit_nodes_tier2`, `audit_nodes_tier3`, `handle_apply`, `track_audit_step_changes` |
 | `app/handlers/blueprint_handlers.py` | Blueprint Architect Shiny wiring (ADR-039/045) | Reactive hooks → Architect UI | `_handle_data_analysis_recipe_import`, `_do_load_component`, `sync_blueprint_mapper`, `_handle_upload_*` |
-| `app/handlers/gallery_handlers.py` | Gallery Shiny wiring (ADR-037/045) | Reactive hooks → Gallery UI | `_update_gallery_options`, `handle_gallery_clone`, `gallery_preview_img`, `gallery_md_content` |
+| `app/handlers/gallery_handlers.py` | Gallery Shiny wiring (ADR-037/045/093) | Reactive hooks → Gallery UI | `_update_gallery_options`, `gallery_preview_img`, `gallery_md_content` |
 | `app/handlers/ingestion_handlers.py` | Ingestion & app features Shiny wiring (ADR-045) | Reactive hooks → Ingest/App features | `handle_ingest`, `update_app_features_context` |
 | `app/modules/orchestrator.py` | Tier 1 Ingestion & Assembly Bridge | Data analysis recipe + Data → Parquet | `DataOrchestrator (orchestrator.py)` |
 | `libs/ingestion/src/ingestion/ingestor.py` | Reads sources, early validation | File → LazyFrame | `DataIngestor (ingestor.py)`, `scan_csv` |

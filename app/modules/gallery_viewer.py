@@ -185,11 +185,6 @@ class GalleryViewer:
                     ui.span("Select an Example", class_="fw-bold"),
                     choices={}
                 ),
-                ui.input_action_button(
-                    "btn_clone_gallery",
-                    ui.HTML('<i class="bi bi-copy"></i> Clone to Sandbox'),
-                    class_="btn-primary w-100 mt-2"
-                ),
                 value="gallery_example_panel",
             ),
             ui.accordion_panel(

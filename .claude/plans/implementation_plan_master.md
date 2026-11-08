@@ -545,7 +545,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 - ST22 Lineage 2 (Plasmids) — user task.
 - THEATER-1, PROP-2/PROP-3, EXPORT-2/3/4 — deferred.
 - UX-NOTIF-1 — DONE (2026-05-02). UX-NOTIF-2 (ghost persistence) deferred.
-- Gallery Clone to Sandbox re-verify — deferred.
+- ~~Gallery Clone to Sandbox re-verify~~ — moot, the feature was removed 2026-11-08 (ADR-093).
 
 ---
 
@@ -576,7 +576,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 - CSS rounding verification in browser (Bootstrap cards top corners, accordion items).
 - `tasks_test_ui_current.md` §12 Gallery UI tests need re-verification after taxonomy changes.
 - UX-CSS-DEMO: review `assets/demo/demo_vetinst.css` after default theme finalised.
-- Gallery Clone to Sandbox re-verify.
+- ~~Gallery Clone to Sandbox re-verify~~ — moot, the feature was removed 2026-11-08 (ADR-093).
 
 ---
 

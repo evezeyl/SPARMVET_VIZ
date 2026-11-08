@@ -154,43 +154,35 @@ reads a reactive calc that recomputes from inputs.
 
 ---
 
-## 7. Cross-Space Handoffs Stay File-Based — with one deliberate, flag-gated exception
+## 7. Cross-Space Handoffs Stay File-Based — no exceptions
 
-**Corrected 2026-11-07:** this section previously claimed "no in-app handoff, no cross-space
-state coupling" for every pair of spaces, including GALLERY→BLUEPRINT. That is wrong for one
-pair: GALLERY→HOME has a real in-app handoff. See the exception below the table.
+**History (kept for context, not current):** this section went through two corrections. It first
+wrongly claimed zero in-app handoffs anywhere, when GALLERY actually had one working
+(`handle_gallery_clone`, "Clone to Sandbox" → HOME's T3) — corrected 2026-11-07. Then, 2026-11-08
+(ADR-093), Eve decided that handoff was itself the wrong design — T3 is audited modifications a
+HOME user makes to their own running analysis, never a place to import recipe content from
+anywhere — and had it removed, with no Gallery→BLUEPRINT handoff built to replace it. So the rule
+below is, as of 2026-11-08, true without exception again.
 
-Handoffs **between most spaces** are file-based, and intentionally so: one space exports a
+Handoffs **between every pair of spaces** are file-based, and intentionally so: one space exports a
 file; the user loads it in the other space *if and when* that space is enabled. There is **no
-in-app "Open in BLUEPRINT"** anywhere in the code, and no BLUEPRINT-targeted state coupling.
+in-app handoff of any kind** between any two spaces, and no cross-space state coupling anywhere.
 
 **Why (decisive):** the spaces are **independently flag-gated** — `test_lab_enabled`,
 `blueprint_enabled`, and `gallery_enabled` are independent flags (`rules_app_features_flags.md`).
 An app features may grant TEST_LAB without BLUEPRINT, or GALLERY without BLUEPRINT. An in-app
 cross-space handoff would break the instant the target space is disabled, and would violate
 ADR-071 positive-inclusion (each space must stand alone). A file on disk works under *any*
-app features combination. This is why the GALLERY→BLUEPRINT idea noted in §9 was never built.
+app features combination.
 
 | Handoff | How it works |
 |---|---|
 | TEST_LAB Scaffolding → BLUEPRINT | Export the boilerplate data analysis recipe ZIP; open it in BLUEPRINT (if enabled) via BLUEPRINT's normal data analysis recipe load. |
 | BLUEPRINT → HOME | Save the data analysis recipe to disk; HOME's data analysis recipe selector picks it up. |
 | TEST_LAB Anonymiser → BLUEPRINT (de-anonymise) | Join the anonymised data with the mapping TSV in BLUEPRINT (step list printed in the Anonymiser output). |
+| GALLERY → anywhere | Copy the YAML text by hand (`gallery_yaml_preview` output) into a separate file or into BLUEPRINT's editor. GALLERY has no runtime coupling to any other space (ADR-093). |
 
-Each row above is "export here, choose there." No control reaches across a space boundary.
-
-**The one exception — GALLERY → HOME, "Clone to Sandbox":** checked against the live code
-(`gallery_handlers.py::handle_gallery_clone`) and `ui_implementation_contract.md §12e`
-("Gallery → T3 Transplant Rules", current and detailed there). This button inserts the
-example's `wrangling` block directly into HOME's T3 sandbox as a `developer_raw_yaml` audit
-node — no export, no file, no user re-choosing anything. It is a real, working in-app
-cross-space handoff, not file-based. It does not violate the independence rule above because
-it degrades safely: gated on `t3_sandbox_enabled` and on app features
-(`pipeline-exploration-advanced` and `developer`), it is simply hidden (not broken) when the
-target capability is off, and the node still carries an empty `reason` that blocks `btn_apply`
-until the user writes one — so nothing silent happens to HOME's state. GALLERY→BLUEPRINT has
-no equivalent: a user who wants an example as a BLUEPRINT starting point copies the YAML text
-manually, the same as with any other file.
+Every row above is "export here, choose there" or "copy by hand." No control reaches across a space boundary.
 
 ---
 
@@ -227,21 +219,20 @@ manually, the same as with any other file.
                                                                           └──────────────────┘
 
    Solid arrows = artifact flows, every one OPTIONAL. Each producing tool is usable standalone.
-   Every arrow is a file the user EXPORTS from one tool/space and CHOOSES in the next — with one
-   exception, not drawn above: GALLERY also has a direct "Clone to Sandbox" button straight into
-   HOME's T3 (not through BLUEPRINT at all, not file-based) — see the exception in §7.
+   Every arrow is a file the user EXPORTS from one tool/space and CHOOSES in the next, or (GALLERY)
+   YAML text the user copies by hand — no exceptions (ADR-093, 2026-11-08).
 ```
 
 ---
 
 ## 9. What This Means for Implementation
 
-There is **no further in-app integration to build.** Linking stays file-based (export →
-choose) for every pair except GALLERY→HOME, which already has its "Clone to Sandbox" button
-(§7). The producer tools already each support file choice + export, which is the entire
-mechanism for the rest. "Open in BLUEPRINT" was never built and has no plan to be — it would
-duplicate what manual copy-paste already does, at the cost of module and space independence
-(§5, §7).
+There is **no in-app integration to build, anywhere.** Linking stays file-based (export →
+choose) or, for GALLERY, copy-by-hand, for every pair of spaces, no exceptions (ADR-093,
+2026-11-08). The producer tools already each support file choice + export, which is the entire
+mechanism. "Open in BLUEPRINT" was never built and has no plan to be; neither does any
+machine-assisted Gallery→BLUEPRINT path — both would duplicate what manual copy-paste already
+does, at the cost of module and space independence (§5, §7).
 
 The only follow-up is documentation:
 

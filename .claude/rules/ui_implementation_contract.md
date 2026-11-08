@@ -589,13 +589,18 @@ T3 ghost is never written on intermediate filter edits — only on apply or pane
 
 ### 12e. Gallery → T3 Transplant Rules
 
-**App features gate:** Gallery transplant into the T3 sandbox is available to **`pipeline-exploration-advanced` and `developer` app features files only**. Lower app features files (static, simple) can browse the gallery but the "Send to T3" button is hidden.
-
-- Gallery transplant always targets the **last-active plot sub-tab** in Home.
-- A transplanted gallery node is inserted as a Yellow `developer_raw_yaml` node with `reason: ""` (empty, blocking apply).
-- The `reason` field is pre-focused in the UI immediately after transplant so the user fills it before doing anything else.
-- The transplanted node carries a `gallery_source` metadata field: `{gallery_id, gallery_yaml_hash}` for provenance.
-- Gallery transplant is **deferred** — no changes are applied until `btn_apply` is pressed. If the user navigates away from Home before applying, the pending transplant is preserved in `_pending_t3_nodes` (see §13).
+> **REMOVED (ADR-093, 2026-11-08):** the Gallery clone-to-T3 feature this section described
+> (`handle_gallery_clone`, the "Clone to Sandbox" button) is deleted. T3 is audited modifications a
+> HOME user makes to their own running analysis — never a place to import recipe content from
+> anywhere, Gallery included (ADR-082 §4 extended). GALLERY is now unconditionally the static
+> reference browser `rules_ui_dashboard.md §5` describes, with no interactive handoff into any other
+> space. See ADR-093 for the full reasoning. This section's content below is kept only so a reader
+> who finds an old reference to `gallery_source`/`developer_raw_yaml`-from-Gallery understands what it
+> meant; it is not current.
+>
+> - Gallery transplant always targeted the **last-active plot sub-tab** in Home.
+> - A transplanted gallery node was inserted as a Yellow `developer_raw_yaml` node with `reason: ""` (empty, blocking apply).
+> - The transplanted node carried a `gallery_source` metadata field: `{gallery_id, gallery_yaml_hash}` for provenance.
 
 ### 12f. Export Report Spec
 

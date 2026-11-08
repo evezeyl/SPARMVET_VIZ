@@ -127,9 +127,9 @@
 ## `app/handlers/gallery_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (gallery_handlers)`
-- **consumes:** `app/src/bootloader.py`, `libs/transformer/src/transformer/data_wrangler.py (removed — clone now builds AuditStep directly)`
+- **consumes:** `app/src/bootloader.py`
 - **consumed_by:** `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/ui_implementation_contract.md#12e`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/rules_ui_dashboard.md#5`
 
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`

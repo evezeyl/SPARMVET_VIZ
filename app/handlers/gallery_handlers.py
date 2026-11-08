@@ -1,14 +1,18 @@
 """app/handlers/gallery_handlers.py
-Gallery Shiny wiring (ADR-037 / ADR-045, Phase 22-F).
+Gallery Shiny wiring (ADR-037 / ADR-045).
 
 Entry point:
     define_server(input, output, session, *,
-                  bootloader, safe_input,
-                  current_app_features=None, home_state=None)
+                  bootloader, safe_input)
 
-Concern: Gallery filtering, preview rendering, example clone, gallery_browser_anchor.
-         Clone transplants a developer_raw_yaml AuditStep into home_state._pending_t3_nodes
-         (§12e). Gated on t3_sandbox_enabled.
+Concern: Gallery filtering and preview rendering only. GALLERY is a static
+reference browser (rules_ui_dashboard.md §5, "Gallery Isolation Boundary") —
+it has no interactive handoff into any other user space. A prior clone-to-T3
+feature was removed 2026-11-08 (F-23/F-22, uml_findings.md): T3 is HOME-only,
+audited modifications to a user's own running analysis, never a place to
+import recipe content from. GALLERY serves inspiration; a builder who wants
+to reuse a recipe fragment copies the YAML by hand into a text file or
+BLUEPRINT, same as any other file-based handoff (developer_workflow.md §7).
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.* decorators
 only. It MUST NOT be imported by non-Shiny contexts.
 """
@@ -17,26 +21,21 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (gallery_handlers)
-# consumes: app/src/bootloader.py, libs/transformer/src/transformer/data_wrangler.py (removed — clone now builds AuditStep directly)
+# consumes: app/src/bootloader.py
 # consumed_by: app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/ui_implementation_contract.md#12e
+# doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/rules_ui_dashboard.md#5
 # @end_deps
 
-import base64
-import hashlib
 import json
-import uuid
-from datetime import datetime, timezone
+import base64
 from pathlib import Path
 
 import polars as pl
-import yaml
 from shiny import reactive, render, ui
 
 
 def define_server(input, output, session, *,
-                  bootloader, safe_input,
-                  current_app_features=None, home_state=None):
+                  bootloader, safe_input):
     """Register all Gallery reactive handlers.
 
     Parameters
@@ -45,10 +44,6 @@ def define_server(input, output, session, *,
         Path Authority instance (ADR-031).
     safe_input : callable
         Shared utility: safe_input(input_obj, key, default) → value.
-    current_app_features : reactive.Value[str] | None
-        Active app features — used to gate "Send to T3" (§12e).
-    home_state : reactive.Value[dict] | None
-        §13 Home Module State Object — receives transplanted AuditSteps.
     """
 
     # --- Gallery Taxonomy 'Select All' Logic ---
@@ -150,77 +145,6 @@ def define_server(input, output, session, *,
             choices = {rid: entry["name"] for rid, entry in registry.items()}
             choices = dict(sorted(choices.items(), key=lambda item: item[1]))
             ui.update_select("gallery_example_select", choices=choices)
-
-    @reactive.Effect
-    @reactive.event(input.btn_clone_gallery)
-    def handle_gallery_clone():
-        # Gate: only app features files with T3 sandbox can receive transplants (§12e).
-        if not bootloader.is_enabled("t3_sandbox_enabled"):
-            ui.notification_show(
-                "Send to T3 is not available for this app features.",
-                type="warning", duration=5,
-            )
-            return
-
-        if home_state is None:
-            return
-
-        example_id = safe_input(input, "gallery_example_select", None)
-        if not example_id:
-            return
-
-        index_path = bootloader.get_location("gallery") / "gallery_index.json"
-        if not index_path.exists():
-            return
-
-        try:
-            with open(index_path, "r") as f:
-                idx = json.load(f)
-
-            example_entry = idx["registry"].get(example_id)
-            if not example_entry:
-                return
-
-            file_path = example_entry["path"]
-            with open(file_path, "r") as f:
-                raw_yaml = f.read()
-                data_analysis_recipe = yaml.safe_load(raw_yaml)
-
-            # Extract the wrangling block as the YAML fragment for T3.
-            wrangling_raw = data_analysis_recipe.get("wrangling", {})
-            yaml_fragment = yaml.dump(
-                {"wrangling": wrangling_raw}, default_flow_style=False, allow_unicode=True,
-            )
-            gallery_yaml_hash = hashlib.sha256(raw_yaml.encode()).hexdigest()[:16]
-
-            # Build a developer_raw_yaml AuditStep (§12b / §12e).
-            node: dict = {
-                "node_type": "developer_raw_yaml",
-                "id": str(uuid.uuid4()),
-                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M"),
-                "plot_scope": "__all__",
-                "plot_scopes_intent": ["__all_at_apply__"],
-                "params": {"yaml_fragment": yaml_fragment},
-                "reason": "",  # empty — blocks btn_apply until user fills it in
-                "gallery_source": {
-                    "gallery_id": example_id,
-                    "gallery_yaml_hash": gallery_yaml_hash,
-                },
-            }
-
-            # Append to pending nodes in home_state (§12g.7).
-            cur = home_state.get()
-            pending = list(cur.get("_pending_t3_nodes", []))
-            pending.append(node)
-            home_state.set({**cur, "_pending_t3_nodes": pending})
-
-            ui.notification_show(
-                f"Example '{example_id}' sent to T3 sandbox. "
-                "Add a reason in the Audit panel, then press Apply.",
-                type="message", duration=8,
-            )
-        except Exception as e:
-            ui.notification_show(f"Clone failed: {e}", type="error", duration=10)
 
     # --- Gallery Content Resolution (ADR-037) ---
     @reactive.Calc

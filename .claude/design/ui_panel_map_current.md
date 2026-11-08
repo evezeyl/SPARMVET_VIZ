@@ -277,7 +277,7 @@
 | Gallery sidebar accordion | `#gallery_sidebar_accordion` | Example + Taxonomy panels |
 | Gallery taxonomy filters | `.gallery-sidebar-group` | ×6 filter groups (ADR-063: 6-axis taxonomy) |
 | Gallery filter title | `.gallery-filter-title` | 0.85rem/700/uppercase labels |
-| Example selector + clone | `#gallery_example_select`, `#btn_clone_gallery` | Inside sidebar accordion |
+| Example selector | `#gallery_example_select` | Inside sidebar accordion; no clone button (removed, ADR-093) |
 | View title banner | `.view-title-banner` | "📚 Gallery Inspiration" |
 | Preview accordion | `#gallery_preview_accordion` | bslib accordion |
 | Preview accordion header | `#gallery_preview_accordion .accordion-button` | bg `#f8f9fa`, §14 |

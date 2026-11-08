@@ -1254,7 +1254,7 @@ The "All except" choice captures the justification-plot case directly without re
 
 ### Relationship to existing ADRs
 
-- **ADR-037** (Gallery Browser): Gallery transplants now also receive a propagation dialog when targeting non-key columns. Existing gallery clone behaviour preserved as the default per-plot choice.
+- **ADR-037** (Gallery Browser): Gallery transplants now also receive a propagation dialog when targeting non-key columns. Existing gallery clone behaviour preserved as the default per-plot choice. **REMOVED by ADR-093 (2026-11-08):** the Gallery clone/transplant feature this point describes no longer exists.
 - **ADR-044** (Persona-Gated Audit Stack): Unchanged. Persona gates the right-sidebar visibility; per-plot scoping is orthogonal.
 - **ADR-046** (Scientific Audit Protocol): Strengthened. The audit protocol now records propagation choices and primary-key warnings explicitly.
 - **ADR-047** (Tier-Aware Export Bundle): The export Methods generator now recognises `primary_key_warning: true` and prepends a textual marker.
@@ -1540,7 +1540,7 @@ Seven violation sites were found across 5 files: `ui.py`, `gallery_handlers.py`,
 
 1. **Prohibition:** Runtime application code MUST NOT compare `bootloader.persona` against name strings. All behavioral branching must use `bootloader.is_enabled(flag_name)`.
 
-2. **New flag `t3_sandbox_enabled`:** Added to all six persona templates and the `PersonaValidator._REQUIRED_FLAGS` list. Controls: T3 wrangling tier visibility in the tier toggle, right sidebar audit panel inclusion in the layout, Gallery "Send to T3" button, T3 data slice inclusion in export bundle.
+2. **New flag `t3_sandbox_enabled`:** Added to all six persona templates and the `PersonaValidator._REQUIRED_FLAGS` list. Controls: T3 wrangling tier visibility in the tier toggle, right sidebar audit panel inclusion in the layout, T3 data slice inclusion in export bundle. (The fourth control this flag originally had, the Gallery "Send to T3" button, was removed by ADR-093, 2026-11-08 — the feature it gated no longer exists.)
    - `false`: `pipeline-static`, `pipeline-exploration-simple`
    - `true`: `pipeline-exploration-advanced`, `project-independent`, `developer`, `qa`
 
@@ -1719,7 +1719,7 @@ The authoritative CSS design token specification is `.claude/rules/rules_css_sty
 
 1. **Gallery filter UI moves to `#nav_sidebar`** via the `sidebar_tools_ui` Gallery branch in `home_theater.py`. The filter accordion is structured as three `ui.accordion_panel()` sections — Family, Data Pattern, Difficulty — plus a bottom Apply button, mirroring Home's Filters panel layout.
 
-2. **Recipe selector and clone button** move to the top of the `sidebar_tools_ui` Gallery branch (above the filter accordion) — they are the primary navigation controls for the view and belong with the nav tools, not embedded in the content.
+2. **Recipe selector and clone button** move to the top of the `sidebar_tools_ui` Gallery branch (above the filter accordion) — they are the primary navigation controls for the view and belong with the nav tools, not embedded in the content. (The clone button itself was removed by ADR-093, 2026-11-08; the recipe selector's position is unchanged by that removal.)
 
 3. **Gallery main content** (`gallery_tech_tabs` + educational pane) is rendered as a plain full-width `ui.div()` — no `ui.layout_sidebar()` wrapper.
 
@@ -4380,3 +4380,52 @@ Lesson: a panel renderer that reads `active_cfg()` re-renders the whole sidebar 
 **Decision 2.** The `id:` key stays (it marks the root of a recipe, `rules_test_lab.md` §3a) and must equal the file name. `validate_data_analysis_recipe` reports a difference with a tip; a test checks every shipped recipe and template; the shipped ones are corrected (`1_test_data_ST22_dummy`, `figshare_integration`, `audit`, `e_coli`, `simple_template`, `universal_template`, `complex_template`). The include folder of `complex_template` is renamed to match the file (basename mirroring).
 
 **Not done (tracked in tasks.md):** the Blueprint selector still lists file paths instead of ids (CONFIG-BLUEPRINT-ID-DISPLAY-1); `complex_template` lacks `analysis_groups:` and does not load; the templates are not covered by a load test.
+
+## ADR-093: Remove Gallery's T3 clone — GALLERY is a static reference browser, no interactive handoff to any other space (2026-11-08)
+
+**Status:** ACCEPTED and IMPLEMENTED (Eve, 2026-11-08).
+
+**Context.** GALLERY had one interactive feature (`handle_gallery_clone`, the "Clone to Sandbox"
+button, `app/handlers/gallery_handlers.py`): it sent the active example's whole `wrangling` block
+into HOME's T3 as a `developer_raw_yaml` audit node. Investigating a doc discrepancy about it
+(`.claude/tasks/uml_findings.md` F-22, then F-23) surfaced two problems with the feature itself,
+not just its documentation:
+
+1. Two rule files disagreed about T3's own scope — `rules_ui_dashboard.md §1` named four node
+   types (filters, exclusions, column visibility, aesthetic overrides); `ui_implementation_contract.md
+   §12a` named five, `developer_raw_yaml` being the fifth, built for BLUEPRINT's own YAML-escape-hatch
+   save path. Gallery's clone only fit the five-type contract, not the four-type summary.
+2. Eve's clarification settled which was right: **T3 is audited modifications a HOME user makes to
+   their own running analysis** — never a place to import recipe content from anywhere. BLUEPRINT has
+   no T3 and no audit stack at all; it is the IDE for building T1/T2 recipes. Gallery pushing a whole
+   example into T3 was recipe-authoring wearing a T3 costume — one level deeper than what ADR-082 §4
+   ("BLUEPRINT never authors T3 — T3 is HOME-only") already said, extended here to "no recipe-building
+   content in T3, regardless of source."
+
+Eve also declined the alternative of building a real Gallery→BLUEPRINT handoff: GALLERY now serves
+purely as inspiration and a demonstration of what the app can plot; a builder who wants to reuse a
+recipe fragment copies the YAML by hand, same as any other file-based handoff
+(`.claude/design/developer_workflow.md §7`). This keeps the user spaces independent with no special
+case to maintain.
+
+**Decision.**
+1. `handle_gallery_clone` and its `btn_clone_gallery` button are removed (`gallery_handlers.py`,
+   `gallery_viewer.py`). GALLERY has zero interactive handoff into any other space.
+2. `rules_ui_dashboard.md §5`'s Gallery Isolation Boundary carve-out ("The ONLY permitted interactive
+   functionality is the transplantation...into the Tier 3 active sandbox") is deleted — GALLERY is now
+   unconditionally the static reference browser the rest of that rule already said it must be.
+3. `ui_implementation_contract.md §12e` ("Gallery → T3 Transplant Rules") is marked REMOVED.
+4. `.claude/design/spaces/GALLERY.md`'s Non-Goals, Key Design Constraints, Current State and Open
+   Questions sections are corrected to match (no transplant, no BLUEPRINT handoff, inspiration only).
+5. `t3_sandbox_enabled`'s "Gallery 'Send to T3' button" control (ADR-052/053-era flag definition,
+   this log, 2026-04/05) no longer applies — the flag's other three controls (T3 tier visibility, right
+   sidebar audit panel, T3 export data) are unchanged.
+6. `developer_workflow.md §7` reverts to its general rule with no exception: every cross-space
+   handoff is file-based.
+
+**Consequences.** F-22 and F-23 (`uml_findings.md`) are closed by removal rather than by picking one of
+the open options. `rules_test_lab.md`-style module independence now also holds for GALLERY↔HOME and
+GALLERY↔BLUEPRINT: no space writes into another space's state at runtime, ever. If a future need for
+machine-assisted "start a new recipe from this gallery example" emerges, it is a new BLUEPRINT feature
+(e.g. an import-from-YAML entry point alongside `btn_bp_new_data_analysis_recipe`), decided and
+designed on its own — not a revival of the T3 clone.

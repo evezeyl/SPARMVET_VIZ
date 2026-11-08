@@ -221,15 +221,13 @@ def server(input, output, session):
             active_cfg=active_cfg,
         )
 
-    # Gallery: filtering, preview, clone → T3 transplant (GALLERY-CLONE-DECOUPLE-1)
+    # Gallery: filtering and preview only — static reference browser (rules_ui_dashboard.md §5)
     if bootloader.is_enabled("gallery_enabled"):
         from app.handlers.gallery_handlers import define_server as _define_gallery_server
         _define_gallery_server(
             input, output, session,
             bootloader=bootloader,
             safe_input=_safe_input,
-            current_app_features=current_app_features,
-            home_state=home_state,
         )
 
     # Ingestion & app features switching
