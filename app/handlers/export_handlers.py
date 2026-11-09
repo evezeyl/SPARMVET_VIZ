@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, function:_build_methods_section
-# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), polars, shiny
+# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 #            reactive.Value:last_drawn_seeds (REPRO-SEED-2/REPRO-PROV-1, ADR-097)
 # consumed_by: app/handlers/home_theater.py
@@ -538,6 +538,27 @@ def define_export_server(input, output, session, *,
                 class_="mb-1",
             )
 
+        # Mode 2 add-on (ADR-097 decision 1/#45): opt-in, forces global scope when
+        # checked — the scope radio above still renders but is overridden server-side
+        # (safe_input(input, "export_include_reproducibility", ...)), so the note below
+        # explains the override rather than disabling the radio itself.
+        mode2_toggle = ui.div(
+            ui.input_checkbox(
+                "export_include_reproducibility",
+                "Also include a reproducibility/reimport bundle",
+                value=False,
+            ),
+            ui.tags.small(
+                "Adds the full recipe (with your audited steps baked in as real "
+                "wrangling actions), the actual data files, and a provenance record "
+                "with the seed and hashes needed to verify or re-run this later. "
+                "Forces Scope to Global — you can't partially reconstruct a recipe.",
+                class_="text-muted d-block mb-1",
+                style="font-size:0.7em;",
+            ),
+            class_="mb-1",
+        )
+
         return ui.div(
             ui.div(
                 ui.input_text(
@@ -546,6 +567,7 @@ def define_export_server(input, output, session, *,
                     value="",
                 ),
                 scope_toggle,
+                mode2_toggle,
                 ui.input_radio_buttons(
                     "export_preset",
                     label="Quality",
@@ -679,8 +701,17 @@ def define_export_server(input, output, session, *,
                         type="warning", duration=8,
                     )
 
+        # ── Mode 2 add-on (ADR-097 decision 1, #45): Publication content (plots,
+        # report, T3 justification) is always built, unchanged — this is additive, not
+        # a second, separate "reproducibility-only" bundle that suppresses it. That
+        # stricter split (and whether Mode 1 keeps its current full recipe copy once
+        # this exists) stays an open question, not resolved here. Checking the box
+        # forces global scope — you cannot partially reconstruct a recipe from one
+        # plot's data alone — regardless of the scope radio's current value.
+        wants_mode2 = bool(safe_input(input, "export_include_reproducibility", False))
+
         # ── Apply export scope (Global / Active group / Active plot) ──────
-        export_scope = safe_input(input, "export_scope", "global")
+        export_scope = "global" if wants_mode2 else safe_input(input, "export_scope", "global")
         scope_label = "global"
         _subtab = (active_home_subtab.get() or "") if active_home_subtab is not None else ""
         active_pid = _subtab.removeprefix("subtab_") if _subtab.startswith("subtab_") else ""
@@ -1081,6 +1112,90 @@ def define_export_server(input, output, session, *,
                         )
                     except Exception as e:
                         zf.writestr(f"{bundle_dir}/data_analysis_recipes/t3_steps_ERROR.txt", str(e))
+
+            # ── Mode 2 add-on: reproducibility/reimport bundle (ADR-097, #45) ──────
+            # Additive to everything above, never a replacement — Mode 1's content is
+            # unchanged regardless of this checkbox (see the UI note in system_tools_ui).
+            mode2_skipped: dict[str, str] = {}
+            if wants_mode2:
+                try:
+                    from blueprint_arch.t3_translator import build_mode2_recipe
+                    import yaml as _yaml
+
+                    mode2_cfg, mode2_skipped = build_mode2_recipe(cfg.raw_config, _t3_by_plot)
+                    zf.writestr(
+                        f"{bundle_dir}/data_analysis_recipes_reproducibility/{data_analysis_recipe_id}.yaml",
+                        _yaml.safe_dump(mode2_cfg, sort_keys=False, allow_unicode=True),
+                    )
+
+                    # Actual data files, not just a hash reference — Eve: "needs all to be
+                    # fully reproducible". Sensitive-data handling is #46, not built here.
+                    for _ds_id, _src_path in prov.get("data_source_paths", {}).items():
+                        try:
+                            _src = Path(_src_path)
+                            with open(_src, "rb") as f:
+                                zf.writestr(
+                                    f"{bundle_dir}/data_reproducibility/{_ds_id}{_src.suffix}",
+                                    f.read(),
+                                )
+                        except Exception as e:
+                            zf.writestr(
+                                f"{bundle_dir}/data_reproducibility/{_ds_id}_ERROR.txt", str(e)
+                            )
+
+                    # The seed in effect per plot (ADR-097 decision 2/3) — a T3-pinned
+                    # override first, else this session's drawn number (REPRO-SEED-2).
+                    _seeds_per_plot: dict[str, object] = {}
+                    for _p_id, _ in all_plots:
+                        _pinned = (_t3_aesthetic_overrides.get(_p_id) or {}).get("random_state")
+                        if _pinned is not None:
+                            _seeds_per_plot[_p_id] = _pinned
+                        elif last_drawn_seeds is not None:
+                            with reactive.isolate():
+                                _drawn = last_drawn_seeds.get().get(_p_id)
+                            if _drawn is not None:
+                                _seeds_per_plot[_p_id] = _drawn
+
+                    effective_run = {
+                        "_about": (
+                            "Retrospective provenance for this export (field names checked "
+                            "against RO-Crate's Provenance Run Crate profile, arXiv:2312.07852, "
+                            "where they naturally overlap) — what was actually used, not just "
+                            "what the recipe declares as its default."
+                        ),
+                        "generated": now.isoformat(),
+                        "data_analysis_recipe_sha256": prov["data_analysis_recipe_sha256"],
+                        "data_batch_hash": prov["data_batch_hash"],
+                        "t3_audit_steps_sha256": prov["t3_audit_steps_sha256"],
+                        "engine_fingerprint": prov["engine_fingerprint"],
+                        "containerized": prov["containerized"],
+                        "image_ref": prov["image_ref"],
+                        "uv_lock_sha256": prov["uv_lock_sha256"],
+                        "git_commit": prov["git_commit"],
+                        "release_version": prov["release_version"],
+                        "software_versions": prov["software_versions"],
+                        "data_source_paths": prov["data_source_paths"],
+                        "seeds_per_plot": _seeds_per_plot,
+                        "t3_translation_skipped": mode2_skipped,
+                    }
+                    zf.writestr(
+                        f"{bundle_dir}/data_analysis_recipes_reproducibility/effective_run.yaml",
+                        _yaml.safe_dump(effective_run, sort_keys=False, allow_unicode=True),
+                    )
+                    if mode2_skipped:
+                        with reactive.isolate():
+                            _notify(
+                                f"{len(mode2_skipped)} plot(s)' T3 steps could not be fully "
+                                "baked into the reproducibility recipe (see "
+                                "t3_translation_skipped in effective_run.yaml) — they are "
+                                "still in the Publication content, just not engine-replayable "
+                                "yet.",
+                                type="warning", duration=10,
+                            )
+                except Exception as e:
+                    zf.writestr(
+                        f"{bundle_dir}/data_analysis_recipes_reproducibility/ERROR.txt", str(e)
+                    )
 
             # data_analysis_recipe_sha, data_sha, tiers_exported, prov — all computed before tmpdir block.
 
@@ -1629,6 +1744,13 @@ def define_export_server(input, output, session, *,
                 "  report.qmd        — Quarto source (re-render: quarto render report.qmd)",
                 rendered_note,
                 "  README.txt        — this file",
+                *([
+                    "  data_analysis_recipes_reproducibility/<id>.yaml — frozen recipe copy with",
+                    "       your audited T3 steps baked in as real wrangling actions, per plot",
+                    "       (ADR-097). effective_run.yaml alongside it records the seed, the four",
+                    "       verification hashes, and any plot whose steps couldn't be fully baked in.",
+                    "  data_reproducibility/<dataset>.<ext> — the actual data files used.",
+                ] if wants_mode2 else []),
                 "",
                 "IMPORTANT — keep the folder structure intact.",
                 "  The report contains relative links to the dataset subfolders.",

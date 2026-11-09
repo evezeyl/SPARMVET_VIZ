@@ -4750,8 +4750,17 @@ default; option A (a genuine per-plot tier3 recipe concept) is not ruled out as 
 alternative. The marker convention is a structured `_t3_origin` dict key on the forked join
 (not a YAML comment) — chosen because it round-trips through plain `yaml.safe_dump`/`safe_load`
 and is directly machine-readable on read-back, closing the "we do not read T3" gap more
-robustly than a comment would. #45 (export mode split) and #48 (Import) still need to wire this
-translator in; neither has started.
+robustly than a comment would.
+
+**#45 (export mode split) is also done, scoped narrower than decision 1's original framing.**
+Not a second "reproducibility-only" bundle that suppresses Mode 1 content — Mode 1 is always
+built, unchanged; Mode 2 is an opt-in, additive checkbox that forces `export_scope: global` and
+adds the translator's frozen recipe, the actual data files (not just hashes — "needs all to be
+fully reproducible"), and a new `effective_run.yaml` (the four hash legs, per-plot seed,
+`t3_translation_skipped`). Whether Mode 1 keeps its current full recipe copy now that Mode 2
+exists is left open, not resolved — changing existing Mode 1 output needs its own explicit
+go-ahead, not a side-effect of building Mode 2. #48 (Import) still needs this translator and
+the Mode 2 bundle shape; it has not started.
 
 **Context.** Issue #39 started narrow — "record the random seed and the data files used at
 export" — and widened once its own open questions were answered: the data-provenance half was

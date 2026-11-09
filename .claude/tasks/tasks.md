@@ -110,12 +110,27 @@ pieces last.
   filtering the original join's Tier 1 the same way. Full headless suite (1548) passes.
   **Not yet done:** wiring this into the actual Mode 2 export (#45) or Import (#48) — this
   task built the translator itself, standalone and tested, not its integration.
-- [ ] **REPRO-EXPORT-MODES-1** `[sonnet/medium]` (#45/4B): split the Export panel into Mode 1
-  (Publication, unchanged) and Mode 2 (Reproducibility/reimport, forced `export_scope: global`,
-  explanatory note in the UI), combinable into one zip in a single action. Decide: does Mode 2
-  copy data into the bundle or reference+hash it (today's behaviour), and does Mode 1 keep a
-  lightweight recipe reference now that Mode 2 exists. Depends on REPRO-PROV-1; a non-translator
-  version can ship before REPRO-TRANSLATOR-1 lands, just not claim full T3 reproducibility yet.
+- [x] **REPRO-EXPORT-MODES-1** `[sonnet/medium]` (#45/4B) — DONE 2026-11-09, scoped narrower
+  than originally framed: not a second "reproducibility-only, no plots" bundle — Mode 1
+  (Publication) content is always built, unchanged; Mode 2 is an **opt-in, additive** checkbox
+  ("Also include a reproducibility/reimport bundle") that adds to the same zip, never replaces.
+  Checking it forces `export_scope: global` server-side regardless of the scope radio's value,
+  with an explanatory note. When checked: `build_mode2_recipe()` (REPRO-TRANSLATOR-1) produces
+  the frozen recipe (`data_analysis_recipes_reproducibility/<id>.yaml`); the actual data files
+  are copied, not just hashed (`data_reproducibility/<dataset>.<ext>` — Eve: "needs all to be
+  fully reproducible"); `effective_run.yaml` carries the four hash legs (REPRO-PROV-1), the
+  per-plot seed in effect (pinned override else the session's drawn number,
+  REPRO-SEED-2), and which plots' T3 steps couldn't be fully baked in
+  (`t3_translation_skipped`, surfaced both in the file and as a non-blocking notification).
+  README's Contents list gets the two new folders explained when the box is checked.
+  **Left open, by design, not resolved here:** whether Mode 1 keeps its current full recipe
+  copy now that Mode 2 exists (Eve called it "overkill" but this wasn't touched — changing
+  existing, relied-upon Mode 1 output needs its own explicit go-ahead); a stricter
+  "reproducibility-only" bundle that suppresses plots/report entirely is not built. New
+  Playwright test (real browser download, `qa`) checks the bundle is additive, the frozen
+  recipe reloads cleanly (no leftover ConfigManager `plots:` key), and `effective_run.yaml`'s
+  fields are well-formed. Full `test_export_download.py` suite (5) and full headless suite
+  (1548) pass.
 - [ ] **REPRO-SENSITIVE-1** `[haiku/low]` (#46/4C): non-blocking in-app notification when a
   Mode 2 export will copy real data into a shareable bundle; new user-guide section on
   anonymising sensitive data before loading it and keeping any de-anonymisation key outside the

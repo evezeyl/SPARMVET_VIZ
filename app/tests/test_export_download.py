@@ -106,6 +106,57 @@ def test_exploration_filters_are_never_exported(loaded):
             assert diff is None, f"plot {name} changed by an exploration filter (plot view {view})"
 
 
+def test_mode2_checkbox_adds_the_reproducibility_bundle(loaded):
+    """ADR-097/#45: opt-in, additive. Unchecked = unchanged bundle; checked = the new
+    folders appear alongside everything that was already there."""
+    import yaml as _yaml
+
+    def _relative(names):
+        # Each download's top folder is "<timestamp>_<label>/..." — strip it so two
+        # downloads taken seconds apart (different timestamps) compare on content.
+        return {n.split("/", 1)[1] if "/" in n else n for n in names}
+
+    before = _download(loaded)
+    before_names = _relative(before.namelist())
+
+    loaded.locator("#export_include_reproducibility").check(force=True)
+    _wait_shiny(loaded)
+    after = _download(loaded)
+    after_names_raw = after.namelist()
+    after_names = _relative(after_names_raw)
+    loaded.locator("#export_include_reproducibility").uncheck(force=True)
+    _wait_shiny(loaded)
+
+    # Additive — nothing from the unchecked bundle disappears.
+    assert before_names <= after_names
+    after_names = after_names_raw  # the rest of this test wants real zip entry names
+
+    recipe_entries = [n for n in after_names if "/data_analysis_recipes_reproducibility/" in n
+                       and n.endswith(".yaml") and not n.endswith("effective_run.yaml")]
+    assert recipe_entries, after_names
+    run_entries = [n for n in after_names if n.endswith("effective_run.yaml")]
+    assert run_entries, after_names
+    assert any("/data_reproducibility/" in n for n in after_names), after_names
+
+    errors = {n: after.read(n).decode() for n in after_names if "reproducibility" in n and n.endswith("_ERROR.txt")}
+    assert not errors, errors
+
+    run = _yaml.safe_load(after.read(run_entries[0]).decode())
+    assert len(run["data_analysis_recipe_sha256"]) == 64
+    assert len(run["data_batch_hash"]) == 64
+    assert len(run["t3_audit_steps_sha256"]) == 64
+    assert run["engine_fingerprint"]
+    assert isinstance(run["containerized"], bool)
+    assert isinstance(run["data_source_paths"], dict) and run["data_source_paths"]
+    assert "seeds_per_plot" in run and "t3_translation_skipped" in run
+
+    # The frozen recipe copy must itself be valid, reloadable YAML with no leftover
+    # ConfigManager-internal `plots:` mirror key (confirmed live earlier to break reload).
+    frozen = _yaml.safe_load(after.read(recipe_entries[0]).decode())
+    assert "plots" not in frozen
+    assert "joins" in frozen
+
+
 def test_a_data_change_after_the_view_is_opened_blocks_the_export(loaded):
     files = {f: f.read_bytes() for f in DATA_DIR.rglob("*.tsv")}
     assert files, "no data file found to change"
