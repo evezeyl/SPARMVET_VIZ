@@ -1,10 +1,11 @@
+import math
 from typing import Dict, Any
 from matplotlib.ticker import MaxNLocator
 
 # @deps
 # provides: component:scale_color_gradient, component:scale_fill_gradient, component:scale_color_gradient2, component:scale_fill_gradient2, component:scale_color_gradientn, component:scale_fill_gradientn, component:scale_color_distiller, component:scale_fill_distiller, component:scale_color_cmap, component:scale_fill_cmap, component:scale_color_viridis_d, component:scale_fill_viridis_d, component:scale_color_viridis_c, component:scale_fill_viridis_c, component:scale_color_cmap_d, component:scale_fill_cmap_d, component:scale_color_discrete, component:scale_fill_discrete, component:scale_color_brewer, component:scale_fill_brewer, component:scale_color_manual, component:scale_fill_manual, component:scale_x_continuous, component:scale_y_continuous, component:scale_x_discrete, component:scale_y_discrete, component:scale_x_log10, component:scale_y_log10, component:scale_x_reverse, component:scale_y_reverse, component:scale_x_datetime, component:scale_y_datetime, component:scale_x_date, component:scale_y_date, component:scale_x_sqrt, component:scale_y_sqrt, component:scale_x_symlog, component:scale_y_symlog, component:scale_x_timedelta, component:scale_y_timedelta, component:scale_size_continuous, component:scale_size_discrete, component:scale_shape_discrete, component:scale_alpha_continuous, component:scale_alpha_discrete, component:scale_linetype_discrete, component:scale_stroke_continuous, component:scale_color_identity, component:scale_fill_identity, component:scale_size_identity, component:scale_shape_identity, component:scale_alpha_identity, component:scale_linetype_identity, component:scale_stroke_identity, component:scale_alpha, component:scale_alpha_manual, component:scale_size, component:scale_size_manual, component:scale_size_area, component:scale_shape, component:scale_shape_manual, component:scale_linetype, component:scale_linetype_manual, component:scale_color_hue, component:scale_fill_hue, component:scale_color_continuous, component:scale_fill_continuous
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry)
-# doc: .claude/rules/rules_viz_factory.md
+# doc: .claude/rules/rules_viz_factory.md, issue #36 (_integer_breaks narrow-range fallback)
 # @end_deps
 
 from plotnine import (
@@ -526,6 +527,24 @@ def handle_fill_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _integer_breaks(lims):
+    """Whole-number tick positions for `breaks_integer: true` (issue #36).
+
+    `MaxNLocator(integer=True)` only *prefers* integer ticks — on a narrow range
+    (span under ~1, e.g. after a filter on the mapped column itself leaves a
+    couple of Years) it falls back to fractional ticks regardless, since no
+    "nice" step (1/2/5/10...) fits inside the span:
+
+        MaxNLocator(integer=True).tick_values(2023.6, 2024.4)
+        -> [2023.6, 2023.7, 2023.8, ..., 2024.4]   # not integers at all
+
+    For a small span, every integer in the (expanded) range is itself a small,
+    fixed-size tick set, so there is no reason to delegate to a "nice sparse
+    ticks" algorithm at all — just list them. Reserve the locator for genuinely
+    large ranges, where its step selection already lands on integers anyway.
+    """
+    lo, hi = math.floor(lims[0]), math.ceil(lims[1])
+    if hi - lo <= 25:
+        return list(range(lo, hi + 1))
     return MaxNLocator(integer=True).tick_values(lims[0], lims[1])
 
 
