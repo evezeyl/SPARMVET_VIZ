@@ -2,7 +2,7 @@
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
 #           function:normalise_plot_spec, function:serialise_plot_spec,
-#           function:layers_have_jitter (REPRO-SEED-2)
+#           function:layers_have_jitter (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1)
 # consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
@@ -145,6 +145,23 @@ def layers_have_jitter(layers: list[dict]) -> bool:
     decision 2 / REPRO-SEED-2) — used to decide whether a plot's seed is worth drawing,
     bookkeeping, or exporting at all, before paying for a full `resolve_plot_config()` call."""
     return any(_is_jitter_layer(layer) for layer in (layers or []))
+
+
+def recipe_pins_random_state(layers: list[dict]) -> bool:
+    """True if the recipe's own L4 `layers:` already pins a jitter layer's
+    `random_state` to a fixed number (issue #49/REPRO-RESHUFFLE-1) — `None` or the
+    string `"random"` both mean "no fixed seed, draw fresh" (viz_factory.py's own
+    `_seed_random_components` rule), anything else is a deliberate author pin. Used to
+    decide whether a "Reshuffle" control is meaningful: redrawing a seed the recipe
+    author already fixed would silently override their choice without being obviously
+    so — the control stays hidden in that case."""
+    for layer in (layers or []):
+        if not _is_jitter_layer(layer):
+            continue
+        rs = (layer.get("params") or {}).get("random_state")
+        if rs is not None and rs != "random":
+            return True
+    return False
 
 
 def _dedupe_layers(layers: list[dict]) -> list[dict]:

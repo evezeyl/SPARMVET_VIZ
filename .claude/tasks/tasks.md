@@ -233,10 +233,37 @@ pieces last.
   (`test_shiny_smoke.py::TestSessionListRefresh::test_session_label_saves_on_blur`, fills,
   tabs to blur, asserts the backend actually stored it). Full suites green: headless 1583
   (up from 1578).
-- [ ] **REPRO-RESHUFFLE-1** `[sonnet/medium]` (#49, deferred — do not start before the items
-  above are stable): a UI control to deliberately redraw and pin a plot's seed, shown only on
-  plots with a jitter-capable layer and only when the seed isn't already pinned to a fixed
-  number. Depends on REPRO-SEED-1.
+- [x] **REPRO-RESHUFFLE-1** `[sonnet/medium]` (#49): DONE 2026-11-09. "🔀 Reshuffle
+  arrangement" button (`app/handlers/home_theater.py`, `_make_plot_cell_handler`'s
+  `_plot_reshuffle_ui`/`_handle_reshuffle`, registered per known plot id — not a scan over
+  dynamic ids, plot ids are known upfront from the recipe) next to the plot badge, its own
+  narrow output — never a revival of the Plot Style panel (stays unmounted, fork issue #15,
+  `ui_implementation_contract.md §12g.9`). Visibility (new `recipe_pins_random_state()`,
+  `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, next to `layers_have_jitter`):
+  hidden unless the plot has a jitter-capable layer AND neither the recipe itself (a fixed
+  `random_state` number in the layer's own params) nor a T3 override has already pinned a
+  seed. Click → draws `secrets.randbits(31)` and writes it into
+  `home_state['t3_plot_overrides'][subtab]['random_state']` (an `@reactive.Effect`, R2) — the
+  existing `_effective_random_state` Calc (REPRO-SEED-2) picks it up on its own, no new
+  render-side plumbing needed, and the button then hides itself (nothing left to reshuffle
+  from until the pin is removed some other way — no unpin control, not asked for). Found and
+  fixed two real bugs via the Playwright test, not just in review: (1) the output wrapper's
+  id and the button's own id were both `plot_reshuffle_{p_id}` — an invalid DOM id collision
+  that made every selector match two elements; split into `plot_reshuffle_{p_id}` (wrapper)
+  and `plot_reshuffle_btn_{p_id}` (button). (2) The visibility render wrapped its
+  `home_state.get()` read in `reactive.isolate()` (copied from `_plot_cell_ui`'s *different*
+  use of isolate, for collapse state) — this silently prevented the button from ever
+  reacting to its own pin, so it never hid itself after a click; removed the isolate, this
+  render must react to `home_state`. Checked against `COM-REACTIVE Reactive wiring of HOME`
+  (`docs/UML/app.mdj`) before skipping a UML update: the diagram tracks
+  `home_state → plot_group of each plot` at the whole-plot-cell granularity, already covers
+  this addition, no new box needed. 6 new headless tests
+  (`libs/viz_factory/tests/test_plot_config_resolver.py::TestRecipePinsRandomState`) + 3 new
+  Playwright tests (`test_shiny_smoke.py::TestReshuffleControl`: shown when meaningful, absent
+  on a non-jitter plot, click pins and hides). Docs: `reproducible_plots.qmd`'s "Coming
+  later" section and `reproducibility_same_input_same_output.qmd`'s open question both
+  updated — this was the feature either one described as not yet built. Full suites green:
+  headless 1589 (up from 1583).
 
 ### Audit Fixes — ADR Compliance (ADR behavioural audit 2026-11-06)
 

@@ -45,7 +45,7 @@ from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
-from viz_factory.plot_config_resolver import layers_have_jitter
+from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
 
 from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
@@ -676,6 +676,58 @@ def define_server(input, output, session, *,
     def _make_plot_cell_handler(p_id: str):
         _acc_id = f"plot_acc_{p_id}"
         _panel_val = f"plot_panel_{p_id}"
+        _this_subtab = f"subtab_{p_id}"
+        _reshuffle_output_id = f"plot_reshuffle_{p_id}"
+        _reshuffle_btn_id = f"plot_reshuffle_btn_{p_id}"
+
+        @output(id=_reshuffle_output_id)
+        @render.ui
+        def _plot_reshuffle_ui():
+            """REPRO-RESHUFFLE-1 (#49): a UI control to deliberately redraw and pin a
+            plot's jitter seed. Its own narrow output next to the badge — not a
+            revival of the Plot Style panel, which stays unmounted (fork issue #15,
+            ui_implementation_contract.md §12g.9). Shown only when reshuffling is
+            actually meaningful: the plot has a jitter-capable layer, the recipe
+            itself hasn't already pinned a fixed number, and no T3 override has
+            pinned one yet either (once pinned, by any mechanism, there is nothing
+            left to reshuffle from this button — edit the recipe or the override to
+            go back to "random")."""
+            spec = _resolve_active_spec(p_id)
+            layers = (spec or {}).get("layers", [])
+            if not layers_have_jitter(layers) or recipe_pins_random_state(layers):
+                return ui.div()
+            # Deliberately NOT reactive.isolate() here, unlike _plot_cell_ui's own
+            # collapse-state read: this output must re-render and hide itself the
+            # moment _handle_reshuffle below pins the seed into home_state.
+            _hs = home_state.get() if home_state is not None else {}
+            overrides = _hs.get("t3_plot_overrides", {}).get(_this_subtab) or {}
+            if overrides.get("random_state") is not None:
+                return ui.div()
+            return ui.input_action_button(
+                _reshuffle_btn_id, "🔀 Reshuffle arrangement",
+                class_="btn-outline-secondary btn-sm",
+                style="font-size:0.7em; padding:1px 6px;",
+                title="Draw a new random scatter arrangement and keep it fixed from now on.",
+            )
+
+        @reactive.Effect
+        @reactive.event(getattr(input, _reshuffle_btn_id, lambda: None))
+        def _handle_reshuffle():
+            if home_state is None:
+                return
+            try:
+                clicks = getattr(input, _reshuffle_btn_id)()
+            except Exception:
+                return
+            if not clicks:
+                return
+            new_seed = secrets.randbits(31)
+            hs = home_state.get()
+            overrides = dict(hs.get("t3_plot_overrides", {}))
+            plot_overrides = dict(overrides.get(_this_subtab, {}))
+            plot_overrides["random_state"] = new_seed
+            overrides[_this_subtab] = plot_overrides
+            home_state.set({**hs, "t3_plot_overrides": overrides})
 
         @output(id=f"plot_badge_{p_id}")
         @render.ui
@@ -729,7 +781,11 @@ def define_server(input, output, session, *,
                 )
             else:
                 content = ui.div(
-                    ui.output_ui(f"plot_badge_{p_id}"),
+                    ui.div(
+                        ui.output_ui(f"plot_badge_{p_id}"),
+                        ui.output_ui(f"plot_reshuffle_{p_id}"),
+                        class_="d-flex justify-content-between align-items-start",
+                    ),
                     ui.output_plot(f"plot_group_{p_id}", height="480px"),
                 )
 

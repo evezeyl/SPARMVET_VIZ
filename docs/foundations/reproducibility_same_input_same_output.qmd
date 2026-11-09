@@ -78,7 +78,7 @@ plotnine, the plotting library, treats `random_state=0` as **no seed** (it check
 
 ## Randomness on purpose
 
-The seed is a **default, never a rule**. Jitter can be useful to try again, and a fixed picture is only one possible choice. Today the choice is made in the data analysis recipe (`random_state`). Whether the user should be able to reshuffle an arrangement in the interface, and how that choice would be recorded so that an exported report can still be reproduced, is an open question for a later feature.
+The seed is a **default, never a rule**. Jitter can be useful to try again, and a fixed picture is only one possible choice. The choice can be made in the data analysis recipe (`random_state`), or in the app itself: a plot with an unpinned jitter layer shows a "Reshuffle arrangement" button (`app/handlers/home_theater.py`, `_plot_reshuffle_ui`/`_handle_reshuffle`, issue #49) that draws and pins a new seed into that plot's T3 `aesthetic_override` — the same state shape and export path `random_state: random`'s auto-recorded seed already uses (`seeds_per_plot` in `effective_run.yaml`), so a reshuffled arrangement is exported and reproducible exactly like a recipe-pinned one.
 
 ## Related
 

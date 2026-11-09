@@ -74,8 +74,10 @@ But that order is *a* fixed order, not necessarily the one **you want**. If you 
 2. Do you need a particular order of bars, samples or rows? Add an explicit **sort**.
 3. Open the plot twice. Is it identical? Then it is reproducible.
 
-## Coming later
+## Reshuffling in the app
 
-We are thinking about letting you reshuffle the arrangement directly in the app with a button, rather than only via `random_state: random` in the data analysis recipe. The recording of whichever number gets used is already automatic (see above) — what's missing is a convenient in-app "try another arrangement" control.
+Plots that use jitter and have no fixed `random_state` yet show a small **🔀 Reshuffle arrangement** button next to the plot. Clicking it draws a new arrangement and pins it — the plot keeps that exact arrangement from then on, the same way as if you had written the number into the data analysis recipe yourself. The button disappears once a seed is pinned, whether by this button, a `random_state: <number>` in the recipe, or any other means — there is nothing left to reshuffle from until that pin is removed.
+
+There is no button yet to remove a pin and go back to "random" from inside the app — edit the data analysis recipe (`random_state: random`, see above) to do that.
 
 For the technical background (why the order can change, how the engine keeps it fixed, how to test it), see [Same input, same output](../foundations/reproducibility_same_input_same_output.qmd).

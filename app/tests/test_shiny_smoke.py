@@ -78,6 +78,21 @@ def _load_data_analysis_recipe(page: Page, base_url: str, data_analysis_recipe_i
     _wait_shiny(page)
 
 
+def _navigate_to_phenotype_plot(page: Page) -> None:
+    """Navigate to the Curiosity group -> phenotype_genome_length_fragmentation plot
+    (the only plot in 1_test_data_ST22_dummy with an inline jitter layer and no
+    recipe-pinned random_state — REPRO-RESHUFFLE-1, #49)."""
+    curiosity_tab = page.locator(".nav-link:has-text('Curiosity')")
+    if curiosity_tab.count() == 0:
+        pytest.skip("Curiosity group tab not found in active data analysis recipe")
+    curiosity_tab.first.click()
+    _wait_shiny(page)
+    plot_tab = page.locator(".nav-link:has-text('Phenotype Genome Length Fragmentation')")
+    if plot_tab.count() > 0:
+        plot_tab.first.click()
+        _wait_shiny(page)
+
+
 def _navigate_to_mlst_plot(page: Page) -> None:
     """Navigate to the AMR/Virulence group → mlst_bar plot (has 'year' numeric column).
 
@@ -669,6 +684,64 @@ class TestSessionListRefresh:
             assert sm.get_session_label(key) == "ST22 outbreak analysis, dataset batch Jan2025"
         finally:
             sm.delete_session(key)
+
+
+# ---------------------------------------------------------------------------
+# Reshuffle control (REPRO-RESHUFFLE-1, #49)
+# ---------------------------------------------------------------------------
+
+class TestReshuffleControl:
+    """The module-scoped page is shared with every other class in this file (same
+    convention TestViewBadges documents): navigating to the Curiosity group here must
+    not leave later tests (e.g. TestViewBadges._open_plot, which assumes Quality
+    Control is the active group) stranded on a tab their own locators can't see."""
+
+    def _restore_to_quality_control(self, page: Page) -> None:
+        qc_tab = page.locator(".nav-link:has-text('Quality Control')")
+        if qc_tab.count() > 0:
+            qc_tab.first.click()
+            _wait_shiny(page)
+
+    def test_shown_on_a_jitter_plot_with_no_pinned_seed(self, page: Page, shiny_app: ShinyAppProc):
+        _load_data_analysis_recipe(page, shiny_app.url)
+        _navigate_to_phenotype_plot(page)
+        try:
+            expect(
+                page.locator("#plot_reshuffle_btn_phenotype_genome_length_fragmentation")
+            ).to_be_visible(timeout=10_000)
+        finally:
+            self._restore_to_quality_control(page)
+
+    def test_absent_on_a_plot_with_no_jitter_layer(self, page: Page, shiny_app: ShinyAppProc):
+        """Quality Control's assembly_quality_dotplot has no jitter layer at all —
+        the control must not render there. Already ends on Quality Control."""
+        _load_data_analysis_recipe(page, shiny_app.url)
+        self._restore_to_quality_control(page)
+        plot_tab = page.locator(".nav-link:has-text('Assembly Quality Dotplot')")
+        if plot_tab.count() == 0:
+            pytest.skip("assembly_quality_dotplot sub-tab not found")
+        plot_tab.first.click()
+        _wait_shiny(page)
+        page.wait_for_selector("#plot_group_assembly_quality_dotplot", timeout=10_000)
+        expect(page.locator("#plot_reshuffle_btn_assembly_quality_dotplot")).to_have_count(0)
+
+    def test_click_pins_the_seed_and_hides_the_control(self, page: Page, shiny_app: ShinyAppProc):
+        """Clicking Reshuffle draws and pins a new seed — the control then disappears
+        (nothing left to reshuffle from until the pin is removed some other way)."""
+        _load_data_analysis_recipe(page, shiny_app.url)
+        _navigate_to_phenotype_plot(page)
+        try:
+            btn = page.locator("#plot_reshuffle_btn_phenotype_genome_length_fragmentation")
+            expect(btn).to_be_visible(timeout=10_000)
+            btn.click()
+            _wait_shiny(page)
+
+            expect(
+                page.locator("#plot_reshuffle_btn_phenotype_genome_length_fragmentation")
+            ).to_have_count(0, timeout=8_000)
+            _no_render_error(page)
+        finally:
+            self._restore_to_quality_control(page)
 
 
 # ---------------------------------------------------------------------------

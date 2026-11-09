@@ -18,6 +18,7 @@ from viz_factory.plot_config_resolver import (
     normalise_plot_spec,
     _BUILTIN_DEFAULTS,
     layers_have_jitter,
+    recipe_pins_random_state,
 )
 
 
@@ -424,6 +425,37 @@ class TestLayersHaveJitter:
     def test_empty_or_none_layers(self):
         assert not layers_have_jitter([])
         assert not layers_have_jitter(None)
+
+
+class TestRecipePinsRandomState:
+    """recipe_pins_random_state() (#49/REPRO-RESHUFFLE-1) — whether the Reshuffle
+    control should even be offered: hidden when the recipe author already pinned a
+    fixed number themselves."""
+
+    def test_no_jitter_layer_is_not_pinned(self):
+        assert not recipe_pins_random_state([{"name": "geom_bar", "params": {}}])
+
+    def test_jitter_with_no_random_state_param_is_not_pinned(self):
+        assert not recipe_pins_random_state([{"name": "position_jitter", "params": {}}])
+
+    def test_jitter_with_random_sentinel_string_is_not_pinned(self):
+        assert not recipe_pins_random_state(
+            [{"name": "position_jitter", "params": {"random_state": "random"}}]
+        )
+
+    def test_jitter_with_a_fixed_number_is_pinned(self):
+        assert recipe_pins_random_state(
+            [{"name": "position_jitter", "params": {"random_state": 123}}]
+        )
+
+    def test_inline_position_jitter_with_a_fixed_number_is_pinned(self):
+        assert recipe_pins_random_state(
+            [{"name": "geom_point", "params": {"position": "jitter", "random_state": 0}}]
+        )
+
+    def test_empty_or_none_layers(self):
+        assert not recipe_pins_random_state([])
+        assert not recipe_pins_random_state(None)
 
 
 class TestResolvePlotConfigLayerAccumulation:

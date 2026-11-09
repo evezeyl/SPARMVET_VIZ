@@ -4278,7 +4278,7 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
    | `drop_duplicates` | keeps the first row of each duplicate group, in input order (`maintain_order: false` is an explicit opt-out) |
    | `value_counts` | values in first-appearance order |
    | `sample` | fixed default seed 0; another `seed` gives another sample |
-2. **Plots.** Every random component is seeded by default. `DEFAULT_RANDOM_STATE = 0` in `viz_factory.py`; a layer sets its own `random_state`; `VizFactory(random_state=...)` changes the default for a whole factory (**the handle for tests** that need a known arrangement, or a deliberately different one). **The seed is a default, never a rule:** `random_state: null` (or `random`) on a layer, or `VizFactory(random_state=None)`, asks for a different arrangement on every render, because jitter can be useful to try again. A user-facing reshuffle (with the seed recorded in the export so the report stays reproducible) is a possible later feature. The seed is passed to plotnine as a numpy generator object, never as a bare number, because of the zero trap above. Routes covered: `position: jitter` and `jitterdodge` on a geom, `geom_jitter`, `position_jitter`, `position_jitterdodge`.
+2. **Plots.** Every random component is seeded by default. `DEFAULT_RANDOM_STATE = 0` in `viz_factory.py`; a layer sets its own `random_state`; `VizFactory(random_state=...)` changes the default for a whole factory (**the handle for tests** that need a known arrangement, or a deliberately different one). **The seed is a default, never a rule:** `random_state: null` (or `random`) on a layer, or `VizFactory(random_state=None)`, asks for a different arrangement on every render, because jitter can be useful to try again. A user-facing reshuffle (with the seed recorded in the export so the report stays reproducible) is a possible later feature. **Built 2026-11-09 (#49, ADR-097):** a "Reshuffle arrangement" button next to any plot with an unpinned jitter layer draws and pins a new seed into that plot's T3 `aesthetic_override.random_state` — recorded in `effective_run.yaml` via the same `seeds_per_plot` mechanism REPRO-SEED-2 already built for the unpinned-`random` case. The seed is passed to plotnine as a numpy generator object, never as a bare number, because of the zero trap above. Routes covered: `position: jitter` and `jitterdodge` on a geom, `geom_jitter`, `position_jitter`, `position_jitterdodge`.
 3. **A new action that can reorder rows** (grouping, deduplication, joins, sorting, sampling, anything with parallel execution) must state its order rule in its description and have a test of that rule. A new random component must be seeded.
 4. **Guards.** `app/tests/test_anchor_determinism.py` builds every collection of the shipped test manifests several times in empty folders and requires identical rows in identical order. Each fix was switched off once and the matching test failed (including the original bug).
 5. **Cache.** `ENGINE_CACHE_VERSION` is raised to "2", so anchors built with the old, unordered behaviour are rebuilt (ADR-089).
@@ -4709,15 +4709,15 @@ while planning this with Eve (2026-11-08):
 
 ## ADR-097: Reproducible export & import — two export modes, T3 reaches the engine only through a forked copy, verification warns rather than blocks (2026-11-09)
 
-**Status:** ACCEPTED — design locked, implementation not yet started. Tracked by
+**Status:** ACCEPTED, implemented 2026-11-09. Tracked by
 [#44](https://github.com/evezeyl/SPARMVET_VIZ/issues/44) (parent) and sub-issues
 [#39](https://github.com/evezeyl/SPARMVET_VIZ/issues/39) (4A),
 [#45](https://github.com/evezeyl/SPARMVET_VIZ/issues/45) (4B),
 [#46](https://github.com/evezeyl/SPARMVET_VIZ/issues/46) (4C),
 [#47](https://github.com/evezeyl/SPARMVET_VIZ/issues/47) (4D),
-[#48](https://github.com/evezeyl/SPARMVET_VIZ/issues/48) (4E); related, independent
-[#49](https://github.com/evezeyl/SPARMVET_VIZ/issues/49) (reshuffle, deferred) and
-[#50](https://github.com/evezeyl/SPARMVET_VIZ/issues/50) (Session Management labels). Decided
+[#48](https://github.com/evezeyl/SPARMVET_VIZ/issues/48) (4E) — all done; related, independent
+[#49](https://github.com/evezeyl/SPARMVET_VIZ/issues/49) (reshuffle control — done) and
+[#50](https://github.com/evezeyl/SPARMVET_VIZ/issues/50) (Session Management labels — done). Decided
 by Eve, with @dasharch. Full discussion, grounding citations, and the audit that checked this
 design before anything was built: `.claude/design/reproducible_export_design.md` — this ADR is
 the settled summary; that file is the working history and stays more detailed.
