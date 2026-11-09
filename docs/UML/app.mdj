@@ -9064,8 +9064,8 @@
 											"left": 26,
 											"top": 486,
 											"width": 308,
-											"height": 26,
-											"text": "Export: label, scope Global, group or plot, format, Export Bundle",
+											"height": 39,
+											"text": "Export: label, scope Global, group or plot, format, Export Bundle; Import a reproducibility bundle, verify per leg",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -9105,8 +9105,8 @@
 											"left": 26,
 											"top": 586,
 											"width": 308,
-											"height": 13,
-											"text": "Session Management: export, import, restore, delete",
+											"height": 26,
+											"text": "Session Management: label, export, import, restore, delete",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -9352,7 +9352,7 @@
 											"top": 321,
 											"width": 798,
 											"height": 13,
-											"text": "Plot, with a badge saying what it shows (plot_group, plot_badge)",
+											"text": "Plot, with a badge saying what it shows, and a Reshuffle button when jitter is unpinned (plot_group, plot_badge, plot_reshuffle)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -9887,7 +9887,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Export: label, scope Global, group or plot, format, Export Bundle",
+							"name": "Export: label, scope Global, group or plot, format, Export Bundle; Import a reproducibility bundle, verify per leg",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -9927,7 +9927,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Session Management: export, import, restore, delete",
+							"name": "Session Management: label, export, import, restore, delete",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -10117,7 +10117,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Plot, with a badge saying what it shows (plot_group, plot_badge)",
+							"name": "Plot, with a badge saying what it shows, and a Reshuffle button when jitter is unpinned (plot_group, plot_badge, plot_reshuffle)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -10357,7 +10357,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Export: label, scope Global, group or plot, format, Export Bundle"
+							"name": "Export: label, scope Global, group or plot, format, Export Bundle; Import a reproducibility bundle, verify per leg"
 						},
 						{
 							"_type": "WFText",
@@ -10365,7 +10365,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Session Management: export, import, restore, delete"
+							"name": "Session Management: label, export, import, restore, delete"
 						},
 						{
 							"_type": "WFText",
@@ -10413,7 +10413,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Plot, with a badge saying what it shows (plot_group, plot_badge)"
+							"name": "Plot, with a badge saying what it shows, and a Reshuffle button when jitter is unpinned (plot_group, plot_badge, plot_reshuffle)"
 						},
 						{
 							"_type": "WFText",
@@ -64463,7 +64463,7 @@
 														"$ref": "AAAAAAGht1wW4G7H3IA="
 													},
 													"edgePosition": 1,
-													"text": "9 : copy the YAML of the data analysis recipe, t3_steps.yaml"
+													"text": "9 : t3_steps.yaml (audit trail) -- never the recipe or data"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -64569,9 +64569,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 202,
+													"left": 181,
 													"top": 545,
-													"width": 407.5322265625,
+													"width": 448.4365234375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -64579,7 +64579,7 @@
 														"$ref": "AAAAAAGht1wXRW7caoI="
 													},
 													"edgePosition": 1,
-													"text": "10 : report.qmd, README.txt, hashes and keys, provenance in images"
+													"text": "10 : report.qmd, README.txt, effective_run.yaml (4 hash legs, always written)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -64904,7 +64904,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "copy the YAML of the data analysis recipe, t3_steps.yaml",
+									"name": "t3_steps.yaml (audit trail) -- never the recipe or data",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},
@@ -64918,7 +64918,7 @@
 									"_parent": {
 										"$ref": "AAAAAAGht1wRxW2QTJ8="
 									},
-									"name": "report.qmd, README.txt, hashes and keys, provenance in images",
+									"name": "report.qmd, README.txt, effective_run.yaml (4 hash legs, always written)",
 									"source": {
 										"$ref": "AAAAAAGht1wS2G2/0xo="
 									},

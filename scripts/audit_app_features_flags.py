@@ -9,9 +9,9 @@ This wraps `scripts/validate_app_features_config.py` behavior using the same val
 classes, but outputs a report to .claude/logs/audits/ with full results.
 
 Usage:
-  .venv/bin/python scripts/audit_template_flags.py
-  .venv/bin/python scripts/audit_template_flags.py --output .claude/logs/audits/audit_templates_2026-05-12.md
-  .venv/bin/python scripts/audit_template_flags.py --project-root /path/to/project --output report.md
+  .venv/bin/python scripts/audit_app_features_flags.py
+  .venv/bin/python scripts/audit_app_features_flags.py --output .claude/logs/audits/audit_templates_2026-05-12.md
+  .venv/bin/python scripts/audit_app_features_flags.py --project-root /path/to/project --output report.md
 """
 import argparse
 import subprocess

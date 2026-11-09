@@ -118,9 +118,9 @@ All actions available for use in data analysis recipe `wrangling` and `steps` bl
 
 | Category | Actions |
 |---|---|
-| **Cleaning** | `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `rename_columns`, `unique` |
+| **Cleaning** | `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique` |
 | **Expressions** | `regex_extract`, `cast`, `coalesce`, `label_if`, `mutate`, `regex_replace`, `null_if` |
-| **Analytical** | `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate` |
+| **Analytical** | `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate` |
 | **Advanced** | `split_and_explode`, `derive_categories`, `split_column_to_parts`, `divide_columns`, `split_column` |
 | **Reshaping** | `unpivot`, `explode`, `unnest`, `split_to_list`, `to_struct`, `pivot` |
 | **Performance** | `summarize`, `count_by_group` |

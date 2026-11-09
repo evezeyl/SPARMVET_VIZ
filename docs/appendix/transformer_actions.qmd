@@ -53,14 +53,14 @@ null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
 
 ### Annotated actions (BP-SCHEMA-1)
 
-Of the 63 registered actions (`grep -c '^@register_action(' libs/transformer/src/transformer/actions/**/*.py`),
+Of the 67 registered actions (`grep -c '^@register_action(' libs/transformer/src/transformer/actions/**/*.py`),
 all but the two engine-internal persistence actions (`sink_parquet`, `scan_parquet` —
 `rules_data_engine.md §1` notes these are never written by hand in a data analysis recipe) carry a
-`ui_schema` dict and appear in the Blueprint IDE picker — 61 of 63. A sample across categories:
+`ui_schema` dict and appear in the Blueprint IDE picker — 65 of 67. A sample across categories:
 
 **Cleaning:** `fill_nulls` · `drop_nulls` · `keep_columns` · `drop_columns` · `strip_whitespace` · `rename_columns`
 
-**Filtering:** `filter_range` · `filter_eq` · `is_in`
+**Filtering:** `filter_range` · `filter_eq` · `filter_ne` · `filter_gt` · `filter_lt` · `is_in` · `not_in`
 
 **Derivation:** `add_constant` · `mutate` · `label_if` · `coalesce`
 
@@ -269,6 +269,30 @@ Fills null values in a primary column using fallback columns.
   columns: ["primary_id", "external_id"]
 ```
 
+### 2.15 `filter_ne`
+Keeps rows where a column does not equal an exact value — the exclusion counterpart to `filter_eq`.
+```yaml
+- action: "filter_ne"
+  column: "country"
+  value: "Norway"
+```
+
+### 2.16 `filter_gt`
+Keeps rows where a numeric column is strictly greater than a value (exclusive bound; use `filter_range` for an inclusive one).
+```yaml
+- action: "filter_gt"
+  columns: ["identity_score"]
+  value: 90
+```
+
+### 2.17 `filter_lt`
+Keeps rows where a numeric column is strictly less than a value (exclusive bound; use `filter_range` for an inclusive one).
+```yaml
+- action: "filter_lt"
+  columns: ["identity_score"]
+  value: 100
+```
+
 ## 3. Cleaning Actions (Advanced)
 
 ### 3.1 `regex_extract`
@@ -414,6 +438,14 @@ Extracts a sub-slice from a list column.
 Filters the dataset based on existence within a provided list.
 ```yaml
 - action: "is_in"
+  column: "species"
+  values: ["E. coli", "Salmonella"]
+```
+
+### 6.3 `not_in`
+Keeps rows where a column value is NOT in a provided list — the exclusion counterpart to `is_in`.
+```yaml
+- action: "not_in"
   column: "species"
   values: ["E. coli", "Salmonella"]
 ```
