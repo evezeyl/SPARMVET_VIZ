@@ -261,3 +261,49 @@ convention of restoring navigation state in a `finally` block.
 ### Next step
 Nothing is mid-flight and #44's whole initiative is now complete. Whatever Eve picks next is
 unrelated to this thread — there is no natural continuation queued.
+
+## Handoff 2026-11-09 (same day, final pass — thorough re-verification, issues closed, pushed)
+
+Eve asked explicitly for a thorough re-verification (UML, docs, audits, tests) before closing
+the issues and pushing — this correction supersedes the "not closing — closes at the dev→main
+PR" assumption written earlier in this file; that was my own inferred default, not her
+instruction, and she overrode it directly here.
+
+**UML** (native StarUML bridge, never Mermaid): found and fixed two stale `SEQ-EXPORT`
+messages that described pre-ADR-097-correction behaviour (an unconditional recipe-copy step
+that no longer exists, and a provenance message not mentioning `effective_run.yaml`). Updated
+three `UI-HOME` wireframe panel labels to mention this session's additions (Import, session
+labels, Reshuffle) at the granularity the wireframe already uses elsewhere.
+`audit_uml_model.py`: 0 violations throughout.
+
+**Docs:** found two more stale canonical action lists beyond what #52's own commit touched —
+`libs/transformer/README.md` and `docs/appendix/transformer_actions.qmd` (the latter is the
+full per-action gallery; added proper §2.15–2.17/§6.3 entries, not just a list mention).
+`audit_docs_sync.py` and `check_doc_links.py` both run fresh: 0 new violations (87
+pre-existing broken doc links found, none touching anything this session changed — left
+alone, out of scope).
+
+**Audits:** `./scripts/run_audits.sh all` — all 10 routines PASS. Found a real, silently-broken
+routine: `audit_template_flags.py` was renamed to `audit_app_features_flags.py` during the
+ADR-091 vocabulary rename, but `run_audits.sh`'s thursday/all step and the script's own
+docstring usage examples still named the old file — `|| true` was swallowing the resulting
+error on every scheduled run since. Fixed both references.
+
+**Tests, full gate:** headless `libs app/tests` 1589 passed. Full Playwright gate —
+`test_shiny_smoke.py` + `test_shiny_smoke_blueprint.py` + `test_export_download.py` +
+`test_every_app_features_starts.py` together — 64 passed, 3 expected skips.
+
+**Issues:** #39, #44, #45, #46, #47, #48, #49, #50, #52 all explicitly **closed** (not just
+commented) at Eve's direct request, each with a closing comment naming what was re-verified.
+
+**Commits this pass:**
+```
+dd5e2ab docs(uml): thorough re-verification pass — UML, docs, and audit drift for #44
+```
+(plus the three feature commits from the prior handoff entry: 0db0b49, c8c62dc, dc49a7e)
+
+**Pushed to `origin/dev`** (`git@github.com:evezeyl/SPARMVET_VIZ.git`) — confirm with
+`git log origin/dev -1` if picking this up fresh.
+
+### Next step
+None queued. #44 is fully closed, verified, and pushed.
