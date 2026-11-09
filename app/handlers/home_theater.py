@@ -1704,7 +1704,7 @@ def define_server(input, output, session, *,
 
         def _render_export():
             return ui.accordion_panel(
-                "Export",
+                "Export / Import",
                 ui.div(
                     ui.output_ui("system_tools_ui"),
                     class_="d-flex flex-column gap-1"

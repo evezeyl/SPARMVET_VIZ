@@ -409,8 +409,18 @@ class TestRecipeSwitchPlotRender:
         expect(page.locator(".shiny-plot-output img").first).to_be_visible(timeout=8_000)
 
         # Leave the shared page back on the suite's default recipe so later tests in
-        # this module aren't affected by this test's recipe switch.
+        # this module aren't affected by this test's recipe switch. Found live, 2026-11-10:
+        # 1_Abromics_general_pipeline ALSO has a "Quality Control" group, so
+        # _load_data_analysis_recipe's shared-session shortcut (checks only that the
+        # "Quality Control" nav-link is visible) can't tell the two recipes apart — a
+        # later test that relies on that shortcut can run against the wrong recipe if
+        # this restore is still in flight. Wait for the selector's own value, not just a
+        # tab label both recipes share.
         page.locator("#data_analysis_recipe_id").select_option("1_test_data_ST22_dummy")
+        expect(page.locator("#data_analysis_recipe_id")).to_have_value("1_test_data_ST22_dummy")
+        # Wait for a plot sub-tab name unique to ST22 dummy (not just "Quality Control",
+        # which both recipes have) — proof the DOM actually switched, not just the <select>.
+        page.wait_for_selector("text=Qc Reads Horizontal Barplot", timeout=20_000)
         _wait_shiny(page)
 
 

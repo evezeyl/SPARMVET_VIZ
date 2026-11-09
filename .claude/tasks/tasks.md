@@ -69,6 +69,26 @@ All four: headless suite (1589) and the full Playwright gate (`test_shiny_smoke`
 `test_shiny_smoke_blueprint` + `test_export_download` + `test_every_app_features_starts`,
 64 passed/3 skipped) re-run clean after the changes.
 
+**Follow-up, 2026-11-10 (same day, Eve: "I can't see the External Exchange HOME — where do
+we import it?"):** the #54 fix above gave Import a visible label but left it buried below
+~10 export-form fields and an `<hr>` inside a collapsed "Export" accordion — still not
+findable. Restructured `system_tools_ui` (`export_handlers.py`): Import now gets its own
+bold-headed block ("⬇ Import a bundle") at the *top* of the panel, before the export form
+("⬆ Export" heading added there too); accordion panel renamed "Export" → "Export / Import"
+(`home_theater.py`). Also found and fixed, while re-running the full Playwright gate twice
+to confirm the restructure was clean: `TestRecipeSwitchRendering::test_first_plot_renders_without_a_click_after_recipe_switch`
+(committed 2026-11-08, predates this session) restores the shared page to the ST22 dummy
+recipe at the end but only waited for the "Quality Control" tab label — which
+`1_Abromics_general_pipeline` (the recipe it switches away from) also has, so a later test
+relying on `_load_data_analysis_recipe`'s shared-session shortcut could run against the
+wrong recipe if the restore was still in flight. Reproduced twice in the full suite (not a
+one-off: `TestPhase25Panels::test_info_panel_shows_the_info_block_of_the_open_data_analysis_recipe`
+failed both times, asserting "ST22 Dummy Dataset" but getting "Abromics General Pipeline"'s
+info block) — fixed by waiting for a plot sub-tab name unique to ST22 dummy instead of a
+tab label both recipes share. Full `test_shiny_smoke.py` re-run clean twice after the fix
+(33 passed, 3 skipped both times, ~110s each — also notably faster than the two failing
+runs, which each spent a timeout window on the race). Headless suite (1589) still clean.
+
 ### Reproducible export & import (ADR-097, 2026-11-09) — implementation order
 
 Design locked (`ADR-097`, `.claude/design/reproducible_export_design.md`), tracked by #44 +

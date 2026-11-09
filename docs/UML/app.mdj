@@ -9887,7 +9887,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Export: label, scope Global, group or plot, format, Export Bundle; Import a reproducibility bundle, verify per leg",
+							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -10357,7 +10357,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Export: label, scope Global, group or plot, format, Export Bundle; Import a reproducibility bundle, verify per leg"
+							"name": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle"
 						},
 						{
 							"_type": "WFText",

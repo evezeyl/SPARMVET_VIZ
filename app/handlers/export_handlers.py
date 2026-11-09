@@ -564,7 +564,39 @@ def define_export_server(input, output, session, *,
         )
 
         return ui.div(
+            # REPRO-IMPORT-1 (#48, ADR-097): put Import first and give it its own
+            # bold heading — Eve, 2026-11-10, still couldn't find it after it was given
+            # a visible label but left buried below ~10 export form fields and an <hr>.
+            # This is a different action from configuring an export, so it gets its own
+            # clearly-headed block at the top of the panel, not a line at the bottom.
             ui.div(
+                ui.tags.div(
+                    "⬇ Import a bundle",
+                    style="font-weight:700;font-size:0.85em;margin-bottom:4px;",
+                ),
+                ui.input_file(
+                    "import_bundle_upload", "Reproducibility bundle (.zip)",
+                    accept=[".zip"], multiple=False,
+                ),
+                ui.tags.small(
+                    "Only a bundle exported with 'Also include a reproducibility/reimport "
+                    "bundle' checked (below) can be imported. Verifies what it can against "
+                    "this machine, per leg, and writes a new recipe + session (never into "
+                    "the live app, ADR-093). Reload (F5) afterwards to see it in the Data "
+                    "analysis recipe selector.",
+                    class_="text-muted d-block mb-1",
+                    style="font-size:0.7em;",
+                ),
+                ui.output_ui("import_bundle_report"),
+                class_="upload-row",
+                style="background:#f8f9fa;border-radius:4px;padding:6px 8px;margin-bottom:8px;",
+            ),
+            ui.hr(class_="my-2"),
+            ui.div(
+                ui.tags.div(
+                    "⬆ Export",
+                    style="font-weight:700;font-size:0.85em;margin-bottom:4px;",
+                ),
                 ui.input_text(
                     "export_user_name", label="Bundle label / name",
                     placeholder="label (no spaces, no special characters)…",
@@ -613,30 +645,11 @@ def define_export_server(input, output, session, *,
                     "💾 Export Bundle",
                     class_="btn-success btn-sm w-100 mt-1",
                 ),
-                ui.hr(class_="my-2"),
-                # REPRO-IMPORT-1 (#48, ADR-097): reachable here, not TEST_LAB — Export is
-                # already gated on export_enabled alone, independent of test_lab_enabled /
-                # blueprint_enabled, which the issue requires.
-                ui.div(
-                    ui.input_file(
-                        "import_bundle_upload", "Import reproducibility bundle (.zip)",
-                        accept=[".zip"], multiple=False,
-                    ),
-                    ui.tags.small(
-                        "Only a bundle exported with 'Also include a reproducibility/reimport "
-                        "bundle' checked (above) can be imported. Verifies what it can against "
-                        "this machine, per leg, and writes a new recipe + session (never into "
-                        "the live app, ADR-093). Reload (F5) afterwards to see it in the Data "
-                        "analysis recipe selector.",
-                        class_="text-muted d-block mb-1",
-                        style="font-size:0.7em;",
-                    ),
-                    ui.output_ui("import_bundle_report"),
-                    class_="upload-row",
-                ),
                 class_="mb-2 px-2",
                 style="font-size:0.8em;"
             ),
+            class_="px-2",
+            style="font-size:0.8em;"
         )
 
     # ── REPRO-IMPORT-1 (#48, ADR-097): import + per-leg verification ────────────
