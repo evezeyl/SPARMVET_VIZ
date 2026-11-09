@@ -7,7 +7,7 @@ from utils.errors import TransformationError
 DEFAULT_SAMPLE_SEED = 0
 
 # @deps
-# provides: action:top_n_other, action:window_agg, action:shift, action:fill_nulls_direction, action:sort, action:sample, action:cum_sum, action:cum_count, action:date_extract, action:date_truncate, action:list_slice, action:list_join, action:is_in, action:z_score, action:percentile, action:value_counts, action:describe_stats, action:select_by_pattern, action:horizontal_stats, action:any_horizontal, action:all_horizontal, action:interpolate
+# provides: action:top_n_other, action:window_agg, action:shift, action:fill_nulls_direction, action:sort, action:sample, action:cum_sum, action:cum_count, action:date_extract, action:date_truncate, action:list_slice, action:list_join, action:is_in, action:not_in, action:z_score, action:percentile, action:value_counts, action:describe_stats, action:select_by_pattern, action:horizontal_stats, action:any_horizontal, action:all_horizontal, action:interpolate
 # consumes: libs/utils/src/utils/errors.py (TransformationError)
 # consumed_by: any YAML data analysis recipe using these action names, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
 # doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075, ADR-078)
@@ -414,6 +414,33 @@ def action_is_in(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         )
 
     return lf.filter(pl.col(col).is_in(values))
+
+
+@register_action("not_in", ui_schema={
+    "label": "Filter: value is not in list",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["filter", "set", "blacklist", "exclusion"],
+    "params": {
+        "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
+        "values": {"widget": "string", "label": "Excluded values (comma-separated)", "required": True},
+    },
+    "description": "Keep rows where a column value is NOT in an excluded set; equivalent to SQL WHERE col NOT IN (...).",
+    "yaml_example": "- action: not_in\n  column: country\n  values: [Norway, Sweden, Denmark]",
+    "wraps": [{"lib": "polars", "attr_path": ["Expr", "is_in"]}],
+})
+def action_not_in(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+    """Filters rows where column value is NOT in a list (counterpart to is_in)."""
+    col = spec.get("column")
+    values = spec.get("values", [])
+
+    if not col or not values:
+        raise TransformationError(
+            "action 'not_in' missing required parameters.",
+            tip="Provide 'column' and 'values' (list) in the YAML spec."
+        )
+
+    return lf.filter(~pl.col(col).is_in(values))
 
 
 # --- Batch 4: Advanced Analytical & Stats ---

@@ -188,6 +188,26 @@ pieces last.
   (`libs app/tests`, up from 1548), Playwright `test_export_download.py` 6/6 and
   `test_shiny_smoke.py` 34 passed/3 skipped. Docs: `understanding_your_export.qmd` gained
   "Importing someone else's reproducibility bundle".
+- [x] **ACTIONS-FILTER-GAPS-1** `[sonnet/medium]` (#52): DONE 2026-11-09. Closed the
+  engine-coverage gap REPRO-TRANSLATOR-1 found and refused to approximate: no registered
+  action existed for `ne`, strict `gt`/`lt`, or `not_in`. Added `filter_ne`, `filter_gt`,
+  `filter_lt` (`libs/transformer/src/transformer/actions/cleaning/core.py`, next to
+  `filter_eq`/`filter_range`, same silent-no-op-on-missing-params idiom) and `not_in`
+  (`cleaning/analytical.py`, next to `is_in`, same `TransformationError`-on-missing-params
+  idiom) — all four follow the existing pattern exactly, including `ui_schema` for the
+  BLUEPRINT form catalog. `t3_translator.py`'s `_TRANSLATABLE_OPS` extended from
+  `{eq, ge, le, in}` to all eight T3 filter ops (`eq, ne, gt, ge, lt, le, in, not_in`,
+  `ui_implementation_contract.md §8`'s full op list); `translate_t3_node()` maps each to
+  its action. The `ne`-with-list-value case, previously asserted to still raise, now
+  correctly promotes to `not_in` and translates. Kept one defensive
+  "unrecognised op still raises, never approximates" test (`op: "regex"`, not a real T3
+  op) since every real op is now translatable — the two downstream tests that had used
+  `op: "ne"` as their "this op is untranslatable" example were switched to the same bogus
+  op, since `ne` no longer demonstrates that. Updated the authoritative action list
+  (`rules_agent_role_bioscientist.md §8`). New `libs/transformer/tests/test_filter_actions.py`
+  (11 tests, includes an is_in/not_in exact-complement check). `test_t3_translator.py`
+  rewritten for all 8 ops (52 tests total, up from 40). Full headless suite 1578 passed
+  (up from 1566).
 - [ ] **REPRO-SESSION-LABELS-1** `[sonnet/low]` (#50, the UI half): per-session free-text
   label/description, and a clearer way to distinguish sessions of the same recipe against
   different data batches in the Session Management list view. Independent of the chain above.

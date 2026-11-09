@@ -4,7 +4,7 @@ from transformer.actions.base import register_action
 from ...utils.naming import clean_column_header
 
 # @deps
-# provides: action:fill_nulls, action:drop_nulls, action:replace_values, action:rename, action:drop_duplicates, action:unique_rows, action:recode_values, action:sanitize_column_names, action:keep_columns, action:drop_columns, action:strip_whitespace, action:round_numeric, action:filter_range, action:add_constant, action:filter_eq, action:rename_columns, action:unique
+# provides: action:fill_nulls, action:drop_nulls, action:replace_values, action:rename, action:drop_duplicates, action:unique_rows, action:recode_values, action:sanitize_column_names, action:keep_columns, action:drop_columns, action:strip_whitespace, action:round_numeric, action:filter_range, action:add_constant, action:filter_eq, action:filter_ne, action:filter_gt, action:filter_lt, action:rename_columns, action:unique
 # consumed_by: any YAML data analysis recipe using these action names, .claude/rules/rules_agent_role_bioscientist.md#8, libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)
 # doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
@@ -510,6 +510,77 @@ def action_filter_eq(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     if not col:
         return lf
     return lf.filter(pl.col(col) == val)
+
+
+@register_action("filter_ne", ui_schema={
+    "label": "Filter not equal",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["filter", "equality", "exclusion"],
+    "params": {
+        "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": False},
+        "columns": {"widget": "column_selector", "multi": True, "label": "Columns (fallback, uses first)", "required": False, "hint": "Alternative to 'column'; uses first element"},
+        "value": {"widget": "column_or_literal", "label": "Value", "required": True},
+    },
+    "description": "Keep rows where a column does not equal an exact value; use `not_in` for excluding a set of values.",
+    "yaml_example": "- action: filter_ne\n  column: country\n  value: Norway",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"]}],
+})
+def action_filter_ne(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+    """Not-equal filter (counterpart to filter_eq)."""
+    col = spec.get("column", spec.get("columns", [None])[0])
+    val = spec.get("value")
+    if not col:
+        return lf
+    return lf.filter(pl.col(col) != val)
+
+
+@register_action("filter_gt", ui_schema={
+    "label": "Filter greater than",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["numeric", "filter", "range"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": False, "label": "Column", "required": True, "dtype_filter": ["numeric"]},
+        "value": {"widget": "number", "label": "Value (exclusive)", "required": True},
+    },
+    "description": "Keep rows where a numeric column is strictly greater than a value; use `filter_range` for an inclusive bound.",
+    "yaml_example": "- action: filter_gt\n  columns: identity\n  value: 90",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"]}],
+})
+def action_filter_gt(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+    """Strict greater-than filter (counterpart to filter_range's inclusive min)."""
+    columns = spec.get("columns", [])
+    if not columns:
+        return lf
+    value = spec.get("value")
+    if value is None:
+        return lf
+    return lf.filter(pl.col(columns[0]) > value)
+
+
+@register_action("filter_lt", ui_schema={
+    "label": "Filter less than",
+    "category": "filtering",
+    "context": ["t1", "t2"],
+    "tags": ["numeric", "filter", "range"],
+    "params": {
+        "columns": {"widget": "column_selector", "multi": False, "label": "Column", "required": True, "dtype_filter": ["numeric"]},
+        "value": {"widget": "number", "label": "Value (exclusive)", "required": True},
+    },
+    "description": "Keep rows where a numeric column is strictly less than a value; use `filter_range` for an inclusive bound.",
+    "yaml_example": "- action: filter_lt\n  columns: identity\n  value: 100",
+    "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"]}],
+})
+def action_filter_lt(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+    """Strict less-than filter (counterpart to filter_range's inclusive max)."""
+    columns = spec.get("columns", [])
+    if not columns:
+        return lf
+    value = spec.get("value")
+    if value is None:
+        return lf
+    return lf.filter(pl.col(columns[0]) < value)
 
 
 @register_action("rename_columns", ui_schema={

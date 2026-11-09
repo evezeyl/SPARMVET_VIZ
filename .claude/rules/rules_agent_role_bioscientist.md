@@ -408,11 +408,11 @@ Outputs:
 
 **Documentation standard (ADR-075 §1):** Every entry in this list is expected to carry `description` + `yaml_example` in its `ui_schema`, and `wraps` for all 1:1 Polars wrappers. The Blueprint IDE help panel and `help_registry.py` surface these fields. If you notice an action is missing `description` or `yaml_example`, file a task (BP-HELP-TRANSFORMER-1 scope).
 
-**Cleaning:** `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `rename_columns`, `unique`
+**Cleaning:** `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique`
 
 **Expressions:** `regex_extract`, `cast`, `coalesce`, `label_if`, `mutate`, `regex_replace`, `null_if`
 
-**Analytical:** `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate`
+**Analytical:** `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate`
 
 **Advanced:** `split_and_explode`, `derive_categories`, `split_column_to_parts`, `divide_columns`, `split_column`
 

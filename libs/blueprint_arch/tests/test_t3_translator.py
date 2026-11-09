@@ -2,9 +2,12 @@
 Automated tests for t3_translator.py (ADR-097 decision 4, REPRO-TRANSLATOR-1, issue #47).
 
 Verifies:
-- translate_t3_node: eq/ge/le/in happy paths, the eq/ne+list auto-promotion mirroring
-  viz_factory's own render-time rule, drop_column, developer_raw_yaml (valid + invalid
-  fragment), and that ne/gt/lt/not_in raise UntranslatableNode rather than approximate.
+- translate_t3_node: eq/ne/gt/ge/lt/le/in/not_in happy paths (all eight T3 filter ops —
+  #52 closed the gap that used to leave ne/gt/lt/not_in untranslatable), the eq/ne+list
+  auto-promotion mirroring viz_factory's own render-time rule, drop_column,
+  developer_raw_yaml (valid + invalid fragment), and that a genuinely unrecognised op
+  still raises UntranslatableNode rather than approximate (defensive — every real T3 op
+  is translatable today, `ui_implementation_contract.md §8`).
 - translate_plot_steps: ordering, aesthetic_override skipped, one bad node fails the
   whole plot (no partial result).
 - build_mode2_recipe: forking mechanics (T2-then-T3 ordering, empty-tier2 case),
@@ -42,9 +45,21 @@ class TestTranslateNodeFilterOps:
         actions = translate_t3_node(node("filter_row", {"column": "country", "op": "eq", "value": "Norway"}))
         assert actions == [{"action": "filter_eq", "column": "country", "value": "Norway"}]
 
+    def test_ne(self):
+        actions = translate_t3_node(node("filter_row", {"column": "species", "op": "ne", "value": "cat"}))
+        assert actions == [{"action": "filter_ne", "column": "species", "value": "cat"}]
+
+    def test_gt(self):
+        actions = translate_t3_node(node("filter_row", {"column": "identity", "op": "gt", "value": 90}))
+        assert actions == [{"action": "filter_gt", "columns": ["identity"], "value": 90}]
+
     def test_ge(self):
         actions = translate_t3_node(node("filter_row", {"column": "year", "op": "ge", "value": 2024}))
         assert actions == [{"action": "filter_range", "columns": ["year"], "min": 2024}]
+
+    def test_lt(self):
+        actions = translate_t3_node(node("filter_row", {"column": "identity", "op": "lt", "value": 100}))
+        assert actions == [{"action": "filter_lt", "columns": ["identity"], "value": 100}]
 
     def test_le(self):
         actions = translate_t3_node(node("filter_row", {"column": "year", "op": "le", "value": 2024}))
@@ -56,18 +71,24 @@ class TestTranslateNodeFilterOps:
         )
         assert actions == [{"action": "is_in", "column": "country", "values": ["Norway", "Sweden"]}]
 
+    def test_not_in(self):
+        actions = translate_t3_node(
+            node("filter_row", {"column": "country", "op": "not_in", "value": ["Norway", "Sweden"]})
+        )
+        assert actions == [{"action": "not_in", "column": "country", "values": ["Norway", "Sweden"]}]
+
     def test_exclusion_row_uses_the_op_literally_no_flip(self):
         """AUDIT-1 (ui_implementation_contract.md §12g.3): the operator is the truth —
         exclusion_row does not get eq flipped to ne."""
         actions = translate_t3_node(node("exclusion_row", {"column": "sample_id", "op": "eq", "value": "S2"}))
         assert actions == [{"action": "filter_eq", "column": "sample_id", "value": "S2"}]
 
-    @pytest.mark.parametrize("op", ["ne", "gt", "lt", "not_in"])
-    def test_untranslatable_ops_raise_not_approximate(self, op):
-        """No registered action for these — must raise, never silently approximate
-        (e.g. gt as inclusive ge would wrongly include the boundary value)."""
+    def test_an_unrecognised_op_raises_not_approximate(self):
+        """Defensive — every real T3 op (ui_implementation_contract.md §8) is
+        translatable today (#52), but a genuinely unknown op must still raise, never
+        silently approximate."""
         with pytest.raises(UntranslatableNode):
-            translate_t3_node(node("filter_row", {"column": "year", "op": op, "value": 2024}))
+            translate_t3_node(node("filter_row", {"column": "year", "op": "regex", "value": "2024"}))
 
     def test_eq_with_list_value_promotes_to_in(self):
         """Mirrors viz_factory.render()'s own render-time auto-promotion — a stored
@@ -75,10 +96,10 @@ class TestTranslateNodeFilterOps:
         actions = translate_t3_node(node("filter_row", {"column": "country", "op": "eq", "value": ["Norway", "Sweden"]}))
         assert actions == [{"action": "is_in", "column": "country", "values": ["Norway", "Sweden"]}]
 
-    def test_ne_with_list_value_still_untranslatable(self):
-        """Promotes to not_in, which still has no registered action — must still raise."""
-        with pytest.raises(UntranslatableNode):
-            translate_t3_node(node("filter_row", {"column": "country", "op": "ne", "value": ["Norway", "Sweden"]}))
+    def test_ne_with_list_value_promotes_to_not_in(self):
+        """Same auto-promotion rule, the other direction — ne/list -> not_in."""
+        actions = translate_t3_node(node("filter_row", {"column": "country", "op": "ne", "value": ["Norway", "Sweden"]}))
+        assert actions == [{"action": "not_in", "column": "country", "values": ["Norway", "Sweden"]}]
 
     def test_missing_column_raises(self):
         with pytest.raises(UntranslatableNode):
@@ -156,7 +177,7 @@ class TestTranslatePlotSteps:
         """Never a partial, silently-incomplete result."""
         nodes = [
             node("filter_row", {"column": "year", "op": "eq", "value": 2024}),
-            node("filter_row", {"column": "species", "op": "ne", "value": "cat"}),
+            node("filter_row", {"column": "species", "op": "regex", "value": "cat"}),
         ]
         with pytest.raises(UntranslatableNode):
             translate_plot_steps(nodes)
@@ -283,7 +304,7 @@ class TestBuildMode2RecipeMultiPlotPropagation:
 class TestBuildMode2RecipeSkipped:
     def test_untranslatable_op_is_skipped_not_raised(self):
         raw = _recipe_with_one_join()
-        t3 = {"p1": [node("filter_row", {"column": "year", "op": "ne", "value": 2024}, node_id="n1")]}
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "regex", "value": "2024"}, node_id="n1")]}
         new_cfg, skipped = build_mode2_recipe(raw, t3)
         assert "p1" in skipped
         # Original target_dataset is left completely untouched — never partially forked.

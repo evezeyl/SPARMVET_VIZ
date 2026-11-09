@@ -14,15 +14,17 @@ recipe's `raw_config` and each plot's own ordered, already-active T3 nodes
 (`t3_audit_steps_by_plot`, the same shape already extracted there) and gets back a frozen,
 export-only copy — the live recipe on disk is never touched.
 
-Engine-coverage gap found while building this (not approximated — filed as an issue
-instead): the registered wrangling actions only cover `eq` (filter_eq), inclusive
-`ge`/`le` (filter_range), and `in` (is_in). There is no registered action for `ne`,
-strict `gt`/`lt`, or `not_in` — checked directly in
-libs/transformer/src/transformer/actions/cleaning/{core,analytical}.py, not assumed.
-Approximating e.g. strict `gt` as inclusive `ge` would silently include one extra
-boundary value — a real correctness bug, not a translator detail — so a plot whose T3
-steps use an untranslatable op is skipped (named in the returned `skipped` dict) rather
-than exported as falsely "fully reproducible".
+Engine-coverage gap found while building this, closed in #52: the registered wrangling
+actions originally only covered `eq` (filter_eq), inclusive `ge`/`le` (filter_range), and
+`in` (is_in) — no action existed for `ne`, strict `gt`/`lt`, or `not_in`. Rather than
+approximate (e.g. strict `gt` as inclusive `ge` would silently include one extra boundary
+value — a real correctness bug, not a translator detail), the gap was closed by adding
+`filter_ne`, `filter_gt`, `filter_lt` (cleaning/core.py) and `not_in`
+(cleaning/analytical.py) actions, following the existing pattern. All eight T3 filter ops
+(`eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`) are now translatable. A plot whose T3
+steps use a node type with no translation at all (anything other than filter_row/
+exclusion_row/drop_column/developer_raw_yaml) is still skipped (named in the returned
+`skipped` dict) rather than exported as falsely "fully reproducible".
 
 Marker convention for translated-vs-native steps (left undecided in the original design
 discussion): a structured `_t3_origin` key on the forked join dict, not a YAML comment —
@@ -62,9 +64,10 @@ class UntranslatableNode(Exception):
 
 
 # Ops the registered action set can represent EXACTLY — checked directly against
-# libs/transformer/src/transformer/actions/cleaning/core.py (filter_eq, filter_range)
-# and analytical.py (is_in). `ne`, strict `gt`/`lt`, and `not_in` have no equivalent.
-_TRANSLATABLE_OPS = {"eq", "ge", "le", "in"}
+# libs/transformer/src/transformer/actions/cleaning/core.py (filter_eq, filter_ne,
+# filter_range, filter_gt, filter_lt) and analytical.py (is_in, not_in). #52 closed the
+# gap that used to leave ne/gt/lt/not_in out of this set.
+_TRANSLATABLE_OPS = {"eq", "ne", "gt", "ge", "lt", "le", "in", "not_in"}
 
 
 def _canonical_hash(obj: Any) -> str:
@@ -110,18 +113,27 @@ def translate_t3_node(node: dict) -> list[dict]:
                 op = "not_in"
         if op not in _TRANSLATABLE_OPS:
             raise UntranslatableNode(
-                f"op '{op}' has no registered wrangling action yet (only eq/ge/le/in are "
-                f"representable today — see issue filed for ne/gt/lt/not_in) — node: {node!r}"
+                f"op '{op}' has no registered wrangling action — not one of "
+                f"{sorted(_TRANSLATABLE_OPS)} — node: {node!r}"
             )
         if op == "eq":
             return [{"action": "filter_eq", "column": column, "value": value}]
+        if op == "ne":
+            return [{"action": "filter_ne", "column": column, "value": value}]
+        if op == "gt":
+            return [{"action": "filter_gt", "columns": [column], "value": value}]
         if op == "ge":
             return [{"action": "filter_range", "columns": [column], "min": value}]
+        if op == "lt":
+            return [{"action": "filter_lt", "columns": [column], "value": value}]
         if op == "le":
             return [{"action": "filter_range", "columns": [column], "max": value}]
         if op == "in":
             values = value if isinstance(value, list) else [value]
             return [{"action": "is_in", "column": column, "values": values}]
+        if op == "not_in":
+            values = value if isinstance(value, list) else [value]
+            return [{"action": "not_in", "column": column, "values": values}]
 
     if node_type == "drop_column":
         column = params.get("column")

@@ -4737,7 +4737,9 @@ building it, not assumed in the original design:
    approximated (e.g. strict `gt` as inclusive `ge` would silently include one extra boundary
    value — a correctness bug, not a translator detail). A plot whose T3 steps use one of these
    ops is reported in `build_mode2_recipe()`'s `skipped` dict, never silently exported as
-   falsely "fully reproducible".
+   falsely "fully reproducible". **Closed 2026-11-09 (ACTIONS-FILTER-GAPS-1):** `filter_ne`,
+   `filter_gt`, `filter_lt` and `not_in` actions added following the existing pattern; all
+   eight T3 filter ops are now translatable. `_TRANSLATABLE_OPS` extended accordingly.
 2. **`ConfigManager` injects a root-level `plots:` key into `raw_config`** as an internal
    convenience mirror of `analysis_groups` (`config_loader.py`'s own comment: "engine detail
    only... for VizFactory"). Confirmed live, not hypothetical: dumping a `raw_config` with this
