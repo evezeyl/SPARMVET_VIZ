@@ -1,7 +1,8 @@
 # @deps
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
-#           function:normalise_plot_spec, function:serialise_plot_spec
+#           function:normalise_plot_spec, function:serialise_plot_spec,
+#           function:layers_have_jitter (REPRO-SEED-2)
 # consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
@@ -126,6 +127,25 @@ def _layer_dedup_key(layer: dict) -> tuple | None:
 # ---------------------------------------------------------------------------
 # _dedupe_layers
 # ---------------------------------------------------------------------------
+
+def _is_jitter_layer(layer: dict) -> bool:
+    """True if a layer carries jitter — either a named jitter layer, or any layer with an
+    inline `position: jitter`/`jitterdodge` param. Shared by the L5 random_state injection
+    below and by callers (REPRO-SEED-2) that need to know whether drawing/recording a seed
+    for this plot is even meaningful before resolving the full config."""
+    lparams = layer.get("params") or {}
+    return (
+        layer.get("name") in ("geom_jitter", "position_jitter", "position_jitterdodge")
+        or lparams.get("position") in ("jitter", "jitterdodge")
+    )
+
+
+def layers_have_jitter(layers: list[dict]) -> bool:
+    """True if any layer in an unresolved L4 `layers:` list carries jitter (ADR-097
+    decision 2 / REPRO-SEED-2) — used to decide whether a plot's seed is worth drawing,
+    bookkeeping, or exporting at all, before paying for a full `resolve_plot_config()` call."""
+    return any(_is_jitter_layer(layer) for layer in (layers or []))
+
 
 def _dedupe_layers(layers: list[dict]) -> list[dict]:
     """Deduplicate layers by (kind, target) keeping LAST occurrence.
@@ -530,13 +550,8 @@ def resolve_plot_config(
         if "random_state" in override:
             rs = override["random_state"]
             for layer in all_layers:
-                lparams = layer.get("params") or {}
-                is_jitter_layer = layer.get("name") in (
-                    "geom_jitter", "position_jitter", "position_jitterdodge",
-                )
-                is_jitter_position = lparams.get("position") in ("jitter", "jitterdodge")
-                if is_jitter_layer or is_jitter_position:
-                    layer["params"] = {**lparams, "random_state": rs}
+                if _is_jitter_layer(layer):
+                    layer["params"] = {**(layer.get("params") or {}), "random_state": rs}
             provenance["random_state"] = "L5"
 
     # ── Deduplicate layers ───────────────────────────────────────────────────

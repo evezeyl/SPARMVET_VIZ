@@ -44,13 +44,19 @@ pieces last.
   at all. 8 new unit tests (`TestResolvePlotConfigL5RandomState`) plus a live end-to-end check
   (same override seed → identical jitter across renders; different seed → different jitter).
   Full viz_factory suite (246) and full headless suite (1494) pass, no regressions.
-- [ ] **REPRO-SEED-2** `[sonnet/medium]` (#39/4A, part 2): automatic seed bookkeeping for the
-  default case (`random_state: random`, no pinned override) — a `@reactive.Calc` draws the
-  seed, a separate idempotency-guarded `@reactive.Effect` persists it into an ordinary
-  per-session `reactive.Value` (never inside the `@render.plot` itself — Reactive Write
-  Discipline R1, `ui_implementation_contract.md §14`; never the bootloader's process-wide asset
-  cache). Non-blocking notification at export time when `random_state: random` is still in
-  effect with no pinned override. Depends on REPRO-SEED-1 for the override path to exist first.
+- [x] **REPRO-SEED-2** `[sonnet/medium]` (#39/4A, part 2) — DONE 2026-11-09: automatic seed
+  bookkeeping for the default case (`random_state: random`, no pinned override). Per plot,
+  `_effective_random_state` (`@reactive.Calc`, `home_theater.py`) returns a pinned T3 override
+  unchanged or draws one fresh `secrets.randbits(31)` seed; a separate idempotency-guarded
+  `@reactive.Effect` (`_persist_drawn_seed`) is the only thing that writes it into
+  `last_drawn_seeds` (new per-session `reactive.Value({})`, threaded through `server.py` →
+  `home_theater.py` → `export_handlers.py`) — never inside the `@render.plot` itself (R1). The
+  render reads the same Calc, so what's shown and what's bookkept always agree. Skips plots
+  with no jitter at all (`layers_have_jitter`, factored out of REPRO-SEED-1's resolver code for
+  reuse here) — verified against the real shipped `phenotype_genome_length_dotplot.yaml` plot
+  (inline `position: jitter`), not just synthetic test data. Non-blocking notification added in
+  `export_bundle_download` when any exported plot's seed is unpinned. `test_render_purity.py`
+  (44, R1 check), full headless suite (1498), and the `qa` Playwright smoke suite (29) all pass.
 - [ ] **REPRO-PROV-1** `[sonnet/medium]` (#39/4A, part 3): consolidated provenance record
   (`export_handlers.py`) carrying all four hash legs — recipe (already computed), data
   (already computed), engine (environment-aware: container image+tag+digest vs. source

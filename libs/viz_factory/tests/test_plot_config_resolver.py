@@ -17,6 +17,7 @@ from viz_factory.plot_config_resolver import (
     _layer_dedup_key,
     normalise_plot_spec,
     _BUILTIN_DEFAULTS,
+    layers_have_jitter,
 )
 
 
@@ -403,6 +404,26 @@ class TestResolvePlotConfigL5RandomState:
         layer = next(l for l in result["layers"] if l["name"] == "geom_jitter")
         assert layer["params"]["random_state"] == 7
         assert "random_state" not in result["_provenance"]
+
+
+class TestLayersHaveJitter:
+    """layers_have_jitter() — the cheap pre-check REPRO-SEED-2 uses before drawing/
+    bookkeeping a seed, on the unresolved L4 layers list (no resolve_plot_config call)."""
+
+    def test_named_jitter_layers_detected(self):
+        for name in ("geom_jitter", "position_jitter", "position_jitterdodge"):
+            assert layers_have_jitter([{"name": name, "params": {}}])
+
+    def test_inline_position_detected(self):
+        assert layers_have_jitter([{"name": "geom_point", "params": {"position": "jitter"}}])
+        assert layers_have_jitter([{"name": "geom_bar", "params": {"position": "jitterdodge"}}])
+
+    def test_no_jitter_anywhere(self):
+        assert not layers_have_jitter([{"name": "geom_bar", "params": {}}])
+
+    def test_empty_or_none_layers(self):
+        assert not layers_have_jitter([])
+        assert not layers_have_jitter(None)
 
 
 class TestResolvePlotConfigLayerAccumulation:

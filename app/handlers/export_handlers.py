@@ -392,7 +392,8 @@ def define_export_server(input, output, session, *,
                          session_processing_issues=None,
                          t3_filter_rows=None,
                          t3_drop_columns=None,
-                         view_keys=None):
+                         view_keys=None,
+                         last_drawn_seeds=None):
     """Register export-bundle + system-tools handlers.
 
     Reactive deps (kwargs):
@@ -409,6 +410,8 @@ def define_export_server(input, output, session, *,
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
       t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
       view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
+      last_drawn_seeds   : reactive.Value[dict] | None  REPRO-SEED-2 (ADR-097): {plot_id: seed}
+                           bookkeeping for plots whose jitter seed isn't pinned by a T3 override
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -613,6 +616,23 @@ def define_export_server(input, output, session, *,
         if not all_plots:
             for p_id, spec in top_plots.items():
                 all_plots.append((p_id, spec))
+
+        # REPRO-SEED-2 (ADR-097 decision 2): non-blocking nudge, never a refusal — the
+        # export is still fully reproducible via the number actually drawn (recorded in
+        # last_drawn_seeds), this just flags that a future render would draw a different one.
+        if last_drawn_seeds is not None:
+            with reactive.isolate():
+                _unpinned = [p for p, _ in all_plots if p in last_drawn_seeds.get()]
+            if _unpinned:
+                with reactive.isolate():
+                    _notify(
+                        f"{len(_unpinned)} plot(s) use an unpinned random seed "
+                        "(random_state: random) — exported with the number actually drawn "
+                        "this session, but a future render would draw a different one. Pin a "
+                        "fixed seed for a final/publication export if you need the same "
+                        "arrangement every time.",
+                        type="warning", duration=8,
+                    )
 
         # ── Apply export scope (Global / Active group / Active plot) ──────
         export_scope = safe_input(input, "export_scope", "global")

@@ -33,10 +33,11 @@ from __future__ import annotations
 # consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, utils/config_loader.py, app/modules/t3_audit_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
+# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
 # @end_deps
 
 import re
+import secrets
 from pathlib import Path
 
 import polars as pl
@@ -44,6 +45,7 @@ from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
+from viz_factory.plot_config_resolver import layers_have_jitter
 
 from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
@@ -115,7 +117,8 @@ def define_server(input, output, session, *,
                   home_state=None, session_manager=None,
                   data_refresh_trigger=None,
                   notification_log=None,
-                  session_processing_issues=None):
+                  session_processing_issues=None,
+                  last_drawn_seeds=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -155,6 +158,11 @@ def define_server(input, output, session, *,
         §12d Session ghost save/restore manager.
     session_processing_issues : reactive.Value[list] | None
         DIAG-RUNTIME-AUDIT-1: accumulates structured runtime error entries.
+    last_drawn_seeds : reactive.Value[dict] | None
+        REPRO-SEED-2 (ADR-097 decision 2): per-session bookkeeping of the last seed
+        actually drawn for each plot whose jitter seed isn't pinned by a T3 override —
+        {plot_id: seed}. Not audited T3 state; read by export (REPRO-PROV-1) to record
+        what was on screen rather than drawing a fresh, different number at export time.
     """
 
     from app.modules.notification_utils import make_notifier
@@ -394,6 +402,44 @@ def define_server(input, output, session, *,
 
     def _make_group_plot_handler(p_id: str):
         """Factory: returns a @render.plot fn that renders plot_group_{p_id}."""
+        this_subtab = f"subtab_{p_id}"
+
+        @reactive.Calc
+        def _effective_random_state():
+            """REPRO-SEED-2 (ADR-097 decision 2): resolve the seed this plot's jitter
+            should use. A T3-pinned override (aesthetic_override.random_state) always
+            wins and is returned as-is — it's already recorded via T3 state itself, so
+            nothing new needs bookkeeping. Otherwise, draw one fresh seed and return it;
+            the companion @reactive.Effect below is what remembers it (never here —
+            a @reactive.Calc must not write reactive state, R1, ui_implementation_contract.md
+            §14). Depends on home_state, so a recipe/T3 switch naturally redraws; an
+            unrelated re-render that doesn't touch home_state keeps the same draw,
+            avoiding visible jitter "flicker" with no user action behind it.
+
+            Returns (value, was_freshly_drawn).
+            """
+            spec = _resolve_active_spec(p_id)
+            if not layers_have_jitter((spec or {}).get("layers", [])):
+                return None, False
+            overrides = (
+                (home_state.get() if home_state is not None else {})
+                .get("t3_plot_overrides", {})
+                .get(this_subtab)
+            ) or {}
+            pinned = overrides.get("random_state")
+            if pinned is not None:
+                return pinned, False
+            return secrets.randbits(31), True
+
+        @reactive.Effect
+        def _persist_drawn_seed():
+            value, was_drawn = _effective_random_state()
+            if not was_drawn or last_drawn_seeds is None:
+                return
+            current = last_drawn_seeds.get()
+            if current.get(p_id) != value:
+                last_drawn_seeds.set({**current, p_id: value})
+
         @output(id=f"plot_group_{p_id}")
         @render.plot(alt=f"Plot: {p_id}")
         def _group_plot_handler():
@@ -423,8 +469,8 @@ def define_server(input, output, session, *,
             plot_spec = copy.deepcopy(spec)
             # Phase 22-J: per-plot T3 stack — query by this plot's subtab id,
             # not by the active subtab (this plot may not be the active one
-            # when its render runs in re-renders).
-            this_subtab = f"subtab_{p_id}"
+            # when its render runs in re-renders). `this_subtab` comes from the
+            # enclosing factory scope (shared with _effective_random_state above).
             # ADR-085 (2026-08-10, amended): T1/T2 are always the untouched
             # reference — NEITHER exploration filters (applied_filters) NOR
             # committed audit nodes may affect them. Both only apply on
@@ -494,9 +540,20 @@ def define_server(input, output, session, *,
                 .get(this_subtab)
             )
 
+            # REPRO-SEED-2 (ADR-097 decision 2): merge in the resolved seed (pinned
+            # override, or this session's drawn number) — reads the same Calc the
+            # bookkeeping Effect reads, so what's shown and what gets recorded always
+            # agree. None when the plot has no jitter at all (layers_have_jitter) —
+            # leaves _t3_overrides untouched rather than adding a meaningless key.
+            _resolved_seed, _ = _effective_random_state()
+            _render_overrides = (
+                {**(_t3_overrides or {}), "random_state": _resolved_seed}
+                if _resolved_seed is not None else _t3_overrides
+            )
+
             try:
                 return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
-                                          aesthetic_override=_t3_overrides)
+                                          aesthetic_override=_render_overrides)
             except Exception as e:
                 # Capture error for session_processing_issues without violating R1
                 # (cannot call reactive.Value.set inside @render.*). ADR-094/
@@ -2081,6 +2138,7 @@ def define_server(input, output, session, *,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
         view_keys=_data_analysis_recipe_keys,
+        last_drawn_seeds=last_drawn_seeds,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

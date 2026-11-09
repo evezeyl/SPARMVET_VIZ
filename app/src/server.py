@@ -125,6 +125,7 @@ def server(input, output, session):
     data_refresh_trigger = reactive.Value(0)   # incremented after data import to bust plot cache
     notification_log = reactive.Value([])      # UX-NOTIF-1: persistent alert log (last 20)
     session_processing_issues = reactive.Value([])  # DIAG-RUNTIME-AUDIT-1: structured PipelineError log
+    last_drawn_seeds = reactive.Value({})      # REPRO-SEED-2 (ADR-097): {plot_id: seed} bookkeeping, not audited T3 state
 
     # §13 Home Module State Object — see orchestrator_helpers.DEFAULT_HOME_STATE for schema
     home_state = reactive.Value(dict(DEFAULT_HOME_STATE))
@@ -206,6 +207,7 @@ def server(input, output, session):
         data_refresh_trigger=data_refresh_trigger,
         notification_log=notification_log,
         session_processing_issues=session_processing_issues,
+        last_drawn_seeds=last_drawn_seeds,
     )
 
     # Pipeline Audit: T2/T3 nodes, btn_apply, audit_pending_badge (requires t3_sandbox_enabled)
