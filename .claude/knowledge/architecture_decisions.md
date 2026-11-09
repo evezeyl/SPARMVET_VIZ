@@ -4752,15 +4752,35 @@ alternative. The marker convention is a structured `_t3_origin` dict key on the 
 and is directly machine-readable on read-back, closing the "we do not read T3" gap more
 robustly than a comment would.
 
-**#45 (export mode split) is also done, scoped narrower than decision 1's original framing.**
-Not a second "reproducibility-only" bundle that suppresses Mode 1 content — Mode 1 is always
-built, unchanged; Mode 2 is an opt-in, additive checkbox that forces `export_scope: global` and
-adds the translator's frozen recipe, the actual data files (not just hashes — "needs all to be
-fully reproducible"), and a new `effective_run.yaml` (the four hash legs, per-plot seed,
-`t3_translation_skipped`). Whether Mode 1 keeps its current full recipe copy now that Mode 2
-exists is left open, not resolved — changing existing Mode 1 output needs its own explicit
-go-ahead, not a side-effect of building Mode 2. #48 (Import) still needs this translator and
-the Mode 2 bundle shape; it has not started.
+**#45 (export mode split) is also done — corrected once already, 2026-11-09, after Eve's
+review of the first pass.** First pass kept Mode 1's recipe copy unchanged, reasoning that
+changing existing output needed its own go-ahead. Eve corrected this directly: Mode 1 must
+never contain the recipe at all (only report/plots/hashes — "the point is for the user to
+provide evidence that its the same and where things come from"), and the two modes are
+**complements, not alternatives** — minimizing repeats between them, not keeping two near-
+identical recipe copies side by side. Settled design, confirmed against a native StarUML
+diagram (`docs/UML/app.mdj`, HOME package, `EXP-MODES Export bundle contents by mode`) built
+and iterated live with her before any code changed:
+
+- **Mode 1 (Publication)** never includes the recipe or raw data — only `report.qmd` (plots +
+  Methods prose), `plots/`, `README.txt`, `t3_steps.yaml` (the human-readable audit record).
+- **`effective_run.yaml` is written unconditionally, identical content either way** — not
+  scattered hash values restated as prose, the literal shared file both modes carry. This is
+  the actual mechanism for Eve's requirement that two *separately* exported bundles (Mode 1
+  today, Mode 2 next week) can be proven to correspond: diff the file field by field (not
+  eyeball, not one collapsed code — #48's per-leg verify logic is the real comparison tool).
+  If recipe/data/T3-steps hashes match but `engine_fingerprint`/`git_commit` differ, that is
+  itself the evidence that a software change (e.g. a bug fix) explains a result difference,
+  not a problem with the analysis — Eve: "can justify that yeah was a bug of the software for
+  a user... not my logic problem but now its fixed."
+- **Mode 2 (Reproducibility)** adds the translator's frozen recipe and the actual data files
+  (not just hashes — "needs all to be fully reproducible") under
+  `data_analysis_recipes_reproducibility/` and `data_reproducibility/`. Never plots or report.
+- `git_commit` was already in `effective_run.yaml` since the first pass (REPRO-PROV-1) — Eve's
+  "that is why we need also to include the commit id" confirmed the requirement was already
+  met, not a new gap.
+
+#48 (Import) still needs this translator and the Mode 2 bundle shape; it has not started.
 
 **Context.** Issue #39 started narrow — "record the random seed and the data files used at
 export" — and widened once its own open questions were answered: the data-provenance half was

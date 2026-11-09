@@ -549,10 +549,11 @@ def define_export_server(input, output, session, *,
                 value=False,
             ),
             ui.tags.small(
-                "Adds the full recipe (with your audited steps baked in as real "
-                "wrangling actions), the actual data files, and a provenance record "
-                "with the seed and hashes needed to verify or re-run this later. "
-                "Forces Scope to Global — you can't partially reconstruct a recipe.",
+                "The verification record (effective_run.yaml — hashes, seeds, "
+                "environment) is always included. Checking this also adds the full "
+                "recipe (your audited steps baked in as real wrangling actions) and "
+                "the actual data files, so someone can re-run this, not just verify "
+                "it. Forces Scope to Global — you can't partially reconstruct a recipe.",
                 class_="text-muted d-block mb-1",
                 style="font-size:0.7em;",
             ),
@@ -619,12 +620,19 @@ def define_export_server(input, output, session, *,
         """
         Phase 21-I: Export Results Bundle.
 
-        Produces a zip file containing:
+        Produces a zip file containing (ADR-097, #45 — Publication content, never the
+        recipe or raw data; see effective_run.yaml below for the shared verification
+        record, and the optional Mode 2 add-on for the recipe/data themselves):
         - plots/          SVG (web preset) or high-DPI PNG (publication preset) per plot
         - data/           T1 TSV for each dataset referenced by active plots
-        - data_analysis_recipes/   YAML files of the data analysis recipe for the active data analysis recipe (and t3_steps.yaml)
+        - t3_steps.yaml   human-readable audit record backing the Methods prose (when T3 has steps)
+        - effective_run.yaml   the four verification hashes, per-plot seeds, environment —
+                          written identically whether or not Mode 2 is checked
         - report.qmd      Quarto source report embedding all plots and datasets
         - README.txt      Bundle data analysis recipe (timestamp, data analysis recipe, app features, preset)
+        - data_analysis_recipes_reproducibility/, data_reproducibility/  — only when the
+          "Also include a reproducibility/reimport bundle" box is checked: the frozen
+          recipe (T3 baked in) and the actual data files
         """
         import io
         import zipfile
@@ -1050,40 +1058,8 @@ def define_export_server(input, output, session, *,
                                     f"T3 data export failed:\n{e}"
                                 )
 
-                # ── Copy the YAML files of the data analysis recipe (active data analysis recipe ONLY) ──────────────
-                # EXPORT-BUG-2 (2026-04-30): the previous code did
-                # proj_dir.rglob("*.yaml") on the parent directory, which
-                # scooped up EVERY other data analysis recipe's data analysis recipe + their include
-                # fragments into the bundle (cross-data-analysis-recipe leak). Now we copy:
-                #   1. The active data analysis recipe's data analysis recipe itself
-                #   2. Its `!include` subdirectory if one exists (named
-                #      `{data_analysis_recipe_id}/`) — that's where fragment files live per
-                #      the basename-mirroring convention.
-                try:
-                    proj_data_analysis_recipe_path = bootloader.available_data_analysis_recipes.get(data_analysis_recipe_id)
-                    if proj_data_analysis_recipe_path:
-                        data_analysis_recipe_p = Path(str(proj_data_analysis_recipe_path))
-                        proj_dir = data_analysis_recipe_p.parent
-                        # 1. The active data analysis recipe itself
-                        with open(data_analysis_recipe_p, "rb") as f:
-                            zf.writestr(
-                                f"{bundle_dir}/data_analysis_recipes/{data_analysis_recipe_p.name}",
-                                f.read()
-                            )
-                        # 2. Includes subdirectory (if it exists for this project)
-                        includes_dir = proj_dir / data_analysis_recipe_id
-                        if includes_dir.is_dir():
-                            for yaml_file in includes_dir.rglob("*.yaml"):
-                                rel = yaml_file.relative_to(proj_dir)
-                                with open(yaml_file, "rb") as f:
-                                    zf.writestr(
-                                        f"{bundle_dir}/data_analysis_recipes/{rel}",
-                                        f.read()
-                                    )
-                except Exception as e:
-                    zf.writestr(f"{bundle_dir}/data_analysis_recipes/ERROR.txt", str(e))
-
-                # ── t3_steps.yaml (when T3 has committed changes) ─────────
+                # ── t3_steps.yaml (when T3 has committed changes) — Mode 1 content: the
+                # human-readable audit record backing the Methods prose, not the recipe. ──
                 if _t3_by_plot or _t3_aesthetic_overrides:
                     try:
                         import yaml as _yaml
@@ -1107,16 +1083,19 @@ def define_export_server(input, output, session, *,
                         if _t3_aesthetic_overrides:
                             t3_steps_data["t3_aesthetic_overrides"] = _t3_aesthetic_overrides
                         zf.writestr(
-                            f"{bundle_dir}/data_analysis_recipes/t3_steps.yaml",
+                            f"{bundle_dir}/t3_steps.yaml",
                             _yaml.safe_dump(t3_steps_data, sort_keys=False, allow_unicode=True),
                         )
                     except Exception as e:
-                        zf.writestr(f"{bundle_dir}/data_analysis_recipes/t3_steps_ERROR.txt", str(e))
+                        zf.writestr(f"{bundle_dir}/t3_steps_ERROR.txt", str(e))
 
-            # ── Mode 2 add-on: reproducibility/reimport bundle (ADR-097, #45) ──────
-            # Additive to everything above, never a replacement — Mode 1's content is
-            # unchanged regardless of this checkbox (see the UI note in system_tools_ui).
-            mode2_skipped: dict[str, str] = {}
+            # ── Mode 2 add-on: the heavy, Mode-2-exclusive content (ADR-097, #45) ──
+            # Recipe + actual data files. Additive to everything above, never a
+            # replacement — Mode 1's content is unchanged regardless of this checkbox.
+            # effective_run.yaml itself is NOT here — it is written unconditionally
+            # below, since both modes need the exact same file to be comparable
+            # (Eve, 2026-11-09): "if they differ means mode 1 and mode 2 not equal".
+            mode2_skipped: dict[str, str] | None = None
             if wants_mode2:
                 try:
                     from blueprint_arch.t3_translator import build_mode2_recipe
@@ -1142,46 +1121,6 @@ def define_export_server(input, output, session, *,
                             zf.writestr(
                                 f"{bundle_dir}/data_reproducibility/{_ds_id}_ERROR.txt", str(e)
                             )
-
-                    # The seed in effect per plot (ADR-097 decision 2/3) — a T3-pinned
-                    # override first, else this session's drawn number (REPRO-SEED-2).
-                    _seeds_per_plot: dict[str, object] = {}
-                    for _p_id, _ in all_plots:
-                        _pinned = (_t3_aesthetic_overrides.get(_p_id) or {}).get("random_state")
-                        if _pinned is not None:
-                            _seeds_per_plot[_p_id] = _pinned
-                        elif last_drawn_seeds is not None:
-                            with reactive.isolate():
-                                _drawn = last_drawn_seeds.get().get(_p_id)
-                            if _drawn is not None:
-                                _seeds_per_plot[_p_id] = _drawn
-
-                    effective_run = {
-                        "_about": (
-                            "Retrospective provenance for this export (field names checked "
-                            "against RO-Crate's Provenance Run Crate profile, arXiv:2312.07852, "
-                            "where they naturally overlap) — what was actually used, not just "
-                            "what the recipe declares as its default."
-                        ),
-                        "generated": now.isoformat(),
-                        "data_analysis_recipe_sha256": prov["data_analysis_recipe_sha256"],
-                        "data_batch_hash": prov["data_batch_hash"],
-                        "t3_audit_steps_sha256": prov["t3_audit_steps_sha256"],
-                        "engine_fingerprint": prov["engine_fingerprint"],
-                        "containerized": prov["containerized"],
-                        "image_ref": prov["image_ref"],
-                        "uv_lock_sha256": prov["uv_lock_sha256"],
-                        "git_commit": prov["git_commit"],
-                        "release_version": prov["release_version"],
-                        "software_versions": prov["software_versions"],
-                        "data_source_paths": prov["data_source_paths"],
-                        "seeds_per_plot": _seeds_per_plot,
-                        "t3_translation_skipped": mode2_skipped,
-                    }
-                    zf.writestr(
-                        f"{bundle_dir}/data_analysis_recipes_reproducibility/effective_run.yaml",
-                        _yaml.safe_dump(effective_run, sort_keys=False, allow_unicode=True),
-                    )
                     if mode2_skipped:
                         with reactive.isolate():
                             _notify(
@@ -1196,6 +1135,61 @@ def define_export_server(input, output, session, *,
                     zf.writestr(
                         f"{bundle_dir}/data_analysis_recipes_reproducibility/ERROR.txt", str(e)
                     )
+                    mode2_skipped = {"_error": str(e)}
+
+            # ── effective_run.yaml — written UNCONDITIONALLY, identical content either
+            # way, bundle root (ADR-097, #45 corrected scope, Eve 2026-11-09): the single
+            # shared, machine-comparable file both modes carry, so two bundles exported
+            # SEPARATELY (Mode 1 today, Mode 2 next week) can be proven to match — or, if
+            # they differ, show exactly which field differs (recipe/data/T3-steps changed
+            # vs. only engine_fingerprint/git_commit changed, i.e. a software update
+            # explains a result difference, not a problem with the analysis). Comparison
+            # is per-field, not a single collapsed code and not eyeball-only — #48's
+            # per-leg verify logic is the actual comparison tool.
+            with reactive.isolate():
+                _seeds_per_plot: dict[str, object] = {}
+                for _p_id, _ in all_plots:
+                    _pinned = (_t3_aesthetic_overrides.get(_p_id) or {}).get("random_state")
+                    if _pinned is not None:
+                        _seeds_per_plot[_p_id] = _pinned
+                    elif last_drawn_seeds is not None:
+                        _drawn = last_drawn_seeds.get().get(_p_id)
+                        if _drawn is not None:
+                            _seeds_per_plot[_p_id] = _drawn
+
+            import yaml as _yaml
+            effective_run = {
+                "_about": (
+                    "Retrospective provenance for this export (field names checked "
+                    "against RO-Crate's Provenance Run Crate profile, arXiv:2312.07852, "
+                    "where they naturally overlap) — what was actually used, not just "
+                    "what the recipe declares as its default. Written identically by "
+                    "Publication and Reproducibility exports — compare two separately "
+                    "exported copies field by field to confirm they're the same analysis."
+                ),
+                "generated": now.isoformat(),
+                "data_analysis_recipe_sha256": prov["data_analysis_recipe_sha256"],
+                "data_batch_hash": prov["data_batch_hash"],
+                "t3_audit_steps_sha256": prov["t3_audit_steps_sha256"],
+                "engine_fingerprint": prov["engine_fingerprint"],
+                "containerized": prov["containerized"],
+                "image_ref": prov["image_ref"],
+                "uv_lock_sha256": prov["uv_lock_sha256"],
+                "git_commit": prov["git_commit"],
+                "release_version": prov["release_version"],
+                "software_versions": prov["software_versions"],
+                "data_source_paths": prov["data_source_paths"],
+                "seeds_per_plot": _seeds_per_plot,
+                "t3_translation_skipped": (
+                    mode2_skipped if wants_mode2 else
+                    "not attempted — check 'Also include a reproducibility/reimport "
+                    "bundle' to translate T3 steps into replayable recipe actions"
+                ),
+            }
+            zf.writestr(
+                f"{bundle_dir}/effective_run.yaml",
+                _yaml.safe_dump(effective_run, sort_keys=False, allow_unicode=True),
+            )
 
             # data_analysis_recipe_sha, data_sha, tiers_exported, prov — all computed before tmpdir block.
 
@@ -1393,27 +1387,16 @@ def define_export_server(input, output, session, *,
                 f"**Software:** {_sw_qmd_str}  ",
                 f"**Data analysis recipe:** `{prov['data_analysis_recipe_name']}` — `{prov['data_analysis_recipe_path']}`  ",
                 "",
+                "> The full verification record — recipe/data/T3-steps/engine hashes, per-plot",
+                "> seeds, environment — is in **`effective_run.yaml`**, included in this bundle.",
+                "> It is written identically whether or not the reproducibility bundle (the",
+                "> recipe + actual data files) was also requested, so a copy from a separately",
+                "> exported bundle can be diffed against this one, field by field, to confirm",
+                "> they are the same analysis (ADR-097).",
+                "",
                 "| Hash | Value | Meaning |",
                 "|------|-------|---------|",
-                f"| Data analysis recipe SHA256 | `{prov['data_analysis_recipe_sha256'] or 'n/a'}` | File-set hash: the data analysis recipe file and every file it includes |",
-                f"| Data batch hash | `{prov['data_batch_hash'] or 'n/a'}` | SHA256 of all raw source file content (sorted by dataset id) |",
-                f"| T3 audit steps SHA256 | `{prov['t3_audit_steps_sha256']}` | Changes if any audited filter/exclusion/drop/aesthetic override changes |",
-                f"| Engine fingerprint | `{prov['engine_fingerprint']}` | Cache-version constant + installed Polars/transformer versions |",
-                (
-                    f"| Environment | containerized, `image_ref={prov['image_ref'] or 'not set'}` | "
-                    "Set at image build time via SPARMVET_IMAGE_REF; a tag alone is not a real pin |"
-                    if prov["containerized"] else
-                    f"| Environment | source install, `git_commit={prov['git_commit']}`, "
-                    f"`uv.lock SHA256={prov['uv_lock_sha256'] or 'not present'}` | "
-                    "uv.lock not yet part of this project — a known limitation, not a bug |"
-                ),
                 *_dh_qmd_rows,
-                "",
-                "> These hashes allow independent verification that this report was generated",
-                "> from the exact data analysis recipe, raw data, wrangling steps, T3 adjustments, and",
-                "> software environment present at export time (ADR-097). The Tier 1 and Tier 2 keys",
-                "> are stored in the metadata of the parquet files (`sparmvet_tier1_key`,",
-                "> `sparmvet_tier2_key`) and in the plot image metadata.",
                 "",
                 "## About the data in this report",
                 "",
@@ -1597,10 +1580,9 @@ def define_export_server(input, output, session, *,
                 "---",
                 "",
                 "> Report generated by SPARMVET-VIZ.",
-                f"> Git commit: `{prov['git_commit']}` | Release: `{prov['release_version']}`",
-                "> The data analysis recipe files are in the `data_analysis_recipes/` folder.",
-                f"> Data analysis recipe SHA256 (file set): {prov['data_analysis_recipe_sha256'] or 'n/a'}",
-                f"> Data batch hash (raw source files): {prov['data_batch_hash'] or 'n/a'}",
+                "> Full verification record — recipe/data/T3-steps/engine hashes, per-plot",
+                "> seeds — in `effective_run.yaml`, written the same way whether or not the",
+                "> reproducibility bundle (recipe + actual data files) was also requested.",
                 "> Decision hashes (wrangling steps): see `sparmvet_decision_hash` in each Parquet metadata block.",
             ]
 
@@ -1708,19 +1690,13 @@ def define_export_server(input, output, session, *,
                 "",
                 "Reproducibility",
                 "-" * 40,
-                f"Data analysis recipe SHA256  : {prov['data_analysis_recipe_sha256'] or 'n/a'}",
-                f"  (file-set hash: the data analysis recipe file and every file it includes)",
-                f"Data batch hash  : {prov['data_batch_hash'] or 'n/a'}",
-                f"  (SHA256 of all raw source file content, sorted by dataset id)",
-                f"T3 audit steps SHA256 : {prov['t3_audit_steps_sha256']}",
-                f"  (changes if any audited filter/exclusion/drop/aesthetic override changes)",
-                f"Engine fingerprint    : {prov['engine_fingerprint']}",
-                (
-                    f"Environment      : containerized, image_ref={prov['image_ref'] or 'not set — see SPARMVET_IMAGE_REF'}"
-                    if prov["containerized"] else
-                    f"Environment      : source install, git_commit={prov['git_commit']}, "
-                    f"uv.lock SHA256={prov['uv_lock_sha256'] or 'not present'}"
-                ),
+                "See effective_run.yaml (included in this bundle) for the full verification",
+                "record: recipe/data/T3-steps/engine hashes, per-plot seeds, environment.",
+                "Written identically whether or not the reproducibility bundle (recipe +",
+                "actual data files) was also requested — diff a copy from a separately",
+                "exported bundle against this one, field by field, to confirm they are the",
+                "same analysis (ADR-097).",
+                "",
                 "Stage keys (per dataset; Tier 1 and Tier 2 chained keys):",
                 *_dh_lines,
                 "",
@@ -1730,7 +1706,7 @@ def define_export_server(input, output, session, *,
                 *mapping_block,
                 "",
                 "Audited T3 steps (always applied to the plot and its data):",
-                *([f"  {_p}: {len(_t3_by_plot.get(_p, []))} step(s), see data_analysis_recipes/t3_steps.yaml and the T3 Audit Trail in report.qmd"
+                *([f"  {_p}: {len(_t3_by_plot.get(_p, []))} step(s), see t3_steps.yaml and the T3 Audit Trail in report.qmd"
                    for _p in sorted(audited_plots)] or ["  none"]),
                 "",
                 "Contents:",
@@ -1739,16 +1715,18 @@ def define_export_server(input, output, session, *,
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
                 "  <dataset>/T3_data_<plot>.tsv — My view data of each plot (T3, when exported): T2 (T1 when there",
                 "                     are no tier2 steps) plus that plot's filters and column drops",
-                "  data_analysis_recipes/ — YAML files of the data analysis recipe",
+                "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
+                "  effective_run.yaml — the full verification record: recipe/data/T3-steps/engine",
+                "                     hashes, per-plot seeds. Written the same way either way (ADR-097).",
                 "  lineage/          — lineage_graph.json (shared-node DAG, ADR-074)",
                 "  report.qmd        — Quarto source (re-render: quarto render report.qmd)",
                 rendered_note,
                 "  README.txt        — this file",
                 *([
                     "  data_analysis_recipes_reproducibility/<id>.yaml — frozen recipe copy with",
-                    "       your audited T3 steps baked in as real wrangling actions, per plot",
-                    "       (ADR-097). effective_run.yaml alongside it records the seed, the four",
-                    "       verification hashes, and any plot whose steps couldn't be fully baked in.",
+                    "       your audited T3 steps baked in as real wrangling actions, per plot.",
+                    "       Any plot whose steps couldn't be fully baked in is named in",
+                    "       effective_run.yaml's t3_translation_skipped.",
                     "  data_reproducibility/<dataset>.<ext> — the actual data files used.",
                 ] if wants_mode2 else []),
                 "",

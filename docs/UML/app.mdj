@@ -10456,6 +10456,1438 @@
 							"name": "Plot Style: not shown today"
 						}
 					]
+				},
+				{
+					"_type": "FCFlowchart",
+					"_id": "AAAAAAGhwIL8VRe1/BM=",
+					"_parent": {
+						"$ref": "AAAAAAGht1V6z9k+p4w="
+					},
+					"name": "EXP-MODES",
+					"ownedElements": [
+						{
+							"_type": "FCFlowchartDiagram",
+							"_id": "AAAAAAGhwIL8VRe2olw=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "EXP-MODES Export bundle contents by mode",
+							"ownedViews": [
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhwIRbyxiOvgM=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRbyxiMbI8="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRbyxiP1CI=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRbyxiOvgM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 454.243408203125,
+											"top": 30,
+											"width": 40.47900390625,
+											"height": 52,
+											"text": "User clicks Export Bundle",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 444.243408203125,
+									"top": 20,
+									"width": 60.47900390625,
+									"height": 72,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRbyxiP1CI="
+									}
+								},
+								{
+									"_type": "FCDecisionView",
+									"_id": "AAAAAAGhwIRb5RiWvVE=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRb5hiXNCg=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRb5RiWvVE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 446.657958984375,
+											"top": 155,
+											"width": 55.64990234375,
+											"height": 26,
+											"text": "Mode selected?",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 418.8330078125,
+									"top": 142,
+									"width": 111.2998046875,
+									"height": 52,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRb5hiXNCg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhwIRb+Rie+Ro=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRb+RifLL8=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRb+Rie+Ro="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 253.59130859375,
+											"top": 428,
+											"width": 85.28076171875,
+											"height": 52,
+											"text": "Mode 1: Publication\nthe paper-facing facet",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 243.59130859375,
+									"top": 418,
+									"width": 105.28076171875,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRb+RifLL8="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhwIRcDBimwXc=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRcDBikGjA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRcDBinYBg=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRcDBimwXc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 739.8067626953125,
+											"top": 254,
+											"width": 117.05712890625,
+											"height": 52,
+											"text": "Both (recommended)\none zip - the two facets together",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 729.8067626953125,
+									"top": 244,
+									"width": 137.05712890625,
+									"height": 124,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRcDBinYBg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhwIRcIhiu73g=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRcIhivjiI=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRcIhiu73g="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 698.098388671875,
+											"top": 428,
+											"width": 106.9453125,
+											"height": 52,
+											"text": "Mode 2: Reproducibility\nthe dig-in-and-rerun facet",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 688.098388671875,
+									"top": 418,
+									"width": 126.9453125,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRcIhivjiI="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGhwIRcPxi2TzY=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRcPhi0GnI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRcPxi3/y4=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRcPxi2TzY="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 185.2568359375,
+											"top": 563,
+											"width": 144.27587890625,
+											"height": 214,
+											"text": "effective_run.yaml\nrecipe / data / T3-steps / engine hashes + git_commit\n+ per-plot seeds + skipped list\nALWAYS written, identical content either way",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 175.2568359375,
+									"top": 553,
+									"width": 164.27587890625,
+									"height": 280,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRcPxi3/y4="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGhwIRceRi+4+4=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRceRi8ZH0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRceRi/4iM=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRceRi+4+4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 641,
+											"width": 105.2568359375,
+											"height": 84,
+											"text": "report.qmd\nplots + Methods prose (T3 why)\npoints to effective_run.yaml",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 631,
+									"width": 125.2568359375,
+									"height": 124,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRceRi/4iM="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhwIRcoxjGohI=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRcoxjEDVA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRcpBjHM6w=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRcoxjGohI="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 387.53271484375,
+											"top": 686.5,
+											"width": 15.07177734375,
+											"height": 13,
+											"text": "plots/",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 369.53271484375,
+									"top": 676.5,
+									"width": 51.07177734375,
+									"height": 33,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRcpBjHM6w="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGhwIRcwRjOqPQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRcwRjMCXA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRcwRjPz30=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRcwRjOqPQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 460.6044921875,
+											"top": 673.5,
+											"width": 111.25537109375,
+											"height": 30,
+											"text": "README.txt\npoints to effective_run.yaml",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 450.6044921875,
+									"top": 663.5,
+									"width": 131.25537109375,
+									"height": 59,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRcwRjPz30="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGhwIRc4xjW6zE=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRc4xjUxF4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRc4xjXLzs=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRc4xjW6zE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 621.85986328125,
+											"top": 641,
+											"width": 259.42236328125,
+											"height": 84,
+											"text": "data_analysis_recipes_reproducibility/\nfrozen recipe, T3 baked in as real steps",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 611.85986328125,
+									"top": 631,
+									"width": 279.42236328125,
+									"height": 124,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRc4xjXLzs="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhwIRdBRjesjc=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRdBRjc8Xs="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRdBRjf1Fg=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRdBRjesjc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 960.2822265625,
+											"top": 667,
+											"width": 96.64794921875,
+											"height": 26,
+											"text": "data_reproducibility/\nactual data files, copied",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 921.2822265625,
+									"top": 657,
+									"width": 174.64794921875,
+									"height": 72,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRdBRjf1Fg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhwIRdJxjmLjQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRdJxjkV9c="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhwIRdJxjn4zw=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRdJxjmLjQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 196.343017578125,
+											"top": 893,
+											"width": 122.103515625,
+											"height": 169,
+											"text": "two SEPARATE exports: diff effective_run.yaml field by field (#48 per-leg verify)\nrecipe/data/T3 match, engine_fingerprint or git_commit differ\n= a software change explains the difference, not the analysis",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 186.343017578125,
+									"top": 883,
+									"width": 142.103515625,
+									"height": 345,
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRdJxjn4zw="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRdUxjuXZc=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRdUxjsjBk="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRdUxjvubc=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRdUxjuXZc="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRdUxjsjBk="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 488,
+											"top": 110,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRdUxjuXZc="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRb5RiWvVE="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRbyxiOvgM="
+									},
+									"lineStyle": 3,
+									"points": "474:93;474:117;474:141",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRdUxjvubc="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRdhBj3HV0=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRdhBj18Og="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRdhBj4pbA=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRdhBj3HV0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRdhBj18Og="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 259,
+											"top": 299,
+											"width": 63.59716796875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRdhBj3HV0="
+											},
+											"edgePosition": 1,
+											"text": "Publication"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRb+Rie+Ro="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb5RiWvVE="
+									},
+									"lineStyle": 3,
+									"points": "418:182;276:219;276:306;276:393;283:417",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRdhBj4pbA="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRdvxkA5hI=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRdvxj+Sdw="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRdvxkBOIM=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRdvxkA5hI="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRdvxj+Sdw="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 359,
+											"top": 299,
+											"width": 85.26171875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRdvxkA5hI="
+											},
+											"edgePosition": 1,
+											"text": "Reproducibility"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRcIhiu73g="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb5RiWvVE="
+									},
+									"lineStyle": 3,
+									"points": "428:195;387:219;387:306;387:393;687:448",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRdvxkBOIM="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRd+hkJsiM=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRd+hkH7JE="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRd+hkKl+o=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRd+hkJsiM="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRd+hkH7JE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 799,
+											"top": 212,
+											"width": 26.74267578125,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRd+hkJsiM="
+											},
+											"edgePosition": 1,
+											"text": "Both"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRcDBimwXc="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb5RiWvVE="
+									},
+									"lineStyle": 3,
+									"points": "531:177;798:219;798:243",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRd+hkKl+o="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIReKBkS1Pg=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIReJxkQj5Q="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIReKBkTE5Q=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIReKBkS1Pg="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIReJxkQj5Q="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 450,
+											"top": 400,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIReKBkS1Pg="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRb+Rie+Ro="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRcDBimwXc="
+									},
+									"lineStyle": 3,
+									"points": "729:323;444:393;350:436",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIReKBkTE5Q="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIReVRkbw7s=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIReVRkZk/A="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIReVRkcRdc=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIReVRkbw7s="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIReVRkZk/A="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 819,
+											"top": 396,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIReVRkbw7s="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRcIhiu73g="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRcDBimwXc="
+									},
+									"lineStyle": 3,
+									"points": "805:369;808:393;788:417",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIReVRkcRdc="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIReghkk1u0=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIReghki9o0="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRegxkl/Rw=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIReghkk1u0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIReghki9o0="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 183,
+											"top": 514,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIReghkk1u0="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRcPxi2TzY="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb+Rie+Ro="
+									},
+									"lineStyle": 3,
+									"points": "243:489;170:528;183:552",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRegxkl/Rw="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIReyRktEHg=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIReyRkr2qY="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIReyRkuhD0=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIReyRktEHg="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIReyRkr2qY="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 418,
+											"top": 532,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIReyRktEHg="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRcPxi2TzY="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRcIhiu73g="
+									},
+									"lineStyle": 3,
+									"points": "687:473;407:528;341:601",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIReyRkuhD0="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRfBxk2awA=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRfBxk0KA0="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRfBxk3y28=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRfBxk2awA="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRfBxk0KA0="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 202,
+											"top": 530,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRfBxk2awA="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRceRi+4+4="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb+Rie+Ro="
+									},
+									"lineStyle": 3,
+									"points": "243:494;190:528;123:630",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRfBxk3y28="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRfNRk/y1g=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRfNRk9LYI="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRfNRlAjGo=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRfNRk/y1g="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRfNRk9LYI="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 329,
+											"top": 515,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRfNRk/y1g="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRcoxjGohI="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb+Rie+Ro="
+									},
+									"lineStyle": 3,
+									"points": "309:504;316:528;387:676",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRfNRlAjGo="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRfZBlIySc=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRfZBlG0M4="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRfZBlJXyY=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRfZBlIySc="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRfZBlG0M4="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 398,
+											"top": 512,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRfZBlIySc="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRcwRjOqPQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRb+Rie+Ro="
+									},
+									"lineStyle": 3,
+									"points": "350:500;387:528;492:663",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRfZBlJXyY="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRfkxlR9RI=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRfkxlPiFQ="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRfkxlScx8=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRfkxlR9RI="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRfkxlPiFQ="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 766,
+											"top": 522,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRfkxlR9RI="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRc4xjW6zE="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRcIhiu73g="
+									},
+									"lineStyle": 3,
+									"points": "752:504;752:528;751:630",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRfkxlScx8="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRfwhlajN0=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRfwhlYUdA="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRfwhlbJao=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRfwhlajN0="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRfwhlYUdA="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1023,
+											"top": 522,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRfwhlajN0="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRdBRjesjc="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRcIhiu73g="
+									},
+									"lineStyle": 3,
+									"points": "816:477;1009:528;1008:656",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRfwhlbJao="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhwIRf8xlj95w=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIL8VRe2olw="
+									},
+									"model": {
+										"$ref": "AAAAAAGhwIRf8xlhx9w="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhwIRf8xlk6oU=",
+											"_parent": {
+												"$ref": "AAAAAAGhwIRf8xlj95w="
+											},
+											"model": {
+												"$ref": "AAAAAAGhwIRf8xlhx9w="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 227,
+											"top": 851,
+											"width": 89.36865234375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhwIRf8xlj95w="
+											},
+											"edgePosition": 1,
+											"text": "diff field by field"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhwIRdJxjmLjQ="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhwIRcPxi2TzY="
+									},
+									"lineStyle": 3,
+									"points": "257:834;257:858;257:882",
+									"nameLabel": {
+										"$ref": "AAAAAAGhwIRf8xlk6oU="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhwIMJnRhcBqw=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "TEST A"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhwIMbpBhk09s=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "TEST B"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhwIONlhhs3vw=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "TEST C"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhwIRbyxiMbI8=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "User clicks Export Bundle",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRdUxjsjBk=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRbyxiMbI8="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRbyxiMbI8="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCDecision",
+							"_id": "AAAAAAGhwIRb5RiUJ0w=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "Mode selected?",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRdhBj18Og=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									},
+									"name": "Publication",
+									"source": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRdvxj+Sdw=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									},
+									"name": "Reproducibility",
+									"source": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRd+hkH7JE=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									},
+									"name": "Both",
+									"source": {
+										"$ref": "AAAAAAGhwIRb5RiUJ0w="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRcDBikGjA="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhwIRb+Ric0kk=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "Mode 1: Publication\nthe paper-facing facet",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIReghki9o0=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRcPhi0GnI="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRfBxk0KA0=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRceRi8ZH0="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRfNRk9LYI=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRcoxjEDVA="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRfZBlG0M4=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRcwRjMCXA="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhwIRcDBikGjA=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "Both (recommended)\none zip - the two facets together",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIReJxkQj5Q=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRcDBikGjA="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRcDBikGjA="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRb+Ric0kk="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIReVRkZk/A=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRcDBikGjA="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRcDBikGjA="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhwIRcIhisW8U=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "Mode 2: Reproducibility\nthe dig-in-and-rerun facet",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIReyRkr2qY=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRcPhi0GnI="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRfkxlPiFQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRc4xjUxF4="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRfwhlYUdA=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									},
+									"source": {
+										"$ref": "AAAAAAGhwIRcIhisW8U="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRdBRjc8Xs="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGhwIRcPhi0GnI=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "effective_run.yaml\nrecipe / data / T3-steps / engine hashes + git_commit\n+ per-plot seeds + skipped list\nALWAYS written, identical content either way",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIRf8xlhx9w=",
+									"_parent": {
+										"$ref": "AAAAAAGhwIRcPhi0GnI="
+									},
+									"name": "diff field by field",
+									"source": {
+										"$ref": "AAAAAAGhwIRcPhi0GnI="
+									},
+									"target": {
+										"$ref": "AAAAAAGhwIRdJxjkV9c="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGhwIRceRi8ZH0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "report.qmd\nplots + Methods prose (T3 why)\npoints to effective_run.yaml"
+						},
+						{
+							"_type": "FCData",
+							"_id": "AAAAAAGhwIRcoxjEDVA=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "plots/"
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGhwIRcwRjMCXA=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "README.txt\npoints to effective_run.yaml"
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGhwIRc4xjUxF4=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "data_analysis_recipes_reproducibility/\nfrozen recipe, T3 baked in as real steps"
+						},
+						{
+							"_type": "FCData",
+							"_id": "AAAAAAGhwIRdBRjc8Xs=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "data_reproducibility/\nactual data files, copied"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhwIRdJxjkV9c=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIL8VRe1/BM="
+							},
+							"name": "two SEPARATE exports: diff effective_run.yaml field by field (#48 per-leg verify)\nrecipe/data/T3 match, engine_fingerprint or git_commit differ\n= a software change explains the difference, not the analysis"
+						}
+					]
 				}
 			]
 		},
@@ -67383,6 +68815,19 @@
 									"target": {
 										"$ref": "AAAAAAGht1w+gnqt0Gk="
 									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhwIPqoRh0DcM=",
+									"_parent": {
+										"$ref": "AAAAAAGht1w9/3qdy2k="
+									},
+									"source": {
+										"$ref": "AAAAAAGht1w9/3qdy2k="
+									},
+									"target": {
+										"$ref": "AAAAAAGht1w+QHqlAxc="
+									}
 								}
 							]
 						},
@@ -92357,6 +93802,1649 @@
 					],
 					"technology": "not working yet: partial",
 					"description": "Should host the app and mount the datasets. The connector exists; the app has not been run there."
+				}
+			]
+		},
+		{
+			"_type": "FCFlowchart",
+			"_id": "AAAAAAGhwHGsHgO8fVw=",
+			"_parent": {
+				"$ref": "AAAAAAFF+h6SjaM2Hec="
+			},
+			"name": "Flowchart by Mermaid",
+			"ownedElements": [
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsHgO+OYI=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "User clicks Export Bundle",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIQPln+I=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHgO+OYI="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHgO+OYI="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsHwPBcCQ="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCDecision",
+					"_id": "AAAAAAGhwHGsHwPBcCQ=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "Mode selected?",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIQPoV0w=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPBcCQ="
+							},
+							"name": "Publication",
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPBcCQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIQPr6zY=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPBcCQ="
+							},
+							"name": "Reproducibility",
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPBcCQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIgPu4eY=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPBcCQ="
+							},
+							"name": "Both",
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPBcCQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsHwPKhUU="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsHwPEbbc=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "Mode 1: Publication<br/>(for the paper's author)",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIgP3iak=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIAPNG68="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIgP6czE=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIAPQOPk="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIwP9/7Q=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIAPTnfo="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIwQAYug=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIAPWpZM="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsHwPHtMs=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "Mode 2: Reproducibility<br/>(for someone poking around)",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIwQDVUU=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIAPZ7w8="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIwQGCEE=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIAPca8E="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIwQJHlQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIAPfCiw="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsJAQMRuU=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsIQPi7F0="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsHwPKhUU=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "Both<br/>one zip, two folders",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIgPxWfI=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPKhUU="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPKhUU="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsHwPEbbc="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHGsIgP01ho=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHGsHwPKhUU="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHGsHwPKhUU="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHGsHwPHtMs="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIAPNG68=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "report.qmd<br/>plots + Methods prose T3 why + hash table"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIAPQOPk=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "plots/"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIAPTnfo=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "README.txt<br/>same hash table, plain text"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIAPWpZM=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "recipe YAML / raw data"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIAPZ7w8=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "data_analysis_recipes_reproducibility/<br/>frozen recipe, T3 baked in as real steps"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIAPca8E=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "data_reproducibility/<br/>actual data files, copied"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIAPfCiw=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "effective_run.yaml<br/>hashes + per-plot seeds + environment + skipped list"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHGsIQPi7F0=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHGsHgO8fVw="
+					},
+					"name": "plots / report"
+				}
+			]
+		},
+		{
+			"_type": "FCFlowchart",
+			"_id": "AAAAAAGhwHIJkQjRr+8=",
+			"_parent": {
+				"$ref": "AAAAAAFF+h6SjaM2Hec="
+			},
+			"name": "Flowchart by Mermaid",
+			"ownedElements": [
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkgjTVKQ=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "User clicks\nExport Bundle",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJkwj6WxM=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjTVKQ="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjTVKQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkgjW9ic="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCDecision",
+					"_id": "AAAAAAGhwHIJkgjW9ic=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "Mode\nselected?",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJkwj9iEU=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjW9ic="
+							},
+							"name": "Publication",
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjW9ic="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJkwkAxDs=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjW9ic="
+							},
+							"name": "Reproducibility",
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjW9ic="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJkwkDUV0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjW9ic="
+							},
+							"name": "Both",
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjW9ic="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkgjfjrI="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkgjZOCw=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "Mode 1: Publication\nfor the paper's author",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkM66U=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkgji3eA="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkPh9g=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkwjl8o8="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkSLeU=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkwjozvQ="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkVhT0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkwjrrFg="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkgjcjd0=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "Mode 2: Reproducibility\nfor someone poking around",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkY5cw=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkwjuCBQ="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkb8hk=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkwjx9k8="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkehG0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkwj0gYA="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkhvEQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkwj3Sk0="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkgjfjrI=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "Both\none zip, two folders",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkGXF0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjfjrI="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjfjrI="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkgjZOCw="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHIJlAkJa0Y=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHIJkgjfjrI="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHIJkgjfjrI="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHIJkgjcjd0="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkgji3eA=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "report.qmd\nplots + Methods prose (T3 why) + hash table"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkwjl8o8=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "plots/"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkwjozvQ=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "README.txt\nsame hash table, plain text"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkwjrrFg=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "recipe YAML\nraw data files"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkwjuCBQ=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "data_analysis_recipes_reproducibility/\nfrozen recipe, T3 baked in as real steps"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkwjx9k8=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "data_reproducibility/\nactual data files, copied"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkwj0gYA=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "effective_run.yaml\nhashes + per-plot seeds + environment + skipped list"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHIJkwj3Sk0=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHIJkQjRr+8="
+					},
+					"name": "plots\nreport"
+				}
+			]
+		},
+		{
+			"_type": "FCFlowchart",
+			"_id": "AAAAAAGhwHcFwAvcSfs=",
+			"_parent": {
+				"$ref": "AAAAAAFF+h6SjaM2Hec="
+			},
+			"name": "Flowchart by Mermaid",
+			"ownedElements": [
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwQveC7g=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "User clicks\nExport Bundle",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwgwLC54=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQveC7g="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQveC7g="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwQvhAj4="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCDecision",
+					"_id": "AAAAAAGhwHcFwQvhAj4=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "Mode\nselected?",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwOC8Q=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvhAj4="
+							},
+							"name": "Publication",
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvhAj4="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwR8hc=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvhAj4="
+							},
+							"name": "Reproducibility",
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvhAj4="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwUqQ8=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvhAj4="
+							},
+							"name": "Both",
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvhAj4="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgvqNlg="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwQvkSpw=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "Mode 1: Publication\nfor the paper's author",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwdhr4=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgvtpCE="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwjWPc=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgvwF6E="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwmCh4=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgvz4Ck="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwp7Yc=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgv2l6k="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwskrg=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgv5k1s="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgvnCtU=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "Mode 2: Reproducibility\nfor someone poking around",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwgHeI=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgvtpCE="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwv+pM=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgv8GOE="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwym4Q=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgv/sG0="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFxAw1YEs=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgwC5OM="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFxAw4YIo=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgwFeaI="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgvqNlg=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "Both\none zip, two folders",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwX7EI=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvqNlg="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvqNlg="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwQvkSpw="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFwwwa3Uk=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvqNlg="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvqNlg="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgvnCtU="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgvtpCE=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "Analysis ID\n+ 3 content hashes:\nrecipe / data / T3-steps\n(same value in both modes)",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHcFxAw7gcw=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHcFwgvtpCE="
+							},
+							"name": "same Analysis ID in two\nSEPARATE exports means:\nsame recipe, same data,\nsame audited T3 decisions",
+							"source": {
+								"$ref": "AAAAAAGhwHcFwgvtpCE="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHcFwgwIass="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgvwF6E=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "report.qmd\nplots + Methods prose (T3 why)"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgvz4Ck=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "plots/"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgv2l6k=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "README.txt"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgv5k1s=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "recipe YAML\nraw data files"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgv8GOE=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "data_analysis_recipes_reproducibility/\nfrozen recipe, T3 baked in as real steps"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgv/sG0=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "data_reproducibility/\nactual data files, copied"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgwC5OM=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "effective_run.yaml\nAnalysis ID + hashes + seeds\n+ environment + skipped list"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgwFeaI=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "plots\nreport"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHcFwgwIass=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHcFwAvcSfs="
+					},
+					"name": "Mode 2 bundle is the\nverifiable backing for\nthat Mode 1 report"
+				}
+			]
+		},
+		{
+			"_type": "FCFlowchart",
+			"_id": "AAAAAAGhwHyC0Q8cxoc=",
+			"_parent": {
+				"$ref": "AAAAAAFF+h6SjaM2Hec="
+			},
+			"name": "Flowchart by Mermaid",
+			"ownedElements": [
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0Q8epFA=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "User clicks\nExport Bundle",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0g9I9hM=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8epFA="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8epFA="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0Q8hv0Q="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCDecision",
+					"_id": "AAAAAAGhwHyC0Q8hv0Q=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "Mode\nselected?",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9Ll9w=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8hv0Q="
+							},
+							"name": "Publication",
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8hv0Q="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9OPWk=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8hv0Q="
+							},
+							"name": "Reproducibility",
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8hv0Q="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9RIs8=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8hv0Q="
+							},
+							"name": "Both",
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8hv0Q="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g8qEpE="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0Q8ko6w=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "Mode 1: Publication\nfor the paper's author",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9aNQU=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g8t8a4="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9gV24=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g8w308="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9jhio=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g8zzIQ="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9mbeQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g82jCo="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9pJ38=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g850ZU="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0Q8nkkQ=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "Mode 2: Reproducibility\nfor someone poking around",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9dSK4=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g8t8a4="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC1A9sn8E=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g88MJA="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC1A9vQ/0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g8/hoc="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC1A9ywuY=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"name": "never includes",
+							"source": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g9CqKk="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g8qEpE=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "Both\none zip, two folders",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9Uj9Q=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0g8qEpE="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0g8qEpE="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0Q8ko6w="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC0w9XFHM=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0g8qEpE="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwHyC0g8qEpE="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0Q8nkkQ="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g8t8a4=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "effective_run.yaml\nrecipe / data / T3-steps / engine hashes\n+ per-plot seeds + skipped list\nSAME file content in both modes",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwHyC1A91Xbg=",
+							"_parent": {
+								"$ref": "AAAAAAGhwHyC0g8t8a4="
+							},
+							"name": "two SEPARATE exports:\ndiff effective_run.yaml field by field\n(not eyeball, not one combined code) -\n#48's per-leg verify logic",
+							"source": {
+								"$ref": "AAAAAAGhwHyC0g8t8a4="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwHyC0g9F4t0="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g8w308=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "report.qmd\nplots + Methods prose (T3 why)\npoints to effective_run.yaml, no hash values restated"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g8zzIQ=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "plots/"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g82jCo=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "README.txt\npoints to effective_run.yaml"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g850ZU=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "recipe YAML\nraw data files"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g88MJA=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "data_analysis_recipes_reproducibility/\nfrozen recipe, T3 baked in as real steps"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g8/hoc=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "data_reproducibility/\nactual data files, copied"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g9CqKk=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "plots\nreport"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwHyC0g9F4t0=",
+					"_parent": {
+						"$ref": "AAAAAAGhwHyC0Q8cxoc="
+					},
+					"name": "recipe/data/T3 match, engine differs\n= a software change explains the difference,\nnot a problem with the analysis"
+				}
+			]
+		},
+		{
+			"_type": "FCFlowchart",
+			"_id": "AAAAAAGhwIAgMRJHVz8=",
+			"_parent": {
+				"$ref": "AAAAAAFF+h6SjaM2Hec="
+			},
+			"name": "Flowchart by Mermaid",
+			"ownedElements": [
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMhJJSL8=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "User clicks\nExport Bundle",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNBJtnvo=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMhJJSL8="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMhJJSL8="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMhJM3fM="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCDecision",
+					"_id": "AAAAAAGhwIAgMhJM3fM=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "Mode\nselected?",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNBJws3U=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMhJM3fM="
+							},
+							"name": "Publication",
+							"source": {
+								"$ref": "AAAAAAGhwIAgMhJM3fM="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNBJzNOo=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMhJM3fM="
+							},
+							"name": "Reproducibility",
+							"source": {
+								"$ref": "AAAAAAGhwIAgMhJM3fM="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNBJ2Hzg=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMhJM3fM="
+							},
+							"name": "Both (recommended)",
+							"source": {
+								"$ref": "AAAAAAGhwIAgMhJM3fM="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJV/e4="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMxJPMvk=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "Mode 1: Publication\nthe paper-facing facet",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRJ/Mv8=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJYcsY="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRKFynQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJbDWc="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRKIOCg=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJeSNE="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRKLCE8=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJh4+Y="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMxJS8C8=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "Mode 2: Reproducibility\nthe dig-in-and-rerun facet",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRKCqWg=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJYcsY="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRKO9B0=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgNBJk56w="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRKR+RY=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgNBJnqvY="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMxJV/e4=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "Both\none zip - the two facets together",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNBJ5SuA=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJV/e4="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJV/e4="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJPMvk="
+							}
+						},
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRJ8WoI=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJV/e4="
+							},
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJV/e4="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgMxJS8C8="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMxJYcsY=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "effective_run.yaml\nrecipe / data / T3-steps / engine hashes + git_commit\n+ per-plot seeds + skipped list\nALWAYS written, identical content either way",
+					"ownedElements": [
+						{
+							"_type": "FCFlow",
+							"_id": "AAAAAAGhwIAgNRKUarI=",
+							"_parent": {
+								"$ref": "AAAAAAGhwIAgMxJYcsY="
+							},
+							"name": "two SEPARATE exports:\ndiff effective_run.yaml field by field\n(#48's per-leg verify logic)",
+							"source": {
+								"$ref": "AAAAAAGhwIAgMxJYcsY="
+							},
+							"target": {
+								"$ref": "AAAAAAGhwIAgNBJqds8="
+							}
+						}
+					]
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMxJbDWc=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "report.qmd\nplots + Methods prose (T3 why)\npoints to effective_run.yaml"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMxJeSNE=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "plots/"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgMxJh4+Y=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "README.txt\npoints to effective_run.yaml"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgNBJk56w=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "data_analysis_recipes_reproducibility/\nfrozen recipe, T3 baked in as real steps"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgNBJnqvY=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "data_reproducibility/\nactual data files, copied"
+				},
+				{
+					"_type": "FCProcess",
+					"_id": "AAAAAAGhwIAgNBJqds8=",
+					"_parent": {
+						"$ref": "AAAAAAGhwIAgMRJHVz8="
+					},
+					"name": "recipe/data/T3 match, engine_fingerprint\nor git_commit differs = a software change\nexplains the difference, not the analysis"
 				}
 			]
 		}

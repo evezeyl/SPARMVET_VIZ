@@ -110,27 +110,27 @@ pieces last.
   filtering the original join's Tier 1 the same way. Full headless suite (1548) passes.
   **Not yet done:** wiring this into the actual Mode 2 export (#45) or Import (#48) — this
   task built the translator itself, standalone and tested, not its integration.
-- [x] **REPRO-EXPORT-MODES-1** `[sonnet/medium]` (#45/4B) — DONE 2026-11-09, scoped narrower
-  than originally framed: not a second "reproducibility-only, no plots" bundle — Mode 1
-  (Publication) content is always built, unchanged; Mode 2 is an **opt-in, additive** checkbox
-  ("Also include a reproducibility/reimport bundle") that adds to the same zip, never replaces.
-  Checking it forces `export_scope: global` server-side regardless of the scope radio's value,
-  with an explanatory note. When checked: `build_mode2_recipe()` (REPRO-TRANSLATOR-1) produces
-  the frozen recipe (`data_analysis_recipes_reproducibility/<id>.yaml`); the actual data files
-  are copied, not just hashed (`data_reproducibility/<dataset>.<ext>` — Eve: "needs all to be
-  fully reproducible"); `effective_run.yaml` carries the four hash legs (REPRO-PROV-1), the
-  per-plot seed in effect (pinned override else the session's drawn number,
-  REPRO-SEED-2), and which plots' T3 steps couldn't be fully baked in
-  (`t3_translation_skipped`, surfaced both in the file and as a non-blocking notification).
-  README's Contents list gets the two new folders explained when the box is checked.
-  **Left open, by design, not resolved here:** whether Mode 1 keeps its current full recipe
-  copy now that Mode 2 exists (Eve called it "overkill" but this wasn't touched — changing
-  existing, relied-upon Mode 1 output needs its own explicit go-ahead); a stricter
-  "reproducibility-only" bundle that suppresses plots/report entirely is not built. New
-  Playwright test (real browser download, `qa`) checks the bundle is additive, the frozen
-  recipe reloads cleanly (no leftover ConfigManager `plots:` key), and `effective_run.yaml`'s
-  fields are well-formed. Full `test_export_download.py` suite (5) and full headless suite
-  (1548) pass.
+- [x] **REPRO-EXPORT-MODES-1** `[sonnet/medium]` (#45/4B) — DONE 2026-11-09, **corrected once
+  already** after Eve's review of the first pass (see ADR-097's implementation-status note for
+  the full before/after). First pass kept Mode 1's recipe copy unchanged and invented a
+  combined "Analysis ID" — both wrong. Corrected, settled design (confirmed against a native
+  StarUML diagram, `docs/UML/app.mdj` HOME package, `EXP-MODES Export bundle contents by mode`,
+  built live with her before the fix): **Mode 1 never includes the recipe or raw data** — only
+  `report.qmd`, `plots/`, `README.txt`, `t3_steps.yaml`. **`effective_run.yaml` is written
+  unconditionally, identical content either way**, at the bundle root — not scattered hash
+  values restated as prose; this is the actual mechanism for proving two *separately* exported
+  bundles correspond (diff it field by field — not eyeball, not one collapsed code, #48's job).
+  **Mode 2** (opt-in checkbox, forces `export_scope: global`) adds the translator's frozen
+  recipe (`data_analysis_recipes_reproducibility/<id>.yaml`) and the actual data files
+  (`data_reproducibility/<dataset>.<ext>` — "needs all to be fully reproducible"); nothing
+  Mode-2-only duplicates into Mode 1. `t3_translation_skipped` is a dict when Mode 2 ran, else
+  an explicit "not attempted" string — never a fabricated empty dict implying nothing was
+  skipped. README/report trimmed to point at `effective_run.yaml` instead of repeating the
+  hash table. Playwright tests (real browser download, `qa`) updated/added: confirms Mode 1
+  alone never has the recipe, `effective_run.yaml` is present either way with matching
+  recipe/data hashes across both downloads, Mode 2 adds the recipe/data additively, the frozen
+  recipe reloads cleanly (no leftover ConfigManager `plots:` key). Full `test_export_download.py`
+  suite (5) and full headless suite (1548) pass.
 - [ ] **REPRO-SENSITIVE-1** `[haiku/low]` (#46/4C): non-blocking in-app notification when a
   Mode 2 export will copy real data into a shareable bundle; new user-guide section on
   anonymising sensitive data before loading it and keeping any de-anonymisation key outside the

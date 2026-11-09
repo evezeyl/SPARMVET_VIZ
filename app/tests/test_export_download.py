@@ -46,18 +46,30 @@ def loaded(page: Page, shiny_app: ShinyAppProc):
 
 
 def test_the_bundle_records_the_keys_and_has_the_data(loaded):
+    """ADR-097/#45 corrected split: Mode 1 alone never includes the recipe or raw data
+    — effective_run.yaml (the shared, machine-comparable verification record) is what
+    carries the hashes instead, written unconditionally."""
+    import yaml as _yaml
+
     z = _download(loaded)
     names = z.namelist()
     assert not any(n.endswith("EXPORT_NOT_CREATED.txt") for n in names), "the export was refused"
     readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
-    # the folder with the YAML files of the data analysis recipe (ADR-091: not steps/, not audit_steps/)
-    assert any("/data_analysis_recipes/" in n for n in names)
+    # Mode 1 alone never contains the recipe (ADR-091: not steps/, not audit_steps/ either)
+    assert not any("data_analysis_recipes_reproducibility/" in n for n in names)
     assert not any("/audit_steps/" in n or "/steps/" in n for n in names)
-    assert "data_analysis_recipes/" in readme
+    assert "effective_run.yaml" in readme
     assert re.search(r"tier1_key=[0-9a-f]{64}", readme)
     assert re.search(r"tier2_key=([0-9a-f]{64}|none)", readme)
-    assert re.search(r"Data analysis recipe SHA256\s*: [0-9a-f]{64}", readme)
-    assert re.search(r"Data batch hash\s*: [0-9a-f]{64}", readme)
+
+    run_entry = next(n for n in names if n.endswith("effective_run.yaml"))
+    run = _yaml.safe_load(z.read(run_entry).decode())
+    assert len(run["data_analysis_recipe_sha256"]) == 64
+    assert len(run["data_batch_hash"]) == 64
+    assert len(run["t3_audit_steps_sha256"]) == 64
+    assert run["git_commit"]
+    assert "not attempted" in run["t3_translation_skipped"]   # Mode 2 not requested here
+
     assert any(n.endswith("T1_data.tsv") for n in names)
     assert any("/plots/" in n and not n.endswith("_ERROR.txt") for n in names)
     errors = {n: z.read(n).decode() for n in names if n.endswith("_ERROR.txt")}
@@ -148,7 +160,18 @@ def test_mode2_checkbox_adds_the_reproducibility_bundle(loaded):
     assert run["engine_fingerprint"]
     assert isinstance(run["containerized"], bool)
     assert isinstance(run["data_source_paths"], dict) and run["data_source_paths"]
-    assert "seeds_per_plot" in run and "t3_translation_skipped" in run
+    assert "seeds_per_plot" in run
+    # Mode 2 was requested in this download — the translator actually ran, so this is
+    # a dict (possibly empty), not the "not attempted" placeholder.
+    assert isinstance(run["t3_translation_skipped"], dict)
+
+    # effective_run.yaml is unconditional — the earlier, Mode-1-only download must
+    # already have one, with the same recipe/data hashes, but no translation attempted.
+    before_run_entry = next(n for n in before.namelist() if n.endswith("effective_run.yaml"))
+    before_run = _yaml.safe_load(before.read(before_run_entry).decode())
+    assert before_run["data_analysis_recipe_sha256"] == run["data_analysis_recipe_sha256"]
+    assert before_run["data_batch_hash"] == run["data_batch_hash"]
+    assert "not attempted" in before_run["t3_translation_skipped"]
 
     # The frozen recipe copy must itself be valid, reloadable YAML with no leftover
     # ConfigManager-internal `plots:` mirror key (confirmed live earlier to break reload).
