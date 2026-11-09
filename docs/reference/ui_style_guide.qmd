@@ -160,7 +160,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 LEFT SIDEBAR (#nav_sidebar)
 │  Nav Pills Strip
 │  ├── Master data analysis recipe       (#wrangle_sidebar_accordion)
-│  └── External Exchange
+│  └── Recipe File Exchange
 │
 CENTRAL THEATER (.wrangle-studio-container)
 │  View Title Banner         (.view-title-banner)

@@ -20,9 +20,10 @@ from __future__ import annotations
 # provides: helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)
 # provides: output:bp_meta_form_ui, effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)
 # provides: effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)
-# provides: output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — data analysis recipe coherence validation via subprocess)
+# provides: output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
 # consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
+# consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
@@ -64,7 +65,10 @@ from blueprint_arch.data_analysis_recipe_navigator import (
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
-from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe_data
+from app.modules.data_analysis_recipe_validator import (
+    validate_data_analysis_recipe,
+    validate_data_analysis_recipe_data,
+)
 from blueprint_arch.join_designer import (
     compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
 )
@@ -2765,21 +2769,46 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_bp_validate)
     def _handle_validate():
-        """Run audit_data_analysis_recipe_coherence.py (structure) and validate_data_analysis_recipe_data
-        (data vs. contract) and merge both into _validate_result. BP-VALIDATE-1 / VALIDATE-UI-1.
+        """Three checks, merged into _validate_result. BP-VALIDATE-1 / VALIDATE-UI-1 / issue #53.
 
-        Two checks, because they catch different things: the subprocess below checks the data
-        analysis recipe's own shape (parse errors, action/component names, join keys) without
-        touching any data file (--skip-tsv). validate_data_analysis_recipe_data reads the real
-        data and checks it against the declared contract (input_fields/output_fields) — the only
-        check that would catch a renamed column, which the engine otherwise skips silently
-        (rules_agent_role_bioscientist.md §3-A "Silent Skip Warning").
+        They catch different things, and all three are needed to not pass something broken:
+        - validate_data_analysis_recipe() loads the recipe through the REAL engine
+          (ConfigManager, SystemExit caught per ADR-094) — this is the one that enforces the
+          *current* structural rules as the engine actually enforces them: id == file name
+          (ADR-092), the tiered-wrangling mandate (flat list rejection,
+          LEGACY-FLAT-WRANGLING-1), and anything else ConfigManager/DataWrangler reject at
+          load time. This check did not exist here before #53 — Validate could PASS a
+          recipe HOME's own load gate would refuse outright.
+        - the audit_data_analysis_recipe_coherence.py subprocess checks shape the engine
+          does NOT raise on, only silently mishandles: unregistered action/component names,
+          join key symmetry, the deprecated factory_id key (ADR-083) — without touching any
+          data file (--skip-tsv).
+        - validate_data_analysis_recipe_data reads the real data and checks it against the
+          declared contract (input_fields/output_fields) — the only check that would catch a
+          renamed column, which the engine otherwise skips silently
+          (rules_agent_role_bioscientist.md §3-A "Silent Skip Warning").
+
+        None of the three supersedes the others: a recipe can pass the engine load and still
+        reference an unregistered action (engine skips it silently, it never raises), or pass
+        the static checks and still fail to load (e.g. a flat wrangling list — the static
+        script never calls ConfigManager, so it cannot see that rejection).
         """
         path = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path or not Path(path).exists():
             ui.notification_show("No data analysis recipe loaded.", type="warning")
             return
 
+        # Check 1 — the real engine load path (ADR-092, ADR-094, LEGACY-FLAT-WRANGLING-1, ...).
+        try:
+            recipe_rule_problems = validate_data_analysis_recipe(path)
+        except Exception as e:
+            recipe_rule_problems = []
+            ui.notification_show(f"Recipe-rules check could not run: {e}", type="warning", duration=8)
+            recipe_rule_check_failed = True
+        else:
+            recipe_rule_check_failed = False
+
+        # Check 2 — static structural checks the engine does not raise on.
         try:
             proc = subprocess.run(
                 [".venv/bin/python", "scripts/audit_data_analysis_recipe_coherence.py",
@@ -2807,12 +2836,16 @@ def define_server(input, output, session, *,
             return label, True, 0
 
         checks = [
+            ("recipe rules (ADR-092/094)", not recipe_rule_problems and not recipe_rule_check_failed,
+             len(recipe_rule_problems)),
             _count("Parse errors"),
             _count("invalid action names"),
             _count("invalid component names"),
             _count("join key violations"),
+            _count("factory_id key"),
         ]
 
+        # Check 3 — data vs. the declared contract.
         try:
             data_problems = validate_data_analysis_recipe_data(
                 path, bootloader.get_location("raw_data"), data_lookup=bootloader.data_lookup,
@@ -2824,7 +2857,7 @@ def define_server(input, output, session, *,
         else:
             checks.append(("data vs contract", len(data_problems) == 0, len(data_problems)))
 
-        passed = structure_passed and not data_problems
+        passed = structure_passed and not data_problems and not recipe_rule_problems and not recipe_rule_check_failed
 
         _validate_result.set({
             "pass": passed,
@@ -2832,7 +2865,8 @@ def define_server(input, output, session, *,
             "data_analysis_recipe_name": Path(path).name,
             "raw_text": stdout,
             "data_problems": [
-                {"location": p.location, "problem": p.problem, "tip": p.tip} for p in data_problems
+                {"location": p.location, "problem": p.problem, "tip": p.tip}
+                for p in (recipe_rule_problems + data_problems)
             ],
         })
         status = "PASS" if passed else "FAIL"

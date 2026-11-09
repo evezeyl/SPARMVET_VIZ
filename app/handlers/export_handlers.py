@@ -553,7 +553,10 @@ def define_export_server(input, output, session, *,
                 "environment) is always included. Checking this also adds the full "
                 "recipe (your audited steps baked in as real wrangling actions) and "
                 "the actual data files, so someone can re-run this, not just verify "
-                "it. Forces Scope to Global — you can't partially reconstruct a recipe.",
+                "it. Forces Scope to Global — you can't partially reconstruct a recipe. "
+                "Check this now if you'll want to Import this bundle later — a bundle "
+                "exported without this box checked cannot be imported, only verified "
+                "against its effective_run.yaml.",
                 class_="text-muted d-block mb-1",
                 style="font-size:0.7em;",
             ),
@@ -616,14 +619,15 @@ def define_export_server(input, output, session, *,
                 # blueprint_enabled, which the issue requires.
                 ui.div(
                     ui.input_file(
-                        "import_bundle_upload", None,
+                        "import_bundle_upload", "Import reproducibility bundle (.zip)",
                         accept=[".zip"], multiple=False,
                     ),
                     ui.tags.small(
-                        "Import a reproducibility/reimport bundle (.zip) — verifies what it "
-                        "can against this machine, per leg, and writes a new recipe + "
-                        "session (never into the live app, ADR-093). Reload (F5) afterwards "
-                        "to see it in the Data analysis recipe selector.",
+                        "Only a bundle exported with 'Also include a reproducibility/reimport "
+                        "bundle' checked (above) can be imported. Verifies what it can against "
+                        "this machine, per leg, and writes a new recipe + session (never into "
+                        "the live app, ADR-093). Reload (F5) afterwards to see it in the Data "
+                        "analysis recipe selector.",
                         class_="text-muted d-block mb-1",
                         style="font-size:0.7em;",
                     ),
@@ -674,7 +678,14 @@ def define_export_server(input, output, session, *,
             return ui.div()
         kind, payload = state
         if kind == "error":
-            return ui.tags.small(payload, class_="text-danger d-block mt-1")
+            return ui.div(
+                ui.tags.b("Import failed", style="color:#d62828;"),
+                ui.tags.div(payload, style="font-size:0.85em;"),
+                style=(
+                    "background:#ffe0e0;color:#d62828;border-radius:4px;"
+                    "padding:6px 8px;margin-top:4px;"
+                ),
+            )
 
         result = payload
         _leg_color = {"match": "#0b6358", "mismatch": "#d62828", "not_checked": "#6c757d"}

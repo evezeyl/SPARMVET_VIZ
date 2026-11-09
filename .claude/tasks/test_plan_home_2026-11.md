@@ -25,6 +25,18 @@ hand-editing markdown while also looking at the browser. Use whichever is easier
 
 ## Round log (heartbeat — I maintain this)
 
+**Round 2 pre-pass, 2026-11-10:** Eve's own first manual click-through (not yet logged item by
+item here) surfaced three real gaps across Home/Blueprint/Export that code reading alone had not
+caught — filed as issues #53/#54/#55, all fixed same session (see `tasks.md` "Manual-testing
+findings, 2026-11-10" for the full writeup). HOM-59 added (reproducibility bundle import had no
+test item at all until now). BLU-32/BLU-33/LAB-29 added to `test_plan_2026-06.md` for the Phase 2
+(Blueprint/Test Lab) retest, since this file is HOME-only. Also fixed, found while answering
+Eve's question about the Validate button in Blueprint: it never called the real engine load path
+(`validate_data_analysis_recipe`), so it could PASS a recipe that would be rejected at real load
+time (`id:` != file name, flat wrangling list) — see BLU-33. Headless suite (1589) and the full
+Playwright gate re-run clean after all four fixes.
+
+
 **Round 1, 2026-11-08:** PRE-01/02/03/05, HOM-07 passed. HOM-08 is `[~]` (tier resets to Result
 on Home→Gallery→Home; plot sub-tab itself is restored correctly). Fixed live: Alerts moved to the
 left sidebar (same reachability fix as Processing Issues, F-26), 28 stale test sessions cleared.
@@ -151,6 +163,7 @@ Open <http://127.0.0.1:8000>. Chrome, dev console open, network cache disabled (
 - [ ] HOM-32 — Bundle contains `plots/`, `data/` (T1+T2; T3 when advanced+T3 active), `data_analysis_recipes/`, `report.qmd` (with a **T3 Audit Trail** section when T3 nodes exist), `README.txt`. Filters present → `FILTERS.txt` included ("no trace, no export").
 - [ ] HOM-33 — `report.qmd` front-matter records data analysis recipe id + sha; methods text reads in plain English from active T3 nodes; PK-touching nodes carry the ⚠️ marker.
 - [ ] HOM-46 `[?]` **NEW (note from Eve, 2026-11-05)** — Export after an audit: the exported data analysis recipe must state **the data actually used**, not the default data. Check with a deployment that has `prefer_discovery: true` (data delivered into `raw_data`) and after a Data Import. Suspected gap: the bundle's `data_analysis_recipes/` holds a verbatim copy of the data analysis recipe, which still shows the default `source.path`, while the README/report list the data really used (`data_source_paths`). Decide how the bundle states which data was used. [ADR-088 point 5](../knowledge/architecture_decisions.md)
+- [~] HOM-59 **NEW (issue #48/#54, reproducibility bundle import, never live-tested)** — Export panel → check "Also include a reproducibility/reimport bundle" → Export Bundle → re-import that same .zip via "Import reproducibility bundle (.zip)" below the Export button. Expect a 4-leg report (`recipe`/`data`/`engine`/`t3_steps`, each match/mismatch/not_checked with a one-line reason) and a notification naming the new recipe id; reload (F5) and confirm it appears in the Data analysis recipe selector. Separately: export **without** checking the box, then try to import that bundle — expect a clear red refusal (not a silent no-op) naming the missing box. **Eve, 2026-11-10, live-found**: this exact confusion happened — tried the second case first, got the refusal, read it as "the feature does nothing." Fixed (#54): hint added next to the checkbox at export time, file control given a visible label, refusal now renders as a red alert box instead of small grey text. **Open, needs your call**: does "comparison to what was before" mean something beyond this 4-leg hash table (e.g. a diff view against the currently-open recipe)? — RETEST ↻
 
 ## 8. Data Import + Processing Issues
 

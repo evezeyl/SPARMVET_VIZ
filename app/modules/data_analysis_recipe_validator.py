@@ -8,12 +8,22 @@ doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_
 
 Data analysis recipe validator (headless, no Shiny).
 
-`validate_data_analysis_recipe` checks that every wrangling block and every assembly steps of a
-data analysis recipe is in a shape the engine accepts (tiered, with tier1/tier2 keys), by running
-the same resolver the engine uses (DataWrangler._resolve_tier). `validate_data_analysis_recipe_data`
-goes further: it reads the real data and checks it against the declared contract. Both are wired
-into the BLUEPRINT "Validate" action (BP-VALIDATE-1 / VALIDATE-UI-1, 2026-11-08) — before that date
-the data-contract half was written and tested but never called from the running app.
+`validate_data_analysis_recipe` loads the recipe through the real engine path (ConfigManager,
+SystemExit caught per ADR-094) and checks every wrangling block and assembly steps is in a shape
+the engine accepts (tiered, with tier1/tier2 keys, via the same resolver the engine uses —
+DataWrangler._resolve_tier), plus the id == file name rule (ADR-092). `validate_data_analysis_recipe_data`
+goes further: it reads the real data and checks it against the declared contract.
+
+Both are wired into the BLUEPRINT "Validate" action (`_handle_validate`, BP-VALIDATE-1 /
+VALIDATE-UI-1 / issue #53). History, because both halves were independently "wired" and then
+turned out not to be: the data-contract half was written and tested on 2026-05-xx but never
+called from the running app until VALIDATE-UI-1 (2026-11-08) fixed that. This function
+(`validate_data_analysis_recipe`, the structure/engine-load half) was written for HOME's load
+gate (ADR-094) and this docstring then *claimed* it was also wired into Validate — it was not:
+Validate only ran a separate hand-rolled static script that never touches ConfigManager, so a
+recipe with `id:` != file name or a flat wrangling list could PASS Validate and still fail to
+load in HOME. Actually wired in by issue #53 (2026-11-10) — found via Eve's own manual testing,
+not caught by re-reading this docstring, which is exactly why it was wrong.
 
 Lives in the app layer on purpose: only this layer may combine utils (ConfigManager) and
 transformer (DataWrangler); the libraries stay isolated (ADR-011/016).

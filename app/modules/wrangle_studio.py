@@ -203,7 +203,13 @@ class WrangleStudio:
                     icon=ui.tags.i(class_="bi bi-collection")
                 ),
                 ui.accordion_panel(
-                    "📤 External Exchange",
+                    "📤 Recipe File Exchange",
+                    ui.tags.small(
+                        "The recipe YAML only — not a reproducibility bundle. To import/export "
+                        "a reproducibility bundle (data + recipe + hashes), use the Export panel "
+                        "in HOME instead.",
+                        class_="text-muted d-block mb-1",
+                    ),
                     ui.input_file("data_analysis_recipe_uploader", "Select YAML...",
                                   accept=[".yaml"], multiple=False),
                     ui.input_action_button("btn_upload_replace", "📥 Upload (Replace)",

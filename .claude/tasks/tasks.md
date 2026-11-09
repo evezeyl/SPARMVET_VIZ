@@ -26,6 +26,49 @@
 
 Items with no blockers — can be started immediately.
 
+### Manual-testing findings, 2026-11-10 (issues #53/#54/#55)
+
+Eve's own first manual pass through Home/Blueprint/Export surfaced three real gaps code
+reading alone had not caught. All three fixed same session; Home re-verification for
+tomorrow's testing session is the remaining blocker.
+
+- [x] **#55** `[sonnet/low]` — Test Lab right sidebar showed nothing. Confirmed deliberate
+  since #42 (2026-11-08), documented then as "a separate, smaller finding, out of scope,"
+  but never turned into its own issue. The content (`_render_test_lab_right_info()`,
+  `home_theater.py`) already existed and was already correct — only
+  `config/ui/sidebars/testlab_standard_right.yaml` was stale (`visible: false, panels: []`).
+  Flipped to `visible: true, panels: [{type: test_lab_right_info}]`. `SidebarValidator`:
+  0 violations across all 8 app features templates.
+- [x] **#53** `[sonnet/low]` — "I think the external exchange landed in blueprint and not in
+  home panel." Real cause found: Blueprint's left sidebar has a panel literally titled
+  "External Exchange" (recipe YAML upload/replace/append/download) — generic enough that
+  Eve reasonably looked there first for the new reproducibility-bundle import (#48), which
+  correctly lives in Home's Export panel (confirmed in code: no actual sidebar-config
+  overlap). Renamed the Blueprint panel to "Recipe File Exchange" with an explicit note
+  pointing at Home's Export panel for bundles (`wrangle_studio.py`). Also gave Home's
+  `import_bundle_upload` file control a visible label (was `None`) and a one-line reminder
+  of the same distinction. Updated the two active docs that still said "External Exchange"
+  (`docs/reference/ui_style_guide.qmd`, `.claude/design/ui_panel_map_current.md`); left
+  historical log/archive hits untouched.
+- [x] **#54** `[sonnet/low]` — reproducibility bundle Import appeared to do nothing. Root
+  cause: "Also include a reproducibility/reimport bundle" is unchecked by default at export
+  time; importing a Mode-1-only bundle correctly refuses (`BundleImportError`, the 4-leg
+  comparison table only renders on success) but the refusal rendered as small grey/red text
+  under a long accordion — easy to read as "the feature does nothing." Added a hint at the
+  checkbox itself ("check this now if you'll want to Import this bundle later"), reworded the
+  file-control's help text to lead with the same requirement, and turned the error state into
+  a proper red alert box instead of `ui.tags.small`. **Open:** whether "comparison to what
+  was before" means something beyond the 4-leg hash table (e.g. a diff view against the
+  currently-open recipe) — needs Eve's clarification, not assumed.
+- [x] **Validate-button rule drift** `[sonnet/low]` — see the correction note under
+  `VALIDATE-UI-1` below; `_handle_validate` now also runs `validate_data_analysis_recipe()`
+  (the real `ConfigManager` load path) and surfaces the `factory_id` check row the coherence
+  script already computed but the UI silently dropped.
+
+All four: headless suite (1589) and the full Playwright gate (`test_shiny_smoke` +
+`test_shiny_smoke_blueprint` + `test_export_download` + `test_every_app_features_starts`,
+64 passed/3 skipped) re-run clean after the changes.
+
 ### Reproducible export & import (ADR-097, 2026-11-09) — implementation order
 
 Design locked (`ADR-097`, `.claude/design/reproducible_export_design.md`), tracked by #44 +
@@ -303,6 +346,7 @@ Done 2026-11-06: removed `lookup.py` (`lookup_anchor_rows`), `DataWrangler.run_t
   7. Ran the three `rules_legacy_management.md §5` audit greps. Check 1 (unmarked deprecated-sounding prose) is mostly past-tense documentation, not actionable — spot-checked the highest-signal hits. Check 2 found one genuine violation: `assets/scripts/materialize_data_analysis_recipe_plots.py`, marked "DEPRECATED SHIM" in its own docstring with no linked task — added a proper banner and opened `LEGACY-MATERIALIZE-SHIM-REMOVE-1`. The `architecture_decisions.md:58` hit is an ADR entry correctly pointing to its own superseding ADR (ADR-032) — that's the ADR log's built-in convention, not a violation. Check 3 (tombstone expiry) found nothing past its stated phase.
 - [x] **AUDIT-GATE-UI-1** `[sonnet/medium]` (done 2026-11-07): `app/tests/test_shiny_smoke.py::TestAuditGate::test_unreasoned_node_blocks_apply_then_reason_unblocks_it` — switches to My view (T3), adds a filter row, sends it to audit (accepting the default propagation scope), asserts `#btn_apply` reads "Apply ⛔" and is disabled, fills the `t3_reason_*` input, asserts it flips to "Apply" and enabled. Proven by mutation: stubbing `gatekeeper_blocked()` to always return `[]` makes the test fail on the first assertion (button shows "Apply", not "Apply ⛔"); restoring it passes along with the rest of the smoke suite (21/21, +3 skipped).
 - [x] **VALIDATE-UI-1** `[sonnet/medium]` (done 2026-11-08): issue #26. `validate_data_analysis_recipe_data()` (issue #18) was written and tested but called from nowhere in the running app — the one wired button, BP-VALIDATE-1, explicitly skipped it (`--skip-tsv`). Found while writing up the "process of failures" for Eve and confirmed against `rules_agent_role_bioscientist.md`'s own "Silent Skip Warning": a mismatched `input_fields`/`output_fields` column name was silently skipped with zero warning anywhere in the app. `_handle_validate` (`blueprint_handlers.py`) now runs both checks and merges them: structure (existing subprocess) + data-vs-contract (now wired), shown as a fifth check row plus a detail list (location, problem, "did you mean" tip) for any data-contract problem. Proven by mutation: disabling the new `checks.append` call makes `test_validate_runs_the_data_contract_check` fail (assertion on the "data vs contract" row text); restoring it, that test plus the full Blueprint Playwright suite (14/14) and the headless suite (1444) pass. **Not done:** auto-run on data analysis recipe upload (the structure subprocess check alone can take up to 30s — auto-firing it on every upload is a separate UX/perf decision, not bundled into this fix).
+  **Correction, 2026-11-10 (issue #53):** this entry's "structure (existing subprocess)" phrase masked a real gap — the "structure" check was *only* `audit_data_analysis_recipe_coherence.py`, a hand-rolled static script that never calls `ConfigManager`. `validate_data_analysis_recipe()` (the function `VALIDATE-UI-1` names in its own id and that HOME's load gate, ADR-094, uses) was **never actually called from Validate** until now. This meant Validate could PASS a recipe with `id:` != file name (ADR-092) or a flat (non-tiered) wrangling list (LEGACY-FLAT-WRANGLING-1) — both hard rejections at real load time — because neither check path the button ran touches the real engine. Found via Eve's manual testing ("ensure it checks the recipe according to the latest rules... to ensure it does not validate something not working"). Fixed: `_handle_validate` now runs three checks (engine load via `validate_data_analysis_recipe`, the static coherence script, data-vs-contract), none superseding the others. Also fixed a second, smaller gap found while re-reading: the coherence script already computed and reported `factory_id_violations` (deprecated key, ADR-083) in its markdown output and in `overall_pass`, but the Blueprint UI's `_count()` calls never surfaced it as its own check row — added.
 
 ### Export consistency (the export holds the Result plus the audited steps; exploration is never exported), added 2026-11-06
 

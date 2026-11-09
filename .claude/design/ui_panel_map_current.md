@@ -153,7 +153,7 @@
 │ │  accordion            │ │ │    #blueprint_tubemap_accordion       │ │ │  info             │ │
 │ └───────────────────────┘ │ │    (bslib accordion)                  │ │ │                   │ │
 │ ┌───────────────────────┐ │ │    header: "🗺️ Data analysis recipe lineage"       │ │ │  ── hr ────────── │ │
-│ │  External Exchange    │ │ │    bg: #f8f9fa / text: #1a1a1a    │ │ │                   │ │
+│ │  Recipe File Exchange    │ │ │    bg: #f8f9fa / text: #1a1a1a    │ │ │                   │ │
 │ │  accordion panel      │ │ │    viewport: #tubemap_viewport 320px  │ │ │  Active Logic     │ │
 │ └───────────────────────┘ │ └───────────────────────────────────────┘ │ │  Stack  h6        │ │
 │                           │ ┌───────────────────────────────────────┐ │ │  .audit-node-tier3│ │
