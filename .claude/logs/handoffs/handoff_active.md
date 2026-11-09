@@ -206,3 +206,58 @@ d0d4f37 fix(export): Mode 1 never carries the recipe, effective_run.yaml is shar
 
 ### Next step, if there is one
 Nothing is mid-flight. The natural next pieces (#49, #50, #52) are each independent and small — pick whichever matters most next session. No uncommitted work, no pending `@verify`, no open StarUML edit in progress (project saved).
+
+## Handoff 2026-11-09 (same day, continuation — #52/#50/#49 all done)
+
+State: everything **committed on `dev`** (not pushed), working tree clean. The three items
+listed as "next" above are now all done, closing out #44 entirely (7/7 sub-issues).
+
+```
+0db0b49 feat(transformer): register filter_ne/filter_gt/filter_lt/not_in actions (#52)
+c8c62dc feat(session): editable per-session labels, fixes label-before-first-Apply bug (#50)
+dc49a7e feat(home): reshuffle-and-pin control for an unpinned plot seed (#49)
+```
+
+Each closed with a GitHub issue comment (not closed — this repo's workflow closes issues at
+the dev→main PR). #44 (tracking) got a final summary comment too.
+
+**#52** — `filter_ne`/`filter_gt`/`filter_lt` (`libs/transformer/.../cleaning/core.py`) and
+`not_in` (`cleaning/analytical.py`), following the existing action pattern exactly.
+`t3_translator.py`'s `_TRANSLATABLE_OPS` now covers all 8 T3 filter ops.
+
+**#50** — found a real bug while building the UI: `set_session_label`/`get_session_label`
+only ever touched the most-recent T3 ghost, so a brand-new session (before any Apply) could
+not be labelled at all. Canonical storage moved to `assembly.json` (exists from first
+assembly; `write_assembly_ghost(label=None)` preserves an existing label across a
+recipe/data-change rewrite). UI: `ui.input_text(..., update_on="blur")` in the session card,
+no separate Save button, guarded by comparing against the stored value (R3) so an unrelated
+session action elsewhere can't spuriously re-fire the save.
+
+**#49** — "🔀 Reshuffle arrangement" button next to a plot with an unpinned jitter layer;
+clicking draws and pins a new seed into that plot's T3 `aesthetic_override.random_state`
+(the shape #39/REPRO-SEED-1 already built — no new render-side plumbing needed). New
+`recipe_pins_random_state()` in `plot_config_resolver.py` decides visibility. Found and fixed
+three real bugs via the tests: an id collision between the `output_ui` wrapper and the button
+inside it (both named `plot_reshuffle_{p_id}`); a copy-pasted `reactive.isolate()` that
+silently stopped the button from ever reacting to its own pin; and a shared-module-scoped-page
+state leak (the new tests left the browser on the "Curiosity" group tab, breaking
+`TestViewBadges` later in the same file) — fixed by following this file's own documented
+convention of restoring navigation state in a `finally` block.
+
+### Files changed this continuation
+- `libs/transformer/src/transformer/actions/cleaning/{core,analytical}.py` — 4 new actions
+- `libs/transformer/tests/test_filter_actions.py` — NEW
+- `libs/blueprint_arch/src/blueprint_arch/t3_translator.py` + its tests — extended op coverage
+- `app/modules/session_manager.py`, `app/handlers/session_handlers.py` — label storage + UI
+- `app/tests/test_session_manager.py`, `app/tests/test_shiny_smoke.py` — new tests throughout
+- `app/handlers/home_theater.py` — reshuffle control
+- `libs/viz_factory/src/viz_factory/plot_config_resolver.py` + its tests — `recipe_pins_random_state`
+- `docs/user_guide/reproducible_plots.qmd`, `docs/foundations/reproducibility_same_input_same_output.qmd`,
+  `docs/user_guide/understanding_your_export.qmd` — corrected/updated throughout both sessions
+- `.claude/tasks/tasks.md`, `.claude/knowledge/architecture_decisions.md` — all REPRO-* and
+  ACTIONS-FILTER-GAPS-1 entries marked done with implementation notes
+- `.claude/rules/rules_agent_role_bioscientist.md §8` — action list updated
+
+### Next step
+Nothing is mid-flight and #44's whole initiative is now complete. Whatever Eve picks next is
+unrelated to this thread — there is no natural continuation queued.
