@@ -235,3 +235,122 @@ sub-issue of the Mode 2 / Import work above — it's Session Management's own ba
 - #39 itself becomes 4A (re-scoped, not closed-and-reopened — same issue, narrowed body).
 - 4F (reshuffle) and 4G (session labels) referenced from the tracking issue but filed as their
   own independent issues, not sub-issues, since neither blocks nor is blocked by 4A–4E.
+
+Filed as #44 (tracking), #39 (4A, re-scoped), #45 (4B), #46 (4C), #47 (4D), #48 (4E), #49 (4F,
+deferred), #50 (4G).
+
+---
+
+## 6. Audit findings (2026-11-09) — before any of #39/#45–#48 start building
+
+Two parallel investigations (one tracing the design against the real codebase and this
+project's own ADRs, one researching external reproducibility-bundling practice) were run
+after the issues above were filed, specifically to catch logic flaws before implementation —
+not a survey, a check for things that would break. Findings below, with the corrections made
+during discussion.
+
+### 6a. #47's "T3 → recipe actions" is not an ADR-082/ADR-093 boundary violation — corrected
+
+First pass over-read the ADRs: ADR-082 §4 forbids **BLUEPRINT** from writing T3 (Blueprint
+authoring/injecting T3 state) — #47 does the opposite direction, HOME's own T3 (which HOME
+legitimately owns, per Eve: *"T3 belongs to HOME"*) flowing *out* into an export artifact.
+ADR-093 removed a *third*, different direction (Gallery content flowing *into* T3). Neither
+ADR is actually in #47's path. **Not a blocker. No superseding ADR needed.**
+
+The real question #47 raises is narrower and purely technical, not an ADR question:
+**Tier 2 is shared across every plot using a given join** (`rules_data_engine.md`'s
+Bifurcation Point Rule), but T3 steps are **per-plot** (`t3_audit_steps_by_plot`). Baking one
+plot's T3 steps directly into that join's shared `tier2:` list would wrongly apply that one
+plot's filters to every other plot sharing the same branch — a correctness bug.
+
+**Two solution options for #47 to choose between (not decided here):**
+
+- **(A) A genuine per-plot "tier3" concept in the recipe.** Architecturally the most honest —
+  T3 steps get their own, truly per-plot, recipe section. Requires teaching the headless engine
+  (`DataAssembler`) a new concept it doesn't have today: real new engine work, not just an
+  export-time YAML change.
+- **(B) Fork the join per affected plot.** For each plot carrying T3 steps, duplicate just that
+  join's branch under a new id used only by that plot (mechanically the existing Bifurcation
+  Point Rule / Tier 2 "Branch" concept, applied at export time), append the translated actions
+  to the fork, repoint only that plot's `target_dataset` at it. Zero new engine code —
+  `debug_assembler.py` needs no changes. Downside: more near-duplicate join blocks in the
+  frozen copy when several plots each carry their own T3 steps.
+
+(B) is lower-risk and faster for a first version; (A) is the more architecturally proper
+long-term shape. #47's body should record this as an open decision, not resolve it by default.
+
+### 6b. #48 (Import) must commit to file-based-only — ADR-093 does apply here
+
+ADR-093's stated principle: *"every cross-space handoff is file-based... no space writes into
+another space's state at runtime, ever."* #48's original body said "reconstructs what it can"
+with no committed mechanism — that is the actual gap. **Import must write a new recipe file +
+a new session under `_sessions/`, then let the user open it through the existing
+selector/restore entry points — never inject parsed bundle content directly into a live
+`wrangle_studio`/`home_state` object.** This is a hard rule, not a UX choice.
+
+**Verification-mismatch handling, resolved:** non-blocking. Import always proceeds; each leg
+reports pass/fail; a mismatch is a loud, hard-to-miss warning, never a refusal to open — matches
+the project's existing non-blocking-warning pattern (e.g. the `random_state: random` export
+warning, §4A).
+
+### 6c. #39's automatic seed bookkeeping must not violate Reactive Write Discipline R1
+
+`ui_implementation_contract.md §14` R1: a `@render.*` must never call `.set()` on a reactive
+value. The natural-looking place to capture "which seed did this render actually draw" is
+inside the `@render.plot` that calls `viz_factory.render()` — which R1 forbids outright (this
+project has hit the resulting bugs before: outputs stuck "recalculating", stale renders). Fix
+is already this project's own pattern (R2/R3, §14): draw the seed via a separate
+`@reactive.Calc`, persist it via a separate, idempotency-guarded `@reactive.Effect` — the
+render reads the Calc, never writes state itself. Also: the value holding the last-drawn seed
+must be an ordinary **per-session** `reactive.Value`, not the bootloader's process-wide asset
+cache (used for `tier1_anchor`) — reusing that cache would leak one user's drawn seed into
+every other session rendering the same recipe.
+
+### 6d. #39/#48 are missing a fourth hash leg: the T3 steps themselves — new finding
+
+Confirmed by reading the code, not assumed: `export_handlers.py`'s provenance dict has never
+had a `t3_audit_steps_sha256` field — `grep -n "t3_audit_steps_sha256" app/handlers/export_handlers.py`
+returns nothing, even though the *original* design spec's own example front-matter
+(`ui_implementation_contract.md §12f`) already specified one: `t3_audit_steps_sha256: "b7c1..."
+# SHA256 of the serialized audit steps`. Designed once, never wired up.
+
+The same gap exists on ordinary session reopen, not just reproducibility export/import:
+`app/handlers/session_handlers.py` (~line 324-325) restores a T3 ghost and warns on a
+`data_analysis_recipe_sha256` or `data_batch_hash` mismatch — but never checks whether the T3
+steps themselves changed, even though they affect the data just as much as the recipe or the
+data batch do.
+
+**Fold-in:**
+- **#39**: compute and include `t3_audit_steps_sha256` (per the content already serialized for
+  export) in the consolidated provenance record.
+- **#48**: verify it as a fourth leg (recipe / data / engine / **T3 steps**), same pass/fail
+  reporting, same non-blocking-mismatch rule as §6b.
+- **#50** (Session Management, separate from the export/import flow): extend the existing
+  restore-mismatch warning to also check T3-steps content — this is ordinary session-reopen
+  integrity, not new export surface, so it belongs with Session Management's own work, not #39
+  or #48.
+
+### 6e. Import vs. existing Session Management — distinct, confirmed, but must be stated
+
+Confirmed by reading `session_manager.py`: `export_session_zip`/`import_session_zip` only ever
+zip the `_sessions/{key}/` ghost directory (metadata + *paths* to source files, never the
+recipe or the data itself) — so #48 is a genuinely different capability, not a duplicate. #48's
+body should explicitly state whether Import extends `SessionManager`'s existing machinery or
+builds a parallel importer, rather than leaving that unstated.
+
+### 6f. External research — two items worth folding in, three checked as not applicable
+
+- **Align field vocabulary with [RO-Crate's Provenance Run Crate profile](https://arxiv.org/abs/2312.07852)**
+  (W3C-PROV-aligned, formalizes exactly our prospective/retrospective split) when naming fields
+  in `effective_run.yaml` (#39) — not full adoption, just reusing established names where they
+  overlap, and **documenting the source inline** (a comment citing the spec) so a future move
+  to full adoption has a clear starting point, per Eve.
+- **The "engine fingerprint" (library version strings) is weaker than established practice**
+  (Code Ocean-style tools snapshot the whole environment). Plan for later, not blocking #47/#48:
+  also snapshot the dependency lock (`uv.lock`) into the Mode 2 bundle, and note the project's
+  existing container path (`assets/containers/Dockerfile`) as a stronger future option.
+- Checked, not applicable: GPU/BLAS nondeterminism (VizFactory's jitter is CPU-only
+  `numpy.random.RandomState`, already deterministic, ADR-090); row-order false-hash-match
+  (SPARMVET hashes raw file bytes, not computed dataframes); ACM artifact-badging checklist
+  (already substantially matched — commit hash, README — only gap is no license field, low
+  priority for an internal tool).
