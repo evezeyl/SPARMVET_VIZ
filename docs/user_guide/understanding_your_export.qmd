@@ -5,25 +5,26 @@ subtitle: "What those long strings of letters and numbers in your README mean �
 
 ## What is an export bundle?
 
-When you click **Export Bundle** in the Export panel, SPARMVET_VIZ produces a self-contained archive of your work: your plots, your data at each tier, the wrangling steps that produced them, and a record of every filter decision you made and why.
+When you click **Export Bundle** in the Export panel, SPARMVET_VIZ always produces a self-contained archive: your plots, your data at each tier, and a record of every audited decision you made and why.
 
 The export shows what you see. The plots and tables in the archive are the Result (Tier 2), exactly like the Result plot in the app. Steps you have sent to audit (a filter, an exclusion or a column drop with a reason, for example to remove poor quality data) are always applied to the exported plot and its data, and the data of that plot is saved as `T3_data_<plot>.tsv`. Filters you only tried while exploring are never exported.
 
-The README.txt file at the top of that archive contains a **Reproducibility** section with entries that look like this:
+**This standard bundle never contains your data analysis recipe or your raw data files.** It is built for the person reading your paper who wants to check what was done and verify it matches — not for someone who wants to re-run your pipeline. If you also want to hand over something re-runnable (the recipe with your audited steps baked in, plus the actual data files), tick **"Also include a reproducibility/reimport bundle"** in the Export panel before downloading — see [Two things your export can be](#two-things-your-export-can-be) below.
 
-```
-Reproducibility
-----------------------------------------
-Data analysis recipe SHA256  : 8b2b554ec00a6c2b0e2485750255812a30fb37c9...
-  (file-set hash: the data analysis recipe file and every file it includes)
-Data batch hash  : d980020899395837fdce2847d1b762a0e2e0f77e...
-  (SHA256 of all raw source file content, sorted by dataset id)
-Stage keys (per dataset; Tier 1 and Tier 2 chained keys):
-  ST22_Anchor: tier1_key=6fad636ab39c9142...
-  ST22_Anchor: tier2_key=a41c07be9d2e55f0...   (or: none (T2 equals T1))
+Every bundle — with or without that checkbox — contains a file called **`effective_run.yaml`** at its top level. This is the full verification record: hashes, per-plot random seeds, and environment details. This page explains what each entry means and why it is there.
+
+```yaml
+data_analysis_recipe_sha256: 8b2b554ec00a6c2b0e2485750255812a30fb37c9...
+data_batch_hash:             d980020899395837fdce2847d1b762a0e2e0f77e...
+t3_audit_steps_sha256:       f1a9c3e7b6d2a805...
+engine_fingerprint:          ...
+git_commit:                  a3f9c81b...
+release_version:             ...
+seeds_per_plot:
+  multi_resistance_by_country: 20261109143012
 ```
 
-These are **fingerprints** — mathematical summaries of a file or set of files. This page explains what each one means and why your export includes them.
+These are **fingerprints** — mathematical summaries of a file, a set of files, or a decision. This page explains what each one means and why your export includes them.
 
 ---
 
@@ -35,29 +36,39 @@ A SHA-256 fingerprint works the same way: it produces a unique 64-character stri
 
 ---
 
-## The three fingerprints in your export
+## The fingerprints in effective_run.yaml
 
-### 1. Data analysis recipe SHA256 — "Which configuration was used?"
+### 1. data_analysis_recipe_sha256 — "Which configuration was used?"
 
 This is the fingerprint of the **data analysis recipe file** — the YAML configuration that defines your pipeline: which data files to load, what cleaning steps to apply, and how to build each plot.
 
 **What it guarantees:** If someone else runs the same analysis with a data analysis recipe that has the same SHA256, they will get the same plots (assuming the same raw data). The fingerprint covers the data analysis recipe file **and every file it includes** (wrangling, audit trails, plots). If any of them was edited — even a single line — this fingerprint will be different.
 
-**When to use it:** When sharing your export with a colleague or submitting as supplementary material to a paper. They can verify that the configuration file in the archive is the exact one used to produce the results.
+**When to use it:** When sharing your export with a colleague or submitting as supplementary material to a paper. If they later get the reproducibility add-on bundle too (see below), they can verify its recipe file hashes to the same value recorded here.
 
 ---
 
-### 2. Data batch hash — "Which data was used?"
+### 2. data_batch_hash — "Which data was used?"
 
 This is the fingerprint of your **raw source data files** — the TSV files that were loaded into the pipeline (e.g., the output from ResFinder, MLST, FastP). Each file is fingerprinted individually, then the individual fingerprints are combined in alphabetical order into a single fingerprint.
 
-**What it guarantees:** If the Data batch hash matches between two exports, both were run on byte-for-byte identical input files. If a pipeline reruns and produces updated output (even a small change in one file), the fingerprint will be different.
+**What it guarantees:** If the data batch hash matches between two exports, both were run on byte-for-byte identical input files. If a pipeline reruns and produces updated output (even a small change in one file), the fingerprint will be different.
 
 **When to use it:** To confirm that two reports are based on the same batch of pipeline results. Useful when comparing results over time or across systems (e.g., local vs. Galaxy).
 
 ---
 
-### 3. Tier 1 key and Tier 2 key — "Which processing was used?"
+### 3. t3_audit_steps_sha256 — "Which audit decisions were applied?"
+
+This is the fingerprint of your full T3 audit trail — every filter, exclusion, column drop and plot-style override you sent to audit, with its reason, exactly as it appears in `t3_steps.yaml` and the report's Methods section.
+
+**What it guarantees:** If this hash matches between two exports, the exact same set of audited decisions was applied, in the same order, with the same reasons. A single word changed in a reason text, or one more filter sent to audit, changes this fingerprint.
+
+**When to use it:** To confirm that a plot you are looking at now reflects the same editorial decisions (what was filtered out, and why) as one you exported earlier.
+
+---
+
+### 4. Tier 1 key and Tier 2 key — "Which processing was used?"
 
 These keys are written in the README and the report, in the image metadata of each plot (`sparmvet:tier1_key`, `sparmvet:tier2_key`), and inside the stored data files (file metadata keys `sparmvet_tier1_key` and `sparmvet_tier2_key`).
 
@@ -71,6 +82,68 @@ The **Tier 1 key** is built from the processing rules of the data analysis recip
 
 ---
 
+### 5. engine_fingerprint and git_commit — "Which version of the software produced this?"
+
+`engine_fingerprint` summarises the installed package versions (Polars, Plotnine, etc.) and `git_commit` records the exact commit of SPARMVET_VIZ itself that generated the bundle. `release_version`, `containerized` and `image_ref` record whether this ran from a tagged release or a container, and which one.
+
+**What it guarantees:** Two exports with identical `data_analysis_recipe_sha256`, `data_batch_hash` and `t3_audit_steps_sha256` but **different** `engine_fingerprint`/`git_commit` were produced by the same recipe, the same data and the same audit decisions, run through two different versions of the software. If the plots differ, the difference came from the software, not from your analysis choices — useful if a bug was found and fixed between two runs, and you need to show a reviewer that the change in results is not a change in your reasoning.
+
+**When to use it:** Comparing two `effective_run.yaml` files field by field (see below) when results changed between runs and you need to know why.
+
+---
+
+## Comparing two exports, field by field
+
+Because `effective_run.yaml` is written the same way in every bundle, comparing two exports of the same analysis is a matter of diffing two small YAML files, not eyeballing plots:
+
+- Same `data_analysis_recipe_sha256`, `data_batch_hash`, `t3_audit_steps_sha256`, different `engine_fingerprint`/`git_commit` → same analysis, different software version. Any difference in the plots is a software change, not an analysis change.
+- Different `data_analysis_recipe_sha256` or `t3_audit_steps_sha256` → the recipe or the audited decisions changed.
+- Different `data_batch_hash` → the raw data changed (a pipeline rerun, new samples).
+
+Checking field by field, rather than one collapsed summary, tells you exactly *where* two runs diverge instead of just *that* they diverge.
+
+---
+
+## Two things your export can be
+
+Every export always contains the plots, the Tier 1/Tier 2 data tables, the audit trail and `effective_run.yaml`. That alone is enough for a reader to **verify** your results: check the hashes, read the Methods section, see what was filtered and why.
+
+Ticking **"Also include a reproducibility/reimport bundle"** in the Export panel adds, on top of all of that:
+
+- `data_analysis_recipes_reproducibility/<id>.yaml` — a copy of your data analysis recipe with every audited T3 step (filters, exclusions, column drops) rewritten as real wrangling actions, so it can be loaded and re-run, not just read.
+- `data_reproducibility/` — the actual raw data files that fed the analysis.
+
+This add-on is for the reader who wants to **re-run** your analysis, not just check it — a collaborator continuing the work, or a reviewer who wants to reproduce a number themselves. It is never a replacement for the always-included content; checking the box only adds to the bundle, it changes nothing in what was already there (and `effective_run.yaml` is identical either way, which is how you can prove the two are the same analysis — see the field-by-field comparison above).
+
+Not every audited step can always be rewritten as a real recipe action (some filter operators the engine doesn't yet support as a standalone step). When that happens, the affected plot is named in `effective_run.yaml`'s `t3_translation_skipped` field — the plot and its data are still in the always-included content, just not replayable from the recipe yet.
+
+---
+
+## Importing someone else's reproducibility bundle
+
+The same Export panel has an **Import** control for the other direction: receiving a reproducibility/reimport bundle (from a colleague, a reviewer, or your own past export) and checking whether it still reproduces.
+
+Upload the `.zip` there. It writes a new recipe and a new session — it never changes anything you currently have open — and reports, per field:
+
+- **data** — always checkable: the data files inside the bundle are re-hashed and compared against the hash the bundle itself recorded.
+- **engine** — this machine's installed software versions and commit, compared against what the bundle recorded.
+- **recipe** — checked only if you already have the *original* (untranslated) recipe locally under the same name; otherwise reported as "not checked" rather than a false mismatch, because the bundle's own copy has your audited steps baked in and will never hash the same as the original by design.
+- **t3_steps** — reported for reference; not independently re-derivable from a single bundle (compare it against another `effective_run.yaml` of the same session instead).
+
+A mismatch is never a reason the import is refused — every leg's status is shown, and you decide what it means. After importing, **reload the page (F5)** to see the new recipe in the Data analysis recipe selector; it does not appear immediately (recipes are only scanned once, when the app starts).
+
+---
+
+## Before you include your raw data
+
+The reproducibility add-on copies your **actual raw data files** into the bundle — not hashes of them, the files themselves. Anyone who receives that bundle receives the data.
+
+If your data could identify a person, a farm, a patient, or anything else that should not travel with a shared file: **anonymise it before you ever load it into SPARMVET_VIZ**, not at export time. The app has no anonymisation step of its own — by the time a file reaches the app, whatever it contains is what ends up in a reproducibility bundle if you tick the checkbox.
+
+A simple approach that keeps your own ability to trace results back to real identities: before loading data, replace identifying values (sample names, farm IDs, patient codes) with arbitrary codes, and keep the mapping from code back to real identity in a separate file, **stored outside the SPARMVET_VIZ project folders entirely** — not in `raw_data`, not anywhere that could be swept into a session export or a bundle. That mapping file is yours alone; nothing in the app reads it, writes it, or needs to know it exists.
+
+---
+
 ## Why does this matter for your research?
 
 Reproducibility in bioinformatics means more than just running the same script twice. It means being able to prove, months or years later, that a specific result came from specific inputs processed by specific logic.
@@ -79,11 +152,13 @@ The fingerprints together answer:
 
 | Question | Answered by |
 |---|---|
-| Did I use the same pipeline configuration? | Data analysis recipe SHA256 |
-| Did I use the same batch of raw results? | Data batch hash |
+| Did I use the same pipeline configuration? | `data_analysis_recipe_sha256` |
+| Did I use the same batch of raw results? | `data_batch_hash` |
+| Did I make the same editorial (audit) decisions? | `t3_audit_steps_sha256` |
 | Did the data cleaning logic change? | Tier 1 key and Tier 2 key |
+| Did the software itself change between two runs? | `engine_fingerprint` / `git_commit` |
 
-When you publish a figure, these three values are your audit trail. Anyone with access to the same data analysis recipe and the same raw data can regenerate the exact same result — and verify it using the fingerprints in your README.
+When you publish a figure, these values together are your audit trail. Anyone with the reproducibility add-on bundle (recipe + data) can regenerate the exact same result — and anyone with just the standard export can verify it using the fingerprints in `effective_run.yaml`.
 
 ---
 
@@ -132,9 +207,11 @@ If you rerun an export and the fingerprints differ from a previous one, it means
 
 | Changed fingerprint | Likely cause |
 |---|---|
-| Data analysis recipe SHA256 | The data analysis recipe YAML file was edited |
-| Data batch hash | A source data file was updated (pipeline rerun) |
+| `data_analysis_recipe_sha256` | The data analysis recipe YAML file was edited |
+| `data_batch_hash` | A source data file was updated (pipeline rerun) |
+| `t3_audit_steps_sha256` | A filter, exclusion, column drop or its reason text was sent to audit, changed, or removed |
 | Tier 1 key / Tier 2 key | The processing changed: a wrangling step (Tier 1 changes both keys, a Tier 2 step only the Tier 2 key), the data, or the engine version |
+| `engine_fingerprint` / `git_commit`, everything else unchanged | The software itself was updated between the two runs — worth checking release notes or recent fixes before assuming your analysis logic changed |
 
 Differences are not errors — they are informative. They tell you exactly which part of the analysis changed between two runs.
 

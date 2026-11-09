@@ -112,10 +112,10 @@
 
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `function:_build_methods_section`
-- **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `polars`, `shiny`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/modules/exporter.py`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `polars`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/design/export_specification.md`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
 
 ## `app/handlers/filter_and_audit_handlers.py`
 - **Role:** `ref`
@@ -136,7 +136,7 @@
 - **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`
 - **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_audit_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
 - **consumed_by:** `app/src/server.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
 
 ## `app/handlers/ingestion_handlers.py`
 - **Role:** `ref`
@@ -147,9 +147,9 @@
 ## `app/handlers/session_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
-- **consumes:** `shiny`, `pathlib`
+- **consumes:** `shiny`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
 - **consumed_by:** `app/handlers/home_theater.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
 ## `app/handlers/test_lab_handlers.py`
 - **Role:** `ref`
@@ -157,6 +157,13 @@
 - **consumes:** `app/modules/test_lab_studio.py`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/test_lab/scaffolder.py`, `libs/id_reconciliation/`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `app/modules/bundle_importer.py`
+- **Role:** `ref`
+- **provides:** `function:import_bundle`, `function:read_effective_run`, `class:ImportResult`, `class:LegResult`, `class:BundleImportError`
+- **consumes:** `app/modules/cache_keys.py (engine_fingerprint)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe — safe ConfigManager probe`, `ADR-077)`, `app/modules/session_manager.py (SessionManager)`
+- **consumed_by:** `app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md`
 
 ## `app/modules/cache_keys.py`
 - **Role:** `ref`
@@ -223,9 +230,9 @@
 ## `app/modules/session_manager.py`
 - **Role:** `ref`
 - **provides:** `class:SessionManager`, `typedef:AuditStep`
-- **consumes:** `stdlib only (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`
+- **consumes:** `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
-- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
 ## `app/modules/sidebar_registry.py`
 - **Role:** `ref`
@@ -271,10 +278,10 @@
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
-- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`
 - **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`
 - **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
-- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094`, `project_conventions.md §"Deployment Resolution`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
 
 ## `app/src/main.py`
 - **Role:** `ref`
@@ -294,7 +301,7 @@
 - **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
 - **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
 - **consumed_by:** `app.src.main`
-- **doc:** `ADR-045`, `ADR-003`
+- **doc:** `ADR-045`, `ADR-003`, `ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)`
 
 ## `app/src/ui.py`
 - **Role:** `ref`
@@ -484,6 +491,13 @@
 - **consumes:** `nothing — catalogs injected at startup by app/src/server.py via register()`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/modules/wrangle_studio.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md (ADR-075)`, `.claude/rules/rules_app_structure.md §2`
+
+## `libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
+- **Role:** `info`
+- **provides:** `function:translate_t3_node`, `function:translate_plot_steps`, `function:build_mode2_recipe`, `class:UntranslatableNode`
+- **consumes:** `stdlib (copy`, `hashlib`, `json)`, `PyYAML (developer_raw_yaml fragment parsing only)`
+- **consumed_by:** `app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring`, `#45/#48)`, `libs/blueprint_arch/tests/test_t3_translator.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md#4D`
 
 ## `libs/connector/src/connector/__init__.py`
 - **Role:** `info`
@@ -842,7 +856,7 @@
 - **Role:** `plot`
 - **provides:** `component:scale_color_gradient`, `component:scale_fill_gradient`, `component:scale_color_gradient2`, `component:scale_fill_gradient2`, `component:scale_color_gradientn`, `component:scale_fill_gradientn`, `component:scale_color_distiller`, `component:scale_fill_distiller`, `component:scale_color_cmap`, `component:scale_fill_cmap`, `component:scale_color_viridis_d`, `component:scale_fill_viridis_d`, `component:scale_color_viridis_c`, `component:scale_fill_viridis_c`, `component:scale_color_cmap_d`, `component:scale_fill_cmap_d`, `component:scale_color_discrete`, `component:scale_fill_discrete`, `component:scale_color_brewer`, `component:scale_fill_brewer`, `component:scale_color_manual`, `component:scale_fill_manual`, `component:scale_x_continuous`, `component:scale_y_continuous`, `component:scale_x_discrete`, `component:scale_y_discrete`, `component:scale_x_log10`, `component:scale_y_log10`, `component:scale_x_reverse`, `component:scale_y_reverse`, `component:scale_x_datetime`, `component:scale_y_datetime`, `component:scale_x_date`, `component:scale_y_date`, `component:scale_x_sqrt`, `component:scale_y_sqrt`, `component:scale_x_symlog`, `component:scale_y_symlog`, `component:scale_x_timedelta`, `component:scale_y_timedelta`, `component:scale_size_continuous`, `component:scale_size_discrete`, `component:scale_shape_discrete`, `component:scale_alpha_continuous`, `component:scale_alpha_discrete`, `component:scale_linetype_discrete`, `component:scale_stroke_continuous`, `component:scale_color_identity`, `component:scale_fill_identity`, `component:scale_size_identity`, `component:scale_shape_identity`, `component:scale_alpha_identity`, `component:scale_linetype_identity`, `component:scale_stroke_identity`, `component:scale_alpha`, `component:scale_alpha_manual`, `component:scale_size`, `component:scale_size_manual`, `component:scale_size_area`, `component:scale_shape`, `component:scale_shape_manual`, `component:scale_linetype`, `component:scale_linetype_manual`, `component:scale_color_hue`, `component:scale_fill_hue`, `component:scale_color_continuous`, `component:scale_fill_continuous`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
-- **doc:** `.claude/rules/rules_viz_factory.md`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `issue #36 (_integer_breaks narrow-range fallback)`
 
 ## `libs/viz_factory/src/viz_factory/themes/core.py`
 - **Role:** `plot`

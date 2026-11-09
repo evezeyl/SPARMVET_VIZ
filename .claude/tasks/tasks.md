@@ -131,18 +131,63 @@ pieces last.
   recipe/data hashes across both downloads, Mode 2 adds the recipe/data additively, the frozen
   recipe reloads cleanly (no leftover ConfigManager `plots:` key). Full `test_export_download.py`
   suite (5) and full headless suite (1548) pass.
-- [ ] **REPRO-SENSITIVE-1** `[haiku/low]` (#46/4C): non-blocking in-app notification when a
-  Mode 2 export will copy real data into a shareable bundle; new user-guide section on
-  anonymising sensitive data before loading it and keeping any de-anonymisation key outside the
-  app. Depends on REPRO-EXPORT-MODES-1 existing.
-- [ ] **REPRO-IMPORT-1** `[sonnet/high]` (#48/4E): Import a Mode 2 bundle — strictly file-based
-  (ADR-093, ADR-097 decision 6: writes a new recipe file + new session under `_sessions/`, user
-  opens it through the existing selector/restore entry points, never injects into live
-  `wrangle_studio`/`home_state`). Verifies all four hash legs, reports pass/fail per leg,
-  non-blocking on mismatch (loud warning, never a refusal to open). State explicitly whether
-  this extends `SessionManager`'s existing zip import/export or is a parallel importer. Depends
-  on REPRO-EXPORT-MODES-1 (bundle shape) and REPRO-TRANSLATOR-1 (for the imported recipe to
-  actually be runnable).
+- [x] **REPRO-SENSITIVE-1** `[haiku/low]` (#46/4C): DONE 2026-11-09. Non-blocking
+  `_notify(..., type="warning", duration=12)` fired inside `export_bundle_download()`'s
+  `if wants_mode2:` block, right after the raw data files are copied into
+  `data_reproducibility/` — names that the bundle now carries the actual data and points at
+  the user guide. New guidance added to `docs/user_guide/understanding_your_export.qmd`
+  (section "Before you include your raw data"): anonymise before loading into the app, not at
+  export time, and keep any de-anonymisation mapping file outside the SPARMVET_VIZ project
+  folders entirely. While touching this area, also corrected now-stale claims left over from
+  before REPRO-EXPORT-MODES-1/REPRO-SEED-2 in both `understanding_your_export.qmd` (three
+  fingerprints → five fields of `effective_run.yaml`, added `t3_audit_steps_sha256` and
+  `engine_fingerprint`/`git_commit` as comparison fields, added "Two things your export can
+  be" explaining Mode 1 vs. the opt-in add-on) and `reproducible_plots.qmd` (it said SPARMVET
+  "does not yet record" a drawn random seed and that reshuffling was "not available" — both
+  now done by REPRO-SEED-2; rewrote the seed table and "Coming later" section accordingly).
+  Depends on REPRO-EXPORT-MODES-1 (done).
+- [x] **REPRO-IMPORT-1** `[sonnet/high]` (#48/4E): DONE 2026-11-09. New pure module
+  `app/modules/bundle_importer.py` (`import_bundle`, `read_effective_run`, `ImportResult`,
+  `LegResult`, `BundleImportError`) — a parallel importer, confirmed distinct from
+  `SessionManager.export_session_zip`/`import_session_zip` (those only ever zip ghost metadata
+  + source *paths*, never the recipe or data itself). File-based only (ADR-093): extracts
+  `data_reproducibility/` into `raw_data_dir/_imported/<id>_imported_<timestamp>/`, repoints the
+  frozen recipe's `data_schemas.*.source.path` at the extracted files, writes it into the real
+  recipes directory, and writes a `SessionManager` assembly ghost under `_sessions/` — never
+  touches a live `wrangle_studio`/`home_state` object. The imported recipe only becomes
+  selectable after a reload (`Bootloader` resolves `available_data_analysis_recipes` once per
+  process, ADR-094) — the UI and docs say so plainly rather than pretending otherwise. Four
+  legs, non-blocking (`status`: `match`/`mismatch`/`not_checked`, never a refusal): **data**
+  (always checkable — rehashes the bundle's own `data_reproducibility/` files against the
+  recorded `data_batch_hash`); **engine** (this machine's `engine_fingerprint()`/`git_commit`
+  vs. recorded — explains "software changed, not your analysis" per ADR-097 decision 3);
+  **recipe** (only checkable, to avoid a guaranteed false mismatch, when the *original*
+  untranslated recipe is found locally by id in `bootloader.available_data_analysis_recipes` —
+  the frozen copy has T3 baked in by design and never hashes the same as the original);
+  **t3_steps** (reported for reference, `not_checked` — no independent local source once T3
+  only existed in the exporting session; compare two `effective_run.yaml` files instead).
+  Found and fixed live, not just in review: calling `ConfigManager` (via
+  `SessionManager.compute_data_analysis_recipe_sha256`) directly on an untrusted, just-written
+  recipe would `sys.exit(1)` the whole Shiny process on a broken bundle (ADR-077's fail-fast
+  behaviour, correct at app startup, fatal from inside a running request) — caught by the
+  module's own headless test suite, fixed by gating with
+  `data_analysis_recipe_validator.validate_data_analysis_recipe()` first (the same
+  `SystemExit`-catching wrapper ADR-094's HOME load gate already uses) and raising
+  `BundleImportError` instead. Wired into the Export panel (`export_handlers.py`'s
+  `system_tools_ui`/new `import_bundle_report` output), gated on `export_enabled` alone —
+  reachable without `test_lab_enabled` or `blueprint_enabled`, per the issue's done-when.
+  `app/tests/test_bundle_importer.py` (16 tests, headless: writes a real tiny recipe, runs it
+  through the real `build_mode2_recipe`, round-trips a hand-built bundle through
+  `import_bundle`, covers every leg's match/mismatch/not_checked path, source repointing, the
+  `SystemExit`-safety fix, and skipped-T3-plot passthrough). `test_export_download.py` gained
+  `test_import_a_bundle_reports_the_four_legs` (real browser: ticks the reproducibility
+  checkbox, downloads a real Mode 2 bundle, uploads it back through `#import_bundle_upload`,
+  asserts the rendered report; cleans up the real recipe/data files it writes into the
+  project tree in a `finally` block — confirmed by checking `git status` before/after, since
+  Import's whole point is writing outside `tmp_path`). Full suites green: headless 1566
+  (`libs app/tests`, up from 1548), Playwright `test_export_download.py` 6/6 and
+  `test_shiny_smoke.py` 34 passed/3 skipped. Docs: `understanding_your_export.qmd` gained
+  "Importing someone else's reproducibility bundle".
 - [ ] **REPRO-SESSION-LABELS-1** `[sonnet/low]` (#50, the UI half): per-session free-text
   label/description, and a clearer way to distinguish sessions of the same recipe against
   different data batches in the Session Management list view. Independent of the chain above.

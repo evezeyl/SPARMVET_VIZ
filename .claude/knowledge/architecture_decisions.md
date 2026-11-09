@@ -4900,5 +4900,14 @@ actually reproducible for the T3-adjusted result.
   explicit audit pass that checked this design against the ADR set before implementation,
   not from the original design discussion.
 
-**Files touched:** none yet — design-only ADR. Planned, per sub-issue, listed in
-`.claude/design/reproducible_export_design.md`.
+**Files touched (updated 2026-11-09 as #39/#45–#48 shipped — see `tasks.md`'s REPRO-* entries
+for the full per-task detail):** `app/handlers/export_handlers.py` (provenance record,
+`effective_run.yaml`, Mode 2 add-on, Import UI); `app/modules/cache_keys.py`
+(`engine_fingerprint`); `app/handlers/home_theater.py` + `app/src/server.py`
+(`last_drawn_seeds` Calc+Effect, REPRO-SEED-2); `libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
+(new — T3→recipe-action translator, `build_mode2_recipe`); `app/modules/bundle_importer.py`
+(new — Import + four-leg verification); `app/tests/test_bundle_importer.py` (new),
+`libs/blueprint_arch/tests/test_t3_translator.py` (new), `app/tests/test_export_download.py`
+(Mode 2 + Import coverage); `docs/user_guide/understanding_your_export.qmd` and
+`docs/user_guide/reproducible_plots.qmd` (rewritten for the two-mode/`effective_run.yaml`
+shape — both had gone stale describing the pre-#45 single-bundle design).

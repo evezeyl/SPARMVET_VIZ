@@ -11,8 +11,8 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, function:_build_methods_section
-# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), polars, shiny
+# provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
+# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 #            reactive.Value:last_drawn_seeds (REPRO-SEED-2/REPRO-PROV-1, ADR-097)
 # consumed_by: app/handlers/home_theater.py
@@ -610,9 +610,101 @@ def define_export_server(input, output, session, *,
                     "💾 Export Bundle",
                     class_="btn-success btn-sm w-100 mt-1",
                 ),
+                ui.hr(class_="my-2"),
+                # REPRO-IMPORT-1 (#48, ADR-097): reachable here, not TEST_LAB — Export is
+                # already gated on export_enabled alone, independent of test_lab_enabled /
+                # blueprint_enabled, which the issue requires.
+                ui.div(
+                    ui.input_file(
+                        "import_bundle_upload", None,
+                        accept=[".zip"], multiple=False,
+                    ),
+                    ui.tags.small(
+                        "Import a reproducibility/reimport bundle (.zip) — verifies what it "
+                        "can against this machine, per leg, and writes a new recipe + "
+                        "session (never into the live app, ADR-093). Reload (F5) afterwards "
+                        "to see it in the Data analysis recipe selector.",
+                        class_="text-muted d-block mb-1",
+                        style="font-size:0.7em;",
+                    ),
+                    ui.output_ui("import_bundle_report"),
+                    class_="upload-row",
+                ),
                 class_="mb-2 px-2",
                 style="font-size:0.8em;"
             ),
+        )
+
+    # ── REPRO-IMPORT-1 (#48, ADR-097): import + per-leg verification ────────────
+    _import_bundle_state = reactive.Value(None)   # ("error", str) | ("ok", ImportResult) | None
+
+    @reactive.Effect
+    @reactive.event(input.import_bundle_upload)
+    def _handle_import_bundle_upload():
+        file_info = input.import_bundle_upload()
+        if not file_info:
+            return
+        from app.modules.bundle_importer import BundleImportError, import_bundle
+        try:
+            zip_bytes = Path(file_info[0]["datapath"]).read_bytes()
+            result = import_bundle(zip_bytes, bootloader=bootloader)
+        except BundleImportError as e:
+            _import_bundle_state.set(("error", str(e)))
+            _notify(f"❌ Import failed: {e}", type="error", duration=10)
+            return
+        except Exception as e:
+            _import_bundle_state.set(("error", str(e)))
+            _notify(f"❌ Import failed unexpectedly: {e}", type="error", duration=10)
+            return
+        _import_bundle_state.set(("ok", result))
+        n_mismatch = sum(1 for leg in result.legs.values() if leg.status == "mismatch")
+        _notify(
+            f"✅ Imported as '{result.recipe_id}'. "
+            + (f"{n_mismatch} leg(s) mismatch — see the report below."
+               if n_mismatch else "All checked legs match.")
+            + " Reload the app (F5) to see it in the Data analysis recipe selector.",
+            type="warning" if n_mismatch else "message", duration=12,
+        )
+
+    @output
+    @render.ui
+    def import_bundle_report():
+        state = _import_bundle_state.get()
+        if state is None:
+            return ui.div()
+        kind, payload = state
+        if kind == "error":
+            return ui.tags.small(payload, class_="text-danger d-block mt-1")
+
+        result = payload
+        _leg_color = {"match": "#0b6358", "mismatch": "#d62828", "not_checked": "#6c757d"}
+        rows = [
+            ui.div(
+                ui.tags.b(leg_name.replace("_", " "), style=f"color:{_leg_color[leg.status]};"),
+                f": {leg.status.replace('_', ' ')}",
+                ui.tags.br(),
+                ui.tags.span(leg.detail, class_="text-muted", style="font-size:0.95em;"),
+                class_="mb-1",
+            )
+            for leg_name, leg in result.legs.items()
+        ]
+        skipped_note = (
+            ui.tags.small(
+                f"{len(result.skipped_t3_plots)} plot(s)' T3 steps were not translated into "
+                "replayable actions when this bundle was exported (see the plot names in "
+                "effective_run.yaml's t3_translation_skipped).",
+                class_="text-muted d-block mt-1",
+            )
+            if result.skipped_t3_plots else ui.div()
+        )
+        return ui.div(
+            ui.tags.small(
+                f"Imported as '{result.recipe_id}' — reload (F5) to see it in the selector.",
+                class_="d-block mb-1", style="font-weight:600;",
+            ),
+            *rows,
+            skipped_note,
+            class_="mt-1",
         )
 
     @render.download(filename=lambda: _export_bundle_filename())
@@ -1121,6 +1213,20 @@ def define_export_server(input, output, session, *,
                             zf.writestr(
                                 f"{bundle_dir}/data_reproducibility/{_ds_id}_ERROR.txt", str(e)
                             )
+                    # REPRO-SENSITIVE-1 (#46): this bundle now carries the actual raw data
+                    # files, not just hashes of them — it is meant to be shared/moved (e.g.
+                    # attached to a paper submission or handed to a collaborator). Say so
+                    # every time, non-blocking (the user may have already anonymised the
+                    # data before loading it, in which case this is a no-op reminder).
+                    with reactive.isolate():
+                        _notify(
+                            "This reproducibility bundle includes your actual raw data "
+                            "files, not just hashes — anyone who gets the bundle gets the "
+                            "data. If it contains sensitive information, anonymise it "
+                            "before sharing or archiving (see the user guide: "
+                            "Understanding Your Export).",
+                            type="warning", duration=12,
+                        )
                     if mode2_skipped:
                         with reactive.isolate():
                             _notify(

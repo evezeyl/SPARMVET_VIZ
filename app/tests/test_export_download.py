@@ -180,6 +180,52 @@ def test_mode2_checkbox_adds_the_reproducibility_bundle(loaded):
     assert "joins" in frozen
 
 
+def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
+    """REPRO-IMPORT-1 (#48): round-trip a real Mode 2 bundle through the running app's
+    own Import control (reachable from the Export panel, no test_lab_enabled/blueprint_enabled
+    needed) and confirm it reports all four verification legs."""
+    loaded.locator("#export_include_reproducibility").check(force=True)
+    _wait_shiny(loaded)
+    z = _download(loaded)
+    loaded.locator("#export_include_reproducibility").uncheck(force=True)
+    _wait_shiny(loaded)
+
+    bundle_path = tmp_path / "bundle.zip"
+    # Rebuild the zip bytes from the already-open ZipFile's entries (it doesn't expose
+    # its original source bytes directly).
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as out:
+        for name in z.namelist():
+            out.writestr(name, z.read(name))
+    bundle_path.write_bytes(buf.getvalue())
+
+    loaded.locator("#import_bundle_upload").set_input_files(str(bundle_path))
+    loaded.wait_for_function(
+        "() => document.querySelector('#import_bundle_report') && "
+        "document.querySelector('#import_bundle_report').textContent.includes('Imported as')",
+        timeout=30_000,
+    )
+    _wait_shiny(loaded)
+    report_text = loaded.locator("#import_bundle_report").inner_text()
+    recipe_id_match = re.search(r"Imported as '([^']+)'", report_text)
+    try:
+        assert "Imported as" in report_text
+        for leg in ("data", "engine", "recipe", "t3 steps"):
+            assert leg in report_text.lower(), report_text
+    finally:
+        # Import writes real files into the project's own recipes/raw_data locations
+        # (not tmp_path) — clean up what this test created, same as the data-file
+        # restore above does for a different kind of on-disk side effect.
+        if recipe_id_match:
+            recipe_id = recipe_id_match.group(1)
+            recipe_path = Path("config/data_analysis_recipes/pipelines") / f"{recipe_id}.yaml"
+            recipe_path.unlink(missing_ok=True)
+            data_dir = DATA_DIR.parent / "_imported" / recipe_id
+            if data_dir.is_dir():
+                import shutil
+                shutil.rmtree(data_dir, ignore_errors=True)
+
+
 def test_a_data_change_after_the_view_is_opened_blocks_the_export(loaded):
     files = {f: f.read_bytes() for f in DATA_DIR.rglob("*.tsv")}
     assert files, "no data file found to change"

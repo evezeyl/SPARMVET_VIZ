@@ -49,6 +49,7 @@ app/
 │   ├── test_lab_studio.py      # TestLabStudio — TEST_LAB tools (renamed from dev_studio.py).
 │   ├── exporter.py             # SubmissionExporter — gallery submission (imported only by tests today, F-20).
 │   ├── session_manager.py      # SessionManager — session ghost files, legacy format refusal.
+│   ├── bundle_importer.py      # import_bundle() — reproducibility bundle import + 4-leg hash verification (ADR-097, #48).
 │   ├── sidebar_registry.py     # PANEL_REGISTRY — panel type → gate flag → label (ADR-073).
 │   ├── sidebar_validator.py    # SidebarValidator — startup check of the slot registry.
 │   ├── app_features_validator.py # AppFeaturesValidator — startup check of the flags.
@@ -159,6 +160,7 @@ def define_server(input, output, session, *,
 | Filter builder (add row / apply / Send to Audit / reset) | `app/handlers/filter_and_audit_handlers.py` |
 | Data preview column selector | `app/handlers/home_theater.py` |
 | Export results bundle (zip / plots / data / Quarto) | `app/handlers/export_handlers.py` |
+| Import a reproducibility bundle + per-leg hash verification (ADR-097, #48) | `app/modules/bundle_importer.py` (pure logic) / `app/handlers/export_handlers.py` (Import control in the Export panel) |
 | Session save / restore / import / delete | `app/handlers/session_handlers.py` |
 | Data Import panel (upload, assign, replace metadata) | `app/handlers/data_import_handlers.py` |
 | The Pipeline Audit stack (Violet/Yellow nodes, Apply gate) | `app/handlers/audit_stack.py` |

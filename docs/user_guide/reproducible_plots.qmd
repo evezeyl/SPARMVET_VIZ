@@ -8,8 +8,8 @@ You can send your figures to a colleague, a reviewer or a journal. They (or you,
 
 - **By default, SPARMVET gives the same picture every time.** The random scatter uses a fixed starting number (a "seed"), and the rows are kept in a fixed order. This is on purpose: if you reopen the app tomorrow with the same data, you expect to see the same plot, not a surprise.
 - **If you need exactly the same picture later, write the number in your data analysis recipe.** Do not rely on the default.
-- **If you choose "random", the picture changes every time** and cannot be reproduced. Use it to explore, not for the final figure.
-- Your export contains a **copy of your data analysis recipe** as you wrote it. What is written there is what a reader can reproduce.
+- **If you choose "random", the picture changes every time you re-render it** — but the number actually drawn for the plot you looked at is recorded automatically and written into every export's `effective_run.yaml`, so that specific picture is never lost, even though it won't repeat on its own next time you open the app.
+- Your standard export always contains `effective_run.yaml` with these seeds. It does **not** contain a copy of your data analysis recipe — see [Understanding Your Export](understanding_your_export.qmd) for what the standard export holds versus the opt-in reproducibility/reimport bundle (which does include the recipe, with the pinned seeds baked in).
 
 ## Random scatter ("jitter")
 
@@ -48,15 +48,17 @@ Ask for a new arrangement every time (for exploring only):
 
 ## What your export contains
 
-The export bundle holds a **copy of your data analysis recipe** (the `steps` folder). A reader can reproduce your picture from it:
+Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every plot that uses jitter — the number actually used to draw that picture, whether it came from your data analysis recipe or was drawn fresh because you asked for "random":
 
-| What the data analysis recipe says | Can a reader reproduce the exact picture? |
-|---|---|
-| `random_state: 123` (a number) | **Yes**, always. |
-| nothing about the seed | Yes, with the same SPARMVET version, because the program default (0) is fixed. A later version could change the default, so **write the number** for a final figure. |
-| `random_state: random` | **No.** The arrangement was different each time and nothing records which one you saw. Replace it with a number before you export. |
+| What the data analysis recipe says | What's recorded in `seeds_per_plot` | Will a future render repeat it on its own? |
+|---|---|---|
+| `random_state: 123` (a number) | `123` | **Yes**, always — the recipe pins it. |
+| nothing about the seed | the program default (`0`) | Yes, with the same SPARMVET version. A later version could change the default, so **write the number** for a final figure. |
+| `random_state: random` | the number actually drawn this render, e.g. `1847302991` | **No** — the next render draws a new one. The picture you looked at is still fully documented (that number reproduces it exactly), it just won't come back by itself. |
 
-SPARMVET does not yet record the arrangement you were looking at when you used "random". Until it does, **the number must be written in the data analysis recipe by you**.
+If you're exporting with an unpinned (`random`) seed, the app tells you so with a non-blocking reminder at export time — it's not an error, just a nudge that *this* number was recorded but won't repeat unless you pin it.
+
+The opt-in reproducibility/reimport bundle (see [Understanding Your Export](understanding_your_export.qmd)) goes one step further: when you tick "Also include a reproducibility/reimport bundle", the recipe copy it writes still reflects whatever `random_state` you wrote yourself — pin the number there if you want the add-on recipe to be exactly repeatable by someone else re-running it.
 
 ## The order of rows
 
@@ -74,6 +76,6 @@ But that order is *a* fixed order, not necessarily the one **you want**. If you 
 
 ## Coming later
 
-We are thinking about letting you reshuffle the arrangement directly in the app, with the number it used recorded for you in the export. This is not available yet; today the number is written in the data analysis recipe.
+We are thinking about letting you reshuffle the arrangement directly in the app with a button, rather than only via `random_state: random` in the data analysis recipe. The recording of whichever number gets used is already automatic (see above) — what's missing is a convenient in-app "try another arrangement" control.
 
 For the technical background (why the order can change, how the engine keeps it fixed, how to test it), see [Same input, same output](../foundations/reproducibility_same_input_same_output.qmd).
