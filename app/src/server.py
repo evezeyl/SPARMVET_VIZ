@@ -3,12 +3,14 @@
 # consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.app_features_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # provides: reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)
 # consumed_by: app.src.main
-# doc: ADR-045, ADR-003
+# doc: ADR-045, ADR-003, ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)
 # @end_deps
 # app/src/server.py — Thin Orchestrator (ADR-045, Phase 22)
 # ~250 lines at most (rules_app_structure.md section 3): shared state, shared calcs, shared utils,
 # five define_server() delegations.
 # No business logic. No @render.* or @reactive.* here.
+from types import SimpleNamespace
+
 from shiny import reactive
 import polars as pl
 
@@ -83,7 +85,13 @@ def server(input, output, session):
     def active_cfg():
         # When the selector is hidden the deployment (or SPARMVET_DATA_ANALYSIS_RECIPE) names the data analysis recipe;
         # fall back to the data_analysis_recipe_id widget only when the selector is visible.
-        data_analysis_recipe_id = _safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        data_analysis_recipe_id = _safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe_or_none())
+        # issue #38: zero usable recipes — every caller of active_cfg() across the handlers
+        # only ever reads `.raw_config` (verified by grep), so an empty stand-in here is
+        # enough to make all of them render their own "nothing to show" state instead of
+        # raising. Fixing it once here, not at each of the ~15 call sites.
+        if not data_analysis_recipe_id:
+            return SimpleNamespace(raw_config={})
         # ADR-089: the parsed data analysis recipe stays in memory only while none of its files changed on
         # disk (size and modification time are checked each time a session evaluates this).
         path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"

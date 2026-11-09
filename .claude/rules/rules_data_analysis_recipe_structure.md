@@ -307,10 +307,15 @@ the expected, normal state while building one.
   one; selector hidden (no escape hatch for the user) → still fatal at startup, same as a
   genuine "not found" typo, but the message names the real cause and the contact instead of
   suggesting a spelling fix.
-- **Scope boundary:** if literally every recipe fails the gate, `get_default_data_analysis_recipe()`
-  still raises (unchanged exception type, improved message) rather than a new graceful
-  empty-state screen — building that is separate, larger, future work. The common case (some
-  recipes valid, some not) is what the gate makes safe.
+- **Scope boundary — closed (issue #38, 2026-11-09):** `get_default_data_analysis_recipe()`
+  itself still raises when literally every recipe fails the gate (unchanged exception type,
+  improved message) — but nothing in the startup path calls it unguarded any more.
+  `Bootloader.get_default_data_analysis_recipe_or_none()` and `bootloader.has_usable_data_analysis_recipe`
+  are the non-raising siblings; `active_cfg()` (`app/src/server.py`) returns an empty stand-in
+  instead of raising when there is no usable recipe, and `dynamic_tabs()`'s Home branch renders
+  a short "No data analysis recipes yet" message (pointing at Blueprint/Test Lab, whichever
+  this deployment enables) instead of reaching the assembly `try`. See ADR-094 point 6's
+  closure note for the full list of what changed.
 - **Pre-release deployment testing is a separate, earlier line of defense**, not replaced by
   this gate — the gate is the second line, for drift after release.
 

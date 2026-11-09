@@ -152,3 +152,53 @@ def test_a_default_naming_a_recipe_that_does_not_exist_is_still_the_old_fatal_pa
 
     with pytest.raises(SystemExit):
         Bootloader()
+
+
+# ---------------------------------------------------------------------------
+# issue #38 — zero usable recipes must not crash the Bootloader itself, and
+# must expose a non-raising way to ask "is there anything to show".
+# ---------------------------------------------------------------------------
+
+def test_zero_recipes_on_disk_bootloader_construction_does_not_raise(tmp_path, monkeypatch):
+    """An empty data_analysis_recipes folder — the app's own repro steps for issue #38.
+    Bootloader() must not raise; the crash this issue is about only ever happened later,
+    at the first unguarded get_default_data_analysis_recipe() call during session setup."""
+    dep, _root = _deployment(tmp_path)  # no recipe written, no default named
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+
+    b = Bootloader()  # must not raise
+
+    assert b.available_data_analysis_recipes == {}
+    assert b.rejected_data_analysis_recipes == {}
+    assert b.has_usable_data_analysis_recipe is False
+    assert b.get_default_data_analysis_recipe_or_none() is None
+    with pytest.raises(FileNotFoundError):
+        b.get_default_data_analysis_recipe()
+
+
+def test_all_recipes_rejected_is_also_a_non_raising_empty_state(tmp_path, monkeypatch):
+    """Every recipe exists but fails the gate — same non-raising empty state as zero on disk,
+    with the rejections still recorded for the sidebar to explain."""
+    dep, root = _deployment(tmp_path)
+    (root / "data_analysis_recipes" / "broken.yaml").write_text(_BROKEN_RECIPE.format(name="broken"))
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+
+    b = Bootloader()  # must not raise
+
+    assert b.available_data_analysis_recipes == {}
+    assert "broken" in b.rejected_data_analysis_recipes
+    assert b.has_usable_data_analysis_recipe is False
+    assert b.get_default_data_analysis_recipe_or_none() is None
+    with pytest.raises(FileNotFoundError):
+        b.get_default_data_analysis_recipe()
+
+
+def test_has_usable_data_analysis_recipe_is_true_once_one_passes(tmp_path, monkeypatch):
+    dep, root = _deployment(tmp_path)
+    (root / "data_analysis_recipes" / "good.yaml").write_text(_VALID_RECIPE.format(name="good"))
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+
+    b = Bootloader()
+
+    assert b.has_usable_data_analysis_recipe is True
+    assert b.get_default_data_analysis_recipe_or_none() == "good"

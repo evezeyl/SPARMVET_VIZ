@@ -4495,6 +4495,34 @@ A real gap made this concrete, not hypothetical: *"the user might not be able to
 4. **Reading the contact must survive a badly broken recipe.** `read_data_analysis_recipe_header(path)` reads just `id:`/`info:` via a bare `yaml.safe_load` — no `ConfigManager`, no `!include` resolution, no engine involvement — so a recipe whose `data_schemas:`/`wrangling:` is malformed still shows who to contact. Only a YAML syntax error bad enough to break the whole file falls back to the deployment contact alone.
 5. **The operator-named default gets the same gate, with sharper error text, not a bypass.** If `default_data_analysis_recipe` / `SPARMVET_DATA_ANALYSIS_RECIPE` names a recipe that exists on disk but fails the gate: with the selector visible, HOME falls through to the first recipe that *does* pass (the user can pick differently) — it never silently opens the broken one. With the selector hidden (the exact case with no escape hatch), this is still fatal at startup, same severity as today's "name not found", but the message now says *what failed and who to contact* instead of suggesting a spelling mistake — because it is not one.
 6. **Scope boundary, stated plainly:** if literally every discovered recipe fails the gate, the app still raises at the point a recipe is needed (`get_default_data_analysis_recipe()`, unchanged exception type, improved message) rather than a new graceful empty-state screen. Building that empty state is a real, separate, larger piece of work (`home_theater.py` has no empty-state rendering path today, for this or for the pre-existing "zero recipes exist on disk at all" case) — out of scope here. The common case (some recipes valid, some not) is what this ADR makes safe; the degenerate all-fail case is unchanged from before, not worse.
+
+   **Closed (issue #38, 2026-11-09):** `get_default_data_analysis_recipe()` itself is kept
+   exactly as described above (still raises `FileNotFoundError` — some test and call sites
+   rely on that). What changed is that nothing in the session-startup path is allowed to call
+   it unguarded any more: `Bootloader.get_default_data_analysis_recipe_or_none()` is the new
+   non-raising sibling, and the two places that actually ran it eagerly, outside any
+   `@render`/`@reactive` error boundary — `home_theater.py`'s eager `reactive.Value(...)` at
+   session init, and the always-on `_sync_session_provenance` effect — now use it. `active_cfg()`
+   (`app/src/server.py`), read by every handler that touches the active recipe, now returns an
+   empty stand-in (`SimpleNamespace(raw_config={})`) instead of raising when there is no usable
+   recipe and no explicit selection, which fixes every one of its ~15 call sites in one place
+   (all of them only ever read `.raw_config`). `dynamic_tabs()`'s Home branch checks the new
+   `bootloader.has_usable_data_analysis_recipe` and renders a short "No data analysis recipes
+   yet" message naming Blueprint/Test Lab (whichever this deployment actually enables) instead
+   of reaching the assembly `try/except` at all. BLUEPRINT, Test Lab, and Gallery's own nav and
+   sidebars were already recipe-independent by construction (confirmed by reading
+   `wrangle_studio.render_ui()`/`build_sidebar_ui()`) — no change needed there, consistent with
+   point 2 of the "What should happen" framing in the issue (they are where recipes are
+   authored). Rescan cadence (the issue's other open question): documented, not changed — the
+   `bootloader` singleton still scans once per process at `__init__` time
+   (`_discover_data_analysis_recipes`, comment added); picking up a newly added or fixed recipe
+   needs a restart, same as any other app features/deployment change today. A few remaining raw
+   `get_default_data_analysis_recipe()` call sites stay as they were: they are either reachable
+   only via a user-initiated event (`@reactive.event`, e.g. the Data Import "Apply" button) or
+   only from plot-id-specific handlers that are never registered when zero recipes exist
+   (`_collect_all_group_plot_ids` returns `[]`) — a real gap only if a feature built for
+   "a recipe is open" is used with none open, a materially smaller and different problem than
+   "the app won't start."
 7. **Pre-release testing is a separate, earlier line of defense, not replaced by this gate.** Eve: a static deployment should ideally catch a bad recipe during deployment testing, before it ever reaches a user. This ADR's gate is the second line — for drift after release (a data file changes shape on disk, a recipe is hand-edited on the server). Neither replaces the other.
 8. **ADR-079 wiring begins, scoped to the path HOME needs most.** The renderer side (`libs/utils/src/utils/pipeline_error.py`, `app/src/render/pipeline_error_renderers.py`, `dispatch_pipeline_error()`) was already complete and unit-tested; `PipelineError` was already raised at all 7 production sites; nothing caught it anywhere. This ADR wires the catch point for data materialization (`DataOrchestrator`, the path a recipe that passed the load gate still goes through to actually run) using the `notification` surface. The remaining five retrofit targets (`viz_factory` render failures, T3 Apply, Blueprint inline, Data Import panel, plus the full audit-trail/export/ghost-format capture of ADR-079 Phase 3) are **not** done here — tracked as `PIPELINE-ERROR-WIRE-2` (`tasks.md`), not silently dropped.
 

@@ -1,8 +1,8 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, read_data_analysis_recipe_header, resolve_contact — ADR-094)
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
-# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094, project_conventions.md §"Deployment Resolution"
+# doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
 # @end_deps
 # app/src/bootloader.py
 #
@@ -333,7 +333,17 @@ class Bootloader:
         )
 
     def _discover_data_analysis_recipes(self) -> Dict[str, str]:
-        """Scans the project directory for YAML data analysis recipes."""
+        """Scans the project directory for YAML data analysis recipes.
+
+        Decision (issue #38): this runs once, inside `Bootloader.__init__`, against the
+        module-level `bootloader` singleton (`bottom of this file) — not per session and not
+        re-run while the server is running. A recipe added, fixed, or removed on disk after
+        the process started is not picked up until the app is restarted. Rescanning per
+        session (or on a timer) is a separate, bigger change — live rescan would also need to
+        invalidate `load_data_analysis_recipe`'s in-memory cache (`app/modules/cache_keys.py`)
+        and any session already using a now-removed recipe — and is not needed to close this
+        issue: the common deployment pattern is "restart after changing recipes", same as any
+        other app features/deployment config change today."""
         mf_files = list(self.data_analysis_recipes_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
@@ -442,6 +452,22 @@ class Bootloader:
                 )
             raise FileNotFoundError(f"No data analysis recipes found in {self.data_analysis_recipes_dir}.")
         return list(self.available_data_analysis_recipes.keys())[0]
+
+    def get_default_data_analysis_recipe_or_none(self) -> str | None:
+        """Same resolution as `get_default_data_analysis_recipe()`, but `None` instead of raising
+        when zero recipes are usable (issue #38 — the all-rejected / zero-recipes case ADR-094
+        left open). For call sites that must run once per session regardless of recipe state
+        (HOME needs to render an empty state, not crash); callers that genuinely require a
+        recipe to proceed should keep using `get_default_data_analysis_recipe()`."""
+        try:
+            return self.get_default_data_analysis_recipe()
+        except FileNotFoundError:
+            return None
+
+    @property
+    def has_usable_data_analysis_recipe(self) -> bool:
+        """True once at least one data analysis recipe has passed the ADR-094 load gate."""
+        return bool(self.available_data_analysis_recipes)
 
     def _load_deployment_config(self) -> Dict[str, Any]:
         """Loads the deployment file."""

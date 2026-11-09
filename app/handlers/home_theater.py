@@ -176,7 +176,12 @@ def define_server(input, output, session, *,
     # Track selected data analysis recipe across sidebar nav switches (data_analysis_recipe_id input is
     # absent from DOM while Gallery/Blueprint is active; without this, returning
     # to Home re-renders sidebar_tools_ui with the default data analysis recipe selected).
-    _last_data_analysis_recipe_id = reactive.Value(bootloader.get_default_data_analysis_recipe())
+    # issue #38: get_default_data_analysis_recipe() raises when zero recipes are usable.
+    # This line runs once per session, eagerly, outside any @render/@reactive try/except —
+    # unlike every other call site below, an uncaught raise here kills session setup itself
+    # (no page renders at all, only a terminal traceback). Use the _or_none variant so the
+    # empty-recipes state reaches dynamic_tabs()/sidebar_tools_ui() as data, not an exception.
+    _last_data_analysis_recipe_id = reactive.Value(bootloader.get_default_data_analysis_recipe_or_none())
 
     @reactive.Effect
     def _track_data_analysis_recipe_id():
@@ -722,6 +727,34 @@ def define_server(input, output, session, *,
         if active_sidebar == "Gallery":
             return ui.div(gallery_viewer.render_explorer_ui(), class_="theater-container-main")
 
+        # issue #38: Home has nothing to run without at least one usable data analysis recipe
+        # (ADR-094's explicitly-deferred all-rejected / zero-recipes case). Point the user at
+        # whichever authoring workspaces this deployment actually enables, instead of either
+        # crashing (the bug) or a generic "Data Assembly Failed" exception message (unhelpful —
+        # there is no recipe to assemble yet, this is not a failure of one).
+        if not bootloader.has_usable_data_analysis_recipe:
+            _next_steps = []
+            if bootloader.is_enabled("blueprint_enabled"):
+                _next_steps.append("**Blueprint** to build one")
+            if bootloader.is_enabled("test_lab_enabled"):
+                _next_steps.append("**Test Lab** to bootstrap one from a file")
+            if _next_steps:
+                _hint = " or ".join(_next_steps) + "."
+            else:
+                _hint = "Ask this deployment's operator to add one."
+            _rejected = bootloader.rejected_data_analysis_recipes
+            _why = (
+                f"{len(_rejected)} data analysis recipe(s) exist but failed validation — "
+                "see Data analysis recipe Choice in the sidebar for details."
+                if _rejected else
+                "No data analysis recipe files were found."
+            )
+            return ui.div(
+                ui.tags.h5("No data analysis recipes yet", class_="mb-2"),
+                ui.markdown(f"{_why} Open {_hint}"),
+                class_="alert alert-info m-3",
+            )
+
         # 2. Results Theater (Home) Logic — ADR-043 Unified Home Theater
         try:
             data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
@@ -1060,7 +1093,10 @@ def define_server(input, output, session, *,
     def _sync_session_provenance():
         if home_state is None:
             return
-        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        # issue #38: this @reactive.Effect runs unconditionally once registered, regardless of
+        # which workspace/accordion is visible — not gated behind the dynamic_tabs() Home
+        # branch like most other calls here. Must not raise when there is no usable recipe.
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe_or_none())
         if not data_analysis_recipe_id:
             return
         try:
