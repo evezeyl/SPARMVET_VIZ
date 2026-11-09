@@ -12,10 +12,11 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, function:_build_methods_section
-# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, polars, shiny
+# consumes: app/modules/exporter.py, app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
+#            reactive.Value:last_drawn_seeds (REPRO-SEED-2/REPRO-PROV-1, ADR-097)
 # consumed_by: app/handlers/home_theater.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/design/export_specification.md
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
 # @end_deps
 
 from pathlib import Path
@@ -49,14 +50,27 @@ def build_export_provenance(
     stage_keys: dict | None = None,
     orchestrator=None,
     anchor_dir=None,
+    t3_by_plot: dict | None = None,
+    t3_aesthetic_overrides: dict | None = None,
 ) -> dict:
     """Collect all export provenance fields for README, QMD, and image metadata.
 
     ADR-069: all 8 required provenance fields + git info + software versions.
+    ADR-097 (REPRO-PROV-1, issue #39): adds the fourth verification leg
+    (``t3_audit_steps_sha256``) and an environment-aware engine fingerprint
+    (``containerized``/``image_ref`` vs. ``git_commit``/``uv_lock_sha256`` — detected
+    automatically, never asked of the user, decision 3). Field names checked against
+    RO-Crate's Provenance Run Crate profile (arXiv:2312.07852, W3C-PROV-aligned) where they
+    naturally overlap — not full adoption, just aligned naming, so a future move to full
+    adoption starts from something traceable.
     Headless-safe: takes plain Python objects, no Shiny imports.
     """
+    import hashlib
+    import os
     import subprocess as _sp
     import sys
+
+    from app.modules.cache_keys import canonical_hash, engine_fingerprint
 
     # Git info (EXPORT-VERSION-1)
     git_commit = "n/a"
@@ -127,6 +141,31 @@ def build_export_provenance(
         except Exception:
             pass
 
+    # T3-steps hash — the fourth verification leg (ADR-097 decision 3). Confirmed missing
+    # before this: the original ui_implementation_contract.md §12f spec named this exact
+    # field and it was never computed anywhere. A snapshot, not a seal — recomputed fresh
+    # here every export; T3 itself stays fully editable in the live session (§6d).
+    t3_audit_steps_sha256 = canonical_hash({
+        "t3_audit_steps_by_plot": t3_by_plot or {},
+        "t3_plot_overrides": t3_aesthetic_overrides or {},
+    })
+
+    # Engine/environment leg, detected automatically (ADR-097 decision 3 / §6b): a
+    # containerized run is identified by the usual Docker/Podman/OCI markers; the
+    # SPARMVET_IMAGE_REF env var (set by the image build, not by the app) is the only real
+    # pin (a tag is mutable) — recorded as "not set" rather than fabricated when absent, so
+    # the gap is visible instead of a false pin. A source-clone run falls back to
+    # git_commit (already captured above) plus uv.lock's own content hash, when the file
+    # exists — this project has no uv.lock committed yet (checked directly, not assumed),
+    # so that field is None today; not a bug, a real limitation to close later (external
+    # research: "plan for later, not blocking", ADR-097 §6f).
+    containerized = Path("/.dockerenv").exists() or bool(os.environ.get("container"))
+    image_ref = os.environ.get("SPARMVET_IMAGE_REF") if containerized else None
+    uv_lock_path = Path(__file__).resolve().parents[2] / "uv.lock"
+    uv_lock_sha256 = (
+        hashlib.sha256(uv_lock_path.read_bytes()).hexdigest() if uv_lock_path.exists() else None
+    )
+
     return {
         "created_at": now.isoformat(),
         "data_analysis_recipe_id": data_analysis_recipe_id,
@@ -150,6 +189,12 @@ def build_export_provenance(
         "release_version": release_version,
         "software_versions": sw_versions,
         "data_source_paths": data_source_paths,
+        # ADR-097 decision 3 — the four verification legs (recipe/data above; engine + T3 here):
+        "t3_audit_steps_sha256": t3_audit_steps_sha256,
+        "engine_fingerprint": engine_fingerprint(),
+        "containerized": containerized,
+        "image_ref": image_ref,
+        "uv_lock_sha256": uv_lock_sha256,
     }
 
 
@@ -751,6 +796,8 @@ def define_export_server(input, output, session, *,
                 stage_keys=stage_keys,
                 orchestrator=orchestrator,
                 anchor_dir=anchor_dir,
+                t3_by_plot=_t3_by_plot,
+                t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
 
             # ── Render and save plots ─────────────────────────────────────
@@ -1235,12 +1282,23 @@ def define_export_server(input, output, session, *,
                 "|------|-------|---------|",
                 f"| Data analysis recipe SHA256 | `{prov['data_analysis_recipe_sha256'] or 'n/a'}` | File-set hash: the data analysis recipe file and every file it includes |",
                 f"| Data batch hash | `{prov['data_batch_hash'] or 'n/a'}` | SHA256 of all raw source file content (sorted by dataset id) |",
+                f"| T3 audit steps SHA256 | `{prov['t3_audit_steps_sha256']}` | Changes if any audited filter/exclusion/drop/aesthetic override changes |",
+                f"| Engine fingerprint | `{prov['engine_fingerprint']}` | Cache-version constant + installed Polars/transformer versions |",
+                (
+                    f"| Environment | containerized, `image_ref={prov['image_ref'] or 'not set'}` | "
+                    "Set at image build time via SPARMVET_IMAGE_REF; a tag alone is not a real pin |"
+                    if prov["containerized"] else
+                    f"| Environment | source install, `git_commit={prov['git_commit']}`, "
+                    f"`uv.lock SHA256={prov['uv_lock_sha256'] or 'not present'}` | "
+                    "uv.lock not yet part of this project — a known limitation, not a bug |"
+                ),
                 *_dh_qmd_rows,
                 "",
                 "> These hashes allow independent verification that this report was generated",
-                "> from the exact data analysis recipe, raw data, and wrangling steps present at export time.",
-                "> The Tier 1 and Tier 2 keys are stored in the metadata of the parquet files",
-                "> (`sparmvet_tier1_key`, `sparmvet_tier2_key`) and in the plot image metadata.",
+                "> from the exact data analysis recipe, raw data, wrangling steps, T3 adjustments, and",
+                "> software environment present at export time (ADR-097). The Tier 1 and Tier 2 keys",
+                "> are stored in the metadata of the parquet files (`sparmvet_tier1_key`,",
+                "> `sparmvet_tier2_key`) and in the plot image metadata.",
                 "",
                 "## About the data in this report",
                 "",
@@ -1539,6 +1597,15 @@ def define_export_server(input, output, session, *,
                 f"  (file-set hash: the data analysis recipe file and every file it includes)",
                 f"Data batch hash  : {prov['data_batch_hash'] or 'n/a'}",
                 f"  (SHA256 of all raw source file content, sorted by dataset id)",
+                f"T3 audit steps SHA256 : {prov['t3_audit_steps_sha256']}",
+                f"  (changes if any audited filter/exclusion/drop/aesthetic override changes)",
+                f"Engine fingerprint    : {prov['engine_fingerprint']}",
+                (
+                    f"Environment      : containerized, image_ref={prov['image_ref'] or 'not set — see SPARMVET_IMAGE_REF'}"
+                    if prov["containerized"] else
+                    f"Environment      : source install, git_commit={prov['git_commit']}, "
+                    f"uv.lock SHA256={prov['uv_lock_sha256'] or 'not present'}"
+                ),
                 "Stage keys (per dataset; Tier 1 and Tier 2 chained keys):",
                 *_dh_lines,
                 "",

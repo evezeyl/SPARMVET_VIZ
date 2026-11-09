@@ -57,14 +57,19 @@ pieces last.
   (inline `position: jitter`), not just synthetic test data. Non-blocking notification added in
   `export_bundle_download` when any exported plot's seed is unpinned. `test_render_purity.py`
   (44, R1 check), full headless suite (1498), and the `qa` Playwright smoke suite (29) all pass.
-- [ ] **REPRO-PROV-1** `[sonnet/medium]` (#39/4A, part 3): consolidated provenance record
-  (`export_handlers.py`) carrying all four hash legs — recipe (already computed), data
-  (already computed), engine (environment-aware: container image+tag+digest vs. source
-  `git_commit`+`uv.lock`+Python version), and the new `t3_audit_steps_sha256` (computed over
-  the already-serialized T3 step content; never existed before despite being named in the
-  original `ui_implementation_contract.md §12f` spec — confirmed absent by grep). Field names
-  checked against RO-Crate's Provenance Run Crate profile vocabulary where it overlaps, cited
-  inline. No new UI.
+- [x] **REPRO-PROV-1** `[sonnet/medium]` (#39/4A, part 3) — DONE 2026-11-09: consolidated
+  provenance record (`build_export_provenance()`, `export_handlers.py`) now carries all four
+  hash legs. Recipe/data unchanged (already existed). Engine leg is environment-aware,
+  detected automatically, never asked of the user: containerized (`/.dockerenv` or `container`
+  env var) → `image_ref` from `SPARMVET_IMAGE_REF` if set, `"not set"` if not (never a false
+  pin); source install → existing `git_commit` + `uv_lock_sha256` (checked directly: this
+  project has no `uv.lock` committed yet — recorded as `None`, a documented limitation, not a
+  silent gap). New `t3_audit_steps_sha256` leg: `canonical_hash()` (`cache_keys.py`, reused,
+  not reinvented) over `{t3_audit_steps_by_plot, t3_plot_overrides}` — confirmed missing before
+  this (grep found zero hits, despite the field being named in the original
+  `ui_implementation_contract.md §12f` spec). Surfaced in the existing README.txt
+  "Reproducibility" section and report.qmd's hash table — no new UI. 13 provenance tests (6
+  new) + full headless suite (1504) + real-download Playwright suite (4) all pass.
 - [ ] **REPRO-RESTORE-HASH-1** `[sonnet/low]` (#50, the hash-check half only — labels/multi-dataset
   distinction is separate, lower-priority UI work, not ordered here): extend
   `session_handlers.py`'s existing restore-mismatch warning (recipe-sha / data-batch-hash) with
