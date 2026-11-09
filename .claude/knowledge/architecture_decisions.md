@@ -4722,6 +4722,37 @@ by Eve, with @dasharch. Full discussion, grounding citations, and the audit that
 design before anything was built: `.claude/design/reproducible_export_design.md` — this ADR is
 the settled summary; that file is the working history and stays more detailed.
 
+**Implementation status (2026-11-09):** REPRO-SEED-1/2, REPRO-PROV-1, and
+REPRO-RESTORE-HASH-1 (all of #39/4A) are done. REPRO-TRANSLATOR-1 (#47/4D, decision 4) has
+its core — `libs/blueprint_arch/src/blueprint_arch/t3_translator.py` — built, tested (40 unit
+tests), and verified live end-to-end against the real engine (`DataOrchestrator`'s actual
+`materialize_tier1`/`materialize_tier2`, not a mock): a forked join's materialized Tier 2
+output was confirmed byte-identical to manually filtering the original join's Tier 1 the same
+way, using the real shipped `2_test_data_ST22_dummy` recipe and data. Two things found while
+building it, not assumed in the original design:
+
+1. **A real engine-coverage gap**, not approximated — the registered wrangling actions only
+   cover `eq`, inclusive `ge`/`le`, and `in`. There is no action for `ne`, strict `gt`/`lt`, or
+   `not_in`. Filed as [#52](https://github.com/evezeyl/SPARMVET_VIZ/issues/52) rather than
+   approximated (e.g. strict `gt` as inclusive `ge` would silently include one extra boundary
+   value — a correctness bug, not a translator detail). A plot whose T3 steps use one of these
+   ops is reported in `build_mode2_recipe()`'s `skipped` dict, never silently exported as
+   falsely "fully reproducible".
+2. **`ConfigManager` injects a root-level `plots:` key into `raw_config`** as an internal
+   convenience mirror of `analysis_groups` (`config_loader.py`'s own comment: "engine detail
+   only... for VizFactory"). Confirmed live, not hypothetical: dumping a `raw_config` with this
+   key present and reloading it trips `LEGACY-FLAT-PLOTS-1`'s own fatal check. `t3_translator.py`
+   strips this key unconditionally so its output is always safe to dump and reload — this
+   matters for #45's Mode 2 writer and #48's Import too, not just this translator.
+
+The fork-vs-per-plot-tier3 choice (option B of two, decision 4) remains the implemented
+default; option A (a genuine per-plot tier3 recipe concept) is not ruled out as a longer-term
+alternative. The marker convention is a structured `_t3_origin` dict key on the forked join
+(not a YAML comment) — chosen because it round-trips through plain `yaml.safe_dump`/`safe_load`
+and is directly machine-readable on read-back, closing the "we do not read T3" gap more
+robustly than a comment would. #45 (export mode split) and #48 (Import) still need to wire this
+translator in; neither has started.
+
 **Context.** Issue #39 started narrow — "record the random seed and the data files used at
 export" — and widened once its own open questions were answered: the data-provenance half was
 already mostly built (`data_source_paths`, `decision_hashes`, `data_analysis_recipe_sha256`,

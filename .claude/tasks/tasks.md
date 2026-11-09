@@ -84,18 +84,32 @@ pieces last.
   like the T3 hash, never actually implemented — only the recipe-sha check existed. Both are
   now checked, same non-blocking severity. 11 new/changed tests (`test_session_manager.py`),
   full headless suite (1508), `qa` Playwright smoke suite (29) all pass.
-- [ ] **REPRO-TRANSLATOR-1** `[sonnet/high]` (#47/4D): the T3 → recipe-action translator. Per
-  plot, compute the full ordered translated-action sequence for that plot's `target_dataset`
-  join (`exclusion_row`/`filter_row` → `filter_eq`/`filter_range`/etc., `drop_column` →
-  `drop_columns`; `aesthetic_override` not translated; `developer_raw_yaml` near-direct copy);
-  fork the join under a plot-specific id in the frozen Mode 2 copy only, append the plot's
-  sequence after the join's existing `tier2:` steps (T2-then-T3 ordering, matching live
-  behaviour; an empty original `tier2` means the fork's `tier2` is just the translated actions
-  alone). Dedupe to a shared fork only when two plots' resulting sequences for the same join are
-  byte-identical — never group by propagation scope directly (ADR-097 decision 4). Decide and
-  apply a marker convention (YAML comment banner) distinguishing translated-from-T3 steps from
-  native recipe steps on read-back — open, decide here. The riskiest, most open-ended piece;
-  scope/estimate on its own before starting.
+- [x] **REPRO-TRANSLATOR-1** `[sonnet/high]` (#47/4D) — DONE 2026-11-09:
+  `libs/blueprint_arch/src/blueprint_arch/t3_translator.py`. Per plot, computes the full
+  ordered translated-action sequence for that plot's `target_dataset` join (`exclusion_row`/
+  `filter_row` → `filter_eq`/`filter_range`/`is_in` with the same eq/ne+list auto-promotion
+  viz_factory applies at render time; `drop_column` → `drop_columns`; `aesthetic_override`
+  skipped, not translated; `developer_raw_yaml` parsed and passed through after validating it's
+  a list of canonical `action:` steps); forks the join under a plot-specific id in the returned
+  copy only, appends the sequence after the join's existing `tier2:` steps (T2-then-T3,
+  matching live behaviour; empty original `tier2` → fork's `tier2` is just the translated
+  actions). Dedupes to a shared fork only when two plots' resulting sequences for the same join
+  are byte-identical, computed independently per plot first — never grouped by propagation scope
+  directly (ADR-097 decision 4; covered by dedicated multi-plot propagation tests). Marker
+  convention decided: a structured `_t3_origin` dict key on the forked join (not a YAML
+  comment) — round-trips through plain `yaml.safe_dump`/`safe_load`, directly machine-readable
+  on read-back. **Engine-coverage gap found, not approximated:** no registered action exists
+  for `ne`/strict `gt`/strict `lt`/`not_in` — filed as #52; a plot using one of these ops is
+  named in the `skipped` return dict rather than silently exported as falsely reproducible.
+  **A second real gap found and fixed:** `ConfigManager` injects an internal `plots:` mirror
+  key into `raw_config` that breaks reload (`LEGACY-FLAT-PLOTS-1`) — confirmed live, now
+  stripped unconditionally by `build_mode2_recipe()`. 40 unit tests
+  (`test_t3_translator.py`) + verified live end-to-end against the real engine (not a mock):
+  materialized the forked join's actual Tier 2 output via `DataOrchestrator` against the real
+  shipped `2_test_data_ST22_dummy` recipe/data and confirmed it byte-identical to manually
+  filtering the original join's Tier 1 the same way. Full headless suite (1548) passes.
+  **Not yet done:** wiring this into the actual Mode 2 export (#45) or Import (#48) — this
+  task built the translator itself, standalone and tested, not its integration.
 - [ ] **REPRO-EXPORT-MODES-1** `[sonnet/medium]` (#45/4B): split the Export panel into Mode 1
   (Publication, unchanged) and Mode 2 (Reproducibility/reimport, forced `export_scope: global`,
   explanatory note in the UI), combinable into one zip in a single action. Decide: does Mode 2

@@ -1,0 +1,338 @@
+"""
+Automated tests for t3_translator.py (ADR-097 decision 4, REPRO-TRANSLATOR-1, issue #47).
+
+Verifies:
+- translate_t3_node: eq/ge/le/in happy paths, the eq/ne+list auto-promotion mirroring
+  viz_factory's own render-time rule, drop_column, developer_raw_yaml (valid + invalid
+  fragment), and that ne/gt/lt/not_in raise UntranslatableNode rather than approximate.
+- translate_plot_steps: ordering, aesthetic_override skipped, one bad node fails the
+  whole plot (no partial result).
+- build_mode2_recipe: forking mechanics (T2-then-T3 ordering, empty-tier2 case),
+  per-plot correctness under propagation (shared fork only when sequences are
+  byte-identical, different forks when they diverge), the _t3_origin marker, the
+  skipped dict for untranslatable/bare-schema/missing-spec plots, and that the
+  original raw_config is never mutated.
+
+Run from project root:
+    PYTHONPATH=. .venv/bin/python -m pytest libs/blueprint_arch/tests/test_t3_translator.py -v
+"""
+import copy
+
+import pytest
+
+from blueprint_arch.t3_translator import (
+    UntranslatableNode,
+    translate_t3_node,
+    translate_plot_steps,
+    build_mode2_recipe,
+)
+
+
+def node(node_type, params, node_id=None, reason=""):
+    n = {"node_type": node_type, "params": params, "reason": reason}
+    if node_id:
+        n["id"] = node_id
+    return n
+
+
+# ── translate_t3_node ────────────────────────────────────────────────────────
+
+class TestTranslateNodeFilterOps:
+    def test_eq(self):
+        actions = translate_t3_node(node("filter_row", {"column": "country", "op": "eq", "value": "Norway"}))
+        assert actions == [{"action": "filter_eq", "column": "country", "value": "Norway"}]
+
+    def test_ge(self):
+        actions = translate_t3_node(node("filter_row", {"column": "year", "op": "ge", "value": 2024}))
+        assert actions == [{"action": "filter_range", "columns": ["year"], "min": 2024}]
+
+    def test_le(self):
+        actions = translate_t3_node(node("filter_row", {"column": "year", "op": "le", "value": 2024}))
+        assert actions == [{"action": "filter_range", "columns": ["year"], "max": 2024}]
+
+    def test_in(self):
+        actions = translate_t3_node(
+            node("filter_row", {"column": "country", "op": "in", "value": ["Norway", "Sweden"]})
+        )
+        assert actions == [{"action": "is_in", "column": "country", "values": ["Norway", "Sweden"]}]
+
+    def test_exclusion_row_uses_the_op_literally_no_flip(self):
+        """AUDIT-1 (ui_implementation_contract.md §12g.3): the operator is the truth —
+        exclusion_row does not get eq flipped to ne."""
+        actions = translate_t3_node(node("exclusion_row", {"column": "sample_id", "op": "eq", "value": "S2"}))
+        assert actions == [{"action": "filter_eq", "column": "sample_id", "value": "S2"}]
+
+    @pytest.mark.parametrize("op", ["ne", "gt", "lt", "not_in"])
+    def test_untranslatable_ops_raise_not_approximate(self, op):
+        """No registered action for these — must raise, never silently approximate
+        (e.g. gt as inclusive ge would wrongly include the boundary value)."""
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("filter_row", {"column": "year", "op": op, "value": 2024}))
+
+    def test_eq_with_list_value_promotes_to_in(self):
+        """Mirrors viz_factory.render()'s own render-time auto-promotion — a stored
+        node can carry op='eq' with a list value and only be promoted at render time."""
+        actions = translate_t3_node(node("filter_row", {"column": "country", "op": "eq", "value": ["Norway", "Sweden"]}))
+        assert actions == [{"action": "is_in", "column": "country", "values": ["Norway", "Sweden"]}]
+
+    def test_ne_with_list_value_still_untranslatable(self):
+        """Promotes to not_in, which still has no registered action — must still raise."""
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("filter_row", {"column": "country", "op": "ne", "value": ["Norway", "Sweden"]}))
+
+    def test_missing_column_raises(self):
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("filter_row", {"op": "eq", "value": "x"}))
+
+
+class TestTranslateNodeDropColumn:
+    def test_drop_column(self):
+        actions = translate_t3_node(node("drop_column", {"column": "notes"}))
+        assert actions == [{"action": "drop_columns", "columns": ["notes"]}]
+
+    def test_missing_column_raises(self):
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("drop_column", {}))
+
+
+class TestTranslateNodeDeveloperRawYaml:
+    def test_valid_fragment_passes_through(self):
+        fragment = "- action: cast\n  columns: [Year]\n  dtype: String\n"
+        actions = translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": fragment}))
+        assert actions == [{"action": "cast", "columns": ["Year"], "dtype": "String"}]
+
+    def test_invalid_yaml_raises(self):
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": "not: valid: : yaml: :"}))
+
+    def test_fragment_missing_action_key_raises(self):
+        """Shorthand-without-action-key is silently ignored by the real engine
+        (rules_data_analysis_recipe_structure.md §7) — the translator must refuse it
+        outright rather than pass through dead content."""
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": "- mutate: [col, expr]\n"}))
+
+    def test_fragment_not_a_list_raises(self):
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": "action: cast\n"}))
+
+
+class TestTranslateNodeUnknownType:
+    def test_aesthetic_override_raises_if_reached_directly(self):
+        """Cosmetic nodes must be filtered by the caller (translate_plot_steps does
+        this) — calling translate_t3_node directly on one is a caller error, not a
+        silently-ignored no-op."""
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("aesthetic_override", {"fill_color": "#ff0000"}))
+
+    def test_unknown_node_type_raises(self):
+        with pytest.raises(UntranslatableNode):
+            translate_t3_node(node("some_future_node_type", {}))
+
+
+# ── translate_plot_steps ─────────────────────────────────────────────────────
+
+class TestTranslatePlotSteps:
+    def test_order_preserved(self):
+        nodes = [
+            node("filter_row", {"column": "year", "op": "ge", "value": 2023}),
+            node("filter_row", {"column": "year", "op": "le", "value": 2025}),
+        ]
+        actions = translate_plot_steps(nodes)
+        assert actions == [
+            {"action": "filter_range", "columns": ["year"], "min": 2023},
+            {"action": "filter_range", "columns": ["year"], "max": 2025},
+        ]
+
+    def test_aesthetic_override_skipped_not_raised(self):
+        nodes = [
+            node("aesthetic_override", {"fill_color": "#ff0000"}),
+            node("filter_row", {"column": "year", "op": "eq", "value": 2024}),
+        ]
+        actions = translate_plot_steps(nodes)
+        assert actions == [{"action": "filter_eq", "column": "year", "value": 2024}]
+
+    def test_one_bad_node_fails_the_whole_plot(self):
+        """Never a partial, silently-incomplete result."""
+        nodes = [
+            node("filter_row", {"column": "year", "op": "eq", "value": 2024}),
+            node("filter_row", {"column": "species", "op": "ne", "value": "cat"}),
+        ]
+        with pytest.raises(UntranslatableNode):
+            translate_plot_steps(nodes)
+
+    def test_empty_list(self):
+        assert translate_plot_steps([]) == []
+
+
+# ── build_mode2_recipe ───────────────────────────────────────────────────────
+
+def _recipe_with_one_join():
+    return {
+        "analysis_groups": {
+            "g1": {"plots": {"p1": {"spec": {"target_dataset": "J1"}},
+                              "p2": {"spec": {"target_dataset": "J1"}}}}
+        },
+        "joins": {
+            "J1": {"steps": {"tier1": [{"action": "join", "right_ingredient": "x", "on": "id"}]}},
+        },
+    }
+
+
+class TestBuildMode2RecipeForking:
+    def test_fork_created_and_plot_repointed(self):
+        raw = _recipe_with_one_join()
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        new_cfg, skipped = build_mode2_recipe(raw, t3)
+        assert skipped == {}
+        fork_id = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
+        assert fork_id == "J1__t3_p1"
+        assert fork_id in new_cfg["joins"]
+        # p2 (no T3 steps) keeps the original join untouched
+        assert new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"] == "J1"
+
+    def test_t2_then_t3_ordering_appended_after_existing_tier2(self):
+        raw = _recipe_with_one_join()
+        raw["joins"]["J1"]["steps"]["tier2"] = [{"action": "sort", "columns": ["id"]}]
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        new_cfg, _ = build_mode2_recipe(raw, t3)
+        fork_tier2 = new_cfg["joins"]["J1__t3_p1"]["steps"]["tier2"]
+        assert fork_tier2 == [
+            {"action": "sort", "columns": ["id"]},
+            {"action": "filter_eq", "column": "year", "value": 2024},
+        ]
+
+    def test_empty_original_tier2_fork_is_just_the_translated_actions(self):
+        raw = _recipe_with_one_join()   # no tier2 at all on J1
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        new_cfg, _ = build_mode2_recipe(raw, t3)
+        assert new_cfg["joins"]["J1__t3_p1"]["steps"]["tier2"] == [
+            {"action": "filter_eq", "column": "year", "value": 2024}
+        ]
+        # tier1 (the shared trunk) is untouched, byte-identical to the original
+        assert new_cfg["joins"]["J1__t3_p1"]["steps"]["tier1"] == raw["joins"]["J1"]["steps"]["tier1"]
+
+    def test_t3_origin_marker_present(self):
+        raw = _recipe_with_one_join()
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        new_cfg, _ = build_mode2_recipe(raw, t3)
+        origin = new_cfg["joins"]["J1__t3_p1"]["_t3_origin"]
+        assert origin == {"forked_from": "J1", "source_plot": "p1", "node_ids": ["n1"]}
+
+    def test_original_raw_config_never_mutated(self):
+        raw = _recipe_with_one_join()
+        original = copy.deepcopy(raw)
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        build_mode2_recipe(raw, t3)
+        assert raw == original
+
+    def test_only_aesthetic_override_nodes_no_fork_needed(self):
+        raw = _recipe_with_one_join()
+        t3 = {"p1": [node("aesthetic_override", {"fill_color": "#ff0000"})]}
+        new_cfg, skipped = build_mode2_recipe(raw, t3)
+        assert skipped == {}
+        assert new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"] == "J1"
+        assert "J1__t3_p1" not in new_cfg["joins"]
+
+
+class TestBuildMode2RecipeMultiPlotPropagation:
+    """ADR-097 decision 4: the fork must be keyed by each plot's own fully-resolved,
+    ordered action sequence — never by "which plots received a given shared node"."""
+
+    def test_two_plots_sharing_an_identical_sequence_share_one_fork(self):
+        raw = _recipe_with_one_join()
+        shared_node = node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="shared")
+        t3 = {"p1": [dict(shared_node)], "p2": [dict(shared_node)]}
+        new_cfg, skipped = build_mode2_recipe(raw, t3)
+        assert skipped == {}
+        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
+        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"]
+        assert fork_p1 == fork_p2
+        assert len(new_cfg["joins"]) == 2   # original J1 + exactly one fork, not two
+
+    def test_a_plot_with_an_extra_node_on_top_gets_its_own_fork(self):
+        """A shared node plus one plot's own additional node must NOT collapse into
+        the shared fork — the resulting sequences genuinely differ."""
+        raw = _recipe_with_one_join()
+        shared_node = node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="shared")
+        extra_node = node("drop_column", {"column": "notes"}, node_id="extra")
+        t3 = {"p1": [dict(shared_node)], "p2": [dict(shared_node), extra_node]}
+        new_cfg, skipped = build_mode2_recipe(raw, t3)
+        assert skipped == {}
+        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
+        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"]
+        assert fork_p1 != fork_p2
+        assert len(new_cfg["joins"]) == 3   # original J1 + two distinct forks
+
+    def test_shared_node_across_different_joins_forks_separately(self):
+        """A node propagated to 'all plots' spanning different joins must become
+        translated actions in multiple different forks, one per join it touches."""
+        raw = _recipe_with_one_join()
+        raw["joins"]["J2"] = {"steps": {"tier1": [{"action": "join", "right_ingredient": "y", "on": "id"}]}}
+        raw["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"] = "J2"
+        shared_node = node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="shared")
+        t3 = {"p1": [dict(shared_node)], "p2": [dict(shared_node)]}
+        new_cfg, skipped = build_mode2_recipe(raw, t3)
+        assert skipped == {}
+        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
+        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"]
+        assert fork_p1 == "J1__t3_p1" and fork_p2 == "J2__t3_p2"
+        assert fork_p1 != fork_p2
+
+
+class TestBuildMode2RecipeSkipped:
+    def test_untranslatable_op_is_skipped_not_raised(self):
+        raw = _recipe_with_one_join()
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "ne", "value": 2024}, node_id="n1")]}
+        new_cfg, skipped = build_mode2_recipe(raw, t3)
+        assert "p1" in skipped
+        # Original target_dataset is left completely untouched — never partially forked.
+        assert new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"] == "J1"
+        assert "J1__t3_p1" not in new_cfg["joins"]
+
+    def test_bare_schema_plot_is_skipped(self):
+        raw = _recipe_with_one_join()
+        raw["analysis_groups"]["g1"]["plots"]["p1"]["spec"] = {}  # no target_dataset
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        _, skipped = build_mode2_recipe(raw, t3)
+        assert "p1" in skipped
+        assert "target_dataset" in skipped["p1"]
+
+    def test_unknown_plot_id_is_skipped(self):
+        raw = _recipe_with_one_join()
+        t3 = {"does_not_exist": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        _, skipped = build_mode2_recipe(raw, t3)
+        assert "does_not_exist" in skipped
+
+    def test_target_dataset_pointing_at_a_bare_schema_not_a_join_is_skipped(self):
+        raw = _recipe_with_one_join()
+        raw["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"] = "some_bare_schema"
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        _, skipped = build_mode2_recipe(raw, t3)
+        assert "p1" in skipped
+
+    def test_empty_t3_by_plot(self):
+        raw = _recipe_with_one_join()
+        new_cfg, skipped = build_mode2_recipe(raw, {})
+        assert skipped == {}
+        assert new_cfg == raw
+
+
+class TestBuildMode2RecipeStripsConfigManagerInternals:
+    """ConfigManager injects a root-level `plots:` key into raw_config as an internal
+    convenience mirror of analysis_groups (config_loader.py comment: "engine detail
+    only"). Confirmed live (not a hypothetical): a recipe dumped with this key present
+    fails to reload — it trips LEGACY-FLAT-PLOTS-1's fatal check on a root `plots:` key.
+    build_mode2_recipe must strip it so its output is always safe to dump and reload."""
+
+    def test_root_plots_key_is_stripped(self):
+        raw = _recipe_with_one_join()
+        raw["plots"] = {"p1": {"target_dataset": "J1"}}   # ConfigManager-style mirror
+        new_cfg, _ = build_mode2_recipe(raw, {})
+        assert "plots" not in new_cfg
+
+    def test_stripped_even_with_no_t3_content_at_all(self):
+        raw = _recipe_with_one_join()
+        raw["plots"] = {}
+        new_cfg, _ = build_mode2_recipe(raw, {})
+        assert "plots" not in new_cfg
