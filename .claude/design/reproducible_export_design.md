@@ -279,6 +279,18 @@ plot's filters to every other plot sharing the same branch — a correctness bug
 (B) is lower-risk and faster for a first version; (A) is the more architecturally proper
 long-term shape. #47's body should record this as an open decision, not resolve it by default.
 
+**(B) clarified with a concrete example (Eve asked "what do you mean by fork the join" —
+rightly pointing out T3 applies after T2, or after T1 when T2≡T1):** say join
+`AMR_Profile_Joint` has `wrangling.tier2: [stepA, stepB]`, and plot `year_distribution` had a
+T3 filter "year ≥ 2024" applied. The fork (used only by that one plot) becomes a new join
+`AMR_Profile_Joint__year_distribution` with `wrangling.tier2: [stepA, stepB, <translated
+filter for year ≥ 2024>]` — the *same* existing tier2 steps, with the translated T3 action
+simply appended at the end of that same list. Since tier2 already always runs sequentially
+after tier1, appending the T3 action to the end of it *is* "T2 then T3" — exactly what the live
+app already computes today, expressed as one extra step in an existing list. When the original
+join's tier2 is empty (T2≡T1), the fork's tier2 is just `[<translated T3 steps>]` alone — still
+correct, tier2 runs after tier1 whether it holds 0 or N steps.
+
 ### 6b. #48 (Import) must commit to file-based-only — ADR-093 does apply here
 
 ADR-093's stated principle: *"every cross-space handoff is file-based... no space writes into
@@ -292,6 +304,19 @@ selector/restore entry points — never inject parsed bundle content directly in
 reports pass/fail; a mismatch is a loud, hard-to-miss warning, never a refusal to open — matches
 the project's existing non-blocking-warning pattern (e.g. the `random_state: random` export
 warning, §4A).
+
+**The "engine" leg needs to branch on how this instance is actually running (Eve, 2026-11-09):**
+two things raised together —
+(1) release-based pinning is premature while this project has no mature release process yet
+    (confirmed, not solved: `git_commit`, already captured, stays the primary granularity for
+    now; revisit once there's a real semantic-version/release scheme to pin to);
+(2) the container-image idea from §6f below is not universal — some people will install from
+    GitHub directly (clone + their own venv) rather than the shipped container, depending on how
+    they integrate this into Galaxy/IRIDA/their own infrastructure. The environment fingerprint
+    needs a branch, not one fixed field: **containerized** → image name + tag + digest (tags are
+    mutable, the digest is the only real pin); **source install** → `git_commit` + `uv.lock` +
+    Python version. Which path is in effect should be detected automatically, not asked of the
+    user. Not solved here — folded in as a requirement for whoever builds #47/#48's engine leg.
 
 ### 6c. #39's automatic seed bookkeeping must not violate Reactive Write Discipline R1
 
@@ -329,6 +354,19 @@ data batch do.
   restore-mismatch warning to also check T3-steps content — this is ordinary session-reopen
   integrity, not new export surface, so it belongs with Session Management's own work, not #39
   or #48.
+
+**Hashing T3 does not freeze it (Eve asked whether this conflicts with T3 staying editable —
+it doesn't, and this project already has the working precedent):** the hash is a fingerprint
+of "what T3 contains right now," recomputed fresh every time it's saved or exported — not a
+seal that blocks further edits. `data_analysis_recipe_sha256` and `data_batch_hash` already
+work exactly this way: the recipe or the data can keep changing afterward, the hash only
+describes the one snapshot it was computed from. T3 stays fully editable during the live
+session (add/remove/modify nodes freely, unchanged); each save (on Apply or panel-leave, the
+existing triggers, §12d) or export recomputes `t3_audit_steps_sha256` over whatever the step
+list looks like *at that moment* and stores it with that specific snapshot. The restore/import
+check then only asks "does what I'm loading match the hash recorded when *this* snapshot was
+saved" — trivially true right after a save, meaningful only if something changed outside the
+app in between (hand-edited ghost file, corrupted export, tampered re-import).
 
 ### 6e. Import vs. existing Session Management — distinct, confirmed, but must be stated
 
