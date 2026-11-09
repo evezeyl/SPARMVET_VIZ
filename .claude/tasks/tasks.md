@@ -26,6 +26,77 @@
 
 Items with no blockers — can be started immediately.
 
+### Reproducible export & import (ADR-097, 2026-11-09) — implementation order
+
+Design locked (`ADR-097`, `.claude/design/reproducible_export_design.md`), tracked by #44 +
+sub-issues #39/#45/#46/#47/#48, related #49/#50. Order below follows the dependency chain
+worked out during design: seed/hash recording first (nothing else needs it to exist, but
+everything else needs it to be correct), then the translator (the real engine-facing risk),
+then the export/import surfaces that assume the translator works, then the smaller/independent
+pieces last.
+
+- [ ] **REPRO-SEED-1** `[sonnet/medium]` (#39/4A, part 1): add `random_state` as a recognised
+  `aesthetic_override` key (L5 of the plot-config cascade, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`),
+  injected into whichever jitter-capable layer(s) the resolved plot has, overriding any
+  recipe-set `random_state` on that layer. Reuses the existing per-plot/session/no-recipe-edit
+  mechanism `fill_color`/`theme`/etc. already use — no new state model.
+- [ ] **REPRO-SEED-2** `[sonnet/medium]` (#39/4A, part 2): automatic seed bookkeeping for the
+  default case (`random_state: random`, no pinned override) — a `@reactive.Calc` draws the
+  seed, a separate idempotency-guarded `@reactive.Effect` persists it into an ordinary
+  per-session `reactive.Value` (never inside the `@render.plot` itself — Reactive Write
+  Discipline R1, `ui_implementation_contract.md §14`; never the bootloader's process-wide asset
+  cache). Non-blocking notification at export time when `random_state: random` is still in
+  effect with no pinned override. Depends on REPRO-SEED-1 for the override path to exist first.
+- [ ] **REPRO-PROV-1** `[sonnet/medium]` (#39/4A, part 3): consolidated provenance record
+  (`export_handlers.py`) carrying all four hash legs — recipe (already computed), data
+  (already computed), engine (environment-aware: container image+tag+digest vs. source
+  `git_commit`+`uv.lock`+Python version), and the new `t3_audit_steps_sha256` (computed over
+  the already-serialized T3 step content; never existed before despite being named in the
+  original `ui_implementation_contract.md §12f` spec — confirmed absent by grep). Field names
+  checked against RO-Crate's Provenance Run Crate profile vocabulary where it overlaps, cited
+  inline. No new UI.
+- [ ] **REPRO-RESTORE-HASH-1** `[sonnet/low]` (#50, the hash-check half only — labels/multi-dataset
+  distinction is separate, lower-priority UI work, not ordered here): extend
+  `session_handlers.py`'s existing restore-mismatch warning (recipe-sha / data-batch-hash) with
+  a third check against `t3_audit_steps_sha256`. Depends on REPRO-PROV-1 for the field to exist.
+- [ ] **REPRO-TRANSLATOR-1** `[sonnet/high]` (#47/4D): the T3 → recipe-action translator. Per
+  plot, compute the full ordered translated-action sequence for that plot's `target_dataset`
+  join (`exclusion_row`/`filter_row` → `filter_eq`/`filter_range`/etc., `drop_column` →
+  `drop_columns`; `aesthetic_override` not translated; `developer_raw_yaml` near-direct copy);
+  fork the join under a plot-specific id in the frozen Mode 2 copy only, append the plot's
+  sequence after the join's existing `tier2:` steps (T2-then-T3 ordering, matching live
+  behaviour; an empty original `tier2` means the fork's `tier2` is just the translated actions
+  alone). Dedupe to a shared fork only when two plots' resulting sequences for the same join are
+  byte-identical — never group by propagation scope directly (ADR-097 decision 4). Decide and
+  apply a marker convention (YAML comment banner) distinguishing translated-from-T3 steps from
+  native recipe steps on read-back — open, decide here. The riskiest, most open-ended piece;
+  scope/estimate on its own before starting.
+- [ ] **REPRO-EXPORT-MODES-1** `[sonnet/medium]` (#45/4B): split the Export panel into Mode 1
+  (Publication, unchanged) and Mode 2 (Reproducibility/reimport, forced `export_scope: global`,
+  explanatory note in the UI), combinable into one zip in a single action. Decide: does Mode 2
+  copy data into the bundle or reference+hash it (today's behaviour), and does Mode 1 keep a
+  lightweight recipe reference now that Mode 2 exists. Depends on REPRO-PROV-1; a non-translator
+  version can ship before REPRO-TRANSLATOR-1 lands, just not claim full T3 reproducibility yet.
+- [ ] **REPRO-SENSITIVE-1** `[haiku/low]` (#46/4C): non-blocking in-app notification when a
+  Mode 2 export will copy real data into a shareable bundle; new user-guide section on
+  anonymising sensitive data before loading it and keeping any de-anonymisation key outside the
+  app. Depends on REPRO-EXPORT-MODES-1 existing.
+- [ ] **REPRO-IMPORT-1** `[sonnet/high]` (#48/4E): Import a Mode 2 bundle — strictly file-based
+  (ADR-093, ADR-097 decision 6: writes a new recipe file + new session under `_sessions/`, user
+  opens it through the existing selector/restore entry points, never injects into live
+  `wrangle_studio`/`home_state`). Verifies all four hash legs, reports pass/fail per leg,
+  non-blocking on mismatch (loud warning, never a refusal to open). State explicitly whether
+  this extends `SessionManager`'s existing zip import/export or is a parallel importer. Depends
+  on REPRO-EXPORT-MODES-1 (bundle shape) and REPRO-TRANSLATOR-1 (for the imported recipe to
+  actually be runnable).
+- [ ] **REPRO-SESSION-LABELS-1** `[sonnet/low]` (#50, the UI half): per-session free-text
+  label/description, and a clearer way to distinguish sessions of the same recipe against
+  different data batches in the Session Management list view. Independent of the chain above.
+- [ ] **REPRO-RESHUFFLE-1** `[sonnet/medium]` (#49, deferred — do not start before the items
+  above are stable): a UI control to deliberately redraw and pin a plot's seed, shown only on
+  plots with a jitter-capable layer and only when the seed isn't already pinned to a fixed
+  number. Depends on REPRO-SEED-1.
+
 ### Audit Fixes — ADR Compliance (ADR behavioural audit 2026-11-06)
 
 - [x] **ADR-045-PLOTERR-1** `[AUDIT]` `[sonnet/low]`: `architect_active_plot` (`@render.plot`, `app/modules/wrangle_studio.py` lines 552-607) calls `_plot_error.set(...)` six times. This breaks the reactive write rule R1 (`ui_implementation_contract.md §14`): renders are read-only. Fix: compute the error text in a `@reactive.Calc` (or write it from a `@reactive.Effect` with an idempotent guard) and let the render only read it. Affects BLUEPRINT (demo scope). Add a Playwright or unit check that the Blueprint plot still shows its error banner. DONE 2026-11-06: the error text is computed in the `_plot_outcome` Calc; `app/tests/test_render_purity.py` fails if any render in `app/` writes a reactive value. The error banner itself is not covered by an automated test (check by hand in BLUEPRINT).

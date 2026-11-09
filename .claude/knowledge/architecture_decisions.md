@@ -4706,3 +4706,139 @@ while planning this with Eve (2026-11-08):
 **Files touched:** `app/src/main.py` (dict `static_assets`), `docs/_quarto.yml` (`output-dir`),
 `app/handlers/home_theater.py` (the second link, `sidebar_nav_ui`), `assets/scripts/check_doc_links.py`
 (ignore list).
+
+## ADR-097: Reproducible export & import — two export modes, T3 reaches the engine only through a forked copy, verification warns rather than blocks (2026-11-09)
+
+**Status:** ACCEPTED — design locked, implementation not yet started. Tracked by
+[#44](https://github.com/evezeyl/SPARMVET_VIZ/issues/44) (parent) and sub-issues
+[#39](https://github.com/evezeyl/SPARMVET_VIZ/issues/39) (4A),
+[#45](https://github.com/evezeyl/SPARMVET_VIZ/issues/45) (4B),
+[#46](https://github.com/evezeyl/SPARMVET_VIZ/issues/46) (4C),
+[#47](https://github.com/evezeyl/SPARMVET_VIZ/issues/47) (4D),
+[#48](https://github.com/evezeyl/SPARMVET_VIZ/issues/48) (4E); related, independent
+[#49](https://github.com/evezeyl/SPARMVET_VIZ/issues/49) (reshuffle, deferred) and
+[#50](https://github.com/evezeyl/SPARMVET_VIZ/issues/50) (Session Management labels). Decided
+by Eve, with @dasharch. Full discussion, grounding citations, and the audit that checked this
+design before anything was built: `.claude/design/reproducible_export_design.md` — this ADR is
+the settled summary; that file is the working history and stays more detailed.
+
+**Context.** Issue #39 started narrow — "record the random seed and the data files used at
+export" — and widened once its own open questions were answered: the data-provenance half was
+already mostly built (`data_source_paths`, `decision_hashes`, `data_analysis_recipe_sha256`,
+`data_batch_hash`, `git_commit` all already existed in `export_handlers.py`), but two deeper
+gaps surfaced. First, export today conflates two different jobs under one button: producing
+plots for a paper (with the T3 audit trail's human justification, "why was this row excluded")
+and producing something someone else can later reconstruct and verify (which needs the recipe,
+the data, and the seed, not just the plots). Second, T3 state — row filters, exclusions, column
+drops committed during interactive analysis in HOME — exists only inside a running Shiny
+session; the headless engine (`ConfigManager`/`DataAssembler`) has never had a way to replay it
+without the app running, so a "reproducibility" export containing only a recipe copy was not
+actually reproducible for the T3-adjusted result.
+
+**Decision.**
+
+1. **Two export modes, combinable into one zip.** Mode 1 (Publication — today's export,
+   unchanged 3-way scope global/group/plot, T3 content stays human prose in the Methods
+   section) and Mode 2 (Reproducibility/reimport — new, `export_scope` forced to `global`,
+   carries the full recipe, the data, and a consolidated provenance record). A single export
+   action can produce both at once.
+
+2. **Seed-in-effect, per plot, via the existing T3 cascade.** `random_state` is added to the
+   `aesthetic_override` data shape (L5 of the plot-config cascade) — reusing the per-plot,
+   session-level, already-exported mechanism that `fill_color`/`theme`/`alpha`/etc. already
+   use, rather than inventing a parallel one. For the default case (`random_state: random`, no
+   pinned override), the seed actually drawn is remembered automatically per session, per plot
+   — captured via a `@reactive.Calc` and persisted via a separate, idempotency-guarded
+   `@reactive.Effect` (never inside the `@render.plot` itself — Reactive Write Discipline R1,
+   `ui_implementation_contract.md §14`), in an ordinary per-session `reactive.Value`, never the
+   bootloader's process-wide asset cache. Multiple jittered layers in one plot continue to
+   share one seed (unchanged behaviour).
+
+3. **A consolidated provenance record carries four hash legs, not three.** Recipe (file-set
+   hash, already computed), data (content hash per dataset, already computed), engine
+   (environment-aware: a containerized run records image name + tag + digest — the digest
+   being the only real pin, tags are mutable — a source-clone run records `git_commit` +
+   `uv.lock` + Python version; release-based pinning is deferred until the project has a mature
+   release process to pin to), and — newly added here — **the T3 steps themselves**
+   (`t3_audit_steps_sha256`). This field was specified once in the original design
+   (`ui_implementation_contract.md §12f`'s own example front-matter) and never actually wired
+   into `export_handlers.py` — confirmed absent by grep, not assumed. The hash is a snapshot,
+   recomputed on every save or export, exactly like the existing recipe/data hashes — it never
+   freezes T3, which stays fully editable during the live session. The same fourth check
+   (T3-steps mismatch) extends to ordinary session restore (`session_handlers.py`), not only
+   to Mode 2 import — reopening a saved T3 ghost deserves the same integrity check as the
+   recipe-sha/data-batch-hash checks it already gets. Field names in this record should reuse
+   RO-Crate's Provenance Run Crate profile vocabulary (`arXiv:2312.07852`, W3C-PROV-aligned)
+   where it naturally overlaps — not full adoption, but aligned naming with the source cited
+   inline, so a future move to full adoption starts from something traceable.
+
+4. **T3 steps reach the engine only through a forked, export-time copy of the join — never
+   through the live, shared recipe.** Tier 2 is shared across every plot using a given join
+   (`rules_data_engine.md`'s Bifurcation Point Rule); T3 steps are per-plot. Writing a plot's T3
+   steps directly into that join's shared `tier2:` would wrongly affect every other plot
+   sharing the branch. The chosen mechanism (option B of two considered in the design doc;
+   option A — a genuine new per-plot "tier3" concept taught to `DataAssembler` — stays on the
+   table as a longer-term alternative, not ruled out): for each plot carrying T3 steps, fork
+   just that one join under a plot-specific id, append the plot's own translated actions to the
+   end of the fork's `tier2:` list (after the join's existing tier2 steps — T2-then-T3, exactly
+   today's live ordering; when the original tier2 is empty, T2≡T1, the fork's tier2 is just the
+   translated actions alone), and repoint only that plot's `target_dataset` at the fork. This
+   reuses the Bifurcation Point Rule mechanically — no new engine code, `debug_assembler.py`
+   needs no changes. Because T3 nodes can propagate across several plots (sharing one `id` but
+   living in each plot's own ordered per-plot list, and potentially spanning different joins),
+   **the fork must be keyed by each plot's own fully-resolved, ordered action sequence for a
+   given join — never by "which plots received a given node."** Two plots may share one fork
+   only when their resulting sequences for the same join turn out byte-identical; that is a
+   deduplication step performed *after* independent per-plot computation, never the primary
+   grouping. Exact marker convention distinguishing translated-from-T3 steps from native recipe
+   steps on read-back is left open, to be decided inside #47.
+
+5. **This never touches BLUEPRINT's own invariant, and is not a new crossing of ADR-093's
+   boundary** — worth stating explicitly since an early read of this design mistakenly flagged
+   it as one. ADR-082 §4 forbids BLUEPRINT from writing T3; decision 4 above is the opposite
+   direction, HOME's own T3 (which HOME legitimately owns) flowing *out* into an export
+   artifact, and only into a frozen, export-time copy — never back into the live recipe on
+   disk. ADR-093 removed a third, different direction (Gallery content flowing *into* T3). None
+   of the three ADRs' forbidden directions is what decision 4 does.
+
+6. **Import is file-based only — this is where ADR-093's boundary does apply.** ADR-093: *"every
+   cross-space handoff is file-based... no space writes into another space's state at runtime,
+   ever."* Import reads a Mode 2 bundle, writes a new recipe file plus a new session under
+   `_sessions/`, and the user opens it through the existing selector/restore entry points —
+   it never injects parsed bundle content directly into a live `wrangle_studio`/`home_state`
+   object. This is a hard rule for #48, not a UX preference.
+
+7. **Verification warns, it never blocks.** Both Import (#48) and ordinary session restore
+   (#50, decision 3) report each hash leg's match/fail individually and let the user proceed
+   regardless — a mismatch is a loud, hard-to-miss warning, matching this project's existing
+   non-blocking pattern (the `random_state: random` export warning). Import is a genuinely
+   distinct capability from `SessionManager`'s existing `export_session_zip`/`import_session_zip`
+   (confirmed by reading `session_manager.py`: those only ever zip ghost metadata and *paths*
+   to source files, never the recipe or the data itself) — #48 should state explicitly whether
+   it extends that machinery or builds a parallel importer.
+
+8. **Sensitive data is a documentation concern, not a code-enforced one.** The app cannot know
+   what counts as sensitive in a given dataset. Mode 2 gets one non-blocking in-app
+   notification when it will copy real data into a shareable bundle; the user guide gets a new
+   section recommending anonymisation before data ever reaches the app, with any
+   de-anonymisation key kept outside it entirely.
+
+**Consequences.**
+- `export_handlers.py` gains a fourth hash field (`t3_audit_steps_sha256`) and a consolidated
+  record structure; `session_handlers.py` gains a third restore-mismatch check; `viz_factory.py`
+  / `plot_config_resolver.py` gain `random_state` as a recognised `aesthetic_override` key;
+  `home_theater.py` gains the per-session seed-bookkeeping Calc+Effect pair. None of this is
+  built yet — this ADR fixes the shape, not the code.
+- Left genuinely open, to decide inside the relevant sub-issue, not fixed by this ADR: option A
+  vs. B for #47 (join-forking is the current default, not an exclusion of the per-plot-tier3
+  alternative); the exact marker convention for translated-vs-native recipe steps (#47); the
+  consolidated record's filename and full field list beyond the four hash legs (#39); whether
+  Mode 2 copies data into the bundle or references+hashes it, and whether Mode 1 keeps a
+  lightweight recipe reference (#45); Import's exact UI placement (#48).
+- Supersedes nothing. Clarifies, for the record, that ADR-082 §4 and ADR-093 do not block
+  decision 4 above, and that ADR-093 does govern decision 6 — both findings came from an
+  explicit audit pass that checked this design against the ADR set before implementation,
+  not from the original design discussion.
+
+**Files touched:** none yet — design-only ADR. Planned, per sub-issue, listed in
+`.claude/design/reproducible_export_design.md`.
