@@ -324,6 +324,87 @@ class TestResolvePlotConfigL5Mutex:
         assert result["_l5_mutex_warn"] is False
 
 
+class TestResolvePlotConfigL5RandomState:
+    """issue #39/ADR-097 decision 2 — random_state as an aesthetic_override key."""
+
+    def test_named_geom_jitter_layer_gets_random_state(self):
+        raw_spec = {"layers": [{"name": "geom_jitter", "params": {}}]}
+        result = resolve_plot_config(
+            raw_spec, {}, None, aesthetic_override={"random_state": 42},
+        )
+        layer = next(l for l in result["layers"] if l["name"] == "geom_jitter")
+        assert layer["params"]["random_state"] == 42
+        assert result["_provenance"]["random_state"] == "L5"
+
+    def test_overrides_a_recipe_set_seed(self):
+        raw_spec = {"layers": [{"name": "position_jitter", "params": {"random_state": 7}}]}
+        result = resolve_plot_config(
+            raw_spec, {}, None, aesthetic_override={"random_state": 99},
+        )
+        layer = next(l for l in result["layers"] if l["name"] == "position_jitter")
+        assert layer["params"]["random_state"] == 99
+
+    def test_inline_jitter_position_on_a_geom_gets_random_state(self):
+        raw_spec = {"layers": [{"name": "geom_point", "params": {"position": "jitter"}}]}
+        result = resolve_plot_config(
+            raw_spec, {}, None, aesthetic_override={"random_state": 5},
+        )
+        layer = next(l for l in result["layers"] if l["name"] == "geom_point")
+        assert layer["params"]["random_state"] == 5
+        assert layer["params"]["position"] == "jitter"   # untouched
+
+    def test_jitterdodge_position_gets_random_state(self):
+        raw_spec = {"layers": [{"name": "geom_bar", "params": {"position": "jitterdodge"}}]}
+        result = resolve_plot_config(
+            raw_spec, {}, None, aesthetic_override={"random_state": 3},
+        )
+        layer = next(l for l in result["layers"] if l["name"] == "geom_bar")
+        assert layer["params"]["random_state"] == 3
+
+    def test_no_jitter_layer_is_a_no_op(self):
+        """A plot with no jitter at all: the override is accepted, nothing crashes,
+        nothing is injected anywhere, since there is no layer to carry a seed."""
+        raw_spec = {"layers": [{"name": "geom_bar", "params": {}}]}
+        result = resolve_plot_config(
+            raw_spec, {}, None, aesthetic_override={"random_state": 1},
+        )
+        layer = next(l for l in result["layers"] if l["name"] == "geom_bar")
+        assert "random_state" not in layer["params"]
+        assert result["_provenance"]["random_state"] == "L5"
+
+    def test_random_sentinel_string_passes_through_unmodified(self):
+        """ADR-097: an override can itself say "random" (force unpinned even if the
+        recipe pinned a fixed seed) — the resolver just carries the value, _generator()
+        in viz_factory.py is what interprets "random" as no-seed."""
+        raw_spec = {"layers": [{"name": "geom_jitter", "params": {"random_state": 7}}]}
+        result = resolve_plot_config(
+            raw_spec, {}, None, aesthetic_override={"random_state": "random"},
+        )
+        layer = next(l for l in result["layers"] if l["name"] == "geom_jitter")
+        assert layer["params"]["random_state"] == "random"
+
+    def test_multiple_jitter_layers_in_one_plot_all_get_the_same_seed(self):
+        """Confirms ADR-097 decision 2: multiple jittered layers in one plot continue to
+        share one seed (unchanged behaviour) — the override applies to every match."""
+        raw_spec = {"layers": [
+            {"name": "geom_jitter", "params": {}},
+            {"name": "position_jitterdodge", "params": {}},
+        ]}
+        result = resolve_plot_config(
+            raw_spec, {}, None, aesthetic_override={"random_state": 11},
+        )
+        for name in ("geom_jitter", "position_jitterdodge"):
+            layer = next(l for l in result["layers"] if l["name"] == name)
+            assert layer["params"]["random_state"] == 11
+
+    def test_no_override_leaves_jitter_layer_untouched(self):
+        raw_spec = {"layers": [{"name": "geom_jitter", "params": {"random_state": 7}}]}
+        result = resolve_plot_config(raw_spec, {}, None, aesthetic_override=None)
+        layer = next(l for l in result["layers"] if l["name"] == "geom_jitter")
+        assert layer["params"]["random_state"] == 7
+        assert "random_state" not in result["_provenance"]
+
+
 class TestResolvePlotConfigLayerAccumulation:
     def test_geom_layers_accumulate(self):
         """geom_bar and geom_text both survive — no dedup."""

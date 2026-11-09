@@ -6,7 +6,8 @@
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
 #              libs/viz_factory/tests/test_plot_spec_roundtrip.py
-# doc: .claude/design/plot_config_cascade.md, .claude/design/plot_authoring_model.md
+# doc: .claude/design/plot_config_cascade.md, .claude/design/plot_authoring_model.md,
+#      ADR-097 (aesthetic_override.random_state, REPRO-SEED-1)
 # @end_deps
 """
 Five-tier plot configuration cascade resolver (ADR-024 / cascade design 2026-05-10).
@@ -521,6 +522,22 @@ def resolve_plot_config(
         if geom_overrides:
             seed["_l5_geom_overrides"] = geom_overrides
             provenance["_l5_geom_overrides"] = "L5"
+
+        # random_state (issue #39/ADR-097 decision 2): pin or reshuffle the seed for every
+        # jitter-capable layer this plot has, overriding whatever the recipe itself set.
+        # Mutates the already-appended L1-L4 layers in place, before dedup — a plot with no
+        # jitter at all simply has no layer to match, so this is a no-op for it.
+        if "random_state" in override:
+            rs = override["random_state"]
+            for layer in all_layers:
+                lparams = layer.get("params") or {}
+                is_jitter_layer = layer.get("name") in (
+                    "geom_jitter", "position_jitter", "position_jitterdodge",
+                )
+                is_jitter_position = lparams.get("position") in ("jitter", "jitterdodge")
+                if is_jitter_layer or is_jitter_position:
+                    layer["params"] = {**lparams, "random_state": rs}
+            provenance["random_state"] = "L5"
 
     # ── Deduplicate layers ───────────────────────────────────────────────────
     seed["layers"] = _dedupe_layers(all_layers)

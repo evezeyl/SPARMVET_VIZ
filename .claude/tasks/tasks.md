@@ -35,11 +35,15 @@ everything else needs it to be correct), then the translator (the real engine-fa
 then the export/import surfaces that assume the translator works, then the smaller/independent
 pieces last.
 
-- [ ] **REPRO-SEED-1** `[sonnet/medium]` (#39/4A, part 1): add `random_state` as a recognised
-  `aesthetic_override` key (L5 of the plot-config cascade, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`),
-  injected into whichever jitter-capable layer(s) the resolved plot has, overriding any
-  recipe-set `random_state` on that layer. Reuses the existing per-plot/session/no-recipe-edit
-  mechanism `fill_color`/`theme`/etc. already use — no new state model.
+- [x] **REPRO-SEED-1** `[sonnet/medium]` (#39/4A, part 1) — DONE 2026-11-09: `random_state`
+  added as a recognised `aesthetic_override` key in `resolve_plot_config()`
+  (`libs/viz_factory/src/viz_factory/plot_config_resolver.py`) — injected into every
+  jitter-capable layer the resolved plot has (`geom_jitter`, `position_jitter`,
+  `position_jitterdodge`, or any layer with `params.position` of `"jitter"`/`"jitterdodge"`),
+  overriding any recipe-set `random_state` on that layer; a no-op when the plot has no jitter
+  at all. 8 new unit tests (`TestResolvePlotConfigL5RandomState`) plus a live end-to-end check
+  (same override seed → identical jitter across renders; different seed → different jitter).
+  Full viz_factory suite (246) and full headless suite (1494) pass, no regressions.
 - [ ] **REPRO-SEED-2** `[sonnet/medium]` (#39/4A, part 2): automatic seed bookkeeping for the
   default case (`random_state: random`, no pinned override) — a `@reactive.Calc` draws the
   seed, a separate idempotency-guarded `@reactive.Effect` persists it into an ordinary
