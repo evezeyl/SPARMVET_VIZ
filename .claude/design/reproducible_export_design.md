@@ -291,6 +291,27 @@ app already computes today, expressed as one extra step in an existing list. Whe
 join's tier2 is empty (T2≡T1), the fork's tier2 is just `[<translated T3 steps>]` alone — still
 correct, tier2 runs after tier1 whether it holds 0 or N steps.
 
+**Correctness across multiple plots (Eve, 2026-11-09 — the single-plot example above isn't
+enough on its own):** `ui_implementation_contract.md §12g`'s propagation model (a node can
+target "this plot only" / "all plots" / "all plots except...", and propagated copies share one
+`id` but each lives in that plot's own ordered `t3_audit_steps_by_plot[plot_id]` list) means
+the fork can't be keyed by "which plots received a given node":
+
+- **A node propagated to several plots sharing one join** can only share one fork with them if
+  that is the *only* thing distinguishing those plots for that join — a plot that also carries
+  its own exclusive node on top needs its own separate fork.
+- **A node propagated to "all plots" is not one fork** — if those plots are built from
+  *different* joins/datasets, the same node (`id`) becomes translated actions in *multiple*
+  different forks, one per join it actually touches.
+- **Order is per plot, not global.** Even nodes sharing an `id` across plots don't guarantee
+  the same relative position once a plot mixes in its own additional nodes — the translator
+  must use each plot's own `t3_audit_steps_by_plot[plot_id]` order, never a merged/inferred one.
+
+**Resolution:** compute each plot's translation independently first — that plot's own full,
+ordered action sequence for its `target_dataset`'s join — and only *after* that, treat
+"plots whose resulting sequence for the same join is byte-identical can share one fork" as a
+pure deduplication step, never as the primary grouping mechanism.
+
 ### 6b. #48 (Import) must commit to file-based-only — ADR-093 does apply here
 
 ADR-093's stated principle: *"every cross-space handoff is file-based... no space writes into
