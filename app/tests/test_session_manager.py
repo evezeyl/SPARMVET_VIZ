@@ -445,14 +445,64 @@ def test_transformation_sha256_active_only():
 
 
 # ---------------------------------------------------------------------------
-# Label helpers
+# Label helpers (REPRO-SESSION-LABELS-1, #50)
 # ---------------------------------------------------------------------------
 
-def test_set_get_label(sm):
+def _assemble(sm, key, source_files, label=None):
+    sm.write_assembly_ghost(
+        session_key=key, data_analysis_recipe_id="pid",
+        data_analysis_recipe_sha256="a" * 64, data_batch_hash="c" * 64,
+        source_files={k: str(v) for k, v in source_files.items()}, parquet_paths={},
+        label=label,
+    )
+
+
+def test_set_get_label_via_assembly_ghost(sm, source_files):
     key = "aaaaaaaaaaaa:cccccccccccc"
-    sm.write_t3_ghost(key, "pid", "a" * 64, "c" * 64, "T3", [], {}, label="original")
+    _assemble(sm, key, source_files)
     sm.set_session_label(key, "updated")
     assert sm.get_session_label(key) == "updated"
+
+
+def test_label_works_before_any_t3_ghost_exists(sm, source_files):
+    """The bug this fix closes: a brand-new session (assembly.json only, no Apply
+    yet) could not be labelled at all under the old T3-ghost-only storage."""
+    key = "aaaaaaaaaaaa:dddddddddddd"
+    _assemble(sm, key, source_files)
+    assert sm.get_session_label(key) == ""
+    sm.set_session_label(key, "first label, before any Apply")
+    assert sm.get_session_label(key) == "first label, before any Apply"
+
+
+def test_set_session_label_on_unknown_session_is_a_noop(sm):
+    sm.set_session_label("nonexistent:session0", "x")  # no assembly.json — must not raise
+    assert sm.get_session_label("nonexistent:session0") == ""
+
+
+def test_label_survives_a_reassembly_rewrite(sm, source_files):
+    """write_assembly_ghost(label=None) (the default, every real caller) must
+    preserve an existing label rather than silently wiping it on data/recipe change."""
+    key = "aaaaaaaaaaaa:eeeeeeeeeeee"
+    _assemble(sm, key, source_files)
+    sm.set_session_label(key, "kept across reassembly")
+    _assemble(sm, key, source_files)  # simulates a recipe/data-change rewrite
+    assert sm.get_session_label(key) == "kept across reassembly"
+
+
+def test_write_assembly_ghost_explicit_label_overrides(sm, source_files):
+    key = "aaaaaaaaaaaa:ffffffffffff"
+    _assemble(sm, key, source_files, label="initial")
+    _assemble(sm, key, source_files, label="replaced")
+    assert sm.get_session_label(key) == "replaced"
+
+
+def test_label_falls_back_to_legacy_t3_ghost_storage(sm, source_files):
+    """A session labelled before this fix has its label only in a T3 ghost —
+    get_session_label must still find it."""
+    key = "aaaaaaaaaaaa:gggggggggggg"
+    _assemble(sm, key, source_files)  # label="" by default
+    sm.write_t3_ghost(key, "pid", "a" * 64, "c" * 64, "T3", [], {}, label="legacy")
+    assert sm.get_session_label(key) == "legacy"
 
 
 # ---------------------------------------------------------------------------

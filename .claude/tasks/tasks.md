@@ -208,9 +208,31 @@ pieces last.
   (11 tests, includes an is_in/not_in exact-complement check). `test_t3_translator.py`
   rewritten for all 8 ops (52 tests total, up from 40). Full headless suite 1578 passed
   (up from 1566).
-- [ ] **REPRO-SESSION-LABELS-1** `[sonnet/low]` (#50, the UI half): per-session free-text
-  label/description, and a clearer way to distinguish sessions of the same recipe against
-  different data batches in the Session Management list view. Independent of the chain above.
+- [x] **REPRO-SESSION-LABELS-1** `[sonnet/low]` (#50, the UI half): DONE 2026-11-09. Found a
+  real bug while implementing, not just adding UI: `set_session_label`/`get_session_label`
+  only ever read/wrote the most-recent T3 ghost — a brand-new session (`assembly.json` only,
+  before any Apply) had no T3 ghost yet, so it silently could not be labelled at all.
+  Canonical storage moved to `assembly.json` (`write_assembly_ghost` gained a `label: str |
+  None = None` param — `None`, every real caller's default, preserves whatever label is
+  already on disk across a recipe/data-change rewrite rather than wiping it; an explicit
+  string sets/clears it). `get_session_label` falls back to the legacy T3-ghost location for
+  sessions labelled before this fix. `list_all_sessions()` now returns `label` directly (no
+  extra per-card lookup). UI: the static italic label text in `session_handlers.py`'s session
+  card replaced with `ui.input_text(..., update_on="blur")` — no separate Save button. The
+  scanning `@reactive.Effect` (same one restore/delete already use) saves only when the
+  blurred value differs from the STORED label (R3 idempotent guard,
+  `ui_implementation_contract.md §14`) — without it, any unrelated session action anywhere
+  would re-fire this effect and re-write every label to its current box value on every pass.
+  Deliberately does not bump `_session_list_version` on save: nothing else in the panel reads
+  the label, and forcing a re-render would reset any *other* session's box mid-edit (R4).
+  Distinguishing sessions of the same recipe against different data batches (the second
+  done-when) is served by the same free-text label, since a hash prefix alone isn't
+  meaningfully distinguishable to a user. 8 new headless tests
+  (`app/tests/test_session_manager.py`, including the before-any-T3-ghost case and the
+  reassembly-preserves-label case) + 1 new Playwright test
+  (`test_shiny_smoke.py::TestSessionListRefresh::test_session_label_saves_on_blur`, fills,
+  tabs to blur, asserts the backend actually stored it). Full suites green: headless 1583
+  (up from 1578).
 - [ ] **REPRO-RESHUFFLE-1** `[sonnet/medium]` (#49, deferred — do not start before the items
   above are stable): a UI control to deliberately redraw and pin a plot's seed, shown only on
   plots with a jitter-capable layer and only when the seed isn't already pinned to a fixed

@@ -220,21 +220,40 @@ class SessionManager:
         data_batch_hash: str,
         source_files: dict[str, str],   # {dataset_id: path_str}
         parquet_paths: dict[str, str],   # {"assembly": ..., "contracted": ...}
+        label: str | None = None,
     ) -> Path:
-        """Write assembly.json to the session directory."""
+        """Write assembly.json to the session directory.
+
+        REPRO-SESSION-LABELS-1 (#50): `label` is the canonical home for the
+        user-facing session label — assembly.json is written once per session and
+        exists before any T3 ghost does, unlike the old label-in-T3-ghost storage
+        (which left a brand-new session unlabellable until its first Apply). A
+        rewrite of an already-assembled session (recipe/data changed, ADR-089) must
+        not silently erase a label the user already set: pass `label=None` (the
+        default) to preserve whatever is already on disk; pass an explicit string
+        (including "") to set or clear it.
+        """
+        path = self.session_dir(session_key) / "assembly.json"
+        if label is None:
+            label = ""
+            if path.exists():
+                try:
+                    label = json.loads(path.read_text()).get("label", "")
+                except Exception:
+                    label = ""
         ghost = {
             "session_key": session_key,
             "data_analysis_recipe_id": data_analysis_recipe_id,
             "data_analysis_recipe_sha256": data_analysis_recipe_sha256,
             "data_batch_hash": data_batch_hash,
             "assembled_at": _now_iso(),
+            "label": label,
             "source_files": {
                 k: {"path": str(v), "sha256": _file_sha256(v)}
                 for k, v in source_files.items()
             },
             "parquet_paths": parquet_paths,
         }
-        path = self.session_dir(session_key) / "assembly.json"
         path.write_text(json.dumps(ghost, indent=2))
         return path
 
@@ -435,6 +454,7 @@ class SessionManager:
                 session_key = ghost.get("session_key", assembly_file.parent.name)
                 t3_ghosts = self.list_t3_ghosts(session_key)
                 latest_t3 = t3_ghosts[0].get("saved_at", "") if t3_ghosts else ""
+                label = ghost.get("label", "") or (t3_ghosts[0].get("label", "") if t3_ghosts else "")
                 sessions.append({
                     "session_key": session_key,
                     "data_analysis_recipe_id": ghost.get("data_analysis_recipe_id", ""),
@@ -443,6 +463,7 @@ class SessionManager:
                     "assembled_at": ghost.get("assembled_at", ""),
                     "latest_t3_saved_at": latest_t3,
                     "t3_count": len(t3_ghosts),
+                    "label": label,
                 })
             except LegacySessionError as exc:
                 # shown in the session panel with the fix, never skipped silently
@@ -520,16 +541,24 @@ class SessionManager:
     # ------------------------------------------------------------------
 
     def get_session_label(self, session_key: str) -> str:
-        """Return the label from the most-recent T3 ghost, or ''."""
+        """Return the session's label, or ''.
+
+        REPRO-SESSION-LABELS-1 (#50): assembly.json is canonical (exists for every
+        session, even one with no T3 ghost yet). Falls back to the most-recent T3
+        ghost for sessions labelled before this change — old ghosts stored it there.
+        """
+        ghost = self.read_assembly_ghost(session_key)
+        label = (ghost or {}).get("label", "")
+        if label:
+            return label
         ghosts = self.list_t3_ghosts(session_key)
         return ghosts[0].get("label", "") if ghosts else ""
 
     def set_session_label(self, session_key: str, label: str) -> None:
-        """Update the label field in the most-recent T3 ghost."""
-        ghosts = self.list_t3_ghosts(session_key)
-        if not ghosts:
+        """Set the session's label in assembly.json — works even before any Apply."""
+        path = self.session_dir(session_key) / "assembly.json"
+        if not path.exists():
             return
-        path = Path(ghosts[0]["file"])
         data = json.loads(path.read_text())
         data["label"] = label
         path.write_text(json.dumps(data, indent=2))

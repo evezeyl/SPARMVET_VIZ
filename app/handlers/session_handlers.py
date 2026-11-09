@@ -125,7 +125,8 @@ def define_session_server(input, output, session, *,
                 batch_short = s.get("data_batch_hash", "")[:8] or "?"
                 t3_count = s.get("t3_count", 0)
                 last_saved = s.get("latest_t3_saved_at") or s.get("assembled_at", "")
-                label = session_manager.get_session_label(sk) or "(no label)"
+                label = s.get("label", "")
+                safe_sk = sk.replace(":", "_")
 
                 group_panels.append(
                     ui.div(
@@ -135,9 +136,15 @@ def define_session_server(input, output, session, *,
                                 class_="text-muted d-block",
                                 style="font-size:0.7em;",
                             ),
-                            ui.tags.small(
-                                label,
-                                style="font-size:0.72em; font-style:italic; color:#555;",
+                            # REPRO-SESSION-LABELS-1 (#50): free-text description per
+                            # session, saved on blur. Distinguishes sessions of the same
+                            # recipe against different data batches better than a raw
+                            # hash prefix does.
+                            ui.input_text(
+                                f"session_label_input_{safe_sk}", None,
+                                value=label, placeholder="Describe this session…",
+                                update_on="blur",
+                                width="100%",
                             ),
                             ui.tags.small(
                                 last_saved[:16].replace("T", " ") if last_saved else "—",
@@ -270,6 +277,25 @@ def define_session_server(input, output, session, *,
                         f"🗑 Session deleted: {sk[:24]}…",
                         type="message", duration=4,
                     )
+            except Exception:
+                pass
+
+            # Label (REPRO-SESSION-LABELS-1, #50): saved on blur (ui.input_text's own
+            # update_on="blur"), not a separate button. Idempotent guard (R3,
+            # ui_implementation_contract.md §14) against the STORED label, not the
+            # rendered default — this effect re-scans every known label input on every
+            # session action, so without the guard an unrelated restore/delete click
+            # elsewhere would re-write every label to its current (possibly unchanged)
+            # box value on every pass; comparing to storage makes repeats no-ops and
+            # only ever writes when the user actually edited and blurred this box.
+            # Deliberately does NOT bump _session_list_version: the box already shows
+            # what the user typed, nothing else in this panel reads the label, and a
+            # forced re-render would reset any OTHER session's box mid-edit (R4).
+            label_id = f"session_label_input_{safe_sk}"
+            try:
+                new_label = (getattr(input, label_id)() or "").strip()
+                if new_label != session_manager.get_session_label(sk):
+                    session_manager.set_session_label(sk, new_label)
             except Exception:
                 pass
 

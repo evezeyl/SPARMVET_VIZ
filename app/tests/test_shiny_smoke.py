@@ -643,6 +643,33 @@ class TestSessionListRefresh:
             sm.delete_session(key_a)
             sm.delete_session(key_b)
 
+    def test_session_label_saves_on_blur(self, page: Page, shiny_app: ShinyAppProc, tmp_path):
+        """REPRO-SESSION-LABELS-1 (#50): typing a description and clicking away saves
+        it — no separate Save button, and no session_list_version bump needed (the
+        box already shows what was typed)."""
+        sm = self._make_session_manager()
+        key = self._seed_session(sm, tmp_path, "hom50_label")
+        try:
+            assert sm.get_session_label(key) == ""  # fresh session, never labelled
+
+            page.goto(shiny_app.url)
+            page.wait_for_selector("#nav_accordion", timeout=15_000)
+            page.locator("#nav_accordion").get_by_text("Session Management").first.click()
+            _wait_shiny(page)
+            self._open_session_group(page, "hom50_label")
+
+            safe_sk = key.replace(":", "_")
+            label_input = page.locator(f"#session_label_input_{safe_sk}")
+            expect(label_input).to_be_visible(timeout=10_000)
+
+            label_input.fill("ST22 outbreak analysis, dataset batch Jan2025")
+            label_input.press("Tab")  # update_on="blur" — only commits once focus leaves
+            _wait_shiny(page)
+
+            assert sm.get_session_label(key) == "ST22 outbreak analysis, dataset batch Jan2025"
+        finally:
+            sm.delete_session(key)
+
 
 # ---------------------------------------------------------------------------
 # T4 — Data preview
