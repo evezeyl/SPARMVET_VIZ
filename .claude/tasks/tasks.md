@@ -89,6 +89,56 @@ tab label both recipes share. Full `test_shiny_smoke.py` re-run clean twice afte
 (33 passed, 3 skipped both times, ~110s each — also notably faster than the two failing
 runs, which each spent a timeout window on the race). Headless suite (1589) still clean.
 
+**Evening review pass, 2026-11-10 (Eve: "review the testing suite... UML review...
+revise the home panel scripts... set up comments... maximize catching problems before
+me"):**
+
+1. **Live Playwright walkthrough with screenshots** (`tmpAI/home_review_2026-11-10/`,
+   gitignored scratch) of everything touched today: Home Export/Import restructure,
+   Blueprint "Recipe File Exchange" rename, Blueprint Validate's 3-check PASS result,
+   Test Lab right sidebar. All confirmed visually correct — this is the check that
+   should have caught #54 the first time (structural checks passed; only an actual
+   screenshot would have shown it was still unfindable).
+2. **Test suite review** — found 3 real gaps where "does the element exist" tests had
+   passed even though the thing a human experiences was broken, each now closed with a
+   mutation-tested regression test (verified fails on the bug, passes on the fix, no
+   leftover mutation code): `test_import_a_bundle_block_is_findable_above_export_form`
+   (pixel-position assertion, not just visibility — the exact #54 miss), `test_test_lab_right_sidebar_shows_the_tool_descriptions`
+   (no test existed for the right sidebar at all — the exact #55 gap), `test_validate_runs_the_real_engine_load_check`
+   (asserts the `recipe rules` check row specifically, not just any PASS/FAIL badge).
+   `test_global_export_panel_visible` updated for the new panel name.
+3. **UML sync** — found one real gap beyond the earlier commit's fixes: UI-TESTLAB
+   wireframe had no right-sidebar panel at all (consistent with it never having been
+   reachable before today), so issue #55 made the model stale the moment it shipped.
+   Added a "Right sidebar: ..." panel to UI-TESTLAB (widened the frame 940→1250 to fit
+   it), re-exported all 30 diagrams. **Found broken while re-exporting:**
+   `staruml_export_diagrams` reports success for every diagram but silently does not
+   write any file to the given folder (confirmed: unchanged mtimes after two calls) —
+   worked around by copying the already-fetched live preview image directly for the one
+   diagram that actually changed; the other 29 were already current from the prior
+   commit's export, so this didn't block anything tonight, but the export tool itself is
+   unreliable and worth fixing or replacing before it's next needed for a bigger batch.
+   `audit_uml_model.py`: 0 violations throughout.
+4. **Intent comments** — added a `VOCAB NOTE` / `GUARDED` comment convention (grep-able)
+   at the 4 places changed today that carry a non-obvious naming or reachability
+   discrepancy: `home_theater.py` `_render_export` (label "Export / Import" vs. panel
+   type key staying `"export"`), `export_handlers.py` `system_tools_ui` (the
+   import-above-export ordering + which test guards it), `home_theater.py`
+   `_render_test_lab_right_info` (correct code ≠ reachable code — check the sidebar
+   slot config too), `wrangle_studio.py` Recipe File Exchange panel (why it's a
+   separate feature from HOME's bundle import, not a naming accident). Each cross-
+   references the relevant UML element and/or regression test, not just the issue
+   number, so a future reader can verify current reality against both without re-
+   deriving the history.
+5. **Recipe for tomorrow verified**: `validate_data_analysis_recipe` +
+   `validate_data_analysis_recipe_data` on `1_test_data_ST22_dummy.yaml` — 0 problems
+   both. Session ghost store checked (`tmp/UI_TEST/user/_sessions/`) — only 2 entries,
+   both from today's own test/review runs, not accumulated clutter; nothing to clear.
+
+Full re-verification after all of the above: headless (1589), full Playwright gate —
+**67 passed** (64 + the 3 new tests), 3 skipped, no flakes. `.playwright-mcp/` (tool
+scratch dir created by the live walkthrough) added to `.gitignore`.
+
 ### Reproducible export & import (ADR-097, 2026-11-09) — implementation order
 
 Design locked (`ADR-097`, `.claude/design/reproducible_export_design.md`), tracked by #44 +

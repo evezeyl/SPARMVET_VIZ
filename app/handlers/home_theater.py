@@ -1703,6 +1703,14 @@ def define_server(input, output, session, *,
             )
 
         def _render_export():
+            # VOCAB NOTE (issue #54, 2026-11-10): the visible label is "Export / Import" but the
+            # panel TYPE key stays "export" everywhere else (sidebar_registry.py,
+            # config/ui/sidebars/*.yaml `type: export`, this function's name, PANEL_REGISTRY's
+            # gate flag export_enabled). Renaming the key too would be a larger, riskier config
+            # migration across every app features template for a label-only change -- not worth
+            # it. If you're hunting for "Export / Import" in code and only finding "export", this
+            # is why. UML cross-reference: UI-HOME wireframe, the panel named
+            # "Export / Import: ..." (docs/UML/app.mdj).
             return ui.accordion_panel(
                 "Export / Import",
                 ui.div(
@@ -1924,6 +1932,14 @@ def define_server(input, output, session, *,
             )
 
         def _render_test_lab_right_info():
+            # VOCAB NOTE (issue #55, 2026-11-10): this function existed and was correct for
+            # some time before it was reachable — the only thing missing was the slot list in
+            # config/ui/sidebars/testlab_standard_right.yaml (visible:false, panels:[]). A
+            # renderer having correct code is NOT evidence a panel is live: always check the
+            # sidebar config too. GUARDED: test_shiny_smoke.py::TestPhase25Panels::
+            # test_test_lab_right_sidebar_shows_the_tool_descriptions (mutation-tested against
+            # the slot-config-only regression, not just this function breaking). UML
+            # cross-reference: UI-TESTLAB wireframe, the "Right sidebar: ..." panel.
             return ui.accordion(
                 ui.accordion_panel(
                     "ID Reconciliation",

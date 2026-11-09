@@ -483,6 +483,28 @@ class TestPhase25Panels:
         expect(accordion.get_by_text("Session Management", exact=True)).not_to_be_visible()
         expect(accordion.get_by_text("Data analysis recipe Choice", exact=True)).not_to_be_visible()
 
+    def test_test_lab_right_sidebar_shows_the_tool_descriptions(
+        self, page: Page, shiny_app: ShinyAppProc
+    ):
+        """Regression guard for issue #55 (2026-11-10): Test Lab's right sidebar was
+        structurally present-but-empty (testlab_standard_right.yaml: visible:false, panels:[])
+        from 2026-11-08 until this fix, even though the content
+        (_render_test_lab_right_info, home_theater.py) had existed the whole time — nothing
+        caught the gap because nothing asserted the right sidebar had content for Test Lab.
+        Checks it shows the 5 tool names, not just that the container exists."""
+        if _LAUNCH_APP_FEATURES not in {"developer", "qa"}:
+            pytest.skip("Test Lab is only enabled for developer and qa app features")
+        page.goto(shiny_app.url)
+        page.wait_for_selector("#sidebar_nav", timeout=15_000)
+        page.locator("#sidebar_nav").get_by_text("Test Lab").first.click()
+        page.wait_for_selector("#audit_sidebar", timeout=15_000)
+        right = page.locator("#audit_sidebar")
+        for tool_name in (
+            "ID Reconciliation", "Data analysis recipe Scaffolding",
+            "Synthetic Data", "Anonymisation", "File Reformatting",
+        ):
+            expect(right.get_by_text(tool_name, exact=True)).to_be_visible()
+
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in ("developer", "qa"),
         reason="Test Lab is only enabled for developer and qa app features",
@@ -534,11 +556,37 @@ class TestPhase25Panels:
             "Alerts must not also render in the right sidebar (no duplicate DOM id, REG-10)"
 
     def test_global_export_panel_visible(self, page: Page, shiny_app: ShinyAppProc):
-        """Export accordion panel is always present (renamed from 'Global Export' in export redesign 2026-05-04)."""
+        """Export/Import accordion panel is always present (renamed from 'Global Export' in
+        export redesign 2026-05-04; renamed again 'Export' -> 'Export / Import' issue #54)."""
         page.goto(shiny_app.url)
         page.wait_for_selector("#nav_accordion", timeout=15_000)
         accordion = page.locator("#nav_accordion")
-        expect(accordion.get_by_text("Export")).to_be_visible()
+        expect(accordion.get_by_text("Export / Import")).to_be_visible()
+
+    def test_import_a_bundle_block_is_findable_above_export_form(
+        self, page: Page, shiny_app: ShinyAppProc
+    ):
+        """Regression guard for issue #54 (found live, twice, 2026-11-10): a bundle-import
+        control that merely *exists in the DOM* passed every structural test while still being
+        practically unfindable, buried below ~10 export-form fields. This asserts the thing a
+        human actually experiences: opening the panel, "Import a bundle" is the first heading
+        seen, strictly above "Bundle label / name" (the first field of the Export form) in
+        vertical position -- not just present somewhere in the accordion panel."""
+        page.goto(shiny_app.url)
+        page.wait_for_selector("#nav_accordion", timeout=15_000)
+        accordion = page.locator("#nav_accordion")
+        accordion.get_by_text("Export / Import", exact=True).click()
+        import_heading = page.get_by_text("Import a bundle", exact=False)
+        export_heading = page.get_by_text("Bundle label / name", exact=False)
+        expect(import_heading).to_be_visible()
+        expect(export_heading).to_be_visible()
+        import_box = import_heading.bounding_box()
+        export_box = export_heading.bounding_box()
+        assert import_box["y"] < export_box["y"], (
+            f"'Import a bundle' (y={import_box['y']}) must appear above "
+            f"'Bundle label / name' (y={export_box['y']}) -- it regressed back to being "
+            "buried below the export form."
+        )
 
     @pytest.mark.skipif(
         _LAUNCH_APP_FEATURES not in ("pipeline-static", "pipeline-exploration-simple"),

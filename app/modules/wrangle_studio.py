@@ -203,6 +203,15 @@ class WrangleStudio:
                     icon=ui.tags.i(class_="bi bi-collection")
                 ),
                 ui.accordion_panel(
+                    # VOCAB NOTE (issue #53, 2026-11-10): renamed from "External Exchange" --
+                    # that name was generic enough that Eve looked here first for the
+                    # reproducibility bundle import, which correctly lives in HOME's
+                    # "Export / Import" panel instead (export_handlers.py system_tools_ui).
+                    # These two features are deliberately separate (BLUEPRINT = recipe-building
+                    # IDE; reproducibility import/export = scientist-facing HOME work, per
+                    # Eve's own framing) -- the fix was making the SEPARATION legible in the
+                    # UI, not merging them. If you add a third "exchange"-shaped feature
+                    # anywhere, give it a name specific enough not to repeat this.
                     "📤 Recipe File Exchange",
                     ui.tags.small(
                         "The recipe YAML only — not a reproducibility bundle. To import/export "

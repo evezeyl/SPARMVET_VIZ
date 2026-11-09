@@ -569,6 +569,12 @@ def define_export_server(input, output, session, *,
             # a visible label but left buried below ~10 export form fields and an <hr>.
             # This is a different action from configuring an export, so it gets its own
             # clearly-headed block at the top of the panel, not a line at the bottom.
+            # GUARDED: test_shiny_smoke.py::TestPhase25Panels::
+            # test_import_a_bundle_block_is_findable_above_export_form asserts this Import
+            # block renders ABOVE the "Bundle label / name" Export field by actual pixel
+            # position, not just DOM presence — mutation-tested against exactly this ordering
+            # regressing. If you reorder these two blocks, that test will fail; update it
+            # deliberately, don't just delete it.
             ui.div(
                 ui.tags.div(
                     "⬇ Import a bundle",

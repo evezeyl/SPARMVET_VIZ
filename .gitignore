@@ -35,6 +35,7 @@ site_libs/
 # --- Temporary workspaces ---
 tmp/
 tmpAI/
+.playwright-mcp/
 
 # --- Data files (large/binary — tracked selectively in assets/) ---
 *.parquet

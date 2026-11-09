@@ -371,6 +371,31 @@ class TestBlueprintEscapeAndValidate:
         )
         _no_render_error(page)
 
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
+    def test_validate_runs_the_real_engine_load_check(self, page: Page, shiny_app: ShinyAppProc):
+        """'Run validation' also calls validate_data_analysis_recipe() -- the real
+        ConfigManager-backed load path HOME's own load gate (ADR-094) uses -- not just the
+        hand-rolled static coherence script (issue #53, 2026-11-10).
+
+        Before this fix, Validate could PASS a recipe with `id:` != file name (ADR-092) or a
+        flat (non-tiered) wrangling list (LEGACY-FLAT-WRANGLING-1) -- both hard rejections at
+        real load time -- because neither check path it ran touched the engine. Asserts the
+        'recipe rules' check row is actually rendered, not just the pre-existing structure and
+        data-contract rows.
+        """
+        _navigate_to_blueprint(page, shiny_app.url)
+        _expand_accordion(page, "Validate")
+        page.locator("#btn_bp_validate").click()
+        _wait_shiny(page, timeout=35_000)
+        result_text = page.locator("#bp_validate_ui").inner_text(timeout=30_000)
+        assert "recipe rules" in result_text, (
+            f"'recipe rules' check row not found in validation result. Got: {result_text[:300]!r}"
+        )
+        _no_render_error(page)
+
 
 # ---------------------------------------------------------------------------
 # T4-BP — Save/Export → HOME round-trip (c) and help panel check (b)

@@ -9065,7 +9065,7 @@
 											"top": 486,
 											"width": 308,
 											"height": 39,
-											"text": "Export: label, scope Global, group or plot, format, Export Bundle; Import a reproducibility bundle, verify per leg",
+											"text": "Export / Import: Import a reproducibility bundle, verify per leg (shown first); Export label, scope, format, Export Bundle",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -36500,7 +36500,7 @@
 									},
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"width": 940,
+									"width": 1250,
 									"height": 540
 								},
 								{
@@ -37045,6 +37045,55 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhvLtC0fqca3A="
 									}
+								},
+								{
+									"_type": "WFPanelView",
+									"_id": "AAAAAAGhweYIcxrNwLw=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhweYIcxrLkcE="
+									},
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 960,
+									"top": 20,
+									"width": 270,
+									"height": 150
+								},
+								{
+									"_type": "WFTextView",
+									"_id": "AAAAAAGhweYpmhrXbRc=",
+									"_parent": {
+										"$ref": "AAAAAAGhulWFKNb7mKQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhweYpmhrVuRA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhweYpmhrYlc4=",
+											"_parent": {
+												"$ref": "AAAAAAGhweYpmhrXbRc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"horizontalAlignment": 0
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"containerChangeable": true,
+									"left": 966,
+									"top": 26,
+									"width": 258,
+									"height": 138,
+									"nameLabel": {
+										"$ref": "AAAAAAGhweYpmhrYlc4="
+									}
 								}
 							]
 						}
@@ -37327,6 +37376,24 @@
 									"name": "status",
 									"kind": "string",
 									"value": "implemented"
+								}
+							]
+						},
+						{
+							"_type": "WFPanel",
+							"_id": "AAAAAAGhweYIcxrLkcE=",
+							"_parent": {
+								"$ref": "AAAAAAGhulWGBdb/u8g="
+							},
+							"name": "Right sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale.",
+							"ownedElements": [
+								{
+									"_type": "WFText",
+									"_id": "AAAAAAGhweYpmhrVuRA=",
+									"_parent": {
+										"$ref": "AAAAAAGhweYIcxrLkcE="
+									},
+									"name": "Right sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale."
 								}
 							]
 						}
