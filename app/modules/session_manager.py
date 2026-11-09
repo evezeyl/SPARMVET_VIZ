@@ -23,9 +23,9 @@ from __future__ import annotations
 
 # @deps
 # provides: class:SessionManager, typedef:AuditStep
-# consumes: stdlib only (hashlib, json, shutil, zipfile, pathlib, datetime, uuid)
+# consumes: stdlib (hashlib, json, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
-# doc: .claude/rules/ui_implementation_contract.md#12d
+# doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
 
 import hashlib
@@ -36,6 +36,8 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict
+
+from app.modules.cache_keys import canonical_hash
 
 
 # ---------------------------------------------------------------------------
@@ -346,6 +348,7 @@ class SessionManager:
             # about per-plot still get a usable list.
             t3_audit_steps = [n for nodes in t3_audit_steps_by_plot.values() for n in nodes]
         ts = _timestamp()
+        _overrides = t3_plot_overrides or {}
         ghost = {
             "session_key": session_key,
             "data_analysis_recipe_id": data_analysis_recipe_id,
@@ -357,8 +360,19 @@ class SessionManager:
             "schema_version": 2,           # 22-J: bumped from implicit v1 (flat list only)
             "t3_audit_steps": t3_audit_steps,        # legacy flat view, kept for bw compat
             "t3_audit_steps_by_plot": t3_audit_steps_by_plot,
-            "t3_plot_overrides": t3_plot_overrides or {},
+            "t3_plot_overrides": _overrides,
             "notification_log": notification_log or [],
+            # REPRO-RESTORE-HASH-1 (ADR-097 decision 3/§6d): a self-consistency fingerprint
+            # of this ghost's own T3 content — not a comparison against "current" T3 (there
+            # is no independent current copy to compare against; restore is about to replace
+            # it with exactly this). Same canonical_hash() shape export uses
+            # (build_export_provenance's t3_audit_steps_sha256), so a ghost and an export
+            # taken at the same moment agree. Meaningful only if the ghost file is corrupted
+            # or hand-edited outside the app afterward.
+            "t3_audit_steps_sha256": canonical_hash({
+                "t3_audit_steps_by_plot": t3_audit_steps_by_plot,
+                "t3_plot_overrides": _overrides,
+            }),
         }
         path = self.session_dir(session_key) / f"t3_{ts}.json"
         path.write_text(json.dumps(ghost, indent=2))
@@ -401,6 +415,10 @@ class SessionManager:
                 "t3_audit_steps": flat,
                 "t3_audit_steps_by_plot": by_plot,
                 "t3_plot_overrides": data.get("t3_plot_overrides", {}),
+                # Absent on ghosts written before REPRO-RESTORE-HASH-1 — "" means "nothing
+                # to check", not a mismatch (see the self-consistency check in
+                # session_handlers.py::_restore_session).
+                "t3_audit_steps_sha256": data.get("t3_audit_steps_sha256", ""),
             })
         return ghosts
 

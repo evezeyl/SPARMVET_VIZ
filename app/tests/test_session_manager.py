@@ -242,6 +242,56 @@ def test_write_list_t3_ghosts(sm):
 
 
 # ---------------------------------------------------------------------------
+# REPRO-RESTORE-HASH-1 (ADR-097 decision 3/§6d): t3_audit_steps_sha256 self-consistency
+# ---------------------------------------------------------------------------
+
+def test_t3_ghost_carries_a_self_consistency_hash(sm):
+    key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
+    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
+    sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="x")
+    ghost = sm.list_t3_ghosts(key)[0]
+    assert len(ghost["t3_audit_steps_sha256"]) == 64
+
+
+def test_t3_ghost_hash_is_stable_for_identical_content(sm):
+    key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
+    audit_steps = [make_audit_step("filter_row", {"column": "species"}, reason="test")]
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="a")
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", list(audit_steps), {}, label="b")
+    ghosts = sm.list_t3_ghosts(key)
+    assert ghosts[0]["t3_audit_steps_sha256"] == ghosts[1]["t3_audit_steps_sha256"]
+
+
+def test_t3_ghost_hash_differs_for_different_content(sm):
+    """t3_audit_steps_by_plot is what the hash covers — t3_audit_steps_by_plot, not the
+    legacy flat list, is the authoritative, current representation (Phase 22-J)."""
+    key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", label="a",
+                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("filter_row", {"column": "species"}, reason="x")]})
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", label="b",
+                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("exclusion_row", {"column": "species"}, reason="x")]})
+    ghosts = sm.list_t3_ghosts(key)
+    assert ghosts[0]["t3_audit_steps_sha256"] != ghosts[1]["t3_audit_steps_sha256"]
+
+
+def test_legacy_ghost_with_no_stored_hash_reports_empty_not_a_mismatch(sm, tmp_path):
+    """A ghost written before this field existed must not look corrupted on restore —
+    an empty string, not a fabricated or recomputed value standing in for one."""
+    import json
+    key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
+    d = sm.session_dir(key)
+    d.mkdir(parents=True, exist_ok=True)
+    legacy = {
+        "session_key": key, "data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64,
+        "saved_at": "2026-01-01T00:00:00", "label": "", "tier_toggle": "T3",
+        "t3_audit_steps": [], "t3_audit_steps_by_plot": {"subtab_p": []}, "t3_plot_overrides": {},
+    }
+    (d / "t3_20260101_000000.json").write_text(json.dumps(legacy))
+    ghost = sm.list_t3_ghosts(key)[0]
+    assert ghost["t3_audit_steps_sha256"] == ""
+
+
+# ---------------------------------------------------------------------------
 # 22-A-11: list_all_sessions
 # ---------------------------------------------------------------------------
 

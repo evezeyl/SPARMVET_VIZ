@@ -70,10 +70,20 @@ pieces last.
   `ui_implementation_contract.md §12f` spec). Surfaced in the existing README.txt
   "Reproducibility" section and report.qmd's hash table — no new UI. 13 provenance tests (6
   new) + full headless suite (1504) + real-download Playwright suite (4) all pass.
-- [ ] **REPRO-RESTORE-HASH-1** `[sonnet/low]` (#50, the hash-check half only — labels/multi-dataset
-  distinction is separate, lower-priority UI work, not ordered here): extend
-  `session_handlers.py`'s existing restore-mismatch warning (recipe-sha / data-batch-hash) with
-  a third check against `t3_audit_steps_sha256`. Depends on REPRO-PROV-1 for the field to exist.
+- [x] **REPRO-RESTORE-HASH-1** `[sonnet/low]` (#50, the hash-check half only — labels/multi-dataset
+  distinction is separate, lower-priority UI work, not ordered here) — DONE 2026-11-09:
+  `write_t3_ghost()` (`session_manager.py`) now computes and stores `t3_audit_steps_sha256`
+  (via `cache_keys.canonical_hash`, same shape as export's leg) on every save;
+  `list_t3_ghosts()` surfaces it (`""` for ghosts written before this field existed — "nothing
+  to check", never a fabricated mismatch). `_restore_session()` (`session_handlers.py`)
+  recomputes the hash from the ghost's own content and compares to its own stored value — a
+  **self-consistency** check (the ghost file was corrupted/hand-edited), not a
+  comparison-against-current (there is no independent "current" T3 before restore replaces
+  it). While here, also fixed a second, adjacent gap found by the same read: the
+  `data_batch_hash` mismatch warning was specified (`ui_implementation_contract.md §12d`) but,
+  like the T3 hash, never actually implemented — only the recipe-sha check existed. Both are
+  now checked, same non-blocking severity. 11 new/changed tests (`test_session_manager.py`),
+  full headless suite (1508), `qa` Playwright smoke suite (29) all pass.
 - [ ] **REPRO-TRANSLATOR-1** `[sonnet/high]` (#47/4D): the T3 → recipe-action translator. Per
   plot, compute the full ordered translated-action sequence for that plot's `target_dataset`
   join (`exclusion_row`/`filter_row` → `filter_eq`/`filter_range`/etc., `drop_column` →

@@ -11,9 +11,9 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_session_server, output:session_management_ui, output:session_export_active
-# consumes: shiny, pathlib
+# consumes: shiny, pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
 # consumed_by: app/handlers/home_theater.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051
+# doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
 
 from pathlib import Path
@@ -330,6 +330,18 @@ def define_session_server(input, output, session, *,
                 type="warning", duration=8,
             )
 
+        # Data batch mismatch (ui_implementation_contract.md §12d — specified, found missing
+        # here; the recipe check above existed, this one never did). Same ghost-vs-current
+        # comparison, same non-blocking severity.
+        current_dbh = state.get("data_batch_hash") or ""
+        saved_dbh = ghost.get("data_batch_hash", "")
+        if current_dbh and saved_dbh and current_dbh != saved_dbh:
+            _notify(
+                "⚠️ Session was saved against a different data batch. Row filters and "
+                "exclusions may match different or no rows.",
+                type="warning", duration=8,
+            )
+
         # Load T3 ghosts list for this session
         try:
             t3_ghosts = session_manager.list_t3_ghosts(session_key)
@@ -344,6 +356,30 @@ def define_session_server(input, output, session, *,
             # panel until the user re-targets or deletes them.
             latest = t3_ghosts[0]
             by_plot = latest.get("t3_audit_steps_by_plot") or {}
+
+            # REPRO-RESTORE-HASH-1 (ADR-097 decision 3/§6d): self-consistency check, not a
+            # comparison against "current" T3 — there is no independent current copy to
+            # compare against, restore is about to replace it with exactly this. Recompute
+            # the hash from the ghost's own content and compare to its own stored field;
+            # a mismatch means the ghost file was corrupted or hand-edited outside the app.
+            # Empty stored hash = a ghost written before this field existed — nothing to
+            # check, not a mismatch.
+            from app.modules.cache_keys import canonical_hash as _canonical_hash
+            _saved_t3_sha = latest.get("t3_audit_steps_sha256", "")
+            if _saved_t3_sha:
+                _recomputed = _canonical_hash({
+                    "t3_audit_steps_by_plot": by_plot,
+                    "t3_plot_overrides": latest.get("t3_plot_overrides", {}),
+                })
+                if _recomputed != _saved_t3_sha:
+                    _notify(
+                        "⚠️ This session's T3 steps do not match their own recorded "
+                        "checksum — the saved file may have been edited or corrupted "
+                        "outside the app. Review the restored audit steps before trusting "
+                        "them.",
+                        type="warning", duration=10,
+                    )
+
             new_state = {
                 **state,
                 "t3_audit_steps_by_plot": by_plot,
