@@ -307,3 +307,114 @@ dd5e2ab docs(uml): thorough re-verification pass — UML, docs, and audit drift 
 
 ### Next step
 None queued. #44 is fully closed, verified, and pushed.
+
+---
+
+## Handoff 2026-11-10 (end of day — live-testing findings, 3 fixes, evening review pass)
+
+Eve did live manual testing of Home/Blueprint/Test Lab and found 4 real problems in one pass.
+All fixed, tested, documented, UML-synced, and pushed. Tomorrow's plan: she tests HOME
+properly, starting that session fresh (no memory) — this entry is what that fresh session
+needs to know.
+
+### What was wrong, and what was fixed
+
+1. **Issue #53 — Blueprint's left-sidebar panel was named "External Exchange."** It only
+   imports/exports a bare recipe YAML, not a reproducibility bundle, but the name didn't say
+   that — Eve read it as the place to import a reproducibility bundle. Renamed to
+   **"Recipe File Exchange"** with an explicit one-line pointer to the real location
+   (`app/modules/wrangle_studio.py`, `build_sidebar_ui()`).
+
+2. **Issue #54 — the reproducibility bundle Import control existed in HOME's Export panel
+   but Eve could not find it.** First fix (visible label + hint text) was not enough — she
+   said so directly ("BUT I cant see the External Exchange HOME - where do we import it?").
+   Real fix: restructured `system_tools_ui()` in `app/handlers/export_handlers.py` so Import
+   is a bold-headed block, physically **first**, above Export, inside an accordion panel
+   renamed **"Export / Import."** Confirmed by pixel position in a new mutation-tested test
+   (`test_import_a_bundle_block_is_findable_above_export_form`), not just by existence.
+
+3. **Issue #55 — Test Lab's right sidebar showed nothing.** Root cause:
+   `config/ui/sidebars/testlab_standard_right.yaml` was `visible: false, panels: []`, stale
+   since the panel content (`_render_test_lab_right_info()`, 5 tool descriptions) was written
+   — the content always worked, the slot config was just never flipped on. Fixed the YAML;
+   added a regression test that checks the actual tool names render
+   (`test_test_lab_right_sidebar_shows_the_tool_descriptions`) — there was no test for this
+   panel at all before, which is why a dead config sat unnoticed.
+
+4. **Blueprint's "Validate" button never actually validated against the real engine load
+   path.** It only ran a static-shape subprocess check — a recipe could pass Validate and
+   still fail to load in HOME. Fixed `_handle_validate()` in `app/handlers/blueprint_handlers.py`
+   to merge three checks: `validate_data_analysis_recipe()` (the real ADR-092/094 engine-load
+   path) + the existing static coherence subprocess + `validate_data_analysis_recipe_data()`
+   (data vs. contract). New test asserts the `"recipe rules"` row specifically, not just a
+   PASS/FAIL badge (`test_validate_runs_the_real_engine_load_check`).
+
+### The pattern behind all of this (why it slipped through)
+
+Every one of these was a case of "the test checked existence, not the actual user-visible
+behavior." Added three new mutation-tested Playwright regression tests closing exactly that
+gap — each one verified tonight to fail against the original bug and pass against the fix,
+with zero leftover mutation code (`git diff` confirmed clean each time). See the "GUARDED"
+code comments at the 4 touched files for which test guards which behavior.
+
+### Also fixed, unrelated to today's bug reports
+
+A real, pre-existing Playwright test race in
+`TestRecipeSwitchRendering::test_first_plot_renders_without_a_click_after_recipe_switch`
+(predates this session, commit `47b274c`, 2026-11-08) — the restore-to-ST22-dummy step waited
+on a tab label shared by two different recipes, so a later test's shared-session shortcut
+could occasionally load the wrong one. Fixed by waiting on a plot sub-tab name unique to
+ST22-dummy plus an explicit selector-value check. Verified clean twice in a row after the fix.
+
+### Still open / known caveats (not blocking)
+
+- `mcp__staruml-bridge__staruml_export_diagrams` silently does not write files — confirmed by
+  unchanged mtimes across two calls that both reported success. Worked around tonight by
+  copying the already-rendered `staruml_diagram_image` result directly. Needs a real fix or
+  replacement before it's next needed for a larger diagram batch.
+- Issue #54's "comparison to what was before" — whether Eve meant something beyond the 4-leg
+  hash verification table (e.g. an actual diff view against the currently-open recipe) is
+  still open, documented in the issue #54 comment thread and as `HOM-59` in
+  `.claude/tasks/test_plan_home_2026-11.md`. Needs her clarification, not a guess.
+
+### Verification done tonight, all clean
+
+- Live Playwright screenshot walkthrough (dev server, `developer` app features, port 8123) of
+  Home Export/Import, Blueprint Recipe File Exchange + Validate, Test Lab right sidebar — all
+  6 screenshots visually confirmed correct, saved to `tmpAI/home_review_2026-11-10/`
+  (gitignored, agent scratch — not meant to persist, regenerate if needed).
+- Test recipe for tomorrow, `config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml`:
+  0 structure problems, 0 data-contract problems (`validate_data_analysis_recipe[_data]`).
+- UML: added the missing UI-TESTLAB right-sidebar panel (frame widened 940→1250), saved,
+  `audit_uml_model.py` 0 violations.
+- Headless suite: 1589 passed. Full Playwright gate: 67 passed (64 + 3 new)/3 skipped, no
+  flakes, 428.85s.
+- `audit_docs_sync.py` 0 violations, `audit_deps_verify.py` PASS.
+
+### Commits this session
+
+```
+143ae2d fix(blueprint,home): close #53/#54/#55 and make Validate check the real recipe rules
+58d6490 test(home,blueprint): mutation-tested regression guards + UML + intent comments
+```
+
+Pushed to `origin/dev`. Working tree clean (`git status --porcelain` empty at session end).
+
+### Next step for tomorrow's fresh session
+
+Eve is testing HOME tomorrow, deliberately starting a **new chat session with no memory** so
+testing starts clean. For that fresh session:
+
+1. Read this handoff entry first, then `.claude/tasks/test_plan_home_2026-11.md` for the
+   live test plan (has `HOM-59` open, see above).
+2. The 3 issues fixed tonight (#53/#54/#55) are closed — re-verify only if something looks off
+   again, don't assume they're still broken.
+3. Test recipe is `1_test_data_ST22_dummy` — already confirmed clean, no need to re-check
+   unless the data or recipe files change.
+4. Dev server for manual testing: `PYTHONPATH=. SPARMVET_APP_FEATURES=developer
+   ./.venv/bin/shiny run app/src/main.py --port 8123` (or whichever app features Eve wants —
+   `developer` has every flag on).
+5. The new "VOCAB NOTE" / "GUARDED" code-comment convention (added tonight at
+   `wrangle_studio.py`, `export_handlers.py`, `home_theater.py` ×2) is there to help a fresh
+   session quickly find which test/UML element governs a given panel's intent — grep for
+   `VOCAB NOTE` or `GUARDED` if something in HOME looks wrong and the reason isn't obvious.
