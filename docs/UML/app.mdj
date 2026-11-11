@@ -13466,30 +13466,174 @@
 							"name": "HOME-AUDIT-LINEAGE Where each level acts, with real ST22 collections",
 							"ownedViews": [
 								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64hT1YDqdw=",
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhy7i21Fy2epw=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64hT1YBBn8="
+										"$ref": "AAAAAAGhy7i21Fy0mv0="
 									},
 									"subViews": [
 										{
 											"_type": "LabelView",
-											"_id": "AAAAAAGhy64hT1YE8PE=",
+											"_id": "AAAAAAGhy7i21Fy309c=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64hT1YDqdw="
+												"$ref": "AAAAAAGhy7i21Fy2epw="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 30,
+											"width": 240,
+											"height": 13,
+											"text": "WHERE A STEP ACTS",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 20,
+									"width": 260,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i21Fy309c="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhy7i2/Vy+gO4=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i2/Vy8RZA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i2/Vy/Q4k=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i2/Vy+gO4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 350,
+											"top": 30,
+											"width": 280,
+											"height": 13,
+											"text": "QC_Reads_Anchor",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 340,
+									"top": 20,
+									"width": 300,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i2/Vy/Q4k="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhy7i3FVzGn5M=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i3FVzE0ko="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i3FVzH5Q0=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i3FVzGn5M="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 710,
+											"top": 30,
+											"width": 280,
+											"height": 13,
+											"text": "Quast_with_metadata",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 700,
+									"top": 20,
+									"width": 300,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i3FVzH5Q0="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhy7i3NFzOfLs=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i3NFzMuIQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i3NFzPaWw=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i3NFzOfLs="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1070,
+											"top": 30,
+											"width": 280,
+											"height": 13,
+											"text": "MLST_with_metadata",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1060,
+									"top": 20,
+									"width": 300,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i3NFzPaWw="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i3UFzWlVE=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i3UFzUTGw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i3UFzX6NE=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i3UFzWlVE="
 											},
 											"lineColor": "#e0a800",
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 30,
+											"top": 110,
 											"width": 240,
-											"height": 39,
-											"text": "LEVEL 0 PROJECT: key exclusion at the sources of ALL collections that have the key; T1, T2 and every plot change",
+											"height": 26,
+											"text": "LEVEL 0 PROJECT. Key exclusion at the sources of EVERY collection with the key",
 											"wordWrap": true
 										}
 									],
@@ -13498,78 +13642,38 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 20,
+									"top": 100,
 									"width": 260,
-									"height": 110,
+									"height": 90,
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64hT1YE8PE="
+										"$ref": "AAAAAAGhy7i3UFzX6NE="
 									}
 								},
 								{
 									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64hY1YLODE=",
+									"_id": "AAAAAAGhy7i3b1zePa4=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64hY1YJI1Y="
+										"$ref": "AAAAAAGhy7i3b1zcI4A="
 									},
 									"subViews": [
 										{
 											"_type": "LabelView",
-											"_id": "AAAAAAGhy64hY1YMLoA=",
+											"_id": "AAAAAAGhy7i3b1zfOX8=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64hY1YLODE="
+												"$ref": "AAAAAAGhy7i3b1zePa4="
 											},
 											"lineColor": "#e0a800",
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 310,
-											"top": 30,
-											"width": 240,
-											"height": 52,
-											"text": "LEVEL 1 T1 of THIS collection: key exclusion at the sources of this collection; its T1, T2 and all plots reading it change",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#e0a800",
-									"fillColor": "#fff3cd",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 300,
-									"top": 20,
-									"width": 260,
-									"height": 110,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64hY1YMLoA="
-									}
-								},
-								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64hdVYTdGI=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64hdVYRwoQ="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64hdVYUeAY=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64hdVYTdGI="
-											},
-											"lineColor": "#e0a800",
-											"fillColor": "#fff3cd",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 590,
-											"top": 30,
+											"left": 30,
+											"top": 220,
 											"width": 240,
 											"height": 39,
-											"text": "LEVEL 2 T2 of THIS collection: filter or drop after its tier-2 steps; all plots reading it change",
+											"text": "LEVEL 1 THIS COLLECTION (T1). Key exclusion at the sources of this collection only",
 											"wordWrap": true
 										}
 									],
@@ -13577,39 +13681,439 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 580,
-									"top": 20,
+									"left": 20,
+									"top": 210,
 									"width": 260,
-									"height": 110,
+									"height": 90,
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64hdVYUeAY="
+										"$ref": "AAAAAAGhy7i3b1zfOX8="
 									}
 								},
 								{
 									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64hiFYbbO8=",
+									"_id": "AAAAAAGhy7i3h1zmZig=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64hiFYZ6xo="
+										"$ref": "AAAAAAGhy7i3h1zkOig="
 									},
 									"subViews": [
 										{
 											"_type": "LabelView",
-											"_id": "AAAAAAGhy64hiFYc28I=",
+											"_id": "AAAAAAGhy7i3h1znnGc=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64hiFYbbO8="
+												"$ref": "AAAAAAGhy7i3h1zmZig="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 350,
+											"top": 160,
+											"width": 280,
+											"height": 39,
+											"text": "T1 of QC_Reads_Anchor, sources: FastP, Quast, Bracken, metadata_schema << LEVELS 0 and 1 act here >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 340,
+									"top": 150,
+									"width": 300,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i3h1znnGc="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i3nlzuHbA=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i3nlzsuZE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i3nlzvOtQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i3nlzuHbA="
 											},
 											"lineColor": "#e0a800",
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 870,
-											"top": 30,
+											"left": 710,
+											"top": 160,
+											"width": 280,
+											"height": 39,
+											"text": "T1 of Quast_with_metadata\nsources: Quast, metadata_schema\n<< LEVELS 0 and 1 act here (example) >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 700,
+									"top": 150,
+									"width": 300,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i3nlzvOtQ="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i3tFz2GD0=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i3tFz04CM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i3tFz3gJ4=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i3tFz2GD0="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1070,
+											"top": 160,
+											"width": 280,
+											"height": 39,
+											"text": "T1 of MLST_with_metadata\nsources: MLST, metadata_schema\n<< LEVELS 0 and 1 act here >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1060,
+									"top": 150,
+									"width": 300,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i3tFz3gJ4="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i37lz+Gi8=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i37Vz8j74="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i37lz/GUA=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i37lz+Gi8="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 350,
 											"width": 240,
 											"height": 26,
-											"text": "LEVEL 3 T3 of chosen plot(s): only those plots change",
+											"text": "LEVEL 2 THIS COLLECTION (T2). Filter or drop after its tier-2 steps",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 340,
+									"width": 260,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i37lz/GUA="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i4EF0Gxqc=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i4EF0E+00="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i4EF0HNvk=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i4EF0Gxqc="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 350,
+											"top": 350,
+											"width": 280,
+											"height": 26,
+											"text": "T2 of QC_Reads_Anchor\n<< LEVEL 2 acts here >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 340,
+									"top": 340,
+									"width": 300,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i4EF0HNvk="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i4Kl0Ozo8=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i4Kl0Mew0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i4Kl0PZe8=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i4Kl0Ozo8="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 710,
+											"top": 350,
+											"width": 280,
+											"height": 26,
+											"text": "T2 of Quast_with_metadata\n<< LEVEL 2 acts here >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 700,
+									"top": 340,
+									"width": 300,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i4Kl0PZe8="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i4bF0Wc+s=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i4a10UNms="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i4bF0Xd3s=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i4bF0Wc+s="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1070,
+											"top": 350,
+											"width": 280,
+											"height": 26,
+											"text": "T2 of MLST_with_metadata\n(tier-2 steps: T1 differs)\n<< LEVEL 2 acts here >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1060,
+									"top": 340,
+									"width": 300,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i4bF0Xd3s="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhy7i4ml0ezEc=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i4ml0c9BA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i4ml0fjl4=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i4ml0ezEc="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 470,
+											"width": 240,
+											"height": 26,
+											"text": "LEVEL 3 PLOT (T3). Only the chosen plot(s)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 460,
+									"width": 260,
+									"height": 70,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i4ml0fjl4="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhy7i4u10mwhE=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i4u10kcHE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i4vF0nu0c=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i4u10mwhE="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 400,
+											"top": 470,
+											"width": 180,
+											"height": 26,
+											"text": "qc_reads_horizontal_barplot\n<< LEVEL 3 >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 340,
+									"top": 460,
+									"width": 300,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i4vF0nu0c="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhy7i45l0ukmA=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i45l0s6sk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i45l0vliU=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i45l0ukmA="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 733,
+											"top": 470,
+											"width": 74,
+											"height": 26,
+											"text": "miaou\n<< LEVEL 3 >>",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 700,
+									"top": 460,
+									"width": 140,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhy7i45l0vliU="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhy7i5Al02Jao=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhy7i5Al00Mvc="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhy7i5Al03Yxg=",
+											"_parent": {
+												"$ref": "AAAAAAGhy7i5Al02Jao="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 900,
+											"top": 470,
+											"width": 104.7724609375,
+											"height": 26,
+											"text": "assembly_quality_dotplot\n<< LEVEL 3 >>",
 											"wordWrap": true
 										}
 									],
@@ -13618,478 +14122,118 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 860,
-									"top": 20,
-									"width": 260,
-									"height": 110,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64hiFYc28I="
-									}
-								},
-								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64hmlYjWqM=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64hmlYhZLc="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64hmlYkYPE=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64hmlYjWqM="
-											},
-											"lineColor": "#6c757d",
-											"fillColor": "#e9ecef",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 30,
-											"top": 210,
-											"width": 280,
-											"height": 26,
-											"text": "T1 of QC_Reads_Anchor\nsources: FastP, Quast, Bracken, metadata_schema",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#6c757d",
-									"fillColor": "#e9ecef",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 20,
-									"top": 200,
-									"width": 300,
+									"top": 460,
+									"width": 184.7724609375,
 									"height": 80,
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64hmlYkYPE="
+										"$ref": "AAAAAAGhy7i5Al03Yxg="
 									}
 								},
 								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64hrFYr7c4=",
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhy7i5IV0+hZ8=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64hrFYpDcQ="
+										"$ref": "AAAAAAGhy7i5IF08RWA="
 									},
 									"subViews": [
 										{
 											"_type": "LabelView",
-											"_id": "AAAAAAGhy64hrFYsWqg=",
+											"_id": "AAAAAAGhy7i5IV0/xDc=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64hrFYr7c4="
+												"$ref": "AAAAAAGhy7i5IV0+hZ8="
 											},
-											"lineColor": "#6c757d",
-											"fillColor": "#e9ecef",
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 390,
-											"top": 210,
-											"width": 280,
+											"left": 1094,
+											"top": 470,
+											"width": 77.01708984375,
 											"height": 26,
-											"text": "T1 of Quast_with_metadata\nsources: Quast, metadata_schema",
+											"text": "MLST_counts_bar\n<< LEVEL 3 >>",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#6c757d",
-									"fillColor": "#e9ecef",
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 380,
-									"top": 200,
-									"width": 300,
+									"left": 1060,
+									"top": 460,
+									"width": 145.01708984375,
 									"height": 80,
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64hrFYsWqg="
+										"$ref": "AAAAAAGhy7i5IV0/xDc="
 									}
 								},
 								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64hvVYz3FI=",
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhy7i5OF1GEVM=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64hvVYxkIk="
+										"$ref": "AAAAAAGhy7i5OF1ErsU="
 									},
 									"subViews": [
 										{
 											"_type": "LabelView",
-											"_id": "AAAAAAGhy64hvVY0NVY=",
+											"_id": "AAAAAAGhy7i5OF1HQN0=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64hvVYz3FI="
+												"$ref": "AAAAAAGhy7i5OF1GEVM="
 											},
-											"lineColor": "#6c757d",
-											"fillColor": "#e9ecef",
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 750,
-											"top": 210,
-											"width": 280,
+											"left": 1253,
+											"top": 470,
+											"width": 74,
 											"height": 26,
-											"text": "T1 of MLST_with_metadata\nsources: MLST, metadata_schema",
+											"text": "year_distribution\n<< LEVEL 3 >>",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#6c757d",
-									"fillColor": "#e9ecef",
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 740,
-									"top": 200,
-									"width": 300,
+									"left": 1220,
+									"top": 460,
+									"width": 140,
 									"height": 80,
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64hvVY0NVY="
-									}
-								},
-								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64h0FY7vBI=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64h0FY5oQ0="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64h0FY8SIU=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64h0FY7vBI="
-											},
-											"lineColor": "#6c757d",
-											"fillColor": "#e9ecef",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 30,
-											"top": 340,
-											"width": 280,
-											"height": 13,
-											"text": "T2 of QC_Reads_Anchor",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#6c757d",
-									"fillColor": "#e9ecef",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 20,
-									"top": 330,
-									"width": 300,
-									"height": 60,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64h0FY8SIU="
-									}
-								},
-								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64h4lZDmYE=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64h4lZBWrs="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64h4lZEoWA=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64h4lZDmYE="
-											},
-											"lineColor": "#6c757d",
-											"fillColor": "#e9ecef",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 390,
-											"top": 340,
-											"width": 280,
-											"height": 13,
-											"text": "T2 of Quast_with_metadata",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#6c757d",
-									"fillColor": "#e9ecef",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 380,
-									"top": 330,
-									"width": 300,
-									"height": 60,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64h4lZEoWA="
-									}
-								},
-								{
-									"_type": "FCProcessView",
-									"_id": "AAAAAAGhy64h9FZLmn8=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64h9FZJLAg="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64h9FZMqh0=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64h9FZLmn8="
-											},
-											"lineColor": "#6c757d",
-											"fillColor": "#e9ecef",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 750,
-											"top": 340,
-											"width": 280,
-											"height": 26,
-											"text": "T2 of MLST_with_metadata\n(tier-2 steps: T1 differs from T2)",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#6c757d",
-									"fillColor": "#e9ecef",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 740,
-									"top": 330,
-									"width": 300,
-									"height": 70,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64h9FZMqh0="
-									}
-								},
-								{
-									"_type": "FCDataView",
-									"_id": "AAAAAAGhy64iB1ZTT5o=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64iB1ZRgp0="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64iB1ZUgXE=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64iB1ZTT5o="
-											},
-											"lineColor": "#345beb",
-											"fillColor": "#eef0fb",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 80,
-											"top": 460,
-											"width": 180,
-											"height": 13,
-											"text": "qc_reads_horizontal_barplot",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#345beb",
-									"fillColor": "#eef0fb",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 20,
-									"top": 450,
-									"width": 300,
-									"height": 60,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64iB1ZUgXE="
-									}
-								},
-								{
-									"_type": "FCDataView",
-									"_id": "AAAAAAGhy64iGVZbopI=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64iGVZZcBc="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64iGVZcRgU=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64iGVZbopI="
-											},
-											"lineColor": "#345beb",
-											"fillColor": "#eef0fb",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 413,
-											"top": 460,
-											"width": 74,
-											"height": 13,
-											"text": "miaou",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#345beb",
-									"fillColor": "#eef0fb",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 380,
-									"top": 450,
-									"width": 140,
-									"height": 60,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64iGVZcRgU="
-									}
-								},
-								{
-									"_type": "FCDataView",
-									"_id": "AAAAAAGhy64iK1ZjwdU=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64iK1ZhSok="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64iK1Zk7B4=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64iK1ZjwdU="
-											},
-											"lineColor": "#345beb",
-											"fillColor": "#eef0fb",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 577,
-											"top": 460,
-											"width": 91.97705078125,
-											"height": 13,
-											"text": "assembly_quality_dotplot",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#345beb",
-									"fillColor": "#eef0fb",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 540,
-									"top": 450,
-									"width": 165.97705078125,
-									"height": 60,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64iK1Zk7B4="
-									}
-								},
-								{
-									"_type": "FCDataView",
-									"_id": "AAAAAAGhy64iPVZrOao=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64iPVZpAxE="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64iPVZse4w=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64iPVZrOao="
-											},
-											"lineColor": "#345beb",
-											"fillColor": "#eef0fb",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 773,
-											"top": 460,
-											"width": 74,
-											"height": 13,
-											"text": "MLST_counts_bar",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#345beb",
-									"fillColor": "#eef0fb",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 740,
-									"top": 450,
-									"width": 140,
-									"height": 60,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64iPVZse4w="
-									}
-								},
-								{
-									"_type": "FCDataView",
-									"_id": "AAAAAAGhy64iVVZznhA=",
-									"_parent": {
-										"$ref": "AAAAAAGhypjRhEM3MTg="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy64iVVZx5T4="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhy64iVlZ03ZI=",
-											"_parent": {
-												"$ref": "AAAAAAGhy64iVVZznhA="
-											},
-											"lineColor": "#345beb",
-											"fillColor": "#eef0fb",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 933,
-											"top": 460,
-											"width": 74,
-											"height": 13,
-											"text": "year_distribution",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#345beb",
-									"fillColor": "#eef0fb",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 900,
-									"top": 450,
-									"width": 140,
-									"height": 60,
-									"nameLabel": {
-										"$ref": "AAAAAAGhy64iVlZ03ZI="
+										"$ref": "AAAAAAGhy7i5OF1HQN0="
 									}
 								},
 								{
 									"_type": "FCDocumentView",
-									"_id": "AAAAAAGhy64ihlZ7rsY=",
+									"_id": "AAAAAAGhy7i5Tl1O65I=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64ihVZ5dMU="
+										"$ref": "AAAAAAGhy7i5Tl1MtJs="
 									},
 									"subViews": [
 										{
 											"_type": "LabelView",
-											"_id": "AAAAAAGhy64ihlZ87o0=",
+											"_id": "AAAAAAGhy7i5Tl1PhqI=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64ihlZ7rsY="
+												"$ref": "AAAAAAGhy7i5Tl1O65I="
 											},
 											"lineColor": "#10a395",
 											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
-											"top": 570,
+											"left": 350,
+											"top": 590,
 											"width": 1000,
-											"height": 55,
-											"text": "Example: a level 1 step on Quast_with_metadata changes ITS T1, T2 and the plots miaou and assembly_quality_dotplot. QC_Reads_Anchor and MLST_with_metadata are not touched, although metadata_schema is a source of all three: the step is inserted inside the build of this collection only",
+											"height": 64,
+											"text": "Example drawn in amber: a LEVEL 1 step on Quast_with_metadata changes its T1, its T2 and the plots miaou and assembly_quality_dotplot. QC_Reads_Anchor and MLST_with_metadata are not touched, although metadata_schema is a source of all three: the step is inserted inside the build of this collection only. LEVEL 0 would change all three columns.",
 											"wordWrap": true
 										}
 									],
@@ -14097,43 +14241,43 @@
 									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 560,
+									"left": 340,
+									"top": 580,
 									"width": 1020,
-									"height": 90,
+									"height": 100,
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64ihlZ87o0="
+										"$ref": "AAAAAAGhy7i5Tl1PhqI="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64ip1aDIvs=",
+									"_id": "AAAAAAGhy7i5ZV1WCFA=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64ip1aBGEw="
+										"$ref": "AAAAAAGhy7i5ZV1UxLI="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64ip1aEENo=",
+											"_id": "AAAAAAGhy7i5ZV1XFyo=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64ip1aDIvs="
+												"$ref": "AAAAAAGhy7i5ZV1WCFA="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64ip1aBGEw="
+												"$ref": "AAAAAAGhy7i5ZV1UxLI="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 184,
-											"top": 298,
+											"left": 504,
+											"top": 288,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64ip1aDIvs="
+												"$ref": "AAAAAAGhy7i5ZV1WCFA="
 											},
 											"edgePosition": 1
 										}
@@ -14141,46 +14285,46 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64h0FY7vBI="
+										"$ref": "AAAAAAGhy7i4EF0Gxqc="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64hmlYjWqM="
+										"$ref": "AAAAAAGhy7i3h1zmZig="
 									},
 									"lineStyle": 2,
-									"points": "170:280;170:330",
+									"points": "490:250;490:340",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64ip1aEENo="
+										"$ref": "AAAAAAGhy7i5ZV1XFyo="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64ivVaLaZU=",
+									"_id": "AAAAAAGhy7i5f11ep5E=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64ivVaJUq0="
+										"$ref": "AAAAAAGhy7i5f11clOA="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64ivVaMV3M=",
+											"_id": "AAAAAAGhy7i5f11f9bA=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64ivVaLaZU="
+												"$ref": "AAAAAAGhy7i5f11ep5E="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64ivVaJUq0="
+												"$ref": "AAAAAAGhy7i5f11clOA="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 544,
-											"top": 298,
+											"left": 864,
+											"top": 288,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64ivVaLaZU="
+												"$ref": "AAAAAAGhy7i5f11ep5E="
 											},
 											"edgePosition": 1
 										}
@@ -14188,46 +14332,46 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64h4lZDmYE="
+										"$ref": "AAAAAAGhy7i4Kl0Ozo8="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64hrFYr7c4="
+										"$ref": "AAAAAAGhy7i3nlzuHbA="
 									},
 									"lineStyle": 2,
-									"points": "530:280;530:330",
+									"points": "850:250;850:340",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64ivVaMV3M="
+										"$ref": "AAAAAAGhy7i5f11f9bA="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64i1laTu0g=",
+									"_id": "AAAAAAGhy7i5ml1mJFU=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64i1laRda8="
+										"$ref": "AAAAAAGhy7i5ml1kaag="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64i1laUL4Y=",
+											"_id": "AAAAAAGhy7i5ml1nFhY=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64i1laTu0g="
+												"$ref": "AAAAAAGhy7i5ml1mJFU="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64i1laRda8="
+												"$ref": "AAAAAAGhy7i5ml1kaag="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 904,
-											"top": 298,
+											"left": 1224,
+											"top": 288,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64i1laTu0g="
+												"$ref": "AAAAAAGhy7i5ml1mJFU="
 											},
 											"edgePosition": 1
 										}
@@ -14235,46 +14379,46 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64h9FZLmn8="
+										"$ref": "AAAAAAGhy7i4bF0Wc+s="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64hvVYz3FI="
+										"$ref": "AAAAAAGhy7i3tFz2GD0="
 									},
 									"lineStyle": 2,
-									"points": "890:280;890:330",
+									"points": "1210:250;1210:340",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64i1laUL4Y="
+										"$ref": "AAAAAAGhy7i5ml1nFhY="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64i7FabTdM=",
+									"_id": "AAAAAAGhy7i5s11uSjE=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64i7FaZFq4="
+										"$ref": "AAAAAAGhy7i5s11sML8="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64i7Facqyc=",
+											"_id": "AAAAAAGhy7i5s11vCB8=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64i7FabTdM="
+												"$ref": "AAAAAAGhy7i5s11uSjE="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64i7FaZFq4="
+												"$ref": "AAAAAAGhy7i5s11sML8="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 184,
-											"top": 413,
+											"left": 504,
+											"top": 433,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64i7FabTdM="
+												"$ref": "AAAAAAGhy7i5s11uSjE="
 											},
 											"edgePosition": 1
 										}
@@ -14282,46 +14426,46 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64iB1ZTT5o="
+										"$ref": "AAAAAAGhy7i4u10mwhE="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64h0FY7vBI="
+										"$ref": "AAAAAAGhy7i4EF0Gxqc="
 									},
 									"lineStyle": 2,
-									"points": "170:390;170:450",
+									"points": "490:420;490:460",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64i7Facqyc="
+										"$ref": "AAAAAAGhy7i5s11vCB8="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64jAlajgy4=",
+									"_id": "AAAAAAGhy7i59112S+M=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64jAlahfGM="
+										"$ref": "AAAAAAGhy7i59110z2c="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64jAlakgXM=",
+											"_id": "AAAAAAGhy7i59113oo8=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64jAlajgy4="
+												"$ref": "AAAAAAGhy7i59112S+M="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64jAlahfGM="
+												"$ref": "AAAAAAGhy7i59110z2c="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 529,
-											"top": 489,
+											"left": 849,
+											"top": 504,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64jAlajgy4="
+												"$ref": "AAAAAAGhy7i59112S+M="
 											},
 											"edgePosition": 1
 										}
@@ -14329,46 +14473,46 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64iGVZbopI="
+										"$ref": "AAAAAAGhy7i45l0ukmA="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64h4lZDmYE="
+										"$ref": "AAAAAAGhy7i4Kl0Ozo8="
 									},
 									"lineStyle": 2,
-									"points": "530:390;530:480;520:480",
+									"points": "850:420;850:495;840:495",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64jAlakgXM="
+										"$ref": "AAAAAAGhy7i59113oo8="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64jF1areJY=",
+									"_id": "AAAAAAGhy7i6LF1+qLs=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64jF1apzQE="
+										"$ref": "AAAAAAGhy7i6LF18w4s="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64jF1asHfs=",
+											"_id": "AAAAAAGhy7i6LF1/g04=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64jF1areJY="
+												"$ref": "AAAAAAGhy7i6LF1+qLs="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64jF1apzQE="
+												"$ref": "AAAAAAGhy7i6LF18w4s="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 530,
-											"top": 459,
+											"left": 850,
+											"top": 474,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64jF1areJY="
+												"$ref": "AAAAAAGhy7i6LF1+qLs="
 											},
 											"edgePosition": 1
 										}
@@ -14376,46 +14520,46 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64iK1ZjwdU="
+										"$ref": "AAAAAAGhy7i5Al02Jao="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64h4lZDmYE="
+										"$ref": "AAAAAAGhy7i4Kl0Ozo8="
 									},
 									"lineStyle": 2,
-									"points": "530:390;530:480;540:480",
+									"points": "850:420;850:495;860:495",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64jF1asHfs="
+										"$ref": "AAAAAAGhy7i6LF1/g04="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64jMFaz4zQ=",
+									"_id": "AAAAAAGhy7i6TV2G20Y=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64jMFaxzgw="
+										"$ref": "AAAAAAGhy7i6TV2EcnA="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64jMFa0GME=",
+											"_id": "AAAAAAGhy7i6TV2HFXU=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64jMFaz4zQ="
+												"$ref": "AAAAAAGhy7i6TV2G20Y="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64jMFaxzgw="
+												"$ref": "AAAAAAGhy7i6TV2EcnA="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 889,
-											"top": 489,
+											"left": 1209,
+											"top": 504,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64jMFaz4zQ="
+												"$ref": "AAAAAAGhy7i6TV2G20Y="
 											},
 											"edgePosition": 1
 										}
@@ -14423,46 +14567,46 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64iPVZrOao="
+										"$ref": "AAAAAAGhy7i5IV0+hZ8="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64h9FZLmn8="
+										"$ref": "AAAAAAGhy7i4bF0Wc+s="
 									},
 									"lineStyle": 2,
-									"points": "890:400;890:480;880:480",
+									"points": "1210:430;1210:495;1205:495",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64jMFa0GME="
+										"$ref": "AAAAAAGhy7i6TV2HFXU="
 									}
 								},
 								{
 									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy64jRla7aqQ=",
+									"_id": "AAAAAAGhy7i6aF2Ou1s=",
 									"_parent": {
 										"$ref": "AAAAAAGhypjRhEM3MTg="
 									},
 									"model": {
-										"$ref": "AAAAAAGhy64jRla5C48="
+										"$ref": "AAAAAAGhy7i6aF2MfVs="
 									},
 									"subViews": [
 										{
 											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy64jRla8044=",
+											"_id": "AAAAAAGhy7i6aF2PLkQ=",
 											"_parent": {
-												"$ref": "AAAAAAGhy64jRla7aqQ="
+												"$ref": "AAAAAAGhy7i6aF2Ou1s="
 											},
 											"model": {
-												"$ref": "AAAAAAGhy64jRla5C48="
+												"$ref": "AAAAAAGhy7i6aF2MfVs="
 											},
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 890,
-											"top": 459,
+											"left": 1210,
+											"top": 474,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
-												"$ref": "AAAAAAGhy64jRla7aqQ="
+												"$ref": "AAAAAAGhy7i6aF2Ou1s="
 											},
 											"edgePosition": 1
 										}
@@ -14470,262 +14614,294 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"head": {
-										"$ref": "AAAAAAGhy64iVVZznhA="
+										"$ref": "AAAAAAGhy7i5OF1GEVM="
 									},
 									"tail": {
-										"$ref": "AAAAAAGhy64h9FZLmn8="
+										"$ref": "AAAAAAGhy7i4bF0Wc+s="
 									},
 									"lineStyle": 2,
-									"points": "890:400;890:480;900:480",
+									"points": "1210:430;1210:495;1220:495",
 									"nameLabel": {
-										"$ref": "AAAAAAGhy64jRla8044="
+										"$ref": "AAAAAAGhy7i6aF2PLkQ="
 									}
 								}
 							]
 						},
 						{
-							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64hT1YBBn8=",
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhy7i21Fy0mv0=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "LEVEL 0 PROJECT: key exclusion at the sources of ALL collections that have the key; T1, T2 and every plot change"
+							"name": "WHERE A STEP ACTS"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhy7i2/Vy8RZA=",
+							"_parent": {
+								"$ref": "AAAAAAGhypjRhEM2UxI="
+							},
+							"name": "QC_Reads_Anchor"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhy7i3FVzE0ko=",
+							"_parent": {
+								"$ref": "AAAAAAGhypjRhEM2UxI="
+							},
+							"name": "Quast_with_metadata"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhy7i3NFzMuIQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhypjRhEM2UxI="
+							},
+							"name": "MLST_with_metadata"
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64hY1YJI1Y=",
+							"_id": "AAAAAAGhy7i3UFzUTGw=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "LEVEL 1 T1 of THIS collection: key exclusion at the sources of this collection; its T1, T2 and all plots reading it change"
+							"name": "LEVEL 0 PROJECT. Key exclusion at the sources of EVERY collection with the key"
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64hdVYRwoQ=",
+							"_id": "AAAAAAGhy7i3b1zcI4A=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "LEVEL 2 T2 of THIS collection: filter or drop after its tier-2 steps; all plots reading it change"
+							"name": "LEVEL 1 THIS COLLECTION (T1). Key exclusion at the sources of this collection only"
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64hiFYZ6xo=",
+							"_id": "AAAAAAGhy7i3h1zkOig=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "LEVEL 3 T3 of chosen plot(s): only those plots change"
-						},
-						{
-							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64hmlYhZLc=",
-							"_parent": {
-								"$ref": "AAAAAAGhypjRhEM2UxI="
-							},
-							"name": "T1 of QC_Reads_Anchor\nsources: FastP, Quast, Bracken, metadata_schema",
+							"name": "T1 of QC_Reads_Anchor, sources: FastP, Quast, Bracken, metadata_schema << LEVELS 0 and 1 act here >>",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64ip1aBGEw=",
+									"_id": "AAAAAAGhy7i5ZV1UxLI=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64hmlYhZLc="
+										"$ref": "AAAAAAGhy7i3h1zkOig="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64hmlYhZLc="
+										"$ref": "AAAAAAGhy7i3h1zkOig="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64h0FY5oQ0="
+										"$ref": "AAAAAAGhy7i4EF0E+00="
 									}
 								}
 							]
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64hrFYpDcQ=",
+							"_id": "AAAAAAGhy7i3nlzsuZE=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "T1 of Quast_with_metadata\nsources: Quast, metadata_schema",
+							"name": "T1 of Quast_with_metadata\nsources: Quast, metadata_schema\n<< LEVELS 0 and 1 act here (example) >>",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64ivVaJUq0=",
+									"_id": "AAAAAAGhy7i5f11clOA=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64hrFYpDcQ="
+										"$ref": "AAAAAAGhy7i3nlzsuZE="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64hrFYpDcQ="
+										"$ref": "AAAAAAGhy7i3nlzsuZE="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64h4lZBWrs="
+										"$ref": "AAAAAAGhy7i4Kl0Mew0="
 									}
 								}
 							]
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64hvVYxkIk=",
+							"_id": "AAAAAAGhy7i3tFz04CM=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "T1 of MLST_with_metadata\nsources: MLST, metadata_schema",
+							"name": "T1 of MLST_with_metadata\nsources: MLST, metadata_schema\n<< LEVELS 0 and 1 act here >>",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64i1laRda8=",
+									"_id": "AAAAAAGhy7i5ml1kaag=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64hvVYxkIk="
+										"$ref": "AAAAAAGhy7i3tFz04CM="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64hvVYxkIk="
+										"$ref": "AAAAAAGhy7i3tFz04CM="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64h9FZJLAg="
+										"$ref": "AAAAAAGhy7i4a10UNms="
 									}
 								}
 							]
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64h0FY5oQ0=",
+							"_id": "AAAAAAGhy7i37Vz8j74=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "T2 of QC_Reads_Anchor",
+							"name": "LEVEL 2 THIS COLLECTION (T2). Filter or drop after its tier-2 steps"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhy7i4EF0E+00=",
+							"_parent": {
+								"$ref": "AAAAAAGhypjRhEM2UxI="
+							},
+							"name": "T2 of QC_Reads_Anchor\n<< LEVEL 2 acts here >>",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64i7FaZFq4=",
+									"_id": "AAAAAAGhy7i5s11sML8=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64h0FY5oQ0="
+										"$ref": "AAAAAAGhy7i4EF0E+00="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64h0FY5oQ0="
+										"$ref": "AAAAAAGhy7i4EF0E+00="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64iB1ZRgp0="
+										"$ref": "AAAAAAGhy7i4u10kcHE="
 									}
 								}
 							]
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64h4lZBWrs=",
+							"_id": "AAAAAAGhy7i4Kl0Mew0=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "T2 of Quast_with_metadata",
+							"name": "T2 of Quast_with_metadata\n<< LEVEL 2 acts here >>",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64jAlahfGM=",
+									"_id": "AAAAAAGhy7i59110z2c=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64h4lZBWrs="
+										"$ref": "AAAAAAGhy7i4Kl0Mew0="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64h4lZBWrs="
+										"$ref": "AAAAAAGhy7i4Kl0Mew0="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64iGVZZcBc="
+										"$ref": "AAAAAAGhy7i45l0s6sk="
 									}
 								},
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64jF1apzQE=",
+									"_id": "AAAAAAGhy7i6LF18w4s=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64h4lZBWrs="
+										"$ref": "AAAAAAGhy7i4Kl0Mew0="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64h4lZBWrs="
+										"$ref": "AAAAAAGhy7i4Kl0Mew0="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64iK1ZhSok="
+										"$ref": "AAAAAAGhy7i5Al00Mvc="
 									}
 								}
 							]
 						},
 						{
 							"_type": "FCProcess",
-							"_id": "AAAAAAGhy64h9FZJLAg=",
+							"_id": "AAAAAAGhy7i4a10UNms=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "T2 of MLST_with_metadata\n(tier-2 steps: T1 differs from T2)",
+							"name": "T2 of MLST_with_metadata\n(tier-2 steps: T1 differs)\n<< LEVEL 2 acts here >>",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64jMFaxzgw=",
+									"_id": "AAAAAAGhy7i6TV2EcnA=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64h9FZJLAg="
+										"$ref": "AAAAAAGhy7i4a10UNms="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64h9FZJLAg="
+										"$ref": "AAAAAAGhy7i4a10UNms="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64iPVZpAxE="
+										"$ref": "AAAAAAGhy7i5IF08RWA="
 									}
 								},
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy64jRla5C48=",
+									"_id": "AAAAAAGhy7i6aF2MfVs=",
 									"_parent": {
-										"$ref": "AAAAAAGhy64h9FZJLAg="
+										"$ref": "AAAAAAGhy7i4a10UNms="
 									},
 									"source": {
-										"$ref": "AAAAAAGhy64h9FZJLAg="
+										"$ref": "AAAAAAGhy7i4a10UNms="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy64iVVZx5T4="
+										"$ref": "AAAAAAGhy7i5OF1ErsU="
 									}
 								}
 							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhy7i4ml0c9BA=",
+							"_parent": {
+								"$ref": "AAAAAAGhypjRhEM2UxI="
+							},
+							"name": "LEVEL 3 PLOT (T3). Only the chosen plot(s)"
 						},
 						{
 							"_type": "FCData",
-							"_id": "AAAAAAGhy64iB1ZRgp0=",
+							"_id": "AAAAAAGhy7i4u10kcHE=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "qc_reads_horizontal_barplot"
+							"name": "qc_reads_horizontal_barplot\n<< LEVEL 3 >>"
 						},
 						{
 							"_type": "FCData",
-							"_id": "AAAAAAGhy64iGVZZcBc=",
+							"_id": "AAAAAAGhy7i45l0s6sk=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "miaou"
+							"name": "miaou\n<< LEVEL 3 >>"
 						},
 						{
 							"_type": "FCData",
-							"_id": "AAAAAAGhy64iK1ZhSok=",
+							"_id": "AAAAAAGhy7i5Al00Mvc=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "assembly_quality_dotplot"
+							"name": "assembly_quality_dotplot\n<< LEVEL 3 >>"
 						},
 						{
 							"_type": "FCData",
-							"_id": "AAAAAAGhy64iPVZpAxE=",
+							"_id": "AAAAAAGhy7i5IF08RWA=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "MLST_counts_bar"
+							"name": "MLST_counts_bar\n<< LEVEL 3 >>"
 						},
 						{
 							"_type": "FCData",
-							"_id": "AAAAAAGhy64iVVZx5T4=",
+							"_id": "AAAAAAGhy7i5OF1ErsU=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "year_distribution"
+							"name": "year_distribution\n<< LEVEL 3 >>"
 						},
 						{
 							"_type": "FCDocument",
-							"_id": "AAAAAAGhy64ihVZ5dMU=",
+							"_id": "AAAAAAGhy7i5Tl1MtJs=",
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Example: a level 1 step on Quast_with_metadata changes ITS T1, T2 and the plots miaou and assembly_quality_dotplot. QC_Reads_Anchor and MLST_with_metadata are not touched, although metadata_schema is a source of all three: the step is inserted inside the build of this collection only"
+							"name": "Example drawn in amber: a LEVEL 1 step on Quast_with_metadata changes its T1, its T2 and the plots miaou and assembly_quality_dotplot. QC_Reads_Anchor and MLST_with_metadata are not touched, although metadata_schema is a source of all three: the step is inserted inside the build of this collection only. LEVEL 0 would change all three columns."
 						}
 					]
 				},
