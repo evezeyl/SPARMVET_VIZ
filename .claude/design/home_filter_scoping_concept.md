@@ -43,6 +43,12 @@ To test (Eve): trash icon with several applied filters, removing only one; the d
 To detail later: audited steps per plot (this plot / all / all except); a separate UML (HOME-AUDIT-SCOPE) can be
 linked from the "Audited steps" boxes once the exact behaviour is known (tag `detail` = diagram name).
 
+Rule proposed by Eve, 2026-11-11 (matches the code, to be confirmed): **an audited step always applies on T3.**
+T3 = the derived frame of ONE plot: its dataset's T2 plus that plot's audited steps. T1 and T2 never change.
+Consequences: the column check at promotion must run on the T3 base (T2), not on the data view (issue #58);
+"this plot only" changes only that plot's T3, so another plot on the same dataset keeps its own T3 by design
+(use "all plots" to keep them alike); the same T3 function should serve the table, the plot and the export.
+
 ## 3. Data lineage cases (what can differ between stages)
 
 A plot reads ONE dataset (`target_dataset`, a join id or a data schema). Several plots can share it.
