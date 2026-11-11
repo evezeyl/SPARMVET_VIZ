@@ -1,5 +1,9 @@
 # HOME filter scoping: concept, diagrams and test plan (DRAFT, thinking stage)
 
+> 2026-11-11, later: this file is the working log. The two clean descriptions are
+> `home_preview_filters.md` (Exploration) and `home_audit_steps.md` (Audit workspace); issue
+> evezeyl/SPARMVET_VIZ#60. Where they differ from this file, they win.
+
 **Status:** DRAFT 2026-11-11. No behaviour is changed by this file. Written with Eve to settle the
 concept before any further code change. Related: issues evezeyl/SPARMVET_VIZ#56, #57; ADR-087.
 
