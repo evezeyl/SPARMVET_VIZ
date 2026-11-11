@@ -27,7 +27,7 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 | `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py` (only the places listed in WP4), a new `app/modules/preview_filters.py`, `app/modules/view_badge.py`, `app/src/help/home.md`, `docs/user_guide/system_transparency.qmd`, `docs/appendix/FAQ.qmd`, `app/tests/test_filters_behaviour.py` | **B** |
 | `.claude/design/home_*`, ADR-098/099 in `architecture_decisions.md`, `docs/UML/**`, the reading guide | **D** |
 | `1_test_data_ST22_dummy` recipe files | nobody until Eve answers #67/#70; canaries may be **added** (brief section 0b) |
-| `CLAUDE.md` | Eve (never stage it) |
+| `CLAUDE.md` | Eve (do not edit; committed 2026-11-11 with her section 9) |
 
 **Where two packages meet:**
 - `t3_audit_engine.py`: only A edits it. B needs a counting helper for WP3a: A adds it right after WP1 (a pure function, signature agreed in an issue comment on #63); B calls it.

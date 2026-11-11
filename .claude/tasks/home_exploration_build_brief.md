@@ -28,8 +28,8 @@ commit** (`git revert`) and report; do not pile fixes on top.
   `libs/blueprint_arch/**` (including `t3_translator.py`), `libs/transformer/**` (the registered actions), `app/modules/orchestrator.py`,
   `app/modules/cache_keys.py`;
 - the header strip as built ("Plot to show", "Data to show", My view, Compare) and everything about the right sidebar;
-- Blueprint, Gallery, Test Lab, `config/app_features/*`, `sidebar_registry.py`, `CLAUDE.md` (Eve's uncommitted edit stays uncommitted:
-  never stage it), the UML model `docs/UML/app.mdj` and the diagrams (if a diagram becomes wrong, tell Eve).
+- Blueprint, Gallery, Test Lab, `config/app_features/*`, `sidebar_registry.py`, `CLAUDE.md` (Eve's file: do not edit it; her section 9
+  "No Guessing" was committed on 2026-11-11), the UML model `docs/UML/app.mdj` and the diagrams (if a diagram becomes wrong, tell Eve).
 
 **S4. Allowed files per package** are listed in each package. Anything else needs Eve.
 
