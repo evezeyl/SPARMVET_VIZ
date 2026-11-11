@@ -17095,7 +17095,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 670,
+											"left": 885,
 											"top": 30,
 											"width": 240,
 											"height": 26,
@@ -17105,7 +17105,7 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 660,
+									"left": 875,
 									"top": 20,
 									"width": 260,
 									"height": 111,
@@ -17133,7 +17133,7 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 670,
+											"left": 885,
 											"top": 191,
 											"width": 240,
 											"height": 13,
@@ -17145,7 +17145,7 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 660,
+									"left": 875,
 									"top": 181,
 									"width": 260,
 									"height": 111,
@@ -17173,7 +17173,7 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 660,
+											"left": 875,
 											"top": 352,
 											"width": 260,
 											"height": 26,
@@ -17185,7 +17185,7 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 650,
+									"left": 865,
 									"top": 342,
 									"width": 280,
 									"height": 124,
@@ -17213,7 +17213,7 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 1005,
+											"left": 1135,
 											"top": 545.5,
 											"width": 240,
 											"height": 13,
@@ -17225,7 +17225,7 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 995,
+									"left": 1125,
 									"top": 535.5,
 									"width": 260,
 									"height": 72,
@@ -17253,7 +17253,7 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 645,
+											"left": 765,
 											"top": 551.5,
 											"width": 240,
 											"height": 13,
@@ -17265,7 +17265,7 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 635,
+									"left": 755,
 									"top": 541.5,
 									"width": 260,
 									"height": 60,
@@ -17293,7 +17293,7 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 355,
+											"left": 475,
 											"top": 526,
 											"width": 240,
 											"height": 13,
@@ -17305,7 +17305,7 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 345,
+									"left": 465,
 									"top": 516,
 									"width": 260,
 									"height": 111,
@@ -17331,7 +17331,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 580,
+											"left": 795,
 											"top": 722.5,
 											"width": 150,
 											"height": 91,
@@ -17341,7 +17341,7 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 505,
+									"left": 720,
 									"top": 677,
 									"width": 300,
 									"height": 182,
@@ -17369,8 +17369,8 @@
 											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 245,
-											"top": 984,
+											"left": 400,
+											"top": 938.5,
 											"width": 240,
 											"height": 26,
 											"text": "Not concerned (column absent in that plot):\nskipped and listed in the notification",
@@ -17381,8 +17381,8 @@
 									"fillColor": "#e9ecef",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 235,
-									"top": 974,
+									"left": 390,
+									"top": 928.5,
 									"width": 260,
 									"height": 72,
 									"nameLabel": {
@@ -17409,8 +17409,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 535,
-											"top": 964.5,
+											"left": 690,
+											"top": 919,
 											"width": 240,
 											"height": 26,
 											"text": "One pending step per plot\n(same id, one shared reason)",
@@ -17421,8 +17421,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 525,
-									"top": 954.5,
+									"left": 680,
+									"top": 909,
 									"width": 260,
 									"height": 111,
 									"nameLabel": {
@@ -17449,8 +17449,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 515,
-											"top": 1171,
+											"left": 360,
+											"top": 1082.5,
 											"width": 280,
 											"height": 39,
 											"text": "You write the reason; Apply commits the step to that plot's T3\n(t3_audit_steps_by_plot) and clears the staged and applied preview rows",
@@ -17461,8 +17461,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 505,
-									"top": 1161,
+									"left": 350,
+									"top": 1072.5,
 									"width": 300,
 									"height": 85,
 									"nameLabel": {
@@ -17489,51 +17489,11 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 1023,
-											"top": 1306,
-											"width": 154,
-											"height": 39,
-											"text": "My view plot of that plot = its T3\n(T2 + its audited steps)",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#e0a800",
-									"fillColor": "#fff3cd",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 970,
-									"top": 1296,
-									"width": 260,
-									"height": 137,
-									"nameLabel": {
-										"$ref": "AAAAAAGhyr/W0kyFCPQ="
-									}
-								},
-								{
-									"_type": "FCDataView",
-									"_id": "AAAAAAGhyr/W9EyM7f4=",
-									"_parent": {
-										"$ref": "AAAAAAGhyr/Vckwu5po="
-									},
-									"model": {
-										"$ref": "AAAAAAGhyr/W9EyKW9Q="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhyr/W9EyNWbU=",
-											"_parent": {
-												"$ref": "AAAAAAGhyr/W9EyM7f4="
-											},
-											"lineColor": "#e0a800",
-											"fillColor": "#fff3cd",
-											"font": "Arial;13;0",
-											"parentStyle": true,
 											"left": 733,
-											"top": 1306,
+											"top": 1220,
 											"width": 154,
 											"height": 39,
-											"text": "My view table of that plot = its T3\n(T2 + its audited steps)",
+											"text": "My view of that plot (plot and table)\n= its T3: T2 + its audited steps",
 											"wordWrap": true
 										}
 									],
@@ -17542,11 +17502,11 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 680,
-									"top": 1296,
+									"top": 1210,
 									"width": 260,
 									"height": 137,
 									"nameLabel": {
-										"$ref": "AAAAAAGhyr/W9EyNWbU="
+										"$ref": "AAAAAAGhyr/W0kyFCPQ="
 									}
 								},
 								{
@@ -17570,7 +17530,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 360,
-											"top": 1325.5,
+											"top": 1239.5,
 											"width": 280,
 											"height": 62,
 											"text": "Export: T3_data_<plot>.tsv for each plot with steps,\nt3_steps.yaml, T3 audit trail in report.qmd",
@@ -17582,7 +17542,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 350,
-									"top": 1315.5,
+									"top": 1229.5,
 									"width": 300,
 									"height": 98,
 									"nameLabel": {
@@ -17610,7 +17570,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 80,
-											"top": 1319,
+											"top": 1233,
 											"width": 180,
 											"height": 39,
 											"text": "T1 file and T2 file: unchanged\n(a step is stored per plot, applied on top of T2)",
@@ -17622,7 +17582,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 1309,
+									"top": 1223,
 									"width": 300,
 									"height": 111,
 									"nameLabel": {
@@ -17649,8 +17609,8 @@
 											"fillColor": "#ffe0e0",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 825,
-											"top": 919,
+											"left": 980,
+											"top": 934.5,
 											"width": 340,
 											"height": 52,
 											"text": "FIX (#58): the column check must run on the plot's T3 base (= T2,\nwhere the step applies), not on the data view (Raw / Result).\nRule: an audited step always applies on T3; T1 and T2 never change",
@@ -17661,10 +17621,10 @@
 									"fillColor": "#ffe0e0",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 815,
-									"top": 909,
+									"left": 970,
+									"top": 924.5,
 									"width": 360,
-									"height": 202,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/XdUylglM="
 									}
@@ -17689,11 +17649,11 @@
 											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 965,
-											"top": 690,
+											"left": 1085,
+											"top": 738,
 											"width": 340,
-											"height": 39,
-											"text": "BY DESIGN: T3 belongs to one plot. \"This plot only\" changes that plot's T3;\nanother plot on the same dataset keeps its own T3. \"All plots\" keeps them alike.",
+											"height": 52,
+											"text": "BY DESIGN: T3 belongs to one plot. \"This plot only\" puts the step in that plot's T3 only.\n\"All plots\" / \"All except\" PROPAGATE the same step into the T3 of every concerned plot.",
 											"wordWrap": true
 										}
 									],
@@ -17701,10 +17661,10 @@
 									"fillColor": "#e9ecef",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 955,
-									"top": 680,
+									"left": 1075,
+									"top": 728,
 									"width": 360,
-									"height": 176,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/XoEytOrM="
 									}
@@ -17731,7 +17691,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 804,
+											"left": 1019,
 											"top": 149,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -17751,7 +17711,7 @@
 										"$ref": "AAAAAAGhyr/V4kw0txI="
 									},
 									"lineStyle": 3,
-									"points": "790:132;790:156;790:180",
+									"points": "1005:132;1005:156;1005:180",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/Xzky1+aU="
 									}
@@ -17778,7 +17738,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 804,
+											"left": 1019,
 											"top": 310,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -17798,7 +17758,7 @@
 										"$ref": "AAAAAAGhyr/V8Uw8pDw="
 									},
 									"lineStyle": 3,
-									"points": "790:293;790:317;790:341",
+									"points": "1005:293;1005:317;1005:341",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/YC0y+YmI="
 									}
@@ -17825,7 +17785,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 1139,
+											"left": 1269,
 											"top": 484,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -17845,7 +17805,7 @@
 										"$ref": "AAAAAAGhyr/WB0xExLM="
 									},
 									"lineStyle": 3,
-									"points": "931:441;1125:491;1125:535",
+									"points": "1146:453;1255:491;1255:535",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/YR0zHOsY="
 									}
@@ -17872,7 +17832,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 779,
+											"left": 899,
 											"top": 484,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -17892,7 +17852,7 @@
 										"$ref": "AAAAAAGhyr/WB0xExLM="
 									},
 									"lineStyle": 3,
-									"points": "772:467;765:491;765:541",
+									"points": "918:467;885:491;885:541",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/Yb0zQvP4="
 									}
@@ -17919,7 +17879,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 489,
+											"left": 609,
 											"top": 484,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -17939,7 +17899,7 @@
 										"$ref": "AAAAAAGhyr/WB0xExLM="
 									},
 									"lineStyle": 3,
-									"points": "649:443;475:491;475:515",
+									"points": "864:434;595:491;595:515",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/YmUzZ8k4="
 									}
@@ -17966,8 +17926,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 823,
-											"top": 658,
+											"left": 919,
+											"top": 650,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -17986,7 +17946,7 @@
 										"$ref": "AAAAAAGhyr/WKkxMxZw="
 									},
 									"lineStyle": 3,
-									"points": "994:605;815:652;782:676",
+									"points": "1124:601;905:652;898:676",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/YwUzidEM="
 									}
@@ -18013,8 +17973,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 775,
-											"top": 656,
+											"left": 899,
+											"top": 647,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -18033,7 +17993,7 @@
 										"$ref": "AAAAAAGhyr/WRExUde0="
 									},
 									"lineStyle": 3,
-									"points": "765:603;765:652;742:676",
+									"points": "885:603;885:652;882:676",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/Y7EzrNNQ="
 									}
@@ -18060,8 +18020,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 483,
-											"top": 633,
+											"left": 600,
+											"top": 632,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -18080,7 +18040,7 @@
 										"$ref": "AAAAAAGhyr/WYExcgS8="
 									},
 									"lineStyle": 3,
-									"points": "475:628;475:652;512:676",
+									"points": "595:628;595:652;719:704",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/ZFUz0sP8="
 									}
@@ -18106,7 +18066,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 372,
+											"left": 527,
 											"top": 877,
 											"width": 14.4599609375,
 											"height": 13,
@@ -18128,7 +18088,7 @@
 										"$ref": "AAAAAAGhyr/Wdkxkh/c="
 									},
 									"lineStyle": 3,
-									"points": "504:828;365:884;365:973",
+									"points": "719:818;520:884;520:928",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/ZTEz9vWA="
 									}
@@ -18154,7 +18114,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 659,
+											"left": 814,
 											"top": 877,
 											"width": 20.22998046875,
 											"height": 13,
@@ -18176,7 +18136,7 @@
 										"$ref": "AAAAAAGhyr/Wdkxkh/c="
 									},
 									"lineStyle": 3,
-									"points": "655:860;655:884;655:954",
+									"points": "822:860;810:884;810:908",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/ZlU0Gt0M="
 									}
@@ -18203,8 +18163,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 669,
-											"top": 1129,
+											"left": 514,
+											"top": 1038,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -18223,7 +18183,7 @@
 										"$ref": "AAAAAAGhyr/WoEx0Fz0="
 									},
 									"lineStyle": 3,
-									"points": "655:1067;655:1136;655:1160",
+									"points": "679:998;500:1045;500:1072",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/Zv00PlaE="
 									}
@@ -18250,8 +18210,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 1114,
-											"top": 1264,
+											"left": 824,
+											"top": 1178,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -18270,56 +18230,9 @@
 										"$ref": "AAAAAAGhyr/WtEx8wQ8="
 									},
 									"lineStyle": 3,
-									"points": "806:1226;1100:1271;1100:1295",
+									"points": "651:1149;810:1185;810:1209",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/Z7E0YXag="
-									}
-								},
-								{
-									"_type": "FCFlowView",
-									"_id": "AAAAAAGhyr/aFk0gb3w=",
-									"_parent": {
-										"$ref": "AAAAAAGhyr/Vckwu5po="
-									},
-									"model": {
-										"$ref": "AAAAAAGhyr/aFk0eGwo="
-									},
-									"subViews": [
-										{
-											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhyr/aFk0h0kI=",
-											"_parent": {
-												"$ref": "AAAAAAGhyr/aFk0gb3w="
-											},
-											"model": {
-												"$ref": "AAAAAAGhyr/aFk0eGwo="
-											},
-											"visible": false,
-											"font": "Arial;13;0",
-											"parentStyle": false,
-											"left": 824,
-											"top": 1264,
-											"height": 13,
-											"alpha": 1.5707963267948966,
-											"distance": 15,
-											"hostEdge": {
-												"$ref": "AAAAAAGhyr/aFk0gb3w="
-											},
-											"edgePosition": 1
-										}
-									],
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"head": {
-										"$ref": "AAAAAAGhyr/W9EyM7f4="
-									},
-									"tail": {
-										"$ref": "AAAAAAGhyr/WtEx8wQ8="
-									},
-									"lineStyle": 3,
-									"points": "755:1247;810:1271;810:1295",
-									"nameLabel": {
-										"$ref": "AAAAAAGhyr/aFk0h0kI="
 									}
 								},
 								{
@@ -18345,7 +18258,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 514,
-											"top": 1264,
+											"top": 1178,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -18364,7 +18277,7 @@
 										"$ref": "AAAAAAGhyr/WtEx8wQ8="
 									},
 									"lineStyle": 3,
-									"points": "555:1247;500:1271;500:1315",
+									"points": "500:1159;500:1185;500:1229",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/aQE0qNmU="
 									}
@@ -18392,7 +18305,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 184,
-											"top": 1264,
+											"top": 1178,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -18411,7 +18324,7 @@
 										"$ref": "AAAAAAGhyr/WtEx8wQ8="
 									},
 									"lineStyle": 3,
-									"points": "504:1224;170:1271;170:1308",
+									"points": "349:1147;170:1185;170:1222",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/abU0zbns="
 									}
@@ -18438,7 +18351,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 1009,
+											"left": 1164,
 											"top": 877,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -18458,7 +18371,7 @@
 										"$ref": "AAAAAAGhyr/Wdkxkh/c="
 									},
 									"lineStyle": 3,
-									"points": "806:820;995:884;995:908",
+									"points": "1021:831;1150:884;1150:924",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/arU08tbw="
 									}
@@ -18485,7 +18398,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 1149,
+											"left": 1269,
 											"top": 645,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -18505,9 +18418,183 @@
 										"$ref": "AAAAAAGhyr/WKkxMxZw="
 									},
 									"lineStyle": 3,
-									"points": "1130:609;1135:652;1135:679",
+									"points": "1255:609;1255:652;1255:727",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyr/a3E1Fri0="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyuRUIU+JTt8=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyuRUIU+HgAU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyuRUIU+Kfq0=",
+											"_parent": {
+												"$ref": "AAAAAAGhyuRUIU+JTt8="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 690,
+											"top": 1080,
+											"width": 360,
+											"height": 52,
+											"text": "FIX? column drops: no check that the plot uses the column.\nDropping a column a plot maps (x, y, colour, facet) breaks that plot\n(VisualizationError); with \"All plots\" it can break several",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 680,
+									"top": 1070,
+									"width": 380,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyuRUIU+Kfq0="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyuRUNk+RhWM=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyuRUNk+PWQU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyuRUNk+S8n0=",
+											"_parent": {
+												"$ref": "AAAAAAGhyuRUNk+RhWM="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1100,
+											"top": 1095,
+											"width": 360,
+											"height": 26,
+											"text": "DECIDE: column drops offered only when Data to show = My view;\nfilters when either choice is My view",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1090,
+									"top": 1085,
+									"width": 380,
+									"height": 60,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyuRUNk+S8n0="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhyuRUSk+Zgz8=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyuRUSk+XK9w="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhyuRUSk+alG4=",
+											"_parent": {
+												"$ref": "AAAAAAGhyuRUSk+Zgz8="
+											},
+											"model": {
+												"$ref": "AAAAAAGhyuRUSk+XK9w="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 884,
+											"top": 1038,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhyuRUSk+Zgz8="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhyuRUIU+JTt8="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhyr/WoEx0Fz0="
+									},
+									"lineStyle": 3,
+									"points": "852:1021;870:1045;870:1069",
+									"nameLabel": {
+										"$ref": "AAAAAAGhyuRUSk+alG4="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhyuRUYk+hHqQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyuRUYU+f/RI="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhyuRUYk+iXV4=",
+											"_parent": {
+												"$ref": "AAAAAAGhyuRUYk+hHqQ="
+											},
+											"model": {
+												"$ref": "AAAAAAGhyuRUYU+f/RI="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1294,
+											"top": 1038,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhyuRUYk+hHqQ="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhyuRUNk+RhWM="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhyr/WoEx0Fz0="
+									},
+									"lineStyle": 3,
+									"points": "941:987;1280:1045;1280:1084",
+									"nameLabel": {
+										"$ref": "AAAAAAGhyuRUYk+iXV4="
 									}
 								}
 							]
@@ -18768,6 +18855,32 @@
 									"target": {
 										"$ref": "AAAAAAGhyr/WtEx6brA="
 									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhyuRUSk+XK9w=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Wn0xyoAY="
+									},
+									"source": {
+										"$ref": "AAAAAAGhyr/Wn0xyoAY="
+									},
+									"target": {
+										"$ref": "AAAAAAGhyuRUIU+HgAU="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhyuRUYU+f/RI=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Wn0xyoAY="
+									},
+									"source": {
+										"$ref": "AAAAAAGhyr/Wn0xyoAY="
+									},
+									"target": {
+										"$ref": "AAAAAAGhyuRUNk+PWQU="
+									}
 								}
 							]
 						},
@@ -18790,19 +18903,6 @@
 									},
 									"target": {
 										"$ref": "AAAAAAGhyr/W0kyCfoo="
-									}
-								},
-								{
-									"_type": "FCFlow",
-									"_id": "AAAAAAGhyr/aFk0eGwo=",
-									"_parent": {
-										"$ref": "AAAAAAGhyr/WtEx6brA="
-									},
-									"source": {
-										"$ref": "AAAAAAGhyr/WtEx6brA="
-									},
-									"target": {
-										"$ref": "AAAAAAGhyr/W9EyKW9Q="
 									}
 								},
 								{
@@ -18839,15 +18939,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "My view plot of that plot = its T3\n(T2 + its audited steps)"
-						},
-						{
-							"_type": "FCData",
-							"_id": "AAAAAAGhyr/W9EyKW9Q=",
-							"_parent": {
-								"$ref": "AAAAAAGhyr/VckwtXU8="
-							},
-							"name": "My view table of that plot = its T3\n(T2 + its audited steps)"
+							"name": "My view of that plot (plot and table)\n= its T3: T2 + its audited steps"
 						},
 						{
 							"_type": "FCDocument",
@@ -18879,7 +18971,23 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "BY DESIGN: T3 belongs to one plot. \"This plot only\" changes that plot's T3;\nanother plot on the same dataset keeps its own T3. \"All plots\" keeps them alike."
+							"name": "BY DESIGN: T3 belongs to one plot. \"This plot only\" puts the step in that plot's T3 only.\n\"All plots\" / \"All except\" PROPAGATE the same step into the T3 of every concerned plot."
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyuRUIU+HgAU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "FIX? column drops: no check that the plot uses the column.\nDropping a column a plot maps (x, y, colour, facet) breaks that plot\n(VisualizationError); with \"All plots\" it can break several"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyuRUNk+PWQU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "DECIDE: column drops offered only when Data to show = My view;\nfilters when either choice is My view"
 						}
 					]
 				},
@@ -19028,8 +19136,8 @@
 											"left": 720,
 											"top": 30,
 											"width": 230,
-											"height": 26,
-											"text": "T3 = My view of a plot (derived, not stored)",
+											"height": 39,
+											"text": "T3 = the plot's own derived frame (T2 + its audited steps, not stored). It exists once the plot has its first audited step",
 											"wordWrap": true
 										}
 									],
@@ -19742,8 +19850,8 @@
 											"left": 490,
 											"top": 430,
 											"width": 460,
-											"height": 26,
-											"text": "LINEAGE L3 (T1, T2 differ): the step is applied on T2, so a column that exists only in T1 is skipped at render",
+											"height": 39,
+											"text": "LINEAGE L3 (T1, T2 differ): a step applies on T3 = T2 + steps, so a column that exists only in T1 is skipped @eve : in practive this means that we have a T3 created if it did not exist before correct ?",
 											"wordWrap": true
 										}
 									],
@@ -19775,15 +19883,15 @@
 											"_parent": {
 												"$ref": "AAAAAAGhysAdGE6lfmA="
 											},
-											"lineColor": "#d62828",
-											"fillColor": "#ffe0e0",
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
 											"top": 520,
 											"width": 410,
-											"height": 26,
-											"text": "FIX?: two plots on one dataset: \"this plot only\" gives the same dataset two different T3 views",
+											"height": 39,
+											"text": "BY DESIGN: T3 belongs to one plot. THIS PLOT = that T3 only; ALL / EXCEPT = the same step propagated into the T3 of every concerned plot",
 											"wordWrap": true
 										}
 									],
@@ -19822,8 +19930,8 @@
 											"left": 490,
 											"top": 520,
 											"width": 460,
-											"height": 13,
-											"text": "FIX: column check runs on the data view (T1 or T2), steps apply on T2",
+											"height": 26,
+											"text": "FIX (#58): \"concerned plots\" must follow the lineage (the column exists in the plot's T2), not the data view; then the scope option chooses among them",
 											"wordWrap": true
 										}
 									],
@@ -19871,7 +19979,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "T3 = the plot's own derived frame: T2 + its audited steps (not stored)"
+							"name": "T3 = the plot's own derived frame (T2 + its audited steps, not stored). It exists once the plot has its first audited step"
 						},
 						{
 							"_type": "FCTerminator",
@@ -20015,7 +20123,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "LINEAGE L3 (T1, T2 differ): a step applies on T3 = T2 + steps, so a column that exists only in T1 is skipped"
+							"name": "LINEAGE L3 (T1, T2 differ): a step applies on T3 = T2 + steps, so a column that exists only in T1 is skipped. The plot's T3 is created with its first audited step"
 						},
 						{
 							"_type": "FCProcess",
@@ -20023,7 +20131,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "BY DESIGN: T3 belongs to one plot; two plots on one dataset can have different T3 (use ALL PLOTS to keep them alike)"
+							"name": "BY DESIGN: T3 belongs to one plot. THIS PLOT = that T3 only; ALL / EXCEPT = the same step propagated into the T3 of every concerned plot"
 						},
 						{
 							"_type": "FCProcess",
@@ -20031,7 +20139,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "FIX (#58): column check must run on the plot's T3 base (= T2), not on the data view"
+							"name": "FIX (#58): \"concerned plots\" must follow the lineage (the column exists in the plot's T2), not the data view; then the scope option chooses among them"
 						}
 					]
 				}

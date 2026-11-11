@@ -49,6 +49,12 @@ Consequences: the column check at promotion must run on the T3 base (T2), not on
 "this plot only" changes only that plot's T3, so another plot on the same dataset keeps its own T3 by design
 (use "all plots" to keep them alike); the same T3 function should serve the table, the plot and the export.
 
+Column drops (checked 2026-11-11, issue #59): on Raw/Result the column selector changes the table only (plots
+unaffected). On My view a drop can be sent to audit (reason, scope options like filters, join-key columns blocked).
+Dropping a column the plot maps makes that plot fail (`VisualizationError`); nothing warns at promotion and "all
+plots" can break several. Eve: allowed in T3 with a warning. Drops are offered only when Data to show = My view
+(filters: either choice).
+
 ## 3. Data lineage cases (what can differ between stages)
 
 A plot reads ONE dataset (`target_dataset`, a join id or a data schema). Several plots can share it.
