@@ -34,6 +34,15 @@ refreshed (Eve, 2026-11-11), although the badge count dropped when tested headle
 Stale text to correct when the concept is settled: the docstring of `_filter_apply`
 (`filter_and_audit_handlers.py`) still says exploration filters apply on "My view" only.
 
+Correction 2026-11-11 (Eve): once a preview filter is sent to audit it becomes an audited step and the
+staged/applied preview rows are cleared when the audit is applied (`_clear_filters_on_t3_apply`). So My view
+plot = stored data + audited steps; preview filters appear in it only while the user is still trying them.
+Export = stored data + audited steps, or stored data alone when there are none.
+
+To test (Eve): trash icon with several applied filters, removing only one; the data table must refresh at once.
+To detail later: audited steps per plot (this plot / all / all except); a separate UML (HOME-AUDIT-SCOPE) can be
+linked from the "Audited steps" boxes once the exact behaviour is known (tag `detail` = diagram name).
+
 ## 3. Data lineage cases (what can differ between stages)
 
 A plot reads ONE dataset (`target_dataset`, a join id or a data schema). Several plots can share it.
