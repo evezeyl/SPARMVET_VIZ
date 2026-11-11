@@ -17,8 +17,11 @@ never saved, never exported and never changes a plot. To change what a plot show
   selectors: more space.
 - **My view and Compare leave the strip** and live in the Audit workspace.
 - Exploration and the Audit workspace are **exclusive**: opening one minimises the other.
-- The left Filters panel is renamed **Exploration Filters**; its header names what it acts on, for example
-  "Exploration Filters: Raw table of MLST_with_metadata". There is no Send to Audit here.
+- The left panel keeps the name **Filters**. Its header names what it acts on, for example "Filters: Raw table of
+  MLST_with_metadata". There is no Send to Audit here. **Under the hood** the same filter form serves two
+  tools: in Exploration its button is "Add to preview" (a lazy filter on the shown table, this file); in the Audit
+  workspace the same form creates an audit step (`home_audit_steps.md`, a rebuild through the lineage). Only the
+  form widgets are shared. A short note in the code and in the docs states that the two behave differently.
 
 ## 3. What a preview does
 
@@ -88,7 +91,7 @@ dataset (own list); very wide table; view change with filters on (cleared, messa
 2. Preview no longer changes any plot.
 3. My view and Compare move out of the strip into the Audit workspace; the "Plot to show" choice goes.
 4. Clear on view and recipe change, with a message and a `WHY` code comment.
-5. Strip renamed Exploration; panel renamed Exploration Filters; header names the target view.
+5. Strip renamed Exploration; the Filters panel keeps its name and its header names the target view.
 
 ## 11. Tests (browser, data oracle, screenshots)
 
