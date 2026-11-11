@@ -346,3 +346,11 @@ L1 T1=T2=T3, L2 T1=T2 with T3 different, L3 all different; red nodes = scope dec
 Both are flowcharts in the HOME package. Concept text: `.claude/design/home_filter_scoping_concept.md`.
 `HOME-FILTER-MATRIX` (columns Raw / Result / My view against table, plot, Send to Audit, export, Compare) was added the same day; in `HOME-FILTER-FLOW` My view is a stage before the plot and before Send to Audit.
 Still to draw: the lineage object diagram of `1_test_data_ST22_dummy` and the cross-dataset sequence.
+
+**Added 2026-11-11 (audit scope, issue #58):** `HOME-AUDIT-SCOPE` (flow: staged rows -> Send to Audit ->
+propagation dialog this plot / all / all except -> column check -> pending step per plot -> Apply -> My view plot
+and table, export) and `HOME-AUDIT-EFFECT` (what each scope option changes in the T1 file, the T2 file, T3 and
+the export). Both show the code as built; pink boxes = to fix (found: column check follows the data view,
+evezeyl/SPARMVET_VIZ#58; plots sharing a dataset get separate copies). The "Audited steps" and "Send to Audit"
+boxes of `HOME-FILTER-SCOPING` and `HOME-FILTER-MATRIX` carry the tag `detail = HOME-AUDIT-SCOPE`.
+Eve's colour code: pink fill = to fix.
