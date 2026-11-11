@@ -906,8 +906,14 @@ def define_filter_audit_server(input, output, session, *,
                 return
             current = list(_pending_filters.get())
             if idx < len(current):
-                current.pop(idx)
+                removed = current.pop(idx)
                 _pending_filters.set(current)
+                # GUARDED (issue #56 retest, HOM-09): removing a row also takes it out of the applied
+                # filters, so the view updates at once; Apply is for new rows, not for undoing one.
+                applied = list(applied_filters.get())
+                if removed in applied:
+                    applied.remove(removed)
+                    applied_filters.set(applied)
         return _remove
 
     # Register remove handlers for up to 50 filter rows

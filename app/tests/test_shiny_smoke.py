@@ -911,7 +911,29 @@ class TestPreviewFiltersOnReferenceViews:
         try:
             assert self._grid_rows(page) != before
         finally:
-            page.locator("#filter_reset").click()
+            # trash, not Reset: Reset also clears the value widget, which the next test needs
+            page.locator("#filter_remove_0").click()
             _wait_shiny(page)
-            page.locator("#filter_apply").click()
-            _wait_shiny(page)
+
+    def test_removing_an_applied_row_updates_the_view_without_apply(
+            self, page: Page, shiny_app: ShinyAppProc):
+        """GUARDED: the trash icon undoes a filter at once; the user does not press Apply again."""
+        _load_data_analysis_recipe(page, shiny_app.url)
+        _open_filters_panel(page)
+        page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
+        _wait_shiny(page)
+        before = self._grid_rows(page)
+        page.locator("#fb_col").select_option(index=1)
+        _wait_shiny(page)
+        page.locator("#fb_op").select_option("ne")
+        _wait_shiny(page)
+        page.locator("#filter_add_row").click()
+        expect(page.locator("#filter_remove_0")).to_be_visible(timeout=5_000)
+        page.locator("#filter_apply").click()
+        _wait_shiny(page)
+        note = page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")
+        expect(note).to_be_visible(timeout=15_000)
+        page.locator("#filter_remove_0").click()
+        _wait_shiny(page)
+        expect(note).to_have_count(0, timeout=15_000)
+        assert self._grid_rows(page) == before
