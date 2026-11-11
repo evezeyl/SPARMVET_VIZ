@@ -449,3 +449,13 @@ Audit mode waits for Eve (`AUDIT-DECIDE-1`). Archive tag before the redesign: `a
 ### Where everything is
 Reading guide `.claude/design/home_audit_reading_guide.md`; design `home_preview_filters.md`, `home_audit_steps.md` (sections 18-20 are the
 reviews); ADR-098 (built) and ADR-099 (target); diagrams `docs/UML/diagrams/HOME-*` and `UI-HOME-*`; issues #56, #59-#64.
+
+## Handoff addendum 2026-11-11 (recipe review of 1_test_data_ST22_dummy)
+
+**Done:** data-scientist review of the ST22 recipe (`.claude/design/recipe_review_st22_2026-11-11.md`). Verified by running: `facet_by` inside `mapping:` is ignored (#65);
+three other plot-spec keys dropped silently (#66); `ST22_Anchor` joins two long tables (rows 74 -> 1731, `virulence_count` wrong for 18 of 42 samples, #67; engine check #68);
+recipe hygiene (#69); samples with only unknown phenotypes scored as 0 (#70); the recipe data check passes while a schema cannot be built (#71). #61 has a second defect (the `on:` of
+`unpivot` steps would be taken as join keys). Recipe fixed where unambiguous; all six plot-target collections byte-identical before/after; 21 new tests
+(`test_shipped_recipes_hygiene.py`), headless 1620 passed.
+**Waiting for Eve:** `RECIPE-ST22-2` (three questions in section 3 of the review file). **Brief updated:** WP7-WP10 added, WP2 gains the unpivot test.
+

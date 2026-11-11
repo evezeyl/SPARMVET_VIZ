@@ -11,8 +11,8 @@ audit design (not yet decided) would make Eve undo.
 ## 0. Safety protocol (read before any edit; this is the part that protects Eve's work)
 
 **S1. Baseline first.** `git status`, `git log --oneline -15`. Tag the start: `git tag pre-explore-build-$(date +%Y%m%d)`. Run the
-headless suite and the smoke file (commands in section 1). Verified on 2026-11-11: headless **1599 passed**; `test_shiny_smoke.py`
-**38 passed, 3 skipped**. If your baseline is red, **stop and report**; do not fix unrelated failures inside this work.
+headless suite and the smoke file (commands in section 1). Verified on 2026-11-11 (before the recipe commit): headless **1599 passed**; `test_shiny_smoke.py`
+**38 passed, 3 skipped**. After the recipe commit of the same day (`.claude/design/recipe_review_st22_2026-11-11.md`) the headless count is **1620** (21 new hygiene tests). If your baseline is red, **stop and report**; do not fix unrelated failures inside this work.
 
 **S2. One work package = one commit, tests included, revertible alone.** After each package run the headless suite; after WP2, WP4
 and WP5 also the full browser gate. If the gate is red and the cause is not clear within a few minutes, **revert that package's
@@ -95,13 +95,14 @@ join steps) and for `3_test_no_joins` (no joins; its declared `is_primary_key` i
 is in `app/tests/debug_home_theater.py`, which pytest does not collect and which does not run (IndentationError, line 81).
 **Allowed files:** a new pure module `app/modules/recipe_keys.py`; in `session_manager.py` only the body of `extract_primary_keys`, which
 **delegates** to it and keeps the return type (sorted `list[str]` of column names); `app/tests/` (a collected `test_*.py`; fix or retire the dead script).
-**Do:** read the loaded dicts (`raw_config`); handle tiered `tier1`/`tier2` lists and legacy lists; `on` as string or list, `left_on`/`right_on`,
-the YAML `True` key; add the declared keys (`is_primary_key: true` in `input_fields`; optional, often absent: a join column of a schema without a
+**Do:** read the loaded dicts (`raw_config`); handle tiered `tier1`/`tier2` lists and legacy lists; **only steps whose `action` is `join` or `join_filter`** (the
+current function reads `on` of every step: on a flat copy of the ST22 recipe it returns `n50`, `total_length`, `N50`... from the `unpivot` steps; see the comment on #61);
+`on` as string or list, `left_on`/`right_on`, the YAML `True` key; add the declared keys (`is_primary_key: true` in `input_fields`; optional, often absent: a join column of a schema without a
 declared key counts as an **inferred** key). A recipe without joins returns its declared keys. Never find keys from column names.
 **User-visible effect (announce, S7):** the primary-key warning banner now appears when an audit filter targets a key column, and dropping a key
 column is blocked, as ADR-049 specifies. Re-run `TestAuditGate`, `test_session_manager`, the browser gate.
 **Tests (real `ConfigManager`, `from utils.config_loader import ConfigManager`, no mocks):** ST22 returns `sample_id`; `3_test_no_joins` returns its
-declared key; tiered, list, string, list-valued `on`, `left_on`/`right_on`; `VirulenceFinder.metadata_sample_material` is never a key; mutation check.
+declared key; tiered, list, string, list-valued `on`, `left_on`/`right_on`; `VirulenceFinder.metadata_sample_material` is never a key; the `unpivot` columns of the ST22 recipe (`n50`, `total_length`, `largest_contig`, `N50`, `genome_length`, `contigs_sup300bp`) are never keys; mutation check.
 
 ### WP3a - NA: inform only (#63, step 1) `[sonnet/medium]`
 **Verified problem:** `!=`, none-of and comparisons drop rows with a missing value silently; NaN is kept by `>=` and dropped by `<`. The audit engine
@@ -153,8 +154,31 @@ Send to Audit from the new store gives the same audit nodes as before. **Mutatio
 `app/src/help/home.md`, `docs/user_guide/system_transparency.qmd`, `docs/appendix/FAQ.qmd`: the two explanations of `home_preview_filters.md` section 8.
 ADR-098: one line saying how far it is built. `ui_implementation_contract.md`: lists per dataset, cleared on view change.
 
+### WP7 - plot spec: `mapping.facet_by` (#65) `[sonnet/medium]`
+**Verified problem:** `facet_by` inside `mapping:` is documented, written by the Blueprint form and used by six plots, but `plot_config_resolver.py` only reads a spec-level
+`facet_by`; the plot gets `facet_null`. **Allowed files:** `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, its tests, docs that say otherwise.
+**Do:** take `facet_by` from `mapping` (spec-level wins if both exist), remove it from the aesthetic mapping, keep injecting `facet_wrap` only when the spec has no `facet_*` layer.
+**Tests:** facet class is `facet_wrap` for both spellings; an explicit layer is not duplicated; a test that fails when a recipe plot asks for panels and has none (all shipped recipes);
+**look at the six pictures** (three in `1_test_data_ST22_dummy`, three in `2_test_data_ST22_dummy`); mutation check. `virulence_variants` will become faceted by sequence type: tell Eve (the
+anchor decision of #67 may change that plot anyway).
+
+### WP8 - plot spec: warn for dropped keys (#66) `[sonnet/medium]`
+**Allowed files:** `libs/viz_factory/src/viz_factory/plot_config_resolver.py` and `viz_factory.py` (where the unknown `plot_defaults` keys already produce a `PipelineError`
+warning, line about 250), tests. Same severity and surface as that warning (ADR-079). Passthrough metadata keys must not warn (`family`, `pattern`, `difficulty`, `description`, `info`). Hints:
+`facet_scales` -> `facet_wrap` layer with `scales`; `labs` -> `labs` layer; `coordinate_flip` -> `coord_flip` layer.
+
+### WP9 - the data check executes the wrangling (#71) `[sonnet/low]`
+**Allowed files:** `app/modules/data_analysis_recipe_validator.py` (`validate_data_analysis_recipe_data`), its tests. `collect()` (or `head(1).collect()`) per schema; report the dataset and the
+reason. A test with a wrongly declared type (must fail without the fix). State the time cost on the shipped recipes (measured 0.1 s for the largest ST22 schema set).
+
+### WP10 - many-to-many join warning (#68) `[sonnet/medium]` **needs Eve's OK: edits `libs/transformer` (frozen)**
+Rows before and after each join; the key repeated on both sides gives a warning (one-to-many stays silent). Also input for guard-rail J1 of the audit (#64). Do not start without Eve.
+
+**Not in this brief, waiting for Eve:** the anchor of the ST22 recipe (#67), the resistance score of samples without phenotype (#70), the remaining recipe hygiene (#69), and all of
+audit mode.
+
 ## 4. Order for the demo
-WP1 > WP2 > WP3a > WP4 (with WP5 alongside) > WP6. WP1-WP3a make the numbers in a figure correct and visible (and make the reproducibility bundle agree
+WP1 > WP2 > WP3a > WP4 (with WP5 alongside) > WP6; WP7-WP9 are independent of the others and can go first or last (each has its own commit). WP1-WP3a make the numbers in a figure correct and visible (and make the reproducibility bundle agree
 with the figure); WP4-WP5 make the exploration behave as documented and protect it.
 
 ## 5. Questions for Eve (ask in ONE message at the start)
