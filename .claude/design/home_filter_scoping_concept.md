@@ -89,6 +89,10 @@ Column selector: remove column used by the plot (temporary break, restore with "
 2. **Scope of an exploration filter:** global (today) / per plot / per dataset (plots that share a dataset) / per dataset and stage.
    Eve's thinking aloud: a preview filter is for verification, so per dataset may be simpler; the real question is
    the scope inside My view and for audited steps. Decide after the diagrams.
+   Argument for per dataset (Claude, 2026-11-11): the filter form already offers only the columns of the active
+   plot's dataset, so a filter is already built on one dataset; a global list lets it also hit other datasets that
+   happen to share a column name (sample_id, Year, Country). Per dataset follows the stored data (T1/T2 per dataset)
+   and plots sharing a dataset share the filter. Needs Eve's confirmation before code.
 3. Column selector: table only (recommended) or also the plot (temporary).
 
 ## 7. Test suite plan (browser + screenshots; science must not be wrong)

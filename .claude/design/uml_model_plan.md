@@ -344,4 +344,5 @@ a plain table instead of a forced-fit diagram.
 filters, what each consumer does, audit and export) and `HOME-FILTER-SCOPING` (concept: lineage cases
 L1 T1=T2=T3, L2 T1=T2 with T3 different, L3 all different; red nodes = scope decisions still open).
 Both are flowcharts in the HOME package. Concept text: `.claude/design/home_filter_scoping_concept.md`.
+`HOME-FILTER-MATRIX` (columns Raw / Result / My view against table, plot, Send to Audit, export, Compare) was added the same day; in `HOME-FILTER-FLOW` My view is a stage before the plot and before Send to Audit.
 Still to draw: the lineage object diagram of `1_test_data_ST22_dummy` and the cross-dataset sequence.

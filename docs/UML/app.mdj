@@ -12301,7 +12301,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 677.5,
+											"left": 30,
 											"top": 43,
 											"width": 210,
 											"height": 26,
@@ -12311,7 +12311,7 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 667.5,
+									"left": 20,
 									"top": 33,
 									"width": 230,
 									"height": 85,
@@ -12339,7 +12339,7 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
+											"left": 167.5,
 											"top": 191,
 											"width": 210,
 											"height": 26,
@@ -12351,7 +12351,7 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
+									"left": 157.5,
 									"top": 181,
 									"width": 230,
 									"height": 90,
@@ -12379,8 +12379,8 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 262.5,
-											"top": 335,
+											"left": 362.5,
+											"top": 331,
 											"width": 240,
 											"height": 26,
 											"text": "Applied list (applied_filters)\nONE list for the whole analysis",
@@ -12391,8 +12391,8 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 252.5,
-									"top": 325,
+									"left": 352.5,
+									"top": 321,
 									"width": 260,
 									"height": 90,
 									"nameLabel": {
@@ -12419,8 +12419,8 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 68,
-											"top": 485.5,
+											"left": 75.5,
+											"top": 503.5,
 											"width": 134,
 											"height": 39,
 											"text": "DATA TABLE\nRaw, Result and My view:\nrows are filtered",
@@ -12431,8 +12431,8 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 475.5,
+									"left": 27.5,
+									"top": 493.5,
 									"width": 230,
 									"height": 98,
 									"nameLabel": {
@@ -12459,11 +12459,11 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 905.5,
-											"top": 646.5,
+											"left": 465.5,
+											"top": 999.5,
 											"width": 154,
-											"height": 39,
-											"text": "PLOT\nMy view and the right pane\nof Compare only",
+											"height": 13,
+											"text": "PLOT\nfiltered here",
 											"wordWrap": true
 										}
 									],
@@ -12471,8 +12471,8 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 852.5,
-									"top": 636.5,
+									"left": 412.5,
+									"top": 989.5,
 									"width": 260,
 									"height": 98,
 									"nameLabel": {
@@ -12499,8 +12499,8 @@
 											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 290,
-											"top": 479,
+											"left": 297.5,
+											"top": 497,
 											"width": 220,
 											"height": 26,
 											"text": "A dataset without the\nfiltered column skips\nthat filter",
@@ -12511,8 +12511,8 @@
 									"fillColor": "#e9ecef",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 280,
-									"top": 469,
+									"left": 287.5,
+									"top": 487,
 									"width": 240,
 									"height": 111,
 									"nameLabel": {
@@ -12539,7 +12539,7 @@
 											"fillColor": "#ffe0e0",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 387.5,
+											"left": 290,
 											"top": 36.5,
 											"width": 240,
 											"height": 26,
@@ -12551,7 +12551,7 @@
 									"fillColor": "#ffe0e0",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 377.5,
+									"left": 280,
 									"top": 26.5,
 									"width": 260,
 									"height": 98,
@@ -12579,7 +12579,7 @@
 											"fillColor": "#ffe0e0",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 117.5,
+											"left": 580,
 											"top": 30,
 											"width": 220,
 											"height": 26,
@@ -12591,7 +12591,7 @@
 									"fillColor": "#ffe0e0",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 107.5,
+									"left": 570,
 									"top": 20,
 									"width": 240,
 									"height": 111,
@@ -12619,11 +12619,11 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 655,
-											"top": 331,
+											"left": 717.5,
+											"top": 684,
 											"width": 210,
 											"height": 26,
-											"text": "Send to Audit\n(My view, with a reason)\nstaged rows become steps",
+											"text": "Send to Audit\n(with a reason)\nstaged rows become steps",
 											"wordWrap": true
 										}
 									],
@@ -12631,8 +12631,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 645,
-									"top": 321,
+									"left": 707.5,
+									"top": 674,
 									"width": 230,
 									"height": 98,
 									"nameLabel": {
@@ -12659,8 +12659,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 640,
-											"top": 479,
+											"left": 702.5,
+											"top": 832,
 											"width": 240,
 											"height": 26,
 											"text": "Audited steps, PER PLOT\n(this plot / all / all except)\nstay until deleted",
@@ -12671,8 +12671,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 630,
-									"top": 469,
+									"left": 692.5,
+									"top": 822,
 									"width": 260,
 									"height": 111,
 									"nameLabel": {
@@ -12699,8 +12699,8 @@
 											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 572.5,
-											"top": 640,
+											"left": 712.5,
+											"top": 993,
 											"width": 240,
 											"height": 73,
 											"text": "Export = Result + audited steps only\n(from the stored files, which stay as they are)",
@@ -12711,8 +12711,8 @@
 									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 562.5,
-									"top": 630,
+									"left": 702.5,
+									"top": 983,
 									"width": 260,
 									"height": 111,
 									"nameLabel": {
@@ -12740,8 +12740,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 781,
-											"top": 162,
+											"left": 131,
+											"top": 136,
 											"width": 21.68994140625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12762,7 +12762,7 @@
 										"$ref": "AAAAAAGhypgexEG1f3s="
 									},
 									"lineStyle": 3,
-									"points": "783:119;783:156;746:180",
+									"points": "135:119;135:156;182:180",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypggyUIWeV4="
 									}
@@ -12788,8 +12788,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 525,
-											"top": 303,
+											"left": 261,
+											"top": 275,
 											"width": 32.51904296875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12810,7 +12810,7 @@
 										"$ref": "AAAAAAGhypge3kG9V7Q="
 									},
 									"lineStyle": 3,
-									"points": "583:272;535:296;477:324",
+									"points": "273:272;273:296;352:322",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypghCUIfIyQ="
 									}
@@ -12836,8 +12836,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 125,
-											"top": 437,
+											"left": 133,
+											"top": 430,
 											"width": 49.12451171875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12858,57 +12858,9 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "252:409;135:444;135:475",
+									"points": "352:393;143:436;142:493",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypghXUIoXmc="
-									}
-								},
-								{
-									"_type": "FCFlowView",
-									"_id": "AAAAAAGhypghi0Iwo1Y=",
-									"_parent": {
-										"$ref": "AAAAAAGhypgeVUGv1LQ="
-									},
-									"model": {
-										"$ref": "AAAAAAGhypghikIuSsY="
-									},
-									"subViews": [
-										{
-											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhypghi0IxHIU=",
-											"_parent": {
-												"$ref": "AAAAAAGhypghi0Iwo1Y="
-											},
-											"model": {
-												"$ref": "AAAAAAGhypghikIuSsY="
-											},
-											"font": "Arial;13;0",
-											"parentStyle": false,
-											"left": 970,
-											"top": 518,
-											"width": 74.4072265625,
-											"height": 13,
-											"alpha": 1.5707963267948966,
-											"distance": 15,
-											"hostEdge": {
-												"$ref": "AAAAAAGhypghi0Iwo1Y="
-											},
-											"edgePosition": 1,
-											"text": "My view only"
-										}
-									],
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"head": {
-										"$ref": "AAAAAAGhypgfRkHV1jA="
-									},
-									"tail": {
-										"$ref": "AAAAAAGhypge9UHF5kA="
-									},
-									"lineStyle": 3,
-									"points": "514:386;993:444;993:525;993:605;989:636",
-									"nameLabel": {
-										"$ref": "AAAAAAGhypghi0IxHIU="
 									}
 								},
 								{
@@ -12932,8 +12884,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 370,
-											"top": 437,
+											"left": 378,
+											"top": 429,
 											"width": 89.58447265625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12954,7 +12906,7 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "393:416;400:444;400:468",
+									"points": "433:412;408:436;408:486",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgh2EJDT4g="
 									}
@@ -12981,8 +12933,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 626,
-											"top": 140,
+											"left": 299,
+											"top": 152,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13001,7 +12953,7 @@
 										"$ref": "AAAAAAGhypgft0HtkOk="
 									},
 									"lineStyle": 3,
-									"points": "574:126;615:156;636:180",
+									"points": "332:126;285:156;281:180",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiBEJM/WI="
 									}
@@ -13028,7 +12980,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 352,
+											"left": 497,
 											"top": 219,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13048,7 +13000,7 @@
 										"$ref": "AAAAAAGhypgft0HtkOk="
 									},
 									"lineStyle": 3,
-									"points": "402:126;338:156;338:226;338:296;355:324",
+									"points": "456:126;483:156;483:226;483:296;483:320",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiTkJVmtA="
 									}
@@ -13075,8 +13027,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 469,
-											"top": 135,
+											"left": 566,
+											"top": 164,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13095,7 +13047,7 @@
 										"$ref": "AAAAAAGhypgf0EH1rVg="
 									},
 									"lineStyle": 3,
-									"points": "349:116;465:156;559:187",
+									"points": "601:132;563:156;389:198",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgifEJe5MQ="
 									}
@@ -13122,7 +13074,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 202,
+											"left": 717,
 											"top": 219,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13142,57 +13094,9 @@
 										"$ref": "AAAAAAGhypgf0EH1rVg="
 									},
 									"lineStyle": 3,
-									"points": "200:132;188:156;188:226;188:296;261:324",
+									"points": "699:132;703:156;703:226;703:296;614:324",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiqUJnn5Q="
-									}
-								},
-								{
-									"_type": "FCFlowView",
-									"_id": "AAAAAAGhypgi6kJvBXs=",
-									"_parent": {
-										"$ref": "AAAAAAGhypgeVUGv1LQ="
-									},
-									"model": {
-										"$ref": "AAAAAAGhypgi6UJtGLk="
-									},
-									"subViews": [
-										{
-											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhypgi6kJwIQs=",
-											"_parent": {
-												"$ref": "AAAAAAGhypgi6kJvBXs="
-											},
-											"model": {
-												"$ref": "AAAAAAGhypgi6UJtGLk="
-											},
-											"font": "Arial;13;0",
-											"parentStyle": false,
-											"left": 735,
-											"top": 289,
-											"width": 78.05712890625,
-											"height": 13,
-											"alpha": 1.5707963267948966,
-											"distance": 15,
-											"hostEdge": {
-												"$ref": "AAAAAAGhypgi6kJvBXs="
-											},
-											"edgePosition": 1,
-											"text": "Send to Audit"
-										}
-									],
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"head": {
-										"$ref": "AAAAAAGhypggD0H94pM="
-									},
-									"tail": {
-										"$ref": "AAAAAAGhypge3kG9V7Q="
-									},
-									"lineStyle": 3,
-									"points": "731:272;760:296;760:320",
-									"nameLabel": {
-										"$ref": "AAAAAAGhypgi6kJwIQs="
 									}
 								},
 								{
@@ -13217,8 +13121,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 774,
-											"top": 437,
+											"left": 837,
+											"top": 790,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13237,7 +13141,7 @@
 										"$ref": "AAAAAAGhypggD0H94pM="
 									},
 									"lineStyle": 3,
-									"points": "760:420;760:444;760:468",
+									"points": "823:773;823:797;823:821",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjR0J5HeE="
 									}
@@ -13263,8 +13167,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 860,
-											"top": 588,
+											"left": 630,
+											"top": 964,
 											"width": 110.55712890625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13285,7 +13189,7 @@
 										"$ref": "AAAAAAGhypggQ0IF0ls="
 									},
 									"lineStyle": 3,
-									"points": "862:581;905:605;934:636",
+									"points": "721:934;678:958;626:989",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjdUKCeC8="
 									}
@@ -13311,8 +13215,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 682,
-											"top": 598,
+											"left": 822,
+											"top": 951,
 											"width": 50.5908203125,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13333,9 +13237,190 @@
 										"$ref": "AAAAAAGhypggQ0IF0ls="
 									},
 									"lineStyle": 3,
-									"points": "713:581;693:605;693:629",
+									"points": "830:934;833:958;833:982",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjoUKLXJA="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqJtAUUv8gc=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqJtAEUt320="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqJtAUUwOMA=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqJtAUUv8gc="
+											},
+											"lineColor": "#345beb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 567.5,
+											"top": 471,
+											"width": 240,
+											"height": 26,
+											"text": "MY VIEW (view mode)\nwhere plots change and\nSend to Audit is offered",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 557.5,
+									"top": 461,
+									"width": 260,
+									"height": 163,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqJtAUUwOMA="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhyqJtH0U3qvM=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqJtH0U1nkw="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhyqJtH0U4tOU=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqJtH0U3qvM="
+											},
+											"model": {
+												"$ref": "AAAAAAGhyqJtH0U1nkw="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 670,
+											"top": 429,
+											"width": 64.30810546875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhyqJtH0U3qvM="
+											},
+											"edgePosition": 1,
+											"text": "plots follow"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhyqJtAUUv8gc="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhypge9UHF5kA="
+									},
+									"lineStyle": 3,
+									"points": "614:411;688:436;688:460",
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqJtH0U4tOU="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhyqJtO0U/SDI=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqJtO0U9slM="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhyqJtO0VAb8M=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqJtO0U/SDI="
+											},
+											"model": {
+												"$ref": "AAAAAAGhyqJtO0U9slM="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 547,
+											"top": 790,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhyqJtO0U/SDI="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhypgfRkHV1jA="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhyqJtAUUv8gc="
+									},
+									"lineStyle": 3,
+									"points": "568:625;533:649;533:723;533:797;533:878;533:958;536:989",
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqJtO0VAb8M="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhyqJtYUVHqfY=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqJtYEVFitQ="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhyqJtYUVIv8c=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqJtYUVHqfY="
+											},
+											"model": {
+												"$ref": "AAAAAAGhyqJtYEVFitQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 798,
+											"top": 642,
+											"width": 78.05712890625,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhyqJtYUVHqfY="
+											},
+											"edgePosition": 1,
+											"text": "Send to Audit"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhypggD0H94pM="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhyqJtAUUv8gc="
+									},
+									"lineStyle": 3,
+									"points": "792:625;823:649;823:673",
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqJtYUVIv8c="
 									}
 								}
 							]
@@ -13465,6 +13550,20 @@
 									"target": {
 										"$ref": "AAAAAAGhypgfnUHjzW0="
 									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhyqJtH0U1nkw=",
+									"_parent": {
+										"$ref": "AAAAAAGhypge9UHDS4M="
+									},
+									"name": "plots follow",
+									"source": {
+										"$ref": "AAAAAAGhypge9UHDS4M="
+									},
+									"target": {
+										"$ref": "AAAAAAGhyqJtAEUt320="
+									}
 								}
 							]
 						},
@@ -13482,7 +13581,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "PLOT\nMy view and the right pane\nof Compare only"
+							"name": "PLOT\nfiltered here"
 						},
 						{
 							"_type": "FCData",
@@ -13578,7 +13677,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Send to Audit\n(My view, with a reason)\nstaged rows become steps",
+							"name": "Send to Audit\n(with a reason)\nstaged rows become steps",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13640,6 +13739,43 @@
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
 							"name": "Export = Result + audited steps only\n(from the stored files, which stay as they are)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqJtAEUt320=",
+							"_parent": {
+								"$ref": "AAAAAAGhypgeVUGuLNo="
+							},
+							"name": "MY VIEW (view mode)\nwhere plots change and\nSend to Audit is offered",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhyqJtO0U9slM=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqJtAEUt320="
+									},
+									"source": {
+										"$ref": "AAAAAAGhyqJtAEUt320="
+									},
+									"target": {
+										"$ref": "AAAAAAGhypgfRkHTR0s="
+									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhyqJtYEVFitQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqJtAEUt320="
+									},
+									"name": "Send to Audit",
+									"source": {
+										"$ref": "AAAAAAGhyqJtAEUt320="
+									},
+									"target": {
+										"$ref": "AAAAAAGhypggD0H7Gzk="
+									}
+								}
+							]
 						}
 					]
 				},
@@ -14026,8 +14162,8 @@
 											"left": 880,
 											"top": 725.5,
 											"width": 230,
-											"height": 39,
-											"text": "Audited steps, per plot\nforked copy, with a reason\n(never written to the T1/T2 files)",
+											"height": 26,
+											"text": "Audited steps, per plot\nforked copy, with a reason",
 											"wordWrap": true
 										}
 									],
@@ -15662,6 +15798,1050 @@
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
 							"name": "EDGE: a column in T1 but not in T2\nthe filter is skipped on that view"
+						}
+					]
+				},
+				{
+					"_type": "FCFlowchart",
+					"_id": "AAAAAAGhyqKxRUVTBvw=",
+					"_parent": {
+						"$ref": "AAAAAAGht1V6z9k+p4w="
+					},
+					"name": "HOME-FILTER-MATRIX",
+					"ownedElements": [
+						{
+							"_type": "FCFlowchartDiagram",
+							"_id": "AAAAAAGhyqKxRUVUwMA=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "HOME-FILTER-MATRIX What each view shows and does",
+							"ownedViews": [
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhyqKxh0VaztQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKxh0VYoiU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKxh0VbTzc=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKxh0VaztQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 30,
+											"width": 250,
+											"height": 13,
+											"text": "RAW (T1)\nstored data",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 20,
+									"width": 270,
+									"height": 70,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKxh0VbTzc="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhyqKxlkViIb4=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKxlUVgK9U="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKxlkVj2Po=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKxlkViIb4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 30,
+											"width": 250,
+											"height": 13,
+											"text": "RESULT (T2)\nrecipe result",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 20,
+									"width": 270,
+									"height": 70,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKxlkVj2Po="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhyqKxpUVqWiM=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKxpUVo6bY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKxpUVrrwg=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKxpUVqWiM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 30,
+											"width": 250,
+											"height": 26,
+											"text": "MY VIEW\nwhere you change what the plot shows",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 20,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKxpUVrrwg="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKxtUVyX4g=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKxtUVwEWU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKxtUVzKfE=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKxtUVyX4g="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 130,
+											"width": 130,
+											"height": 13,
+											"text": "DATA TABLE",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 120,
+									"width": 150,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKxtUVzKfE="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKxxUV6Y30=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKxxUV4mqM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKxxkV764k=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKxxUV6Y30="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 130,
+											"width": 250,
+											"height": 13,
+											"text": "T1 stored data\n+ preview filters",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 120,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKxxkV764k="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKx10WC3xs=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKx10WAQcQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKx10WDnUc=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKx10WC3xs="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 130,
+											"width": 250,
+											"height": 13,
+											"text": "T2 stored data\n+ preview filters",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 120,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKx10WDnUc="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKx6kWKCmk=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKx6kWIoWc="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKx6kWL0K0=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKx6kWKCmk="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 130,
+											"width": 250,
+											"height": 13,
+											"text": "T2 + preview filters\n+ audited steps",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 120,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKx6kWL0K0="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKx/UWSgVw=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKx/UWQzKs="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKx/UWTs8s=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKx/UWSgVw="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 230,
+											"width": 130,
+											"height": 13,
+											"text": "PLOT",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 220,
+									"width": 150,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKx/UWTs8s="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKyFEWay/A=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKyE0WYACE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKyFEWbJ08=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKyFEWay/A="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 230,
+											"width": 250,
+											"height": 13,
+											"text": "plots start at Result",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 220,
+									"width": 270,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKyFEWbJ08="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKyL0WiSzk=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKyL0WguPw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKyL0Wj6vI=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKyL0WiSzk="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 230,
+											"width": 250,
+											"height": 13,
+											"text": "recipe plot\n(T2 stored data)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 220,
+									"width": 270,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKyL0Wj6vI="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKyVEWqdyI=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKyVEWoVbE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKyVEWrsqc=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKyVEWqdyI="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 230,
+											"width": 250,
+											"height": 13,
+											"text": "T2 + preview filters\n+ audited steps",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 220,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKyVEWrsqc="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKybUWyAAE=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKybUWwjFY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKybUWzO0o=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKybUWyAAE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 330,
+											"width": 130,
+											"height": 13,
+											"text": "SEND TO AUDIT",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 320,
+									"width": 150,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKybUWzO0o="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKyokW62Cg=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKyokW4OcY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKyokW7WXo=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKyokW62Cg="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 330,
+											"width": 250,
+											"height": 13,
+											"text": "go to My view first",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 320,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKyokW7WXo="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKyyUXCHk0=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKyyUXAGc4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKyyUXDSUM=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKyyUXCHk0="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 330,
+											"width": 250,
+											"height": 13,
+											"text": "go to My view first",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 320,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKyyUXDSUM="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKy30XKmdY=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKy30XIDnI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKy30XLvjk=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKy30XKmdY="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 330,
+											"width": 250,
+											"height": 26,
+											"text": "offered, with a reason\n(permanent, per plot)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 320,
+									"width": 270,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKy30XLvjk="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKy9kXSI/A=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKy9kXQWf4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKy9kXTHVo=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKy9kXSI/A="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 430,
+											"width": 130,
+											"height": 13,
+											"text": "EXPORT",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 420,
+									"width": 150,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKy9kXTHVo="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKzDkXa4Hc=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKzDkXYEz4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKzDkXbR0w=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKzDkXa4Hc="
+											},
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 430,
+											"width": 250,
+											"height": 13,
+											"text": "Result + audited steps",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 420,
+									"width": 270,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKzDkXbR0w="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKzKUXiCpQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKzKEXgYPE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKzKUXjl4E=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKzKUXiCpQ="
+											},
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 430,
+											"width": 250,
+											"height": 13,
+											"text": "Result + audited steps",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 420,
+									"width": 270,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKzKUXjl4E="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKzVUXqZ+g=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKzVUXordU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKzVUXrBiQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKzVUXqZ+g="
+											},
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 430,
+											"width": 250,
+											"height": 26,
+											"text": "Result + audited steps\n(preview filters excluded)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 420,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKzVUXrBiQ="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKzkkXyHkI=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKzkkXwQjo="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKzkkXzras=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKzkkXyHkI="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 530,
+											"width": 130,
+											"height": 13,
+											"text": "COMPARE",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 520,
+									"width": 150,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKzkkXzras="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKzykX6LuQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKzyUX4CHY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKzykX7JkQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKzykX6LuQ="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 530,
+											"width": 250,
+											"height": 13,
+											"text": "left plot = Result",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 520,
+									"width": 270,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKzykX7JkQ="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyqKz5kYCAl0=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyqKz5kYAtjY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyqKz5kYDy44=",
+											"_parent": {
+												"$ref": "AAAAAAGhyqKz5kYCAl0="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 530,
+											"width": 250,
+											"height": 13,
+											"text": "right plot = My view",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 520,
+									"width": 270,
+									"height": 85,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyqKz5kYDy44="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhyqKxh0VYoiU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "RAW (T1)\nstored data"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhyqKxlUVgK9U=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "RESULT (T2)\nrecipe result"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhyqKxpUVo6bY=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "MY VIEW\nwhere you change what the plot shows"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKxtUVwEWU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "DATA TABLE"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKxxUV4mqM=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "T1 stored data\n+ preview filters"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKx10WAQcQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "T2 stored data\n+ preview filters"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKx6kWIoWc=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "T2 + preview filters\n+ audited steps"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKx/UWQzKs=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "PLOT"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKyE0WYACE=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "plots start at Result"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKyL0WguPw=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "recipe plot\n(T2 stored data)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKyVEWoVbE=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "T2 + preview filters\n+ audited steps"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKybUWwjFY=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "SEND TO AUDIT"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKyokW4OcY=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "go to My view first"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKyyUXAGc4=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "go to My view first"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKy30XIDnI=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "offered, with a reason\n(permanent, per plot)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKy9kXQWf4=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "EXPORT"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKzDkXYEz4=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "Result + audited steps"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKzKEXgYPE=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "Result + audited steps"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKzVUXordU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "Result + audited steps\n(preview filters excluded)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKzkkXwQjo=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "COMPARE"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKzyUX4CHY=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "left plot = Result"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyqKz5kYAtjY=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "right plot = My view"
 						}
 					]
 				}
