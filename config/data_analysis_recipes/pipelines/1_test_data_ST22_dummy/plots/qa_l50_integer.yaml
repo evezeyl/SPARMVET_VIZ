@@ -1,0 +1,19 @@
+target_dataset: QA_L50_integer
+title: "QA: samples per L50 (integer column)"
+family: Distribution
+pattern: 1 Numeric
+difficulty: Simple
+description: Canary for thresholds on an integer column. A filter "L50 >= 8.5" must remove the bar at 8 and keep 9; "L50 < 8.5" must keep 8.
+mapping:
+  x: L50
+layers:
+- name: geom_bar
+  params: {}
+- name: scale_x_continuous
+  params:
+    breaks_integer: true
+- name: labs
+  params:
+    subtitle: "Expect values 4 to 14, 42 samples; L50 >= 8.5 keeps 9, not 8"
+    x: L50 (number of contigs holding half of the assembly)
+    y: Samples

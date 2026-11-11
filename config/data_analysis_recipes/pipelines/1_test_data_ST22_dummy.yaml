@@ -224,6 +224,40 @@ joins:
     steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
     final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
 
+  # QA canaries: one collection per failure mode, expected numbers are in `wrangling/QA_*.yaml` and `plots/qa_*.yaml`
+  QA_AMR_per_sample:
+    description: QA canary - samples without an AMR gene must stay (long T1, one row per sample in T2).
+    ingredients:
+    - dataset_id: metadata_schema
+    - dataset_id: ResFinder
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_AMR_per_sample.yaml'
+
+  QA_ST_with_NA:
+    description: QA canary - a missing sequence type must stay visible as missing.
+    ingredients:
+    - dataset_id: Summary_quality
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_ST_with_NA.yaml'
+
+  QA_year_types:
+    description: QA canary - year as a number and as a label without ".0".
+    ingredients:
+    - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_year_types.yaml'
+
+  QA_L50_integer:
+    description: QA canary - an integer column for threshold filters.
+    ingredients:
+    - dataset_id: Quast
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_L50_integer.yaml'
+
+  QA_fanout_exhibit:
+    description: QA canary, EXHIBIT of a known defect - two long tables joined on one key (issue #68).
+    ingredients:
+    - dataset_id: metadata_schema
+    - dataset_id: ResFinder
+    - dataset_id: VirulenceFinder
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_fanout_exhibit.yaml'
+
 # ── Analysis Groups ───────────────────────────────────────────────────────────
 # Plot specs: see plots/ for each spec file.
 analysis_groups:
@@ -272,6 +306,28 @@ analysis_groups:
         info: Miaou! Distribution of assembly metrics across sources — the boss's
           favourite shape.
         spec: !include '1_test_data_ST22_dummy/plots/miaou.yaml'
+
+  QA Canaries:
+    description: "QA canaries (not for publication): each plot isolates one failure mode; the expected numbers are in its title"
+    plots:
+      qa_amr_genes_per_sample:
+        info: Samples without an AMR gene must stay (long T1, one row per sample in T2).
+        spec: !include '1_test_data_ST22_dummy/plots/qa_amr_genes_per_sample.yaml'
+      qa_sequence_type_missing:
+        info: A missing sequence type must stay visible as missing.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_sequence_type_missing.yaml'
+      qa_year_label:
+        info: The year label has no ".0"; the numeric year stays numeric.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_year_label.yaml'
+      qa_l50_integer:
+        info: Integer column for threshold filters (L50 >= 8.5 must keep 9, not 8).
+        spec: !include '1_test_data_ST22_dummy/plots/qa_l50_integer.yaml'
+      qa_facet_by_mapping:
+        info: facet_by written in mapping must give 3 panels.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_facet_by_mapping.yaml'
+      qa_fanout_rows_per_sample:
+        info: EXHIBIT of a known defect (issue 68) - rows are inflated on purpose.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_fanout_rows_per_sample.yaml'
 
 plot_defaults:
   theme: theme_minimal

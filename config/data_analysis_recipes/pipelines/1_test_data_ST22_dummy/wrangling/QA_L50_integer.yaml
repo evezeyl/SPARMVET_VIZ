@@ -1,0 +1,4 @@
+# QA canary: an integer column (L50), the target for threshold filters such as ">= 8.5".
+tier1:
+  - action: "keep_columns"
+    columns: ["sample_id", "L50"]

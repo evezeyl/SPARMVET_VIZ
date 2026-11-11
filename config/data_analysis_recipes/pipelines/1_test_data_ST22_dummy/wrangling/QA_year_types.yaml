@@ -1,0 +1,6 @@
+# QA canary: the year as a number (kept for filters) and as a text label for a discrete axis.
+# TSV numbers are read as Float64, so a direct cast to text gives "2022.0": go through Int64.
+tier1:
+  - action: "mutate"
+    column: "year_label"
+    expression: "pl.col('year').cast(pl.Int64).cast(pl.String)"

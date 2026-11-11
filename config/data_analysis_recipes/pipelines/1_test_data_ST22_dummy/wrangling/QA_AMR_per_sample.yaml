@@ -1,0 +1,21 @@
+# QA canary: every sample must stay in the result, also the ones without an AMR gene (left join).
+# T1 is long (one row per sample and gene, a sample without a gene keeps one row with an empty gene);
+# T2 is one row per sample with its gene count (0 for the samples without a gene).
+tier1:
+  - action: "cast"
+    columns: ["sample_id"]
+    dtype: "String"
+  - action: "join"
+    right_ingredient: "ResFinder"
+    "on": ["sample_id"]
+    how: "left"
+  - action: "keep_columns"
+    columns: ["sample_id", "country", "source", "year", "gene", "predicted_phenotype"]
+
+tier2:
+  # count() counts non-empty values, so a sample without a gene gets 0, not 1.
+  - action: "summarize"
+    columns: ["gene"]
+    group_by: ["sample_id", "country"]
+    agg: "count"
+    new_name: "n_amr_genes"

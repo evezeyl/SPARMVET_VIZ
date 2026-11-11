@@ -1,0 +1,18 @@
+target_dataset: QA_ST_with_NA
+title: "QA: samples per sequence type"
+family: Ranking
+pattern: 1 Categorical
+difficulty: Simple
+description: Canary for missing values. The 2 samples without a sequence type must be visible as missing, not dropped and not filled.
+mapping:
+  x: ST
+layers:
+- name: geom_bar
+  params: {}
+- name: coord_flip
+  params: {}
+- name: labs
+  params:
+    subtitle: "Expect 42 samples: 2 without a sequence type (shown as nan)"
+    x: Sequence type
+    y: Samples

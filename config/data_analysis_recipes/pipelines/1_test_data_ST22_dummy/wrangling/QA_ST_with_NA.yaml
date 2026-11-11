@@ -1,0 +1,4 @@
+# QA canary: a sample without a sequence type must stay visible as a missing value, not be dropped or filled.
+tier1:
+  - action: "keep_columns"
+    columns: ["sample_id", "ST"]

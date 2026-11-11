@@ -1,0 +1,19 @@
+target_dataset: QA_fanout_exhibit
+title: "QA EXHIBIT: rows per sample after joining two long tables"
+family: Ranking
+pattern: 1 Numeric, 1 Categorical
+difficulty: Simple
+description: Exhibit of a known defect. Each sample has as many rows as AMR genes times virulence genes. The many-to-many join check (issue #68) must flag the collection QA_fanout_exhibit.
+mapping:
+  x: sample_id
+  y: rows_per_sample
+layers:
+- name: geom_col
+  params: {}
+- name: coord_flip
+  params: {}
+- name: labs
+  params:
+    subtitle: "Inflated on purpose (issue 68): AMR genes x virulence genes"
+    x: Sample
+    y: Rows after the join

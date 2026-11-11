@@ -1,0 +1,17 @@
+target_dataset: QA_year_types
+title: "QA: samples per year (text label)"
+family: Ranking
+pattern: 1 Categorical
+difficulty: Simple
+description: Canary for types. The text label of the year has no ".0"; the numeric year column stays numeric for range filters.
+mapping:
+  x: year_label
+  fill: country
+layers:
+- name: geom_bar
+  params: {}
+- name: labs
+  params:
+    subtitle: "Expect 2022: 9, 2023: 8, 2024: 25 and never 2022.0"
+    x: Year
+    y: Samples
