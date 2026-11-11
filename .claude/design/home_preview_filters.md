@@ -13,7 +13,7 @@ saved, never exported, and never changes a plot. To change what a plot shows, us
 ## 2. Where it lives
 
 - The existing header strip is renamed **Exploration**; its two choices are simply **Data** (Raw (T1)| Result (T2)) and
-  **Plot** (the recipe's Result plot), without "to show". [decided]  @eve: as such will allow to remove the grey comments under the selectors and win space. -> done in this file: the grey explanations under the selectors go. **[to confirm]** With My view and Compare gone, the Plot choice has only one value (the Result plot); it can be removed, leaving one toggle **Data: Raw (T1) | Result (T2)**.
+  **Plot** (the recipe's Result plot), without "to show". [decided]  @eve: as such will allow to remove the grey comments under the selectors and win space. -> done in this file: the grey explanations under the selectors go. **[to confirm]** With My view and Compare gone, the Plot choice has only one value (the Result plot); it can be removed, leaving one toggle **Data: Raw (T1) | Result (T2)**. @eve : good point - agreed
 - **My view and Compare leave this strip** and move to the new Audit workspace. The two are **exclusive**:
   when the Audit workspace is open, Exploration is minimised; when Exploration is active, the Audit workspace is
   minimised (space). [decided] @eve: audit workspace minimized when Exploration is active. -> done
@@ -50,12 +50,12 @@ data types: Year is 2022.0 in T1 and "2022" in T2). Keeping it would silently ma
 a preview filter is built against the columns, names and data types of ONE stage. T1 (Raw) and T2 (Result)
 differ (wide vs long, renamed columns, Year read as 2022.0 vs text "2022"), so a filter carried across a view
 change can match nothing, match the wrong rows, or silently skip. Clearing it on a view change keeps every
-preview filter valid for the data it is applied to. -> to do in code, with the change itself
+preview filter valid for the data it is applied to. -> to do in code, with the change itself @eve: this should also shortly be explained in the help for the user. 
 
 ## 5. Scope
 
 - A preview list belongs to **one view and one dataset** (the dataset the plot targets; plots sharing it share
-  the list). [decided; today it is ONE global list for the whole analysis: to change] @eve: ok
+  the list). [decided; today it is ONE global list for the whole analysis: to change] @eve: ok - @eve: short explanation in help for user
 - **[open]** switching to a plot of another dataset inside the same view: keep each dataset's own list
   (recommended) or clear. @eve: ok
 - The columns offered are those of the current stage, so a preview filter is always valid where it is applied.
