@@ -10,7 +10,7 @@ and its joins measured, its plots were not looked at one by one.
 
 | # | Finding | Evidence | Severity | Class | Issue | Status |
 |---|---|---|---|---|---|---|
-| 1 | `facet_by` inside `mapping:` gives no panels (documented as equivalent to `facet_wrap`; the Blueprint form writes it; six shipped plots use it). `miaou` pooled three metrics in one violin (false bimodal shape); the Quast boxplot put N50 and total length on one axis | verified: render with both spellings (`tmpAI/recipe_review/facet_check.py`), `plot_config_resolver.py:473,514`, pictures before/after | high (wrong figure) | software bug | #65 | recipe plots fixed with an explicit `facet_wrap`; code fix open |
+| 1 | `facet_by` inside `mapping:` gives no panels (documented as equivalent to `facet_wrap`; the Blueprint form writes it; six shipped plots use it). `miaou` pooled three metrics in one violin (false bimodal shape); the Quast boxplot put N50 and total length on one axis | verified: render with both spellings (`tmpAI/recipe_review/facet_check.py`), `plot_config_resolver.py:473,514`, pictures before/after | high (wrong figure) | software bug | #65 | **fixed** in the recipe (explicit `facet_wrap`) and in the resolver (mapping.facet_by honoured, mutation-checked); `virulence_variants` kept unfaceted until Eve decides (#67) |
 | 2 | `facet_scales`, `labs`, `coordinate_flip` at the top of a plot spec are dropped without a message (`_meta`) | verified: axis titles of `phenotype_genome_length_fragmentation` stayed `phenotype_count`/`quality_value`; scan of all recipes | medium | guard rail | #66 | recipe plots fixed; warning open |
 | 3 | `qc_reads_horizontal_barplot` mapped `x: total_reads, y: sample_id` with `geom_col`: thin vertical lines instead of bars | verified: picture before/after | high (unreadable figure) | recipe | #69 | fixed (`x: sample_id, y: total_reads`, `coord_flip`) |
 | 4 | `ST22_Anchor` joins two long tables (ResFinder x VirulenceFinder): rows 42 -> 74 -> 1731 -> 617 (342 distinct sample/gene pairs). `virulence_count` is wrong for 18 of 42 samples (72 for a sample with 9 genes); `virulence_bar` bars are multiplied by the AMR gene count; `virulence_variants` colours by an AMR constant | verified: instrumented joins (`fanout.py`), `diagnose.py`, pictures | high (wrong numbers) | recipe + guard rail | #67, #68 | **waiting for Eve (what must the anchor answer?)** |
@@ -22,7 +22,7 @@ and its joins measured, its plots were not looked at one by one.
 | 10 | `ST22_Anchor` contract: `phenotype` does not exist (engine message at build); `sample_id` declared numeric (rules: categorical key; data is a string) | verified: engine output; collection unchanged after the type fix | low | recipe | #69 | `sample_id` fixed; `phenotype` waits for #67 |
 | 11 | Legacy top-level `wrangling:` with a `tier3` join at the end of the recipe | verified: nothing in the engine reads it; every collection byte-identical (hash) after removal | low | recipe | #69 | removed |
 | 12 | `extract_primary_keys` returns `[]` (dict-shaped steps) and, once that is fixed, would take the `on:` of `unpivot` steps as join keys | verified: flat-list copy test (`pk_proof.py`) | high (safeguards dead) | software bug | #61 | open (WP2 of the brief, now with the unpivot test) |
-| 13 | The recipe data check returned "no problems" while a schema could not be built; `test_render_every_plot` passes with ignored facets and fan-out | verified: baseline 75 passed with the broken schema | medium (checker blind spot) | software bug | #71 | `test_shipped_recipes_hygiene.py` added as guard; the check itself open |
+| 13 | The recipe data check returned "no problems" while a schema could not be built; `test_render_every_plot` passes with ignored facets and fan-out | verified: baseline 75 passed with the broken schema | medium (checker blind spot) | software bug | #71 | **fixed**: the check runs the wrangling on one row (types, not values); `test_render_every_plot` now asserts panels; hygiene and canary tests added |
 | 14 | Unused material: ingredients `Quality_metrics`, `Detailed_summary`; collections no plot reads (`FastP_with_metadata`, `Bracken_with_metadata`, `ResFinder_with_metadata`, `AR1_MLST_Serotype_Virulence`); plot spec `FastP_reads_boxplot.yaml` mounted by no group | verified: scan (`scan_recipes.py`) | info | practice | #69 | kept (Blueprint material); say so in `info:` or remove on purpose |
 
 The Abromics recipe (the one the local deployment opens first): no unknown keys, no ignored plot keys, every schema builds; its only
@@ -45,12 +45,26 @@ Verified by comparing shape and content hash of all six plot-target collections 
 Guard: `app/tests/test_shipped_recipes_hygiene.py` (21 tests: unknown `plot_defaults` keys, ignored plot-spec keys, every data schema builds,
 for every shipped recipe). Mutation check: on the unfixed recipe 3 of them fail.
 
+## 2b. QA canaries (added the same day)
+
+A group **QA Canaries** in this recipe (6 plots, 5 new collections) for catching errors better. Each isolates one failure mode, its correct numbers are
+computed from the raw tsv files in `app/tests/test_qa_canaries.py` (not through the engine) and are written in the plot subtitle, so a person looking
+at the picture can see a wrong one. Map of canaries to failure modes and to the work packages that use them: `.claude/tasks/home_exploration_build_brief.md`
+section 0b. Think-through behind the choice (data scientist and developer): every canary has a known answer that is independent of the code under test;
+the failure modes are the ones this review actually found (a sample vanishing from a long table, a missing value filled or dropped, `2022.0`, an integer
+threshold, panels not drawn, rows multiplied by a join); T1 and T2 differ on purpose in one of them so that stage-dependent behaviour can be tested; one
+canary is an EXHIBIT of a known defect (#68) so that a future check has something real to flag. Mutation-checked: an inner join instead of a left join and
+a direct cast of the year to text both make the right test fail. Trade-off: the group is visible to every user of this recipe; a separate recipe file would
+keep the demo clean and is a small change if you prefer it.
+
 ## 3. Questions for Eve (the recipe cannot be finished without them)
 
 1. **What must `ST22_Anchor` answer?** The recipe says "AMR + Virulence + MLST", the plot spec says "whitelisted virulence genes by sequence type". Options:
    (a) virulence + MLST + metadata, no ResFinder; the "Detected" status moves to the VirulenceFinder step (**recommended**: the plots read virulence;
    AMR already has its own collection and heatmap); (b) keep AMR but reduce ResFinder to one row per sample before the join (loses the gene detail the
    tile plot needs); (c) two collections. Recommendation (a), unless you want AMR genes in that one figure.
+   Related: the plot spec of `virulence_variants` says "facetted by sequence type"; now that `facet_by` in `mapping` works, that gives 16 panels too small to read
+   with this table, so the setting was left out (comment in `plots/integration_plot.yaml`). Decide together with this question: facets with free scales, no facets, or another layout.
 2. **Samples without any usable phenotype (4 of 42).** (a) not plotted, with a note "n = 38 of 42" (**recommended**); (b) keep at 0 and say so in the title;
    (c) other.
 3. **MLST plot title and demo filter.** Keep the 2023-2025 filter (it makes the T1/T2 toggle visible) and add "2023-2025" to the MLST title, or leave it?

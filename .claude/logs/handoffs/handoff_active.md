@@ -459,3 +459,13 @@ recipe hygiene (#69); samples with only unknown phenotypes scored as 0 (#70); th
 (`test_shipped_recipes_hygiene.py`), headless 1620 passed.
 **Waiting for Eve:** `RECIPE-ST22-2` (three questions in section 3 of the review file). **Brief updated:** WP7-WP10 added, WP2 gains the unpivot test.
 
+## Handoff 2026-11-11 night (prepared while Eve rested; start from `.claude/tasks/next_session_start.md`)
+
+**Done and committed:** recipe fixes of `1_test_data_ST22_dummy` (`7775a8d`); QA canary group with raw-file oracles (`c2cb302`); `mapping.facet_by` honoured (`4f85ec2`, #65, closed);
+the recipe data check runs the wrangling (`af36dc9`, #71, closed). Issues #61-#71 re-verified against the code the same day (#59, #61, #62, #63 demonstrated again by running).
+**Verification:** headless 1646 passed; QA canaries 8 passed; browser gate: 1 pass (recipe fixes only), then 3 runs of the changed tree with 1 or 2 timing failures each time in DIFFERENT tests (info panel, preview filter row removal, session label) that pass alone and in other runs; fresh-session load time unchanged; not proven either way: issue #72 (read it before you trust or distrust a red gate). I committed with that stated.
+**Prepared for tomorrow:** `.claude/tasks/next_session_start.md` (three tracks, file ownership, traps, paste-ready prompts), the build brief with an issue protocol for parallel sessions, a status table and the canary map,
+`.claude/design/home_audit_review_agenda_2026-11-12.md` and `home_audit_first_cut.md` (a proposal for a smaller first audit version, not decided), `recipe_review_st22_2026-11-11.md`.
+**Waiting for Eve:** #67 (ST22 anchor), #70 (unknown phenotypes), #69 (rest), the NA rule (WP3b), the many-to-many check (#68, edits `libs/transformer`), the 13 audit decisions.
+**Do not forget:** `CLAUDE.md` has an uncommitted edit of Eve's: never stage it. Libraries are installed editable with absolute paths, so no git worktrees for builders.
+

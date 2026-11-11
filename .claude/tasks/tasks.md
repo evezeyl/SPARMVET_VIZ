@@ -40,10 +40,13 @@ audit steps. Order: WP1, WP2, WP3a, WP4 (with WP5), WP6. Safety protocol S1-S8 o
 - [ ] **HOME-EXPLORE-6** `[haiku/low]` — help, user guide, FAQ, ADR-098 and contract text for the above.
 - [x] **RECIPE-ST22-1** `[sonnet/medium]` (2026-11-11, `recipe_review_st22_2026-11-11.md`) — data-scientist review of `1_test_data_ST22_dummy`: plots with ignored `facet_by`/`facet_scales`/`labs`/`coordinate_flip` corrected with explicit layers, horizontal QC bars, unknown `plot_defaults` keys, `Detailed_summary` type, `sample_id` contract type, legacy `tier3` block removed; collections byte-identical; guard `app/tests/test_shipped_recipes_hygiene.py`. Issues #65-#71.
 - [ ] **RECIPE-ST22-2** `[opus/high]` — waits for Eve: what `ST22_Anchor` answers (#67: fan-out ResFinder x VirulenceFinder, wrong `virulence_count`, AMR "status" as virulence fill, missing `phenotype` in the contract), score of samples without usable phenotype (#70), MLST title and demo filter. Then fix the recipe, look at every picture, update the contract.
-- [ ] **HOME-EXPLORE-7** `[sonnet/medium]` — #65 `mapping.facet_by` honoured by the resolver (test: facet class, six shipped plots looked at, mutation check). See brief WP7.
+- [x] **HOME-EXPLORE-7** `[sonnet/medium]` — DONE 2026-11-11 (`4f85ec2`): #65 `mapping.facet_by` honoured by the resolver; unit tests, `test_render_every_plot` asserts panels, six plots looked at, mutation-checked. `virulence_variants` kept unfaceted until Eve decides (#67).
 - [ ] **HOME-EXPLORE-8** `[sonnet/medium]` — #66 warning for plot-spec keys dropped to `_meta` (same surface as unknown `plot_defaults` keys). See brief WP8.
-- [ ] **HOME-EXPLORE-9** `[sonnet/low]` — #71 the recipe data check executes the wrangling (not only the lazy schema). See brief WP9.
+- [x] **HOME-EXPLORE-9** `[sonnet/low]` — DONE 2026-11-11 (`af36dc9`): #71 the recipe data check runs the wrangling on one row (types, not values); two tests, mutation-checked.
 - [ ] **HOME-EXPLORE-10** `[sonnet/medium]` — #68 many-to-many join warning (rows before/after). Edits `libs/transformer` (frozen): needs Eve's OK. See brief WP10.
+- [x] **RECIPE-ST22-3** `[sonnet/high]` — DONE 2026-11-11 (`c2cb302`): group "QA Canaries" in `1_test_data_ST22_dummy` (6 plots, 5 collections, one failure mode each, answers computed from the raw files in `app/tests/test_qa_canaries.py`, expected numbers in the plot subtitles, one exhibit of a known defect). Canary map: brief section 0b. Extend it when you find a new failure mode.
+- [ ] **AUDIT-CUT-1** `[opus/high]` — Eve reviews the proposal `.claude/design/home_audit_first_cut.md` (a smaller first audit version) with the agenda `home_audit_review_agenda_2026-11-12.md`; then the accepted cut becomes work packages and sub-issues of #60. Depends: AUDIT-DECIDE-1 (group 1 of the agenda).
+- [ ] **NEXT-SESSION-1** — builders and the design review start from `.claude/tasks/next_session_start.md` (tracks A, B, D; file ownership; traps; paste-ready prompts).
 
 ### Manual-testing findings, 2026-11-10 (issues #53/#54/#55)
 
