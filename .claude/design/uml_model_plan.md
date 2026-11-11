@@ -354,3 +354,10 @@ the export). Both show the code as built; pink boxes = to fix (found: column che
 evezeyl/SPARMVET_VIZ#58; plots sharing a dataset get separate copies). The "Audited steps" and "Send to Audit"
 boxes of `HOME-FILTER-SCOPING` and `HOME-FILTER-MATRIX` carry the tag `detail = HOME-AUDIT-SCOPE`.
 Eve's colour code: pink fill = to fix.
+
+**Redrawn 2026-11-11 (issue #60), replacing the five HOME-FILTER-* / HOME-AUDIT-* diagrams of the same day:**
+`HOME-EXPLORATION` (preview filters), `HOME-VIEW-MATRIX` (Exploration vs Audit workspace), `HOME-AUDIT-LINEAGE`
+(levels 0-3 on real ST22 collections), `HOME-AUDIT-FLOW` (make, apply, check, remove a step), `HOME-AUDIT-EFFECT`
+(what each level changes), `HOME-AUDIT-CACHE` (original vs audit cache, chained keys), `HOME-AUDIT-PANEL`
+(layout sketch). They show the TARGET model of `home_preview_filters.md` and `home_audit_steps.md`; pink boxes =
+to build or fix. Boxes with "(detail: X)" carry the tag `detail = X`.

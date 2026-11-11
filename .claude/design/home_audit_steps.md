@@ -9,6 +9,11 @@ Companion: `home_preview_filters.md`. Nothing here is code yet. Marks: **[built]
 a reason, it is recorded, it can be removed, and it never edits the original data (original T1 and T2). The
 audit exists to keep the WHOLE PROJECT consistent, not to explore data.**
 
+**Recommended use (goes into the help):** make results publication-ready. Do not "clean" data to make it look
+better. Remove only cases that are really bad or that make no sense to show, and say so ("data not shown" and
+why): that is what the mandatory reason and the export are for. Results are often long format, where `sample_id`
+repeats on many rows and is not unique in the original data; the audit works on that entity identifier.
+
 ## 2. Vocabulary (agreed)
 
 | Word | Meaning |
@@ -103,7 +108,10 @@ Numbers 0-3 are the internal names and follow the T numbers (project = 0, T1 = 1
 5. Late-stage steps are inserted after the dataset's tier-2 steps; level 3 steps run on the plot frame at render
    time. A forked recipe (same mechanism as the reproducibility export, ADR-097 `t3_translator`) carries them.
 6. A dataset without the key, or a key value not present, is a **reported no-op** ("0 rows in MLST"), always shown.
-7. Cost: rebuilding can be heavy on large data. The dialog warns. The audit is for production-ready figures, not
+7. **Recipe good practice (docs, later a Blueprint check, not fixed now):** declare in a collection only the
+   ingredients it uses. Today every collection build prepares ALL ingredient schemas, used or not, which makes
+   audit rebuilds slower; the dummy ST22 recipe is an example of what to avoid.
+8. Cost: rebuilding can be heavy on large data. The dialog warns. The audit is for production-ready figures, not
    for exploring data: limit it to changes that are really needed. Today every collection build prepares all
    ingredient schemas, used or not; that should be avoided first (independent, small fix).
 
