@@ -10,6 +10,7 @@ they never touch design files, the audit, or the export.
 1. `home_audit_reading_guide.md` (the map; section 3 is the list of 13 decisions).
 2. `home_audit_steps.md` sections 1-5 (rule, words, audit mode, kinds, reach and stage), then 18-20 (the three reviews and D1-D14).
 3. `home_audit_first_cut.md` (new, a proposal: a smaller first version, with what it cannot do).
+   **Then `home_audit_forensics_2026-11-12.md`**: new facts found in the current design (F1-F13) and, for every undecided item, the options with consequences for the scientist, data scientist, developer, checker, operator and novice, and a recommendation. Read its section 4 first (the path in one table), then section 3 where you want the reasons.
 4. `recipe_review_st22_2026-11-11.md` section 3 (three questions about the ST22 recipe) and its before/after pictures in `tmpAI/recipe_review/`.
 
 To look at in the app (QA group, new): open `1_test_data_ST22_dummy`, tab "QA Canaries": six plots with the expected numbers in the subtitle; the

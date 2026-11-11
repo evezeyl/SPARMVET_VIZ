@@ -75,3 +75,18 @@ keep the demo clean and is a small change if you prefer it.
 a fan-out, a status column that means something else. Of those, the facet class and the join row growth can be tested (#65, #68); the others need a
 person to look at the picture. Looking at each picture is therefore part of any recipe change (the before/after PNGs of this review are in
 `tmpAI/recipe_review/`).
+
+## 5. Steps for tomorrow (recipe review, in this order)
+
+Nothing below is done yet; each step waits for the answer named in it. The scripts used for the verification are in `tmpAI/recipe_review/`
+(not committed): `forensics_data.py`, `fanout.py`, `diagnose.py`, `canary_check.py`, `render.py` (pictures), `scan_recipes.py`.
+
+1. **Answer R1-R4** (agenda `home_audit_review_agenda_2026-11-12.md`, section 1): anchor (#67), score of samples without phenotype (#70), MLST title, `virulence_variants` layout.
+2. **R1, if (a):** in `1_test_data_ST22_dummy`: move the constant `status: Detected` from `wrangling/ResFinder_wrangling.yaml` to `wrangling/VirulenceFinder_wrangling.yaml`; take ResFinder out of the `ST22_Anchor` ingredients and join steps; correct `output_fields/ST22_Anchor_final_output_fields.yaml` (no `gene`, no `phenotype`; `status` from the virulence step); check that `virulence_count` equals the number of distinct genes per sample (the fan-out is gone) and that the table has 342 (sample, gene) rows before sorting; add the test (raw-file oracle, like `test_qa_canaries.py`); render `virulence_bar` and `virulence_variants` and **look at them**.
+3. **R4:** if panels are wanted for `virulence_variants`, an explicit `facet_wrap` layer with `scales: free`; render, look; if not, delete the comment left in `plots/integration_plot.yaml`.
+4. **R2, if (a):** in `assembly/Summary_phenotype_length_fragmentation_assembly.yaml` give a sample with only unknown phenotypes a missing score (not 0) and leave it out of the plot; subtitle "n = 38 of 42 samples (4 without a usable phenotype)"; test on the raw numbers (6 samples truly at 0, 4 not plotted).
+5. **R3:** years in the title of `plots/MLST_counts_bar.yaml`.
+6. **Add the missing canary (forensics F1):** a collection with counts per year aggregated in T2 (no `sample_id`) and its plot, with a raw-file oracle and a mutation check; it is the fixture for the reach tests of the audit.
+7. **Verify:** `test_shipped_recipes_hygiene.py`, `test_qa_canaries.py`, `test_render_every_plot.py`, the recipe data check, the headless suite; the browser gate (read #72 first: a red gate is a question); look at every changed picture next to its "before" in `tmpAI/recipe_review/`.
+8. **Close:** comment and close #67 and #70 with evidence; tick the rest of #69 (the information item is yours: keep or remove the unused collections and `FastP_reads_boxplot.yaml`); update the statuses in section 1 of this file; separate commits for the recipe change and for the tests.
+9. **Later, when #66 and #68 are built:** promote `scan_recipes.py` and `fanout.py` to committed audit scripts (they find ignored keys and row-multiplying joins in every shipped recipe).

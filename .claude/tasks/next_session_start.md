@@ -43,11 +43,10 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 4. **Eve's dev server** (`--reload`, port 8123) reloads on every edit: keep each edit atomic, a half-written file breaks her page.
 5. **Scratch:** own folder `tmpAI/<your-name>/`; `tmp/` is for `@verify` evidence only.
 6. **A recipe change needs its picture looked at**, not only a green test (the review found that the tests pass with wrong figures).
-7. **The browser tests are timing-sensitive on this machine** (verified 2026-11-11: the same smoke file took 126 s and 225 s on the same code; in 4 runs of the changed tree two different tests failed once each,
-   `TestPhase25Panels::test_info_panel_shows_the_info_block...` (60 s wait for the "Quality Control" tab) and `TestPreviewFiltersOnReferenceViews::test_removing_an_applied_row_updates_the_view_without_apply`
-   (table of 41 instead of 42 rows, a filter left from an earlier test); both passed alone and in the next runs, and the unchanged baseline passed 2 of 2). Rule: a red gate is a **question**, not a verdict:
-   rerun the failing test alone, then the file once more; if it fails again in the same place it is real (revert your package, S2). Never close an issue on a gate you have seen fail without saying so in the DONE comment.
-   `TestRecipeSwitchPlotRender` is the other known timing-flaky test.
+7. **The browser tests are timing-sensitive on this machine; this is established, not a guess** (controlled experiment of 2026-11-11, `home_audit_forensics_2026-11-12.md` section 5, issue #72). The old code (before the day's changes) failed as often
+   as the new code, and only under CPU load (1 of 3 runs each; 0 of 3 without load); the failures are always in different tests; no random seed or random order is involved. Known races: the label test reads the disk right after `_wait_shiny`;
+   a recipe selection right after `goto` can be lost (the page then shows the default recipe). Rule: a red gate is a **question**: rerun the failing test alone, then the file once; if it fails again in the same place it is real (revert your package, S2).
+   Never close an issue on a gate you have seen fail without saying so in the DONE comment. `TestRecipeSwitchPlotRender` is the other known timing-flaky test.
 
 ## 4. Paste-ready prompts
 
