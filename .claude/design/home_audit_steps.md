@@ -1,5 +1,6 @@
 # HOME: audit steps and audit mode
 
+**Read `home_audit_reading_guide.md` first (the map, the questions to decide, the status of the diagrams).**
 **Status:** 2026-11-11, version 4, after the full consistency review with Eve (history: git commits 5b59a4a, e5ae922,
 069052b). Companion: `home_preview_filters.md`. Decision record: ADR-099 (`architecture_decisions.md`). Section 18 is the review as a scientist and as a data
 scientist (findings, evidence, remedies); section 19 is the software's role and the guard rails (issue #64); section 20 is the review as the software developer

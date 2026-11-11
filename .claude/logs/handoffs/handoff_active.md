@@ -418,3 +418,34 @@ testing starts clean. For that fresh session:
    `wrangle_studio.py`, `export_handlers.py`, `home_theater.py` ×2) is there to help a fresh
    session quickly find which test/UML element governs a given panel's intent — grep for
    `VOCAB NOTE` or `GUARDED` if something in HOME looks wrong and the reason isn't obvious.
+
+## Handoff 2026-11-11 (HOME filters and audit: design day; a fresh session may start the build of Exploration and the engine fixes)
+
+**Branch:** dev. Code last changed by `fa552bf` / `28ec1a6`; everything after is design (UML, ADR-098/099, design files, issues).
+**Uncommitted and not ours:** `CLAUDE.md` (Eve added section 9 "No Guessing"). Never stage it.
+
+### What happened
+Eve's manual test of HOM-09 led to a day of design. Result: Exploration (preview, table only, per dataset, cleared on view change) is
+agreed; audit mode (the only way to change a plot) is designed but **not decided** (13 questions in
+`.claude/design/home_audit_reading_guide.md`). Four reviews (scientist, data scientist, developer, consistency checker) found
+verified bugs and design holes; the method is saved in `.claude/workflows/design_review_personas.md`.
+
+### Built today (on dev, tested)
+Preview filters change the table on every view and plots only on My view (ADR-098); trash unapplies at once; one operator vocabulary
+and text size (#57, closed); tests for all of it (headless 1599 passed; `test_shiny_smoke.py` 38 passed, 3 skipped).
+
+### Verified problems, open (issues)
+#61 `extract_primary_keys` returns `[]` on tiered join steps (the ADR-049 key safeguards never fire; its only test is a dead debug script);
+#62 integer thresholds truncated (`>= 90.5` keeps 90); #63 missing values dropped silently by `!=`, none-of and comparisons; #59 helper and
+message for a plot broken by a dropped column; #64 guard rails; #60 the audit redesign; #56 Exploration.
+
+### Next step for a new session
+Open `.claude/tasks/home_exploration_build_brief.md` and follow it: WP1, WP2, WP3a, WP4 (with WP5), WP6; WP3b (the NA rule) is BLOCKED. It has a safety protocol (baseline, one revertible
+commit per package, frozen files, compatibility with the audit) and four questions for Eve to ask first. Task entries: `HOME-EXPLORE-1..6` in `tasks.md`.
+Re-verified the same day: #61 (empty key list on 3 recipes), #59, #62, #63; and a new finding, the audit engine and the translated recipe actions
+give different rows for an integer threshold, so the figure and the reproducibility bundle disagree today (#62).
+Audit mode waits for Eve (`AUDIT-DECIDE-1`). Archive tag before the redesign: `archive/home-filters-uml-2026-11-11`.
+
+### Where everything is
+Reading guide `.claude/design/home_audit_reading_guide.md`; design `home_preview_filters.md`, `home_audit_steps.md` (sections 18-20 are the
+reviews); ADR-098 (built) and ADR-099 (target); diagrams `docs/UML/diagrams/HOME-*` and `UI-HOME-*`; issues #56, #59-#64.

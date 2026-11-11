@@ -26,6 +26,19 @@
 
 Items with no blockers — can be started immediately.
 
+### HOME Exploration and engine fixes (issues #56, #61, #62, #63; brief: `home_exploration_build_brief.md`)
+
+Compatible with the audit redesign (ADR-099), which is not decided yet; none of these touches the header strip, My view or the
+audit steps. Order: WP1, WP2, WP3a, WP4 (with WP5), WP6. Safety protocol S1-S8 of the brief binds (baseline, one commit per package, frozen files, compatibility with the audit).
+
+- [ ] **HOME-EXPLORE-1** `[sonnet/medium]` — #62 integer thresholds: one shared filter-value implementation (`libs/utils`), correct rounding by operator, equivalence test engine = VizFactory = translated recipe action (today the figure and the reproducibility bundle DISAGREE), tests from the table of #62, mutation check.
+- [ ] **HOME-EXPLORE-2** `[sonnet/medium]` — #61 key extraction reads tiered join steps and `is_primary_key` (inferred when absent), works for recipes without joins; test in a collected `test_*.py` on the real `ConfigManager`; fix or retire `debug_home_theater.py` (IndentationError, not collected). Expect the PK safeguards of ADR-049 to start firing.
+- [ ] **HOME-EXPLORE-3a** `[sonnet/medium]` — #63 step 1: inform only ("N rows have no value in this column and are removed by this filter"), no change of the rows.
+- [ ] **HOME-EXPLORE-3b** `[sonnet/high]` — #63 step 2, the NA rule: **BLOCKED, do not start** (needs Eve's default and the audit step compiler; engine and registered actions must change together, backward compatible).
+- [ ] **HOME-EXPLORE-4** `[sonnet/high]` — #56 preview lists per dataset (pure store), cleared on Data-to-show and recipe change with a message and a WHY comment, panel header names the target, reset-to-all-columns button, one operator vocabulary.
+- [ ] **HOME-EXPLORE-5** `[sonnet/high]` — filter test suite with a data oracle (table text and "Viewing rows a through b of N"), edge cases of `home_preview_filters.md` section 9, screenshots in `tmpAI/`, mutation check per rule.
+- [ ] **HOME-EXPLORE-6** `[haiku/low]` — help, user guide, FAQ, ADR-098 and contract text for the above.
+
 ### Manual-testing findings, 2026-11-10 (issues #53/#54/#55)
 
 Eve's own first manual pass through Home/Blueprint/Export surfaced three real gaps code
@@ -487,6 +500,15 @@ Names agreed: `deployment` (`SPARMVET_DEPLOYMENT`), `app features` (`SPARMVET_AP
 ---
 
 ## 🤔 Needs Discussion / Decision
+
+### HOME audit redesign (ADR-099, issues #60, #64): waiting for Eve's decisions
+
+Read `.claude/design/home_audit_reading_guide.md` (section 3 lists the 13 questions). No code before the answers. Build order when
+decided: `home_audit_steps.md` section 20 (D14).
+
+- [ ] **AUDIT-DECIDE-1** `[opus/high]` — Eve answers the questions of the reading guide section 3 (stage and reach, NA default, reason categories, caption, key source, reach selector, audit table selector, trial computation, event log, lineage map, guard-rail list, D1-D14, legacy names); then redraw `HOME-AUDIT-LINEAGE` and `HOME-AUDIT-EFFECT`, update ADR-099, write the build plan.
+- [ ] **AUDIT-REPLACE-1** `[sonnet/medium]` — tracking item so nothing becomes orphaned: when audit mode is built, replace (do not leave behind) My view, Compare and "Plot to show" in the strip, the propagation dialog, per-plot `t3_audit_steps_by_plot` (old sessions map to plot-level steps), the pending badge / filter inventory / Apply gate of the right panel, and update `UC-HOME`, `SEQ-AUDIT`, `COM-REACTIVE`, `C4-COMP-HOME`, `UI-HOME as built today`, the amendment notes in ADR-024, 044, 049, 085, 086, 089, 097, 098, the contract and the help. Depends: AUDIT-DECIDE-1.
+- [ ] **AUDIT-USABILITY-1** `[sonnet/low]` — before the dialog wording is final: 2-3 scientists who did not write the design use it on the ST22 recipe, thinking aloud (persona 5 of `design_review_personas.md`). Depends: dialog built.
 
 Items where a design pass, ADR authoring, or explicit scoping is needed before code can be written.
 

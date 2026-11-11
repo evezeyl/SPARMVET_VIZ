@@ -16692,6 +16692,46 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhy7i6aF2PLkQ="
 									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzEpRhm5t9JA=",
+									"_parent": {
+										"$ref": "AAAAAAGhypjRhEM3MTg="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzEpRhW5rvMU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzEpRhm5uGVU=",
+											"_parent": {
+												"$ref": "AAAAAAGhzEpRhm5t9JA="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 710,
+											"width": 1320,
+											"height": 26,
+											"text": "PENDING (Eve to confirm, home_audit_steps.md section 18): the levels 0-3 drawn here may become STAGE (sources, T1, T2, plot) x REACH (plots, table, project). A table-level step cannot be limited to some of the plots that read the table. Values and columns come from the table the user looks at",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 700,
+									"width": 1340,
+									"height": 60,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzEpRhm5uGVU="
+									}
 								}
 							]
 						},
@@ -16970,6 +17010,14 @@
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
 							"name": "Example in amber: a LEVEL 1 step on Quast_with_metadata changes its T1, its T2 and the plots miaou and assembly_quality_dotplot. QC_Reads_Anchor and MLST_with_metadata are not touched, although metadata_schema is a source of all three: the step is inserted inside the build of this collection only. LEVEL 0 would change all three columns. Value filters and drops are never early."
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzEpRhW5rvMU=",
+							"_parent": {
+								"$ref": "AAAAAAGhypjRhEM2UxI="
+							},
+							"name": "PENDING (Eve to confirm, home_audit_steps.md section 18): the levels 0-3 drawn here may become STAGE (sources, T1, T2, plot) x REACH (plots, table, project). A table-level step cannot be limited to some of the plots that read the table. Values and columns come from the table the user looks at"
 						}
 					]
 				},
@@ -18497,7 +18545,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "steps with reasons, original and audit data, attrition table, coverage check, forked recipe (detail: HOME-AUDIT-FLOW)",
+							"name": "after a PRE-EXPORT REVIEW: steps with reasons, original and audit data, attrition table, coverage check, forked recipe (detail: HOME-AUDIT-FLOW)",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -21934,6 +21982,46 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9GV9V89Oro="
 									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzEpRp2510eg=",
+									"_parent": {
+										"$ref": "AAAAAAGhysAab03vrP0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzEpRp25zKBk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzEpRp252rAk=",
+											"_parent": {
+												"$ref": "AAAAAAGhzEpRp2510eg="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 770,
+											"width": 1450,
+											"height": 13,
+											"text": "PENDING (Eve to confirm, home_audit_steps.md section 18): levels 0-3 may become STAGE x REACH; the export row will also list the pre-export review and the event log",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 770,
+									"width": 1470,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzEpRp252rAk="
+									}
 								}
 							]
 						},
@@ -22256,6 +22344,14 @@
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
 							"name": "Colours: dark blue = recomputed where the step is inserted (starting point); light blue = recomputed because it depends on it; grey = reused as it is or unchanged; amber = the user step. Nothing is ever copied: a stage is either reused or recomputed"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzEpRp25zKBk=",
+							"_parent": {
+								"$ref": "AAAAAAGhysAab03u+aQ="
+							},
+							"name": "PENDING (Eve to confirm, home_audit_steps.md section 18): levels 0-3 may become STAGE x REACH; the export row will also list the pre-export review and the event log"
 						}
 					]
 				},
@@ -25804,7 +25900,7 @@
 											"top": 646,
 											"width": 668,
 											"height": 65,
-											"text": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist | all plots that use the same table as this plot | every plot in the project); chain with changed stages in bold; plots and tables affected, rows AND entities before/after, NA rows; guard-rail findings (info | warning to acknowledge | confirm with a reason); button Show the lineage map; reason category + reason (required); initials (optional). Cancel | Apply",
+											"text": "DIALOG New audit step, 3 steps (opens over the screen; nothing is applied until the last Apply). STEP 1 WHAT: kind; reach selector, nothing preselected. STEP 2 CHECK: chain, plots and tables affected, rows AND entities before/after, NA rows, findings (info | warning | confirm with a reason), before/after preview of the open plot, button Show the lineage map. STEP 3 WHY: reason category + reason, warnings acknowledged, initials (optional). Cancel | Back | Next | Apply",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -26543,7 +26639,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist | all plots that use the same table as this plot | every plot in the project); chain with changed stages in bold; plots and tables affected, rows AND entities before/after, NA rows; guard-rail findings (info | warning to acknowledge | confirm with a reason); button Show the lineage map; reason category + reason (required); initials (optional). Cancel | Apply"
+							"name": "DIALOG New audit step, 3 steps (opens over the screen; nothing is applied until the last Apply). STEP 1 WHAT: kind; reach selector, nothing preselected. STEP 2 CHECK: chain, plots and tables affected, rows AND entities before/after, NA rows, findings (info | warning | confirm with a reason), before/after preview of the open plot, button Show the lineage map. STEP 3 WHY: reason category + reason, warnings acknowledged, initials (optional). Cancel | Back | Next | Apply"
 						},
 						{
 							"_type": "WFText",
@@ -26551,7 +26647,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist | all plots that use the same table as this plot | every plot in the project); chain with changed stages in bold; plots and tables affected, rows AND entities before/after, NA rows; guard-rail findings (info | warning to acknowledge | confirm with a reason); button Show the lineage map; reason category + reason (required); initials (optional). Cancel | Apply"
+							"name": "DIALOG New audit step, 3 steps (opens over the screen; nothing is applied until the last Apply). STEP 1 WHAT: kind; reach selector, nothing preselected. STEP 2 CHECK: chain, plots and tables affected, rows AND entities before/after, NA rows, findings (info | warning | confirm with a reason), before/after preview of the open plot, button Show the lineage map. STEP 3 WHY: reason category + reason, warnings acknowledged, initials (optional). Cancel | Back | Next | Apply"
 						},
 						{
 							"_type": "WFPanel",

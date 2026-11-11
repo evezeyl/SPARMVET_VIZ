@@ -394,3 +394,20 @@ unchanged); the audit wireframe dialog lists them.
 recipe graph, event log, step compiler, guard rails, policy, audit cache; layers; tests); `HOME-AUDIT-FLOW` is now
 three steps (what, check with an effect preview, why) and ends in the pre-export review. The wireframe dialog text still
 shows one dialog and is brought in line when Eve confirms D4.
+
+## HOME filters and audit: status of every diagram (checked 2026-11-11)
+
+Statuses: **target** (the design Eve agreed or proposed), **pending** (waits for a decision), **as built** (describes today's app, kept
+until the change is built; tracked by `AUDIT-REPLACE-1` in `tasks.md`), **valid** (still true).
+
+| Diagram | Status | Note |
+|---|---|---|
+| HOME-EXPLORATION, HOME-VIEW-MATRIX, UI-HOME-EXPLORATION, UI-HOME-AUDIT | target | |
+| HOME-AUDIT-FLOW, HOME-AUDIT-GUARDRAILS, HOME-AUDIT-CACHE, HOME-AUDIT-COMPONENTS | target | components diagram is new (developer review) |
+| HOME-AUDIT-LINEAGE, HOME-AUDIT-EFFECT | pending | red box: levels 0-3 may become stage x reach |
+| UI-HOME The screen as built today, SEQ-AUDIT, COM-REACTIVE, C4-COMP-HOME | as built | replaced when audit mode is built |
+| UC-HOME | mixed | four old use cases renamed "(replaced by audit mode, ADR-099)"; four planned ones added |
+| STM-STAGE, SEQ-OPEN, SEQ-EXPORT | valid | gain audit companions when built |
+
+`audit_uml_model.py` checks tags against the repository; it does not check that diagrams agree with each other. That check is the
+Checker persona of `.claude/workflows/design_review_personas.md` and is run by hand.
