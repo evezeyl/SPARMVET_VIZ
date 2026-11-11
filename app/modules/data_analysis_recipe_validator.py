@@ -38,6 +38,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional, Union
 
+import polars as pl
 import yaml
 from transformer.data_wrangler import DataWrangler
 from utils.config_loader import ConfigManager
@@ -179,10 +180,22 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
     problems: list[DataAnalysisRecipeProblem] = []
     for location, ds_id, spec in schemas:
         try:
-            columns = orchestrator.prepare_ingredient(ds_id, spec).collect_schema().names()
+            frame = orchestrator.prepare_ingredient(ds_id, spec)
+            columns = frame.collect_schema().names()
         except Exception as exc:
             problems.append(DataAnalysisRecipeProblem(name, location, f"dataset cannot be loaded: {exc}", getattr(exc, "tip", None)))
             continue
+        # WHY: collect_schema() only plans the query. A step whose input type does not fit (a text step on a
+        # column declared categorical) fails when the plan runs, so run it on one row (issue #71). Value
+        # problems (a letter in a numeric column) are not reported here: they are checked at import (issue #11).
+        try:
+            frame.head(1).collect()
+        except (pl.exceptions.SchemaError, pl.exceptions.ColumnNotFoundError) as exc:
+            problems.append(DataAnalysisRecipeProblem(
+                name, location, f"wrangling cannot run on this dataset: {exc}",
+                "Compare the declared type of the column with what the wrangling step expects (text steps need utf8)."))
+        except pl.exceptions.PolarsError:
+            pass
         for slug in _declared_columns(spec.get("output_fields")):
             if slug in columns:
                 continue

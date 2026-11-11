@@ -118,6 +118,50 @@ def test_a_missing_data_file_is_reported(tmp_path):
     assert problem.location == "data_schemas.B" and "cannot be loaded" in problem.problem
 
 
+# --- a step that cannot run on its declared type (issue #71) ---------------------------------------------
+
+def _recipe_with_a_split_step(tmp_path: Path, code_type: str) -> Path:
+    """Dataset B declares `code` as <code_type> and splits it on "/" in tier 1 (needs text, not categorical)."""
+    (tmp_path / "b.tsv").write_text("sample_id\tcode\ns1\t1/2\ns2\t3/4\n")
+    recipe = tmp_path / "split.yaml"
+    recipe.write_text(dedent(f"""
+        id: split
+        data_schemas:
+          B:
+            source: {{type: local_tsv, path: {tmp_path / 'b.tsv'}}}
+            input_fields:
+              sample_id: {{type: categorical}}
+              code: {{type: {code_type}}}
+            wrangling:
+              tier1:
+                - action: split_column_to_parts
+                  column: code
+                  separator: "/"
+                  new_columns: [left, right]
+        joins:
+          OnlyB:
+            ingredients:
+              - dataset_id: B
+            steps:
+              tier1: []
+        """) + _ANALYSIS.replace("target_dataset: A", "target_dataset: OnlyB"))
+    return recipe
+
+
+def test_a_step_that_cannot_run_on_the_declared_type_is_reported(tmp_path):
+    """Found 2026-11-11: Detailed_summary declared a column categorical and split it as text; the check
+    passed (it only planned the query) while the dataset could not be built."""
+    recipe = _recipe_with_a_split_step(tmp_path, "categorical")
+    [problem] = validate_data_analysis_recipe_data(recipe, tmp_path)
+    assert problem.location == "data_schemas.B"
+    assert "wrangling cannot run" in problem.problem and "code" in problem.problem
+
+
+def test_the_same_step_on_a_text_column_has_no_problem(tmp_path):
+    recipe = _recipe_with_a_split_step(tmp_path, "utf8")
+    assert validate_data_analysis_recipe_data(recipe, tmp_path) == []
+
+
 # --- the build ---------------------------------------------------------------------------------
 
 def _build(tmp_path: Path, collection: str):
