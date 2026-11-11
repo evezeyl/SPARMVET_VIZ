@@ -19836,7 +19836,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Pick the REACH with a selector (radio buttons, nothing preselected), plain words: only this plot | these plots (choose below) | all plots that use the same table as this plot (names listed) | every plot in the project",
+							"name": "Pick the REACH with a selector (radio buttons, nothing preselected), plain words: selected plots (checklist of the recipe plots; one checked = only this plot) | all plots that use the same table as this plot (names listed) | every plot in the project",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -19859,7 +19859,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "The STAGE follows from the kind and the reach: remove samples = early (sources) for same-table / project reach; value filter and drop = late (T2) or plot (T3), never early; a plot reach = T3",
+							"name": "The STAGE follows from the kind and the reach: remove samples = early (sources) for same-table / project reach; value filter and drop = late (T2) or plot (T3), never early; selected plots = T3. Columns and values come from the data (T3 frame, audit T2, key values), never from the plots",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -21999,7 +21999,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "Early = remove samples (by ID) only, on EVERY ingredient of a reached collection that has the key (left joins keep rows otherwise); keys come from the join steps, never from column names. Value filters and drops are never early"
+							"name": "Early = remove samples (by ID) only, on EVERY ingredient of a reached collection that has the key (left joins keep rows otherwise). Keys are declared with is_primary_key in the data schema and linked by the join steps, never found from column names. Value filters and drops are never early"
 						},
 						{
 							"_type": "FCProcess",
@@ -25572,7 +25572,7 @@
 											"top": 646,
 											"width": 668,
 											"height": 65,
-											"text": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (only this plot | these plots, choose below | all plots that use the same table as this plot | every plot in the project) with plot names; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)",
+											"text": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist of the recipe plots | all plots that use the same table as this plot | every plot in the project); lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -26311,7 +26311,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (only this plot | these plots, choose below | all plots that use the same table as this plot | every plot in the project) with plot names; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
+							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist of the recipe plots | all plots that use the same table as this plot | every plot in the project); lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
 						},
 						{
 							"_type": "WFText",
@@ -26319,7 +26319,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (only this plot | these plots, choose below | all plots that use the same table as this plot | every plot in the project) with plot names; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
+							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist of the recipe plots | all plots that use the same table as this plot | every plot in the project); lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
 						},
 						{
 							"_type": "WFPanel",

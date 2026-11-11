@@ -4988,8 +4988,9 @@ and a filter built on Raw can be wrong on Result (wide vs long, renamed columns,
    before/after and the warnings, needs a **reason**, and takes effect on **Apply** (Cancel changes nothing).
    Removing a step is the undo (recompute without it; later steps are kept and re-checked; statuses applied / not
    concerned / broken; a broken step blocks the export). Controls: Undo last, Revert to step N, Remove all.
-4. **Reach and stage, four internal levels.** The user picks the **reach** (nothing preselected): only this plot,
-   these plots, all plots that use the same table, every plot in the project. The **stage** follows from the kind of
+4. **Reach and stage, four internal levels.** The user picks the **reach** (nothing preselected): selected plots (a
+   checklist built from the recipe's plots; one checked = only this plot), all plots that use the same table,
+   every plot in the project [confirm: three options with a checklist; where the selector sits is open]. The **stage** follows from the kind of
    step: *remove samples (by ID)* is early, at the sources inside the build of each reached collection (level 0
    project, level 1 this collection); value filters and column drops are late, on T2 (level 2), or on the plot
    frame (level 3); value filters and drops are never early [confirm]. Order: levels 0-1, the recipe's own steps,
@@ -4999,9 +5000,13 @@ and a filter built on Raw can be wrong on Result (wide vs long, renamed columns,
    list of operations that will run); the reason, initials and date are not hashed; the key is stored in the file
    and checked on read. N = 5 recent states by default (a setting); a missing entry is recomputed from the step
    list. The step list is the source of truth.
-6. **Keys come from the join steps**, never from column names (key family = connected (data schema, column) pairs);
-   a key exclusion applies to every ingredient of a reached collection that has the key (left joins); a missing key
-   or value is a reported no-op; a renamed key in tier-1 is refused with a message.
+6. **Keys are declared, not guessed** [confirm]: a key is a field with `is_primary_key: true` in a data schema's
+   `input_fields` (this works in recipes without any join), and the join steps link differently named columns into
+   one key family; never found from column names. A key exclusion applies to every ingredient of a reached collection
+   that has the key (left joins); a data schema with no declared key falls back to a row filter on a column the user
+   picks; a missing key or value is a reported no-op; a renamed key in tier-1 is refused with a message. Recipe
+   practice (documented): same ID name everywhere, `is_primary_key` set, key never renamed in tier-1. Filter
+   columns and values come from the data (T3 frame, audit T2, key values of the sources), never from the plots.
 7. **Project consistency is shown, never silent:** a chain drawing with the changed stages in bold and colour, the
    affected list, a project overview (collections x steps) and a coverage check for key exclusions. Drops are not
    recommended outside plot level; a warning lists the plots and steps that use the column (#59).
@@ -5021,7 +5026,13 @@ keeping My view as a scratchpad without the sandbox flag (plots would change wit
 the original data or the recipe files; early value filters (column names at the sources differ from what the user
 sees).
 
-**Verified facts it rests on (2026-11-11).** `prepare_ingredient` runs once per collection build, so an early step is
+**Added during the review (2026-11-11):** Apply is atomic (the step list changes only if the recomputation
+succeeds); an append-only event log records creations, removals and reverts and is exported [confirm].
+
+**Verified facts it rests on (2026-11-11).** `extract_primary_keys` returns an empty list on tiered join steps,
+verified with the real `ConfigManager` (issue #61), so the key safeguards of ADR-049 do not fire today;
+`is_primary_key: true` is set on `sample_id` in 10 of the 11 ST22 data schemas, not on the reference table; the
+engine accepts `on`, `left_on`/`right_on`; `3_test_no_joins` has a data schema used directly and declares its key. `prepare_ingredient` runs once per collection build, so an early step is
 local to the collections reached; a join cannot be an ingredient of another join (T2 is a leaf); the existing
 translator already forks the join per plot because T2 is shared; `1_test_data_ST22_dummy` has `sample_id` in all
 collections, casts it to String at tier-1 in two places, renames it nowhere, and has no tier-1 step that
