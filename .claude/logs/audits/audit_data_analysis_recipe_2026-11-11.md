@@ -1,0 +1,31 @@
+Status: PROCESSED 2026-11-11 — 0 tasks created, 0 false positives skipped, 0 acceptable debt noted (both pass; neither can see a many-to-many join or an ignored plot-spec key: issues #66 and #68)
+# Audit Report: Data Analysis Recipe Structure Integrity
+Generated: 2026-11-11T22:00:08
+Project root: /home/evezeyl/Documents/Insync/gdrive/OBSWORK/20_GITS/SPARMVET_VIZ
+Assembler: libs/transformer/tests/debug_assembler.py
+Scratch output: tmpAI/audit_data_analysis_recipe_integrity
+Rule: All pipeline data analysis recipes must assemble without error (ADR-041, ADR-024)
+
+- Data analysis recipes checked: 7
+- Passed: 7
+- Failed: 0
+
+## Result: ✅ PASS
+
+All pipeline data analysis recipes assemble successfully.
+
+## ✅ Passing Data Analysis Recipes
+
+- `config/data_analysis_recipes/pipelines/1_Abromics_general_pipeline.yaml`
+- `config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml`
+- `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- `config/data_analysis_recipes/pipelines/3_test_no_joins.yaml`
+- `config/data_analysis_recipes/pipelines/demo_abromics.yaml`
+- `config/data_analysis_recipes/pipelines/figshare_integration.yaml`
+- `config/data_analysis_recipes/pipelines/stress_test_master.yaml`
+
+## References
+- `.claude/rules/rules_data_analysis_recipe_structure.md` — canonical YAML format
+- `.claude/rules/rules_data_engine.md` — 3-Tier lifecycle, wrangling standards
+- `libs/transformer/tests/debug_assembler.py` — assembler debug runner
+- Routine 3 (Data analysis recipe integrity) in `.claude/workflows/audit_routine_registry.md`
