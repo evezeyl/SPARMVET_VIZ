@@ -2,7 +2,7 @@
 
 **Status:** 2026-11-11, version 4, after the full consistency review with Eve (history: git commits 5b59a4a, e5ae922,
 069052b). Companion: `home_preview_filters.md`. Decision record: ADR-099 (`architecture_decisions.md`). Section 18 is the review as a scientist and as a data
-scientist (findings, evidence, remedies). Nothing here is code yet. Marks: **[built]**, **[to build]**, **[confirm]** = my proposal from the review, Eve to confirm before code.
+scientist (findings, evidence, remedies); section 19 is the software's role and the guard rails (issue #64). Nothing here is code yet. Marks: **[built]**, **[to build]**, **[confirm]** = my proposal from the review, Eve to confirm before code.
 
 ## 1. The rule, in one sentence
 
@@ -76,6 +76,22 @@ Audit mode is not a new central page. It reuses what HOME already has, so very l
 - **Audit table stage selector [confirm]:** the audit table can show audit T1 | audit T2 | audit T3 of the plot
   (read-only, no filters there), so the user can check where a sample was removed (Eve's idea of selecting T1, T2,
   T3 in the workspace).
+- **Lineage map [confirm]:** a button "Show the lineage map" (in the dialog and in the right panel) opens a read-only
+  map of the plot's lineage: sources, ingredients and their tier-1 steps, the join and how it joins, the tier-2
+  steps, the plot; steps in plain words; steps that compute population statistics flagged; the audit steps overlaid;
+  the nodes the step being made would change highlighted. The user may not know how the recipe is built, so this is how
+  they understand it before deciding. **How it avoids overlapping Blueprint (checked in the code and the rules):**
+  - *Layers:* no problem. `BlueprintMapper` and `build_plot_lineage` are pure library code (no Shiny; HOME already
+    imports `blueprint_arch`, for example in `export_handlers.py`); Tier 3 (`app/`) may import any library.
+  - *Rendering:* the Blueprint map is Blueprint's own panel (`blueprint_tubemap_ui`, gated by `blueprint_enabled`).
+    The cross-panel rule (CLAUDE.md section 8, rule 4) forbids HOME from mounting it. HOME has **its own read-only
+    renderer** in its own dialog, gated by the sandbox flag. First version: a plain layered list (HTML), no graph
+    library; the vendored Cytoscape stays an option.
+  - *One source of truth:* the structure comes from the shared lineage code (`build_plot_lineage`, extended if needed);
+    the plain-language text comes from the action catalogue that the app injects at startup (`schema_registry`, the
+    descriptions every action already has); the "population statistics" flags come from the guard-rail registry in
+    `app/` (the library cannot import `transformer`). Blueprint is not modified, so the two maps cannot drift.
+  - *No handoff:* no "edit this step" button (user-space independence); the text points to Blueprint for recipe changes.
 - **Plots are not rebuilt in a new place.** The central plot and table handlers are the ones used today (My view
   already reads another data source for the same plots; Compare already has two panes). Only the data source
   changes to the audit data.
@@ -322,6 +338,7 @@ HOME test plan items). Checked list, to re-verify before the code starts.
 | `app/handlers/home_theater.py` | strip -> Exploration, mode switch, panel dispatch, plot and table data sources, My view/Compare removed | `test_shiny_smoke`, `test_view_badge`, `test_render_every_plot`, `test_export_view_consistency`, `debug_home_theater`, `test_ui_scenarios`, `test_ui_app_features_masking` |
 | `app/handlers/filter_and_audit_handlers.py` | shared filter form, two actions, new dialog, propagation replaced | `test_filter_operators`, smoke filter tests (new data-oracle suite) |
 | `app/handlers/audit_stack.py` | step list, statuses, delete/undo/revert, no draft | `test_session_manager` (gatekeeper), smoke `TestAuditGate` |
+| NEW `app/modules/audit_guard_rails.py` (pure functions, the registry of section 19) | checks, levels, messages, help anchors | one test per check with a mutation check; test that the dialog, help and export list the same ids |
 | `app/modules/t3_audit_engine.py`, `view_badge.py` | filter apply, labels, skip rule, badge texts | `test_filter_operators`, `test_view_badge` |
 | `app/modules/session_manager.py`, `session_handlers.py` | steps carry kind/reach/level/initials; old per-plot nodes map to level 3 | `test_session_manager`, `test_legacy_formats`, `test_write_t3_ghost_warning`, `debug_session_flow` |
 | `app/modules/orchestrator.py`, `cache_keys.py` | audit overlay, separate audit cache, chained keys, no unused-ingredient builds | `test_cache_chain`, `test_tier2_store`, `test_anchor_determinism`, `test_data_analysis_recipe_data_check`, `test_retest_data_analysis_recipes` |
@@ -341,7 +358,7 @@ HOME test plan items). Checked list, to re-verify before the code starts.
 `app_features_traceability_matrix.md`, `project_conventions.md`, `.claude/design/` maps (`ui_panel_map_current`,
 `ui_reachability_map`, `functionality_dependency_map`, `app_features_capability_matrix`,
 `app_features_scoping_guide`, `export_specification`, `design_t3_export_threading`, `reproducible_export_design`),
-`app/src/help/home.md`, `app/README.md`, user guide (`system_transparency`, `audit_pipeline`, `reproducible_plots`,
+`app/src/help/home.md` (and the help of the audit filters), `app/README.md`, a new page "Before you audit", user guide (`system_transparency`, `audit_pipeline`, `reproducible_plots`,
 `understanding_your_export`), `docs/appendix/FAQ.qmd`, `docs/appendix/data_lifecycle_theater.qmd`,
 `docs/workflows/ui_app_features.qmd`, `docs/user_guide/glossary_and_feedback.qmd` (add data schema, join, table; there is no
 definition of collection or table in the documentation today), `docs/appendix/Standards_yaml.qmd` and
@@ -369,7 +386,7 @@ level 3); a plot left with zero rows; a drop of a used column; a drop of an unus
 steps; session restore against a changed recipe; export after a level 0 step (attrition, coverage, forked recipe
 re-runs to the same result); huge data (warning); cache depth reached; missing audit cache entry (recompute); trial
 computation then Cancel; Remove all steps returns to the originals; stage keys contain the upstream key; comparison
-flag on and sandbox off (validator refuses); a recipe without any join (`3_test_no_joins`) with a declared key; a
+flag on and sandbox off (validator refuses); a warning acknowledged, and an override with its reason, stored and exported; a step with a warning but no override reason (refused); NA rows with each operator; a recipe without any join (`3_test_no_joins`) with a declared key; a
 data schema with no declared key; a join on a column that is not declared as a key; recomputation that fails (Apply is
 atomic); a step that leaves a plot with zero rows; a pasted list of thousands of IDs; the plot checklist with many plots.
 
@@ -397,6 +414,12 @@ numbers; the event log; atomic Apply; legacy step types kept as they are; names 
 **Decided (Eve, later in the review):** the reach selector sits in the dialog; the key mapping is read from the loaded
 dictionaries; `is_primary_key` is optional (inference as fallback); all three items I had forgotten (atomic Apply, event
 log, recipe documentation) are accepted.
+
+**Decided (Eve, 2026-11-11, section 19):** the principle (inform, warn, let the user decide; a risky choice needs a recorded
+reason; block only technical problems); the four levels; the NA rule (never silent); a guard-rail registry; the review
+findings documented in issue #64; the problems and the principle go into the documentation and the help.
+**To confirm [confirm]:** the first list of checks and their levels (section 19), the thresholds (20 %, 3 entities), the
+reason categories, the optional caption (off by default), the lineage map.
 
 **Open:**
 1. Exact wording of the reach options and kinds (draft in section 17, to review together).
@@ -468,3 +491,67 @@ works on **the table they look at** (T1, T2 or the plot), and that values must c
 **What I would not trust even after these remedies:** removing samples at plot level for a table that contains
 population statistics (flaw 5): the tool warns, but only the user can decide; and any audit on data whose IDs are
 not clean (flaw 4): the post-condition check catches it, it does not fix it.
+
+## 19. The software's role and the guard rails (principle decided by Eve, 2026-11-11; issue #64)
+
+**Principle.** The software makes good data science possible and the user's informed choice easy. It does not decide
+for the user: it **informs, warns and lets the user decide**. A risky choice needs a **written reason** that is
+recorded and exported. The software **blocks only what is technically wrong or not reproducible**, never a scientific
+judgement. What is data-science practice (not cleaning data with the audit, stating exclusion criteria in advance,
+reporting every exclusion) is taught in the help and the documentation: "with great power comes great
+responsibility: think before you do".
+
+**Four levels.**
+
+| Level | What the user sees and must do | Recorded in the step and exported |
+|---|---|---|
+| **Info** | shown in the dialog (counts, affected plots and tables, chain), nothing to do | the numbers |
+| **Warning** | shown with a plain explanation; the user ticks "I understand" before Apply | which warnings were shown and acknowledged |
+| **Confirm with a reason** | a strong warning for choices that usually bias results; the user writes why it is acceptable here | the override reason, with the warning id |
+| **Block** | technical only: a column or key that no longer exists, a renamed key refused, a step the forked recipe cannot represent, a failed recomputation | nothing is applied; the error is shown |
+
+**The mechanism: a guard-rail registry.** One module of pure functions, one entry per check: `id`, trigger (kind,
+stage, reach, data), level, plain-language message, help anchor, test. The checks run when the dialog opens and
+whenever a choice changes, again at Apply, and after recomputation (post-conditions). The list in the dialog, the help
+page and the export section are all built from the registry, so they cannot drift; adding a check is one entry and one
+test. For every check the entry states whether a warning is enough or the functionality must change, which is the
+decision Eve asked to make explicit.
+
+**Software correctness (must simply be right, with tests; not guard rails):** integer thresholds (#62); the NA rule
+below (#63); one filter implementation shared by the preview, the audit and VizFactory; the canonical hash; atomic
+cache writes; the export self-checks; the post-condition check itself.
+
+**The NA rule (decided: never silent).** Missing values are a visible, selectable value ("NA (missing)") in every
+value list. "Remove" filters keep rows with NA unless NA is selected; "keep" filters remove them unless NA is
+selected; for comparisons (>, <, between) rows with NA are removed unless the user ticks "keep rows with NA". The
+dialog always says "N rows have no value in this column: they are kept / removed". NaN follows the same rule.
+
+**Checks (first list; extend as problems are found).**
+
+| Id | Check | Level | Why |
+|---|---|---|---|
+| I1 | rows and **entities** before/after; entities that lose all their rows; NA rows touched | info | rows are not samples (flaw 3) |
+| I2 | tables and plots that change, with names; a table step cannot be limited to some plots | info | flaw 11 |
+| I3 | sample census per table; entities present in some tables only | info | flaw 6 |
+| W1 | large attrition (default more than 20 % of rows or entities; a setting) | warning | flaw 12 |
+| W2 | a plot loses a whole level of its x, fill or facet variable | warning | flaw 12 |
+| W3 | a group left with fewer than 3 entities | warning | flaw 12 |
+| W4 | drop of a column used by plots, steps or as a key (#59) | warning | #59 |
+| W5 | the step has no effect (already done by step N); a plot is left with zero rows | warning | flaw 8 |
+| C1 | samples removed at plot or T2 level **downstream of population statistics** (`z_score`, `percentile`, `window_agg`, `cum_sum`, `cum_count`, `value_counts`, `describe_stats`, `top_n_other`, `pivot`, `derive_categories`, `summarize`, `count_by_group`) | confirm with reason | flaw 5 |
+| C2 | the filter acts on the **variable the plot shows** ("outlier by value"): selection on the outcome | confirm with reason | flaw 7 |
+| C3 | **incomplete exclusion**: after the step the excluded values, or look-alikes (`' S2'`, `'s2'`), are still in a reached table | confirm with reason | flaw 4 |
+| B1 | a column or key used by a step no longer exists (status broken); a key renamed in tier-1; a step the forked recipe cannot represent; the recomputation failed | block | technical |
+
+**Reason category.** Required, from a short list (technical failure, contamination, duplicate, out of scope, outlier
+by value, other), plus free text (required for "outlier by value", "other" and every override). C2 suggests
+"outlier by value" automatically so the user does not have to remember. The report groups exclusions by category,
+prints the attrition (rows and entities, per step) and lists every acknowledged warning and override reason. The list
+is a constant in the code, documented, extendable by configuration later [open].
+
+**Figure caption [confirm].** An optional export setting, off by default: add "n = X after exclusions (Y excluded; see
+audit trail)" to the caption of each figure. Eve: the data should be cleaned beforehand, so this is optional.
+
+**Documentation and help.** A page "Before you audit" and the help of the audit filters: the problems above in plain
+words with an example each, the prior art (ARRIVE, CONSORT, Simmons et al. 2011), the principle, and the advice to use
+the lowest reach that fits. The check messages come from the registry.

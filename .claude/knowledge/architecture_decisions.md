@@ -5035,6 +5035,14 @@ zero-row statuses; export self-checks; a canonical hash; atomic cache writes. Pr
 table the user looks at (T1, T2 or plot) with a reach that depends on the stage, replacing the levels 0-3 by (stage,
 reach).
 
+**The software's role (Eve, 2026-11-11), issue #64:** the software informs, warns and lets the user decide; a risky
+choice needs a written reason that is recorded and exported; only technical problems block. Four levels (info,
+warning, confirm with a reason, block); a guard-rail registry (one module, one entry and one test per check) feeds
+the dialog, the help and the export; the NA rule (missing values are a visible, selectable value, never silent); a
+read-only lineage map in audit mode so the user understands how the recipe is built: it reuses the pure lineage data
+code of `blueprint_arch` but has its own renderer in HOME's own dialog (the cross-panel rule forbids mounting
+Blueprint's panel; Blueprint is not modified).
+
 **Added during the review (2026-11-11):** Apply is atomic (the step list changes only if the recomputation
 succeeds); an append-only event log records creations, removals and reverts and is exported [confirm].
 

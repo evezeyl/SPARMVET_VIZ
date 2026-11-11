@@ -384,3 +384,8 @@ Remember: `audit_uml_model.py` checks tags against the repository only, not whet
 `HOME-AUDIT-EFFECT` (levels 0-3 become stage x reach), add the review safeguards to `HOME-AUDIT-FLOW` (post-condition
 check, "no effect" status, warnings), and show the entity counts in the project overview. Until then those two diagrams
 show the levels of section 5 as agreed earlier.
+
+**Added 2026-11-11 (guard rails, issue #64):** `HOME-AUDIT-GUARDRAILS` (info, warning, confirm with a reason, block, with
+the check ids of `home_audit_steps.md` section 19); `HOME-AUDIT-FLOW` now shows the guard rails, the reason category, the
+acknowledged warnings and the read-only lineage map (own renderer in HOME; data from `blueprint_arch`; Blueprint
+unchanged); the audit wireframe dialog lists them.

@@ -18637,7 +18637,7 @@
 											"top": 270,
 											"width": 400,
 											"height": 52,
-											"text": "Pick the REACH with a selector (radio buttons, nothing preselected), plain words: only this plot | these plots (choose below) | all plots that use the same table as this plot (names listed) | every plot in the project",
+											"text": "Pick the REACH with a selector (radio buttons, nothing preselected), plain words: selected plots (checklist of the recipe plots; one checked = only this plot) | all plots that use the same table as this plot (names listed) | every plot in the project",
 											"wordWrap": true
 										}
 									],
@@ -18676,8 +18676,8 @@
 											"left": 30,
 											"top": 390,
 											"width": 400,
-											"height": 39,
-											"text": "The STAGE follows from the kind and the reach: remove samples = early (sources) for same-table / project reach; value filter and drop = late (T2) or plot (T3), never early; a plot reach = T3",
+											"height": 65,
+											"text": "The STAGE follows from the kind and the reach: remove samples = early (sources) for same-table / project reach; value filter and drop = late (T2) or plot (T3), never early; selected plots = T3. Columns and values come from the data (T3 frame, audit T2, key values), never from the plots",
 											"wordWrap": true
 										}
 									],
@@ -18716,8 +18716,8 @@
 											"left": 30,
 											"top": 510,
 											"width": 400,
-											"height": 65,
-											"text": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows before/after; plots that cannot show it; for a drop: plots and steps that use the column (detail: HOME-AUDIT-EFFECT)",
+											"height": 91,
+											"text": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows AND entities before/after, NA rows touched; plots that cannot show it; GUARD RAILS run: info, warnings to acknowledge, confirm with a written reason (detail: HOME-AUDIT-GUARDRAILS); \"Show the lineage map\" (read-only, own renderer)",
 											"wordWrap": true
 										}
 									],
@@ -18728,7 +18728,7 @@
 									"left": 20,
 									"top": 500,
 									"width": 420,
-									"height": 110,
+									"height": 130,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yKVd8c5Q="
 									}
@@ -18752,10 +18752,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 155,
-											"top": 672.5,
+											"top": 682.5,
 											"width": 150,
-											"height": 45,
-											"text": "Reason written and Apply pressed?",
+											"height": 65,
+											"text": "Reason + category written, warnings acknowledged, overrides explained, Apply pressed?",
 											"wordWrap": true
 										}
 									],
@@ -18764,7 +18764,7 @@
 									"left": 80,
 									"top": 650,
 									"width": 300,
-									"height": 90,
+									"height": 130,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yQleEDeg="
 									}
@@ -19380,7 +19380,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 244,
-											"top": 623,
+											"top": 633,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19399,7 +19399,7 @@
 										"$ref": "AAAAAAGhy66yKVd7GlE="
 									},
 									"lineStyle": 2,
-									"points": "230:610;230:650",
+									"points": "230:630;230:650",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66ziVf8eZc="
 									}
@@ -19426,7 +19426,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 234,
-											"top": 758,
+											"top": 778,
 											"width": 20.22998046875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -19447,7 +19447,7 @@
 										"$ref": "AAAAAAGhy66yQleDGn4="
 									},
 									"lineStyle": 2,
-									"points": "230:740;230:790",
+									"points": "230:780;230:790",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66ztVgE+NA="
 									}
@@ -19781,6 +19781,94 @@
 									"nameLabel": {
 										"$ref": "AAAAAAGhy660i1g8zQY="
 									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO01mtMDaY=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO01WtKduM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO01mtNN5A=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO01mtMDaY="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 570,
+											"top": 270,
+											"width": 400,
+											"height": 52,
+											"text": "Lineage map (read-only): sources, ingredients, joins, tier steps in plain words; population statistics flagged; audit steps overlaid; affected nodes highlighted. Own renderer in HOME; data from blueprint_arch; Blueprint unchanged",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 560,
+									"top": 260,
+									"width": 420,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO01mtNN5A="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhzDO1KmtUHG8=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO1KmtSzO0="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhzDO1KmtVA9c=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO1KmtUHG8="
+											},
+											"model": {
+												"$ref": "AAAAAAGhzDO1KmtSzO0="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 527,
+											"top": 493,
+											"width": 36.1435546875,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhzDO1KmtUHG8="
+											},
+											"edgePosition": 1,
+											"text": "button"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhzDO01mtMDaY="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhy66yKVd7GlE="
+									},
+									"lineStyle": 2,
+									"points": "440:500;560:500;560:360",
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO1KmtVA9c="
+									}
 								}
 							]
 						},
@@ -19882,7 +19970,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows before/after; plots that cannot show it; for a drop: plots and steps that use the column (detail: HOME-AUDIT-EFFECT)",
+							"name": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows AND entities before/after, NA rows touched; plots that cannot show it; GUARD RAILS run: info, warnings to acknowledge, confirm with a written reason (detail: HOME-AUDIT-GUARDRAILS); \"Show the lineage map\" (read-only, own renderer)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -19896,6 +19984,20 @@
 									"target": {
 										"$ref": "AAAAAAGhy66yQleBu8Y="
 									}
+								},
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhzDO1KmtSzO0=",
+									"_parent": {
+										"$ref": "AAAAAAGhy66yKVd533U="
+									},
+									"name": "button",
+									"source": {
+										"$ref": "AAAAAAGhy66yKVd533U="
+									},
+									"target": {
+										"$ref": "AAAAAAGhzDO01WtKduM="
+									}
 								}
 							],
 							"tags": [
@@ -19908,6 +20010,16 @@
 									"name": "detail",
 									"kind": "string",
 									"value": "HOME-AUDIT-EFFECT"
+								},
+								{
+									"_type": "Tag",
+									"_id": "AAAAAAGhzDQD32y4CO8=",
+									"_parent": {
+										"$ref": "AAAAAAGhy66yKVd533U="
+									},
+									"name": "detail",
+									"kind": "string",
+									"value": "HOME-AUDIT-GUARDRAILS"
 								}
 							]
 						},
@@ -19917,7 +20029,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Reason written and Apply pressed?",
+							"name": "Reason + category written, warnings acknowledged, overrides explained, Apply pressed?",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -20128,6 +20240,14 @@
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
 							"name": "TO FIX (#58): \"concerned\" is checked on the plot's audit T2, not on the data view; TO BUILD (#59): drop warning and clear message in a broken plot"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO01WtKduM=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "Lineage map (read-only): sources, ingredients, joins, tier steps in plain words; population statistics flagged; audit steps overlaid; affected nodes highlighted. Own renderer in HOME; data from blueprint_arch; Blueprint unchanged"
 						}
 					]
 				},
@@ -21576,8 +21696,8 @@
 											"left": 30,
 											"top": 610,
 											"width": 680,
-											"height": 26,
-											"text": "Early = remove samples (by ID) only, on EVERY ingredient of a reached collection that has the key (left joins keep rows otherwise); keys come from the join steps, never from column names. Value filters and drops are never early",
+											"height": 39,
+											"text": "Early = remove samples (by ID) only, on EVERY ingredient of a reached collection that has the key (left joins keep rows otherwise). Keys are declared with is_primary_key in the data schema and linked by the join steps, never found from column names. Value filters and drops are never early",
 											"wordWrap": true
 										}
 									],
@@ -26311,7 +26431,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist of the recipe plots | all plots that use the same table as this plot | every plot in the project); lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
+							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist | all plots that use the same table as this plot | every plot in the project); chain with changed stages in bold; plots and tables affected, rows AND entities before/after, NA rows; guard-rail findings (info | warning to acknowledge | confirm with a reason); button Show the lineage map; reason category + reason (required); initials (optional). Cancel | Apply"
 						},
 						{
 							"_type": "WFText",
@@ -26319,7 +26439,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist of the recipe plots | all plots that use the same table as this plot | every plot in the project); lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
+							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist | all plots that use the same table as this plot | every plot in the project); chain with changed stages in bold; plots and tables affected, rows AND entities before/after, NA rows; guard-rail findings (info | warning to acknowledge | confirm with a reason); button Show the lineage map; reason category + reason (required); initials (optional). Cancel | Apply"
 						},
 						{
 							"_type": "WFPanel",
@@ -26552,6 +26672,970 @@
 							"name": "flag",
 							"kind": "string",
 							"value": "t3_sandbox_enabled"
+						}
+					]
+				},
+				{
+					"_type": "FCFlowchart",
+					"_id": "AAAAAAGhzDO1Z2taHDA=",
+					"_parent": {
+						"$ref": "AAAAAAGht1V6z9k+p4w="
+					},
+					"name": "HOME-AUDIT-GUARDRAILS",
+					"ownedElements": [
+						{
+							"_type": "FCFlowchartDiagram",
+							"_id": "AAAAAAGhzDO1Z2tbJPM=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "HOME-AUDIT-GUARDRAILS The software informs, warns and lets the user decide",
+							"ownedViews": [
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhzDO2Imth+cA=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO2ImtflOw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO2ImtioEs=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO2Imth+cA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 30,
+											"width": 150,
+											"height": 13,
+											"text": "LEVEL",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 20,
+									"width": 170,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO2ImtioEs="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhzDO2RWtpelM=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO2RWtn4Qs="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO2RWtqO3k=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO2RWtpelM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 30,
+											"width": 280,
+											"height": 13,
+											"text": "WHAT THE USER SEES AND MUST DO",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 20,
+									"width": 300,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO2RWtqO3k="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhzDO2Ymtx5kk=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO2Ymtvflg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO2Ymtyrio=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO2Ymtx5kk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 530,
+											"top": 30,
+											"width": 300,
+											"height": 13,
+											"text": "RECORDED AND EXPORTED",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 520,
+									"top": 20,
+									"width": 320,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO2Ymtyrio="
+									}
+								},
+								{
+									"_type": "FCTerminatorView",
+									"_id": "AAAAAAGhzDO2fGt5Q8A=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO2fGt3GxM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO2fGt6Vj8=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO2fGt5Q8A="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 870,
+											"top": 30,
+											"width": 400,
+											"height": 13,
+											"text": "EXAMPLES (checks)",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 860,
+									"top": 20,
+									"width": 420,
+									"height": 50,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO2fGt6Vj8="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO2kGuBU8I=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO2kGt/frM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO2kGuCKXI=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO2kGuBU8I="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 110,
+											"width": 150,
+											"height": 13,
+											"text": "INFO",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 100,
+									"width": 170,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO2kGuCKXI="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO2pmuJppk=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO2pmuH4OE="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO2pmuKbmI=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO2pmuJppk="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 110,
+											"width": 280,
+											"height": 26,
+											"text": "Shown in the dialog (counts, affected plots and tables, chain). Nothing to do",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 100,
+									"width": 300,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO2pmuKbmI="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO2u2uRNrc=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO2u2uPFjU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO2u2uSFrU=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO2u2uRNrc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 530,
+											"top": 110,
+											"width": 300,
+											"height": 13,
+											"text": "The numbers (rows and entities, NA rows)",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 520,
+									"top": 100,
+									"width": 320,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO2u2uSFrU="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO20muZ7RI=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO20muXZ/M="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO20mua9/Y=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO20muZ7RI="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 870,
+											"top": 110,
+											"width": 400,
+											"height": 26,
+											"text": "I1 rows and entities before/after, entities losing all rows, NA rows | I2 plots and tables that change | I3 sample census",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 860,
+									"top": 100,
+									"width": 420,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO20mua9/Y="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO26muhQcY=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO26mufKHM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO26mui6is=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO26muhQcY="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 220,
+											"width": 150,
+											"height": 13,
+											"text": "WARNING",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 210,
+									"width": 170,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO26mui6is="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO3A2upZMM=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO3A2unV5g="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO3A2uqBHk=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO3A2upZMM="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 220,
+											"width": 280,
+											"height": 26,
+											"text": "Plain explanation; the user ticks \"I understand\" before Apply",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 210,
+									"width": 300,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO3A2uqBHk="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO3HWuxbjc=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO3HWuv7nQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO3HWuyPQI=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO3HWuxbjc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 530,
+											"top": 220,
+											"width": 300,
+											"height": 13,
+											"text": "Which warnings were shown and acknowledged",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 520,
+									"top": 210,
+									"width": 320,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO3HWuyPQI="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO3Tmu50F0=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO3TWu3YFM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO3Tmu6vXU=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO3Tmu50F0="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 870,
+											"top": 220,
+											"width": 400,
+											"height": 39,
+											"text": "W1 large attrition | W2 a plot loses a whole group | W3 group left with fewer than 3 entities | W4 drop of a used column | W5 no effect, zero rows",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 860,
+									"top": 210,
+									"width": 420,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO3Tmu6vXU="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO3d2vBxZY=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO3d2u/6bg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO3d2vCqJk=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO3d2vBxZY="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 330,
+											"width": 150,
+											"height": 26,
+											"text": "CONFIRM WITH A REASON",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 320,
+									"width": 170,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO3d2vCqJk="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO3mGvJeu8=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO3mGvHpOQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO3mGvK8YQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO3mGvJeu8="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 330,
+											"width": 280,
+											"height": 26,
+											"text": "Strong warning for choices that usually bias results; the user writes why it is acceptable here",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 320,
+									"width": 300,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO3mGvK8YQ="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO3uGvRZ6c=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO3uGvPnJg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO3uGvSuvo=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO3uGvRZ6c="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 530,
+											"top": 330,
+											"width": 300,
+											"height": 26,
+											"text": "The override reason with the warning id; the report lists them",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 520,
+									"top": 320,
+									"width": 320,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO3uGvSuvo="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO312vZlV0=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO312vXY/Q="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO312vaWQA=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO312vZlV0="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 870,
+											"top": 330,
+											"width": 400,
+											"height": 52,
+											"text": "C1 samples removed after population statistics (z-score, percentile, rank, top-N, pivot, summaries) | C2 filter on the variable the plot shows (outlier by value) | C3 incomplete exclusion (variants still present)",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 860,
+									"top": 320,
+									"width": 420,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO312vaWQA="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO3/GvhxQg=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO3/GvfxkM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO3/GviZ5k=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO3/GvhxQg="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 440,
+											"width": 150,
+											"height": 13,
+											"text": "BLOCK",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 430,
+									"width": 170,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO3/GviZ5k="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO4IGvp1CQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO4IGvnbxw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO4IGvqDs4=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO4IGvp1CQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 440,
+											"width": 280,
+											"height": 26,
+											"text": "Technical problems only. Nothing is applied; the error is shown",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 430,
+									"width": 300,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO4IGvqDs4="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO4R2vxuJA=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO4R2vv4Lg="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO4R2vyzso=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO4R2vxuJA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 530,
+											"top": 440,
+											"width": 300,
+											"height": 13,
+											"text": "Nothing is applied",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 520,
+									"top": 430,
+									"width": 320,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO4R2vyzso="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDO4bGv5ckc=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO4bGv3MD4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO4bGv61kY=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO4bGv5ckc="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 870,
+											"top": 440,
+											"width": 400,
+											"height": 26,
+											"text": "B1 a column or key no longer exists | a key renamed in tier-1 | a step the forked recipe cannot represent | the recomputation failed",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 860,
+									"top": 430,
+									"width": 420,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO4bGv61kY="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGhzDO4n2wB+Ms=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDO1Z2tbJPM="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDO4n2v/DG4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDO4n2wCfp8=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDO4n2wB+Ms="
+											},
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 570,
+											"width": 1240,
+											"height": 55,
+											"text": "The software makes good data science possible and the choice informed. It does not decide for the user. A risky choice needs a recorded reason. Only technical problems block. Data-science practice (do not clean with the audit, state criteria in advance, report every exclusion) is taught in the help: with great power comes great responsibility, think before you do",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 560,
+									"width": 1260,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDO4n2wCfp8="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhzDO2ImtflOw=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "LEVEL"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhzDO2RWtn4Qs=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "WHAT THE USER SEES AND MUST DO"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhzDO2Ymtvflg=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "RECORDED AND EXPORTED"
+						},
+						{
+							"_type": "FCTerminator",
+							"_id": "AAAAAAGhzDO2fGt3GxM=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "EXAMPLES (checks)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO2kGt/frM=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "INFO"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO2pmuH4OE=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "Shown in the dialog (counts, affected plots and tables, chain). Nothing to do"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO2u2uPFjU=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "The numbers (rows and entities, NA rows)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO20muXZ/M=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "I1 rows and entities before/after, entities losing all rows, NA rows | I2 plots and tables that change | I3 sample census"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO26mufKHM=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "WARNING"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO3A2unV5g=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "Plain explanation; the user ticks \"I understand\" before Apply"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO3HWuv7nQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "Which warnings were shown and acknowledged"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO3TWu3YFM=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "W1 large attrition | W2 a plot loses a whole group | W3 group left with fewer than 3 entities | W4 drop of a used column | W5 no effect, zero rows"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO3d2u/6bg=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "CONFIRM WITH A REASON"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO3mGvHpOQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "Strong warning for choices that usually bias results; the user writes why it is acceptable here"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO3uGvPnJg=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "The override reason with the warning id; the report lists them"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO312vXY/Q=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "C1 samples removed after population statistics (z-score, percentile, rank, top-N, pivot, summaries) | C2 filter on the variable the plot shows (outlier by value) | C3 incomplete exclusion (variants still present)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO3/GvfxkM=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "BLOCK"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO4IGvnbxw=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "Technical problems only. Nothing is applied; the error is shown"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO4R2vv4Lg=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "Nothing is applied"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDO4bGv3MD4=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "B1 a column or key no longer exists | a key renamed in tier-1 | a step the forked recipe cannot represent | the recomputation failed"
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGhzDO4n2v/DG4=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDO1Z2taHDA="
+							},
+							"name": "The software makes good data science possible and the choice informed. It does not decide for the user. A risky choice needs a recorded reason. Only technical problems block. Data-science practice (do not clean with the audit, state criteria in advance, report every exclusion) is taught in the help: with great power comes great responsibility, think before you do"
 						}
 					]
 				}
@@ -63264,7 +64348,7 @@
 											"top": 1385,
 											"width": 331,
 											"height": 13,
-											"text": "{status=\"implemented\", adr=\"ADR-087\"}",
+											"text": "{status=\"implemented\", adr=\"ADR-098\"}",
 											"horizontalAlignment": 1
 										}
 									],
