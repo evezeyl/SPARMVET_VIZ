@@ -4930,7 +4930,9 @@ shape — both had gone stale describing the pre-#45 single-bundle design).
 3. Compare: the left pane (Result) never applies preview filters or audit nodes; the right pane is My view (preview filters + audited steps).
 4. A filter naming a column absent from the active view (T1 wide, T2 maybe long) is skipped, not an error. A filter leaving zero rows gives an empty table.
 5. The Raw/Result data badge says "N preview filter(s) on, not saved"; the Result plot badge says the filters change the table only and plots change on My view.
-7. Open (not decided): scope of a preview filter (global today; per plot or per dataset considered) and of audited steps; see `.claude/design/home_filter_scoping_concept.md`.
+7. Scope (Eve, 2026-11-11): a preview filter belongs to a **dataset** (the dataset the plot targets; plots sharing it share the filter); today it is one global list (to change). An audited step belongs to **one plot's T3** (T3 = that plot's T2 + its audited steps, derived, not stored); the scope option (this plot / all / all except) propagates it into every concerned plot, concerned = the column is in that plot's T2 (follows the lineage). T1 and T2 never change.
+8. Column drops follow the same logic as filters: preview on Raw/Result/My view is table-only; drop to audit is offered like Send to Audit, with the same scope options, and a warning listing the plots that use the column (issue #59).
+9. Still to confirm: My view without audit capability (ADR-085 scratchpad vs "My view only when audit is on"); what Apply of an audit clears. See `.claude/design/home_filter_scoping_concept.md` and the HOME-FILTER-* / HOME-AUDIT-* diagrams.
 6. One operator vocabulary (`OP_WORDS` in `t3_audit_engine.py`): dropdown, staged list and help use the same words; a one-value set reads "column = value".
 
 **Consequences.** Tier-isolation tests flipped; `TestPreviewFiltersOnReferenceViews` guards the behaviour (mutation-tested). Help (`app/src/help/home.md`), user guide, FAQ, contract updated.

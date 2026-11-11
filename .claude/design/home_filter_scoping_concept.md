@@ -107,14 +107,15 @@ Column selector: remove column used by the plot (temporary break, restore with "
 
 1. ~~Do exploration filters change the plot in Raw/Result?~~ DECIDED 2026-11-11: no. Apply on Raw/Result
    changes the **table only**; plots change only in My view; Compare left = Result as is, right = My view.
-2. **Scope of an exploration filter:** global (today) / per plot / per dataset (plots that share a dataset) / per dataset and stage.
+2. ~~Scope of an exploration filter~~ DECIDED 2026-11-11: per dataset (plots sharing a dataset share it). Earlier options: global (today) / per plot / per dataset (plots that share a dataset) / per dataset and stage.
    Eve's thinking aloud: a preview filter is for verification, so per dataset may be simpler; the real question is
    the scope inside My view and for audited steps. Decide after the diagrams.
    Argument for per dataset (Claude, 2026-11-11): the filter form already offers only the columns of the active
    plot's dataset, so a filter is already built on one dataset; a global list lets it also hit other datasets that
    happen to share a column name (sample_id, Year, Country). Per dataset follows the stored data (T1/T2 per dataset)
    and plots sharing a dataset share the filter. Needs Eve's confirmation before code.
-3. Column selector: table only (recommended) or also the plot (temporary).
+3. DECIDED: column selector (preview) is table only on every view; a drop is a T3 step sent to audit, same logic as filters, with a warning for plots that use the column (#59).
+4. TO CONFIRM: My view without audit capability (ADR-085 scratchpad vs Eve: only when audit is on). TO CONFIRM: what Apply of an audit clears from the preview lists.
 
 ## 7. Test suite plan (browser + screenshots; science must not be wrong)
 

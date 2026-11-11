@@ -12301,20 +12301,20 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
-											"top": 43,
-											"width": 210,
-											"height": 26,
-											"text": "User adds a filter row\n(column, operator, value)",
+											"left": 340,
+											"top": 30,
+											"width": 220,
+											"height": 39,
+											"text": "User adds a filter row\n(column, operator, value) for the dataset of the plot she is on",
 											"wordWrap": true
 										}
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 33,
-									"width": 230,
-									"height": 85,
+									"left": 330,
+									"top": 20,
+									"width": 240,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgexEG2K1Q="
 									}
@@ -12339,11 +12339,11 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 167.5,
-											"top": 191,
-											"width": 210,
+											"left": 692.5,
+											"top": 150,
+											"width": 220,
 											"height": 26,
-											"text": "Staged list\n(_pending_filters)\nrows with a trash icon",
+											"text": "Staged list (_pending_filters)\nrows with a trash icon",
 											"wordWrap": true
 										}
 									],
@@ -12351,10 +12351,10 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 157.5,
-									"top": 181,
-									"width": 230,
-									"height": 90,
+									"left": 682.5,
+									"top": 140,
+									"width": 240,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypge3kG++X8="
 									}
@@ -12379,11 +12379,11 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 362.5,
-											"top": 331,
+											"left": 755,
+											"top": 270,
 											"width": 240,
-											"height": 26,
-											"text": "Applied list (applied_filters)\nONE list for the whole analysis",
+											"height": 39,
+											"text": "Applied list: one per DATASET\n(the dataset the plot targets;\nplots sharing a dataset share it)",
 											"wordWrap": true
 										}
 									],
@@ -12391,8 +12391,8 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 352.5,
-									"top": 321,
+									"left": 745,
+									"top": 260,
 									"width": 260,
 									"height": 90,
 									"nameLabel": {
@@ -12419,9 +12419,9 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 75.5,
-											"top": 503.5,
-											"width": 134,
+											"left": 1235,
+											"top": 420,
+											"width": 140,
 											"height": 39,
 											"text": "DATA TABLE\nRaw, Result and My view:\nrows are filtered",
 											"wordWrap": true
@@ -12431,10 +12431,10 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 27.5,
-									"top": 493.5,
-									"width": 230,
-									"height": 98,
+									"left": 1185,
+									"top": 410,
+									"width": 240,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgfKkHOW2s="
 									}
@@ -12459,8 +12459,8 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 465.5,
-											"top": 999.5,
+											"left": 363,
+											"top": 810,
 											"width": 154,
 											"height": 13,
 											"text": "PLOT\nfiltered here",
@@ -12471,10 +12471,10 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 412.5,
-									"top": 989.5,
+									"left": 310,
+									"top": 800,
 									"width": 260,
-									"height": 98,
+									"height": 50,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgfRkHWg9o="
 									}
@@ -12499,11 +12499,11 @@
 											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 297.5,
-											"top": 497,
+											"left": 677.5,
+											"top": 420,
 											"width": 220,
-											"height": 26,
-											"text": "A dataset without the\nfiltered column skips\nthat filter",
+											"height": 39,
+											"text": "A stage without the filtered column\n(T1 wide, T2 long) skips that filter",
 											"wordWrap": true
 										}
 									],
@@ -12511,10 +12511,10 @@
 									"fillColor": "#e9ecef",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 287.5,
-									"top": 487,
+									"left": 667.5,
+									"top": 410,
 									"width": 240,
-									"height": 111,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgfnUHmxwA="
 									}
@@ -12535,26 +12535,24 @@
 											"_parent": {
 												"$ref": "AAAAAAGhypgft0HtkOk="
 											},
-											"lineColor": "#d62828",
-											"fillColor": "#ffe0e0",
+											"lineColor": "#6c757d",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 290,
-											"top": 36.5,
+											"left": 610,
+											"top": 30,
 											"width": 240,
 											"height": 26,
-											"text": "Trash icon on a row:\nremoves it from staged\nAND from applied",
+											"text": "Trash icon on a row: removes it\nfrom staged AND from applied",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#d62828",
-									"fillColor": "#ffe0e0",
+									"lineColor": "#6c757d",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 280,
-									"top": 26.5,
+									"left": 600,
+									"top": 20,
 									"width": 260,
-									"height": 98,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgft0Huxfg="
 									}
@@ -12575,26 +12573,24 @@
 											"_parent": {
 												"$ref": "AAAAAAGhypgf0EH1rVg="
 											},
-											"lineColor": "#d62828",
-											"fillColor": "#ffe0e0",
+											"lineColor": "#6c757d",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 580,
+											"left": 905,
 											"top": 30,
 											"width": 220,
 											"height": 26,
-											"text": "Reset: clears staged\nand applied, and the\nvalue widget",
+											"text": "Reset: clears staged and applied\nof this dataset, and the value widget",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#d62828",
-									"fillColor": "#ffe0e0",
+									"lineColor": "#6c757d",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 570,
+									"left": 895,
 									"top": 20,
 									"width": 240,
-									"height": 111,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgf0EH22Tg="
 									}
@@ -12619,9 +12615,9 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 717.5,
-											"top": 684,
-											"width": 210,
+											"left": 60,
+											"top": 550,
+											"width": 220,
 											"height": 26,
 											"text": "Send to Audit\n(with a reason)\nstaged rows become steps",
 											"wordWrap": true
@@ -12631,10 +12627,10 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 707.5,
-									"top": 674,
-									"width": 230,
-									"height": 98,
+									"left": 50,
+									"top": 540,
+									"width": 240,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypggD0H+n/U="
 									}
@@ -12659,8 +12655,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 702.5,
-											"top": 832,
+											"left": 50,
+											"top": 670,
 											"width": 240,
 											"height": 26,
 											"text": "Audited steps, PER PLOT\n(this plot / all / all except)\nstay until deleted",
@@ -12671,10 +12667,10 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 692.5,
-									"top": 822,
+									"left": 40,
+									"top": 660,
 									"width": 260,
-									"height": 111,
+									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypggQ0IGPXY="
 									}
@@ -12699,11 +12695,11 @@
 											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 712.5,
-											"top": 993,
+											"left": 30,
+											"top": 790,
 											"width": 240,
-											"height": 73,
-											"text": "Export = Result + audited steps only\n(from the stored files, which stay as they are)",
+											"height": 55,
+											"text": "Export: T1 (+ T2 when the recipe has tier-2 steps)\n+ T3 data of each plot with audited steps.\nPreview filters are not exported",
 											"wordWrap": true
 										}
 									],
@@ -12711,10 +12707,10 @@
 									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 702.5,
-									"top": 983,
+									"left": 20,
+									"top": 780,
 									"width": 260,
-									"height": 111,
+									"height": 90,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypggjkIOJE8="
 									}
@@ -12740,8 +12736,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 131,
-											"top": 136,
+											"left": 442,
+											"top": 94,
 											"width": 21.68994140625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12762,7 +12758,7 @@
 										"$ref": "AAAAAAGhypgexEG1f3s="
 									},
 									"lineStyle": 3,
-									"points": "135:119;135:156;182:180",
+									"points": "450:91;450:115;682:154",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypggyUIWeV4="
 									}
@@ -12788,8 +12784,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 261,
-											"top": 275,
+											"left": 797,
+											"top": 218,
 											"width": 32.51904296875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12810,7 +12806,7 @@
 										"$ref": "AAAAAAGhypge3kG9V7Q="
 									},
 									"lineStyle": 3,
-									"points": "273:272;273:296;352:322",
+									"points": "803:211;803:235;828:259",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypghCUIfIyQ="
 									}
@@ -12836,8 +12832,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 133,
-											"top": 430,
+											"left": 1132,
+											"top": 355,
 											"width": 49.12451171875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12858,7 +12854,7 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "352:393;143:436;142:493",
+									"points": "1006:338;1150:375;1225:409",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypghXUIoXmc="
 									}
@@ -12884,8 +12880,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 378,
-											"top": 429,
+											"left": 758,
+											"top": 368,
 											"width": 89.58447265625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12906,7 +12902,7 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "433:412;408:436;408:486",
+									"points": "818:351;788:375;788:409",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgh2EJDT4g="
 									}
@@ -12933,8 +12929,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 299,
-											"top": 152,
+											"left": 817,
+											"top": 108,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -12953,7 +12949,7 @@
 										"$ref": "AAAAAAGhypgft0HtkOk="
 									},
 									"lineStyle": 3,
-									"points": "332:126;285:156;281:180",
+									"points": "774:91;803:115;803:139",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiBEJM/WI="
 									}
@@ -12980,8 +12976,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 497,
-											"top": 219,
+											"left": 614,
+											"top": 168,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13000,7 +12996,7 @@
 										"$ref": "AAAAAAGhypgft0HtkOk="
 									},
 									"lineStyle": 3,
-									"points": "456:126;483:156;483:226;483:296;483:320",
+									"points": "652:91;600:115;600:175;600:235;744:272",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiTkJVmtA="
 									}
@@ -13027,8 +13023,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 566,
-											"top": 164,
+											"left": 1028,
+											"top": 123,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13047,7 +13043,7 @@
 										"$ref": "AAAAAAGhypgf0EH1rVg="
 									},
 									"lineStyle": 3,
-									"points": "601:132;563:156;389:198",
+									"points": "1021:91;1025:115;924:142",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgifEJe5MQ="
 									}
@@ -13074,8 +13070,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 717,
-											"top": 219,
+											"left": 962,
+											"top": 168,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13094,7 +13090,7 @@
 										"$ref": "AAAAAAGhypgf0EH1rVg="
 									},
 									"lineStyle": 3,
-									"points": "699:132;703:156;703:226;703:296;614:324",
+									"points": "975:91;948:115;948:175;948:235;923:259",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiqUJnn5Q="
 									}
@@ -13121,8 +13117,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 837,
-											"top": 790,
+											"left": 184,
+											"top": 628,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13141,7 +13137,7 @@
 										"$ref": "AAAAAAGhypggD0H94pM="
 									},
 									"lineStyle": 3,
-									"points": "823:773;823:797;823:821",
+									"points": "170:611;170:635;170:659",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjR0J5HeE="
 									}
@@ -13167,8 +13163,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 630,
-											"top": 964,
+											"left": 256,
+											"top": 735,
 											"width": 110.55712890625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13189,7 +13185,7 @@
 										"$ref": "AAAAAAGhypggQ0IF0ls="
 									},
 									"lineStyle": 3,
-									"points": "721:934;678:958;626:989",
+									"points": "251:731;305:755;390:799",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjdUKCeC8="
 									}
@@ -13215,8 +13211,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 822,
-											"top": 951,
+											"left": 139,
+											"top": 748,
 											"width": 50.5908203125,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13237,7 +13233,7 @@
 										"$ref": "AAAAAAGhypggQ0IF0ls="
 									},
 									"lineStyle": 3,
-									"points": "830:934;833:958;833:982",
+									"points": "158:731;150:755;150:779",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjoUKLXJA="
 									}
@@ -13261,21 +13257,21 @@
 											"lineColor": "#345beb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 567.5,
-											"top": 471,
+											"left": 320,
+											"top": 410,
 											"width": 240,
-											"height": 26,
-											"text": "MY VIEW (view mode)\nwhere plots change and\nSend to Audit is offered",
+											"height": 52,
+											"text": "MY VIEW (view mode) = T3, or T2 when\nthere is no audited step. Plots change here;\nSend to Audit is offered here",
 											"wordWrap": true
 										}
 									],
 									"lineColor": "#345beb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 557.5,
-									"top": 461,
+									"left": 310,
+									"top": 400,
 									"width": 260,
-									"height": 163,
+									"height": 90,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqJtAUUwOMA="
 									}
@@ -13301,8 +13297,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 670,
-											"top": 429,
+											"left": 422,
+											"top": 368,
 											"width": 64.30810546875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13323,7 +13319,7 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "614:411;688:436;688:460",
+									"points": "744:326;440:375;440:399",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqJtH0U4tOU="
 									}
@@ -13350,8 +13346,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 547,
-											"top": 790,
+											"left": 464,
+											"top": 628,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13370,7 +13366,7 @@
 										"$ref": "AAAAAAGhyqJtAUUv8gc="
 									},
 									"lineStyle": 3,
-									"points": "568:625;533:649;533:723;533:797;533:878;533:958;536:989",
+									"points": "447:491;450:515;450:575;450:635;450:695;450:755;444:799",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqJtO0VAb8M="
 									}
@@ -13396,8 +13392,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 798,
-											"top": 642,
+											"left": 145,
+											"top": 508,
 											"width": 78.05712890625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13418,9 +13414,216 @@
 										"$ref": "AAAAAAGhyqJtAUUv8gc="
 									},
 									"lineStyle": 3,
-									"points": "792:625;823:649;823:673",
+									"points": "309:479;170:515;170:539",
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqJtYUVIv8c="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw4Hw0+8Iwk=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw4Hw0+6oNU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw4HxE+9zY0=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw4Hw0+8Iwk="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1175,
+											"top": 270,
+											"width": 280,
+											"height": 39,
+											"text": "Column selector (Raw, Result, My view):\nhides columns in the TABLE only (preview);\nplots are not affected, same logic as filters",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1165,
+									"top": 260,
+									"width": 300,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw4HxE+9zY0="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhyw4H9E/E5eU=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw4H9E/CrB0="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhyw4H9E/FBC0=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw4H9E/E5eU="
+											},
+											"model": {
+												"$ref": "AAAAAAGhyw4H9E/CrB0="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 1329,
+											"top": 371,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhyw4H9E/E5eU="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhypgfKkHNUuU="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhyw4Hw0+8Iwk="
+									},
+									"lineStyle": 3,
+									"points": "1315:351;1315:375;1310:409",
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw4H9E/FBC0="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw4IL0/MTk0=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw4IL0/K59s="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw4IME/NY2g=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw4IL0/MTk0="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 610,
+											"top": 790,
+											"width": 310,
+											"height": 26,
+											"text": "TO CHANGE (code): the preview list is ONE global list today.\nDecided: one list per dataset",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 600,
+									"top": 780,
+									"width": 330,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw4IME/NY2g="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw4IVU/UuP8=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw4IVU/SLA0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw4IVU/V/uQ=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw4IVU/UuP8="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 970,
+											"top": 790,
+											"width": 310,
+											"height": 39,
+											"text": "DECIDE: ADR-085 offers My view without audit capability\n(scratchpad). Eve: My view only when audit is on",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 960,
+									"top": 780,
+									"width": 330,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw4IVU/V/uQ="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw4IgU/cNzQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhypgeVUGv1LQ="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw4IgU/aLvM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw4IgU/dZXw=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw4IgU/cNzQ="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 1330,
+											"top": 790,
+											"width": 310,
+											"height": 39,
+											"text": "DECIDE: after Apply, preview rows are cleared for ALL datasets (today);\nper dataset: only those of the plots that got the step?",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 1320,
+									"top": 780,
+									"width": 330,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw4IgU/dZXw="
 									}
 								}
 							]
@@ -13431,7 +13634,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "User adds a filter row\n(column, operator, value)",
+							"name": "User adds a filter row\n(column, operator, value) for the dataset of the plot she is on",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13455,7 +13658,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Staged list\n(_pending_filters)\nrows with a trash icon",
+							"name": "Staged list (_pending_filters)\nrows with a trash icon",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13493,7 +13696,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Applied list (applied_filters)\nONE list for the whole analysis",
+							"name": "Applied list: one per DATASET\n(the dataset the plot targets;\nplots sharing a dataset share it)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13581,7 +13784,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "PLOT\nfiltered here"
+							"name": "PLOT of My view = T3\n(and Compare right pane)"
 						},
 						{
 							"_type": "FCData",
@@ -13597,7 +13800,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "A dataset without the\nfiltered column skips\nthat filter"
+							"name": "A stage without the filtered column\n(T1 wide, T2 long) skips that filter"
 						},
 						{
 							"_type": "FCProcess",
@@ -13605,7 +13808,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Trash icon on a row:\nremoves it from staged\nAND from applied",
+							"name": "Trash icon on a row: removes it\nfrom staged AND from applied",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13641,7 +13844,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Reset: clears staged\nand applied, and the\nvalue widget",
+							"name": "Reset: clears staged and applied\nof this dataset, and the value widget",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13738,7 +13941,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Export = Result + audited steps only\n(from the stored files, which stay as they are)"
+							"name": "Export: T1 (+ T2 when the recipe has tier-2 steps)\n+ T3 data of each plot with audited steps.\nPreview filters are not exported"
 						},
 						{
 							"_type": "FCProcess",
@@ -13746,7 +13949,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "MY VIEW (view mode)\nwhere plots change and\nSend to Audit is offered",
+							"name": "MY VIEW (view mode) = T3, or T2 when\nthere is no audited step. Plots change here;\nSend to Audit is offered here",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13776,6 +13979,53 @@
 									}
 								}
 							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw4Hw0+6oNU=",
+							"_parent": {
+								"$ref": "AAAAAAGhypgeVUGuLNo="
+							},
+							"name": "Column selector (Raw, Result, My view):\nhides columns in the TABLE only (preview);\nplots are not affected, same logic as filters",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhyw4H9E/CrB0=",
+									"_parent": {
+										"$ref": "AAAAAAGhyw4Hw0+6oNU="
+									},
+									"source": {
+										"$ref": "AAAAAAGhyw4Hw0+6oNU="
+									},
+									"target": {
+										"$ref": "AAAAAAGhypgfKUHLLsM="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw4IL0/K59s=",
+							"_parent": {
+								"$ref": "AAAAAAGhypgeVUGuLNo="
+							},
+							"name": "TO CHANGE (code): the preview list is ONE global list today.\nDecided: one list per dataset"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw4IVU/SLA0=",
+							"_parent": {
+								"$ref": "AAAAAAGhypgeVUGuLNo="
+							},
+							"name": "DECIDE: ADR-085 offers My view without audit capability\n(scratchpad). Eve: My view only when audit is on"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw4IgU/aLvM=",
+							"_parent": {
+								"$ref": "AAAAAAGhypgeVUGuLNo="
+							},
+							"name": "DECIDE: after Apply, preview rows are cleared for ALL datasets (today);\nper dataset: only those of the plots that got the step?"
 						}
 					]
 				},
@@ -13895,7 +14145,7 @@
 											"top": 240,
 											"width": 280,
 											"height": 13,
-											"text": "Preview filters (a list)",
+											"text": "Preview filters (one list per dataset)",
 											"wordWrap": true
 										}
 									],
@@ -14015,7 +14265,7 @@
 											"top": 470,
 											"width": 280,
 											"height": 26,
-											"text": "My view plot = stored data + preview filters while you try them",
+											"text": "My view plot = stored data (T3 = T2)\n+ preview filters while you try them",
 											"wordWrap": true
 										}
 									],
@@ -14054,8 +14304,8 @@
 											"left": 30,
 											"top": 540,
 											"width": 280,
-											"height": 26,
-											"text": "Export = stored data: T1=T2=T3 (no audited steps yet)",
+											"height": 13,
+											"text": "Export = T1 only (no audited steps yet)",
 											"wordWrap": true
 										}
 									],
@@ -14094,8 +14344,8 @@
 											"left": 30,
 											"top": 650,
 											"width": 280,
-											"height": 26,
-											"text": "OPEN: scope of a preview filter (per dataset proposed)",
+											"height": 39,
+											"text": "DECIDED: a preview filter belongs to a dataset;\nplots sharing the dataset share it.\nTO CHANGE (code): one global list today",
 											"wordWrap": true
 										}
 									],
@@ -14211,7 +14461,7 @@
 											"top": 240,
 											"width": 120,
 											"height": 26,
-											"text": "Preview filters (a list)",
+											"text": "Preview filters (one list per dataset)",
 											"wordWrap": true
 										}
 									],
@@ -14371,7 +14621,7 @@
 											"top": 470,
 											"width": 280,
 											"height": 26,
-											"text": "My view plot = stored data + audited steps (+ preview filters while you try them)",
+											"text": "My view plot = T3 = stored data + audited steps (+ preview filters while you try them)",
 											"wordWrap": true
 										}
 									],
@@ -14411,7 +14661,7 @@
 											"top": 540,
 											"width": 280,
 											"height": 26,
-											"text": "Export = stored data: T1=T2 + (T3 audited steps)",
+											"text": "Export = T1 + T3 data of the plots with audited steps",
 											"wordWrap": true
 										}
 									],
@@ -14450,8 +14700,8 @@
 											"left": 370,
 											"top": 650,
 											"width": 280,
-											"height": 26,
-											"text": "OPEN: scope of audited steps (this plot / all / all except; plots sharing a dataset)",
+											"height": 65,
+											"text": "DECIDED: an audited step belongs to ONE plot's T3. The scope option propagates it into every concerned plot (column in that plot's T2). TO FIX (code, #58): the check follows the data view",
 											"wordWrap": true
 										}
 									],
@@ -14462,7 +14712,7 @@
 									"left": 360,
 									"top": 640,
 									"width": 300,
-									"height": 70,
+									"height": 85,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqxrm0tHSeo="
 									}
@@ -14647,7 +14897,7 @@
 											"top": 430,
 											"width": 120,
 											"height": 26,
-											"text": "Preview filters (a list)",
+											"text": "Preview filters (one list per dataset)",
 											"wordWrap": true
 										}
 									],
@@ -14847,7 +15097,7 @@
 											"top": 705,
 											"width": 280,
 											"height": 26,
-											"text": "My view plot = T2 + audited steps (+ preview filters while you try them)",
+											"text": "My view plot = T3 = T2 + audited steps (+ preview filters while you try them)",
 											"wordWrap": true
 										}
 									],
@@ -14886,8 +15136,8 @@
 											"left": 710,
 											"top": 775,
 											"width": 280,
-											"height": 26,
-											"text": "Export = T1 + T2 + T3 audited steps. (allows reimport for reproducibility)",
+											"height": 39,
+											"text": "Export = T1 + T2 + T3 data of the plots with audited steps (also allows re-import for reproducibility)",
 											"wordWrap": true
 										}
 									],
@@ -14898,7 +15148,7 @@
 									"left": 700,
 									"top": 765,
 									"width": 300,
-									"height": 50,
+									"height": 59,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqxsc0ufud4="
 									}
@@ -14919,20 +15169,20 @@
 											"_parent": {
 												"$ref": "AAAAAAGhyqxsgUumZnc="
 											},
-											"lineColor": "#d62828",
-											"fillColor": "#ffe0e0",
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 710,
 											"top": 850,
 											"width": 280,
 											"height": 26,
-											"text": "EDGE: a column in T1 but not in T2: the filter is skipped on that view",
+											"text": "DECIDED: a column in T1 but not in T2: the filter is skipped on that stage (built)",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#d62828",
-									"fillColor": "#ffe0e0",
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 700,
@@ -15608,7 +15858,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Preview filters (a list)",
+							"name": "Preview filters (one list per dataset)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -15647,7 +15897,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "My view plot = stored data + preview filters while you try them"
+							"name": "My view plot = stored data (T3 = T2)\n+ preview filters while you try them"
 						},
 						{
 							"_type": "FCProcess",
@@ -15655,7 +15905,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Export = stored data: T1=T2=T3 (no audited steps yet)"
+							"name": "Export = T1 only (no audited steps yet)"
 						},
 						{
 							"_type": "FCProcess",
@@ -15663,7 +15913,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "OPEN: scope of a preview filter (per dataset proposed)"
+							"name": "DECIDED: a preview filter belongs to a dataset;\nplots sharing the dataset share it.\nTO CHANGE (code): one global list today"
 						},
 						{
 							"_type": "FCTerminator",
@@ -15730,7 +15980,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Preview filters (a list)",
+							"name": "Preview filters (one list per dataset)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -15789,7 +16039,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "My view plot = stored data + audited steps (+ preview filters while you try them)"
+							"name": "My view plot = T3 = stored data + audited steps (+ preview filters while you try them)"
 						},
 						{
 							"_type": "FCProcess",
@@ -15797,7 +16047,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Export = stored data: T1=T2 + (T3 audited steps)"
+							"name": "Export = T1 + T3 data of the plots with audited steps"
 						},
 						{
 							"_type": "FCProcess",
@@ -15805,7 +16055,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "OPEN: scope of audited steps (this plot / all / all except; plots sharing a dataset)"
+							"name": "DECIDED: an audited step belongs to ONE plot's T3. The scope option propagates it into every concerned plot (column in that plot's T2). TO FIX (code, #58): the check follows the data view"
 						},
 						{
 							"_type": "FCTerminator",
@@ -15918,7 +16168,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Preview filters (a list)",
+							"name": "Preview filters (one list per dataset)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -15985,7 +16235,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "My view plot = T2 + audited steps (+ preview filters while you try them)"
+							"name": "My view plot = T3 = T2 + audited steps (+ preview filters while you try them)"
 						},
 						{
 							"_type": "FCProcess",
@@ -15993,7 +16243,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Export = T1 + T2 + T3 audited steps. (allows reimport for reproducibility)"
+							"name": "Export = T1 + T2 + T3 data of the plots with audited steps (also allows re-import for reproducibility)"
 						},
 						{
 							"_type": "FCProcess",
@@ -16001,7 +16251,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "EDGE: a column in T1 but not in T2: the filter is skipped on that view"
+							"name": "DECIDED: a column in T1 but not in T2: the filter is skipped on that stage (built)"
 						}
 					]
 				},
@@ -16114,8 +16364,8 @@
 											"left": 810,
 											"top": 30,
 											"width": 250,
-											"height": 26,
-											"text": "MY VIEW\nwhere you change what the plot shows",
+											"height": 39,
+											"text": "MY VIEW = T3 (T2 when there is no audited step)\nwhere you change what the plot shows",
 											"wordWrap": true
 										}
 									],
@@ -16200,7 +16450,7 @@
 									"left": 200,
 									"top": 120,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKxxkV764k="
 									}
@@ -16240,7 +16490,7 @@
 									"left": 500,
 									"top": 120,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKx10WDnUc="
 									}
@@ -16269,7 +16519,7 @@
 											"top": 130,
 											"width": 250,
 											"height": 26,
-											"text": "T2 + audited steps\n(+ preview filters while you try them)",
+											"text": "T3 = T2 + audited steps\n(+ preview filters while you try them)",
 											"wordWrap": true
 										}
 									],
@@ -16280,7 +16530,7 @@
 									"left": 800,
 									"top": 120,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKx6kWL0K0="
 									}
@@ -16425,7 +16675,7 @@
 											"top": 230,
 											"width": 250,
 											"height": 26,
-											"text": "T2 + audited steps\n(+ preview filters while you try them)",
+											"text": "T3 = T2 + audited steps\n(+ preview filters while you try them)",
 											"wordWrap": true
 										}
 									],
@@ -16436,7 +16686,7 @@
 									"left": 800,
 									"top": 220,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKyVEWrsqc="
 									}
@@ -16512,7 +16762,7 @@
 									"left": 200,
 									"top": 320,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKyokW7WXo="
 									}
@@ -16552,7 +16802,7 @@
 									"left": 500,
 									"top": 320,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKyyUXDSUM="
 									}
@@ -16649,20 +16899,20 @@
 											"_parent": {
 												"$ref": "AAAAAAGhyqKzDkXa4Hc="
 											},
-											"lineColor": "#d62828",
-											"fillColor": "#ffe0e0",
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 210,
 											"top": 430,
 											"width": 250,
-											"height": 26,
-											"text": "FIX: depends on the audit scope\n(detail: HOME-AUDIT-SCOPE)",
+											"height": 39,
+											"text": "T1 (+ T2 when the recipe has tier-2 steps)\n+ T3 data of the plots with audited steps\n(same bundle whatever the view)",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#d62828",
-									"fillColor": "#ffe0e0",
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 200,
@@ -16689,20 +16939,20 @@
 											"_parent": {
 												"$ref": "AAAAAAGhyqKzKUXiCpQ="
 											},
-											"lineColor": "#d62828",
-											"fillColor": "#ffe0e0",
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 510,
 											"top": 430,
 											"width": 250,
-											"height": 26,
-											"text": "FIX: depends on the audit scope\n(detail: HOME-AUDIT-SCOPE)",
+											"height": 39,
+											"text": "same bundle whatever the view:\nT1 (+ T2) + T3 data of the plots\nthat have audited steps",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#d62828",
-									"fillColor": "#ffe0e0",
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 500,
@@ -16729,26 +16979,26 @@
 											"_parent": {
 												"$ref": "AAAAAAGhyqKzVUXqZ+g="
 											},
-											"lineColor": "#d62828",
-											"fillColor": "#ffe0e0",
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 810,
 											"top": 430,
 											"width": 250,
-											"height": 26,
-											"text": "FIX: depends on the audit scope\n(detail: HOME-AUDIT-SCOPE)",
+											"height": 52,
+											"text": "same bundle; preview filters excluded.\nWhich plots have T3 data depends on\nthe scope chosen at Send to Audit",
 											"wordWrap": true
 										}
 									],
-									"lineColor": "#d62828",
-									"fillColor": "#ffe0e0",
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 800,
 									"top": 420,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKzVUXrBiQ="
 									}
@@ -16864,9 +17114,321 @@
 									"left": 800,
 									"top": 520,
 									"width": 270,
-									"height": 85,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhyqKz5kYDy44="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6DWVAUCt4=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6DWVASTnI="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6DWVAVp+Y=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6DWVAUCt4="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 630,
+											"width": 130,
+											"height": 13,
+											"text": "PREVIEW FILTERS",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 620,
+									"width": 150,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6DWVAVp+Y="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6DblAcmz4=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6DblAaQRw="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6DblAdvGE=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6DblAcmz4="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 630,
+											"width": 250,
+											"height": 13,
+											"text": "one list per dataset;\nchanges the table only",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 620,
+									"width": 270,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6DblAdvGE="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6Dk1AkoxI=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6DklAiTa4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6Dk1AlUYA=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6Dk1AkoxI="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 630,
+											"width": 250,
+											"height": 13,
+											"text": "one list per dataset;\nchanges the table only",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 620,
+									"width": 270,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6Dk1AlUYA="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6DtVAsvqk=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6DtVAq7t0="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6DtVAtOkc=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6DtVAsvqk="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 630,
+											"width": 250,
+											"height": 26,
+											"text": "one list per dataset;\nchanges the table and the plot",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 620,
+									"width": 270,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6DtVAtOkc="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6D3FA0XqQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6D3FAy9Rs="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6D3VA1uUY=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6D3FA0XqQ="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 740,
+											"width": 130,
+											"height": 26,
+											"text": "COLUMN SELECTOR / DROP",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 730,
+									"width": 150,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6D3VA1uUY="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6EAVA8EsI=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6EAVA6ypU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6EAVA9Evs=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6EAVA8EsI="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 210,
+											"top": 740,
+											"width": 250,
+											"height": 13,
+											"text": "hides columns in the table only (preview)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 200,
+									"top": 730,
+									"width": 270,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6EAVA9Evs="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6EJVBE96M=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6EJVBC/0c="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6EJVBFtkM=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6EJVBE96M="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 510,
+											"top": 740,
+											"width": 250,
+											"height": 13,
+											"text": "hides columns in the table only (preview)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 500,
+									"top": 730,
+									"width": 270,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6EJVBFtkM="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw6ESlBM+Ds=",
+									"_parent": {
+										"$ref": "AAAAAAGhyqKxRUVUwMA="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw6ESlBKVIM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw6ESlBN57Q=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw6ESlBM+Ds="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 810,
+											"top": 740,
+											"width": 250,
+											"height": 39,
+											"text": "hides columns in the table (preview);\ndrop to audit: reason + warning for\nother plots, changes that plot's T3",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 800,
+									"top": 730,
+									"width": 270,
+									"height": 90,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw6ESlBN57Q="
 									}
 								}
 							]
@@ -16893,7 +17455,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "MY VIEW\nwhere you change what the plot shows"
+							"name": "MY VIEW = T3 (T2 when there is no audited step)\nwhere you change what the plot shows"
 						},
 						{
 							"_type": "FCProcess",
@@ -16925,7 +17487,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "T2 + audited steps\n(+ preview filters while you try them)"
+							"name": "T3 = T2 + audited steps\n(+ preview filters while you try them)"
 						},
 						{
 							"_type": "FCProcess",
@@ -16957,7 +17519,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "T2 + audited steps\n(+ preview filters while you try them)"
+							"name": "T3 = T2 + audited steps\n(+ preview filters while you try them)"
 						},
 						{
 							"_type": "FCProcess",
@@ -17017,7 +17579,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "FIX: depends on the audit scope\n(detail: HOME-AUDIT-SCOPE)"
+							"name": "T1 (+ T2 when the recipe has tier-2 steps)\n+ T3 data of the plots with audited steps\n(same bundle whatever the view)"
 						},
 						{
 							"_type": "FCProcess",
@@ -17025,7 +17587,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "FIX: depends on the audit scope\n(detail: HOME-AUDIT-SCOPE)"
+							"name": "same bundle whatever the view:\nT1 (+ T2) + T3 data of the plots\nthat have audited steps"
 						},
 						{
 							"_type": "FCProcess",
@@ -17033,7 +17595,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
-							"name": "FIX: depends on the audit scope\n(detail: HOME-AUDIT-SCOPE)"
+							"name": "same bundle; preview filters excluded.\nWhich plots have T3 data depends on\nthe scope chosen at Send to Audit"
 						},
 						{
 							"_type": "FCProcess",
@@ -17058,6 +17620,70 @@
 								"$ref": "AAAAAAGhyqKxRUVTBvw="
 							},
 							"name": "right plot = My view"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6DWVASTnI=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "PREVIEW FILTERS"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6DblAaQRw=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "one list per dataset;\nchanges the table only"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6DklAiTa4=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "one list per dataset;\nchanges the table only"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6DtVAq7t0=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "one list per dataset;\nchanges the table and the plot"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6D3FAy9Rs=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "COLUMN SELECTOR / DROP"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6EAVA6ypU=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "hides columns in the table only (preview)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6EJVBC/0c=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "hides columns in the table only (preview)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw6ESlBKVIM=",
+							"_parent": {
+								"$ref": "AAAAAAGhyqKxRUVTBvw="
+							},
+							"name": "hides columns in the table (preview);\ndrop to audit: reason + warning for\nother plots, changes that plot's T3"
 						}
 					]
 				},
@@ -17099,7 +17725,7 @@
 											"top": 30,
 											"width": 240,
 											"height": 26,
-											"text": "On My view: staged filter rows, or columns to drop",
+											"text": "On My view (T3): staged filter rows, or columns to drop (same logic for both)",
 											"wordWrap": true
 										}
 									],
@@ -17136,8 +17762,8 @@
 											"left": 885,
 											"top": 191,
 											"width": 240,
-											"height": 13,
-											"text": "Send to Audit / drop to audit",
+											"height": 39,
+											"text": "Send to Audit (filters) / drop to audit (columns)\nWhat is sent leaves the preview list",
 											"wordWrap": true
 										}
 									],
@@ -17335,7 +17961,7 @@
 											"top": 722.5,
 											"width": 150,
 											"height": 91,
-											"text": "Target plots = your scope\n(this plot / all / all minus the picked ones)\nIs the column in that plot's T3 base (= T2)?",
+											"text": "Target plots = your scope\n(this plot / all / all minus the picked ones)\nConcerned = the column is in the plot's T2 (follows the lineage)",
 											"wordWrap": true
 										}
 									],
@@ -17373,7 +17999,7 @@
 											"top": 938.5,
 											"width": 240,
 											"height": 26,
-											"text": "Not concerned (column absent in that plot):\nskipped and listed in the notification",
+											"text": "Not concerned (column not in that plot's T2):\nskipped and listed in the notification",
 											"wordWrap": true
 										}
 									],
@@ -17413,7 +18039,7 @@
 											"top": 919,
 											"width": 240,
 											"height": 26,
-											"text": "One pending step per plot\n(same id, one shared reason)",
+											"text": "One pending step per concerned plot\n(same id, one shared reason)",
 											"wordWrap": true
 										}
 									],
@@ -17572,8 +18198,8 @@
 											"left": 80,
 											"top": 1233,
 											"width": 180,
-											"height": 39,
-											"text": "T1 file and T2 file: unchanged\n(a step is stored per plot, applied on top of T2)",
+											"height": 52,
+											"text": "T1 and T2 files: unchanged\n(the step is stored per plot and applied on top of T2)",
 											"wordWrap": true
 										}
 									],
@@ -17613,7 +18239,7 @@
 											"top": 934.5,
 											"width": 340,
 											"height": 52,
-											"text": "FIX (#58): the column check must run on the plot's T3 base (= T2,\nwhere the step applies), not on the data view (Raw / Result).\nRule: an audited step always applies on T3; T1 and T2 never change",
+											"text": "TO FIX (#58): today \"concerned\" is checked on the data view (Raw = T1, Result = T2);\nit must be the plot's T2, where the step applies. Rule: an audited step always\napplies on T3; T1 and T2 never change",
 											"wordWrap": true
 										}
 									],
@@ -18447,7 +19073,7 @@
 											"top": 1080,
 											"width": 360,
 											"height": 52,
-											"text": "FIX? column drops: no check that the plot uses the column.\nDropping a column a plot maps (x, y, colour, facet) breaks that plot\n(VisualizationError); with \"All plots\" it can break several",
+											"text": "TO BUILD (#59): for a drop, the dialog lists the plots that use the column\n(x, y, colour, facet, layers) with a WARNING that they can break; the user may go on.\nA plot broken by an audited drop shows: \"column X was dropped by audit step N\"",
 											"wordWrap": true
 										}
 									],
@@ -18486,8 +19112,8 @@
 											"left": 1100,
 											"top": 1095,
 											"width": 360,
-											"height": 26,
-											"text": "DECIDE: column drops offered only when Data to show = My view;\nfilters when either choice is My view",
+											"height": 39,
+											"text": "TO CHANGE (code): drops are offered like filters, when My view is chosen\nin either \"Data to show\" or \"Plot to show\" (today only Data to show)",
 											"wordWrap": true
 										}
 									],
@@ -18605,7 +19231,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "On My view: staged filter rows, or columns to drop",
+							"name": "On My view (T3): staged filter rows, or columns to drop (same logic for both)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -18628,7 +19254,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Send to Audit / drop to audit",
+							"name": "Send to Audit (filters) / drop to audit (columns)\nWhat is sent leaves the preview list",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -18782,7 +19408,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Target plots = your scope\n(this plot / all / all minus the picked ones)\nIs the column in that plot's T3 base (= T2)?",
+							"name": "Target plots = your scope\n(this plot / all / all minus the picked ones)\nConcerned = the column is in the plot's T2 (follows the lineage)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -18833,7 +19459,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Not concerned (column absent in that plot):\nskipped and listed in the notification"
+							"name": "Not concerned (column not in that plot's T2):\nskipped and listed in the notification"
 						},
 						{
 							"_type": "FCProcess",
@@ -18841,7 +19467,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "One pending step per plot\n(same id, one shared reason)",
+							"name": "One pending step per concerned plot\n(same id, one shared reason)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -18955,7 +19581,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "T1 file and T2 file: unchanged\n(a step is stored per plot, applied on top of T2)"
+							"name": "T1 and T2 files: unchanged\n(the step is stored per plot and applied on top of T2)"
 						},
 						{
 							"_type": "FCProcess",
@@ -18963,7 +19589,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "FIX (#58): the column check must run on the plot's T3 base (= T2,\nwhere the step applies), not on the data view (Raw / Result).\nRule: an audited step always applies on T3; T1 and T2 never change"
+							"name": "TO FIX (#58): today \"concerned\" is checked on the data view (Raw = T1, Result = T2);\nit must be the plot's T2, where the step applies. Rule: an audited step always\napplies on T3; T1 and T2 never change"
 						},
 						{
 							"_type": "FCProcess",
@@ -18979,7 +19605,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "FIX? column drops: no check that the plot uses the column.\nDropping a column a plot maps (x, y, colour, facet) breaks that plot\n(VisualizationError); with \"All plots\" it can break several"
+							"name": "TO BUILD (#59): for a drop, the dialog lists the plots that use the column\n(x, y, colour, facet, layers) with a WARNING that they can break; the user may go on.\nA plot broken by an audited drop shows: \"column X was dropped by audit step N\""
 						},
 						{
 							"_type": "FCProcess",
@@ -18987,7 +19613,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "DECIDE: column drops offered only when Data to show = My view;\nfilters when either choice is My view"
+							"name": "TO CHANGE (code): drops are offered like filters, when My view is chosen\nin either \"Data to show\" or \"Plot to show\" (today only Data to show)"
 						}
 					]
 				},
@@ -19808,7 +20434,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 430,
+											"top": 530,
 											"width": 410,
 											"height": 26,
 											"text": "LINEAGE L1/L2 (T1 = T2): the step is applied on that one stored dataset",
@@ -19820,7 +20446,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 420,
+									"top": 520,
 									"width": 430,
 									"height": 60,
 									"nameLabel": {
@@ -19848,10 +20474,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 490,
-											"top": 430,
+											"top": 530,
 											"width": 460,
 											"height": 39,
-											"text": "LINEAGE L3 (T1, T2 differ): a step applies on T3 = T2 + steps, so a column that exists only in T1 is skipped @eve : in practive this means that we have a T3 created if it did not exist before correct ?",
+											"text": "LINEAGE L3 (T1, T2 differ): a step applies on T3 = T2 + steps, so a column that exists only in T1 is skipped. The plot's T3 is created with its first audited step",
 											"wordWrap": true
 										}
 									],
@@ -19860,7 +20486,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 480,
-									"top": 420,
+									"top": 520,
 									"width": 480,
 									"height": 60,
 									"nameLabel": {
@@ -19888,7 +20514,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 520,
+											"top": 620,
 											"width": 410,
 											"height": 39,
 											"text": "BY DESIGN: T3 belongs to one plot. THIS PLOT = that T3 only; ALL / EXCEPT = the same step propagated into the T3 of every concerned plot",
@@ -19900,7 +20526,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 510,
+									"top": 610,
 									"width": 430,
 									"height": 70,
 									"nameLabel": {
@@ -19928,10 +20554,10 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 490,
-											"top": 520,
+											"top": 620,
 											"width": 460,
 											"height": 26,
-											"text": "FIX (#58): \"concerned plots\" must follow the lineage (the column exists in the plot's T2), not the data view; then the scope option chooses among them",
+											"text": "TO FIX (#58): \"concerned plots\" must follow the lineage (the column is in the plot's T2), not the data view; the scope option then chooses among them",
 											"wordWrap": true
 										}
 									],
@@ -19940,11 +20566,211 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 480,
-									"top": 510,
+									"top": 610,
 									"width": 480,
 									"height": 70,
 									"nameLabel": {
 										"$ref": "AAAAAAGhysAdQ06uzgk="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw7/r1Brqlc=",
+									"_parent": {
+										"$ref": "AAAAAAGhysAab03vrP0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw7/r1BpyOQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw7/r1BsKUE=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw7/r1Brqlc="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 410,
+											"width": 170,
+											"height": 26,
+											"text": "DROP COLUMN (same three options)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 400,
+									"width": 190,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw7/r1BsKUE="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhyw7/zVBzdfI=",
+									"_parent": {
+										"$ref": "AAAAAAGhysAab03vrP0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw7/zVBxJ2E="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw7/zVB0aXo=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw7/zVBzdfI="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 271,
+											"top": 410,
+											"width": 108,
+											"height": 13,
+											"text": "unchanged",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 230,
+									"top": 400,
+									"width": 190,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw7/zVB0aXo="
+									}
+								},
+								{
+									"_type": "FCDataView",
+									"_id": "AAAAAAGhyw7/4lB7UBI=",
+									"_parent": {
+										"$ref": "AAAAAAGhysAab03vrP0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw7/4lB5KzM="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw7/4lB8X8o=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw7/4lB7UBI="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 481,
+											"top": 410,
+											"width": 108,
+											"height": 13,
+											"text": "unchanged",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 440,
+									"top": 400,
+									"width": 190,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw7/4lB8X8o="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhyw7/9lCDld0=",
+									"_parent": {
+										"$ref": "AAAAAAGhysAab03vrP0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw7/9lCBhQU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw7/9lCEAlk=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw7/9lCDld0="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 660,
+											"top": 410,
+											"width": 230,
+											"height": 52,
+											"text": "the column is removed from the T3 of each concerned plot. A plot that uses it BREAKS: warning in the dialog, clear message in the plot (TO BUILD, #59)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 650,
+									"top": 400,
+									"width": 250,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw7/9lCEAlk="
+									}
+								},
+								{
+									"_type": "FCDocumentView",
+									"_id": "AAAAAAGhyw8ADlCLfoM=",
+									"_parent": {
+										"$ref": "AAAAAAGhysAab03vrP0="
+									},
+									"model": {
+										"$ref": "AAAAAAGhyw8ADlCJxZ4="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhyw8ADlCMogw=",
+											"_parent": {
+												"$ref": "AAAAAAGhyw8ADlCLfoM="
+											},
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 940,
+											"top": 410,
+											"width": 260,
+											"height": 47,
+											"text": "T3_data without the column; the same warning rule applies to the exported plot",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 930,
+									"top": 400,
+									"width": 280,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhyw8ADlCMogw="
 									}
 								}
 							]
@@ -20139,7 +20965,47 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "FIX (#58): \"concerned plots\" must follow the lineage (the column exists in the plot's T2), not the data view; then the scope option chooses among them"
+							"name": "TO FIX (#58): \"concerned plots\" must follow the lineage (the column is in the plot's T2), not the data view; the scope option then chooses among them"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw7/r1BpyOQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhysAab03u+aQ="
+							},
+							"name": "DROP COLUMN (same three options)"
+						},
+						{
+							"_type": "FCData",
+							"_id": "AAAAAAGhyw7/zVBxJ2E=",
+							"_parent": {
+								"$ref": "AAAAAAGhysAab03u+aQ="
+							},
+							"name": "unchanged"
+						},
+						{
+							"_type": "FCData",
+							"_id": "AAAAAAGhyw7/4lB5KzM=",
+							"_parent": {
+								"$ref": "AAAAAAGhysAab03u+aQ="
+							},
+							"name": "unchanged"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhyw7/9lCBhQU=",
+							"_parent": {
+								"$ref": "AAAAAAGhysAab03u+aQ="
+							},
+							"name": "the column is removed from the T3 of each concerned plot. A plot that uses it BREAKS: warning in the dialog, clear message in the plot (TO BUILD, #59)"
+						},
+						{
+							"_type": "FCDocument",
+							"_id": "AAAAAAGhyw8ADlCJxZ4=",
+							"_parent": {
+								"$ref": "AAAAAAGhysAab03u+aQ="
+							},
+							"name": "T3_data without the column; the same warning rule applies to the exported plot"
 						}
 					]
 				}
