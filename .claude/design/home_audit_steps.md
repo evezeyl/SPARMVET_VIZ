@@ -22,7 +22,7 @@ repeats on many rows and is not unique in the original data; the audit works on 
 | **Audit T1 / audit T2** | The same stages rebuilt from a copy of the original with the audit steps applied. |
 | **Audit T3 (of a plot)** | One plot's frame: its audit T2 plus the steps made for that plot only. Derived. Exported as T3 data when a plot has its own steps. |
 | **Filters** | The filter form (same widgets everywhere). In Exploration it makes a preview; in the Audit workspace the same form creates an audit step (section 3). |
-| **Validated step** | An audit step applied with its reason. No draft: a step cannot be applied without a reason, and removing a wrong step is the undo. |
+| **Validated step** | An audit step applied with its reason. No draft list: a step cannot be applied without a reason and the Apply press, and removing a wrong step is the undo. |
 
 Lineage chain used everywhere (workspace and diagrams): `original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx)`.
 
@@ -35,7 +35,7 @@ The audit mode is not a new central page. It reuses what HOME already has, so ve
 | **Left sidebar, Filters panel** | the shared filter form. Exploration: button "Add to preview". Audit mode: button **"Create audit step"**. Alerts (notification log) and processing issues stay in the left sidebar as today (checked in `home_theater.py`). |
 | **Centre (kept as small as possible)** | the same plot and data components as today, fed with the audit data: the **audited plot** (audit T3), the audit table and **Compare** (original Result plot \| audited plot). Exploration is minimised (exclusive: opening one minimises the other). |
 | **Right sidebar = the existing Pipeline Audit panel** (slot `audit_stack`, already gated by the sandbox flag) | the **step list** (kind, reach, reason, initials, date, status, delete; Undo last, Revert to step N, Remove all), the **lineage chain** (drawn vertically to fit), the list of **what is affected**, and a button to open the project overview. Today this panel holds the audit nodes and the apply tools (checked in `home_theater.py` and `sidebar_registry.py`); processing issues are in the LEFT sidebar, not here. |
-| **Dialog "New audit step"** (replaces today's propagation dialog) | the reach selector (section 5), the stage choice when needed, the chain drawing and affected list for the step about to be made, the **reason** (required) and Apply. |
+| **Dialog "New audit step"** (replaces today's propagation dialog) | the reach selector (section 5), the stage choice when needed, the chain drawing and affected list for the step about to be made, the **reason** (required) and two buttons, **Cancel** and **Apply**. |
 | **Dialog / wide view "Project overview"** | collections x steps and the coverage check (too wide for the sidebar). |
 
 - **Gating:** the audit mode, the "Create audit step" button, the Audit panel and the dialogs are all gated by the
@@ -45,13 +45,20 @@ The audit mode is not a new central page. It reuses what HOME already has, so ve
   when the user returns). The same form widgets are reused; **under the hood the two behave differently**
   (preview = lazy filter on the shown table; audit step = rebuild through the lineage, cached). A short note in
   the code and the docs states the difference.
-- To make a step the user chooses the kind, the reach and the reason (sections 4-5). The step is applied at
-  once. If it was a mistake, delete it from the step list (section 10).
+- To make a step the user chooses the kind, the reach and the reason (sections 4-5), reads the information in
+  the dialog (chain, affected plots, warnings, rows before/after) and presses **Apply** (enabled only when a
+  reach is chosen and a reason is written; **Cancel** closes the dialog and changes nothing). Apply is the pause
+  that lets the user read before committing. **There is no draft list and no Apply gate in the Audit panel**: the
+  step is applied when Apply is pressed in the dialog. If it was a mistake, delete it from the step list
+  (section 10).
+- **Compare** (original Result plot next to the audited plot) is a **toggle, on or off**, shown only when the
+  existing flag `comparison_mode_enabled` is on (checked in `home_theater.py`, `app_features_validator.py`). Off:
+  the audited plot uses the full width.
 - **Plots are not rebuilt in a new place.** The central plot and table handlers are the ones used today (My view
   already reads another data source for the same plots; Compare already has two panes). Only the data source
   changes to the audit data.
 
-Wireframes of the screen with audit mode off and on: `UI-HOME-EXPLORATION` and `UI-HOME-AUDIT` (see also `HOME-AUDIT-PANEL`).
+Wireframes of the screen with audit mode off and on: `UI-HOME-EXPLORATION` and `UI-HOME-AUDIT`.
 
 ## 4. Kinds of step
 

@@ -366,3 +366,8 @@ to build or fix. Boxes with "(detail: X)" carry the tag `detail = X`.
 show the target screen; `UI-HOME The screen as built today` keeps the screen before the redesign. In the
 wireframes light blue = new or changed, darker blue = audit mode, grey = notes. Open in them: where the mode switch
 sits, and what stays of the existing right panel (Inherited Tier 2 nodes, filter inventory).
+
+**Update 2026-11-11 (later):** `HOME-AUDIT-PANEL` removed (redundant with `UI-HOME-EXPLORATION` and `UI-HOME-AUDIT`).
+In the effect and cache diagrams "rebuilt" is replaced by "recomputed"; nothing is copied, a stage is reused or
+recomputed. The new-step dialog has Cancel and Apply (no draft list). Compare is a toggle gated by
+`comparison_mode_enabled`.

@@ -16649,7 +16649,7 @@
 											"top": 510,
 											"width": 400,
 											"height": 65,
-											"text": "Shown BEFORE applying: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows before/after; plots that cannot show it; for a drop: plots and steps that use the column (detail: HOME-AUDIT-EFFECT)",
+											"text": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows before/after; plots that cannot show it; for a drop: plots and steps that use the column (detail: HOME-AUDIT-EFFECT)",
 											"wordWrap": true
 										}
 									],
@@ -16687,7 +16687,7 @@
 											"top": 672.5,
 											"width": 150,
 											"height": 45,
-											"text": "Reason written?",
+											"text": "Reason written and Apply pressed?",
 											"wordWrap": true
 										}
 									],
@@ -16725,7 +16725,7 @@
 											"top": 800,
 											"width": 400,
 											"height": 26,
-											"text": "Validated step: the audit cache is rebuilt for the affected stages (detail: HOME-AUDIT-CACHE)",
+											"text": "Apply: the step is validated and the audit cache is recomputed for the affected stages (detail: HOME-AUDIT-CACHE)",
 											"wordWrap": true
 										}
 									],
@@ -17004,8 +17004,8 @@
 											"left": 570,
 											"top": 660,
 											"width": 400,
-											"height": 13,
-											"text": "No reason: the step is not applied",
+											"height": 26,
+											"text": "Cancel, or no reason: nothing is applied. The user can read the information first",
 											"wordWrap": true
 										}
 									],
@@ -17814,7 +17814,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Shown BEFORE applying: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows before/after; plots that cannot show it; for a drop: plots and steps that use the column (detail: HOME-AUDIT-EFFECT)",
+							"name": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows before/after; plots that cannot show it; for a drop: plots and steps that use the column (detail: HOME-AUDIT-EFFECT)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -17849,7 +17849,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Reason written?",
+							"name": "Reason written and Apply pressed?",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -17887,7 +17887,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Validated step: the audit cache is rebuilt for the affected stages (detail: HOME-AUDIT-CACHE)",
+							"name": "Apply: the step is validated and the audit cache is recomputed for the affected stages (detail: HOME-AUDIT-CACHE)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -17935,7 +17935,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Audited plot, audit T3 table and Compare (original Result | audited) are shown",
+							"name": "Audited plot and audit T3 table are shown; Compare (original Result | audited) if the toggle is on",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -18043,7 +18043,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "No reason: the step is not applied"
+							"name": "Cancel, or no reason: nothing is applied. The user can read the information first"
 						},
 						{
 							"_type": "FCProcess",
@@ -18474,8 +18474,8 @@
 											"left": 658,
 											"top": 110,
 											"width": 94,
-											"height": 52,
-											"text": "rebuilt for every collection with the key (starting point)",
+											"height": 65,
+											"text": "recomputed from the sources, early step inserted (starting point)",
 											"wordWrap": true
 										}
 									],
@@ -18514,8 +18514,8 @@
 											"left": 838,
 											"top": 110,
 											"width": 94,
-											"height": 26,
-											"text": "rebuilt (derived from audit T1)",
+											"height": 52,
+											"text": "recomputed from audit T1 (recipe tier-2 steps)",
 											"wordWrap": true
 										}
 									],
@@ -18754,8 +18754,8 @@
 											"left": 658,
 											"top": 210,
 											"width": 94,
-											"height": 39,
-											"text": "rebuilt for this collection (starting point)",
+											"height": 65,
+											"text": "recomputed from the sources, early step inserted (starting point)",
 											"wordWrap": true
 										}
 									],
@@ -18794,8 +18794,8 @@
 											"left": 838,
 											"top": 210,
 											"width": 94,
-											"height": 26,
-											"text": "rebuilt (derived from audit T1)",
+											"height": 52,
+											"text": "recomputed from audit T1 (recipe tier-2 steps)",
 											"wordWrap": true
 										}
 									],
@@ -19034,8 +19034,8 @@
 											"left": 658,
 											"top": 310,
 											"width": 94,
-											"height": 26,
-											"text": "reused (not rebuilt)",
+											"height": 39,
+											"text": "reused: the original T1 is read as it is",
 											"wordWrap": true
 										}
 									],
@@ -19074,8 +19074,8 @@
 											"left": 838,
 											"top": 310,
 											"width": 94,
-											"height": 39,
-											"text": "rebuilt for this collection (starting point)",
+											"height": 78,
+											"text": "recomputed from the original T1 + tier-2 + the late step (starting point)",
 											"wordWrap": true
 										}
 									],
@@ -19086,7 +19086,7 @@
 									"left": 800,
 									"top": 300,
 									"width": 170,
-									"height": 90,
+									"height": 98,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy68zUlmQ6zE="
 									}
@@ -19314,8 +19314,8 @@
 											"left": 658,
 											"top": 410,
 											"width": 94,
-											"height": 13,
-											"text": "reused",
+											"height": 26,
+											"text": "reused (original or audit cache)",
 											"wordWrap": true
 										}
 									],
@@ -19354,8 +19354,8 @@
 											"left": 838,
 											"top": 410,
 											"width": 94,
-											"height": 13,
-											"text": "reused",
+											"height": 26,
+											"text": "reused (original or audit cache)",
 											"wordWrap": true
 										}
 									],
@@ -19621,7 +19621,7 @@
 											"top": 700,
 											"width": 1450,
 											"height": 13,
-											"text": "Colours: dark blue = where the step is inserted (starting point); light blue = derived from it (rebuilt); grey = unchanged or reused; amber = the user's step",
+											"text": "Colours: dark blue = recomputed where the step is inserted (starting point); light blue = recomputed because it depends on it; grey = reused as it is or unchanged; amber = the user step. Nothing is ever copied: a stage is either reused or recomputed",
 											"wordWrap": true
 										}
 									],
@@ -19723,7 +19723,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "rebuilt for every collection with the key (starting point)"
+							"name": "recomputed from the sources, early step inserted (starting point)"
 						},
 						{
 							"_type": "FCData",
@@ -19731,7 +19731,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "rebuilt (derived from audit T1)"
+							"name": "recomputed from audit T1 (recipe tier-2 steps)"
 						},
 						{
 							"_type": "FCData",
@@ -19779,7 +19779,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "rebuilt for this collection (starting point)"
+							"name": "recomputed from the sources, early step inserted (starting point)"
 						},
 						{
 							"_type": "FCData",
@@ -19787,7 +19787,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "rebuilt (derived from audit T1)"
+							"name": "recomputed from audit T1 (recipe tier-2 steps)"
 						},
 						{
 							"_type": "FCData",
@@ -19835,7 +19835,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "reused (not rebuilt)"
+							"name": "reused: the original T1 is read as it is"
 						},
 						{
 							"_type": "FCData",
@@ -19843,7 +19843,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "rebuilt for this collection (starting point)"
+							"name": "recomputed from the original T1 + tier-2 + the late step (starting point)"
 						},
 						{
 							"_type": "FCData",
@@ -19891,7 +19891,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "reused"
+							"name": "reused (original or audit cache)"
 						},
 						{
 							"_type": "FCData",
@@ -19899,7 +19899,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "reused"
+							"name": "reused (original or audit cache)"
 						},
 						{
 							"_type": "FCData",
@@ -19955,7 +19955,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhysAab03u+aQ="
 							},
-							"name": "Colours: dark blue = where the step is inserted (starting point); light blue = derived from it (rebuilt); grey = unchanged or reused; amber = the user's step"
+							"name": "Colours: dark blue = recomputed where the step is inserted (starting point); light blue = recomputed because it depends on it; grey = reused as it is or unchanged; amber = the user step. Nothing is ever copied: a stage is either reused or recomputed"
 						}
 					]
 				},
@@ -20118,8 +20118,8 @@
 											"left": 480,
 											"top": 210,
 											"width": 380,
-											"height": 26,
-											"text": "audit T1: sources with early steps inserted. With no early step it IS the original T1",
+											"height": 39,
+											"text": "audit T1: recomputed from the sources with the early steps inserted. With no early step there is none: the original T1 is used as it is",
 											"wordWrap": true
 										}
 									],
@@ -20158,8 +20158,8 @@
 											"left": 480,
 											"top": 340,
 											"width": 380,
-											"height": 13,
-											"text": "audit T2: audit T1 + recipe tier-2 + late steps",
+											"height": 26,
+											"text": "audit T2: recomputed from audit T1 (the original T1 when no early step) + recipe tier-2 steps + late steps",
 											"wordWrap": true
 										}
 									],
@@ -20609,54 +20609,6 @@
 									}
 								},
 								{
-									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy9OoMmO6KmA=",
-									"_parent": {
-										"$ref": "AAAAAAGhy69iEln+mlY="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy9OoMmO4Q8c="
-									},
-									"subViews": [
-										{
-											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy9OoMmO70pM=",
-											"_parent": {
-												"$ref": "AAAAAAGhy9OoMmO6KmA="
-											},
-											"model": {
-												"$ref": "AAAAAAGhy9OoMmO4Q8c="
-											},
-											"font": "Arial;13;0",
-											"parentStyle": false,
-											"left": 183,
-											"top": 344,
-											"width": 74.4326171875,
-											"height": 13,
-											"alpha": 1.5707963267948966,
-											"distance": 15,
-											"hostEdge": {
-												"$ref": "AAAAAAGhy9OoMmO6KmA="
-											},
-											"edgePosition": 1,
-											"text": "no early step"
-										}
-									],
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"head": {
-										"$ref": "AAAAAAGhy9OnFGNixFk="
-									},
-									"tail": {
-										"$ref": "AAAAAAGhy9Omz2NKR5g="
-									},
-									"lineStyle": 2,
-									"points": "220:270;220:365;470:365",
-									"nameLabel": {
-										"$ref": "AAAAAAGhy9OoMmO70pM="
-									}
-								},
-								{
 									"_type": "FCTerminatorView",
 									"_id": "AAAAAAGhy9PtcmPSVKI=",
 									"_parent": {
@@ -20796,20 +20748,6 @@
 									"target": {
 										"$ref": "AAAAAAGhy9Om5WNQreo="
 									}
-								},
-								{
-									"_type": "FCFlow",
-									"_id": "AAAAAAGhy9OoMmO4Q8c=",
-									"_parent": {
-										"$ref": "AAAAAAGhy9Omz2NI0wg="
-									},
-									"name": "no early step",
-									"source": {
-										"$ref": "AAAAAAGhy9Omz2NI0wg="
-									},
-									"target": {
-										"$ref": "AAAAAAGhy9OnFGNgeUQ="
-									}
 								}
 							]
 						},
@@ -20827,7 +20765,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "audit T1: sources with early steps inserted. With no early step it IS the original T1",
+							"name": "audit T1: recomputed from the sources with the early steps inserted. With no early step there is none: the original T1 is used as it is",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -20850,7 +20788,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy69iEln95Is="
 							},
-							"name": "audit T2: audit T1 + recipe tier-2 + late steps",
+							"name": "audit T2: recomputed from audit T1 (the original T1 when no early step) + recipe tier-2 steps + late steps",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -20931,7 +20869,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGht1V6z9k+p4w="
 					},
-					"name": "HOME-AUDIT-PANEL",
+					"name": "OBSOLETE-TO-DELETE",
 					"ownedElements": [
 						{
 							"_type": "FCFlowchartDiagram",
@@ -20939,7 +20877,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy6+kVFtBtRw="
 							},
-							"name": "HOME-AUDIT-PANEL Layout sketch of the Audit workspace",
+							"name": "OBSOLETE-TO-DELETE Layout sketch replaced by UI-HOME-EXPLORATION and UI-HOME-AUDIT",
 							"ownedViews": [
 								{
 									"_type": "FCProcessView",
@@ -24158,7 +24096,7 @@
 											"top": 311,
 											"width": 388,
 											"height": 26,
-											"text": "Original Result plot (reference, Compare): the recipe plot, never changed",
+											"text": "Original Result plot (reference). Shown only when Compare is on. Compare: on/off toggle (flag comparison_mode_enabled)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -24222,7 +24160,7 @@
 											"top": 311,
 											"width": 388,
 											"height": 26,
-											"text": "Audited plot (audit T3 of this plot): the plot with the audit data. Badge says which steps apply",
+											"text": "Audited plot (audit T3 of this plot): the plot with the audit data. Full width when Compare is off. Badge says which steps apply",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -24326,7 +24264,7 @@
 									"left": 420,
 									"top": 640,
 									"width": 680,
-									"height": 230
+									"height": 250
 								},
 								{
 									"_type": "WFTextView",
@@ -24349,8 +24287,8 @@
 											"left": 426,
 											"top": 646,
 											"width": 668,
-											"height": 52,
-											"text": "DIALOG New audit step (opens over the screen, replaces the propagation dialog): kind; reach selector, nothing preselected (this plot only | all plots that use the same table | every plot in the project) with plot names; stage if needed; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; reason (required); Apply",
+											"height": 65,
+											"text": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind; reach selector, nothing preselected (this plot only | all plots that use the same table | every plot in the project) with plot names; stage if needed; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -24364,7 +24302,7 @@
 									"left": 426,
 									"top": 646,
 									"width": 668,
-									"height": 507,
+									"height": 238,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy9UzzWaGur8="
 									}
@@ -24733,8 +24671,8 @@
 											"left": 1176,
 											"top": 636,
 											"width": 318,
-											"height": 39,
-											"text": "No Apply gate and no draft: a step is applied when created. Today the panel also has Inherited (Tier 2) nodes and the filter inventory: to review what stays",
+											"height": 65,
+											"text": "No Apply button in this panel: Apply is in the dialog, after the user has read the information. No draft list. Today the panel also has Inherited (Tier 2) nodes, the filter inventory and a pending badge: to review what stays",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -24993,7 +24931,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Original Result plot (reference, Compare): the recipe plot, never changed"
+							"name": "Original Result plot (reference). Shown only when Compare is on. Compare: on/off toggle (flag comparison_mode_enabled)"
 						},
 						{
 							"_type": "WFText",
@@ -25001,7 +24939,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Original Result plot (reference, Compare): the recipe plot, never changed"
+							"name": "Original Result plot (reference). Shown only when Compare is on. Compare: on/off toggle (flag comparison_mode_enabled)"
 						},
 						{
 							"_type": "WFPanel",
@@ -25009,7 +24947,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audited plot (audit T3 of this plot): the plot with the audit data. Badge says which steps apply"
+							"name": "Audited plot (audit T3 of this plot): the plot with the audit data. Full width when Compare is off. Badge says which steps apply"
 						},
 						{
 							"_type": "WFText",
@@ -25017,7 +24955,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Audited plot (audit T3 of this plot): the plot with the audit data. Badge says which steps apply"
+							"name": "Audited plot (audit T3 of this plot): the plot with the audit data. Full width when Compare is off. Badge says which steps apply"
 						},
 						{
 							"_type": "WFPanel",
@@ -25041,7 +24979,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen, replaces the propagation dialog): kind; reach selector, nothing preselected (this plot only | all plots that use the same table | every plot in the project) with plot names; stage if needed; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; reason (required); Apply"
+							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind; reach selector, nothing preselected (this plot only | all plots that use the same table | every plot in the project) with plot names; stage if needed; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
 						},
 						{
 							"_type": "WFText",
@@ -25049,7 +24987,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "DIALOG New audit step (opens over the screen, replaces the propagation dialog): kind; reach selector, nothing preselected (this plot only | all plots that use the same table | every plot in the project) with plot names; stage if needed; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; reason (required); Apply"
+							"name": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind; reach selector, nothing preselected (this plot only | all plots that use the same table | every plot in the project) with plot names; stage if needed; lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)"
 						},
 						{
 							"_type": "WFPanel",
@@ -25137,7 +25075,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "No Apply gate and no draft: a step is applied when created. Today the panel also has Inherited (Tier 2) nodes and the filter inventory: to review what stays"
+							"name": "No Apply button in this panel: Apply is in the dialog, after the user has read the information. No draft list. Today the panel also has Inherited (Tier 2) nodes, the filter inventory and a pending badge: to review what stays"
 						},
 						{
 							"_type": "WFText",
@@ -25145,7 +25083,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "No Apply gate and no draft: a step is applied when created. Today the panel also has Inherited (Tier 2) nodes and the filter inventory: to review what stays"
+							"name": "No Apply button in this panel: Apply is in the dialog, after the user has read the information. No draft list. Today the panel also has Inherited (Tier 2) nodes, the filter inventory and a pending badge: to review what stays"
 						}
 					]
 				}
