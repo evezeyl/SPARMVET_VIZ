@@ -389,3 +389,8 @@ show the levels of section 5 as agreed earlier.
 the check ids of `home_audit_steps.md` section 19); `HOME-AUDIT-FLOW` now shows the guard rails, the reason category, the
 acknowledged warnings and the read-only lineage map (own renderer in HOME; data from `blueprint_arch`; Blueprint
 unchanged); the audit wireframe dialog lists them.
+
+**Added 2026-11-11 (developer review, `home_audit_steps.md` section 20):** `HOME-AUDIT-COMPONENTS` (planned pure components:
+recipe graph, event log, step compiler, guard rails, policy, audit cache; layers; tests); `HOME-AUDIT-FLOW` is now
+three steps (what, check with an effect preview, why) and ends in the pre-export review. The wireframe dialog text still
+shows one dialog and is brought in line when Eve confirms D4.

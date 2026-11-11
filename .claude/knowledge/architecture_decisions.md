@@ -5043,6 +5043,13 @@ read-only lineage map in audit mode so the user understands how the recipe is bu
 code of `blueprint_arch` but has its own renderer in HOME's own dialog (the cross-panel rule forbids mounting
 Blueprint's panel; Blueprint is not modified).
 
+**Review as the software developer (2026-11-11), `home_audit_steps.md` section 20:** the rules hold, the architecture changes: one
+recipe graph that every feature queries; an event-sourced, append-only log from which the step list is derived; a step
+compiler (steps become existing registered recipe actions, used for the hash, the execution, the forked recipe and the
+lineage highlight); a three-step dialog (what, check with an effect preview, why); a pre-export review gate; a policy
+block in the configuration; honest wording of the checks; executable guarantees as property tests; format versions; a
+build order with the user interface last. To confirm before code.
+
 **Added during the review (2026-11-11):** Apply is atomic (the step list changes only if the recomputation
 succeeds); an append-only event log records creations, removals and reverts and is exported [confirm].
 

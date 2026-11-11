@@ -2,7 +2,8 @@
 
 **Status:** 2026-11-11, version 4, after the full consistency review with Eve (history: git commits 5b59a4a, e5ae922,
 069052b). Companion: `home_preview_filters.md`. Decision record: ADR-099 (`architecture_decisions.md`). Section 18 is the review as a scientist and as a data
-scientist (findings, evidence, remedies); section 19 is the software's role and the guard rails (issue #64). Nothing here is code yet. Marks: **[built]**, **[to build]**, **[confirm]** = my proposal from the review, Eve to confirm before code.
+scientist (findings, evidence, remedies); section 19 is the software's role and the guard rails (issue #64); section 20 is the review as the software developer
+(architecture, how the information reaches the user, what changed). Nothing here is code yet. Marks: **[built]**, **[to build]**, **[confirm]** = my proposal from the review, Eve to confirm before code.
 
 ## 1. The rule, in one sentence
 
@@ -338,6 +339,7 @@ HOME test plan items). Checked list, to re-verify before the code starts.
 | `app/handlers/home_theater.py` | strip -> Exploration, mode switch, panel dispatch, plot and table data sources, My view/Compare removed | `test_shiny_smoke`, `test_view_badge`, `test_render_every_plot`, `test_export_view_consistency`, `debug_home_theater`, `test_ui_scenarios`, `test_ui_app_features_masking` |
 | `app/handlers/filter_and_audit_handlers.py` | shared filter form, two actions, new dialog, propagation replaced | `test_filter_operators`, smoke filter tests (new data-oracle suite) |
 | `app/handlers/audit_stack.py` | step list, statuses, delete/undo/revert, no draft | `test_session_manager` (gatekeeper), smoke `TestAuditGate` |
+| NEW `app/modules/recipe_graph.py`, `audit_events.py` (event log), `audit_compiler.py` (step compiler), `audit_policy.py` | recipe graph (D1), event-sourced log (D2), compiler (D3), policy (D7) | property tests (D9) and golden tests on every shipped recipe |
 | NEW `app/modules/audit_guard_rails.py` (pure functions, the registry of section 19) | checks, levels, messages, help anchors | one test per check with a mutation check; test that the dialog, help and export list the same ids |
 | `app/modules/t3_audit_engine.py`, `view_badge.py` | filter apply, labels, skip rule, badge texts | `test_filter_operators`, `test_view_badge` |
 | `app/modules/session_manager.py`, `session_handlers.py` | steps carry kind/reach/level/initials; old per-plot nodes map to level 3 | `test_session_manager`, `test_legacy_formats`, `test_write_t3_ghost_warning`, `debug_session_flow` |
@@ -418,7 +420,9 @@ log, recipe documentation) are accepted.
 **Decided (Eve, 2026-11-11, section 19):** the principle (inform, warn, let the user decide; a risky choice needs a recorded
 reason; block only technical problems); the four levels; the NA rule (never silent); a guard-rail registry; the review
 findings documented in issue #64; the problems and the principle go into the documentation and the help.
-**To confirm [confirm]:** the first list of checks and their levels (section 19), the thresholds (20 %, 3 entities), the
+**To confirm [confirm]:** the changes D1-D14 of section 20 (recipe graph, event-sourced log, step compiler, three-step
+dialog with an effect preview, pre-export review gate, policy configuration, `hypothesis`, build order), the first list of
+checks and their levels (section 19), the thresholds (20 %, 3 entities), the
 reason categories, the optional caption (off by default), the lineage map.
 
 **Open:**
@@ -555,3 +559,50 @@ audit trail)" to the caption of each figure. Eve: the data should be cleaned bef
 **Documentation and help.** A page "Before you audit" and the help of the audit filters: the problems above in plain
 words with an example each, the prior art (ARRIVE, CONSORT, Simmons et al. 2011), the principle, and the advice to use
 the lowest reach that fits. The check messages come from the registry.
+
+## 20. Review as the software developer (2026-11-11)
+
+**Question.** Does the logic we have make sure the user has the information needed and takes good decisions? **Answer.**
+The *rules* (what the system must do) are good. The *architecture* behind them was not yet good enough: the same
+recipe analysis was needed by seven features and would have been written seven times, the audit trail lived in two
+places, information came in one overloaded dialog, and the strongest check was missing at the point of no return (the
+export). The changes below fix that. What remains risky is human (wording, warning fatigue) and can only be tested with
+real users.
+
+**What holds (keep):** original data never changed; recompute, never copy; chained keys and the canonical hash; atomic
+Apply; stage and reach; the NA rule; the four levels (info, warning, confirm with a reason, block); the guard-rail
+registry as the single source of messages; the rule that only technical problems block.
+
+**Evidence for the biggest human risk (warning fatigue).** In clinical decision support, 46-96 % of alerts are
+overridden ([Poly et al. 2020](https://medinform.jmir.org/2020/7/e15653/PDF)); tailoring alerts to the user's role was
+the most successful remedy ([Hussain et al. 2019](https://psnet.ahrq.gov/issue/medication-safety-alert-fatigue-may-be-reduced-interaction-design-and-clinical-role-tailoring)).
+Attention to repeated warnings falls over time and recovers when the warning's appearance changes
+([Vance et al. 2018](https://misq.org/tuning-out-security-warnings-a-longitudinal-examination-of-habituation-through-fmri-eye-tracking-and-field-experiments.html)).
+So: few, specific, rare warnings; a different look for each level; the strongest review where it matters.
+
+**Changes (D1-D14); [confirm] = Eve to confirm before code.**
+
+| # | Change | Why (what was not good enough) | Effect on the design |
+|---|---|---|---|
+| D1 | **One recipe graph** (`recipe_graph`, pure, built once per recipe from `raw_config`): data schemas, ingredient steps, joins, tier steps, plots, key families, the columns available at each stage, the columns each plot uses, flags for population-statistic steps. Everything below is a **query** on it | key mapping (#61), concerned plots (#58), used-by-plot (#59), impact preview, lineage map and checks C1, W2, W4 each needed their own parsing of the recipe: duplicated logic gives inconsistent answers, and the first of them (`extract_primary_keys`) is already wrong | new component; tested against every shipped recipe; sections 6, 7.4, 9 and 19 use it |
+| D2 | **Event-sourced log**: only append-only events are stored (step created, removed, reverted, warning acknowledged, override written); the step list is derived from them. Undo is a new event | "step list + separate event log" (sections 10-11) can disagree; the log is also what the report needs (steps made and removed, acknowledgements) | one store; session, export and history come from it |
+| D3 | **Step compiler**: a step compiles to a list of the **existing registered recipe actions** (the translator already does this for plot steps); that one output is hashed, executed, exported as the forked recipe, used to highlight the lineage map and to compute the impact | "one code path" was stated, not structured | one module; golden tests per step kind; new NA-aware actions with #63 |
+| D4 | **Three-step dialog with an effect preview** (not a draft list): 1 *What* (kind, reach, values), 2 *Check* (rows and entities before/after, findings sorted by level, the lineage map, a **before/after preview of the open plot** from the trial computation), 3 *Why* (reason category and text, acknowledgements, Apply) | one dialog with everything is overload; the best information is to **show the effect**, not only describe it; the stepwise order also gives the pause Eve asked for | dialog text, flow diagram and wireframe updated |
+| D5 | **Pre-export review gate**: before an export the user sees a generated plain-language methods paragraph, the attrition table, every acknowledged warning and override, and any broken or incomplete step, and attests | the strongest check belongs at the point of no return; it lets the step-time dialog ask for fewer confirmations (less fatigue) | new screen before the export; the paragraph goes into the report |
+| D6 | **Few, specific, rare warnings** | evidence above | every check must carry a number or a name, offer the alternative, fire rarely; one distinct look per level; confirm-with-reason only for C1-C3; thresholds tested with users |
+| D7 | **Policy in configuration** (`audit_policy` in the deployment or the app features): attrition threshold, minimum group size, reason categories, minimum reason length, whether initials are required, whether the confirm-level checks may be overridden | different labs, different rules; keeps "the user decides" at the right level; defaults safe | one config block, validated at startup like the flags |
+| D8 | **Honest checks**: guard rails are heuristics (a `mutate` expression such as `x / x.sum()` hides a population statistic from an action-name scan). The scan also reads `mutate` expressions for aggregations; a clean result says "no issue found by checks A, B, C", never "safe"; the lineage map lists every step so a person can look | false assurance is worse than no check | wording; a "what the audit guarantees and what it does not" page |
+| D9 | **Executable guarantees (property tests)**: audit with no steps equals the original (same hash); a step applied twice equals once; row steps commute within a stage; undo restores the earlier hash; the original files never change; trial equals apply; the exported recipe re-run equals the audit data; the key changes if and only if the operations change; the result equals an independent reference implementation on random frames with nulls, NaN, whitespace and case. Property-based testing with `hypothesis` **[confirm: new dev dependency]** | the design claims properties; they must be executable | new test suite, listed in section 14 |
+| D10 | **Persistent awareness**: "N audit steps active" in Exploration, in the plot header and in the export metadata; a plot made with audit steps says so | nobody should mistake an audited plot for the original, or forget steps exist | badge texts |
+| D11 | **Quick path for the common job** (remove a bad sample): an entry in the Filters panel that opens the dialog at step 1 with the kind chosen; the reach stays unselected | most use is one job; the full dialog should not be needed to find it | one button |
+| D12 | **Background computation with progress and cancel** (Shiny extended task, to check against the installed Shiny version); Apply is disabled while it runs; the existing "recalculating" overlay stays | recomputation can be slow; the page must not freeze | atomic Apply unchanged |
+| D13 | **Format versions**: `schema_version` on events and exports; sessions of the old model are migrated by a mapping (section 4) | the format will change again | one field and a migration test |
+| D14 | **Build order** (each stage shippable and tested headless; the UI last): (1) engine bugs #62, #63 and one shared filter implementation; (2) recipe graph and key mapping (#61); (3) event log, step compiler, audit cache, without a UI; (4) guard-rail registry and tests; (5) the dialog, the panel and the lineage map; (6) export, importer and the review gate; (7) documentation and help | the risky logic is testable without a browser; a UI built on untested logic is where wrong figures come from | build plan for #60 |
+
+**A usability check before the wording is final:** let two or three scientists who did not write the design use the
+dialog on the ST22 recipe (think-aloud), with the real warning texts. The wording of the reach options and of C1-C3 is
+decided after that, not before.
+
+**Verdict after the changes.** Good enough to build, in the order of D14. The two things no design removes: users who
+click through warnings (reduced by D4-D6, caught by D5), and recipes whose structure the checks cannot see (D8: the
+lineage map and the honest wording are the answer).

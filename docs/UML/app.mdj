@@ -18555,7 +18555,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
+											"left": 870,
 											"top": 30,
 											"width": 400,
 											"height": 13,
@@ -18565,7 +18565,7 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
+									"left": 860,
 									"top": 20,
 									"width": 420,
 									"height": 60,
@@ -18593,11 +18593,11 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
-											"top": 150,
+											"left": 870,
+											"top": 140,
 											"width": 400,
-											"height": 26,
-											"text": "Filters form, button \"Create audit step\". Kind: remove samples (by ID) | keep or remove rows by a value | remove a column",
+											"height": 39,
+											"text": "STEP 1 WHAT. Filters form, button \"Create audit step\" (or the quick entry \"Remove samples\"): kind = remove samples (by ID) | keep or remove rows by a value | remove a column",
 											"wordWrap": true
 										}
 									],
@@ -18605,10 +18605,10 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 140,
+									"left": 860,
+									"top": 130,
 									"width": 420,
-									"height": 70,
+									"height": 80,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66x41dkirI="
 									}
@@ -18633,11 +18633,11 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
+											"left": 870,
 											"top": 270,
 											"width": 400,
-											"height": 52,
-											"text": "Pick the REACH with a selector (radio buttons, nothing preselected), plain words: selected plots (checklist of the recipe plots; one checked = only this plot) | all plots that use the same table as this plot (names listed) | every plot in the project",
+											"height": 39,
+											"text": "STEP 1 WHAT (continued). Pick the REACH with a selector, nothing preselected: selected plots (checklist of the recipe plots) | all plots that use the same table as this plot (names) | every plot in the project",
 											"wordWrap": true
 										}
 									],
@@ -18645,10 +18645,10 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
+									"left": 860,
 									"top": 260,
 									"width": 420,
-									"height": 90,
+									"height": 100,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66x9FdsfWE="
 									}
@@ -18673,8 +18673,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
-											"top": 390,
+											"left": 870,
+											"top": 420,
 											"width": 400,
 											"height": 65,
 											"text": "The STAGE follows from the kind and the reach: remove samples = early (sources) for same-table / project reach; value filter and drop = late (T2) or plot (T3), never early; selected plots = T3. Columns and values come from the data (T3 frame, audit T2, key values), never from the plots",
@@ -18685,10 +18685,10 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 380,
+									"left": 860,
+									"top": 410,
 									"width": 420,
-									"height": 90,
+									"height": 100,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yBld0sT8="
 									}
@@ -18713,11 +18713,11 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
-											"top": 510,
+											"left": 870,
+											"top": 570,
 											"width": 400,
-											"height": 91,
-											"text": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows AND entities before/after, NA rows touched; plots that cannot show it; GUARD RAILS run: info, warnings to acknowledge, confirm with a written reason (detail: HOME-AUDIT-GUARDRAILS); \"Show the lineage map\" (read-only, own renderer)",
+											"height": 78,
+											"text": "STEP 2 CHECK (before anything is applied): chain original T1 -> audit T1 -> audit T2 -> audit T3; plots and tables affected; rows AND entities before/after; NA rows; findings sorted by level (info, warning, confirm with a reason; detail: HOME-AUDIT-GUARDRAILS); BEFORE/AFTER PREVIEW of the open plot from the trial computation; button Show the lineage map",
 											"wordWrap": true
 										}
 									],
@@ -18725,10 +18725,10 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 500,
+									"left": 860,
+									"top": 560,
 									"width": 420,
-									"height": 130,
+									"height": 150,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66yKVd8c5Q="
 									}
@@ -18751,18 +18751,18 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 155,
-											"top": 682.5,
+											"left": 800,
+											"top": 792.5,
 											"width": 150,
 											"height": 65,
-											"text": "Reason + category written, warnings acknowledged, overrides explained, Apply pressed?",
+											"text": "STEP 3 WHY: reason category + reason, warnings acknowledged, overrides explained. Apply pressed?",
 											"wordWrap": true
 										}
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 80,
-									"top": 650,
+									"left": 725,
+									"top": 760,
 									"width": 300,
 									"height": 130,
 									"nameLabel": {
@@ -18789,8 +18789,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 30,
-											"top": 800,
+											"left": 255,
+											"top": 950,
 											"width": 400,
 											"height": 26,
 											"text": "Apply: the step is validated and the audit cache is recomputed for the affected stages (detail: HOME-AUDIT-CACHE)",
@@ -18801,8 +18801,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 20,
-									"top": 790,
+									"left": 245,
+									"top": 940,
 									"width": 420,
 									"height": 80,
 									"nameLabel": {
@@ -18830,7 +18830,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 100,
-											"top": 920,
+											"top": 1085,
 											"width": 260,
 											"height": 39,
 											"text": "Audited plot and audit T3 table are shown; Compare (original Result | audited) if the toggle is on",
@@ -18842,7 +18842,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 910,
+									"top": 1075,
 									"width": 420,
 									"height": 70,
 									"nameLabel": {
@@ -18870,7 +18870,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 30,
-											"top": 1020,
+											"top": 1210,
 											"width": 400,
 											"height": 26,
 											"text": "Impact report, coverage check (\"ID2 still present in ...\") and project overview (collections x steps)",
@@ -18882,7 +18882,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": false,
 									"left": 20,
-									"top": 1010,
+									"top": 1200,
 									"width": 420,
 									"height": 70,
 									"nameLabel": {
@@ -18909,8 +18909,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 920,
+											"left": 245,
+											"top": 795,
 											"width": 400,
 											"height": 26,
 											"text": "Delete a step, Undo last, Revert to step N or Remove all: recompute WITHOUT it; later steps are kept and re-checked",
@@ -18921,8 +18921,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 910,
+									"left": 235,
+									"top": 785,
 									"width": 420,
 									"height": 80,
 									"nameLabel": {
@@ -18949,8 +18949,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 1020,
+											"left": 480,
+											"top": 1080,
 											"width": 400,
 											"height": 26,
 											"text": "Status of every step after recomputing: applied | not concerned (key or column absent there) | broken (its column no longer exists: red)",
@@ -18961,8 +18961,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 1010,
+									"left": 470,
+									"top": 1070,
 									"width": 420,
 									"height": 80,
 									"nameLabel": {
@@ -18989,8 +18989,8 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 1140,
+											"left": 480,
+											"top": 1215,
 											"width": 400,
 											"height": 13,
 											"text": "A broken step blocks the export until it is fixed or removed",
@@ -19001,8 +19001,8 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 1130,
+									"left": 470,
+									"top": 1205,
 									"width": 420,
 									"height": 60,
 									"nameLabel": {
@@ -19029,11 +19029,11 @@
 											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 1240,
+											"left": 480,
+											"top": 1480,
 											"width": 400,
-											"height": 55,
-											"text": "Export: steps with reasons, original and audit data, attrition table, coverage check, forked recipe. Exploration is never exported",
+											"height": 64,
+											"text": "Export (after the PRE-EXPORT REVIEW): steps with reasons, original and audit data, attrition table, coverage check, forked recipe. Exploration is never exported",
 											"wordWrap": true
 										}
 									],
@@ -19041,10 +19041,10 @@
 									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 1230,
+									"left": 470,
+									"top": 1470,
 									"width": 420,
-									"height": 90,
+									"height": 100,
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66y01e840g="
 									}
@@ -19069,8 +19069,8 @@
 											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 660,
+											"left": 705,
+											"top": 960,
 											"width": 400,
 											"height": 26,
 											"text": "Cancel, or no reason: nothing is applied. The user can read the information first",
@@ -19081,8 +19081,8 @@
 									"fillColor": "#e9ecef",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 650,
+									"left": 695,
+									"top": 950,
 									"width": 420,
 									"height": 60,
 									"nameLabel": {
@@ -19109,8 +19109,8 @@
 											"fillColor": "#ffe0e0",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 30,
+											"left": 930,
+											"top": 1490,
 											"width": 400,
 											"height": 26,
 											"text": "TO BUILD: the whole workflow. Today: per-plot T3 steps, a propagation dialog, My view and preview filters in My view",
@@ -19121,8 +19121,8 @@
 									"fillColor": "#ffe0e0",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 20,
+									"left": 920,
+									"top": 1480,
 									"width": 420,
 									"height": 80,
 									"nameLabel": {
@@ -19149,8 +19149,8 @@
 											"fillColor": "#ffe0e0",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 150,
+											"left": 1380,
+											"top": 1490,
 											"width": 400,
 											"height": 39,
 											"text": "TO FIX (#58): \"concerned\" is checked on the plot's audit T2, not on the data view; TO BUILD (#59): drop warning and clear message in a broken plot",
@@ -19161,8 +19161,8 @@
 									"fillColor": "#ffe0e0",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 140,
+									"left": 1370,
+									"top": 1480,
 									"width": 420,
 									"height": 80,
 									"nameLabel": {
@@ -19191,8 +19191,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 244,
-											"top": 103,
+											"left": 1084,
+											"top": 98,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19210,8 +19210,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66xz1dbyjE="
 									},
-									"lineStyle": 2,
-									"points": "230:80;230:140",
+									"lineStyle": 3,
+									"points": "1070:81;1070:105;1070:129",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66zHlfcZyM="
 									}
@@ -19238,7 +19238,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 244,
+											"left": 1084,
 											"top": 228,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -19257,8 +19257,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66x41djg3I="
 									},
-									"lineStyle": 2,
-									"points": "230:210;230:260",
+									"lineStyle": 3,
+									"points": "1070:211;1070:235;1070:259",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66zOlfkhW8="
 									}
@@ -19285,8 +19285,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 244,
-											"top": 358,
+											"left": 1084,
+											"top": 378,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19304,8 +19304,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66x9FdrNBo="
 									},
-									"lineStyle": 2,
-									"points": "230:350;230:380",
+									"lineStyle": 3,
+									"points": "1070:361;1070:385;1070:409",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66zT1fs3hM="
 									}
@@ -19332,8 +19332,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 244,
-											"top": 478,
+											"left": 1084,
+											"top": 528,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19351,8 +19351,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yBldzUBg="
 									},
-									"lineStyle": 2,
-									"points": "230:470;230:500",
+									"lineStyle": 3,
+									"points": "1070:511;1070:535;1070:559",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66zclf03+w="
 									}
@@ -19379,8 +19379,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 244,
-											"top": 633,
+											"left": 889,
+											"top": 728,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19398,8 +19398,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yKVd7GlE="
 									},
-									"lineStyle": 2,
-									"points": "230:630;230:650",
+									"lineStyle": 3,
+									"points": "922:711;875:735;875:759",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66ziVf8eZc="
 									}
@@ -19425,8 +19425,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 234,
-											"top": 778,
+											"left": 644,
+											"top": 923,
 											"width": 20.22998046875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -19446,8 +19446,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yQleDGn4="
 									},
-									"lineStyle": 2,
-									"points": "230:780;230:790",
+									"lineStyle": 3,
+									"points": "724:885;650:915;578:939",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66ztVgE+NA="
 									}
@@ -19473,8 +19473,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 463,
-											"top": 659,
+											"left": 912,
+											"top": 908,
 											"width": 14.4599609375,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -19494,8 +19494,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yQleDGn4="
 									},
-									"lineStyle": 2,
-									"points": "380:680;560:680",
+									"lineStyle": 3,
+									"points": "897:891;905:915;905:949",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66z2FgMA1w="
 									}
@@ -19523,7 +19523,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 244,
-											"top": 883,
+											"top": 1038,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19541,8 +19541,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yU1eLI5k="
 									},
-									"lineStyle": 2,
-									"points": "230:870;230:910",
+									"lineStyle": 3,
+									"points": "313:1021;230:1045;230:1074",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy66z8FgUu5s="
 									}
@@ -19570,7 +19570,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 244,
-											"top": 988,
+											"top": 1168,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19588,8 +19588,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yZVeTfj4="
 									},
-									"lineStyle": 2,
-									"points": "230:980;230:1010",
+									"lineStyle": 3,
+									"points": "230:1146;230:1175;230:1199",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy660GFgcXGk="
 									}
@@ -19616,8 +19616,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 769,
-											"top": 839,
+											"left": 459,
+											"top": 906,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19635,8 +19635,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yiVejs6c="
 									},
-									"lineStyle": 2,
-									"points": "770:910;770:830;440:830",
+									"lineStyle": 3,
+									"points": "445:866;445:915;449:939",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy660QlgkxcY="
 									}
@@ -19663,8 +19663,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 230,
-											"top": 1029,
+											"left": 694,
+											"top": 1038,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19682,8 +19682,8 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yU1eLI5k="
 									},
-									"lineStyle": 2,
-									"points": "230:870;230:1050;560:1050",
+									"lineStyle": 3,
+									"points": "597:1021;680:1045;680:1069",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy660W1gsU+g="
 									}
@@ -19710,8 +19710,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 784,
-											"top": 1103,
+											"left": 694,
+											"top": 1168,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -19729,57 +19729,10 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66ym1erUyU="
 									},
-									"lineStyle": 2,
-									"points": "770:1090;770:1130",
+									"lineStyle": 3,
+									"points": "680:1151;680:1175;680:1204",
 									"nameLabel": {
 										"$ref": "AAAAAAGhy660clg0N1c="
-									}
-								},
-								{
-									"_type": "FCFlowView",
-									"_id": "AAAAAAGhy660i1g7eug=",
-									"_parent": {
-										"$ref": "AAAAAAGhyr/Vckwu5po="
-									},
-									"model": {
-										"$ref": "AAAAAAGhy660i1g5KlA="
-									},
-									"subViews": [
-										{
-											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhy660i1g8zQY=",
-											"_parent": {
-												"$ref": "AAAAAAGhy660i1g7eug="
-											},
-											"model": {
-												"$ref": "AAAAAAGhy660i1g5KlA="
-											},
-											"visible": false,
-											"font": "Arial;13;0",
-											"parentStyle": false,
-											"left": 784,
-											"top": 1203,
-											"height": 13,
-											"alpha": 1.5707963267948966,
-											"distance": 15,
-											"hostEdge": {
-												"$ref": "AAAAAAGhy660i1g7eug="
-											},
-											"edgePosition": 1
-										}
-									],
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"head": {
-										"$ref": "AAAAAAGhy66y01e7kg0="
-									},
-									"tail": {
-										"$ref": "AAAAAAGhy66ytlezTJk="
-									},
-									"lineStyle": 2,
-									"points": "770:1190;770:1230",
-									"nameLabel": {
-										"$ref": "AAAAAAGhy660i1g8zQY="
 									}
 								},
 								{
@@ -19802,8 +19755,8 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 570,
-											"top": 270,
+											"left": 1065,
+											"top": 785,
 											"width": 400,
 											"height": 52,
 											"text": "Lineage map (read-only): sources, ingredients, joins, tier steps in plain words; population statistics flagged; audit steps overlaid; affected nodes highlighted. Own renderer in HOME; data from blueprint_arch; Blueprint unchanged",
@@ -19814,8 +19767,8 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 560,
-									"top": 260,
+									"left": 1055,
+									"top": 775,
 									"width": 420,
 									"height": 100,
 									"nameLabel": {
@@ -19843,8 +19796,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 527,
-											"top": 493,
+											"left": 1261,
+											"top": 728,
 											"width": 36.1435546875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -19864,10 +19817,145 @@
 									"tail": {
 										"$ref": "AAAAAAGhy66yKVd7GlE="
 									},
-									"lineStyle": 2,
-									"points": "440:500;560:500;560:360",
+									"lineStyle": 3,
+									"points": "1218:711;1265:735;1265:774",
 									"nameLabel": {
 										"$ref": "AAAAAAGhzDO1KmtVA9c="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDYArmzC43M=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDYArmzAm/I="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDYArmzDrGs=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDYArmzC43M="
+											},
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 480,
+											"top": 1330,
+											"width": 400,
+											"height": 39,
+											"text": "PRE-EXPORT REVIEW (the point of no return): generated methods paragraph, attrition table, every acknowledged warning and override with its reason, broken or incomplete steps; the user attests",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 470,
+									"top": 1320,
+									"width": 420,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDYArmzDrGs="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhzDYAy2zKbDc=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDYAy2zIhko="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhzDYAy2zLgVE=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDYAy2zKbDc="
+											},
+											"model": {
+												"$ref": "AAAAAAGhzDYAy2zIhko="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 694,
+											"top": 1288,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhzDYAy2zKbDc="
+											},
+											"edgePosition": 1
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhzDYArmzC43M="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhy66ytlezTJk="
+									},
+									"lineStyle": 3,
+									"points": "680:1266;680:1295;680:1319",
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDYAy2zLgVE="
+									}
+								},
+								{
+									"_type": "FCFlowView",
+									"_id": "AAAAAAGhzDYjL2zZIPA=",
+									"_parent": {
+										"$ref": "AAAAAAGhyr/Vckwu5po="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDYjL2zXY3A="
+									},
+									"subViews": [
+										{
+											"_type": "EdgeLabelView",
+											"_id": "AAAAAAGhzDYjL2zaLAc=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDYjL2zZIPA="
+											},
+											"model": {
+												"$ref": "AAAAAAGhzDYjL2zXY3A="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": false,
+											"left": 671,
+											"top": 1438,
+											"width": 46.25537109375,
+											"height": 13,
+											"alpha": 1.5707963267948966,
+											"distance": 15,
+											"hostEdge": {
+												"$ref": "AAAAAAGhzDYjL2zZIPA="
+											},
+											"edgePosition": 1,
+											"text": "attested"
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"head": {
+										"$ref": "AAAAAAGhy66y01e7kg0="
+									},
+									"tail": {
+										"$ref": "AAAAAAGhzDYArmzC43M="
+									},
+									"lineStyle": 3,
+									"points": "680:1421;680:1445;680:1469",
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDYjL2zaLAc="
 									}
 								}
 							]
@@ -19901,7 +19989,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Filters form, button \"Create audit step\". Kind: remove samples (by ID) | keep or remove rows by a value | remove a column",
+							"name": "STEP 1 WHAT. Filters form, button \"Create audit step\" (or the quick entry \"Remove samples\"): kind = remove samples (by ID) | keep or remove rows by a value | remove a column",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -19924,7 +20012,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Pick the REACH with a selector (radio buttons, nothing preselected), plain words: selected plots (checklist of the recipe plots; one checked = only this plot) | all plots that use the same table as this plot (names listed) | every plot in the project",
+							"name": "STEP 1 WHAT (continued). Pick the REACH with a selector, nothing preselected: selected plots (checklist of the recipe plots) | all plots that use the same table as this plot (names) | every plot in the project",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -19970,7 +20058,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "In the dialog, BEFORE Apply: the chain original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx), changed stages in bold and colour; datasets and plots affected, rows AND entities before/after, NA rows touched; plots that cannot show it; GUARD RAILS run: info, warnings to acknowledge, confirm with a written reason (detail: HOME-AUDIT-GUARDRAILS); \"Show the lineage map\" (read-only, own renderer)",
+							"name": "STEP 2 CHECK (before anything is applied): chain original T1 -> audit T1 -> audit T2 -> audit T3; plots and tables affected; rows AND entities before/after; NA rows; findings sorted by level (info, warning, confirm with a reason; detail: HOME-AUDIT-GUARDRAILS); BEFORE/AFTER PREVIEW of the open plot from the trial computation; button Show the lineage map",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -20029,7 +20117,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Reason + category written, warnings acknowledged, overrides explained, Apply pressed?",
+							"name": "STEP 3 WHY: reason category + reason, warnings acknowledged, overrides explained. Apply pressed?",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -20196,7 +20284,7 @@
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
-									"_id": "AAAAAAGhy660i1g5KlA=",
+									"_id": "AAAAAAGhzDYAy2zIhko=",
 									"_parent": {
 										"$ref": "AAAAAAGhy66ytVexRGY="
 									},
@@ -20204,7 +20292,7 @@
 										"$ref": "AAAAAAGhy66ytVexRGY="
 									},
 									"target": {
-										"$ref": "AAAAAAGhy66y01e5N8U="
+										"$ref": "AAAAAAGhzDYArmzAm/I="
 									}
 								}
 							]
@@ -20215,7 +20303,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
-							"name": "Export: steps with reasons, original and audit data, attrition table, coverage check, forked recipe. Exploration is never exported"
+							"name": "Export (after the PRE-EXPORT REVIEW): steps with reasons, original and audit data, attrition table, coverage check, forked recipe. Exploration is never exported"
 						},
 						{
 							"_type": "FCProcess",
@@ -20248,6 +20336,30 @@
 								"$ref": "AAAAAAGhyr/VckwtXU8="
 							},
 							"name": "Lineage map (read-only): sources, ingredients, joins, tier steps in plain words; population statistics flagged; audit steps overlaid; affected nodes highlighted. Own renderer in HOME; data from blueprint_arch; Blueprint unchanged"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDYArmzAm/I=",
+							"_parent": {
+								"$ref": "AAAAAAGhyr/VckwtXU8="
+							},
+							"name": "PRE-EXPORT REVIEW (the point of no return): generated methods paragraph, attrition table, every acknowledged warning and override with its reason, broken or incomplete steps; the user attests",
+							"ownedElements": [
+								{
+									"_type": "FCFlow",
+									"_id": "AAAAAAGhzDYjL2zXY3A=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDYArmzAm/I="
+									},
+									"name": "attested",
+									"source": {
+										"$ref": "AAAAAAGhzDYArmzAm/I="
+									},
+									"target": {
+										"$ref": "AAAAAAGhy66y01e5N8U="
+									}
+								}
+							]
 						}
 					]
 				},
@@ -25692,7 +25804,7 @@
 											"top": 646,
 											"width": 668,
 											"height": 65,
-											"text": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist of the recipe plots | all plots that use the same table as this plot | every plot in the project); lineage chain with changed stages in bold and colour; plots and datasets affected, rows before/after; warnings; reason (required); initials (optional). Buttons: Cancel | Apply (enabled when a reach is chosen and a reason is written)",
+											"text": "DIALOG New audit step (opens over the screen; nothing is applied until Apply): kind (remove samples by ID | keep or remove rows by a value | remove a column); reach selector, nothing preselected (selected plots: a checklist | all plots that use the same table as this plot | every plot in the project); chain with changed stages in bold; plots and tables affected, rows AND entities before/after, NA rows; guard-rail findings (info | warning to acknowledge | confirm with a reason); button Show the lineage map; reason category + reason (required); initials (optional). Cancel | Apply",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -27636,6 +27748,638 @@
 								"$ref": "AAAAAAGhzDO1Z2taHDA="
 							},
 							"name": "The software makes good data science possible and the choice informed. It does not decide for the user. A risky choice needs a recorded reason. Only technical problems block. Data-science practice (do not clean with the audit, state criteria in advance, report every exclusion) is taught in the help: with great power comes great responsibility, think before you do"
+						}
+					]
+				},
+				{
+					"_type": "FCFlowchart",
+					"_id": "AAAAAAGhzDaF8mziR0o=",
+					"_parent": {
+						"$ref": "AAAAAAGht1V6z9k+p4w="
+					},
+					"name": "HOME-AUDIT-COMPONENTS",
+					"ownedElements": [
+						{
+							"_type": "FCFlowchartDiagram",
+							"_id": "AAAAAAGhzDaF8mzjJyY=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "HOME-AUDIT-COMPONENTS Planned components of audit mode (software view)",
+							"ownedViews": [
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaGwGzplJ8=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaGwGznXFY="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaGwGzq43I=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaGwGzplJ8="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 30,
+											"width": 1280,
+											"height": 13,
+											"text": "LAYER: handlers and screen (Shiny; app/handlers)",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 20,
+									"width": 1300,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaGwGzq43I="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaG5Wzxrjg=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaG5Wzv704="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaG5mzy/xI=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaG5Wzxrjg="
+											},
+											"lineColor": "#345beb",
+											"fillColor": "#eef0fb",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 80,
+											"width": 1280,
+											"height": 13,
+											"text": "Audit mode screen: mode switch, Filters form, 3-step dialog, step list, lineage map, project overview, pre-export review",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#345beb",
+									"fillColor": "#eef0fb",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 70,
+									"width": 1300,
+									"height": 60,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaG5mzy/xI="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaHB2z55pA=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaHB2z335c="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaHB2z6eCw=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaHB2z55pA="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 170,
+											"width": 1280,
+											"height": 13,
+											"text": "LAYER: pure modules (no Shiny; app/modules and libs). Unit and property tests, no browser needed",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 160,
+									"width": 1300,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaHB2z6eCw="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaHJG0BL2w=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaHJGz/pdk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaHJW0CbN8=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaHJG0BL2w="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 220,
+											"width": 380,
+											"height": 39,
+											"text": "recipe_graph: ONE graph of the recipe (schemas, joins, steps, plots, keys, columns per stage, population-statistic flags). Every other component asks it, none re-reads the recipe",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 210,
+									"width": 400,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaHJW0CbN8="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaHPm0JrwI=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaHPm0HDaU="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaHPm0K9vs=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaHPm0JrwI="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 450,
+											"top": 220,
+											"width": 380,
+											"height": 39,
+											"text": "audit_events: append-only event log (step created, removed, reverted, warning acknowledged, override). The step list is derived from it",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 440,
+									"top": 210,
+									"width": 400,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaHPm0K9vs="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaHWm0ROIo=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaHWm0PTJk="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaHWm0SwWA=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaHWm0ROIo="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 870,
+											"top": 220,
+											"width": 440,
+											"height": 39,
+											"text": "audit_compiler: a step compiles to existing registered recipe actions. One output: hashed (audit_cache), executed, exported as the forked recipe, lineage highlight, impact. Reads recipe_graph, writes events",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 860,
+									"top": 210,
+									"width": 460,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaHWm0SwWA="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaHim0ZZv8=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaHiW0XOvo="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaHim0aCgY=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaHim0ZZv8="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 350,
+											"width": 380,
+											"height": 39,
+											"text": "audit_guard_rails: registry of checks (id, trigger, level, message, help anchor, test), reads recipe_graph and audit_policy. Feeds the dialog, the help and the export",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 340,
+									"width": 400,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaHim0aCgY="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaHwW0hGtQ=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaHwW0fXcs="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaHwm0ioMo=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaHwW0hGtQ="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 450,
+											"top": 350,
+											"width": 380,
+											"height": 26,
+											"text": "audit_policy: thresholds, reason categories, minimum reason length, who may override (configuration)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 440,
+									"top": 340,
+									"width": 400,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaHwm0ioMo="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaH6G0pO1g=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaH6G0nK64="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaH6G0qLsU=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaH6G0pO1g="
+											},
+											"lineColor": "#e0a800",
+											"fillColor": "#fff3cd",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 870,
+											"top": 350,
+											"width": 440,
+											"height": 26,
+											"text": "audit_cache: separate folder, chained keys, canonical hash, atomic writes, N recent states",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#e0a800",
+									"fillColor": "#fff3cd",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 860,
+									"top": 340,
+									"width": 460,
+									"height": 100,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaH6G0qLsU="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaIC20x7vE=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaICm0v70k="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaIC20y1JM=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaIC20x7vE="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 480,
+											"width": 1280,
+											"height": 13,
+											"text": "LAYER: existing engine (unchanged except for the filter fixes)",
+											"wordWrap": true
+										}
+									],
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 470,
+									"width": 1300,
+									"height": 40,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaIC20y1JM="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaILW05npg=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaILW030nQ="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaILW06Y6U=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaILW05npg="
+											},
+											"lineColor": "#6c757d",
+											"fillColor": "#e9ecef",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 530,
+											"width": 1280,
+											"height": 13,
+											"text": "Orchestrator and cache (originals) | shared filter implementation (#62, #63) | transformer actions | blueprint_arch lineage code and t3_translator (extended) | VizFactory",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#6c757d",
+									"fillColor": "#e9ecef",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 520,
+									"width": 1300,
+									"height": 70,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaILW06Y6U="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaIVm1Bj14=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaIVW0/+GA="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaIVm1CV9U=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaIVm1Bj14="
+											},
+											"lineColor": "#10a395",
+											"fillColor": "#d5efec",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 630,
+											"width": 1280,
+											"height": 26,
+											"text": "TESTS: property tests (hypothesis): audit with no steps = original, idempotent, undo restores the hash, originals never written, trial = apply, exported recipe re-run = audit data, independent reference on frames with nulls, NaN, whitespace, case",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#10a395",
+									"fillColor": "#d5efec",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 620,
+									"width": 1300,
+									"height": 80,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaIVm1CV9U="
+									}
+								},
+								{
+									"_type": "FCProcessView",
+									"_id": "AAAAAAGhzDaIiG1JqNo=",
+									"_parent": {
+										"$ref": "AAAAAAGhzDaF8mzjJyY="
+									},
+									"model": {
+										"$ref": "AAAAAAGhzDaIh21H9xo="
+									},
+									"subViews": [
+										{
+											"_type": "LabelView",
+											"_id": "AAAAAAGhzDaIiG1KvvA=",
+											"_parent": {
+												"$ref": "AAAAAAGhzDaIiG1JqNo="
+											},
+											"lineColor": "#d62828",
+											"fillColor": "#ffe0e0",
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 30,
+											"top": 740,
+											"width": 1280,
+											"height": 13,
+											"text": "NOT CHANGED: Blueprint, Gallery, Test Lab. HOME has its own lineage map renderer; it only reads data from blueprint_arch (cross-panel rule respected)",
+											"wordWrap": true
+										}
+									],
+									"lineColor": "#d62828",
+									"fillColor": "#ffe0e0",
+									"font": "Arial;13;0",
+									"parentStyle": false,
+									"left": 20,
+									"top": 730,
+									"width": 1300,
+									"height": 60,
+									"nameLabel": {
+										"$ref": "AAAAAAGhzDaIiG1KvvA="
+									}
+								}
+							]
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaGwGznXFY=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "LAYER: handlers and screen (Shiny; app/handlers)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaG5Wzv704=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "Audit mode screen: mode switch, Filters form, 3-step dialog, step list, lineage map, project overview, pre-export review"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaHB2z335c=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "LAYER: pure modules (no Shiny; app/modules and libs). Unit and property tests, no browser needed"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaHJGz/pdk=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "recipe_graph: ONE graph of the recipe (schemas, joins, steps, plots, keys, columns per stage, population-statistic flags). Every other component asks it, none re-reads the recipe"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaHPm0HDaU=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "audit_events: append-only event log (step created, removed, reverted, warning acknowledged, override). The step list is derived from it"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaHWm0PTJk=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "audit_compiler: a step compiles to existing registered recipe actions. One output: hashed (audit_cache), executed, exported as the forked recipe, lineage highlight, impact. Reads recipe_graph, writes events"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaHiW0XOvo=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "audit_guard_rails: registry of checks (id, trigger, level, message, help anchor, test), reads recipe_graph and audit_policy. Feeds the dialog, the help and the export"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaHwW0fXcs=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "audit_policy: thresholds, reason categories, minimum reason length, who may override (configuration)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaH6G0nK64=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "audit_cache: separate folder, chained keys, canonical hash, atomic writes, N recent states"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaICm0v70k=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "LAYER: existing engine (unchanged except for the filter fixes)"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaILW030nQ=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "Orchestrator and cache (originals) | shared filter implementation (#62, #63) | transformer actions | blueprint_arch lineage code and t3_translator (extended) | VizFactory"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaIVW0/+GA=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "TESTS: property tests (hypothesis): audit with no steps = original, idempotent, undo restores the hash, originals never written, trial = apply, exported recipe re-run = audit data, independent reference on frames with nulls, NaN, whitespace, case"
+						},
+						{
+							"_type": "FCProcess",
+							"_id": "AAAAAAGhzDaIh21H9xo=",
+							"_parent": {
+								"$ref": "AAAAAAGhzDaF8mziR0o="
+							},
+							"name": "NOT CHANGED: Blueprint, Gallery, Test Lab. HOME has its own lineage map renderer; it only reads data from blueprint_arch (cross-panel rule respected)"
 						}
 					]
 				}
