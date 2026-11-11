@@ -60,3 +60,9 @@ def test_preview_filters_are_announced_on_raw_and_result(tier):
 def test_no_preview_note_without_filters_or_on_my_view():
     assert not any("preview" in n for n in view_badge("T2", True, False).notes)
     assert not any("preview" in n for n in view_badge("T3", True, True, preview_filters=2).notes)
+
+
+def test_plot_badge_on_result_says_preview_filters_do_not_change_the_plot():
+    badge = view_badge("T2", True, False, table_only_filters=2)
+    assert any("table only" in n for n in badge.notes)
+    assert not any("table only" in n for n in view_badge("T3", True, True, table_only_filters=2).notes)

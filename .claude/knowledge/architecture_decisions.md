@@ -4925,11 +4925,12 @@ shape — both had gone stale describing the pre-#45 single-bundle design).
 **Context.** ADR-085 hid exploration filters on Raw and Result: the filter was accepted, listed as applied, and changed nothing (found in HOM-09). A control that shows and does nothing breaks the logic of the tiers. The contract table (`ui_implementation_contract.md` section 4) already said "visual-only filter for inspection" and contradicted ADR-085.
 
 **Decision.**
-1. Row filters (and the preview column selector) are a temporary preview on **every** view: Raw, Result, My view. They are applied to a lazy copy at render time. They are never written to Parquet and never exported (unchanged: only audited steps are exported).
+1. Row filters (and the preview column selector) are a temporary preview. **In the data table** they apply on every view: Raw, Result, My view. **In plots** they apply only on My view (and the right pane of Compare): Raw and Result plots are the recipe's plots (Eve, 2026-11-11). They are applied to a lazy copy at render time, never written to Parquet, never exported (only audited steps are exported).
 2. Audit-committed nodes (`filter_row`, `exclusion_row`, `drop_column`) still apply only on My view. "Send to Audit" with a reason is the only way a step becomes permanent: applied to the exported plot and data and recorded in the audit trail. The T1/T2 Parquet files stay cache files keyed by recipe and data hash.
-3. Compare: the left pane (Result) never applies preview filters or audit nodes; the right pane is My view.
+3. Compare: the left pane (Result) never applies preview filters or audit nodes; the right pane is My view (preview filters + audited steps).
 4. A filter naming a column absent from the active view (T1 wide, T2 maybe long) is skipped, not an error. A filter leaving zero rows gives an empty table.
-5. Raw and Result show a badge note "N preview filter(s) on, not saved" so a filtered preview is never mistaken for the reference data.
+5. The Raw/Result data badge says "N preview filter(s) on, not saved"; the Result plot badge says the filters change the table only and plots change on My view.
+7. Open (not decided): scope of a preview filter (global today; per plot or per dataset considered) and of audited steps; see `.claude/design/home_filter_scoping_concept.md`.
 6. One operator vocabulary (`OP_WORDS` in `t3_audit_engine.py`): dropdown, staged list and help use the same words; a one-value set reads "column = value".
 
 **Consequences.** Tier-isolation tests flipped; `TestPreviewFiltersOnReferenceViews` guards the behaviour (mutation-tested). Help (`app/src/help/home.md`), user guide, FAQ, contract updated.

@@ -14,7 +14,7 @@ Two different things are called "tier" today. They must be named apart.
 | **Exploration** | Temporary preview (Apply). Never stored, never exported. | UI |
 | **Audited step** | Send to Audit with a reason. Permanent, per plot, exported. | T3 |
 
-Eve's rule (2026-11-11), to confirm in section 6: *Raw and Result are for looking at the data. They do
+Eve's rule (2026-11-11), CONFIRMED and implemented: *Raw and Result are for looking at the data. They do
 not modify the plots. To change a plot, work in My view.*
 
 ## 2. What the code does today (read from code, not changed)
@@ -84,10 +84,11 @@ Column selector: remove column used by the plot (temporary break, restore with "
 
 ## 6. Decisions needed from Eve (not yet taken)
 
-1. **Do exploration filters change the plot in Raw/Result?** Today the Result plot is filtered by
-   Apply (built in #56). Eve's note says Raw/Result "will not modify the plots". If that is the rule:
-   Apply on Raw/Result affects the **table only**, the plot changes only in My view, and Compare stays as is.
+1. ~~Do exploration filters change the plot in Raw/Result?~~ DECIDED 2026-11-11: no. Apply on Raw/Result
+   changes the **table only**; plots change only in My view; Compare left = Result as is, right = My view.
 2. **Scope of an exploration filter:** global (today) / per plot / per dataset (plots that share a dataset) / per dataset and stage.
+   Eve's thinking aloud: a preview filter is for verification, so per dataset may be simpler; the real question is
+   the scope inside My view and for audited steps. Decide after the diagrams.
 3. Column selector: table only (recommended) or also the plot (temporary).
 
 ## 7. Test suite plan (browser + screenshots; science must not be wrong)

@@ -60,7 +60,7 @@ This FAQ captures the strategic "Whys" and "How-To" patterns discovered during t
 
 ### How do I filter what is shown in the plots?
 
-Use the **Filters** panel in the left sidebar (Home mode). Add one or more filter rows: choose a column, an operator (`∈ any of`, `=`, `>`, etc.), and a value. Click **Apply** — the filter is shown in the plots and the data preview as a temporary preview (never written to the data, never exported; only **Send to Audit** makes a step permanent). Click **Reset** to clear.
+Use the **Filters** panel in the left sidebar (Home mode). Add one or more filter rows: choose a column, an operator (`∈ any of`, `=`, `>`, etc.), and a value. Click **Apply** — the filter is a temporary preview: it changes the data table on every view and the plots on My view only (never written to the data, never exported; only **Send to Audit** makes a step permanent). Click **Reset** to clear.
 
 Multiple rows on the same column use **AND logic** (both conditions must be true). Multiple rows on different columns also use AND logic.
 

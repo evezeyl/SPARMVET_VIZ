@@ -937,3 +937,35 @@ class TestPreviewFiltersOnReferenceViews:
         _wait_shiny(page)
         expect(note).to_have_count(0, timeout=15_000)
         assert self._grid_rows(page) == before
+
+    def test_plot_changes_only_on_my_view(self, page: Page, shiny_app: ShinyAppProc):
+        """GUARDED (Eve, 2026-11-11): Apply changes the table everywhere, the PLOT only on My view.
+        Raw/Result plots are the recipe's plots."""
+        _load_data_analysis_recipe(page, shiny_app.url)
+        _open_filters_panel(page)
+        page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
+        _wait_shiny(page)
+        img = page.locator(".shiny-plot-output img").first
+        expect(img).to_be_visible(timeout=15_000)
+        src_before = img.get_attribute("src")
+        page.locator("#fb_col").select_option(index=1)
+        _wait_shiny(page)
+        page.locator("#fb_op").select_option("ne")
+        _wait_shiny(page)
+        page.locator("#filter_add_row").click()
+        expect(page.locator("#filter_remove_0")).to_be_visible(timeout=5_000)
+        page.locator("#filter_apply").click()
+        _wait_shiny(page)
+        try:
+            page.wait_for_timeout(1_500)
+            assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before
+            expect(page.locator("[id^='plot_badge_'] .spv-view-note", has_text="table only")).to_be_visible()
+            page.locator("#plot_view input[value=T3]").check(force=True)
+            _wait_shiny(page)
+            page.wait_for_timeout(1_500)
+            assert page.locator(".shiny-plot-output img").first.get_attribute("src") != src_before
+        finally:
+            page.locator("#plot_view input[value=T2]").check(force=True)
+            _wait_shiny(page)
+            page.locator("#filter_remove_0").click()
+            _wait_shiny(page)

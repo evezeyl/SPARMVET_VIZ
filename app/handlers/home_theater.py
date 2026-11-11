@@ -471,14 +471,18 @@ def define_server(input, output, session, *,
             # not by the active subtab (this plot may not be the active one
             # when its render runs in re-renders). `this_subtab` comes from the
             # enclosing factory scope (shared with _effective_random_state above).
-            # ADR-087 (supersedes ADR-085 decision 1, issue #56): exploration filters are a
-            # temporary preview on every view and are never written to the Parquet files or
-            # exported. Audit-committed nodes still apply only on "My view" (T3), the one place
-            # a user's permanent decisions show. Compare's left pane never filters (its own handler).
+            # ADR-087 (issue #56): preview filters (Apply) change the DATA TABLE on every view,
+            # but a PLOT changes only on "My view" - the one place the user works on what the plot
+            # shows. Raw/Result plots are the recipe's plots. Audited nodes follow the same rule.
+            # Compare's left pane never filters (its own handler).
             # ADR-086: plots follow "Plot to show" (plot_view), not the data view.
             # "T3" = My view, "CMP" = Compare (right pane is My view).
+            # GUARDED by test_shiny_smoke.py::TestPreviewFiltersOnReferenceViews (plot unchanged on Result).
             in_my_view = safe_input(input, "plot_view", "T2") in ("T3", "CMP")
-            filter_rows = list(applied_filters.get()) + (_t3_filter_rows(this_subtab) if in_my_view else [])
+            filter_rows = (
+                (list(applied_filters.get()) + _t3_filter_rows(this_subtab))
+                if in_my_view else []
+            )
             if filter_rows:
                 vf_filters = [
                     {k: v for k, v in f.items() if k != "dtype"}
@@ -737,7 +741,7 @@ def define_server(input, output, session, *,
             tier = "T3" if view == "T3" else "T2"
             spec = _resolve_active_spec(p_id)
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
-            return _badge_ui(view_badge(tier, has_t2, _my_view_has_changes(f"subtab_{p_id}"), len(applied_filters.get())))
+            return _badge_ui(view_badge(tier, has_t2, _my_view_has_changes(f"subtab_{p_id}"), table_only_filters=len(applied_filters.get())))
 
         @output(id=f"plot_cell_{p_id}")
         @render.ui

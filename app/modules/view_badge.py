@@ -43,7 +43,8 @@ def has_tier2_steps(raw_config: dict, target_dataset: Optional[str]) -> bool:
     return bool(tier2_steps(raw_config, target_dataset))
 
 
-def view_badge(tier: str, has_tier2: bool, has_changes: bool, preview_filters: int = 0) -> ViewBadge:
+def view_badge(tier: str, has_tier2: bool, has_changes: bool, preview_filters: int = 0,
+                table_only_filters: int = 0) -> ViewBadge:
     """The badge for a view.
 
     tier         "T1" (Raw), "T2" (Result) or "T3" (My view)
@@ -62,4 +63,6 @@ def view_badge(tier: str, has_tier2: bool, has_changes: bool, preview_filters: i
             notes.append("T2=T1")
     if preview_filters and tier in ("T1", "T2"):
         notes.append(f"{preview_filters} preview filter(s) on, not saved")
+    if table_only_filters and tier == "T2":
+        notes.append(f"{table_only_filters} preview filter(s) change the table only; plots change on My view")
     return ViewBadge(tier=tier, label=label, notes=tuple(notes))

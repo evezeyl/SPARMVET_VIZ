@@ -7,31 +7,32 @@ Two independent choices — one for the plots, one for the data preview table be
 
 | Plot to show | What the plots render |
 |---|---|
-| **Result** | T2 result produced by the data analysis recipe (T2 = T1 if no processing steps are defined), plus any preview filters you apply |
+| **Result** | T2 result produced by the data analysis recipe (T2 = T1 if no processing steps are defined). Always the recipe's plot: preview filters do not change it |
 | **My view** | Result plus your preview filters and the steps you sent to audit |
 | **Compare** | Side by side: Result (left) vs My view (right) — only when comparison is enabled |
 
 | Data to show | What the data preview table shows |
 |---|---|
-| **Raw** | T1 — as assembled, no processing (plus preview filters) |
-| **Result** | T2 — with data analysis recipe processing applied (plus preview filters) |
+| **Raw** | T1 — as assembled, no processing (preview filters change this table) |
+| **Result** | T2 — with data analysis recipe processing applied (preview filters change this table) |
 | **My view** | Result plus your preview filters and the steps you sent to audit |
 
 Plots never show Raw (T1) directly — Raw is for comparing against Result in the table only. Raw and Result are never changed by anything you do in Filters: the data files stay as they are.
 
 ### Filters (left sidebar)
-Filters and column choices are a **preview**: they let you look at the data to understand it. They work on Raw, Result and My view, and they are **never written to the data and never exported**. A badge above the table or plot tells you when preview filters are on ("N preview filter(s) on, not saved").
+**Raw and Result are for looking at the data; My view is where you change what the plot shows.**
 
-Click **+ Add** to stage a filter row, then:
-- **Apply** — shows the staged filters in the plots and the table (preview only).
-- **➜ Send to Audit** — makes the step permanent, with a reason: it is applied to the exported plot and data and recorded in the audit trail. Only available on My view when the app features enables the audit sandbox.
-- **Reset** — clears staged (unapplied) rows.
+- On **Raw** and **Result**, a filter changes the **table only**. Use it to check "what is this data?". It does not change any plot, and it is never saved or exported. A badge says "N preview filter(s) on, not saved".
+- On **My view**, the same filters also change the **plot** (still a preview: not saved, not exported). In **Compare**, the left plot is always the Result as the recipe defines it and the right plot is My view, so you see what your filters did.
+- Only **➜ Send to Audit** (with a reason, My view only) makes a step permanent: it is applied to the exported plot and data and recorded in the audit trail.
+
+Filters are one list for the whole analysis: they apply to every plot and table whose data has the filtered column. A dataset without that column ignores the filter.
+
+Click **+ Add** to stage a filter row, then **Apply** to show it. The 🗑 icon removes a row and its effect at once. **Reset** clears all rows. Send to Audit is described above.
 
 Operators: **= equals**, **≠ not equal**, **> greater than**, **≥ greater or equal**, **< less than**, **≤ less or equal**, **↔ between** (numbers); **∈ any of**, **∉ none of** (categories). Choosing one value shows as "column = value"; several values show as "any of".
 
 If a filter names a column the current view does not have (Raw is wide, Result may be long), it is skipped for that view.
-
-In Compare, the left plot (Result) never shows your preview filters, so you can see what they did.
 
 ### Data Preview
 Shows up to the first 100 rows of the active plot's dataset at the selected "Data to show" tier. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only (view-only on Raw/Result); on My view, with the audit sandbox enabled, deselecting a column stages it to be permanently dropped via the audit trail.
