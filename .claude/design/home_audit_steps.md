@@ -1,126 +1,154 @@
 # HOME: audit steps and the Audit workspace
 
-**Status:** DRAFT 2026-11-11, written with Eve. Companion: `home_preview_filters.md`. Nothing here is code until
-Eve has read both files and the diagrams. Marks: **[built]**, **[decided]**, **[open]**.
+**Status:** 2026-11-11, rewritten after Eve's review (history of the comments: git commit 5b59a4a). Companion:
+`home_preview_filters.md`. Nothing here is code yet. Marks: **[built]**, **[to build]**, **[open]** = to decide.
 
 ## 1. The rule, in one sentence
 
-**An audit step is the only way to change what a plot shows, what the data is, and what is exported. It always
-has a reason, it is recorded, and it never edits the reference data (the stored T1 and T2).**
+**An audit step is the only way to change what a plot shows, what the data is and what is exported. It always has
+a reason, it is recorded, it can be removed, and it never edits the original data (original T1 and T2).**
 
 ## 2. Vocabulary (agreed)
 
 | Word | Meaning |
 |---|---|
-| **Reference T1 / T2** | The stored stages, exactly as the recipe built them. Never changed. |
-| **Audited lineage T1\* / T2\*** | The same stages rebuilt with the lineage-level audit steps applied (derived, cached, not the reference). | @eve : we will need to think about the cashing system - if we want to be efficient we need to keep original T1, T2 cached if we eg. return to empty state of audit (removing all audit steps and applied). So the audit should work from copy of T1 -> audit_T1 and then derive T2 and T3 from there. This also means that the way the audit recipe export will need to be changed to export the audited data  + the original T1 (original_T1) 
-| **T3 of a plot** | That plot's frame: its T2\* plus its plot-level audit steps. Derived, not stored. | @will we still have a T3 if we have to derive T2 - because then the steps can be added directly to T2 no ? 
-| **Preview** | Temporary look at Raw or Result (`home_preview_filters.md`). | @eve : yes but we still need a propagation so it is different than the other preview mode no ? but it is where the caching mechanism is leveraged. 
-| **Draft step** | A step being tried in the Audit workspace; shown applied there, not yet sent. | @eve: Draft 
-| **Audit step** | A draft step that was sent with a reason and applied. | @eve: Validated 
+| **Original T1 / T2** | The stored stages exactly as the recipe built them. Cached, never changed. |
+| **Audit T1 / audit T2** | The same stages rebuilt **from a copy** of the original with the audit steps applied. |
+| **Audit T3 (of a plot)** | One plot's frame: its audit T2 plus the steps made for that plot only. Derived, not stored. |
+| **Exploration** | Looking at Raw/Result with preview filters (`home_preview_filters.md`). Never changes anything. |
+| **Validated step** | An audit step with its reason, applied. There is no draft: every step is validated when it is made, and removing a wrong step is the undo. |
 
-## 3. The Audit workspace (new panel) [decided]
+Lineage chain used everywhere (in the workspace and in the diagrams):
+`original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx)`.
 
-- A separate panel (lighter blue, kept apart from Exploration). While it is open the Exploration strip is
-  minimised to give space. @eve: it will need to be gated correctly, 
-- It shows **the selected plot** and its data, and a small **lineage tree** of that plot (ingredient datasets ->
-  join -> T2 -> T3), built from the existing backward trace (`build_plot_lineage`). A forward trace
-  (dataset -> plots that depend on it) is to build. @eve : original_T1 -> audit_T1 -> audit_T2 (-> audit T3 if T3 is necessary)
-- You choose the **kind of step**, the **stage or dataset** it applies to, and the **scope**; you try it as a
-  **draft step** (shown on the plot and the data of the workspace), see the **impact preview**, write the
-  **reason**, then **Apply** produces Audit step. 
-- **Compare** (Reference Result vs audited) lives here.
-- Offered only when audit capability is on. [open: ADR-085 offers My view without audit as a scratchpad; Eve:
-  only when audit is on. Decide for the configs without audit.]
+## 3. The Audit workspace (new panel) [to build]
 
-@eve : here in this mode - I am wondering if we should not just remove the preview : you do and send to audit - if you are wrong you remove from audit - its not exploration anymore - That would simplify our model. We are sure we want some changes - but we let the possibility of reversal if error has been made - That would simplify the steps for the users. 
+- A separate panel (lighter blue). It is **gated by the audit capability flag**: without it only Exploration
+  exists (no My view scratchpad; ADR-085 is amended). It is exclusive with Exploration: opening one minimises
+  the other.
+- It shows **the selected plot** (audited) and its data, the **Compare** view (original Result plot | audited
+  plot), the **step list** and the **lineage chain** of the plot.
+- To make a step the user chooses **what** (kind), **where** (level, section 5) and the **reason**. The step is
+  applied at once: no preview, no staged list. If it was a mistake, delete it from the step list.
+- Before the step is applied the dialog shows **which lineages it will affect** (section 6). After it is applied
+  an **impact report** shows rows removed per dataset and the plots that changed.
 
-@eve: start to review above - I did not yet read the rest. 
-## 4. Kinds of audit step
+## 4. Kinds of step
 
-| Kind | Example | Where it acts | Scope choices |
+| Kind | Example |
+|---|---|
+| **Exclude entities (by key)** | "sample ID2 is bad" |
+| **Filter rows** | "identity >= 90", "keep 2023-2025" |
+| **Drop column** | remove a column (warning: plots using it break, section 8) |
+
+Aesthetic overrides (colour, shape) are plot-level appearance, out of scope of this file.
+
+## 5. Levels: where a step acts (this is the scope)
+
+The level decides which data and which plots are affected. One step has exactly one level.
+
+| Level | Acts on | Affects | Typical use |
 |---|---|---|---|
-| **A. Exclude entities (key)** [decided, to build] | "sample ID2 is bad" | At the start of the lineage: T1 of every chosen dataset that has the key, **before** the recipe's tier-1/tier-2 steps. T1\* and T2\* are rebuilt from it. | **Whole project** = every dataset that has the key. **This lineage** = the datasets that feed the chosen plot. [open: pick datasets; which is the default] |
-| **B. Filter rows (plot level)** [built, per plot] | "keep only 2023" | On one plot's T3 (T2\* plus step). | This plot / all plots / all except (propagation into the T3 of every *concerned* plot). |
-| **C. Drop column (plot level)** [built, per plot] | remove a column from one plot's data | Same as B. | Same as B, **with a warning** listing plots that use the column (#59). |
+| **1. Project** (T1, all) | the start of every lineage whose data has the key | audit T1, T2, T3 of **every** plot downstream | remove a bad sample from the whole project |
+| **2. Lineage** (T1, this lineage) | the start of the lineages that feed the chosen plot | audit T1, T2, T3 of the plots of those lineages | remove a sample only where this plot's data comes from |
+| **3. Dataset** (T2) | the dataset's audit T2, after the recipe's tier-2 steps | **all plots that read that dataset** | a value filter on a derived column shared by plots |
+| **4. Plot** (T3) | one plot (or several chosen plots) | only those plots | "years xx and yy are too small to compare in THIS plot" |
 
-*Concerned plot* = the column exists in that plot's T2\* (the lineage, not the data view; #58).
-Aesthetic overrides (colour, shape) are a separate plot-level kind, out of scope of this file.
+How steps combine, in order: level 1-2 steps -> the recipe's own tier-1/tier-2 steps -> level 3 steps -> level 4
+steps. Consequences:
+- **Two plots that share one T2:** a level 3 step changes both; a level 4 step changes only the chosen one.
+- **"Only this plot" and the other plots untouched** = level 4. **A step for all plots of a dataset** = level 3.
+  A single step cannot mix "T3 for this plot and T2 for the others"; that is two steps (level 3 plus level 4).
+- **"Everyone except plot P" at level 3 does not exist** (T2 is shared); use level 4 steps on the others.
+- T2 is a leaf stage: a level 3 step does not flow into other datasets' T1.
+- Level 4 on several plots = pick the plots (default: this plot); a plot without the column is "not concerned"
+  and listed.
+- Default level proposed in the dialog: **4 (this plot)**, the safest. Levels 1-2 ask for a confirmation that
+  names what will be rebuilt.
 
-## 5. Why kind A is lineage-level (the science problem)
+## 6. Showing the user what is affected [to build]
 
-A plot-level filter on `sample_id` cannot remove a sample from a plot whose data has no `sample_id` (for example
-counts per year): the plot silently keeps the bad sample. Applying the exclusion at the start of the lineage and
-rebuilding downstream fixes this, including aggregates. Because the exclusion is by **key**, not by an arbitrary
-output row, it is the easy case of the database "deletion propagation" problem (see section 9).
+Every step dialog and every step in the list shows the lineage chain
+`original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx)` as a small drawing:
+- the level(s) the step changes in **bold and a different colour**; unaffected stages stay grey;
+- under it, the list of **datasets and plots affected** (names), and for each, rows before/after;
+- plots that **cannot show** the step, with the reason (column missing, plot uses a dropped column).
 
-## 6. How kind A works (mechanics) [decided in principle, details open]
+This is plain HTML/CSS in the panel, so colour and bold are possible.
 
-1. The key column of each dataset comes from the recipe's join steps (`on`, `left_on`/`right_on`; the app
-   already collects them as `primary_keys`). Different key families (sample_id, gene_id) are kept apart.
-2. A step "exclude key = value(s)" is inserted at the top of tier-1 of each chosen dataset, in a **forked copy**
-   of the recipe (same mechanism as the reproducibility export, ADR-097 `t3_translator`).
-3. T1\* and T2\* are materialised from the fork and cached under a key that includes the hash of the audit steps
-   (ADR-089 chained keys). The reference files are untouched.
-4. A plot reads T2\* (then its own plot-level steps = T3). The Result plot in Exploration still reads the
-   reference.
-5. Undo = delete the step; the cache key changes; the lineage is rebuilt without it.
+## 7. Mechanics [to build, details open]
+
+1. Original T1/T2 stay cached. Audit T1/T2 are derived from a **copy**; with no step, the audit stages ARE the
+   original (same cache key, nothing recomputed).
+2. Cache key of an audit stage = key of the original + hash of the ordered steps that apply to it (ADR-089
+   chained keys). Removing a step returns to a previous key, so the earlier result is a cache hit. A small
+   number of recent states is kept.
+3. Level 1-2 steps are inserted at the start of the lineage in a **forked copy of the recipe** (same mechanism
+   as the reproducibility export, ADR-097 `t3_translator`); level 3 steps after the dataset's tier-2 steps;
+   level 4 steps on the plot frame at render time.
+4. The key column of each dataset comes from the recipe's join steps (`on`, `left_on`/`right_on`; the app
+   collects them as `primary_keys`). Different key families (sample_id, gene_id) are kept apart.
+5. A key exclusion is inserted **at the sources** (before each ingredient's own tier-1 steps), so it is exact
+   even when a tier-1 step aggregates across samples. [open: or on the anchor, simpler but not exact]
 6. A dataset without the key, or a key value not present, is a reported no-op ("0 rows in MLST").
-7. Order of steps is kept and shown; several exclusions combine.
-8. Cost: rebuilding can be heavy on large data. Warning in the dialog; incremental maintenance is a possible
-   later optimisation (section 9).
+7. Cost: rebuilding can be heavy on large data. The dialog warns; incremental recomputation is a later
+   optimisation (section 12).
 
-## 7. Impact preview, reason, Apply [decided]
+## 8. Drop column warning [to build, #59]
 
-Before Apply the workspace shows: rows removed per dataset (attrition), plots that change, plots that cannot
-show the step (and why), for drops the plots that use the column. Reason is required. Apply records the step,
-rebuilds what is needed, and **clears the draft list** so the user sees what is committed and what is not.
+Before a drop is applied the dialog lists the plots that use the column (x, y, colour, facet, layers) with a
+warning that they will break. The user may continue. A plot broken by a drop shows
+"column X was dropped by audit step N" instead of a generic render error.
 
-## 8. Export and trace [decided in principle]
+## 9. Reason, undo, export
 
-Bundle contains: the audit steps with reasons, the data of the audited lineage (T1\*/T2\*) and T3 data per plot,
-an **attrition table** (rows excluded per dataset and step), and the forked recipe so the result can be re-run
-(ADR-097). Preview filters are not exported.
+- **Reason** is required when the step is made. Removing a step needs no reason and is recorded.
+- The step list shows level, kind, reason, date, who, and a delete button.
+- **Export** (Mode 1 and 2, ADR-097) contains: the steps with level and reason, original T1 and T2, the audit
+  T1/T2 and the T3 data of plots with level 4 steps, an **attrition table** (rows removed per dataset and
+  step), and the forked recipe so the result can be re-run. Exploration is never exported.
 
-## 9. Prior art (computer science, not only bioinformatics)
+## 10. Prior art (computer science)
 
 - **Deletion propagation in databases** (Buneman, Khanna, Tan, PODS 2002): which source deletions remove a
-  derived tuple, with *source* and *view side effects*; it ties to why-/where-provenance and is tractable for
-  *key-preserving* views. Our exclusion is by key, so it falls in the tractable case.
-  https://www.cis.upenn.edu/~sanjeev/papers/pods02_view_deletion.pdf ,
-  https://en.wikipedia.org/wiki/Reverse_data_management
-- **Lineage-driven erasure** (GDPR in data lakes): delete at the source layer first, then propagate to derived
-  layers; keep a record that proves it happened (tombstone, reason). Our step is a recorded exclusion at the
-  lineage root; the reference data is kept (not erasure).
+  derived tuple; tractable for *key-preserving* views. Excluding by key is that easy case.
+  https://www.cis.upenn.edu/~sanjeev/papers/pods02_view_deletion.pdf
+- **Lineage-driven erasure** (GDPR in data lakes): delete at the source layer, propagate downstream, keep a
+  record that proves it. Our step is a recorded exclusion with a reason; the original is kept.
   https://docs.databricks.com/aws/en/ldp/gdpr
-- **Incremental view maintenance** (differential dataflow, DBSP): a deletion is a change with weight -1 that
-  flows through joins and aggregates, so only the affected part is recomputed. A possible optimisation for
-  large data. https://arxiv.org/pdf/2203.16684v1.pdf
-- **Column-level lineage tools** (impact analysis before a change). https://docs.getdbt.com/docs/explore/column-level-lineage
-- Honest note: none of these is a ready-made answer for this app; they support the design (exclude at the
-  root by key, rebuild downstream, record the reason, report impact).
+- **Incremental view maintenance** (differential dataflow, DBSP): a deletion is a change of weight -1 that
+  flows through joins and aggregates; only the affected part is recomputed. A later optimisation.
+  https://arxiv.org/pdf/2203.16684v1.pdf
+- **Column-level lineage tools** show impact before a change. https://docs.getdbt.com/docs/explore/column-level-lineage
+- None is a ready-made answer; they support the design: act at the right level, rebuild downstream, record the
+  reason, show the impact.
 
-## 10. What exists today vs target
+## 11. What exists today vs target
 
 | Item | Today | Target |
 |---|---|---|
-| Plot-level steps B and C | per plot, propagation dialog, `t3_audit_steps_by_plot` [built] | keep; concerned plots by T2\*; drop warning |
-| Concerned-plot check | uses the data view (T1 or T2) (#58) | uses the plot's T2\* |
-| Kind A (exclude by key) | not built; a `sample_id` filter on a plot lacking the column is skipped | lineage-level, whole project / this lineage |
-| Audit workspace, impact preview, attrition | not built | build |
-| Draft step | preview filters shown in My view | draft step in the workspace |
-| Clear after Apply | clears all preview rows, every dataset | clears the draft list |
+| Plot-level filter/drop steps | per plot, propagation dialog "this / all / all except" [built] | level 4, pick plots; "all except" becomes picking plots |
+| Concerned plots | checked on the data view (#58) | checked on the plot's audit T2 |
+| Exclude by key at project/lineage level | not built; a `sample_id` filter on a plot without that column is skipped | levels 1-2 |
+| Dataset-level step (shared T2) | not built | level 3 |
+| Audit workspace, lineage chain drawing, impact report | not built | build |
+| Draft / staged lists in audit | preview filters shown in My view | none: validated step + undo |
+| Clear after apply | clears all preview rows | nothing to clear (no draft); Exploration lists are cleared by view change |
+| My view without audit capability | offered (ADR-085) | not offered |
+| Export | steps, T2, T3 data | + original T1/T2, audit T1/T2, attrition table, forked recipe |
 
-## 11. Edge cases (each needs a test)
+## 12. Edge cases (each needs a test)
 
-bad sample present in no plot's column; present in some datasets only; key column named differently across
-datasets; two key families; exclude then undo; two exclusions; exclusion + plot filter on the same column;
-plot on an aggregate; plot sharing a dataset; recipe switch; export after an exclusion (attrition table, forked
-recipe re-runs to the same result); huge data (warning); step on a key that no dataset has.
+bad sample in no plot's column; present in some datasets only; key named differently across datasets; two key
+families; exclusion then undo; two exclusions; exclusion plus a plot filter on the same column; plot on an
+aggregate; two plots on one dataset (level 3 vs level 4); level 3 step on a column dropped by another step;
+tier-1 step that aggregates across samples (source vs anchor insertion); a plot left with zero rows; a step on
+a key that no dataset has; recipe switch with steps; export after a level 1 step (attrition table, forked
+recipe re-runs to the same result); huge data (warning); order of steps; delete a step in the middle.
 
-## 12. Open questions for Eve
+## 13. Open questions for Eve
 
-1. Default scope of kind A: whole project or this lineage?
-2. Pick datasets by hand (third option) or only the two?
-3. Audit workspace in configs without audit capability (ADR-085 scratchpad).
-4. Cache: store T1\*/T2\* files or rebuild on demand? (Eve: few changes expected; warn on huge data.)
+1. Key exclusion inserted at the sources (exact, my recommendation) or on the anchor (simpler)?
+2. Default level in the dialog: 4 (this plot)? Levels 1-2 with a confirmation?
+3. How many recent audit states to keep in the cache (undo speed vs disk)?
+4. "All except" at level 4 replaced by picking plots: OK?
