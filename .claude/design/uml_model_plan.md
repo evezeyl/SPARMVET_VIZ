@@ -361,3 +361,8 @@ Eve's colour code: pink fill = to fix.
 (what each level changes), `HOME-AUDIT-CACHE` (original vs audit cache, chained keys), `HOME-AUDIT-PANEL`
 (layout sketch). They show the TARGET model of `home_preview_filters.md` and `home_audit_steps.md`; pink boxes =
 to build or fix. Boxes with "(detail: X)" carry the tag `detail = X`.
+
+**Added 2026-11-11 (later):** wireframes `UI-HOME-EXPLORATION` (audit mode off) and `UI-HOME-AUDIT` (audit mode on)
+show the target screen; `UI-HOME The screen as built today` keeps the screen before the redesign. In the
+wireframes light blue = new or changed, darker blue = audit mode, grey = notes. Open in them: where the mode switch
+sits, and what stays of the existing right panel (Inherited Tier 2 nodes, filter inventory).

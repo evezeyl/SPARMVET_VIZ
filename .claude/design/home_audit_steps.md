@@ -26,20 +26,32 @@ repeats on many rows and is not unique in the original data; the audit works on 
 
 Lineage chain used everywhere (workspace and diagrams): `original T1 -> audit T1 -> audit T2 -> audit T3 (plot = xx)`.
 
-## 3. The Audit workspace (new panel) [to build]
+## 3. The Audit workspace (a mode of HOME, reusing the existing panels) [to build]
 
-- A separate panel (lighter blue), **gated by the sandbox flag** (today `t3_sandbox_enabled`): without it only
-  Exploration exists, no My view scratchpad (ADR-085 is amended). Exclusive with Exploration: opening one
-  minimises the other.
-- It shows the selected plot (audited), its data, **Compare** (original Result plot | audited plot), the **step
-  list**, the **lineage chain** and the **project overview** (section 6).
-- **Filters in the workspace.** The Exploration filters are not applied while the workspace is open (they are
-  kept for when the user returns). The same filter form is reused: in Exploration its button is "Add to preview",
-  in the workspace it is "Create audit step" (asks the reason, then applies). **Under the hood they behave
-  differently** (preview = lazy filter on the shown table; audit step = rebuild through the lineage, cached).
-  The code shares the form widgets only, and a short note in the code and the docs states the difference.
+The audit mode is not a new central page. It reuses what HOME already has, so very little new layout is needed:
+
+| Where | What it holds in audit mode |
+|---|---|
+| **Left sidebar, Filters panel** | the shared filter form. Exploration: button "Add to preview". Audit mode: button **"Create audit step"**. Alerts (notification log) and processing issues stay in the left sidebar as today (checked in `home_theater.py`). |
+| **Centre (kept as small as possible)** | the same plot and data components as today, fed with the audit data: the **audited plot** (audit T3), the audit table and **Compare** (original Result plot \| audited plot). Exploration is minimised (exclusive: opening one minimises the other). |
+| **Right sidebar = the existing Pipeline Audit panel** (slot `audit_stack`, already gated by the sandbox flag) | the **step list** (kind, reach, reason, initials, date, status, delete; Undo last, Revert to step N, Remove all), the **lineage chain** (drawn vertically to fit), the list of **what is affected**, and a button to open the project overview. Today this panel holds the audit nodes and the apply tools (checked in `home_theater.py` and `sidebar_registry.py`); processing issues are in the LEFT sidebar, not here. |
+| **Dialog "New audit step"** (replaces today's propagation dialog) | the reach selector (section 5), the stage choice when needed, the chain drawing and affected list for the step about to be made, the **reason** (required) and Apply. |
+| **Dialog / wide view "Project overview"** | collections x steps and the coverage check (too wide for the sidebar). |
+
+- **Gating:** the audit mode, the "Create audit step" button, the Audit panel and the dialogs are all gated by the
+  **same sandbox flag** (today `t3_sandbox_enabled`). Without it only Exploration exists (no My view scratchpad;
+  ADR-085 is amended).
+- **Filters in audit mode.** The Exploration filters are not applied while audit mode is on (they are kept for
+  when the user returns). The same form widgets are reused; **under the hood the two behave differently**
+  (preview = lazy filter on the shown table; audit step = rebuild through the lineage, cached). A short note in
+  the code and the docs states the difference.
 - To make a step the user chooses the kind, the reach and the reason (sections 4-5). The step is applied at
   once. If it was a mistake, delete it from the step list (section 10).
+- **Plots are not rebuilt in a new place.** The central plot and table handlers are the ones used today (My view
+  already reads another data source for the same plots; Compare already has two panes). Only the data source
+  changes to the audit data.
+
+Wireframes of the screen with audit mode off and on: `UI-HOME-EXPLORATION` and `UI-HOME-AUDIT` (see also `HOME-AUDIT-PANEL`).
 
 ## 4. Kinds of step
 
@@ -54,8 +66,8 @@ Aesthetic overrides (colour, shape) are not implemented and out of scope (maybe 
 ## 5. Reach and stage: what the user chooses, and what happens (replaces "levels")
 
 Two different questions, kept apart:
-- **Reach**: which plots are affected. The user chooses it, in plain words, **with no default** (the user must
-  think), and always sees the list of plots it means.
+- **Reach**: which plots are affected. The user picks it with a **selector** (radio buttons, **nothing
+  preselected** so the user must think); the option labels are in plain words and each shows the plots it means.
 - **Stage**: where in the pipeline the step is inserted. It follows from the kind, not from the user.
 
 | Reach (words the user sees) | Early stage (before the recipe's steps) | Late stage (after the recipe's tier-2) | Plot stage |
@@ -96,12 +108,20 @@ Numbers 0-3 are the internal names and follow the T numbers (project = 0, T1 = 1
 1. Original T1/T2 are never touched. The audit stages are derived from a **copy** and live in a **separate audit
    cache** (its own folder, never in the anchors folder; with no step the audit stages simply point at the
    originals, nothing is copied). Cache naming must make "original" and "audit" unmistakable.
-2. **Invalidation by construction**: the key of an audit stage = the key of the stage before it + the hash of the
-   ordered steps that apply to it (ADR-089 chained keys). A level 1 step changes the T1 key and therefore every
-   later key; a level 2 step changes only the T2 key and reuses audit T1. Nothing has to be "updated" by hand, so
-   a stage cannot be forgotten or mixed. A test must check that every audit stage key contains its upstream key.
-3. Removing a step returns to a previous key: its earlier result is a cache hit. The number of recent states kept
-   is a setting (default value, adjustable in config or session); no number is fixed now.
+2. **Invalidation by construction**: the key of an audit stage = SHA-256 of (the key of the stage before it + the
+   **canonical list of operations that will actually be executed for this stage**: kind, column, operator, value,
+   stage and insertion point, collection; sorted, values normalised). The reason, initials and date are **not** in
+   the hash (they do not change the data). The same code produces the list that is hashed and the list that is
+   run, so the hash cannot describe something different from what is done. The key is also stored inside the
+   audit file and compared on read, as for the originals (ADR-089): a mismatch rebuilds. A level 1 step changes the
+   T1 key and therefore every later key; a level 2 step changes only the T2 key and reuses audit T1. Nothing has to
+   be "updated" by hand. Tests: every audit stage key contains its upstream key; different operation lists never
+   give the same key; changing only the reason does not change the key; originals are never written by an audit.
+3. **Limit and rebuild.** The audit cache keeps the current state plus the last N-1 states per recipe session
+   (**N = 5 by default, a setting**); the oldest are removed (never the one in use). A missing, removed or corrupt
+   entry is never a problem: it is rebuilt from the step list and the nearest cached earlier stage, or from the
+   originals. The cache only speeds things up; the step list is the source of truth. When the recipe or the data
+   change (the original keys change) the audit entries that depended on them are removed at that moment.
 4. Early-stage steps are inserted **at the sources, inside the build of each reached collection** (before each
    ingredient's own tier-1 steps). Checked in the code: `prepare_ingredient` runs once per collection build, so
    this is exact (even when a tier-1 step aggregates across samples) and local to the reached collections.
@@ -112,8 +132,7 @@ Numbers 0-3 are the internal names and follow the T numbers (project = 0, T1 = 1
    ingredients it uses. Today every collection build prepares ALL ingredient schemas, used or not, which makes
    audit rebuilds slower; the dummy ST22 recipe is an example of what to avoid.
 8. Cost: rebuilding can be heavy on large data. The dialog warns. The audit is for production-ready figures, not
-   for exploring data: limit it to changes that are really needed. Today every collection build prepares all
-   ingredient schemas, used or not; that should be avoided first (independent, small fix).
+   for exploring data: limit it to changes that are really needed.
 
 ## 8. Keys: what the ST22 dummy recipe shows
 
@@ -157,13 +176,15 @@ After the rebuild each remaining step is checked and shows a status:
 A broken step does not fail silently: the export is refused until it is fixed or removed (like the existing key
 check refusal). Safeguards at creation: adding a drop lists steps that use the column; adding a filter on a
 column already dropped is not possible. Controls: **Undo last**, **Remove all steps** (back to the originals,
-cheap thanks to the cache), delete any single step, edit a step (= replace it). [open: also "revert to step N"]
+cheap thanks to the cache), **Revert to step N** (removes every step after N, in one action), delete any single
+step, edit a step (= replace it).
 
 ## 11. Reason, who, export
 
 - **Reason** is required when the step is made. Removing a step needs no reason and is recorded.
-- The step list shows level, kind, reach, reason, date and a delete button. **Who**: the app has no login, so
-  [open] an optional "author" text per session, or omit it.
+- The step list shows level, kind, reach, reason, **initials**, date and a delete button. **Who**: the app has no
+  login, so the user may type optional initials once per session (several people can work on one project);
+  empty is allowed.
 - **Export** (Mode 1 and 2, ADR-097): the steps with level and reason, original T1/T2, audit T1/T2, T3 data of
   plots with level 3 steps, the **attrition table** (rows removed per collection and step), the **coverage
   check**, and the forked recipe so the result can be re-run. Exploration is never exported.
@@ -209,7 +230,7 @@ HOME test plan items). First list, to complete with an impact check before the c
 | `app/modules/orchestrator.py`, `cache_keys.py` | audit overlay, separate audit cache, chained keys, no unused-ingredient builds | `test_cache_chain`, `test_tier2_store`, `test_anchor_determinism`, `test_data_analysis_recipe_data_check`, `test_retest_data_analysis_recipes` |
 | `app/handlers/export_handlers.py`, `app/modules/exporter.py` | originals + audit data, attrition table, coverage, refusal on broken steps | `test_export_download`, `test_export_view_consistency`, `test_export_provenance` |
 | `app/modules/bundle_importer.py`, `libs/blueprint_arch/.../t3_translator.py` | steps with levels, forked recipe, the four verification legs | `test_bundle_importer`, `libs/blueprint_arch/tests/test_t3_translator.py` |
-| `app/src/server.py`, flags, `sidebar_registry.py`, `app_features_validator.py`, `config/app_features/*.yaml` | new panel, sandbox gate, shared state | `test_every_app_features_starts`, validator tests, import check |
+| `app/src/server.py`, flags, `sidebar_registry.py`, `app_features_validator.py`, `config/app_features/*.yaml`, `config/ui/sidebars/home_standard_right.yaml` | audit mode gate, the existing `audit_stack` slot gets the new content, shared state | `test_every_app_features_starts`, validator tests, import check |
 | Blueprint (`blueprint_handlers.py`, `wrangle_studio.py`), `data_import_handlers.py` | none by design, but they call the orchestrator | smoke Blueprint tests, import tests |
 | VizFactory | clear message for a plot broken by a drop (#59) | viz_factory tests |
 | Docs, help (`app/src/help/home.md`), user guide, FAQ, ADRs (085, 087, 097 notes), UML, `renamed_keys.py` check | rewritten | `audit_docs_sync`, `audit_uml_model` |
@@ -227,16 +248,31 @@ Remove all steps returns to the originals; stage keys contain the upstream key.
 
 ## 16. Decided and open
 
-**Decided:** one rule and vocabulary (sections 1-2); reach (plain words, no default) and stage (from the kind)
-instead of levels; numbering 0-3; early insertion at the sources, inside each reached collection; no draft; the
-Filters form is shared with two actions; the workspace is gated by the sandbox flag; separate audit cache with
-chained keys; delete = rebuild without it; broken steps block the export; drop policy; project overview and
-coverage check; cache depth is a setting.
+**Decided:** one rule and vocabulary (sections 1-2); reach (selector, plain-word labels, nothing preselected) and
+stage (from the kind) instead of levels; numbering 0-3; early insertion at the sources, inside each reached
+collection; no draft; the Filters form is shared with two actions; audit mode, button, Audit panel and dialogs gated
+by the sandbox flag; audit mode reuses the left Filters panel, the centre plot components and the existing right
+Audit panel (a dialog replaces the propagation dialog); separate audit cache with chained keys, canonical hash, N = 5
+by default as a setting, rebuild when missing; delete = rebuild without it; Undo last, Revert to step N, Remove all;
+broken steps block the export; drop policy; project overview and coverage check; optional initials on each step.
 
 **Open:**
-1. Who: an optional author text per session, or omit.
-2. "Revert to step N" in addition to undo last / remove all.
-3. Manual key mapping by the user (not in the first version).
-4. Exact wording of the reach choices in the dialog (to test with a user).
-5. Default value of the cache depth setting.
-6. Excluding by a secondary key (Gene) in a later version.
+1. Exact wording of the reach options and kinds (draft in section 17, to review together).
+2. Manual key mapping by the user (not in the first version).
+3. Excluding by a secondary key (Gene) in a later version.
+4. Where the project overview opens (dialog or wide accordion under the table).
+5. Where the mode switch (Exploration | Audit mode) sits on the screen.
+6. What stays of the existing right Pipeline Audit panel: the "Inherited (Tier 2)" nodes, the filter inventory, the pending badge and the Apply gate (no draft, so no Apply gate is proposed).
+
+## 17. Wording to review together (draft v1)
+
+Kinds (what the user sees): "Remove samples (by ID)" | "Keep or remove rows by a value" | "Remove a column".
+Reach (selector, nothing preselected; each option lists its plots and their number):
+- "Only this plot" (1 plot: name)
+- "All plots that use the same table as this plot" (N plots: names)
+- "Every plot in the project" (N plots)
+
+Under the selector, always: the lineage chain with the changed stages in bold and colour, the plots affected, rows
+before/after. One-line advice: "Use the smallest choice that fits." Open wording questions: is "table" understood
+(the data table behind the plot) or better "data set"/"data"? Is "Every plot in the project" clear when some plots
+do not contain the sample? (the dialog then says "N plots contain it, M do not").
