@@ -31,6 +31,47 @@ def _op_label(op: str) -> str:
             "lt": "<", "le": "≤", "in": "∈", "not_in": "∉"}.get(op, op)
 
 
+# One vocabulary for every place an operator is shown: the operator dropdown, the staged filter
+# list, the audit panel (issue #57). symbol = short form, words = what it means.
+OP_WORDS = {
+    "eq": ("=", "equals"), "ne": ("≠", "not equal"),
+    "gt": (">", "greater than"), "ge": ("≥", "greater or equal"),
+    "lt": ("<", "less than"), "le": ("≤", "less or equal"),
+    "in": ("∈", "any of"), "not_in": ("∉", "none of"),
+    "between": ("↔", "between"),
+}
+
+
+def op_choice_label(op: str) -> str:
+    """Dropdown text for an operator: symbol plus words, e.g. '≠ not equal'."""
+    sym, words = OP_WORDS.get(op, (op, op))
+    return f"{sym} {words}"
+
+
+def describe_filter(column: str, op: str, value) -> str:
+    """One-line text of a filter row. A one-value set reads as equality ('sequence_type = 101'),
+    several values read 'any of' / 'none of' (issue #57)."""
+    vals = value if isinstance(value, (list, tuple)) else None
+    if vals is not None and len(vals) == 1:
+        op, vals = {"in": "eq", "not_in": "ne"}.get(op, op), None
+        value = value[0]
+    if op == "between" and isinstance(value, (list, tuple)) and len(value) == 2:
+        return f"{column} between {value[0]} and {value[1]}"
+    sym, words = OP_WORDS.get(op, (op, op))
+    if vals is not None:
+        return f"{column} {words} {', '.join(str(v) for v in vals)}"
+    return f"{column} {sym} {value}"
+
+
+def inapplicable_filter_rows(lf, filter_rows: list) -> list:
+    """Filter rows whose column is absent from lf; they are skipped, not applied (issue #56)."""
+    try:
+        names = set(lf.collect_schema().names())
+    except Exception:
+        return []
+    return [f for f in filter_rows if f.get("column") is not None and f.get("column") not in names]
+
+
 def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
     """
     Apply a list of {column, op, value, dtype} dicts to a LazyFrame.
@@ -79,6 +120,10 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
         op = f.get("op", "eq")
         val = f.get("value")
         if col is None:
+            continue
+        # Issue #56: T1 is wide and T2 may be long, so a filter built on one view can name a
+        # column the active view does not have. Skip it (see inapplicable_filter_rows) rather than crash.
+        if actual_dtypes and col not in actual_dtypes:
             continue
 
         actual_dt = actual_dtypes.get(col)

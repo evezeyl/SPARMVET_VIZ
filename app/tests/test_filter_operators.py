@@ -256,3 +256,52 @@ class TestCompound:
         # production filter row may carry before the user picks a column.
         r = _filter_loop(lf, [{"column": None, "op": "eq", "value": "x"}]).collect()
         assert r.height == 5  # no-op
+
+
+# --- Issue #56 / ADR-087: filters on a column the active view does not have ---
+
+def test_filter_on_missing_column_is_skipped_not_an_error():
+    import polars as pl
+    from app.modules.t3_audit_engine import _apply_filter_rows, inapplicable_filter_rows
+    lf = pl.DataFrame({"a": [1, 2, 3]}).lazy()
+    rows = [{"column": "gone", "op": "eq", "value": "x"}, {"column": "a", "op": "ge", "value": "2"}]
+    assert _apply_filter_rows(lf, rows).collect()["a"].to_list() == [2, 3]
+    assert [f["column"] for f in inapplicable_filter_rows(lf, rows)] == ["gone"]
+
+
+def test_filter_that_leaves_zero_rows_is_empty_not_an_error():
+    import polars as pl
+    from app.modules.t3_audit_engine import _apply_filter_rows
+    lf = pl.DataFrame({"a": ["x", "y"]}).lazy()
+    out = _apply_filter_rows(lf, [{"column": "a", "op": "in", "value": ["zzz"]}]).collect()
+    assert out.height == 0 and out.columns == ["a"]
+
+
+def test_exploration_filter_never_modifies_the_source_frame():
+    """The preview filters a lazy copy; the source data is untouched (nothing to write back)."""
+    import polars as pl
+    from app.modules.t3_audit_engine import _apply_filter_rows
+    df = pl.DataFrame({"a": [1, 2, 3]})
+    _apply_filter_rows(df.lazy(), [{"column": "a", "op": "eq", "value": "1"}]).collect()
+    assert df["a"].to_list() == [1, 2, 3]
+
+
+# --- Issue #57: one vocabulary for operators ---
+
+def test_single_value_set_reads_as_equality():
+    from app.modules.t3_audit_engine import describe_filter
+    assert describe_filter("sequence_type", "in", ["101"]) == "sequence_type = 101"
+    assert describe_filter("sequence_type", "not_in", ["101"]) == "sequence_type ≠ 101"
+
+
+def test_several_values_read_any_of_none_of():
+    from app.modules.t3_audit_engine import describe_filter
+    assert describe_filter("c", "in", ["a", "b"]) == "c any of a, b"
+    assert describe_filter("c", "not_in", ["a", "b"]) == "c none of a, b"
+
+
+def test_every_operator_the_dropdown_offers_has_words_in_the_label():
+    from app.modules.t3_audit_engine import op_choice_label
+    for op in ("in", "not_in", "eq", "ne", "gt", "ge", "lt", "le", "between"):
+        label = op_choice_label(op)
+        assert " " in label, f"{op} has no explaining text: {label!r}"

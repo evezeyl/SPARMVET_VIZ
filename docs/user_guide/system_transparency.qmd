@@ -92,15 +92,15 @@ Both the **plot area** and the **data preview table** are independently collapsi
 
 ### Row Filters (left sidebar — Filters panel)
 
-The **Filters** accordion in the left sidebar lets you narrow down what is plotted and previewed, without touching the underlying data.
+The **Filters** accordion in the left sidebar lets you narrow down what is plotted and previewed. This is a **preview**: it works on Raw, Result and My view, is never written to the data, and is never exported. Only steps you send to audit (with a reason) become permanent.
 
 **How it works:**
 
 1. Select a column from the dropdown (scoped to the active plot's dataset).
-2. Choose an operator: `∈ any of` / `∉ none of` for categories; `=`, `≠`, `>`, `≥`, `<`, `≤` for numbers.
+2. Choose an operator: `∈ any of` / `∉ none of` / `= equals` / `≠ not equal` for categories; `=`, `≠`, `>`, `≥`, `<`, `≤`, `↔ between` for numbers. One selected value reads "column = value"; several read "any of".
 3. Select or type a value, then click **+ Add** to stage the row.
 4. Repeat for as many conditions as you need — rows on the same column use AND logic.
-5. Click **Apply** to push the filter to the plots and data preview.
+5. Click **Apply** to show the filter in the plots and the data preview. A badge says "N preview filter(s) on, not saved" on Raw and Result. In Compare, the left plot (Result) ignores preview filters.
 6. Click **Reset** to clear all filters.
 
 The column selector for the data preview (above the table) lets you show or hide columns in the preview only — this does not affect the plot.

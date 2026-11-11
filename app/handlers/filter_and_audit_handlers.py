@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_controls_ui, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (_op_label), app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label), app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -25,7 +25,7 @@ from __future__ import annotations
 from shiny import reactive, render, ui
 
 from app.src.bootloader import bootloader
-from app.modules.t3_audit_engine import _op_label
+from app.modules.t3_audit_engine import describe_filter, op_choice_label
 
 
 def define_filter_audit_server(input, output, session, *,
@@ -126,12 +126,11 @@ def define_filter_audit_server(input, output, session, *,
             op = f.get("op", "eq")
             val = f.get("value", "")
             dtype_str = f.get("dtype", "")
-            val_display = ", ".join(str(v) for v in val) if isinstance(val, list) else str(val)
             rows.append(ui.div(
                 ui.div(
                     ui.tags.small(
-                        f"{col} {_op_label(op)} {val_display}",
-                        class_="text-dark spv-text-xs",
+                        describe_filter(col, op, val),
+                        class_="text-dark spv-filter-text",
                     ),
                     ui.tags.small(f" [{dtype_str}]", class_="text-muted spv-text-micro"),
                     class_="flex-grow-1"
@@ -182,14 +181,10 @@ def define_filter_audit_server(input, output, session, *,
         # Continuous columns get a `between` range operator (UX-FILTER-1).
         # eq is the first option for both — most intuitive default.
         if is_discrete:
-            op_choices = {"in": "∈ any of", "not_in": "∉ none of", "eq": "= exact", "ne": "≠"}
+            op_choices = {o: op_choice_label(o) for o in ("in", "not_in", "eq", "ne")}
         else:
-            op_choices = {
-                "eq": "=", "ne": "≠",
-                "gt": ">", "ge": "≥",
-                "lt": "<", "le": "≤",
-                "between": "↔ between",
-            }
+            op_choices = {o: op_choice_label(o)
+                          for o in ("eq", "ne", "gt", "ge", "lt", "le", "between")}
 
         sel_op = safe_input(input, "fb_op", next(iter(op_choices.keys())))
         # If the user previously picked an op that's now unavailable (e.g.

@@ -118,7 +118,7 @@ Open <http://127.0.0.1:8000>. Chrome, dev console open, network cache disabled (
 
 ## 3. Filters (T1/T2)
 
-- [ ] HOM-09 — String column: operators are `=` / `≠` / `∈ any of` / `∉ none of` (no `between`). Add row → staged; Apply → preview + plot update; Reset clears.
+- [~] HOM-09 — String column: operators are `= equals` / `≠ not equal` / `∈ any of` / `∉ none of` (no `between`), each with words. Add row → staged; Apply → preview + plot update **on Raw, Result and My view** (badge "N preview filter(s) on, not saved" on Raw/Result); Reset clears. Eve's first pass 2026-11-11: filter did nothing on Result → model changed, ADR-087, [#56](https://github.com/evezeyl/SPARMVET_VIZ/issues/56), labels/text size [#57](https://github.com/evezeyl/SPARMVET_VIZ/issues/57). Fixed on dev, awaiting Eve's retest ↻
 - [ ] HOM-10 — Numeric column: operators include `↔ between` → two lo/hi inputs; inclusivity radios read `≤ inclusive` / `< exclusive` (single symbol).
 - [ ] HOM-11 — Int column shows integer default (`2022` not `2022.0`), step = 1.
 - [ ] HOM-12 — Multiple staged rows AND together; removing one updates the count and result.

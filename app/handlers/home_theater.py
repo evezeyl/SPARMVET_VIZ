@@ -471,19 +471,14 @@ def define_server(input, output, session, *,
             # not by the active subtab (this plot may not be the active one
             # when its render runs in re-renders). `this_subtab` comes from the
             # enclosing factory scope (shared with _effective_random_state above).
-            # ADR-085 (2026-08-10, amended): T1/T2 are always the untouched
-            # reference — NEITHER exploration filters (applied_filters) NOR
-            # committed audit nodes may affect them. Both only apply on
-            # "My view" (T3). This is stricter than the original HOM-41 fix,
-            # which gated only the committed audit nodes; testing showed
-            # exploration filters had the identical leak.
+            # ADR-087 (supersedes ADR-085 decision 1, issue #56): exploration filters are a
+            # temporary preview on every view and are never written to the Parquet files or
+            # exported. Audit-committed nodes still apply only on "My view" (T3), the one place
+            # a user's permanent decisions show. Compare's left pane never filters (its own handler).
             # ADR-086: plots follow "Plot to show" (plot_view), not the data view.
             # "T3" = My view, "CMP" = Compare (right pane is My view).
             in_my_view = safe_input(input, "plot_view", "T2") in ("T3", "CMP")
-            filter_rows = (
-                (list(applied_filters.get()) + _t3_filter_rows(this_subtab))
-                if in_my_view else []
-            )
+            filter_rows = list(applied_filters.get()) + (_t3_filter_rows(this_subtab) if in_my_view else [])
             if filter_rows:
                 vf_filters = [
                     {k: v for k, v in f.items() if k != "dtype"}
@@ -742,7 +737,7 @@ def define_server(input, output, session, *,
             tier = "T3" if view == "T3" else "T2"
             spec = _resolve_active_spec(p_id)
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
-            return _badge_ui(view_badge(tier, has_t2, _my_view_has_changes(f"subtab_{p_id}")))
+            return _badge_ui(view_badge(tier, has_t2, _my_view_has_changes(f"subtab_{p_id}"), len(applied_filters.get())))
 
         @output(id=f"plot_cell_{p_id}")
         @render.ui
@@ -1319,7 +1314,7 @@ def define_server(input, output, session, *,
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
         has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
-        return _badge_ui(view_badge(tier_toggle.get(), has_t2, _my_view_has_changes(subtab)))
+        return _badge_ui(view_badge(tier_toggle.get(), has_t2, _my_view_has_changes(subtab), len(applied_filters.get())))
 
     @output
     @render.text
@@ -1341,13 +1336,10 @@ def define_server(input, output, session, *,
 
         try:
             lf = _resolve_active_lf(spec)
-            # ADR-085 (2026-08-10, amended): T1/T2 stay pure — neither exploration
-            # filters nor committed audit nodes apply outside "My view" (T3).
+            # ADR-087 (issue #56): exploration filters preview on every view, never saved;
+            # audit-committed nodes apply only on "My view" (T3).
             in_t3_preview = tier_toggle.get() == "T3"
-            _preview_rows = (
-                (list(applied_filters.get()) + _t3_filter_rows())
-                if in_t3_preview else []
-            )
+            _preview_rows = list(applied_filters.get()) + (_t3_filter_rows() if in_t3_preview else [])
             lf = _apply_filter_rows(lf, _preview_rows)
             # Apply T3 drop_column nodes — committed audit drops (T3 only).
             if in_t3_preview:

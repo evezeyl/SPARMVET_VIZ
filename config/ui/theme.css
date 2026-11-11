@@ -869,6 +869,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 
 /* Font size scale (em-based, relative to context) */
 .spv-text-sm    { font-size: 0.8em; }
+.spv-filter-text { font-size: 0.8rem; }    /* Secondary scale (rules_css_style_spec.md section 2): filter list text, issue #57 */
 .spv-text-xs    { font-size: 0.75em; }
 .spv-text-xxs   { font-size: 0.72em; }
 .spv-text-meta  { font-size: 0.7em; }

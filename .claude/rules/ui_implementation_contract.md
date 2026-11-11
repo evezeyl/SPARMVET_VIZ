@@ -85,10 +85,12 @@ Reactivity in the Active Leaf (Right side) is strictly gated by documentation to
 | **Col Drop in Active T3 Table** | `df.drop_columns()` in T3.         | Automatic Yellow Node   |
 | **(Advanced Filter) in active T3 Table**        | Filter cols in T3 data. | Automatic Yellow Node   |
 | **Drag Node**                | Reorder Polars operation sequence. | Update `audit_pending` |
-| **Filters panel "Apply"** — commits to `applied_filters` | Renders only on "My view" (T3). T1/T2 unaffected. | **NONE** (Transient) |
+| **Filters panel "Apply"** — commits to `applied_filters` | Preview on every view (Raw, Result, My view); never written to Parquet, never exported (ADR-087). Compare's left pane ignores it. | **NONE** (Transient) |
 | **Filters panel "Send to Audit"** — T3 + `t3_sandbox_enabled` only | Promotes staged rows via the propagation modal. | Automatic Yellow Node (reason-gated) |
-| **Ref Table Filter** in Tier 1 or Tier 2 Table         | Visual-only filter for inspection. | **NONE** (Transient)    |
+| **Filter** in Tier 1 or Tier 2 Table (same Filters panel)         | Preview for inspection (ADR-087). | **NONE** (Transient)    |
 | **Ref Table Drop**  in Tier 1 or Tier 2 Table              | Visual-only drop for inspection. | **NONE** (Transient) |
+
+> **SUPERSEDED in part (ADR-087, 2026-11-11, issue #56):** exploration filters (`applied_filters`) now preview on every view; only audit-committed nodes stay confined to My view. The paragraph below is kept for the audit-node rule.
 
 **ADR-085 (2026-08-10) — T1/T2 tier isolation invariant.** T1 and T2 are permanently pure in every
 configuration: no exploration filter (`applied_filters`) and no audit-committed node

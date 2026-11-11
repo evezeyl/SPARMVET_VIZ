@@ -4007,6 +4007,8 @@ following the basename mirroring standard (`rules_manifest_structure.md §1`).
 
 ## ADR-085: "My View" (T3) Decoupled from Audit Capability + T1/T2 Tier Isolation (2026-08-10)
 
+> **HISTORICAL in part (superseded by ADR-087, 2026-11-11):** decision 1 below, for *exploration* filters (`applied_filters`), no longer holds: they now preview on every view. The rule for audit-committed nodes (My view only) and decisions 2-3 stay active.
+
 **Status:** ACCEPTED. Authority: @dasharch, decided with @evezeyl during live-app testing (`test_plan_2026-06.md` HOM-41/HOM-43).
 **Amends:** `ui_implementation_contract.md §4` (Interaction & Event Mapping), `§5` (Theater Layout Model), `§8` (Filter Recipe Builder), `§12a` (T3 Scope Lock). `rules_persona_feature_flags.md` (Group B). `rules_ui_dashboard.md §1`.
 
@@ -4913,3 +4915,21 @@ for the full per-task detail):** `app/handlers/export_handlers.py` (provenance r
 (Mode 2 + Import coverage); `docs/user_guide/understanding_your_export.qmd` and
 `docs/user_guide/reproducible_plots.qmd` (rewritten for the two-mode/`effective_run.yaml`
 shape — both had gone stale describing the pre-#45 single-bundle design).
+
+
+## ADR-087: Exploration filters preview on every view; only audited steps are permanent (2026-11-11)
+
+**Status:** ACCEPTED (2026-11-11, confirmed by @evezeyl). Authority: @dasharch. Issues: evezeyl/SPARMVET_VIZ#56 (behaviour), evezeyl/SPARMVET_VIZ#57 (operator labels).
+**Supersedes:** ADR-085 decision 1 and ADR-086 point 4 for **exploration filters** (`applied_filters`). Audit-committed nodes keep the ADR-085 rule.
+
+**Context.** ADR-085 hid exploration filters on Raw and Result: the filter was accepted, listed as applied, and changed nothing (found in HOM-09). A control that shows and does nothing breaks the logic of the tiers. The contract table (`ui_implementation_contract.md` section 4) already said "visual-only filter for inspection" and contradicted ADR-085.
+
+**Decision.**
+1. Row filters (and the preview column selector) are a temporary preview on **every** view: Raw, Result, My view. They are applied to a lazy copy at render time. They are never written to Parquet and never exported (unchanged: only audited steps are exported).
+2. Audit-committed nodes (`filter_row`, `exclusion_row`, `drop_column`) still apply only on My view. "Send to Audit" with a reason is the only way a step becomes permanent: applied to the exported plot and data and recorded in the audit trail. The T1/T2 Parquet files stay cache files keyed by recipe and data hash.
+3. Compare: the left pane (Result) never applies preview filters or audit nodes; the right pane is My view.
+4. A filter naming a column absent from the active view (T1 wide, T2 maybe long) is skipped, not an error. A filter leaving zero rows gives an empty table.
+5. Raw and Result show a badge note "N preview filter(s) on, not saved" so a filtered preview is never mistaken for the reference data.
+6. One operator vocabulary (`OP_WORDS` in `t3_audit_engine.py`): dropdown, staged list and help use the same words; a one-value set reads "column = value".
+
+**Consequences.** Tier-isolation tests flipped; `TestPreviewFiltersOnReferenceViews` guards the behaviour (mutation-tested). Help (`app/src/help/home.md`), user guide, FAQ, contract updated.

@@ -873,3 +873,45 @@ class TestViewBadges:
         expect(badge).to_be_visible(timeout=15_000)
         # the badge is a sibling of the plot output, not inside the <img> the plot is drawn as
         assert badge.evaluate("e => !e.closest('img') && !!e.closest('[id^=plot_badge_]')")
+
+
+# ---------------------------------------------------------------------------
+# T6 - Exploration filters preview on Raw and Result (ADR-087, issue #56, HOM-09)
+# ---------------------------------------------------------------------------
+
+class TestPreviewFiltersOnReferenceViews:
+    """GUARDED: a filter must change what the user sees on Result and Raw, not only on My view.
+    The old gate (ADR-085) accepted the filter and silently showed unfiltered data."""
+
+    GRID_ROWS = "#home_data_preview tbody tr"
+
+    def _grid_rows(self, page: Page) -> str:
+        """The grid text. The grid shows a window of rows, so its row count cannot tell a filter
+        applied from none; the removed value's rows do change the text."""
+        page.wait_for_selector(self.GRID_ROWS, timeout=15_000)
+        return page.locator("#home_data_preview").inner_text()
+
+    def test_filter_shrinks_the_result_preview_and_reset_restores_it(
+            self, page: Page, shiny_app: ShinyAppProc):
+        _load_data_analysis_recipe(page, shiny_app.url)
+        _open_filters_panel(page)
+        page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
+        _wait_shiny(page)
+        before = self._grid_rows(page)
+        page.locator("#fb_col").select_option(index=1)
+        _wait_shiny(page)
+        page.locator("#fb_op").select_option("ne")
+        _wait_shiny(page)
+        page.locator("#filter_add_row").click()
+        _wait_shiny(page)
+        page.locator("#filter_apply").click()
+        _wait_shiny(page)
+        expect(page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")).to_contain_text(
+            "preview filter(s) on, not saved", timeout=15_000)
+        try:
+            assert self._grid_rows(page) != before
+        finally:
+            page.locator("#filter_reset").click()
+            _wait_shiny(page)
+            page.locator("#filter_apply").click()
+            _wait_shiny(page)

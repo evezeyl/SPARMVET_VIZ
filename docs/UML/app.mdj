@@ -789,7 +789,7 @@
 									"parentStyle": true,
 									"left": 303.5,
 									"top": 130,
-									"width": 306.181640625,
+									"width": 306,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht1WIEtxW7e8="
@@ -11588,7 +11588,7 @@
 											"left": 853.589599609375,
 											"top": 386,
 											"width": 72.998046875,
-											"height": 104,
+											"height": 91,
 											"text": "Import & Verify (#48)\nupload a bundle, checks what it can against this machine",
 											"wordWrap": true
 										}
@@ -12540,7 +12540,7 @@
 									"parentStyle": true,
 									"left": 129,
 									"top": 35.5,
-									"width": 526.2802734375,
+									"width": 526,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+PLcaZDWrQ="
@@ -13021,7 +13021,7 @@
 									"parentStyle": true,
 									"left": 259.5,
 									"top": 121.5,
-									"width": 265.25830078125,
+									"width": 265,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+PMDqa5ah0="
@@ -13502,7 +13502,7 @@
 									"parentStyle": true,
 									"left": 293.5,
 									"top": 207.5,
-									"width": 197.83349609375,
+									"width": 197,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+PMrKdHEfg="
@@ -13983,7 +13983,7 @@
 									"parentStyle": true,
 									"left": 228,
 									"top": 293.5,
-									"width": 328.55712890625,
+									"width": 328,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+PNT6ftJaw="
@@ -14464,7 +14464,7 @@
 									"parentStyle": true,
 									"left": 238,
 									"top": 379.5,
-									"width": 308.56201171875,
+									"width": 308,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+PN+Kir478="
@@ -15258,7 +15258,7 @@
 											"left": 917.04541015625,
 											"top": 195,
 											"width": 54.919921875,
-											"height": 65,
+											"height": 52,
 											"text": "filter inputs (x6 checkbox groups)",
 											"wordWrap": true
 										}
@@ -17104,7 +17104,7 @@
 											"left": 26,
 											"top": 356,
 											"width": 308,
-											"height": 26,
+											"height": 13,
 											"text": "No interactive handoff into any other space (ADR-093)",
 											"horizontalAlignment": 0,
 											"wordWrap": true
@@ -17819,7 +17819,7 @@
 									"parentStyle": true,
 									"left": 178.5,
 									"top": 35.5,
-									"width": 239.77880859375,
+									"width": 239,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+Rvn6w95N8="
@@ -18300,7 +18300,7 @@
 									"parentStyle": true,
 									"left": 178.5,
 									"top": 121.5,
-									"width": 240.2041015625,
+									"width": 239,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+RwSqy0uqw="
@@ -18781,7 +18781,7 @@
 									"parentStyle": true,
 									"left": 120.5,
 									"top": 207.5,
-									"width": 355.921875,
+									"width": 355,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+RxOK1JtE0="
@@ -19262,7 +19262,7 @@
 									"parentStyle": true,
 									"left": 170,
 									"top": 293.5,
-									"width": 257.0380859375,
+									"width": 256,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+Rx4638oR4="
@@ -19743,7 +19743,7 @@
 									"parentStyle": true,
 									"left": 208,
 									"top": 379.5,
-									"width": 180.4853515625,
+									"width": 180,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+Rym67N0uo="
@@ -20224,7 +20224,7 @@
 									"parentStyle": true,
 									"left": 193.5,
 									"top": 465.5,
-									"width": 209.4306640625,
+									"width": 209,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+Rzaa+8dQQ="
@@ -21194,7 +21194,7 @@
 									"parentStyle": true,
 									"left": 227.5,
 									"top": 655.5,
-									"width": 141.4599609375,
+									"width": 141,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+R07bH2eLg="
@@ -22176,7 +22176,7 @@
 									"parentStyle": true,
 									"left": 203,
 									"top": 845.5,
-									"width": 190.654296875,
+									"width": 190,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+R2g7UE6ws="
@@ -22657,7 +22657,7 @@
 									"parentStyle": true,
 									"left": 157,
 									"top": 931.5,
-									"width": 283.08251953125,
+									"width": 282,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+R3SraJQTY="
@@ -23134,7 +23134,7 @@
 									"parentStyle": true,
 									"left": 205,
 									"top": 1007,
-									"width": 186.9853515625,
+									"width": 186,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGhu+nb3fURTfI="
@@ -24330,7 +24330,7 @@
 											"left": 1175.783447265625,
 											"top": 138.25,
 											"width": 91.7744140625,
-											"height": 78,
+											"height": 65,
 											"text": "nav/select inputs (x4: sidebar_nav, stored_selector, node_clicked, btn_import)",
 											"wordWrap": true
 										}
@@ -24438,7 +24438,7 @@
 											"left": 996.635498046875,
 											"top": 837,
 											"width": 49.8671875,
-											"height": 52,
+											"height": 39,
 											"text": "data edit handlers (x4)",
 											"wordWrap": true
 										}
@@ -24942,7 +24942,7 @@
 											"left": 64.34716796875,
 											"top": 869,
 											"width": 77.32080078125,
-											"height": 78,
+											"height": 65,
 											"text": "agent session state (x3: session_id, conversation, in_flight)",
 											"wordWrap": true
 										}
@@ -25230,7 +25230,7 @@
 											"left": 268.063720703125,
 											"top": 987.5,
 											"width": 94.6689453125,
-											"height": 52,
+											"height": 39,
 											"text": "_grp_modal_ctx / _groups_refresh (local state)",
 											"wordWrap": true
 										}
@@ -30408,7 +30408,7 @@
 											"left": 726,
 											"top": 26,
 											"width": 268,
-											"height": 26,
+											"height": 13,
 											"text": "Step editor: pick an action, fill in its form, Apply",
 											"horizontalAlignment": 0,
 											"wordWrap": true
@@ -30591,7 +30591,7 @@
 											"left": 726,
 											"top": 416,
 											"width": 268,
-											"height": 26,
+											"height": 13,
 											"text": "Plot defaults: colours, style, layout for every plot",
 											"horizontalAlignment": 0,
 											"wordWrap": true
@@ -30774,7 +30774,7 @@
 											"left": 26,
 											"top": 516,
 											"width": 208,
-											"height": 26,
+											"height": 13,
 											"text": "Export: download the recipe as a file",
 											"horizontalAlignment": 0,
 											"wordWrap": true
@@ -32148,7 +32148,7 @@
 									"parentStyle": true,
 									"left": 97,
 									"top": 35.5,
-									"width": 225.9853515625,
+									"width": 225,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+TuKbtPFDc="
@@ -32629,7 +32629,7 @@
 									"parentStyle": true,
 									"left": 125,
 									"top": 121.5,
-									"width": 170.41162109375,
+									"width": 169,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+TuzbvGwfw="
@@ -33110,7 +33110,7 @@
 									"parentStyle": true,
 									"left": 107,
 									"top": 207.5,
-									"width": 206.46630859375,
+									"width": 205,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+TvdbxbrWU="
@@ -33591,7 +33591,7 @@
 									"parentStyle": true,
 									"left": 93.5,
 									"top": 293.5,
-									"width": 233.2470703125,
+									"width": 232,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+TwUr0OSbo="
@@ -34072,7 +34072,7 @@
 									"parentStyle": true,
 									"left": 76,
 									"top": 379.5,
-									"width": 268.654296875,
+									"width": 267,
 									"height": 25,
 									"stereotypeLabel": {
 										"$ref": "AAAAAAGht+TxBb3fe88="
@@ -34902,7 +34902,7 @@
 											"left": 30,
 											"top": 42,
 											"width": 131.498046875,
-											"height": 65,
+											"height": 52,
 											"text": "Reconcile: outputs (x8 panels + match table + id_transformation.yaml download)",
 											"wordWrap": true
 										}
@@ -35190,7 +35190,7 @@
 											"left": 251.678466796875,
 											"top": 772,
 											"width": 47.01904296875,
-											"height": 78,
+											"height": 91,
 											"text": "Anon: calc chain (file info, columns, run)",
 											"wordWrap": true
 										}
@@ -35262,7 +35262,7 @@
 											"left": 398.702880859375,
 											"top": 670,
 											"width": 57.07177734375,
-											"height": 39,
+											"height": 26,
 											"text": "Reformat: file upload",
 											"wordWrap": true
 										}
@@ -37081,7 +37081,13 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"horizontalAlignment": 0
+											"left": 966,
+											"top": 26,
+											"width": 258,
+											"height": 104,
+											"text": "Right sidebar: same 5 tool descriptions as the center launcher (ID Reconciliation, Data analysis recipe Scaffolding, Synthetic Data, Anonymisation, File Reformatting). Reachable since issue #55 (2026-11-10) -- content existed since the panel was designed, only the sidebar slot config (testlab_standard_right.yaml) was stale.",
+											"horizontalAlignment": 0,
+											"wordWrap": true
 										}
 									],
 									"font": "Arial;13;0",
@@ -37090,7 +37096,7 @@
 									"left": 966,
 									"top": 26,
 									"width": 258,
-									"height": 138,
+									"height": 546,
 									"nameLabel": {
 										"$ref": "AAAAAAGhweYpmhrYlc4="
 									}
@@ -44075,9 +44081,9 @@
 									},
 									"font": "Arial;13;0",
 									"parentStyle": true,
-									"left": 49.7890625,
+									"left": 47.59912109375,
 									"top": 25,
-									"width": 292.6015625,
+									"width": 270.41650390625,
 									"height": 13,
 									"text": "[Model] Requirements [REQ-CORE Requirements]"
 								},
@@ -44091,7 +44097,7 @@
 									"parentStyle": true,
 									"left": 25,
 									"top": 25,
-									"width": 18.7890625,
+									"width": 16.59912109375,
 									"height": 13,
 									"text": "req"
 								}
@@ -52772,7 +52778,7 @@
 							},
 							"name": "adr",
 							"kind": "string",
-							"value": "ADR-085"
+							"value": "ADR-087"
 						}
 					],
 					"text": "An audited step needs a reason before Apply"
@@ -53267,9 +53273,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 29.72998046875,
+													"left": 27.55908203125,
 													"top": 10,
-													"width": 39,
+													"width": 38.2763671875,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -53283,7 +53289,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 13.72998046875,
+													"width": 11.55908203125,
 													"height": 13,
 													"text": "sd"
 												}
@@ -56306,9 +56312,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 29.72998046875,
+													"left": 27.55908203125,
 													"top": 10,
-													"width": 39,
+													"width": 38.2763671875,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -56322,7 +56328,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 13.72998046875,
+													"width": 11.55908203125,
 													"height": 13,
 													"text": "sd"
 												}
@@ -60018,9 +60024,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 29.72998046875,
+													"left": 27.55908203125,
 													"top": 10,
-													"width": 39,
+													"width": 38.2763671875,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -60034,7 +60040,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 13.72998046875,
+													"width": 11.55908203125,
 													"height": 13,
 													"text": "sd"
 												}
@@ -63056,9 +63062,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": true,
-													"left": 29.72998046875,
+													"left": 27.55908203125,
 													"top": 10,
-													"width": 39,
+													"width": 38.2763671875,
 													"height": 13,
 													"text": "HOME"
 												},
@@ -63072,7 +63078,7 @@
 													"parentStyle": true,
 													"left": 10,
 													"top": 10,
-													"width": 13.72998046875,
+													"width": 11.55908203125,
 													"height": 13,
 													"text": "sd"
 												}
@@ -80448,7 +80454,7 @@
 													"left": 2403,
 													"top": 885,
 													"width": 219,
-													"height": 39,
+													"height": 26,
 													"text": "Per session: shared reactive state, creates the modules, calls each define_server.",
 													"wordWrap": true
 												}
@@ -80584,7 +80590,7 @@
 													"left": 1618,
 													"top": 641,
 													"width": 219,
-													"height": 26,
+													"height": 13,
 													"text": "[Component: home_theater + 6 handlers]",
 													"wordWrap": true
 												},
@@ -80598,7 +80604,7 @@
 													"font": "Arial;13;0",
 													"parentStyle": true,
 													"left": 1618,
-													"top": 677,
+													"top": 664,
 													"width": 219,
 													"height": 26,
 													"text": "Tabs, plots, data preview, filters, audit, sessions, export, data import.",
@@ -80888,7 +80894,7 @@
 													"left": 1353,
 													"top": 420,
 													"width": 219,
-													"height": 26,
+													"height": 13,
 													"text": "[Component: orchestrator, cache_keys]",
 													"wordWrap": true
 												},
@@ -80902,7 +80908,7 @@
 													"font": "Arial;13;0",
 													"parentStyle": true,
 													"left": 1353,
-													"top": 456,
+													"top": 443,
 													"width": 219,
 													"height": 26,
 													"text": "Builds and reads Tier 1 and Tier 2, checks the chained keys.",
@@ -81512,7 +81518,7 @@
 													"left": 293,
 													"top": 124.5,
 													"width": 219,
-													"height": 39,
+													"height": 26,
 													"text": "Deployment file, app features file, sidebar panels, palettes. Read at startup.",
 													"wordWrap": true
 												}
@@ -81816,7 +81822,7 @@
 													"left": 823,
 													"top": 150,
 													"width": 219,
-													"height": 52,
+													"height": 39,
 													"text": "user_data/_sessions/{session_key}: assembly.json and t3_{timestamp}.json with the audit steps.",
 													"wordWrap": true
 												}
@@ -82700,9 +82706,9 @@
 													"font": "Arial;13;0",
 													"parentStyle": false,
 													"left": 1552,
-													"top": 571,
+													"top": 577,
 													"width": 44.79541015625,
-													"height": 65,
+													"height": 52,
 													"alpha": 1.5707963267948966,
 													"distance": 15,
 													"hostEdge": {
@@ -83494,7 +83500,7 @@
 													"left": 2148,
 													"top": 144,
 													"width": 214,
-													"height": 52,
+													"height": 39,
 													"text": "Should deliver samples and metadata. The connector exists; fetch_data raises NotImplementedError.",
 													"wordWrap": true
 												}
@@ -84327,7 +84333,7 @@
 											},
 											"name": "adr",
 											"kind": "string",
-											"value": "ADR-085"
+											"value": "ADR-087"
 										},
 										{
 											"_type": "Tag",
@@ -84595,7 +84601,7 @@
 													"left": 568,
 													"top": 56,
 													"width": 219,
-													"height": 39,
+													"height": 26,
 													"text": "Per session: shared reactive state, creates the modules, calls each define_server.",
 													"wordWrap": true
 												}
@@ -84747,7 +84753,7 @@
 													"left": 838,
 													"top": 249,
 													"width": 219,
-													"height": 39,
+													"height": 26,
 													"text": "Pipeline Audit panel: the steps of the open plot, Apply, the gate on reasons.",
 													"wordWrap": true
 												}
@@ -84823,7 +84829,7 @@
 													"left": 1108,
 													"top": 249,
 													"width": 219,
-													"height": 26,
+													"height": 13,
 													"text": "Data analysis recipe file import button.",
 													"wordWrap": true
 												}
@@ -84975,7 +84981,7 @@
 													"left": 298,
 													"top": 429,
 													"width": 219,
-													"height": 26,
+													"height": 13,
 													"text": "Session panel: import, restore, delete.",
 													"wordWrap": true
 												}
@@ -85127,7 +85133,7 @@
 													"left": 838,
 													"top": 429,
 													"width": 225.4814453125,
-													"height": 26,
+													"height": 13,
 													"text": "Data Import panel: upload, assign, replace.",
 													"wordWrap": true
 												}
@@ -85567,7 +85573,7 @@
 													"left": 568,
 													"top": 573,
 													"width": 219,
-													"height": 26,
+													"height": 13,
 													"text": "[Component: orchestrator, cache_keys]",
 													"wordWrap": true
 												},
@@ -85581,7 +85587,7 @@
 													"font": "Arial;13;0",
 													"parentStyle": true,
 													"left": 568,
-													"top": 609,
+													"top": 596,
 													"width": 219,
 													"height": 26,
 													"text": "Builds and reads Tier 1 and Tier 2, checks the chained keys.",
@@ -87758,7 +87764,7 @@
 											},
 											"name": "adr",
 											"kind": "string",
-											"value": "ADR-085"
+											"value": "ADR-087"
 										}
 									],
 									"technology": "app/handlers/audit_stack.py",
@@ -91602,7 +91608,7 @@
 											"left": 48,
 											"top": 466,
 											"width": 214,
-											"height": 39,
+											"height": 26,
 											"text": "Deployment file, app features file, sidebar panels, palettes. Read at startup.",
 											"wordWrap": true
 										}
@@ -91754,7 +91760,7 @@
 											"left": 1088,
 											"top": 466,
 											"width": 214,
-											"height": 39,
+											"height": 26,
 											"text": "Answers the BLUEPRINT agent. Only when blueprint_agent_enabled is on.",
 											"wordWrap": true
 										}
@@ -92058,7 +92064,7 @@
 											"left": 918,
 											"top": 846,
 											"width": 214,
-											"height": 52,
+											"height": 39,
 											"text": "user_data/_sessions/{session_key}: assembly.json and t3_{timestamp}.json with the audit steps.",
 											"wordWrap": true
 										}
@@ -92118,7 +92124,7 @@
 											"left": 1208,
 											"top": 823,
 											"width": 214,
-											"height": 26,
+											"height": 13,
 											"text": "[Container: YAML, PNG, JSON index]",
 											"wordWrap": true
 										},
@@ -92132,7 +92138,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 1208,
-											"top": 859,
+											"top": 846,
 											"width": 214,
 											"height": 26,
 											"text": "Location gallery. Static examples, never computed at run time.",
@@ -92331,9 +92337,9 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 392,
-											"top": 506,
+											"top": 513,
 											"width": 43.3544921875,
-											"height": 78,
+											"height": 65,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
 											"hostEdge": {
@@ -93344,7 +93350,7 @@
 									"left": 808,
 									"top": 669,
 									"width": 214,
-									"height": 26,
+									"height": 13,
 									"text": "[Software System: outside this system]",
 									"wordWrap": true
 								},
@@ -93358,7 +93364,7 @@
 									"font": "Arial;13;0",
 									"parentStyle": true,
 									"left": 808,
-									"top": 705,
+									"top": 692,
 									"width": 214,
 									"height": 39,
 									"text": "Produces the result tables (for example Abromics, VIGAS-P) as files. No API between the two.",
@@ -93436,7 +93442,7 @@
 									"left": 60.64599609375,
 									"top": 176.5,
 									"width": 214,
-									"height": 39,
+									"height": 26,
 									"text": "Answers the BLUEPRINT agent. Only when blueprint_agent_enabled is on.",
 									"wordWrap": true
 								}
@@ -93894,7 +93900,7 @@
 									"left": 680.64599609375,
 									"top": 88.5,
 									"width": 127.16259765625,
-									"height": 39,
+									"height": 26,
 									"text": "[Software System: not working yet: partial]",
 									"wordWrap": true
 								},
@@ -93908,9 +93914,9 @@
 									"font": "Arial;13;0",
 									"parentStyle": true,
 									"left": 680.64599609375,
-									"top": 137.5,
+									"top": 124.5,
 									"width": 127.16259765625,
-									"height": 78,
+									"height": 65,
 									"text": "Should deliver samples and metadata. The connector exists; fetch_data raises NotImplementedError.",
 									"wordWrap": true
 								}
@@ -94063,7 +94069,7 @@
 									"left": 853.80859375,
 									"top": 131,
 									"width": 57.0908203125,
-									"height": 169,
+									"height": 143,
 									"text": "Should host the app and mount the datasets. The connector exists; the app has not been run there.",
 									"wordWrap": true
 								}

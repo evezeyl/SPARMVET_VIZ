@@ -179,6 +179,9 @@ class VizFactory:
                 val = f.get("value")
                 if col is None:
                     continue
+                # Issue #56: a filter on a column this plot's data does not have is skipped, not an error.
+                if actual_dtypes and col not in actual_dtypes:
+                    continue
 
                 actual_dt = actual_dtypes.get(col)
                 is_numeric = _is_numeric(actual_dt)

@@ -48,3 +48,15 @@ def test_a_plot_on_a_bare_schema_or_unknown_dataset_has_no_tier2_steps():
     assert has_tier2_steps(RAW, "SomeDataSchema") is False   # not a join
     assert has_tier2_steps(RAW, None) is False
     assert has_tier2_steps({}, "WithT2") is False
+
+
+@pytest.mark.parametrize("tier", ["T1", "T2"])
+def test_preview_filters_are_announced_on_raw_and_result(tier):
+    """ADR-087 (issue #56): a filtered preview must never pass for the reference data."""
+    badge = view_badge(tier, has_tier2=True, has_changes=False, preview_filters=2)
+    assert "2 preview filter(s) on, not saved" in badge.notes
+
+
+def test_no_preview_note_without_filters_or_on_my_view():
+    assert not any("preview" in n for n in view_badge("T2", True, False).notes)
+    assert not any("preview" in n for n in view_badge("T3", True, True, preview_filters=2).notes)
