@@ -185,3 +185,11 @@ Contract → CLI Execution → Materialize to `tmpAI/` → Validate → Copy to 
 3. **No secrets in source** — credentials via environment variables or KDE Wallet only
 4. **Cross-panel prohibition** — a module's UI outputs must be mounted inside that module's own gated panel
 5. **Vendor manifest** — update `app/src/www/vendor/VENDOR_MANIFEST.md` when adding/upgrading any vendored asset
+
+---
+
+## 9. Working Rules: No Guessing
+
+- **Never guess intent:** If a request has any ambiguity, missing requirements, or multiple valid architectural approaches, DO NOT write code or edit files yet.
+- **Ask first:** List your specific clarifying questions (bulleted, concise) and state any assumptions you are making. Wait for Eve's confirmation before executing changes.
+- **Never speculate:** Detect discrepancies, ask questions, and proceed only when everything is clear.
