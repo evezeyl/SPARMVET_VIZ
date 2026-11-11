@@ -339,3 +339,9 @@ a plain table instead of a forced-fit diagram.
 ## Sources
 
 [arc42 sections](https://examples.arc42.org/sections/), [C4 model](https://c4model.com/), [C4 modelling guide](https://barkingiguana.com/writing/the-workshop-c4-modelling/), [Kruchten 4+1](https://arxiv.org/pdf/2006.04975), [views and viewpoints](https://btabok.iasaglobal.org/btabok_3/capability-descriptions/views-and-viewpoints/).
+
+**Added 2026-11-11 (HOME filters, issue #56):** `HOME-FILTER-FLOW` (as built: staged and applied
+filters, what each consumer does, audit and export) and `HOME-FILTER-SCOPING` (concept: lineage cases
+L1 T1=T2=T3, L2 T1=T2 with T3 different, L3 all different; red nodes = scope decisions still open).
+Both are flowcharts in the HOME package. Concept text: `.claude/design/home_filter_scoping_concept.md`.
+Still to draw: the lineage object diagram of `1_test_data_ST22_dummy` and the cross-dataset sequence.
