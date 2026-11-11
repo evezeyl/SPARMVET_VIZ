@@ -12301,7 +12301,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 847.5,
+											"left": 677.5,
 											"top": 43,
 											"width": 210,
 											"height": 26,
@@ -12311,7 +12311,7 @@
 									],
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 837.5,
+									"left": 667.5,
 									"top": 33,
 									"width": 230,
 									"height": 85,
@@ -12339,7 +12339,7 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 767.5,
+											"left": 570,
 											"top": 191,
 											"width": 210,
 											"height": 26,
@@ -12351,7 +12351,7 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 757.5,
+									"left": 560,
 									"top": 181,
 									"width": 230,
 									"height": 90,
@@ -12379,11 +12379,11 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 352.5,
+											"left": 262.5,
 											"top": 335,
 											"width": 240,
-											"height": 39,
-											"text": "Applied list (applied_filters)\nONE list for the whole analysis\nnot per plot, not per stage",
+											"height": 26,
+											"text": "Applied list (applied_filters)\nONE list for the whole analysis",
 											"wordWrap": true
 										}
 									],
@@ -12391,7 +12391,7 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 342.5,
+									"left": 252.5,
 									"top": 325,
 									"width": 260,
 									"height": 90,
@@ -12459,7 +12459,7 @@
 											"fillColor": "#eef0fb",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 1095.5,
+											"left": 905.5,
 											"top": 646.5,
 											"width": 154,
 											"height": 39,
@@ -12471,52 +12471,12 @@
 									"fillColor": "#eef0fb",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 1042.5,
+									"left": 852.5,
 									"top": 636.5,
 									"width": 260,
 									"height": 98,
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgfRkHWg9o="
-									}
-								},
-								{
-									"_type": "FCDataView",
-									"_id": "AAAAAAGhypgfeEHd/P0=",
-									"_parent": {
-										"$ref": "AAAAAAGhypgeVUGv1LQ="
-									},
-									"model": {
-										"$ref": "AAAAAAGhypgfeEHbgVs="
-									},
-									"subViews": [
-										{
-											"_type": "LabelView",
-											"_id": "AAAAAAGhypgfeEHeNrw=",
-											"_parent": {
-												"$ref": "AAAAAAGhypgfeEHd/P0="
-											},
-											"lineColor": "#6c757d",
-											"fillColor": "#e9ecef",
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 330,
-											"top": 479,
-											"width": 140,
-											"height": 52,
-											"text": "Raw plot, Result plot,\nCompare left plot:\nnever filtered (recipe plot)",
-											"wordWrap": true
-										}
-									],
-									"lineColor": "#6c757d",
-									"fillColor": "#e9ecef",
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"left": 280,
-									"top": 469,
-									"width": 240,
-									"height": 111,
-									"nameLabel": {
-										"$ref": "AAAAAAGhypgfeEHeNrw="
 									}
 								},
 								{
@@ -12539,11 +12499,11 @@
 											"fillColor": "#e9ecef",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 560,
+											"left": 290,
 											"top": 479,
 											"width": 220,
 											"height": 26,
-											"text": "A dataset without the\nfiltered column ignores\nthe filter (no error)",
+											"text": "A dataset without the\nfiltered column skips\nthat filter",
 											"wordWrap": true
 										}
 									],
@@ -12551,7 +12511,7 @@
 									"fillColor": "#e9ecef",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 550,
+									"left": 280,
 									"top": 469,
 									"width": 240,
 									"height": 111,
@@ -12579,7 +12539,7 @@
 											"fillColor": "#ffe0e0",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 557.5,
+											"left": 387.5,
 											"top": 36.5,
 											"width": 240,
 											"height": 26,
@@ -12591,7 +12551,7 @@
 									"fillColor": "#ffe0e0",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 547.5,
+									"left": 377.5,
 									"top": 26.5,
 									"width": 260,
 									"height": 98,
@@ -12619,7 +12579,7 @@
 											"fillColor": "#ffe0e0",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 287.5,
+											"left": 117.5,
 											"top": 30,
 											"width": 220,
 											"height": 26,
@@ -12631,7 +12591,7 @@
 									"fillColor": "#ffe0e0",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 277.5,
+									"left": 107.5,
 									"top": 20,
 									"width": 240,
 									"height": 111,
@@ -12659,7 +12619,7 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 845,
+											"left": 655,
 											"top": 331,
 											"width": 210,
 											"height": 26,
@@ -12671,7 +12631,7 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 835,
+									"left": 645,
 									"top": 321,
 									"width": 230,
 									"height": 98,
@@ -12699,7 +12659,7 @@
 											"fillColor": "#fff3cd",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 830,
+											"left": 640,
 											"top": 479,
 											"width": 240,
 											"height": 26,
@@ -12711,7 +12671,7 @@
 									"fillColor": "#fff3cd",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 820,
+									"left": 630,
 									"top": 469,
 									"width": 260,
 									"height": 111,
@@ -12739,11 +12699,11 @@
 											"fillColor": "#d5efec",
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 762.5,
+											"left": 572.5,
 											"top": 640,
 											"width": 240,
 											"height": 73,
-											"text": "Export = Result + audited steps\nPreview filters are never exported\nParquet files are never changed",
+											"text": "Export = Result + audited steps only\n(from the stored files, which stay as they are)",
 											"wordWrap": true
 										}
 									],
@@ -12751,7 +12711,7 @@
 									"fillColor": "#d5efec",
 									"font": "Arial;13;0",
 									"parentStyle": false,
-									"left": 752.5,
+									"left": 562.5,
 									"top": 630,
 									"width": 260,
 									"height": 111,
@@ -12780,8 +12740,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 952,
-											"top": 161,
+											"left": 781,
+											"top": 162,
 											"width": 21.68994140625,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12802,7 +12762,7 @@
 										"$ref": "AAAAAAGhypgexEG1f3s="
 									},
 									"lineStyle": 3,
-									"points": "953:119;953:156;925:180",
+									"points": "783:119;783:156;746:180",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypggyUIWeV4="
 									}
@@ -12828,8 +12788,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 659,
-											"top": 304,
+											"left": 525,
+											"top": 303,
 											"width": 32.51904296875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -12850,7 +12810,7 @@
 										"$ref": "AAAAAAGhypge3kG9V7Q="
 									},
 									"lineStyle": 3,
-									"points": "757:266;670:296;595:324",
+									"points": "583:272;535:296;477:324",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypghCUIfIyQ="
 									}
@@ -12898,7 +12858,7 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "342:399;135:444;135:475",
+									"points": "252:409;135:444;135:475",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypghXUIoXmc="
 									}
@@ -12924,7 +12884,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 1160,
+											"left": 970,
 											"top": 518,
 											"width": 74.4072265625,
 											"height": 13,
@@ -12946,57 +12906,9 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "604:384;1183:444;1183:525;1183:605;1179:636",
+									"points": "514:386;993:444;993:525;993:605;989:636",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypghi0IxHIU="
-									}
-								},
-								{
-									"_type": "FCFlowView",
-									"_id": "AAAAAAGhypghs0I5SRU=",
-									"_parent": {
-										"$ref": "AAAAAAGhypgeVUGv1LQ="
-									},
-									"model": {
-										"$ref": "AAAAAAGhypghs0I3xxY="
-									},
-									"subViews": [
-										{
-											"_type": "EdgeLabelView",
-											"_id": "AAAAAAGhypghs0I6yQg=",
-											"_parent": {
-												"$ref": "AAAAAAGhypghs0I5SRU="
-											},
-											"model": {
-												"$ref": "AAAAAAGhypghs0I3xxY="
-											},
-											"font": "Arial;13;0",
-											"parentStyle": false,
-											"left": 398,
-											"top": 437,
-											"width": 32.51904296875,
-											"height": 13,
-											"alpha": 1.5707963267948966,
-											"distance": 15,
-											"hostEdge": {
-												"$ref": "AAAAAAGhypghs0I5SRU="
-											},
-											"edgePosition": 1,
-											"text": "never"
-										}
-									],
-									"font": "Arial;13;0",
-									"parentStyle": false,
-									"head": {
-										"$ref": "AAAAAAGhypgfeEHd/P0="
-									},
-									"tail": {
-										"$ref": "AAAAAAGhypge9UHF5kA="
-									},
-									"lineStyle": 3,
-									"points": "427:416;400:444;400:468",
-									"nameLabel": {
-										"$ref": "AAAAAAGhypghs0I6yQg="
 									}
 								},
 								{
@@ -13020,7 +12932,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 640,
+											"left": 370,
 											"top": 437,
 											"width": 89.58447265625,
 											"height": 13,
@@ -13042,7 +12954,7 @@
 										"$ref": "AAAAAAGhypge9UHF5kA="
 									},
 									"lineStyle": 3,
-									"points": "595:416;670:444;670:468",
+									"points": "393:416;400:444;400:468",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgh2EJDT4g="
 									}
@@ -13069,8 +12981,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 760,
-											"top": 137,
+											"left": 626,
+											"top": 140,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -13089,7 +13001,7 @@
 										"$ref": "AAAAAAGhypgft0HtkOk="
 									},
 									"lineStyle": 3,
-									"points": "724:126;753:156;794:180",
+									"points": "574:126;615:156;636:180",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiBEJM/WI="
 									}
@@ -13116,7 +13028,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 487,
+											"left": 352,
 											"top": 219,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13136,7 +13048,7 @@
 										"$ref": "AAAAAAGhypgft0HtkOk="
 									},
 									"lineStyle": 3,
-									"points": "550:126;473:156;473:226;473:296;473:324",
+									"points": "402:126;338:156;338:226;338:296;355:324",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiTkJVmtA="
 									}
@@ -13163,7 +13075,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 603,
+											"left": 469,
 											"top": 135,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13183,7 +13095,7 @@
 										"$ref": "AAAAAAGhypgf0EH1rVg="
 									},
 									"lineStyle": 3,
-									"points": "519:123;600:156;757:196",
+									"points": "349:116;465:156;559:187",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgifEJe5MQ="
 									}
@@ -13210,7 +13122,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 392,
+											"left": 202,
 											"top": 219,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13230,7 +13142,7 @@
 										"$ref": "AAAAAAGhypgf0EH1rVg="
 									},
 									"lineStyle": 3,
-									"points": "384:132;378:156;378:226;378:296;414:324",
+									"points": "200:132;188:156;188:226;188:296;261:324",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgiqUJnn5Q="
 									}
@@ -13256,7 +13168,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 925,
+											"left": 735,
 											"top": 289,
 											"width": 78.05712890625,
 											"height": 13,
@@ -13278,7 +13190,7 @@
 										"$ref": "AAAAAAGhypge3kG9V7Q="
 									},
 									"lineStyle": 3,
-									"points": "923:272;950:296;950:320",
+									"points": "731:272;760:296;760:320",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgi6kJwIQs="
 									}
@@ -13305,7 +13217,7 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 964,
+											"left": 774,
 											"top": 437,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -13325,7 +13237,7 @@
 										"$ref": "AAAAAAGhypggD0H94pM="
 									},
 									"lineStyle": 3,
-									"points": "950:420;950:444;950:468",
+									"points": "760:420;760:444;760:468",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjR0J5HeE="
 									}
@@ -13351,7 +13263,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 1050,
+											"left": 860,
 											"top": 588,
 											"width": 110.55712890625,
 											"height": 13,
@@ -13373,7 +13285,7 @@
 										"$ref": "AAAAAAGhypggQ0IF0ls="
 									},
 									"lineStyle": 3,
-									"points": "1052:581;1095:605;1124:636",
+									"points": "862:581;905:605;934:636",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjdUKCeC8="
 									}
@@ -13399,7 +13311,7 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 872,
+											"left": 682,
 											"top": 598,
 											"width": 50.5908203125,
 											"height": 13,
@@ -13421,7 +13333,7 @@
 										"$ref": "AAAAAAGhypggQ0IF0ls="
 									},
 									"lineStyle": 3,
-									"points": "903:581;883:605;883:629",
+									"points": "713:581;693:605;693:629",
 									"nameLabel": {
 										"$ref": "AAAAAAGhypgjoUKLXJA="
 									}
@@ -13496,7 +13408,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Applied list (applied_filters)\nONE list for the whole analysis\nnot per plot, not per stage",
+							"name": "Applied list (applied_filters)\nONE list for the whole analysis",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -13586,7 +13498,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "A dataset without the\nfiltered column ignores\nthe filter (no error)"
+							"name": "A dataset without the\nfiltered column skips\nthat filter"
 						},
 						{
 							"_type": "FCProcess",
@@ -13727,7 +13639,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypgeVUGuLNo="
 							},
-							"name": "Export = Result + audited steps\nPreview filters are never exported\nParquet files are never changed"
+							"name": "Export = Result + audited steps only\n(from the stored files, which stay as they are)"
 						}
 					]
 				},
@@ -15548,7 +15460,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhypjRhEM2UxI="
 							},
-							"name": "Audited steps, per plot\nforked copy, with a reason\n(never written to the T1/T2 files)",
+							"name": "Audited steps, per plot\nforked copy, with a reason",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
