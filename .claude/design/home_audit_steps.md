@@ -134,7 +134,7 @@ in the recipe, joins and source file headers:
 In the first version a key mapping comes from the join steps only; no manual mapping by the user. An ingredient
 with no key found is reported, never guessed.
 
-## 9. Drop column policy [to build, #59]
+## 9. Drop column policy [to build; helper and message: #59]
 
 - **Not recommended** as a project-wide or dataset-wide step. Allowed at plot level (level 3) for plotting needs,
   for example dropping an unclean column so the exported T3 data matches the plot.
@@ -185,7 +185,7 @@ cheap thanks to the cache), delete any single step, edit a step (= replace it). 
 | Item | Today | Target |
 |---|---|---|
 | Plot-level filter/drop steps | per plot, dialog "this / all / all except" [built] | level 3, pick plots from a list |
-| Concerned plots | checked on the data view (#58) | checked on the plot's audit T2 |
+| Concerned plots | checked on the data view (#58, closed: superseded by #60) | checked on the plot's audit T2 |
 | Exclude by key | not built; a `sample_id` filter on a plot lacking the column is skipped | levels 0-1, exact at the sources |
 | Dataset-level step (shared T2) | not built | level 2 |
 | Audit workspace, chain drawing, project overview, coverage check | not built | build |
