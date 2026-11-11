@@ -1,5 +1,4 @@
 target_dataset: Quast_with_metadata
-facet_scales: free_y
 title: 🐱 Miaou — Assembly Metric Distributions by Source
 family: Distribution
 pattern: 1 Numeric, 1 Categorical
@@ -11,7 +10,10 @@ mapping:
   x: source
   y: value
   fill: source
-  facet_by: metric
 layers:
 - name: geom_violin
   params: {}
+- name: facet_wrap
+  params:
+    facets: ~metric
+    scales: free_y

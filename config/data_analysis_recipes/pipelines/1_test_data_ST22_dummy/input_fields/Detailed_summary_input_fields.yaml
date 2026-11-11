@@ -29,7 +29,7 @@ overlap:
   label: '%Overlap'
 hsp_lengthtotal_length:
   original_name: HSP Length/Total Length
-  type: categorical
+  type: utf8
   label: Hsp Length/Total Length
 contig:
   original_name: Contig

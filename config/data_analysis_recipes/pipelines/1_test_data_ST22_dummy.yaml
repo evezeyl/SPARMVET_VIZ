@@ -274,18 +274,5 @@ analysis_groups:
         spec: !include '1_test_data_ST22_dummy/plots/miaou.yaml'
 
 plot_defaults:
-  height: 450
   theme: theme_minimal
-  show_legend: true
   default_font_family: "Liberation Sans"
-
-wrangling:
-  tier1: []
-  tier2: []
-  tier3:
-  - action: join
-    params:
-      right_ingredient: metadata_schema
-      'on':
-      - sample_id
-    comment: MLST_Metadata_wrangling.yaml
