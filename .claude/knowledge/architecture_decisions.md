@@ -5026,6 +5026,15 @@ keeping My view as a scratchpad without the sandbox flag (plots would change wit
 the original data or the recipe files; early value filters (column names at the sources differ from what the user
 sees).
 
+**Review as a scientist and a data scientist (2026-11-11), details in `home_audit_steps.md` section 18:** the design is
+not to be trusted for publication figures until these are built: explicit missing-value rule in every step (#63) and
+correct integer thresholds (#62), both in today's engine; entities counted as well as rows; a post-condition check
+after every key exclusion; a warning when samples are removed downstream of population statistics (z-score,
+percentile, rank, top-N, pivot, summaries); a sample census; reason categories and the event log; "no effect" and
+zero-row statuses; export self-checks; a canonical hash; atomic cache writes. Proposed change, to confirm: stage = the
+table the user looks at (T1, T2 or plot) with a reach that depends on the stage, replacing the levels 0-3 by (stage,
+reach).
+
 **Added during the review (2026-11-11):** Apply is atomic (the step list changes only if the recomputation
 succeeds); an append-only event log records creations, removals and reverts and is exported [confirm].
 

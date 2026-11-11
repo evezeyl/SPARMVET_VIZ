@@ -1,8 +1,8 @@
 # HOME: audit steps and audit mode
 
 **Status:** 2026-11-11, version 4, after the full consistency review with Eve (history: git commits 5b59a4a, e5ae922,
-069052b). Companion: `home_preview_filters.md`. Decision record: ADR-099 (`architecture_decisions.md`). Nothing here
-is code yet. Marks: **[built]**, **[to build]**, **[confirm]** = my proposal from the review, Eve to confirm before code.
+069052b). Companion: `home_preview_filters.md`. Decision record: ADR-099 (`architecture_decisions.md`). Section 18 is the review as a scientist and as a data
+scientist (findings, evidence, remedies). Nothing here is code yet. Marks: **[built]**, **[to build]**, **[confirm]** = my proposal from the review, Eve to confirm before code.
 
 ## 1. The rule, in one sentence
 
@@ -22,6 +22,7 @@ repeats on many rows and is not unique in the original data; the audit works on 
 | **Data schema** (an **ingredient** when it is joined) | One source file with its contract (`input_fields`) and its own tier-1 steps. In the recipe: `data_schemas:`, `dataset_id`. |
 | **Join** | A combination of data schemas into one table (`joins:`; older text says "assembly"). |
 | **Collection** | What a plot reads: a **join**, or a **data schema used directly** (a recipe without joins, such as `3_test_no_joins`). Internal word: `target_dataset` in a plot spec, `collection_id` in the code. |
+| **Lineage** | The path of the data of one plot: sources -> the ingredients -> the collection's T1 -> its T2 -> the plot (T3), in its original and its audit version. A collection is the node that several plots can share; a plot has one lineage, and a collection is reached by the lineages of all the plots that read it. |
 | **Table** (the user's word) | The data table behind a plot = the T2 of its collection. |
 | **Dataset** | Avoid in new text: the recipe uses it loosely for a data schema (`dataset_id`) and for a plot's target (`target_dataset`). |
 | **Original T1 / T2** | The stored stages of a collection exactly as the recipe built them. Cached, never changed. |
@@ -109,10 +110,9 @@ Two different questions, kept apart:
 | **Every plot in the project** | **level 0**: early, at the sources of every collection that has the key | level 2 on every collection that has the column (others: "not concerned") |
 
 The checklist is built from the recipe's `analysis_groups`, so the selector adapts to every recipe. **[confirm]** three
-options with a checklist, instead of four options ("only this plot" and "these plots" merged). **[open]** where the
-reach selector sits: in the "New audit step" dialog (proposed: everything to read and decide is in one place, and
-Apply stays disabled until a reach is chosen), or in the Filters panel next to the form, with the dialog only
-confirming.
+options with a checklist, instead of four options ("only this plot" and "these plots" merged). **Decided (Eve):** the reach
+selector sits in the "New audit step" dialog (everything to read and decide is in one place, and Apply stays
+disabled until a reach is chosen).
 
 Numbers 0-3 are the internal names and follow the T numbers (project = 0, T1 = 1, T2 = 2, T3 = 3). The user never
 sees them.
@@ -129,6 +129,8 @@ sees them.
   a navigator (grouped by tab, with a search box) when there are many plots.
 - T2 is a leaf stage: a level 2 step does not flow into other collections (checked: a join cannot be an
   ingredient of another join; the orchestrator keeps only data schemas as ingredients).
+- **A hint under the selector depends on the kind:** for "Remove samples" because of bad quality: "Usually every
+  plot in the project"; for a value filter: "Use the smallest choice that fits". The hint never preselects.
 - Help and user documentation must explain the choice in these words, with the simple advice: **always use the
   lowest reach that fits what you want** (this plot, then this table, then the project).
 
@@ -170,13 +172,17 @@ sees them.
    originals. The cache only speeds things up; the step list is the source of truth. When the recipe or the data
    change (the original keys change) the audit entries that depended on them are removed at that moment. Location:
    under `user_data` next to `anchors/`, in `audit/<session_key>/`.
-4. **Key mapping.** Built once per recipe from (a) the **declared keys**: every input field with
+4. **Key mapping.** Read **directly from the loaded recipe dictionaries** (`raw_config`), so no transformation of the
+   recipe is needed; the reader handles tiered steps (`tier1`/`tier2` lists) and legacy lists. Built once per recipe
+   from (a) the **declared keys**: every input field with
    `is_primary_key: true` in a data schema (an existing, documented property of the data contract), and (b) the
    **join steps** (`action: join`, `on` as a string or a list, `left_on`/`right_on`), which link differently named
    columns into one key family and flag a join on a column that is not declared (a warning for the recipe author).
    A collection that is a join takes the keys of its ingredients. A **data schema used directly** (a recipe without
    any join, such as `3_test_no_joins`) has its declared key and needs no join, so removing samples by ID works there
-   too. A data schema with **no declared key and no join** has no key: reported "no key declared"; for it, "Remove
+   too. `is_primary_key` is optional and often absent: a data schema with no declared key whose column is used in a join is
+   given that column as an **inferred key** (shown as "inferred" in the dialog and in the project overview, with a
+   note for the recipe author). A data schema with **no declared key and no join** has no key: reported "no key declared"; for it, "Remove
    samples" falls back to a row filter on a column the user picks (late stage or plot), with a warning if the
    table's steps contain aggregations (a filter after an aggregation does not change the aggregate). Never found from
    column names. **Today's `extract_primary_keys` returns an empty list on tiered join steps (issue #61); the new
@@ -388,13 +394,16 @@ selector with three options and a plot checklist (section 5); the key mapping fr
 steps, and the no-key fallback (section 7.4); the audit table stage selector; the trial computation for the impact
 numbers; the event log; atomic Apply; legacy step types kept as they are; names with `t3` kept.
 
+**Decided (Eve, later in the review):** the reach selector sits in the dialog; the key mapping is read from the loaded
+dictionaries; `is_primary_key` is optional (inference as fallback); all three items I had forgotten (atomic Apply, event
+log, recipe documentation) are accepted.
+
 **Open:**
 1. Exact wording of the reach options and kinds (draft in section 17, to review together).
 2. Manual key mapping by the user (not in the first version).
 3. Excluding by a secondary key (Gene) in a later version.
 4. Where the project overview opens (dialog or wide accordion under the table).
 5. What stays of the existing right panel: the "Inherited (Tier 2)" nodes, the filter inventory, the pending badge.
-5b. Where the reach selector sits: in the dialog (proposed) or in the Filters panel (section 5).
 6. The importer's verification legs with levels 0-2 (section 11).
 
 ## 17. Wording to review together (draft v3)
@@ -409,3 +418,53 @@ Under the selector, always: the lineage chain with the changed stages in bold an
 before/after. One-line advice: "Use the smallest choice that fits." Open wording questions: is "table" understood
 (the data table behind the plot) or better "data set"/"data"? Is "Every plot in the project" clear when some plots
 do not contain the sample? (the dialog then says "N plots contain it, M do not").
+
+## 18. Review as a scientist and as a data scientist (2026-11-11)
+
+**Verdict.** The structure (original data never changed, steps with reasons, recompute and cache, coverage and
+overview) is sound, but the audit **cannot yet be trusted for publication figures**. Tests of the current filter engine
+and a review of the design found the flaws below. "Verified" = run on the real code, "reasoned" = follows from the
+design or the data; a reasoned item still needs a test. Background: ARRIVE and CONSORT require exclusions and
+attrition to be reported with their reasons
+([ARRIVE 3b](https://arriveguidelines.org/arrive-guidelines/inclusion-and-exclusion-criteria/3b/explanation));
+flexible analysis choices made after seeing data inflate false positives
+([Simmons, Nelson, Simonsohn 2011](https://www.bitss.org/education/mooc-parent-page/week-2-publication-bias/is-there-a-credibility-crisis/false-positive-psychology-2/)).
+
+| # | Flaw | Evidence | Remedy in the design | Status |
+|---|---|---|---|---|
+| 1 | **Integer thresholds are truncated**: `v >= 90.5` keeps 90, `v < 90.5` drops 90, `v = 90.5` keeps 90 | verified; same code twice (`t3_audit_engine.py`, `viz_factory.py`) | one implementation, correct rounding by operator; tests | issue #62, independent of the redesign |
+| 2 | **Missing values vanish silently**: "remove Norway" (`!=`, none-of) also drops rows with no country; NaN is kept by `>=` and dropped by `<` | verified; Polars drops null predicates ([docs](https://docs.pola.rs/api/python/stable/reference/lazyframe/api/polars.LazyFrame.filter.html)) | an explicit rule in every step: missing values kept or removed (safe default for "remove": keep), shown in the dialog with the count, part of the step record and its hash | issue #63, needs Eve's default |
+| 3 | **Rows are not samples**: in long format a filter can remove every row of a sample, the sample disappears and the denominator changes ("absent" instead of "zero") | verified (a sample with no row at identity >= 90 vanished) | the dialog, the attrition table and the project overview count **entities (by key) as well as rows**, and list entities that lose all their rows | reasoned design; to build |
+| 4 | **Key matching is exact**: removing `S2` leaves `' S2'` and `'s2'`; an early step sits **before** tier-1 normalisation (strip, case) | verified for the filter; reasoned for the sources | values are offered from the **T1** of the reached collections (what the recipe's joins see); after every key exclusion a **post-condition check** verifies that the excluded values (and look-alike variants) are absent from every reached audit T1 and T2; if not, the step is "incomplete" (red) and blocks the export | to build |
+| 5 | **Removal after a computed statistic is contaminated**: z-scores, percentiles, ranks, top-N, pivots and summaries computed over all samples still contain the removed samples if the removal is applied later (plot level, T2) | reasoned; the actions exist: `z_score`, `percentile`, `window_agg`, `cum_sum`, `cum_count`, `value_counts`, `describe_stats`, `top_n_other`, `pivot`, `derive_categories`, `summarize`, `count_by_group` (checked in the registry); none is cross-sample in the ST22 recipe | the dialog scans the collection's steps and **warns** when samples are removed at plot or T2 level downstream of such a step, and recommends "this table" or "every plot" (removal before the computation) | to build |
+| 6 | **Tables end with different sample sets**: only a coverage check on the excluded IDs, no view of which entities each table holds | reasoned | the project overview adds a **sample census**: entities per table before/after, and entities present in some tables but not others | to build |
+| 7 | **Researcher degrees of freedom**: exclusions made after seeing the result cannot be prevented | external evidence, above | a **reason category** (technical failure, contamination, duplicate, out of scope, outlier by value, other) plus free text; the **event log** keeps steps that were made and removed; the report says which exclusions are "outlier by value" and prints the attrition (rows and entities, per step, ARRIVE/CONSORT style); an optional figure caption "n = X after exclusions (see audit trail)" **[confirm]** | to build |
+| 8 | **Redundant or contradictory steps**: a step that changes nothing (already removed by another) looks "applied"; two filters can leave no rows | reasoned | status **"no effect (already done by step N)"**; zero rows warn before Apply | to build |
+| 9 | **Exported data must be what the plot used**: today's test covers the T3 path only | reasoned | tests: the forked recipe re-run headlessly must give the same data hash as the audit stages; a new "audit data hash" leg in the importer; at export, entity and row counts of the exported frame must equal those of the rendered plot | to build |
+| 10 | **Hash and cache robustness**: the canonical form of the operation list, partial writes, two sessions writing the same file | reasoned | canonical JSON (sorted keys, typed numbers, normalised strings, a format version and the engine version); write to a temporary file and rename; the key is checked on read | to build |
+| 11 | **A table step cannot be limited to one plot**: a T1 or T2 step changes every plot that reads the table. Example: `MLST_with_metadata` is read by `mlst_bar` and `year_distribution`; a T1 step with "only mlst_bar" would also change `year_distribution` | verified in the recipe | see "Stage and reach" below | **[confirm]** |
+| 12 | **Compare uses each plot's own axes**, which can make the audited and original plots look alike or unlike for the wrong reason | reasoned | option "same axes" in Compare | low priority |
+| 13 | Steps tied to a data version: a reused ID in new data | reasoned; the session key already contains the data batch hash (contract section 12d) | verify at implementation that steps are never carried to another batch | check |
+
+**Stage and reach (proposed change to section 5) [confirm].** Eve's questions show that for value filters the user
+works on **the table they look at** (T1, T2 or the plot), and that values must come from that table:
+- **Stage = the table the user is looking at** (audit table selector: T1 | T2 | the plot). A value filter or a drop
+  acts at the end of the collection's tier-1 steps (T1), after its tier-2 steps (T2), or on the plot frame (T3).
+  Columns and values come from that stage. This replaces "value filters are never early": a filter on T1 is exact
+  because it acts on the T1 table the user sees (no renamed-column problem), and it is cheap (the original T1 file
+  filtered, then tier-2 recomputed).
+- **Reach depends on the stage**: T1 or T2 -> "this table" (all plots that read it, named) or "every table in the
+  project that has the column"; plot -> "selected plots". A table step cannot be limited to some of the plots that
+  read it. If the user looks at T1 or T2 and chooses a subset of plots, the dialog says: "this changes the table:
+  these N plots read it [names]. Change the table, or apply to the plot level (only if the column exists in the
+  plot's frame)".
+- **Remove samples** (the key kind) keeps the reach choice: selected plots (level 3) | this table (sources of this
+  collection) | every plot in the project (sources of all collections with the key).
+- The number "levels 0-3" no longer fits (a project reach exists at T1 and at T2): the internal record becomes
+  **stage** (sources, T1, T2, T3) and **reach** (plots, table, project). The old numbers stay in a conversion table
+  (0 = project at T1, 1 = table at T1, 2 = table or project at T2, 3 = plots at T3). The diagrams HOME-AUDIT-LINEAGE
+  and HOME-AUDIT-EFFECT are redrawn after Eve confirms this.
+
+**What I would not trust even after these remedies:** removing samples at plot level for a table that contains
+population statistics (flaw 5): the tool warns, but only the user can decide; and any audit on data whose IDs are
+not clean (flaw 4): the post-condition check catches it, it does not fix it.

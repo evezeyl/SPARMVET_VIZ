@@ -379,3 +379,8 @@ filters never early, the mode switch at the left of the group-tabs row (`UI-HOME
 planned use cases added to `UC-HOME`, ADR numbering fixed (`ADR-098` = what is built, `ADR-099` = the target). The
 `SEQ-AUDIT` diagram keeps its name because `docs/appendix/data_lifecycle_theater.qmd` embeds its picture.
 Remember: `audit_uml_model.py` checks tags against the repository only, not whether diagrams agree with each other.
+
+**Pending after Eve confirms section 18 of `home_audit_steps.md` (stage and reach):** redraw `HOME-AUDIT-LINEAGE` and
+`HOME-AUDIT-EFFECT` (levels 0-3 become stage x reach), add the review safeguards to `HOME-AUDIT-FLOW` (post-condition
+check, "no effect" status, warnings), and show the entity counts in the project overview. Until then those two diagrams
+show the levels of section 5 as agreed earlier.
