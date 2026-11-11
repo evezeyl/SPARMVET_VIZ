@@ -464,6 +464,16 @@ def resolve_plot_config(
     # ── L4: Plot spec ────────────────────────────────────────────────────────
     spec = normalise_plot_spec(raw_spec)
 
+    # WHY: `facet_by` inside `mapping:` is the documented spelling (rules_data_analysis_recipe_structure.md
+    # section 8; the Blueprint mapping form writes it there). Plotnine has no such aesthetic and ignores it
+    # silently, so without this the plot got no panels (issue #65). A spec-level `facet_by` wins over it.
+    if isinstance(spec.get("mapping"), dict) and "facet_by" in spec["mapping"]:
+        mapping = dict(spec["mapping"])
+        facet_from_mapping = mapping.pop("facet_by")
+        spec = {**spec, "mapping": mapping}
+        if facet_from_mapping and not spec.get("facet_by"):
+            spec["facet_by"] = facet_from_mapping
+
     # Mapping
     if spec.get("mapping"):
         seed["mapping"] = spec["mapping"]

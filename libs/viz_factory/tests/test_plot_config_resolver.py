@@ -514,6 +514,44 @@ class TestResolvePlotConfigFacetBy:
         assert len(facet_layers) >= 1
         assert "Country" in facet_layers[-1]["params"]["facets"]
 
+    def test_mapping_facet_by_injects_facet_wrap(self):
+        # The documented spelling (rules_data_analysis_recipe_structure.md section 8, the Blueprint mapping form).
+        result = resolve_plot_config(
+            {"mapping": {"x": "Year", "facet_by": "Country"}}, {}, None
+        )
+        assert result["facet_by"] == "Country"
+        facet_layers = [l for l in result["layers"] if l["name"] == "facet_wrap"]
+        assert len(facet_layers) == 1
+        assert facet_layers[0]["params"]["facets"] == "~Country"
+
+    def test_mapping_facet_by_is_not_an_aesthetic(self):
+        result = resolve_plot_config(
+            {"mapping": {"x": "Year", "facet_by": "Country"}}, {}, None
+        )
+        assert "facet_by" not in result["mapping"]
+        assert result["mapping"] == {"x": "Year"}
+
+    def test_spec_level_facet_by_wins_over_mapping(self):
+        result = resolve_plot_config(
+            {"mapping": {"x": "Year", "facet_by": "Source"}, "facet_by": "Country"}, {}, None
+        )
+        assert result["facet_by"] == "Country"
+        assert [l["params"]["facets"] for l in result["layers"] if l["name"] == "facet_wrap"] == ["~Country"]
+
+    def test_explicit_facet_layer_wins_over_mapping_facet_by(self):
+        spec = {
+            "mapping": {"x": "Year", "facet_by": "Source"},
+            "layers": [{"name": "facet_wrap", "params": {"facets": "~Country", "scales": "free_y"}}],
+        }
+        result = resolve_plot_config(spec, {}, None)
+        facets = [l for l in result["layers"] if l["name"] == "facet_wrap"]
+        assert len(facets) == 1 and facets[0]["params"]["facets"] == "~Country"
+
+    def test_empty_mapping_facet_by_is_ignored(self):
+        result = resolve_plot_config({"mapping": {"x": "Year", "facet_by": ""}}, {}, None)
+        assert not [l for l in result["layers"] if l["name"].startswith("facet_") and l["name"] != "facet_null"]
+        assert "facet_by" not in result["mapping"]
+
     def test_facet_wrap_not_duplicated_if_explicit(self):
         spec = {
             "mapping": {"x": "Year"},

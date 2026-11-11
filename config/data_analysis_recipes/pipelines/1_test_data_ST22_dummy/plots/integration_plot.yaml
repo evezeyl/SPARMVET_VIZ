@@ -8,10 +8,11 @@ difficulty: Advanced
 mapping:
   x: Selected_Virulence_Genes
   y: sample_id
-  facet_by: sequence_type
   fill: status
 layers:
 - name: geom_tile
   params:
     color: white
     size: 0.1
+# facet_by: sequence_type was written here but never applied (issue #65). Applied now it gives 16 panels too small to read
+# with this table, so it is left out until Eve decides what this plot shows (issue #67).
