@@ -258,7 +258,7 @@ class TestCompound:
         assert r.height == 5  # no-op
 
 
-# --- Issue #56 / ADR-087: filters on a column the active view does not have ---
+# --- Issue #56 / ADR-098: filters on a column the active view does not have ---
 
 def test_filter_on_missing_column_is_skipped_not_an_error():
     import polars as pl

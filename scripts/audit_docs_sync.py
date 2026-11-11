@@ -11,6 +11,8 @@ Verifies that human-facing documentation stays in sync with the codebase:
      are checked for existence on disk
   4. Violet Law references — `ClassName (filename.py)` patterns in .qmd files
      are checked: filename.py must exist somewhere under libs/ or app/
+  5. ADR numbers — every `## ADR-NNN:` heading in the ADR log is unique (added
+     2026-11-11 after ADR-087 was accidentally written twice and no audit noticed)
 
 Run this after significant refactors, before releases, or when documentation
 has not been touched for several weeks.
@@ -206,6 +208,33 @@ def check_violet_law(project_root: Path) -> list[dict]:
     return violations
 
 
+# ── ADR numbers ───────────────────────────────────────────────────────────────
+
+ADR_HEADING_RE = re.compile(r"^## (ADR-\d+)\b", re.MULTILINE)
+
+
+def check_adr_numbers(project_root: Path) -> list[dict]:
+    """Each ADR number may head exactly one section of the ADR log.
+
+    Duplicate headings make `ADR-NNN` references ambiguous and let the UML audit's adr tag
+    check pass against the wrong entry.
+    """
+    log = project_root / KNOWLEDGE_DIR / "architecture_decisions.md"
+    if not log.exists():
+        return []
+    text = log.read_text(encoding="utf-8")
+    seen: dict[str, list[int]] = {}
+    for m in ADR_HEADING_RE.finditer(text):
+        seen.setdefault(m.group(1), []).append(text.count("\n", 0, m.start()) + 1)
+    return [
+        {
+            "path": f"{KNOWLEDGE_DIR}/architecture_decisions.md",
+            "detail": f"{num} heads {len(lines)} sections (lines {', '.join(map(str, lines))})",
+        }
+        for num, lines in sorted(seen.items()) if len(lines) > 1
+    ]
+
+
 # ── Report ────────────────────────────────────────────────────────────────────
 
 def render_report(
@@ -213,11 +242,12 @@ def render_report(
     deps_violations: list[dict],
     path_violations: list[dict],
     violet_violations: list[dict],
+    adr_violations: list[dict],
     project_root: Path,
     skip_violet: bool,
 ) -> str:
     now = datetime.now().isoformat(timespec="seconds")
-    all_violations = readme_violations + deps_violations + path_violations + violet_violations
+    all_violations = readme_violations + deps_violations + path_violations + violet_violations + adr_violations
     total = len(all_violations)
 
     lines = [
@@ -231,6 +261,7 @@ def render_report(
         f"- Doc backtick path violations: {len(path_violations)}",
         f"- Violet Law stale references: {len(violet_violations)}"
         + (" (skipped)" if skip_violet else ""),
+        f"- Duplicate ADR numbers: {len(adr_violations)}",
         f"- **Total violations: {total}**",
         "",
     ]
@@ -276,6 +307,12 @@ def render_report(
             "Violet Law applies to human-facing .qmd files only — not code.",
         )
 
+    lines += section(
+        "ADR Numbers",
+        adr_violations,
+        "Give the newer entry the next free ADR number and update the references that mean it.",
+    )
+
     lines += [
         "## References",
         "- `rules_documentation_aesthetics.md §1` — Code-Documentation Synchronization Mandate",
@@ -310,7 +347,9 @@ def main() -> int:
     path_v = check_doc_backtick_paths(project_root)
     violet_v = [] if args.skip_violet else check_violet_law(project_root)
 
-    report = render_report(readme_v, deps_v, path_v, violet_v, project_root, args.skip_violet)
+    adr_v = check_adr_numbers(project_root)
+
+    report = render_report(readme_v, deps_v, path_v, violet_v, adr_v, project_root, args.skip_violet)
     print(report)
 
     if args.output:
@@ -319,7 +358,7 @@ def main() -> int:
         output_path.write_text(report, encoding="utf-8")
         print(f"\nReport written to: {output_path}", file=sys.stderr)
 
-    total = len(readme_v) + len(deps_v) + len(path_v) + len(violet_v)
+    total = len(readme_v) + len(deps_v) + len(path_v) + len(violet_v) + len(adr_v)
     return 1 if total else 0
 
 

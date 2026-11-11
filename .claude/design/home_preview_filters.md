@@ -1,13 +1,13 @@
 # HOME: Exploration (preview filters and column choices)
 
-**Status:** 2026-11-11, agreed with Eve (history of the comments: git commit 5b59a4a). Companion:
-`home_audit_steps.md`. Nothing here is code yet. Marks: **[built]** = in the app today, **[to build]** = decided,
+**Status:** 2026-11-11, agreed with Eve (history of the comments: git commit 5b59a4a), checked again in the full
+consistency review. Companion: `home_audit_steps.md`. Decision record: ADR-099. Nothing here is code yet. Marks: **[built]** = in the app today, **[to build]** = decided,
 not built.
 
 ## 1. The rule, in one sentence
 
 **Exploration only helps you look at the data you are looking at right now. A preview filter or column choice is
-never saved, never exported and never changes a plot. To change what a plot shows, use the Audit workspace
+never saved, never exported and never changes a plot. To change what a plot shows, use audit mode
 (`home_audit_steps.md`).**
 
 ## 2. Where it lives [to build]
@@ -15,12 +15,13 @@ never saved, never exported and never changes a plot. To change what a plot show
 - The header strip becomes **Exploration**: one toggle **Data: Raw (T1) | Result (T2)**. The old "Plot to show"
   choice goes (the plot is always the recipe's Result plot) and so do the grey explanations under the
   selectors: more space.
-- **My view and Compare leave the strip** and live in the Audit workspace.
-- Exploration and the Audit workspace are **exclusive**: opening one minimises the other.
+- **My view and Compare leave the strip** and live in audit mode.
+- Exploration and audit mode are **exclusive**: opening one minimises the other. The **mode switch**
+  (Exploration | Audit mode) sits at the left of the group-tabs row and is shown only with the sandbox flag.
 - The left panel keeps the name **Filters**. Its header names what it acts on, for example "Filters: Raw table of
   MLST_with_metadata". There is no Send to Audit here. **Under the hood** the same filter form serves two
   tools: in Exploration its button is "Add to preview" (a lazy filter on the shown table, this file); in the Audit
-  workspace the same form creates an audit step (`home_audit_steps.md`, a rebuild through the lineage). Only the
+  audit mode the same form creates an audit step (`home_audit_steps.md`, a recomputation through the lineage). Only the
   form widgets are shared. A short note in the code and in the docs states that the two behave differently.
 
 ## 3. What a preview does
@@ -43,6 +44,8 @@ never saved, never exported and never changes a plot. To change what a plot show
    ("3 preview filters cleared, you changed view"). [to build]
 6. **A change of recipe** clears them. [to build]
 7. Never saved in sessions, never exported. [built]
+8. Switching between Exploration and audit mode is **not** a view change: the lists are kept, and not applied while
+   audit mode is on. [to build]
 
 **Why clear on a view change (state this reason in the code as a short `WHY` comment, in the help text and in
 the ADR):** a preview filter is built against the columns, names and data types of ONE stage. T1 (Raw) and T2
@@ -75,7 +78,7 @@ Two short explanations must be in the "?" help, the user guide and the FAQ:
    filter made on one could give wrong results on the other.
 2. **What a filter applies to:** the data you are looking at (this view, this dataset); plots that share the
    dataset share the filter; other datasets have their own. Filters are for looking, not for changing results:
-   use the Audit workspace for that.
+   use audit mode for that.
 
 ## 9. Edge cases (each needs a test)
 
@@ -89,7 +92,7 @@ dataset (own list); very wide table; view change with filters on (cleared, messa
 
 1. One global list -> one list per (view, dataset).
 2. Preview no longer changes any plot.
-3. My view and Compare move out of the strip into the Audit workspace; the "Plot to show" choice goes.
+3. My view and Compare move out of the strip into audit mode; the "Plot to show" choice goes; a mode switch is added.
 4. Clear on view and recipe change, with a message and a `WHY` code comment.
 5. Strip renamed Exploration; the Filters panel keeps its name and its header names the target view.
 

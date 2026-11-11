@@ -52,7 +52,7 @@ def test_a_plot_on_a_bare_schema_or_unknown_dataset_has_no_tier2_steps():
 
 @pytest.mark.parametrize("tier", ["T1", "T2"])
 def test_preview_filters_are_announced_on_raw_and_result(tier):
-    """ADR-087 (issue #56): a filtered preview must never pass for the reference data."""
+    """ADR-098 (issue #56): a filtered preview must never pass for the reference data."""
     badge = view_badge(tier, has_tier2=True, has_changes=False, preview_filters=2)
     assert "2 preview filter(s) on, not saved" in badge.notes
 

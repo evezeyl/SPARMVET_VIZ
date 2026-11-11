@@ -85,12 +85,12 @@ Reactivity in the Active Leaf (Right side) is strictly gated by documentation to
 | **Col Drop in Active T3 Table** | `df.drop_columns()` in T3.         | Automatic Yellow Node   |
 | **(Advanced Filter) in active T3 Table**        | Filter cols in T3 data. | Automatic Yellow Node   |
 | **Drag Node**                | Reorder Polars operation sequence. | Update `audit_pending` |
-| **Filters panel "Apply"** — commits to `applied_filters` | Changes the data table on every view; changes PLOTS only on My view (ADR-087). Never written to Parquet, never exported. Compare's left pane ignores it. | **NONE** (Transient) |
+| **Filters panel "Apply"** — commits to `applied_filters` | Changes the data table on every view; changes PLOTS only on My view (ADR-098). Never written to Parquet, never exported. Compare's left pane ignores it. | **NONE** (Transient) |
 | **Filters panel "Send to Audit"** — T3 + `t3_sandbox_enabled` only | Promotes staged rows via the propagation modal. | Automatic Yellow Node (reason-gated) |
-| **Filter** in Tier 1 or Tier 2 Table (same Filters panel)         | Preview for inspection (ADR-087). | **NONE** (Transient)    |
+| **Filter** in Tier 1 or Tier 2 Table (same Filters panel)         | Preview for inspection (ADR-098). | **NONE** (Transient)    |
 | **Ref Table Drop**  in Tier 1 or Tier 2 Table              | Visual-only drop for inspection. | **NONE** (Transient) |
 
-> **SUPERSEDED in part (ADR-087, 2026-11-11, issue #56):** exploration filters (`applied_filters`) now change the data table on every view and the plots only on My view; audit-committed nodes stay confined to My view. The paragraph below is kept for the audit-node rule.
+> **SUPERSEDED in part (ADR-098, 2026-11-11, issue #56):** exploration filters (`applied_filters`) now change the data table on every view and the plots only on My view; audit-committed nodes stay confined to My view. The paragraph below is kept for the audit-node rule.
 
 **ADR-085 (2026-08-10) — T1/T2 tier isolation invariant.** T1 and T2 are permanently pure in every
 configuration: no exploration filter (`applied_filters`) and no audit-committed node

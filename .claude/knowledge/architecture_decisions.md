@@ -238,6 +238,8 @@
 
 ## ADR-024: Tiered Wrangling & Data Lifecycle (ADR-024 Refinement)
 
+> **To be amended by ADR-099 (not yet built):** audit mode adds audit stages (audit T1, audit T2) as derived, cached stages next to the original T1/T2. The original tiers and their rules are unchanged.
+
 **Status:** IMPLEMENTED (April 10, 2026)
 **Context:** Plotnine's 22-minute render time for >200k rows necessitates a data reduction strategy. Users require "instant" UI filtering without re-running heavy Layer 1/2 joins.
 **Decision:** Implement a three-tier tree lifecycle and a two-tier nested wrangling structure within the `DataWrangler (data_wrangler.py)`.
@@ -767,6 +769,8 @@ A unified **radio-button strip** above the theater content area controls which d
 
 ## ADR-044: Persona-Gated Audit Stack & Right Sidebar Visibility
 
+> **To be amended by ADR-099 (not yet built):** the content of the right Pipeline Audit panel changes (step list, lineage chain, affected list). Its gate (the sandbox flag) and the visibility rule stay.
+
 **Status:** IMPLEMENTED (2026-04-30) — Phase 21-G verified. Right sidebar suppression live in `home_theater.py:right_sidebar_content_ui`. `btn_revert` superseded by per-node 🗑 delete (Phase 22-I).
 **Context:** The Pipeline Audit (right sidebar) previously displayed T2 Blueprint nodes (Violet) as a persistent reference for all personas. For lower-privilege personas (`pipeline_static`, `pipeline_exploration_simple`), the T3 sandbox is inaccessible and the T3 recipe silently mirrors T2. The right sidebar therefore contains no actionable information for these personas — it adds visual noise, consumes screen real estate, and misrepresents the interaction model by implying the user has an audit trail to manage.
 **Decision:** Apply a two-level persona gate to the right sidebar.
@@ -1202,6 +1206,8 @@ prefer_discovery: true
 ---
 
 ## ADR-049: Per-Plot T3 Audit Scoping & Join-Key Propagation (Phase 22-J, 2026-04-25)
+
+> **To be amended by ADR-099 (not yet built):** the propagation dialog "this plot / all plots / all except" is replaced by a reach selector and a stage that follows from the kind of step; plot-level steps become level 3.
 
 **Status:** IMPLEMENTED at HEAD `94bb917`, live-UI verified 2026-04-30 (§1 per-plot scoping passed). **AMENDED 2026-04-30 (AUDIT-1)**: the §12g.3 "silent conversion" rule for PK-column filters is removed — see [ADR-049a](#adr-049a-2026-04-30-amendment-pk-filter-allowed) below.
 
@@ -4007,7 +4013,7 @@ following the basename mirroring standard (`rules_manifest_structure.md §1`).
 
 ## ADR-085: "My View" (T3) Decoupled from Audit Capability + T1/T2 Tier Isolation (2026-08-10)
 
-> **HISTORICAL in part (superseded by ADR-087, 2026-11-11):** decision 1 below, for *exploration* filters (`applied_filters`), no longer holds: they now preview on every view. The rule for audit-committed nodes (My view only) and decisions 2-3 stay active.
+> **HISTORICAL in part (superseded by ADR-098, 2026-11-11):** decision 1 below, for *exploration* filters (`applied_filters`), no longer holds: they now preview on every view. The rule for audit-committed nodes (My view only) and decisions 2-3 stay active until ADR-099 is built, which replaces My view by audit mode.
 
 **Status:** ACCEPTED. Authority: @dasharch, decided with @evezeyl during live-app testing (`test_plan_2026-06.md` HOM-41/HOM-43).
 **Amends:** `ui_implementation_contract.md §4` (Interaction & Event Mapping), `§5` (Theater Layout Model), `§8` (Filter Recipe Builder), `§12a` (T3 Scope Lock). `rules_persona_feature_flags.md` (Group B). `rules_ui_dashboard.md §1`.
@@ -4089,6 +4095,8 @@ frozen T1/T2 references — and once `_filter_apply` was fixed to route all comm
 ---
 
 ## ADR-086: Separate "Plot to show" from "Data to show"; Comparison Mode is T2 vs My view (2026-11-05)
+
+> **To be amended by ADR-099 (not yet built):** the header choices "Plot to show" and "Data to show" are replaced by Exploration (Data: Raw | Result); My view and Compare move to audit mode (Compare as an on/off toggle).
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl). Authority: @dasharch, decided with @evezeyl during live-app testing (`test_plan_2026-06.md` HOM-40, HOM-42, CSS-07).
 **Amends:** `ui_implementation_contract.md §2` (Tier Toggle Strip, Comparison Mode), `§5` (Theater Layout Model). Refines ADR-043/ADR-044 (single tier toggle) and ADR-085 (the open "Viewing:" indicator note).
@@ -4208,6 +4216,8 @@ separate "Compare T2 vs T3" switch (visible only in My view) split the plots in 
 ---
 
 ## ADR-089: Cache chain, chained content keys for Tier 1, Tier 2 and the loaded manifest (2026-11-05)
+
+> **To be amended by ADR-099 (not yet built):** the original cache keeps these rules; a separate audit cache with chained keys is added next to it (key = hash of the upstream key and the operations that will run, stored in the file).
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl). Authority: @dasharch, decided with @evezeyl after a verified bug (fork issues evezeyl/SPARMVET_VIZ#9 and #10).
 **Extends:** ADR-024 (tiers), the reproducibility hash schema (`docs/foundations/reproducibility_hash_schema.qmd`), ADR-031 (decision hash in Parquet metadata), ADR-088 point 6.
@@ -4711,6 +4721,8 @@ while planning this with Eve (2026-11-08):
 
 ## ADR-097: Reproducible export & import — two export modes, T3 reaches the engine only through a forked copy, verification warns rather than blocks (2026-11-09)
 
+> **To be amended by ADR-099 (not yet built):** the forked-recipe mechanism gains shared late insertion (level 2) and early source insertion (levels 0-1); the importer's verification legs are to be re-specified for audit steps.
+
 **Status:** ACCEPTED, implemented 2026-11-09. Tracked by
 [#44](https://github.com/evezeyl/SPARMVET_VIZ/issues/44) (parent) and sub-issues
 [#39](https://github.com/evezeyl/SPARMVET_VIZ/issues/39) (4A),
@@ -4917,7 +4929,9 @@ for the full per-task detail):** `app/handlers/export_handlers.py` (provenance r
 shape — both had gone stale describing the pre-#45 single-bundle design).
 
 
-## ADR-087: Exploration filters preview on every view; only audited steps are permanent (2026-11-11)
+## ADR-098: Exploration filters preview on every view; only audited steps are permanent (2026-11-11)
+
+> **Built on dev 2026-11-11. To be amended by ADR-099 (not yet built).** It was first numbered ADR-087 by mistake and renumbered the same day, because ADR-087 is the manifest-errors decision. It describes what the app does today; ADR-099 is the target.
 
 **Status:** ACCEPTED (2026-11-11, confirmed by @evezeyl). Authority: @dasharch. Issues: evezeyl/SPARMVET_VIZ#56 (behaviour), evezeyl/SPARMVET_VIZ#57 (operator labels).
 **Supersedes:** ADR-085 decision 1 and ADR-086 point 4 for **exploration filters** (`applied_filters`). Audit-committed nodes keep the ADR-085 rule.
@@ -4936,3 +4950,91 @@ shape — both had gone stale describing the pre-#45 single-bundle design).
 6. One operator vocabulary (`OP_WORDS` in `t3_audit_engine.py`): dropdown, staged list and help use the same words; a one-value set reads "column = value".
 
 **Consequences.** Tier-isolation tests flipped; `TestPreviewFiltersOnReferenceViews` guards the behaviour (mutation-tested). Help (`app/src/help/home.md`), user guide, FAQ, contract updated.
+
+
+## ADR-099: Exploration and audit mode — original and audit data, four levels of audit step, no draft (2026-11-11)
+
+**Status:** ACCEPTED in principle by @evezeyl (2026-11-11). **Not built.** Items marked [confirm] in
+`.claude/design/home_audit_steps.md` section 16 need her OK before the code starts. Authority: @dasharch.
+Tracked by evezeyl/SPARMVET_VIZ#60 (parent), #56 (Exploration), #59 (helper and message). Full text:
+`.claude/design/home_preview_filters.md` and `.claude/design/home_audit_steps.md`; diagrams HOME-EXPLORATION,
+HOME-VIEW-MATRIX, HOME-AUDIT-LINEAGE, HOME-AUDIT-FLOW, HOME-AUDIT-EFFECT, HOME-AUDIT-CACHE, UI-HOME-EXPLORATION,
+UI-HOME-AUDIT. Archive tag before the redesign: `archive/home-filters-uml-2026-11-11`.
+**Amends:** ADR-098 (what is built today becomes the starting point), ADR-085 (My view), ADR-086 (header choices,
+Compare), ADR-049 (propagation dialog), ADR-044 (content of the right panel), ADR-024 (audit stages), ADR-089 (audit
+cache), ADR-097 (forked recipe modes, verification legs). **Consistent with:** ADR-082 (T3 is HOME-only; BLUEPRINT
+never authors it), ADR-093 (no recipe content comes from anywhere else; the forked recipe is generated from the
+user's own steps). **Not changed:** BLUEPRINT, GALLERY, VizFactory, the original cache, the original T1/T2.
+
+**Context.** Testing HOM-09 and a review of the filter diagrams found a science problem in the audit as built. An
+audited step is a per-plot filter on a column of that plot's T2. A bad sample removed with "all plots" is skipped on
+every plot whose data has no such column (for example counts per year or aggregates), and those plots still show
+the sample. The user cannot tell which plots changed, and nothing keeps the project consistent. Also: "My view"
+mixed three things (a view, a preview and the place where changes are made), the preview filter list was global,
+and a filter built on Raw can be wrong on Result (wide vs long, renamed columns, Year 2022.0 vs "2022").
+
+**Decision.**
+1. **Exploration (preview) and audit are two different things.** Exploration (Data: Raw (T1) | Result (T2)) is for
+   looking: filters and column choices change the **table only**, per view and dataset, are cleared on a view or
+   recipe change (reason: a filter is built against one stage's columns, names and types), and are never saved or
+   exported. The plot is the recipe's plot. Everything that changes a plot, the data or the export is an audit step.
+2. **Audit mode** replaces My view and Compare. It is a mode of HOME (mode switch at the left of the group-tabs
+   row), exclusive with Exploration, and gated by the sandbox flag. It reuses the Filters panel (button "Create
+   audit step"), the centre plot and table components, and the right Pipeline Audit panel (step list, chain,
+   affected list); a dialog replaces the propagation dialog. Compare is an on/off toggle (flag
+   `comparison_mode_enabled`, which becomes a child of the sandbox flag). Without the sandbox flag only Exploration
+   exists.
+3. **No draft.** A step is made in a dialog that shows the chain, the plots and datasets affected, the rows
+   before/after and the warnings, needs a **reason**, and takes effect on **Apply** (Cancel changes nothing).
+   Removing a step is the undo (recompute without it; later steps are kept and re-checked; statuses applied / not
+   concerned / broken; a broken step blocks the export). Controls: Undo last, Revert to step N, Remove all.
+4. **Reach and stage, four internal levels.** The user picks the **reach** (nothing preselected): only this plot,
+   these plots, all plots that use the same table, every plot in the project. The **stage** follows from the kind of
+   step: *remove samples (by ID)* is early, at the sources inside the build of each reached collection (level 0
+   project, level 1 this collection); value filters and column drops are late, on T2 (level 2), or on the plot
+   frame (level 3); value filters and drops are never early [confirm]. Order: levels 0-1, the recipe's own steps,
+   level 2, level 3. A key exclusion on a plot reach is a level 3 row filter on the key column.
+5. **Original and audit data.** Original T1/T2 are never changed. Audit T1/T2 are **recomputed** (nothing is
+   copied) and live in a **separate audit cache** with chained keys: key = SHA-256(upstream key + the canonical
+   list of operations that will run); the reason, initials and date are not hashed; the key is stored in the file
+   and checked on read. N = 5 recent states by default (a setting); a missing entry is recomputed from the step
+   list. The step list is the source of truth.
+6. **Keys come from the join steps**, never from column names (key family = connected (data schema, column) pairs);
+   a key exclusion applies to every ingredient of a reached collection that has the key (left joins); a missing key
+   or value is a reported no-op; a renamed key in tier-1 is refused with a message.
+7. **Project consistency is shown, never silent:** a chain drawing with the changed stages in bold and colour, the
+   affected list, a project overview (collections x steps) and a coverage check for key exclusions. Drops are not
+   recommended outside plot level; a warning lists the plots and steps that use the column (#59).
+8. **Export** carries the steps with reasons, original and audit data, an attrition table, the coverage check, the
+   audit keys and the forked recipe. Exploration is never exported. The forked recipe is generated from the user's
+   steps through `t3_translator` (extended with shared late and early source insertion); the user's recipe files
+   are never edited.
+9. **Names kept:** the flag `t3_sandbox_enabled`, `t3_steps.yaml`, `T3_data_<plot>.tsv`, the ghost `t3_*.json` and
+   `t3_audit_engine.py` keep their names for now; a rename is a separate task (`renamed_keys` mechanism).
+10. **Intended use:** publication-ready results with a justified "data not shown", not data cleaning and not
+    exploration. Help says so and advises "use the lowest reach that fits".
+
+**Alternatives not chosen.** Filtering the stored T1 file by key (cheaper, but not exact when a tier-1 step
+aggregates across samples); keeping per-plot propagation only (the failure above); showing levels to the user (too
+many words for the same question); a draft or staged list in audit (Eve: every step is validated and reversible);
+keeping My view as a scratchpad without the sandbox flag (plots would change without a reason or a record); editing
+the original data or the recipe files; early value filters (column names at the sources differ from what the user
+sees).
+
+**Verified facts it rests on (2026-11-11).** `prepare_ingredient` runs once per collection build, so an early step is
+local to the collections reached; a join cannot be an ingredient of another join (T2 is a leaf); the existing
+translator already forks the join per plot because T2 is shared; `1_test_data_ST22_dummy` has `sample_id` in all
+collections, casts it to String at tier-1 in two places, renames it nowhere, and has no tier-1 step that
+aggregates across samples; the right sidebar is configured by slot and visible in every configuration that has the
+sandbox flag on today; `pipeline-exploration-simple` has comparison on and sandbox off (a dead flag under this
+decision).
+
+**Consequences.** Impact and retest list: `home_audit_steps.md` section 14 (handlers, session, orchestrator and
+cache, export and importer, translator, flags and validator, rules, docs, tests, the older UML). New validator
+rules: comparison requires the sandbox flag; the sandbox flag requires the `audit_stack` slot. A filter and audit
+test suite with a data oracle and screenshots, with a mutation check per rule, is part of the work. Recipe good
+practice (declare only the ingredients a collection uses) goes into the docs, and later a Blueprint check.
+
+**Open.** Wording of the reach options and kinds (to test with a user); manual key mapping and secondary keys
+(later); where the project overview opens; what stays of the existing right panel; the importer's verification legs
+with levels 0-2.

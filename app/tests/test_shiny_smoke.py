@@ -876,7 +876,7 @@ class TestViewBadges:
 
 
 # ---------------------------------------------------------------------------
-# T6 - Exploration filters preview on Raw and Result (ADR-087, issue #56, HOM-09)
+# T6 - Exploration filters preview on Raw and Result (ADR-098, issue #56, HOM-09)
 # ---------------------------------------------------------------------------
 
 class TestPreviewFiltersOnReferenceViews:

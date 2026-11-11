@@ -471,7 +471,7 @@ def define_server(input, output, session, *,
             # not by the active subtab (this plot may not be the active one
             # when its render runs in re-renders). `this_subtab` comes from the
             # enclosing factory scope (shared with _effective_random_state above).
-            # ADR-087 (issue #56): preview filters (Apply) change the DATA TABLE on every view,
+            # ADR-098 (issue #56): preview filters (Apply) change the DATA TABLE on every view,
             # but a PLOT changes only on "My view" - the one place the user works on what the plot
             # shows. Raw/Result plots are the recipe's plots. Audited nodes follow the same rule.
             # Compare's left pane never filters (its own handler).
@@ -1340,7 +1340,7 @@ def define_server(input, output, session, *,
 
         try:
             lf = _resolve_active_lf(spec)
-            # ADR-087 (issue #56): exploration filters preview on every view, never saved;
+            # ADR-098 (issue #56): exploration filters preview on every view, never saved;
             # audit-committed nodes apply only on "My view" (T3).
             in_t3_preview = tier_toggle.get() == "T3"
             _preview_rows = list(applied_filters.get()) + (_t3_filter_rows() if in_t3_preview else [])

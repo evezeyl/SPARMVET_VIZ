@@ -1,3 +1,8 @@
+> **HISTORICAL (2026-11-11, superseded by `home_preview_filters.md`, `home_audit_steps.md` and ADR-099):**
+> this file is the working log of the first filter discussion. Several decisions below were replaced the same
+> day (for example: preview filters per dataset, "audited steps belong to one plot's T3", the old levels). It is
+> kept to show how the thinking moved and is **not instructions**.
+
 # HOME filter scoping: concept, diagrams and test plan (DRAFT, thinking stage)
 
 > 2026-11-11, later: this file is the working log. The two clean descriptions are
@@ -5,7 +10,7 @@
 > evezeyl/SPARMVET_VIZ#60. Where they differ from this file, they win.
 
 **Status:** DRAFT 2026-11-11. No behaviour is changed by this file. Written with Eve to settle the
-concept before any further code change. Related: issues evezeyl/SPARMVET_VIZ#56, #57; ADR-087.
+concept before any further code change. Related: issues evezeyl/SPARMVET_VIZ#56, #57; ADR-098.
 
 ## 1. Words (to be fixed in the UI, the help, the UML)
 
@@ -80,7 +85,7 @@ audited step is applied (on a forked copy at render/export), and what is exporte
 
 ## 4. Diagrams to build (StarUML, native API; names follow the code)
 
-HOME package, status tag `implemented` / `planned`, ADR tag ADR-087.
+HOME package, status tag `implemented` / `planned`, ADR tag ADR-098.
 
 1. **HOME-FILTER-STATE (as is)**: state diagram. Staged rows, applied rows; events Add, Apply, trash,
    Reset, plot-tab change, view-mode change; Send to Audit leaves the diagram into the audit stack.

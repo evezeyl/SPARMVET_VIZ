@@ -371,3 +371,11 @@ sits, and what stays of the existing right panel (Inherited Tier 2 nodes, filter
 In the effect and cache diagrams "rebuilt" is replaced by "recomputed"; nothing is copied, a stage is reused or
 recomputed. The new-step dialog has Cancel and Apply (no draft list). Compare is a toggle gated by
 `comparison_mode_enabled`.
+
+**Consistency review 2026-11-11 (end of day):** all HOME filter and audit diagrams, both design files and the ADRs were
+checked against each other and against the code and the ST22 recipe; corrections made: plot id `mlst_bar` (was a
+file name), "audit mode" instead of "audit workspace", "recomputed" instead of "rebuilt", four reach options, value
+filters never early, the mode switch at the left of the group-tabs row (`UI-HOME-EXPLORATION`, `UI-HOME-AUDIT`),
+planned use cases added to `UC-HOME`, ADR numbering fixed (`ADR-098` = what is built, `ADR-099` = the target). The
+`SEQ-AUDIT` diagram keeps its name because `docs/appendix/data_lifecycle_theater.qmd` embeds its picture.
+Remember: `audit_uml_model.py` checks tags against the repository only, not whether diagrams agree with each other.
