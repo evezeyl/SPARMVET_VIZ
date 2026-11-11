@@ -12,12 +12,14 @@ saved, never exported, and never changes a plot. To change what a plot shows, us
 
 ## 2. Where it lives
 
-- The existing header strip is renamed **Exploration**; its two choices are simply **Data** (Raw | Result) and
-  **Plot** (the recipe's Result plot), without "to show". [decided]
-- **My view and Compare leave this strip** and move to the new Audit workspace; the strip becomes smaller and is
-  minimised while the Audit workspace is open (space). [decided]
-- The Filters panel in the left sidebar is the preview tool. Its header names what it acts on, for example
-  "Filters for: Raw table of MLST_with_metadata". [decided]
+- The existing header strip is renamed **Exploration**; its two choices are simply **Data** (Raw (T1)| Result (T2)) and
+  **Plot** (the recipe's Result plot), without "to show". [decided]  @eve: as such will allow to remove the grey comments under the selectors and win space. -> done in this file: the grey explanations under the selectors go. **[to confirm]** With My view and Compare gone, the Plot choice has only one value (the Result plot); it can be removed, leaving one toggle **Data: Raw (T1) | Result (T2)**.
+- **My view and Compare leave this strip** and move to the new Audit workspace. The two are **exclusive**:
+  when the Audit workspace is open, Exploration is minimised; when Exploration is active, the Audit workspace is
+  minimised (space). [decided] @eve: audit workspace minimized when Exploration is active. -> done
+- The Filters panel in the left sidebar is renamed **Exploration Filters** (it is only used in Exploration). Its
+  header names what it acts on, for example "Exploration Filters: Raw table of MLST_with_metadata". [decided]
+  @eve: we can rename Filters to "Exploration Filters" if its only used in Exploration : this clarifies. -> done
 
 ## 3. What a preview does
 
@@ -25,10 +27,10 @@ saved, never exported, and never changes a plot. To change what a plot shows, us
 |---|---|
 | Row filter | Hides rows in the **data table** of the stage you are on (Raw = T1, Result = T2). [built for the table] |
 | Column selector | Hides columns in the **data table** only. [built] |
-| Plot | **Not changed** by anything in Exploration. Raw has no plot ("NA"). [decided; today Apply also filters the My view plot, which moves to the Audit workspace as a *draft step*] |
+| Plot | **Not changed** by anything in Exploration. Raw has no plot ("NA"). [decided; today Apply also filters the My view plot, which moves to the Audit workspace as an audit step] |
 | Data files | Never written. The filter runs on a lazy copy at render time. [built] |
 | Export | Never exported. [built] |
-| Audit | Nothing is sent to audit from Exploration. [decided; today Send to Audit starts from the same list] |
+| Audit | Nothing is sent to audit from Exploration. [decided; today Send to Audit starts from the same list] | @eve: yes any way in this mode send to audit does not exist. 
 
 ## 4. Life of a preview filter
 
@@ -42,14 +44,20 @@ saved, never exported, and never changes a plot. To change what a plot shows, us
 7. Not saved in sessions, not in the export. [built]
 
 Why clear on a view change: a filter built on Raw (wide) can be wrong on Result (long, renamed columns, other
-data types: Year is 2022.0 in T1 and "2022" in T2). Keeping it would silently match nothing or the wrong rows.
+data types: Year is 2022.0 in T1 and "2022" in T2). Keeping it would silently match nothing or the wrong rows. @eve: ok and I agree and understand: this is why the filters needs to be cleared on view change. This resoning must be documented (its a logic reason to do so - so it needs to be stated shortly as comment in the code AND in the documentation)
+
+**Documented reason (to repeat as a short `WHY` comment in the clearing code, in the help text and in the ADR):**
+a preview filter is built against the columns, names and data types of ONE stage. T1 (Raw) and T2 (Result)
+differ (wide vs long, renamed columns, Year read as 2022.0 vs text "2022"), so a filter carried across a view
+change can match nothing, match the wrong rows, or silently skip. Clearing it on a view change keeps every
+preview filter valid for the data it is applied to. -> to do in code, with the change itself
 
 ## 5. Scope
 
 - A preview list belongs to **one view and one dataset** (the dataset the plot targets; plots sharing it share
-  the list). [decided; today it is ONE global list for the whole analysis: to change]
+  the list). [decided; today it is ONE global list for the whole analysis: to change] @eve: ok
 - **[open]** switching to a plot of another dataset inside the same view: keep each dataset's own list
-  (recommended) or clear.
+  (recommended) or clear. @eve: ok
 - The columns offered are those of the current stage, so a preview filter is always valid where it is applied.
   The safety skip ("a stage without the column skips the filter") stays but should never fire. [built]
 
@@ -77,7 +85,7 @@ between inclusive/exclusive; recipe switch with filters on; Home -> Gallery -> H
 1. One global list -> one list per (view, dataset).
 2. Preview no longer changes any plot; plot preview becomes "draft step" in the Audit workspace.
 3. My view and Compare move out of the strip.
-4. Clear on view change, with a message; panel header names the target view.
+4. Clear on view change, with a message and a `WHY` code comment (reason in section 4); panel header names the target view.
 5. Strip renamed Exploration, shorter labels, minimised when the Audit workspace is open.
 
 ## 10. Tests (browser, data oracle, screenshots)

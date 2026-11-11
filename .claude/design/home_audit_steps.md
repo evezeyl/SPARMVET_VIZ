@@ -13,26 +13,29 @@ has a reason, it is recorded, and it never edits the reference data (the stored 
 | Word | Meaning |
 |---|---|
 | **Reference T1 / T2** | The stored stages, exactly as the recipe built them. Never changed. |
-| **Audited lineage T1\* / T2\*** | The same stages rebuilt with the lineage-level audit steps applied (derived, cached, not the reference). |
-| **T3 of a plot** | That plot's frame: its T2\* plus its plot-level audit steps. Derived, not stored. |
-| **Preview** | Temporary look at Raw or Result (`home_preview_filters.md`). |
-| **Draft step** | A step being tried in the Audit workspace; shown applied there, not yet sent. |
-| **Audit step** | A draft step that was sent with a reason and applied. |
+| **Audited lineage T1\* / T2\*** | The same stages rebuilt with the lineage-level audit steps applied (derived, cached, not the reference). | @eve : we will need to think about the cashing system - if we want to be efficient we need to keep original T1, T2 cached if we eg. return to empty state of audit (removing all audit steps and applied). So the audit should work from copy of T1 -> audit_T1 and then derive T2 and T3 from there. This also means that the way the audit recipe export will need to be changed to export the audited data  + the original T1 (original_T1) 
+| **T3 of a plot** | That plot's frame: its T2\* plus its plot-level audit steps. Derived, not stored. | @will we still have a T3 if we have to derive T2 - because then the steps can be added directly to T2 no ? 
+| **Preview** | Temporary look at Raw or Result (`home_preview_filters.md`). | @eve : yes but we still need a propagation so it is different than the other preview mode no ? but it is where the caching mechanism is leveraged. 
+| **Draft step** | A step being tried in the Audit workspace; shown applied there, not yet sent. | @eve: Draft 
+| **Audit step** | A draft step that was sent with a reason and applied. | @eve: Validated 
 
 ## 3. The Audit workspace (new panel) [decided]
 
 - A separate panel (lighter blue, kept apart from Exploration). While it is open the Exploration strip is
-  minimised to give space.
+  minimised to give space. @eve: it will need to be gated correctly, 
 - It shows **the selected plot** and its data, and a small **lineage tree** of that plot (ingredient datasets ->
   join -> T2 -> T3), built from the existing backward trace (`build_plot_lineage`). A forward trace
-  (dataset -> plots that depend on it) is to build.
+  (dataset -> plots that depend on it) is to build. @eve : original_T1 -> audit_T1 -> audit_T2 (-> audit T3 if T3 is necessary)
 - You choose the **kind of step**, the **stage or dataset** it applies to, and the **scope**; you try it as a
   **draft step** (shown on the plot and the data of the workspace), see the **impact preview**, write the
-  **reason**, then **Apply**.
+  **reason**, then **Apply** produces Audit step. 
 - **Compare** (Reference Result vs audited) lives here.
 - Offered only when audit capability is on. [open: ADR-085 offers My view without audit as a scratchpad; Eve:
   only when audit is on. Decide for the configs without audit.]
 
+@eve : here in this mode - I am wondering if we should not just remove the preview : you do and send to audit - if you are wrong you remove from audit - its not exploration anymore - That would simplify our model. We are sure we want some changes - but we let the possibility of reversal if error has been made - That would simplify the steps for the users. 
+
+@eve: start to review above - I did not yet read the rest. 
 ## 4. Kinds of audit step
 
 | Kind | Example | Where it acts | Scope choices |
