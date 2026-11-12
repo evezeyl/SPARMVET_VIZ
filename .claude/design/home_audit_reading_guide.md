@@ -21,7 +21,7 @@ target), issues #56, #60, #61, #62, #63, #64.
 | S4 the same data, recipe and steps give the same figure and export | W4 pure logic is kept apart from the screen |
 | S5 the software informs and warns, the user decides; only the technical blocks | W5 a feature that is off is absent, not greyed (ADR-071) |
 | S6 what you see is what is exported | W6 changes come in small, tested, revertible steps; no mechanism the design does not need |
-| | W7 **data-agnostic** (Eve, 2026-11-12): the software is used for datasets other than bioinformatics; no field-specific word in the code or in fixed texts; domain words (the name of the entity, the examples) come from the recipe or the help |
+| | W7 **data-agnostic** (Eve, 2026-11-12): the software is used for datasets other than bioinformatics; no field-specific word in the code or in fixed texts; domain words (the name of the entity, the examples) come from the recipe or the help. **Design documents too (Eve, 2026-11-12):** they lead with generic words (entity, attribute, population table) and put the field example in a marked example; `home_audit_steps.md` section 4 is done, the other sections still use field words and are swept section by section |
 
 **The problems, in the order we settle them** (details of P1-P4 in `home_design_first_roadmap_2026-11-12.md` section 3-4; the analysis behind each in `home_evidence/`)
 

@@ -16,6 +16,25 @@ Here are the core terms you will encounter. If you ever see these words highligh
 *   **Tier 3 ("Leaf")**: An in-session audit layer applied on top of T2 results — the transient, predicate-pushdown UI view also called "My view". Scoped strictly to five node types: row filters, row exclusions, column drops, aesthetic overrides (color, shape, fill), and (gated) a YAML escape hatch. Does not modify the data analysis recipe. App features gated — not all users see it.
 *   **App features**: An app features that changes how the Dashboard looks. Some app features files lock down all editing features, while other app features files (like *Developer*) give you access to the advanced Test Lab and Wrangle Studio.
 
+## Terms of the audit redesign (planned, not built yet)
+
+These terms describe the audit mode that is being designed (`.claude/design/home_audit_steps.md`). Until it is built, the definitions above describe the app as it works today. Each entry gives the general meaning and, as an example, how it reads in the bioinformatics test recipe.
+
+*   **Entity**: the unit that a key identifies, the thing whose rows you count: a sample, a patient, a site, a sensor. *Example (bioinformatics): a sequenced sample; "n = 38 samples".*
+*   **Key**: the column that identifies the entity. It repeats in long tables (one entity, many rows), so "rows" and "entities" are counted separately. *Example: `sample_id`.*
+*   **Population table**: the table with one row per entity, where the full list of entities starts. Every count of "how many were removed" starts there. *Example: the metadata table.*
+*   **Attribute**: a descriptive column of the entity, used to select entities. *Example: country, batch.*
+*   **Exploration**: looking at the data with preview filters. Nothing is saved, exported, or changed in a plot.
+*   **Audit mode**: the only way to change data, a plot or an export. Every change is a step with a reason, recorded and removable. The original data is never changed.
+*   **Audit step**: one recorded change (remove entities, filter rows by a value, remove a column) written at one place of the data flow, with one reason.
+*   **T1, T2, T3**: the three places of the data flow of a table and a plot: T1 is the table after the recipe's first steps (the joined data), T2 after its second group of steps (what plots share), T3 the plot's own data. When a place has no steps it is the same as the one before it.
+*   **Lineage**: the path of the data from its sources through T1, T2 and T3 to the plot. It shows which tables and plots a change touches.
+*   **Attrition table**: how many rows and entities were removed at each step, from the full population to the number in the figure. *Example: "42 samples in the metadata, 4 removed at step 1, 38 in the figure".*
+*   **Missing value**: treated as a value. "Everything except x" keeps it; "only x" and comparisons remove it; the number removed is always reported.
+*   **Cache key (series key)**: a code made of labelled parts (engine, recipe, data, each group of steps) that says exactly what a stored table was made from; if one part differs, the table is rebuilt. Comparing two keys part by part shows where two runs differ.
+*   **Content hash**: a code computed from the rows and columns of a table; equal tables give equal codes. It tells whether an audit step really changed a plot.
+*   **Step compiler** (developers): turns a user's audit step into the recipe's own actions at the right place of the audit recipe.
+
 ## Submitting Feedback and Feature Requests
 
 Your experience using SPARMVET is incredibly important to us! If you encounter confusing behavior, think of a massive improvement, or wish a new type of plot existed, we want to hear about it.
