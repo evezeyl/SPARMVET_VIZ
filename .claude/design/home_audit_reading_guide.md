@@ -86,8 +86,9 @@ Compare is part of Audit mode and is on whenever audit is on (P1). Names use hyp
 6. **Attrition per step**, derived and never stored: it starts at the source population (every unit of the population table), lists the recipe's own row-removing steps, then the audit steps, each with before and after; the figure caption is composed from it, in the entity's own word (declared in the recipe).
 7. **Keys**: a series of labelled parts (`E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`), per collection, empty parts left out; whole-recipe hashes identify the project state and never decide what to rebuild (`home_evidence/home_hash_model_2026-11-12.md`, diagrams `DM-KEYS*`).
 8. **Export** is one bundle: audited plots, the original Result plot for each really affected plot, original and audit data, the steps with reasons, the exclusion list, the attrition table, the verification legs; one tick adds the recipe and raw data. **Import** is gated by the configuration and validated.
-9. Audit is for **publication-ready** figures (data that is really bad or makes no sense in a plot, with a reason); not for exploring, not for mass cleaning.
-10. Build order: design, review, mechanism and build plan, code (tests adapted first), configuration and gating last.
+9. **Every table has T1, T2 and T3, with or without a join** (empty = the previous node, a dataset plotted directly is a collection). **Everything written in a recipe is executed or the recipe is rejected with the reason**: HOME rejects at the load gate, BLUEPRINT reports and never blocks building (empty placeholders accepted).
+10. Audit is for **publication-ready** figures (data that is really bad or makes no sense in a plot, with a reason); not for exploring, not for mass cleaning.
+11. Build order: design, review, mechanism and build plan, code (tests adapted first), configuration and gating last.
 
 ## 2. Decision register (counted 2026-11-12)
 
