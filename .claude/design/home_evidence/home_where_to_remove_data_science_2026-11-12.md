@@ -73,3 +73,37 @@ The worst sample by N50 in the Quast data: `66678807` (N50 131,595; median 324,1
 - **Q5.4 Exclusion or hiding.** Is the only audit removal an **exclusion** (as if the sample never existed), with plot-level steps (late) offered only for "not meaningful in this plot", with the warning that upstream statistics still include the entities?
 - **Q5.5 Value filters.** Same lineage logic on the table the user looks at, including before an aggregation?
 - **Q5.6 (optional) Evidence link.** Should a step name its evidence plots (the QC plot) so the export shows them next to the reason?
+
+## 8. Refined after the discussion with Eve (2026-11-12)
+
+**Agreed in the discussion (to be recorded as decided once the questions below are answered):** a removal is an **operation on the data**, not on a plot (Q5.1); it must be possible to remove a key such as `sample_id` from **all datasets at once** (speed; a poor sample that must be re-run); **there is no "hiding" in audit mode**: every audit step really changes data and is recorded and exported.
+
+**The contradiction you saw, and how it is resolved.** My Q5.1 said the operation is on datasets, my Q5.2 said the scope is chosen by plots. Two different things were mixed:
+- the **operation** says *where in the data* it happens: a **node** of the dataflow (a dataset, a table at T1, a table at T2, or a plot's own table at T3);
+- the **association view** (dataset -> table -> plot) shows what that operation reaches, and flags the plots that must stay original;
+- **pinning** a plot to the original is a separate, visible setting of the plot, made in that view. It is not part of the operation.
+
+**The stages (names to settle):** *dataset* (a source with its own first steps), *table T1* (the datasets joined, before the table's tier-2 steps), *table T2* (the table the plots read), *plot T3* (the plot's own table).
+
+**The association, from your ST22 recipe (verified):**
+
+| Dataset | Feeds table(s) | Plots |
+|---|---|---|
+| `metadata_schema` | all four tables below | |
+| `FastP` | `QC_Reads_Anchor`, `ST22_Anchor` | `qc_reads_horizontal_barplot`; `virulence_bar`, `virulence_variants` |
+| `Quast` | `QC_Reads_Anchor`, `Quast_with_metadata` | `qc_reads_horizontal_barplot`; `assembly_quality_dotplot` (QC), `miaou` |
+| `ResFinder` | `ResFinder` (used directly), `ST22_Anchor` | `amr_heatmap`; `virulence_bar`, `virulence_variants` |
+| `MLST` | `MLST_with_metadata`, `ST22_Anchor` | `mlst_bar`, `year_distribution`; the two virulence plots |
+
+**What a value filter implies (question 5), with your data.** ResFinder has `%Identity` and a step that counts genes per sample (`total_gene_count`, `count_by_group` by `sample_id`). A filter `%Identity >= 99` placed **before** that count keeps 13 of the 70 rows, so `total_gene_count` changes for **35 of 38 samples** and **27 samples drop to 0 genes**. The same filter placed on the **plot's own table** (after the count) shows the same 13 rows in the figure, but `total_gene_count` still says the original number. Neither is "wrong": they answer different questions, and the dialog must show which one the user is doing. That is the implication: **a value filter before an aggregation changes every later number that was computed from those rows, in every table and plot that reads it.**
+
+**What the evidence link (question 6) means.** When you remove samples because the QC plot shows they are poor, the step can store "evidence: `qc_reads_horizontal_barplot`". The export then shows that figure (the original, unfiltered one) next to the reason, so a reader sees what justified the removal. It documents the step; it does not change any data.
+
+**The refined questions, in order**
+- **R1 The model.** An audit operation is: *what* (remove entities by key | filter rows by value | drop a column), *where* (a node: dataset, table T1, table T2, plot T3) and a *reason*. The effect is everything downstream of that node. The dialog shows the association (which tables and plots) before Apply.
+- **R2 Removing a key.** Offered in two ways: **all datasets that have the key, in one action** (the speed case; default), or **chosen datasets**. The dialog lists the datasets it cut and the ones without the key.
+- **R3 Pinning.** Every table exists as original and audited. By default plots read the audited version; the user can **pin a plot to the original** (the QC plots) in the association view. One setting per plot.
+- **R4 Plot-level steps.** A step on a plot's own table (stage T3) stays a real audit step (recorded, exported), for cases such as "a category with too few observations to be meaningful in this plot". It changes only that plot, not the tables before it.
+- **R5 Value filters.** The user filters on the table they look at; the earliest node where the column exists is proposed; the dialog shows the downstream effect and warns when an aggregation lies downstream.
+- **R6 Evidence link.** Optional: a step names its evidence plot(s), shown in the export next to the reason.
+
