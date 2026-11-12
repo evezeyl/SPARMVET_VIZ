@@ -26,8 +26,8 @@ target), issues #56, #60, #61, #62, #63, #64.
 
 | # | Problem | Status |
 |---|---|---|
-| **P1** | **Which kinds of configuration exist, and what depends on what** (may audit mode run without export, sessions or Compare?) | **NOW** |
-| P2 | The Exploration screen: "Raw has no plot (NA)", the notices | waiting |
+| P1 | Which kinds of configuration exist, and what depends on what | **DECIDED 2026-11-12 (Eve):** audit mode needs export, Compare and sessions (compare the effect, save unfinished work, export what is finished and verifiable); Compare needs audit |
+| **P2** | **The Exploration screen: "Raw has no plot (NA)", the notices** | **NOW** |
 | P3 | Preview lists while audit mode is on | waiting |
 | P4 | What is exported and saved when there is no audit | waiting |
 | P5 | Audit: stage and reach (questions 1 and 6 below) | waiting |
@@ -74,8 +74,8 @@ target), issues #56, #60, #61, #62, #63, #64.
    plots and tables affected, rows and entities before/after, a before/after preview of the plot, a read-only lineage map.
 7. **No draft**: a three-step dialog (what, check, why), then Apply; removing a step is the undo. Before an **export** there
    is a review of every exclusion and warning.
-8. Missing values are never silent ("NA" is a visible value). Rows are not samples: entities are counted too.
-9. The audit is for **publication-ready** figures with a justified "data not shown", not for cleaning data.
+8. Missing values are never silent ("NA" is a visible value). Rows are not samples: in a long table one sample has many rows, so a filter that removes 10 rows may remove 10 samples or only 1 (and a sample can vanish from a plot although only some of its rows were removed). The software therefore shows both numbers, rows and samples ("entities"), before and after a step.
+9. The audit is for **publication-ready** figures. It can remove data that is really bad (for example poor-quality samples, from some or all analyses) or that makes no sense to show in a plot (for example a category with too few observations to compare), each with a reason, recorded as "data not shown". It is **not** for exploring data, and it is **not** meant to clean messy data (no mass homogenisation of non-standardised fields: that is a recipe change).
 10. Build the risky logic first, **without a UI**, with property tests; the screen comes last.
 
 ## 2. Read in this order

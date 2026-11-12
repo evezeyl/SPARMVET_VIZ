@@ -1,5 +1,7 @@
 # HOME: gating of filters by configuration, and configurations for automatic tests (decision paper)
 
+> **CORRECTION (2026-11-12, Eve, P1): audit requires export, Compare and sessions. Rule 6 is correct; problem P4 and section 5 (R-a/R-b/R-c) and the configurations `test-audit` and `test-audit-no-sessions` are WRONG and withdrawn. Only R-a stands.**
+>
 > **STATUS CHANGE (2026-11-12, after Eve's correction): this paper is stage 5 of `home_design_first_roadmap_2026-11-12.md` and is PAUSED.** It describes how the code works **today** (sections 2 and 3.2) and proposes gating and test files **before** the behaviour is agreed, which is the wrong order. Read the roadmap first: the design (what each kind of configuration shows and can do) is agreed first, then the mechanism, then the code; gating and test configurations are derived from the agreed behaviour table. Use this paper only as input: its verified facts tell the build plan what has to change. Its questions Q1, Q2 and Q7 are now Q3, Q2 and Q5 of the roadmap; Q3-Q6 and Q8 wait.
 
 **Written for:** Eve, to review in one place. **Written:** 2026-11-12, after your answers of the same day. **Status:** problem, alternatives with pros and cons, and my recommendation for each. Nothing here is decided and nothing was built or changed in code, configuration or diagrams.

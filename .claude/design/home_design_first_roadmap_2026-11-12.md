@@ -50,7 +50,7 @@ Where the table says "as C" the decided design says nothing different; the pictu
 
 ## 4. The design questions (stage 1), each in design terms
 
-### Q1. Which kinds of configuration are legitimate, and what may depend on what?
+### Q1. Which kinds of configuration are legitimate, and what may depend on what? **DECIDED 2026-11-12 (Eve): option (a)** - audit needs export, Compare and sessions (the user compares the effect, saves unfinished work, exports what is finished so others can verify).
 The design needs to say whether audit mode may exist **without** export or without sessions, and whether Compare may be off.
 **Why it is a design question:** an audit step changes a figure; the project rule is that every step is recorded and exported. A configuration where steps can be made but cannot leave the session would let a figure exist that nobody can reproduce.
 | Option | Science | User | Consequence |

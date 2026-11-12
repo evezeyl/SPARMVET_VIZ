@@ -73,8 +73,7 @@ Audit mode is not a new central page. It reuses what HOME already has, so very l
   that lets the user read before committing. **There is no draft list and no Apply gate in the Audit panel**: the
   step is applied when Apply is pressed in the dialog. If it was a mistake, delete it from the step list
   (section 10).
-- **Compare** is shown only when the existing flag `comparison_mode_enabled` is on (checked in `home_theater.py`,
-  `app_features_validator.py`). Off: the audited plot uses the full width.
+- **Compare** is an on/off toggle inside audit mode. **Decided 2026-11-12 (Eve, P1):** audit mode requires the flags `comparison_mode_enabled`, `session_management_enabled` and `export_enabled` (the validator's Rule 6 stays); with the toggle off the audited plot uses the full width.
 - **Audit table stage selector [confirm]:** the audit table can show audit T1 | audit T2 | audit T3 of the plot
   (read-only, no filters there), so the user can check where a sample was removed (Eve's idea of selecting T1, T2,
   T3 in the workspace).
@@ -502,7 +501,7 @@ not clean (flaw 4): the post-condition check catches it, it does not fix it.
 **Principle.** The software makes good data science possible and the user's informed choice easy. It does not decide
 for the user: it **informs, warns and lets the user decide**. A risky choice needs a **written reason** that is
 recorded and exported. The software **blocks only what is technically wrong or not reproducible**, never a scientific
-judgement. What is data-science practice (not cleaning data with the audit, stating exclusion criteria in advance,
+judgement. What is data-science practice (not exploring data with the audit, not homogenising messy fields with it, stating exclusion criteria in advance,
 reporting every exclusion) is taught in the help and the documentation: "with great power comes great
 responsibility: think before you do".
 

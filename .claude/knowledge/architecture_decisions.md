@@ -5016,8 +5016,9 @@ and a filter built on Raw can be wrong on Result (wide vs long, renamed columns,
    are never edited.
 9. **Names kept:** the flag `t3_sandbox_enabled`, `t3_steps.yaml`, `T3_data_<plot>.tsv`, the ghost `t3_*.json` and
    `t3_audit_engine.py` keep their names for now; a rename is a separate task (`renamed_keys` mechanism).
-10. **Intended use:** publication-ready results with a justified "data not shown", not data cleaning and not
-    exploration. Help says so and advises "use the lowest reach that fits".
+10. **Intended use:** publication-ready results with a justified "data not shown" (poor-quality samples, or data that makes no sense in a plot, with a reason), not exploration and not a way to clean messy,
+    non-standardised fields (that is a recipe change; wording corrected 2026-11-12, Eve). Help says so and advises "use the lowest reach that fits".
+11. **Configuration (Eve, 2026-11-12, P1):** audit mode requires comparison, sessions and export (the user compares the effect, saves unfinished work, exports what is finished so others can verify); comparison requires the audit flag.
 
 **Alternatives not chosen.** Filtering the stored T1 file by key (cheaper, but not exact when a tier-1 step
 aggregates across samples); keeping per-plot propagation only (the failure above); showing levels to the user (too
