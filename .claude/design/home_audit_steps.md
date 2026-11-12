@@ -573,11 +573,7 @@ dialog always says "N rows have no value in this column: they are kept / removed
 | C3 | **incomplete exclusion**: after the step the excluded values, or look-alikes (`' S2'`, `'s2'`), are still in a reached table | confirm with reason | flaw 4 |
 | B1 | a column or key used by a step no longer exists (status broken); a key renamed in tier-1; a step the forked recipe cannot represent; the recomputation failed | block | technical |
 
-**Reason category.** Required, from a short list (technical failure, contamination, duplicate, out of scope, outlier
-by value, other), plus free text (required for "outlier by value", "other" and every override). C2 suggests
-"outlier by value" automatically so the user does not have to remember. The report groups exclusions by category,
-prints the attrition (rows and entities, per step) and lists every acknowledged warning and override reason. The list
-is a constant in the code, documented, extendable by configuration later [open].
+**Reason (decided 2026-11-12, Eve, P7; replaces the fixed category list).** The software is **data-agnostic**: it will be used for datasets other than bioinformatics, so there is **no fixed list of categories**. The reason is **free text, required, and must be a good justification**. The help suggests a convention that keeps it clean and lets the vocabulary grow at no cost: a hashtag with a short category, then the explanation, for example `#technical failure: sequencing run bad` or `#technical failure: instrument calibration failed`, with good examples from several fields. Proposed on top (for Eve to veto): the dialog offers the tags already used in the project as suggestions; the report groups the steps by tag (steps without a tag under "untagged"). The check C2 (the filter acts on the variable the plot shows, i.e. selection on the outcome) is **data-based**, not category-based, so it does not need the category. The report prints the attrition (rows and entities, per step) and lists every acknowledged warning and override reason.
 
 **Figure caption [confirm].** An optional export setting, off by default: add "n = X after exclusions (Y excluded; see
 audit trail)" to the caption of each figure. Eve: the data should be cleaned beforehand, so this is optional.
