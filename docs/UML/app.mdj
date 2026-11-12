@@ -12743,7 +12743,7 @@
 											"top": 703,
 											"width": 144.27587890625,
 											"height": 214,
-											"text": "effective_run.yaml\nrecipe / data / T3-steps / engine hashes + git_commit\n+ per-plot seeds + skipped list\nALWAYS written, identical content either way",
+											"text": "effective_run.yaml\nE, D, R (+ file lists), AR, A, Rec, node keys (original and audit), file hashes + git_commit\n+ per-plot seeds + skipped list\nALWAYS written, identical content either way. Detail: DM-KEYS-EXPORT",
 											"wordWrap": true
 										}
 									],
@@ -13725,11 +13725,11 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
-											"left": 942.1181640625,
+											"left": 946.1181640625,
 											"top": 30,
-											"width": 52.15625,
-											"height": 91,
-											"text": "4 legs: data / engine / recipe / t3_steps\nmatch / mismatch / not_checked - never blocks",
+											"width": 72.77783203125,
+											"height": 130,
+											"text": "legs: engine, data, recipe, audit recipe, steps, record, and each part of every node key | match / mismatch / not_checked - never blocks. Detail: DM-KEYS-EXPORT",
 											"wordWrap": true
 										}
 									],
@@ -13737,7 +13737,7 @@
 									"parentStyle": false,
 									"left": 914.1181640625,
 									"top": 20,
-									"width": 108.15625,
+									"width": 136.77783203125,
 									"height": 228,
 									"nameLabel": {
 										"$ref": "AAAAAAGhwLg4txqgP5s="
@@ -13926,7 +13926,7 @@
 										"$ref": "AAAAAAGhwLg4khqPkUI="
 									},
 									"lineStyle": 3,
-									"points": "928:375;968:273;968:249",
+									"points": "928:375;968:273;970:249",
 									"nameLabel": {
 										"$ref": "AAAAAAGhwLg5ABrA1zY="
 									}
@@ -22712,8 +22712,8 @@
 											"left": 920,
 											"top": 400,
 											"width": 400,
-											"height": 26,
-											"text": "Tests: key contains upstream key; different operations never share a key; the reason does not change the key; originals never written",
+											"height": 39,
+											"text": "Tests: a key starts with its upstream key; different operations never share a key; the reason does not change the key; an empty list adds no part; equal keys give equal content; originals are never written",
 											"wordWrap": true
 										}
 									],
@@ -22836,9 +22836,9 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 414,
+											"left": 397,
 											"top": 219,
-											"width": 62.86083984375,
+											"width": 96.10986328125,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -22846,7 +22846,7 @@
 												"$ref": "AAAAAAGhy9Ont2OaM8k="
 											},
 											"edgePosition": 1,
-											"text": "early steps"
+											"text": "audit steps at T1"
 										}
 									],
 									"font": "Arial;13;0",
@@ -80854,9 +80854,9 @@
 													},
 													"font": "Arial;13;0",
 													"parentStyle": false,
-													"left": 181,
+													"left": 77,
 													"top": 545,
-													"width": 448.4365234375,
+													"width": 656.271484375,
 													"height": 13,
 													"alpha": 1.5707963267948966,
 													"distance": 10,
@@ -80864,7 +80864,7 @@
 														"$ref": "AAAAAAGht1wXRW7caoI="
 													},
 													"edgePosition": 1,
-													"text": "10 : report.qmd, README.txt, effective_run.yaml (4 hash legs, always written)"
+													"text": "10 : report.qmd, README.txt, effective_run.yaml (legs and node keys, always written; detail: DM-KEYS-EXPORT)"
 												},
 												{
 													"_type": "EdgeLabelView",
@@ -81940,9 +81940,9 @@
 													"parentStyle": true,
 													"left": 175,
 													"top": 437,
-													"width": 181,
+													"width": 369.4306640625,
 													"height": 13,
-													"text": "Not stored (Tier 2 only)"
+													"text": "Not stored (empty step list: same key as the previous node)"
 												},
 												{
 													"_type": "LabelView",
@@ -81974,7 +81974,7 @@
 											"parentStyle": true,
 											"left": 170,
 											"top": 430,
-											"width": 191,
+											"width": 379.4306640625,
 											"height": 25,
 											"stereotypeLabel": {
 												"$ref": "AAAAAAGht1wcuXCdtDQ="
@@ -82032,7 +82032,7 @@
 											"parentStyle": true,
 											"left": 170,
 											"top": 455,
-											"width": 191
+											"width": 379.4306640625
 										}
 									],
 									"font": "Arial;13;0",
@@ -82040,7 +82040,7 @@
 									"containerChangeable": true,
 									"left": 170,
 									"top": 430,
-									"width": 190,
+									"width": 378.4306640625,
 									"height": 60,
 									"showProperty": false,
 									"nameCompartment": {
@@ -82669,8 +82669,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 263,
-											"top": 327,
+											"left": 311,
+											"top": 322,
 											"width": 148.14794921875,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -82693,8 +82693,8 @@
 											"visible": null,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 351,
-											"top": 333,
+											"left": 400,
+											"top": 323,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 30,
@@ -82715,8 +82715,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 310,
-											"top": 314,
+											"left": 356,
+											"top": 319,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -82735,7 +82735,7 @@
 										"$ref": "AAAAAAGht1wbxHAsx60="
 									},
 									"lineStyle": 1,
-									"points": "369:226;279:429",
+									"points": "380:226;362:429",
 									"showVisibility": true,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1we1XEnVxs="
@@ -82768,8 +82768,8 @@
 											},
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 245,
-											"top": 314,
+											"left": 291,
+											"top": 319,
 											"width": 131.5234375,
 											"height": 13,
 											"alpha": 1.5707963267948966,
@@ -82792,8 +82792,8 @@
 											"visible": null,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 296,
-											"top": 308,
+											"left": 341,
+											"top": 318,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 30,
@@ -82814,8 +82814,8 @@
 											"visible": false,
 											"font": "Arial;13;0",
 											"parentStyle": false,
-											"left": 337,
-											"top": 327,
+											"left": 385,
+											"top": 322,
 											"height": 13,
 											"alpha": -1.5707963267948966,
 											"distance": 15,
@@ -82834,7 +82834,7 @@
 										"$ref": "AAAAAAGht1wcuXCbVeU="
 									},
 									"lineStyle": 1,
-									"points": "279:429;369:226",
+									"points": "362:429;380:226",
 									"showVisibility": true,
 									"nameLabel": {
 										"$ref": "AAAAAAGht1wfIXE4How="
@@ -97955,7 +97955,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0GpzEm580gM="
 							},
-							"name": "SOURCE DATA FILES\nread once per session (the only costly read)",
+							"name": "SOURCE DATA FILES\nhashed once, then again only when they change (stat cache); in full at export and import",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -98336,7 +98336,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0GpzEm580gM="
 							},
-							"name": "COST: only disk reads take time (data once per session, recipe files are small). Everything else hashes a few short strings. c is computed only when needed."
+							"name": "COST: only disk reads take time. Data files are re-read only when their size, time or inode changed; recipe files are small. Everything else hashes a few short strings. c is computed only when needed."
 						},
 						{
 							"_type": "FCProcess",
@@ -98344,7 +98344,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0GpzEm580gM="
 							},
-							"name": "TO CONFIRM (Eve): 1 series of labelled parts, 128 bits each. 2 phase 1 = coarse parts (whole-recipe material, collection id), phase 2 = precise parts from the recipe graph. 3 data hash: full content once per session, a size+time mode only as a later setting. 4 Rec with reasons. 5 retire decision_hash, drop the plot input key (ADR-089). Not built: all of the audit parts, c, A, Rec, AR"
+							"name": "DECIDED (Eve): 1 series of labelled parts. 2 the target is precise parts from the recipe graph (the graph is built first, so no coarse phase unless it is late; a collection whose inputs cannot be listed safely keeps a coarse part). 4 Rec with reasons. 5 retire decision_hash, drop the plot input key (ADR-089). TO CONFIRM: 3 data hash at start: a stat cache (size, mtime, ctime, inode) skips re-reading unchanged files; always full content at export and import; a setting forces full content. Not built: all of the audit parts, c, A, Rec, AR"
 						},
 						{
 							"_type": "FCData",
@@ -101375,7 +101375,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "1  Start, or open a view",
+							"name": "1  Start, or open a view (the app reopened)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -101398,7 +101398,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "sha256 of every data file once per session (the only costly read), sha256 of the recipe files (small), E; then D, R, the parts and the expected key of every node that is read",
+							"name": "sha256 of a data file only if its stat (size, mtime, ctime, inode) changed since the last session, else the saved value; sha256 of the recipe files; E; then D, R, the parts and the expected key of every node that is read",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
