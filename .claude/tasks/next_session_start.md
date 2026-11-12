@@ -59,7 +59,7 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 **Track D (design review, with Eve):**
 > Read `.claude/design/home_audit_review_agenda_2026-11-12.md`, `home_audit_reading_guide.md`, `home_audit_forensics_2026-11-12.md` (section 4 first) and `home_audit_architect_review_2026-11-12.md` (section 0 first). Run the review with Eve in the order of the agenda, write her decisions into the design files at once, and change nothing in code.
 
-**Proposed, not decided (do not build until Eve says):** the pure view policy first inside WP4 (#56) (architect review AR2, section 3.2). Track B: finish what the brief says; if Eve accepts the proposal, she will say so in a comment on #56.
+**Open question that may change WP4's scope (do not guess; Eve answers it in the review):** the interim of the header strip for the two features without the sandbox flag (forensics 3.7, F8; brief section 5, question 3). Until she answers, track B builds WP4 as briefed: the strip stays as built, nothing about My view, Compare or "Plot to show" is touched. (An earlier idea of adding a view-policy module to WP4 is withdrawn.)
 
 ## 5. What every builder hands back
 
