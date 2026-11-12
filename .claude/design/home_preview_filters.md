@@ -10,7 +10,9 @@ not built.
 never saved, never exported and never changes a plot. To change what a plot shows, use audit mode
 (`home_audit_steps.md`).**
 
-> **NOTE TO RECHECK (Eve, 2026-11-12):** "Result (T2)" may in fact be **T3** for a plot, because the recipe can give a plot its own data steps (a plot-level filter in its spec, plot-specific formatting). The engine applies the plot's `filters:` when it draws (VizFactory), while the data preview shows the table T2, so the table and the plot can differ for such a plot (reasoned, not tested; no shipped plot uses `filters:`). Exploration may need the three stages T1, T2, T3 (one more choice) and the data shown must be what the plot reads. To be rechecked when the Exploration screen is rewritten.
+> **DECIDED (Eve, 2026-11-12): "Result" is what the plot reads, its own table: T3 when the recipe defines one for it, otherwise T3 = T2 (equivalent). The data shown in Exploration must be that table; the three stages are shown as they exist. To recheck in the code when the screen is rewritten.**
+>
+> **Why (the note to recheck):** "Result (T2)" may in fact be **T3** for a plot, because the recipe can give a plot its own data steps (a plot-level filter in its spec, plot-specific formatting). The engine applies the plot's `filters:` when it draws (VizFactory), while the data preview shows the table T2, so the table and the plot can differ for such a plot (reasoned, not tested; no shipped plot uses `filters:`). Exploration may need the three stages T1, T2, T3 (one more choice) and the data shown must be what the plot reads. To be rechecked when the Exploration screen is rewritten.
 
 ## 2. Where it lives [to build]
 
