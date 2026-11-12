@@ -1,3 +1,5 @@
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** plan of the configuration rename, implemented on the branch `rename/config-vocabulary` (merged into `dev`). Replaced by: ADR-091 and `app/modules/renamed_keys.py`. Original path: `.claude/tasks/config_rename_strategy.md`.
+
 # Strategy: the configuration rename (ADR-091, issue evezeyl/SPARMVET_VIZ#27)
 
 **Goal:** rename persona, manifest and the old meanings of recipe everywhere, in a way that keeps the app working after every commit, so that when something breaks we can find the commit that did it.

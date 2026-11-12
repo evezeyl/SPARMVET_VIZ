@@ -10,6 +10,8 @@ deps:
   consumed_by: [.claude/knowledge/architecture_decisions.md]
 ---
 
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** research draft, status RESOLVED on 2026-05-20. Replaced by: ADR-082. Original path: `.claude/design/blueprint_full_feature_set_research.md`.
+
 > **RESOLVED 2026-05-20** — All seven decision points (§6) were settled with Eve and the
 > output written as **ADR-082: BLUEPRINT Full Feature Set & Build-Mode Contract** in
 > `.claude/knowledge/architecture_decisions.md`. Q1 (preview=on-Apply) and Q3 (variant-in-data-analysis-recipe)

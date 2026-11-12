@@ -18,7 +18,7 @@ target), issues #56, #60, #61, #62, #63, #64.
 | `home_audit_forensics_2026-11-12.md`, `home_audit_architect_review_2026-11-12.md` | analysis papers: status map, options with pros and cons, findings | evidence for decisions, not designs |
 | `home_gating_and_test_configs_2026-11-12.md` | gating and test configurations | **paused** (stage 5, after the behaviour is agreed) |
 | `home_audit_first_cut.md` | a smaller first audit version | proposal |
-| `home_filter_scoping_concept.md` | the first concept | HISTORICAL |
+| `../outdated/design/home_filter_scoping_concept.md` | the first concept | OUTDATED, moved to `.claude/outdated/` |
 | `../tasks/home_exploration_build_brief.md`, `../tasks/next_session_start.md` | instructions for the builders | current |
 | `../tasks/test_plan_home_2026-11.md` | HOME test plan | not re-checked against ADR-099 |
 | `../workflows/design_review_personas.md` | the review method | current |

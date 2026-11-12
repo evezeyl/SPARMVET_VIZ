@@ -11,7 +11,7 @@ The audit exclusions of assets/scripts/audit_old_words.py (history, the two AI a
 are respected.
 
 Examples:
-  .venv/bin/python assets/scripts/rename_vocabulary.py --out .claude/tasks/config_rename_mapping.md
+  .venv/bin/python assets/scripts/rename_vocabulary.py --out .claude/outdated/tasks/config_rename_mapping.md
   .venv/bin/python assets/scripts/rename_vocabulary.py --unmapped
 """
 

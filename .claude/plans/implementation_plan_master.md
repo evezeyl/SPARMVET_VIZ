@@ -574,7 +574,7 @@ Reuses `.claude/knowledge/archive/refactor_protocol_phase24.md` verbatim. Same v
 ### Still open / ongoing
 
 - CSS rounding verification in browser (Bootstrap cards top corners, accordion items).
-- `tasks_test_ui_current.md` §12 Gallery UI tests need re-verification after taxonomy changes.
+- `.claude/outdated/tasks/tasks_test_ui_current.md` §12 (outdated file) Gallery UI tests need re-verification after taxonomy changes.
 - UX-CSS-DEMO: review `assets/demo/demo_vetinst.css` after default theme finalised.
 - ~~Gallery Clone to Sandbox re-verify~~ — moot, the feature was removed 2026-11-08 (ADR-093).
 

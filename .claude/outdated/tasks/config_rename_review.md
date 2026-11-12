@@ -1,3 +1,5 @@
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** review gate of the configuration rename, which is done. Replaced by: ADR-091. Original path: `.claude/tasks/config_rename_review.md`.
+
 # Review gate for the configuration rename (phase 1, task CONFIG-VOCAB-REVIEW-1 and CONFIG-MAPPING-1)
 
 For Eve. Read this page, answer the questions at the end, then the real run can start. The two long files are generated and are only for checking: the inventory (`config_rename_inventory.md`, 60 keys) and the mapping table (`config_rename_mapping.md`, about 500 words and 285 paths). The rules that make the table are in `assets/scripts/rename_vocabulary_rules.yaml`; changing a rule and running `assets/scripts/rename_vocabulary.py --out ...` rebuilds the table.

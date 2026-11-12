@@ -1,3 +1,5 @@
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** mapping of the word "project" for the configuration rename, which is done. Replaced by: ADR-091. Original path: `.claude/tasks/project_word_mapping.md`.
+
 # Mapping: the word "project" (CONFIG-PROJECT-WORD-1)
 
 Decided with Eve on 2026-11-07. "Project" was the generic word that replaced "species" (Terminology.qmd,

@@ -818,7 +818,7 @@ the same TSV (identical structure and error patterns) for regression testing acr
 |---|---|
 | `test_lab_studio.py` | UI and server handlers for all TEST_LAB tools |
 | `libs/test_lab/` | Existing library — `aqua_synthesizer.py`, `bootstrapper.py` are the foundations to build on. `reconciler.py` (`KeyReconciler`) is migrated wholesale into `libs/id_reconciliation/` and deleted after TL-IDLIB-TESTS-1 passes. |
-| `libs/id_reconciliation/` | New library (to be created) — pure ID matching logic, pattern detection, id transformation generation. Tier 1 only (utils + polars). See `id_reconciliation_module_sketch.md`. |
+| `libs/id_reconciliation/` | New library (to be created) — pure ID matching logic, pattern detection, id transformation generation. Tier 1 only (utils + polars). See `.claude/outdated/design/id_reconciliation_module_sketch.md` (outdated, history). |
 
 ---
 

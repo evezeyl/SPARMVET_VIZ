@@ -1,3 +1,5 @@
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** sketch of a library that was built on 2026-05-22 (already marked HISTORICAL). Replaced by: `libs/id_reconciliation/README.md` and `.claude/rules/rules_test_lab.md`. Original path: `.claude/design/id_reconciliation_module_sketch.md`.
+
 # ID Reconciliation Library — Module Structure Sketch
 
 > **HISTORICAL (superseded by TL-IDLIB-TESTS-1, 2026-05-22):**

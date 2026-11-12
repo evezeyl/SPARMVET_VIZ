@@ -1,3 +1,5 @@
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** superseded on 2026-06-19 by the live test plans; pinned to the Phase 26 baseline. Replaced by: `.claude/tasks/test_plan_2026-06.md` and `.claude/tasks/test_plan_home_2026-11.md`. Original path: `.claude/tasks/tasks_test_ui_current.md`.
+
 # Live-UI Test Checklist — Current Dashboard
 
 > **SUPERSEDED (2026-06-19):** Pinned to the **Phase 26** baseline — predates TEST_LAB,

@@ -3,7 +3,7 @@
 **Owner:** @evezeyl (tester) · @dasharch (fixer)
 **Created:** 2026-06-19
 **Baseline:** `dev` branch @ Phase 34 (TEST_LAB built, BLUEPRINT full feature set, legacy removals, 8 app features files)
-**Supersedes:** [`tasks_test_ui_current.md`](tasks_test_ui_current.md) (pinned to Phase 26 — stale; its still-open items are folded in here, see each `(carried)` tag)
+**Supersedes:** [`tasks_test_ui_current.md`](../outdated/tasks/tasks_test_ui_current.md) (pinned to Phase 26 — stale; its still-open items are folded in here, see each `(carried)` tag)
 **Scope:** **Phase 2** — BLUEPRINT · GALLERY · TEST_LAB + configuration-file gating + cross-space workflow + the regression/CSS items not specific to HOME. **HOME itself was split out on 2026-11-08** into [`test_plan_home_2026-11.md`](test_plan_home_2026-11.md) (Eve: test what you actually see on launch, in that order, by itself, before anything else) — do that file first, then come back here. Comprehensive, but **prioritised** — see §0.4.
 
 > EVE: testing in google chrome - developper console - network - cache deactivated 
@@ -46,7 +46,7 @@ You can attach a screenshot path or terminal snippet the same way. Don't fix any
 
 **Backtick hint tags:** some items carry a small tag after the ID like `` `[?]` ``, `` `[~]` `` or `` `[b]` `` — that is *my pre-flag* of the likely disposition (decision / polish / not-built), to save you guessing. The **checkbox is still the real status you set** — leave it `[ ]` until you've actually looked, then flip it.
 
-**Keep this file thin (added 2026-08-10):** the checklist line stays **one line** — ID, marker, short symptom, and a link if there's evidence. Raw material (console pastes, screenshots, my root-cause writeups, retest steps) goes in a dated findings file — `.claude/tasks/YYYYMMDD_testing_partN.md` — under a `## <ID>` heading matching the checklist ID, e.g. [`20260810_testing_part1.md`](20260810_testing_part1.md). Link the checklist line to `filename.md#anchor`. Anything you jot in the raw file that isn't a checklist line yet, I fold into a one-liner here with a link back.
+**Keep this file thin (added 2026-08-10):** the checklist line stays **one line** — ID, marker, short symptom, and a link if there's evidence. Raw material (console pastes, screenshots, my root-cause writeups, retest steps) goes in a dated findings file — `.claude/tasks/YYYYMMDD_testing_partN.md` — under a `## <ID>` heading matching the checklist ID, e.g. [`20260810_testing_part1.md`](../outdated/tasks/20260810_testing_part1.md). Link the checklist line to `filename.md#anchor`. Anything you jot in the raw file that isn't a checklist line yet, I fold into a one-liner here with a link back.
 
 ### 0.3 The round-trip (what each side does)
 

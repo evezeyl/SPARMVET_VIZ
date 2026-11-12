@@ -1,3 +1,5 @@
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** raw evidence and fix log of the 2026-08-10 testing round (console pastes); the fixes are done. Replaced by: nothing; the test plans keep one line per item and link here for the history. Original path: `.claude/tasks/20260810_testing_part1.md`.
+
 # Testing notes — 2026-08-10 (part 1)
 
 Raw evidence + fix log. Kept separate from `test_plan_2026-06.md` on purpose: the

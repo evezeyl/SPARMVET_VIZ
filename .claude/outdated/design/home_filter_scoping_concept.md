@@ -1,3 +1,5 @@
+> **OUTDATED (moved here on 2026-11-12; kept for history only, do not follow):** first concept of HOME filter scoping, already marked HISTORICAL. Replaced by: `.claude/design/home_preview_filters.md`, `.claude/design/home_audit_steps.md` and ADR-099. Original path: `.claude/design/home_filter_scoping_concept.md`.
+
 > **HISTORICAL (2026-11-11, superseded by `home_preview_filters.md`, `home_audit_steps.md` and ADR-099):**
 > this file is the working log of the first filter discussion. Several decisions below were replaced the same
 > day (for example: preview filters per dataset, "audited steps belong to one plot's T3", the old levels). It is

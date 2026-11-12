@@ -3733,7 +3733,7 @@ Resolution order: **plot-level palette > `plot_defaults.palette` > no palette (m
 
 ## ADR-082: BLUEPRINT Full Feature Set & Build-Mode Contract (2026-05-20)
 
-**Status:** ACCEPTED — decided with Eve 2026-05-20. Supersedes the research draft `.claude/design/blueprint_full_feature_set_research.md` (now RESOLVED). Umbrella ADR over ADR-039/040/056/067/071/074/075/076.
+**Status:** ACCEPTED — decided with Eve 2026-05-20. Supersedes the research draft `.claude/outdated/design/blueprint_full_feature_set_research.md` (now RESOLVED). Umbrella ADR over ADR-039/040/056/067/071/074/075/076.
 
 **Context:** BLUEPRINT is a visual IDE for building and editing SPARMVET manifests without writing code. Prior ADRs locked individual pieces (TubeMap navigation, lineage rail, shared infrastructure, the IDE build-mode design, the AI agent). No single ADR named the *full* feature set or how the parts compose into one user experience, and the design had drifted ahead of the docs: between 2026-05-09 and 2026-05-11 the form builder, searchable action picker (BP-ACTION-PARITY-1), Field Gap Analysis (BP-FIELD-GAP-1), forward-propagation hints (BP-FWD-HINT-1), and Visual Fork (BP-VISUAL-FORK-1) all shipped without an umbrella contract. A 2026-05-20 verification pass against the running implementation surfaced four mismatches with the redefined design (below). This ADR locks the feature set so a new contributor can read one document end-to-end, and so the remaining build work is scoped against an agreed target.
 
@@ -4308,7 +4308,7 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 **Status:** ACCEPTED (2026-11-07, reviewed by @evezeyl; the review decisions are listed at the end of this entry; two design gaps found during the review are open). The names were agreed with @evezeyl in chat; the entry becomes ACCEPTED when Eve has reviewed it together with the issue evezeyl/SPARMVET_VIZ#27 (the IRIDA check is evezeyl/SPARMVET_VIZ#28). Authority: @dasharch.
 **Replaces:** the vocabulary table (point 1), the manifest identity and startup order (points 3 and 4) of ADR-088. ADR-088 keeps its text as history under a HISTORICAL banner; the live rules exist only here, in the new terms.
 **Amends:** ADR-048 (deployment profile becomes "deployment"; its IRIDA token assumption is flagged below), ADR-052 (`manifest_selector.fixed_manifest` leaves the app features files).
-**Implementation status:** IMPLEMENTED on the branch `rename/config-vocabulary` (2026-11-07, phases 0 to 9, tags `rename-phase-N`), waiting for the full retest and the merge into `dev`. Plan and phases: `.claude/tasks/config_rename_strategy.md`.
+**Implementation status:** IMPLEMENTED on the branch `rename/config-vocabulary` (2026-11-07, phases 0 to 9, tags `rename-phase-N`), waiting for the full retest and the merge into `dev`. Plan and phases: `.claude/outdated/tasks/config_rename_strategy.md`.
 
 **Context.** ADR-088 fixed the three kinds of configuration but left three problems:
 1. Several settings sit in the wrong file (verified in code, 2026-11-07):
@@ -4415,7 +4415,7 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 3. The top-level recipe key `type:` (species, project, pipeline, audit) was read by no code and is removed; `legacy_keys.py` refuses it and the migration script drops it.
 4. "Project palette" becomes "Deployment palette"; the app features name `project-independent` becomes `standalone`.
 5. Kept: IRIDA's project (`irida.project_id`), `pyproject`, `project_root`, "this project" for the repository.
-6. Old names are refused with a "renamed to" message (`renamed_keys.py`); the old-words audit counts "project". Mapping: `.claude/tasks/project_word_mapping.md`.
+6. Old names are refused with a "renamed to" message (`renamed_keys.py`); the old-words audit counts "project". Mapping: `.claude/outdated/tasks/project_word_mapping.md`.
 
 Lesson: a panel renderer that reads `active_cfg()` re-renders the whole sidebar (shell stability pattern, ADR-045 R4): the Info content is its own output slot.
 
@@ -4946,7 +4946,7 @@ shape — both had gone stale describing the pre-#45 single-bundle design).
 5. The Raw/Result data badge says "N preview filter(s) on, not saved"; the Result plot badge says the filters change the table only and plots change on My view.
 7. Scope (Eve, 2026-11-11): a preview filter belongs to a **dataset** (the dataset the plot targets; plots sharing it share the filter); today it is one global list (to change). An audited step belongs to **one plot's T3** (T3 = that plot's T2 + its audited steps, derived, not stored); the scope option (this plot / all / all except) propagates it into every concerned plot, concerned = the column is in that plot's T2 (follows the lineage). T1 and T2 never change.
 8. Column drops follow the same logic as filters: preview on Raw/Result/My view is table-only; drop to audit is offered like Send to Audit, with the same scope options, and a warning listing the plots that use the column (issue #59).
-9. Still to confirm: My view without audit capability (ADR-085 scratchpad vs "My view only when audit is on"); what Apply of an audit clears. See `.claude/design/home_filter_scoping_concept.md` and the HOME-FILTER-* / HOME-AUDIT-* diagrams.
+9. Still to confirm: My view without audit capability (ADR-085 scratchpad vs "My view only when audit is on"); what Apply of an audit clears. See `.claude/outdated/design/home_filter_scoping_concept.md` and the HOME-FILTER-* / HOME-AUDIT-* diagrams.
 6. One operator vocabulary (`OP_WORDS` in `t3_audit_engine.py`): dropdown, staged list and help use the same words; a one-value set reads "column = value".
 
 **Consequences.** Tier-isolation tests flipped; `TestPreviewFiltersOnReferenceViews` guards the behaviour (mutation-tested). Help (`app/src/help/home.md`), user guide, FAQ, contract updated.
