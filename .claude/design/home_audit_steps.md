@@ -117,7 +117,27 @@ audit mode**; `aesthetic_override` (colour, shape) is not implemented and stays 
 Old sessions: every saved per-plot node maps to a level 3 step of the same kind with reach "these plots", empty
 initials; legacy types are kept as they are.
 
-## 5. Reach and stage: what the user chooses, and what happens (replaces "levels")
+## 5. Where a step goes (decided 2026-11-12, Eve, P5)
+
+### 5a. The decided design
+
+1. **An audit is every change the user makes, with a recorded reason.** Preview is not an audit (it changes nothing). The audit is **the original recipe plus audit steps inserted at chosen places of its dataflow** (the forked recipe, ADR-097/099); the user's recipe files are never edited. Running the original recipe gives the original tables, running the audit recipe gives the audited ones.
+2. **A step is an operation on the data, not on a plot:** *what* (remove entities by key | filter rows by value | drop a column), *where* (a node of the dataflow: a dataset, a table at T1, a table at T2, or a plot's own table at T3) and a *reason*. Its effect is everything downstream of that node, shown before Apply.
+3. **Removing a key** (for example `sample_id`) is offered **from all tables that have the key in one action** (the default; for a poor sample that must be re-run) or from chosen ones. The dialog lists where it cut and where the key does not exist.
+4. **Scope by tick boxes.** The user ticks the results (plots) that must change, all ticked by default. The software places the step **at the earliest point inside each ticked table that reaches no unticked plot**; where a table is shared with an unticked plot it places the step **later, at the plot's own table**, and says so. There is no pinning: the original plots (the immutable Result, the Compare reference, the original plots in the export) are the evidence of why data was removed.
+5. **A step on a plot's own table (T3) is a real step**, recorded and exported (for example a category with too few observations to be meaningful in this plot). **There is no hiding in audit mode.**
+6. **Value filters and column drops follow the same logic**, on the table the user looks at; **all downstream effects are shown** before Apply (a filter before an aggregation changes every later number computed from those rows); the **reason** records why it was done here and not there.
+7. **What the user is shown** (four layers): (1) the results with tick boxes, grouped by tab; (2) one plain sentence per result on the data behind it (from the lineage and the table's description; what one row is; which other plots share it); (3) what will happen to each plot as the user ticks (changed at the source | changed at this plot only | unchanged); (4) the lineage chain on request, a read-only plain layered list (per node: name, description, steps in plain words, a verdict per step, key present, rows and samples, shared plots; the user's step marked where it sits).
+8. **What the software must know** (the recipe graph, D1, a prerequisite built first): per table the datasets feeding it, the reaction of each step to a missing sample **relative to the key** (declared properties in the action registry refined by parameters; Polars' optimizer used as a test of those declarations, since "pushed down" proves a step is safe and "refused" proves nothing), join types and which inputs carry the key, key presence at each stage, population-dependent steps, and which plots share each table. The dialog also **compares the result of removing early and removing after** on the real data and reports whether it is the same.
+9. **Names (decided):** every element (recipe `info:`, group, plot, table, dataset) has `label` (short name) and `description` (one or two sentences: what it is and what one row is). `info` on plots, datasets and tables and `display_name` in the recipe's `info:` are old names: a validator warning first, a refusal later (the "renamed to" rule). The recipe's top-level `info:` block and a plot's `title` (the title drawn on the figure) stay. The recipe validator gives an **advice** (never a block) for a plotted table without a description.
+
+Evidence and the measurements behind these points: `home_evidence/home_where_to_remove_data_science_2026-11-12.md`.
+
+### 5b. Earlier text, kept for history until this file is rewritten
+
+> **SUPERSEDED IN PART (2026-11-12, Eve, P5):** the three reach options, the levels 0-3 and "value filters are never inserted early" below are replaced by 5a. The parts about stage order, early insertion at the sources inside each reached table, and the notes on key families still describe the intended engine behaviour.
+
+#### Earlier section 5 (history)
 
 Two different questions, kept apart:
 - **Reach**: which plots are affected. The user picks it with a **selector** (radio buttons, **nothing
