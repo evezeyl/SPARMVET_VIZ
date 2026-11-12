@@ -70,6 +70,9 @@ Categories: `= equals`, `≠ not equal`, `∈ any of`, `∉ none of`. Numbers: `
 
 - Badge on the table: "Viewing: Raw / Result" plus "N preview filter(s) on, not saved". [built]
 - The row count line ("Viewing rows a through b of N") is the user's check that a filter worked. [built]
+- **Notice in the Filters panel (decided 2026-11-12, Eve; to build).** It never mentions a function that the configuration does not have.
+  - Exploration only, no audit mode: "Filters here change the table you are looking at. They are not saved and never exported. The plot is the Result and does not change."
+  - Exploration with audit mode available: the same text plus "To change a plot, use Audit mode."
 
 ## 8. Help text for the user (to write with the change)
 

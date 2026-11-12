@@ -73,6 +73,7 @@ Audit mode is not a new central page. It reuses what HOME already has, so very l
   that lets the user read before committing. **There is no draft list and no Apply gate in the Audit panel**: the
   step is applied when Apply is pressed in the dialog. If it was a mistake, delete it from the step list
   (section 10).
+- **Notice while audit mode is on (decided 2026-11-12, Eve; to build):** "Audit mode: each step changes the audited plot and the data, needs a reason, is recorded and is exported. The Result plot stays unchanged for comparison."
 - **Compare** is an on/off toggle inside audit mode. **Decided 2026-11-12 (Eve, P1):** audit mode requires the flags `comparison_mode_enabled`, `session_management_enabled` and `export_enabled` (the validator's Rule 6 stays); with the toggle off the audited plot uses the full width.
 - **Audit table stage selector [confirm]:** the audit table can show audit T1 | audit T2 | audit T3 of the plot
   (read-only, no filters there), so the user can check where a sample was removed (Eve's idea of selecting T1, T2,
