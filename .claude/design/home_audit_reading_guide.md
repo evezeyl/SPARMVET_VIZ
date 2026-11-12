@@ -103,6 +103,7 @@ Compare is part of Audit mode and is on whenever audit is on (P1). Names use hyp
 | O5 | Rule texts | **DECIDED and edited** (Tier 1 dependencies in `rules_runtime_environment.md`; the T3 sentence in `ui_implementation_contract.md`) | - |
 | O6 | The node popup and the project overview: **DECIDED a popup in its own window**, built as a pure content function so a panel can replace the window later; what stays of the right panel (Inherited nodes, filter inventory, pending badge) is decided at the screen redraw | partly decided | UI-HOME-AUDIT |
 | O7 | The **step compiler** (defined in the vocabulary of `home_audit_steps.md`: it turns a user's step into recipe actions in the right list of the audit recipe; the generalised `t3_translator`), the event log, the pre-export review gate, D1-D14 (trimmed) | **accepted** (Eve); the specification is written in stage 2 | the build plan |
+| O9 | Rename the recipe field `is_primary_key` to `is_entity_key` (a primary key is unique, an entity key repeats in long tables); warn first, refuse later | yes, at the recipe-format stage | clarity |
 | O8 | Configuration stage | **DECIDED** to leave it to the end (`CONFIG-REVIEW-1`) | - |
 So **nothing is waiting for you now except the review of the text; the right panel is decided at the screen redraw (O6), and the compiler is specified in stage 2 (O7).**
 
