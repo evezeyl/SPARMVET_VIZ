@@ -12,6 +12,7 @@ through the recipe engine, so a mistake in the engine cannot hide in the oracle:
 | qa_facet_by_mapping (plot)       | panels that were asked for and not drawn (issue 65)                 |
 | QA_fanout_exhibit                | two long tables joined on one key multiply rows (issue 68); an EXHIBIT of a known defect |
 | QA_aggregated_no_key             | a plot whose data is an aggregate has no sample_id: removing a sample by its ID cannot reach it (issue 60) |
+| QA_population_zscore             | a step that depends on the other samples (z-score): where a removal is placed changes the numbers (audit placement rule) |
 
 When the many-to-many check of issue 68 is built, add a test here that it flags QA_fanout_exhibit and no other canary.
 
@@ -155,6 +156,28 @@ def test_aggregated_plot_data_has_no_sample_key(stage):
     )
     assert got.equals(expected), "counts per country and year differ from the raw metadata"
     assert got["n_samples"].sum() == metadata["sample_id"].n_unique(), "a sample was lost or counted twice"
+
+
+def test_zscore_depends_on_the_other_samples(stage):
+    """Fixture of the audit placement rule: the z-score of one sample is computed across ALL samples.
+
+    The oracle comes from the raw Quast file. The second half shows why the place of a removal matters: removing a
+    sample before the statistic changes every other sample's value, removing it after leaves them unchanged. No
+    shipped recipe had a step of this kind until this canary.
+    """
+    quast = _tsv("test_data_Quast_*.tsv").select(pl.col("sample_id").cast(pl.String), pl.col("N50").cast(pl.Float64))
+    mean, sd = quast["N50"].mean(), quast["N50"].std()
+    expected = quast.with_columns(((pl.col("N50") - mean) / sd).alias("expected")).sort("sample_id")
+    _, tier2 = stage("QA_population_zscore")
+    got = tier2.select(pl.col("sample_id").cast(pl.String), pl.col("n50_zscore").cast(pl.Float64)).sort("sample_id")
+    assert got.height == quast.height
+    assert (got["n50_zscore"] - expected["expected"]).abs().max() < 1e-9, "z-scores differ from the raw-file oracle"
+
+    removed = expected["sample_id"][0]
+    kept = expected.filter(pl.col("sample_id") != removed)
+    after = kept["expected"]  # removal AFTER the statistic: the other samples keep their value
+    before = ((kept["N50"] - kept["N50"].mean()) / kept["N50"].std())  # removal BEFORE the statistic
+    assert (after - before).abs().max() > 1e-3, "removing before and after the statistic must give different numbers"
 
 
 def test_facet_by_in_mapping_gives_panels(stage, raw_config):

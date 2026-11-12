@@ -264,6 +264,13 @@ joins:
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key.yaml'
 
+  QA_population_zscore:
+    description: QA canary - a z-score across samples, so a sample removed before the step changes every other sample (audit placement rule).
+    ingredients:
+    - dataset_id: metadata_schema
+    - dataset_id: Quast
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_population_zscore.yaml'
+
 # ── Analysis Groups ───────────────────────────────────────────────────────────
 # Plot specs: see plots/ for each spec file.
 analysis_groups:
@@ -337,6 +344,9 @@ analysis_groups:
       qa_aggregated_no_key:
         info: Data of this plot is an aggregate with no sample_id column (issue 60).
         spec: !include '1_test_data_ST22_dummy/plots/qa_aggregated_no_key.yaml'
+      qa_population_zscore:
+        info: A z-score across all samples, the case where the place of a removal changes the numbers of the other samples.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_population_zscore.yaml'
 
 plot_defaults:
   theme: theme_minimal

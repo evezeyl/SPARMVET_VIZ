@@ -1,0 +1,19 @@
+# QA canary: a step whose result for one sample depends on the OTHER samples (a z-score across all samples).
+# Removing a sample BEFORE this step changes the z-score of every other sample; removing it AFTER leaves them
+# unchanged. This is the case that the placement rule of the audit design (earliest correct point, home_audit_steps.md
+# section 5a) must handle, and the fixture for its tests. No shipped recipe had such a step.
+tier1:
+  - action: "cast"
+    columns: ["sample_id"]
+    dtype: "String"
+  - action: "join"
+    right_ingredient: "Quast"
+    "on": ["sample_id"]
+    how: "left"
+  - action: "keep_columns"
+    columns: ["sample_id", "country", "n50"]
+
+tier2:
+  # appends n50_zscore = (n50 - mean over all samples) / standard deviation over all samples
+  - action: "z_score"
+    columns: ["n50"]
