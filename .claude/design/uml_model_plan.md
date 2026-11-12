@@ -411,3 +411,5 @@ until the change is built; tracked by `AUDIT-REPLACE-1` in `tasks.md`), **valid*
 
 `audit_uml_model.py` checks tags against the repository; it does not check that diagrams agree with each other. That check is the
 Checker persona of `.claude/workflows/design_review_personas.md` and is run by hand.
+
+**Added 2026-11-12 (hash model, Eve):** `DM-KEYS` (general picture: what each hash is made from and what it answers) with the details `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT`, in the "Data and configuration" package; changed `HOME-AUDIT-CACHE`, `EXP-MODES`, `STM-STAGE`, `SEQ-EXPORT`. The general model points to the details by name ("Detail: DM-KEYS-..."). Content: `.claude/design/home_evidence/home_hash_model_2026-11-12.md`.
