@@ -1,0 +1,65 @@
+# Independent review of the decided HOME design (one pass before Eve reviews it)
+
+**Written for:** Eve. **Written:** 2026-11-12. **Method:** `.claude/workflows/design_review_personas.md` (rules 1-8): scientist, data scientist, software developer, software architect; each finding says what was run. **Evidence classes:** verified (run, or read at `file:line`), reasoned, external, assumed.
+**What was reviewed:** the design as decided in P1-P9: `home_preview_filters.md`, `home_audit_steps.md` (sections 3, 5a, 11, 19), ADR-099 points 11-14, the reading guide. **Status:** findings and remedies; the decisions are Eve's. No code, configuration or diagram was changed. Scratch scripts: `tmpAI/architect/`.
+
+## 0. The answers to your questions
+
+1. **Can the science be trusted?** Yes, on the conditions the design already sets: the original data is never changed; every change has a recorded reason; both the original and the audited result are exported; the steps can be verified by someone else from the bundle. **Three things weaken that claim and should be settled first:** the strongest protection against post-hoc exclusion (the check "the filter acts on the variable the plot shows") was deferred; the caption count cannot be computed for plots whose data has no key; and "remove by attribute" (a whole batch, a whole country) does not exist. No software can make an exclusion scientifically valid; it makes it visible, justified and re-checkable, and that is what the design does.
+2. **Wrong data-science decisions?** **None found that is wrong.** The placement rule (earliest correct point, per table, every input that has the key) matches standard theory and holds on all 7 shipped recipes. **Three statements need tightening** (order of steps, how "affected" is defined, the data check when the key is absent), section 3.
+3. **Sound architecture and functionality?** Yes, with constraints found by testing: the mechanism for "different scope per table" **works with the existing engine for ordinary datasets** (verified) but **not for the special dataset `metadata_schema`**; the recipe graph must come first; new screens must be pure modules with thin handlers.
+4. **Forgotten things:** 9 found, section 4. The most valuable: remove by attribute, an exported exclusion list, a noun for the entity, the caption count for key-less plots.
+5. **What to decide before the review/plan:** the short list in section 5.
+
+## 1. What was run
+
+| Check | Result |
+|---|---|
+| Dataset variants per table (a forked recipe gives `Quast_with_metadata` an audited copy of `Quast`; `QC_Reads_Anchor` keeps the original) | **works**: 126 rows / 42 samples -> **123 / 41**; `QC_Reads_Anchor` stays 42 (verified, existing orchestrator, no engine change) |
+| The same for `metadata_schema` | **fails to build** ("column `source` not found"): `metadata_schema` is a top-level special dataset, not an ordinary data schema (cause not investigated) |
+| Tables of the ST22 recipe that have a `country` column | 4 of 6: **`ResFinder` and `Summary_phenotype_length_fragmentation` do not** (verified) |
+| Field-specific words in user-visible UI strings (sample, gene, isolate, strain; rough grep) | 30 lines (verified, rough) |
+| Does the recipe format let a column carry a label? | yes (`label: "Sample ID"`), but that label is not a noun for "n = 38 ..." (verified in `docs/appendix/Standards_yaml.qmd`) |
+| Earlier results reused | removal commutes with all steps of all 7 shipped recipes; Polars' optimizer is a one-sided proof; three demos (z-score, key-less aggregate, one-input join); all in `home_where_to_remove_data_science_2026-11-12.md` |
+
+## 2. What holds
+
+- **Original never changed; the audit is the recipe plus inserted steps; recipe steps are never removed.** Consistent with the science (S1, S2, S4) and with the engine (the forked recipe exists and was measured).
+- **Tick-box scope by tables** is implementable (section 1) and shows the user what matters (the lineage, which plots share which table: verified on `Quast_with_metadata`).
+- **Preview is not an audit; audit needs export, Compare and sessions; Import gated and validated.** Coherent with the intended use; the authorisation by configuration matches how the app is deployed.
+- **No hiding; free-text reason; NA never silent; caption in the report text.** Transparent and data-agnostic.
+- The decisions follow the stated principles: inform and warn, the user decides, only the technical blocks.
+
+## 3. Findings (what to tighten, by point of view)
+
+| # | Point of view | Finding | Evidence | Severity | Remedy | Decision needed |
+|---|---|---|---|---|---|---|
+| SC1 | Scientist | The check **"the filter acts on the variable the plot shows"** (selection on the outcome, the classic route to a flattering figure) is in the **"later"** list. It is the single most important guard against post-hoc exclusion, and cheap once the recipe graph knows the columns a plot uses (needed anyway for "a used column") | reasoned; the decided first set is in `home_audit_steps.md` 19 | high | move it into the first set, level "confirm with a reason" | yes |
+| SC2 | Scientist | **The caption count "n = entities" cannot be computed for a plot whose data has no key column** (counts per country and year). The plot's own table does not contain `sample_id` | verified (canary `QA_aggregated_no_key`: T2 has no `sample_id`) | high | count entities at the **last node of the lineage that still has the key** (the input of the aggregation), and say so ("38 samples enter this figure") | yes |
+| SC3 | Scientist | **"Affected plot"** (original and audited both exported) is not defined. By reach (a step reaches its table) or by data (the plot's frame really differs)? A step can reach a table in which the sample does not occur ("not concerned") | reasoned from `home_audit_steps.md` 10 statuses | medium | define it by data: the plot's frame differs between the two recipes | small |
+| SC4 | Scientist | **Missing: remove by attribute.** A batch, a farm, a country must be removed everywhere, but the attribute exists in some tables only: `country` is absent from 2 of 6 tables, so a value filter cannot reach them | verified (section 1) | high | add a step kind **"remove entities where [column, operator, value]"**: resolved to keys in the table that has the column, then removed from every table that has the key (the same placement logic); the dialog lists the keys it found | yes |
+| SC5 | Scientist | **Missing: an exported exclusion list** (key, reason, date, step) in a plain file. Your "remove it from everywhere to be re-run in another analysis" needs a list the pipeline can read | reasoned from your use case | medium | add `exclusions.tsv` to the publication bundle | small |
+| SC6 | Scientist | After a removal a **category can become empty** (a country with no samples left) and still appear as an empty facet or legend entry. The check for it was deferred | reasoned | low | keep deferred; note in the help | no |
+| DS1 | Data scientist | **The statement "row steps combine as AND and drops as a union, so their order inside one stage does not matter"** (`home_audit_steps.md` 10) predates the new placement model. Steps now sit at different nodes: an aggregation between two filters makes them **not** commute | reasoned (theory) | medium | restate: the order is the **position in the dataflow**, never the creation time; removing one step recomputes the rest | yes (wording) |
+| DS2 | Data scientist | **The data check ("removed early against removed after")** needs a precise rule. What is equal (exact rows? floats within a tolerance?) and what when the **late variant cannot be made** (no key in the table)? | reasoned | medium | exact equality on the other rows, a stated tolerance for floating-point columns; if the late variant is impossible say "cannot be removed after this point" | yes (wording) |
+| DS3 | Data scientist | **One key family only.** The design handles one entity (`sample_id`). Hierarchical entities (patient and samples), composite keys and a second entity (gene) are not covered; secondary keys were left for later (`home_audit_steps.md` open question 3) | verified from the design text | medium | state it as a limit of the first version; SC4 covers the common hierarchical case through attributes | yes (accept the limit) |
+| DS4 | Data scientist | **Fan-out (many-to-many joins) inflates rows** and makes counts misleading; the check is issue #68 and is a recipe check, not an audit check | verified earlier (canary `QA_fanout_exhibit`) | medium | keep as a recipe validation (WP10); the entity counts in the audit already guard the audit's own numbers | no |
+| AR1 | Architect | **The placement mechanism** (tick-box scope per table) works with the existing engine for ordinary datasets (**verified**), so my earlier "orchestrator stays frozen" holds for them. It **does not for `metadata_schema`**, a singleton special dataset | verified (section 1) | high | decide for special datasets: insert at the table's first join step (after the join; equivalent while the steps are per-entity), or change the engine. Dataset-level insertion stays needed when a population-dependent step sits inside a dataset's own steps | yes (stage 2) |
+| AR2 | Architect | **The recipe graph (D1) needs a specification** before the build: its content, its tests, and the **registry of how each of the 67 actions reacts to a missing entity** (a declared property refined by parameters). Nothing yet says how that registry is kept true | reasoned | high | decide that the registry is **tested by an oracle**: for every action declared "per entity", removing an entity before or after gives the same other rows on random frames (this is the property test D9, made a design requirement) | yes |
+| AR3 | Developer | **Security follow-ups.** (a) The NA rule must be implemented with **parameterised actions, never by building formula strings from user values** (a value with a quote would otherwise inject code). (b) Session and bundle files validated on load. (c) The new Import flag needs a validator rule (Import requires Export) and a name | reasoned (a); verified that the translator today builds named actions, not formulas | high (a), medium | write (a) as a rule of the design; add the flag to the configuration stage | small |
+| AR4 | Developer | **Data-agnostic words.** 30 user-visible lines name samples or genes (rough grep). The caption needs a **noun** (singular and plural) for the entity; the key column's label is "Sample ID", not a noun | verified (section 1) | medium | a dedicated field for the entity noun (for example `entity: sample` on the key column), used by the dialog, the caption and the help; a one-off sweep of the UI texts in the build | yes |
+| AR5 | Architect | **Vocabulary collision.** "T3" meant the interactive leaf (My view); it now means the plot's own table. ADR-099 keeps the `t3_*` names | reasoned | low | in new text say "plot table"; keep the old names in code until a rename task | no |
+| AR6 | Architect | **Build rule.** The handlers are single functions of up to 2,700 lines. The new screens (dialog, lineage, checks, caption, export manifest) must be **pure modules with table tests and thin handlers**, or the audit build will grow the problem | verified earlier (`scan.py`) | medium | write it into the build plan | no |
+
+## 4. What was forgotten (the list to decide on)
+
+1. **Remove by attribute** (SC4). 2. **An exported exclusion list** (SC5). 3. **The entity noun field** (AR4). 4. **The caption count for plots without a key** (SC2). 5. **The definition of "affected"** (SC3). 6. **A tested registry of how actions react to a missing entity** (AR2). 7. **The rule for special datasets such as `metadata_schema`** (AR1). 8. **The statement on step order** (DS1). 9. **The rule for formula-free NA handling** (AR3 a).
+Considered and **not** needed now: a census of entities per table, empty-category warnings, a second entity key, fan-out in the audit (a recipe check).
+
+## 5. To decide before the review and the plan (one at a time, in this order)
+
+1. **SC1:** the "acts on the plotted variable" check moves into the first set. 2. **SC2:** how n is counted for plots without a key. 3. **SC4:** remove by attribute, in the first version or later. 4. **AR4:** the entity noun field. 5. **SC5:** the exclusion list. 6. **SC3 and DS1, DS2:** the three wordings. 7. **AR2:** the oracle test as a design requirement. 8. **AR1:** the special datasets (stage 2, with the engine). 9. **AR3, AR5, AR6:** build rules, no decision needed beyond agreement.
+
+## 6. Not covered (said plainly)
+
+Usability with real users (the novice persona; the wording of the dialog and the warnings is untested); production data size; shared-server concurrency of the original stored tables (architect review AR4); property tests with random data were designed but not run; the cause of the `metadata_schema` failure; the UML diagrams (a design pass, not a drawing review).
