@@ -1,6 +1,6 @@
 # Independent review of the decided HOME design (one pass before Eve reviews it)
 
-**Written for:** Eve. **Written:** 2026-11-12. **Method:** `.claude/workflows/design_review_personas.md` (rules 1-8): scientist, data scientist, software developer, software architect; each finding says what was run. **Evidence classes:** verified (run, or read at `file:line`), reasoned, external, assumed.
+**Written:** 2026-11-12. **Method:** `.claude/workflows/design_review_personas.md` (rules 1-8): scientist, data scientist, software developer, software architect; each finding says what was run. **Evidence classes:** verified (run, or read at `file:line`), reasoned, external, assumed.
 **What was reviewed:** the design as decided in P1-P9: `home_preview_filters.md`, `home_audit_steps.md` (sections 3, 5a, 11, 19), ADR-099 points 11-14, the reading guide. **Status:** findings and remedies; the decisions are Eve's. No code, configuration or diagram was changed. Scratch scripts: `tmpAI/architect/`.
 
 ## 0. The answers to your questions
@@ -62,4 +62,4 @@ Considered and **not** needed now: a census of entities per table, empty-categor
 
 ## 6. Not covered (said plainly)
 
-Usability with real users (the novice persona; the wording of the dialog and the warnings is untested); production data size; shared-server concurrency of the original stored tables (architect review AR4); property tests with random data were designed but not run; the cause of the `metadata_schema` failure; the UML diagrams (a design pass, not a drawing review).
+**The hardest case of the placement rule is untested on real recipes:** no shipped recipe uses a step that depends on the other samples (statistics across samples, ranks, running totals); the rule is proven by theory, by Polars' optimizer on synthetic cases and by the three demos, not by a recipe in use. Usability with real users (the novice persona; the wording of the dialog and the warnings is untested); production data size; shared-server concurrency of the original stored tables (architect review AR4); property tests with random data were designed but not run; the cause of the `metadata_schema` failure; the UML diagrams (a design pass, not a drawing review).
