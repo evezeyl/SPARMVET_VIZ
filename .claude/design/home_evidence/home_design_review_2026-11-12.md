@@ -11,7 +11,9 @@
 | SC4 remove by attribute | **Principle registered** (Eve: select with the filter on a table that carries it, remove by key). Verified: `country` has one value per sample in all 4 tables that carry it. **One point to confirm:** which samples the selector finds (28 across the tables that carry it, not 21 from the table the user looks at) |
 | Limit "hardest case untested" | **Done**: collection `QA_population_zscore` with plot `qa_population_zscore` and an oracle test from the raw Quast file; mutation-checked (a broken z-score fails it). Headless baseline 1652 |
 | Limit "UML not reviewed" | **Done**: `home_uml_review_2026-11-12.md` (3 diagrams contradicted, 8 partly outdated; nothing edited) |
-| SC1 check on the plotted variable, SC2 caption count for key-less plots, AR4 entity noun, AR2 oracle test for the action registry, AR1 special datasets | **Open, one at a time** (`home_audit_steps.md` section 16 item 7) |
+| SC1 check on the plotted variable | **Withdrawn by Eve, 2026-11-12**: an ordinary audit step; the user decides and justifies; transparency lets the reader judge |
+| AR2 oracle test for the action registry, AR1 special datasets | **Closed** by the T1/T2/T3 model |
+| SC2 caption count for key-less plots, AR4 entity noun | **Open, one at a time** (`home_audit_steps.md` section 16 item 7) |
 
 ## 0. The answers to your questions
 
