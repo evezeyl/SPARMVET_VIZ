@@ -51,6 +51,7 @@ target), issues #56, #60, #61, #62, #63, #64.
 | `home_design_first_roadmap_2026-11-12.md` | the behaviour table by kind of configuration and the questions of P1-P4 | working document for stage 1 |
 | `home_evidence/home_hash_model_2026-11-12.md`, `home_attrition_report_2026-11-12.md`, `home_design_review_2026-11-12.md`, `home_uml_review_2026-11-12.md`, `home_where_to_remove_data_science_2026-11-12.md` | the hash model, the attrition and caption, the independent review, the UML review, the data-science analysis behind the placement of steps | evidence and decisions; the first two are decided |
 | `recipe_review_st22_2026-11-11.md` (section 3b) | the test recipe defects and the AMR data scientist proposals R1-R4 (agreed) | applied by `RECIPE-ST22-FIX-1` |
+| `home_observations_and_future.md` | am I blocked (no), where my text is interpretation, my observations and risks, the future (other engines, non-tabular data, maps, interactivity) and the small engine registry | read when you want the honest state |
 | `home_audit_review_agenda_2026-11-12.md` | the script of the review session | current |
 | `home_evidence/` (forensics, architect review, gating paper) | analysis: what is decided, options with pros and cons, verified findings | evidence to consult per problem, not designs; the gating paper is paused |
 | `home_audit_first_cut.md` | a smaller first audit version | PARKED (plan stage) |
