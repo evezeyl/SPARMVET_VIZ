@@ -499,3 +499,6 @@ Eve: move outdated plans/tests to a flagged `outdated` folder; work as design (s
 
 ## 2026-11-12 (P1 decided)
 Eve decided P1: audit mode requires export, Compare and sessions; Compare requires audit. Rule 6 of the validator is right; my F16 / gating P4 / R-b, R-c / `test-audit` were wrong (withdrawn in the papers). Reading guide idea 8 explains "rows are not samples"; idea 9 and ADR-099 point 10 reworded (audit may remove poor-quality samples or data that makes no sense in a plot; not for exploration; not for homogenising messy fields). ADR-099 point 11 added. P2 is now.
+
+## 2026-11-12 (P2, plot decided)
+Eve: Exploration has ONE plot (Result, immutable, always shown); Audit mode has the immutable Result (comparison) and the audited plot (T3/My view). Replaces "Raw has no plot (NA)" in `home_preview_filters.md` (text fixed). UML to update after her OK: UI-HOME-EXPLORATION box and HOME-VIEW-MATRIX PLOT row (Raw cell "NA"). Open in P2: the notice text.

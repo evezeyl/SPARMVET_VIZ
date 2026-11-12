@@ -30,7 +30,7 @@ never saved, never exported and never changes a plot. To change what a plot show
 |---|---|
 | Row filter | Hides rows in the **data table** of the stage you are on (Raw = T1, Result = T2). [built for the table] |
 | Column selector | Hides columns in the **data table** only. [built] |
-| Plot | **Not changed.** The Result plot is the recipe's plot; Raw has no plot (NA). [to build; today Apply also filters the My view plot] |
+| Plot | **Not changed.** Exploration has **one plot: the Result, immutable** (the recipe's plot), always shown whatever the Data toggle says (Raw or Result); the toggle only changes the table. Decided 2026-11-12 (Eve), replacing "Raw has no plot (NA)". [to build; today Apply also filters the My view plot] |
 | Data files | Never written; the filter runs on a lazy copy at render time. [built] |
 | Export | Never exported. [built] |
 
