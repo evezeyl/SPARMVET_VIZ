@@ -4218,6 +4218,7 @@ separate "Compare T2 vs T3" switch (visible only in My view) split the plots in 
 ## ADR-089: Cache chain, chained content keys for Tier 1, Tier 2 and the loaded manifest (2026-11-05)
 
 > **To be amended by ADR-099 (not yet built):** the original cache keeps these rules; a separate audit cache with chained keys is added next to it (key = hash of the upstream key and the operations that will run, stored in the file).
+> **Amended by ADR-099 point 16 (Eve, 2026-11-12, not yet built):** a key is a **series of labelled parts** joined in execution order, not a hash of hashes: `E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`, 128 bits per part, an empty part is left out (T3 = T2 = T1); the T1 key is per collection with precise parts from the recipe graph (point 2 of the decision below stays fail-safe for a collection whose inputs cannot be listed); T3 and audit nodes have keys; `data_batch_hash` stays the full content hashed once per session (point 8, no stat cache; later maybe a pre-hash when new data arrives); the plot input key of the table below is dropped (never built); the older `decision_hash` is retired. Model: `.claude/design/home_evidence/home_hash_model_2026-11-12.md`, diagrams `DM-KEYS*`.
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl). Authority: @dasharch, decided with @evezeyl after a verified bug (fork issues evezeyl/SPARMVET_VIZ#9 and #10).
 **Extends:** ADR-024 (tiers), the reproducibility hash schema (`docs/foundations/reproducibility_hash_schema.qmd`), ADR-031 (decision hash in Parquet metadata), ADR-088 point 6.

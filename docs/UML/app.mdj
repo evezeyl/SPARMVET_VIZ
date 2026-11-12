@@ -13907,7 +13907,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": false,
 											"left": 953,
-											"top": 266,
+											"top": 265,
 											"height": 13,
 											"alpha": 1.5707963267948966,
 											"distance": 15,
@@ -96302,8 +96302,8 @@
 											"left": 136,
 											"top": 50,
 											"width": 248,
-											"height": 26,
-											"text": "SOURCE DATA FILES\nread once per session (the only costly read)",
+											"height": 39,
+											"text": "SOURCE DATA FILES\nhashed once, then again only when they change (stat cache); in full at export and import",
 											"wordWrap": true
 										}
 									],
@@ -97193,7 +97193,7 @@
 											"top": 1280,
 											"width": 880,
 											"height": 26,
-											"text": "COST: only disk reads take time (data once per session, recipe files are small). Everything else hashes a few short strings. c is computed only when needed.",
+											"text": "COST: only disk reads take time. Data files are re-read only when their size, time or inode changed; recipe files are small. Everything else hashes a few short strings. c is computed only when needed.",
 											"wordWrap": true
 										}
 									],
@@ -97230,8 +97230,8 @@
 											"left": 1050,
 											"top": 1280,
 											"width": 900,
-											"height": 39,
-											"text": "TO CONFIRM (Eve): 1 series of labelled parts, 128 bits each. 2 phase 1 = coarse parts (whole-recipe material, collection id), phase 2 = precise parts from the recipe graph. 3 data hash: full content once per session, a size+time mode only as a later setting. 4 Rec with reasons. 5 retire decision_hash, drop the plot input key (ADR-089). Not built: all of the audit parts, c, A, Rec, AR",
+											"height": 52,
+											"text": "DECIDED (Eve): 1 series of labelled parts. 2 the target is precise parts from the recipe graph (the graph is built first, so no coarse phase unless it is late; a collection whose inputs cannot be listed safely keeps a coarse part). 4 Rec with reasons. 5 retire decision_hash, drop the plot input key (ADR-089). TO CONFIRM: 3 data hash at start: a stat cache (size, mtime, ctime, inode) skips re-reading unchanged files; always full content at export and import; a setting forces full content. Not built: all of the audit parts, c, A, Rec, AR",
 											"wordWrap": true
 										}
 									],
@@ -97955,7 +97955,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0GpzEm580gM="
 							},
-							"name": "SOURCE DATA FILES\nhashed once, then again only when they change (stat cache); in full at export and import",
+							"name": "SOURCE DATA FILES\nread once per session (the only costly read)",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -98336,7 +98336,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0GpzEm580gM="
 							},
-							"name": "COST: only disk reads take time. Data files are re-read only when their size, time or inode changed; recipe files are small. Everything else hashes a few short strings. c is computed only when needed."
+							"name": "COST: only disk reads take time (data once per session, recipe files are small). Everything else hashes a few short strings. c is computed only when needed. Later, maybe: hash new data when it arrives."
 						},
 						{
 							"_type": "FCProcess",
@@ -98344,7 +98344,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0GpzEm580gM="
 							},
-							"name": "DECIDED (Eve): 1 series of labelled parts. 2 the target is precise parts from the recipe graph (the graph is built first, so no coarse phase unless it is late; a collection whose inputs cannot be listed safely keeps a coarse part). 4 Rec with reasons. 5 retire decision_hash, drop the plot input key (ADR-089). TO CONFIRM: 3 data hash at start: a stat cache (size, mtime, ctime, inode) skips re-reading unchanged files; always full content at export and import; a setting forces full content. Not built: all of the audit parts, c, A, Rec, AR"
+							"name": "DECIDED (Eve): 1 series of labelled parts. 2 the target is precise parts from the recipe graph (built first; a collection whose inputs cannot be listed safely keeps a coarse part). 3 the data hash is the full content, once per session; no stat cache (the data changes little); later, maybe a pre-hash automation when new data arrives. 4 Rec with reasons. 5 retire decision_hash, drop the plot input key (ADR-089). Not built: all of the audit parts, c, A, Rec, AR"
 						},
 						{
 							"_type": "FCData",
@@ -99517,7 +99517,7 @@
 											"top": 150,
 											"width": 340,
 											"height": 13,
-											"text": "1  Start, or open a view",
+											"text": "1  Start, or open a view (the app reopened)",
 											"wordWrap": true
 										}
 									],
@@ -99557,7 +99557,7 @@
 											"top": 150,
 											"width": 420,
 											"height": 39,
-											"text": "sha256 of every data file once per session (the only costly read), sha256 of the recipe files (small), E; then D, R, the parts and the expected key of every node that is read",
+											"text": "sha256 of a data file only if its stat (size, mtime, ctime, inode) changed since the last session, else the saved value; sha256 of the recipe files; E; then D, R, the parts and the expected key of every node that is read",
 											"wordWrap": true
 										}
 									],
@@ -101375,7 +101375,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "1  Start, or open a view (the app reopened)",
+							"name": "1  Start, or open a view",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",
@@ -101398,7 +101398,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGh0G5Fb3bjJZE="
 							},
-							"name": "sha256 of a data file only if its stat (size, mtime, ctime, inode) changed since the last session, else the saved value; sha256 of the recipe files; E; then D, R, the parts and the expected key of every node that is read",
+							"name": "sha256 of every data file once per session (the only costly read), sha256 of the recipe files (small), E; then D, R, the parts and the expected key of every node that is read",
 							"ownedElements": [
 								{
 									"_type": "FCFlow",

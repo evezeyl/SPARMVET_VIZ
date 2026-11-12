@@ -9,6 +9,8 @@ subtitle: "Three-layer fingerprinting for data analysis recipe, data, and wrangl
 
 **Extended by ADR-089 (2026-11-05):** the three hashes below are now combined into a *cache chain* (see [Cache chain](#cache-chain-adr-089)). `data_analysis_recipe_sha256` now covers every file of the data analysis recipe, not only the entry file.
 
+> **To be amended by ADR-099 point 16 (decided 2026-11-12, not yet built):** the stage keys become a **series of labelled parts** joined in execution order (`E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`, 128 bits per part, an empty part is left out so T3 = T2 = T1); the T1 key is per collection (today one key serves the whole recipe) with precise parts from the recipe graph; T3 and the audit steps get keys; the whole-recipe hashes (recipe file set, data batch, engine) identify the project state and never decide what to rebuild; new hashes at export: a content hash of a frame, the steps hash, the record hash (steps with reasons) and the audit recipe hash; the data hash stays the full content, once per session. The older `decision_hash` is retired and the "plot input" key below is dropped (it was never built). Full model: `.claude/design/home_evidence/home_hash_model_2026-11-12.md`; diagrams `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT` (`docs/UML/diagrams/`). Everything below describes the model as built today.
+
 ---
 
 ## Context
