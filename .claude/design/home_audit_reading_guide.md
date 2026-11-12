@@ -4,24 +4,56 @@
 **Companions (the real content):** `home_preview_filters.md`, `home_audit_steps.md`, ADR-098 (what is built), ADR-099 (the
 target), issues #56, #60, #61, #62, #63, #64.
 
-## 0. All the HOME working documents and their role (checked 2026-11-12)
+## 0. How we work on the HOME redesign (Eve, 2026-11-12)
+
+1. **Design first.** Settle how HOME should work, so that it is both **science-sound** and **software-design-sound** (the criteria below). One problem at a time.
+2. **Review and agree.** For each problem: the statement, the options with pros and cons seen from both sides, your decision, and then it is written into the design files (`spaces/HOME.md`, `home_preview_filters.md`, `home_audit_steps.md`, ADR-099). Nothing is built, gated or tested before its design is agreed.
+3. **Then plan.** The mechanism (engine, keys, code structure), then a build plan in small revertible steps. Existing plans are ON HOLD until then.
+4. **Then build, gate and test**, from the agreed design.
+
+**Criteria every design decision is judged against**
+
+| Science-sound | Software-design-sound |
+|---|---|
+| S1 the original data is never changed | W1 one source of truth for each rule |
+| S2 nothing changes a plot, the data or an export without a recorded, reasoned, removable step | W2 looking (preview) and changing (audit) are two separate things |
+| S3 the numbers are right: missing values, thresholds, samples counted as well as rows | W3 behaviour is specified per kind of configuration, so it can be tested |
+| S4 the same data, recipe and steps give the same figure and export | W4 pure logic is kept apart from the screen |
+| S5 the software informs and warns, the user decides; only the technical blocks | W5 a feature that is off is absent, not greyed (ADR-071) |
+| S6 what you see is what is exported | W6 changes come in small, tested, revertible steps; no mechanism the design does not need |
+
+**The problems, in the order we settle them** (details of P1-P4 in `home_design_first_roadmap_2026-11-12.md` section 3-4; the analysis behind each in `home_evidence/`)
+
+| # | Problem | Status |
+|---|---|---|
+| **P1** | **Which kinds of configuration exist, and what depends on what** (may audit mode run without export, sessions or Compare?) | **NOW** |
+| P2 | The Exploration screen: "Raw has no plot (NA)", the notices | waiting |
+| P3 | Preview lists while audit mode is on | waiting |
+| P4 | What is exported and saved when there is no audit | waiting |
+| P5 | Audit: stage and reach (questions 1 and 6 below) | waiting |
+| P6 | Audit: the NA rule, its default (question 2, #63) | waiting |
+| P7 | Audit: reason categories, caption, audit table selector, first checks (questions 3, 4, 7, 11) | waiting |
+| P8 | The transition: what the features without audit show until audit mode exists | waiting |
+| P9 | Who may bring recipe text into the app (recipe text is code) | waiting |
+| later | Mechanism (stage 2): the audit engine, trial computation, event log, lineage map, D1-D14, architect findings N2-N6, legacy names (questions 8-10, 12, 13); then the build plan; then gating and test configurations | after P1-P9 |
+
+## 0b. All the HOME working documents and their role (checked 2026-11-12)
 
 | File | Role | Status |
 |---|---|---|
-| `spaces/HOME.md` | the canonical HOME design (CLAUDE.md 3.6: read before implementing) | **STALE** (2026-05-05): says "audit always on, no opt-out", the old "T3 cascade rule" with retired flag names; no Exploration, no audit mode. To rewrite from the agreed behaviour table |
+| `spaces/HOME.md` | the canonical HOME design (CLAUDE.md 3.6: read before implementing) | **STALE** (2026-05-05): "audit always on, no opt-out", the old "T3 cascade rule" with retired flag names; no Exploration, no audit mode. To rewrite from the agreed design |
 | `home_preview_filters.md` | Exploration design | agreed 2026-11-11 |
 | `home_audit_steps.md` | audit mode design, v4, with the three reviews | decided in part; `[confirm]` items open |
 | ADR-098 / ADR-099 (`architecture_decisions.md`) | what is built / the target | ADR-099 accepted in principle, not built |
-| this guide | the map and the 13 questions | entry point |
+| this guide | the order of work, the criteria, the problem queue and the 13 questions | entry point |
+| `home_design_first_roadmap_2026-11-12.md` | the behaviour table by kind of configuration and the questions of P1-P4 | working document for stage 1 |
 | `home_audit_review_agenda_2026-11-12.md` | the script of the review session | current |
-| `home_design_first_roadmap_2026-11-12.md` | the order of work (design, mechanism, code, gating, tests) and the **behaviour table by kind of configuration** with Q1-Q5 | proposal; to be folded into the files above once agreed |
-| `home_audit_forensics_2026-11-12.md`, `home_audit_architect_review_2026-11-12.md` | analysis papers: status map, options with pros and cons, findings | evidence for decisions, not designs |
-| `home_gating_and_test_configs_2026-11-12.md` | gating and test configurations | **paused** (stage 5, after the behaviour is agreed) |
-| `home_audit_first_cut.md` | a smaller first audit version | proposal |
-| `../outdated/design/home_filter_scoping_concept.md` | the first concept | OUTDATED, moved to `.claude/outdated/` |
-| `../tasks/home_exploration_build_brief.md`, `../tasks/next_session_start.md` | instructions for the builders | current |
-| `../tasks/test_plan_home_2026-11.md` | HOME test plan | not re-checked against ADR-099 |
+| `home_evidence/` (forensics, architect review, gating paper) | analysis: what is decided, options with pros and cons, verified findings | evidence to consult per problem, not designs; the gating paper is paused |
+| `home_audit_first_cut.md` | a smaller first audit version | PARKED (plan stage) |
+| `../tasks/home_exploration_build_brief.md`, `../tasks/next_session_start.md` | instructions for the builders | **ON HOLD** until the design is agreed |
+| `../tasks/test_plan_home_2026-11.md` | HOME test plan | valid for HOME as built; rewritten after the redesign |
 | `../workflows/design_review_personas.md` | the review method | current |
+| `../outdated/` | outdated plans, test notes and research, kept for history (index in its README) | OUTDATED |
 | `docs/UML/diagrams/HOME-*`, `UI-HOME-*` | pictures | see section 4 |
 
 **Not listed in CLAUDE.md:** none of the HOME design files above except `spaces/HOME.md` (stale). A session that follows CLAUDE.md alone would not find the design.

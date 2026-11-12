@@ -1,5 +1,7 @@
 # SPARMVET_VIZ — HOME Test Plan (Phase 1 of the split)
 
+> **VALID FOR HOME AS BUILT TODAY (2026-11-12):** it tests behaviour (My view, Compare, "Plot to show", per-plot audit) that the redesign replaces. It will be rewritten from the agreed behaviour table after the redesign. Do not extend it for the target.
+
 **Owner:** @evezeyl (tester) · @dasharch (fixer)
 **Split from:** [`test_plan_2026-06.md`](test_plan_2026-06.md) on 2026-11-08 — Eve: "last time it went
 in all directions," testing should follow what you actually do when you launch the app, not jump

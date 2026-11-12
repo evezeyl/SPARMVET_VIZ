@@ -1,5 +1,7 @@
 # Start here (2026-11-12): builders and the design review side by side
 
+> **ON HOLD (2026-11-12, Eve):** the prompts below were written before the design is agreed. The order of work is now design, agree, plan, build (`.claude/design/home_audit_reading_guide.md` section 0). **Do not use these prompts and do not start a work package until Eve releases it.** Independent of the design, and the first candidates to release: WP1 (#62), WP2 (#61), WP3a, WP8 (#66), WP10 (#68, needs her OK). WP4-WP6 (Exploration behaviour) wait for the behaviour design.
+
 **Written for:** Eve, and the Claude sessions she starts tomorrow. **Prepared:** 2026-11-11 evening, while Eve rested.
 Three tracks run at the same time. They must not step on each other: each has its own files (section 2).
 
@@ -43,7 +45,7 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 4. **Eve's dev server** (`--reload`, port 8123) reloads on every edit: keep each edit atomic, a half-written file breaks her page.
 5. **Scratch:** own folder `tmpAI/<your-name>/`; `tmp/` is for `@verify` evidence only.
 6. **A recipe change needs its picture looked at**, not only a green test (the review found that the tests pass with wrong figures).
-7. **The browser tests are timing-sensitive on this machine; this is established, not a guess** (controlled experiment of 2026-11-11, `home_audit_forensics_2026-11-12.md` section 5, issue #72). The old code (before the day's changes) failed as often
+7. **The browser tests are timing-sensitive on this machine; this is established, not a guess** (controlled experiment of 2026-11-11, `.claude/design/home_evidence/home_audit_forensics_2026-11-12.md` section 5, issue #72). The old code (before the day's changes) failed as often
    as the new code, and only under CPU load (1 of 3 runs each; 0 of 3 without load); the failures are always in different tests; no random seed or random order is involved. Known races: the label test reads the disk right after `_wait_shiny`;
    a recipe selection right after `goto` can be lost (the page then shows the default recipe). Rule: a red gate is a **question**: rerun the failing test alone, then the file once; if it fails again in the same place it is real (revert your package, S2).
    Never close an issue on a gate you have seen fail without saying so in the DONE comment. `TestRecipeSwitchPlotRender` is the other known timing-flaky test.
@@ -57,7 +59,7 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 > Read `.claude/tasks/next_session_start.md` and `.claude/tasks/home_exploration_build_brief.md`, then work as track B: WP4 (#56), WP5 with the QA canaries, WP3a display after track A's helper exists, WP6 last. Same protocol and constraints; do not edit engine files, design files or the UML.
 
 **Track D (design review, with Eve):**
-> Read `.claude/design/home_audit_review_agenda_2026-11-12.md`, then `home_gating_and_test_configs_2026-11-12.md` (the decision paper, section 8 = the questions), `home_audit_reading_guide.md`, `home_audit_forensics_2026-11-12.md` (section 0 and 4 first) and `home_audit_architect_review_2026-11-12.md` (section 0 first). Run the review with Eve in the order of the agenda, write her decisions into the design files at once, and change nothing in code.
+> Read `.claude/design/home_audit_review_agenda_2026-11-12.md`, then `.claude/design/home_evidence/home_gating_and_test_configs_2026-11-12.md` (the decision paper, section 8 = the questions), `home_audit_reading_guide.md`, `.claude/design/home_evidence/home_audit_forensics_2026-11-12.md` (section 0 and 4 first) and `.claude/design/home_evidence/home_audit_architect_review_2026-11-12.md` (section 0 first). Run the review with Eve in the order of the agenda, write her decisions into the design files at once, and change nothing in code.
 
 **Open question that may change WP4's scope (do not guess; Eve answers it in the review):** the interim of the header strip for the two features without the sandbox flag (forensics 3.7, F8; brief section 5, question 3). Until she answers, track B builds WP4 as briefed: the strip stays as built, nothing about My view, Compare or "Plot to show" is touched. (An earlier idea of adding a view-policy module to WP4 is withdrawn.)
 

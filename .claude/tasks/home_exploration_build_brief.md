@@ -1,5 +1,7 @@
 # Build brief: HOME Exploration and engine fixes (start here in a new session)
 
+> **ON HOLD (2026-11-12, Eve):** written before the design is agreed. The order of work is now design, agree, plan, build (`.claude/design/home_audit_reading_guide.md` section 0). **Do not start a work package until Eve releases it.** Independent of the design, and the first candidates to release: WP1 (#62), WP2 (#61), WP3a, WP8 (#66), WP10 (#68, needs her OK). WP4-WP6 (Exploration behaviour) wait for the behaviour design.
+
 **Written for:** the next Claude session that builds these parts. **Date:** 2026-11-11 (re-verified the same day).
 **Owner of decisions:** Eve. **Goal that overrides everything below:** do not break what works, and do not do work that the
 audit design (not yet decided) would make Eve undo.

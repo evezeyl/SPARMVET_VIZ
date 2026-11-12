@@ -2,7 +2,7 @@
 
 **Written for:** Eve, to review. **Written:** 2026-11-12, after your correction: my gating paper described how the code works today and proposed to start with gating; the order must be **(1) agree how the app should work, (2) then change the code to work like that, (3) then gate and test it**.
 **Status:** a proposed order, a behaviour table made only from what is decided (open cells marked), and the design questions in design terms. No code, configuration or diagram is changed.
-**Words:** DECIDED / CONFIRM / OPEN / MINE as in `home_audit_forensics_2026-11-12.md` section 0.
+**Words:** DECIDED / CONFIRM / OPEN / MINE as in `home_evidence/home_audit_forensics_2026-11-12.md` section 0.
 
 ## 1. The order (what has to be fixed and decided first)
 
@@ -90,9 +90,9 @@ A recipe is code (architect review AR1). The design should say, in user words: m
 
 | Paper | New role |
 |---|---|
-| `home_gating_and_test_configs_2026-11-12.md` | stage 5, **paused**; banner added; its verified facts are input to stage 3; its questions Q1, Q2, Q7 are now Q3, Q2 and Q5 here; Q3-Q6 and Q8 wait |
-| `home_audit_forensics_2026-11-12.md` | the status map (section 0) and the options for the audit behaviour (3.3-3.8) belong to stage 1; the engine options (3.2) to stage 2 |
-| `home_audit_architect_review_2026-11-12.md` | stage 2 (N2-N6, AR findings); AR1 touches Q7 |
+| `home_evidence/home_gating_and_test_configs_2026-11-12.md` | stage 5, **paused**; banner added; its verified facts are input to stage 3; its questions Q1, Q2, Q7 are now Q3, Q2 and Q5 here; Q3-Q6 and Q8 wait |
+| `home_evidence/home_audit_forensics_2026-11-12.md` | the status map (section 0) and the options for the audit behaviour (3.3-3.8) belong to stage 1; the engine options (3.2) to stage 2 |
+| `home_evidence/home_audit_architect_review_2026-11-12.md` | stage 2 (N2-N6, AR findings); AR1 touches Q7 |
 
 ## 6. What I propose to do next, once you have read this
 

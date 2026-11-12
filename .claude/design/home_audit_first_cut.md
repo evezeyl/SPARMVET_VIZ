@@ -1,5 +1,7 @@
 # A smaller first audit version (PROPOSAL, not decided)
 
+> **PARKED (2026-11-12, Eve):** a build plan written before the design is agreed. Input for the plan stage, not the plan.
+
 **Written for:** Eve, for the audit-planning review of 2026-11-12. **Status:** proposal. Nothing here is built or decided; it only makes
 the "smaller first version" of `home_audit_reading_guide.md` section 6 concrete so that the review can accept, change or drop it.
 **Sources:** `home_audit_steps.md` sections 5, 14, 16, 19 and 20 (D1-D14); issues #60, #61, #62, #63, #64.
