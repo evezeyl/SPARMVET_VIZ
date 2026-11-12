@@ -59,6 +59,22 @@ target), issues #56, #60, #61, #62, #63, #64.
 
 **Not listed in CLAUDE.md:** none of the HOME design files above except `spaces/HOME.md` (stale). A session that follows CLAUDE.md alone would not find the design.
 
+## 0c. The configurations as Eve wants them (2026-11-12; targets only, adapted at the end after the design is coded)
+
+A configuration file only switches functionalities on or off for the user; it never changes what we build. The deployment configurations are easy to redo once the build exists, so the design comes first.
+
+| Configuration | What it is | Target |
+|---|---|---|
+| `pipeline-static` | what runs at the end of a pipeline: no user interaction, no exploration; picks the data and runs the recipe automatically (one day perhaps producing an HTML page) | unchanged |
+| `pipeline-exploration-simple` | Exploration (preview) only, no audit | **rename `pipeline-simple-exploration`**; audit off; Compare is only part of audit, so off here |
+| `pipeline-exploration-advanced` | Exploration and Audit mode (with Compare, sessions, export), **no Test Lab, Blueprint or Gallery** | unchanged in content |
+| `developer` | everything | unchanged |
+| `demo-vetinst` | the web page configuration with some CSS adjustments, to show the flexibility | **rename `web-demo-vetinst`** |
+| `web-demo` | the web page configuration (static or Exploration only: still to decide) | **rename (word "demo") when decided**; base of `web-demo-vetinst` |
+| `standalone`, `qa`, any other | for testing; Claude's to remove or replace | replace by purpose-made test configurations when needed |
+
+Compare is part of Audit mode and is on whenever audit is on (P1). Names use hyphens (validator rule). Task `CONFIG-REVIEW-1` in `tasks.md`.
+
 ## 1. The idea in ten lines
 
 1. **Exploration** (Raw or Result) is for looking. A preview filter changes the table only, is never saved or exported,
