@@ -31,14 +31,12 @@ target), issues #56, #60, #61, #62, #63, #64.
 | **P2** | **The Exploration screen.** Plot: **DECIDED 2026-11-12 (Eve)**: one plot, the Result, immutable, always shown (the Data toggle only changes the table). Notices: **DECIDED 2026-11-12** (three texts, in `home_preview_filters.md` 7 and `home_audit_steps.md` 3) | decided |
 | P3 | Preview lists while audit mode is on | **DECIDED 2026-11-12 (Eve):** hidden, kept; the Filters panel and column control follow the mode; one candidate step previewed in the dialog, then Apply with a reason (`home_audit_steps.md` 3). Columns: same logic as filters (candidate drop, previewed in the dialog, then Apply) | decided |
 | **P4** | **Export and session.** P4a (no audit): **DECIDED 2026-11-12** (same export without audit parts; preview never saved or exported; session = recipe and data reference). **P4b DECIDED 2026-11-12**: original and audited side by side for affected plots, labelled; audit tables only where a step changed; one tick "include recipe and raw data" (off, warning) | decided |
-| P5 | Audit: where in the data processing a step goes | **DECIDED 2026-11-12** (Eve): written into `home_audit_steps.md` section 5a and ADR-099 point 12 (operation on data, tick boxes, earliest point that reaches no unticked plot, all-at-once key removal, no pinning, no hiding, four layers of information, uniform `label` and `description`) | decided |
+| P5 | Audit: where in the data processing a step goes | **DECIDED 2026-11-12, revised the same day** (Eve): a step is an operation on data written at T1, T2 or T3, chosen by the user with the lineage shown; ticks state exactly what is written (safe mode); the only automatic placement is "remove from all tables"; the first version (tick boxes, earliest safe point) was replaced after testing (`home_audit_steps.md` 5a, ADR-099 point 12) | decided |
 | P6 | The NA rule and its defaults (question 2, #63) | **DECIDED 2026-11-12** (Eve): never silent; missing is a visible, selectable value in preview and audit; defaults as in `home_audit_steps.md` 19; the user and the recipe maker decide what missing means |
 | P7 | Audit: reason, caption, tables shown, first checks | **DECIDED 2026-11-12**: reason = free text with a hashtag convention; caption in the report text, on by default, entity word from the recipe; tables shown = stage x version, T3 defined by the recipe, Result = the plot's own table, the recipe is as is (the audit only adds); first set of checks (`home_audit_steps.md` 3 and 19) | decided |
 | P8 | The transition for features without audit | **WITHDRAWN 2026-11-12 (Eve)**: a configuration file only switches functionalities on or off; it does not change what we build. The design is the same in every configuration (Exploration = preview, one immutable Result plot; no "My view" or "Plot to show" anywhere). The configuration files are adapted at the end (stage 5): `pipeline-exploration-simple` gets `comparison_mode_enabled: false`; the web page configuration (`web-demo`, to be renamed `static-web`; the word "demo" is confusing) is to decide: fully static or Exploration only | withdrawn |
 | P9 | Who may bring recipe text into the app | **DECIDED 2026-11-12** (Eve): Import is gated by the configuration and for an authorised person only; warn and validate with the existing recipe validation plus a formula rule (`home_audit_steps.md` 11, ADR-099 point 14) | decided |
-| **P10** | **Findings of the independent review** (`home_evidence/home_design_review_2026-11-12.md`: 9 items to decide, in order: SC1 the check on the plotted variable in the first set; SC2 the caption count for plots without a key; SC4 remove by attribute; AR4 the entity noun; SC5 the exclusion list; the wordings SC3, DS1, DS2; AR2 the oracle test; AR1 special datasets) | **NOW** |
-| P10b | Small items of the review registered; population canary added; UML reviewed (`home_evidence/home_uml_review_2026-11-12.md`, nothing edited) | DONE |
-| **P11** | **What is next, in this order:** (1) SC1 withdrawn by Eve (done); (2) SC2 caption: DONE (attrition per step, derived); levels: DONE (three levels, one reason per action); (3) AR4 entity declaration: DONE; nodes in the recipe file (5a point 15) and descriptions (point 16) wait for Eve's confirm; (4) the list of changed sections for Eve's review, then the rewrite of `spaces/HOME.md` and the UML redraw (UML-HOME-REDRAW-1); (5) stage 2: the hash model (`home_evidence/home_hash_model_2026-11-12.md`, waits for Eve), recipe graph in `libs/utils` (RECIPE-GRAPH-UTILS-1), how steps are written into the audit recipe (T1/T2/T3 lists, T3 container in the recipe and the audit recipe, keys that keep the previous key when a list is empty), the audit cache; (6) TEST-ADAPT-1, then stage 3 build plan, stage 4 code (NA rule #63 first), stage 5 configuration (CONFIG-REVIEW-1) and tests | **NOW: (3)** |
+| P10, P10b, P11 | Findings of the independent review, the small items, the UML review, the nodes and keys, the hash model, the attrition proposal | **DECIDED or done** (see section 2); what remains is in section 2, O1-O8 |
 | later | Mechanism (stage 2): the audit engine, trial computation, event log, lineage map, D1-D14, architect findings N2-N6, legacy names (questions 8-10, 12, 13); then the build plan; then gating and test configurations | after P1-P9 |
 
 ## 0b. All the HOME working documents and their role (checked 2026-11-12)
@@ -78,107 +76,55 @@ A configuration file only switches functionalities on or off for the user; it ne
 
 Compare is part of Audit mode and is on whenever audit is on (P1). Names use hyphens (validator rule). Task `CONFIG-REVIEW-1` in `tasks.md`.
 
-## 1. The idea in ten lines
+## 1. The idea, as decided today (2026-11-12; replaces the ten lines of 2026-11-11)
 
-1. **Exploration** (Raw or Result) is for looking. A preview filter changes the table only, is never saved or exported,
-   is cleared when you change view. It never changes a plot.
-2. **Audit mode** is the only way to change a plot, the data or the export. It needs a reason, it is recorded, it can be
-   removed. The original data (original T1 and T2) is never changed.
-3. A step has a **kind** (remove samples by ID | keep or remove rows by a value | remove a column), a **reach** (which plots)
-   and a **stage** (where in the pipeline). The user picks the reach; the stage follows.
-4. Audit data is **recomputed**, never copied, in a **separate cache**; a step is a list of existing recipe actions
-   (the "compiler"), so the hash, the execution, the export and the lineage highlight all come from one place.
-5. The **software informs, warns and lets the user decide**. Four levels: info, warning, confirm with a written reason,
-   block (technical only). Everything shown, acknowledged or overridden is stored and exported.
-6. The user sees **what a step touches before applying**: the chain original T1 > audit T1 > audit T2 > audit T3, the
-   plots and tables affected, rows and entities before/after, a before/after preview of the plot, a read-only lineage map.
-7. **No draft**: a three-step dialog (what, check, why), then Apply; removing a step is the undo. Before an **export** there
-   is a review of every exclusion and warning.
-8. Missing values are never silent ("NA" is a visible value). Rows are not samples: in a long table one sample has many rows, so a filter that removes 10 rows may remove 10 samples or only 1 (and a sample can vanish from a plot although only some of its rows were removed). The software therefore shows both numbers, rows and samples ("entities"), before and after a step.
-9. The audit is for **publication-ready** figures. It can remove data that is really bad (for example poor-quality samples, from some or all analyses) or that makes no sense to show in a plot (for example a category with too few observations to compare), each with a reason, recorded as "data not shown". It is **not** for exploring data, and it is **not** meant to clean messy data (no mass homogenisation of non-standardised fields: that is a recipe change).
-10. Build the risky logic first, **without a UI**, with property tests; the screen comes last.
+1. **Exploration** (Raw | Result) is for looking: a preview filter changes the table only, is never saved or exported, is cleared when the view changes, and never changes a plot. The one plot is the Result, immutable.
+2. **Audit mode** is the only way to change data, a plot or an export. Every change is a **step with one recorded reason** (free text, a hashtag convention), recorded, removable. The original data is never changed.
+3. **Every plot has a T3, every table a T2**; T1, T2, T3 are defined the same way (an ordered list of steps; empty means equal to the previous node). A step is written at **one place** chosen by the user (T1 or T2 of a table, or T3 of a plot); the only automatic placement is "remove these entities from all tables". The dialog shows the lineage backwards to the roots and forwards to every descendant; each place is a tick line that states exactly what is written (safe mode).
+4. The audit is **the original recipe plus steps written into its own lists** (the audit recipe, exportable and re-runnable); audit steps are filters, drops and removals by key; a recipe maker may use any action in T3 and is responsible for good practice.
+5. The software **informs, warns and lets the user decide**: three levels (info, warning, block, technical only). Missing values are a value: "not x" keeps them, "only x" and comparisons remove them, always counted and reported.
+6. **Attrition per step**, derived and never stored: it starts at the source population (every unit of the population table), lists the recipe's own row-removing steps, then the audit steps, each with before and after; the figure caption is composed from it, in the entity's own word (declared in the recipe).
+7. **Keys**: a series of labelled parts (`E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`), per collection, empty parts left out; whole-recipe hashes identify the project state and never decide what to rebuild (`home_evidence/home_hash_model_2026-11-12.md`, diagrams `DM-KEYS*`).
+8. **Export** is one bundle: audited plots, the original Result plot for each really affected plot, original and audit data, the steps with reasons, the exclusion list, the attrition table, the verification legs; one tick adds the recipe and raw data. **Import** is gated by the configuration and validated.
+9. Audit is for **publication-ready** figures (data that is really bad or makes no sense in a plot, with a reason); not for exploring, not for mass cleaning.
+10. Build order: design, review, mechanism and build plan, code (tests adapted first), configuration and gating last.
 
-## 2. Read in this order
+## 2. Decision register (counted 2026-11-12)
 
-| Step | File | What you get |
-|---|---|---|
-| 1 | this guide | the map |
-| 2 | `home_preview_filters.md` | Exploration (short; agreed) |
-| 3 | `home_audit_steps.md` sections 1-5 | rule, words, audit mode, kinds, reach and stage |
-| 4 | `home_audit_steps.md` sections 18-20 | the scientist, data-scientist and developer reviews; guard rails; the changes D1-D14 |
-| 5 | the diagrams in section 4 below | pictures; open them in StarUML for the full version |
-| 6 | `home_audit_steps.md` sections 6-17 | the details, when you want them |
+**Decided: 39 items, counted by this grouping (A 8, B 15, C 4, D 8, E 4; another grouping gives another number).** (A) Behaviour: P1-P7, P9 (P8 withdrawn). (B) Audit model: the T1/T2/T3 model and the nodes in the recipe file; where a step is written; ticks as safe mode; "remove from all tables"; remove by attribute (select with the filter, remove by key); one reason per action; three levels; attrition from the source population; caption; exclusion list; first set of checks; affected plot by content; the exact checks after Apply; the NA meaning. (C) Recipe format: `label` and `description` everywhere and the advice that explains why; the `entity:` declaration; limits of the first version (one key family). (D) Architecture: the recipe graph in `libs/utils`, Blueprint's navigator rebuilt on it; the hash model (series, precise parts, full-content data hash once per session, record hash, retire `decision_hash`, drop the plot input key). (E) Rules of work: correct wrong recipes (no shims), complete steps, tests adapted first, data-agnostic. Where written: sections 5a, 4, 11, 19 of `home_audit_steps.md`, ADR-099 points 10-16, the hash model document.
 
-## 3. What to decide (my recommendation; what changes if you say no)
-
-| # | Question | My recommendation | If no |
+**Still to decide (the real remainder):**
+| # | Decision | My recommendation | Needed for |
 |---|---|---|---|
-| 1 | **Stage and reach.** Stage = the table the user is looking at (T1, T2 or plot); reach depends on the stage; the numbers 0-3 become (stage, reach) | yes: values come from the table you look at, and a table step cannot be limited to some of its plots | keep levels 0-3 and "never early" for value filters; redraw nothing |
-| 2 | **NA rule.** Missing values are a selectable value; "remove" filters keep NA unless selected; comparisons drop NA unless ticked; counts always shown | yes (never silent) | choose the opposite default; the rule stays visible either way |
-| 3 | **Reason categories** (technical failure, contamination, duplicate, out of scope, outlier by value, other) + free text, "outlier by value" flagged in the report | yes | free text only |
-| 4 | **Optional figure caption** "n = X after exclusions", off by default | yes (optional) | drop it |
-| 5 | **Keys**: from `is_primary_key` (optional) + join steps, inferred if missing; read from the loaded dicts | yes | keys from join steps only |
-| 6 | **Reach selector**: three options with a checklist of plots, in the dialog | yes | other wording |
-| 7 | **Audit table selector** (audit T1 / T2 / T3 of the plot, read-only) | yes: lets you see where a sample was removed | drop it |
-| 8 | **Trial computation** for the numbers and the before/after plot, reused by Apply | yes | estimates only (less exact) |
-| 9 | **Event-sourced log** (only events are stored; the step list is derived) | yes | step list + separate log (can disagree) |
-| 10 | **Lineage map** (read-only, own renderer in HOME; data from `blueprint_arch`) | yes | drop; the chain drawing remains |
-| 11 | **Guard-rail checks** first list and thresholds (20 % attrition, groups under 3 entities) | yes, then test with users | change the list |
-| 12 | **D1-D14** of section 20, incl. the dev dependency `hypothesis` and a policy block in the configuration | yes | smaller version, see section 6 |
-| 13 | Keep legacy step types (`developer_raw_yaml`, `aesthetic_override`) and the `t3` names for now | yes | rename later as its own task |
+| O1 | Loader and validator roles: one rule set `check_recipe` in `libs/utils`; the loader builds the recipe and stops on errors, the validator reports everything; unknown keys are warnings (task `UNKNOWN-KEYS-1`) | yes | the recipe format changes (T3 container, `entity:`) |
+| O2 | The read-only popup per node (T1, T2, T3): the recipe's steps in plain words with before and after (5a point 7) | yes | the screen redraw |
+| O3 | What happens to the audit step kind `developer_raw_yaml` (nothing creates it today) | display only, never authored (N2) | the step model |
+| O4 | Permission to change `libs/transformer` (retire `decision_hash`, the persistence action, per-collection keys; N6) | yes, with tests first | the hash build |
+| O5 | Rule texts that need your double confirmation: `libs/utils` may use third-party packages it declares (pyyaml); "wrangling is never done in T3" is about the audit only; ADR-024 and ADR-089 are amended by notes already | yes | consistency |
+| O6 | Two screen details: where the project overview opens; what stays of the right panel (Inherited nodes, filter inventory, pending badge) | decide at the screen redraw | UI-HOME-AUDIT |
+| O7 | Mechanism items I will specify for your confirmation in stage 2: event log, pre-export review gate, step compiler, D1-D14 (without the parts the new model made obsolete) | as written in section 20 of the audit file, trimmed | the build plan |
+| O8 | Configuration stage (last): names (`pipeline-simple-exploration`, `web-demo-vetinst`, `static-web`), the web page configuration (static or Exploration only), the Import flag and its cascade rule (`CONFIG-REVIEW-1`) | later | gating |
+So **five decisions now (O1-O5), two at the screen redraw and mechanism (O6, O7), one at the end (O8).**
 
-Already decided by you: exploration vs audit split; audit mode replaces My view and Compare (Compare on/off); mode switch at
-the left of the group-tabs row; reach selector in the dialog, nothing preselected; Apply and Cancel; initials; Revert to step N;
-separate audit cache with chained keys; N = 5 as a setting; delete = recompute without it; atomic Apply; event log in
-principle; recipe documentation; the software's role (inform, warn, let the user decide); comparison as a child of the
-sandbox flag and the validator rules; "remove samples on a plot" is a plot-level row filter; filter values come from the data.
+## 3. The path to the first code (what stands between us and building)
+1. **Your answers** to O1-O5 (a few minutes).
+2. **Your review of the design text**, in this order (each section was changed or added during 2026-11-12): `home_audit_steps.md` section 4 (kinds, remove by attribute), 5a (points 3-17), 10, 11 (reason, export, import), 16, 19 (levels, NA, caption and attrition); `home_preview_filters.md` sections 2, 3, 6, 7; ADR-099 points 10-16; the hash model document and the diagrams `DM-KEYS*`; the attrition document.
+3. **Documents I rewrite from the agreed text**: `spaces/HOME.md` (stale since May) and the UML redraw of the diagrams marked in `home_evidence/home_uml_review_2026-11-12.md` (task `UML-HOME-REDRAW-1`).
+4. **Stage 2, the mechanism and the build plan**: the recipe graph specification (`RECIPE-GRAPH-UTILS-1`), how steps are written into the audit recipe, the keys per node (`KEYS-NODE-1`), the loader and validator (`UNKNOWN-KEYS-1`, `ENTITY-DECL-1`), the engine path for T3; a build plan in small revertible packages, tests adapted first (`TEST-ADAPT-1`, `TEST-ORDER-1`).
+5. **First code, in this order** (each package: tests that fail for the right reason first): the missing-value rule `NA-RULE-63`; unknown keys; the recipe graph in `libs/utils`; keys per node; then the audit pieces; the recipe fixes `RECIPE-ST22-FIX-1` run in parallel because they only need descriptions and explicit missing-value steps.
 
-## 4. Diagrams (`docs/UML/diagrams/`, model `docs/UML/app.mdj`, package HOME)
+## 4. Diagrams (`docs/UML/diagrams/`, model `docs/UML/app.mdj`)
+| Diagram | Status |
+|---|---|
+| `DM-KEYS` (general), `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT` | **new 2026-11-12, current target** |
+| `HOME-AUDIT-CACHE`, `EXP-MODES`, `STM-STAGE`, `SEQ-EXPORT` | updated 2026-11-12 for the keys |
+| `HOME-EXPLORATION`, `HOME-VIEW-MATRIX`, `UI-HOME-EXPLORATION`, `UI-HOME-AUDIT`, `HOME-AUDIT-GUARDRAILS`, `HOME-AUDIT-COMPONENTS`, `UC-HOME` | partly outdated (details in `home_evidence/home_uml_review_2026-11-12.md`); redrawn after your review |
+| `HOME-AUDIT-LINEAGE`, `HOME-AUDIT-FLOW`, `HOME-AUDIT-EFFECT` | **contradicted** (they show the replaced level model); redrawn |
+| `UI-HOME` (as built), `SEQ-AUDIT`, `COM-REACTIVE`, `C4-COMP-HOME`, `SEQ-OPEN`, `SEQ-LAUNCH` | as built; replaced or updated when built |
+The audit script `audit_uml_model.py` checks tags against the repository only (0 discrepancies on 2026-11-12); that diagrams agree with each other is a review.
 
-| Diagram | Shows | Status |
-|---|---|---|
-| `HOME-EXPLORATION` | preview filters: staged, applied, clear on view change, why | **current target** |
-| `HOME-VIEW-MATRIX` | Raw, Result and audit mode against table, plot, filters, columns, lists, Compare, export | **current target** |
-| `UI-HOME-EXPLORATION` | the screen with audit mode off | **current target** |
-| `UI-HOME-AUDIT` | the screen with audit mode on (three-step dialog) | **current target** |
-| `HOME-AUDIT-FLOW` | what, check, why, apply, statuses, pre-export review, lineage map | **current target** |
-| `HOME-AUDIT-GUARDRAILS` | the four levels and the check ids | **current target** |
-| `HOME-AUDIT-CACHE` | original cache, audit cache, chained keys, limit, tests | **current target** |
-| `HOME-AUDIT-COMPONENTS` | planned pure components and layers | **current target** (new, from the developer review) |
-| `HOME-AUDIT-LINEAGE` | levels 0-3 on real ST22 collections | **pending decision 1** (red box says so) |
-| `HOME-AUDIT-EFFECT` | what each level changes | **pending decision 1** (red box says so) |
-| `UI-HOME The screen as built today` | the screen before the redesign | **as built; replaced when audit mode is built** |
-| `SEQ-AUDIT` | exploration and audit as built today (picture embedded in `docs/appendix/data_lifecycle_theater.qmd`) | **as built; replaced when audit mode is built** |
-| `COM-REACTIVE`, `C4-COMP-HOME` | reactive wiring and components as built (tier_toggle, applied_filters, audit_pending) | **as built; updated when built** |
-| `UC-HOME` | use cases: four old ones are named "(replaced by audit mode, ADR-099)"; four planned ones added | **mixed, marked** |
-| `STM-STAGE`, `SEQ-OPEN`, `SEQ-EXPORT` | stored stages, open a plot, export as built | **valid; gain audit companions when built** |
+## 5. What is replaced when audit mode is built (unchanged; task `AUDIT-REPLACE-1`)
+My view, Compare and "Plot to show" in the header strip; the propagation dialog; per-plot audit steps (`t3_audit_steps_by_plot`, old sessions map to T3 steps); the pending badge, filter inventory and Apply gate of the right panel (O6); `extract_primary_keys` (fixed with the graph, #61); the integer-threshold and missing-value behaviour of the filters (#62 and #63, `NA-RULE-63`). Nothing is removed before audit mode exists.
 
-The audit script `audit_uml_model.py` checks tags against the repository only. It does **not** check that diagrams agree with
-each other. That check is a review (`.claude/workflows/design_review_personas.md`, persona 1) and was done on 2026-11-11.
-
-## 5. What is replaced when audit mode is built (and what is not)
-
-Nothing is removed before then. Tracked as a task (`AUDIT-REPLACE-1` in `tasks.md`) so nothing becomes orphaned.
-
-| Today | Replaced by | Not before |
-|---|---|---|
-| My view, Compare and "Plot to show" in the header strip | Exploration toggle (Data: Raw / Result) and audit mode (Compare on/off) | audit mode exists |
-| Propagation dialog "this plot / all / all except" | the three-step dialog with reach and stage | audit mode exists |
-| Per-plot audit steps (`t3_audit_steps_by_plot`) | steps with kind, reach, stage; old sessions map to plot-level steps | the new step record exists |
-| Pending badge, filter inventory, Apply gate in the right panel | to review (open question 5 of the audit file) | audit mode exists |
-| `extract_primary_keys` (returns an empty list on tiered joins) | key mapping (#61), **fix now** | not blocked |
-| Integer threshold and NA behaviour of the filters | explicit rules (#62, #63), **fix now** | #63 needs decision 2 |
-
-## 6. What can start now, and what cannot
-
-**Can start now (needs no audit decision):** the engine fixes #62 and #61, and the information part of #63 ("N rows have no value...", behaviour unchanged); the preview changes of
-`home_preview_filters.md` that do not touch the header strip (lists per dataset, clear on view and recipe change, panel
-header, reset-to-all-columns, one operator vocabulary); the filter test suite with a data oracle and screenshots; the
-related help text. Brief for the next session, with a safety protocol (baseline, one revertible commit per package, frozen files, compatibility with the audit): `.claude/tasks/home_exploration_build_brief.md`.
-**Blocked until you decide:** the NA rule itself (#63 step 2): the audit engine and the registered recipe actions that the reproducibility export re-runs must change together, backward compatible. **Found while re-verifying:** today the figure and the reproducibility bundle give different rows for an integer threshold such as `>= 90.5` (#62), so WP1 also repairs that.
-
-**Waits for your decision:** everything of audit mode (new panel, dialog, step model, cache, export review). Since the design
-is large and the demo needs scientifically good software, a **smaller first audit version** is possible once you decide:
-keep today's per-plot steps and add the safeguards that matter most (key fix, NA rule, integer fix, entity counts, the
-population-statistics warning, the incomplete-exclusion check, reason category, event log, the pre-export review), and build
-the cache, the lineage-level steps and the lineage map afterwards. Tell me if you want that cut written as a plan.
+## 6. The earlier "13 questions" (2026-11-11), kept for history only
+They are answered or replaced: stage and reach (replaced by the T1/T2/T3 model), NA rule (decided), reason categories (replaced by free text), caption (decided, on by default), keys from `is_primary_key` (decided, with the recipe graph), reach selector (replaced by ticks), audit table selector (tables shown by stage and version), trial computation (one candidate step previewed in the dialog), event log, lineage map, guard-rail checks (first set decided, three levels), D1-D14 (O7), legacy step types (O3).
