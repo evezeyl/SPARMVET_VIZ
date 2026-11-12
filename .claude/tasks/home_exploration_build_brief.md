@@ -162,8 +162,8 @@ and the translated actions **agree** today (both drop), so **do not change the b
 column among the rows that the filter would remove). Information only: same rows as before.
 **Tests:** counts for every operator with nulls, NaN, mixed; rows unchanged (compare with the pre-change output); mutation check.
 
-### WP3b - NA: the rule (#63, step 2) `[sonnet/high]` **BLOCKED: do not start**
-Needs Eve's decision on the default and the audit design (step compiler). Changing the engine alone would make the plot and the reproducibility
+### WP3b - NA: the rule (#63, step 2) `[sonnet/high]` **UNBLOCKED 2026-11-12 (rule decided by Eve, `home_audit_steps.md` section 19); build in stage 4, not before the design is agreed**
+Decision made: a missing value is a value; `!=` and none-of keep it, `==`, one-of and comparisons remove it, always reported; `na` parameter defaults follow that rule (plan in the comment of 2026-11-12 on #63). Earlier text, kept for history: needed Eve's decision on the default and the audit design (step compiler). Changing the engine alone would make the plot and the reproducibility
 export disagree; changing the registered actions would silently change existing recipes. The plan (an optional `na` parameter whose default is today's
 behaviour, passed explicitly by engine, VizFactory and translator; Blueprint schemas retested) is in the comment on #63. Leave it.
 
