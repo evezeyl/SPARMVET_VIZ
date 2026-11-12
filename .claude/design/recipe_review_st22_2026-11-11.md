@@ -101,3 +101,5 @@ Nothing below is done yet; each step waits for the answer named in it. The scrip
 | R2 samples without usable phenotype | (a) not plotted, caption "n = 38 of 42" | "Unknown" must never be coded as susceptible (0). The six truly susceptible samples stay at 0. Better still: show them as a separate grey "no prediction" group, so nothing is drawn as nothing |
 | R3 MLST title | keep the year filter (it makes T1/T2 visible), say in the title "2023-2025, 33 of 42 samples" and in the table description | A subset must never be silent |
 | R4 `virulence_variants` | tiles gene x sequence type with the share of isolates carrying the gene and n per sequence type; sequence types with fewer than 3 isolates grouped as "other" (the action `top_n_other` exists) | 16 panels are unreadable and a share from one isolate misleads |
+
+**Eve, 2026-11-12:** R1-R4 as proposed in 3b are agreed ("seems good"). "Not detected" is a good result and a category: count the samples with no resistance gene detected. Valid only when the sample was analysed (the four samples above show why the population table must be the reference). Applied in task RECIPE-ST22-FIX-1, tests first.
