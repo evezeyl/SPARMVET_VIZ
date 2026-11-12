@@ -1,6 +1,6 @@
 # Attrition per step and the figure caption (proposal, 2026-11-12)
 
-**Status: MINE, awaiting Eve (CONFIRM).** Replaces the options A/B for the caption count of a plot whose table has no key (review SC2).
+**Status: DECIDED by Eve, 2026-11-12 ("Ok proposal"); registered in `home_audit_steps.md` section 19.** Replaces the options A/B for the caption count of a plot whose table has no key (review SC2).
 **Evidence classes:** verified = run (`tmpAI/architect/attrition_demo.py`, real registered actions on the stored original stage); external = web search (standard mode, not read in full); reasoned.
 
 ## The problem
@@ -25,3 +25,6 @@ The caption says "n = 38 samples after exclusions". An aggregated plot (counts p
 | Same plot with step A removed | B is recomputed: 42 -> 40, again 2 missing values. No stored number to refresh |
 | Plot `QA_aggregated_no_key`, T1 step removes 4 samples | 42 -> 38 entities at T1. After the recipe's summarize: 9 groups, **no key column** |
 | Same plot, T3 step `country != Norway` | 9 -> 6 groups; the recipe's own count column falls 38 -> 14, which the software cannot know (so the caption must not claim 38 after this step) |
+
+## The order study, read (2026-11-12; Eve asked why the sample size differed)
+Source: Wang, Sreedhara, Schneeweiss and the REPEAT Initiative, Nature Communications 2022, read through the PMC copy (about 100,000 of 116,000 characters; the last part was not read). They reproduced 150 real-world-evidence studies. The median relative sample size (original/reproduction) was 0.9; for 21 % of reproductions the size was less than half or more than twice the original. The worked example with the 26 % gap is attributed by the authors to **ambiguity in the specification**: the criteria did not say whether they were applied before or after the selection of the study entry date, and the diagnosis codes were not given, so a standard code set was assumed. The paper does **not** name the engine, the missing-value coding or software differences as a cause; it recommends more complete reporting and communicating the data version. So the lesson for the audit is to record the order and the place of every step explicitly and to bind the result to the data version, which the design already does (ordered step list, lineage position, chained keys, the key check). Engines: Polars' optimizer moves a filter below another step only when it is provably safe (12 of 12 synthetic cases agreed with theory, `home_where_to_remove_data_science_2026-11-12.md`), so the engine does not change results; what changes them is the order the recipe states.

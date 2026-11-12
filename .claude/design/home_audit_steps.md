@@ -308,7 +308,7 @@ step, edit a step (= replace it).
 
 ## 11. Reason, who, step record, export
 
-- **Reason** is required when the step is made. Removing a step needs no reason and is recorded.
+- **Reason** is required when the step is made, always, with no exception, and **one reason covers one user action** whatever the number of places it is written ("remove from all tables" is one action) and whatever the level; the record lists everything that was affected. Removing a step needs no reason and is recorded.
 - **Who**: the app has no login, so the user may type optional initials once per session (several people can
   work on one project); empty is allowed.
 - **Event log [confirm]:** the step list shows what exists now; an append-only **event log** records every
@@ -451,7 +451,7 @@ dictionaries; `is_primary_key` is optional (inference as fallback); all three it
 log, recipe documentation) are accepted.
 
 **Decided (Eve, 2026-11-11, section 19):** the principle (inform, warn, let the user decide; a risky choice needs a recorded
-reason; block only technical problems); the four levels; the NA rule (never silent); a guard-rail registry; the review
+reason; block only technical problems); the levels (three since 2026-11-12: info, warning, block); the NA rule (never silent); a guard-rail registry; the review
 findings documented in issue #64; the problems and the principle go into the documentation and the help.
 **To confirm [confirm]:** the changes D1-D14 of section 20 (recipe graph, event-sourced log, step compiler, three-step
 dialog with an effect preview, pre-export review gate, policy configuration, `hypothesis`, build order), the first list of
@@ -465,7 +465,7 @@ reason categories, the optional caption (off by default), the lineage map.
 4. Where the project overview opens (dialog or wide accordion under the table).
 5. What stays of the existing right panel: the "Inherited (Tier 2)" nodes, the filter inventory, the pending badge.
 6. The importer's verification legs with levels 0-2 (section 11).
-7. From the independent review of 2026-11-12 (`home_evidence/home_design_review_2026-11-12.md`), still to decide one at a time: the caption count for a plot whose table has no key (SC2); the field that carries the noun for the entity (AR4); whether the level "confirm with a reason" is still needed now that C1 and C2 are not gates (only C3 remains, and every step already needs a reason). **Decided 2026-11-12 (Eve): the recipe graph is new shared code in `libs/utils` (`utils.recipe_graph`)**, by the existing rule that a primitive needed by two domain libraries goes there (`rules_test_lab.md` 2c; `utils` already holds `config_loader`, `hashing`, `id_patterns`). HOME's audit modules (pure, in `app/modules/`) and Blueprint both import it; HOME never calls Blueprint's screens. **Decided (Eve, 2026-11-12): Blueprint's navigator is rebuilt on `utils.recipe_graph`, one source of truth.** Consequences: the graph carries where each node is defined (the include file), which Blueprint needs and HOME ignores; the navigator's existing tests are the regression oracle (adapted first, TEST-ADAPT-1); Blueprint's behaviour does not change but its code does, so the statement "Blueprint unchanged" of the audit design means behaviour only; this supersedes in part the placement of the navigator in `blueprint_arch` (ADR-067, ADR-074). Note for Eve's double confirmation: `rules_runtime_environment.md` says Tier 1 may use "only stdlib and polars" while `libs/utils/pyproject.toml` declares `pyyaml` too; the rule text needs that correction. **Closed by the model of 2026-11-12:** special datasets such as `metadata_schema` (AR1, no dataset-level insertion is needed) and the action registry (AR2, reduced to the list of steps that summarise rows).
+7. From the independent review of 2026-11-12 (`home_evidence/home_design_review_2026-11-12.md`), still to decide one at a time: the field that carries the noun for the entity (AR4). **Closed 2026-11-12 (Eve):** the level "confirm with a reason" is dropped; one reason per user action, at every level and for every place it is written ("everywhere" is one action with one reason), and the record lists everything that was affected. **Decided 2026-11-12 (Eve): the recipe graph is new shared code in `libs/utils` (`utils.recipe_graph`)**, by the existing rule that a primitive needed by two domain libraries goes there (`rules_test_lab.md` 2c; `utils` already holds `config_loader`, `hashing`, `id_patterns`). HOME's audit modules (pure, in `app/modules/`) and Blueprint both import it; HOME never calls Blueprint's screens. **Decided (Eve, 2026-11-12): Blueprint's navigator is rebuilt on `utils.recipe_graph`, one source of truth.** Consequences: the graph carries where each node is defined (the include file), which Blueprint needs and HOME ignores; the navigator's existing tests are the regression oracle (adapted first, TEST-ADAPT-1); Blueprint's behaviour does not change but its code does, so the statement "Blueprint unchanged" of the audit design means behaviour only; this supersedes in part the placement of the navigator in `blueprint_arch` (ADR-067, ADR-074). Note for Eve's double confirmation: `rules_runtime_environment.md` says Tier 1 may use "only stdlib and polars" while `libs/utils/pyproject.toml` declares `pyyaml` too; the rule text needs that correction. **Closed by the model of 2026-11-12:** special datasets such as `metadata_schema` (AR1, no dataset-level insertion is needed) and the action registry (AR2, reduced to the list of steps that summarise rows).
 
 **Decided (Eve, 2026-11-12, small items after the independent review):** vocabulary "plot table"; affected plot by data; order by position in the dataflow; the exact data-check rule; limits of the first version; steps made of named actions, no formula text; the exclusion list; remove by an attribute in principle (select with the filter on a table that carries it, remove by key). Section 5a points 10-14, section 4, section 11.
 
@@ -541,13 +541,12 @@ judgement. What is data-science practice (not exploring data with the audit, not
 reporting every exclusion) is taught in the help and the documentation: "with great power comes great
 responsibility: think before you do".
 
-**Four levels.**
+**Three levels (decided 2026-11-12, Eve; the earlier fourth level, "confirm with a reason", is dropped: one justification per user action is enough, and every step already has one).**
 
 | Level | What the user sees and must do | Recorded in the step and exported |
 |---|---|---|
 | **Info** | shown in the dialog (counts, affected plots and tables, chain), nothing to do | the numbers |
 | **Warning** | shown with a plain explanation; the user ticks "I understand" before Apply | which warnings were shown and acknowledged |
-| **Confirm with a reason** | a strong warning for choices that usually bias results; the user writes why it is acceptable here | the override reason, with the warning id |
 | **Block** | technical only: a column or key that no longer exists, a renamed key refused, a step the forked recipe cannot represent, a failed recomputation | nothing is applied; the error is shown |
 
 **The mechanism: a guard-rail registry.** One module of pure functions, one entry per check: `id`, trigger (kind,
@@ -579,16 +578,16 @@ dialog always says "N rows have no value in this column: they are kept / removed
 | W3 | a group left with fewer than 3 entities | warning | flaw 12 |
 | W4 | drop of a column used by plots, steps or as a key (#59) | warning | #59 |
 | W5 | the step has no effect (already done by step N); a plot is left with zero rows | warning | flaw 8 |
-| C1 | samples removed at plot or T2 level **downstream of population statistics** (`z_score`, `percentile`, `window_agg`, `cum_sum`, `cum_count`, `value_counts`, `describe_stats`, `top_n_other`, `pivot`, `derive_categories`, `summarize`, `count_by_group`) | confirm with reason | flaw 5 |
+| C1 | samples removed at plot or T2 level **downstream of population statistics** (`z_score`, `percentile`, `window_agg`, `cum_sum`, `cum_count`, `value_counts`, `describe_stats`, `top_n_other`, `pivot`, `derive_categories`, `summarize`, `count_by_group`) | info (named in the dialog: their numbers change too) | flaw 5 |
 | C2 | **withdrawn (Eve, 2026-11-12)**: selecting by the value of a plotted variable is an ordinary audit step. The user decides what is an outlier, records the reason and chooses the level. The reader can judge from the reason, the attrition table, the caption count and the original plot beside the audited one; the help teaches the practice | - | - |
-| C3 | **incomplete exclusion**: after the step the excluded values, or look-alikes (`' S2'`, `'s2'`), are still in a reached table | confirm with reason | flaw 4 |
+| C3 | **incomplete exclusion**: after the step the excluded values, or look-alikes (`' S2'`, `'s2'`), are still in a reached table | warning | flaw 4 |
 | B1 | a column or key used by a step no longer exists (status broken); a key renamed in tier-1; a step the forked recipe cannot represent; the recomputation failed | block | technical |
 
 **First version of the checks (decided 2026-11-12, Eve, P7: "a good start").** In: **counts** (rows and entities before and after), **reach** (the tables and plots the step changes), **large removal** (more than a set share of rows or entities, default 20 %, a setting), **a used column** (a dropped column is used by a plot or a step), **no effect or empty** (the step changes nothing, or leaves a plot with no rows), **later steps that summarise rows** (named in the dialog, their numbers change too; replaces the removal-before-or-after comparison of the earlier draft), **incomplete removal** (look-alike IDs remain), **technical block**. **Later:** a group too small (a setting), the census of entities per table. Thresholds are settings, not fixed. Few and specific warnings (warning fatigue, section 20).
 
 **Reason (decided 2026-11-12, Eve, P7; replaces the fixed category list).** The software is **data-agnostic**: it will be used for datasets other than bioinformatics, so there is **no fixed list of categories**. The reason is **free text, required, and must be a good justification**. The help suggests a convention that keeps it clean and lets the vocabulary grow at no cost: a hashtag with a short category, then the explanation, for example `#technical failure: sequencing run bad` or `#technical failure: instrument calibration failed`, with good examples from several fields. **Accepted on top (Eve, if the cost is small):** the dialog offers the tags already used in the project as suggestions. **Deferred:** grouping the report by tag (Eve: beyond what we settle now; the report content is a separate matter). The report prints the attrition (rows and entities, per step) and lists every acknowledged warning and override reason.
 
-**Figure caption (decided 2026-11-12, Eve, P7; replaces the optional setting).** The caption of each figure **in the report text** (never drawn on the figure itself) states the count after exclusions, for example "n = 38 samples after exclusions (4 excluded; see audit trail)". It is **on by default**: the software is transparent, and the user can delete the line in the report. It exists only where an audit exists (with Audit mode; an Exploration-only export has no exclusions to state). The count is of **entities by key**, not rows. **Data-agnostic:** the word for the entity ("samples", "patients", "sites") comes **from the recipe** (the label of the key column; fallback "entities"), never from the code. Proposed (Eve may veto): a figure that no audit step affects says "no audit step affects this figure" so the caption is always present when an audit exists.
+**Figure caption and attrition (decided 2026-11-12, Eve: P7 and "Ok proposal"; replaces the optional setting).** The caption of each figure **in the report text** (never drawn on the figure itself) states the count after exclusions, for example "n = 38 samples after exclusions (4 excluded, step 1; see audit trail)". It is **on by default**; the user can delete the line in the report; it exists only where an audit exists. **Data-agnostic:** the word for the entity comes **from the recipe**, never from the code. **Each step reports its own before and after**, in the unit of its node: entities by key (and rows) when the node has the key, otherwise rows or groups with the words "no key here", and always the **missing values removed**. The numbers are **derived, not stored**: computed from the stored original stage plus the ordered step list, each step applied to the result of the steps before it; remove a step and the later numbers are recomputed; the report holds a snapshot that the import recomputes to verify. The caption of a plot is composed from the steps that reach it, in lineage order; for a plot whose table has no key, the entity count is given up to the last node that has the key and the caption says so; it never states a number it cannot verify. A figure that no audit step affects says "no audit step affects this figure" (proposed, Eve may veto). Evidence and verified examples: `home_evidence/home_attrition_report_2026-11-12.md`.
 
 
 **Documentation and help.** A page "Before you audit" and the help of the audit filters: the problems above in plain
@@ -605,7 +604,7 @@ export). The changes below fix that. What remains risky is human (wording, warni
 real users.
 
 **What holds (keep):** original data never changed; recompute, never copy; chained keys and the canonical hash; atomic
-Apply; stage and reach; the NA rule; the four levels (info, warning, confirm with a reason, block); the guard-rail
+Apply; stage and reach; the NA rule; the levels (info, warning, block); the guard-rail
 registry as the single source of messages; the rule that only technical problems block.
 
 **Evidence for the biggest human risk (warning fatigue).** In clinical decision support, 46-96 % of alerts are
