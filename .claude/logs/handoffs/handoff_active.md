@@ -469,3 +469,10 @@ the recipe data check runs the wrangling (`af36dc9`, #71, closed). Issues #61-#7
 **Waiting for Eve:** #67 (ST22 anchor), #70 (unknown phenotypes), #69 (rest), the NA rule (WP3b), the many-to-many check (#68, edits `libs/transformer`), the 13 audit decisions.
 **Do not forget:** `CLAUDE.md` (Eve's section 9) was committed on 2026-11-11 at her request; do not edit it. Libraries are installed editable with absolute paths, so no git worktrees for builders.
 
+
+## 2026-11-12 (morning, before the audit review)
+
+**Done:** QA canary `QA_aggregated_no_key` (the fixture for the audit reach, #60; headless 1649 passed); the cheaper engine (E) explained with measurements (`home_audit_forensics_2026-11-12.md` 3.2b); F8 and 3.7 corrected: a feature without audit never changes a plot, that is Eve's rule and not a loss; a software architect's forensic review of the app and of the undecided items (`.claude/design/home_audit_architect_review_2026-11-12.md`).
+**Most consequential finding:** recipe text runs as Python (`eval` in `mutate`); verified by running a `developer_raw_yaml` step. Bundle import writes a zip's recipe into the shared recipes folder. Severe only on a shared server. Not exploited. Options in architect review 3.1; nothing changed.
+**Waiting for Eve:** N2-N6 and the proposal "view policy first in WP4 (#56)" (task `AUDIT-ARCH-DECIDE-1`); the earlier list (R1-R4, 13 audit decisions, NA rule, WP10). No issue was filed for the architect findings (candidates are listed in section 6 of the review).
+**Not changed:** app code, design files other than the three above, the UML. The builders' file ownership and prompts in `next_session_start.md` are unchanged apart from the baseline numbers (headless 1649, canaries 9).

@@ -12,7 +12,7 @@ audit design (not yet decided) would make Eve undo.
 
 **S1. Baseline first.** `git status`, `git log --oneline -15`. Tag the start: `git tag pre-explore-build-$(date +%Y%m%d)`. Run the
 headless suite and the smoke file (commands in section 1). Verified on 2026-11-11 (before the recipe commit): headless **1599 passed**; `test_shiny_smoke.py`
-**38 passed, 3 skipped**. After the recipe, canary, facet and data-check commits of the same day the headless count is **1646**; the browser gate was **70 passed, 3 skipped** once (recipe fixes only) and then failed 1-2 timing-sensitive tests in each of 3 runs of the changed tree (different tests each time, passing alone; issue #72). Use 1646 as your headless baseline; for the browser gate read #72 and rerun a failing test alone before you conclude (S1). If your baseline is red, **stop and report**; do not fix unrelated failures inside this work.
+**38 passed, 3 skipped**. After the recipe, canary, facet and data-check commits of the same day the headless count is **1646**; the browser gate was **70 passed, 3 skipped** once (recipe fixes only) and then failed 1-2 timing-sensitive tests in each of 3 runs of the changed tree (different tests each time, passing alone; issue #72). **Update 2026-11-12:** the seventh canary (`QA_aggregated_no_key`) makes the headless baseline **1649** (1 canary test, the determinism check of the new collection, the render of the new plot). Use 1649 as your headless baseline; for the browser gate read #72 and rerun a failing test alone before you conclude (S1). If your baseline is red, **stop and report**; do not fix unrelated failures inside this work.
 
 **S2. One work package = one commit, tests included, revertible alone.** After each package run the headless suite; after WP2, WP4
 and WP5 also the full browser gate. If the gate is red and the cause is not clear within a few minutes, **revert that package's
@@ -95,6 +95,7 @@ Several sessions may work on different packages at the same time. The issues on 
 | `QA_L50_integer` / `qa_l50_integer` | Int64 values 4 to 14, 42 samples | WP1: `L50 >= 8.5` must keep 9 and not 8; `< 8.5` must keep 8; `= 8.5` nothing |
 | `qa_facet_by_mapping` (on `QA_year_types`) | 3 panels: France, Germany, Norway | #65 stays fixed |
 | `QA_fanout_exhibit` / `qa_fanout_rows_per_sample` | T1 1731 rows, up to 192 rows for one sample: a DEFECT shown on purpose | WP10: the check must flag this collection and no other canary. Change its test on purpose when #68 is built |
+| `QA_aggregated_no_key` / `qa_aggregated_no_key` (added 2026-11-12) | T1 42 rows with `sample_id`; the T2 the plot reads has 9 rows (country x year) and **no `sample_id`**; counts sum to 42, Norway 2024 = 19 | the audit reach tests (#60): the plot that a "remove sample X by ID" step cannot reach by filtering its own data. Not used by WP1-WP9 |
 
 Rules for canaries: one failure mode each; the answer is computed independently of the engine; the expected numbers are in the plot subtitle; a plot id starts with `qa_`; every new canary gets a test and a mutation check (break the recipe once and see the test fail). Add yours to this table.
 

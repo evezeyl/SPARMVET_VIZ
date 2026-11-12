@@ -47,7 +47,7 @@ for every shipped recipe). Mutation check: on the unfixed recipe 3 of them fail.
 
 ## 2b. QA canaries (added the same day)
 
-A group **QA Canaries** in this recipe (6 plots, 5 new collections) for catching errors better. Each isolates one failure mode, its correct numbers are
+A group **QA Canaries** in this recipe (7 plots, 6 new collections; the seventh, `QA_aggregated_no_key`, was added on 2026-11-12: a plot whose data is an aggregate without `sample_id`, the fixture for the audit reach, #60) for catching errors better. Each isolates one failure mode, its correct numbers are
 computed from the raw tsv files in `app/tests/test_qa_canaries.py` (not through the engine) and are written in the plot subtitle, so a person looking
 at the picture can see a wrong one. Map of canaries to failure modes and to the work packages that use them: `.claude/tasks/home_exploration_build_brief.md`
 section 0b. Think-through behind the choice (data scientist and developer): every canary has a known answer that is independent of the code under test;

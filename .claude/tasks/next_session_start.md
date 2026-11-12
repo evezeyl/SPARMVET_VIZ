@@ -15,7 +15,7 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 ## 1. First fifteen minutes (every builder)
 
 1. `git status`, `git log --oneline -15`; read `CLAUDE.md` section 9 (no guessing) and `.claude/tasks/home_exploration_build_brief.md` (sections 0, 0b, 3).
-2. Baseline: headless **1646 passed**; browser gate **70 passed, 3 skipped**; canaries `app/tests/test_qa_canaries.py` 8 passed. Red baseline: stop and report.
+2. Baseline: headless **1649 passed** (2026-11-12, after the seventh canary); browser gate **70 passed, 3 skipped** (not rerun since the canary was added; the browser tests do not read the QA group); canaries `app/tests/test_qa_canaries.py` 9 passed. Red baseline: stop and report.
 3. Read your issues with all their comments, then **claim** them (issue protocol, brief section 0b) and fill your row of the status table.
 4. Say in one message what you will do first and which files you will edit; then work.
 
@@ -57,7 +57,9 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 > Read `.claude/tasks/next_session_start.md` and `.claude/tasks/home_exploration_build_brief.md`, then work as track B: WP4 (#56), WP5 with the QA canaries, WP3a display after track A's helper exists, WP6 last. Same protocol and constraints; do not edit engine files, design files or the UML.
 
 **Track D (design review, with Eve):**
-> Read `.claude/design/home_audit_review_agenda_2026-11-12.md` and `home_audit_reading_guide.md`. Run the review with Eve in the order of the agenda, write her decisions into the design files at once, and change nothing in code.
+> Read `.claude/design/home_audit_review_agenda_2026-11-12.md`, `home_audit_reading_guide.md`, `home_audit_forensics_2026-11-12.md` (section 4 first) and `home_audit_architect_review_2026-11-12.md` (section 0 first). Run the review with Eve in the order of the agenda, write her decisions into the design files at once, and change nothing in code.
+
+**Proposed, not decided (do not build until Eve says):** the pure view policy first inside WP4 (#56) (architect review AR2, section 3.2). Track B: finish what the brief says; if Eve accepts the proposal, she will say so in a comment on #56.
 
 ## 5. What every builder hands back
 

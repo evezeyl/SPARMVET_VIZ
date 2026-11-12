@@ -10,11 +10,12 @@ they never touch design files, the audit, or the export.
 1. `home_audit_reading_guide.md` (the map; section 3 is the list of 13 decisions).
 2. `home_audit_steps.md` sections 1-5 (rule, words, audit mode, kinds, reach and stage), then 18-20 (the three reviews and D1-D14).
 3. `home_audit_first_cut.md` (new, a proposal: a smaller first version, with what it cannot do).
-   **Then `home_audit_forensics_2026-11-12.md`**: new facts found in the current design (F1-F13) and, for every undecided item, the options with consequences for the scientist, data scientist, developer, checker, operator and novice, and a recommendation. Read its section 4 first (the path in one table), then section 3 where you want the reasons.
+   **Then `home_audit_forensics_2026-11-12.md`**: new facts found in the current design (F1-F13) and, for every undecided item, the options with consequences for the scientist, data scientist, developer, checker, operator and novice, and a recommendation. Read its section 4 first (the path in one table), then section 3 where you want the reasons. Section 3.2b explains the cheaper engine (E) with measured costs; 3.7 is closed by your rule (a feature without audit never changes a plot).
+   **Then `home_audit_architect_review_2026-11-12.md`** (the app seen by a software architect): section 0 is the answer in ten lines; section 2 the findings AR1-AR10 (the first: recipe text is Python code); section 4 the undecided items with an architect's view and five new decisions N2-N6.
 4. `recipe_review_st22_2026-11-11.md` section 3 (three questions about the ST22 recipe) and its before/after pictures in `tmpAI/recipe_review/`.
 
-To look at in the app (QA group, new): open `1_test_data_ST22_dummy`, tab "QA Canaries": six plots with the expected numbers in the subtitle; the
-"AMR genes per sample" bar at 0 is the sample that used to vanish; the last plot is a defect shown on purpose (#68).
+To look at in the app (QA group, new): open `1_test_data_ST22_dummy`, tab "QA Canaries": seven plots with the expected numbers in the subtitle; the
+"AMR genes per sample" bar at 0 is the sample that used to vanish; the "rows per sample" plot is a defect shown on purpose (#68); the last one (`qa_aggregated_no_key`) is a plot with no `sample_id` in its data (#60).
 
 ## 1. Recipe questions (10 minutes; they block the recipe, not the build)
 
@@ -36,6 +37,9 @@ To look at in the app (QA group, new): open `1_test_data_ST22_dummy`, tab "QA Ca
 
 Order of the session: confirm or change the cut (`home_audit_first_cut.md`) > Group 1 > Group 2 > Group 3 > parking lot.
 
+**Group 4: new, from the architect review (decide after the cut; none blocks the builders).** N2 keep or remove `developer_raw_yaml` as an audit kind; N3 trust levels for recipe text from outside (recipe text is Python code, AR1);
+N4 flag rules in one table (and the dead combination of `pipeline-exploration-simple`); N5 architecture rules as tests; N6 stored stages (atomic write, path, clean-up; touches `libs/transformer`, needs your OK). Also: accept or refuse the proposal to put the pure view policy first in WP4 (#56).
+
 ## 3. What Claude does with each answer, immediately
 
 - Writes the decision into `home_audit_steps.md` (section 16 "Decided"), `home_audit_reading_guide.md` (section 3 table) and ADR-099.
@@ -51,4 +55,4 @@ existing right panel (open question 5); the importer's verification legs (open q
 ## 5. State of the world this agenda assumes (verified 2026-11-11)
 
 Issues #59, #61, #62, #63 re-demonstrated by running; #65 and #71 fixed and closed with evidence (see their comments); #66-#70 open; recipe fixes and QA canaries committed;
-headless 1646 passed, browser gate 70 passed 3 skipped.
+headless 1646 passed (1649 after the seventh canary on 2026-11-12), browser gate 70 passed 3 skipped.

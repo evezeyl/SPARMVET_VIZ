@@ -1,7 +1,7 @@
 # HOME audit: forensics of the current design, and options for what is still undecided
 
-**Written for:** Eve, to decide with. **Written:** 2026-11-11 late evening (for the review of 2026-11-12). **Status:** analysis and
-recommendations; nothing here is decided and nothing was changed in code, recipes or diagrams.
+**Written for:** Eve, to decide with. **Written:** 2026-11-11 late evening (for the review of 2026-11-12); **updated 2026-11-12:** F1 canary built, F8 and 3.7 corrected (your rule decides it), section 3.2b (the cheaper engine, measured). **Status:** analysis and
+recommendations; nothing here is decided. The only change to code or recipes since the first version is the new QA canary. **Companion:** `home_audit_architect_review_2026-11-12.md` (the app seen by a software architect).
 **Method:** `.claude/workflows/design_review_personas.md`. Every finding carries an evidence class: **verified** (run, or read at
 `file:line`), **reasoned** (follows from verified facts, not yet run), **assumed** (not checked, said so). Scripts and logs are in
 `tmpAI/recipe_review/` (not committed). Points of view used for the consequences: **S** scientist who publishes, **DS** data scientist,
@@ -11,14 +11,14 @@ recommendations; nothing here is decided and nothing was changed in code, recipe
 
 | # | Finding | Evidence | Why it matters |
 |---|---|---|---|
-| F1 | **The central flaw of #60 cannot be shown on any shipped recipe.** In all 7 recipes, every plot-target collection still has a `sample_id` column in its T2 (11 targets in ST22, 1-2 in the others). The flaw ("a sample removed from all plots stays in plots whose data has no such column") needs a plot built on an aggregate without the key | verified: `tmpAI/recipe_review/forensics_data.py` | the reach tests of the full design (and check I2, "N plots contain the column, M do not") have no real fixture. A canary is missing: counts per year aggregated in T2, without `sample_id` |
+| F1 | **The central flaw of #60 cannot be shown on any shipped recipe.** In all 7 recipes, every plot-target collection still has a `sample_id` column in its T2 (11 targets in ST22, 1-2 in the others). The flaw ("a sample removed from all plots stays in plots whose data has no such column") needs a plot built on an aggregate without the key | verified: `tmpAI/recipe_review/forensics_data.py` | the reach tests of the full design (and check I2, "N plots contain the column, M do not") have no real fixture. **The canary now exists (2026-11-12):** `QA_aggregated_no_key` (T1 has `sample_id`, the T2 that the plot reads has not; 9 country/year groups, 42 samples; test `test_aggregated_plot_data_has_no_sample_key`, mutation-checked, picture looked at) |
 | F2 | The orchestrator loads a recipe **by id from a file** and prepares **all** ingredient schemas on every collection build; there is no hook for an overlay on one collection | verified: `orchestrator.py:110-165` | the design's "early insertion inside the build of each reached collection" (`home_audit_steps.md` 7.5) needs edits in `orchestrator.py` and `cache_keys.py`, both frozen in the build brief |
 | F3 | **An audit state can be a forked recipe file, run by a second `DataOrchestrator` in an audit folder, with the existing cache keys.** Proof of concept: a plot-level filter forked with `build_mode2_recipe`, written as `audit_poc.yaml`, built by a second orchestrator: 87 rows, equal to the direct Polars filter on the original T2 (126 rows); the keys differ automatically. ADR-089 already gives "invalidation by construction": `tier2_key = hash(tier1_key, the join's tier2 steps)`, and tier-2 steps are stripped from the tier-1 material, so a late step changes only that join's T2 key and an early step changes the tier-1 key | verified: `tmpAI/recipe_review/poc_forked.py`; `cache_keys.py:75-110`; `t3_translator.py:191-281` | the separate audit cache, the new key scheme and the "canonical hash" of the design (7.1-7.3, D3) largely duplicate machinery that exists and is tested (alternative E, section 3.2). Untested: the early key-exclusion fork mode (new code) |
 | F4 | The translator already handles all 8 operators and builds the forked recipe **in memory** (`build_mode2_recipe`, a deep copy, plots stripped, forks named `<join>__t3_<plot>`) | verified: `t3_translator.py:70,86-142,191-281` | the "step compiler" (D3) mostly exists; two modes are to be added (shared late, early at the sources) |
 | F5 | Format versioning partly exists: ghost files carry `schema_version: 2`; `AuditStep` is a `TypedDict(total=False)`, so **added fields are safe**; `LegacySessionError` fires only on pre-rename keys | verified: `session_manager.py:47-57,379,433,141` | decision 9 ("the session format changes: confirm") is overstated for an additive record; only replacing the list by an event store needs a new version and a migration |
 | F6 | **2 of 7 shipped recipes declare no `is_primary_key`** (`2_test_data_ST22_dummy`, `figshare_integration`); both join on `sample_id`, so inference from the joins finds the key. ST22 declares it on 11 of 12 schemas, Abromics 3 of 4, `3_test_no_joins` and `demo_abromics` all | verified: `forensics_data.py` and a join scan | "declared keys only" would switch sample exclusion off for 2 of 7 recipes; the proposed "declared + join inference" works for all 7 |
 | F7 | **Blast radius of replacing My view, Compare and per-plot steps** (code refs in `app/` and `libs/*/src`, then test refs): `t3_audit_steps_by_plot` 35 in 9 files (13 in tests), `tier_toggle` 43 in 9 (12), `aesthetic_override` 42 in 8 (34), `comparison_mode` 11 in 3 (23), `plot_view` 12 in 2 (10), `exclusion_row` 17 in 7 (9); `home_theater.py` has 2255 lines | verified: grep counts | the full design is a large, cross-cutting change; the cut avoids most of it |
-| F8 | **A consequence hidden in section 3 of the audit design:** "without the sandbox flag only Exploration exists". `pipeline-exploration-simple` and `web-demo` have `interactivity_enabled: true` and `t3_sandbox_enabled: false`, so in the new design their users can filter tables but never see a changed plot (today My view gives them that, ADR-085). `pipeline-exploration-simple` also has `comparison_mode_enabled: true` with sandbox off (a dead flag the design plans to forbid) | verified: `config/app_features/*.yaml`, `home_audit_steps.md:55-60` | a visible loss for the public demo and the simple pipeline users; needs your explicit yes (decision N1) |
+| F8 | **A consequence of your rule (corrected 2026-11-12).** Under the new design plots change only through an audit step. `pipeline-exploration-simple` and `web-demo` have `interactivity_enabled: true` and `t3_sandbox_enabled: false`, so their users filter tables to look at the data and the plots always show the Result. That is what your rule asks: **it is not a loss.** My first version called it a loss that needs your yes; that was wrong, your rule already decides it. What changes is the code of today: `plot_view` offers "My view" (and Compare) to them and exploration filters change that plot (`home_theater.py:481`, ADR-085/098). Items to implement, in 3.7 | verified: `config/app_features/pipeline-exploration-simple.yaml` lines 7-25, `web-demo.yaml` lines 8-21, `home_theater.py:478-490, 976-1006`, `home_audit_steps.md:55-60` | the two features need no "Plot to show" strip (one choice only), `comparison_mode_enabled: false` in `pipeline-exploration-simple` (Compare would show the same plot twice) and one help line |
 | F9 | **Wording drift survived the consistency pass:** `home_audit_steps.md` still says "Audit workspace" (1x), "workspace" (2x) and "rebuilt" (1x); the diagram `HOME-VIEW-MATRIX` is titled "What Exploration and the Audit workspace show and do"; the word "never" is still in 16 places of 8 HOME diagrams (EXPLORATION 3, VIEW-MATRIX 2, AUDIT-FLOW 3, AUDIT-EFFECT 3, AUDIT-CACHE 2, AUDIT-LINEAGE 1, AUDIT-COMPONENTS 1, UI-HOME-EXPLORATION 1) | verified: term scan of the design files and of `docs/UML/app.mdj` | breaks your UML rule; to fix on 2026-11-12 in track D (statements about built behaviour, such as "never exported" for preview filters, are true today; those about the target are not) |
 | F10 | The data check and `test_render_every_plot` passed with wrong figures (recipe review); the two generated recipe audits pass and cannot see a many-to-many join or an ignored plot key | verified: recipe review, #66, #68, #71 | the safety net must be the canaries plus pictures looked at, not green tests alone |
 | F11 | **Property tests bring randomness.** D9 proposes `hypothesis`; random generation without a fixed seed would add the kind of intermittent failure we are chasing in the browser gate (#72) | reasoned: Hypothesis is seeded per run unless `derandomize=True` or a fixed seed is set | if adopted: derandomized or fixed seed in CI, the seed printed on failure |
@@ -60,6 +60,37 @@ and makes "what you see = what the export re-runs" true by construction. Finer k
 (the interface is "recipe in, frames out"). **Risks to check in the spike:** `id` must equal the file name (ADR-092); the session key and the export key check must name the audit state explicitly;
 a forked recipe is a full resolved copy (size, N = 5 states).
 
+### 3.2b The cheaper engine (E) explained: what it gives, what it costs (added 2026-11-12, measured)
+
+**What E is.** Today a recipe is a file: the orchestrator turns it into stored tables (T1, then T2) and every plot reads T2. E treats an audit state the same way. Take the recipe, add the audit steps to a copy
+(`build_mode2_recipe`, which export Mode 2 already uses for the bundle), write the copy as a file in an audit folder, and let a second `DataOrchestrator` build and store it. The audit adds no new way of computing data:
+it is "the recipe plus your steps", run by the same code and cached by the same keys (ADR-089). "Cheaper" means: less new code, because the machinery already exists and is tested.
+
+**Measured** (`tmpAI/architect/engine_cost.py`; one plot-level filter per recipe; second orchestrator in a temporary folder; load average 2.9):
+
+| Recipe and plot | T2 rows, original -> audit | Equal to a direct Polars filter of the original T2 | Original cold / warm | Fork cold / warm | Fork's stored stages | Recipe file |
+|---|---|---|---|---|---|---|
+| ST22 `qc_reads_horizontal_barplot`, `sample_id != <one id>` | 42 -> 41 | yes | 0.09 / 0.25 s | 0.08 / 0.01 s | 2 files, 0.06 MB | 15 KB entry file -> 42 KB (one resolved file) |
+| Abromics `abromics_st_by_country` | 342 -> 335 | yes | 0.05 / 0.00 s | 0.04 / 0.00 s | 2 files, 0.01 MB | 3 KB -> 10 KB |
+| figshare `plot_A_phenotype_bar`, `host_animal_species != 'Bos taurus'` | 203,146 -> 151,569 | yes | 0.16 / 0.07 s | 0.14 / 0.05 s | 2 files, 0.28 MB | 3 KB -> 8 KB |
+
+In all three the tier-1 key of the fork differs from the original (verified), so an audit never reuses or overwrites a stored stage of the original. Timings are noisy at this size (the original "warm" 0.25 s is slower than its cold run):
+read them as "all below 0.3 s", not as a ranking. The builds read the shipped test data; **production size is not known.**
+
+| | Pros of E | Cons of E |
+|---|---|---|
+| Correctness | the audited figure, the table and the export are one computation: "what you see is what the export re-runs" holds by construction (today the figure and the bundle disagree for #62); an engine bug is fixed once | an engine bug is inherited by the audit (true for any design), so #61, #62 and #63 come first |
+| Size of the change | much less new code than a bespoke cache; the translator already handles all 8 operators (F4); `cache_keys.py` and `orchestrator.py` stay frozen; the recipe cache is keyed by absolute path, so a second orchestrator does not collide with the first (`cache_keys.py:179-205`, verified) | one mode is new and untested: early key exclusion on every ingredient that has the key (F2, F3); only the late, plot-level mode was run |
+| Cache | invalidation by construction (a changed step changes the key); the audit has its own folder, so it does not meet the shared `anchors/` folder (see architect review AR4); old states are removed by deleting a directory | **coarser:** a join added to the recipe changes the tier-1 material (`cache_keys.py:tier1_material` strips only plot sections and tier-2 steps), so the audit rebuilds tier 1 of its collection and shares nothing with the original's stored stages. Fine at 0.3 s and 203,146 rows; **unknown at production size** |
+| Disk | small here (2 files per state, 0.01 to 0.28 MB) | each state is a resolved recipe copy plus stored stages; 5 states per session and many sessions need a clean-up rule, and none exists for stored stages today (AR4) |
+| Checking and export | the bundle can carry the audit recipe, runnable by anyone with the debug scripts (`debug_assembler.py`); the oracle is a direct Polars filter of the original T2 (what the proof of concept used: independent and strong) | `id` must equal the file name (ADR-092), so ids must be generated and unique; the session key and the export key check must name the audit state explicitly |
+| Security | filters translate to named actions, no code | the audit state is **a recipe**, and recipes are code (architect review AR1): a `developer_raw_yaml` step is run through `eval`; E makes that path a normal one, so the audit kinds and the trust of imported steps must be decided first (N2, N3) |
+| Reversibility | the interface is "recipe in, frames out": a finer cache can replace the backend later | the screen is built against that interface; changing it later costs the screen |
+
+**What E does not solve:** the scattered view policy (AR2), the size of the handlers (AR3), the NA rule (3.4), many-to-many joins (#68).
+**The spike before deciding** (one session, no UI): (1) early key exclusion as a fork mode, run on all 7 shipped recipes with the oracle "same rows as filtering every ingredient that has the key"; (2) measure the rebuild on the largest recipe;
+(3) confirm that the session key and the export key check work with an audit state; (4) try the clean-up rule (N6); (5) try the trust check (N3).
+
 ### 3.3 Reach and stage (guide decisions 1 and 6; the structure of audit mode)
 
 | Option | S | DS | Dev | QA | N |
@@ -95,11 +126,21 @@ Consequences: S - C and A both let the report list removed steps, D cannot; DS -
 Options: **A** declared `is_primary_key` + join steps + inference (the design); **B** declared only; **C** join steps only. Evidence F6: B switches sample exclusion off for 2 of 7 shipped recipes; C misses a recipe with no joins that declares its key.
 **Recommendation: A**, plus a recipe-validator warning "no key declared" (advice, not a block) and the docs line "declare `is_primary_key` on the ID column". **Reversibility:** high.
 
-### 3.7 Without the sandbox flag (new, decision N1)
+### 3.7 Without the sandbox flag (was decision N1; closed by your rule on 2026-11-12)
 
-Options: **(a)** accept: those users only preview tables, plots never change; **(b)** keep ADR-085's My view for them (a scratch plot that changes without a record); **(c)** a visibly marked "preview plot" in Exploration for them.
-Consequences: S - (a) users cannot see the plot effect of a filter; DS - (a) has no unrecorded plot change that can be screenshotted into slides, (b) breaks "plots change only through audit"; Dev - (a) removes the ADR-085 path; QA - (a) the smallest matrix; N - one rule "plots change only through audit".
-**Recommendation: (a)**, stated in the help, and ask one real user of the simple pipeline before it ships (I do not know who uses it: **assumed**). Reversible.
+Your rule: plots change only through an audit step, and the sandbox flag is what turns audit on. A feature without it (`pipeline-exploration-simple`, `web-demo`) therefore never changes a plot: users filter tables to look at the data and the plots show the Result.
+**No decision is needed.** In the first version of this file I asked for your yes and called it a loss; that was a mistake (I read "no changed plot" as a loss, it is the intended behaviour).
+What it means for the build (the left column is verified in the code of today):
+
+| Item | Today (built, ADR-085/098) | After the audit build |
+|---|---|---|
+| "Plot to show" strip | offers Result, My view and, if `comparison_mode_enabled`, Compare (`home_theater.py:976-1006`) | one choice only (Result), so the strip is not shown |
+| Exploration filters and the plot | change the plot in My view (`home_theater.py:481`) | change the table only |
+| `comparison_mode_enabled` in `pipeline-exploration-simple` | `true` with the sandbox off: Compare puts Result next to a filtered My view | must be `false` (Compare would show the same plot twice); the flag validator should refuse the combination (the flag is a child of the sandbox flag) |
+| "Data to show: My view" | table with exploration filters | unchanged; the badge already tells that the plot is not filtered (`view_badge.py:66`, text to update with the audit build) |
+| Help text | says My view is a scratchpad | one line: "In this configuration filters change the tables; plots always show the Result." |
+
+Until the audit build ships nothing changes (ADR-098 stays as built). **Reversible.** The flag rule joins decision N4 of the architect review.
 
 ### 3.8 The remaining numbered decisions (short)
 
@@ -123,11 +164,13 @@ R2 four samples without usable phenotype: **(a)** not plotted with a note "n = 3
 
 | Step | What | Needs from you | Unlocks |
 |---|---|---|---|
-| 0 | Builders: WP1-WP9 as in the brief; add the canary of F1 (aggregated, no `sample_id`) | nothing | tests for the reach decisions |
-| 1 | Decide 3.1 (cut first), 3.2 (E, after a spike), 3.4 (NA: A with B first), 3.5 (C), 3.6 (A), 3.7 (a) | 6 answers | pieces 1-7 of the cut |
-| 2 | Spike: early key exclusion as a fork mode + second orchestrator (one session, no UI) | 3.2 yes | the decision 3.3 with evidence |
+| 0 | Builders: WP1-WP9 as in the brief. The canary of F1 is **done** (`QA_aggregated_no_key`). **Proposed by the architect review (needs your yes):** the pure view policy comes first inside #56 (AR2) | your yes for the proposal | tests for the reach decisions; one rule for table, plot and export |
+| 1 | Decide 3.1 (cut first), 3.2 (E, after a spike), 3.4 (NA: A with B first), 3.5 (C), 3.6 (A); 3.7 is closed by your rule. **New, from the architect review:** N2 (`developer_raw_yaml` in the audit), N3 (trust levels for recipe sources), N4 (flags in one table), N5 (architecture rules as tests), N6 (stored stages) | 5 + 5 answers | pieces 1-7 of the cut |
+| 2 | Spike: early key exclusion as a fork mode + second orchestrator, with the clean-up rule and the trust check (one session, no UI; list in 3.2b) | 3.2 yes | the decision 3.3 with evidence |
 | 3 | Decide 3.3 (B) and the rest of 3.8 | after the spike | the full audit plan |
 | 4 | Fix F9 (wording, UML, "never") | your rule on built-behaviour "never" | consistent diagrams |
+
+The architect review (`home_audit_architect_review_2026-11-12.md`) adds ten findings about the app itself (AR1-AR10); the first is that recipe text runs as Python code.
 
 ## 5. Browser gate flakiness (finding F13)
 
@@ -158,5 +201,5 @@ the failures are always in different tests.
 
 ## 6. Not verified (said plainly)
 
-Production data size and the real cost of rebuilding all collections per early step; who uses `pipeline-exploration-simple`; whether the early key-exclusion fork mode works on every shipped recipe (only the late plot-level mode was run);
+Production data size and the real cost of rebuilding all collections per early step (the measured late-mode costs are in 3.2b: all below 0.3 s on the shipped data); whether the early key-exclusion fork mode works on every shipped recipe (only the late plot-level mode was run);
 usability of the warning texts (needs 2-3 scientists); the `hypothesis` seeding behaviour was taken from its documented defaults, not run here.
