@@ -43,12 +43,14 @@ target), issues #56, #60, #61, #62, #63, #64.
 
 | File | Role | Status |
 |---|---|---|
-| `spaces/HOME.md` | the canonical HOME design (CLAUDE.md 3.6: read before implementing) | **STALE** (2026-05-05): "audit always on, no opt-out", the old "T3 cascade rule" with retired flag names; no Exploration, no audit mode. To rewrite from the agreed design |
+| `spaces/HOME.md` | the canonical HOME design (CLAUDE.md 3.6: read before implementing) | **REWRITTEN 2026-11-12** from the agreed design, each statement marked built or target; one place to read the whole of HOME |
 | `home_preview_filters.md` | Exploration design | agreed 2026-11-11 |
 | `home_audit_steps.md` | audit mode design, v4, with the three reviews | decided in part; `[confirm]` items open |
 | ADR-098 / ADR-099 (`architecture_decisions.md`) | what is built / the target | ADR-099 accepted in principle, not built |
 | this guide | the order of work, the criteria, the problem queue and the 13 questions | entry point |
 | `home_design_first_roadmap_2026-11-12.md` | the behaviour table by kind of configuration and the questions of P1-P4 | working document for stage 1 |
+| `home_evidence/home_hash_model_2026-11-12.md`, `home_attrition_report_2026-11-12.md`, `home_design_review_2026-11-12.md`, `home_uml_review_2026-11-12.md`, `home_where_to_remove_data_science_2026-11-12.md` | the hash model, the attrition and caption, the independent review, the UML review, the data-science analysis behind the placement of steps | evidence and decisions; the first two are decided |
+| `recipe_review_st22_2026-11-11.md` (section 3b) | the test recipe defects and the AMR data scientist proposals R1-R4 (agreed) | applied by `RECIPE-ST22-FIX-1` |
 | `home_audit_review_agenda_2026-11-12.md` | the script of the review session | current |
 | `home_evidence/` (forensics, architect review, gating paper) | analysis: what is decided, options with pros and cons, verified findings | evidence to consult per problem, not designs; the gating paper is paused |
 | `home_audit_first_cut.md` | a smaller first audit version | PARKED (plan stage) |
@@ -105,13 +107,22 @@ Compare is part of Audit mode and is on whenever audit is on (P1). Names use hyp
 | O6 | The node popup and the project overview: **DECIDED a popup in its own window**, built as a pure content function so a panel can replace the window later; what stays of the right panel (Inherited nodes, filter inventory, pending badge) is decided at the screen redraw | partly decided | UI-HOME-AUDIT |
 | O7 | The **step compiler** (defined in the vocabulary of `home_audit_steps.md`: it turns a user's step into recipe actions in the right list of the audit recipe; the generalised `t3_translator`), the event log, the pre-export review gate, D1-D14 (trimmed) | **accepted** (Eve); the specification is written in stage 2 | the build plan |
 | O9 | Rename the recipe field `is_primary_key` to `is_entity_key` (a primary key is unique, an entity key repeats in long tables); warn first, refuse later | yes, at the recipe-format stage | clarity |
+| O10 | An `engine:` declaration in the recipe (data engine `polars`, plot engine `plotnine`; unknown value = failure; recorded in the export and in the engine part of the keys) so a later integration of another language can be declared per recipe, later per collection or tier list | proposed, see the answer of 2026-11-12 | recipe format |
 | O8 | Configuration stage | **DECIDED** to leave it to the end (`CONFIG-REVIEW-1`) | - |
 So **nothing is waiting for you now except the review of the text; the right panel is decided at the screen redraw (O6), and the compiler is specified in stage 2 (O7).**
 
 ## 3. The path to the first code (what stands between us and building)
 1. **Your answers** to O1-O5 (a few minutes).
-2. **Your review of the design text**, in this order (each section was changed or added during 2026-11-12): `home_audit_steps.md` section 4 (kinds, remove by attribute), 5a (points 3-17), 10, 11 (reason, export, import), 16, 19 (levels, NA, caption and attrition); `home_preview_filters.md` sections 2, 3, 6, 7; ADR-099 points 10-16; the hash model document and the diagrams `DM-KEYS*`; the attrition document.
-3. **Documents I rewrite from the agreed text**: `spaces/HOME.md` (stale since May) and the UML redraw of the diagrams marked in `home_evidence/home_uml_review_2026-11-12.md` (task `UML-HOME-REDRAW-1`).
+2. **Your review of the design text.** Reading list, in this order (each was changed or added during 2026-11-12; nothing is waiting for a decision while you read, mark what you disagree with):
+   1. `spaces/HOME.md` (new: the whole of HOME in one place, built or target);
+   2. `home_preview_filters.md` sections 2, 3, 6, 7 (Exploration);
+   3. `home_audit_steps.md`: section 2 (vocabulary, step compiler), 4 (the two kinds of step), 5a points 3-20 (the mechanism, nodes, keys, shapes, fail instead of warn, the Blueprint boundary), 9 (drop), 10, 11 (reason, export, import), 16, 19 (levels, missing values, attrition and caption);
+   4. `home_evidence/home_hash_model_2026-11-12.md` with the diagrams `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT` (`docs/UML/diagrams/`);
+   5. `home_evidence/home_attrition_report_2026-11-12.md`;
+   6. ADR-099 points 10-16 in `architecture_decisions.md`;
+   7. `home_evidence/home_uml_review_2026-11-12.md` (which diagrams are outdated) and `recipe_review_st22_2026-11-11.md` section 3b (the recipe proposals);
+   8. the planned terms in `docs/user_guide/glossary_and_feedback.qmd`.
+3. **Documents I rewrite from the agreed text**: `spaces/HOME.md` (done 2026-11-12) and the UML redraw of the diagrams marked in `home_evidence/home_uml_review_2026-11-12.md` (task `UML-HOME-REDRAW-1`).
 4. **Stage 2, the mechanism and the build plan**: the recipe graph specification (`RECIPE-GRAPH-UTILS-1`), how steps are written into the audit recipe, the keys per node (`KEYS-NODE-1`), the loader and validator (`UNKNOWN-KEYS-1`, `ENTITY-DECL-1`), the engine path for T3; a build plan in small revertible packages, tests adapted first (`TEST-ADAPT-1`, `TEST-ORDER-1`).
 5. **First code, in this order** (each package: tests that fail for the right reason first): the missing-value rule `NA-RULE-63`; unknown keys; the recipe graph in `libs/utils`; keys per node; then the audit pieces; the recipe fixes `RECIPE-ST22-FIX-1` run in parallel because they only need descriptions and explicit missing-value steps.
 
