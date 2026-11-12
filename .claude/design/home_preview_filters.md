@@ -70,6 +70,7 @@ Categories: `= equals`, `≠ not equal`, `∈ any of`, `∉ none of`. Numbers: `
 
 - Badge on the table: "Viewing: Raw / Result" plus "N preview filter(s) on, not saved". [built]
 - The row count line ("Viewing rows a through b of N") is the user's check that a filter worked. [built]
+- **Export and session in Exploration only (decided 2026-11-12, Eve, P4a).** The configuration offers the same export as with audit (publication bundle, reproducibility add-on, Import, ADR-097) with the audit parts absent. Preview filters and hidden columns are never saved, so they cannot be exported: the export text says "The export contains the Result plots and their data. Filters you used to look at the data are not exported." A session holds only the recipe and data reference (the contract 7.1 and 7.2 are stale on this and on the recipe files in the standard bundle: to correct in stage 3).
 - **Notice in the Filters panel (decided 2026-11-12, Eve; to build).** It never mentions a function that the configuration does not have.
   - Exploration only, no audit mode: "Filters here change the table you are looking at. They are not saved and never exported. The plot is the Result and does not change."
   - Exploration with audit mode available: the same text plus "To change a plot, use Audit mode."
