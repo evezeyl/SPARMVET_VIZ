@@ -107,3 +107,30 @@ The worst sample by N50 in the Quast data: `66678807` (N50 131,595; median 324,1
 - **R5 Value filters.** The user filters on the table they look at; the earliest node where the column exists is proposed; the dialog shows the downstream effect and warns when an aggregation lies downstream.
 - **R6 Evidence link.** Optional: a step names its evidence plot(s), shown in the export next to the reason.
 
+## 9. Eve's Polars question, and the audit as a recipe with steps inserted at different places
+
+**Eve (2026-11-12):** could flags in Polars tell us which steps are aggregations, and would that help? And: the audit steps are basically added at different places in the (audit) recipe.
+
+**The audit recipe.** Yes. An audit is **the original recipe plus audit steps inserted at chosen positions of its dataflow**: at the start of a dataset (before its own steps), after the joins of a table (T1), after the table's second stage (T2), or on a plot's own table (T3). This is the "forked recipe" already in the design (ADR-099 point 8; the user's own recipe files are never edited). Two consequences:
+- One logical action such as "remove sample X from all datasets" **expands into several inserted steps**, one per dataset that has the key. The user sees one action; the audit recipe holds N insertions; the export lists them.
+- Running the **original recipe** gives the original tables, running the **audit recipe** gives the audited tables. "Two versions of the data" is simply the result of two recipes, and a plot is set to read one of them.
+
+**What Polars gives (verified on Polars 1.40.1):**
+- **No "is an aggregation" flag on expressions** (`Expr.meta` offers nothing of the kind). A query plan can be inspected as text (`explain`) and as JSON (`serialize`; it names group-by nodes), but that format is not a stable public contract (reasoned).
+- **The optimizer is a one-sided proof.** I asked it to move "sample is not d" below each step. Synthetic: 12 of 12 cases match the theory (row-local, group by the key, window over the key, joins, whole-row unique: moved; z-score, window over country, rank, running total, unique on country only, first 3 rows: not moved). On the **real ingredients of the 7 recipes**: 18 moved, 6 refused, 2 have no `sample_id`. The 6 refusals are all **entity-local steps** (`unpivot`, `split_and_explode`, `split_column_to_parts`, a numeric `filter_range`) that Polars simply cannot prove safe. So: **"moved" proves the step commutes; "refused" proves nothing**. It must not be used alone to warn.
+
+**What would help, in two parts (MINE):**
+1. **A declared property in our own action registry**: each action says whether it is row-local, depends on the other samples, or is a join, refined by its parameters relative to the key (grouped by the key = local; grouped by country = depends). This gives early warnings such as "an aggregation lies downstream of this step". The Polars optimizer can be used as a **test** of these declarations (a declared-local action that Polars refuses is checked by hand; a declared-local action that changes other rows is a bug).
+2. **A data check in the dialog:** compute the audit recipe both ways on the real data (the sample removed early, against removed after the computation) and compare the other rows. If identical: "the result is the same wherever this is removed". If different: show which numbers differ. This is exact for the data at hand and needs no classification of the 67 operations; it is the trial computation of the design, used as a check.
+
+Together they cover the problem of *detecting where a removal matters*. They do not decide the intent (exclusion or not), the scope, or which plots are evidence: those stay the user's choices, with the reason recorded (Eve: the reason at each step says "removed here but not there because...").
+
+## 10. Settled in the discussion so far (2026-11-12, to be written into the design files when P5 closes)
+
+- **R1 accepted, with Eve's definition:** *an audit is every change the user makes, with a recorded reason.* (Preview is not an audit: it changes nothing.)
+- **R2 accepted:** remove a key from **all datasets at once**, or from chosen datasets.
+- **R4 accepted:** a step on a plot's own table is a real step.
+- **R5 accepted:** value filters and column drops follow the lineage logic; **all downstream effects are shown** before Apply; the **reason** records why it was done here and not there.
+- **R6 dropped** (the reason text covers it, and the QC plot appears in the export anyway as a plot no step touched).
+- **R3 pinning: not yet clear to Eve; to explain with an example.**
+
