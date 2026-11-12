@@ -134,7 +134,7 @@ Together they cover the problem of *detecting where a removal matters*. They do 
 - **R6 dropped** (the reason text covers it, and the QC plot appears in the export anyway as a plot no step touched).
 - **R3 pinning: not yet clear to Eve; to explain with an example.**
 
-## 11. Eve's reply on the QC plots, and my view (2026-11-12; proposal, not yet confirmed)
+## 11. Eve's reply on the QC plots, and my view (2026-11-12; **confirmed by Eve**: the logic, the dropping of pinning, the tick boxes)
 
 **Eve:** the original plots remain, so removing the samples from the QC plots too still leaves the proof of why they were removed. QC and analyses usually use different datasets, so one T1 can stay unchanged while others are audited. For a shared table such as Quast the removal must happen later, at the T3 concerned and not in the T1 of the lineage. The software needs the recipe's processing per dataset to decide.
 
@@ -144,4 +144,31 @@ Together they cover the problem of *detecting where a removal matters*. They do 
 3. **The Quast case (verified lineage):** `Quast` (`strip_whitespace`) -> left join with `metadata_schema` on `sample_id` -> `unpivot` (3 metrics) -> `cast`; T2 = T1 with `sample_id` present (126 rows = 42 x 3); the plots are a boxplot (QC) and a violin (`miaou`), their statistics computed after the filter. Every step is per-sample, so a removal at `miaou`'s own table equals a removal at the source.
 4. **The recipe graph (D1 of the design, so far only "to confirm") is a prerequisite:** per table the datasets feeding it, the reaction of each step relative to the key, the join types, key presence, the plots that read it. It comes first in the build order.
 5. **Proposed rule:** the user ticks the tables or plots that must change (default all); the software places the step at the earliest point inside each ticked table that does not reach an unticked plot; where a table is shared with an unticked plot it places the step later, at the plot's own table, and says so.
+
+## 12. How to convey the information to a user who did not write the recipe (P5b; proposal)
+
+**Eve:** the user will not know what `ST22_Anchor` is if they never wrote the recipe; maybe we can add pointers inside the recipe itself. She likes the tick boxes.
+
+**What the recipes carry today (verified, 7 shipped recipes, non-QA):** group label or description 11 of 11; plot label 9 of 20, plot info 12 of 20, plot title 12 of 20; **description of a plotted table 4 of 13** (and they are generic, such as "Primary joined dataset for ST22 Dummy analysis"); dataset description 11 of 22. So a user would often see a bare name.
+
+**Proposal: speak the user's language, from the plots down to the data, in four layers.**
+1. **Results (what the user knows):** the plots, grouped by tab, with their titles. These are the tick boxes.
+2. **The data behind each result, in one plain sentence:** generated from the lineage and, when the recipe has one, the table's own description. Example for `miaou`: "Quast results joined with the sample metadata and reshaped to one row per sample and metric (3 metrics). The sample key is kept. Also read by: Assembly quality (box plot)."
+3. **What will happen to each plot, shown as you tick:** "changed at the source" | "changed at this plot only (the table is shared with an unticked plot)" | "unchanged".
+4. **The lineage chain on request** (the lineage map of the design): datasets, steps in plain words, table, plot.
+
+**Mock-up of the dialog (sample 66678807):**
+
+    Which results must change?                         (all ticked by default)
+    Quality Control
+      [x] Reads per sample (horizontal bar)    data: QC reads table (FastP, Quast, Bracken, metadata)  -> changed at the source
+      [ ] Assembly quality (box plot)          data: Quast results + metadata, one row per sample and metric. Also read by: Cat (miaou)   -> unchanged
+    Cat
+      [x] miaou                                 data: the same table as Assembly quality          -> changed at this plot only (shared with an unticked plot)
+
+**Pointers inside the recipe (options):**
+- **(a) Use the fields that exist** (`description` on tables and datasets, `label` and `info` on plots), add a recipe-validator **advice** (never a block) "a table read by a plot has no description", and a prompt in the Blueprint form. Where nothing is written the dialog generates the sentence from the steps. Cheap, no format change.
+- **(b) Add structured fields** for the things the dialog needs most: what one row is ("one row per sample and gene"), a role (quality control, analysis, reference). More precise, but a recipe-format change and more authoring work.
+- **(c) Nothing in the recipe**, everything generated. Works for every recipe now, but cannot say what `ST22_Anchor` means in the lab's words.
+**Recommendation: (a) now**, with the generated sentence as fallback, and (b) only the single hint "what one row is" later if users need it (it is the "rows are not samples" problem at the source). The generated sentences need a plain-language text for each of the 67 actions (the action catalogue has developer descriptions today): a content task, not code.
 
