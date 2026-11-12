@@ -29,8 +29,8 @@ target), issues #56, #60, #61, #62, #63, #64.
 | P1 | Which kinds of configuration exist, and what depends on what | **DECIDED 2026-11-12 (Eve):** audit mode needs export, Compare and sessions (compare the effect, save unfinished work, export what is finished and verifiable); Compare needs audit |
 | **P2** | **The Exploration screen.** Plot: **DECIDED 2026-11-12 (Eve)**: one plot, the Result, immutable, always shown (the Data toggle only changes the table). Notices: **DECIDED 2026-11-12** (three texts, in `home_preview_filters.md` 7 and `home_audit_steps.md` 3) | decided |
 | P3 | Preview lists while audit mode is on | **DECIDED 2026-11-12 (Eve):** hidden, kept; the Filters panel and column control follow the mode; one candidate step previewed in the dialog, then Apply with a reason (`home_audit_steps.md` 3). Columns: same logic as filters (candidate drop, previewed in the dialog, then Apply) | decided |
-| **P4** | **Export and session.** P4a (no audit): **DECIDED 2026-11-12** (same export without audit parts; preview never saved or exported; session = recipe and data reference). **P4b (audit mode): proposal under review**: original (no audit) and audited plots side by side for affected plots, clearly labelled | **NOW** (P4b) |
-| P5 | Audit: stage and reach (questions 1 and 6 below) | waiting |
+| **P4** | **Export and session.** P4a (no audit): **DECIDED 2026-11-12** (same export without audit parts; preview never saved or exported; session = recipe and data reference). **P4b DECIDED 2026-11-12**: original and audited side by side for affected plots, labelled; audit tables only where a step changed; one tick "include recipe and raw data" (off, warning) | decided |
+| **P5** | **Audit: stage and reach (questions 1 and 6 below)** | **NOW** |
 | P6 | Audit: the NA rule, its default (question 2, #63) | waiting |
 | P7 | Audit: reason categories, caption, audit table selector, first checks (questions 3, 4, 7, 11) | waiting |
 | P8 | The transition: what the features without audit show until audit mode exists | waiting |
