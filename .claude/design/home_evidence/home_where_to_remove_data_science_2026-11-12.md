@@ -134,3 +134,14 @@ Together they cover the problem of *detecting where a removal matters*. They do 
 - **R6 dropped** (the reason text covers it, and the QC plot appears in the export anyway as a plot no step touched).
 - **R3 pinning: not yet clear to Eve; to explain with an example.**
 
+## 11. Eve's reply on the QC plots, and my view (2026-11-12; proposal, not yet confirmed)
+
+**Eve:** the original plots remain, so removing the samples from the QC plots too still leaves the proof of why they were removed. QC and analyses usually use different datasets, so one T1 can stay unchanged while others are audited. For a shared table such as Quast the removal must happen later, at the T3 concerned and not in the T1 of the lineage. The software needs the recipe's processing per dataset to decide.
+
+**My view:**
+1. **Pinning (R3) is dropped.** The immutable original Result plot is the evidence (Compare reference in audit mode; the export carries the original beside the audited plot). Keeping a QC plot unchanged is a matter of scope, not a mechanism.
+2. **The scope is a set of tables** (their T1), because the engine builds a private copy of every dataset inside each table: a removal inside one table does not touch the others. In ST22 the QC and the analyses share `FastP`, `Quast` and `metadata_schema` (only `Bracken` is QC-only), so a dataset-level split is impossible and a table-level one is possible. "All at once" = every table that has the key.
+3. **The Quast case (verified lineage):** `Quast` (`strip_whitespace`) -> left join with `metadata_schema` on `sample_id` -> `unpivot` (3 metrics) -> `cast`; T2 = T1 with `sample_id` present (126 rows = 42 x 3); the plots are a boxplot (QC) and a violin (`miaou`), their statistics computed after the filter. Every step is per-sample, so a removal at `miaou`'s own table equals a removal at the source.
+4. **The recipe graph (D1 of the design, so far only "to confirm") is a prerequisite:** per table the datasets feeding it, the reaction of each step relative to the key, the join types, key presence, the plots that read it. It comes first in the build order.
+5. **Proposed rule:** the user ticks the tables or plots that must change (default all); the software places the step at the earliest point inside each ticked table that does not reach an unticked plot; where a table is shared with an unticked plot it places the step later, at the plot's own table, and says so.
+
