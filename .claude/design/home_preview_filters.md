@@ -65,6 +65,7 @@ valid for the data it is applied to.
 Categories: `= equals`, `≠ not equal`, `∈ any of`, `∉ none of`. Numbers: `= equals`, `≠ not equal`,
 `> greater than`, `≥ greater or equal`, `< less than`, `≤ less or equal`, `↔ between`. One selected value reads
 "column = value"; several read "any of". Source: `OP_WORDS` in `app/modules/t3_audit_engine.py`.
+**Missing values (decided 2026-11-12, Eve, P6; to build):** "NA (missing)" is a visible, selectable value in every value list of a preview filter, so the user decides whether to look at the rows with a missing value or not; the preview says how many rows have no value in the column. The same rule as in audit steps (`home_audit_steps.md` 19); nothing is dropped or kept silently.
 
 ## 7. Feedback to the user
 

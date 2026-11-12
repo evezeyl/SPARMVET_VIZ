@@ -554,6 +554,7 @@ cache writes; the export self-checks; the post-condition check itself.
 value list. "Remove" filters keep rows with NA unless NA is selected; "keep" filters remove them unless NA is
 selected; for comparisons (>, <, between) rows with NA are removed unless the user ticks "keep rows with NA". The
 dialog always says "N rows have no value in this column: they are kept / removed". NaN follows the same rule.
+**Confirmed 2026-11-12 (Eve, P6), with the reason:** a missing value can mean very different things in the datasets of a pipeline (the software did not find the value in its database; the software failed and the sample must be rerun; the sample quality was insufficient). The software cannot know which, so it never removes or keeps them silently: they stay visible, and the user (and, before, the recipe maker) decides how to treat them. In an audit step the user chooses and the reason records why; in Exploration the user chooses whether to look at those rows or not (the same "NA (missing)" value in the filter).
 
 **Checks (first list; extend as problems are found).**
 

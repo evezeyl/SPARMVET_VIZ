@@ -31,8 +31,8 @@ target), issues #56, #60, #61, #62, #63, #64.
 | P3 | Preview lists while audit mode is on | **DECIDED 2026-11-12 (Eve):** hidden, kept; the Filters panel and column control follow the mode; one candidate step previewed in the dialog, then Apply with a reason (`home_audit_steps.md` 3). Columns: same logic as filters (candidate drop, previewed in the dialog, then Apply) | decided |
 | **P4** | **Export and session.** P4a (no audit): **DECIDED 2026-11-12** (same export without audit parts; preview never saved or exported; session = recipe and data reference). **P4b DECIDED 2026-11-12**: original and audited side by side for affected plots, labelled; audit tables only where a step changed; one tick "include recipe and raw data" (off, warning) | decided |
 | P5 | Audit: where in the data processing a step goes | **DECIDED 2026-11-12** (Eve): written into `home_audit_steps.md` section 5a and ADR-099 point 12 (operation on data, tick boxes, earliest point that reaches no unticked plot, all-at-once key removal, no pinning, no hiding, four layers of information, uniform `label` and `description`) | decided |
-| **P6** | **Audit: the NA rule, its default (question 2, #63)** | **NOW** |
-| P7 | Audit: reason categories, caption, audit table selector, first checks (questions 3, 4, 7, 11) | waiting |
+| P6 | The NA rule and its defaults (question 2, #63) | **DECIDED 2026-11-12** (Eve): never silent; missing is a visible, selectable value in preview and audit; defaults as in `home_audit_steps.md` 19; the user and the recipe maker decide what missing means |
+| **P7** | **Audit: reason categories, caption, audit table selector, first checks (questions 3, 4, 7, 11); taken one at a time, reason categories first** | **NOW** |
 | P8 | The transition: what the features without audit show until audit mode exists | waiting |
 | P9 | Who may bring recipe text into the app (recipe text is code) | waiting |
 | later | Mechanism (stage 2): the audit engine, trial computation, event log, lineage map, D1-D14, architect findings N2-N6, legacy names (questions 8-10, 12, 13); then the build plan; then gating and test configurations | after P1-P9 |
