@@ -84,6 +84,7 @@ An **entity** is the unit a key identifies (a sample, a patient, a site, a senso
 
 - **Recipe-driven:** every change comes from the recipe or from a recorded audit step; structural changes go to BLUEPRINT.
 - **Original data and recipe never change** (S1); same data, recipe and steps give the same figure and export (S4); what you see is what is exported (S6).
+- **Engines are declared** (`data_engine: python-polars`, `plot_engine: python-plotnine`, required, unknown = failure) so a later integration of another language is a declared choice (`home_audit_steps.md` 5a point 21).
 - **Fail instead of warn:** everything written in a recipe is executed or the recipe is rejected with the reason; HOME rejects at the load gate, BLUEPRINT reports and never blocks building.
 - **Data-agnostic:** no field-specific word in the code or in fixed texts; the name of the entity and the examples come from the recipe and the help (W7).
 - **Positive inclusion** (ADR-071): a feature that is off is absent, not greyed; the configuration file only switches functionalities on or off, the design is the same in every configuration.
@@ -114,7 +115,6 @@ Built: the pipeline and plots; Exploration with the old header strip (My view, C
 ## Open Questions
 
 - What stays of the right panel in audit mode (Inherited nodes, filter inventory, pending badge): decided at the screen redraw.
-- An `engine:` declaration in the recipe (data engine and plot engine, for a later integration of other languages): proposed 2026-11-12, to decide.
 - **Auto-label algorithm:** when labels are rotated, truncated or hidden (font size, plot width, label count); needs a spec.
 - Preview rows: default 100, "show all" toggle (UX-PREVIEW-ROWS-1); plot panel collapse (THEATER-1).
 - Navigation between several recipes when the selector is hidden.

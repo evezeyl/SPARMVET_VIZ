@@ -36,6 +36,7 @@ Eve's reading ("node hashes see changes, whole-recipe hashes decide recomputatio
 
 ## 4. Proposed model, designed from the needs and not from the code (MINE; drawn in UML `DM-KEYS` and its details)
 **Where the time goes.** Only reading files costs time: the data files (once per session) and the recipe files (small). Everything else hashes a few short strings. So the model must not multiply hashes of files, and it should not hash a hash again when a concatenation is enough.
+**Engines (decided 2026-11-12):** `E` is made from the recipe's declared `data_engine` and `plot_engine` with their versions and the cache version (5a point 21 of the audit file); the export always records them.
 **Leaves (read from disk, once, kept in a table in memory):** `d(file)` for every source data file, `r(file)` for every recipe file. **Engine** `E`: a short text (cache version, Polars, transformer), no disk.
 **Whole-recipe hashes (identity; checkable outside the app):** `D` = hash of the sorted `dataset_id:d(file)`; `R` = hash of the sorted `path:r(file)` (checkable with `sha256sum`); `session_key = R[:12]:D[:12]`. They answer "is this the same project state?" (session, export key check, notice to reload); **they never decide what to rebuild**.
 **Parts (cheap, no disk):** `dC` = hash of the data files of collection C; `rC` = hash of the canonical resolved definition of C (ingredients and tier-1 steps); `s2`, `s3` = recipe steps at T2 and T3; `a1`, `a2`, `a3` = **audit operations** at T1, T2, T3 (operations only: no reasons, dates, initials).
