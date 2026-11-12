@@ -21,6 +21,7 @@ target), issues #56, #60, #61, #62, #63, #64.
 | S4 the same data, recipe and steps give the same figure and export | W4 pure logic is kept apart from the screen |
 | S5 the software informs and warns, the user decides; only the technical blocks | W5 a feature that is off is absent, not greyed (ADR-071) |
 | S6 what you see is what is exported | W6 changes come in small, tested, revertible steps; no mechanism the design does not need |
+| | W7 **data-agnostic** (Eve, 2026-11-12): the software is used for datasets other than bioinformatics; no field-specific word in the code or in fixed texts; domain words (the name of the entity, the examples) come from the recipe or the help |
 
 **The problems, in the order we settle them** (details of P1-P4 in `home_design_first_roadmap_2026-11-12.md` section 3-4; the analysis behind each in `home_evidence/`)
 
@@ -32,7 +33,7 @@ target), issues #56, #60, #61, #62, #63, #64.
 | **P4** | **Export and session.** P4a (no audit): **DECIDED 2026-11-12** (same export without audit parts; preview never saved or exported; session = recipe and data reference). **P4b DECIDED 2026-11-12**: original and audited side by side for affected plots, labelled; audit tables only where a step changed; one tick "include recipe and raw data" (off, warning) | decided |
 | P5 | Audit: where in the data processing a step goes | **DECIDED 2026-11-12** (Eve): written into `home_audit_steps.md` section 5a and ADR-099 point 12 (operation on data, tick boxes, earliest point that reaches no unticked plot, all-at-once key removal, no pinning, no hiding, four layers of information, uniform `label` and `description`) | decided |
 | P6 | The NA rule and its defaults (question 2, #63) | **DECIDED 2026-11-12** (Eve): never silent; missing is a visible, selectable value in preview and audit; defaults as in `home_audit_steps.md` 19; the user and the recipe maker decide what missing means |
-| **P7** | **Audit: reason, caption, audit table selector, first checks (questions 3, 4, 7, 11); one at a time.** Reason: **DECIDED 2026-11-12** (free text with a suggested hashtag convention, no fixed list, data-agnostic). Next: the figure caption | **NOW** |
+| **P7** | **Audit: reason, caption, audit table selector, first checks (questions 3, 4, 7, 11); one at a time.** Reason: **DECIDED 2026-11-12** (free text with a suggested hashtag convention, no fixed list, data-agnostic). Caption: **DECIDED 2026-11-12** (in the report text, on by default, entity word from the recipe). Next: the audit table selector and the first checks | **NOW** |
 | P8 | The transition: what the features without audit show until audit mode exists | waiting |
 | P9 | Who may bring recipe text into the app (recipe text is code) | waiting |
 | later | Mechanism (stage 2): the audit engine, trial computation, event log, lineage map, D1-D14, architect findings N2-N6, legacy names (questions 8-10, 12, 13); then the build plan; then gating and test configurations | after P1-P9 |
