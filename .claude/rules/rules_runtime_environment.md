@@ -48,7 +48,7 @@ Each library in `./libs/` is designed to be **independently installable and reus
 
 ### Tier 1 — Base layer: `libs/utils/`
 
-- Zero cross-lib imports of its own — only stdlib and polars allowed.
+- Zero cross-lib imports of its own: no other library of this repository and no Shiny. Third-party packages are allowed when they are declared in its own `pyproject.toml` (today polars and pyyaml). Confirmed by Eve, 2026-11-12 (ADR-099 point 16).
 - May be imported by any domain library.
 - **Explicit dependency rule:** Any domain library that imports from `libs/utils/` MUST declare it in its own `pyproject.toml` `[project.dependencies]`. Silent/implicit use is forbidden.
 

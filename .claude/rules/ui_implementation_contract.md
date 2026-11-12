@@ -464,7 +464,7 @@ T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanen
 
 **`drop_column` is permanent within the session:** it physically removes the column from the working frame — it does not merely hide it in the UI. This is the unambiguous truth the export reflects. There is no "column_visibility" toggle that hides without dropping; any column removal in T3 must be justified and is permanent until the node is deactivated.
 
-T3 never exposes an action-picker UI. Wrangling (rename, cast, derive, split, etc.) is always done in Tier 1/2 data analysis recipes — never in T3.
+In audit mode T3 never exposes an action-picker UI: the user can only add filters, drops and removals by key. A data analysis recipe may declare any registered action in its own T3 list; the engine runs it like any step and the recipe maker is responsible for good practice (reshaping early is better). Reworded 2026-11-12 (Eve, ADR-099 point 16); before, this sentence said that wrangling is never done in T3.
 
 ### 12b. AuditStep Schema
 
