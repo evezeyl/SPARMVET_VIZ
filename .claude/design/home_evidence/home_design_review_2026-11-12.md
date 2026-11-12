@@ -3,6 +3,16 @@
 **Written:** 2026-11-12. **Method:** `.claude/workflows/design_review_personas.md` (rules 1-8): scientist, data scientist, software developer, software architect; each finding says what was run. **Evidence classes:** verified (run, or read at `file:line`), reasoned, external, assumed.
 **What was reviewed:** the design as decided in P1-P9: `home_preview_filters.md`, `home_audit_steps.md` (sections 3, 5a, 11, 19), ADR-099 points 11-14, the reading guide. **Status:** findings and remedies; the decisions are Eve's. No code, configuration or diagram was changed. Scratch scripts: `tmpAI/architect/`.
 
+## Status after Eve's reply (2026-11-12)
+
+| Item | State |
+|---|---|
+| SC3 affected plot, DS1 order, DS2 data-check rule, DS3 limits, DS4 fan-out, AR3 (a) no formula text, AR3 (b) validate on load, AR3 (c) Import flag, AR5 vocabulary, AR6 build rule, SC5 exclusion list, SC6 empty categories | **Registered** (`home_audit_steps.md` 4, 5a points 10-14, 11, 16; ADR-099 point 15). AR3 (c): name and cascade rule at CONFIG-REVIEW-1; AR6 already drawn in HOME-AUDIT-COMPONENTS |
+| SC4 remove by attribute | **Principle registered** (Eve: select with the filter on a table that carries it, remove by key). Verified: `country` has one value per sample in all 4 tables that carry it. **One point to confirm:** which samples the selector finds (28 across the tables that carry it, not 21 from the table the user looks at) |
+| Limit "hardest case untested" | **Done**: collection `QA_population_zscore` with plot `qa_population_zscore` and an oracle test from the raw Quast file; mutation-checked (a broken z-score fails it). Headless baseline 1652 |
+| Limit "UML not reviewed" | **Done**: `home_uml_review_2026-11-12.md` (3 diagrams contradicted, 8 partly outdated; nothing edited) |
+| SC1 check on the plotted variable, SC2 caption count for key-less plots, AR4 entity noun, AR2 oracle test for the action registry, AR1 special datasets | **Open, one at a time** (`home_audit_steps.md` section 16 item 7) |
+
 ## 0. The answers to your questions
 
 1. **Can the science be trusted?** Yes, on the conditions the design already sets: the original data is never changed; every change has a recorded reason; both the original and the audited result are exported; the steps can be verified by someone else from the bundle. **Three things weaken that claim and should be settled first:** the strongest protection against post-hoc exclusion (the check "the filter acts on the variable the plot shows") was deferred; the caption count cannot be computed for plots whose data has no key; and "remove by attribute" (a whole batch, a whole country) does not exist. No software can make an exclusion scientifically valid; it makes it visible, justified and re-checkable, and that is what the design does.
