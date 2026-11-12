@@ -1,5 +1,7 @@
 # HOME: gating of filters by configuration, and configurations for automatic tests (decision paper)
 
+> **STATUS CHANGE (2026-11-12, after Eve's correction): this paper is stage 5 of `home_design_first_roadmap_2026-11-12.md` and is PAUSED.** It describes how the code works **today** (sections 2 and 3.2) and proposes gating and test files **before** the behaviour is agreed, which is the wrong order. Read the roadmap first: the design (what each kind of configuration shows and can do) is agreed first, then the mechanism, then the code; gating and test configurations are derived from the agreed behaviour table. Use this paper only as input: its verified facts tell the build plan what has to change. Its questions Q1, Q2 and Q7 are now Q3, Q2 and Q5 of the roadmap; Q3-Q6 and Q8 wait.
+
 **Written for:** Eve, to review in one place. **Written:** 2026-11-12, after your answers of the same day. **Status:** problem, alternatives with pros and cons, and my recommendation for each. Nothing here is decided and nothing was built or changed in code, configuration or diagrams.
 **Method and words:** as in `home_audit_forensics_2026-11-12.md` (evidence: **verified** / **reasoned** / **not verified**; status: **DECIDED**, **CONFIRM**, **OPEN**, **MINE**). Points of view: **S** scientist who publishes, **DS** data scientist, **Dev** developer, **QA** checker, **Ops** operator, **N** novice user.
 **Scripts (scratch, not committed):** `tmpAI/architect/flag_combinations.py` (the 32 combinations through the real validator), `tmpAI/architect/scan.py`.

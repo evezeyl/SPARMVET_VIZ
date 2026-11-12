@@ -4,6 +4,28 @@
 **Companions (the real content):** `home_preview_filters.md`, `home_audit_steps.md`, ADR-098 (what is built), ADR-099 (the
 target), issues #56, #60, #61, #62, #63, #64.
 
+## 0. All the HOME working documents and their role (checked 2026-11-12)
+
+| File | Role | Status |
+|---|---|---|
+| `spaces/HOME.md` | the canonical HOME design (CLAUDE.md 3.6: read before implementing) | **STALE** (2026-05-05): says "audit always on, no opt-out", the old "T3 cascade rule" with retired flag names; no Exploration, no audit mode. To rewrite from the agreed behaviour table |
+| `home_preview_filters.md` | Exploration design | agreed 2026-11-11 |
+| `home_audit_steps.md` | audit mode design, v4, with the three reviews | decided in part; `[confirm]` items open |
+| ADR-098 / ADR-099 (`architecture_decisions.md`) | what is built / the target | ADR-099 accepted in principle, not built |
+| this guide | the map and the 13 questions | entry point |
+| `home_audit_review_agenda_2026-11-12.md` | the script of the review session | current |
+| `home_design_first_roadmap_2026-11-12.md` | the order of work (design, mechanism, code, gating, tests) and the **behaviour table by kind of configuration** with Q1-Q5 | proposal; to be folded into the files above once agreed |
+| `home_audit_forensics_2026-11-12.md`, `home_audit_architect_review_2026-11-12.md` | analysis papers: status map, options with pros and cons, findings | evidence for decisions, not designs |
+| `home_gating_and_test_configs_2026-11-12.md` | gating and test configurations | **paused** (stage 5, after the behaviour is agreed) |
+| `home_audit_first_cut.md` | a smaller first audit version | proposal |
+| `home_filter_scoping_concept.md` | the first concept | HISTORICAL |
+| `../tasks/home_exploration_build_brief.md`, `../tasks/next_session_start.md` | instructions for the builders | current |
+| `../tasks/test_plan_home_2026-11.md` | HOME test plan | not re-checked against ADR-099 |
+| `../workflows/design_review_personas.md` | the review method | current |
+| `docs/UML/diagrams/HOME-*`, `UI-HOME-*` | pictures | see section 4 |
+
+**Not listed in CLAUDE.md:** none of the HOME design files above except `spaces/HOME.md` (stale). A session that follows CLAUDE.md alone would not find the design.
+
 ## 1. The idea in ten lines
 
 1. **Exploration** (Raw or Result) is for looking. A preview filter changes the table only, is never saved or exported,
