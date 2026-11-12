@@ -11,6 +11,7 @@ through the recipe engine, so a mistake in the engine cannot hide in the oracle:
 | QA_L50_integer                   | integer column for threshold filters (issue 62), values altered      |
 | qa_facet_by_mapping (plot)       | panels that were asked for and not drawn (issue 65)                 |
 | QA_fanout_exhibit                | two long tables joined on one key multiply rows (issue 68); an EXHIBIT of a known defect |
+| QA_aggregated_no_key             | a plot whose data is an aggregate has no sample_id: removing a sample by its ID cannot reach it (issue 60) |
 
 When the many-to-many check of issue 68 is built, add a test here that it flags QA_fanout_exhibit and no other canary.
 
@@ -129,6 +130,31 @@ def test_fanout_exhibit_multiplies_rows_as_documented(stage, raw_config):
     assert tier1.height > tier2.height, "the exhibit no longer multiplies rows"
     got = tier2.with_columns(pl.col("sample_id").cast(pl.String)).join(both, on="sample_id")
     assert (got["rows_per_sample"].cast(pl.Int64) == got["expected_rows"].cast(pl.Int64)).all()
+
+
+def test_aggregated_plot_data_has_no_sample_key(stage):
+    """Fixture of issue 60: T1 keeps the key, the T2 that the plot reads does not, and its numbers add up to the samples.
+
+    This is the property that makes "remove sample X from every plot" impossible to do by filtering the plot's
+    own data. When the audit reach is built, its tests use this collection as the plot that has no key column.
+    """
+    metadata = _tsv("test_metadata_*.tsv")
+    expected = (
+        metadata.group_by("Country", pl.col("Year").cast(pl.Int64).cast(pl.String).alias("year_label"))
+        .len()
+        .rename({"Country": "country", "len": "n_samples"})
+        .with_columns(pl.col("n_samples").cast(pl.Int64))
+        .sort("country", "year_label")
+    )
+    tier1, tier2 = stage("QA_aggregated_no_key")
+    assert "sample_id" in tier1.columns and tier1.height == metadata.height
+    assert "sample_id" not in tier2.columns, "the aggregate must not carry the key (that is what this canary is for)"
+    got = (
+        tier2.select(pl.col("country").cast(pl.String), pl.col("year_label").cast(pl.String), pl.col("n_samples").cast(pl.Int64))
+        .sort("country", "year_label")
+    )
+    assert got.equals(expected), "counts per country and year differ from the raw metadata"
+    assert got["n_samples"].sum() == metadata["sample_id"].n_unique(), "a sample was lost or counted twice"
 
 
 def test_facet_by_in_mapping_gives_panels(stage, raw_config):

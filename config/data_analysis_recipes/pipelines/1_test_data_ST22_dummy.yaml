@@ -258,6 +258,12 @@ joins:
     - dataset_id: VirulenceFinder
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_fanout_exhibit.yaml'
 
+  QA_aggregated_no_key:
+    description: QA canary - T2 is an aggregate without sample_id, so a sample cannot be removed from it by its ID (issue #60).
+    ingredients:
+    - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key.yaml'
+
 # ── Analysis Groups ───────────────────────────────────────────────────────────
 # Plot specs: see plots/ for each spec file.
 analysis_groups:
@@ -328,6 +334,9 @@ analysis_groups:
       qa_fanout_rows_per_sample:
         info: EXHIBIT of a known defect (issue 68) - rows are inflated on purpose.
         spec: !include '1_test_data_ST22_dummy/plots/qa_fanout_rows_per_sample.yaml'
+      qa_aggregated_no_key:
+        info: Data of this plot is an aggregate with no sample_id column (issue 60).
+        spec: !include '1_test_data_ST22_dummy/plots/qa_aggregated_no_key.yaml'
 
 plot_defaults:
   theme: theme_minimal
