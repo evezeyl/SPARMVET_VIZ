@@ -91,20 +91,20 @@ Compare is part of Audit mode and is on whenever audit is on (P1). Names use hyp
 
 ## 2. Decision register (counted 2026-11-12)
 
-**Decided: 44 items, counted by this grouping (A 8, B 15, C 4, D 8, E 4, plus O1, O2, O4, O5, O8 confirmed by Eve on 2026-11-12; another grouping gives another number).** (A) Behaviour: P1-P7, P9 (P8 withdrawn). (B) Audit model: the T1/T2/T3 model and the nodes in the recipe file; where a step is written; ticks as safe mode; "remove from all tables"; remove by attribute (select with the filter, remove by key); one reason per action; three levels; attrition from the source population; caption; exclusion list; first set of checks; affected plot by content; the exact checks after Apply; the NA meaning. (C) Recipe format: `label` and `description` everywhere and the advice that explains why; the `entity:` declaration; limits of the first version (one key family). (D) Architecture: the recipe graph in `libs/utils`, Blueprint's navigator rebuilt on it; the hash model (series, precise parts, full-content data hash once per session, record hash, retire `decision_hash`, drop the plot input key). (E) Rules of work: correct wrong recipes (no shims), complete steps, tests adapted first, data-agnostic. Where written: sections 5a, 4, 11, 19 of `home_audit_steps.md`, ADR-099 points 10-16, the hash model document.
+**Decided: 47 items, counted by this grouping (A 8, B 15, C 4, D 8, E 4, plus O1-O5, O7, O8 and the principle of O6 confirmed by Eve on 2026-11-12; another grouping gives another number).** (A) Behaviour: P1-P7, P9 (P8 withdrawn). (B) Audit model: the T1/T2/T3 model and the nodes in the recipe file; where a step is written; ticks as safe mode; "remove from all tables"; remove by attribute (select with the filter, remove by key); one reason per action; three levels; attrition from the source population; caption; exclusion list; first set of checks; affected plot by content; the exact checks after Apply; the NA meaning. (C) Recipe format: `label` and `description` everywhere and the advice that explains why; the `entity:` declaration; limits of the first version (one key family). (D) Architecture: the recipe graph in `libs/utils`, Blueprint's navigator rebuilt on it; the hash model (series, precise parts, full-content data hash once per session, record hash, retire `decision_hash`, drop the plot input key). (E) Rules of work: correct wrong recipes (no shims), complete steps, tests adapted first, data-agnostic. Where written: sections 5a, 4, 11, 19 of `home_audit_steps.md`, ADR-099 points 10-16, the hash model document.
 
 **Still to decide (the real remainder):**
 | # | Decision | My recommendation | Needed for |
 |---|---|---|---|
 | O1 | Loader and validator roles | **DECIDED** (Eve, 2026-11-12) | - |
 | O2 | The read-only popup per node, kept open while the user looks | **DECIDED**; the mechanism (pinned panel) is for stage 2 | - |
-| O3 | What happens to the audit step kind `developer_raw_yaml` (nothing creates it today; it came from Blueprint's YAML escape hatch) | remove the kind with the removal protocol, since nothing creates it and development has no shims | the step model |
+| O3 | The audit step kind `developer_raw_yaml` | **DECIDED: remove** (task `AUDIT-RAWYAML-REMOVE-1`) | - |
 | O4 | Permission to change `libs/transformer` | **DECIDED** (tests first) | - |
 | O5 | Rule texts | **DECIDED and edited** (Tier 1 dependencies in `rules_runtime_environment.md`; the T3 sentence in `ui_implementation_contract.md`) | - |
-| O6 | Screen details: the project overview and the node popup stay open while looking (decided in principle); what stays of the right panel (Inherited nodes, filter inventory, pending badge) | decide at the screen redraw | UI-HOME-AUDIT |
-| O7 | The **step compiler** (the piece that turns a user's step into recipe actions in the right list of the audit recipe; the generalised `t3_translator`), the event log, the pre-export review gate, D1-D14 (trimmed) | specified in stage 2 for your confirmation | the build plan |
+| O6 | The node popup and the project overview: **DECIDED a popup in its own window**, built as a pure content function so a panel can replace the window later; what stays of the right panel (Inherited nodes, filter inventory, pending badge) is decided at the screen redraw | partly decided | UI-HOME-AUDIT |
+| O7 | The **step compiler** (defined in the vocabulary of `home_audit_steps.md`: it turns a user's step into recipe actions in the right list of the audit recipe; the generalised `t3_translator`), the event log, the pre-export review gate, D1-D14 (trimmed) | **accepted** (Eve); the specification is written in stage 2 | the build plan |
 | O8 | Configuration stage | **DECIDED** to leave it to the end (`CONFIG-REVIEW-1`) | - |
-So **one decision now (O3), one at the screen redraw (O6, the right panel), one in stage 2 (O7).**
+So **nothing is waiting for you now except the review of the text; the right panel is decided at the screen redraw (O6), and the compiler is specified in stage 2 (O7).**
 
 ## 3. The path to the first code (what stands between us and building)
 1. **Your answers** to O1-O5 (a few minutes).
