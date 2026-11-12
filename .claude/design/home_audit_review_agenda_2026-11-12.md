@@ -7,6 +7,8 @@ they never touch design files, the audit, or the export.
 
 ## 0. To read first (about 20 minutes, in this order)
 
+**Start here (written after your answers of 2026-11-12): `home_gating_and_test_configs_2026-11-12.md`.** One paper: how filters are gated by configuration (preview filters and filters that go to audit are separate capabilities), the problem in six verified facts, the options with pros and cons, the configurations for automatic tests, and **8 questions with my recommendation (section 8)**. Everything else below is background for it and for the audit design.
+
 1. `home_audit_reading_guide.md` (the map; section 3 is the list of 13 decisions).
 2. `home_audit_steps.md` sections 1-5 (rule, words, audit mode, kinds, reach and stage), then 18-20 (the three reviews and D1-D14).
 3. `home_audit_first_cut.md` (new, a proposal: a smaller first version, with what it cannot do).
@@ -40,7 +42,7 @@ Order of the session: confirm or change the cut (`home_audit_first_cut.md`) > Gr
 **Group 4: new, from the architect review (decide after the cut; none blocks the builders).** N2 keep or remove `developer_raw_yaml` as an audit kind; N3 trust levels for recipe text from outside (recipe text is Python code, AR1);
 N4 how to hold the decided flag rules (one table); N5 architecture rules as tests; N6 stored stages of the original anchors (atomic write, path, clean-up; touches `libs/transformer`, needs your OK). N2 is now about the step type `developer_raw_yaml`: no code creates it, so I recommend keeping it display-only.
 
-**Ask first, because they change the screen (forensics 3.7, F8, F14):** (1) the interim: may the two features without the sandbox flag keep a plot that changes unrecorded until audit mode exists (a), or do they get their final strip now (b)? (2) In the target, when the user picks "Raw", does the plot area go empty or does the Result plot stay (the decided texts say "Raw has no plot (NA)")?
+**Ask first, because they change the screen and the configuration:** the 8 questions of section 8 of the gating paper (Q7 there is the interim: may the two features without the audit flag keep a plot that changes unrecorded until audit mode exists (a), or do they get their final strip now (b)?); and F14: in the target, when the user picks "Raw", does the plot area go empty or does the Result plot stay (the decided texts say "Raw has no plot (NA)")?
 
 ## 3. What Claude does with each answer, immediately
 

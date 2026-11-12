@@ -57,7 +57,7 @@ the many-to-many check (WP10, edits `libs/transformer`), everything of audit mod
 > Read `.claude/tasks/next_session_start.md` and `.claude/tasks/home_exploration_build_brief.md`, then work as track B: WP4 (#56), WP5 with the QA canaries, WP3a display after track A's helper exists, WP6 last. Same protocol and constraints; do not edit engine files, design files or the UML.
 
 **Track D (design review, with Eve):**
-> Read `.claude/design/home_audit_review_agenda_2026-11-12.md`, `home_audit_reading_guide.md`, `home_audit_forensics_2026-11-12.md` (section 4 first) and `home_audit_architect_review_2026-11-12.md` (section 0 first). Run the review with Eve in the order of the agenda, write her decisions into the design files at once, and change nothing in code.
+> Read `.claude/design/home_audit_review_agenda_2026-11-12.md`, then `home_gating_and_test_configs_2026-11-12.md` (the decision paper, section 8 = the questions), `home_audit_reading_guide.md`, `home_audit_forensics_2026-11-12.md` (section 0 and 4 first) and `home_audit_architect_review_2026-11-12.md` (section 0 first). Run the review with Eve in the order of the agenda, write her decisions into the design files at once, and change nothing in code.
 
 **Open question that may change WP4's scope (do not guess; Eve answers it in the review):** the interim of the header strip for the two features without the sandbox flag (forensics 3.7, F8; brief section 5, question 3). Until she answers, track B builds WP4 as briefed: the strip stays as built, nothing about My view, Compare or "Plot to show" is touched. (An earlier idea of adding a view-policy module to WP4 is withdrawn.)
 
