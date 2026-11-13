@@ -92,3 +92,98 @@ Reason for the order: a rename made before the action is strict would move the s
 | D. Block formulas now, solve later (A, B or a developer-only flag) | nothing runs | the 6 shipped formulas need a replacement first | small now, a stop-gap |
 
 **Recommendation: A for all three sites (the third one is the worst today), then B step by step** where a single-step action reads better (ID reconciliation already has `lowercase`). C is not a defence. D only if A cannot be done before recipes from outside are accepted. In every case recipes of other people stay unverified until they pass the checker; the checker (`check_recipe`) is where option A is called, so the two belong in the same package.
+
+## 9. Third round (Eve's answers, 2026-11-13) and what was checked
+
+**Eve's answers** (recorded with the date; the sessions may discuss, only Eve decides):
+
+| Point | Eve |
+|---|---|
+| Naming | Prefix AND registry field (`polars: exact / modified / composite / wrapper` + `wraps`): an action that is not Polars must be easy to see by its name; the registry field and the Blueprint display come in addition. Before renaming: check that each difference is deliberate and not an implementation error. |
+| O7, O19 (`labels`), O11, O16, O1, O23 | yes, as recommended. |
+| O25 (missing values in filters) | yes, but the default is **keep** (not remove). The recipe maker must choose, and the right choice depends on the data; we have no automatic solution. This is a known open limit and is written down as such. |
+| Percentile | split. Composites: see the naming rule (kept if simple, documented, every switch an option). |
+| Types | Why not follow Polars for the types? (section 11). |
+| `filter_rows` of the gallery | fix, or search for a missed rename (section 12). |
+| Gallery | the same rules as every recipe; no silent failure. |
+| Name policy N1 to N6 | yes: one action per Polars method, with the exception of the special names (N7, N8: the recipe session appends). |
+| O28 (two runs) | yes; tell Eve if a problem needs a new discussion afterwards. |
+| O10 (formulas) | she wants a **security check**: that a bad recipe cannot do bad things (section 13). |
+| Working mode | the two sessions may discuss up to 10 rounds, then present to Eve. |
+
+## 10. Classification of the 67 actions (VERIFIED: every body read through `tmpAI/architect/actions_digest.py`, output `actions_digest.txt`; the column `polars` is the registry field Eve accepted)
+
+Counts: **13 plainly Polars**, **10 Polars name but different behaviour**, **26 our own name for one Polars call**, **14 several steps**, **4 duplicates**.
+
+| polars | Actions | Notes (all VERIFIED by reading the body) |
+|---|---|---|
+| `exact` (6) | `drop_nulls`, `explode`, `unnest`, `unpivot`, `pivot`, `scan_parquet` | only the parameter names differ from Polars (`columns` for `subset`); `pivot` collects (eager) |
+| `wrapper` with the Polars name (7) | `cast`, `shift`, `cum_sum`, `cum_count`, `interpolate`, `all_horizontal`, `any_horizontal` | one Polars call, applied through `with_columns`, optional `target_column` |
+| `modified`: Polars name, other behaviour (10) | `coalesce` (overwrites the first column), `is_in`, `not_in` (filter rows; Polars returns a mask), `value_counts` (returns a frame, first-appearance order), `join` (default `how` is `left`; Polars default is `inner`; order fixed `left_right`), `sort` (always stable, alias `columns`), `sample` (seed 0; default fraction 0.1; collects), `rename` (two forms), `sink_parquet` (writes metadata, returns a scan), `unique` (alias of `drop_duplicates`: keeps first, ordered) | see "deliberate or not" below |
+| `wrapper`, our own name for one Polars call (26) | `add_constant`, `count_by_group`, `date_truncate`, `describe_stats`, `divide_columns`, `fill_nulls`, `fill_nulls_direction`, `horizontal_stats`, `label_if`, `list_join`, `list_slice`, `mutate`, `null_if`, `regex_extract`, `regex_replace`, `replace_values`, `round_numeric`, `select_by_pattern`, `split_to_list`, `strip_whitespace`, `window_agg`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `filter_range` | hidden choices inside some: `strip_whitespace` also strips double quotes; `select_by_pattern` adds `^...$` itself; `replace_values` maps many old values to ONE new value; `divide_columns` casts both columns to Float64 |
+| `composite`, several steps or own logic (14) | `date_extract`, `derive_categories` (external file + Python `map_elements`), `drop_columns` (protects keys, ignores a missing column), `keep_columns` (adds the keys first), `percentile` (rank divided by the row count: not a percentile), `recode_values`, `sanitize_column_names`, `split_and_explode`, `split_column`, `split_column_to_parts`, `summarize` (unknown `agg` counts), `to_struct` (struct, then drop), `top_n_other`, `z_score` | |
+| duplicates (4) | `drop_duplicates`, `unique_rows`, `rename_columns`, `join_filter` | covered by `unique`, `rename`, `join` (how `inner` or `semi`) |
+
+**Why there are so many renames (the answer to Eve's question).** They are NOT corrections of implementation errors. 26 actions are convenient names we gave to one Polars call (`fill_nulls`, `round_numeric`, `regex_replace`, `strip_whitespace`): they behave as Polars does, but their names are ours; only 13 actions carry a Polars name and behave like Polars. The count of renames is therefore decided by the rule, not by mistakes.
+
+**Deliberate or accidental** (each difference of the 10 "modified"; evidence = ADR, description or code comment; the author's intention is NOT in any commit message):
+
+| Difference | Verdict | Evidence |
+|---|---|---|
+| `sample` seed 0, `sort` stable, `value_counts` first-appearance order, `join` order `left_right`, `drop_duplicates` keeps first | DELIBERATE | ADR-090, code comments |
+| `coalesce` overwrites the first column | DELIBERATE (documented) | the `description` field says so |
+| `sink_parquet` metadata and scan | DELIBERATE (engine-internal) | docstring, ADR-024/031/089 |
+| `is_in` / `not_in` filter the rows | USE is deliberate (the audit dialog operators); REUSING the Polars name is not | `t3_translator.py:133, 136`; added 2026-04-17 without a reason |
+| `value_counts` returns a frame | order deliberate; the frame shape differs from Polars and is not described | `analytical.py:517-519` |
+| `join` default `how: left` | UNKNOWN (no reason found; Polars default is `inner`); needs Eve | `data_assembler`, `join_action` |
+| `rename` two forms, `rename_columns`, `join_filter`, `unique_rows`, `drop_duplicates`, `unique` | ACCIDENTAL duplicates, from history (three `unique` entries from 2026-03-23, 2026-03-25 and an alias) | `git log -S` |
+| `sample` default `fraction: 0.1` | UNDOCUMENTED hidden default | `sample` body |
+| `strip_whitespace` strips `"` too | UNDOCUMENTED hidden choice | body |
+
+**A finding for the rule.** Where our default differs from Polars only to be deterministic (`sort` stable, `unique` keep first, `sample` seed, `join` how), another way keeps the Polars name: make the parameter **required** in the recipe (no default), so the recipe states it and the action is `exact`. Eve decides between this and `modif_` with a documented default.
+
+**Three ways to name (counts from the table above; Eve decides).**
+
+| Scheme | Renames | Result |
+|---|---|---|
+| 1. Eve's rule: prefix everything that is not Polars (`modif_` for one Polars call changed, `step_` for several) | about 50 (36 + 14) and 4 removed | every unprefixed name is Polars; each of our own names is marked |
+| 2. Recipe session: prefix only where a reader could mistake the name for Polars, registry field for the rest | about 14 | smaller migration; the signal is in the field |
+| 3. Toward Polars first: rename the 26 own one-call wrappers to the Polars name with the namespace written in the name (`fill_null`, `round`, `str_replace_all`, `str_strip_chars`, `dt_truncate`), then prefix only the true deviations (10 `modif_`, 14 `step_`) | about 50, but afterwards about 39 of 67 are exact Polars names | "no prefix means it is Polars" holds for most actions, which is what Eve wants |
+
+Whatever the scheme, the registry field `polars` is added, and it is shown in Blueprint. Scheme 3 is my recommendation (it satisfies "most actions should follow Polars", and the prefix stays meaningful); it is a recommendation, not a decision.
+
+## 11. Types: follow Polars? (VERIFIED by run, Polars 1.40.1)
+
+- `cast` already uses the Polars names (`Int64`, `Float64`, `String`, `Boolean`, `Date`, `Categorical`; `expressions.py:78-85`). The `type:` of `input_fields` uses another vocabulary: ingestion casts only `numeric` (Float64), `categorical` and `string` (both String) and `date` (`ingestor.py:169-178`); `utf8`, `integer` and others are not cast at ingestion; the validator has a wider map (`metadata_validator.py:21-36`, with `integer` and `int` already) that disagrees: `categorical` is `Categorical` there and `String` at ingestion.
+- So yes, we can follow Polars: one vocabulary for the type of a column in `input_fields` and in `cast`, the Polars names. This also removes the `categorical` ambiguity.
+- Polars strict rules (run): a String `"2022"` casts to `Int64`; `"2022.0"` and `"2022.5"` FAIL naming the value; a Float64 `2022.5` cast to `Int64` is **truncated to 2022 without any error** (a silent science risk in the current rule "Float64 to Int64 to String"). A TSV with all whole numbers is already read as `Int64`, also with an empty cell.
+- Recommendation: declare `Int64` and follow the Polars strict behaviour (a file that holds `2022.0` fails and names the value; the maker declares `Float64`, then casts). This is simpler than the earlier idea "accept `2022.0` as whole" and needs no special rule. Plus: `cast` from Float64 to Int64 must fail when a value is not whole.
+- Migration: the shipped recipes use `numeric`, `categorical`, `utf8`, `date`; a mapping table is needed (what `categorical` becomes is Eve's decision: `String` is what ingestion does today). Registered as INT-TYPE-1 (amended).
+
+## 12. `filter_rows` of the gallery, and the gallery rigor (VERIFIED)
+
+- `filter_rows` was **never a registered action**: no `register_action("filter_rows")` in any commit. It appears only in `assets/gallery_data/beeswarm_sina/data_analysis_recipe.yaml` (`wrangling: tier3: - action: filter_rows, column: mic_value, operator: '>', value: 0`), added 2026-05-03 with the first gallery recipes (commit acbe48f0). It is an invented name, not a missed rename. The intended meaning is `filter_gt` on `mic_value` (value 0). It is the only gallery recipe that uses any `action:` at all.
+- Nobody noticed because `generate_previews.py` does not run wrangling (no `wrangling`, `DataAssembler` or `materialize` in it) and `test_gallery_bundle.py` checks only the bundle files and the index. So the gallery recipes are never checked as recipes: the same silent failure Eve wants gone.
+- Proposed (tasks GALLERY-RIGOR-1): run the same recipe checker (profile `gallery`) over every gallery recipe at index rebuild and in a test; fix `beeswarm_sina` (a real `filter_gt`, after checking that the preview image is unchanged, or removal of the dead block).
+
+## 13. Missing values in the three filter paths (informational; probe `tmpAI/architect/missing_values_filters_probe.py`)
+
+Frame: id 1 (A, 1.0), id 2 (B, 2.0), id 3 (missing, missing), id 4 (A, NaN). The filter actions, the HOME/audit filter rows (`_apply_filter_rows`) and the VizFactory `filters` give the **same rows** in all nine cases (`!=`, `not in`, `==`, `>`, `<`, `in`, range, on text and numbers):
+
+- a missing value (null) is **dropped** by `!=` and `not in` (id 3 never appears), as SQL does;
+- a NaN is treated as a number: it is larger than every number (so `> 1` and `!= 1` keep it) and it is dropped by nothing.
+So the three paths agree today. The open point is semantic (Eve's O25): "keep the missing rows" is not what any path does now; the `na` option would add it, with default `keep` as Eve decided, which CHANGES today's results for `!=` and `not in` (the golden baseline measures this).
+
+## 14. Security: what a recipe can make the app read, write or run (first inventory, VERIFIED by reading; not yet attacked)
+
+| Site | What a recipe can do | State |
+|---|---|---|
+| `mutate`, ID-reconciliation `mutate`, `stat_function` | run Python (`eval`); `stat_function` has no restriction | option A (formula check) agreed by both sessions; Eve wants it verified |
+| `sink_parquet` | write a Parquet file to ANY path the user can write (`os.makedirs` and `write_parquet(path)`; no confinement) | open; O11 says allowed for tests; needs a confinement or a refusal in the checker |
+| `scan_parquet`, `derive_categories` `reference_file`, data source `path` | read any path the user can read (the content then appears in tables and exports) | open; needs a rule: paths relative to the deployment locations, no absolute path, no `..` |
+| `!include` | `os.path.join(dirname(recipe), included_file)`: `../..` and an absolute path read any YAML or text file (`config_loader.py:56-58`); a parse error may show part of it | open; needs confinement to the recipe folder |
+| bundle import (zip) | `bundle_importer.py` extracts files; zip-slip not yet checked | TO VERIFY |
+| report.qmd of an export | labels and reasons from a recipe are written into a Quarto file the user renders; a code cell in a label could run | TO VERIFY |
+| YAML | `SafeLoader` everywhere (no object construction); aliases can still expand (memory) | low; TO VERIFY with a test |
+| regex | Polars uses the Rust regex engine (no catastrophic backtracking) | believed safe; TO VERIFY |
+| agent adapter (`subprocess` of the `claude` CLI) | recipe text reaches an LLM prompt in Blueprint (developer app features only) | out of the HOME scope; note |
