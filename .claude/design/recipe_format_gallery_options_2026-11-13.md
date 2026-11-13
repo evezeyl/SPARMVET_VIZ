@@ -135,7 +135,7 @@ data_schemas:
       species: {type: categorical, label: Species}
       amr_class: {type: categorical, label: Antimicrobial class}
       value: {type: numeric, label: Value}
-    wrangling: {tier1: {}}
+    wrangling: {tier1: []}
 analysis_groups:
   example:
     label: Example
@@ -152,7 +152,7 @@ analysis_groups:
             - {name: geom_bar, params: {}}
 ```
 
-`geom` (`geom_bar`) is not typed: it is read from the first layer. The old `data_path`, `name` and `wrangling.tier3` disappear: the path is in `source`, the name is `label`, and the example's own steps (what `submit_example` wrote into `tier3`) are the plot's `steps: {tier3: {...}}`, the same container as in audit mode (ADR-099).
+`geom` (`geom_bar`) is not typed: it is read from the first layer. The old `data_path`, `name` and `wrangling.tier3` disappear: the path is in `source`, the name is `label`, and the example's own steps (what `submit_example` wrote into `tier3`) are the plot's `steps: {tier3: [...]}`, the same container as in audit mode (ADR-099).
 
 ## 7. The plan (scheduled later, fixed now)
 

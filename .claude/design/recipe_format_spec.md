@@ -8,7 +8,9 @@
 
 **v0.3 (same day, after your gallery message):** (1) the comment key is **`comment`** (singular). Blueprint already writes it on steps, layers, groups and plots (BP-COMMENTS-1, ADR-082 Q4; `blueprint_handlers.py:376-378,402-404`, `join_designer.py:153`), and ADR-083 gives every layer a `comment`. My v0.2 had `comments` and a checker that would have refused what Blueprint saves. It is renamed and accepted on every step and every layer (5b, 6.5, 6.8). (2) Section 6.9 (gallery) is **withdrawn**: you want the gallery to follow the same spec, so the v0.2 text that kept its own words is wrong. The options, with pros and cons, are in `recipe_format_gallery_options_2026-11-13.md`; 6.9 is rewritten when you choose.
 
-**v0.8 (same day, after the HOME session recorded your decision that steps are dictionaries):** I had read "dictionaries" too narrowly and wrote that steps stay lists. Section 4d now specifies **steps as an ordered dictionary** (a step id as key, the order of the keys is the order of the steps, the code builds one ordered list in one place), with the three risks the HOME draft named checked and confirmed (duplicate keys, the hash sorts keys, five writers sort keys), the options, and the timing (before format 1 is confirmed). ADR-041 point 2 is superseded by it.
+**v0.8 (same day, after the HOME analysis you pasted):** the form of a container follows **what depends on it** (4c): named and order-free is a dictionary, ordered is a list, and a third category, named **and** ordered (`final_contract`, `analysis_groups`, `plots`), is an ordered dictionary with explicit safeguards. Steps stay lists; a step that needs a name carries an optional `id` inside its list item (4d). I had drafted "steps as a dictionary" first and withdrew it; that draft was swept into another session's commit (`c8c916dc`) and is replaced here. Checked by running: reversing the keys of `final_contract` changes the column order of the stored T1 but **not** of the stored T2 (issue #86), so order in that dictionary is meaning and the cache key ignores it.
+
+**Also in v0.8, from your message "check how each operation for the data and plot is registered":** section 6.10. The registries are the source of what a step or a layer may contain, and they have gaps that the checker would turn into false errors or silent passes (nine parameters whose declared type hides a list or a dictionary; aliases read by the code but not declared; two actions without a schema; all 191 components open to extra parameters).
 
 **v0.7 (same day, after your message on dictionaries, identical keys and the string type):** (1) a wrong container form is refused with a message that shows the **corrected text**, in the app and in the tests; this is added to the HOME plan and the tasks so it is not missed (4c). (2) "Identical keys": a key must be unique inside one mapping, so the same slug in every table's own `input_fields` is correct; the real hazards are a repeated key inside one mapping (T10) and a column name present in both tables of a join, which the engine renames silently to `..._right` (`QC_Reads_Anchor` has `total_reads_right` today): new check J08. (3) The type vocabulary: the record gives only "deprecated alias" as the reason `string` was removed; four lists disagree and the ingestor does not cast `utf8`; to be read from one place (decided), content to decide (6.4, point 10).
 
@@ -109,7 +111,7 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 | Profile | Used by | An empty `analysis_groups` / `joins` / empty step list is |
 |---|---|---|
 | `run` | HOME's load gate; any program that draws plots | `analysis_groups` must hold at least one group with at least one plot |
-| `build` | Blueprint (building step by step), recipes that only build data (transformer tests, scripts) | accepted (`analysis_groups: {}`, `tier2: {}`, `tier3: {}` are explicit placeholders) |
+| `build` | Blueprint (building step by step), recipes that only build data (transformer tests, scripts) | accepted (`analysis_groups: {}`, `tier2: []`, `tier3: []` are explicit placeholders) |
 
 `[DECIDED, 5a-19: HOME rejects, Blueprint reports and never blocks building; empty placeholders accepted]` Everything else is identical in both profiles.
 
@@ -158,7 +160,7 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 | V03 | E | higher than the app reads | written for a newer format; update the app |
 | V04 | E | not an integer (`"1"`, `1.0`, `true`) | write `format_version: 1` |
 
-**Migration** (one tool, for us and for any user's recipes): `assets/scripts/migrate_recipe_format.py --from 0 --to 1`, built on the pattern of `migrate_config_vocabulary.py` (a dry run by default, `--apply` to write, safe to run twice). It edits the text, so every `#` comment is kept. It applies the replacement table of section 9 mechanically, adds `format_version` and the two engine lines, unwraps fragments, turns every list of steps into an ordered dictionary with ids `<action>_<n>`, and writes a `label` made from the id as real text for the author to edit. It does **not** invent what is not mechanical: descriptions stay empty (an advice), `entity` is not added, science is not touched; it prints the list of what a person must still do. The shipped recipes are migrated with the same tool, then reviewed by hand.
+**Migration** (one tool, for us and for any user's recipes): `assets/scripts/migrate_recipe_format.py --from 0 --to 1`, built on the pattern of `migrate_config_vocabulary.py` (a dry run by default, `--apply` to write, safe to run twice). It edits the text, so every `#` comment is kept. It applies the replacement table of section 9 mechanically, adds `format_version` and the two engine lines, unwraps fragments, and writes a `label` made from the id as real text for the author to edit. It does **not** invent what is not mechanical: descriptions stay empty (an advice), `entity` is not added, science is not touched; it prints the list of what a person must still do. The shipped recipes are migrated with the same tool, then reviewed by hand.
 
 **Where the number is recorded and used.** In every recipe written by the app (all writers), in the forked recipe of an export (copied), in `effective_run.yaml` of an export, and by the importer (its recipe leg says when the version differs). The spec keeps a history table:
 
@@ -173,14 +175,32 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 
 ## 4c. The form of every container (ADR-041)
 
-**What exists.** ADR-041, ENFORCED on 2026-04-20: **keyed definitions are a dictionary, ordered logic is a list, fragments are flat.** (Point 2, the list, is superseded for steps by section 4d: since 2026-11-13 a step list is an ordered dictionary of step ids.) Field definitions are a Rich Dictionary (`slug: {props}`, slugs unique); `tier1` and `tier2` are a sequential list of action mappings; an included fragment holds the value only, with no repeated anchoring key. `rules_data_engine.md` section 4 repeats it for fields. "Keyed or ordered?" is the question that decides every container below, so none is left to guess.
+**What exists.** ADR-041, ENFORCED on 2026-04-20: **keyed definitions are a dictionary, ordered logic is a list, fragments are flat.** Field definitions are a Rich Dictionary (`slug: {props}`, slugs unique); `tier1` and `tier2` are a sequential list of action mappings; an included fragment holds the value only, with no repeated anchoring key. `rules_data_engine.md` section 4 repeats it for fields. "Keyed or ordered?" is the question that decides every container below, so none is left to guess.
+
+**The rule: the form follows what depends on it** `[DECIDED 2026-11-13, after the HOME analysis]`. ADR-041 gives the two clear cases; the third is a container that is both named and ordered.
+
+| Category | Form | What depends on it | Containers |
+|---|---|---|---|
+| 1. Named; the order means nothing for the data | **dictionary** | lookup by name; names are unique | `data_schemas`, `additional_datasets_schemas`, `joins`, `input_fields`, `output_fields`, `source`, `mapping`, `params`, `plot_defaults`, `info`, `entity`, `taxonomy`, `spec` |
+| 2. Ordered; the items need no name | **list** | the order of operations, drawing or joining; YAML guarantees the order of a list | step lists (`tier1`, `tier2`, `tier3`), `ingredients` (the first is the base), `layers`, a `multi` column-selector parameter |
+| 3. Named, and the order is meaning | **ordered dictionary**: the order of the keys is documented as meaningful | `final_contract`: the column order of the table; `analysis_groups`: the tab order; `plots` of a group: the sub-tab order | those three |
+
+**What is verified about category 3** (2026-11-13). The table's columns follow the keys of `final_contract` (`orchestrator.py:59-66`). PyYAML keeps the order on load and sorts on dump by default. Five dump sites in non-test code sort today: `exporter.py:56,86` (they write recipe files; test-only code) and `wrangle_studio.py:1848,1864` and `blueprint_handlers.py:861` (they display YAML and would show the wrong order). `canonical_hash` sorts keys (`cache_keys.py:53-55`; `hashing.py:18`). **A defect found by running it** (`tmpAI/recipe_format/contract_order_test.py`): reversing the keys of `final_contract` changes the column order of the stored T1 (the projection is re-applied at every read, `orchestrator.py:142,302`) but **not** of the stored T2 (returned as stored when its key matches), because the sorted hash cannot see the order. Issue #86.
+
+**Safeguards required for category 3.** (a) The loader keeps the file order and refuses a repeated key (T10). (b) Every writer passes `sort_keys=False`, guarded by a test that scans every `yaml.dump` and `safe_dump` of non-test code. (c) A key (hash) that depends on an order is made from the ordered items, never from a sorted dictionary: `final_contract` enters the Tier 1 material as an ordered list of its keys. The tab order is downstream only and enters no data key.
+
+**What does not depend on order (checked).** `input_fields` and `output_fields` of a schema: the ingestor renames and casts but never selects by them, and the schema `output_fields` are not applied (point 5 of section 13); if they are ever applied they move to category 3. `joins` and `data_schemas`: the one place that read the order of `joins` is the first-join fallback, which is removed (section 11). `mapping`, `params`, `info`. The lines of `info` and the fields shown in Blueprint follow the file (presentation only; the writers' `sort_keys=False` is enough).
+
+The same, container by container:
+
 
 | Container | Form | Why | Refused |
 |---|---|---|---|
-| `data_schemas`, `additional_datasets_schemas`, `joins`, `analysis_groups`, `plots` of a group, `input_fields`, `output_fields`, `final_contract`, `source`, `mapping`, `plot_defaults`, `info`, `entity`, `taxonomy` | **dictionary** | each item has an id or a name, unique, found by key | a list (also a list of names, or of one-key dictionaries) |
+| `data_schemas`, `additional_datasets_schemas`, `joins`, `input_fields`, `output_fields`, `source`, `mapping`, `plot_defaults`, `info`, `entity`, `taxonomy` | **dictionary** (category 1) | each item has a name, unique, found by key; the order means nothing for the data | a list (also a list of names, or of one-key dictionaries) |
+| `final_contract`, `analysis_groups`, `plots` of a group | **ordered dictionary** (category 3) | named, and the order of the keys is meaning: the column order of the table, the tab order, the sub-tab order | a list (also a list of names, or of one-key dictionaries) |
 | a field entry | dictionary `{type, label, ...}` or `{}` | `{}` means "as in the input" | a bare string (`sample_id: categorical`, the deprecated shorthand; none is left in the repository) |
-| `wrangling` of a schema, `steps` of a join | dictionary with `tier1` and optional `tier2`, each an ordered dictionary of steps (4d) | the two tiers are named | a flat list, `[]` |
-| `tier1`, `tier2`, `tier3` | **ordered dictionary** `step id -> step` (4d) | the order of operations is the logic; the order is the order of the keys; the id names the step | a list (the message shows the dictionary with generated ids) |
+| `wrangling` of a schema, `steps` of a join | dictionary with `tier1` (list) and optional `tier2` (list) | the two tiers are named | a flat list, `[]` |
+| `tier1`, `tier2`, `tier3` | **list** of step mappings, each with an optional `id` and `comment` (4d) | the order of operations is the logic (category 2) | a dictionary |
 | `ingredients` | **list** of `{dataset_id: ...}` | the first one is the base of the join | a dictionary, bare ids |
 | `layers` | **list** of `{name, params, comment}` | layers are drawn in order | a dictionary |
 | a column-selector parameter that the action's schema declares `multi` | **list** of names | the schema says it takes several | a single value `[MINE]` (2 steps in 1 file today) |
@@ -189,7 +209,7 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 **What the repository contains** (scan `tmpAI/recipe_format/container_forms.py`, all kinds of recipe file, verified):
 
 - all **307 input and 162 output field entries are dictionaries**: the deprecated string shorthand is gone;
-- **17 containers are in list form.** 7 are empty `[]` written where `{}` or `{tier1: {}}` belongs. 10 have content: **3 `final_contract` lists** (`demo_abromics` a list of 5 one-key dictionaries; `universal_template` and the fixture `relational_audit` lists of names), **1 `output_fields` list of names** (`complex_template`), 1 flat `wrangling` (the legacy VIGAS file), and **5 flat `steps` in join fixtures** (the main engine refuses a non-empty flat list);
+- **17 containers are in list form.** 7 are empty `[]` written where `{}` or `{tier1: []}` belongs. 10 have content: **3 `final_contract` lists** (`demo_abromics` a list of 5 one-key dictionaries; `universal_template` and the fixture `relational_audit` lists of names), **1 `output_fields` list of names** (`complex_template`), 1 flat `wrangling` (the legacy VIGAS file), and **5 flat `steps` in join fixtures** (the main engine refuses a non-empty flat list);
 - **the engine skips a list-form `final_contract` silently** (`orchestrator.py:59-62`), so the contracts of `demo_abromics`, `universal_template` and `relational_audit` are **not applied today**. Converting `demo_abromics` to a dictionary makes it an exclusive whitelist of 5 columns: its plots must be checked at migration (#78);
 - **33 fragments carry the wrapper key** that ADR-041 point 3 prohibits (18 `input_fields`, 4 `final_contract`, 4 `spec`, 3 `steps`, 2 `output_fields`, 2 `wrangling`); the loader removes it silently, which is the compatibility default of P2;
 - **two texts contradict ADR-041**: `rules_data_analysis_recipe_structure.md` section 8 ("the included plot file must contain a single `spec:` root key") and `data_analysis_recipe_data_contract_rules.md` 4.3 (types `categorical | numeric | string | boolean | date`, where `string` was removed on 2026-05-22). Both go in the documentation sweep (#79, rule file with your double confirmation);
@@ -202,8 +222,7 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 | `final_contract: [sample_id, value_col]` | `final_contract` is a dictionary of columns. Write: `final_contract: {sample_id: {}, value_col: {}}` |
 | `final_contract: [{sample_id: {type: categorical}}, {...}]` (a list of one-key dictionaries) | the same dictionaries merged: `final_contract: {sample_id: {type: categorical}, ...}` |
 | `output_fields: []` | `output_fields: {}` |
-| `tier1: [{action: cast, ...}, {action: join, ...}]` (a list of steps) | `tier1: {cast_1: {action: cast, ...}, join_1: {action: join, ...}}`; the ids are made from the action and a counter, to rename |
-| `steps: [{action: join, ...}]` (a flat list) | `steps: {tier1: {join_1: {action: join, ...}}}` |
+| `steps: [{action: join, ...}]` (a flat list) | `steps: {tier1: [{action: join, ...}]}` |
 | a wrapper line `input_fields:` inside the included file | remove the line `input_fields:` and its indentation; the file holds the fields themselves |
 | `sample_id: categorical` | `sample_id: {type: categorical}` |
 | a repeated key | names the key and both lines; remove or rename one |
@@ -216,50 +235,39 @@ It shows in HOME's load gate (the reason of the rejection), in Blueprint's Valid
 
 1. **A repeated key inside one mapping.** PyYAML keeps the last silently (T10).
 2. **A column name present in both tables of a join that is not a join key.** The engine calls `lf.join(...)` without a suffix (`joins.py:56-58`), so Polars renames the second column to `name_right` without a message. `QC_Reads_Anchor` has `total_reads_right` today (ST22 baseline). The join keys themselves (`sample_id` in every table) are the key family and are fine. New check **J08** (advice, suggestion: rename or drop one of the two before the join). It needs the recipe graph (columns per node), so it comes with `RECIPE-GRAPH-UTILS-1`.
-3. **Steps.** A T1 repeats the same action (three `join` steps in `QC_Reads_Anchor`), so a step cannot be keyed by its action name: its key is its **own id** (4d). The same id in two different step lists is fine (different mappings).
+3. **Steps.** A T1 repeats the same action (three `join` steps in `QC_Reads_Anchor`), so ordered logic cannot be keyed by the action name. It stays a list (ADR-041 point 2), and a step that needs a name carries an `id` inside its list item (4d).
 
-## 4d. Steps as an ordered dictionary `[DECIDED direction: Eve 2026-11-13, recorded in the HOME stage-2 draft, point 7; details OPEN]`
+## 4d. Step ids: an optional `id` inside the list item `[DECIDED direction: Eve 2026-11-13 after the HOME analysis; details to confirm]`
 
-**What.** Each step list (`tier1`, `tier2`, `tier3`) is a dictionary `step id -> step`. The id is written by the author and names the step; **the order of the steps is the order of the keys in the file**. This supersedes ADR-041 point 2 ("a sequential list of action dictionaries"), to record in a new ADR.
+**What.** Steps stay a list. A step is a mapping with `action`, its parameters, and two optional keys: `id` (text) and `comment` (5b).
 
 ```yaml
-wrangling:
-  tier1:
-    join_quast:                       # the step id: unique in this list, chosen by the author
-      action: join
-      right_ingredient: Quast
-      'on': [sample_id]
-      comment: reads quality and assembly quality side by side
-    join_bracken: {action: join, right_ingredient: Bracken, 'on': [sample_id]}
-    join_metadata: {action: join, right_ingredient: metadata_schema, 'on': [sample_id]}
-  tier2: {}
+tier1:
+  - id: join_quast               # optional; unique in this list when present
+    action: join
+    right_ingredient: Quast
+    'on': [sample_id]
+    comment: reads quality and assembly quality side by side
+  - {action: join, right_ingredient: Bracken, 'on': [sample_id]}     # no id: fine
 ```
 
-**Dictionaries in the file, lists made by the code** (your words). The loader turns each tier into **one ordered list** `[{id, action, ...}]` in file order, in **one place** (`utils`, next to the recipe graph). The engine, the graph, the hash and the audit compiler all read that list, so nothing downstream changes; no code addresses a step by its position (checked: the engine only iterates, `data_assembler.py:131,150`).
+**Why an id, and why not the action name.** A table repeats actions: in 11 of the 74 non-empty step lists of the repository the same action occurs more than once (`QC_Reads_Anchor` has three `join` steps); there are 148 steps in those lists, at least. The id is needed for the origin marker of audit steps, for removing an audit step, for the node popup and for error messages. The audit only adds steps and removes its own (decided), so the author's steps need no id; an author may give one to refer to a step. No action has a parameter named `id` (checked), so there is no clash.
 
-**Why an id and not the action name.** A table repeats actions: in 11 of the 74 non-empty step lists of the repository the same action occurs more than once (`QC_Reads_Anchor` has three `join` steps); there are 148 steps in those lists, at least. No action takes a parameter named `id` (checked), so the id cannot clash.
+**Rules.**
+1. `id` is text and unique inside its list: check ST08 (E; the message names both positions).
+2. A step that **the app inserts always has an id**: `audit_` followed by a unique suffix. That is the **origin marker** that the HOME draft waits for (6.5, open). The invariant "the copy minus its marked steps equals the original" compares ids.
+3. `id` and `comment` are **not part of the hash** (`canonical_steps` removes them): renaming or commenting a step must not rebuild a table. The order is part of it.
+4. The list is the order, so nothing depends on the order of a mapping (YAML guarantees the order of a list).
 
-**What the id gives.** A stable address for the audit marker, removal and undo, the node popup and error messages ("step `join_bracken` failed" instead of "step 2"); a repeated id is caught by the loader.
-
-**Rules that make it safe.** The first three are the risks the HOME draft named (its point 7); I verified each on 2026-11-13 and each has a test.
-
-1. **Order is file order.** PyYAML keeps the order on load and **sorts on dump by default** (verified). Five dump sites in non-test code sort today: `exporter.py:56,86` (they write recipe files; test-only code) and `wrangle_studio.py:1848,1864` and `blueprint_handlers.py:861` (they display YAML in the UI, which would show the steps in the wrong order). Every writer passes `sort_keys=False`; a test scans every `yaml.dump` and `safe_dump` of non-test code.
-2. **The hash is made from the ordered list of operations** (action and parameters), never from the dictionary: `generate_config_hash` sorts keys (`hashing.py:18`, `json.dumps(sort_keys=True)`), so two orders of a dictionary would give the same key. The id and the `comment` are not in the hash: renaming a step or rewriting its comment must not rebuild a table.
-3. **A repeated id is refused by the loader** (T10; PyYAML keeps the last silently, verified). An id is text: a number, a boolean or an empty key (`1:`, `true:`) is refused (ST08).
-4. **The old list form is refused** with a message that shows the dictionary, with ids made from the action and a counter (`cast_1`, `join_2`), to rename (ST09).
-5. **An audit step is a new key at the end of its list.** Its id starts with `audit_` and ends with a unique suffix: this is the **origin marker** that the HOME draft waits for (spec 6.5, open). The invariant "the copy minus its marked steps equals the original" compares keys.
-
-**Writers that must write ids** (found): `blueprint_handlers.py` (376-404; the Blueprint step form needs a "step name" field), `t3_translator.py`, `bootstrapper.py`, `scaffolder.py`, `gallery_manager.py`, and `normalize_data_analysis_recipe_fields.py` (two copies).
+**What it avoids.** The three dangers recorded in the HOME draft (point 7), all verified: a repeated key is silent in YAML; both hashes sort keys; five dump sites sort keys. They remain real for category 3 (4c), where they are guarded.
 
 | Option | Pros | Cons |
 |---|---|---|
-| **A. An ordered dictionary with author-written ids; the code builds the ordered list** (your decision) **[recommended]** | stable ids; duplicates caught; one rule "keyed means dictionary"; the audit marker is a key prefix; no addressing by position | the order depends on the file order (needs `sort_keys=False` everywhere and the hash on the list: both verified and tested); authors must name steps; Blueprint's form needs a name field; all steps migrate; YAML does not promise the order of a mapping to other tools (PyYAML does) |
-| B. A list with a required `id:` inside each step | the same ids and duplicate check; the order is the list order, so no hash or writer risk | not a dictionary; not your rule |
-| C. A list as today (ADR-041 point 2) | nothing changes | no ids; positions as addresses |
+| A. Steps as an ordered dictionary of ids | an id by construction | the order depends on the file (the hash on a list, every writer, the loader: all needed and verified); every step needs a name; 6 writers change and Blueprint's form needs a name field; all 148+ steps migrate; ADR-041 point 2 superseded |
+| **B. A list, `id` optional inside the item** **[direction]** | ids where wanted; the order is guaranteed by YAML; a duplicate cannot drop a step silently; the hash keeps the order; no migration of steps | the id is a key inside the item, not the key of the container (a check enforces uniqueness) |
+| C. A list without ids | nothing changes | no address but position |
 
-**The id rule.** K1 author-written with a meaningful name **[recommended]**; K2 ordinal (`s1`, `s2`): no effort, no meaning, noise when inserting; K3 `<action>_<n>`: readable, but reordering renames. The migration tool writes K3 names once, as text; from then on they belong to the author.
-**Scope.** Steps, yes. `ingredients` (a list of `{dataset_id}` with no invented key; uniqueness is checked by J04) and `layers` (the grammar-of-graphics chain owned by Blueprint, ADR-083; names repeat) stay lists unless you say otherwise.
-**Timing.** Now, before format 1 is confirmed. Done later it is a format 2 and a second migration of every recipe.
+ADR-041 point 2 is unchanged and gains the `id` key. Only code that inserts steps writes ids (the audit compiler). **To confirm:** `id` optional (recommended) or required on every step; the `audit_` prefix.
 
 ## 5. Fragments (`!include`)
 
@@ -313,7 +321,7 @@ Checks: the id exists; that table carries an entity key (6.4). Without `entity` 
 | `comment` | o | the author's note (5b); was `info.comments` |
 | `source` | R | `{type, path}`; `type` is `local_tsv` or `local_parquet`; `path` is relative to the project root. The fuzzy search of a file by dataset name (`ingestor.py:80-92`) is removed |
 | `input_fields` | R | mapping `column slug -> field` (6.4); `{}` means no contract |
-| `wrangling` | R | `{tier1: {...}, tier2: {...}}` (6.5); `tier1` required, `tier2` optional; **`[]` and a flat list are refused** |
+| `wrangling` | R | `{tier1: [...], tier2: [...]}` (6.5); `tier1` required, `tier2` optional; **`[]` and a flat list are refused** |
 | `output_fields` | o | mapping `column slug -> field`; the columns the schema publishes. Checked by the data check, **not applied by the engine** `[OPEN 13.5]` |
 
 - The three sections share **one id space**; a repeated id is an error (today the second silently replaces the first, `orchestrator.py:151-157`). `metadata_schema` is a reserved id.
@@ -347,8 +355,8 @@ Checks: the id exists; that table carries an entity key (6.4). Without `entity` 
 
 ### 6.5 Steps and tiers
 
-- A **step list** is `{tier1: {...}, tier2: {...}}`, each tier an **ordered dictionary of steps** (4d: step id to step; the order of the keys is the order of the steps). It appears as `wrangling` (data schema), `steps` (join) and, at the plot entry, `steps: {tier3: {...}}` (6.7). All three are written the same way; an empty `{}` means "equal to the previous node". `tier1` is required except at the plot entry; an unknown tier name is an error. `[DECIDED, 5a-15; steps as a dictionary: 4d]`
-- A **step** is a mapping with `action` (a registered name), exactly the parameters in that action's `ui_schema.params`, and optionally `comment` (5b; it is not a parameter and is never passed to the action) (`libs/transformer/.../actions/base.py`). A missing required parameter, an unknown parameter and an unknown action are errors, with a did-you-mean by spelling. **The registry is the one source of the parameter contract** (W1): a test checks that the keys each action's code reads equal its schema. Today 65 of 67 actions have a schema. `scan_parquet` and `sink_parquet` have none: the rules call them engine-internal, but 4 fixture steps use them to test the actions themselves `[OPEN 13.13]`.
+- A **step list** is `{tier1: [...], tier2: [...]}`. It appears as `wrangling` (data schema), `steps` (join) and, at the plot entry, `steps: {tier3: [...]}` (6.7). All three are written the same way; an empty list means "equal to the previous node". `tier1` is required except at the plot entry; an unknown tier name is an error. `[DECIDED, 5a-15]`
+- A **step** is a mapping with `action` (a registered name), exactly the parameters in that action's `ui_schema.params`, and optionally `id` (4d) and `comment` (5b); neither is a parameter and neither is passed to the action (`libs/transformer/.../actions/base.py`). A missing required parameter, an unknown parameter and an unknown action are errors, with a did-you-mean by spelling. **The registry is the one source of the parameter contract** (W1): a test checks that the keys each action's code reads equal its schema. Today 65 of 67 actions have a schema. `scan_parquet` and `sink_parquet` have none: the rules call them engine-internal, but 4 fixture steps use them to test the actions themselves `[OPEN 13.13]`.
 - **No guessing between spellings of a parameter.** Before a step runs, the wrangler looks for "which columns does this step work on" in six spellings in a fixed order (`columns`, `column`, `source`, `source_column`, `target_column`, and the boolean key that an unquoted `on:` becomes), expands `@category` names, checks that the columns exist (the friendly "did you mean" message of ADR-034), and **writes the result back into the step as `columns`** (`data_wrangler.py:132-147`). So a step that says `column:` for an action whose schema says `columns` works by accident. What goes is the guessing, not the check and not `@category`: those keep working, but they read **the parameters that the action's own schema declares as column selectors** (the schemas already do: 71 parameters in 59 of 65 actions, for example `columns`, `column`, `on`, `index`). A misspelled parameter is then reported by the checker before the run, with the right name (ST03). `[MINE: the mechanism; the principle is your "no compatibility default"]`
 - `join` and `join_filter` only in tier1 (exists today, kept). `join_filter` has no `how` parameter; it is always inner (`joins.py`), so `how` on it is an error.
 - `'on'` is quoted. An unquoted `on:` becomes the boolean key `True`; today the loader repairs it with a printed warning (`config_loader.py:18-41`). It is an error: the repair is a compatibility default.
@@ -363,7 +371,7 @@ Checks: the id exists; that table carries an entity key (6.4). Without `entity` 
 | `description` | a | what one row is, which tables are combined and how, what is removed, what a missing value means here |
 | `comment` | o | the author's note (5b) |
 | `ingredients` | R | list of `{dataset_id: <schema id>}`, at least one; **the first is the base** of the join. A bare id (`- FastP`) is refused (`orchestrator.py:173,214`) |
-| `steps` | R | step list (6.5), `{tier1: {...}}` at least |
+| `steps` | R | step list (6.5), `{tier1: [...]}` at least |
 | `final_contract` | o | mapping `column -> field`, an **exclusive whitelist**: the collection keeps exactly these columns. A list is refused (today it is skipped silently, `orchestrator.py:59-62`); a column that the collection does not have is an error (today only printed) |
 
 `output_fields` or `info` on a join are refused (the message says `final_contract` and `description`). Each `right_ingredient` of a step is one of the join's `ingredients`; `on` or `left_on` with `right_on` names the key (not both).
@@ -381,7 +389,7 @@ The orchestrator's silent fallbacks go: an unknown collection falls back to the 
 | `description` | a | what it shows, what is counted, which subset it leaves out (section 10) |
 | `comment` | o | the author's note (5b) |
 | `spec` | R | the plot specification (6.8) |
-| `steps` | o | `{tier3: {...}}`: the steps applied to this plot's table, after its T2. Any registered action; the audit mode writes only filters and drops here. Omitted or empty means the plot reads its table as it is. `[DECIDED, 5a-15; name and place MINE, 13.4]` |
+| `steps` | o | `{tier3: [...]}`: the steps applied to this plot's table, after its T2. Any registered action; the audit mode writes only filters and drops here. Omitted or empty means the plot reads its table as it is. `[DECIDED, 5a-15; name and place MINE, 13.4]` |
 
 `info:` on a plot entry (a sentence, 25 times today) is refused: the message says `description`.
 
@@ -396,6 +404,27 @@ Two forms exist for the same thing (`facet_by` at the top of the spec and inside
 ### 6.9 The gallery: withdrawn until you choose
 
 v0.2 kept the gallery's own file shape and words. You asked for the opposite: the examples follow the same spec (they are examples of recipes), are checked by the same code as the app, and the gallery's special needs are added to the spec as a profile. Investigated, with a proof of concept that renders all 34 examples as standard recipes through the app's own path: `recipe_format_gallery_options_2026-11-13.md` (what is wrong today, six decisions with pros and cons, what changes, in which order). The recommended design adds to this spec: a `gallery` profile (section 3), one optional key on the plot entry (`taxonomy`, 6.7), one dictionary of the gallery terms, and checks in section 8. Nothing of it is in force until you choose.
+
+### 6.10 How operations are registered, and what the checker can read from it (verified 2026-11-13)
+
+**The mechanism.** An operation exists because a Python function carries a decorator, run when the library is imported. `@register_action("name", ui_schema={...})` (`transformer/actions/base.py:22`) fills `AVAILABLE_WRANGLING_ACTIONS` (name to function) and, when a schema is given, `ACTION_SCHEMAS`. `@register_plot_component("name", ui_schema={...})` (`viz_factory/registry.py:21`) fills `PLOT_COMPONENTS` and `COMPONENT_SCHEMAS`. A name registered twice overwrites the first with a log line. Today: **67 actions (65 with a schema), 191 components (all with a schema)**. The schema holds `label`, `category`, `context` (where the operation may appear: t1, t2, assembly, plot), `tags`, `params`, `description`, `yaml_example`, `wraps` (the Polars or plotnine function it wraps; 39 of 65 actions, all components).
+
+**What the checker reads.** Name known or not (ST02, PS04), parameters declared or not (ST03), required present (ST04), `multi` (ST07), `context` against the tier (a `join` in tier 2: ST05 is one case of it). The core never imports `transformer` or `viz_factory` (0b): each caller exports its registry as plain data (name to `{params: {name: {widget, multi, required, options}}, extra_params_allowed, context}`) and passes it in. One function in each library produces that data from the two dictionaries above.
+
+**What the registries do not say (checked by running `registry_survey.py`, `registry_conformance.py`, `registry_examples.py` in `tmpAI/recipe_format/`):**
+
+| # | Gap | Evidence | Consequence for the checker | Resolution |
+|---|---|---|---|---|
+| R1 | No widget for a dictionary or a list of values. Nine parameters are declared `string` or `multi` enum while their own `yaml_example` writes a dictionary or a list: `rename.mapping`, `rename_columns.mapping` (dictionary old to new); `recode_values.rules` (list of mappings); `replace_values.to_replace`, `is_in.values`, `not_in.values`, `split_column.new_columns`, `split_column_to_parts.new_columns` (lists); `date_extract.parts` (a `multi` enum) | the 8 widgets in use: `column_selector`, `string`, `enum`, `column_or_literal`, `number`, `dtype_picker`, `expression`, `bool` | a shape check would call the actions' own examples wrong; Blueprint shows a text box and the user types YAML into it | add widgets `list` and `mapping` (and `rules` for `recode_values`) to the vocabulary of the two registries; correct the nine declarations; the checker tests the shape. A repeated key inside a `mapping` is T10 at any depth: `{a: x, a: y}` silently drops a rename |
+| R2 | The code reads keys the schema does not declare: `rename.target_column`, `split_column.source`, `.separator`, `.target_column` (`cleaning/core.py:126`; `reshaping/core.py:202,205`). | `registry_conformance.py`; section 11 | these are the aliases of 6.5, hidden in the function body, outside the one place (`data_wrangler.py:132-147`) that section 11 already lists | remove the reads with the aliases (package C); a test (AR2) compares the keys a function reads with its schema |
+| R3 | Engine-internal keys travel inside the step: `__right_df__` (`data_assembler.py:207`, read at `joins.py:39`) and `__metadata__` (`data_wrangler.py:196`, read at `cleaning/core.py:320,349`) | grep | a recipe can carry them: they would reach the function | check ST09: a key that starts and ends with a double underscore is reserved and refused in a recipe |
+| R4 | `scan_parquet` and `sink_parquet` have no schema (engine-internal; 4 fixture steps use them) | `registry_survey.py` | an unknown-parameter check cannot run on them | section 13, point 13 |
+| R5 | All 191 components carry `allow_extra_params: true` and their schemas list only a part of the arguments (802 parameters for 191 components); plotnine itself refuses an unknown argument (`PlotnineError`, verified) and accepts both `color` and `colour` | `registry_survey.py`; 8 layer parameters of the shipped recipes are outside the schemas (`color` x8, `outlier_alpha`, `size`) | "unknown parameter fails" cannot rest on the schema alone: it would reject valid plotnine arguments | PS04 reads the schema **plus** the arguments of the wrapped class (signature and aesthetics, resolved from `wraps` by `viz_factory`, as the help panel does) and passes the result to the core as the component's allowed names; an unknown name is an error with a did-you-mean. Open: complete the schemas instead (191 components), later |
+| R6 | A step with a `column_selector` parameter is resolved by the wrangler (the six spellings, `@category` names); the schema says which parameters are selectors | `data_wrangler.py:132-147` | ST03 and the selector resolution must read the same declaration | one reading of the schema: the parameters with widget `column_selector` |
+
+**Which form each registered parameter takes** (the rule of 4c, applied to the values inside a step): a **list** where order or repetition is meaning or a set is meant (`columns`, `values`, `new_columns`, `rules`, `on` with several keys); a **dictionary** where each entry is a name with a value (`mapping`: old name to new name; `plot_defaults`; `mapping` of a plot); a **scalar** otherwise. The registry must say which; today it says "string" for all three, which is R1.
+
+**Self-consistency tests** (they run on the registries, no recipe needed): AR2 (the keys a function reads equal its schema), AR3 (every `yaml_example` passes the checker: shape, names, required; fails today on the nine of R1), AR4 (every `wraps` resolves to an importable function), AR5 (every component name used by `yaml_example` or by a shipped recipe is registered), AR6 (no registered name is overwritten at import).
 
 ## 7. Rules that span elements
 
@@ -438,7 +467,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | S03 | E | schema without `label` | add it |
 | S04 | A | schema without `description` | write it |
 | S05 | E | `source` missing, type not `local_tsv`/`local_parquet`, `path` missing | |
-| S06 | E | `wrangling` is a flat list, `[]`, or has no `tier1`; unknown tier key | `{tier1: {}}` |
+| S06 | E | `wrangling` is a flat list, `[]`, or has no `tier1`; unknown tier key | `{tier1: []}` |
 | S07 | E | `tier2` on a schema that is only an ingredient (never applied) | move it to a join, or plot the schema |
 | S08 | E | `input_fields` / `output_fields` not a mapping | |
 | FD01 | E | unknown field property | replacement |
@@ -449,20 +478,21 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | FD06 | E | a field entry is a bare string (`sample_id: categorical`) | `{type: categorical}` |
 | ST01 | E | step without `action` (shorthand), or not a mapping | |
 | ST02 | E | unknown action | did-you-mean |
-| ST03 | E | parameter not in the action's schema (`comment` is allowed on every step) | did-you-mean; `column`, `source`, `target_column`, `source_column` -> `columns` where that is the name |
+| ST03 | E | parameter not in the action's schema (`id` and `comment` are allowed on every step) | did-you-mean; `column`, `source`, `target_column`, `source_column` -> `columns` where that is the name |
 | ST04 | E | required parameter missing | |
 | ST05 | E | `join` or `join_filter` in tier2 | exists today |
 | ST06 | E | formula uses an operation outside the allowed list | package H |
 | ST07 | E | a parameter declared `multi` has a single value | write a list |
-| ST08 | E | a step id is not text (a number, a boolean, empty) | give the step a name |
-| ST09 | E | a tier is a list of steps | the dictionary with ids made from the action and a counter (4d) |
+| ST08 | E | two steps of one list have the same `id`, or an `id` is not text | rename one; the message names both positions (4d) |
+| ST09 | E | a reserved engine key (`__right_df__`, `__metadata__`, any `__name__`) in a step | remove it; the engine sets it (6.10, R3) |
+| ST10 | E | the value of a parameter has the wrong shape for its declared widget (a list where a scalar is declared, a dictionary where a list is, a repeated key in a `mapping`) | the message shows the declared form and the corrected text (6.10, R1) |
 | J01 | E | unknown key in a join (`info`, `output_fields`, ...) | replacement |
 | J02 | E | join without `label` | |
 | J03 | A | join without `description` | |
 | J04 | E | `ingredients` missing, empty, not `{dataset_id}` items, unknown id, repeated id | |
 | J05 | E | `right_ingredient` not in the join's ingredients; `on` and `left_on` both or neither | |
 | J06 | E | `final_contract` not a mapping, or names a column the collection lacks | |
-| J07 | E | a join's `steps` is a flat list or `[]`, or has no `tier1` | `{tier1: {...}}` |
+| J07 | E | a join's `steps` is a flat list or `[]`, or has no `tier1` | `{tier1: [...]}` |
 | J08 | A | a column name in both ingredients of a join, not a join key: the engine renames the second `name_right` silently (needs the recipe graph) | rename or drop one before the join |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
@@ -489,7 +519,6 @@ Mechanism: `utils/legacy_keys.py` (today three dictionaries of renamed keys, `le
 | Where | Old | New |
 |---|---|---|
 | `info` | `display_name` | `label` |
-| tier lists | a list of steps | an ordered dictionary `step id -> step`; ids `<action>_<n>`, to rename (4d) |
 | top level | (no `format_version`: format 0) | `format_version: 1` and the replacements of this table, by `migrate_recipe_format.py` |
 | top level | `description` | `info.description` |
 | top level | `name`, `pipeline_id` | `info.label`, `id` |
@@ -543,6 +572,7 @@ All of these are compatibility defaults under P2. Each is removed in the package
 | `config_loader.py:141-211` | judges content: structure, renamed keys, source; only part of the rules | C (moves to `check_recipe`) |
 | `data_wrangler.py:60-61` | an empty `wrangling` of any shape means "no steps" | C (S06) |
 | `data_wrangler.py:132-147` | six spellings of the column selector, guessed in a fixed order and written back into the step | C (ST03). The presence check and `@category` stay but read the parameters the action's schema declares as column selectors. Exactly 14 steps in 10 recipe files rely on a wrong spelling today (probe). No ADR decided the aliases (ADR-034 is the diagnostic message); covered by your "no compatibility default" |
+| `cleaning/core.py:126`, `reshaping/core.py:202,205` | `rename` reads `target_column`; `split_column` reads `source`, `target_column`, `separator` although its schema declares `columns` and `delimiter` | C (ST03; 6.10 R2). Used today: `split_column` `source` x3, `separator` x1, `column` x1, `new_names` x1; `keep_columns` `target_column` x1; `split_and_explode` `target_column` x3, `column` x2 (probe) |
 | `ingestor.py:80-92,107` | fuzzy file search by dataset name; `fields` alias | C |
 | `metadata_validator.py:21-37,118` | type aliases; `source_name` | C |
 | `orchestrator.py:59-62` | `final_contract` as a list skipped; missing columns printed | C (J06) |
@@ -564,7 +594,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 | 2 | `info:` sentence on all 17 plot entries and `description` inside 14 of the 17 specs: the same fact twice | recipe 281-349, `plots/*.yaml` | one `description` on the entry; spec keeps only the grammar |
 | 3 | `family`, `pattern`, `difficulty` in 16 specs; copied from gallery examples in the first commit of these plots (2026-04-10); no code reads them from a pipeline plot | grep of readers: only `gallery_manager.py`, from a bundle's `info` | removed from pipeline specs; the taxonomy stays in the gallery (6.9) |
 | 4 | Schemas carry `info: {category, sub_category, comments}` (11 of 12), the comments hold real facts ("filtered by identity > 90 ...") | recipe 19-151 | `category`, `sub_category` and `comment` kept as keys on the schema (5b); the draft restores both `comment` |
-| 5 | `Quality_metrics` has `wrangling: []` | recipe line 43 | `{tier1: {}}` |
+| 5 | `Quality_metrics` has `wrangling: []` | recipe line 43 | `{tier1: []}` |
 | 6 | `ResFinder` tier-2 (`count_by_group`, `sort`) is ignored; the plot `amr_heatmap` reads it directly | baseline: T2 hash equals T1 hash | **change 1:** the plot gets `total_gene_count` and the sort. Evidence: pictures before and after |
 | 7 | Join `Summary_phenotype_length_fragmentation` has `info:` (a sentence) and an `output_fields` that nothing reads | recipe 195-203, `orchestrator.py:59` | `description` and `final_contract`. The whitelist lists 5 columns and the collection has 5 (126 x 5): **expected no data change; verify** |
 | 8 | 3 steps outside their schema: `split_and_explode column`, `split_column source`, `join_filter how` | probe | `columns`; `columns` (+ the rest of that schema to check); `how` removed |
@@ -577,14 +607,15 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 | 15 | Review of v0.1: my gallery variant refused `tier3` and renamed `name` to `label`; both would break the gallery (`submit_example` writes `tier3`; the index reads `name`) | `gallery_manager.py:59-63,138` | 6.9 follows the gallery code |
 | 16 | Your note on dictionaries: ADR-041 decides the form of fields (dictionary), tiers (list) and fragments (flat); the repository has 17 list-form containers, 33 wrapped fragments and 3 contracts the engine skips silently (`demo_abromics`, `universal_template`, `relational_audit`) | 4c; scan `container_forms.py`; `orchestrator.py:59-62` | 4c states the form of every container; checks S08, J06, J07, FD06, F01, T10; the `demo_abromics` contract is checked at migration |
 | 17 | A column name in both tables of a join, not a join key, is renamed `..._right` silently | `joins.py:56-58`; ST22 baseline: `QC_Reads_Anchor.total_reads_right` | check J08 (with the recipe graph); `QC_Reads_Anchor` looked at by the data-scientist pass at migration |
-| 18 | Steps as a dictionary (Eve's decision, recorded by the HOME session): the three risks are real and verified: duplicate keys are silent, the hash sorts keys, 5 YAML dump sites sort keys (2 write recipe files, 3 display); 148+ steps in 74 lists, 11 lists repeat an action; the engine addresses no step by position | `hashing.py:18`; `exporter.py:56,86`; `wrangle_studio.py:1848,1864`; `blueprint_handlers.py:861`; `data_assembler.py:131,150` | 4d: order = file order, hash on the ordered list of operations, loader refuses duplicate ids, writers `sort_keys=False` with a scan test |
+| 18 | Where dictionary order is meaning: the column order of a table (`final_contract`) and the tab order (`analysis_groups`, `plots`). Reversing the keys of `final_contract` changes the stored T1 but not the stored T2; the HOME session's three dangers (silent duplicates, sorted hashes, sorting writers) are verified | `tmpAI/recipe_format/contract_order_test.py`; `orchestrator.py:59-66,142,302`; `cache_keys.py:53-55`; `hashing.py:18`; 5 dump sites | 4c category 3 with safeguards; 4d step ids; issues #85, #86 |
+| 19 | The registries cannot describe a list or a dictionary parameter (9 declared `string` or `multi` enum while their example is a list or a dictionary), hide aliases in function bodies (`rename`, `split_column`), have 2 actions without a schema, and leave all 191 components open to extra parameters | `registry_survey.py`, `registry_conformance.py`, `registry_examples.py`, `step_params_probe.py`, `layer_probe.py`; `base.py:22`; `registry.py:21` | 6.10: widgets `list` and `mapping`, checks ST09 and ST10, tests AR2 to AR6; section 11 rows; issue #87 |
 
 ## 13. My choices to confirm, and the open points
 
 1. **[MINE] Profiles** `run` and `build` as the only difference (section 3).
 2. **[OPEN] The gallery follows the same spec** (your decision of 2026-11-13). How: `recipe_format_gallery_options_2026-11-13.md`, decisions D1 to D7, each with a recommendation.
 3. **[MINE] Schema `category`, `sub_category` and `comment`** kept as direct keys (6.3, 5b). Blueprint's map reads `sub_category` (`blueprint_mapper.py:76`).
-4. **[MINE] The T3 container is `steps: {tier3: {...}}` at the plot entry.** It mirrors `steps: {tier1, tier2}` of a join. Name and place are a placeholder; renaming later costs one line in section 6.7 and one rename in the checker.
+4. **[MINE] The T3 container is `steps: {tier3: [...]}` at the plot entry.** It mirrors `steps: {tier1, tier2}` of a join. Name and place are a placeholder; renaming later costs one line in section 6.7 and one rename in the checker.
 5. **[OPEN] Schema `output_fields`** are verified by the data check (issue #18) but never applied; the rule text calls them the published contract. Keep as a checked declaration, apply them, or remove? Recommendation: keep as a checked declaration and say so in the rule file.
 6. **[OPEN] The two legacy files:** keep (follow the format) or remove? I found no reader; to confirm with a search of the deployment configuration before deleting.
 7. **[OPEN] Duplicate forms in the plot specification** (`facet_by` twice; `filters` against the T3 list): left to Blueprint's owner, listed in 6.8.
@@ -598,8 +629,9 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 15. **[CODE] The `comment` key** exists (BP-COMMENTS-1) and is accepted on every step and layer. What is new and to confirm: `comment` also on `info`, a data schema, a join (5b).
 16. **[MINE] `format_version`** (4b): the name, an integer, one version read at a time, the migration tool. Say if you prefer another name (`spec_version`, `recipe_format`) or a different value form.
 17. **[OPEN] One place for the rules** (section 0 and gallery options D3): make the specification a data file, so the allowed keys, types, vocabularies (gallery terms included), renames and the version live in one file from which the checker, the filter panels and the docs read. Recommended; it shapes how #76 is built, so it should be decided before the checker starts.
-18. **[DECIDED direction, details OPEN] Steps are an ordered dictionary** (4d; you decided it, the HOME session recorded it). To confirm: the id rule (K1 author-written, recommended), the scope (steps only; `ingredients` and `layers` stay lists), and the timing (before format 1 is confirmed).
+18. **[DECIDED direction, details OPEN] The form follows what depends on it** (4c, 4d; you decided it after the HOME analysis): steps stay lists with an optional `id`; named things are dictionaries; `final_contract`, `analysis_groups` and `plots` are ordered dictionaries with safeguards. To confirm: `id` optional (recommended) or required; the `audit_` prefix; `final_contract` key order = the table's column order (recommended: yes, documented and tested; fixes #86); tab order = key order of `analysis_groups` and `plots` (recommended: yes).
 19. **[OPEN] The level of J08** (the silent `_right` suffix): advice (recommended: it changes a name, not a number, unless a plot uses the suffixed column) or error.
+20. **[OPEN, follows your message on registration] The parameter vocabulary of the registries** (6.10 R1): add the widgets `list` and `mapping` (and `rules`) and correct the nine declarations; and for plot layers either (a) keep the schemas as they are and let the checker read the wrapped plotnine arguments (recommended now: it needs no edit of 191 schemas), or (b) complete the 191 schemas so they list every argument (later, with the documentation sprint). The change touches both registries (`libs/transformer`, `libs/viz_factory`): I will not edit them before you confirm.
 
 ## 14. Tests that come out of this file (written first, they fail on today's code)
 
@@ -608,10 +640,10 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 - One test per row of section 11: the tolerated form is now refused (mutation check: put the tolerance back and the test fails).
 - Every shipped recipe of every kind of section 3 passes `check_recipe` with zero errors and zero advice (the retest scenarios with exactly their one planned fault). Replaces the recipe-folder test, the template test and the hygiene test, which become views of the same check.
 - Shape tests (TEST-SHAPES-1): the shipped recipes as fixtures for no join, no key, another key name, no population table, long format.
-- Registry oracle (AR2): for every action, the parameters its code reads equal its `ui_schema.params`.
+- Registry self-consistency (6.10): AR2 for every action the parameters its code reads equal its `ui_schema.params`; AR3 every `yaml_example` passes the checker (fails on the nine parameters of R1); AR4 every `wraps` resolves; AR5 every component named by an example or a shipped recipe is registered; AR6 no registered name is overwritten at import; a layer parameter that plotnine accepts (`color`, `colour`) passes and one it refuses (`foo`) fails.
 - **Gallery protection:** the committed `gallery_index.json` equals the index rebuilt from the bundles (exists); a bundle written by `GalleryManager.submit_example` (with a `tier3` list) passes the checker; every bundle renders its preview with `generate_previews.py`; every taxonomy value is inside the cheat sheet; the tag strip of each `example_meta.md` equals `info`.
 - **Container forms (4c):** one test per refused form (a list where a dictionary belongs and the reverse, a bare string field, a flat `steps`, a wrapper key); a duplicate key is found by the loader; a `final_contract` list is refused instead of skipped; after migration the `demo_abromics` plots still render with their 5-column contract.
-- **Steps as a dictionary (4d):** the order of the keys is the order of execution after load, run and write (a round trip test); the hash changes when the order changes and does not change when a step id or a comment changes; a repeated id and a non-text id are refused; a list of steps is refused with the dictionary suggested; a test scans every `yaml.dump` and `safe_dump` of non-test code for `sort_keys=False`; an audit step is added as a key with the `audit_` prefix at the end; the copy minus the marked steps equals the original.
+- **Order and ids (4c, 4d):** the key order of `final_contract` is the column order after load, run and write, in T1 **and** T2 (a round trip; fails today, #86); groups and plots keep their tab order; the hash changes when the order of steps changes and does not change when an `id` or a `comment` changes; a repeated or non-text `id` is refused; an app-inserted step has an `audit_` id; the copy minus the marked steps equals the original; a scan test requires `sort_keys=False` for every `yaml.dump` and `safe_dump` of non-test code.
 - **Messages with the correction (4c):** for each container-form check the message contains the generated corrected text, compared with an expected string; HOME's gate, Blueprint's Validate and the import screen show the same message (one adapter).
 - **Types (6.4):** a table of declared type to resulting dtype, run through the ingestor for every type of the vocabulary (including digits declared as text); each refused name gives a message that quotes the meanings; no list of types exists in code (a grep test).
 - **Format version:** one test per V01 to V04; every shipped recipe, template, gallery example, written recipe and forked recipe carries `format_version: 1`; `effective_run.yaml` records it.
