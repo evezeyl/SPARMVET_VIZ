@@ -29,6 +29,7 @@ from typing import Dict, List, Optional, Tuple
 
 import yaml
 
+from utils.polars_types import text_dtype_names
 from utils.recipe_check import spec
 from utils.step_migration import NotConvertible, convert_step
 
@@ -88,7 +89,7 @@ def _find(node: yaml.Node, key: str) -> Optional[Tuple[yaml.Node, yaml.Node]]:
 def _field_edits(text: str, fields: yaml.Node, report: List[str], where: str) -> List[_Edit]:
     edits: List[_Edit] = []
     types = spec()["renamed_types"]
-    valid = {"String", "Int64", "Float64", "Boolean", "Date"}
+    valid = set(text_dtype_names())
     for slug_node, definition in _mapping_pairs(fields):
         if not isinstance(definition, yaml.MappingNode):
             continue
@@ -183,7 +184,9 @@ def _recipe_edits(text: str, root: yaml.Node, report: List[str]) -> List[_Edit]:
 
 _STEP_LISTS = ("tier1", "tier2", "tier3")
 _NEW_PREFIXES = ("polars_", "modif_", "step_")
-_TEXT_TYPES = {None, "categorical", "utf8", "string", "character", "String"}
+# The old pipeline cast `categorical` fields to Categorical right after reading, before any step: a `strip_whitespace` without
+# columns (every String column at that moment) never touched them. Only the String-typed fields are text at the first step.
+_TEXT_TYPES = {"utf8", "string", "character", "String"}
 
 
 class _Flow(yaml.SafeDumper):
@@ -198,15 +201,37 @@ def _represent_list(dumper, data):
 _Flow.add_representer(list, _represent_list)
 
 
-def _dump_steps(steps: List[dict], dash_column: int) -> str:
-    """The text of new steps as sequence items whose dash stands at `dash_column` (the first dash is already in place)."""
+def _comments_in(text: str) -> List[str]:
+    """The `# ...` comments written on the lines of a step (after a value, or on a line of their own inside it)."""
+    found = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            found.append(stripped)
+        elif " #" in line and line.count('"') % 2 == 0 and line.count("'") % 2 == 0:
+            found.append(line[line.index(" #") + 1:].strip())
+    return found
+
+
+def _dump_steps(steps: List[dict], dash_column: int, comments: Optional[List[str]] = None) -> str:
+    """The text of new steps as sequence items whose dash stands at `dash_column` (the first dash is already in place).
+    The comments that were written on the old step go on lines above the new steps, so no comment is lost."""
     pad = " " * dash_column
     items = []
     for step in steps:
         body = yaml.dump(step, Dumper=_Flow, sort_keys=False, default_flow_style=False, width=10_000, allow_unicode=True).rstrip("\n")
         lines = body.split("\n")
         items.append("- " + lines[0] + "".join("\n" + pad + "  " + line for line in lines[1:]))
-    return ("\n" + pad).join(items)
+    return "".join(f"{c}\n{pad}" for c in (comments or [])) + ("\n" + pad).join(items)
+
+
+def _content_end(node: yaml.Node) -> int:
+    """The index just after the last character of a node's content. PyYAML's end mark of a block collection lies at the
+    next token, past newlines and comments, which an edit must not swallow."""
+    if isinstance(node, yaml.ScalarNode) or getattr(node, "flow_style", False):
+        return node.end_mark.index
+    children = node.value if isinstance(node, yaml.SequenceNode) else [n for pair in node.value for n in pair]
+    return _content_end(children[-1]) if children else node.end_mark.index
 
 
 def _step_items(root: yaml.Node) -> List[yaml.MappingNode]:
@@ -228,7 +253,7 @@ def _step_items(root: yaml.Node) -> List[yaml.MappingNode]:
     return found
 
 
-def _schema_spans(root: yaml.Node, base: Path) -> List[Tuple[int, int, Optional[List[str]]]]:
+def _schema_spans(root: yaml.Node, base: Path) -> List[Tuple[int, int, Optional[Tuple[List[str], List[str]]]]]:
     """(start, end, text fields) of every schema written inline in a recipe, to know which fields a step may mean."""
     spans = []
     for section in _SCHEMA_SECTIONS:
@@ -236,11 +261,12 @@ def _schema_spans(root: yaml.Node, base: Path) -> List[Tuple[int, int, Optional[
         if pair:
             for _key, schema in _mapping_pairs(pair[1]):
                 if isinstance(schema, yaml.MappingNode):
-                    spans.append((schema.start_mark.index, schema.end_mark.index, _text_fields(schema, base)))
+                    spans.append((schema.start_mark.index, schema.end_mark.index, _schema_facts(schema, base)))
     return spans
 
 
-def migrate_steps_text(text: str, *, strings: Optional[List[str]] = None, where: str = "", base: Optional[Path] = None) -> Tuple[str, List[str]]:
+def migrate_steps_text(text: str, *, facts: Optional[Tuple[List[str], List[str]]] = None, where: str = "", base: Optional[Path] = None,
+                       run: str = "A") -> Tuple[str, List[str]]:
     """Convert the old steps of a recipe or of a step fragment; `strings` are the declared text fields of the schema
     (for a recipe file they are found per schema from `base`, the folder of the recipe)."""
     report: List[str] = []
@@ -259,21 +285,27 @@ def migrate_steps_text(text: str, *, strings: Optional[List[str]] = None, where:
         name = step.get("action") if isinstance(step, dict) else None
         if not isinstance(name, str) or name.startswith(_NEW_PREFIXES):
             continue
-        item_strings = next((s for a, b, s in spans if a <= item.start_mark.index <= b), strings)
+        item_facts = next((s for a, b, s in spans if a <= item.start_mark.index <= b), facts) or ([], [])
         try:
-            converted = convert_step(step, strings=item_strings)
+            converted = convert_step(step, strings=item_facts[0], keys=item_facts[1], run=run)
         except NotConvertible as exc:
             report.append(f"{where}line {item.start_mark.line + 1}: {exc}")
             continue
         start = item.start_mark.index
-        dash_column = item.start_mark.column - 2          # the item starts after "- "
-        edits.append(_Edit(start - 2, item.end_mark.index, _dump_steps(converted, dash_column)))
+        line_start = _line_start(text, start)
+        dash = text.rfind("-", line_start, start)          # the "- " of the sequence item, on the same line
+        end = _content_end(item)
+        if not converted:
+            edits.append(_Edit(dash, end, f"# {name}: removed by the migration, it had nothing to act on (no String field in the schema)"))
+            report.append(f"{where}line {item.start_mark.line + 1}: {name} -> removed (it did nothing)")
+            continue
+        edits.append(_Edit(dash, end, _dump_steps(converted, dash - line_start, _comments_in(text[dash:end]))))
         report.append(f"{where}line {item.start_mark.line + 1}: {name} -> {', '.join(s['action'] for s in converted)}")
     return _apply(text, edits), report
 
 
-def _text_fields(schema: yaml.Node, base: Path) -> Optional[List[str]]:
-    """The declared fields of a schema that Polars reads as text (inline `input_fields` or an included fragment)."""
+def _schema_facts(schema: yaml.Node, base: Path) -> Optional[Tuple[List[str], List[str]]]:
+    """(the declared fields that Polars reads as text, the entity keys) of a schema (inline `input_fields` or a fragment)."""
     pair = _find(schema, "input_fields") or _find(schema, "fields")
     if not pair:
         return None
@@ -287,13 +319,18 @@ def _text_fields(schema: yaml.Node, base: Path) -> Optional[List[str]]:
             node = node.value[0][1]
     if not isinstance(node, yaml.MappingNode):
         return None
-    out = []
+    out, keys = [], []
     for slug, definition in _mapping_pairs(node):
         type_pair = _find(definition, "type") if isinstance(definition, yaml.MappingNode) else None
         declared = type_pair[1].value if type_pair and isinstance(type_pair[1], yaml.ScalarNode) else None
         if declared in _TEXT_TYPES:
             out.append(slug.value)
-    return out
+        for key_name in ("is_entity_key", "is_primary_key"):
+            flag = _find(definition, key_name) if isinstance(definition, yaml.MappingNode) else None
+            if flag and isinstance(flag[1], yaml.ScalarNode) and str(flag[1].value).lower() == "true":
+                keys.append(slug.value)
+                break
+    return out, keys
 
 
 def _apply(text: str, edits: List[_Edit]) -> str:
@@ -319,14 +356,14 @@ def migrate_text(text: str, role: str = "recipe") -> Tuple[str, List[str]]:
     return _apply(text, edits), report
 
 
-def _included_fragments(text: str, base: Path) -> Dict[str, Tuple[str, Optional[List[str]]]]:
+def _included_fragments(text: str, base: Path) -> Dict[str, Tuple[str, Optional[Tuple[List[str], List[str]]]]]:
     """`!include` targets of a recipe file: (role, the text fields of the schema it belongs to).
 
     Roles: `input_fields` (a fragment of fields) and `steps` (a fragment of tier lists, under `wrangling`, `steps` or a tier).
     """
-    roles: Dict[str, Tuple[str, Optional[List[str]]]] = {}
+    roles: Dict[str, Tuple[str, Optional[Tuple[List[str], List[str]]]]] = {}
 
-    def walk(node: yaml.Node, parent_key: Optional[str], strings: Optional[List[str]]) -> None:
+    def walk(node: yaml.Node, parent_key: Optional[str], strings) -> None:
         if isinstance(node, yaml.ScalarNode) and node.tag == "!include":
             if parent_key == "input_fields":
                 roles[node.value] = ("input_fields", None)
@@ -335,7 +372,7 @@ def _included_fragments(text: str, base: Path) -> Dict[str, Tuple[str, Optional[
         elif isinstance(node, yaml.MappingNode):
             for key_node, value_node in node.value:
                 key = key_node.value if isinstance(key_node, yaml.ScalarNode) else None
-                inner = _text_fields(value_node, base) if key is not None and isinstance(value_node, yaml.MappingNode) and _find(value_node, "input_fields") else strings
+                inner = _schema_facts(value_node, base) if key is not None and isinstance(value_node, yaml.MappingNode) and _find(value_node, "input_fields") else strings
                 walk(value_node, key, inner)
         elif isinstance(node, yaml.SequenceNode):
             for item in node.value:
@@ -347,13 +384,17 @@ def _included_fragments(text: str, base: Path) -> Dict[str, Tuple[str, Optional[
     return roles
 
 
-def migrate_recipe_file(path, *, apply: bool = False) -> MigrationReport:
+def migrate_recipe_file(path, *, apply: bool = False, run: str = "A") -> MigrationReport:
     """Migrate a recipe file and the fragments it includes (fields and steps); writes only when `apply` is true."""
     path = Path(path)
     report = MigrationReport()
     text = path.read_text(encoding="utf-8")
-    new, lines = migrate_text(text, role="recipe")
-    new, step_lines = migrate_steps_text(new, where="", base=path.parent)
+    try:
+        new, lines = migrate_text(text, role="recipe")
+        new, step_lines = migrate_steps_text(new, where="", base=path.parent, run=run)
+    except yaml.YAMLError as exc:
+        report.lines.append(f"{path.name}: the file cannot be parsed and was not migrated ({str(exc).splitlines()[0][:80]}); a person must check it")
+        return report
     lines = lines + step_lines
     if new != text:
         report.changed_files.append(path)
@@ -371,7 +412,7 @@ def migrate_recipe_file(path, *, apply: bool = False) -> MigrationReport:
         if role == "input_fields":
             migrated, lines = migrate_text(old, role=role)
         else:
-            migrated, lines = migrate_steps_text(old, strings=strings)
+            migrated, lines = migrate_steps_text(old, facts=strings, run=run)
         if migrated != old:
             report.changed_files.append(fragment)
             report.lines += [f"{target}: {line}" for line in lines]

@@ -1,8 +1,10 @@
 """Every old step and its converted steps give the same table (migration run A, `utils.step_migration`).
 
-For each case the old step runs through the REAL old path (`DataWrangler`, with its column aliases and its defaults; a
-join through the assembler's action with the resolved right table), the converted steps run through the new actions, and
-the two tables must be equal. Nothing is hand-written on the right: it is what the migration tool will write.
+The old actions are removed from the engine; what they produced is frozen in `data/step_conversion_snapshot.json`
+(made on 2026-11-13 by running each old step through the REAL old path: `DataWrangler` with its column aliases and
+defaults, a join through the assembler's action). For each case the converter must still write the frozen new steps,
+and those steps, run through the new actions, must give a table with the same rows, columns, types and content hash
+as the old action did. Nothing is hand-written on the right: it is what the migration tool writes.
 
 The removed actions and the ones that need a decision are checked to refuse (NotConvertible) with a message.
 
@@ -10,6 +12,9 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_step_
 """
 import copy
 import datetime
+import hashlib
+import json
+from pathlib import Path
 
 import polars as pl
 import pytest
@@ -17,7 +22,6 @@ from polars.testing import assert_frame_equal
 
 import transformer.actions  # noqa: F401
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS as A
-from transformer.data_wrangler import DataWrangler
 from utils.step_migration import NotConvertible, REMOVED_ACTIONS, convert_step
 
 NAN = float("nan")
@@ -144,12 +148,12 @@ JOINS = [
 ]
 
 
-def _old(step, frame, right=None):
-    step = copy.deepcopy(step)
-    if right is not None:                              # the assembler hands the resolved right table to the action
-        step["__right_df__"] = right.lazy()
-        return A[step["action"]](frame.lazy(), step).collect()
-    return DataWrangler(data_schema={}).run(frame.lazy(), [step]).collect()
+SNAPSHOT = json.loads((Path(__file__).parent / "data" / "step_conversion_snapshot.json").read_text(encoding="utf-8"))
+
+
+def _record(df: pl.DataFrame) -> dict:
+    return {"rows": df.height, "columns": [f"{n}:{d}" for n, d in df.schema.items()],
+            "sha256": hashlib.sha256(json.dumps(df.to_dicts(), default=str, sort_keys=True).encode()).hexdigest()}
 
 
 def _new(steps, frame, right=None):
@@ -162,23 +166,30 @@ def _new(steps, frame, right=None):
     return lf.collect()
 
 
-@pytest.mark.parametrize("label,step,frame", CASES, ids=[c[0] for c in CASES])
-def test_the_converted_steps_give_the_same_table(label, step, frame):
+ALL_CASES = CASES + JOINS
+
+
+def test_the_snapshot_covers_every_case():
+    assert sorted(SNAPSHOT) == sorted(c[0] for c in ALL_CASES)
+
+
+@pytest.mark.parametrize("label,step,frame", ALL_CASES, ids=[c[0] for c in ALL_CASES])
+def test_the_converter_still_writes_the_frozen_steps(label, step, frame):
+    assert json.loads(json.dumps(convert_step(copy.deepcopy(step), strings=TEXT_COLUMNS), default=str)) == SNAPSHOT[label]["new_steps"]
+
+
+@pytest.mark.parametrize("label,step,frame", ALL_CASES, ids=[c[0] for c in ALL_CASES])
+def test_the_converted_steps_give_the_table_the_old_action_gave(label, step, frame):
     converted = convert_step(copy.deepcopy(step), strings=TEXT_COLUMNS)
-    assert_frame_equal(_new(converted, frame), _old(step, frame))
-
-
-@pytest.mark.parametrize("label,step,frame", JOINS, ids=[c[0] for c in JOINS])
-def test_a_converted_join_gives_the_same_table(label, step, frame):
-    converted = convert_step(copy.deepcopy(step))
-    assert_frame_equal(_new(converted, frame, RIGHT), _old(step, frame, RIGHT))
+    right = RIGHT if step["action"] in ("join", "join_filter") else None
+    assert _record(_new(converted, frame, right)) == SNAPSHOT[label]["old"]
 
 
 def test_strip_whitespace_without_columns_uses_the_declared_text_fields():
     step = {"action": "strip_whitespace"}
     converted = convert_step(step, strings=TEXT_COLUMNS)
     assert converted[0]["columns"] == TEXT_COLUMNS
-    assert_frame_equal(_new(converted, MAIN), _old(step, MAIN))
+    assert _new(converted, MAIN)["s"].to_list() == ["a b", "c", None, "d", "e f", ""]
     with pytest.raises(NotConvertible, match="declared String fields"):
         convert_step(step)
 
@@ -189,10 +200,15 @@ def test_a_removed_action_is_refused_with_what_to_write_instead(action):
         convert_step({"action": action})
 
 
-def test_keep_and_drop_columns_wait_for_run_b():
+def test_keep_and_drop_columns_wait_for_run_b_and_then_write_the_keys_out():
     for action in ("keep_columns", "drop_columns"):
         with pytest.raises(NotConvertible, match="run B"):
             convert_step({"action": action, "columns": ["g"]})
+    assert convert_step({"action": "keep_columns", "columns": ["g", "v"]}, keys=["id"], run="B") == [{"action": "polars_select", "exprs": ["id", "g", "v"]}]
+    assert convert_step({"action": "keep_columns", "columns": ["id", "g"]}, keys=["id"], run="B") == [{"action": "polars_select", "exprs": ["id", "g"]}]
+    assert convert_step({"action": "drop_columns", "columns": ["id", "g"]}, keys=["id"], run="B") == [{"action": "polars_drop", "columns": ["g"]}]
+    with pytest.raises(NotConvertible, match="dropped nothing"):
+        convert_step({"action": "drop_columns", "columns": ["id"]}, keys=["id"], run="B")
 
 
 def test_an_unknown_action_and_a_filter_without_bounds_are_refused():
@@ -212,7 +228,7 @@ def test_every_converted_step_is_valid_for_its_new_action():
     from transformer.actions.base import ACTION_SCHEMAS
     from utils.ui_schema import step_problems
     bad = {}
-    for label, step, _frame in CASES + JOINS:
+    for label, step, _frame in ALL_CASES:
         for new in convert_step(copy.deepcopy(step), strings=TEXT_COLUMNS):
             spec = {k: v for k, v in new.items() if k != "action"}
             problems = step_problems(new["action"], spec, ACTION_SCHEMAS[new["action"]])
@@ -221,56 +237,43 @@ def test_every_converted_step_is_valid_for_its_new_action():
     assert bad == {}
 
 
-# -- old actions that did not do what they said: the old behaviour is pinned, the converted steps do the documented thing ---
+# -- what the old actions did that was wrong (frozen findings); the converted steps do the documented thing ----------
 
-def test_drop_duplicates_without_columns_failed_and_the_converted_step_deduplicates_all_columns():
-    step = {"action": "drop_duplicates"}
-    with pytest.raises(Exception, match="at least one key"):
-        _old(step, MAIN.select("g", "code"))
-    got = _new(convert_step(step), MAIN.select("g", "code"))
-    assert got.height == MAIN.select("g", "code").unique(maintain_order=True).height
+def test_drop_duplicates_without_columns_failed_before_and_the_converted_step_deduplicates_all_columns():
+    got = _new(convert_step({"action": "drop_duplicates"}), MAIN.select("g", "code"))
+    assert got.height == MAIN.select("g", "code").unique(maintain_order=True).height      # the old action raised "at least one key is required"
 
 
-def test_drop_nulls_without_columns_dropped_nothing_and_the_converted_step_drops_rows_with_any_null():
-    step = {"action": "drop_nulls"}
+def test_drop_nulls_without_columns_dropped_nothing_before_and_the_converted_step_drops_rows_with_any_null():
     frame = MAIN.select("g", "w")
-    assert _old(step, frame).height == 6, "the finding: the old action was a silent no-op (its description says it drops rows with any null)"
-    assert _new(convert_step(step), frame).height == frame.drop_nulls().height == 4
+    assert _new(convert_step({"action": "drop_nulls"}), frame).height == frame.drop_nulls().height == 4     # the old action kept all 6 rows
 
 
-def test_null_if_never_nulled_the_column_and_added_a_junk_column_the_converted_formula_does():
-    step = {"action": "null_if", "columns": ["code"], "value": "A"}
-    old = _old(step, MAIN)
-    assert old["code"].to_list() == MAIN["code"].to_list(), "the finding: the column was left unchanged"
-    assert len(old.columns) == len(MAIN.columns) + 1, "the finding: a stray column was added"
-    new = _new(convert_step(step), MAIN)
-    assert new["code"].to_list() == [None, "B", None, "C", "B", "B"] and new.columns == MAIN.columns
+def test_null_if_never_nulled_the_column_before_and_the_converted_formula_does():
+    new = _new(convert_step({"action": "null_if", "columns": ["code"], "value": "A"}), MAIN)
+    assert new["code"].to_list() == [None, "B", None, "C", "B", "B"] and new.columns == MAIN.columns   # the old action left the column and added a stray one
 
 
-def test_split_column_failed_on_a_value_with_fewer_parts_than_names_the_converted_steps_give_null():
+def test_split_column_failed_on_short_values_before_and_the_converted_steps_give_null():
     step = {"action": "split_column", "columns": ["path"], "new_columns": ["a", "b", "c"], "delimiter": "_", "drop_source": True}
-    with pytest.raises(Exception, match="out of bounds"):
-        _old(step, MAIN)
-    new = _new(convert_step(step), MAIN)
+    new = _new(convert_step(step), MAIN)                                                                  # the old action raised "index out of bounds"
     assert new["c"].to_list() == ["c", None, None, None, "i_j", None] and "path" not in new.columns
 
 
-# -- cases that need their own tables so that a wrong default or order shows --------------------------------
-
 def test_sample_default_fraction_and_seed_are_written_into_the_step():
-    big = pl.DataFrame({"i": list(range(200))})
-    step = {"action": "sample"}
-    converted = convert_step(step)
+    converted = convert_step({"action": "sample"})
     assert converted[0]["fraction"] == 0.1 and converted[0]["seed"] == 0
-    assert_frame_equal(_new(converted, big), _old(step, big))
-    assert _old(step, big).height == 20
+    assert _new(converted, pl.DataFrame({"i": list(range(200))})).height == 20
 
 
 def test_a_right_join_keeps_the_right_table_order_as_the_old_action_did():
     left = pl.DataFrame({"id": ["a", "b", "c"], "x": [1, 2, 3]})
     right = pl.DataFrame({"id": ["c", "a", "z"], "y": [10, 20, 30]})
-    step = {"action": "join", "right_ingredient": "R", "on": "id", "how": "right"}
-    converted = convert_step(step)
+    converted = convert_step({"action": "join", "right_ingredient": "R", "on": "id", "how": "right"})
     assert converted[0]["maintain_order"] == "right_left"
-    assert_frame_equal(_new(converted, left, right), _old(step, left, right))
-    assert _old(step, left, right)["id"].to_list() == ["c", "a", "z"]
+    assert _new(converted, left, right)["id"].to_list() == ["c", "a", "z"]
+
+
+def test_strip_whitespace_in_a_schema_without_string_fields_did_nothing_and_is_removed():
+    """The old step acted on the String columns only; `categorical` fields were Categorical by then, so it did nothing."""
+    assert convert_step({"action": "strip_whitespace"}, strings=[]) == []

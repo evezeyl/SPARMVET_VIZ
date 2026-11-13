@@ -101,9 +101,9 @@ renamed:
     height: "removed"
     show_legend: "removed"
 
-# old field type names -> the replacement (spec 7.4; every `categorical` meant String)
+# old field type names -> the replacement (spec 7.4; `categorical` was cast to Categorical after reading, so it stays Categorical)
 renamed_types:
-  categorical: "String (this was String); Categorical stays a type for those who write it"
+  categorical: "Categorical (the old pipeline read it as text and cast it to Categorical; String would change the order of the levels in a plot)"
   utf8: "String"
   string: "String"
   character: "String"

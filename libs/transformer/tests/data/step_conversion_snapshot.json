@@ -1,0 +1,3335 @@
+{
+ "add_constant": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "src": "pl.lit('NORM')"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "src:String"
+   ],
+   "rows": 6,
+   "sha256": "91adf3664b3fab2f1ababdf8678c1aa7c0038bcce48c3e6fa9cc7a89d46ff726"
+  },
+  "step": {
+   "action": "add_constant",
+   "new_column": "src",
+   "value": "NORM"
+  }
+ },
+ "add_constant number": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "one": "pl.lit(1)"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "one:Int32"
+   ],
+   "rows": 6,
+   "sha256": "abac5790cfecdb95376c5da967164724f2de403149116c243533ca2385cd6bec"
+  },
+  "step": {
+   "action": "add_constant",
+   "new_column": "one",
+   "value": 1
+  }
+ },
+ "all_horizontal": {
+  "new_steps": [
+   {
+    "action": "polars_all_horizontal",
+    "exprs": [
+     "a",
+     "b"
+    ],
+    "target_column": "t"
+   }
+  ],
+  "old": {
+   "columns": [
+    "a:Boolean",
+    "b:Boolean",
+    "t:Boolean"
+   ],
+   "rows": 3,
+   "sha256": "639f45074b9a2385ef21ba8b145caf83eb0b9a79eb0ee26f5180f35d1bc5deed"
+  },
+  "step": {
+   "action": "all_horizontal",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "target_column": "t"
+  }
+ },
+ "any_horizontal": {
+  "new_steps": [
+   {
+    "action": "polars_any_horizontal",
+    "exprs": [
+     "a",
+     "b"
+    ],
+    "target_column": "t"
+   }
+  ],
+  "old": {
+   "columns": [
+    "a:Boolean",
+    "b:Boolean",
+    "t:Boolean"
+   ],
+   "rows": 3,
+   "sha256": "73adc3c0366e5b382cf20164715e7810eb568dbe2864f27c02b4f25b73e5f1b4"
+  },
+  "step": {
+   "action": "any_horizontal",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "target_column": "t"
+  }
+ },
+ "cast": {
+  "new_steps": [
+   {
+    "action": "polars_cast",
+    "columns": [
+     "v"
+    ],
+    "dtype": "Float64"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Float64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "5913ad31f482306f645c2fcd9ee40faaa56fae135727b41ccc23b3852e146688"
+  },
+  "step": {
+   "action": "cast",
+   "columns": [
+    "v"
+   ],
+   "dtype": "Float64"
+  }
+ },
+ "coalesce": {
+  "new_steps": [
+   {
+    "action": "polars_coalesce",
+    "exprs": [
+     "g",
+     "s"
+    ],
+    "target_column": "g"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "a32c14ee20b290393b9f3e341e4a2261c2e7f2fcc96c5d12c6e7710f62e5e1bf"
+  },
+  "step": {
+   "action": "coalesce",
+   "columns": [
+    "g",
+    "s"
+   ]
+  }
+ },
+ "count_by_group": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "n": "pl.len().over(['g'])"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "n:UInt32"
+   ],
+   "rows": 6,
+   "sha256": "2e929b6eb02ceba6fa10170e4b389f1fc6255f0fdb333af7acf03e68111c28b1"
+  },
+  "step": {
+   "action": "count_by_group",
+   "group_by": [
+    "g"
+   ],
+   "new_column": "n"
+  }
+ },
+ "count_by_group default": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "group_count": "pl.len().over(['g', 'code'])"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "group_count:UInt32"
+   ],
+   "rows": 6,
+   "sha256": "2e36cbb32563c770b1185b9d52739591b58f532d5c1a6d32a71da6fcfd237bb7"
+  },
+  "step": {
+   "action": "count_by_group",
+   "group_by": [
+    "g",
+    "code"
+   ]
+  }
+ },
+ "cum_count": {
+  "new_steps": [
+   {
+    "action": "polars_cum_count",
+    "columns": [
+     "w"
+    ],
+    "target_column": "w_cumcount"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "w_cumcount:UInt32"
+   ],
+   "rows": 6,
+   "sha256": "e5cff23014fea3541eeabc166b4d35eb976ef9629a9406819331859f72d5e487"
+  },
+  "step": {
+   "action": "cum_count",
+   "column": "w"
+  }
+ },
+ "cum_sum": {
+  "new_steps": [
+   {
+    "action": "polars_cum_sum",
+    "columns": [
+     "v"
+    ],
+    "target_column": "v_cumsum"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "v_cumsum:Int64"
+   ],
+   "rows": 6,
+   "sha256": "dce91ebf35e6b850b7d02ca3ff79afeb4d8f5daed850ef5ecff301442a3a7c5c"
+  },
+  "step": {
+   "action": "cum_sum",
+   "column": "v"
+  }
+ },
+ "cum_sum named": {
+  "new_steps": [
+   {
+    "action": "polars_cum_sum",
+    "columns": [
+     "v"
+    ],
+    "target_column": "run"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "run:Int64"
+   ],
+   "rows": 6,
+   "sha256": "bb7dc80780383390b9758b81411ead72c3eb3b1fe2db358babc6f3040af59f8f"
+  },
+  "step": {
+   "action": "cum_sum",
+   "column": "v",
+   "target_column": "run"
+  }
+ },
+ "date_extract": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "d_day": "pl.col('d').dt.day()",
+     "d_month": "pl.col('d').dt.month()",
+     "d_week": "pl.col('d').dt.week()",
+     "d_weekday": "pl.col('d').dt.weekday()",
+     "d_year": "pl.col('d').dt.year()"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "d_year:Int32",
+    "d_month:Int8",
+    "d_day:Int8",
+    "d_week:Int8",
+    "d_weekday:Int8"
+   ],
+   "rows": 6,
+   "sha256": "aceb134c3113cd13144a4c120bd21194ca83fad231773b1439e2817360f3039c"
+  },
+  "step": {
+   "action": "date_extract",
+   "column": "d",
+   "parts": [
+    "year",
+    "month",
+    "day",
+    "week",
+    "weekday"
+   ]
+  }
+ },
+ "date_extract default": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "d_year": "pl.col('d').dt.year()"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "d_year:Int32"
+   ],
+   "rows": 6,
+   "sha256": "cffa606383d987a30f537c7819127f68fa793436fc08e6830144cd6b30c16a8c"
+  },
+  "step": {
+   "action": "date_extract",
+   "column": "d"
+  }
+ },
+ "date_truncate": {
+  "new_steps": [
+   {
+    "action": "polars_dt_truncate",
+    "columns": [
+     "d"
+    ],
+    "every": "1y"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "159e9a5ff602a50e95a0a5cfeff8aa1aba9f782d412900febbf148e4e82dd56a"
+  },
+  "step": {
+   "action": "date_truncate",
+   "column": "d",
+   "every": "1y"
+  }
+ },
+ "date_truncate default": {
+  "new_steps": [
+   {
+    "action": "polars_dt_truncate",
+    "columns": [
+     "d"
+    ],
+    "every": "1mo"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "89f1a2d83c5a3fd9424e72a7fe12f3e43d7b2882fe44fdc02a96122710ad4db1"
+  },
+  "step": {
+   "action": "date_truncate",
+   "column": "d"
+  }
+ },
+ "describe_stats": {
+  "new_steps": [
+   {
+    "action": "polars_describe"
+   }
+  ],
+  "old": {
+   "columns": [
+    "statistic:String",
+    "v:Float64",
+    "w:Float64"
+   ],
+   "rows": 9,
+   "sha256": "0eaeaaa8e26a658f1117996f81849779585e0687b28bd69de831ddb3314e9af1"
+  },
+  "step": {
+   "action": "describe_stats"
+  }
+ },
+ "divide_columns": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "r": "pl.col('v').cast(pl.Float64) / pl.col('w').cast(pl.Float64)"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "r:Float64"
+   ],
+   "rows": 6,
+   "sha256": "3e238e0dc31a4afbd5a302c4ce23c1fdc31136a6ff124532d07b4d2090903f66"
+  },
+  "step": {
+   "action": "divide_columns",
+   "denominator": "w",
+   "new_column": "r",
+   "numerator": "v"
+  }
+ },
+ "drop_duplicates": {
+  "new_steps": [
+   {
+    "action": "polars_unique",
+    "keep": "first",
+    "maintain_order": true,
+    "subset": [
+     "g"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "1a8ecf0ba4c7ad9ee9073a9e9d49b9bdf85edccb44040ee8b3aa73cfae9dc3d5"
+  },
+  "step": {
+   "action": "drop_duplicates",
+   "columns": [
+    "g"
+   ]
+  }
+ },
+ "drop_nulls": {
+  "new_steps": [
+   {
+    "action": "polars_drop_nulls",
+    "subset": [
+     "w"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 5,
+   "sha256": "84804ea274bc05d5046fe11a39a8059f8d083f07a53082323fd4ed5f752b4bd1"
+  },
+  "step": {
+   "action": "drop_nulls",
+   "columns": [
+    "w"
+   ]
+  }
+ },
+ "explode": {
+  "new_steps": [
+   {
+    "action": "polars_explode",
+    "columns": [
+     "l"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "l:String"
+   ],
+   "rows": 5,
+   "sha256": "61bb08dd0d7642777dd8aefa85518d9a8c9906bca9d1057568c9354aad8fe1c1"
+  },
+  "step": {
+   "action": "explode",
+   "columns": [
+    "l"
+   ]
+  }
+ },
+ "fill_nulls": {
+  "new_steps": [
+   {
+    "action": "polars_fill_null",
+    "columns": [
+     "w"
+    ],
+    "value": 0
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "e7685b00b740dce5b8659361d5214a4d3076ae9e0c5d0766dce966ca03252d4e"
+  },
+  "step": {
+   "action": "fill_nulls",
+   "columns": [
+    "w"
+   ],
+   "value": 0
+  }
+ },
+ "fill_nulls_direction default": {
+  "new_steps": [
+   {
+    "action": "polars_fill_null",
+    "columns": [
+     "w"
+    ],
+    "strategy": "forward"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "a4064b46f22d4d74861521d4385a64cb246867241cfc56122773d0ed01391265"
+  },
+  "step": {
+   "action": "fill_nulls_direction",
+   "columns": [
+    "w"
+   ]
+  }
+ },
+ "fill_nulls_direction forward": {
+  "new_steps": [
+   {
+    "action": "polars_fill_null",
+    "columns": [
+     "w"
+    ],
+    "strategy": "forward"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "a4064b46f22d4d74861521d4385a64cb246867241cfc56122773d0ed01391265"
+  },
+  "step": {
+   "action": "fill_nulls_direction",
+   "columns": [
+    "w"
+   ],
+   "direction": "forward"
+  }
+ },
+ "filter_eq": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "g",
+    "na": "remove",
+    "op": "eq",
+    "value": "x"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 2,
+   "sha256": "5c299b136df954990bd65f35accf017810c8b7d21fd52ca9b30ded62e7083461"
+  },
+  "step": {
+   "action": "filter_eq",
+   "column": "g",
+   "value": "x"
+  }
+ },
+ "filter_eq columns": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "g",
+    "na": "remove",
+    "op": "eq",
+    "value": "y"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "ef5253262d0f027c601e9a39fd82c01206e54b804e60c36c73929f0ec3047a78"
+  },
+  "step": {
+   "action": "filter_eq",
+   "columns": [
+    "g"
+   ],
+   "value": "y"
+  }
+ },
+ "filter_gt": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "v",
+    "na": "remove",
+    "op": "gt",
+    "value": 2
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 4,
+   "sha256": "521532af4262e89c1767baa6af53f277e82548f6937ce307b8612bd1f1b29836"
+  },
+  "step": {
+   "action": "filter_gt",
+   "columns": [
+    "v"
+   ],
+   "value": 2
+  }
+ },
+ "filter_lt": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "w",
+    "na": "remove",
+    "op": "lt",
+    "value": 3
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 2,
+   "sha256": "8ad7e0f9f9ee92590feff9550ffec47208bf5bfc85e43bbe409e5f7899e7803f"
+  },
+  "step": {
+   "action": "filter_lt",
+   "columns": [
+    "w"
+   ],
+   "value": 3
+  }
+ },
+ "filter_ne": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "g",
+    "na": "remove",
+    "op": "ne",
+    "value": "x"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "ef5253262d0f027c601e9a39fd82c01206e54b804e60c36c73929f0ec3047a78"
+  },
+  "step": {
+   "action": "filter_ne",
+   "column": "g",
+   "value": "x"
+  }
+ },
+ "filter_range both": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "v",
+    "na": "remove",
+    "op": "between",
+    "value": [
+     2,
+     5
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 4,
+   "sha256": "b7ae1af6522c8a2adfa434db180085ba4f39b81f6c7b0edbbdcad43f231274de"
+  },
+  "step": {
+   "action": "filter_range",
+   "columns": [
+    "v"
+   ],
+   "max": 5,
+   "min": 2
+  }
+ },
+ "filter_range max": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "w",
+    "na": "remove",
+    "op": "le",
+    "value": 3.5
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "4addf3f8c6019c732850d1f177361040220caa89d7d6f0129ff3534ebe079ae1"
+  },
+  "step": {
+   "action": "filter_range",
+   "columns": [
+    "w"
+   ],
+   "max": 3.5
+  }
+ },
+ "filter_range min": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "v",
+    "na": "remove",
+    "op": "ge",
+    "value": 4
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "0f73ea371e3e73ce69db9b49890361b85370e2237bcbfb278f75b885c77f94db"
+  },
+  "step": {
+   "action": "filter_range",
+   "columns": [
+    "v"
+   ],
+   "min": 4
+  }
+ },
+ "horizontal_stats default": {
+  "new_steps": [
+   {
+    "action": "polars_sum_horizontal",
+    "exprs": [
+     "v",
+     "w"
+    ],
+    "target_column": "horizontal_sum"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "horizontal_sum:Float64"
+   ],
+   "rows": 6,
+   "sha256": "f6645424ddb0500b29b19f190b4597a44514d3b73ae6e59b5914d3c96be76fa7"
+  },
+  "step": {
+   "action": "horizontal_stats",
+   "columns": [
+    "v",
+    "w"
+   ]
+  }
+ },
+ "horizontal_stats max": {
+  "new_steps": [
+   {
+    "action": "polars_max_horizontal",
+    "exprs": [
+     "v",
+     "w"
+    ],
+    "target_column": "horizontal_max"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "horizontal_max:Float64"
+   ],
+   "rows": 6,
+   "sha256": "106c3f1860a3681caf76f83bba37a74e4a31b20ff511c4083c186922c21fbbb5"
+  },
+  "step": {
+   "action": "horizontal_stats",
+   "columns": [
+    "v",
+    "w"
+   ],
+   "operation": "max"
+  }
+ },
+ "horizontal_stats sum": {
+  "new_steps": [
+   {
+    "action": "polars_sum_horizontal",
+    "exprs": [
+     "v",
+     "w"
+    ],
+    "target_column": "t"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "t:Float64"
+   ],
+   "rows": 6,
+   "sha256": "661286f898618351f323d04f57703c5c1fdde2de85dcce3b4d94c450ea7ac16c"
+  },
+  "step": {
+   "action": "horizontal_stats",
+   "columns": [
+    "v",
+    "w"
+   ],
+   "operation": "sum",
+   "target_column": "t"
+  }
+ },
+ "interpolate": {
+  "new_steps": [
+   {
+    "action": "polars_interpolate",
+    "columns": [
+     "w"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "c6e95215994fada9638ba5985e3d710baae9dd8afd02276d90e65edc9095c80e"
+  },
+  "step": {
+   "action": "interpolate",
+   "columns": [
+    "w"
+   ]
+  }
+ },
+ "is_in": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "g",
+    "na": "remove",
+    "op": "in",
+    "value": [
+     "x",
+     "y"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 5,
+   "sha256": "35637a29b8838d430481fe1e7e924a4ae5ba32e8afa90875f3c64248333e5d0c"
+  },
+  "step": {
+   "action": "is_in",
+   "column": "g",
+   "values": [
+    "x",
+    "y"
+   ]
+  }
+ },
+ "join default how": {
+  "new_steps": [
+   {
+    "action": "polars_join",
+    "how": "left",
+    "maintain_order": "left_right",
+    "on": [
+     "id"
+    ],
+    "right_ingredient": "R"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "extra:Int64",
+    "k:String"
+   ],
+   "rows": 6,
+   "sha256": "daf94d70f3fd57ae645de124a60387d7baf8a15e939d8e8ba5048f27dedbc472"
+  },
+  "step": {
+   "action": "join",
+   "on": [
+    "id"
+   ],
+   "right_ingredient": "R"
+  }
+ },
+ "join inner": {
+  "new_steps": [
+   {
+    "action": "polars_join",
+    "how": "inner",
+    "maintain_order": "left_right",
+    "on": [
+     "id"
+    ],
+    "right_ingredient": "R"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "extra:Int64",
+    "k:String"
+   ],
+   "rows": 2,
+   "sha256": "09e32696f46458f03f7075e8e4d0a4e35133564b344aa5a7bbe7c1564a32eec1"
+  },
+  "step": {
+   "action": "join",
+   "how": "inner",
+   "on": "id",
+   "right_ingredient": "R"
+  }
+ },
+ "join left_on right_on": {
+  "new_steps": [
+   {
+    "action": "polars_join",
+    "how": "left",
+    "left_on": [
+     "id"
+    ],
+    "maintain_order": "left_right",
+    "right_ingredient": "R",
+    "right_on": [
+     "id"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "extra:Int64",
+    "k:String"
+   ],
+   "rows": 6,
+   "sha256": "daf94d70f3fd57ae645de124a60387d7baf8a15e939d8e8ba5048f27dedbc472"
+  },
+  "step": {
+   "action": "join",
+   "how": "left",
+   "left_on": "id",
+   "right_ingredient": "R",
+   "right_on": "id"
+  }
+ },
+ "join on": {
+  "new_steps": [
+   {
+    "action": "polars_join",
+    "how": "left",
+    "maintain_order": "left_right",
+    "on": [
+     "id"
+    ],
+    "right_ingredient": "R"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "extra:Int64",
+    "k:String"
+   ],
+   "rows": 6,
+   "sha256": "daf94d70f3fd57ae645de124a60387d7baf8a15e939d8e8ba5048f27dedbc472"
+  },
+  "step": {
+   "action": "join",
+   "how": "left",
+   "on": "id",
+   "right_ingredient": "R"
+  }
+ },
+ "join outer": {
+  "new_steps": [
+   {
+    "action": "polars_join",
+    "how": "full",
+    "maintain_order": "left_right",
+    "on": [
+     "id"
+    ],
+    "right_ingredient": "R"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "id_right:String",
+    "extra:Int64",
+    "k:String"
+   ],
+   "rows": 7,
+   "sha256": "8c7020f98cd809321a9bb655c1725c2f2a058bab53071ccde748067e99c45c34"
+  },
+  "step": {
+   "action": "join",
+   "how": "outer",
+   "on": "id",
+   "right_ingredient": "R"
+  }
+ },
+ "join right": {
+  "new_steps": [
+   {
+    "action": "polars_join",
+    "how": "right",
+    "maintain_order": "right_left",
+    "on": [
+     "id"
+    ],
+    "right_ingredient": "R"
+   }
+  ],
+  "old": {
+   "columns": [
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "id:String",
+    "extra:Int64",
+    "k:String"
+   ],
+   "rows": 3,
+   "sha256": "6df282c05285980c959c4e184678598a8ccc48fd016ea0bd98cec0d2654fbc01"
+  },
+  "step": {
+   "action": "join",
+   "how": "right",
+   "on": "id",
+   "right_ingredient": "R"
+  }
+ },
+ "join_filter": {
+  "new_steps": [
+   {
+    "action": "polars_join",
+    "how": "inner",
+    "maintain_order": "left_right",
+    "on": [
+     "id"
+    ],
+    "right_ingredient": "R"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "extra:Int64",
+    "k:String"
+   ],
+   "rows": 2,
+   "sha256": "09e32696f46458f03f7075e8e4d0a4e35133564b344aa5a7bbe7c1564a32eec1"
+  },
+  "step": {
+   "action": "join_filter",
+   "on": "id",
+   "right_ingredient": "R"
+  }
+ },
+ "label_if": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "lab": "pl.when(pl.col('v') >= 3).then(pl.lit('High')).otherwise(pl.lit('Low'))"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "lab:String"
+   ],
+   "rows": 6,
+   "sha256": "ab4b9c399a60f29efbcc81e03d5f95aa912e1b85896b1357d92c803da2ce684b"
+  },
+  "step": {
+   "action": "label_if",
+   "column": "v",
+   "new_column": "lab",
+   "otherwise": "Low",
+   "predicate": ">=",
+   "then": "High",
+   "value": 3
+  }
+ },
+ "label_if no otherwise": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "lab": "pl.when(pl.col('g') == 'x').then(pl.lit('X')).otherwise(pl.lit(None))"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "lab:String"
+   ],
+   "rows": 6,
+   "sha256": "e6895056aa5abcd1b4793b7736b79ee93788ffdf310152838c7aabb9ebd9116c"
+  },
+  "step": {
+   "action": "label_if",
+   "column": "g",
+   "new_column": "lab",
+   "predicate": "==",
+   "then": "X",
+   "value": "x"
+  }
+ },
+ "list_join": {
+  "new_steps": [
+   {
+    "action": "polars_list_join",
+    "columns": [
+     "l"
+    ],
+    "separator": "-"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "l:String"
+   ],
+   "rows": 3,
+   "sha256": "cf1960bb9435cbb645de00144e82220eb281a92fe7ec4126e3305140bf39f7e1"
+  },
+  "step": {
+   "action": "list_join",
+   "column": "l",
+   "separator": "-"
+  }
+ },
+ "list_join default": {
+  "new_steps": [
+   {
+    "action": "polars_list_join",
+    "columns": [
+     "l"
+    ],
+    "separator": ";",
+    "target_column": "j"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "l:List(String)",
+    "j:String"
+   ],
+   "rows": 3,
+   "sha256": "762fa1d512a8379d6fc2acd7eb8159d34ea94533211f2c76f4f067562bd68064"
+  },
+  "step": {
+   "action": "list_join",
+   "column": "l",
+   "target_column": "j"
+  }
+ },
+ "list_slice": {
+  "new_steps": [
+   {
+    "action": "polars_list_slice",
+    "columns": [
+     "l"
+    ],
+    "length": 1,
+    "offset": 1
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "l:List(String)"
+   ],
+   "rows": 3,
+   "sha256": "f9e9a386d8e708de15e20eb49897a258bdb9d55ba1ac1cf2d39d827c6eea062d"
+  },
+  "step": {
+   "action": "list_slice",
+   "column": "l",
+   "length": 1,
+   "offset": 1
+  }
+ },
+ "list_slice default": {
+  "new_steps": [
+   {
+    "action": "polars_list_slice",
+    "columns": [
+     "l"
+    ],
+    "offset": 0,
+    "target_column": "sl"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "l:List(String)",
+    "sl:List(String)"
+   ],
+   "rows": 3,
+   "sha256": "92f3fe1f2533ee45b7864a7b08092a1b4f053169d96cc4379acb56eae502a46f"
+  },
+  "step": {
+   "action": "list_slice",
+   "column": "l",
+   "target_column": "sl"
+  }
+ },
+ "mutate": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "v2": "pl.col('v') * 2"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "v2:Int64"
+   ],
+   "rows": 6,
+   "sha256": "f75a3cdb950b25d3a6459ef694d78f141601e93361c3902b194d3cea0c2c0479"
+  },
+  "step": {
+   "action": "mutate",
+   "column": "v2",
+   "expression": "pl.col('v') * 2"
+  }
+ },
+ "mutate target_column": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "v3": "pl.col('v') + 1"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "v3:Int64"
+   ],
+   "rows": 6,
+   "sha256": "8dff13ad96e655612f0fed09e0d1eb85d7fe437fe69ffbc83a931c7071141897"
+  },
+  "step": {
+   "action": "mutate",
+   "expression": "pl.col('v') + 1",
+   "target_column": "v3"
+  }
+ },
+ "not_in": {
+  "new_steps": [
+   {
+    "action": "modif_filter",
+    "column": "g",
+    "na": "remove",
+    "op": "not_in",
+    "value": [
+     "x"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "ef5253262d0f027c601e9a39fd82c01206e54b804e60c36c73929f0ec3047a78"
+  },
+  "step": {
+   "action": "not_in",
+   "column": "g",
+   "values": [
+    "x"
+   ]
+  }
+ },
+ "pivot": {
+  "new_steps": [
+   {
+    "action": "polars_pivot",
+    "aggregate_function": "first",
+    "index": [
+     "id"
+    ],
+    "on": [
+     "kind"
+    ],
+    "values": [
+     "val"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "x:Int64",
+    "y:Int64"
+   ],
+   "rows": 2,
+   "sha256": "0c2de61fd72c45c6ceeab68e1ac4440f0705532feef9c08e144ffc1108400a36"
+  },
+  "step": {
+   "action": "pivot",
+   "aggregate_function": "first",
+   "index": "id",
+   "on": "kind",
+   "values": "val"
+  }
+ },
+ "pivot default": {
+  "new_steps": [
+   {
+    "action": "polars_pivot",
+    "aggregate_function": "first",
+    "index": [
+     "id"
+    ],
+    "on": [
+     "kind"
+    ],
+    "values": [
+     "val"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "x:Int64",
+    "y:Int64"
+   ],
+   "rows": 2,
+   "sha256": "0c2de61fd72c45c6ceeab68e1ac4440f0705532feef9c08e144ffc1108400a36"
+  },
+  "step": {
+   "action": "pivot",
+   "index": [
+    "id"
+   ],
+   "on": [
+    "kind"
+   ],
+   "values": [
+    "val"
+   ]
+  }
+ },
+ "recode_values": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "n": "pl.when(pl.col('amr') == 'Susceptible').then(pl.lit(0)).when(pl.col('amr').cast(pl.String).str.starts_with('unknown')).then(pl.lit(None)).when(pl.col('amr').is_in(['R', 'S'])).then(pl.lit(2)).otherwise(pl.lit(1))"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "n:Int32"
+   ],
+   "rows": 6,
+   "sha256": "fec1d2d3a92e68b2686ec9c6e47c4ad614b4e694201e28201122f2af0273bca5"
+  },
+  "step": {
+   "action": "recode_values",
+   "column": "amr",
+   "new_column": "n",
+   "rules": [
+    {
+     "matches": "Susceptible",
+     "value": 0
+    },
+    {
+     "starts_with": "unknown",
+     "value": null
+    },
+    {
+     "matches_any": [
+      "R",
+      "S"
+     ],
+     "value": 2
+    },
+    {
+     "default": 1
+    }
+   ]
+  }
+ },
+ "recode_values in place": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "code": "pl.when(pl.col('code').cast(pl.String).str.contains('A')).then(pl.lit('yes')).otherwise(pl.lit('no'))"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "3fb204af705577208aa7b9412e6162e1ed25bb025f9067541670bcc50d3d68f1"
+  },
+  "step": {
+   "action": "recode_values",
+   "column": "code",
+   "rules": [
+    {
+     "contains": "A",
+     "value": "yes"
+    },
+    {
+     "default": "no"
+    }
+   ]
+  }
+ },
+ "regex_extract": {
+  "new_steps": [
+   {
+    "action": "polars_str_extract",
+    "columns": [
+     "path"
+    ],
+    "group_index": 1,
+    "pattern": "([a-z])_",
+    "target_column": "first"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "first:String"
+   ],
+   "rows": 6,
+   "sha256": "e7a9e8b8278b133560742897d4018b1b87947c61fe7621c1f794abe6ca691383"
+  },
+  "step": {
+   "action": "regex_extract",
+   "pattern": "([a-z])_",
+   "source": "path",
+   "target_column": "first"
+  }
+ },
+ "regex_extract group": {
+  "new_steps": [
+   {
+    "action": "polars_str_extract",
+    "columns": [
+     "path"
+    ],
+    "group_index": 2,
+    "pattern": "([a-z])_([a-z])",
+    "target_column": "second"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "second:String"
+   ],
+   "rows": 6,
+   "sha256": "e14cc393e91a5c8368de38bf7f6bae6a68e4c37e1df4ee3dcce70b800936861a"
+  },
+  "step": {
+   "action": "regex_extract",
+   "group": 2,
+   "pattern": "([a-z])_([a-z])",
+   "source": "path",
+   "target_column": "second"
+  }
+ },
+ "regex_replace": {
+  "new_steps": [
+   {
+    "action": "polars_str_replace_all",
+    "columns": [
+     "path"
+    ],
+    "pattern": "_",
+    "value": "-"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "7cfc8c65a71a30c6b16cbdd11e5878ff48f06837f3c15613e43073a57ac71309"
+  },
+  "step": {
+   "action": "regex_replace",
+   "columns": [
+    "path"
+   ],
+   "pattern": "_",
+   "value": "-"
+  }
+ },
+ "regex_replace default value": {
+  "new_steps": [
+   {
+    "action": "polars_str_replace_all",
+    "columns": [
+     "path"
+    ],
+    "pattern": "_",
+    "value": ""
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "1bd39a8f57e2537a1db28a666b917fd033f0cc6550979b4d7023c86815aed71b"
+  },
+  "step": {
+   "action": "regex_replace",
+   "columns": [
+    "path"
+   ],
+   "pattern": "_"
+  }
+ },
+ "rename mapping": {
+  "new_steps": [
+   {
+    "action": "polars_rename",
+    "mapping": {
+     "g": "group"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "group:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "be002f2728ae6eac5ebee9328b3dfae427b7c86bf8d15c4a8ede791205e0bcd9"
+  },
+  "step": {
+   "action": "rename",
+   "mapping": {
+    "g": "group"
+   }
+  }
+ },
+ "rename new_name": {
+  "new_steps": [
+   {
+    "action": "polars_rename",
+    "mapping": {
+     "g": "group"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "group:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "be002f2728ae6eac5ebee9328b3dfae427b7c86bf8d15c4a8ede791205e0bcd9"
+  },
+  "step": {
+   "action": "rename",
+   "columns": [
+    "g"
+   ],
+   "new_name": "group"
+  }
+ },
+ "rename_columns lists": {
+  "new_steps": [
+   {
+    "action": "polars_rename",
+    "mapping": {
+     "g": "group",
+     "v": "value"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "group:String",
+    "value:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "55ff4d6221e68bfea2eb3490520050888bce2b4833c988d98bd29d82acc2ac07"
+  },
+  "step": {
+   "action": "rename_columns",
+   "columns": [
+    "g",
+    "v"
+   ],
+   "new_names": [
+    "group",
+    "value"
+   ]
+  }
+ },
+ "rename_columns mapping": {
+  "new_steps": [
+   {
+    "action": "polars_rename",
+    "mapping": {
+     "g": "group",
+     "v": "value"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "group:String",
+    "value:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "55ff4d6221e68bfea2eb3490520050888bce2b4833c988d98bd29d82acc2ac07"
+  },
+  "step": {
+   "action": "rename_columns",
+   "mapping": {
+    "g": "group",
+    "v": "value"
+   }
+  }
+ },
+ "replace_values": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "code": "pl.col('code').replace_strict({'A': 'AB', 'B': 'AB'}, default=pl.col('code'))"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "8dc7ec5cea3a336b2ef1a5ddf484d4f13894af3e7a8e30561231752cd5b69148"
+  },
+  "step": {
+   "action": "replace_values",
+   "columns": [
+    "code"
+   ],
+   "new_value": "AB",
+   "to_replace": [
+    "A",
+    "B"
+   ]
+  }
+ },
+ "round_numeric": {
+  "new_steps": [
+   {
+    "action": "polars_round",
+    "columns": [
+     "w"
+    ],
+    "decimals": 0
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "8977306a5979cdf7bc4978d450e69c659e5f39029ebdb982db92cf8f39105d4e"
+  },
+  "step": {
+   "action": "round_numeric",
+   "columns": [
+    "w"
+   ],
+   "decimals": 0
+  }
+ },
+ "round_numeric default": {
+  "new_steps": [
+   {
+    "action": "polars_round",
+    "columns": [
+     "w"
+    ],
+    "decimals": 2
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "768e704b531d045991effba2a7047e602bf4694280341eb79d5c0884c9b3247f"
+  },
+  "step": {
+   "action": "round_numeric",
+   "columns": [
+    "w"
+   ]
+  }
+ },
+ "sample": {
+  "new_steps": [
+   {
+    "action": "polars_sample",
+    "fraction": 0.5,
+    "seed": 3
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "73f9c94b1cb9e54d0114baf50bd351ca495c83e48798f6d13daeeafeaef47086"
+  },
+  "step": {
+   "action": "sample",
+   "fraction": 0.5,
+   "seed": 3
+  }
+ },
+ "sample default": {
+  "new_steps": [
+   {
+    "action": "polars_sample",
+    "fraction": 0.1,
+    "seed": 0
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 0,
+   "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "step": {
+   "action": "sample"
+  }
+ },
+ "shift": {
+  "new_steps": [
+   {
+    "action": "polars_shift",
+    "columns": [
+     "v"
+    ],
+    "n": 2,
+    "target_column": "v_shift_2"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "v_shift_2:Int64"
+   ],
+   "rows": 6,
+   "sha256": "540a87eebbb7f56a089e4b2d7bbb1f8533227f6cfcedd1e6007af3934afd2cc2"
+  },
+  "step": {
+   "action": "shift",
+   "column": "v",
+   "n": 2
+  }
+ },
+ "shift default": {
+  "new_steps": [
+   {
+    "action": "polars_shift",
+    "columns": [
+     "v"
+    ],
+    "n": 1,
+    "target_column": "v_shift_1"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "v_shift_1:Int64"
+   ],
+   "rows": 6,
+   "sha256": "0ecf0c970db2ff90d3bbd9d640a5a716adcc48b953fe228c0bac0ecca575c800"
+  },
+  "step": {
+   "action": "shift",
+   "column": "v"
+  }
+ },
+ "sort by": {
+  "new_steps": [
+   {
+    "action": "polars_sort",
+    "by": [
+     "g",
+     "v"
+    ],
+    "descending": true,
+    "maintain_order": true
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "530e6bf318e01245e50f0a7ef15c5a8a963803fea5767ca45bf77e6af26c635a"
+  },
+  "step": {
+   "action": "sort",
+   "by": [
+    "g",
+    "v"
+   ],
+   "descending": true
+  }
+ },
+ "sort columns": {
+  "new_steps": [
+   {
+    "action": "polars_sort",
+    "by": [
+     "code"
+    ],
+    "maintain_order": true
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "1d447ba2e26e489ea282eb7a318a53f19f2e2c4a25c28a556663375885d94d69"
+  },
+  "step": {
+   "action": "sort",
+   "columns": [
+    "code"
+   ]
+  }
+ },
+ "split_and_explode": {
+  "new_steps": [
+   {
+    "action": "polars_str_split",
+    "by": ",",
+    "columns": [
+     "genes"
+    ]
+   },
+   {
+    "action": "polars_explode",
+    "columns": [
+     "genes"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 9,
+   "sha256": "c335202b9f96dfe1ffb6d6610ea3da82e6d52406e3cc5cc8fdb602a5a0e05e21"
+  },
+  "step": {
+   "action": "split_and_explode",
+   "columns": [
+    "genes"
+   ],
+   "separator": ","
+  }
+ },
+ "split_and_explode default": {
+  "new_steps": [
+   {
+    "action": "polars_str_split",
+    "by": ",",
+    "columns": [
+     "genes"
+    ]
+   },
+   {
+    "action": "polars_explode",
+    "columns": [
+     "genes"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 9,
+   "sha256": "c335202b9f96dfe1ffb6d6610ea3da82e6d52406e3cc5cc8fdb602a5a0e05e21"
+  },
+  "step": {
+   "action": "split_and_explode",
+   "columns": [
+    "genes"
+   ]
+  }
+ },
+ "split_column": {
+  "new_steps": [
+   {
+    "action": "polars_str_splitn",
+    "by": "_",
+    "columns": [
+     "path"
+    ],
+    "n": 2,
+    "target_column": "_split_parts"
+   },
+   {
+    "action": "polars_unnest",
+    "columns": [
+     "_split_parts"
+    ]
+   },
+   {
+    "action": "polars_rename",
+    "mapping": {
+     "field_0": "a",
+     "field_1": "b"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "a:String",
+    "b:String"
+   ],
+   "rows": 6,
+   "sha256": "69982175df81b4705a4256239706bdecd9e9d6d79cd642679a128d2aee985154"
+  },
+  "step": {
+   "action": "split_column",
+   "columns": [
+    "path"
+   ],
+   "delimiter": "_",
+   "new_columns": [
+    "a",
+    "b"
+   ]
+  }
+ },
+ "split_column default delimiter": {
+  "new_steps": [
+   {
+    "action": "polars_str_splitn",
+    "by": " ",
+    "columns": [
+     "s"
+    ],
+    "n": 2,
+    "target_column": "_split_parts"
+   },
+   {
+    "action": "polars_unnest",
+    "columns": [
+     "_split_parts"
+    ]
+   },
+   {
+    "action": "polars_rename",
+    "mapping": {
+     "field_0": "p",
+     "field_1": "q"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "p:String",
+    "q:String"
+   ],
+   "rows": 6,
+   "sha256": "ee7b2fe2e54b3abd66befa8f8220c3625e7e018d829eb72fdbde95f699986a54"
+  },
+  "step": {
+   "action": "split_column",
+   "new_columns": [
+    "p",
+    "q"
+   ],
+   "source": "s"
+  }
+ },
+ "split_to_list": {
+  "new_steps": [
+   {
+    "action": "polars_str_split",
+    "by": ",",
+    "columns": [
+     "genes"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:List(String)",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "3eda294d60c398578e836aac54388f39c9d1100f05f5f2033fda375402fe4bb7"
+  },
+  "step": {
+   "action": "split_to_list",
+   "columns": [
+    "genes"
+   ],
+   "separator": ","
+  }
+ },
+ "split_to_list default": {
+  "new_steps": [
+   {
+    "action": "polars_str_split",
+    "by": ",",
+    "columns": [
+     "genes"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:List(String)",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "3eda294d60c398578e836aac54388f39c9d1100f05f5f2033fda375402fe4bb7"
+  },
+  "step": {
+   "action": "split_to_list",
+   "columns": [
+    "genes"
+   ]
+  }
+ },
+ "strip_whitespace columns": {
+  "new_steps": [
+   {
+    "action": "polars_str_strip_chars",
+    "characters": " \t\n\r\"",
+    "columns": [
+     "s"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "c35d0478adea7c7148790ce964dffc15b387f90919d9337d686e27d3402cb653"
+  },
+  "step": {
+   "action": "strip_whitespace",
+   "columns": [
+    "s"
+   ]
+  }
+ },
+ "summarize count": {
+  "new_steps": [
+   {
+    "action": "polars_group_by",
+    "by": [
+     "g"
+    ],
+    "maintain_order": true,
+    "named_aggs": {
+     "v_count": "pl.col('v').count()",
+     "w_count": "pl.col('w').count()"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "g:String",
+    "v_count:UInt32",
+    "w_count:UInt32"
+   ],
+   "rows": 3,
+   "sha256": "fea1b02c7c9dc075135816f9f76dd409488ae28bce6eac49a0f07fa0c4eba3c1"
+  },
+  "step": {
+   "action": "summarize",
+   "agg": "count",
+   "columns": [
+    "v",
+    "w"
+   ],
+   "group_by": [
+    "g"
+   ]
+  }
+ },
+ "summarize default agg": {
+  "new_steps": [
+   {
+    "action": "polars_group_by",
+    "by": [
+     "g"
+    ],
+    "maintain_order": true,
+    "named_aggs": {
+     "n": "pl.col('v').count()"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "g:String",
+    "n:UInt32"
+   ],
+   "rows": 3,
+   "sha256": "fc3f23300b90505a0ab2d6549ec69bfaeec54d7106bd2f2149c75dbc4bab353b"
+  },
+  "step": {
+   "action": "summarize",
+   "columns": [
+    "v"
+   ],
+   "group_by": [
+    "g"
+   ],
+   "new_name": "n"
+  }
+ },
+ "summarize mean": {
+  "new_steps": [
+   {
+    "action": "polars_group_by",
+    "by": [
+     "g",
+     "code"
+    ],
+    "maintain_order": true,
+    "named_aggs": {
+     "w_mean": "pl.col('w').mean()"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "g:String",
+    "code:String",
+    "w_mean:Float64"
+   ],
+   "rows": 6,
+   "sha256": "3cc416c06030edb0344865669f66d9b42b049a05266f726543e0aa57facc9f89"
+  },
+  "step": {
+   "action": "summarize",
+   "agg": "mean",
+   "columns": [
+    "w"
+   ],
+   "group_by": [
+    "g",
+    "code"
+   ]
+  }
+ },
+ "summarize unknown agg counts": {
+  "new_steps": [
+   {
+    "action": "polars_group_by",
+    "by": [
+     "g"
+    ],
+    "maintain_order": true,
+    "named_aggs": {
+     "v_count": "pl.col('v').count()"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "g:String",
+    "v_count:UInt32"
+   ],
+   "rows": 3,
+   "sha256": "6bc549689d9c2a4571c720a435d3c2c3fb70bfa5c622ab5ac1c93a713890fed9"
+  },
+  "step": {
+   "action": "summarize",
+   "agg": "median",
+   "columns": [
+    "v"
+   ],
+   "group_by": [
+    "g"
+   ]
+  }
+ },
+ "to_struct": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "vw": "pl.struct(['v', 'w'])"
+    }
+   },
+   {
+    "action": "polars_drop",
+    "columns": [
+     "v",
+     "w"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "vw:Struct({'v': Int64, 'w': Float64})"
+   ],
+   "rows": 6,
+   "sha256": "96c2a4e6180eed9aa973ba5751c41d17655a3e7c3f0983048150772da63be7ec"
+  },
+  "step": {
+   "action": "to_struct",
+   "columns": [
+    "v",
+    "w"
+   ],
+   "target_column": "vw"
+  }
+ },
+ "top_n_other": {
+  "new_steps": [
+   {
+    "action": "step_top_n_other",
+    "column": "code",
+    "n": 1,
+    "new_column": "code_top1",
+    "other_label": "Other"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "code_top1:String"
+   ],
+   "rows": 6,
+   "sha256": "54cb00edadb5a48f042345264936effc16f05852a973628edfffe28d28852ed9"
+  },
+  "step": {
+   "action": "top_n_other",
+   "column": "code",
+   "n": 1
+  }
+ },
+ "top_n_other named": {
+  "new_steps": [
+   {
+    "action": "step_top_n_other",
+    "column": "code",
+    "n": 2,
+    "new_column": "t",
+    "other_label": "Rest"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "t:String"
+   ],
+   "rows": 6,
+   "sha256": "b7ede55e97b711dfeefddf7da44de5879ffee0de55d46e90fa692fd0c2bd67d8"
+  },
+  "step": {
+   "action": "top_n_other",
+   "column": "code",
+   "n": 2,
+   "new_column": "t",
+   "other_label": "Rest"
+  }
+ },
+ "unique": {
+  "new_steps": [
+   {
+    "action": "polars_unique",
+    "keep": "first",
+    "maintain_order": true,
+    "subset": [
+     "code"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String"
+   ],
+   "rows": 3,
+   "sha256": "aac3414a9d98f8d98292d8676a7071f1a8d60bebba5969e51a3131092daad0d9"
+  },
+  "step": {
+   "action": "unique",
+   "columns": [
+    "code"
+   ]
+  }
+ },
+ "unique_rows": {
+  "new_steps": [
+   {
+    "action": "polars_unique",
+    "keep": "any",
+    "maintain_order": true
+   }
+  ],
+  "old": {
+   "columns": [
+    "g:String",
+    "code:String"
+   ],
+   "rows": 6,
+   "sha256": "4bdaebb7607acbe8b66ce710eb649f18ac4f34d4686c2beed4d21c0d90a9869e"
+  },
+  "step": {
+   "action": "unique_rows"
+  }
+ },
+ "unnest": {
+  "new_steps": [
+   {
+    "action": "polars_unnest",
+    "columns": [
+     "st"
+    ]
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:Int64",
+    "u:Int64",
+    "v:String"
+   ],
+   "rows": 2,
+   "sha256": "22cde03f043a39ced485b84722dec37f2a1aebae68b3e1d59eca2fb9c37c5721"
+  },
+  "step": {
+   "action": "unnest",
+   "columns": [
+    "st"
+   ]
+  }
+ },
+ "unpivot": {
+  "new_steps": [
+   {
+    "action": "polars_unpivot",
+    "index": [
+     "id"
+    ],
+    "on": [
+     "v",
+     "w"
+    ],
+    "value_name": "val",
+    "variable_name": "var"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "var:String",
+    "val:Float64"
+   ],
+   "rows": 12,
+   "sha256": "f6712459c2b59bf9c4e2bf44a9ecf705efa1932d4c375b5a1cf2c0cd7b6997a7"
+  },
+  "step": {
+   "action": "unpivot",
+   "index": [
+    "id"
+   ],
+   "on": [
+    "v",
+    "w"
+   ],
+   "value_name": "val",
+   "variable_name": "var"
+  }
+ },
+ "unpivot default names": {
+  "new_steps": [
+   {
+    "action": "polars_unpivot",
+    "index": [
+     "id"
+    ],
+    "on": [
+     "v",
+     "w"
+    ],
+    "value_name": "value",
+    "variable_name": "variable"
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "variable:String",
+    "value:Float64"
+   ],
+   "rows": 12,
+   "sha256": "8311d465ca965f1d5f06cc1f38909b1bec16aff90c8db9517c9d93ff33d9ae6f"
+  },
+  "step": {
+   "action": "unpivot",
+   "index": [
+    "id"
+   ],
+   "on": [
+    "v",
+    "w"
+   ]
+  }
+ },
+ "window_agg": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "t": "pl.col('v').sum().over(['g'])"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "t:Int64"
+   ],
+   "rows": 6,
+   "sha256": "d47a35124f6fbc4cb4d5f3859ae626222ecf823745a04ac06a94ac8c2b8c858c"
+  },
+  "step": {
+   "action": "window_agg",
+   "column": "v",
+   "function": "sum",
+   "partition_by": [
+    "g"
+   ],
+   "target_column": "t"
+  }
+ },
+ "window_agg default": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "v_mean": "pl.col('v').mean().over(['g'])"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "v_mean:Float64"
+   ],
+   "rows": 6,
+   "sha256": "3bfff75a36029f16f6f7b76780465a3e6ceab3dd502f1c2e8528750c7f856c63"
+  },
+  "step": {
+   "action": "window_agg",
+   "column": "v",
+   "partition_by": [
+    "g"
+   ]
+  }
+ },
+ "z_score": {
+  "new_steps": [
+   {
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "v_zscore": "(pl.col('v') - pl.col('v').mean()) / pl.col('v').std()",
+     "w_zscore": "(pl.col('w') - pl.col('w').mean()) / pl.col('w').std()"
+    }
+   }
+  ],
+  "old": {
+   "columns": [
+    "id:String",
+    "g:String",
+    "v:Int64",
+    "w:Float64",
+    "s:String",
+    "genes:String",
+    "path:String",
+    "sp:String",
+    "amr:String",
+    "d:Date",
+    "code:String",
+    "v_zscore:Float64",
+    "w_zscore:Float64"
+   ],
+   "rows": 6,
+   "sha256": "1f2d1714f8b51a73d822ebbc5846ed71d54ac2c023e7968067aa0297cba1eb3b"
+  },
+  "step": {
+   "action": "z_score",
+   "columns": [
+    "v",
+    "w"
+   ]
+  }
+ }
+}

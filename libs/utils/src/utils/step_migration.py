@@ -364,9 +364,13 @@ def _split_to_list(s):
 
 
 def _strip_whitespace(s, strings=None):
-    cols = _columns(s) or list(strings or [])
+    cols = _columns(s)
     if not cols:
-        raise NotConvertible("strip_whitespace without columns means every text column: the migration needs the declared String fields of the schema")
+        if strings is None:
+            raise NotConvertible("strip_whitespace without columns means every text column: the migration needs the declared String fields of the schema")
+        cols = list(strings)
+        if not cols:
+            return []           # the old step acted on the String columns only; this schema has none, so it did nothing
     return [{"action": "polars_str_strip_chars", "columns": cols, "characters": STRIP_CHARACTERS}]
 
 
@@ -448,15 +452,32 @@ CONVERTERS: Dict[str, Callable] = {
 }
 
 
-def convert_step(step: dict, *, strings: Optional[List[str]] = None) -> List[dict]:
+def _keep_columns(s, keys):
+    """The old action put the entity keys of the schema first and added them when missing: written out, no key is hidden."""
+    cols = _columns(s)
+    return [{"action": "polars_select", "exprs": list(dict.fromkeys(list(keys or []) + cols))}]
+
+
+def _drop_columns(s, keys):
+    """The old action never dropped an entity key (it printed a warning) and ignored a column that did not exist."""
+    cols = [c for c in _columns(s) if c not in (keys or [])]
+    if not cols:
+        raise NotConvertible("drop_columns dropped nothing (only entity keys, or no column): delete the step")
+    return [{"action": "polars_drop", "columns": cols}]
+
+
+def convert_step(step: dict, *, strings: Optional[List[str]] = None, keys: Optional[List[str]] = None, run: str = "A") -> List[dict]:
     """The new steps for one old step, in order. `strings` is the list of declared String fields of the schema, needed
-    only by `strip_whitespace` without `columns`. Raises NotConvertible when a decision of the author is needed."""
+    only by `strip_whitespace` without `columns`; `keys` the entity keys of the schema, needed by run B for
+    `keep_columns` and `drop_columns`. Raises NotConvertible when a decision of the author is needed."""
     name = step.get("action")
     if name in REMOVED_ACTIONS:
         raise NotConvertible(f"{name}: {REMOVED_ACTIONS[name]}")
     if name in ("keep_columns", "drop_columns"):
-        raise NotConvertible(f"{name}: converted in run B (polars_select, polars_drop)")
-    if name == "strip_whitespace":
+        if run != "B":
+            raise NotConvertible(f"{name}: converted in run B (polars_select, polars_drop)")
+        converted = (_keep_columns if name == "keep_columns" else _drop_columns)(step, keys)
+    elif name == "strip_whitespace":
         converted = _strip_whitespace(step, strings)
     elif name in CONVERTERS:
         converted = CONVERTERS[name](step)
