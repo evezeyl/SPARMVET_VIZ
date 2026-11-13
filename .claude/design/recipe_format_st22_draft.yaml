@@ -2,7 +2,7 @@
 #
 # What this draft shows: every element has `label` and `description`; the two engine keys; `entity`; no `info:` on
 # schemas, joins or plots (the author's notes stay, verbatim, as the key `comment`: spec 5b); the tab text is `label`, not `description`; the plot entry carries the description, the
-# spec keeps only the grammar; `wrangling: {tier1: []}` instead of `[]`; the join contract is `final_contract`.
+# spec keeps only the grammar; `wrangling: {tier1: {}}` instead of `[]`, and steps as an ordered dictionary with ids (spec 4d); the join contract is `final_contract`.
 # What it does not show: the fragment files (they follow in package E: wrappers removed, `column`/`source` -> `columns`,
 # `is_primary_key` -> `is_entity_key`, spec keys removed). Include paths below are those of the current recipe.
 #
@@ -59,8 +59,8 @@ data_schemas:
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
     wrangling:
-      tier1: []
-      tier2: []
+      tier1: {}
+      tier2: {}
     output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_quality_output_fields.yaml'
 
   Quality_metrics:
@@ -75,7 +75,7 @@ data_schemas:
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quality_metrics_20260307_105756.tsv
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Quality_metrics_input_fields.yaml'
     wrangling:
-      tier1: []
+      tier1: {}
     output_fields: !include '1_test_data_ST22_dummy/output_fields/Quality_metrics_output_fields.yaml'
 
   Detailed_summary:
@@ -198,7 +198,8 @@ additional_datasets_schemas:
     input_fields: !include '1_test_data_ST22_dummy/input_fields/APEC_STEC_virulence_genes_input_fields.yaml'
     wrangling:
       tier1:
-        - action: strip_whitespace
+        strip_whitespace_1:
+          action: strip_whitespace
     output_fields: {}
 
 # ── Metadata Schema ───────────────────────────────────────────────────────────
