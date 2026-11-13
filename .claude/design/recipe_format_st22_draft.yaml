@@ -1,0 +1,513 @@
+# DRAFT, not loadable: the main file of 1_test_data_ST22_dummy written in the format of recipe_format_spec.md (v0.1).
+#
+# What this draft shows: every element has `label` and `description`; the two engine keys; `entity`; no `info:` on
+# schemas, joins or plots; the tab text is `label`, not `description`; the plot entry carries the description, the
+# spec keeps only the grammar; `wrangling: {tier1: []}` instead of `[]`; the join contract is `final_contract`.
+# What it does not show: the fragment files (they follow in package E: wrappers removed, `column`/`source` -> `columns`,
+# `is_primary_key` -> `is_entity_key`, spec keys removed). Include paths below are those of the current recipe.
+#
+# Descriptions are written for the tables AS THEY ARE TODAY (rows and samples measured on 2026-11-13, baseline in
+# tmpAI/recipe_format/st22_baseline.json). Three are marked REVISE: R1-R4 (recipe_review_st22_2026-11-11.md 3b) change them.
+
+id: 1_test_data_ST22_dummy
+data_engine: python-polars
+plot_engine: python-plotnine
+
+info:
+  label: ST22 Dummy Dataset
+  subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
+  description: >-
+    Demonstration recipe on 42 E. coli ST22 isolates (test data of the pipeline run of 2026-03-07): quality of reads and
+    assemblies, predicted resistance and virulence genes, sequence types, and quality-control canaries. The population is
+    the 42 sequenced samples of the metadata table.
+  contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
+  category: AMR Research
+  version: '1.8'
+
+# The unit of the recipe; the metadata table has one row per sample and is the start of every flow.
+entity:
+  noun: sample
+  plural: samples
+  population: metadata_schema
+
+# ── Data Schemas ──────────────────────────────────────────────────────────────
+# Fragment files: 1_test_data_ST22_dummy/{input_fields,wrangling,output_fields}/
+data_schemas:
+  Summary:
+    label: Pipeline summary (long)
+    description: >-
+      One row per sample, category (genotype, phenotype, CGE phenotype, plasmid) and value: 623 rows, 42 samples. The
+      comma-separated values of the pipeline summary are split into one row each, trimmed, and repeated rows removed.
+      Texts such as "unknown" are kept as the pipeline wrote them.
+    category: Globally pipeline Summary
+    sub_category: Pipeline Summary
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Summary_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_output_fields.yaml'
+
+  Summary_quality:
+    label: Pipeline summary (quality, wide)
+    description: >-
+      One row per sample with the assembly quality columns of the pipeline summary (genome length, N50, contigs): 42 rows.
+      The same file as "Pipeline summary (long)", read without reshaping so that the two can be joined. Nothing is removed.
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
+    wrangling:
+      tier1: []
+      tier2: []
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_quality_output_fields.yaml'
+
+  Quality_metrics:
+    label: Quality metrics
+    description: >-
+      One row per sample with the summary quality metrics of reads and assembly: 42 rows. Nothing is removed. Not used by
+      any join or plot of this recipe (kept as material for Blueprint).
+    category: Quality Control
+    sub_category: Summary Quality metrics Reads and Assembly
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quality_metrics_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Quality_metrics_input_fields.yaml'
+    wrangling:
+      tier1: []
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quality_metrics_output_fields.yaml'
+
+  Detailed_summary:
+    label: AMR detail (filtered)
+    description: >-
+      One row per resistance-gene hit in a sample, kept only when identity is at least 90 %, overlap at least 85 % and the
+      length ratio (hit length over total length) at least 0.8: 91 rows, 36 of the 42 samples. The 6 samples without a hit
+      that passes are not in this table; the file cannot say whether they had no gene or only weak hits. Not used by any
+      join or plot of this recipe.
+    category: Gene detection
+    sub_category: AMR gene / predicted phenotype detection - summary
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Detailed_Summary_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Detailed_summary_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Detailed_summary_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Detailed_summary_output_fields.yaml'
+
+  FastP:
+    label: Read quality (FastP)
+    description: >-
+      One row per sample with the quality of the sequencing reads (total reads, Q30 rate, GC content): 42 rows. Nothing is
+      removed.
+    category: Quality Control
+    sub_category: Reads Quality
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_FastP_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/FastP_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/FastP_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/FastP_output_fields.yaml'
+
+  Quast:
+    label: Assembly quality (Quast)
+    description: >-
+      One row per sample with the assembly quality (N50, total length, largest contig, L50 and others): 42 rows, 23 columns.
+      Texts are trimmed; nothing is removed.
+    category: Quality Control
+    sub_category: Assembly Quality
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quast_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Quast_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Quast_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quast_output_fields.yaml'
+
+  Bracken:
+    label: Read taxonomy (Bracken)
+    description: >-
+      One row per sample with the taxonomic classification of the reads (the main taxon and its proportion): 42 rows.
+      Nothing is removed.
+    category: Quality Control
+    sub_category: Reads Taxonomic classification
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Bracken_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/Bracken_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/Bracken_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/Bracken_output_fields.yaml'
+
+  ResFinder:
+    label: AMR genes (ResFinder)
+    description: >-
+      One row per resistance gene detected in a sample: 70 rows, 38 of the 42 samples, each row marked "Detected". The 4
+      samples with no row are absent: the file cannot say whether no gene was detected or the sample was not analysed, so a
+      plot must not draw them as zero. Plotted directly (the AMR heatmap); its tier-2 adds the number of genes per sample
+      and sorts the samples by it.
+    category: Gene detection
+    sub_category: AMR gene detection
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/ResFinder_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/ResFinder_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/ResFinder_output_fields.yaml'
+
+  MLST:
+    label: Sequence types (MLST)
+    description: >-
+      One row per sample with the MLST scheme and sequence type: 42 rows. A sequence type that the tool reported as
+      "unknown" or left empty is written "Non Determined": it is a category, not a missing value.
+    category: Strain Classification
+    sub_category: Multilocus Typing
+    source:
+      type: local_tsv
+      path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
+
+# ── Additional Datasets ───────────────────────────────────────────────────────
+additional_datasets_schemas:
+  VirulenceFinder:
+    label: Virulence genes (VirulenceFinder)
+    description: >-
+      One row per virulence gene hit in a sample, with its protein: 984 rows, all 42 samples. The comma-separated hits of
+      the file are split into one row each, split again into gene and protein, trimmed, and repeated rows removed. Hits are
+      all genes of the tool, not only those of interest (see the reference list).
+    category: Gene detection
+    sub_category: VirulenceFinder
+    source:
+      type: local_tsv
+      path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
+    wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
+    output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
+
+  APEC_STEC_virulence_genes:
+    label: Virulence genes of interest (reference)
+    description: >-
+      A reference list, not data about samples: 11 virulence genes of interest for STEC (name, location, plasmid). It has
+      no sample column and is used only to keep the genes of interest when it is joined.
+    category: Gene detection
+    sub_category: VirulenceFinder Reference dataset
+    source:
+      type: local_tsv
+      path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
+    input_fields: !include '1_test_data_ST22_dummy/input_fields/APEC_STEC_virulence_genes_input_fields.yaml'
+    wrangling:
+      tier1:
+        - action: strip_whitespace
+    output_fields: {}
+
+# ── Metadata Schema ───────────────────────────────────────────────────────────
+metadata_schema:
+  label: Sample metadata
+  description: >-
+    One row per sample with its source, collection year and country: 42 rows. This is the population of the recipe (every
+    sequenced sample). Nothing is removed.
+  category: Metadata
+  sub_category: Metadata
+  source:
+    type: local_tsv
+    path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
+  input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
+  wrangling: !include '1_test_data_ST22_dummy/wrangling/metadata_schema_wrangling.yaml'
+  output_fields: !include '1_test_data_ST22_dummy/output_fields/metadata_schema_output_fields.yaml'
+
+# ── Joins ─────────────────────────────────────────────────────────────────────
+# Simple joins: see wrangling/ for each step list.
+# Complex ones (ST22_Anchor, AR1) also have a final_contract in output_fields/.
+joins:
+  FastP_with_metadata:
+    label: Read quality with metadata
+    description: >-
+      One row per sample, with the read quality columns, source, year and country (42 rows). Nothing is removed.
+    ingredients:
+      - dataset_id: FastP
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/FastP_Metadata_wrangling.yaml'
+
+  Quast_with_metadata:
+    label: Assembly quality with metadata (long)
+    description: >-
+      One row per sample and metric (N50, total length, largest contig): 126 rows, 42 samples, with source and country.
+      The three metrics are stacked in one value column, so values of different units share a column; plot them in separate
+      panels.
+    ingredients:
+      - dataset_id: Quast
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/Quast_Metadata_wrangling.yaml'
+
+  Bracken_with_metadata:
+    label: Read taxonomy with metadata
+    description: >-
+      One row per sample, with the main taxon, its proportion, source, year and country (42 rows). Nothing is removed.
+    ingredients:
+      - dataset_id: Bracken
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/Bracken_Metadata_wrangling.yaml'
+
+  ResFinder_with_metadata:
+    label: AMR genes with metadata
+    description: >-
+      One row per resistance gene in a sample, with source, year and country: 70 rows, 38 samples. The 4 samples without a
+      ResFinder row are absent (see the AMR genes table).
+    ingredients:
+      - dataset_id: ResFinder
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/ResFinder_Metadata_wrangling.yaml'
+
+  MLST_with_metadata:
+    label: Sequence types by year
+    description: >-
+      One row per sample with its sequence type and metadata. The raw table (tier 1) holds all 42 samples. The result
+      (tier 2) keeps only the years 2023 to 2025: 33 of the 42 samples, and adds an era (Early before 2024, Recent from
+      2024). The filter is a demonstration of the tier toggle; a plot of it must say "33 of 42".
+    ingredients:
+      - dataset_id: MLST
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/MLST_Metadata_wrangling.yaml'
+
+  QC_Reads_Anchor:
+    label: Quality control table
+    description: >-
+      One row per sample (42 rows, 54 columns): read quality, assembly quality, read taxonomy and metadata side by side.
+      Nothing is removed.
+    ingredients:
+      - dataset_id: FastP
+      - dataset_id: Quast
+      - dataset_id: Bracken
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/QC_Reads_Anchor_wrangling.yaml'
+
+  Summary_phenotype_length_fragmentation:
+    label: Resistance score against assembly quality
+    description: >-
+      One row per sample and quality metric (genome length, N50, contigs above 300 bp): 126 rows, 42 samples. Each sample
+      carries a resistance score, the number of its predicted phenotypes that are neither "Susceptible" nor "unknown".
+      REVISE with R2: a sample whose phenotypes are all "unknown" gets a score of 0 today (issue
+      evezeyl/SPARMVET_VIZ#70), the same as a truly susceptible sample.
+    ingredients:
+      - dataset_id: Summary
+      - dataset_id: Summary_quality
+    steps: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly_output_fields.yaml'
+
+  ST22_Anchor:
+    label: AMR and virulence anchor
+    description: >-
+      REVISE with R1. Today: one row per sample, resistance gene and virulence gene (617 rows, 42 samples): two long tables
+      are joined on the sample, so rows multiply (issues evezeyl/SPARMVET_VIZ#67 and #68) and the virulence count per sample
+      is wrong for 18 of the 42 samples. Only the virulence genes of interest are kept. Do not read counts of rows as counts
+      of samples.
+    ingredients:
+      - dataset_id: metadata_schema
+      - dataset_id: FastP
+      - dataset_id: ResFinder
+      - dataset_id: MLST
+      - dataset_id: VirulenceFinder
+      - dataset_id: APEC_STEC_virulence_genes
+    steps: !include '1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/output_fields/ST22_Anchor_final_output_fields.yaml'
+
+  AR1_MLST_Serotype_Virulence:
+    label: Virulence genes of interest by sample
+    description: >-
+      One row per sample and virulence gene of interest: 342 rows, 42 samples. Sequence type, serotype and metadata are
+      added by left joins (a sample keeps its row if one of them is missing); the virulence genes are restricted to the
+      reference list by an inner join, so a sample with no gene of interest would have no row here (none today: all 42 have
+      at least one). Production-grade sample to gene mapping (Abromics pilot).
+    ingredients:
+      - dataset_id: MLST
+      - dataset_id: metadata_schema
+      - dataset_id: VirulenceFinder
+      - dataset_id: APEC_STEC_virulence_genes
+    steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
+    final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
+
+  # QA canaries: one collection per failure mode, expected numbers are in `wrangling/QA_*.yaml` and `plots/qa_*.yaml`
+  QA_AMR_per_sample:
+    label: QA canary - AMR genes per sample
+    description: >-
+      QA canary. Tier 1 is long (74 rows: one per sample and gene, plus one row for each sample without a gene); tier 2 is
+      one row per sample (42 rows) with its gene count. Samples without any gene must stay, with a count of 0.
+    ingredients:
+      - dataset_id: metadata_schema
+      - dataset_id: ResFinder
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_AMR_per_sample.yaml'
+
+  QA_ST_with_NA:
+    label: QA canary - missing sequence type
+    description: >-
+      QA canary. One row per sample with its sequence type (42 rows). A missing sequence type must stay visible as missing,
+      never dropped or filled.
+    ingredients:
+      - dataset_id: Summary_quality
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_ST_with_NA.yaml'
+
+  QA_year_types:
+    label: QA canary - year as number and as text
+    description: >-
+      QA canary. One row per sample (42 rows) with the year as a number (for range filters) and as a text label without
+      ".0" (for discrete axes).
+    ingredients:
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_year_types.yaml'
+
+  QA_L50_integer:
+    label: QA canary - integer column
+    description: QA canary. One row per sample with the integer L50 (42 rows), for threshold filters such as L50 at least 8.5.
+    ingredients:
+      - dataset_id: Quast
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_L50_integer.yaml'
+
+  QA_fanout_exhibit:
+    label: QA canary - rows multiplied (known defect)
+    description: >-
+      QA canary, EXHIBIT of a known defect (issue evezeyl/SPARMVET_VIZ#68): two long tables joined on one key give 1731 rows
+      for 42 samples. Rows are inflated on purpose; do not copy this pattern.
+    ingredients:
+      - dataset_id: metadata_schema
+      - dataset_id: ResFinder
+      - dataset_id: VirulenceFinder
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_fanout_exhibit.yaml'
+
+  QA_aggregated_no_key:
+    label: QA canary - aggregate without sample column
+    description: >-
+      QA canary. Tier 1 is one row per sample (42); tier 2 is one row per country and year (9 rows) with the number of
+      samples, and has no sample column, so a sample cannot be removed from it by its ID (issue evezeyl/SPARMVET_VIZ#60).
+    ingredients:
+      - dataset_id: metadata_schema
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key.yaml'
+
+  QA_population_zscore:
+    label: QA canary - statistic over all samples
+    description: >-
+      QA canary. One row per sample (42) with the z-score of its N50 over all samples. A sample removed before the step
+      changes the score of every other sample; removed after it, it does not.
+    ingredients:
+      - dataset_id: metadata_schema
+      - dataset_id: Quast
+    steps: !include '1_test_data_ST22_dummy/wrangling/QA_population_zscore.yaml'
+
+# ── Analysis Groups ───────────────────────────────────────────────────────────
+# Plot specs: see plots/ for each spec file (the spec keeps only the grammar: target_dataset, title, mapping, layers).
+analysis_groups:
+  Quality Control:
+    label: 📊 Quality Control
+    description: Quality of the reads and of the assemblies, per sample.
+    plots:
+      qc_reads_horizontal_barplot:
+        label: Reads and taxon share
+        description: >-
+          Total reads per sample (one bar per sample, 42 samples), coloured by the proportion of the main taxon found by
+          Bracken. Table: Quality control table.
+        spec: !include '1_test_data_ST22_dummy/plots/FastP_reads_horizontal_barplot.yaml'
+      assembly_quality_dotplot:
+        label: Assembly quality
+        description: >-
+          Box plot of each assembly metric (N50, total length, largest contig) over the 42 samples, one panel per metric
+          because the units differ. Table: Assembly quality with metadata.
+        spec: !include '1_test_data_ST22_dummy/plots/Quast_assembly_quality_barplot.yaml'
+
+  Curiosity:
+    label: ❓ Curiosity plots
+    description: Exploratory plots that relate predicted resistance to assembly quality.
+    plots:
+      phenotype_genome_length_fragmentation:
+        label: Resistance score and genome length
+        description: >-
+          Each quality metric (genome length, N50, contigs) against the resistance score of the sample, coloured by sequence
+          type, one panel per metric, with a smoothed trend. REVISE with R2: samples with only unknown phenotypes are shown
+          with a score of 0.
+        spec: !include '1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml'
+
+  Results:
+    label: 💊 AMR and ☠️ Virulence
+    description: Resistance genes, virulence genes and sequence types of the 42 samples.
+    plots:
+      amr_heatmap:
+        label: AMR gene heatmap
+        description: >-
+          Which resistance gene was found in which sample: one tile per detected gene, coloured by predicted phenotype. 38 of
+          the 42 samples appear; the 4 without a ResFinder row are absent, not zero. Table: AMR genes (ResFinder), samples
+          sorted by their number of genes (tier 2 of the table, applied once the dataset tier-2 fix is in).
+        spec: !include '1_test_data_ST22_dummy/plots/ResFinder_genes_heatmap.yaml'
+      virulence_bar:
+        label: Virulence genes of interest
+        description: >-
+          Number of virulence genes of interest per sample, one bar per sample, stacked by gene. REVISE with R1: the table
+          multiplies rows by the resistance genes, so the bars are too tall (issue evezeyl/SPARMVET_VIZ#67).
+        spec: !include '1_test_data_ST22_dummy/plots/VirulenceFinder_counts_bar.yaml'
+      mlst_bar:
+        label: Sequence types by country
+        description: >-
+          Number of samples per sequence type, by country. The result table keeps the years 2023 to 2025: 33 of the 42
+          samples. REVISE with R3: the title must say so.
+        spec: !include '1_test_data_ST22_dummy/plots/MLST_counts_bar.yaml'
+      year_distribution:
+        label: Samples per year
+        description: >-
+          Samples per collection year. Tier-toggle test: the raw table shows all years, the result keeps 2023 to 2025 only;
+          the missing bars prove that the toggle works.
+        spec: !include '1_test_data_ST22_dummy/plots/year_distribution.yaml'
+      virulence_variants:
+        label: Virulence variants
+        description: >-
+          Integration plot: one tile per virulence gene and sample, coloured by the "status" column, which holds a constant
+          of the resistance table (issue evezeyl/SPARMVET_VIZ#67). REVISE with R1 and R4: tiles of gene by sequence type with
+          the share of samples are planned, because 16 sequence types are too many panels.
+        spec: !include '1_test_data_ST22_dummy/plots/integration_plot.yaml'
+
+  Cat 🐱:
+    label: 🐱 Cat
+    description: The boss's favourite — violin plots.
+    plots:
+      miaou:
+        label: Miaou 🐈
+        description: >-
+          Distribution of each assembly metric across sources (violin plots, one panel per metric). The boss's favourite
+          shape.
+        spec: !include '1_test_data_ST22_dummy/plots/miaou.yaml'
+
+  QA Canaries:
+    label: QA Canaries
+    description: >-
+      Not for publication. Each plot isolates one failure mode of the engine; the expected numbers are written in its title.
+    plots:
+      qa_amr_genes_per_sample:
+        label: QA - genes per sample
+        description: Samples without a resistance gene must stay (long tier 1, one row per sample in tier 2).
+        spec: !include '1_test_data_ST22_dummy/plots/qa_amr_genes_per_sample.yaml'
+      qa_sequence_type_missing:
+        label: QA - missing sequence type
+        description: A missing sequence type must stay visible as missing.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_sequence_type_missing.yaml'
+      qa_year_label:
+        label: QA - year label
+        description: The year label has no ".0"; the numeric year stays numeric.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_year_label.yaml'
+      qa_l50_integer:
+        label: QA - integer threshold
+        description: Integer column for threshold filters (L50 at least 8.5 must keep 9, not 8).
+        spec: !include '1_test_data_ST22_dummy/plots/qa_l50_integer.yaml'
+      qa_facet_by_mapping:
+        label: QA - facet in mapping
+        description: facet_by written in the mapping must give 3 panels.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_facet_by_mapping.yaml'
+      qa_fanout_rows_per_sample:
+        label: QA - rows per sample (known defect)
+        description: EXHIBIT of a known defect (issue evezeyl/SPARMVET_VIZ#68) - rows are inflated on purpose.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_fanout_rows_per_sample.yaml'
+      qa_aggregated_no_key:
+        label: QA - aggregate without sample column
+        description: The data of this plot is an aggregate with no sample_id column (issue evezeyl/SPARMVET_VIZ#60).
+        spec: !include '1_test_data_ST22_dummy/plots/qa_aggregated_no_key.yaml'
+      qa_population_zscore:
+        label: QA - statistic over all samples
+        description: A z-score across all samples, the case where the place of a removal changes the numbers of the other samples.
+        spec: !include '1_test_data_ST22_dummy/plots/qa_population_zscore.yaml'
+
+plot_defaults:
+  theme: theme_minimal
+  default_font_family: "Liberation Sans"
