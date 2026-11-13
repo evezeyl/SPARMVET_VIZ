@@ -57,14 +57,8 @@ class DataIngestor:
 
         return None
 
-    def ingest(self, dataset_name: str, dataset_schema: Dict[str, Any]) -> Tuple[pl.LazyFrame, Path]:
-        """
-        Locates the dataset file and returns a standard Polars LazyFrame.
-
-        Raises:
-            FileNotFoundError: If the TSV file cannot be located.
-            ValueError: If the file exists but Polars fails to parse it.
-        """
+    def _open(self, dataset_name: str, dataset_schema: Dict[str, Any], as_text: bool = False) -> Tuple[pl.LazyFrame, Path]:
+        """Locate the file of a dataset and open it lazily; with `as_text` every column is a String (no inference)."""
         # ADR-013+: Support explicit source blocks for multi-source alignment
         source = dataset_schema.get("source", {})
         source_type = source.get("type")
@@ -72,7 +66,7 @@ class DataIngestor:
 
         if source_type == "local_tsv" and source_path:
             resolved_path = Path(source_path)
-            lf = pl.scan_csv(resolved_path, separator="\t")
+            lf = pl.scan_csv(resolved_path, separator="\t", infer_schema=not as_text)
         elif source_type == "local_parquet" and source_path:
             resolved_path = Path(source_path)
             lf = pl.scan_parquet(resolved_path)
@@ -80,7 +74,7 @@ class DataIngestor:
             # Fallback to legacy discovery in self.data_dir
             resolved_path = self.find_file(dataset_name)
             if resolved_path and resolved_path.exists():
-                lf = pl.scan_csv(resolved_path, separator="\t")
+                lf = pl.scan_csv(resolved_path, separator="\t", infer_schema=not as_text)
             else:
                 search_context = source_path if source_path else self.data_dir
                 pe = PipelineError(
@@ -101,58 +95,92 @@ class DataIngestor:
                 print(pe.format())
                 raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
+        return lf, resolved_path
+
+    def _import_declared_columns(self, lf: pl.LazyFrame, dataset_name: str, fields_data: Dict[str, Any]) -> pl.LazyFrame:
+        """Strict import: only the declared fields enter, found by their exact `original_name`, renamed to the slug."""
+        # Strict import (Eve 2026-11-13, spec O22): only the declared fields enter. A declared field is
+        # found by its exact `original_name` (the slug when none is given); one the file lacks fails.
+        available_cols = lf.collect_schema().names()
+        wanted = {}   # slug -> header expected in the file
+        for key, props in fields_data.items():
+            wanted[key] = (props or {}).get("original_name") or key
+        absent = {slug: header for slug, header in wanted.items() if header not in available_cols}
+        if absent:
+            pe = PipelineError(
+                component="DataIngestor",
+                problem=(f"Column(s) {sorted(absent)} declared in input_fields for '{dataset_name}' not found in the "
+                         f"source file (expected file headers: {sorted(absent.values())})."),
+                location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
+                fix=(
+                    "The file header must match original_name exactly (spelling and case); the slug is used "
+                    "when no original_name is given. Correct original_name, or remove the declaration."
+                ),
+                who="data_provider",
+                category="ingestion",
+                surface="data_import_panel",
+                severity="error",
+                evidence={"missing": {s: h for s, h in absent.items()}, "available_columns": available_cols[:30]},
+            )
+            print(pe.format())
+            raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe)
+
+        headers = set(wanted.values())
+        left_out = [c for c in available_cols if c not in headers]
+        # select first, then rename: an undeclared file column that already carries a slug cannot collide
+        lf = lf.select([c for c in available_cols if c in headers])
+        rename_mapping = {header: slug for slug, header in wanted.items() if header != slug}
+        if rename_mapping:
+            lf = lf.rename(rename_mapping)
+        if left_out:
+            pe = PipelineError(
+                component="DataIngestor",
+                problem=(f"{len(left_out)} file columns of '{dataset_name}' are not declared in input_fields "
+                         f"and were not imported: {left_out}."),
+                location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
+                fix="Declare a column in input_fields to import it; nothing else is needed if it is not used.",
+                who="data_analysis_recipe_author",
+                category="ingestion",
+                surface="data_import_panel",
+                severity="warning",
+                evidence={"not_imported": left_out},
+            )
+            print(pe.format())
+
+        return lf
+
+    def ingest_declared(self, dataset_name: str, dataset_schema: Dict[str, Any]) -> Tuple[pl.LazyFrame, Path]:
+        """Format 1: read the file as text, import only the declared fields, then apply `strip`, `null_values` and the
+        declared Polars types (`ingestion.declared`). Replaces `ingest` at the migration (spec 7.3, 7.4)."""
+        from ingestion.declared import apply_declared
+        lf, resolved_path = self._open(dataset_name, dataset_schema, as_text=True)
+        fields = dataset_schema.get("input_fields") or {}
+        try:
+            if fields:
+                lf = self._import_declared_columns(lf, dataset_name, fields)
+            return apply_declared(lf, dataset_name, dataset_schema, fields), resolved_path
+        except IngestionError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise IngestionError(f"Failed to read '{resolved_path.name}': {type(exc).__name__}: {str(exc)[:200]}",
+                                 tip="Check that the file is a valid tab-separated file and that the declared fields match it") from exc
+
+    def ingest(self, dataset_name: str, dataset_schema: Dict[str, Any]) -> Tuple[pl.LazyFrame, Path]:
+        """
+        Locates the dataset file and returns a standard Polars LazyFrame.
+
+        Raises:
+            FileNotFoundError: If the TSV file cannot be located.
+            ValueError: If the file exists but Polars fails to parse it.
+        """
+        lf, resolved_path = self._open(dataset_name, dataset_schema)
+
         try:
             # ADR-013: Use 'input_fields' for raw ingestion mapping
             fields_data = dataset_schema.get(
                 "input_fields") or dataset_schema.get("fields") or {}
             if fields_data:
-                # Strict import (Eve 2026-11-13, spec O22): only the declared fields enter. A declared field is
-                # found by its exact `original_name` (the slug when none is given); one the file lacks fails.
-                available_cols = lf.collect_schema().names()
-                wanted = {}   # slug -> header expected in the file
-                for key, props in fields_data.items():
-                    wanted[key] = (props or {}).get("original_name") or key
-                absent = {slug: header for slug, header in wanted.items() if header not in available_cols}
-                if absent:
-                    pe = PipelineError(
-                        component="DataIngestor",
-                        problem=(f"Column(s) {sorted(absent)} declared in input_fields for '{dataset_name}' not found in the "
-                                 f"source file (expected file headers: {sorted(absent.values())})."),
-                        location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
-                        fix=(
-                            "The file header must match original_name exactly (spelling and case); the slug is used "
-                            "when no original_name is given. Correct original_name, or remove the declaration."
-                        ),
-                        who="data_provider",
-                        category="ingestion",
-                        surface="data_import_panel",
-                        severity="error",
-                        evidence={"missing": {s: h for s, h in absent.items()}, "available_columns": available_cols[:30]},
-                    )
-                    print(pe.format())
-                    raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe)
-
-                headers = set(wanted.values())
-                left_out = [c for c in available_cols if c not in headers]
-                # select first, then rename: an undeclared file column that already carries a slug cannot collide
-                lf = lf.select([c for c in available_cols if c in headers])
-                rename_mapping = {header: slug for slug, header in wanted.items() if header != slug}
-                if rename_mapping:
-                    lf = lf.rename(rename_mapping)
-                if left_out:
-                    pe = PipelineError(
-                        component="DataIngestor",
-                        problem=(f"{len(left_out)} file columns of '{dataset_name}' are not declared in input_fields "
-                                 f"and were not imported: {left_out}."),
-                        location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
-                        fix="Declare a column in input_fields to import it; nothing else is needed if it is not used.",
-                        who="data_analysis_recipe_author",
-                        category="ingestion",
-                        surface="data_import_panel",
-                        severity="warning",
-                        evidence={"not_imported": left_out},
-                    )
-                    print(pe.format())
+                lf = self._import_declared_columns(lf, dataset_name, fields_data)
 
             # --- Sanitize: strip whitespace + normalize null sentinels (INGEST-SANITIZE-1) ---
             # Runs after rename so column names are stable; runs before cast so empty strings
