@@ -39,7 +39,7 @@ Each question requires a separate hash. No single hash can answer all three.
 
 **Implementation:** `app/modules/cache_keys.py` (`tier1_key`, `tier2_key`), `app/modules/orchestrator.py` (`materialize_tier1`, `materialize_tier2`). The Parquet file is written by `libs/transformer/src/transformer/actions/persistence/anchor.py` with Polars, metadata inside the file.
 
-**Key property:** the keys use the resolved content, so comments, spacing and the way the data analysis recipe is split into files do not change them.
+**Key property:** the keys use the resolved content, so comments, spacing and the way the data analysis recipe is split into files do not change them. The one order that is part of the content is the key order of a join's `final_contract`: it is the column order of the table, so it enters the `tier1_key` as an ordered list (a reorder rebuilds Tier 1 and with it Tier 2; issue #86). The order of other dictionaries (for example `input_fields`) is not part of the key.
 
 ---
 
