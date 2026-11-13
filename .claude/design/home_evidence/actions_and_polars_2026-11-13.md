@@ -62,3 +62,33 @@ Reason for the order: a rename made before the action is strict would move the s
 5. **`final_contract` becomes a last `select` step** and is refused by the checker (O27, needs Eve's yes after 3).
 6. **Tier-3 container read by the engine** (O9) with the audit build; then spec-level `filters` migrate to it.
 7. **Blueprint** after 5, as its own package (section 5).
+
+## 7. Second round (Eve's answers, 2026-11-13) and why the differing actions exist
+
+**Eve's answers.** The whitelist (`final_contract`) is removed (not transparent); a `select` step replaces it. Actions that do several steps may stay when they are simple, unambiguous, well documented and every behaviour switch is an option. The real Polars actions are kept or added with all their parameters. What differs from Polars is renamed so that the name shows it. First understand why each differing action exists.
+
+**Why they exist** (VERIFIED: usage counted in 28 action names over `config/data_analysis_recipes` and `assets/gallery_data`; git dates by `git log -S`; the intent of the author is NOT in any commit message, so "why" below is the use, not the intention):
+
+| Action(s) | Use today | History |
+|---|---|---|
+| `is_in`, `not_in` | 0 steps in shipped recipes; emitted by the audit translator (`t3_translator.py:133, 136`) for the dialog operators "one of" and "none of" | added 2026-04-17, commit "add analytical cleaning actions" (no reason given) |
+| `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `filter_range` | `filter_range` 9 steps in 5 files, `filter_eq` 1; the others only through the audit translator (`t3_translator.py:120-130`), one action per dialog operator | one Polars method (`filter`) behind five names |
+| `drop_duplicates`, `unique_rows`, `unique` | 2, 1 and 0 steps | `drop_duplicates` 2026-03-23 (a pandas name, a column subset), `unique_rows` 2026-03-25 ("adding unique rows decorator", all columns), `unique` = alias of `drop_duplicates` (it is the Polars name) |
+| `keep_columns`, `drop_columns` | 7 and 2 steps; `drop_columns` also emitted by the audit translator (`t3_translator.py:142`) | the primary-key rules were added "to prevent join breakage" (docstring) |
+
+**New findings of this round.** (1) The audit translator already knows each action's own keys (`filter_eq` takes `column`, `filter_gt` takes `columns`): that is the vocabulary split of H1, hidden in one place; after H1 the translator gets simpler. (2) `assets/gallery_data/beeswarm_sina/data_analysis_recipe.yaml` has `wrangling: tier3:` with an action `filter_rows` that is not registered (the engine reports "not registered"; the gallery only shows the preview image, so nobody noticed); the spec (section 7.7) already lists `wrangling.tier3` as disappearing. (3) The audit translator will become the step compiler (P5) and should emit the Polars-named actions.
+
+**Check of Eve's point 5 (tier-3 container, O9) against the HOME decisions** (READ: `home_audit_steps.md` 5a-15 and the spec, line 392): it fits. 5a-15 gives every plot an optional T3 container at the plot entry (`steps: {tier3: [...]}`), any registered action allowed in the recipe, only filters, drops and removals in audit, an empty list = the previous key, a plot always reads its T3. A spec-level `filters` is then a T3 step of the maker; exploration filters stay out. One caution: the planned bug fix (HOME merges the author's `filters` with the exploration filters, `home_theater.py:498`) is useful only until the container is read; do it only if the container is more than one package away, otherwise it is built twice.
+
+## 8. O10 formulas: the risk, the options (a recommendation to Eve)
+
+**Facts** (VERIFIED by run or READ): the 6 formulas in 4 shipped recipes use only `pl.col`, `pl.lit`, `pl.when/then/otherwise`, `cast`, `str.strip_chars`, `str.to_lowercase`, `n_unique`, `over`: no `lambda`, no `map_elements`, no name outside `pl`. A recipe formula is passed to Python `eval` at three sites: `mutate` (`libs/transformer/.../expressions.py:221`, with `{"pl": pl}` as globals, which still reaches the Python built-ins), the ID-reconciliation `mutate` (`id_reconciliation/core.py:239`, same) and `stat_function` of the plots (`libs/viz_factory/.../geoms/core.py:1335`, `eval(fun)` with no restriction at all; the comment says "safe for developer-controlled recipes only"). A reproducibility bundle is verified by hash against its own record; that proves it was not changed, not that it is safe.
+
+| Option | Keeps | Risk left | Work |
+|---|---|---|---|
+| A. Check the formula before running it (an allow-list: `pl.<known function>`, methods from a list of Polars expression methods, numbers, text, operators; no names, no `lambda`, no attribute starting with `_`) | every Polars formula, `str.to_lowercase` included | a mistake in the list; heavy computation is not stopped | one small module in `libs/utils`, used by the three sites, tested with attack cases (`__import__`, `().__class__`, `lambda`, `getattr`) and a mutation check |
+| B. Remove free formulas; single-step actions instead (`lowercase`, `strip`, `when/then` through `label_if`) | the transparency of single steps | none from formulas | each formula of a recipe becomes steps; some Polars expressions have no step |
+| C. User consent before running a recipe with formulas | nothing is lost | consent does not protect a user who cannot read the formula; an attacker only has to ask | a dialog |
+| D. Block formulas now, solve later (A, B or a developer-only flag) | nothing runs | the 6 shipped formulas need a replacement first | small now, a stop-gap |
+
+**Recommendation: A for all three sites (the third one is the worst today), then B step by step** where a single-step action reads better (ID reconciliation already has `lowercase`). C is not a defence. D only if A cannot be done before recipes from outside are accepted. In every case recipes of other people stay unverified until they pass the checker; the checker (`check_recipe`) is where option A is called, so the two belong in the same package.
