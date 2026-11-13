@@ -1,5 +1,8 @@
 # Gallery examples as standard recipes: what must change, options, plan (2026-11-13, version 2)
 
+> **OUTDATED (2026-11-13, Eve asked for one clean file):** options and plan for gallery examples as standard recipes; the decisions and requirements are folded into spec section 9, the plan is in issue #82. Kept for history only; the live text is `.claude/design/recipe_format_spec.md`. Do not build on this file.
+
+
 **Written for:** Eve, to choose. Companion of `recipe_format_spec.md` v0.4 (its section 6.9 stays withdrawn until you choose here).
 **Status:** proposal and plan. Nothing in the gallery, the recipes or the code was changed. Evidence labels: **verified** (read at file:line or run), **reasoned**, **proposal**.
 **What changed since version 1 (your message of the same day):** the `taxonomy` key is **required** for the gallery (D2); recipes carry a **`format_version`** and so do the examples (spec 4b); the allowed gallery terms go **into the specification itself, one place instead of two** (D3, rewritten); everything that is wrong is mapped to the package that fixes it and the test that proves it (section 3); the work is **planned now and scheduled later** (section 7).

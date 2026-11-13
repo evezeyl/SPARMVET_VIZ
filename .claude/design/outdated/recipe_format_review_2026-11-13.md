@@ -1,5 +1,8 @@
 # Recipe format: the decisions, the current state, the plan and the questions (2026-11-13)
 
+> **OUTDATED (2026-11-13, Eve asked for one clean file):** the first review of the recipe decisions and the plan; its decisions and plan are now in the spec, in the issues #73 to #87 and in `tasks.md`. Kept for history only; the live text is `.claude/design/recipe_format_spec.md`. Do not build on this file.
+
+
 **Written for:** Eve, to confirm the scope and answer Q1-Q6 before any recipe, validator or rule file is changed.
 **Status:** review only. Nothing in code, recipes, rules or docs was changed. Done today: the six audit reports of 2026-11-12 were triaged (commit `e3865b59`).
 **Evidence labels:** *verified* = read at file:line or run today; *reasoned* = follows from verified facts; **DECIDED / CONFIRM / OPEN / MINE** as in the memory rule "check what is decided first" (DECIDED = you decided it and it is written; CONFIRM = written with `[confirm]` or only recommended; OPEN = not decided; MINE = my interpretation or proposal).

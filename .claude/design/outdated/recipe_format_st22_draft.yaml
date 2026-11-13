@@ -1,3 +1,4 @@
+# OUTDATED (2026-11-13): worked example of the ST22 main file in format 1, kept as the input of the ST22 migration (#78). The live specification is .claude/design/recipe_format_spec.md.
 # DRAFT, not loadable: the main file of 1_test_data_ST22_dummy written in the format of recipe_format_spec.md (v0.1).
 #
 # What this draft shows: every element has `label` and `description`; the two engine keys; `entity`; no `info:` on
