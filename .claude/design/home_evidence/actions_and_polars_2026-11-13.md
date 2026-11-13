@@ -323,3 +323,14 @@ So `step_` falls from 12 (the spec's list) to 5, and `modif_` stays at one actio
 4. **Mutation survivors:** `modif_filter`: `condition.fill_null(False)` is equivalent to the bare condition (a null filters out); kept for clarity.
 
 Built and committed: `polars_calls.py` (37 `polars_`), `modified.py` (`modif_filter`), `composite.py` (4 `step_`), `declared.py` (ingestion W5). Remaining before the switch: the differential tests that prove each replacement of section 25 gives the same table, then the removal of the old actions together with `ingest` becoming `ingest_declared` and migration run A.
+
+## 27. The converter old step to new steps, and four more old actions that did not do what they said (2026-11-13, VERIFIED by running the old path and the new steps on the same tables)
+
+`libs/utils/src/utils/step_migration.py` converts every old action to the steps of format 1 (one function each, every silent default written into the step); `libs/transformer/tests/test_step_conversion.py` runs the old step through the real old path (`DataWrangler` with its aliases and defaults, joins through the assembler's action) and the converted steps through the new actions: 113 tests, 6 mutations out of 8 caught (the two survivors are an equivalent right-join order, and a sample seed fixed by a stronger case). Removed actions are refused with what to write instead; `keep_columns` and `drop_columns` wait for run B.
+
+Four old actions were broken, found because the test compares behaviour with what the action says it does:
+1. **`drop_duplicates` without `columns` failed** ("at least one key is required"), although its description says it deduplicates on all columns. Converted: `polars_unique` without `subset`.
+2. **`drop_nulls` without `columns` dropped nothing** (a silent no-op; the wrangler passed `subset=[]`); its description says it drops rows with any null. Converted: `polars_drop_nulls` without `subset` (drops rows with any null). 0 shipped steps, 2 in tests.
+3. **`null_if` never nulled the column** and added a stray column named after the literal. Converted: one in-place formula per column that does what it says. 0 shipped steps.
+4. **`split_column` failed (index out of bounds) on a value with fewer parts than names.** Converted: `str.splitn` gives null for the missing parts.
+Each old behaviour is pinned in a test, so the changes are recorded and not silent. In every case the old step either failed or did nothing, so no shipped table changes (the golden baseline measures this at the switch).
