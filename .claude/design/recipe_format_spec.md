@@ -1,20 +1,25 @@
 # Recipe format specification (format version 1)
 
 **Written for:** Eve, to review. Once confirmed it is the base of the checker, the tests, the rule file and the user documentation.
-**Status:** DRAFT. Nothing is built from it yet. It states how recipes will work and how each point was decided. How it was reached is in the issues (#73 and its children), in `.claude/design/outdated/` (the earlier drafts, with the findings of applying the format to the ST22 recipe) and in git.
-**Tags.** **DECIDED**: Eve decided it (date) or an ADR does. **PROPOSED**: my choice while writing, to confirm. **OPEN**: not decided, with a recommendation; all open points are listed in section 2.3. **CODE**: fixed by code that exists (verified, file:line).
+**Status:** DRAFT, cleaned on 2026-11-13 (task SPEC-CLEAN-1). Nothing is built from it yet except the registry fixes of issue #87 and the strict import. It holds what is decided and why. The discussion that led here is in git (the last commit before the clean-up is `a392b549`), in the issues (#73 and its children), in `.claude/design/outdated/` (the earlier drafts) and in `.claude/design/home_evidence/actions_and_polars_2026-11-13.md` (the evidence, cited here by section number).
+**Tags.** **DECIDED**: Eve decided it (date), or an ADR does. **RECOMMENDED**: the two sessions agree, Eve has not answered. **OPEN**: a question, with its recommendation if there is one. **CODE**: a fact read or run in the code (file:line). A tag in brackets after a heading applies to the whole section.
+**Old labels.** The labels `O1` to `O33` and `N1` to `N14` of the earlier drafts are kept in the column *Ref*, because issues, tasks and the evidence file use them; a bare number there is a row of the earlier decisions table. Decisions are `DEC01` to `DEC48`, recommendations `R1` to `R11`, open questions `Q1` to `Q5`; the registry gaps of section 8 are `RG1` to `RG6`; the gallery design points are `D1` to `D7`.
 **Terms.** *Recipe* = a data analysis recipe, a YAML file. *Schema* = a data schema (one input table). *Collection* = a join, or a schema that is plotted directly. *Tier 1/2/3* = the steps that build, reshape and finally audit a table.
 **RULE** (Eve, 2026-11-13): the recipe describes the science (data science); it must be correctly designed and correctly applied. What the recipe specifies must be done. Libraries that depend on it must be science compliant.
 
 ## 1. How it works, on one page
 
 - **One format, one checker, one place for the rules.** Every recipe (pipelines, templates, retest scenarios, transformer test recipes, gallery examples, recipes written by the app) is a YAML file in format version 1, checked by the same function, `check_recipe`, in `libs/utils`. HOME's load gate, Blueprint's Validate, the importer, the scripts and the tests all call it through one adapter (section 14).
-- **Unknown keys fail. Nothing old is tolerated.** A key that nothing executes or displays does not exist. An old name is refused at once and the message names the new one. No compatibility defaults. A recipe in another format version is refused and the message names the migration tool.
-- **A wrong form is refused with the correction.** The message says where, what is wrong, and shows the corrected text, in the app and in the tests.
-- **The form of a container follows what depends on it** (section 5): named things are dictionaries, ordered operations are lists, and a few named things whose order is meaning (`final_contract`, `analysis_groups`, `plots`) are ordered dictionaries with safeguards.
+- **Unknown keys fail. Nothing old is tolerated.** A key that nothing executes or displays does not exist. An old name is refused at once and the message names the new one. A recipe in another format version is refused and the message names the migration tool.
+- **A wrong form is refused with the correction.** The message says where, what is wrong, and shows the corrected text.
+- **The form of a container follows what depends on it** (section 5): named things are dictionaries, ordered operations are lists, and the two named things whose order is meaning (`analysis_groups`, `plots`) are ordered dictionaries with safeguards.
+- **Every choice is written in the recipe.** An action has no hidden default: a parameter that changes the result is required, or its default is the Polars default. The type of every column, how missing values are read, how a filter treats them, how a sort or a join orders rows: all are in the recipe (section 7.5.1).
+- **The names of the actions say what they are.** `polars_<name>` is a Polars call, tested against the direct call; `modif_<name>` is a Polars idea with a documented change; `step_<name>` is several calls.
 - **Operations come from the registries.** A step is a registered action with the parameters its schema declares; a layer is a registered plot component with the arguments its schema or the wrapped plotnine function declares (section 8).
 - **A gallery example is a standard recipe** with a required `taxonomy`, checked in a `gallery` profile (section 9).
-- **Writing a description is a rule**, not a habit (section 13). Data-science errors are fixed, not documented (section 17).
+- **Writing a description is a rule**, not a habit (section 13). Data-science errors are fixed, not documented (section 18).
+
+The example shows the form. The action names and parameters are illustrative; the registry fixes them (section 7.5.1).
 
 ```yaml
 id: my_recipe                          # equals the file name
@@ -31,20 +36,24 @@ data_schemas:
     label: Anchor table
     description: >-
       One row per sample (42 rows) ...
-    source: {type: local_tsv, path: assets/test_data/anchor.tsv}
+    source: {type: local_tsv, path: assets/test_data/anchor.tsv}   # development path (7.3)
+    null_values: ["", "NA"]            # required: which texts mean a missing value (7.3)
+    strip: true                        # required: strip whitespace before reading
     input_fields:
-      sample_id: {type: categorical, is_entity_key: true}
-      reads: {type: numeric}
+      sample_id: {type: String, is_entity_key: true}
+      reads: {type: Int64}
     wrangling:
       tier1:
-        - {action: filter_range, columns: reads, min: 1000, comment: too few reads to trust}
+        - {action: modif_filter, column: reads, op: ge, value: 1000, na: remove, comment: too few reads to trust}
       tier2: []
   Quality:
     label: Quality table
     description: >-
       One row per sample (42 rows) ...
     source: {type: local_tsv, path: assets/test_data/quality.tsv}
-    input_fields: {sample_id: {type: categorical, is_entity_key: true}}
+    null_values: []
+    strip: true
+    input_fields: {sample_id: {type: String, is_entity_key: true}}
     wrangling: {tier1: []}
 joins:
   Combined:
@@ -52,8 +61,9 @@ joins:
     ingredients: [{dataset_id: Anchor}, {dataset_id: Quality}]
     steps:
       tier1:
-        - {action: join, right_ingredient: Quality, 'on': sample_id, how: left}
-    final_contract: {sample_id: {}, reads: {}}          # exclusive whitelist; its order is the column order
+        - {action: polars_join, right_ingredient: Quality, 'on': sample_id, how: left, maintain_order: left_right}
+        - {action: polars_select, exprs: [sample_id, reads]}   # the published columns, in this order
+    labels: {reads: Number of reads}   # display names of columns, shown in the audit dialog and as plot titles
 analysis_groups:
   overview:
     label: Overview
@@ -62,105 +72,145 @@ analysis_groups:
         label: Reads per sample
         description: Number of reads of each sample.
         spec: {target_dataset: Combined, mapping: {x: sample_id, y: reads}, layers: [{name: geom_col}]}
-        steps: {tier3: []}                               # audit steps of this plot
+        steps: {tier3: []}                               # steps applied to this plot's table
 ```
 
-## 2. What is decided, what is still open
+## 2. What is decided, what is recommended, what is open
 
 ### 2.1 Decided
 
-| # | Decision | Source |
-|---|---|---|
-| 1 | **Scope:** every recipe, in the app and in the tests (transformer fixtures and recipes inside automatic tests included): everything that describes a read of data or a plot | Eve 2026-11-13 |
-| 2 | **Unknown keys fail.** Recipes are checked first (Blueprint), so nothing needs tolerating | Eve 2026-11-13 |
-| 3 | **No backward-compatible default.** The old-key table (`legacy_keys.py`) only suggests the replacement in the message. Old names are **refused at once**, not warned first | Eve 2026-11-13; ADR-099 16(a) |
-| 4 | `is_primary_key` becomes `is_entity_key` | Eve 2026-11-13 |
-| 5 | The **tier-3 container** is in the schema now (audit mode comes soon); its name and place are proposed (O12) | Eve 2026-11-13 |
-| 6 | A dataset plotted directly applies its **own tier-2 list** (engine fix, issue #77) | Eve 2026-11-12 |
-| 7 | `data_engine` (`python-polars`) and `plot_engine` (`python-plotnine`) are **required** | Eve 2026-11-13 |
-| 8 | A **`description`** on every element; where missing it is filled by the rules of section 13 | Eve 2026-11-13 |
-| 9 | Comments on recipes must be possible and are specified (section 6.2) | Eve 2026-11-13 |
-| 10 | The **gallery** follows the same specification (its examples are recipes), is checked by the same code, keeps its taxonomy and its functions, and has a **required `taxonomy` key**; its allowed terms live in the specification, one place instead of two; the work is planned now and done later (section 9) | Eve 2026-11-13 |
-| 11 | Every recipe has a **`spec_version`** that the checker matches against the specification; the gallery has it too | Eve 2026-11-13 (idea from her review with another agent); name decided in row 22 |
-| 12 | One **checker in `libs/utils`** for every user of recipes (HOME, Blueprint, importer, gallery, scripts, tests) | ADR-099 16(g); verified against the layer rules (section 14) |
-| 13 | **Containers follow ADR-041** (keyed things are dictionaries, ordered logic is a list, fragments are flat). A wrong form is refused with a message that shows the corrected text, in the app and in the tests; this is also in the HOME plan | ADR-041; Eve 2026-11-13 |
-| 14 | **The form follows what depends on it** (section 5): steps stay lists, authors write no step name, and the app marks the steps it inserts with an `id` (O5); `final_contract` key order **is** the column order; the tab order **is** the key order of `analysis_groups` and `plots` | Eve 2026-11-13 |
-| 15 | The **field-type vocabulary is read in one place**; its content is row 20 | Eve 2026-11-13 |
-| 16 | **The registries are fixed** (widgets for lists and dictionaries, corrected declarations), and **plot arguments are checked**: plot instructions are part of the recipe (section 8; issue #87) | Eve 2026-11-13 |
-| 17 | Errors of a recipe from a data-science point of view are **fixed**, not documented (section 17) | Eve 2026-11-11/12 |
-| 18 | The worked example is `1_test_data_ST22_dummy` (the most advanced, the default of Eve's tests) | Eve 2026-11-13 |
-| 20 | **Field types:** `categorical` (default), `utf8`, `numeric`, `integer`, `date` and `boolean` (Option A plus `boolean`, section 7.4; `integer` added 2026-11-13, O24). The ingestor is fixed so that `utf8` is cast to text and `boolean` is cast with a real cast; the message for the removed `string` quotes the two meanings | Eve 2026-11-13 |
-| 21 | **Gallery design D1 + D2 + D3** (section 9): an example is a standard recipe in a `gallery` profile; the key is `taxonomy` on the plot entry, required in the gallery, five axes, `geom` derived; the specification is also a data file so the gallery terms live in one place. D4 to D7 are decided when the gallery work starts | Eve 2026-11-13 |
-| 22 | **The version key is `spec_version`**, an integer (section 4.1) | Eve 2026-11-13 |
-| 23 | **J08 is an error with a guidance message:** a non-key column present in both tables of a join (silently renamed `name_right` by Polars) refuses the recipe; the message names both tables and the column and says how to rename or drop one (section 5.2) | Eve 2026-11-13 |
-| 24 | **The two legacy recipes are removed**: `config/data_analysis_recipes/VIGAS-P/` (a recipe and its fragments) and `assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_data_analysis_recipe.yaml`; no code reads them. `Virulence_genes_APEC_input_fields.yaml` in the same folder is **not** legacy: the Abromics pipeline includes it | Eve 2026-11-13 |
-| 25 | **The column-name aliases are removed** (`column`, `source`, `source_column`, `target_column` for `columns`, and the other spellings of section 12); display names for plots are a separate matter (#91) | Eve 2026-11-13 |
-| 26 | **Plot-spec metadata:** the gallery classification is the `taxonomy` key (gallery), not part of a pipeline plot spec; `description` is on the plot entry; a note goes in `comment` | Eve 2026-11-13 ("we had decided to put that in the gallery taxonomy") |
-| 27 | **`comment` is allowed on `info`, a schema and a join** (it already is on steps, layers, groups and plots). The plural `comments` is a typo and is **refused**; the message says `comment` | Eve 2026-11-13 |
-| 28 | **The schema-level `info:` block, `category` and `sub_category` are dropped** (nothing displays them; HOME and Blueprint do not need them). A note is written with `comment`, a description with `description`. The recipe-level `info` stays free-form (project, contact, any key) and is displayed by HOME | Eve 2026-11-13 |
-| 29 | **Plot axis and legend titles default to the field `label`, falling back to the column name when there is none** (an explicit `labs` layer or override wins). HOME table headers keep the column name; the audit dialog and node popup show "Label (name)" (HOME session's proposal). Built under #91 | Eve 2026-11-13 ("default") |
-| 30 | **Profiles `run`, `build`, `gallery`, and `audit`; the audit marker** `id: audit_<8 hex>_<k>` (an `id` on a step is an error in `run` and `build`); **tier-3 steps are data steps** (filters, dropped columns) on the plot entry's table | Eve 2026-11-13 (O4, O5, O12), with the HOME session |
-| 19 | Notes, not decisions: some library code may move to `libs/utils` when two libraries need it (nothing moved; `UTILS-REUSE-REVIEW-1`); the Dockerfile is not ready and nothing is deployed (`DOCKER-RELEASE-1`) | Eve 2026-11-13 |
+Each line: the decision, why in a few words, who and when. *Ref* is the label of the earlier drafts.
+
+**Scope, principles, checker**
+
+| # | Decision | Why | Eve | Ref |
+|---|---|---|---|---|
+| DEC01 | **Scope:** every recipe, in the app and in the tests (transformer fixtures and recipes inside automatic tests included): everything that describes a read of data or a plot | one format everywhere | 2026-11-13 | 1 |
+| DEC02 | **Unknown keys fail; no backward-compatible default.** The old-key table (`legacy_keys.py`) only names the replacement in the message; old names are refused at once | recipes are checked first (Blueprint), so nothing needs tolerating; a tolerated error hides a wrong result | 2026-11-13; ADR-099 16(a) | 2, 3 |
+| DEC03 | **One checker `check_recipe` in `libs/utils`** for every user of recipes (HOME, Blueprint, importer, gallery, scripts, tests) | one rule set; the layer rules allow it (section 14) | ADR-099 16(g) | 12 |
+| DEC04 | **`spec_version`**, an integer, is required in every recipe and in every recipe a tool writes (4.1) | the checker refuses another format and names the migration tool | 2026-11-13 | 11, 22 |
+| DEC05 | **`data_engine` (`python-polars`) and `plot_engine` (`python-plotnine`) are required** | the engines are part of what a recipe means | 2026-11-13 | 7 |
+| DEC06 | **`description` on every element**; where missing it is an advice with the rules of section 13; `label` is the short name | the reader who must choose where to filter did not build the recipe | 2026-11-13 | 8 |
+| DEC07 | **Comments are possible and specified** (6.2): `#` comments are free and kept by every tool; a `comment` key on `info`, a schema, a join, a group, a plot, a step and a layer; the plural `comments` is refused | the why of a choice must survive; one spelling | 2026-11-13 | 9, 27 |
+| DEC08 | **Containers follow ADR-041** and the form follows what depends on it (section 5); a wrong form is refused with a message that shows the corrected text | one rule, and the fix is in the message | ADR-041; 2026-11-13 | 13, 14 |
+| DEC09 | **The registries are fixed** (widgets for lists and dictionaries, corrected declarations) and **plot arguments are checked** | plot instructions are part of the recipe (issue #87) | 2026-11-13 | 16 |
+| DEC10 | **Errors of a recipe from a data-science point of view are fixed**, not documented (section 18) | the RULE | 2026-11-11/12 | 17 |
+| DEC11 | The worked example is `1_test_data_ST22_dummy` | the most advanced, the default of Eve's tests | 2026-11-13 | 18 |
+| DEC12 | **The two legacy recipes are removed**: `config/data_analysis_recipes/VIGAS-P/` and `assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_data_analysis_recipe.yaml`. `Virulence_genes_APEC_input_fields.yaml` is not legacy (the Abromics pipeline includes it) | no code reads them | 2026-11-13 | 24 |
+
+**Elements of the recipe**
+
+| # | Decision | Why | Eve | Ref |
+|---|---|---|---|---|
+| DEC13 | `is_primary_key` becomes `is_entity_key` | a generic word: the format knows no field-specific term | 2026-11-13 | 4 |
+| DEC14 | **The column-name aliases are removed** (`column`, `source`, `source_column`, `target_column` for `columns`, and the other spellings of section 12) | aliases are legacy terms; choose once and apply in the libraries too | 2026-11-13 | 25 |
+| DEC15 | **One name per role for the parameters of `modif_` and `step_` actions and for the audit** (H1): input columns are `columns` (a list), outputs `new_column` or `new_columns`, one `separator`. In a `polars_` action the Polars parameter names win (DEC32) | one vocabulary the audit and the forms can rely on | 2026-11-13 | 21, 14 |
+| DEC16 | **A schema plotted directly applies its own tier-2 list** (engine fix, issue #77); on a schema that is only an ingredient `tier2` is an error | a list that is never applied is a silent wrong result | 2026-11-12 | 6 |
+| DEC17 | **The tier-3 container is in the recipe:** `steps: {tier3: [...]}` on the plot entry, any registered action, the audit writes filters and drops. The engine must read it, because it is the data of the plot. Until it does, the checker refuses a non-empty list (P05). The order of the change is open (R1) | the plot must equal its table; HOME rule 19 "fail instead of warn" | 2026-11-13 | 5, 9 |
+| DEC18 | **Profiles `run`, `build`, `gallery`, `audit`**; the audit marker `id: audit_<8 hex>_<k>` (an `id` on a step is an error in `run` and `build`); tier-3 steps are data steps (filters, dropped columns) on the plot entry's table | `run` and `build` differ only in what an empty placeholder may be | 2026-11-13 | 30, 17 |
+| DEC19 | **J08 is an error with a guidance message:** a non-key column present in both tables of a join (silently renamed `name_right` by Polars) refuses the recipe; the message names both tables and the column and says how to rename or drop one | a silent rename gives a wrong column | 2026-11-13 | 23 |
+| DEC20 | **The schema-level `info` block, `category` and `sub_category` are dropped**; the recipe-level `info` stays free-form (project, contact, any key) and is shown by HOME | nothing displays them | 2026-11-13 | 28 |
+| DEC21 | **Plot-spec metadata:** the gallery classification is the `taxonomy` key on the plot entry (gallery), not part of a pipeline plot spec; `description` is on the plot entry; a note goes in `comment` | "do not confound" gallery and pipeline | 2026-11-13 | 26 |
+| DEC22 | **Plot axis and legend titles default to the field `label`**, falling back to the column name (an explicit `labs` layer or override wins). HOME table headers keep the column name; the audit dialog shows "Label (name)". Built under #91 | readable plots without extra work | 2026-11-13 | 29 |
+| DEC23 | **`final_contract` and the schema `output_fields` are removed.** The published columns of a collection are the last step of its tier 1, a plain `polars_select` (or `polars_drop`), so every column change is a visible step and the column order is the order of the list. Display names of computed columns go in a `labels: {column: text}` mapping on the collection (display only, in no data key; the dialog resolves a label as the collection's `labels`, then the input field's `label`, then nothing). ADR-013/014 are superseded | "not transparent"; one mechanism; the hashes of the tables do not change; closes #86 by removal | 2026-11-13 | 27, 7, 19 |
+| DEC24 | **Strict import:** only the `input_fields` that are written are read; a declared column missing from the file fails; `original_name` matches exactly; the import reports "N file columns are not declared and were not imported". Built (commit `9bfdaf4c`) | `input_fields` becomes the typed list of what the app reads | 2026-11-13 | 22 |
+| DEC25 | **`original_name`** stays on input fields (the exact header in the file); it has no meaning elsewhere | the ingestor renames to the slug, recipes use plain names | 2026-11-13 | 16 |
+| DEC26 | **The id-first rule is a recommendation to the recipe maker**, done by steps in the recipe. Nothing in code enforces or verifies it; the recipe must work without assuming the id is the first column. Ingestion imposes no declared column order; a recipe that needs an order writes a step. The audit's own refusal to drop a key (UI contract 12g.3) is a rule of the audit and stays | no hidden rule inside an action | 2026-11-13 | 32 |
+
+**Types, missing values, paths**
+
+| # | Decision | Why | Eve | Ref |
+|---|---|---|---|---|
+| DEC27 | **`type` is required on every field and is any Polars dtype a text file can hold** (7.4). The declared dtype goes to the CSV reader; the reader fails strictly and names the value. `categorical` is refused with the message "this was String"; `Categorical` stays a type for those who want it; the levels of an `Enum` are the key `categories` (Polars name); the unused `@category` column selection is removed | one vocabulary (Polars); `categorical` was a tweak (String at ingestion, Categorical in the validator); a later cast from text does not work for `Boolean`, `Datetime`, `Time`, `Decimal` | 2026-11-13 | 24 |
+| DEC28 | **Missing values have no default.** `null_values` (a list of texts, `[]` allowed) and `strip` (true or false) are required on every data schema, with an optional override per field. Ingestion reads text, applies them, then casts. The documentation warns recipe makers (null, NaN, the text `NA`; Polars has null and NaN, no NA) | the right answer depends on the data; today's hidden sanitiser turns `NA` (Namibia) into a missing value | 2026-11-13 | new |
+| DEC29 | **A filter always states its missing-value rule:** `na` is required on every filter action | a default silently changes which rows a figure counts | 2026-11-13 | 25 |
+| DEC30 | **Paths: no engine change.** The deployment's `data_lookup` already has `data_analysis_recipe_paths` (the `source.path` of the recipe, the development fallback) and `by_dataset_id` (production: the file is found by dataset name in `raw_data`; the recipe's path is ignored). The path-shape rule (no absolute path, no `..`, no `~`, no URL) applies to a development path only. Optional later: move development paths out of the recipes | how data reaches a deployment is the deployment's business | 2026-11-13 | 31 |
+
+**Names and actions** (7.5.1)
+
+| # | Decision | Why | Eve | Ref |
+|---|---|---|---|---|
+| DEC31 | **Prefixes:** `polars_<name>` for a Polars call, `modif_<name>` for a Polars idea with a documented change, `step_<name>` for several calls; no unprefixed action name remains. A registry field `polars: exact / wrapper / modified / composite` plus `wraps` says the same in data and Blueprint shows it | "an action that is not Polars must be seen by its name" | 2026-11-13 | 7, 12 |
+| DEC32 | **A `polars_` action behaves exactly as Polars:** the Polars name, all Polars parameters with the Polars names and defaults; a test compares it with the direct Polars call. A special need is a separate `modif_` action, or better, is written in the recipe | we must KNOW that it works | 2026-11-13 | 1, 9, 14 |
+| DEC33 | **No hidden choice anywhere:** a parameter that changes the result is required, or its default is the Polars default; for `modif_` and `step_` a default is allowed only when the parameter is "off when absent" | transparency; the registry test makes it executable | 2026-11-13 | 13 |
+| DEC34 | **Determinism is a required parameter, not an action default** (`maintain_order`, `keep`, `seed`, `n` or `fraction`, `how`): the recipe states the order rule, the action is exactly Polars. ADR-090 gets a wording change | the deliberate defaults were bad choices | 2026-11-13 | 10, 30 |
+| DEC35 | **One name per action:** no alias, no second action for one Polars method (`unique` absorbs `drop_duplicates` and `unique_rows`; `rename` absorbs `rename_columns`; `join` absorbs `join_filter`); a Polars name that meant something else here is renamed; a domain action with no Polars method stays only if it cannot be written as single steps | one way to say one thing | 2026-11-13 | 2, 3, 5, 6 |
+| DEC36 | **Actions that do several Polars calls may stay** when simple, unambiguous, documented and every behaviour switch is an option; they are `step_`. No action returns the frame unchanged on a missing parameter or column: it fails and names the step | clear and no silent no-op | 2026-11-13 | 4 |
+| DEC37 | **`polars_select` and `polars_drop` replace `keep_columns` and `drop_columns`:** plain and strict, column names only (a computed column is a `polars_with_columns` step first); no key protection, a missing column fails | the old ones added hidden rules (keys first, missing column ignored) | 2026-11-13 | 26 |
+| DEC38 | **`polars_with_columns` takes a mapping `column: formula`; `mutate` and `add_constant` are removed** (`add_constant` is `pl.lit(...)`). All formulas of one step see the table as it was before the step, as in Polars | the Polars form; fewer special actions | 2026-11-13 | 11 |
+| DEC39 | **`modif_filter`** (`column`, `op`, `value`, `na`) replaces the five `filter_*` actions and `is_in`, `not_in` (which filter rows, unlike Polars): one vocabulary with the audit rows and VizFactory `filters`. Its behaviour is verified first (task MODIF-FILTER-VERIFY-1). `polars_filter` (a formula predicate) can exist beside it and waits until a recipe needs it | the audit writes `modif_filter` now | 2026-11-13 | 11 |
+| DEC40 | **`percentile` is removed** (it was rank divided by the row count; 0 shipped steps). `polars_rank` and `polars_quantile` come with the deferred gaps | the name was misleading | 2026-11-13 | new |
+| DEC41 | **Polars methods without an action are deferred** (evidence section 19), unless they replace an existing action; `polars_fill_nan` and `polars_drop_nans` are added because NaN needs its own handling in the recipe | the app keeps working; adding one needs its equality test | 2026-11-13 | new |
+| DEC42 | **`scan_parquet` and `sink_parquet` are engine functions, not recipe actions** | the engine calls them with cache paths; a recipe writing to any path is a security risk | 2026-11-13 | 11 |
+
+**Process**
+
+| # | Decision | Why | Eve | Ref |
+|---|---|---|---|---|
+| DEC43 | **Migration: one tool, two runs.** Run A: names and types, text level, result-identical (every default written into the steps, so no table changes). Run B: `final_contract`, `keep_columns`, `drop_columns` to `polars_select` and `polars_drop`, plus `labels`. A golden baseline (the content hash of every collection and plot data of every shipped recipe) is taken first; every difference is listed and shown to Eve. One `ENGINE_CACHE_VERSION` bump at the release | a mistake must be found in the run that made it; no silent change | 2026-11-13 | 28 |
+| DEC44 | **Security:** a bad recipe must not be able to run code or read or write where it should not (section 15) | Eve asked for a verified security check | 2026-11-13 | 10, 29 |
+| DEC45 | **ADR-100 "Recipe format version 1"** supersedes ADR-013/014, changes ADR-090's wording and records the format decisions; drafted after the names and the order of work are settled | the ADR log is in force | 2026-11-13 | 23 |
+| DEC46 | **Notes, not decisions:** some library code may move to `libs/utils` when two libraries need it (`UTILS-REUSE-REVIEW-1`, nothing moved); the Dockerfile is not ready and nothing is deployed (`DOCKER-RELEASE-1`) | | 2026-11-13 | 19 |
+
+**The gallery** (section 9): **DEC47** examples are standard recipes in a `gallery` profile, `taxonomy` on the plot entry (required in the gallery, five axes, `geom` derived), the specification is also a data file so the gallery terms live in one place (D1 to D3; 2026-11-13, Ref 21). **DEC48** D4 to D7 as recommended: the checker runs at index rebuild, at app start and in the tests; previews come by the app's path; the tag strip of `example_meta.md` is generated from `taxonomy`; the data contract of an example is generated and reviewed (2026-11-13, Ref O1).
 
 ### 2.2 Principles (each follows from a decision above)
 
-- **P1 Executed, displayed, or refused.** Every key either is executed by an engine, is displayed, or is refused with the reason. `[DECIDED, 5a-19]`
-- **P2 No compatibility defaults.** A wrong recipe is corrected, never tolerated. `[DECIDED, ADR-099 16(a)]`
-- **P3 One word for one thing.** `label` is the short name shown to the user; `description` is one or two sentences; steps and tiers are written the same way everywhere. `[DECIDED, 5a-9]`
-- **P4 Generic words.** The format and the checker know no field-specific word (entity, attribute, table; not sample, gene). Field words live in recipes and help. `[DECIDED, W7]`
-- **P5 An error says where, what and the fix**, and shows the corrected text. `recipe : path : what is wrong. Fix: what to write.` `[PROPOSED, from the message style that exists]`
-- **P6 Looking for a problem is separate from running.** The checker reads the recipe and the registries and never needs the data; the data check stays separate. `[DECIDED, O1 of the HOME plan]`
+- **P1 Executed, displayed, or refused.** Every key either is executed by an engine, is displayed, or is refused with the reason.
+- **P2 No compatibility defaults.** A wrong recipe is corrected, never tolerated (DEC02).
+- **P3 One word for one thing.** `label` is the short name shown to the user; `description` is one or two sentences; steps and tiers are written the same way everywhere.
+- **P4 Generic words.** The format and the checker know no field-specific word (entity, attribute, table; not sample, gene). Field words live in recipes and help.
+- **P5 An error says where, what and the fix**, and shows the corrected text: `recipe : path : what is wrong. Fix: what to write.`
+- **P6 Looking for a problem is separate from running.** The checker reads the recipe and the registries and never needs the data; the data check stays separate.
+- **P7 A choice is written, not assumed.** Nothing the recipe does depends on a default that the reader cannot see (DEC33).
 
-### 2.3 Open: what is still undecided or unclear
+### 2.3 Recommended, awaiting Eve
 
-The numbers O1 to O18 are kept as references; a decided point leaves the table (O2, O3, O4, O5, O6, O8, O12, O13, O14, O15 and O18 were decided on 2026-11-13: rows 20 to 30 of section 2.1).
-
-| # | Question | Recommendation | Touches |
+| # | Recommendation | Why | Ref |
 |---|---|---|---|
-| O1 | **Gallery, the later decisions D4 to D7** (section 9): where an example is checked (D4), how previews are made (D5), the tag strip of `example_meta.md` (D6), the data contract of an example (D7); and whether the dead submission code is removed (G6) | D4 `check_recipe` at rebuild, at app start and in the tests; D5 previews by the app's path; D6 tag strip generated from `taxonomy`; D7 generated contract, reviewed | #82 |
-| O7 | **Schema `output_fields`.** Facts: ADR-013/014 call them the published columns (a strict select); the engine ignores them; `debug_wrangler.py:166-190` applies them for real (a select plus a cast to the declared type, the "Contract Guard" of Phase 1 of the integrity suite), so that tool can verify a table the app never produces (the app loads `categorical` as String, the tool casts to Categorical); HOME does not need them (its recipe graph reads columns by a dry run). Measured on ST22 (scratch): applying them leaves 12 of 17 collections identical, 5 lose columns, 2 steps break. **Options.** **A-strict**: keep them as a declaration and make the dry-run check X7 strict both ways (a declared column that does not exist fails; an existing column not declared fails); no new stage, nothing lost silently; the 5 disagreeing collections are corrected in the recipe; results and hashes do not change; the debug tool's guard is removed or kept as a check (HOME session's recommendation). **B**: apply (a select after the schema's tier 1, before the audit steps appended at its end; the declaration enters the Tier 1 key; decide select only or select plus cast: a Categorical cast may change plots) (changes data, least preferred). **C+**: remove them; the published columns of any collection come from `final_contract`, allowed also on a schema plotted directly, with a missing column an error; Blueprint's third column comes from the recipe graph; 23 recipe files, the test-lab writers and ADR-013/014 change. **Effect on science and reproducibility:** A-strict and C+ leave every number and hash unchanged; B changes the tables (and hashes) of 5 collections. **Simplicity:** C+ is simplest, A-strict keeps a second list per schema that authors must keep complete, B adds an engine stage. **Eve decides** | to be decided after Eve has read this | section 7.3 | **HOME session's final view (channel, round 5):** C+ over A over B, because `final_contract` is already the whitelist of the published table so `output_fields` repeats it; C+ closes the J06 gap and ends the debug tool/production disagreement. Constraints it set: the contract is the LAST operation of Tier 1 (audit steps are appended at the end of the tier1 step list, so they run before the select and may still use a column the contract later drops: keep this order); order of work so Blueprint's third column never goes blank: HOME writes `utils.recipe_graph.columns_of(node)` (a dry run) first, then the viewer switch and the removal of `output_fields` from the recipes in ONE step (this session writes the recipe side: migration, bootstrapper, scaffolder). Verified by HOME: `input_fields` is **not** a whitelist (a file column that is not declared passes into the table), so under C+ an ingredient schema has no column control at all. Both sessions prefer C+ | **C+** (both sessions); Eve decides | section 7.3 |
-| O9 | **[DIRECTION from Eve 2026-11-13, reported by the HOME session: the tier-3 container is the target and the engine must read it, because it is the data of the plot; the ORDER of the change is open, section 7.7]** **Spec-level `filters`** (a plot-level predicate applied at render time). Eve objected to refusing it (she needs every data-science tool). Facts: nothing reads `steps.tier3` from a recipe's plot entry today (it is built in the HOME packages P5 to P7), so `filters` is today's only per-plot filter; HOME overwrites an author's `filters` when the user explores (`home_theater.py:498`, a bug). In the new HOME model the plot always reads T3, so an author tier3 step is applied in the plot and the T3 table. **Alternatives:** A refuse now (loses today's only per-plot filter); **A'** keep `filters` allowed until the tier3 container is read by the engine, then migrate it to `steps.tier3` and refuse the spec key; B keep it for good (the figure then differs from its T3 table, the caption counts and the attrition are blind to it, the data key does not contain it: incompatible with "plot equals table"). **Recommendation: A'**, plus the bug fix (HOME merges the author's and the exploration filters; exploration filters stay out of the export). A top-level `facet_by` is refused, `mapping.facet_by` stays. A per-plot removal that works today without `filters`: a dedicated collection with its own tier2 | A' | section 7.8 |
-| O10 | **[AGREED BY THE SESSIONS, awaiting Eve]** **Formulas** (`mutate` expressions and plot function strings are run with Python `eval`). Security fact (verified by a harmless probe): a formula can call `__import__('os')`, so a recipe that comes from outside (a bundle, an upload in Blueprint) runs code with the app's rights. **Alternatives:** no check (unsafe for imported recipes); a list of allowed operations (safe, restricts every tool not on it); **a syntax check** (an AST whitelist: calls and attribute chains starting at `pl`, constants, arithmetic, comparison and boolean operators, lists, tuples, dicts, subscripts; refused: other names, attribute names that start with an underscore, `lambda`, comprehensions, `map_elements`, `pipe`, `apply` with a Python function). **Recommendation:** the syntax check: every Polars expression method stays; **what Eve loses:** per-row Python functions. Same check for plot function strings (`geoms/core.py:1335`) and `id_reconciliation/core.py:239` | syntax check | #80 |
-| O11 | **`scan_parquet` and `sink_parquet`** have no schema; 4 transformer fixtures use them | give them a schema, allowed, described as for tests and advanced use | #87 |
-| O16 | **`original_name`.** Purpose (documented in `Standards_yaml.qmd` and `data_contracts_adr.qmd`): the exact column header in the data file, which drives the ingestor's rename to the slug, so recipes can use plain names while the files stay as the pipeline tools write them (headers such as "Sequence Type" or "%Identity"). HOME does not need it (columns are slugs after ingestion). On an output list it has no ingest role (Blueprint shows it); its fate follows O7 | keep on input fields; on output lists it follows O7 | section 7.4 |
-| O17 | **Profiles**: `run` and `build` differ only in what an empty placeholder may be | keep | section 3 |
-| O19 | **The `type` in a `final_contract` entry** (ignored today). Both sessions agree: a contract entry is `{label?}` only (an optional label, which is also where the label of a computed column lives); a `type` there is an **error** with the message "the type is set in `input_fields` or by a `cast` step"; the migration strips the 19 existing types in ST22 and keeps the labels. Evidence: the types declared in schema `output_fields` contradict the input type in 3 of 11 cases and nobody notices; the 19 contract types of ST22 agree with the real dtypes (so nothing is lost) | drop the type (agreed by both sessions) | section 7.6 |
-| O20 | **Control of an ingredient schema.** Disappears if strict import (O22) is adopted: only declared file columns enter. Without strict import: an advice from X7, in profile `build` only (the load gate must not be noisy) | follows O22 | section 7.3 |
-| O21 | **One name per role for step parameters (H1) or per-action singular and plural (H2).** Facts: `column` is declared by 19 actions (41 steps use it), `columns` by 36 (72 steps); `filter_eq` and `filter_ne` take `column`, `filter_gt`, `filter_lt` and `filter_range` take `columns`; outputs are named `target_column` (14 actions), `new_column` (6), `new_name` (2), `new_columns` (2); `delimiter` in one action, `separator` in five; `mutate.column` is an OUTPUT name (a string) while `column` is an INPUT in the other 18. **H1:** roles come from the widget, then a table per action: input columns are `columns` (always a list); outputs are `new_column` (one) and `new_columns` (several); `target_column`, `new_name`, `column` retire; one `separator`. Costs: about 70 action schemas and reads in `libs/transformer`, about 70 steps in recipes and fixtures (migration at text level), the action appendix; every collection with a renamed step rebuilds once (the step part of its key changes), the data does not change, `ENGINE_CACHE_VERSION` is bumped once for all changes of spec_version 1. **H2:** keep singular `column` for single-column actions and plural `columns` for list actions, each action declares exactly one, the wrong one fails with "did you mean": cheaper, but the cardinality question stays for authors. Doing H1 now rides the one migration; later it would be a second format break. Both sessions prefer **H1**. **Reported by the HOME session: Eve said yes to H1 in its chat (aliases are legacy terms: choose once, apply in the libraries too); Eve to confirm to this session** | H1, in the same commit as the alias removal | section 7.5 |
-| O22 | **Strict import**: only the `input_fields` that are written are imported. Measured on the shipped pipelines: undeclared file columns today are VirulenceFinder 37 of 40, Quast 19 of 23, Bracken 13 of 16, FastP 10 of 14, ResFinder 8 of 13, Summary 2 of 13; with strict import every collection builds but one (`QA_L50_integer`: one line to add), every shipped plot renders, 4 collections publish fewer unused columns. Conditions (both sessions): a declared column missing from the file FAILS (a warning today), `original_name` matches **exactly** (today case-insensitively), the import reports "N file columns are not declared and were not imported" (information); no pattern for wide files for now (list what the recipe uses; `@category` and `keep_columns` exist). Effects: `input_fields` becomes the typed list of what the app reads (control, reproducibility), results of plots do not change, the tables of 4 collections change once; the build profile reports a missing column, the run profile refuses. The HOME session writes the ingestor change (`libs/ingestion`), tests first. **Reported by the HOME session: Eve said yes in its chat; the change is built (2119 headless tests pass, 14 of 14 retest scenarios pass): costs found: one shipped declaration relied on the case-insensitive match (`Sample_ID` against `sample_id` in the shared metadata `input_fields`), `L50` had to be declared; Eve to confirm to this session** | yes, with the conditions | section 7.3 |
-| O23 | **ADR-100** "Recipe format version 1" supersedes ADR-013/014 (published columns), records the changed label default and the format decisions; this session drafts it, the HOME session reviews its parts and points to ADR-099 points 15 and 16; Eve confirms it as the ADR log is in force. A label used as an axis title: an advice above 40 characters | draft ADR-100 after Eve's answers | section 14 |
-| O24 | **[DECIDED 2026-11-13, Eve, round 5, reported by the HOME session: follow ALL Polars types, no tweak; `categorical` is a tweak and is refused with the message "this was String"; the six-name list below is superseded by the rule at the end of this row]** **No integer type.** `numeric` is Float64, so counts and years print as floats (`2022.0`) unless the author casts twice (Float64 to Int64 to String); the HOME session's canary `QA_L50_integer` needed an explicit cast. **Option:** add `integer` as a sixth type with a real cast in one place shared by the ingestor and the `cast` action; a value that is not an integer FAILS the cast naming the first bad value (fail instead of coerce). **Alternative:** keep explicit cast steps. Both sessions recommend adding it. **New (Polars vocabulary, evidence section 11):** the same six-type list written with the Polars names in `input_fields` and in `cast`, so there is one vocabulary and no mapping table to learn. Polars is strict: a `String` `2022.0` into `Int64` fails and names the value, so the rule "accept `2022.0` as whole" is dropped; a TSV whose column is all whole is read as `Int64` already. A Float64 `2022.5` cast to `Int64` is truncated silently by Polars (even with `strict`): `cast` therefore needs a guard that fails on a non-whole value (Eve's science rule), written in the description. **Checker view:** the checker takes the list as an allow-list of exactly these six names (not every Polars type: no `Int32`, `Utf8`, `Datetime`, `Decimal` until a recipe needs one, and then by an entry here); the old names (`numeric`, `utf8`, `integer`, `int`, `i64`, `float`, `string`, `character`) are refused with the replacement named (no alias, no default). Two risks to measure with the golden baseline before `categorical` is decided: (1) a `Categorical` column does not join with a `String` column without a cast, and a `String` column has no declared level order (plotnine then sorts the levels alphabetically; a `Categorical` keeps its own order), so a changed default type can change the order of a discrete axis or a legend; (2) the default type when `type:` is absent (today `categorical`) must be named in the spec once. **Recommendation:** the default and the identifier type is `String`; `Categorical` only when the maker writes it (for a level order); the migration lists every column whose type changes **Round 5 (supersedes the six-name allow-list and the recommendation on `categorical`):** the type of a field is any Polars dtype that a text file can hold, and it is handed to the CSV reader as the declared dtype (`schema_overrides`), not cast afterwards: the reader parses `Int64`, `Float64`, `Boolean`, `Date`, `Datetime`, `Time`, `Categorical`, `String` and fails strictly naming the value; a later `cast` from text does NOT work for `Boolean`, `Datetime`, `Time`, `Duration`, `Decimal` (HOME session, run on Polars 1.40.1). **Checker:** the allow-list is READ from the installed Polars and pinned by a test that probes every dtype with the real reader on sample text (like the formula allow-list, O29), so a Polars upgrade shows what changed; the parameters Polars needs are written as keys of the field: `categories` (required for `Enum`: the fixed ordered levels, which also fixes the axis order of a plot), `precision` and `scale` (`Decimal`), `format` (`Date`, `Datetime`, `Time` parse format), `time_unit` and `time_zone` (`Datetime`). Collision to settle: `categories` already exists as a field key (a list a step can select as `@category`); for `Enum` it is the levels, for the other types it keeps its meaning. Old names (`numeric`, `utf8`, `integer`, `int`, `string`, `character`, `categorical`) are refused with the replacement named (`categorical`: "this was String"). A `Categorical` key does not join with a `String` key: the join fails loudly with `SchemaError` (verified), never silently. **Open detail (HOME session and recipe session):** today a sanitiser (strip, null sentinels) runs on the text BEFORE the cast; by N13 a hidden choice is not allowed, so the sentinels become an explicit field key `null_values` (the reader's own parameter) and the strip an explicit option; migration run A writes today's list into every field so no table changes; the order of the sanitiser and the reader's `null_values` must be defined once; **the list is known (HOME session, evidence section 20, read from `sanitizer.py`):** after the column rename and before the type cast, on every column that is a `String` at that point, the sanitiser strips whitespace (`str.strip_chars()`) and turns these 14 exact strings into a real null: `""`, `NA`, `N/A`, `None`, `null`, `NaN`, `-`, `na`, `n/a`, `none`, `nan`, `NULL`, `n.a.`, `N.A.`; it is not configurable from the recipe. **Science risk:** the list is applied to identifiers and free text too (`NA` is the ISO code of Namibia, `-` or `None` can be real values), and a later `!=` or `not in` filter then drops those rows. Run A writes the 14 into each field's `null_values` and `strip: true`, so no table changes, and the maker can then shorten the list per column; how many cells of the shipped test data change today is to be measured with the golden baseline | all Polars dtypes a text file can hold | section 7.4 |
-| O25 | **[DIRECTION from Eve 2026-11-13, reported by the HOME session: yes to `na`, the default is KEEP, the maker must choose, no automatic solution; written as a known limit. Recipe-session note below: a default of keep changes today's results, so the recommendation is `na` REQUIRED]** **Missing values in filters (`na`).** Today `filter_eq`, `filter_gt`, `filter_lt`, `filter_range`, `is_in` AND `filter_ne` and `not_in` all DROP missing values (measured). A default change would silently change results, so it is **not** proposed. **Recommendation:** an optional `na: keep|remove` on every filter action (default `remove`, today's behaviour), **required** on `filter_ne` and `not_in` (no existing step uses either, 0 break), written explicitly by the audit compiler so an exported recipe never depends on a default; every filter reports how many rows had no value. **Eve decides:** whether a `NaN` counts as missing (today `>=` keeps NaN and `<` drops it). **Measured by the HOME session (evidence section 13):** the three filter paths agree today; a null is dropped by `!=` and `not in`; a NaN is a number larger than every number and is dropped by nothing. **Known limit (Eve):** there is no automatic right answer, it depends on the data; the recipe maker chooses and the filter reports how many rows had no value. **Recipe-session note:** a default of `keep` makes every filter step that has no `na` change its table (9 `filter_range` steps in 5 shipped recipes, every audit filter), silently, which the rule "what the recipe specifies must be done" and the golden baseline would show only afterwards. **Recommendation:** `na` has no default on any filter action (required), the audit compiler writes it, and migration run A writes `na: remove` (today's behaviour) into every existing step, so no table changes and the maker changes it on purpose. If Eve keeps the default `keep`, the checker treats `na` as optional, and the migration must still write `na: remove` into existing steps or the baseline shows the change | as written | #76 |
-| O26 | **[DIRECTION from Eve 2026-11-13, reported by the HOME session: REMOVE them (they add hidden rules); the recipe gets Polars-like steps `select` and `drop`, plain and strict; the final names are hers (section 7.5.1)]** **`keep_columns` and `drop_columns` are not Polars-like** (verified by running): `keep_columns` silently ADDS the primary keys first and reorders (asked `[y, x]`, got `[sample_id, y, x]`; only in the schema path); `drop_columns` silently ignores a column that does not exist and silently protects the primary keys. **Recommendation:** a plain ordered select and a strict drop that fails on a missing column (one fixture relies on the key injection). **Open edge, for Eve to see:** `select` and `drop` take column NAMES only; a computed column is a `mutate` step first, then the `select`. Needed before any `final_contract` becomes a `keep_columns` step | as written | #78 |
-| O27 | **[DECIDED 2026-11-13, Eve, reported by the HOME session: `final_contract` is REMOVED ("not transparent"); a `select` step in the recipe replaces it. Still open for her: the schema `output_fields` (same direction, not yet confirmed) and the `labels` mapping]** **`final_contract` as the recipe's published columns, or as a trailing step** (Eve, in the HOME chat, as reported: it was a shortcut; "write the recipe as the Polars code would be", the whole recipe defines the output). **Option C++:** no `output_fields`, no `final_contract`: the last step of the collection's tier 1 is a plain `select` (or `drop`; the Polars names that replace `keep_columns` and `drop_columns`, O26), so every column change is a visible step. For: one mechanism, no special stage in HOME's graph, the column order is the order of the list so the #86 rule and the ordered-dictionary category for `final_contract` disappear, a schema plotted directly needs nothing special, ST22's contracts convert mechanically, the hashes of the TABLES do not change. Against: it must come AFTER O26; the exclusive whitelist becomes a convention (a last step) that Blueprint and the checker can still recognise; labels of computed columns need a home: **a collection-level `labels: {column: text}` mapping** (display only, in no data key; the dialog resolves a label as the collection's `labels`, then the input field's `label`, then nothing); ADR-013/014 are superseded; all keys rebuild once. **Option C+** (previous): keep `final_contract` as the one list, also on a directly plotted schema. Both sessions find C++ simpler and closer to Eve's principle; she decides | C++ after O26 (replaces O7's C+) | sections 7.3, 7.6 |
-| O28 | **[PROPOSED BY THE RECIPE SESSION, HOME session to answer; Eve decides]** **Order of work and one migration or two.** Reason for the order: a change must not move a silent behaviour to a new name, and no table may change without being listed. **Steps:** (0) a golden baseline first: the content hash of every collection of every shipped recipe (and of the data of every plot), taken before any change; after each step every difference is listed and goes to Eve, none is accepted silently. (1) `integer` (engine and tests: HOME; checker enum, spec, docs: recipe). (2) `step_problems` with today's names plus unknown and missing keys; the new names plug in as a table once Eve has decided them. (3) the run-time guard (`ACTION-MUST-ACT-1`) and `na`, **before** the structural migration, because they show which recipes rely on a silent no-op and the migration must list those, not copy them. (4) **Migration run A**, one tool, text level, result-identical (table hashes unchanged): H1 renames, alias removal, name changes and merged duplicates (N5); does not wait for O27. (5) **Migration run B**, structural: `keep_columns`, `drop_columns`, `final_contract` to `select` / `drop`, `labels`, split composites; needs the strict `select` and `drop` in the engine, the recipe graph for the keys, and Eve's yes on O27; one `ENGINE_CACHE_VERSION` bump (the version only matters at a release). (6) the tier-3 reader (HOME package P5) can be built in parallel with 4 and 5; the `filters` migration and the gallery bundle wait for names (4) and `na` (3). (7) Blueprint last. **Alternative:** one run that does A and B together (one review, but it waits for O27 and the strict actions, and a mistake cannot be bisected). **Recommendation:** one tool, two runs | two runs, as written | #83 |
-| O29 | **[PROPOSED BY THE RECIPE SESSION, agreed on the split with the HOME session; Eve asked for a security check: a bad recipe must not be able to do bad things]** **Recipe security (task SECURITY-RECIPE-1).** Inventory in `home_evidence/actions_and_polars_2026-11-13.md` section 14 (3 `eval` sites; `sink_parquet` writes any path; `scan_parquet`, `derive_categories` and the source `path` read any path; `!include` is not confined; zip import and `report.qmd` to verify). **Split:** recipe session: `libs/utils/src/utils/formula_check.py` and the checker refusals, and the `!include` confinement in `libs/utils/src/utils/config_loader.py` (the loader, not the checker, must refuse it, because the include runs while the file is read; the checker's own strict reader uses the same loader); HOME session: attack tests, zip import, `report.qmd`. **Formula check (design):** parse with `ast`; allow only `pl.<name>` where the name is on a SHORT explicit allow-list of module-level functions (`col`, `lit`, `when`, `all`, `any_horizontal`, ...), and any `Expr` method or namespace EXCEPT a deny set (`map_elements`, `map_batches`, `pipe`, `meta`, anything starting with `_`); no bare name, no lambda, no keyword call such as `eval` or `getattr`; then `eval` runs with `{"__builtins__": {}, "pl": pl}` as well (two layers). The allow-list is at the module level because that is where file input and output live (`read_*`, `scan_*`, `write_*`, `sink_*`, `Config`); `Expr` methods are expressions only. Tests: attack cases (`__import__`, `().__class__`, `lambda`, `getattr`, `pl.read_csv`, `pl.scan_parquet`) and a mutation check. **`stat_function`** takes a Python lambda string (`lambda x: x * 2`, one shipped test): a different grammar; recommendation: a lambda of one argument whose body has only numbers, `x`, arithmetic and an allow-list of math functions, same two layers. **Paths:** `scan_parquet`, `sink_parquet`, `reference_file` and the source `path` are relative to a named deployment location; no absolute path, no `..`; the checker is pure (`libs/utils` imports no other library) so the CALLER passes the allowed roots as an argument; `sink_parquet` and `scan_parquet` are refused in every profile except the test one (they are engine-internal, O11). **Known limit, written down:** a formula that is allowed can still be slow or large; nothing stops heavy computation. A recipe from outside is unverified until it passes the checker | as written | #75 |
-| O30 | **[OPEN, Eve decides]** **Determinism defaults:** required parameter or `modif_` with a documented default (N10). Reason to ask: `join` has `how: left` as default and no reason for it was found in the code, the ADRs or the history (Polars default is `inner`); `sample` has a hidden `fraction: 0.1`. **Recommendation:** required parameter | N10 | section 7.5.1 |
-| O31 | **[OPEN, Eve decides; evidence sections 16 and 18 of the HOME evidence file; round 5 adds: a gallery recipe has no `source.path`, it has `data_path: example_data.tsv` inside its bundle folder, so the profile `gallery` needs only "`data_path` is a plain file name (no `/`, no `..`)" and the containment below does not apply to it; for pipelines the HOME session recommends to Eve that `source.path` is relative to the deployment's `raw_data` location (the shipped values lose the `assets/test_data/` prefix, run A rewrites 38 values; the local and retest deployments already point `raw_data` at `assets/test_data/`; tests pass their own folder; production unchanged), the alternative is project-root relative with containment as written. Both outcomes are covered: under the first the caller passes the `raw_data` root and layer 2 is the resolution itself; `reference_file` (one shipped use under `config/references/`) then needs its own base, to be named]** **Which paths a recipe may name.** Facts: `source.path` and `reference_file` are project-root relative (38 shipped values `./assets/test_data/...` or `assets/...`, one `config/references/...`, no absolute path, no `..`); production ignores `source.path` and finds the file by dataset name inside `raw_data`; the local deployment's `raw_data` IS `assets/test_data`, so shipped paths lie inside it. A rule "relative to `raw_data`" would refuse every shipped value (the prefix is repeated). **Recommendation, two layers:** (1) shape, always: no absolute path, no `..`, no `~`, no URL; (2) containment, when the caller passes roots: the path resolved from the project root must lie inside one of the allowed roots, which the caller gives (the app: the deployment's `raw_data` and the references folder; tests: a temporary folder); the checker stays pure (`libs/utils` imports no other library). `source.path` gets layer 1 only in production (it is ignored there). `scan_parquet` and `sink_parquet`: engine-internal (the engine calls them with `cache` paths), used by 4 transformer fixtures only; the checker refuses them in a recipe unless the caller passes `allow_internal=True` (the tests do). Alternative: move reference files under a deployment location (more work, no gain now) | as written | O29 |
-| O32 | **[WITHDRAWN 2026-11-13, Eve, reported by the HOME session, round 5]** The entity-key rule (id first, id never dropped) is a recommendation to the recipe maker, done by steps written in the recipe. **No code enforces it and nothing verifies it; the recipe must work without anyone assuming the id is the first column.** So there is no `checks:` mapping, no `entity_key_first`, no `entity_key_kept`, and `columns_at_each_node` is not needed for it (it stays a possible LATER tool for "a step names a column that does not exist"; not decided, not built; measured by the HOME session: the set of columns is exact on 34 of 35 shipped nodes, order differs once). Ingestion imposes no declared column order: a recipe that needs an order writes a step. The audit's refusal to drop a key (12g.3) is a rule of the audit and stays. Run B needs no dry run: the migration writes the explicit `select` from the old list by the fixed rule of `keep_columns` (`list(dict.fromkeys(keys + columns))`, `core.py:343-352`) and removes a key from a `drop_columns` list (the action ignored it), so every table stays identical | withdrawn | O26 |
-| O33 | **[PROPOSED]** **Action names are spelled in 6 places outside the registry** (evidence section 17: audit translator, `data_wrangler.py`, `data_assembler.py`, Blueprint, Test Lab bootstrapper, ID reconciliation). **Recommendation:** one constants module in `libs/utils` (Tier 1, so `test_lab` and `id_reconciliation` can read it without importing `transformer`), the consumers read the names from it, and a test fails when a registered action name appears as a string elsewhere (exempt: the registry, tests, `legacy_keys.py`, the migration tool); another test fails when a constant has no registered action. `scan_parquet` and `sink_parquet` stop being recipe actions (engine functions; consistent with O29, the fixtures call them directly). Side finding ID-RECON-STEPS-1 (ID reconciliation suggests `replacement` and `lowercase`; the action reads `value`): the suggestions can be run through `step_problems`, a pure function, in the id_reconciliation tests | as written | O29, #83 |
+| R1 | **Order of the tier-3 change.** Keep spec-level `filters` allowed until the engine reads `steps.tier3`; then a migration rewrites every filter row into a step of `steps.tier3` and the checker refuses `filters` (P06). Before the migration, measure whether VizFactory's `filters` and the filter actions treat missing values alike (task MISSING-VIZ-FILTERS-1); list every table or figure that would change. Meanwhile HOME merges the author's filters with the exploration filters instead of overwriting them (`home_theater.py:498`) only if the reader is more than one package away | a figure must equal its table; nothing changes silently | 9 |
+| R2 | **`modif_over`** merges `count_by_group` and `window_agg` (both `Expr.over`) | one action per Polars method; Eve has not yet decided the merges | N11 |
+| R3 | **Conditional parameters:** `ui_schema` gets a `rules` list (`when`, `require`, `one_of`, `exclusive`) read by `step_problems` and the engine, so the shape of `value` can depend on `op` and `fill_null` can take `value` or `strategy`; the Blueprint form follows it | `modif_filter` needs it | N11 |
+| R4 | **One constants module for action names in `libs/utils`** (Tier 1, so `test_lab` and `id_reconciliation` can read it), the consumers read names from it; a test fails when a registered action name appears as a string elsewhere (exempt: the registry, tests, `legacy_keys.py`, the migration tool) and when a constant has no registered action. Six places spell names today (audit translator, `data_wrangler.py`, `data_assembler.py`, Blueprint, Test Lab bootstrapper, ID reconciliation) | a rename must not leave a stale string | O33 |
+| R5 | **Security design** (section 15): formula check by `ast` with an allow-list of `pl.<function>` read from the installed Polars; a separate grammar for `stat_function`; path-shape and containment checks; confinement of `!include` in the loader | Eve wants it verified | O29 |
+| R6 | **`na` covers null only.** A NaN is a number larger than every number and is dropped by nothing; it is handled by `polars_fill_nan` and `polars_drop_nans` and named in the documentation | null and NaN are different things in Polars | O25 |
+| R7 | **Each `step_` action is examined one by one** (evidence sections 3, 10, 15): where single steps give the same table the action goes (`split_and_explode` is `str_split` plus `explode`), proved by a golden test; the others are read and documented | transparency without losing tools | 7.5.1 |
+| R8 | **A reference to a table by id** (`join`'s `right_ingredient`) is not a behavioural difference, so `polars_join` is still `polars_` | else `polars_join` is impossible | N12 |
+| R9 | **The checker's allow-lists are read from the installed Polars** (dtypes, formula functions) and pinned by a probe test, so a Polars upgrade shows what changed | no hand-kept list | 24, O29 |
+| R10 | **A column dry run** (`columns_at_each_node`, the real actions on empty frames built from the declared types) in `libs/transformer`, injected into the checker, is a possible LATER tool for "a step names a column the node does not have" (X7, J08). Measured: 34 of 35 shipped nodes have the same columns, one the same set in another order. Not needed for the id rule, not decided, not built | exact, no second copy of what an action does to columns | O32 |
+| R11 | **Profiles `run` and `build` stay as they are** | they differ only in what an empty placeholder may be | O17 |
+
+### 2.4 Open
+
+| # | Question | Recommendation | Ref |
+|---|---|---|---|
+| Q1 | **`polars_cast` from Float64 to Int64** truncates 2022.5 to 2022 silently, in Polars too. Keep it exactly Polars (and write it in the description), or add a guard that fails on a non-whole value (then it is `modif_cast`)? | keep exact and write it; declared types go to the reader, so a cast from text is rarely needed | 24 |
+| Q2 | **`derive_categories`** reads an external file and maps rows with a Python function; it is not Polars. What it does may be a `join` with a lookup table | read it, then decide (R7) | N4 |
+| Q3 | **Gallery G6:** the dead submission code (`submission_modal_ui`, `autofill_meta_from_audit`, `btn_confirm_submission`): remove or keep on purpose | Eve's call | O1 |
+| Q4 | **Which cells the sanitiser changes today** in the shipped test data (how many `NA` and similar become null) | measure with the golden baseline | 24 |
+| Q5 | **Blueprint** is not touched now; what it must change afterwards is a register (evidence section 5) that becomes tasks when each recipe change lands | last in the order of work | |
 
 ## 3. Profiles, and what counts as a recipe
 
-There is one format. A recipe is checked in a **profile**; profiles differ only in what an empty placeholder may be (O17):
+There is one format. A recipe is checked in a **profile**; profiles differ only in what an empty placeholder may be (R11):
 
 | Profile | Used by | Rule |
 |---|---|---|
 | `run` | HOME's load gate; any program that draws plots | `analysis_groups` holds at least one group with at least one plot |
 | `build` | Blueprint (building step by step); recipes that only build data (transformer tests, scripts) | `analysis_groups: {}`, `tier2: []`, `tier3: []` are accepted placeholders |
 | `gallery` | gallery examples | the rules of section 9 on top of `run` |
-| `audit` (proposed with the HOME session, O4) | the audit copy of a recipe | like `run`; steps with an `id` of the form `audit_<8 hex>_<k>` are accepted (O5) |
+| `audit` | the audit copy of a recipe | like `run`; steps with an `id` of the form `audit_<8 hex>_<k>` are accepted |
 
-HOME rejects, Blueprint reports and never blocks building `[DECIDED, 5a-19]`.
+HOME rejects, Blueprint reports and never blocks building.
 
 | Kind | Files | Profile | Notes |
 |---|---|---|---|
 | Pipeline recipes, templates, retest scenarios | 7 + 5 + 4 | `run` | the retest scenarios that are faulty on purpose keep their one fault and must be otherwise valid |
-| Viz-factory test recipes | 194 in `libs/viz_factory/tests/test_data` (one per plot component, the 1:1:1 evidence loop of `rules_viz_factory.md` 3) and 1 in `libs/viz_gallery/tests/data` | `run` | today in the plot engine's compact shape (`plots:` and `data_path:` at the top; 193 of 194): each becomes a standard recipe like a gallery example; one conversion tool serves them and the gallery bundles; found by Eve's question "do the library tests have recipes too?" (#89) |
+| Viz-factory test recipes | 194 in `libs/viz_factory/tests/test_data` (one per plot component, the 1:1:1 evidence loop of `rules_viz_factory.md` 3) and 1 in `libs/viz_gallery/tests/data` | `run` | today in the plot engine's compact shape (`plots:` and `data_path:` at the top; 193 of 194): each becomes a standard recipe like a gallery example; one conversion tool serves them and the gallery bundles (#89) |
 | Transformer test recipes | 68 in `libs/transformer/tests/data` | `build` | the flat form (`wrangling:` and `input_fields:` at the top) is refused: each becomes one schema with its `source` path. The runners already prefer a command-line data path to the recipe's (`rules_asset_scripts.md` 4) |
 | Gallery bundles | 34 | `gallery` | section 9 |
 | Recipes written by the app | Blueprint's new-recipe form, test-lab bootstrapper and scaffolder, `create_data_analysis_recipe.py`, the export's forked recipe, the importer | their use | the checker runs on what they write; a test per writer; every writer emits `spec_version` |
-| Recipes inside automatic tests | inline YAML strings in tests and fixtures | their purpose | one shared helper writes a minimal valid recipe, so no test types the boilerplate |
+| Recipes inside automatic tests | inline YAML strings in tests and fixtures | their purpose | one shared helper (`utils.recipe_factory`) writes a minimal valid recipe, so no test types the boilerplate |
 
 ## 4. File level
 
@@ -179,13 +229,13 @@ HOME rejects, Blueprint reports and never blocks building `[DECIDED, 5a-19]`.
 | `analysis_groups` | yes | mapping `group id -> group` (7.7) | HOME tabs |
 | `plot_defaults` | no | mapping (7.8) | plot engine |
 
-Refused at the top level, with the replacement named (section 12): `plots`, `wrangling`, `input_fields`, `output_fields`, `name`, `pipeline_id`, `description`, `metadata`, `type`, `join_manifests`, and any other unknown key (with a did-you-mean by spelling).
+Refused at the top level, with the replacement named (section 12): `plots`, `wrangling`, `input_fields`, `output_fields`, `final_contract`, `name`, `pipeline_id`, `description`, `metadata`, `type`, `join_manifests`, and any other unknown key (with a did-you-mean by spelling).
 
 ### 4.1 The format version
 
-Every recipe declares `spec_version: 1`, the version of this specification it is written in (the key is called `spec_version`, Eve 2026-11-13). The first confirmed specification is format 1; the unversioned recipes of today are **format 0**. The key is not `info.version`, which stays the author's own version of the recipe's content.
+Every recipe declares `spec_version: 1`, the version of this specification it is written in. The first confirmed specification is format 1; the unversioned recipes of today are **format 0**. The key is not `info.version`, which stays the author's own version of the recipe's content.
 
-The app reads **one** version. Any change of *structure* changes the number: a key added, removed or renamed, a change of required-ness or meaning, a change of a closed vocabulary (the types, the engine names). A new term in an *open* vocabulary (the gallery terms) does not: it ships with an app release, and an app that does not know the term refuses the recipe with "unknown term". With "unknown keys fail" a new optional key also breaks an older checker, so there is no "compatible minor version", and one integer is enough.
+The app reads **one** version. Any change of *structure* changes the number: a key added, removed or renamed, a change of required-ness or meaning, a change of a closed vocabulary (the engine names). A new term in an *open* vocabulary (the gallery terms) does not: it ships with an app release, and an app that does not know the term refuses the recipe with "unknown term". With "unknown keys fail" a new optional key also breaks an older checker, so there is no "compatible minor version", and one integer is enough.
 
 | Check | Sev | Trigger | The message says |
 |---|---|---|---|
@@ -194,31 +244,31 @@ The app reads **one** version. Any change of *structure* changes the number: a k
 | V03 | E | higher | written for a newer format; update the app |
 | V04 | E | not an integer (`"1"`, `1.0`, `true`) | write `spec_version: 1` |
 
-**Migration tool:** `assets/scripts/migrate_recipe_format.py --from 0 --to 1`, on the pattern of `migrate_config_vocabulary.py`: a dry run by default, `--apply` to write, safe to run twice. It edits the text, so every `#` comment is kept. It applies the replacement table (section 12), adds `spec_version` and the engine lines, unwraps fragments and writes a `label` from the id for the author to edit. It does **not** invent what is not mechanical: descriptions stay empty (an advice), `entity` is not added, science is not touched; it prints what a person must still do.
+**Migration tool:** `assets/scripts/migrate_recipe_format.py`, on the pattern of `migrate_config_vocabulary.py`: a dry run by default, `--apply` to write, safe to run twice. It edits the text, so every `#` comment is kept. **Two runs (DEC43).** *Run A* (names and types, result-identical): the replacement table of section 12, the action names, `categorical` to `String` and the other types, `spec_version` and the engine lines, unwrapped fragments, a `label` from the id; it writes into every step the default that the old action applied silently (`na: remove`, `maintain_order`, `keep`, `how`, a `seed`, the sanitiser's 14 texts as `null_values` and `strip: true`), so no table changes. *Run B* (structure): `final_contract`, `keep_columns` and `drop_columns` to `polars_select` and `polars_drop` (the keys that `keep_columns` put first are written into the list by its fixed rule, `list(dict.fromkeys(keys + columns))`, `core.py:343-352`; a key named in a `drop_columns` list is removed from the list, the action ignored it), and `labels`. It does **not** invent what is not mechanical: descriptions stay empty (an advice), `entity` is not added, science is not touched; it prints what a person must still do. The old-to-new action table is data of this tool (it also feeds `legacy_keys.py`), derived from evidence sections 15, 17 and 21.
 
-**Where the number is recorded:** every recipe written by the app, the forked recipe of an export, `effective_run.yaml`; the importer's recipe leg says when the version differs. History table: format 0, the unversioned recipes before 2026-11-13, refused with the migration message; format 1, this specification.
+**Where the number is recorded:** every recipe written by the app, the forked recipe of an export, `effective_run.yaml`; the importer's recipe leg says when the version differs.
 
-**Consequences to accept.** (a) One more required key in every recipe (16 + 68 + 34 files, all writers, many tests); the tool does the mechanical part. (b) An export made under format 0 cannot be re-run until its recipe is migrated; the migrated recipe has another hash, so the importer reports a difference. This follows from "no compatibility default"; the bundle still holds the original file. (c) A number can be wrong: the checker still reads the keys, so it shows as an unknown or missing key. (d) The same idea may later apply to the app-features and deployment files; not proposed now.
+**Consequences to accept.** (a) One more required key in every recipe (16 + 68 + 34 files, all writers, many tests); the tool does the mechanical part. (b) An export made under format 0 cannot be re-run until its recipe is migrated; the migrated recipe has another hash, so the importer reports a difference; the bundle still holds the original file. (c) A number can be wrong: the checker still reads the keys, so it shows as an unknown or missing key.
 
 ## 5. The form of every container (ADR-041)
 
 **What exists.** ADR-041 (ENFORCED 2026-04-20): keyed definitions are a dictionary (field definitions are `slug: {props}`, slugs unique), ordered logic is a list (`tier1`, `tier2`), fragments are flat (the value only, no repeated anchoring key).
 
-**The rule: the form follows what depends on it** `[DECIDED 2026-11-13]`:
+**The rule: the form follows what depends on it** `[DECIDED, DEC08]`:
 
 | Category | Form | What depends on it | Containers |
 |---|---|---|---|
-| 1. Named; the order means nothing for the data | **dictionary** | lookup by name; names are unique | `data_schemas`, `additional_datasets_schemas`, `joins`, `input_fields`, `output_fields`, `source`, `mapping`, `plot_defaults`, `info`, `entity`, `taxonomy`, `spec` |
-| 2. Ordered; the items need no name | **list** | the order of operations, drawing or joining; YAML guarantees the order of a list | step lists (`tier1`, `tier2`, `tier3`), `ingredients` (the first is the base), `layers`, a `multi` column-selector parameter |
-| 3. Named, and the order is meaning | **ordered dictionary**: the order of the keys is documented as meaningful | `final_contract`: the column order of the table; `analysis_groups`: the tab order; `plots` of a group: the sub-tab order | those three |
+| 1. Named; the order means nothing for the data | **dictionary** | lookup by name; names are unique | `data_schemas`, `additional_datasets_schemas`, `joins`, `input_fields`, `source`, `mapping`, `plot_defaults`, `info`, `entity`, `taxonomy`, `spec`, `labels` |
+| 2. Ordered; the items need no name | **list** | the order of operations, drawing or joining; YAML guarantees the order of a list | step lists (`tier1`, `tier2`, `tier3`), `ingredients` (the first is the base), `layers`, a `multi` column-selector parameter, `null_values` |
+| 3. Named, and the order is meaning | **ordered dictionary**: the order of the keys is documented as meaningful | `analysis_groups`: the tab order; `plots` of a group: the sub-tab order | those two |
 
 Container by container:
 
 | Container | Form | Refused |
 |---|---|---|
 | category 1 containers above | dictionary | a list (also a list of names, or of one-key dictionaries) |
-| `final_contract`, `analysis_groups`, `plots` of a group | ordered dictionary | the same |
-| a field entry | dictionary `{type, label, ...}`, or `{}` meaning "as in the input" | a bare string (`sample_id: categorical`, the old shorthand; none is left in the repository) |
+| `analysis_groups`, `plots` of a group | ordered dictionary | the same |
+| a field entry | dictionary `{type, label, ...}` | a bare string (`sample_id: categorical`, the old shorthand; none is left in the repository) |
 | `wrangling` of a schema, `steps` of a join | dictionary with `tier1` (list) and optional `tier2` (list) | a flat list, `[]` |
 | `tier1`, `tier2`, `tier3` | list of step mappings (7.5) | a dictionary |
 | `ingredients` | list of `{dataset_id: ...}` | a dictionary, bare ids |
@@ -226,56 +276,47 @@ Container by container:
 | a column-selector parameter declared `multi` | list of names | a single value |
 | an included fragment | the value itself | a wrapper key that repeats the include key |
 
-**Category 3 is verified, and needs safeguards.** The columns of a table follow the keys of `final_contract` (`orchestrator.py:59-66`). PyYAML keeps the order on load but sorts on dump by default; five dump sites in non-test code sort today (`exporter.py:56,86`, `wrangle_studio.py:1848,1864`, `blueprint_handlers.py:861`); `canonical_hash` sorts keys (`cache_keys.py:53-55`, `hashing.py:18`). **A defect found by running it:** reversing the keys of `final_contract` changes the column order of the stored Tier 1 but **not** of the stored Tier 2, because the sorted hash cannot see the order (issue #86; `tmpAI/recipe_format/contract_order_test.py`). The safeguards:
+**Category 3 needs safeguards** (verified). PyYAML keeps the order on load but sorts on dump by default; five dump sites in non-test code sort today (`exporter.py:56,86`, `wrangle_studio.py:1848,1864`, `blueprint_handlers.py:861`). The safeguards: (1) the loader keeps the file order and refuses a repeated key (T10): PyYAML silently keeps the last; (2) every writer passes `sort_keys=False`, guarded by a test that scans every `yaml.dump` and `safe_dump` of non-test code. The tab order enters no data key. (With `final_contract` removed, the column order is the order of a step list and no ordered dictionary feeds a data key.)
 
-1. The loader keeps the file order and refuses a repeated key (T10): PyYAML silently keeps the last.
-2. Every writer passes `sort_keys=False`, guarded by a test that scans every `yaml.dump` and `safe_dump` of non-test code.
-3. A key (hash) that depends on an order is made from the ordered items, never from a sorted dictionary: `final_contract` enters the Tier 1 key material as an ordered list of its keys. The tab order is downstream only and enters no data key.
+**What does not depend on order:** `input_fields` (the ingestor renames and casts, never selects by them), `joins`, `data_schemas`, `mapping`, `params`, `info`, `labels`.
 
-**What does not depend on order (checked):** `input_fields` and `output_fields` of a schema (the ingestor renames and casts, never selects by them; if schema `output_fields` are ever applied they become category 3, O7), `joins`, `data_schemas` (the one reader of the order of `joins` is the first-join fallback, which goes, section 15), `mapping`, `params`, `info`.
+**What the repository contains today** (scan `tmpAI/recipe_format/container_forms.py`, verified): all 307 input field entries are dictionaries; **17 containers are in list form** (7 empty `[]` written where `{}` or `{tier1: []}` belongs, 10 with content: 3 `final_contract` lists, 1 `output_fields` list, 1 flat `wrangling`, 5 flat join `steps` in fixtures); the engine skips a list-form `final_contract` silently (`orchestrator.py:59-62`), so three recipes' contracts are not applied today, and removing `final_contract` (DEC23) turns each into an explicit step whose effect on the plots is checked at migration (#78); **33 fragments carry the wrapper key** that ADR-041 prohibits (the loader removes it silently); two texts contradict ADR-041 (`rules_data_analysis_recipe_structure.md` section 8 "single `spec:` root key"; `data_analysis_recipe_data_contract_rules.md` 4.3 types), both go in the documentation sweep (#79).
 
-**What the repository contains today** (scan `tmpAI/recipe_format/container_forms.py`, all kinds of recipe, verified): all 307 input and 162 output field entries are dictionaries; **17 containers are in list form**: 7 empty `[]` written where `{}` or `{tier1: []}` belongs, and 10 with content (3 `final_contract` lists, 1 `output_fields` list of names, 1 flat `wrangling`, 5 flat join `steps` in fixtures); **the engine skips a list-form `final_contract` silently** (`orchestrator.py:59-62`), so the contracts of `demo_abromics`, `universal_template` and `relational_audit` are **not applied today**, and converting `demo_abromics` makes it an exclusive whitelist of 5 columns (its plots are checked at migration, #78); **33 fragments carry the wrapper key** that ADR-041 prohibits (the loader removes it silently); two texts contradict ADR-041 (`rules_data_analysis_recipe_structure.md` section 8 "single `spec:` root key"; `data_analysis_recipe_data_contract_rules.md` 4.3 types), both go in the documentation sweep (#79).
-
-### 5.1 The message carries the correction `[DECIDED 2026-11-13]`
+### 5.1 The message carries the correction `[DECIDED, DEC08]`
 
 Each container-form check generates the corrected text from what it found. The same adapter serves HOME's load gate, Blueprint's Validate, the import screen, the scripts and the tests, so they show the same message. Each check has a test that asserts the message **contains the corrected text**, so the suggestion cannot go stale. The migration tool applies the same corrections mechanically.
 
 | Found | The message shows (generated) |
 |---|---|
-| `final_contract: [sample_id, value_col]` | `final_contract` is a dictionary of columns. Write: `final_contract: {sample_id: {}, value_col: {}}` |
-| `final_contract: [{sample_id: {type: categorical}}, ...]` (a list of one-key dictionaries) | the same dictionaries merged: `final_contract: {sample_id: {type: categorical}, ...}` |
-| `output_fields: []` | `output_fields: {}` |
-| `steps: [{action: join, ...}]` (a flat list) | `steps: {tier1: [{action: join, ...}]}` |
+| `final_contract: ...` or `output_fields: ...` | removed: end the step list with `{action: polars_select, exprs: [sample_id, value_col]}` (the columns in this order); display names go in `labels` |
+| `steps: [{action: polars_join, ...}]` (a flat list) | `steps: {tier1: [{action: polars_join, ...}]}` |
+| `output_fields: []` or `wrangling: []` on a schema | `wrangling: {tier1: []}` |
 | a wrapper line `input_fields:` inside the included file | remove the line and its indentation; the file holds the fields themselves |
-| `sample_id: categorical` | `sample_id: {type: categorical}` |
+| `sample_id: categorical` | `sample_id: {type: String}` (and `categorical` itself: "this was String") |
 | a repeated key | names the key and both lines; remove or rename one |
-
-The file keeps the dictionary; the code makes the list it needs (`list(final_contract)`). No recipe writes a list of names.
 
 ### 5.2 Identical keys `[verified]`
 
-A key must be unique **inside one mapping** (ADR-041). The same slug in different mappings is normal: `sample_id` is in the `input_fields` of every table (66 field dictionaries in the repository, each its own mapping) and in every row of a long table. The real hazards are:
+A key must be unique **inside one mapping** (ADR-041). The same slug in different mappings is normal: `sample_id` is in the `input_fields` of every table and in every row of a long table. The real hazards are:
 
 1. **A repeated key inside one mapping:** PyYAML keeps the last silently (T10). This holds at any depth, including a `mapping` parameter: `{a: x, a: y}` silently drops a rename.
-2. **A column name in both tables of a join that is not a join key:** the engine calls `lf.join(...)` without a suffix (`joins.py:56-58`), so Polars renames the second column to `name_right` without a message; `QC_Reads_Anchor` has `total_reads_right` today. The join keys themselves (`sample_id`) are the key family and are fine. Check **J08** (an error with a guidance message, decision 23); it needs the recipe graph. The message names both tables and the column and says how to rename or drop one before the join. `QC_Reads_Anchor` will therefore fail the checker until it is fixed in its migration.
+2. **A column name in both tables of a join that is not a join key:** the engine calls `lf.join(...)` without a suffix (`joins.py:56-58`), so Polars renames the second column to `name_right` without a message; `QC_Reads_Anchor` has `total_reads_right` today. The join keys themselves are the key family and are fine. Check **J08** (DEC19); it needs the recipe graph. `QC_Reads_Anchor` will fail the checker until it is fixed in its migration.
 3. **Steps** repeat actions (a table has three `join` steps), so ordered logic cannot be keyed by the action name; it stays a list and a step that needs a name carries an `id` (7.5).
 
 ## 6. Fragments and comments
 
 ### 6.1 Fragments (`!include`)
 
-- `key: !include 'path/to/file.yaml'` puts the content of the file exactly where the key is. The path is relative to the folder of the recipe `[CODE, config_loader.py:55; nested includes use the same folder]`.
-- **The fragment holds the value itself, with no wrapper key** `[DECIDED, ADR-041 point 3]`. A file whose only top-level key repeats the key it is included under is refused with "remove the wrapper line" (F01). Today the loader removes the wrapper silently (`config_loader.py:77-97`), a compatibility default that ADR-041 prohibits. The ST22 recipe has 68 includes: 56 bare, 12 wrapped; over all recipes 33 are wrapped.
+- `key: !include 'path/to/file.yaml'` puts the content of the file exactly where the key is. The path is relative to the folder of the recipe `[CODE, config_loader.py:55; nested includes use the same folder]` and **must stay inside it** (no absolute path, no `..`; section 15).
+- **The fragment holds the value itself, with no wrapper key** `[DECIDED, ADR-041 point 3]`. A file whose only top-level key repeats the key it is included under is refused with "remove the wrapper line" (F01). Today the loader removes the wrapper silently (`config_loader.py:77-97`), a compatibility default ADR-041 prohibits. The ST22 recipe has 68 includes: 56 bare, 12 wrapped; over all recipes 33 are wrapped.
 - A missing file is an error naming the file (T02).
 
-### 6.2 Comments
-
-Two things are called a comment. Both are allowed.
+### 6.2 Comments `[DECIDED, DEC07]`
 
 | What | Form | Rule |
 |---|---|---|
-| A YAML comment | `# any text`, on its own line or after a value, in a recipe or fragment | **Free, anywhere, never refused.** It is not a key: the loader drops it, the checker never sees it. **Any tool that edits a recipe or a fragment keeps every comment** (a text-level edit or a round-trip library, never `yaml.dump`); a test per writer checks it. The ST22 recipe has 150 comment lines (10 in the main file, 140 in its fragments) that explain defaults and why a column is kept; the first line of `Summary_input_fields.yaml` is Eve's note "do not remove my comments" |
-| A `comment` key | `comment: text`, optional, on `info`, a schema, a join, a group, a plot entry, **every step and every layer** | The author's note of **intent: why, not what**. Read by people, never executed, never passed to an action or to the plot engine. `[CODE for steps, layers, groups, plots: BP-COMMENTS-1, ADR-082 Q4, ADR-083; PROPOSED for info, schema, join, O13]`. It is not the `description`: the description says what the element is; `comment` says why. Two ST22 schemas used a plural `info.comments`; it becomes `comment` |
+| A YAML comment | `# any text`, on its own line or after a value, in a recipe or fragment | **Free, anywhere, never refused.** It is not a key: the loader drops it, the checker never sees it. **Any tool that edits a recipe or a fragment keeps every comment** (a text-level edit or a round-trip library, never `yaml.dump`); a test per writer checks it. The ST22 recipe has 150 comment lines that explain defaults and why a column is kept |
+| A `comment` key | `comment: text`, optional, on `info`, a schema, a join, a group, a plot entry, **every step and every layer** | The author's note of **intent: why, not what**. Read by people, never executed, never passed to an action or to the plot engine. It is not the `description`: the description says what the element is; `comment` says why. `CODE` for steps, layers, groups, plots (BP-COMMENTS-1, ADR-082 Q4, ADR-083) |
 
 ## 7. The elements
 
@@ -303,97 +344,80 @@ Columns: R required, o optional, a advice (never blocks).
 |---|---|---|
 | `label` | R | short name |
 | `description` | a | the grain (what one row is), the entities, what the recipe already removed, how missing values are treated |
-| `comment` | o | the author's note (was the typo `info.comments`, now refused) |
-| `source` | R | `{type, path}`; `type` is `local_tsv` or `local_parquet`; `path` is relative to the project root. The fuzzy search of a file by dataset name (`ingestor.py:80-92`) goes |
-| `input_fields` | R | mapping `column slug -> field` (7.4); `{}` means no contract |
+| `comment` | o | the author's note |
+| `source` | R | `{type, path}`; `type` is `local_tsv` or `local_parquet`; `path` is the **development path** (DEC30): used when the deployment's `data_lookup` is `data_analysis_recipe_paths`, ignored in production (`by_dataset_id`). The fuzzy search of a file by dataset name in the ingestor (`ingestor.py:80-92`) goes |
+| `null_values` | R | list of texts that mean "missing" (`[]` allowed): read as text, these become null, then the dtype is applied (DEC28) |
+| `strip` | R | `true` or `false`: strip whitespace of text before the null words are applied |
+| `input_fields` | R | mapping `column slug -> field` (7.4); `{}` means no contract; **only the declared columns are read** (DEC24) |
 | `wrangling` | R | `{tier1: [...], tier2: [...]}` (7.5); `tier1` required, `tier2` optional; `[]` and a flat list are refused |
-| `output_fields` | o | mapping `column slug -> field`; checked by the data check, **not applied by the engine** (O7) |
 
-The three sections share one id space; a repeated id is an error (today the second silently replaces the first, `orchestrator.py:151-157`). `tier2` of a schema is applied **only when the schema is plotted directly**; on a schema that is only an ingredient it is an error `[DECIDED]`. The keys `fields` (alias of `input_fields`) and `info:` are refused.
+The three sections share one id space; a repeated id is an error (today the second silently replaces the first, `orchestrator.py:151-157`). `tier2` of a schema is applied **only when the schema is plotted directly** (DEC16). The keys `fields` (alias of `input_fields`), `info:` and `output_fields` are refused.
 
-### 7.4 Fields (`input_fields.<slug>`, `output_fields.<slug>`, `final_contract.<slug>`)
+**Missing values** (DEC28). Polars has no `NA`: it has `null` (a missing value, any type) and `NaN` (a floating point value, larger than every number in comparisons, not null); R's `NA` is Polars `null`; the text `NA` in a file is a string. Polars' own reader turns only an empty field into null. Today's hidden sanitiser strips whitespace and turns 14 exact texts into null in every text column (`""`, `NA`, `N/A`, `None`, `null`, `NaN`, `-`, `na`, `n/a`, `none`, `nan`, `NULL`, `n.a.`, `N.A.`, `sanitizer.py`; evidence section 20). That list also hits identifiers and free text (`NA` is the ISO code of Namibia), and a later `!=` or `not in` filter then drops those rows: a hidden choice with a science risk. Run A writes the 14 into each schema's `null_values`, so no table changes; the maker can then shorten the list per schema or per field. Because the reader has no per-column list, the implementation reads text, applies the declared null texts, then casts. The documentation says this plainly (task DOC-MISSING-VALUES-1, with the Namibia example).
 
-| Key | Meaning |
-|---|---|
-| `type` | a Polars dtype name that a text file can hold (`String`, `Int64`, `Float64`, `Boolean`, `Date`, `Datetime`, `Time`, `Categorical`, `Enum`, `Decimal`, ... the list is read from the installed Polars, O24) with the keys Polars needs for it (`categories`, `precision`, `scale`, `format`); the old names are refused, `categorical` with "this was String"; what the default is when `type:` is absent is still to be named once |
-| `original_name` | the column name in the file when it differs; shown in Blueprint. Allowed on output lists (O16) |
-| `label` | display name (default: the slug) |
-| `is_entity_key` | `true` when the column identifies the entity (it repeats in long tables). Replaces `is_primary_key` `[DECIDED]` |
-| `categories` | list of text; a step can then select `@category` (`data_wrangler.py:31-48`) |
+### 7.4 Fields (`input_fields.<slug>`)
 
-`{}` in an output list means "keep this column as it is".
+| Key | | Meaning |
+|---|---|---|
+| `type` | R | a Polars dtype name that a text file can hold (below) |
+| `categories` | o | the levels of an `Enum`, in order (required for `Enum`; it also fixes the axis order of a plot) |
+| `precision`, `scale` | o | for `Decimal` |
+| `format` | o | the parse format for `Date`, `Datetime`, `Time` |
+| `time_unit`, `time_zone` | o | for `Datetime` |
+| `original_name` | o | the column name in the file when it differs (exact match); shown in Blueprint |
+| `label` | o | display name (default: the slug) |
+| `is_entity_key` | o | `true` when the column identifies the entity (it repeats in long tables) |
+| `null_values`, `strip` | o | override of the schema's setting for this column |
 
-**The type vocabulary** `[DECIDED 2026-11-13: one place; six types, `integer` added the same day]`. Four lists disagree today: the rule file (`categorical`, `utf8`), the user docs (`categorical`, `numeric`, `date`, `boolean`), the ingestor (casts `numeric` to Float64, `categorical` and `string` to String, `date` to Date, **nothing else**, `ingestor.py:162-170`) and `MetadataValidator.DTYPE_MAP` (14 names, `metadata_validator.py:21-37`). Verified by running the ingestor on a column of digits: `categorical` and `string` give String; `utf8`, `boolean` and `i64` are **not cast** (the digits stay Int64), so `utf8` does not force text; `string` is accepted by the ingestor but refused by `enforce_schema`; 4 fixtures declare `i64`, which nothing handles. `string` was removed on 2026-05-22 as a "deprecated alias" (`LEGACY-TYPE-ALIASES-1`, commit `125963cf`); no ADR gives a deeper reason. What the files show: all 6 recipes that used it were migrated to `categorical`, and the rule wants the author to say whether a text column is a **group** (`categorical`: identifiers, labels, repeating values; `sample_id` must be one so that digits become text and joins match) or **free text** (`utf8`).
-
-**Decided (Eve, 2026-11-13): option A plus `boolean`.** Five types, and a sixth the same day (`integer`: whole numbers, a real cast shared by the ingestor and the `cast` action that FAILS on the first value that is not whole and names it; counts and years stay `2022`, not `2022.0`): `categorical` (the default: identifiers, labels, repeating values; a group), `utf8` (free text), `numeric`, `date`, `boolean`. What changes: the ingestor casts `utf8` to text (today it does not) and `boolean` with a real cast (the accepted spellings are fixed in the vocabulary file and tested); `string` stays refused and its message quotes the two meanings (`categorical` or `utf8`); the 4 fixtures that declare `i64` are corrected. Alternatives that were not chosen: rename `utf8` to `text`; restore `string` and drop `utf8`.
-
-The vocabulary is one list in the specification file, each entry with a one-line meaning that the error message quotes (section 14).
+**The type** (DEC27). The type is read from Polars, not from a list of ours: the allow-list is the set of Polars dtypes that the installed Polars can read from text with the CSV reader, produced by a probe test that tries every dtype on sample text (R9), so a Polars upgrade shows what changed. The declared dtype is given to the reader (`schema_overrides`), which fails strictly and names the value: a `String` `2022.0` into `Int64` fails ("could not parse `2022.0` as dtype `i64`"). A plain `cast` from text does **not** work for `Boolean`, `Datetime`, `Time`, `Duration`, `Decimal` (run on Polars 1.40.1), which is why the type is handed to the reader. `Enum` needs its levels, `Decimal` its precision. A `Categorical` key does not join with a `String` key: the join fails loudly (`SchemaError`, verified), never silently. A TSV column whose cells are all whole numbers is read as `Int64` by Polars on its own; the declared type makes that a choice written in the recipe. Old names (`numeric`, `utf8`, `integer`, `int`, `i64`, `float`, `string`, `character`, `categorical`) are refused with the replacement named; `categorical` always meant `String`, so its message is "this was String". Run A rewrites the shipped recipes (the tables do not change; ingestion made `categorical` a String). History that matters: four type lists disagreed (rule file, user docs, `ingestor.py:162-170`, `MetadataValidator.DTYPE_MAP`); `utf8`, `boolean` and `i64` were not cast by the ingestor; 4 fixtures declare `i64`.
 
 ### 7.5 Steps, tiers and step ids
 
 - A **step list** is `{tier1: [...], tier2: [...]}`. It appears as `wrangling` (schema), `steps` (join) and, at the plot entry, `steps: {tier3: [...]}` (7.7). All three are written the same way; an empty list means "equal to the previous node". `tier1` is required except at the plot entry; an unknown tier name is an error. `[DECIDED, 5a-15]`
 - A **step** is a mapping with `action` (a registered name), exactly the parameters in that action's `ui_schema.params`, and optionally `comment`, and `id` when the app wrote it (below); neither is a parameter and neither is passed to the action. A missing required parameter, an unknown parameter and an unknown action are errors with a did-you-mean by spelling.
-- **Renames and late names need no alias** (HOME session, verified by running the real orchestrator, `app/tests/test_column_names_through_the_steps.py`): steps run in order and each sees the table the previous step left; a rename in a schema's tier 1 is seen by the join's steps and by tier 2 (the old name is gone); a column that exists only after a join is seen by the next step, by tier 2 and by `final_contract`. The only declarative rename is `original_name` on an input field. The aliases did have a function in **one** of the two paths: a schema's wrangling goes through `DataWrangler`, which resolves `columns` from six spellings; a join's steps go through `DataAssembler`, which resolves none (`filter_gt column: score` there changes nothing). Removing them is decided (O15 row 25); both paths must then **fail** on a missing `columns`, and the resolution code in `data_wrangler.py` is deleted. One rule set for the checker and the engine: `utils.ui_schema.step_problems(action, spec, schema)`; the keys every step may carry are `action`, `id` (audit profile only) and `comment`.
-**What the aliases were** (verified; HOME session and this session):
-
-| Key | Who read it | What happened | What replaces it |
-|---|---|---|---|
-| `column`, `source`, `source_column`, `target_column` (and the key `True` of an unquoted `on:`) on a step | **`DataWrangler`**, the path of a schema's `wrangling` (`data_wrangler.py:132-147`): it looked for the first of them, expanded `@category`, checked the columns and wrote the result into the step as `columns`. **Not** `DataAssembler`, the path of a join's steps | in a schema's wrangling a step with `column: x` worked by accident; in a join the same step changed nothing (no message) | `columns`, the name the action's schema declares; both paths fail on a missing `columns` (`step_problems`) |
-| `target_column`, `source`, `separator` inside an action | the actions themselves: `rename` (`cleaning/core.py:126`), `split_column` (`reshaping/core.py:202,205`) | a second spelling of a parameter the schema already names | `columns`, `delimiter`, the declared names |
-| `@category` | `DataWrangler` (field key `categories`) | selects every column of a category in a step | stays (a selector, not an alias) |
-| a **rename** needing an alias | nobody: steps run in order and each sees the table the previous one left (`app/tests/test_column_names_through_the_steps.py`) | the old name is gone after a rename, the new name is seen downstream | nothing is needed; the only declarative rename is `original_name` on an input field |
-
-- **No guessing between spellings of a parameter.** Before a step runs, the wrangler looks for "which columns does this step work on" in six spellings in a fixed order (`columns`, `column`, `source`, `source_column`, `target_column`, and the boolean key that an unquoted `on:` becomes), expands `@category` names, checks the columns exist (ADR-034's friendly message) and **writes the result back into the step as `columns`** (`data_wrangler.py:132-147`). So a step that says `column:` for an action whose schema says `columns` works by accident. What goes is the guessing, not the presence check and not `@category`: those read **the parameters that the action's own schema declares as column selectors** (71 parameters in 59 of 65 actions). A misspelled parameter is then reported before the run with the right name (ST03). Exactly 14 steps in 10 recipe files rely on a wrong spelling today. `[PROPOSED mechanism, O15]`
-- `join` and `join_filter` only in tier1 (ST05). `join_filter` has no `how`; it is always inner (`joins.py`), so `how` on it is an error.
+- **Renames and late names need no alias** (verified by running the real orchestrator, `app/tests/test_column_names_through_the_steps.py`): steps run in order and each sees the table the previous step left; a rename in a schema's tier 1 is seen by the join's steps and by tier 2; a column that exists only after a join is seen by the next step and by tier 2. The only declarative rename is `original_name` on an input field.
+- **No guessing between spellings of a parameter** (DEC14). Today the wrangler looks for "which columns does this step work on" in six spellings, expands `@category`, checks the columns exist and **writes the result back into the step as `columns`** (`data_wrangler.py:132-147`); a join's steps go through `DataAssembler`, which resolves none (`filter_gt column: score` there changes nothing). What goes is the guessing and `@category`; the presence check stays, reading **the parameters that the action's own schema declares as column selectors** (71 parameters in 59 of 65 actions). Both paths then **fail** on a missing parameter and name the right one (ST03). 14 steps in 10 recipe files rely on a wrong spelling today. One rule set for the checker and the engine: `utils.ui_schema.step_problems(action, spec, schema)`; the keys every step may carry are `action`, `id` (audit profile only) and `comment`.
+- `polars_join` only in tier1 (ST05). `how` is required (DEC34).
 - `'on'` is quoted. An unquoted `on:` becomes the boolean key `True`; today the loader repairs it with a printed warning (`config_loader.py:18-41`). It is an error (T07).
-- Formulas (`mutate` `expression`, plot function strings) may use only an allowed list of Polars operations by function name (O10).
+- Formulas (`polars_with_columns` values, plot function strings) may use only an allowed list of Polars operations (section 15).
 
-**Step ids: written by the app, not by authors** `[DECIDED direction; the name is O5]`. Steps stay lists. A step has no name in the author's recipe: nothing in a recipe refers to a step, so an author writes no `id`. The key exists for one reason: the audit mode inserts steps into the audit copy of a recipe and must be able to **mark** them (the origin marker), to **remove or undo exactly those**, and to open the right node popup. So a step the app inserts carries `id: audit_<unique suffix>`, and the invariant "the copy minus its marked steps equals the original" compares those ids.
+**Step ids: written by the app, not by authors** `[DECIDED, DEC18]`. Steps stay lists. A step has no name in the author's recipe: nothing in a recipe refers to a step. The key exists for one reason: the audit mode inserts steps into the audit copy of a recipe and must be able to **mark** them, to **remove or undo exactly those**, and to open the right node popup. So a step the app inserts carries `id: audit_<unique suffix>`, and the invariant "the copy minus its marked steps equals the original" compares those ids.
 
 ```yaml
 tier1:
-  - action: join                          # the author's step: no id
+  - action: polars_join                   # the author's step: no id
     right_ingredient: Quast
     'on': sample_id
+    how: left
+    maintain_order: left_right
     comment: reads quality and assembly quality side by side
   - id: audit_7f3a                        # inserted by the audit mode
-    action: filter_eq
+    action: modif_filter
     column: Country
+    op: eq
     value: Norway
+    na: remove
 ```
 
-Rules: (1) `id` is accepted because the audit copy contains it; it is text and unique inside its list (ST08). The checker is not obliged to accept an `id` in a recipe that is not an audit copy; whether it warns is decided with the audit mode. (2) `id` and `comment` are **not part of the hash** (a mark or a note must not rebuild a table); the order is. (3) The list is the order, so nothing depends on the order of a mapping. (4) Error messages name a step by its place ("step 3 of `tier1` of `QC_Reads_Anchor`, `join`"), never by an id the author did not write. Why not the action name as the key: a table repeats actions (11 of the 74 non-empty step lists repeat one; `QC_Reads_Anchor` has three `join` steps; 148 steps in those lists at least). No action has a parameter named `id` (checked), so there is no clash.
+Rules: (1) `id` is accepted because the audit copy contains it; it is text and unique inside its list (ST08). (2) `id` and `comment` are **not part of the hash** (a mark or a note must not rebuild a table); the order is. (3) The list is the order, so nothing depends on the order of a mapping. (4) Error messages name a step by its place ("step 3 of `tier1` of `QC_Reads_Anchor`, `polars_join`"), never by an id the author did not write. Why not the action name as the key: a table repeats actions (11 of the 74 non-empty step lists repeat one; `QC_Reads_Anchor` has three joins). A dictionary of ids was rejected: silent duplicates, sorted hashes and sorting writers become real for every step, and 148+ steps would migrate.
 
-| Option | Pros | Cons |
-|---|---|---|
-| A. Steps as an ordered dictionary of ids | an id by construction | all three dangers (silent duplicates, sorted hashes, sorting writers) become real for every step; every step needs a name; 6 writers and Blueprint's form change; 148+ steps migrate; ADR-041 point 2 superseded |
-| **B. A list; the app marks the steps it inserts with an `id`; authors write none** (direction) | YAML guarantees the order; a duplicate cannot drop a step silently; no migration of steps; nothing new for authors | the id is a key inside the item, not the key of the container (ST08 enforces uniqueness) |
-| C. A list without any id | nothing changes | the audit mode must mark its steps another way (a separate key, or by position, which breaks when a step is inserted) |
+### 7.5.1 Action names, defaults and the registry `[DECIDED, DEC31 to DEC42; evidence: home_evidence/actions_and_polars_2026-11-13.md sections 2, 3, 10, 15, 17, 19, 21]`
 
-### 7.5.1 Action names `[RECOMMENDATION, awaiting Eve; evidence: home_evidence/actions_and_polars_2026-11-13.md]`
+Why: stay aligned with Polars so that a recipe reads like the Polars code and a reader can tell at once what is Polars and what is ours.
 
-Eve's direction (2026-11-13, reported by the HOME session): stay aligned with Polars; actions that do several steps at once are split into single steps; every name is checked against Polars. The evidence file holds the check (VERIFIED by probes; 25 of 67 bodies READ). The policy the two sessions recommend:
+| Class | Name | Registry `polars` | Meaning |
+|---|---|---|---|
+| Polars call | `polars_<name>`, the method with its namespace written in the name (`polars_str_replace_all`, `polars_dt_truncate`, `polars_list_join`; the rule is `<namespace>_<method>`, because `str_replace_all` is not an identifier in Polars) | `exact`, `wrapper` | exactly the Polars call: all Polars parameters, Polars names and defaults. `wrapper` = applied through `with_columns` with an optional target column. The equality test (below) proves it |
+| Modified | `modif_<name>` | `modified` | a Polars idea with another parameter or default, or an own vocabulary (`modif_filter`); the difference is in the description, no behaviour is hidden |
+| Composite | `step_<name>` | `composite` | several Polars calls; simple, unambiguous, documented, every switch an option |
 
-| Rule | Text |
-|---|---|
-| N1 | One Polars method is one action, with the Polars name and the Polars parameter names where the form is the same (`subset`, `keep`, `maintain_order`, `how`, `on`). |
-| N2 | A name that exists in Polars but means something else here is renamed (evidence section 2: `is_in`, `not_in`, `value_counts`, `coalesce`, `percentile`, `rename`). |
-| N3 | A family that is not a Polars name is allowed only as a thin named case of ONE Polars method, with `wraps` set, and only where the name carries information that the audit text and the methods section need (the `filter_*` family names the operator). |
-| N4 | No action returns the frame unchanged on a missing parameter or a missing column (it fails and names the step). An action that does several Polars calls may stay only when it is simple, unambiguous and documented, every behaviour switch is an option, and its name says so (`step_`, below) `[Eve 2026-11-13, reported by the HOME session; replaces "no action does two operations"]`. |
-| N7 | **Eve's naming rule (2026-11-13, reported):** an action that is really a Polars action has exactly the Polars name and all Polars parameters (missing ones are added). What differs is renamed so that the name shows it: `modif_<name>` = the Polars idea with another parameter or default, `step_<name>` = more than one Polars call; the difference is written in the description and no behaviour is hidden. |
-| N8 | **[SUPERSEDED 2026-11-13: Eve chose prefix AND registry field, `polars: exact / modified / composite / wrapper` + `wraps`; "an action that is not Polars must be seen by its name". What is still open is only the scheme, see N9.]** Variant that was offered (recipe session): a prefix is needed only where a reader could believe the action is Polars: a name that exists in Polars but differs (`modif_`), or several calls behind one name (`step_`). A name that does not exist in Polars (`strip_whitespace`, `round_numeric`, `fill_nulls`) cannot be mistaken; it gets a registry field `polars: exact / modified / composite / wrapper` (shown in Blueprint, the docs and the checker advice) plus `wraps`. About 14 renames instead of more than 40; if Eve wants the prefix on every non-Polars action it is mechanical (migration run A). **Eve decides.** |
-| N9 | **Three schemes for the names, Eve decides** (evidence section 10): (1) prefix everything that is not Polars, about 50 renames; (2) prefix only the look-alikes, about 14; (3) rename the 26 own one-call wrappers TO the Polars method name written with its namespace (`fill_null`, `str_replace_all`) and prefix only the true deviations. **Recipe-session view:** scheme 3 is acceptable under three conditions. (a) The rule `<namespace>_<method>` (`str_`, `dt_`, `list_`) is written here once, because `str_replace_all` is not an identifier in Polars (`pl.col().str.replace_all`) and a reader could take it for exact. (b) A wrapper takes the exact name only after a test shows it equals the Polars call for the same input and has all Polars parameters with the Polars defaults; a wrapper with a hidden choice (`strip_whitespace` also strips double quotes, `select_by_pattern` adds `^...$`, `replace_values` maps many old values to one, `divide_columns` casts to Float64) is NOT renamed to a Polars name: it gets `modif_` and the hidden choice becomes an option, and every recipe whose table changes is listed. (c) The migration run A changes only names that pass (b); a result change never travels with a rename. |
-| N10 | **Differences that exist only for determinism (ADR-090)** (`sort` stable, `unique` keep first, `sample` seed 0 and `fraction` 0.1, `join` `how: left` with `left_right` order): **recommendation: the parameter that expresses the difference is REQUIRED in the recipe** (`maintain_order`, `keep`, `seed` and `n` or `fraction`, `how` and `maintain_order`), no hidden default, so the name stays exact and the recipe states what happens; the migration writes today's value into every existing step, so no table changes and the reader sees it. Alternative: `modif_` with a documented default (hidden in the name instead of in the recipe). Eve decides |
-| N11 | **Merged actions and conditional parameters (recipe session, answering the HOME session's recount, evidence section 15).** Merging several Polars-name-less actions of ONE Polars method into one action with an option is compatible with N1 and N3 when the option carries what the audit text needs: the five `filter_*` plus `is_in` and `not_in` become ONE `modif_filter` with `column`, `op`, `value`, `na`, the same vocabulary as the audit rows and VizFactory `filters` (rules_viz_factory section 4: `eq, ne, gt, ge, lt, le, in, not_in, between`, `closed` for `between`), so the three filter paths and the tier-3 migration of spec `filters` (P06) use one set of words; `count_by_group` and `window_agg` (both `Expr.over`) become ONE `modif_over`. Such a merge needs **conditional parameters** (the shape of `value` depends on `op`: one value, a list, or `[lo, hi]`; `fill_null` takes `value` OR `strategy`): `ui_schema` gets a `rules` list (`when`, `require`, `one_of`, `exclusive`) that `step_problems` and the engine both read, and the Blueprint form follows it. Each merge lists the recipes whose step changes. `mutate` and `add_constant` (no Polars name) **[DECIDED 2026-11-13, Eve, reported: `polars_with_columns` with a mapping, `add_constant` removed]**: recommendation `with_columns` with a mapping `column: formula` (the Polars form `with_columns(**named)`; each formula passes `formula_check`, O29; `add_constant` is then `pl.lit(...)`); this relaxes the one-column-per-step habit of the bioscientist rule (all formulas of one step see the table as it was before the step, as in Polars), Eve decides |
-| N12 | **[DECIDED 2026-11-13, Eve, reported by the HOME session: the `polars_` reading is yes]** **Prefix on every action name:** `polars_<name>` for what IS a Polars call (the classes `exact` and `wrapper`, the 26 own wrappers renamed to the Polars method with its namespace in the name, `polars_str_replace_all`), `modif_<name>` for a Polars idea with a documented change, `step_<name>` for several calls; no unprefixed action name remains. This replaces the schemes of N9 (scheme 3 with the prefix) and shrinks `modif_`: the determinism defaults (N10) become required parameters, so `polars_sort`, `polars_unique`, `polars_sample`, `polars_join` are exactly Polars. **Checks that follow:** (a) the registry field `polars` and the prefix say the same thing (`exact`, `wrapper` = `polars_`; `modified` = `modif_`; `composite` = `step_`); a registry test fails when they disagree, so there is one source (the field) and one reading aid (the prefix); `wraps` stays: it names the call for the equality test and the help panel. (b) One display `label` per action keeps the Blueprint list short (the name is long, the label is not). (c) `legacy_keys.py` gets one entry per old name (about 44) with the new name in the message; old names are refused, never mapped (no alias); the entries go when ADR-100 retires them. (d) The docs, the rule files and the user guides that spell action names are swept in one task (#79; the rule files with Eve's yes). (e) A reference to a table by id instead of a frame (`join`'s `right_ingredient`) is not a behavioural difference and does not stop an action being `polars_` |
-| N13 | **General rule on defaults `[DIRECTION from Eve: no hidden choice anywhere; every choice is in the recipe]`:** an action parameter that changes the result has NO default unless the default is the Polars default. Executable as a registry test: for a `polars_` action every parameter of the wrapped call is exposed, and its default equals the default in `inspect.signature` of the `wraps` target (or it is required); for `modif_` and `step_` a default is allowed only when the parameter is optional in the sense of "off when absent" (`null`), and every other parameter is required. Applied: `na` is REQUIRED on every filter (supersedes O25's default `keep`; Eve to confirm because she said `keep` earlier), `sample` takes `seed` and `n` or `fraction`, `round` takes `decimals`, `strip_whitespace` becomes an explicit `characters`, `select_by_pattern` takes the regex as the maker writes it (the anchors are written, not added), splits take their separator, `divide_columns` states its cast, `replace_values` many-to-one becomes a visible choice. The old defaults are written into existing steps by migration run A, so no table changes |
-| N14 | **[DECIDED 2026-11-13, Eve, reported by the HOME session: Polars names win in `polars_` actions]** **Conflict H1 (one name per role, O21) against Polars parameter names, settled:** Polars names the same role differently per method (`subset` in `drop_nulls` and `unique`, `by` in `sort`, `on` in `join`, `exprs` in `select`); H1 decided `columns` and `new_column`. A `polars_` action that takes "all Polars parameters with the Polars names" cannot also follow H1. **Recommendation:** in a `polars_` action the Polars parameter names win (the recipe reads as the Polars code, Eve's principle); H1 names apply to `modif_` and `step_` actions and to the audit vocabulary; the checker's did-you-mean knows both and the message says which name the action wants. Resolved as recommended |
-| N5 | One name per action: no alias, no second action for the same Polars method (`drop_duplicates`, `unique`, `unique_rows` become `unique`; `rename` and `rename_columns` become `rename`). |
-| N6 | A domain action with no Polars method is kept only when it cannot be written as single steps (or the single steps are much longer and less clear) and its description says so. |
+**Rules.** (1) The registry field and the prefix say the same thing; a registry test fails when they disagree (one source, one reading aid); `wraps` stays: it names the call for the equality test and the help panel. (2) **Equality test:** for each `polars_` action, call it with the Polars parameters on a probe frame and compare with the direct Polars call named by `wraps`; an action that fails cannot be `polars_`. (3) **No hidden choice (DEC33):** a registry test checks that for a `polars_` action every parameter of the wrapped call is exposed and its default equals the default in `inspect.signature` of the `wraps` target (or it is required); for `modif_` and `step_` a default is allowed only when the parameter is "off when absent"; every other behaviour parameter is required. Applied: `na` on every filter; `seed` and `n` or `fraction` on `polars_sample`; `decimals` on `polars_round`; `characters` on `polars_str_strip_chars`; the regex of a pattern selection as the maker writes it (the anchors `^...$` are written, not added); the separator of a split; the cast of a division; the many-to-one of a value replacement as a visible choice. (4) **Parameter names:** in a `polars_` action the Polars names (`subset`, `by`, `on`, `exprs`); in `modif_` and `step_` actions and in the audit vocabulary the one name per role (DEC15); the did-you-mean knows both and the message says which name the action wants. (5) **Differences that existed only for determinism** (ADR-090: `sort` stable, `unique` keep first, `sample` seed 0 and fraction 0.1, `join` how `left` and order `left_right`) are required parameters (DEC34); run A writes today's value into every step. (6) **Old names:** `legacy_keys.py` gets one entry per old name (about 44) naming the new one; old names are refused, never mapped. (7) A reference to a table by id (`right_ingredient`) does not stop `polars_join` being `polars_` (R8). (8) A display `label` per action keeps the Blueprint list short.
 
-What is not decided: the new names (Eve's; N7 and N8), and what happens to the multi-step actions (Eve's answer of 2026-11-13: they may stay when simple and documented, N4, so option (b) below is the direction; the list is still checked one action at a time): **(a)** remove and let the author write the single steps (most transparent; recipes get longer); **(b)** keep a few, marked as composite in the registry and the description; **(c)** a composite is expanded into single steps when the recipe is loaded, so the engine and the audit only ever see single steps (short recipes, but the author writes something that is not what runs). Recommendation: (a) where the existing single steps give the same table (`split_and_explode` is `split_to_list` plus `explode`), with a golden test that the table is identical before and after; the others one by one after their bodies are read. Two things to say plainly to Eve: `derive_categories` is not Polars and reads an external file (what it does may be a `join` with a lookup table: to verify, not read yet), and `percentile` is `rank` divided by the number of rows, which is not a percentile in the Polars or statistical sense, so a methods text that says "percentile" would be wrong.
+**What happens to the 67 actions** (an estimate from the bodies read, evidence section 15; each exact name still needs its equality test): about 21 keep their name with parameters completed or required (`drop_nulls`, `explode`, `unnest`, `unpivot`, `pivot`, `cast`, `shift`, `cum_sum`, `cum_count`, `interpolate`, `all_horizontal`, `any_horizontal`, `join`, `sort`, `sample`, `rename`, `coalesce`, `unique`, ...) and become `polars_<name>`; about 12 are renamed to a Polars name (`fill_nulls` and `fill_nulls_direction` to `polars_fill_null`, `round_numeric` to `polars_round`, `regex_replace` to `polars_str_replace_all`, `regex_extract` to `polars_str_extract`, `split_to_list` to `polars_str_split`, `date_truncate` to `polars_dt_truncate`, `describe_stats` to `polars_describe`, `horizontal_stats` to the four `polars_*_horizontal`, `keep_columns` to `polars_select`, `drop_columns` to `polars_drop`); about 16 old names become `modif_` and merge into 9 actions (`divide_columns`, `replace_values`, `select_by_pattern`, `strip_whitespace` have a hidden choice that becomes an option; `null_if`, `value_counts`; the filters merge into `modif_filter`); 12 are `step_` (`date_extract`, `derive_categories`, `recode_values`, `sanitize_column_names`, `split_and_explode`, `split_column`, `split_column_to_parts`, `summarize`, `to_struct`, `top_n_other`, `z_score`, `label_if`); 4 duplicates are removed (`unique_rows`, `rename_columns`, `join_filter`, `drop_duplicates` into `unique`); `mutate` and `add_constant` become `polars_with_columns`; `percentile` is removed; `sink_parquet` and `scan_parquet` leave the recipe vocabulary. The Polars methods that have no action (`head`, `tail`, `slice`, `top_k`, the table aggregations, `quantile`, `rank`, `join_asof`, `rolling`, ...) are deferred (DEC41, evidence section 19); `polars_filter` waits until a recipe needs a formula predicate.
 
-**Where the old protection goes.** `keep_columns` and `drop_columns` protect the primary keys today. In the new model that protection is not in the step and nothing enforces it in the recipe (Eve, O32 withdrawn): the audit mode offers no drop of a key (UI contract 12g.3, a rule of the audit, not of the step), and a recipe that drops a join key fails at the join with the engine's own error. The migration turns `keep_columns [a, b]` into `select [<keys>, a, b]` where the keys were added silently, so the table stays identical, and lists every `drop_columns` that named a missing column or a key: such a step never did what it said.
+**Where the old protection goes.** `keep_columns` and `drop_columns` protected the primary keys, `keep_columns` put them first and `drop_columns` ignored a missing column. None of that is in `polars_select` and `polars_drop` (DEC26, DEC37): the audit mode offers no drop of a key (UI contract 12g.3), and a recipe that drops a join key fails at the join with the engine's own error. Run B writes the explicit `polars_select` so the table stays identical and lists every `drop_columns` that named a missing column or a key: such a step never did what it said.
+
+**Facts that justify the rules** (evidence): `is_in` and `not_in` filter rows where Polars returns a mask; `value_counts` returns a frame where Polars returns a struct column; `coalesce` overwrote its first column; `percentile` was `rank` divided by the row count; `rename` had two forms and a duplicate; `sort`, `sample`, `join`, `unique` had defaults that differ from Polars; `strip_whitespace` also stripped double quotes; `select_by_pattern` added the anchors.
 
 ### 7.6 Join (`joins.<id>`), a collection built from schemas
 
@@ -403,10 +427,10 @@ What is not decided: the new names (Eve's; N7 and N8), and what happens to the m
 | `description` | a | what one row is, which tables are combined and how, what is removed, what a missing value means here |
 | `comment` | o | the author's note |
 | `ingredients` | R | list of `{dataset_id: <schema id>}`, at least one; **the first is the base**. A bare id (`- FastP`) is refused |
-| `steps` | R | `{tier1: [...]}` at least (7.5) |
-| `final_contract` | o | mapping `column -> field`, an **exclusive whitelist** in column order: the collection keeps exactly these columns, in this order. A list is refused (today it is skipped silently); a column the collection lacks is an error (today only printed) |
+| `steps` | R | `{tier1: [...]}` at least (7.5); its last step is the published columns (`polars_select` or `polars_drop`, DEC23) |
+| `labels` | o | mapping `column -> display text` (DEC23); also allowed on a schema that is plotted directly |
 
-`output_fields` or `info` on a join are refused (the message says `final_contract` and `description`). Each `right_ingredient` is one of the join's `ingredients`; `on`, or `left_on` with `right_on`, names the key (not both). The orchestrator's silent fallbacks go: an unknown collection falls back to the first join (`orchestrator.py:198-206`) and a join without ingredients uses all schemas (`orchestrator.py:224`).
+`output_fields`, `final_contract` or `info` on a join are refused (the message names `polars_select`, `labels` and `description`). Each `right_ingredient` is one of the join's `ingredients`; `on`, or `left_on` with `right_on`, names the key (not both). The orchestrator's silent fallbacks go: an unknown collection falls back to the first join (`orchestrator.py:198-206`) and a join without ingredients uses all schemas (`orchestrator.py:224`).
 
 ### 7.7 Analysis group and plot entry
 
@@ -420,81 +444,78 @@ What is not decided: the new names (Eve's; N7 and N8), and what happens to the m
 | `description` | a | what it shows, what is counted, which subset it leaves out |
 | `comment` | o | the author's note |
 | `spec` | R | the plot specification (7.8) |
-| `steps` | o | `{tier3: [...]}`: the steps applied to this plot's table after its tier 2. Any registered action; the audit mode writes only filters and drops here. Omitted or empty means the plot reads its table as it is `[DECIDED, 5a-15; name and place O12]` |
+| `steps` | o | `{tier3: [...]}`: the steps applied to this plot's table after its tier 2. Any registered action; the audit mode writes only filters and drops here. Omitted or empty means the plot reads its table as it is `[DECIDED, DEC17]` |
 | `taxonomy` | o | classification for the Gallery (section 9); required in profile `gallery` |
 
-**Who reads `steps.tier3` `[Eve 2026-11-13, reported by the HOME session: the container must be read by the engine; it is the data of the plot. The ORDER of the change is still open]`.**
+**Who reads `steps.tier3`** `[DECIDED, DEC17; order R1]`. **Reader (target):** the engine, not HOME: a T3 node of the plot in `DataOrchestrator` (called "the engine reader of the plot's T3 list" here; it has no name in the code yet, the orchestrator has only `materialize_tier1` and `materialize_tier2`; the name and place are fixed by the HOME session's package P5). Its key is `hash(tier2 key, steps)`; an empty list gives the T2 key, so nothing is stored twice (`home_audit_steps.md` point 15). The plot, the plot's T3 table, the caption counts and the export all read this one node, so the plot equals its table. **Writer:** the audit adds steps to the same list (with `id` and `reason`); the author's steps carry none. **Until the reader exists** the checker refuses a non-empty list (P05), through one constant switched in the same commit as the reader. **Spec-level `filters`** stay allowed until then; the migration is R1 (checks P05, P06).
 
-- **Reader (target).** The engine, not HOME: a T3 node of the plot in `DataOrchestrator` (called "the engine reader of the plot's T3 list" here; it has no name in the code yet, the orchestrator has only `materialize_tier1` and `materialize_tier2`; the name and the place are fixed by the HOME session's package P5). Its key is `hash(tier2 key, steps)`; an empty list gives the T2 key, so nothing is stored twice (`home_audit_steps.md` point 15). The plot, the plot's T3 table, the caption counts and the export all read this one node, so the plot equals its table.
-- **Writer.** The audit adds steps to the same list (with `id` and `reason`, 7.5); the author's steps carry none.
-- **Until the reader exists** a non-empty `steps.tier3` would be a list that is never applied. The checker therefore refuses it (check P05; HOME rule 19 "fail instead of warn"), through one constant that is switched in the same commit as the reader.
-- **Spec-level `filters`.** They stay allowed until the reader exists. Then a migration rule rewrites every filter row into the matching filter step of `steps.tier3`, and the checker refuses `filters` in the spec (check P06) with the message "move it to `steps.tier3`". **Not yet measured:** whether VizFactory's predicate (`filters`) and the filter actions treat missing values alike. It is measured before the migration; every table or figure that would change is listed for Eve, none is changed silently. Meanwhile HOME merges the author's filters with the exploration filters instead of overwriting them (`home_theater.py:498`; HOME session).
-- **Gallery.** Decision D3 puts an example's own steps here. Found by reading: the only bundle with a non-empty `tier3` (`beeswarm_sina`) uses `filter_rows`, an action that is not registered anywhere, and `generate_previews.py` never applies `wrangling` (no line of it mentions `wrangling` or `tier`), so the filter `mic_value > 0` is silently ignored today and the preview shows unfiltered data. That bundle migrates after the reader exists, and its preview picture then changes once (Eve is shown the two pictures).
+**Gallery.** An example's own steps are the plot's `steps: {tier3: [...]}` (DEC47). Found by reading: the only bundle with a non-empty `tier3` (`beeswarm_sina`) uses `filter_rows`, an action that was never registered (invented on 2026-05-03; the intended meaning is a greater-than filter on `mic_value`), and `generate_previews.py` never applies `wrangling`, so the filter is silently ignored today and the preview shows unfiltered data. That bundle migrates after the reader exists; its preview picture then changes once and Eve is shown both pictures. Task GALLERY-RIGOR-1 adds a test and the fix.
 
 `info:` on a plot entry (a sentence, 25 times today) is refused: the message says `description`.
 
 ### 7.8 Plot specification, layers, `plot_defaults`
 
-`spec` keys, the set the plot engine reads (`plot_config_resolver.py:71-74`): `target_dataset` (R, a join id or a schema id), `mapping` (R), `layers` (R, at least one geom or stat), `title`, `theme`, `facet_by`, `palette`, `labels`, `guides`, `filters`. Everything else is an error, with the replacement of section 12 where one exists (`facet_scales`, `labs`, `coordinate_flip` become layers, issue #66). `description` and `info` are refused inside a spec: they are the plot entry's. The gallery taxonomy keys `family`, `pattern`, `difficulty` are refused in a spec: the taxonomy is the gallery's, not the recipe's (Eve: "do not confound"); 16 of the 17 ST22 specs carry three of the axes only because they were copied from gallery examples on 2026-04-10, and no code reads them from a pipeline plot (O18).
+`spec` keys, the set the plot engine reads (`plot_config_resolver.py:71-74`): `target_dataset` (R, a join id or a schema id), `mapping` (R), `layers` (R, at least one geom or stat), `title`, `theme`, `facet_by`, `palette`, `labels`, `guides`, `filters`. Everything else is an error, with the replacement of section 12 where one exists (`facet_scales`, `labs`, `coordinate_flip` become layers, issue #66). `description` and `info` are refused inside a spec: they are the plot entry's. The gallery taxonomy keys `family`, `pattern`, `difficulty` are refused in a spec (DEC21); 16 of the 17 ST22 specs carry three of the axes only because they were copied from gallery examples on 2026-04-10, and no code reads them from a pipeline plot.
 
 `mapping`: keys are aesthetic names of the plot engine (`x`, `y`, `fill`, `color`, `group`, `facet_by`, ...); values are column names of the target table (the "column exists at that node" check needs the recipe graph, X7).
 
-`layers`: list of `{name, params, comment}`; `name` is a registered component (all 191 have a schema; none of the 167 layers in the repository has an unknown name); `params` are checked against **the component's schema plus the arguments of the wrapped plotnine function** `[DECIDED 2026-11-13]` (section 8).
+`layers`: list of `{name, params, comment}`; `name` is a registered component (all 191 have a schema; none of the 167 layers in the repository has an unknown name); `params` are checked against **the component's schema plus the arguments of the wrapped plotnine function** `[DECIDED, DEC09]` (section 8).
 
-Two forms exist for the same thing (`facet_by` at the top of the spec and inside `mapping`; `filters` in the spec and the tier-3 list); both are read today, both stay allowed (O9).
+Two forms exist for the same thing (`facet_by` at the top of the spec and inside `mapping`; `filters` in the spec and the tier-3 list); both are read today and both stay allowed until R1 decides the second; a top-level `facet_by` is refused later, `mapping.facet_by` stays.
 
 `plot_defaults` keys: `palette`, `theme`, `default_font_family`, `facet_panel_spacing`, `legend_position`, `optimisation`, `layers` (`plot_config_resolver.py:64-67`). `height` and `show_legend` (2 templates) are errors.
 
 ## 8. Operations and the registries `[verified 2026-11-13]`
 
-**The mechanism.** An operation exists because a Python function carries a decorator, run when its library is imported. `@register_action("name", ui_schema={...})` (`transformer/actions/base.py:22`) fills `AVAILABLE_WRANGLING_ACTIONS` and, with a schema, `ACTION_SCHEMAS`. `@register_plot_component("name", ui_schema={...})` (`viz_factory/registry.py:21`) fills `PLOT_COMPONENTS` and `COMPONENT_SCHEMAS`. A name registered twice overwrites the first. Today: **67 actions (65 with a schema), 191 components (all with a schema)**. A schema holds `label`, `category`, `context` (where the operation may appear: t1, t2, assembly, plot), `tags`, `params`, `description`, `yaml_example`, `wraps` (the Polars or plotnine function it wraps). `server.py` already hands both schema dictionaries to `blueprint_arch.schema_registry.register` at startup (ADR-011 injection).
+**The mechanism.** An operation exists because a Python function carries a decorator, run when its library is imported. `@register_action("name", ui_schema={...})` (`transformer/actions/base.py:22`) fills `AVAILABLE_WRANGLING_ACTIONS` and, with a schema, `ACTION_SCHEMAS`. `@register_plot_component("name", ui_schema={...})` (`viz_factory/registry.py:21`) fills `PLOT_COMPONENTS` and `COMPONENT_SCHEMAS`. A name registered twice overwrites the first. Today: **67 actions (65 with a schema), 191 components (all with a schema)**. A schema holds `label`, `category`, `context` (where the operation may appear: t1, t2, assembly, plot), `tags`, `params`, `description`, `yaml_example`, `wraps` (the Polars or plotnine function it wraps); from this specification also the registry field `polars` (7.5.1) and the conditional `rules` (R3). `server.py` already hands both schema dictionaries to `blueprint_arch.schema_registry.register` at startup (ADR-011 injection).
 
 **What the checker reads:** the name (ST02, PS04), the parameters declared (ST03), the required ones (ST04), `multi` (ST07), the shape of each value (ST10), `context` against the tier (ST05 is one case). The core imports neither library (section 14): each caller exports its registry as plain data (name to `{params: {name: {widget, multi, required, options}}, allowed_extra_names, context}`) and passes it in.
 
-**What the registries do not say today** (scripts `registry_survey.py`, `registry_conformance.py`, `registry_examples.py` in `tmpAI/recipe_format/`), with why and consequence. **Status 2026-11-13:** the part that does not depend on the recipe migration or the checker is **built** (issue #87: R1, R5, the self-consistency tests; permission given by Eve); the dependent parts are in #76 (ST09, ST10, AR3 against the checker) and #78 (the alias reads, R2). One more defect was found by asking plotnine about every schema parameter: 13 parameters in 7 components that plotnine refuses (#88).
+**What the registries did not say, and the status** (scripts `registry_survey.py`, `registry_conformance.py`, `registry_examples.py` in `tmpAI/recipe_format/`). The part that does not depend on the migration or the checker is **built** (issue #87: RG1, RG5, the self-consistency tests); the dependent parts are in #76 (ST09, ST10, AR3 against the checker) and #78 (the alias reads, RG2). Asking plotnine about every schema parameter found 13 parameters in 7 components that plotnine refuses (#88).
 
-| # | Gap | Why it is so | Consequence | Fix |
-|---|---|---|---|---|
-| R1 | **No widget for a list or a dictionary.** Eight parameters are declared `string` while their own example writes a list or a dictionary (their labels already say "YAML list" or "YAML dict"; the two `is_in`/`not_in` labels say "comma-separated", which the code does not read): `rename.mapping`, `rename_columns.mapping` (dictionary); `recode_values.rules` (list of mappings); `replace_values.to_replace`, `is_in.values`, `not_in.values`, `split_column.new_columns`, `split_column_to_parts.new_columns` (lists) | the schemas were written for the Blueprint form renderer (ADR-075), which knows 9 widgets (`column_selector`, `string`, `enum`, `column_or_literal`, `number`, `dtype_picker`, `expression`, `bool`, `color`) | Blueprint shows a text box and its save handler keeps the typed text as a string (`blueprint_handlers.py:1213-1216`, read, not run); a checker cannot test the shape and would call the actions' own examples wrong | **Built (#87):** widgets `list` and `mapping` (a list of mappings is a `list` with `items: mapping`), one vocabulary in `utils.ui_schema.WIDGETS`; the eight corrected; the Blueprint form shows one line of YAML and saves a list or a mapping (`blueprint_arch.widget_text`), and an error says the form to write. Check ST10 stays in #76 |
-| R2 | **The code reads keys the schema does not declare:** `rename.target_column` (`cleaning/core.py:126`), `split_column.source`, `.target_column`, `.separator` (`reshaping/core.py:202,205`) | aliases kept for older scripts (comments in the code) | a recipe using an alias passes today and a schema-based checker refuses it. Used today: `split_column` `source` x3, `separator` x1, `column` x1, `new_names` x1; `keep_columns` `target_column` x1; `split_and_explode` `target_column` x3, `column` x2 | removed with the recipes that use them (#78); test AR2 is a ratchet that lists them (`test_action_registry_consistency.py`) |
-| R3 | **Engine-internal keys travel inside a step:** `__right_df__` (`data_assembler.py:207`, read at `joins.py:39`) and `__metadata__` (`data_wrangler.py:196`, read at `cleaning/core.py:320,349`) | the engine passes the right table and the primary keys through the step dictionary | a recipe could carry them and reach the function | check ST09 (#76) |
-| R4 | `scan_parquet` and `sink_parquet` have no schema | engine-internal actions; 4 fixture steps use them to test them | an unknown-parameter check cannot run on them | O11 |
-| R5 | **All 191 components have `allow_extra_params: true`** and their schemas list only part of the arguments (802 parameters) | **deliberate**: a component does `p + geom_x(**spec)`, any plotnine argument passes (`libs/viz_factory/README.md:266`, test `test_allow_extra_params_is_true`) | "unknown parameter fails" cannot rest on the schema alone: it would refuse valid arguments (`color` x8, `outlier_alpha`, `size` in the shipped recipes). plotnine itself refuses an unknown argument (`PlotnineError`, verified) and accepts both `color` and `colour` | **Built (#87):** `viz_factory.arguments`: for a geom or stat exactly what plotnine accepts (verified against plotnine for all 63), for another plotnine class or function its signature with the schema, `None` for free-form components; `argument_catalog()` is plain data for the checker. Asking plotnine about the schemas found 13 parameters it refuses (#88). Completing the 191 schemas is a later option |
-| R6 | The wrangler's column resolution and ST03 must read the same declaration | `data_wrangler.py:132-147` | two readings could disagree | one reading: the parameters with widget `column_selector` |
+| # | Gap | Consequence | Fix |
+|---|---|---|---|
+| RG1 | **No widget for a list or a dictionary.** Eight parameters are declared `string` while their example writes a list or a dictionary (`rename.mapping`, `rename_columns.mapping`, `recode_values.rules`, `replace_values.to_replace`, `is_in.values`, `not_in.values`, `split_column.new_columns`, `split_column_to_parts.new_columns`) | Blueprint shows a text box and keeps the typed text as a string; a checker cannot test the shape | **Built (#87):** widgets `list` and `mapping` in `utils.ui_schema.WIDGETS`; the eight corrected; the Blueprint form shows one line of YAML and saves a list or a mapping (`blueprint_arch.widget_text`). ST10 stays in #76 |
+| RG2 | **The code reads keys the schema does not declare:** `rename.target_column`, `split_column.source`, `.target_column`, `.separator` | a recipe using an alias passes today and a schema-based checker refuses it | removed with the recipes that use them (#78); test AR2 is a ratchet that lists them |
+| RG3 | **Engine-internal keys travel inside a step:** `__right_df__` (`data_assembler.py:207`), `__metadata__` (`data_wrangler.py:196`) | a recipe could carry them and reach the function | check ST09 (#76); the `__metadata__` key goes with the key protection (DEC26) |
+| RG4 | `scan_parquet` and `sink_parquet` had no schema | | they leave the recipe vocabulary (DEC42); the 4 fixtures call the engine functions directly |
+| RG5 | **All 191 components have `allow_extra_params: true`** and list only part of the arguments (802 parameters): deliberate, a component does `p + geom_x(**spec)` | "unknown parameter fails" cannot rest on the schema alone | **Built (#87):** `viz_factory.arguments`: for a geom or stat exactly what plotnine accepts (verified for all 63), for another plotnine class its signature with the schema, `None` for free-form components; `argument_catalog()` is plain data for the checker |
+| RG6 | The wrangler's column resolution and ST03 must read the same declaration | two readings could disagree | one reading: the parameters with widget `column_selector` |
 
-**Which form each parameter takes** (the rule of section 5 applied inside a step): a **list** where order or repetition is meaning or a set is meant (`columns`, `values`, `new_columns`, `rules`); a **dictionary** where each entry is a name with a value (`mapping`: old name to new name); a **scalar** otherwise. The registry must say which.
+**Which form each parameter takes** (section 5 applied inside a step): a **list** where order or repetition is meaning or a set is meant (`columns`, `values`, `new_columns`, `rules`); a **dictionary** where each entry is a name with a value (`mapping`); a **scalar** otherwise. The registry must say which.
 
-**Self-consistency tests** (built, they run on the registries; no recipe needed): AR2 the keys a function reads equal its schema (a ratchet that lists the aliases of R2); AR3 every `yaml_example` agrees with its schema in names and value shapes (`test_action_schema_examples.py`; it failed on the eight of R1 before the fix, and passing it **through the checker** comes with #76); AR4 every `wraps` resolves to an importable object; AR5 every component or action named by an example is registered; AR6 no name is registered twice in the source; a layer argument that plotnine accepts (`color`, `colour`) passes and one it refuses (`foo`) fails; every enumerated geom and stat argument is accepted by plotnine and an invented one is refused; the schema parameters that plotnine refuses are a ratchet (#88).
+**Self-consistency tests** (built, they run on the registries; no recipe needed): AR2 the keys a function reads equal its schema; AR3 every `yaml_example` agrees with its schema in names and value shapes; AR4 every `wraps` resolves to an importable object; AR5 every component or action named by an example is registered; AR6 no name is registered twice; a layer argument that plotnine accepts passes and one it refuses fails; every enumerated geom and stat argument is accepted by plotnine; the schema parameters that plotnine refuses are a ratchet (#88). **To add (DEC31 to DEC33):** the prefix equals the `polars` field; the equality test of every `polars_` action; the no-default test; no registered action name as a string outside the registry and the constants module (R4).
 
-## 9. Gallery examples `[DECIDED 2026-11-13: D1, D2, D3; D4 to D7 later, O1]`
+## 9. Gallery examples `[DECIDED, DEC47 and DEC48]`
 
-**Today** (verified, `gallery_manager.py`, `gallery_viewer.py`, `generate_previews.py`): a bundle in `assets/gallery_data/<id>/` holds `data_analysis_recipe.yaml` (its own compact shape: `info` with name, date and six taxonomy values; `data_path`; one plot; `wrangling` with an optional `tier3`), `example_data.tsv`, `example_meta.md`, `preview_plot.png`, `preview_thumb.png`. `gallery_index.json` is rebuilt from the bundles (a registry and a pivot of taxonomy value to examples). The viewer filters by six axes, shows Plot / Data / YAML tabs and the guidance text. Constraints that stay: a static reference (ADR-093: no run in the app, no handoff to HOME or Blueprint), offline use, mounted only if `gallery_enabled` (ADR-071), one plot per example, the folder name as the example's id, the six filter axes and icons, the index format the viewer reads.
+**Today** (verified, `gallery_manager.py`, `gallery_viewer.py`, `generate_previews.py`): a bundle in `assets/gallery_data/<id>/` holds `data_analysis_recipe.yaml` (its own compact shape: `info` with name, date and six taxonomy values; `data_path: example_data.tsv` relative to the bundle; one plot; `wrangling` with an optional `tier3`), `example_data.tsv`, `example_meta.md`, `preview_plot.png`, `preview_thumb.png`. `gallery_index.json` is rebuilt from the bundles. The viewer filters by six axes, shows Plot / Data / YAML tabs and the guidance text. Constraints that stay: a static reference (ADR-093: no run in the app, no handoff to HOME or Blueprint), offline use, mounted only if `gallery_enabled` (ADR-071), one plot per example, the folder name as the example's id, the six filter axes and icons, the index format the viewer reads.
 
-**What is wrong, and each will be fixed** (details and the plan are in issue #82):
+**What is wrong, and each will be fixed** (plan in issue #82):
 
 | # | Finding | Fixed by |
 |---|---|---|
 | G1 | the taxonomy terms are copied in five places and disagree (both fallback lists contain "Numeric-Numeric", which the cheat sheet does not allow, and lack 4 of 10 patterns) | the terms in the specification (one place); the UI reads them |
-| G2 | previews do not come from the app's path: the script hands the bundle's own dict to the renderer, so an example the app could not load still gets a picture | previews by the app's path |
-| G3 | the example file is never validated as a recipe; `data_path` is read by nobody | `check_recipe` in profile `gallery` at rebuild, at app start and in the tests |
+| G2 | previews do not come from the app's path: the script hands the bundle's own dict to the renderer, so an example the app could not load still gets a picture | previews by the app's path (DEC48) |
+| G3 | the example file is never validated as a recipe; `data_path` is read by nobody | `check_recipe` in profile `gallery` at rebuild, at app start and in the tests (DEC48) |
 | G4 | `dumbbell` declares `geom_segment` and draws `geom_line` and `geom_point` | `geom` derived from the first geom layer; the example is reviewed with Eve |
 | G5 | 10 of 34 previews are 800x600, 24 are 960x600 | one standard size |
-| G6 | dead submission code (`submission_modal_ui`, `autofill_meta_from_audit`, `btn_confirm_submission`) | removed, or kept on purpose (Eve's call) |
-| G7 | the tag strip of each `example_meta.md` repeats the taxonomy, unchecked | generated from `taxonomy`, or checked |
-| G8 | the taxonomy travels by copy into 16 of 17 ST22 plot specs through the `_meta` passthrough of ADR-083 | removed in the ST22 migration (O18) |
+| G6 | dead submission code | Q3 |
+| G7 | the tag strip of each `example_meta.md` repeats the taxonomy, unchecked | generated from `taxonomy` (DEC48) |
+| G8 | the taxonomy travels by copy into 16 of 17 ST22 plot specs through the `_meta` passthrough of ADR-083 | removed in the ST22 migration |
+| G9 | `beeswarm_sina` has an unregistered `filter_rows` that nothing applies (7.7) | GALLERY-RIGOR-1, after the tier-3 reader |
 
 **Proof that it works** (`tmpAI/recipe_format/gallery_poc.py`, scratch): all 34 examples written as standard recipes build and render through the app's own path (ConfigManager, DataOrchestrator, VizFactory); 22 previews are pixel-identical, 10 differ only in size, 2 differ by jitter (0.9 % and 2.6 % of the pixels).
 
-**Design (decided 2026-11-13):**
+**Design** `[DECIDED, DEC47]`:
 
-- **D1. An example is a standard recipe** (id, `spec_version`, engines, info, one schema, one group, one plot) checked in profile `gallery`. Pros: one format, one checker, one render path; an example is runnable; it shows good practice; the 34 examples become a regression suite for the plot path. Cons: the file is longer (35 to 60 lines against 25); 34 files to rewrite (scripted, reviewed); a deployment that moves the gallery folder can browse but not run the examples. Alternatives (keep the compact shape and add checks; generate a recipe from the compact shape) keep two formats or two sources.
-- **D2. `taxonomy` on the plot entry**, required in the gallery profile and optional in any other recipe (so a plot can be offered to the Gallery without retyping), five declared axes: `family`, `pattern`, `difficulty`, `show`, `sample_size`; `geom` is **derived** from the first `geom_*` or `stat_*` layer and still offered as a filter. It replaces the `_meta` passthrough of ADR-083. Alternatives: `info.taxonomy` (info is free-form, so the check is a special case), a sidecar file (a second format), inside the spec as ADR-083 does (the spec stops being pure grammar).
-- **D3. The specification is also a data file** in `libs/utils` (with `check_recipe`): for each element its allowed keys and their requiredness, the types, the **vocabularies** (types, engines, **the gallery terms** with label, icon, order and a line of meaning), the table of renamed keys, the format version. The checker, the filter panels, the index order, the cheat sheet, the appendix tables and the migration tool read it or are generated from it. Cross-element rules and the registries stay in code. Terms change more often than structure: a new term in an open vocabulary does not change `spec_version`. A packaging condition is in section 14.
-- **D4 to D7 (can wait until the gallery work starts):** D4 the same `check_recipe` at index rebuild, at app start (left out of the list with the reason shown, as HOME's gate) and in the tests (recommended); D5 previews by the app's path in a Tier-3 script under `assets/scripts/`; D6 keep the teaching text of `example_meta.md` and build the tag strip from `taxonomy`; D7 a data contract generated from the file and reviewed.
+- **D1. An example is a standard recipe** (id, `spec_version`, engines, info, one schema, one group, one plot) checked in profile `gallery`. Pros: one format, one checker, one render path; an example is runnable; it shows good practice; the 34 examples become a regression suite for the plot path. Cons: the file is longer (35 to 60 lines against 25); 34 files to rewrite (scripted, reviewed); a deployment that moves the gallery folder can browse but not run the examples.
+- **D2. `taxonomy` on the plot entry**, required in the gallery profile and optional in any other recipe, five declared axes: `family`, `pattern`, `difficulty`, `show`, `sample_size`; `geom` is **derived** from the first `geom_*` or `stat_*` layer and still offered as a filter. It replaces the `_meta` passthrough of ADR-083.
+- **D3. The specification is also a data file** in `libs/utils` (with `check_recipe`): for each element its allowed keys and requiredness, the vocabularies (the engine names, **the gallery terms** with label, icon, order and a line of meaning), the table of renamed keys, the format version. The checker, the filter panels, the index order, the cheat sheet, the appendix tables and the migration tool read it or are generated from it. Cross-element rules and the registries stay in code. A new term in an open vocabulary does not change `spec_version`. The Polars dtypes are read from Polars, not from this file (R9). A packaging condition is in section 14.
+- **D4 to D7** `[DECIDED as recommended]`: the same `check_recipe` at index rebuild, at app start (left out of the list with the reason shown, as HOME's gate) and in the tests; previews by the app's path in a Tier-3 script under `assets/scripts/`; the teaching text of `example_meta.md` is kept and the tag strip built from `taxonomy`; a data contract generated from the file and reviewed.
 
-**The gallery profile checks** `[PROPOSED, with the decision]`: exactly one group and one plot (GP01); `taxonomy` present with the five axes, each term in the vocabulary (GP02, GP03); `id` equals the folder name (GP04); the companion files exist (GP05); `spec_version` present like everywhere.
+**The gallery profile checks:** exactly one group and one plot (GP01); `taxonomy` present with the five axes, each term in the vocabulary (GP02, GP03); `id` equals the folder name (GP04); the companion files exist (GP05); `source.path` is the bundle's own `example_data.tsv` (a plain file in the bundle: no `/` beyond the bundle folder, no `..`; GP06); `spec_version` present like everywhere.
 
-**An example looks like this** (`bar_simple`; `geom` is not typed, the old `data_path`, `name` and `wrangling.tier3` disappear: the path is in `source`, the name is `label`, the example's own steps are the plot's `steps: {tier3: [...]}`):
+**An example looks like this** (`bar_simple`; `geom` is not typed; the old `data_path`, `name` and `wrangling.tier3` disappear: the path is in `source`, the name is `label`, the example's own steps are the plot's `steps: {tier3: [...]}`):
 
 ```yaml
 id: bar_simple
@@ -512,11 +533,13 @@ data_schemas:
     description: >-
       One row per record (100 rows): a species, an antimicrobial class and a numeric value.
     source: {type: local_tsv, path: ./assets/gallery_data/bar_simple/example_data.tsv}
+    null_values: []
+    strip: true
     input_fields:
-      id: {type: categorical, label: Record}
-      species: {type: categorical, label: Species}
-      amr_class: {type: categorical, label: Antimicrobial class}
-      value: {type: numeric, label: Value}
+      id: {type: String, label: Record}
+      species: {type: String, label: Species}
+      amr_class: {type: String, label: Antimicrobial class}
+      value: {type: Float64, label: Value}
     wrangling: {tier1: []}
 analysis_groups:
   example:
@@ -534,7 +557,7 @@ analysis_groups:
             - {name: geom_bar, params: {}}
 ```
 
-**Risks:** Blueprint's save path must keep the plot entry's keys (`taxonomy`, `comment`, `steps`; verify in `group_plot_manager` before converting); the first preview regeneration changes 12 pictures in git (each is looked at); a generated data contract could change a picture if a type is guessed wrong (the proof-of-concept script is the guard); the Playwright gallery tests and four UML diagrams need an update; if D3 is chosen the schema language can grow (the guard: keys, requiredness, types, vocabularies, renames and the version only).
+**Risks:** Blueprint's save path must keep the plot entry's keys (`taxonomy`, `comment`, `steps`; verify in `group_plot_manager` before converting); the first preview regeneration changes 12 pictures in git (each is looked at); a generated data contract could change a picture if a type is guessed wrong (the proof-of-concept script is the guard); the Playwright gallery tests and four UML diagrams need an update; the schema language can grow (the guard: keys, requiredness, types, vocabularies, renames and the version only).
 
 **Order** (scheduled later): the specification part and the `gallery` profile come with the checker; then the tests; then converting the 34 bundles; then `gallery_manager.py`, previews, viewer, the load gate, rules and records (`rules_gallery_standards.md` rewritten with Eve's double confirmation; a new ADR "Gallery examples are recipes" that amends ADR-037, 061, 063 and ADR-083's `_meta`).
 
@@ -548,7 +571,7 @@ analysis_groups:
 | X4 | a schema's `tier2` is applied only if the schema is a plot's target; otherwise an error |
 | X5 | `id` equals the file name; plot ids are unique **across the recipes of a folder** (a project-level check, `check_recipe_set`) |
 | X6 | the key family: the entity-key columns of the schemas are linked by the join keys; the first version has one family (`home_audit_steps.md` 5a-13). Not a failure if absent |
-| X7 | a step or a `final_contract` that names a column the node does not have is an error (a dry run on column names). Needs the recipe graph |
+| X7 | a step or a `labels` entry that names a column the node does not have is an error (a dry run on column names). Needs the recipe graph (HOME's `utils.recipe_graph`; R10) |
 
 ## 11. The check catalogue (one row = one test)
 
@@ -567,6 +590,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | T08 | E | root `plots:` | move into a group |
 | T09 | E | profile `run`: no group or no plot | add one |
 | T10 | E | the same key twice in one mapping, at any depth (found by the loader) | remove one |
+| T11 | E | an `!include` target outside the recipe's folder (absolute path or `..`), found by the loader | put the fragment inside the recipe folder |
 | F01 | E | fragment wrapper repeats the include key | remove the wrapper line |
 | F02 | E | fragment has the wrong type (a list for a mapping) | |
 | I01 | E | `info` not a mapping, or `label` missing | add `label` |
@@ -574,38 +598,40 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | I03 | E | `info.display_name` | `label` |
 | E01 | E | unknown key in `entity`; `noun`/`plural`/`population` missing | |
 | E02 | E | `population` unknown, or its table has no entity key | |
-| S01 | E | unknown key in a schema (`info`, `fields`, `id`, ...) | replacement |
+| S01 | E | unknown key in a schema (`info`, `fields`, `id`, `output_fields`, ...) | replacement |
 | S02 | E | repeated schema id; use of the reserved id | |
 | S03 | E | schema without `label` | add it |
 | S04 | A | schema without `description` | write it |
 | S05 | E | `source` missing, type not `local_tsv`/`local_parquet`, `path` missing | |
 | S06 | E | `wrangling` is a flat list, `[]`, or has no `tier1`; unknown tier key | `{tier1: []}` |
 | S07 | E | `tier2` on a schema that is only an ingredient | move it to a join, or plot the schema |
-| S08 | E | `input_fields` / `output_fields` not a mapping | |
+| S08 | E | `input_fields` not a mapping | |
+| S09 | E | `null_values` missing or not a list of texts, or `strip` missing or not a boolean (also as a field override) | the two keys and their forms; the documentation on missing values |
 | FD01 | E | unknown field property | replacement |
-| FD02 | E | `type` not in the vocabulary | the vocabulary with its meanings |
+| FD02 | E | `type` missing, or not a Polars dtype that a text file can hold; an old name (`numeric`, `utf8`, `integer`, `string`, ...) | the allowed dtypes; `categorical`: "this was String" |
 | FD03 | E | `is_primary_key` | `is_entity_key` |
 | FD04 | E | `source_name` | `original_name` |
-| FD05 | E | `is_entity_key` not true/false; `categories` not a list of text | |
-| FD06 | E | a field entry is a bare string | `{type: categorical}` |
+| FD05 | E | `is_entity_key` not true/false; `categories` missing for `Enum` or not a list of text; `precision`, `scale`, `format`, `time_unit`, `time_zone` on a type that does not use them | |
+| FD06 | E | a field entry is a bare string | `{type: String}` |
 | ST01 | E | step without `action` (shorthand), or not a mapping | |
-| ST02 | E | unknown action | did-you-mean |
+| ST02 | E | unknown action; an old action name | did-you-mean; the new name from the old-name table |
 | ST03 | E | parameter not in the action's schema (`id` and `comment` are allowed everywhere) | did-you-mean; `column`, `source`, `target_column`, `source_column` -> `columns` where that is the name |
-| ST04 | E | required parameter missing | |
-| ST05 | E | `join` or `join_filter` in tier2 | |
-| ST06 | E | a formula uses an operation outside the allowed list | O10 |
+| ST04 | E | required parameter missing (including every behaviour parameter without a Polars default: `na`, `how`, `maintain_order`, `seed`, ...) | the parameter and its allowed values |
+| ST05 | E | `polars_join` in tier2 | |
+| ST06 | E | a formula uses an operation outside the allowed list (section 15) | |
 | ST07 | E | a parameter declared `multi` has a single value | write a list |
 | ST08 | E | in profiles `run` and `build`: any `id` on a step (authors write none); in profile `audit`: an `id` that does not match `audit_<8 hex>_<k>`, or two steps with the same `id` | remove it (it is written by the app); names the place |
 | ST09 | E | a reserved engine key (`__right_df__`, `__metadata__`, any `__name__`) in a step | remove it; the engine sets it |
 | ST10 | E | the value of a parameter has the wrong shape for its declared widget (a list where a scalar is declared and the reverse; a repeated key in a `mapping`) | the declared form and the corrected text |
-| J01 | E | unknown key in a join (`info`, `output_fields`, ...) | replacement |
+| ST11 | E | a conditional rule of the schema is broken (`when`, `require`, `one_of`, `exclusive`; R3) | the rule in words |
+| J01 | E | unknown key in a join (`info`, `output_fields`, `final_contract`, ...) | replacement |
 | J02 | E | join without `label` | |
 | J03 | A | join without `description` | |
 | J04 | E | `ingredients` missing, empty, not `{dataset_id}` items, unknown id, repeated id | |
 | J05 | E | `right_ingredient` not in the join's ingredients; `on` and `left_on` both or neither | |
-| J06 | E | `final_contract` not a mapping, or names a column the collection lacks | |
+| J06 | E | `labels` not a mapping of text to text | |
 | J07 | E | a join's `steps` is a flat list or `[]`, or has no `tier1` | `{tier1: [...]}` |
-| J08 | E | a column name in both ingredients of a join, not a join key: the engine renames the second `name_right` silently (needs the recipe graph) | the message names both tables and the column; rename or drop one before the join (`rename`, `drop_columns`) |
+| J08 | E | a column name in both ingredients of a join, not a join key: the engine renames the second `name_right` silently (needs the recipe graph) | the message names both tables and the column; rename or drop one before the join (`polars_rename`, `polars_drop`) |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
 | P01 | E | plot entry without `label` or `spec`; unknown key (`info`) | `description` |
@@ -613,22 +639,24 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | P03 | E | plot id not snake_case | |
 | P04 | E | `steps` at the plot entry holds anything but `tier3` | |
 | P05 | E | `steps.tier3` is non-empty while the engine does not read it (one constant, switched with the reader; 7.7) | |
-| P06 | E | `filters` in a plot spec, once the engine reads `steps.tier3` (7.7) | `steps.tier3` |
+| P06 | E | `filters` in a plot spec, once the engine reads `steps.tier3` (R1) | `steps.tier3` |
 | PS01 | E | unknown spec key | replacement |
 | PS02 | E | `target_dataset` missing or unknown | |
 | PS03 | E | `mapping` or `layers` missing; no geom/stat layer | |
 | PS04 | E | layer without `name`; unknown component; argument unknown to the component's schema **and** to the wrapped plotnine function | did-you-mean |
 | PS05 | E | `theme` not a registered theme | |
-| D01 | E | unknown `plot_defaults` key | |
+| PD01 | E | unknown `plot_defaults` key | |
+| PA01 | E | a path in `source.path` or `reference_file` that is absolute, contains `..` or `~`, or is a URL (a development path, DEC30) | a path relative to the project root |
+| PA02 | E | when the caller passes allowed roots: a development path that resolves outside them | |
 | X1-X7 | E | the rules of section 10 | |
 | CM01 | E | `comment` is not text | |
-| GP01-GP05 | E | gallery profile rules (section 9) | defined with the gallery decision |
+| GP01-GP06 | E | gallery profile rules (section 9) | |
 
-The data check (a dataset that cannot be built, an `output_fields` slug with no column) is **not** in this table: it needs the data and stays separate (`validate_data_analysis_recipe_data`).
+The data check (a dataset that cannot be built, an `input_fields` entry with no column in the file) is **not** in this table: it needs the data and stays separate (`validate_data_analysis_recipe_data`).
 
 ## 12. Renamed and removed: the replacement table
 
-Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.py` (three dictionaries today, `legacy_keys.py:9-16`) grows to a table keyed by path and old key; the checker reads it only to write "use X". Nothing is converted silently `[DECIDED]`.
+Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.py` (three dictionaries today, `legacy_keys.py:9-16`) grows to a table keyed by path and old key; the checker reads it only to write "use X". Nothing is converted silently `[DECIDED, DEC02]`. The old-to-new table of the action names is data of the migration tool and of `legacy_keys.py` (7.5.1).
 
 | Where | Old | New |
 |---|---|---|
@@ -639,19 +667,27 @@ Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.p
 | top level | `metadata` | `metadata_schema` |
 | top level | `plots`, `wrangling`, `input_fields`, `output_fields` | inside a group / inside a schema |
 | top level | `type`, `join_manifests` | removed / `joins` |
-| schema | `info` (with `category`, `sub_category`, `comment`) | removed: write `description` (what the table is) and `comment` (why) directly on the schema; the recipe-level `info` is the only `info` block |
+| schema | `info` (with `category`, `sub_category`, `comment`) | removed: write `description` (what the table is) and `comment` (why) directly on the schema |
 | schema | `fields` | `input_fields` |
 | schema | `id` (inside the schema) | removed (the key is the id) |
+| schema | `output_fields` | removed: the published columns are the last step of the collection's tier 1 |
+| (no key) | the hidden sanitiser | `null_values` and `strip` on the schema (run A writes the 14 texts and `strip: true`) |
 | field | `is_primary_key` | `is_entity_key` |
 | field | `source_name` | `original_name` |
-| field | `type: string`, `character` | `categorical` or `utf8` |
-| field | `type: int`, `i64`, `Int64` | `integer` (the migration reports a column whose values are not whole numbers; the ingestor fails on the first one) |
-| field | `type: float`, `Float64`, `String`, `Date`, `Categorical` | `numeric`, `categorical`, `date` |
-| field | `type: bool`, `Boolean` | `boolean` |
-| step | `column`, `source`, `source_column`, `target_column` (where the schema says `columns`) | `columns` |
-| step | `how` on `join_filter` | removed (always inner) |
+| field | `categorical` | `String` ("this was String"); `Categorical` stays a type for those who write it |
+| field | `utf8`, `string`, `character` | `String` |
+| field | `numeric`, `float` | `Float64` |
+| field | `integer`, `int`, `i64` | `Int64` (a column whose cells are not whole numbers fails at the reader, naming the value; the migration reports it) |
+| field | `date`, `bool`, `boolean` | `Date`, `Boolean` |
+| field | `categories` as `@category` selection | removed (task REMOVE-CATEGORY-SELECT-1); `categories` is the level list of an `Enum` |
+| step | `column`, `source`, `source_column`, `target_column` (where the schema says `columns`) | `columns` (or the Polars name in a `polars_` action) |
+| step | any action name without a prefix | `polars_`, `modif_` or `step_` name (7.5.1) |
+| step | `keep_columns`, `drop_columns` | `polars_select`, `polars_drop` (run B) |
+| step | `mutate`, `add_constant` | `polars_with_columns` |
+| step | `percentile` | removed |
+| step | `how` on `join_filter` | `join_filter` is removed; `polars_join` with `how: semi` or `inner` |
 | join | `info` (sentence) | `description` |
-| join | `output_fields` | `final_contract` |
+| join | `output_fields`, `final_contract` | the last step of `steps.tier1`; display names in `labels` |
 | join | `recipe` | `steps` |
 | join | ingredient as a bare id | `{dataset_id: id}` |
 | plot entry | `info` (sentence) | `description` |
@@ -667,7 +703,7 @@ A description is for the person who must choose where to filter or remove data a
 | Element | Say |
 |---|---|
 | Recipe | the question, the population (all units or a subset, and why), the data and its date |
-| Schema | **the grain** ("one row is ..."), the unit and how many (rows and units), what the recipe already removed (with the threshold), how missing values are treated |
+| Schema | **the grain** ("one row is ..."), the unit and how many (rows and units), what the recipe already removed (with the threshold), how missing values are treated (which texts, `null_values`) |
 | Join | the grain of the result, the tables and the join type, whether rows multiply (one-to-many), what is removed |
 | Group | the question the plots of the group answer |
 | Plot | what is drawn and what is counted ("n of N"), which subset it leaves out, how a missing value is drawn |
@@ -680,7 +716,7 @@ Three kinds of "nothing" are never mixed: **not detected** (analysed, no hit: a 
 
 **The design.**
 
-- **Core** `utils.recipe_check.check_recipe(raw, profile, *, catalogs=None, graph=None) -> Result(problems, coverage)`. Pure. The rules are read from a packaged data file in `libs/utils` (D3, O1). The catalogs (`actions`, `components`, `themes`, and the allowed argument names of each component) are **injected**; the recipe graph (`utils.recipe_graph`) is injected for the checks of columns per node.
+- **Core** `utils.recipe_check.check_recipe(raw, profile, *, catalogs=None, graph=None, roots=None) -> Result(problems, coverage)`. Pure. The rules are read from a packaged data file in `libs/utils` (D3). The catalogs (`actions`, `components`, `themes`, and the allowed argument names of each component) are **injected**; the recipe graph (`utils.recipe_graph`) is injected for the checks of columns per node; the allowed roots for development paths are injected (PA02).
 - **`coverage`** lists which groups of checks ran (`structure`, `actions`, `components`, `columns`). A consumer that must have everything asserts it (HOME's gate does, with a test), so nothing is skipped silently.
 - **One Tier-3 adapter**, today's `app/modules/data_analysis_recipe_validator.py` reduced to: build the catalogs from `transformer` and `viz_factory`, call the core, add the data check. HOME's gate, Blueprint's Validate, the import screen, the export and the audit copy, the scripts and the tests all call it.
 - **Tier-2 consumers** call the core with the catalogs they own (`transformer` tests with the action catalog, `viz_factory` with the components, `viz_gallery` and `blueprint_arch` through their caller; `blueprint_arch` already holds an injected catalogue in `schema_registry`).
@@ -696,16 +732,16 @@ Three kinds of "nothing" are never mixed: **not detected** (analysed, no hit: a 
 | Tier 2: a domain library imports `utils` only and declares it | respected: all six domain libraries declare `utils` |
 | ADR-011 / `rules_viz_factory.md` 6a: a library does not read project files by path | respected: the specification file is the package's own resource (`importlib.resources`) |
 | ADR-099 16(g): one rule set `check_recipe` and the recipe graph in `libs/utils` | decided; consistent |
-| `rules_test_lab.md` 2c: a primitive needed by two domain libraries goes to `libs/utils` | the same reason |
+| `rules_test_lab.md` 2c: a primitive needed by two domain libraries goes to `libs/utils` | the same reason (also the constants of the action names, R4) |
 | ADR-094: HOME's gate lives in the app layer "on purpose" because only that layer may combine utils and transformer | stays true: the adapter combines them, only the rule set moves down; ADR-094 gets an "amended by" note |
 | `rules_code_quality.md` 1: no emoji in docstrings, comments, raised messages | the gallery icons in the data file are allowed; messages name terms, never icons |
 | `workspace_standard.md` 5-E: every new module and rule file carries a `@deps` block | to do with the module and the data file |
 
-**Packaging condition** (verified by building two wheels of a copy of `utils`): the container installs the libraries **non-editable** (`assets/containers/Dockerfile:72-81`). Without `[tool.setuptools.package-data]` a YAML file inside `src/utils/` is silently **absent from the wheel**. No library ships a data file today, so `utils` is the first: declare `package-data` and add a test that builds the wheel and reads the file. (The Dockerfile also lists `libs/generator_utils` on line 79, a folder that no longer exists, and no `blueprint_arch`, `test_lab` or `id_reconciliation`; it is not ready and nothing is deployed: `DOCKER-RELEASE-1`.)
+**Packaging condition** (verified by building two wheels of a copy of `utils`): the container installs the libraries **non-editable** (`assets/containers/Dockerfile:72-81`). Without `[tool.setuptools.package-data]` a YAML file inside `src/utils/` is silently **absent from the wheel**. No library ships a data file today, so `utils` is the first: declare `package-data` and add a test that builds the wheel and reads the file. (The Dockerfile also lists `libs/generator_utils`, a folder that no longer exists, and no `blueprint_arch`, `test_lab` or `id_reconciliation`; it is not ready and nothing is deployed: `DOCKER-RELEASE-1`.)
 
-**Things that may move to `utils`** (a note; nothing is moved, there is no overview yet; `UTILS-REUSE-REVIEW-1`): (1) the type vocabulary (`MetadataValidator.DTYPE_MAP`, the ingestor cast, the upload path: decided to be read in one place); (2) the plot-spec key sets `_CANONICAL_SPEC_KEYS` and `_VALID_PLOT_DEFAULTS_KEYS` (`plot_config_resolver.py:64-74`), which are facts about the format; (3) reading a step container, written four times (`DataWrangler._resolve_tier`, `tier2_steps` in `cache_keys.py:90`, `_step_blocks` of the validator, inline in the orchestrator); (4) the shape of a `ui_schema`, described by identical docstrings in two registries and read by `blueprint_arch.schema_registry` and `help_registry`; (5) two mechanisms for renamed keys (`utils/legacy_keys.py`, `app/modules/renamed_keys.py`); (6) `extract_primary_keys` and the lineage helpers of `blueprint_arch` (to `utils.recipe_graph`, decided). What stays: the actions and components themselves, the `@category` selector, anything that needs Polars data or plotnine.
+**Things that may move to `utils`** (a note; nothing is moved; `UTILS-REUSE-REVIEW-1`): (1) the plot-spec key sets `_CANONICAL_SPEC_KEYS` and `_VALID_PLOT_DEFAULTS_KEYS` (`plot_config_resolver.py:64-74`), which are facts about the format; (2) reading a step container, written four times (`DataWrangler._resolve_tier`, `tier2_steps` in `cache_keys.py:90`, `_step_blocks` of the validator, inline in the orchestrator); (3) the shape of a `ui_schema`, described by identical docstrings in two registries and read by `blueprint_arch.schema_registry` and `help_registry`; (4) two mechanisms for renamed keys (`utils/legacy_keys.py`, `app/modules/renamed_keys.py`, which also names a choice `manifest_paths` that does not exist: `DATA_LOOKUP_CHOICES` has two); (5) `extract_primary_keys` and the lineage helpers of `blueprint_arch` (to `utils.recipe_graph`, decided). What stays: the actions and components themselves and anything that needs Polars data or plotnine.
 
-**One name to align with the HOME stage-2 draft** (O4): it writes `check_recipe(raw, mode)` with `mode` = `run` or `build`; this file writes `profile`.
+**One name to align with the HOME stage-2 draft:** it writes `check_recipe(raw, mode)` with `mode` = `run` or `build`; this file writes `profile`.
 
 **How this file spreads once confirmed** (each rule gets one home):
 
@@ -714,12 +750,36 @@ Three kinds of "nothing" are never mixed: **not detected** (analysed, no hit: a 
 | the normative rules in short | `.claude/rules/rules_data_analysis_recipe_structure.md` (changed only with Eve's double confirmation) | the agents' authority |
 | the reference with one example per element | `docs/appendix/data_analysis_recipe_structure.yaml` and `Standards_yaml.qmd` | what a recipe maker reads |
 | the checks as executable rules | `libs/utils` (`check_recipe`) and its tests, one test per row of section 11 | the code is the proof |
-| how to write a description | the user guide and Blueprint's help | recipe makers |
+| how to write a description; missing values | the user guide and Blueprint's help | recipe makers |
 | the text of the error messages | generated from the check table, not typed twice | no drift |
 
 This file then becomes history (marked HISTORICAL, `rules_legacy_management.md`) and points to those homes.
 
-## 15. What the code accepts today and must stop accepting
+## 15. Security: what a recipe may make the app run, read or write `[DECIDED, DEC44; design R5]`
+
+Eve asked for a verified check that a bad recipe cannot do bad things. Inventory (evidence section 14, verified by reading, not yet attacked):
+
+| Site | What a recipe can do today | Plan |
+|---|---|---|
+| formulas: `mutate`, the ID-reconciliation `mutate` (`id_reconciliation/core.py:239`), `stat_function` (`viz_factory/.../geoms/core.py:1335`, `eval(fun)` with no restriction) | run Python with `eval` (`__import__('os')` was run by a harmless probe); a recipe from outside runs code with the app's rights | formula check below, in the checker (ST06) **and** at the three sites |
+| `sink_parquet` | write a Parquet file to any path | engine function, not a recipe action (DEC42) |
+| `scan_parquet`, `derive_categories` `reference_file`, `source.path` | read any path the user can read; the content then appears in tables and exports | path rules below |
+| `!include` | `os.path.join(dirname(recipe), included_file)`: `../..` and an absolute path read any YAML or text file (`config_loader.py:56-58`) | confined to the recipe folder in the loader (T11) |
+| bundle import (zip) | `bundle_importer.py` extracts files; zip-slip not yet checked | HOME session: verify |
+| `report.qmd` of an export | labels and reasons from a recipe are written into a Quarto file the user renders; a code cell in a label could run | HOME session: verify |
+| YAML | `SafeLoader` everywhere (no object construction); aliases can still expand (memory) | low; test |
+| regex | Polars uses the Rust regex engine (no catastrophic backtracking) | believed safe; test |
+| agent adapter (`subprocess` of the `claude` CLI) | recipe text reaches an LLM prompt in Blueprint (developer app features only) | out of scope; noted |
+
+**Formula check** (`libs/utils/src/utils/formula_check.py`, recipe session). Parse with `ast`. Allowed: `pl.<name>` where the name is on a SHORT explicit allow-list of module-level functions (`col`, `lit`, `when`, `all`, `any_horizontal`, ...), any `Expr` method or namespace except a deny set (`map_elements`, `map_batches`, `pipe`, `meta`, anything starting with `_`), constants, arithmetic, comparison and boolean operators, lists, tuples, dicts, subscripts. Refused: any other bare name, `lambda`, comprehensions, a keyword call such as `eval` or `getattr`. The allow-list is at the module level because that is where file input and output live (`read_*`, `scan_*`, `write_*`, `sink_*`, `Config`); `Expr` methods are expressions only; the lists are read from the installed Polars and pinned by a probe test (R9). `eval` also runs with `{"__builtins__": {}, "pl": pl}` (two layers). `stat_function` takes a Python lambda string (one shipped test): a separate grammar, a lambda of one argument whose body has only numbers, `x`, arithmetic and an allow-list of math functions, same two layers. **What Eve loses:** per-row Python functions. Tests: attack cases (`__import__`, `().__class__`, `lambda`, `getattr`, `pl.read_csv`, `pl.scan_parquet`) and a mutation check.
+
+**Paths** (DEC30). Shape rule on a development path (`source.path`, `reference_file`): no absolute path, no `..`, no `~`, no URL (PA01); a gallery example's path is its own bundle file (GP06); the checker is pure, so when the caller passes allowed roots (the app: the deployment's `raw_data` and the references folder; tests: a temporary folder) the resolved path must lie inside one (PA02). Production ignores `source.path`. `reference_file` has one shipped use (`config/references/amr_phenotypes/...`, under no deployment location): it needs its own base, to be named. `scan_parquet` and `sink_parquet` are no longer recipe actions.
+
+**Split of the work.** Recipe session: `formula_check.py`, the checker refusals, the `!include` confinement in `libs/utils/src/utils/config_loader.py` (the loader, not the checker, must refuse it: the include runs while the file is read). HOME session: attack tests, zip import, `report.qmd`.
+
+**Known limit, written down:** a formula that is allowed can still be slow or large; nothing stops heavy computation. A recipe from outside is unverified until it passes the checker. A bundle is verified by hash against its own record; that proves it was not changed, not that it is safe.
+
+## 16. What the code accepts today and must stop accepting
 
 All are compatibility defaults under P2. Each is removed by the issue named (#76 checker and loader, #77 and #86 engine fixes, #78 migration and writers); a test per line.
 
@@ -728,41 +788,46 @@ All are compatibility defaults under P2. Each is removed by the issue named (#76
 | `config_loader.py:18-41,136` | unquoted `on:` repaired with a printed warning | #76 (T07) |
 | `config_loader.py:77-97` | fragment wrapper key removed silently | #76 (F01) |
 | `config_loader.py` (PyYAML `SafeLoader`) | a repeated key keeps the last silently | #76 (T10): a loader that raises on a duplicate key |
+| `config_loader.py:56-58` | an `!include` outside the recipe folder | #76 (T11) |
 | `config_loader.py:141-211` | judges content: structure, renamed keys, source; only part of the rules | #76 (moves to `check_recipe`) |
 | `data_wrangler.py:60-61` | an empty `wrangling` of any shape means "no steps" | #76 (S06) |
 | `data_wrangler.py:132-147` | six spellings of the column selector, guessed and written back into the step | #76 (ST03). 14 steps in 10 recipe files rely on it today. No ADR decided the aliases (ADR-034 is the diagnostic message) |
-| `cleaning/core.py:126`, `reshaping/core.py:202,205` | `rename` reads `target_column`; `split_column` reads `source`, `target_column`, `separator` | #76, #78 (ST03; section 8 R2) |
+| `data_wrangler.py:193-196`, `cleaning/core.py:320,349` | the entity keys put first and protected by `keep_columns` and `drop_columns` | #78 (DEC26, DEC37) |
+| `cleaning/core.py:126`, `reshaping/core.py:202,205` | `rename` reads `target_column`; `split_column` reads `source`, `target_column`, `separator` | #76, #78 (ST03; section 8 RG2) |
+| `ingestion/sanitizer.py`, `ingestor.py:169-178` | a hidden strip and 14 null texts on every text column; types `categorical`/`string` cast to String, others not cast | #78 (DEC27, DEC28) |
 | `ingestor.py:80-92,107` | fuzzy file search by dataset name; `fields` alias | #76 |
 | `metadata_validator.py:21-37,118` | type aliases; `source_name` | #76 |
-| `orchestrator.py:59-62` | `final_contract` as a list skipped; missing columns printed | #76 (J06) |
+| `orchestrator.py:59-62` | `final_contract` as a list skipped; missing columns printed | removed with `final_contract` (DEC23) |
 | `orchestrator.py:151-157` | a repeated schema id replaces the first | #76 (S02) |
 | `orchestrator.py:173,214-216,198-206,224` | bare ingredient; first join as fallback; all schemas as ingredients | #76 (J04) |
-| `cache_keys.py:90`, `orchestrator.py` (Path A) | a schema's own tier-2 ignored; the key ignores the order of `final_contract` | #77, #86 |
+| `cache_keys.py:90`, `orchestrator.py` (Path A) | a schema's own tier-2 ignored | #77 |
 | `home_theater.py:1119,903` | group label falls back to `description`; reads `info.display_name` | #78 |
 | `blueprint_mapper.py:76-77` | node label from `display_name`, `sub_category`, or `description[:35]` | #78 |
 | `plot_config_resolver.py:234-236` | non-canonical spec keys moved to `_meta` and kept | #76 (PS01); `_meta` is retired and replaced by declared keys (`comment`, `taxonomy`); ADR-083 sections 2 and 6 to amend |
 | `bootstrapper.py:154`, `scaffolder.py:182`, `create_data_analysis_recipe.py:177`, `blueprint_handlers.py:2670` | write `display_name` / `name` | #78 |
+| `app/modules/renamed_keys.py:20` | names a data-lookup choice `manifest_paths` that does not exist | with the next change of that file |
 
-
-## 16. Tests that come out of this file (written first; they fail on today's code)
+## 17. Tests that come out of this file (written first; they fail on today's code)
 
 - One small invalid recipe per row of section 11: HOME refuses it, Blueprint reports it, the message holds the fix. A shared helper builds a minimal valid recipe so each test changes one thing.
 - One test per row of section 12: the old form is refused and the message names the new one.
-- One test per row of section 15: the tolerated form is now refused (mutation check: put the tolerance back and the test fails).
+- One test per row of section 16: the tolerated form is now refused (mutation check: put the tolerance back and the test fails).
 - Every shipped recipe of every kind in section 3 passes `check_recipe` with zero errors and zero advice (the retest scenarios with exactly their one planned fault). It replaces the recipe-folder test, the template test and the hygiene test, which become views of the same check.
 - Shape tests (`TEST-SHAPES-1`): the shipped recipes as fixtures for no join, no key, another key name, no population table, long format.
-- **Registries (section 8):** AR2 to AR6 and the plotnine argument test.
-- **Container forms (5):** one test per refused form (a list where a dictionary belongs and the reverse, a bare string field, a flat `steps`, a wrapper key); a duplicate key is found by the loader; a `final_contract` list is refused instead of skipped; after migration the `demo_abromics` plots still render with their 5-column contract.
-- **Order and ids (5, 7.5):** the key order of `final_contract` is the column order after load, run and write, in T1 **and** T2 (fails today, #86); groups and plots keep their tab order; the hash changes when the order of steps changes and does not change when an `id` or a `comment` changes; a repeated or non-text `id` is refused; an app-inserted step has an `audit_` id; the copy minus the marked steps equals the original; a scan test requires `sort_keys=False` for every `yaml.dump` and `safe_dump` of non-test code.
+- **Golden baseline (DEC43):** the content hash of every collection and every plot's data of every shipped recipe is recorded before any change; after each step every difference is listed. Run A must change none; run B changes only what is listed and shown to Eve.
+- **Registries (section 8):** AR2 to AR6, the plotnine argument test, and the three new ones: prefix equals the `polars` field; every `polars_` action equals the direct Polars call (probe frame); no behaviour default other than the Polars default; no registered action name as a string outside the registry and the constants module (R4).
+- **Container forms (5):** one test per refused form (a list where a dictionary belongs and the reverse, a bare string field, a flat `steps`, a wrapper key); a duplicate key is found by the loader; a removed `final_contract` is refused with the `polars_select` correction; after migration the plots that used a contract still render.
+- **Order and ids (5, 7.5):** groups and plots keep their tab order; the hash changes when the order of steps changes and does not change when an `id` or a `comment` changes; a repeated or non-text `id` is refused; an app-inserted step has an `audit_` id; the copy minus the marked steps equals the original; a scan test requires `sort_keys=False` for every `yaml.dump` and `safe_dump` of non-test code.
 - **Messages with the correction (5.1):** for each container-form check the message contains the generated corrected text; HOME's gate, Blueprint's Validate and the import screen show the same message.
-- **Types (7.4):** a table of declared type to resulting dtype, run through the ingestor for every type of the vocabulary (including digits declared as text); each refused name gives a message that quotes the meanings; no list of types exists in code (a grep test).
+- **Types and missing values (7.3, 7.4):** a table of declared dtype to resulting dtype through the ingestor for every dtype of the allow-list (the probe test pinned to the installed Polars); `2022.0` into `Int64` fails and names the value; each refused old name gives its message; `null_values` and `strip` are applied before the cast, in the defined order; a missing `null_values` or `strip` or `type` is refused; the migration writes today's 14 texts and no table changes.
 - **Format version:** one test per V01 to V04; every shipped recipe, template, gallery example, written recipe and forked recipe carries `spec_version: 1`; `effective_run.yaml` records it.
-- **Migration tool:** a format-0 recipe (from the git history of the ST22 recipe) becomes a recipe that passes the checker with advices only; running it twice changes nothing; every `#` comment is kept; the list of manual steps is printed.
-- **Comments:** a recipe with `#` comments passes untouched; every writer (Blueprint save, bootstrapper, scaffolder, the migration) keeps the comments of a fragment it edits (a before/after text comparison).
-- **Gallery protection:** the committed `gallery_index.json` equals the index rebuilt from the bundles; a bundle written by `GalleryManager.submit_example` (with a `tier3` list) passes the checker; every bundle renders its preview through the app path; every taxonomy term is in the vocabulary; the tag strip of each `example_meta.md` equals `taxonomy`.
-- The tests that encode superseded behaviour are listed first (`TEST-ADAPT-1`): `test_empty_wrangling_is_valid` (`wrangling: []`), `test_tiered_steps_is_valid` and the other tests with inline recipes (no engines), the template and folder tests.
+- **Migration tool:** a format-0 recipe (from the git history of the ST22 recipe) becomes a recipe that passes the checker with advices only; run A changes no table hash; running it twice changes nothing; every `#` comment is kept; the list of manual steps is printed.
+- **Comments:** a recipe with `#` comments passes untouched; every writer (Blueprint save, bootstrapper, scaffolder, the migration) keeps the comments of a fragment it edits.
+- **Security (section 15):** attack tests for the formula check at every site, `!include` outside the folder, a path outside the allowed roots, zip-slip and `report.qmd` (HOME session).
+- **Gallery protection:** the committed `gallery_index.json` equals the index rebuilt from the bundles; a bundle written by `GalleryManager.submit_example` passes the checker; every bundle renders its preview through the app path; every taxonomy term is in the vocabulary; the tag strip of each `example_meta.md` equals `taxonomy`.
+- The tests that encode superseded behaviour are listed first (`TEST-ADAPT-1`): `test_empty_wrangling_is_valid` (`wrangling: []`), `test_tiered_steps_is_valid` and the other tests with inline recipes (no engines), the template and folder tests, the tests of `keep_columns`, `drop_columns`, `final_contract` and the sanitiser.
 
-## 17. Errors from a data-science point of view (not format errors)
+## 18. Errors from a data-science point of view (not format errors)
 
 The format makes a recipe readable and checkable; it does not make it right. Eve's rule: those errors are fixed, not documented.
 
@@ -772,4 +837,4 @@ The format makes a recipe readable and checkable; it does not make it right. Eve
 | the other pipelines (Abromics, `demo_abromics`, `figshare_integration`, `stress_test_master`, `2_` and `3_` ST22) | not reviewed one by one: Abromics was scanned (its one row-multiplying join, MLST by VirulenceFinder, is one-to-many and expected) but its plots were not looked at | a data-scientist pass per recipe (grain, joins and row counts, missing values, every picture) as part of its migration, #78 |
 | templates, retest, gallery, transformer test recipes | not reviewed | gallery: every preview is looked at when regenerated; test recipes: their tests have raw-file oracles |
 
-What the checker can catch of these (structure only): an ignored key (#66), an unknown parameter, a join that multiplies rows (#68, an advice with rows before and after). It cannot decide that a score of 0 for "unknown" is wrong; that stays the data scientist's review.
+What the checker can catch of these (structure only): an ignored key (#66), an unknown parameter, a join that multiplies rows (#68, an advice with rows before and after). It cannot decide that a score of 0 for "unknown" is wrong; that stays the data scientist's review. A new risk of the same kind, now visible: the text `NA` read as a missing value in an identifier column (7.3).

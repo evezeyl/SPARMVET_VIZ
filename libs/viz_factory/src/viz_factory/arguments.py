@@ -5,7 +5,7 @@ Which arguments a plot component accepts: its schema's parameters plus what the 
 # provides: function:allowed_arguments, function:unknown_arguments, function:argument_catalog
 # consumes: libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS), plotnine
 # consumed_by: app/modules/data_analysis_recipe_validator.py (the recipe checker's catalogs), libs/viz_factory/tests/test_component_arguments.py
-# doc: .claude/design/recipe_format_spec.md (section 8, R5; check PS04), libs/viz_factory/README.md (allow_extra_params)
+# doc: .claude/design/recipe_format_spec.md (section 8, RG5; check PS04), libs/viz_factory/README.md (allow_extra_params)
 # @end_deps
 
 Plot instructions are part of the recipe, so an unknown argument in a layer is found before the plot is drawn.

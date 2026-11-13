@@ -5,7 +5,7 @@ Text for the `list` and `mapping` widgets of the Blueprint form: a value is show
 # provides: function:value_to_text, function:text_to_value
 # consumes: libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/strict_yaml.py
 # consumed_by: app/modules/wrangle_studio.py, app/handlers/blueprint_handlers.py
-# doc: .claude/design/recipe_format_spec.md (section 8, R1)
+# doc: .claude/design/recipe_format_spec.md (section 8, RG1)
 # @end_deps
 
 Headless (no Shiny). Before these widgets existed, parameters such as `rename.mapping` were declared `string`: the
