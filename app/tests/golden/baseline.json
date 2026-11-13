@@ -1,0 +1,996 @@
+{
+ "polars": "1.40.1",
+ "raw_data": "assets/test_data",
+ "recipes": {
+  "1_Abromics_general_pipeline": {
+   "plots": {
+    "abromics_st_by_country": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "selected_virulence_genes:String",
+      "vf_protein:String"
+     ],
+     "rows": 342,
+     "sha256": "d7aadbd43a56bfbc7a64dfaf959f785bd4992702ea7eca598690a82666dd8041"
+    },
+    "abromics_st_by_source": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "selected_virulence_genes:String",
+      "vf_protein:String"
+     ],
+     "rows": 342,
+     "sha256": "d7aadbd43a56bfbc7a64dfaf959f785bd4992702ea7eca598690a82666dd8041"
+    }
+   },
+   "t1": {
+    "AR1_MLST_Serotype_Virulence": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "selected_virulence_genes:String",
+      "vf_protein:String"
+     ],
+     "rows": 342,
+     "sha256": "d7aadbd43a56bfbc7a64dfaf959f785bd4992702ea7eca598690a82666dd8041"
+    }
+   },
+   "t2": {
+    "AR1_MLST_Serotype_Virulence": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "selected_virulence_genes:String",
+      "vf_protein:String"
+     ],
+     "rows": 342,
+     "sha256": "d7aadbd43a56bfbc7a64dfaf959f785bd4992702ea7eca598690a82666dd8041"
+    }
+   }
+  },
+  "1_test_data_ST22_dummy": {
+   "plots": {
+    "amr_heatmap": {
+     "columns": [
+      "sample_id:String",
+      "gene:Categorical",
+      "predicted_phenotype:Categorical",
+      "identity:Float64",
+      "overlap:Float64",
+      "status:String"
+     ],
+     "rows": 70,
+     "sha256": "17d7acce887ddb97c7c83ae61ba8d58061aff1c80e9e451f0e29eb60fa1fdcb7"
+    },
+    "assembly_quality_dotplot": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "country:Categorical",
+      "metric:String",
+      "value:Float64"
+     ],
+     "rows": 126,
+     "sha256": "93f7a97c9f4ad62dfd68b4dfb9ba8f0143e4be3ca9e793101227f3deb5378ed7"
+    },
+    "miaou": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "country:Categorical",
+      "metric:String",
+      "value:Float64"
+     ],
+     "rows": 126,
+     "sha256": "93f7a97c9f4ad62dfd68b4dfb9ba8f0143e4be3ca9e793101227f3deb5378ed7"
+    },
+    "mlst_bar": {
+     "columns": [
+      "sample_id:String",
+      "scheme:Categorical",
+      "sequence_type:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "era:String"
+     ],
+     "rows": 33,
+     "sha256": "478daf6f05899b82b2b9105e21aefceb855798ec694ad9160dc233558e6cf4e5"
+    },
+    "phenotype_genome_length_fragmentation": {
+     "columns": [
+      "sample_id:String",
+      "ST:Categorical",
+      "phenotype_count:Int32",
+      "quality_metric:String",
+      "quality_value:Float64"
+     ],
+     "rows": 126,
+     "sha256": "735133f3c16c502dab2eefb8eface1e2a44d06d95ffc9514e65e84bdaf2acd71"
+    },
+    "qa_aggregated_no_key": {
+     "columns": [
+      "country:Categorical",
+      "year_label:String",
+      "n_samples:UInt32"
+     ],
+     "rows": 9,
+     "sha256": "7026c15a47849971460ea045066481d1a030061101aa6e7807b04be376739009"
+    },
+    "qa_amr_genes_per_sample": {
+     "columns": [
+      "sample_id:String",
+      "country:Categorical",
+      "n_amr_genes:UInt32"
+     ],
+     "rows": 42,
+     "sha256": "c4f1a2365b420755e5bd98ae1abdc2e62d7b4f21f88c09dd5145cf0dc6a34cce"
+    },
+    "qa_facet_by_mapping": {
+     "columns": [
+      "sample_id:Categorical",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "year_label:String"
+     ],
+     "rows": 42,
+     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+    },
+    "qa_fanout_rows_per_sample": {
+     "columns": [
+      "sample_id:String",
+      "rows_per_sample:UInt32"
+     ],
+     "rows": 42,
+     "sha256": "eb22d405ad94b84936e4e53aecba7b8b6aa527e98a55a55a38e8b2290f707e5f"
+    },
+    "qa_l50_integer": {
+     "columns": [
+      "sample_id:Categorical",
+      "L50:Int64"
+     ],
+     "rows": 42,
+     "sha256": "f91a972331acba6f5cd07af089c06ba2e22adbb3789a0f96e716c6e2d1944f8d"
+    },
+    "qa_population_zscore": {
+     "columns": [
+      "sample_id:String",
+      "country:Categorical",
+      "n50:Float64",
+      "n50_zscore:Float64"
+     ],
+     "rows": 42,
+     "sha256": "04c203189214ca0aff7a2bfd44103d59c4e0c447d16686591cf8d38ee279833f"
+    },
+    "qa_sequence_type_missing": {
+     "columns": [
+      "sample_id:Categorical",
+      "ST:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "02d6644e7bf1f897ce8cff30ab14dfa345cefd85463c129aeed621136e4869f6"
+    },
+    "qa_year_label": {
+     "columns": [
+      "sample_id:Categorical",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "year_label:String"
+     ],
+     "rows": 42,
+     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+    },
+    "qc_reads_horizontal_barplot": {
+     "columns": [
+      "sample_id:String",
+      "total_reads:Float64",
+      "q30_rate:Float64",
+      "gc_content:Float64",
+      "n50:Float64",
+      "total_length:Float64",
+      "largest_contig:Float64",
+      "L50:Float64",
+      "taxon_1:Categorical",
+      "proportion_1:Float64",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
+    },
+    "virulence_bar": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "Selected_Virulence_Genes:String",
+      "VF_protein:String",
+      "gene:Categorical",
+      "status:String",
+      "virulence_count:UInt32"
+     ],
+     "rows": 617,
+     "sha256": "eaeb657b26ccc431b5866e8eb4e93c122938ffa8c5ce0714c527e71f13c6b19b"
+    },
+    "virulence_variants": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "Selected_Virulence_Genes:String",
+      "VF_protein:String",
+      "gene:Categorical",
+      "status:String",
+      "virulence_count:UInt32"
+     ],
+     "rows": 617,
+     "sha256": "eaeb657b26ccc431b5866e8eb4e93c122938ffa8c5ce0714c527e71f13c6b19b"
+    },
+    "year_distribution": {
+     "columns": [
+      "sample_id:String",
+      "scheme:Categorical",
+      "sequence_type:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "era:String"
+     ],
+     "rows": 33,
+     "sha256": "478daf6f05899b82b2b9105e21aefceb855798ec694ad9160dc233558e6cf4e5"
+    }
+   },
+   "t1": {
+    "AR1_MLST_Serotype_Virulence": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "selected_virulence_genes:String",
+      "vf_protein:String"
+     ],
+     "rows": 342,
+     "sha256": "d7aadbd43a56bfbc7a64dfaf959f785bd4992702ea7eca598690a82666dd8041"
+    },
+    "Bracken_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "taxon_1:Categorical",
+      "proportion_1:Float64",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "1df5cd8f9043fa9ce551f30d732149bc4298299cdbadfad4fe549f4a1663ca6e"
+    },
+    "FastP_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "total_reads:Float64",
+      "q30_rate:Float64",
+      "gc_content:Float64",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "d6b1e0cd71d4883779fa95a438d31d59e76a21ef968b8ccb5bcccfa2f804853f"
+    },
+    "MLST_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "scheme:Categorical",
+      "sequence_type:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "bc765d50c6b1a7efacb8ca370e30babf3145013eff71da08343dcefd99b13cb7"
+    },
+    "QA_AMR_per_sample": {
+     "columns": [
+      "sample_id:String",
+      "country:Categorical",
+      "source:Categorical",
+      "year:Float64",
+      "gene:Categorical",
+      "predicted_phenotype:Categorical"
+     ],
+     "rows": 74,
+     "sha256": "79048c15e9cd5d73aaa4e975715afa1230c02c722920fe99c1735c5c07fa2f62"
+    },
+    "QA_L50_integer": {
+     "columns": [
+      "sample_id:Categorical",
+      "L50:Int64"
+     ],
+     "rows": 42,
+     "sha256": "f91a972331acba6f5cd07af089c06ba2e22adbb3789a0f96e716c6e2d1944f8d"
+    },
+    "QA_ST_with_NA": {
+     "columns": [
+      "sample_id:Categorical",
+      "ST:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "02d6644e7bf1f897ce8cff30ab14dfa345cefd85463c129aeed621136e4869f6"
+    },
+    "QA_aggregated_no_key": {
+     "columns": [
+      "sample_id:Categorical",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "year_label:String"
+     ],
+     "rows": 42,
+     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+    },
+    "QA_fanout_exhibit": {
+     "columns": [
+      "sample_id:String",
+      "country:Categorical",
+      "gene:Categorical",
+      "VF_gene:String"
+     ],
+     "rows": 1731,
+     "sha256": "e29dd86aafd48174a4def61ba30f0b3363face68e7e76d422bdbb1d9dd9540c0"
+    },
+    "QA_population_zscore": {
+     "columns": [
+      "sample_id:String",
+      "country:Categorical",
+      "n50:Float64"
+     ],
+     "rows": 42,
+     "sha256": "c1a3da28c847e6c09a59d749dd3c393af3c796723ae4a11b35bb3b09597f5dde"
+    },
+    "QA_year_types": {
+     "columns": [
+      "sample_id:Categorical",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "year_label:String"
+     ],
+     "rows": 42,
+     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+    },
+    "QC_Reads_Anchor": {
+     "columns": [
+      "sample_id:String",
+      "total_reads:Float64",
+      "q30_rate:Float64",
+      "gc_content:Float64",
+      "n50:Float64",
+      "total_length:Float64",
+      "largest_contig:Float64",
+      "L50:Float64",
+      "taxon_1:Categorical",
+      "proportion_1:Float64",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
+    },
+    "Quast_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "country:Categorical",
+      "metric:String",
+      "value:Float64"
+     ],
+     "rows": 126,
+     "sha256": "93f7a97c9f4ad62dfd68b4dfb9ba8f0143e4be3ca9e793101227f3deb5378ed7"
+    },
+    "ResFinder": {
+     "columns": [
+      "sample_id:String",
+      "gene:Categorical",
+      "predicted_phenotype:Categorical",
+      "identity:Float64",
+      "overlap:Float64",
+      "status:String"
+     ],
+     "rows": 70,
+     "sha256": "17d7acce887ddb97c7c83ae61ba8d58061aff1c80e9e451f0e29eb60fa1fdcb7"
+    },
+    "ResFinder_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "gene:Categorical",
+      "predicted_phenotype:Categorical",
+      "identity:Float64",
+      "overlap:Float64",
+      "status:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 70,
+     "sha256": "123daa9f084ba7885c6583b2de82c5fcf2e0edf70aad2b33789580288445efd6"
+    },
+    "ST22_Anchor": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "Selected_Virulence_Genes:String",
+      "VF_protein:String",
+      "gene:Categorical",
+      "status:String"
+     ],
+     "rows": 617,
+     "sha256": "e6b104ac3d296fe1a46cd4fa137fe2846cdc13b98236cadc8dc211508cdfc7c3"
+    },
+    "Summary_phenotype_length_fragmentation": {
+     "columns": [
+      "sample_id:String",
+      "ST:Categorical",
+      "phenotype_count:Int32",
+      "quality_metric:String",
+      "quality_value:Float64"
+     ],
+     "rows": 126,
+     "sha256": "735133f3c16c502dab2eefb8eface1e2a44d06d95ffc9514e65e84bdaf2acd71"
+    }
+   },
+   "t2": {
+    "AR1_MLST_Serotype_Virulence": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "selected_virulence_genes:String",
+      "vf_protein:String"
+     ],
+     "rows": 342,
+     "sha256": "d7aadbd43a56bfbc7a64dfaf959f785bd4992702ea7eca598690a82666dd8041"
+    },
+    "Bracken_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "taxon_1:Categorical",
+      "proportion_1:Float64",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "1df5cd8f9043fa9ce551f30d732149bc4298299cdbadfad4fe549f4a1663ca6e"
+    },
+    "FastP_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "total_reads:Float64",
+      "q30_rate:Float64",
+      "gc_content:Float64",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "d6b1e0cd71d4883779fa95a438d31d59e76a21ef968b8ccb5bcccfa2f804853f"
+    },
+    "MLST_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "scheme:Categorical",
+      "sequence_type:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "era:String"
+     ],
+     "rows": 33,
+     "sha256": "478daf6f05899b82b2b9105e21aefceb855798ec694ad9160dc233558e6cf4e5"
+    },
+    "QA_AMR_per_sample": {
+     "columns": [
+      "sample_id:String",
+      "country:Categorical",
+      "n_amr_genes:UInt32"
+     ],
+     "rows": 42,
+     "sha256": "c4f1a2365b420755e5bd98ae1abdc2e62d7b4f21f88c09dd5145cf0dc6a34cce"
+    },
+    "QA_L50_integer": {
+     "columns": [
+      "sample_id:Categorical",
+      "L50:Int64"
+     ],
+     "rows": 42,
+     "sha256": "f91a972331acba6f5cd07af089c06ba2e22adbb3789a0f96e716c6e2d1944f8d"
+    },
+    "QA_ST_with_NA": {
+     "columns": [
+      "sample_id:Categorical",
+      "ST:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "02d6644e7bf1f897ce8cff30ab14dfa345cefd85463c129aeed621136e4869f6"
+    },
+    "QA_aggregated_no_key": {
+     "columns": [
+      "country:Categorical",
+      "year_label:String",
+      "n_samples:UInt32"
+     ],
+     "rows": 9,
+     "sha256": "7026c15a47849971460ea045066481d1a030061101aa6e7807b04be376739009"
+    },
+    "QA_fanout_exhibit": {
+     "columns": [
+      "sample_id:String",
+      "rows_per_sample:UInt32"
+     ],
+     "rows": 42,
+     "sha256": "eb22d405ad94b84936e4e53aecba7b8b6aa527e98a55a55a38e8b2290f707e5f"
+    },
+    "QA_population_zscore": {
+     "columns": [
+      "sample_id:String",
+      "country:Categorical",
+      "n50:Float64",
+      "n50_zscore:Float64"
+     ],
+     "rows": 42,
+     "sha256": "04c203189214ca0aff7a2bfd44103d59c4e0c447d16686591cf8d38ee279833f"
+    },
+    "QA_year_types": {
+     "columns": [
+      "sample_id:Categorical",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "year_label:String"
+     ],
+     "rows": 42,
+     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+    },
+    "QC_Reads_Anchor": {
+     "columns": [
+      "sample_id:String",
+      "total_reads:Float64",
+      "q30_rate:Float64",
+      "gc_content:Float64",
+      "n50:Float64",
+      "total_length:Float64",
+      "largest_contig:Float64",
+      "L50:Float64",
+      "taxon_1:Categorical",
+      "proportion_1:Float64",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 42,
+     "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
+    },
+    "Quast_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "country:Categorical",
+      "metric:String",
+      "value:Float64"
+     ],
+     "rows": 126,
+     "sha256": "93f7a97c9f4ad62dfd68b4dfb9ba8f0143e4be3ca9e793101227f3deb5378ed7"
+    },
+    "ResFinder": {
+     "columns": [
+      "sample_id:String",
+      "gene:Categorical",
+      "predicted_phenotype:Categorical",
+      "identity:Float64",
+      "overlap:Float64",
+      "status:String"
+     ],
+     "rows": 70,
+     "sha256": "17d7acce887ddb97c7c83ae61ba8d58061aff1c80e9e451f0e29eb60fa1fdcb7"
+    },
+    "ResFinder_with_metadata": {
+     "columns": [
+      "sample_id:String",
+      "gene:Categorical",
+      "predicted_phenotype:Categorical",
+      "identity:Float64",
+      "overlap:Float64",
+      "status:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 70,
+     "sha256": "123daa9f084ba7885c6583b2de82c5fcf2e0edf70aad2b33789580288445efd6"
+    },
+    "ST22_Anchor": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical",
+      "sequence_type:String",
+      "serotype:Categorical",
+      "Selected_Virulence_Genes:String",
+      "VF_protein:String",
+      "gene:Categorical",
+      "status:String",
+      "virulence_count:UInt32"
+     ],
+     "rows": 617,
+     "sha256": "eaeb657b26ccc431b5866e8eb4e93c122938ffa8c5ce0714c527e71f13c6b19b"
+    },
+    "Summary_phenotype_length_fragmentation": {
+     "columns": [
+      "sample_id:String",
+      "ST:Categorical",
+      "phenotype_count:Int32",
+      "quality_metric:String",
+      "quality_value:Float64"
+     ],
+     "rows": 126,
+     "sha256": "735133f3c16c502dab2eefb8eface1e2a44d06d95ffc9514e65e84bdaf2acd71"
+    }
+   }
+  },
+  "2_test_data_ST22_dummy": {
+   "plots": {
+    "multi_resistance_by_country": {
+     "columns": [
+      "Year:String",
+      "Source:Categorical",
+      "Country:Categorical",
+      "gene:Categorical",
+      "predicted_phenotype_clean:String",
+      "sample_id:String",
+      "accession:Categorical",
+      "Multiresistant:String"
+     ],
+     "rows": 70,
+     "sha256": "dfcf4e8f98eb05261378261579c7952b0e838b423f67ac130e90f8331b08680e"
+    },
+    "multi_resistance_by_source": {
+     "columns": [
+      "Year:String",
+      "Source:Categorical",
+      "Country:Categorical",
+      "gene:Categorical",
+      "predicted_phenotype_clean:String",
+      "sample_id:String",
+      "accession:Categorical",
+      "Multiresistant:String"
+     ],
+     "rows": 70,
+     "sha256": "dfcf4e8f98eb05261378261579c7952b0e838b423f67ac130e90f8331b08680e"
+    },
+    "plasmid_prevalence_by_country": {
+     "columns": [
+      "Year:String",
+      "Source:Categorical",
+      "Country:Categorical",
+      "plasmid_name:Categorical",
+      "sample_id:String",
+      "accession:Categorical"
+     ],
+     "rows": 163,
+     "sha256": "28489f30109b1d0ebf9e9171c2b93f7caa58866683db72b8a424e6489776b2e8"
+    }
+   },
+   "t1": {
+    "AMR_Profile_Joint": {
+     "columns": [
+      "Year:String",
+      "Source:Categorical",
+      "Country:Categorical",
+      "gene:Categorical",
+      "predicted_phenotype_clean:String",
+      "sample_id:String",
+      "accession:Categorical",
+      "Multiresistant:String"
+     ],
+     "rows": 70,
+     "sha256": "dfcf4e8f98eb05261378261579c7952b0e838b423f67ac130e90f8331b08680e"
+    },
+    "Plasmid_Profile_Joint": {
+     "columns": [
+      "Year:String",
+      "Source:Categorical",
+      "Country:Categorical",
+      "plasmid_name:Categorical",
+      "sample_id:String",
+      "accession:Categorical"
+     ],
+     "rows": 163,
+     "sha256": "28489f30109b1d0ebf9e9171c2b93f7caa58866683db72b8a424e6489776b2e8"
+    }
+   },
+   "t2": {
+    "AMR_Profile_Joint": {
+     "columns": [
+      "Year:String",
+      "Source:Categorical",
+      "Country:Categorical",
+      "gene:Categorical",
+      "predicted_phenotype_clean:String",
+      "sample_id:String",
+      "accession:Categorical",
+      "Multiresistant:String"
+     ],
+     "rows": 70,
+     "sha256": "dfcf4e8f98eb05261378261579c7952b0e838b423f67ac130e90f8331b08680e"
+    },
+    "Plasmid_Profile_Joint": {
+     "columns": [
+      "Year:String",
+      "Source:Categorical",
+      "Country:Categorical",
+      "plasmid_name:Categorical",
+      "sample_id:String",
+      "accession:Categorical"
+     ],
+     "rows": 163,
+     "sha256": "28489f30109b1d0ebf9e9171c2b93f7caa58866683db72b8a424e6489776b2e8"
+    }
+   }
+  },
+  "3_test_no_joins": {
+   "plots": {
+    "sequence_type_counts": {
+     "columns": [
+      "sample_id:Categorical",
+      "scheme:Categorical",
+      "sequence_type:String"
+     ],
+     "rows": 42,
+     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+    }
+   },
+   "t1": {
+    "MLST": {
+     "columns": [
+      "sample_id:Categorical",
+      "scheme:Categorical",
+      "sequence_type:String"
+     ],
+     "rows": 42,
+     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+    }
+   },
+   "t2": {
+    "MLST": {
+     "columns": [
+      "sample_id:Categorical",
+      "scheme:Categorical",
+      "sequence_type:String"
+     ],
+     "rows": 42,
+     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+    }
+   }
+  },
+  "demo_abromics": {
+   "plots": {
+    "demo_st_by_source": {
+     "error": "VisualizationError: Aesthetic 'x' references unknown column 'Sequence Type'."
+    }
+   },
+   "t1": {
+    "demo_join": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 30,
+     "sha256": "1bd6a79f1237d410fc1337d7e5e7ce1c061a15fc19820e7d7774e455b61f2ff1"
+    }
+   },
+   "t2": {
+    "demo_join": {
+     "columns": [
+      "sample_id:String",
+      "source:Categorical",
+      "year:Float64",
+      "country:Categorical"
+     ],
+     "rows": 30,
+     "sha256": "1bd6a79f1237d410fc1337d7e5e7ce1c061a15fc19820e7d7774e455b61f2ff1"
+    }
+   }
+  },
+  "figshare_integration": {
+   "plots": {
+    "plot_A_phenotype_bar": {
+     "columns": [
+      "sample_id:String",
+      "host_animal_species:Categorical",
+      "host_animal_common:Categorical",
+      "specimen_source_tissue:Categorical",
+      "final_diagnosis:Categorical",
+      "animal_infection_site_uti:Categorical",
+      "mic_id:Categorical",
+      "breakpoint:Categorical",
+      "predicted_phenotype:Categorical",
+      "gene:Categorical",
+      "gene_type:Categorical",
+      "gene_identifier:Categorical",
+      "gene_name_family:Categorical",
+      "resistance_class:Categorical"
+     ],
+     "rows": 203146,
+     "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+    },
+    "plot_B_genotype_bar": {
+     "columns": [
+      "sample_id:String",
+      "host_animal_species:Categorical",
+      "host_animal_common:Categorical",
+      "specimen_source_tissue:Categorical",
+      "final_diagnosis:Categorical",
+      "animal_infection_site_uti:Categorical",
+      "mic_id:Categorical",
+      "breakpoint:Categorical",
+      "predicted_phenotype:Categorical",
+      "gene:Categorical",
+      "gene_type:Categorical",
+      "gene_identifier:Categorical",
+      "gene_name_family:Categorical",
+      "resistance_class:Categorical"
+     ],
+     "rows": 203146,
+     "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+    },
+    "plot_C_resistance_class": {
+     "columns": [
+      "sample_id:String",
+      "host_animal_species:Categorical",
+      "host_animal_common:Categorical",
+      "specimen_source_tissue:Categorical",
+      "final_diagnosis:Categorical",
+      "animal_infection_site_uti:Categorical",
+      "mic_id:Categorical",
+      "breakpoint:Categorical",
+      "predicted_phenotype:Categorical",
+      "gene:Categorical",
+      "gene_type:Categorical",
+      "gene_identifier:Categorical",
+      "gene_name_family:Categorical",
+      "resistance_class:Categorical"
+     ],
+     "rows": 203146,
+     "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+    }
+   },
+   "t1": {
+    "figshare_triple_join": {
+     "columns": [
+      "sample_id:String",
+      "host_animal_species:Categorical",
+      "host_animal_common:Categorical",
+      "specimen_source_tissue:Categorical",
+      "final_diagnosis:Categorical",
+      "animal_infection_site_uti:Categorical",
+      "mic_id:Categorical",
+      "breakpoint:Categorical",
+      "predicted_phenotype:Categorical",
+      "gene:Categorical",
+      "gene_type:Categorical",
+      "gene_identifier:Categorical",
+      "gene_name_family:Categorical",
+      "resistance_class:Categorical"
+     ],
+     "rows": 203146,
+     "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+    }
+   },
+   "t2": {
+    "figshare_triple_join": {
+     "columns": [
+      "sample_id:String",
+      "host_animal_species:Categorical",
+      "host_animal_common:Categorical",
+      "specimen_source_tissue:Categorical",
+      "final_diagnosis:Categorical",
+      "animal_infection_site_uti:Categorical",
+      "mic_id:Categorical",
+      "breakpoint:Categorical",
+      "predicted_phenotype:Categorical",
+      "gene:Categorical",
+      "gene_type:Categorical",
+      "gene_identifier:Categorical",
+      "gene_name_family:Categorical",
+      "resistance_class:Categorical"
+     ],
+     "rows": 203146,
+     "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+    }
+   }
+  },
+  "stress_test_master": {
+   "plots": {
+    "stress_species_amr": {
+     "columns": [
+      "sample_id:Categorical",
+      "species:Categorical",
+      "collection_date:Categorical",
+      "amr_class:Categorical",
+      "value:Categorical"
+     ],
+     "rows": 10000,
+     "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
+    }
+   },
+   "t1": {
+    "Master_Collection": {
+     "columns": [
+      "sample_id:Categorical",
+      "species:Categorical",
+      "collection_date:Categorical",
+      "amr_class:Categorical",
+      "value:Categorical"
+     ],
+     "rows": 10000,
+     "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
+    }
+   },
+   "t2": {
+    "Master_Collection": {
+     "columns": [
+      "sample_id:Categorical",
+      "species:Categorical",
+      "collection_date:Categorical",
+      "amr_class:Categorical",
+      "value:Categorical"
+     ],
+     "rows": 10000,
+     "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
+    }
+   }
+  }
+ },
+ "recipes_dir": "config/data_analysis_recipes/pipelines"
+}
