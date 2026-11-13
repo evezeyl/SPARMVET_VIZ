@@ -40,8 +40,7 @@ def t2(data_analysis_recipe, join, tmp_path):
     return o.materialize_tier2(data_analysis_recipe, join, tmp_path / f"{join}.parquet", keys=o.compute_data_analysis_recipe_keys(data_analysis_recipe))
 
 
-@pytest.mark.parametrize("data_analysis_recipe", ["retest_tier2", "retest_top_n_other", "retest_broken_header",
-                                     "retest_bad_output_field"])
+@pytest.mark.parametrize("data_analysis_recipe", ["retest_tier2", "retest_top_n_other", "retest_broken_header"])
 def test_every_retest_data_analysis_recipe_is_a_valid_data_analysis_recipe(data_analysis_recipe):
     assert validate_data_analysis_recipe(DATA_ANALYSIS_RECIPES / f"{data_analysis_recipe}.yaml") == []
 
@@ -86,26 +85,9 @@ def test_top_n_other_without_count_distinct_keeps_v1_v2_v3(tmp_path):
         entry.write_text(original)
 
 
-# -- retest_broken_header / retest_bad_output_field ------------------------------------------
+# -- retest_broken_header (retest_bad_output_field is retired: a schema has no output_fields in format 1, RETEST-REPLACE-1) ------------------------------------------
 
 def test_a_renamed_header_fails_the_build_and_names_the_dataset_and_the_column(tmp_path):
     with pytest.raises(IngestionError) as e:
         t1("retest_broken_header", "Genes_joined", tmp_path)
     assert "Genes" in str(e.value) and "predicted_phenotype" in str(e.value)
-
-
-def test_a_declared_output_field_with_no_column_is_reported_with_a_tip():
-    problems = validate_data_analysis_recipe_data(DATA_ANALYSIS_RECIPES / "retest_bad_output_field.yaml", RAW)
-    text = " ".join(str(p) for p in problems)
-    assert "phenotype" in text and "predicted_phenotype" in text
-
-
-def test_the_fixed_output_field_passes_the_check():
-    entry = DATA_ANALYSIS_RECIPES / "retest_bad_output_field.yaml"
-    original = entry.read_text()
-    try:
-        entry.write_text(original.replace("      phenotype: {type: categorical}      # EDIT HERE (test 3): change to predicted_phenotype",
-                                          "      predicted_phenotype: {type: categorical}"))
-        assert validate_data_analysis_recipe_data(entry, RAW) == []
-    finally:
-        entry.write_text(original)

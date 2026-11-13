@@ -30,7 +30,6 @@ from playwright.sync_api import sync_playwright
 REPO = Path(__file__).resolve().parents[2]
 RETEST_TIER2 = REPO / "config/data_analysis_recipes/retest/retest_tier2.yaml"
 BROKEN = REPO / "config/data_analysis_recipes/retest/retest_broken_header.yaml"
-BAD_FIELD = REPO / "config/data_analysis_recipes/retest/retest_bad_output_field.yaml"
 SAMPLES = REPO / "assets/test_data/retest/samples.tsv"
 ANCHORS = REPO / "tmp/RETEST/user/anchors"
 results = []
@@ -79,7 +78,7 @@ def main() -> int:
     ap.add_argument("--headed", action="store_true", help="show the browser")
     args = ap.parse_args()
 
-    originals = {p: p.read_text(encoding="utf-8") for p in (RETEST_TIER2, BROKEN, BAD_FIELD, SAMPLES)}
+    originals = {p: p.read_text(encoding="utf-8") for p in (RETEST_TIER2, BROKEN, SAMPLES)}
     shutil.rmtree(REPO / "tmp/RETEST", ignore_errors=True)
     env = {**os.environ, "PYTHONPATH": ".", "SPARMVET_DEPLOYMENT": "config/deployment/local/retest.yaml",
            "SPARMVET_APP_FEATURES": "qa"}
@@ -175,19 +174,12 @@ def main() -> int:
             body = page.inner_text("body")
             check("RT-30 renamed header: the recipe is listed as unavailable, with the dataset and the column",
                   "retest_broken_header" in body and "Genes" in body and "predicted_phenotype" in body)
-            check("RT-31 declared field with no column: listed as unavailable, with the tip",
-                  "retest_bad_output_field" in body and "matches no column" in body and "Did you mean" in body)
             BROKEN.write_text(originals[BROKEN].replace("genes_renamed_header.tsv", "genes.tsv"), encoding="utf-8")
-            BAD_FIELD.write_text(originals[BAD_FIELD].replace("      phenotype: {type: categorical}",
-                                                              "      predicted_phenotype: {type: categorical}", 1),
-                                 encoding="utf-8")
             url = start_server()
             open_data_analysis_recipe(page, url, "retest_tier2")
             body = page.inner_text("body")
             options = page.locator("#data_analysis_recipe_id option").evaluate_all("els => els.map(e => e.value)")
             check("RT-30 after the fix and a restart the recipe is selectable", "retest_broken_header" in options,
-                  str(options))
-            check("RT-31 after the fix and a restart the recipe is selectable", "retest_bad_output_field" in options,
                   str(options))
             browser.close()
     except Exception:
