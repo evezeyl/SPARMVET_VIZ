@@ -521,3 +521,10 @@ Eve: Exploration has ONE plot (Result, immutable, always shown); Audit mode has 
 **Written:** `.claude/design/recipe_format_gallery_options_2026-11-13.md` (decisions D1-D7, inventory of 10 changes, order); spec section 6.9 withdrawn; issue #82; task GALLERY-RECIPES-1.
 **Waiting for Eve:** D1-D7 of the gallery options (recommended: first option of each), the key name `taxonomy`, dead submission code removed or kept; plus section 13 of the spec. Nothing in the gallery or the recipes was changed.
 **Do not touch:** `.claude/design/spaces/HOME.md` (Eve's edit).
+
+## 2026-11-13 (later still: spec v0.4, format version, gallery plan v2)
+
+**Eve's answers:** what is wrong in the gallery will be fixed; a format version for recipes matched to the spec is a good idea (from her review of the app changes with another agent); the gallery's `taxonomy` key is required; the authorised terms should be in the spec (one place instead of two); the gallery work is later but planned now.
+**Written (docs only, committed):** spec v0.4 (`format_version`: section 4b, checks V01-V04, migration tool `migrate_recipe_format.py`, history table; one-place proposal in section 0; section 13 points 16-17); ST22 draft carries `format_version: 1`; gallery options v2 (`recipe_format_gallery_options_2026-11-13.md`): D3 rewritten (the specification as a data file, terms included), G1-G8 each mapped to a package and a test, plan GAL-0..GAL-9 with dependencies and tags, "decide now" (D1-D3, key name) versus "later" (D4-D7).
+**Issues:** new #83 (format version + migration tool); #73, #76, #78, #82 updated, #74 commented. Tasks: RECIPE-FORMAT-VERSION-1, GALLERY-RECIPES-1 (plan).
+**Waiting for Eve:** D1-D3 and the key name (they shape how #76 is built, so before the checker starts); `format_version` name/form; section 13 of the spec. Nothing in recipes, gallery or code was changed.
