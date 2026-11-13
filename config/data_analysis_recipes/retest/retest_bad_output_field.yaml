@@ -1,6 +1,6 @@
-# RETEST: a declared output field that matches no column (issue #18). The data has predicted_phenotype;
-# output_fields declares "phenotype". The app still runs (output_fields of a data schema is not applied
-# yet); the check is the function validate_data_analysis_recipe_data (see the procedure, test 3).
+# RETEST: a declared output field that matches no column. The data has predicted_phenotype;
+# output_fields declares "phenotype". Expected: the load gate refuses the recipe at startup and the
+# recipe choice panel lists it as unavailable with the reason and the tip (retest procedure, RT-31).
 id: retest_bad_output_field
 info:
   display_name: RETEST bad output field

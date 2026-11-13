@@ -1,6 +1,7 @@
-# RETEST: a dataset whose file has a renamed header (issue #18). The data analysis recipe declares the column
+# RETEST: a dataset whose file has a renamed header. The data analysis recipe declares the column
 # predicted_phenotype; the file genes_renamed_header.tsv calls it phenotype_renamed.
-# Expected in Home: a red "Data Assembly Failed" banner that names the dataset and the missing column.
+# Expected: the load gate refuses the recipe at startup and the recipe choice panel lists it as
+# unavailable, naming the dataset and the missing column (retest procedure, RT-30).
 id: retest_broken_header
 info:
   display_name: RETEST broken header

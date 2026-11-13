@@ -1,4 +1,4 @@
-# RETEST: the top_n_other action (issue #23). 21 rows, 18 samples, 8 variants V1..V8 and 1 missing value.
+# RETEST: the top_n_other action. 21 rows, 18 samples, 8 variants V1..V8 and 1 missing value.
 # Sample s07 has 4 rows of V2 (so V2 has 4 rows but only 1 sample).
 # With count_distinct: sample_id the 3 kept variants are V1 (6 samples), V3 (3), V4 (2, wins the tie with V5
 # alphabetically). Remove the count_distinct line (EDIT HERE) and the kept ones become V1 (6 rows), V2 (4), V3 (3).

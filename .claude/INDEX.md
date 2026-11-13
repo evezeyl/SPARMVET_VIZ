@@ -195,7 +195,6 @@ HISTORY: 6 files kept for the record (`.claude/knowledge/archive/`). Task archiv
 | File | Status | Last change | What it is |
 |---|---|---|---|
 | `home_exploration_build_brief.md` | CURRENT (cut 2026-11-13): the working protocol of the build, the issue protocol, the QA canaries, details of packages P1, P3, P8 | 2026-11-13 | Build brief: working protocol and package details for the HOME work |
-| `retest_procedure_2026-11-06.md` | CURRENT manual procedure (not run yet; a test and a script use it, so its name stays) | 2026-11-07 | Retest procedure, 2026-11-06 |
 | `tasks.md` | CURRENT (sorted 2026-11-13) | 2026-11-13 | Tasks (the live list) |
 | `test_plan_2026-06.md` | CURRENT manual test plan for Blueprint, Gallery, Test Lab and the configuration gating (no round run since Phase 34) | 2026-11-13 | SPARMVET_VIZ — Live App Test Plan |
 | `test_plan_home_2026-11.md` | CURRENT stub: only the items of the old HOME ledger that are not passed; the new HOME plan is written at P9/P12 | 2026-11-13 | HOME test plan: what is still open (as-built HOME) |
@@ -221,6 +220,8 @@ HISTORY: 19 files kept for the record (`.claude/tasks/archives/`). Task archives
 | `tasks_test_ui_current.md` | HISTORY |  | Live-UI Test Checklist — Current Dashboard |
 | `tasks_before_sort_2026-11-13.md` | HISTORY | 2026-11-13 | `tasks.md` before it was sorted (superseded tasks, session notes, completed-phases table) |
 | `home_exploration_build_brief_2026-11-11.md` | HISTORY | 2026-11-13 | The build brief with its work-package history and status table |
+| `retest_procedure_2026-11-06.md` | HISTORY | 2026-11-13 | The one-off retest of 2026-11-06 (the permanent procedure is in `workflows/`) |
+| `tasks_backlog_details_2026-11-13.md` | HISTORY | 2026-11-13 | Original text of the backlog tasks shortened, merged or removed in the triage |
 | `test_plan_home_2026-11_ledger.md` | HISTORY | 2026-11-13 | The full HOME test ledger (30 items passed, Eve's notes, round log) |
 | `test_plan_2026-06_before_clean.md` | HISTORY | 2026-11-13 | The Phase 2 test plan with its old iteration log |
 
@@ -228,6 +229,7 @@ HISTORY: 19 files kept for the record (`.claude/tasks/archives/`). Task archives
 
 | File | Status | Last change | What it is |
 |---|---|---|---|
+| `retest_procedure.md` | CURRENT permanent procedure: manual and scripted retest of the stored tiers, keys, export and load gate (`assets/scripts/retest_walkthrough.py` runs part of it) | 2026-11-13 | Retest procedure |
 | `audit_exclusions.yaml` | IN FORCE | 2026-11-07 | Audit Known Exclusions |
 | `audit_routine_registry.md` | IN FORCE | 2026-11-08 | Audit Routine Registry |
 | `audit_triage_protocol.md` | IN FORCE | 2026-11-08 | Audit Triage Protocol |

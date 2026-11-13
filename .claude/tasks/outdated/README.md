@@ -13,3 +13,5 @@
 | `home_exploration_build_brief_2026-11-11.md` | the build brief with its work-package history, status table and question list | `../home_exploration_build_brief.md` |
 | `test_plan_home_2026-11_ledger.md` | the full HOME test ledger, tests behaviour that the redesign replaces | `../test_plan_home_2026-11.md` (open items), later the new HOME plan |
 | `test_plan_2026-06_before_clean.md` | the Phase 2 test plan with its old iteration log and order | `../test_plan_2026-06.md` |
+| `retest_procedure_2026-11-06.md` | the one-off retest of 2026-11-06 with its issue numbers | `../../workflows/retest_procedure.md` |
+| `tasks_backlog_details_2026-11-13.md` | original text of backlog tasks shortened, merged or removed on 2026-11-13 | `../tasks.md` group 4 |

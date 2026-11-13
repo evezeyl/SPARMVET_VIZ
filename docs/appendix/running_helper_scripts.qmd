@@ -188,16 +188,3 @@ These scripts are for the multi-stage Figshare AMR dataset integration pipeline.
 ```
 
 ---
-
-## 8. Materialize Data Analysis Recipe Plots (Deprecated Shim)
-
-**Script:** `assets/scripts/materialize_data_analysis_recipe_plots.py`
-
-::: {.callout-warning}
-This script is a deprecated compatibility shim (removal task `LEGACY-MATERIALIZE-SHIM-REMOVE-1`) that
-forwards every argument to its real replacement: `libs/viz_factory/tests/debug_gallery.py` (the
-canonical headless art-audit tool), not `debug_assembler.py` — `debug_assembler.py` validates the
-data/assembly layer, `debug_gallery.py` is the one that renders plots. Use
-`libs/viz_factory/tests/debug_gallery.py --data-analysis-recipe <path>` directly. See
-[Developer CLI Tools](../reference/developer_how_to.qmd).
-:::

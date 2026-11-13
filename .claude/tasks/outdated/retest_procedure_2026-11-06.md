@@ -1,3 +1,5 @@
+> **OUTDATED (2026-11-13): archive copy of the one-off retest of 2026-11-06** (issues #10, #18, #21, #23 and the 2026-11-06 findings). The permanent procedure that grew from it is `.claude/workflows/retest_procedure.md`.
+
 # Retest procedure, 2026-11-06
 
 **For:** Eve (tester). **Covers:** issues #10, #18, #21, #23 and the export checks (EXPORT-CHECK-1), plus

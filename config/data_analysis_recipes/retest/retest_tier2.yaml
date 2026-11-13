@@ -1,7 +1,7 @@
 # RETEST: Tier 2 stored as a parquet, chained keys, export (issues #10, EXPORT-CHECK-1).
 # 12 samples. Join "Result" has one tier2 step: keep rows with value >= 10 (8 rows remain).
 # Join "All_samples" has no tier2 step, so its T2 equals its T1 (12 rows).
-# Edit the two files marked "EDIT HERE" as described in .claude/tasks/retest_procedure_2026-11-06.md.
+# Edit the two files marked "EDIT HERE" as described in .claude/workflows/retest_procedure.md.
 id: retest_tier2
 info:
   display_name: RETEST Tier 2 and export

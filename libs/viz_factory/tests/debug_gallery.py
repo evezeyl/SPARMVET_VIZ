@@ -2,7 +2,7 @@
 # @deps
 # provides: script:debug_gallery
 # consumes: libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet), libs/viz_factory/src/viz_factory/viz_factory.py
-# consumed_by: config/data_analysis_recipes/pipelines/*/README.md, assets/scripts/materialize_data_analysis_recipe_plots.py
+# consumed_by: config/data_analysis_recipes/pipelines/*/README.md
 # doc: .claude/rules/rules_agent_role_bioscientist.md#7
 # @end_deps
 """

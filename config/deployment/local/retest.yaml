@@ -1,4 +1,4 @@
-# SPARMVET RETEST Deployment: small data analysis recipes for retesting (see .claude/tasks/retest_procedure_2026-11-06.md)
+# SPARMVET RETEST Deployment: small data analysis recipes for retesting (see .claude/workflows/retest_procedure.md)
 # Launch with: SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml
 # Its cache and sessions live in tmp/RETEST/, apart from your normal tmp/UI_TEST/.
 deployment_type: filesystem

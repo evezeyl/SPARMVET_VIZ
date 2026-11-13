@@ -100,11 +100,11 @@ Do not use `recode_values` with `default: "keep"` to mean "leave the other value
 :::
 
 ### How do I perform a "Gallery Audit" without the UI?
-**Strategy**: Use the `GalleryMaterializer (materialize_data_analysis_recipe_plots.py)` tool in `assets/scripts/`. 
+**Strategy**: Use the headless art audit `debug_gallery.py` in `libs/viz_factory/tests/`. 
 ```bash
-./.venv/bin/python assets/scripts/materialize_data_analysis_recipe_plots.py --data-analysis-recipe path/to/data_analysis_recipe.yaml
+./.venv/bin/python libs/viz_factory/tests/debug_gallery.py --data-analysis-recipe path/to/data_analysis_recipe.yaml
 ```
-This renders every plot in your data analysis recipe into Layer 3 high-resolution PNGs in the `tmp/` directory for bulk verification.
+This renders every plot in your data analysis recipe into PNGs for bulk verification (default folder `tmpAI/<date>/<recipe>/plots/`, set with `--output_root`; run `debug_assembler.py` first, it writes the data the plots read).
 
 ### How do I add Titles and Subtitles to my charts?
 **Answer**: Add a `labs` layer to your plot specification in the data analysis recipe:

@@ -121,16 +121,16 @@ implemented elements:
 
 ## 5. Headless Art Audits (The Gallery)
 
-To ensure visual consistency across large data analysis recipes without launching the dashboard, researchers can use the **`GalleryMaterializer (assets/scripts/materialize_data_analysis_recipe_plots.py)`**.
+To ensure visual consistency across large data analysis recipes without launching the dashboard, researchers can use the headless art audit **`debug_gallery.py` (libs/viz_factory/tests/debug_gallery.py)**.
 
 This utility performs a "Bulk Render":
 1. Scans the master data analysis recipe for all plots in all `analysis_groups`.
-2. Automatically locates the corresponding Layer 1 (Wrangled) or Layer 2 (Assembled) data in `tmp/`.
-3. Materializes unique PNG files into `tmp/materialized_gallery/`.
+2. Reads the assembled data that `debug_assembler.py` wrote (default `tmpAI/<date>/<recipe>/`, set with `--tmp`).
+3. Renders one PNG per plot (default `tmpAI/<date>/<recipe>/plots/`, set with `--output_root`).
 
 **Command:**
 ```bash
-./.venv/bin/python assets/scripts/materialize_data_analysis_recipe_plots.py --data-analysis-recipe path/to/data_analysis_recipe.yaml
+./.venv/bin/python libs/viz_factory/tests/debug_gallery.py --data-analysis-recipe path/to/data_analysis_recipe.yaml
 ```
 
 ## 6. Summary Table (Core Orchestrator)

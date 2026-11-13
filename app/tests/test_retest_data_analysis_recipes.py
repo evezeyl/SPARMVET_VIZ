@@ -1,5 +1,5 @@
 """The retest data analysis recipes in config/data_analysis_recipes/retest/ must keep working, with the numbers the retest
-procedure (.claude/tasks/retest_procedure_2026-11-06.md) tells the tester to expect.
+procedure (.claude/workflows/retest_procedure.md) tells the tester to expect.
 
 If this test fails, the procedure is wrong too: fix both.
 

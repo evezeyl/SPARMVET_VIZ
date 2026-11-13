@@ -3,11 +3,12 @@
 It starts the app with the retest deployment (tmp/RETEST is deleted first), then runs, in order:
 RT-01 load and row counts, RT-02 stored files, RT-03 reuse, RT-04 change one tier 2 step,
 RT-05 move the step to tier 1, RT-06 change the data, RT-07 export refused after a change,
-RT-30 renamed header and its fix, RT-31 declared field with no column.
+RT-30 renamed header and its fix, RT-31 declared field with no column (both are refused by the
+load gate at startup and listed as unavailable; after the fix the app is restarted, because the gate runs once per start).
 It edits the retest files and puts them back afterwards, also on a failure.
 
 Needs the app environment (.venv) and Playwright. It is what a person would do by hand in
-.claude/tasks/retest_procedure_2026-11-06.md, so a failure here is a finding.
+.claude/workflows/retest_procedure.md, so a failure here is a finding.
 
 Example:
   PYTHONPATH=. .venv/bin/python assets/scripts/retest_walkthrough.py
@@ -29,6 +30,7 @@ from playwright.sync_api import sync_playwright
 REPO = Path(__file__).resolve().parents[2]
 RETEST_TIER2 = REPO / "config/data_analysis_recipes/retest/retest_tier2.yaml"
 BROKEN = REPO / "config/data_analysis_recipes/retest/retest_broken_header.yaml"
+BAD_FIELD = REPO / "config/data_analysis_recipes/retest/retest_bad_output_field.yaml"
 SAMPLES = REPO / "assets/test_data/retest/samples.tsv"
 ANCHORS = REPO / "tmp/RETEST/user/anchors"
 results = []
@@ -77,21 +79,32 @@ def main() -> int:
     ap.add_argument("--headed", action="store_true", help="show the browser")
     args = ap.parse_args()
 
-    originals = {p: p.read_text(encoding="utf-8") for p in (RETEST_TIER2, BROKEN, SAMPLES)}
+    originals = {p: p.read_text(encoding="utf-8") for p in (RETEST_TIER2, BROKEN, BAD_FIELD, SAMPLES)}
     shutil.rmtree(REPO / "tmp/RETEST", ignore_errors=True)
-    port = free_port()
-    url = f"http://127.0.0.1:{port}/"
     env = {**os.environ, "PYTHONPATH": ".", "SPARMVET_DEPLOYMENT": "config/deployment/local/retest.yaml",
            "SPARMVET_APP_FEATURES": "qa"}
-    srv = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
-                           cwd=REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    try:
+    srv = None
+
+    def start_server():
+        # The load gate (ADR-094) runs once per process, so a fixed recipe needs a new process.
+        nonlocal srv
+        if srv is not None:
+            srv.terminate()
+            srv.wait(timeout=20)
+        port = free_port()
+        srv = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
+                               cwd=REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        address = f"http://127.0.0.1:{port}/"
         for _ in range(60):
             try:
-                urllib.request.urlopen(url, timeout=2)
+                urllib.request.urlopen(address, timeout=2)
                 break
             except Exception:
                 time.sleep(1)
+        return address
+
+    try:
+        url = start_server()
         with sync_playwright() as pw:
             browser = pw.chromium.launch(headless=not args.headed)
             page = browser.new_page(viewport={"width": 1700, "height": 950}, accept_downloads=True)
@@ -157,14 +170,25 @@ def main() -> int:
                   len(only) == 1 and only[0].endswith("EXPORT_NOT_CREATED.txt"), str(only))
             SAMPLES.write_text(originals[SAMPLES], encoding="utf-8")
 
-            # RT-30
-            open_data_analysis_recipe(page, url, "retest_broken_header")
+            # RT-30 and RT-31: the load gate lists a recipe it refuses, with the reason
+            open_data_analysis_recipe(page, url, "retest_tier2")
             body = page.inner_text("body")
-            check("RT-30 broken header: banner names the dataset and the missing column",
-                  "Data Assembly Failed" in body and "Genes" in body and "predicted_phenotype" in body)
+            check("RT-30 renamed header: the recipe is listed as unavailable, with the dataset and the column",
+                  "retest_broken_header" in body and "Genes" in body and "predicted_phenotype" in body)
+            check("RT-31 declared field with no column: listed as unavailable, with the tip",
+                  "retest_bad_output_field" in body and "matches no column" in body and "Did you mean" in body)
             BROKEN.write_text(originals[BROKEN].replace("genes_renamed_header.tsv", "genes.tsv"), encoding="utf-8")
-            open_data_analysis_recipe(page, url, "retest_broken_header")
-            check("RT-30 after the fix the banner is gone", "Data Assembly Failed" not in page.inner_text("body"))
+            BAD_FIELD.write_text(originals[BAD_FIELD].replace("      phenotype: {type: categorical}",
+                                                              "      predicted_phenotype: {type: categorical}", 1),
+                                 encoding="utf-8")
+            url = start_server()
+            open_data_analysis_recipe(page, url, "retest_tier2")
+            body = page.inner_text("body")
+            options = page.locator("#data_analysis_recipe_id option").evaluate_all("els => els.map(e => e.value)")
+            check("RT-30 after the fix and a restart the recipe is selectable", "retest_broken_header" in options,
+                  str(options))
+            check("RT-31 after the fix and a restart the recipe is selectable", "retest_bad_output_field" in options,
+                  str(options))
             browser.close()
     except Exception:
         srv.terminate()
@@ -175,13 +199,6 @@ def main() -> int:
         srv.terminate()
         for path, text in originals.items():
             path.write_text(text, encoding="utf-8")
-
-    # RT-31 (no browser)
-    from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe_data
-    problems = validate_data_analysis_recipe_data(
-        REPO / "config/data_analysis_recipes/retest/retest_bad_output_field.yaml", REPO / "assets/test_data")
-    check("RT-31 the declared column with no data is found, with a tip",
-          any("phenotype" in str(p) and "predicted_phenotype" in str(p) for p in problems), str(problems)[:120])
 
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)} of {len(results)} checks passed")

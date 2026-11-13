@@ -11,6 +11,12 @@
 - **documents:** `.claude/design/spaces/BLUEPRINT.md`, `.claude/knowledge/blueprint_architect_ux_spec.md`
 - **consumed_by:** `.claude/knowledge/architecture_decisions.md`
 
+## `.claude/rules/rules_agent_channel.md`
+- **Role:** `meta`
+- **provides:** `rule:agent_channel`
+- **documents:** `tmpAI/agent_channel.md`
+- **consumed_by:** `CLAUDE.md`, `.claude/rules/workspace_standard.md`
+
 ## `.claude/rules/rules_agent_role_bioscientist.md`
 - **Role:** `meta`
 - **provides:** `rule:data_analysis_recipe_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
@@ -399,12 +405,6 @@
 - **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer)`
 - **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
 - **doc:** `libs/test_lab/README.md`
-
-## `assets/scripts/materialize_data_analysis_recipe_plots.py`
-- **Role:** `info`
-- **provides:** `script:materialize_data_analysis_recipe_plots (DEPRECATED SHIM)`
-- **consumes:** `libs/viz_factory/tests/debug_gallery.py (delegates all work)`
-- **doc:** `libs/viz_factory/tests/debug_gallery.py`
 
 ## `assets/scripts/normalize_data_analysis_recipe_fields.py`
 - **Role:** `info`
@@ -922,7 +922,7 @@
 - **Role:** `plot`
 - **provides:** `script:debug_gallery`
 - **consumes:** `libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
-- **consumed_by:** `config/data_analysis_recipes/pipelines/*/README.md`, `assets/scripts/materialize_data_analysis_recipe_plots.py`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/*/README.md`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
 
 ## `libs/viz_factory/tests/debug_runner.py`

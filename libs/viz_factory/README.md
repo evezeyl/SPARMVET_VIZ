@@ -165,7 +165,7 @@ To prevent silent failures, the factory performs a "Pre-Flight" check before ren
 - **ScaleFactory (scales/core.py)**: Handles visual scaling, axis naming, and math/date transformations (log10, sqrt, datetime). DECO-2 (2026-04-30) added the aesthetic-generic family: `scale_alpha[_manual]`, `scale_size[_manual|_area]`, `scale_shape[_manual]`, `scale_linetype[_manual]`, `scale_color_hue` / `scale_fill_hue`, `scale_color_continuous` / `scale_fill_continuous`.
 - **ThemeFactory (themes/core.py)**: Manages stylistic presets including 3rd-party themes (538, Seaborn, XKCD), the multi-label `labs` component, and DECO-2 single-axis label helpers `xlab` / `ylab` / `ggtitle` / `annotate` (free-form text/segment/rect/point overlays).
 - **FacetFactory (facets/core.py)**: Orchestrates layout partitioning (Wrap, Grid).
-- **GalleryMaterializer (assets/scripts/materialize_data_analysis_recipe_plots.py)**: [Audit Utility] Cross-pillar tool for materializing all plots in a data analysis recipe into Layer 3 PNGs for bulk verification.
+- **headless art audit (libs/viz_factory/tests/debug_gallery.py)**: [Audit Utility] Cross-pillar tool for materializing all plots in a data analysis recipe into Layer 3 PNGs for bulk verification.
 - **IntegritySuite (viz_factory_integrity_suite.py)**: [Orchestrator] Programmatically audits all 193+ registered components for 1:1:1 evidence (was 176 before DECO-2).
 
 - **VisualisationRunner (debug_runner.py)** - [Dev Tool]: High-performance CLI for rendering isolated components and verifying data analysis recipe mappings.
