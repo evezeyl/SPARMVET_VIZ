@@ -292,3 +292,25 @@ It runs in `ingestor.py` after the column rename and before the type cast, on ev
 ## 24. Correction of section 22 (found while writing the ingestion tests, VERIFIED by run, 2026-11-13)
 
 Section 22 said that today "no NaN ever comes from a file" because the sanitiser turns the text `NaN` into null. That is only half true. The sanitiser acts only on columns that are text after the reader's inference. So today the same text `NaN` is read as a real NaN in a column whose other cells are all numbers (`NaN`, `1.5` gives `[nan, 1.5]`), and as a null in a column that also holds another word such as `NA` (`NaN`, `NA`, `1.5` gives `[None, None, 1.5]`). The result depends on the OTHER cells of the column: a hidden, data-dependent behaviour, which is one more reason for explicit `null_values` and a declared type. Under the explicit rule an unlisted `NaN` is a NaN in every case. Test: `libs/ingestion/tests/test_declared_types_and_missing_values.py` (the mixed column case fails today, strict).
+
+## 25. W6 package 2: which old actions become Polars steps, which stay `step_` (a recommendation to Eve, 2026-11-13; counts VERIFIED over all yaml and test code)
+
+Eve: several-step actions may stay but are minimised, must be `step_` and are recorded. Rule applied: an old action goes when the same table can be written with Polars steps that already exist (`polars_with_columns` with a formula, `polars_str_split`, ...); each replacement is proved by a differential test (old action and new steps give the same table) before it is removed. Steps in shipped recipes / all yaml and test code:
+
+| Old action | Becomes | Shipped / all steps |
+|---|---|---|
+| `mutate`, `add_constant` | `polars_with_columns` (built) | 6, 1 / 21, 2 |
+| `count_by_group`, `window_agg` | `polars_with_columns` with `pl.len().over(...)` or `pl.col(c).mean().over(...)` (no `modif_over` needed: R2 falls) | 2, 0 / 3, 1 |
+| `divide_columns`, `z_score`, `label_if`, `null_if`, `replace_values`, `recode_values`, `date_extract`, `to_struct` | `polars_with_columns` formulas (each hidden cast or name is written in the formula) | 1, 1, 0, 0, 1, 1, 0, 0 / 2, 2, 2, 2, 2, 2, 1, 2 |
+| `strip_whitespace` | `polars_str_strip_chars` with the characters written (the quote where it was stripped) | 13 / 20 |
+| `split_and_explode` | `polars_str_split` then `polars_explode` | 3 / 4 |
+| `horizontal_stats` | the four `*_horizontal` (built) | 0 / 1 |
+| `drop_duplicates`, `unique_rows`, `unique` | `polars_unique` (built) | 2, 1, 0 / 5, 2, 1 |
+| `rename_columns`, `join_filter` | `polars_rename`, `polars_join` with `how` | 0, 2 / 1, 3 |
+| `fill_nulls`, `fill_nulls_direction`, `round_numeric`, `regex_replace`, `regex_extract`, `split_to_list` | `polars_fill_null`, `polars_round`, `polars_str_replace_all`, `polars_str_extract`, `polars_str_split` (built) | 1, 0, 0, 0, 0, 0 / 4, 1, 1, 7, 1, 2 |
+| `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `filter_range`, `is_in`, `not_in` | `modif_filter` (built, verified, `na` required) | 1, 0, 0, 0, 9, 0, 0 / 19, 4, 8, 2, 19, 4, 3 |
+| `keep_columns`, `drop_columns` | `polars_select`, `polars_drop` (run B) | 7, 2 / 8, 5 |
+| `percentile`, `value_counts`, `select_by_pattern`, `sanitize_column_names` | removed (0 shipped steps; a rename mapping replaces the last) | 0 / 1, 1, 1, 1 |
+| `summarize`, `top_n_other`, `split_column`, `split_column_to_parts`, `derive_categories` | stay as `step_` actions, each read, documented and given explicit options | 5, 1, 1, 1, 1 / 7, 2, 2, 2, 2 |
+
+So `step_` falls from 12 (the spec's list) to 5, and `modif_` stays at one action (`modif_filter`). `derive_categories` waits for Q2 (a lookup file mapped by a Python function; it may be a `polars_join` with a lookup table). Shipped steps that must keep their table: 13 `strip_whitespace`, 9 `filter_range`, 6 `mutate`, 5 `summarize`, 3 `split_and_explode`, 7 `keep_columns`; the golden baseline measures each replacement.
