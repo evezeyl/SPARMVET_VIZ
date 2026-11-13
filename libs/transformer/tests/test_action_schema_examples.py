@@ -33,9 +33,9 @@ def test_the_example_uses_declared_parameters_with_the_declared_shape(name, sche
         assert key in params, f"{name}: the example writes '{key}', which the schema does not declare"
         shape = expected_shape(params[key])
         if isinstance(value, dict):
-            assert shape == "mapping", f"{name}.{key}: the example writes a mapping, the schema declares {shape}"
+            assert shape in ("mapping", "any"), f"{name}.{key}: the example writes a mapping, the schema declares {shape}"
         elif isinstance(value, list):
-            assert shape in ("list", "list_of_mapping"), f"{name}.{key}: the example writes a list, the schema declares {shape}"
+            assert shape in ("list", "list_of_mapping", "any"), f"{name}.{key}: the example writes a list, the schema declares {shape}"
             if shape == "list_of_mapping":
                 assert all(isinstance(item, dict) for item in value), f"{name}.{key}: items must be mappings"
 

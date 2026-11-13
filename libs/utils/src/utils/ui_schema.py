@@ -29,6 +29,7 @@ WIDGETS = (
     "bool",
     "list",               # a YAML list; `items: mapping` when every item is a mapping
     "mapping",            # a YAML mapping, for example old name to new name
+    "any",                # a value of any form; the schema `rules` (`shape`) say which form the other parameters make it
 )
 
 
@@ -37,6 +38,8 @@ def expected_shape(param_def: dict) -> str:
     widget = param_def.get("widget")
     if widget == "mapping":
         return "mapping"
+    if widget == "any":
+        return "any"
     if widget == "list":
         return "list_of_mapping" if param_def.get("items") == "mapping" else "list"
     if widget in ("column_selector", "enum") and param_def.get("multi"):

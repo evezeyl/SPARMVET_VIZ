@@ -9,3 +9,4 @@ from transformer.actions import relational
 from transformer.actions import persistence
 from transformer.actions import performance
 from transformer.actions import polars_calls  # noqa: F401  (the polars_ actions, W6)
+from transformer.actions import modified  # noqa: F401  (the modif_ actions, W6)

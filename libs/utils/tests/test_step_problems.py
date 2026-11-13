@@ -199,3 +199,22 @@ def test_an_unknown_rule_form_is_a_declaration_problem():
 def test_a_sound_schema_has_no_declaration_problem():
     assert schema_declaration_problems(FILTER) == []
     assert schema_declaration_problems(FILL) == []
+
+
+# -- the widget `any`: a value whose form the schema rules decide (added with modif_filter, 2026-11-13) -------
+
+ANY_SCHEMA = {"params": {"op": {"widget": "enum", "options": ["eq", "in"], "required": True}, "value": {"widget": "any", "required": True}},
+              "rules": [{"when": {"op": "in"}, "shape": {"value": "list"}}, {"when": {"op": "eq"}, "shape": {"value": "scalar"}}]}
+
+
+def test_an_any_widget_takes_a_scalar_or_a_list_and_the_rules_decide():
+    from utils.ui_schema import step_problems
+    assert step_problems("x", {"op": "eq", "value": 3}, ANY_SCHEMA) == []
+    assert step_problems("x", {"op": "in", "value": [1, 2]}, ANY_SCHEMA) == []
+    assert step_problems("x", {"op": "in", "value": 1}, ANY_SCHEMA), "a list is needed for in"
+    assert step_problems("x", {"op": "eq", "value": [1]}, ANY_SCHEMA), "a single value is needed for eq"
+
+
+def test_any_is_a_known_widget_with_its_own_shape():
+    from utils.ui_schema import WIDGETS, expected_shape
+    assert "any" in WIDGETS and expected_shape({"widget": "any"}) == "any"

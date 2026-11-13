@@ -149,7 +149,6 @@ def test_every_polars_action_exposes_its_polars_call_with_polars_defaults():
     assert {n: p for n, p in problems.items() if p} == {}
 
 
-@pytest.mark.xfail(strict=True, reason=NOT_BUILT + " (no modif_ or step_ action yet)")
 def test_modified_and_composite_actions_hide_no_default():
     names = [n for n in _actions() if n.startswith(("modif_", "step_"))]
     assert names, "no modif_ or step_ action is registered"
