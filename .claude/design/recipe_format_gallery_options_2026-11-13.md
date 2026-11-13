@@ -79,6 +79,8 @@ Your question: can the authorised terms be in the specification, so there is one
 | B. Markdown spec as the text, plus a `gallery_terms.yaml` for the terms, plus the checker code | the spec stays prose | three places that must be kept equal (the drift of G1 again), kept in line only by tests |
 | C. Terms written only in the markdown and parsed from it | one place on paper | fragile; the program cannot rely on it |
 
+**Verified against the rules (spec section 0b):** a data file and the checker core in `libs/utils` respect the Tier-1 rule (pure Python and pyyaml, no peer import: shown by running a prototype), ADR-011 and ADR-099 16(g). One condition, found by building two wheels: the container installs `utils` non-editable, and without a `package-data` declaration a YAML file in the package is silently missing from the wheel. Declare it and test it.
+
 If you choose A, it also decides how #76 is built: the "unknown key" check is then data-driven (no code change to add a key), and the generated tables replace the hand-written ones of sections 4 to 9 of the spec.
 
 ### D4. Where is an example checked? (one source of truth) *(can wait)*
@@ -89,7 +91,7 @@ If you choose A, it also decides how #76 is built: the "unknown key" check is th
 | B. Offline and tests only | no change at start | a broken example can reach users if the tests are skipped |
 | C. At app start only | users are protected | nobody sees the error while adding an example |
 
-Layering `[reasoned]`: `libs/viz_gallery` may import `utils` (Tier 1) where `check_recipe` and the specification file live, but not `transformer` or `viz_factory` (peers); the catalogues of actions and plot components are handed in by the caller (script or app), as for HOME.
+Layering `[verified, spec 0b]`: `libs/viz_gallery` may import `utils` (Tier 1) where `check_recipe` and the specification file live, but not `transformer` or `viz_factory` (peers); the catalogues of actions and plot components are handed in by the caller (script or app), as for HOME.
 
 ### D5. How are previews made? *(can wait)*
 

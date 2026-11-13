@@ -1,4 +1,4 @@
-# Recipe format specification (draft v0.4, 2026-11-13)
+# Recipe format specification (draft v0.5, 2026-11-13)
 
 **Written for:** Eve, to read and confirm. After that it is the base of the tests, of the checker (`check_recipe`), of the rule file and of the user documentation.
 **Status:** DRAFT. Nothing is built from it yet. It was written by applying the decisions of 2026-11-11/12 and your answers of 2026-11-13 to the code (read at file:line) and to every recipe file in the repository (scans in `tmpAI/recipe_format/`, scratch). The worked example is `1_test_data_ST22_dummy`: section 12 and `recipe_format_st22_draft.yaml`.
@@ -7,6 +7,8 @@
 **v0.2 (same day, after your review of v0.1):** (1) comments are specified (5b): `#` comments are free and kept, and an optional `comment` key exists; (2) the example variant (gallery) is now defined from what the gallery code reads and writes (6.9). It keeps `name`, the six-axis taxonomy, `data_path`, `wrangling` with `tier3` and its own file names, and it asks for no `label` or `description`; v0.1 refused `tier3` and renamed `name`, which would have broken the gallery; (3) the taxonomy is the gallery's and does not appear in a pipeline recipe (6.8); (4) the column-name aliases are replaced by what the action schemas already declare (6.5, 11); (5) science errors of recipes are fixed, not only described (15).
 
 **v0.3 (same day, after your gallery message):** (1) the comment key is **`comment`** (singular). Blueprint already writes it on steps, layers, groups and plots (BP-COMMENTS-1, ADR-082 Q4; `blueprint_handlers.py:376-378,402-404`, `join_designer.py:153`), and ADR-083 gives every layer a `comment`. My v0.2 had `comments` and a checker that would have refused what Blueprint saves. It is renamed and accepted on every step and every layer (5b, 6.5, 6.8). (2) Section 6.9 (gallery) is **withdrawn**: you want the gallery to follow the same spec, so the v0.2 text that kept its own words is wrong. The options, with pros and cons, are in `recipe_format_gallery_options_2026-11-13.md`; 6.9 is rewritten when you choose.
+
+**v0.5 (same day, after your question on the rules):** section 0b records the verified answer: a checker core and a specification data file in `libs/utils` respect the layering rules, with one packaging condition (found by building wheels) and one naming point to align with the HOME stage-2 draft (`mode` or `profile`).
 
 **v0.4 (same day, after your next message):** (1) every recipe declares a **`format_version`** (section 4b), a good idea you took from the review of the app changes with another agent: it names the version of this specification that a file is written in, the checker refuses any other version and says which migration tool to run; (2) the gallery's `taxonomy` key is **required** in the gallery profile (optional in other recipes); (3) the question "can the allowed gallery terms be in the spec, one place instead of two?" is answered in the gallery options (D3): yes, if the specification itself is also a data file; section 0 says how.
 
@@ -25,6 +27,36 @@ Yes, `.claude/design/` is the right place **while it is a draft**: it is the wor
 This file then becomes history (marked HISTORICAL by the rule `rules_legacy_management.md`) and points to those homes.
 
 **Proposal, to decide with the gallery options (D3): one place for the rules themselves.** The homes above hold the same facts in prose, in code and in tests, and they can drift. If the specification is also a **data file** in `libs/utils` (the allowed keys of each element, required or advice, the types, the vocabularies including the gallery terms, the table of renamed keys, the format version), then the checker, the filter panels, the markdown tables of the appendix, the error messages and the migration tool all read or are generated from that one file. Cross-element rules and the registries of actions and plot components stay in code. This is what makes "the authorised terms are in the spec" true in a way the program can use.
+
+## 0b. Where the checker and the specification file live (verified 2026-11-13)
+
+**Answer.** Yes, it respects our rules, and it is better for reuse. Two conditions came out of checking: the data file must be declared as package data (otherwise it is missing in the container), and the checker must receive the action and plot catalogs from its caller instead of importing them. Both are small. The decision is also already taken: ADR-099 16(g) and the stage-2 draft (`home_stage2_mechanism_spec.md` section 1) put `check_recipe` and `recipe_graph` in `libs/utils`.
+
+| Rule or decision | What it says | Verdict |
+|---|---|---|
+| `rules_runtime_environment.md` section 4, Tier 1 | `libs/utils` has no import of another repository library and no Shiny; third-party packages are allowed when declared in its `pyproject.toml` (polars and pyyaml, confirmed 2026-11-12) | respected: the core is Python and pyyaml. **Verified by running** a scratch prototype (`tmpAI/recipe_format/proto/`): after importing the core, no peer library is loaded |
+| Same, Tier 2 | a domain library imports `utils` only, and declares it | respected: `transformer`, `viz_factory`, `viz_gallery`, `blueprint_arch`, `ingestion`, `connector` all declare `utils` (verified) |
+| ADR-011 / `rules_viz_factory.md` 6a | a library does not read project files by path (the palette precedent) | respected: the specification file is the package's own resource, read with `importlib.resources`, no project path; it must be **packaged** (below) |
+| ADR-099 16(g), `home_audit_steps.md` 5a-8, stage-2 draft | one rule set `check_recipe` in `libs/utils`; the recipe graph in `libs/utils`; the loader builds and stops on errors | decided, consistent with this proposal |
+| `rules_test_lab.md` 2c | a primitive needed by two domain libraries goes to `libs/utils` | the same reason |
+| ADR-094 | HOME's gate lives in the app layer "on purpose": only that layer may combine utils and transformer | stays true: the app-layer adapter combines them; only the rule set moves down. ADR-094 gets an "amended by" note |
+| `rules_code_quality.md` 1 (emoji) | forbidden in Python docstrings, comments and raised messages; allowed in YAML values | the gallery icons in the data file are allowed; messages name terms, never icons |
+| `workspace_standard.md` 5-E (`@deps`) | every new module and rule file carries a `@deps` block | to do with the module and the data file |
+
+**Packaging (verified by building two wheels of a copy of `utils`).** The container installs the libraries **non-editable** (`assets/containers/Dockerfile:72-81`). Without `[tool.setuptools.package-data]` a YAML file inside `src/utils/` is silently **absent from the wheel**; with the declaration it is included. No library ships a data file today, so `utils` would be the first: declare `package-data` and add a test that builds the wheel and reads the file. (While reading that Dockerfile I also found `libs/generator_utils` on line 79, a folder that no longer exists, and no `blueprint_arch`, `test_lab` or `id_reconciliation`; noted in `DOCKER-RELEASE-1`.)
+
+**The design.**
+
+- **Core** `utils.recipe_check.check_recipe(raw, profile, *, catalogs=None, graph=None) -> Result(problems, coverage)`. Pure; the rules are read from `utils/recipe_format.yaml`; the catalogs (`actions`, `components`, `themes`) are **injected**; the recipe graph (`utils.recipe_graph`) is injected for the checks of columns per node.
+- **`coverage`** lists which groups of checks ran (`structure`, `actions`, `components`, `columns`). A consumer that must have everything asserts it (HOME's gate does, and a test asserts it for the gate), so nothing is skipped silently.
+- **One Tier-3 adapter**, today's `app/modules/data_analysis_recipe_validator.py` reduced to: build the catalogs from `transformer` and `viz_factory`, call the core, add the data check. HOME's gate, Blueprint's Validate, the import screen, the export and the audit copy, the scripts and the tests all call the adapter.
+- **Tier-2 consumers** call the core with the catalogs they own: `transformer` tests with the action catalog, `viz_factory` tests with the components, `viz_gallery` and `blueprint_arch` through their caller (`blueprint_arch` already holds an injected catalogue in `schema_registry`).
+- **The loader** (`ConfigManager`, in `utils`) runs the checks that need no catalog (coverage `structure`) and stops on errors; the data check (needs the data files) stays separate.
+- **Verified on the ST22 recipe by the prototype:** with both catalogs the core finds the 3 step problems found earlier (and the missing version and engine keys); with the action catalog only, the same; with no catalog, the structure only, and the coverage says so.
+
+**Callers of validation or loading today** (verified): HOME's gate `bootloader.py:364-367`; the importer `bundle_importer.py:251`; Blueprint's Validate `blueprint_handlers.py:2803,2850` and six more loads; `retest_walkthrough.py:181`; the transformer pipeline `pipeline.py:49`; the cache keys `cache_keys.py:193`. New callers: the gallery, the audit copy, the forked recipe, the migration tool, the test-lab writers.
+
+**One word to align with the HOME stage-2 draft.** It writes `check_recipe(raw, mode)` with `mode` = `run` or `build`. This file writes `profile` (`run`, `build`, `gallery`). HOME already has "Exploration | Audit mode" and `view_recipe(mode)`, so a third use of "mode" would confuse. Proposal: `profile`. It needs the two sessions to agree; your call.
 
 ## 1. What you decided on 2026-11-13
 
