@@ -1,0 +1,138 @@
+# The recipe format as data (spec section 9, D3): the checker, the migration tool and the documentation read this file.
+# Cross-element rules and the registries stay in code. Changing a key, a requirement or the engine names changes
+# `format_version`; a new term of an open vocabulary (the gallery terms) does not.
+format_version: 1
+
+engines:
+  data_engine: [python-polars]
+  plot_engine: [python-plotnine]
+
+# required and optional keys of each element (the checker refuses any other key)
+elements:
+  top:
+    required: [id, spec_version, data_engine, plot_engine, info, data_schemas, analysis_groups]
+    optional: [entity, additional_datasets_schemas, metadata_schema, joins, plot_defaults]
+  info:
+    required: [label]
+    optional: [description, subtitle, contact, version, comment]
+    free_form: true
+  entity:
+    required: [noun, plural, population]
+    optional: []
+  schema:
+    required: [label, source, null_values, strip, input_fields, wrangling]
+    optional: [description, comment]
+  source:
+    required: [type, path]
+    optional: []
+    types: [local_tsv, local_parquet]
+  field:
+    required: [type]
+    optional: [categories, precision, scale, format, time_unit, time_zone, original_name, label, is_entity_key, null_values, strip]
+  join:
+    required: [label, ingredients, steps]
+    optional: [description, comment, labels]
+  group:
+    required: [label, plots]
+    optional: [description, comment]
+  plot:
+    required: [label, spec]
+    optional: [description, comment, steps, taxonomy]
+  spec:
+    required: [target_dataset, mapping, layers]
+    optional: [title, theme, facet_by, palette, labels, guides, filters]
+  plot_defaults:
+    required: []
+    optional: [palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation, layers]
+  layer:
+    required: [name]
+    optional: [params, comment]
+  tiers:
+    schema: [tier1, tier2]
+    join: [tier1, tier2]
+    plot: [tier3]
+
+reserved_schema_ids: [metadata_schema]
+
+# old key -> what to write now (check messages and the migration tool read this; spec section 12)
+renamed:
+  top:
+    plots: "move each plot into a group of analysis_groups"
+    wrangling: "put wrangling inside a schema of data_schemas"
+    input_fields: "put input_fields inside a schema of data_schemas"
+    output_fields: "removed: end the step list of a schema or join with a polars_select step"
+    final_contract: "removed: end the step list of the join with a polars_select step and write display names in labels"
+    name: "info.label"
+    pipeline_id: "id"
+    description: "info.description"
+    metadata: "metadata_schema"
+    type: "removed: describe the recipe under info"
+    join_manifests: "joins"
+  info:
+    display_name: "label"
+  schema:
+    info: "removed: write description (what the table is) and comment (why) on the schema"
+    fields: "input_fields"
+    id: "removed: the key of the schema is its id"
+    output_fields: "removed: end the step list with a polars_select step"
+    category: "removed"
+    sub_category: "removed"
+    comments: "comment"
+  field:
+    is_primary_key: "is_entity_key"
+    source_name: "original_name"
+  join:
+    info: "description"
+    output_fields: "end steps.tier1 with a polars_select step; display names go in labels"
+    final_contract: "end steps.tier1 with a polars_select step; display names go in labels"
+    recipe: "steps"
+  plot:
+    info: "description"
+  spec:
+    description: "put it on the plot entry"
+    info: "description on the plot entry"
+    family: "taxonomy on the plot entry"
+    pattern: "taxonomy on the plot entry"
+    difficulty: "taxonomy on the plot entry"
+    facet_scales: "a facet_wrap layer"
+    labs: "a labs layer"
+    coordinate_flip: "a coord_flip layer"
+  plot_defaults:
+    height: "removed"
+    show_legend: "removed"
+
+# old field type names -> the replacement (spec 7.4; every `categorical` meant String)
+renamed_types:
+  categorical: "String (this was String); Categorical stays a type for those who write it"
+  utf8: "String"
+  string: "String"
+  character: "String"
+  numeric: "Float64"
+  float: "Float64"
+  integer: "Int64"
+  int: "Int64"
+  i64: "Int64"
+  date: "Date"
+  bool: "Boolean"
+  boolean: "Boolean"
+
+# the vocabulary of the gallery taxonomy (spec section 9); open: a new term does not change format_version
+gallery:
+  axes: [family, pattern, difficulty, show, sample_size]
+  terms:
+    family: [Comparison, Correlation, Distribution, Evolution, Part-to-Whole, Ranking]
+    pattern:
+      - 1 Numeric
+      - 1 Numeric, 1 Categorical
+      - 1 Numeric, 2 Categorical
+      - 1 Numeric, 2 Categorical (Faceted)
+      - 2 Numeric
+      - 2 Numeric, 1 Categorical
+      - 2 Numeric, 1 Categorical (Faceted)
+      - 3 Numeric (Matrix)
+      - 1 Year, 1 Numeric
+      - 1 Year, 1 Numeric, 1 Categorical
+    difficulty: [Simple, Intermediate, Advanced]
+    show: [change, distribution, frequency, normality, proportion, ranking, relationship, trend, uncertainty]
+    sample_size: [any, individual points, medium+, large]
+  companion_files: [example_data.tsv, example_meta.md, preview_plot.png]
