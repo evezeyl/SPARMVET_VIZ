@@ -95,6 +95,7 @@ analysis_groups:
 | 24 | **The two legacy recipes are removed**: `config/data_analysis_recipes/VIGAS-P/` (a recipe and its fragments) and `assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_data_analysis_recipe.yaml`; no code reads them. `Virulence_genes_APEC_input_fields.yaml` in the same folder is **not** legacy: the Abromics pipeline includes it | Eve 2026-11-13 |
 | 25 | **The column-name aliases are removed** (`column`, `source`, `source_column`, `target_column` for `columns`, and the other spellings of section 12); display names for plots are a separate matter (#91) | Eve 2026-11-13 |
 | 26 | **Plot-spec metadata:** the gallery classification is the `taxonomy` key (gallery), not part of a pipeline plot spec; `description` is on the plot entry; a note goes in `comment` | Eve 2026-11-13 ("we had decided to put that in the gallery taxonomy") |
+| 27 | **`comment` is allowed on `info`, a schema and a join** (it already is on steps, layers, groups and plots). The plural `comments` is a typo and is **refused**; the message says `comment` | Eve 2026-11-13 |
 | 19 | Notes, not decisions: some library code may move to `libs/utils` when two libraries need it (nothing moved; `UTILS-REUSE-REVIEW-1`); the Dockerfile is not ready and nothing is deployed (`DOCKER-RELEASE-1`) | Eve 2026-11-13 |
 
 ### 2.2 Principles (each follows from a decision above)
@@ -108,21 +109,20 @@ analysis_groups:
 
 ### 2.3 Open: what is still undecided or unclear
 
-The numbers O1 to O18 are kept as references; a decided point leaves the table (O2, O3, O6, O8, O15 and O18 were decided on 2026-11-13: rows 20, 22, 23, 24, 25 and 26 of section 2.1).
+The numbers O1 to O18 are kept as references; a decided point leaves the table (O2, O3, O6, O8, O13, O15 and O18 were decided on 2026-11-13: rows 20, 22, 23, 24, 25, 26 and 27 of section 2.1).
 
 | # | Question | Recommendation | Touches |
 |---|---|---|---|
 | O1 | **Gallery, the later decisions D4 to D7** (section 9): where an example is checked (D4), how previews are made (D5), the tag strip of `example_meta.md` (D6), the data contract of an example (D7); and whether the dead submission code is removed (G6) | D4 `check_recipe` at rebuild, at app start and in the tests; D5 previews by the app's path; D6 tag strip generated from `taxonomy`; D7 generated contract, reviewed | #82 |
-| O4 | **`profile` or `mode`** for run/build/gallery. The HOME stage-2 draft writes `mode`; HOME already uses "mode" for Exploration/Audit | `profile`; needs both sessions to agree | #76, HOME |
-| O5 | **Step marker written by the app**: the audit mode must mark the steps it inserts, to remove or undo exactly those. Proposed: the key `id` with the prefix `audit_`; the HOME session decides the final name. **Authors never write it** and the author-facing parts of the format do not offer it (Eve asked 2026-11-13: an `id` that authors do not use would confuse) | an app-written `id` with `audit_`; the HOME session confirms the name | #85, HOME |
-| O7 | **Schema `output_fields`.** Eve: "ok: the intent was to ensure we have control of the recipe" (2026-11-13), read as: keep them as a checked declaration, because the check is that control (removal would change 12 code files, Blueprint's contract viewer, 23 recipes and ADR-013/041). **Eve to confirm this reading** | keep as a checked declaration; say so in the rule file | section 7.3 |
+| O4 | **`profile`** (not `mode`) for run/build/gallery: the HOME session changed its stage-2 spec to `profile` and keeps "mode" for Exploration/Audit. It also proposes a fourth profile **`audit`** for the audit copy of a recipe (steps with `audit_` ids are accepted only there). **Eve to confirm** | confirm `profile` and the profile `audit` | #76, HOME |
+| O5 | **The marker on a step the audit inserts.** HOME's proposal (message M6): `id: audit_<action>_<k>` where `<action>` is 8 hex characters, one per user action (all steps of one action share it, so an undo removes the whole action) and `<k>` is 1, 2, ...; no other key on a step; the origin header (hash of the original's file set, spec version, time) stays outside the recipe, in the audit record, so the copy is a valid recipe. In profile `run` or `build` an `id` on a step is an **error** (authors write none); in profile `audit` an id must match the pattern. Authors never write it (Eve: an `id` that authors do not use would confuse). **Eve to confirm** | accept HOME's proposal | #85, HOME |
+| O7 | **Schema `output_fields`.** ADR-013 calls them the *published contract* of a schema (input_fields, wrangling, output_fields) and ADR-014 "a strict `.select()`"; the engine never applies them, the data check only compares them with the columns. Eve: "the intent was control of the recipe". **Measured by an experiment** (scratch, nothing changed in the code): applying them to ST22 leaves 12 of 17 collections identical, 5 lose columns (`QC_Reads_Anchor` 54 to 12, `FastP_with_metadata` 17 to 7, `Bracken_with_metadata` 19 to 6, `ResFinder_with_metadata` 17 to 7, the plot collection `ResFinder` 14 to 4), and **2 collections fail** (`QA_ST_with_NA`, `QA_L50_integer`: a later `keep_columns` needs a column the schema did not declare). So declarations and recipe disagree today and nothing says so. **Options.** **A** keep as a checked declaration (today; the ADR text then says "strict select" while the code does not: ADR-013/014 amended). **B** apply them (what ADR-013/014 say: control; the 5 schemas lose their unlisted columns, 2 declarations are corrected; best done when the checker's column dry run X7 exists). **C** remove them: Blueprint's third column and 23 recipe files change, ADR-013/014 superseded, the published columns then come only from a join's `final_contract` (a schema plotted directly has no whitelist) | **B** if control is the aim (after X7); A is the minimum | section 7.3 |
 | O9 | **Duplicate forms in a plot spec** (`facet_by` at the top and inside `mapping`; `filters` in the spec and the tier-3 list) | allowed for now; the plot-engine owner (Blueprint) simplifies | section 7.8 |
 | O10 | **Package H, the list of operations a formula may use** (`mutate` expressions, plot function strings) | derived from all recipes and shown to Eve before it is enforced | #80 |
 | O11 | **`scan_parquet` and `sink_parquet`** have no schema; 4 transformer fixtures use them | give them a schema, allowed, described as for tests and advanced use | #87 |
 | O12 | **The tier-3 container**: `steps: {tier3: [...]}` on the plot entry | keep (it mirrors `steps: {tier1, tier2}` of a join); renaming later is one line | section 7.7 |
-| O13 | **`comment` key** also on `info`, a schema and a join (it exists on steps, layers, groups and plots) | accept | section 6.2 |
-| O14 | **Schema `category` and `sub_category`.** ST22 writes them inside an `info:` block of each schema (`category: Globally pipeline Summary`, `sub_category: Pipeline Summary`). The only reader is a fallback node label in Blueprint's map (`blueprint_mapper.py:76`); nothing else reads a recipe schema's `category`; the gallery does not use them (it has `taxonomy`). Once `label` is required on every schema it makes them unnecessary | drop both (P1: a key nothing executes or displays does not exist); alternative: keep as direct keys of the schema | section 7.3 |
-| O16 | **`original_name` stays allowed** on output lists (Blueprint shows it) | keep | section 7.4 |
+| O14 | **Schema `category` and `sub_category`, and the schema-level `info:` block.** Evidence: they were introduced with the ST22 test pipeline on 2026-04-10 (commit `29ec53cf`) and no ADR or document explains them; the documentation puts `category` in the *recipe-level* `info` (`docs/foundations/data_contracts_adr.qmd`: `display_name`, `category`, `tags`, `version`), which HOME displays (free-form, `info_lines`). Readers of a *schema's* `info`: only a fallback node label in Blueprint's map (`blueprint_mapper.py:76`) and a copy into the navigator's registry; HOME does not read them (HOME session, M6). **Options.** **A** drop both. **B** direct keys of the schema. **C** a free-form `info` block on a schema like the recipe's (project, contact, any key), displayed in Blueprint's node details (needs a small display change). The intent must come from Eve | C if schema notes are wanted, else A | section 7.3 |
+| O16 | **`original_name`.** Purpose (documented in `Standards_yaml.qmd` and `data_contracts_adr.qmd`): the exact column header in the data file, which drives the ingestor's rename to the slug, so recipes can use plain names while the files stay as the pipeline tools write them (headers such as "Sequence Type" or "%Identity"). HOME does not need it (columns are slugs after ingestion). On an output list it has no ingest role (Blueprint shows it); its fate follows O7 | keep on input fields; on output lists it follows O7 | section 7.4 |
 | O17 | **Profiles**: `run` and `build` differ only in what an empty placeholder may be | keep | section 3 |
 
 ## 3. Profiles, and what counts as a recipe
@@ -134,6 +134,7 @@ There is one format. A recipe is checked in a **profile**; profiles differ only 
 | `run` | HOME's load gate; any program that draws plots | `analysis_groups` holds at least one group with at least one plot |
 | `build` | Blueprint (building step by step); recipes that only build data (transformer tests, scripts) | `analysis_groups: {}`, `tier2: []`, `tier3: []` are accepted placeholders |
 | `gallery` | gallery examples | the rules of section 9 on top of `run` |
+| `audit` (proposed with the HOME session, O4) | the audit copy of a recipe | like `run`; steps with an `id` of the form `audit_<8 hex>_<k>` are accepted (O5) |
 
 HOME rejects, Blueprint reports and never blocks building `[DECIDED, 5a-19]`.
 
@@ -288,7 +289,7 @@ Columns: R required, o optional, a advice (never blocks).
 | `label` | R | short name |
 | `description` | a | the grain (what one row is), the entities, what the recipe already removed, how missing values are treated |
 | `category`, `sub_category` | o | grouping text shown in Blueprint `[PROPOSED, O14]` |
-| `comment` | o | the author's note (was `info.comments`) |
+| `comment` | o | the author's note (was the typo `info.comments`, now refused) |
 | `source` | R | `{type, path}`; `type` is `local_tsv` or `local_parquet`; `path` is relative to the project root. The fuzzy search of a file by dataset name (`ingestor.py:80-92`) goes |
 | `input_fields` | R | mapping `column slug -> field` (7.4); `{}` means no contract |
 | `wrangling` | R | `{tier1: [...], tier2: [...]}` (7.5); `tier1` required, `tier2` optional; `[]` and a flat list are refused |
@@ -537,7 +538,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | ST05 | E | `join` or `join_filter` in tier2 | |
 | ST06 | E | a formula uses an operation outside the allowed list | O10 |
 | ST07 | E | a parameter declared `multi` has a single value | write a list |
-| ST08 | E | two steps of one list have the same `id` (written by the app), or an `id` is not text | rename one; names both places |
+| ST08 | E | in profiles `run` and `build`: any `id` on a step (authors write none); in profile `audit`: an `id` that does not match `audit_<8 hex>_<k>`, or two steps with the same `id` | remove it (it is written by the app); names the place |
 | ST09 | E | a reserved engine key (`__right_df__`, `__metadata__`, any `__name__`) in a step | remove it; the engine sets it |
 | ST10 | E | the value of a parameter has the wrong shape for its declared widget (a list where a scalar is declared and the reverse; a repeated key in a `mapping`) | the declared form and the corrected text |
 | J01 | E | unknown key in a join (`info`, `output_fields`, ...) | replacement |
