@@ -42,7 +42,7 @@ the other sessions. `tmpAI/` is git-ignored, so the channel is **not in git**, a
 5. A message to `all` is deleted by the session that **posted** it once everyone had time to read it (the next time the poster reads the file and finds no open question), or by Eve.
 6. **Never rewrite another session's block**; the only exception is deleting a message addressed to you that is done.
 7. **Edit with exact-string edits**, never by overwriting the whole file, and **read the file again just before the edit**: another session may have changed it a moment ago. If an edit fails, read and retry.
-8. **Keep it short:** a message is at most about 10 lines, the file at most about 150 lines. A session that finds the file longer cleans done items (and says so in a message).
+8. **Keep it short:** a message is as long as it needs to be to be understood without the chat (about 25 lines is a good size; Eve lifted the 10-line limit on 2026-11-13), the file at most about 300 lines. A session that finds the file longer cleans done items (and says so in a message).
 9. **No secrets and no personal data** (names of people, e-mail addresses, tokens). File paths, issue numbers, commit hashes and file:line are the right content.
 
 ## 4. Sharing one working tree
