@@ -1,5 +1,8 @@
 # Audit planning review: agenda for 2026-11-12
 
+> **OUTDATED (2026-11-13, moved to `outdated/` in the cleanup of `.claude`):** the script of the review session of 2026-11-12; the questions are answered (guide section 2). Kept for history only; do not build on it.
+
+
 **Written for:** Eve and the Claude session that reviews the audit plan with her. **Rules of the session:** the design is decided by Eve; Claude
 recommends and records; no code, no UML edits before a decision; "never guess, always verify": a claim about the code or the data is checked first.
 Meanwhile two builder agents work on the independent parts (`.claude/tasks/next_session_start.md`), so nothing decided here can break their work:

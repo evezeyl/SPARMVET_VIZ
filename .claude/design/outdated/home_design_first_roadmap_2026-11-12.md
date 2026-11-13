@@ -1,5 +1,8 @@
 # HOME: design first, then mechanism, then code (roadmap and the design to agree)
 
+> **OUTDATED (2026-11-13, moved to `outdated/` in the cleanup of `.claude`):** the roadmap and behaviour table of stage 1, which is done; the order of work and the decisions are in `.claude/design/home_audit_reading_guide.md`; the behaviour table by kind of configuration is still useful input for the configuration stage (`CONFIG-REVIEW-1`). Kept for history only; do not build on it.
+
+
 **Written for:** Eve, to review. **Written:** 2026-11-12, after your correction: my gating paper described how the code works today and proposed to start with gating; the order must be **(1) agree how the app should work, (2) then change the code to work like that, (3) then gate and test it**.
 **Status:** a proposed order, a behaviour table made only from what is decided (open cells marked), and the design questions in design terms. No code, configuration or diagram is changed.
 **Words:** DECIDED / CONFIRM / OPEN / MINE as in `home_evidence/home_audit_forensics_2026-11-12.md` section 0.

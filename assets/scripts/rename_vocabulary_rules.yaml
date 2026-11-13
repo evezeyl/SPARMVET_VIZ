@@ -1,6 +1,6 @@
 # Rename rules for the configuration vocabulary (ADR-091, issue evezeyl/SPARMVET_VIZ#27).
 # Read by assets/scripts/rename_vocabulary.py. Eve approves this file (and the table made
-# from it, .claude/outdated/tasks/config_rename_mapping.md) before any file is changed.
+# from it, .claude/tasks/outdated/config_rename_mapping.md) before any file is changed.
 #
 # pairs: [old, new] in snake_case. Each pair is applied to snake_case, CamelCase and
 # UPPER_CASE spellings of a token, longest old string first. So the pair
@@ -226,7 +226,7 @@ recipe_nouns:
   - {prefix: libs/id_reconciliation/, noun: id_transformation}
   - {prefix: app/handlers/test_lab_handlers.py, noun: id_transformation}
   - {prefix: docs/workflows/test_lab_sdk.qmd, noun: id_transformation}
-  - {prefix: .claude/outdated/design/id_reconciliation_module_sketch.md, noun: id_transformation}
+  - {prefix: .claude/design/outdated/id_reconciliation_module_sketch.md, noun: id_transformation}
   - {prefix: .claude/design/spaces/TEST_LAB.md, noun: id_transformation}
   - {prefix: .claude/rules/rules_test_lab.md, noun: id_transformation}
   - {prefix: libs/viz_gallery/, noun: example}

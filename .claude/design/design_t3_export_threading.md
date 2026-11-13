@@ -1,4 +1,7 @@
 # Design: T3 Export Threading + Lineage Audit trail
+
+> **PARTLY SUPERSEDED (2026-11-13):** the audit redesign (ADR-099, `home_audit_steps.md`) replaces per-plot T3 audit steps by steps written at T1, T2 or T3 into a copy of the recipe; the threading of T3 into the export described here is replaced accordingly when audit mode is built. Valid for the app as built today.
+
 # Covers: T3 node type gap + export bundle lineage (formerly EXPORT-SGE-2)
 # Status: MOSTLY COMPLETE — aesthetic_override render wiring blocked by VIZFAC-RESOLVER-1.
 #

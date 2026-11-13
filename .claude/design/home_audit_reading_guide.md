@@ -23,7 +23,7 @@ target), issues #56, #60, #61, #62, #63, #64.
 | S6 what you see is what is exported | W6 changes come in small, tested, revertible steps; no mechanism the design does not need |
 | | W7 **data-agnostic** (Eve, 2026-11-12): the software is used for datasets other than bioinformatics; no field-specific word in the code or in fixed texts; domain words (the name of the entity, the examples) come from the recipe or the help. **Design documents too (Eve, 2026-11-12):** they lead with generic words (entity, attribute, population table) and put the field example in a marked example; `home_audit_steps.md` section 4 is done, the other sections still use field words and are swept section by section |
 
-**The problems, in the order we settle them** (details of P1-P4 in `home_design_first_roadmap_2026-11-12.md` section 3-4; the analysis behind each in `home_evidence/`)
+**The problems, in the order we settle them** (details of P1-P4 in `outdated/home_design_first_roadmap_2026-11-12.md` section 3-4; the analysis behind each in `home_evidence/`)
 
 | # | Problem | Status |
 |---|---|---|
@@ -48,18 +48,18 @@ target), issues #56, #60, #61, #62, #63, #64.
 | `home_audit_steps.md` | audit mode design, v4, with the three reviews | decided in part; `[confirm]` items open |
 | ADR-098 / ADR-099 (`architecture_decisions.md`) | what is built / the target | ADR-099 accepted in principle, not built |
 | this guide | the order of work, the criteria, the problem queue and the 13 questions | entry point |
-| `home_design_first_roadmap_2026-11-12.md` | the behaviour table by kind of configuration and the questions of P1-P4 | working document for stage 1 |
+| `outdated/home_design_first_roadmap_2026-11-12.md` | the behaviour table by kind of configuration and the questions of P1-P4 | working document for stage 1 |
 | `home_evidence/home_hash_model_2026-11-12.md`, `home_attrition_report_2026-11-12.md`, `home_design_review_2026-11-12.md`, `home_uml_review_2026-11-12.md`, `home_where_to_remove_data_science_2026-11-12.md` | the hash model, the attrition and caption, the independent review, the UML review, the data-science analysis behind the placement of steps | evidence and decisions; the first two are decided |
 | `recipe_review_st22_2026-11-11.md` (section 3b) | the test recipe defects and the AMR data scientist proposals R1-R4 (agreed) | applied by `RECIPE-ST22-FIX-1` |
 | `home_stage2_mechanism_spec.md` | stage 2: the components, the data structures, the algorithms, the export legs, the build plan P0-P12 with the first milestone (the walking skeleton), the risks; draft for your reading | **new 2026-11-13** |
 | `home_observations_and_future.md` | am I blocked (no), where my text is interpretation, my observations and risks, the future (other engines, non-tabular data, maps, interactivity) and the small engine registry | read when you want the honest state |
-| `home_audit_review_agenda_2026-11-12.md` | the script of the review session | current |
+| `outdated/home_audit_review_agenda_2026-11-12.md` | the script of the review session | current |
 | `home_evidence/` (forensics, architect review, gating paper) | analysis: what is decided, options with pros and cons, verified findings | evidence to consult per problem, not designs; the gating paper is paused |
-| `home_audit_first_cut.md` | a smaller first audit version | PARKED (plan stage) |
-| `../tasks/home_exploration_build_brief.md`, `../tasks/next_session_start.md` | instructions for the builders | **ON HOLD** until the design is agreed |
+| `outdated/home_audit_first_cut.md` | a smaller first audit version | PARKED (plan stage) |
+| `../tasks/home_exploration_build_brief.md`, `../tasks/outdated/next_session_start.md` | instructions for the builders | **ON HOLD** until the design is agreed |
 | `../tasks/test_plan_home_2026-11.md` | HOME test plan | valid for HOME as built; rewritten after the redesign |
 | `../workflows/design_review_personas.md` | the review method | current |
-| `../outdated/` | outdated plans, test notes and research, kept for history (index in its README) | OUTDATED |
+| `outdated/` subfolders (`design/outdated/`, `tasks/outdated/`, `baselines/outdated/`) | outdated plans, test notes and research, kept for history in the same directory (a README in each); the map of everything is `.claude/INDEX.md` | OUTDATED |
 | `docs/UML/diagrams/HOME-*`, `UI-HOME-*` | pictures | see section 4 |
 
 **Not listed in CLAUDE.md:** none of the HOME design files above except `spaces/HOME.md` (stale). A session that follows CLAUDE.md alone would not find the design.

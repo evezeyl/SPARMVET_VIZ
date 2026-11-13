@@ -1,5 +1,8 @@
 # Start here (2026-11-12): builders and the design review side by side
 
+> **OUTDATED (2026-11-13, moved to `outdated/` in the cleanup of `.claude`):** the start file for the builders written before the design was agreed; the build plan is `.claude/design/home_stage2_mechanism_spec.md` section 5. Kept for history only; do not build on it.
+
+
 > **ON HOLD (2026-11-12, Eve):** the prompts below were written before the design is agreed. The order of work is now design, agree, plan, build (`.claude/design/home_audit_reading_guide.md` section 0). **Do not use these prompts and do not start a work package until Eve releases it.** Independent of the design, and the first candidates to release: WP1 (#62), WP2 (#61), WP3a, WP8 (#66), WP10 (#68, needs her OK). WP4-WP6 (Exploration behaviour) wait for the behaviour design.
 
 **Written for:** Eve, and the Claude sessions she starts tomorrow. **Prepared:** 2026-11-11 evening, while Eve rested.

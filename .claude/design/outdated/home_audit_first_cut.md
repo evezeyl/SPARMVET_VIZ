@@ -1,5 +1,8 @@
 # A smaller first audit version (PROPOSAL, not decided)
 
+> **OUTDATED (2026-11-13, moved to `outdated/` in the cleanup of `.claude`):** a smaller first audit version, written before the design was agreed; replaced by the walking skeleton (milestone M1) of `.claude/design/home_stage2_mechanism_spec.md` section 5. Kept for history only; do not build on it.
+
+
 > **PARKED (2026-11-12, Eve):** a build plan written before the design is agreed. Input for the plan stage, not the plan.
 
 **Written for:** Eve, for the audit-planning review of 2026-11-12. **Status:** proposal. Nothing here is built or decided; it only makes

@@ -1,5 +1,8 @@
 # Audit findings of 2026-11-07 that the rename did not cause (CONFIG-AUDIT-FIXES-1)
 
+> **OUTDATED (2026-11-13, moved to `outdated/` in the cleanup of `.claude`):** a one-off findings list of 2026-11-07 (the configuration audit fixes, done). Kept for history only; do not build on it.
+
+
 **Status 2026-11-07:** steps 1 to 7 done (all scheduled audits exit 0, `audit_changelog_sync.py` had a second bug: its report said PASS while its exit code said fail). Step 8 (dependency review) stays open as its own task `DEPS-REVIEW-1`.
 
 Source: the scheduled audit scripts in `scripts/`, run on `rename/config-vocabulary` after ADR-092

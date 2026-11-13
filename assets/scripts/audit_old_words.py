@@ -52,10 +52,10 @@ EXCLUDED_PREFIXES = (
     "docs/presentations/",
     ".claude/knowledge/archive/",
     ".claude/knowledge/changelog.md",
-    ".claude/outdated/tasks/project_word_mapping.md",
+    ".claude/tasks/outdated/project_word_mapping.md",
     ".claude/conversations/",
     ".claude/knowledge/architecture_decisions.md",
-    ".claude/outdated/tasks/config_rename_strategy.md",
+    ".claude/tasks/outdated/config_rename_strategy.md",
     "assets/scripts/audit_old_words.py",
     "app/modules/renamed_keys.py",
     "libs/utils/src/utils/legacy_keys.py",
@@ -69,9 +69,9 @@ EXCLUDED_PREFIXES = (
     "assets/scripts/rename_vocabulary.py",
     "assets/scripts/rename_vocabulary_rules.yaml",
     "assets/scripts/inventory_config_keys.py",
-    ".claude/outdated/tasks/config_rename_mapping.md",
-    ".claude/outdated/tasks/config_rename_inventory.md",
-    ".claude/outdated/tasks/config_rename_review.md",
+    ".claude/tasks/outdated/config_rename_mapping.md",
+    ".claude/tasks/outdated/config_rename_inventory.md",
+    ".claude/tasks/outdated/config_rename_review.md",
 )
 # Words allowed only in specific files (the AI agent role files may say persona).
 MAX_FILE_BYTES = 2_000_000
