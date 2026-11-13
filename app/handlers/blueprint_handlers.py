@@ -7,7 +7,7 @@ Entry point:
                   includes_map, component_ctx_map, schema_registry)
 
 Concern: data analysis recipe import, TubeMap sync, Lineage Rail, upload/save/download,
-         dataset pipeline selector, normalize fields, sync_blueprint_mapper.
+         dataset pipeline selector, sync_blueprint_mapper.
 Two-Category Law (ADR-045): This file contains @render.* and @reactive.*
 decorators only. It MUST NOT be imported by non-Shiny contexts.
 """
@@ -65,6 +65,7 @@ from blueprint_arch.data_analysis_recipe_navigator import (
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
+from utils.action_names import JOIN
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     validate_data_analysis_recipe_data,
@@ -1010,47 +1011,6 @@ def define_server(input, output, session, *,
             inc_map=includes_map.get(),
             ctx_map=component_ctx_map.get(),
         )
-
-    @reactive.Effect
-    @reactive.event(input.btn_normalize_fields)
-    def _handle_normalize_fields():
-        """Normalize legacy {column: type} input_fields/output_fields in the active file."""
-        from app.assets.normalize_data_analysis_recipe_fields import normalize_file as _normalize_file
-
-        selected = safe_input(input, "dataset_pipeline_selector", None)
-        inc_map = includes_map.get()
-
-        if not selected or selected not in inc_map:
-            ui.notification_show(
-                "⚠️ No component file loaded. Import a blueprint component first.",
-                type="warning"
-            )
-            return
-
-        abs_path = Path(inc_map[selected])
-        changes, success, message = _normalize_file(abs_path, write=True)
-
-        if not success:
-            ui.notification_show(f"❌ Normalize failed: {message}", type="error")
-            return
-
-        if not changes:
-            ui.notification_show(f"ℹ️ {message}", type="message")
-            return
-
-        try:
-            raw_text = abs_path.read_text(encoding="utf-8")
-            file_content = yaml.safe_load(raw_text) or {}
-            in_fields = file_content.get("input_fields", []) \
-                if isinstance(file_content, dict) else []
-            out_fields = file_content.get("output_fields", []) \
-                if isinstance(file_content, dict) else []
-            wrangle_studio.active_fields.set({"input": in_fields, "output": out_fields})
-            wrangle_studio.active_raw_yaml.set(raw_text)
-        except Exception as e:
-            print(f"[_handle_normalize_fields] Reload failed after write: {e}")
-
-        ui.notification_show(f"✅ {message}", type="success")
 
     @reactive.Effect
     @reactive.event(input.btn_upload_replace)
@@ -2050,7 +2010,7 @@ def define_server(input, output, session, *,
         if not (0 <= idx < len(stack)):
             return
         node = stack[idx]
-        if node.get("action") not in ("join", "join_filter"):
+        if node.get("action") != JOIN:
             return
         params = node.get("params", {})
         parsed = parse_join_step(params)

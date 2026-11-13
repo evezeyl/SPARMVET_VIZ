@@ -24,6 +24,7 @@ from app.src.render.pipeline_error_renderers import render_blueprint_inline
 import polars as pl
 import yaml
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+from utils.action_names import JOIN
 from blueprint_arch.join_designer import JOIN_HOW_OPTIONS
 
 
@@ -351,7 +352,7 @@ class WrangleStudio:
                             ui.input_select("action_selector",
                                             "Select action:", choices=actions),
                             ui.panel_conditional(
-                                "input.action_selector == 'join' || input.action_selector == 'join_filter'",
+                                "input.action_selector == 'polars_join'",
                                 ui.div(
                                     "Joins are authored in the dedicated Joint "
                                     "Designer tab. Click Add Node to open it.",
@@ -767,7 +768,7 @@ class WrangleStudio:
             if not selected or selected == "(no matches)":
                 return
 
-            if selected in ("join", "join_filter"):
+            if selected == JOIN:
                 # BP-JOINT-1: joins are authored in the dedicated Joint Designer pane.
                 # Open a blank Designer (create mode) and switch to its tab.
                 self.joint_edit_idx.set(None)
@@ -1291,13 +1292,20 @@ class WrangleStudio:
 
         # ── [ADR-040] Lineage Contract Viewer render functions ────────────────
 
-        _TYPE_BADGE = {
-            "categorical": ("bg-primary", "CAT"),
-            "numeric":     ("bg-success", "NUM"),
-            "string":      ("bg-secondary", "STR"),
-            "boolean":     ("bg-warning text-dark", "BOOL"),
-            "date":        ("bg-info text-dark", "DATE"),
-        }
+        def _type_badge(ftype):
+            """The badge of a Polars dtype name (recipe format 1: `Int64`, `Float64`, `String`, `Categorical`, `Date`, ...)."""
+            name = ftype.lower()
+            if name.startswith(("int", "uint", "float", "decimal")):
+                return ("bg-success", "NUM")
+            if name in ("categorical", "enum"):
+                return ("bg-primary", "CAT")
+            if name == "string":
+                return ("bg-secondary", "STR")
+            if name == "boolean":
+                return ("bg-warning text-dark", "BOOL")
+            if name in ("date", "datetime", "time", "duration"):
+                return ("bg-info text-dark", "DATE")
+            return ("bg-light text-dark border", ftype.upper() or "?")
 
         def _field_card(slug, meta):
             """Render one field as a compact info card showing all metadata."""
@@ -1305,10 +1313,10 @@ class WrangleStudio:
                 meta = {"type": str(meta) if meta else "?"}
 
             ftype = meta.get("type", meta.get("dtype", "")).lower()
-            badge_cls, badge_text = _TYPE_BADGE.get(ftype, ("bg-light text-dark border", ftype.upper() or "?"))
+            badge_cls, badge_text = _type_badge(ftype)
             label       = meta.get("label", "")
             orig        = meta.get("original_name", "")
-            is_pk       = meta.get("is_primary_key", False)
+            is_pk       = meta.get("is_entity_key", False)
             description = meta.get("description", "")
 
             # Header row: slug + type badge + PK marker
@@ -1395,12 +1403,10 @@ class WrangleStudio:
 
             legacy_warning = ui.div()
             if is_legacy:
+                # The old "Fix Format" button rewrote fields into the old type names. Format 0 recipes are converted
+                # by the migration tool (`assets/scripts/migrate_recipe_format.py`), not in the form.
                 legacy_warning = ui.div(
-                    ui.span("⚠️ Legacy format. ", class_="me-2"),
-                    ui.input_action_button(
-                        "btn_normalize_fields", "⚙️ Fix Format",
-                        class_="btn btn-sm btn-warning py-0 px-2"
-                    ),
+                    ui.span("Legacy format: convert the recipe with assets/scripts/migrate_recipe_format.py.", class_="me-2"),
                     class_="alert alert-warning small py-1 px-2 mb-2 d-flex align-items-center"
                 )
 
@@ -2086,8 +2092,8 @@ class WrangleStudio:
         """
         upstream = self.active_upstream.get()
         cols: dict = {}
-        _NUMERIC = {"numeric", "float", "int", "float64", "int64", "int32",
-                    "float32", "integer", "number"}
+        def _is_numeric(dtype):
+            return str(dtype).lower().startswith(("int", "uint", "float", "decimal"))
 
         if isinstance(upstream, dict):
             for name, props in upstream.items():
@@ -2095,13 +2101,13 @@ class WrangleStudio:
                     dtype = str(props.get("type") or props.get("dtype", "string")).lower()
                 else:
                     dtype = "string"
-                cols[name] = "numeric" if dtype in _NUMERIC else "categorical"
+                cols[name] = "numeric" if _is_numeric(dtype) else "categorical"
         elif isinstance(upstream, list):
             for item in upstream:
                 if isinstance(item, dict):
                     name = item.get("name") or item.get("field", "?")
                     dtype = str(item.get("type") or item.get("dtype", "string")).lower()
-                    cols[name] = "numeric" if dtype in _NUMERIC else "categorical"
+                    cols[name] = "numeric" if _is_numeric(dtype) else "categorical"
                 elif isinstance(item, str):
                     cols[item] = "categorical"
         return cols

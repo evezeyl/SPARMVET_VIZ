@@ -174,7 +174,6 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 
 | Script | Purpose |
 |---|---|
-| `normalize_data_analysis_recipe_fields.py` | Sanitize data analysis recipes to ADR-041 Rich Dict standard |
 | `create_data_analysis_recipe.py` | Scaffold a new pipeline data analysis recipe from a dataset |
 | `create_test_deployment.py` | Generate a dev deployment (ADR-048) |
 | `build_dep_graph.py` | Rebuild the `@deps` dependency graph |

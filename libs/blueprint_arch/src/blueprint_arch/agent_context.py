@@ -200,7 +200,7 @@ _TOOL_CALL_PROTOCOL = textwrap.dedent("""\
         "target": "config/data_analysis_recipes/pipelines/my_pipeline.yaml",
         "operations": [
           {"op": "add", "path": "/data_schemas/amr_results/wrangling/tier1/-",
-           "value": {"action": "filter_range", "columns": ["identity"], "min": 90}}
+           "value": {"action": "modif_filter", "column": "identity", "op": "ge", "value": 90, "na": "remove"}}
         ]
       }
     }

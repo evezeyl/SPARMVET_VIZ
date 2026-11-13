@@ -1,6 +1,6 @@
 # @deps
 # provides: DataAnalysisRecipeScaffolder class (scaffold) — generates a data analysis recipe ZIP with data analysis recipe
-#           fragments (input_fields, wrangling, output_fields, assembly) and a master YAML.
+#           fragments (input_fields, wrangling, assembly) and a master YAML.
 #           joins pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
 # consumes: polars, pathlib, typing, yaml, re, io, zipfile (stdlib/third-party)
 #           test_lab.bootstrapper (DataAnalysisRecipeBootstrapper, IncludeRef, represent_include)
@@ -14,6 +14,8 @@ from typing import Dict, List, Optional, Any
 
 import polars as pl
 import yaml
+
+from utils import action_names
 
 from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
 
@@ -83,7 +85,6 @@ class DataAnalysisRecipeScaffolder:
             self._write_fragment(zf, f"{fragments_prefix}/{dataset_id}_input_fields.yaml", fields)
             self._write_wrangling(zf, f"{fragments_prefix}/{dataset_id}_wrangling.yaml",
                                   pk_candidates, steps.get(dataset_id, []))
-            self._write_fragment(zf, f"{fragments_prefix}/{dataset_id}_output_fields.yaml", fields)
 
         if metadata_path is not None:
             meta_id = self._bs._sanitize_name(Path(metadata_path).stem)
@@ -91,7 +92,6 @@ class DataAnalysisRecipeScaffolder:
             meta_fields, meta_pk = self._infer_fields(df_meta)
             self._write_fragment(zf, f"{fragments_prefix}/{meta_id}_input_fields.yaml", meta_fields)
             self._write_wrangling(zf, f"{fragments_prefix}/{meta_id}_wrangling.yaml", meta_pk, [])
-            self._write_fragment(zf, f"{fragments_prefix}/{meta_id}_output_fields.yaml", meta_fields)
 
         # Assembly stub — one joint per primary dataset (each joined to metadata or the next)
         joins_config = {}
@@ -107,7 +107,6 @@ class DataAnalysisRecipeScaffolder:
             joins_config[join_id] = {
                 "ingredients": ingredients,
                 "steps": IncludeRef(f"{data_analysis_recipe_id}/assembly/{join_id}.yaml"),
-                "final_contract": {},
             }
         else:
             joins_config = {}
@@ -129,7 +128,7 @@ class DataAnalysisRecipeScaffolder:
                 "original_name": col,
             }
             if safe_col in ("id", "sample_id", "isolate_id"):
-                fields[safe_col]["is_primary_key"] = True
+                fields[safe_col]["is_entity_key"] = True
             if df[col].n_unique() == len(df):
                 pk_candidates.append(safe_col)
         return fields, pk_candidates
@@ -150,10 +149,11 @@ class DataAnalysisRecipeScaffolder:
         """Write a tiered assembly stub with join steps for each right ingredient."""
         join_steps = [
             {
-                "action": "join",
+                "action": action_names.JOIN,
                 "right_ingredient": ds_id,
-                "on": self.join_key,  # yaml.dump will quote 'on' automatically
+                "on": [self.join_key],  # yaml.dump will quote 'on' automatically
                 "how": "inner",
+                "maintain_order": "left_right",
             }
             for ds_id in right_ingredients
         ]
@@ -171,15 +171,19 @@ class DataAnalysisRecipeScaffolder:
 
             data_schemas[dataset_id] = {
                 "source": {"type": "local_tsv", "path": source_path},
+                "null_values": [],
+                "strip": False,
                 "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_input_fields.yaml"),
                 "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_output_fields.yaml"),
             }
 
         master: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
+            "spec_version": 1,
+            "data_engine": "python-polars",
+            "plot_engine": "python-plotnine",
             "info": {
-                "display_name": data_analysis_recipe_id.replace('_', ' ').title(),
+                "label": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
                 "description": f"Auto-scaffolded pipeline for {data_analysis_recipe_id}",
             },
@@ -190,9 +194,10 @@ class DataAnalysisRecipeScaffolder:
             meta_id = self._bs._sanitize_name(Path(metadata_path).stem)
             master["metadata_schema"] = {
                 "source": {"type": "local_tsv", "path": str(Path(metadata_path).resolve())},
+                "null_values": [],
+                "strip": False,
                 "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_input_fields.yaml"),
                 "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_output_fields.yaml"),
             }
 
         master["joins"] = joins_config

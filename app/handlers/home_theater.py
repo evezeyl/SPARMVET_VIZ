@@ -894,13 +894,13 @@ def define_server(input, output, session, *,
         groups = cfg.raw_config.get("analysis_groups", {})
 
         # --- UI-TITLE-1: data analysis recipe title banner ---
-        # Resolution: app features ui_title.text override > data analysis recipe info.display_name > nothing.
+        # Resolution: app features ui_title.text override > data analysis recipe info.label > nothing.
         # If resolved title is empty or app features sets ui_title.visible=false: no banner.
         _ui_title_cfg = bootloader.config.get("ui_title", {})
         _title_visible = _ui_title_cfg.get("visible", True)
         _title_text = (
             _ui_title_cfg.get("text")
-            or cfg.raw_config.get("info", {}).get("display_name", "")
+            or cfg.raw_config.get("info", {}).get("label", "")
         )
         _subtitle_text = (
             _ui_title_cfg.get("subtitle")

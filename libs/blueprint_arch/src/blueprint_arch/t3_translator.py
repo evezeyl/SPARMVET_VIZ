@@ -47,6 +47,8 @@ from typing import Any
 
 import yaml
 
+from utils import action_names
+
 # @deps
 # provides: function:translate_t3_node, function:translate_plot_steps, function:build_mode2_recipe, class:UntranslatableNode
 # consumes: stdlib (copy, hashlib, json), PyYAML (developer_raw_yaml fragment parsing only)
@@ -63,10 +65,9 @@ class UntranslatableNode(Exception):
     """
 
 
-# Ops the registered action set can represent EXACTLY — checked directly against
-# libs/transformer/src/transformer/actions/cleaning/core.py (filter_eq, filter_ne,
-# filter_range, filter_gt, filter_lt) and analytical.py (is_in, not_in). #52 closed the
-# gap that used to leave ne/gt/lt/not_in out of this set.
+# Ops that `modif_filter` represents EXACTLY (libs/transformer/src/transformer/actions/modified.py): the audit dialog and the
+# recipe filter share one vocabulary now (`between` has no audit operator).
+FILTER, DROP = action_names.FILTER, action_names.DROP
 _TRANSLATABLE_OPS = {"eq", "ne", "gt", "ge", "lt", "le", "in", "not_in"}
 
 
@@ -105,7 +106,7 @@ def translate_t3_node(node: dict) -> list[dict]:
         # ne/not_in -> not_in, when the stored value is a list) — a committed node can
         # carry op="eq" with a list value and only be promoted at render time, so this
         # translator must apply the identical rule or it would mistranslate it as a
-        # single-value filter_eq on a list, which polars would not evaluate as intended.
+        # single-value eq filter on a list, which polars would not evaluate as intended.
         if isinstance(value, list):
             if op in ("eq", "in"):
                 op = "in"
@@ -116,30 +117,16 @@ def translate_t3_node(node: dict) -> list[dict]:
                 f"op '{op}' has no registered wrangling action — not one of "
                 f"{sorted(_TRANSLATABLE_OPS)} — node: {node!r}"
             )
-        if op == "eq":
-            return [{"action": "filter_eq", "column": column, "value": value}]
-        if op == "ne":
-            return [{"action": "filter_ne", "column": column, "value": value}]
-        if op == "gt":
-            return [{"action": "filter_gt", "columns": [column], "value": value}]
-        if op == "ge":
-            return [{"action": "filter_range", "columns": [column], "min": value}]
-        if op == "lt":
-            return [{"action": "filter_lt", "columns": [column], "value": value}]
-        if op == "le":
-            return [{"action": "filter_range", "columns": [column], "max": value}]
-        if op == "in":
-            values = value if isinstance(value, list) else [value]
-            return [{"action": "is_in", "column": column, "values": values}]
-        if op == "not_in":
-            values = value if isinstance(value, list) else [value]
-            return [{"action": "not_in", "column": column, "values": values}]
+        if op in ("in", "not_in"):
+            value = value if isinstance(value, list) else [value]
+        # `na: remove`: a missing value is dropped by every comparison, as the filters of HOME and the plot have always done
+        return [{"action": FILTER, "column": column, "op": op, "value": value, "na": "remove"}]
 
     if node_type == "drop_column":
         column = params.get("column")
         if not column:
             raise UntranslatableNode(f"drop_column node has no column: {node!r}")
-        return [{"action": "drop_columns", "columns": [column]}]
+        return [{"action": DROP, "columns": [column]}]
 
     if node_type == "developer_raw_yaml":
         fragment = params.get("yaml_fragment", "")

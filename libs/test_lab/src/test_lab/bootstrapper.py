@@ -28,29 +28,32 @@ yaml.add_representer(IncludeRef, represent_include)
 class DataAnalysisRecipeBootstrapper:
     """
     Logic for inferring data schemas from TSVs and bootstrapping data analysis recipe YAMLs.
-    Follows the mandatory 3-block structure (input_fields, wrangling, output_fields).
+    Follows the structure of recipe format 1 (input_fields, wrangling; no output_fields).
     """
 
     def __init__(self, cardinality_threshold: int = 15):
         self.cardinality_threshold = cardinality_threshold
 
     def _map_dtype(self, series: pl.Series) -> str:
-        """Maps Polars dtype to user-friendly dashboard types."""
+        """The Polars dtype name to write for a column (recipe format 1: types are Polars names).
+
+        A text column with few distinct values is suggested as `Categorical`, else `String`; the author can change it.
+        """
         dtype = series.dtype
         if dtype.is_integer():
-            return "integer"
-        elif dtype.is_float():
-            return "float"
-        elif isinstance(dtype, pl.Boolean):
-            return "boolean"
-        elif dtype.is_temporal():
-            return "date"
-        else:
-            # Check cardinality for categorical suggestion
-            unique_count = series.n_unique()
-            if unique_count <= self.cardinality_threshold:
-                return "categorical"
-            return "string"
+            return "Int64"
+        if dtype.is_float():
+            return "Float64"
+        if isinstance(dtype, pl.Boolean):
+            return "Boolean"
+        if isinstance(dtype, pl.Date):
+            return "Date"
+        if isinstance(dtype, pl.Datetime):
+            return "Datetime"
+        if isinstance(dtype, pl.Time):
+            return "Time"
+        # Check cardinality for categorical suggestion
+        return "Categorical" if series.n_unique() <= self.cardinality_threshold else "String"
 
     def _sanitize_name(self, name: str) -> str:
         return re.sub(r'[^\w]', '_', name.lower()).strip('_')
@@ -74,8 +77,8 @@ class DataAnalysisRecipeBootstrapper:
                 ``metadata_schema`` block is added to the master data analysis recipe.
             id_cleaning_steps: Optional per-dataset wrangling steps to inject
                 into ``tier1:``. Keyed by dataset_id (sanitized stem). Valid
-                actions: ``strip_whitespace``, ``cast`` (String only),
-                ``regex_replace``.
+                actions: ``polars_str_strip_chars``, ``polars_cast`` (String only),
+                ``polars_str_replace_all``.
         """
         data_analysis_recipe_dir = out_dir / data_analysis_recipe_id
         data_analysis_recipe_dir.mkdir(parents=True, exist_ok=True)
@@ -102,7 +105,7 @@ class DataAnalysisRecipeBootstrapper:
                     "original_name": col
                 }
                 if safe_col in ["id", "sample_id", "isolate_id"]:
-                    fields[safe_col]["is_primary_key"] = True
+                    fields[safe_col]["is_entity_key"] = True
                 # Annotate high-uniqueness columns as PK candidates
                 if df[col].n_unique() == len(df):
                     pk_candidates.append(safe_col)
@@ -124,11 +127,6 @@ class DataAnalysisRecipeBootstrapper:
                 f.write(f"{pk_hints}")
                 yaml.dump({"tier1": tier1_steps, "tier2": []}, f, sort_keys=False)
 
-            # Write Fragment: output_fields (Identity by default)
-            output_fields_file = fragments_dir / f"{dataset_id}_output_fields.yaml"
-            with open(output_fields_file, 'w') as f:
-                yaml.dump(fields, f, sort_keys=False)
-
             # Prefer a project-relative path; fall back to absolute for files outside cwd.
             resolved = Path(tsv_p).resolve()
             try:
@@ -142,16 +140,21 @@ class DataAnalysisRecipeBootstrapper:
                     "type": "local_tsv",
                     "path": source_path,
                 },
+                # No default for missing values (spec 7.3): the author states what means missing in this file
+                "null_values": [],
+                "strip": False,
                 "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_input_fields.yaml"),
                 "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_output_fields.yaml")
             }
 
         # Write Master Data Analysis Recipe
         master_data_analysis_recipe: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
+            "spec_version": 1,
+            "data_engine": "python-polars",
+            "plot_engine": "python-plotnine",
             "info": {
-                "display_name": data_analysis_recipe_id.replace('_', ' ').title(),
+                "label": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",
                 "description": f"Auto-bootstrapped pipeline for {data_analysis_recipe_id}"
             },
@@ -163,9 +166,10 @@ class DataAnalysisRecipeBootstrapper:
             meta_id = self._sanitize_name(metadata_path.stem)
             master_data_analysis_recipe["metadata_schema"] = {
                 "source": {"type": "local_tsv", "path": str(metadata_path)},
+                "null_values": [],
+                "strip": False,
                 "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_input_fields.yaml"),
                 "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_wrangling.yaml"),
-                "output_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_output_fields.yaml"),
             }
 
         master_data_analysis_recipe["joins"] = {}

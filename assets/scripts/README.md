@@ -15,7 +15,6 @@ python assets/scripts/<script>.py --help
 |---|---|
 | `create_data_analysis_recipe.py` | Scaffold a full YAML data analysis recipe from a TSV/CSV source file. Supports `!include` fragments, column name cleaning, and primary key detection. |
 | `SF_create_data_analysis_recipe.py` | Simpler schema-only variant — infers `input_fields` from a TSV without `!include` support. Useful for quick bootstrapping. |
-| `normalize_data_analysis_recipe_fields.py` | Scan data analysis recipes in `config/data_analysis_recipes/` and normalise field names to ADR-041 standards (snake_case slugs, required properties). |
 
 ### Data Generation & Verification
 

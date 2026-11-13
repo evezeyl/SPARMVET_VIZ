@@ -122,7 +122,7 @@ class TestOutputStructure:
         frags = tmp_path / "test_proj" / "test_proj"
         assert (frags / "samples_input_fields.yaml").exists()
         assert (frags / "samples_wrangling.yaml").exists()
-        assert (frags / "samples_output_fields.yaml").exists()
+        assert not list(frags.glob("*_output_fields.yaml")), "format 1 has no output_fields"
 
     def test_input_fields_infers_sample_id_as_pk(self, minimal_tsv, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
@@ -130,4 +130,30 @@ class TestOutputStructure:
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_input_fields.yaml"
         data = yaml.safe_load(frag.read_text())
-        assert data["sample_id"]["is_primary_key"] is True
+        assert data["sample_id"]["is_entity_key"] is True
+
+
+
+class TestWritersEmitFormatOne:
+    """The recipe a writer produces must pass the recipe checker (W8: one test per writer)."""
+
+    def test_the_bootstrapped_recipe_has_the_keys_of_format_1(self, tmp_path, minimal_tsv):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
+        master = bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
+        class Loader(yaml.SafeLoader):
+            pass
+        Loader.add_constructor("!include", lambda loader, node: loader.construct_scalar(node))   # a bare recipe has no plots yet
+        recipe = yaml.load(master.read_text(), Loader=Loader)
+        assert recipe["spec_version"] == 1 and recipe["data_engine"] == "python-polars" and recipe["plot_engine"] == "python-plotnine"
+        schema = recipe["data_schemas"]["samples"]
+        assert schema["null_values"] == [] and schema["strip"] is False
+        assert "output_fields" not in schema and "display_name" not in recipe["info"]
+
+    def test_the_inferred_types_are_polars_names(self, tmp_path, minimal_tsv):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
+        bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
+        fields = yaml.safe_load((tmp_path / "test_proj" / "test_proj" / "samples_input_fields.yaml").read_text())
+        from utils.polars_types import text_dtype_names
+        assert {f["type"] for f in fields.values()} <= set(text_dtype_names())

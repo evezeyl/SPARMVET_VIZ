@@ -63,7 +63,7 @@ class TestZipStructure:
         names = _zip_names(zb)
         assert "proj_a/proj_a/samples_input_fields.yaml" in names
         assert "proj_a/proj_a/samples_wrangling.yaml" in names
-        assert "proj_a/proj_a/samples_output_fields.yaml" in names
+        assert not any(n.endswith("_output_fields.yaml") for n in names), "format 1 has no output_fields"
 
     def test_assembly_stub_present_with_two_datasets(self, samples_tsv, amr_tsv):
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder

@@ -12,6 +12,8 @@ If deleted: the Joint Designer pane loses its overlap stats and step (de)seriali
 """
 from __future__ import annotations
 
+from utils import action_names
+
 # @deps
 # provides: join_designer:compute_key_match, join_designer:build_join_step, join_designer:parse_join_step
 # consumes: —
@@ -121,7 +123,7 @@ def build_join_step(right_ingredient, left_keys, right_keys, how="inner", commen
     left_keys / right_keys: aligned, non-empty lists of column names (the left side refers
         to the accumulating assembly base; the right side to `right_ingredient`'s columns).
     Symmetric keys (left == right) emit `on`; differing keys emit `left_on` / `right_on`.
-    A single key emits a scalar; composite keys emit a list.
+    Keys are always written as a list (a single key is a list of one).
 
     NOTE on the YAML boolean trap: the emitted symmetric key is the string "on". When this
     step is serialised the writer MUST quote it (`'on':`) — unquoted `on:` reloads as the
@@ -137,18 +139,18 @@ def build_join_step(right_ingredient, left_keys, right_keys, how="inner", commen
         raise ValueError(
             f"Key arity mismatch: {len(left_keys)} left key(s) vs {len(right_keys)} right key(s).")
 
-    step = {"action": "join", "right_ingredient": right_ingredient}
+    step = {"action": action_names.JOIN, "right_ingredient": right_ingredient}
 
-    def _scalar_or_list(keys):
-        return keys[0] if len(keys) == 1 else keys
-
+    # Polars takes a list of keys (format 1): a single key is a list of one, so the form never changes with the arity
     if left_keys == right_keys:
-        step["on"] = _scalar_or_list(left_keys)
+        step["on"] = left_keys
     else:
-        step["left_on"] = _scalar_or_list(left_keys)
-        step["right_on"] = _scalar_or_list(right_keys)
+        step["left_on"] = left_keys
+        step["right_on"] = right_keys
 
     step["how"] = how
+    # The order rule is written in the step (no default): left order, right order of the matches; a right join keeps the right table's.
+    step["maintain_order"] = "right_left" if how == "right" else "left_right"
     if comment:
         step["comment"] = comment
     return step

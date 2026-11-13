@@ -43,45 +43,45 @@ def node(node_type, params, node_id=None, reason=""):
 class TestTranslateNodeFilterOps:
     def test_eq(self):
         actions = translate_t3_node(node("filter_row", {"column": "country", "op": "eq", "value": "Norway"}))
-        assert actions == [{"action": "filter_eq", "column": "country", "value": "Norway"}]
+        assert actions == [{"action": "modif_filter", "column": "country", "op": "eq", "value": "Norway", "na": "remove"}]
 
     def test_ne(self):
         actions = translate_t3_node(node("filter_row", {"column": "species", "op": "ne", "value": "cat"}))
-        assert actions == [{"action": "filter_ne", "column": "species", "value": "cat"}]
+        assert actions == [{"action": "modif_filter", "column": "species", "op": "ne", "value": "cat", "na": "remove"}]
 
     def test_gt(self):
         actions = translate_t3_node(node("filter_row", {"column": "identity", "op": "gt", "value": 90}))
-        assert actions == [{"action": "filter_gt", "columns": ["identity"], "value": 90}]
+        assert actions == [{"action": "modif_filter", "column": "identity", "op": "gt", "value": 90, "na": "remove"}]
 
     def test_ge(self):
         actions = translate_t3_node(node("filter_row", {"column": "year", "op": "ge", "value": 2024}))
-        assert actions == [{"action": "filter_range", "columns": ["year"], "min": 2024}]
+        assert actions == [{"action": "modif_filter", "column": "year", "op": "ge", "value": 2024, "na": "remove"}]
 
     def test_lt(self):
         actions = translate_t3_node(node("filter_row", {"column": "identity", "op": "lt", "value": 100}))
-        assert actions == [{"action": "filter_lt", "columns": ["identity"], "value": 100}]
+        assert actions == [{"action": "modif_filter", "column": "identity", "op": "lt", "value": 100, "na": "remove"}]
 
     def test_le(self):
         actions = translate_t3_node(node("filter_row", {"column": "year", "op": "le", "value": 2024}))
-        assert actions == [{"action": "filter_range", "columns": ["year"], "max": 2024}]
+        assert actions == [{"action": "modif_filter", "column": "year", "op": "le", "value": 2024, "na": "remove"}]
 
     def test_in(self):
         actions = translate_t3_node(
             node("filter_row", {"column": "country", "op": "in", "value": ["Norway", "Sweden"]})
         )
-        assert actions == [{"action": "is_in", "column": "country", "values": ["Norway", "Sweden"]}]
+        assert actions == [{"action": "modif_filter", "column": "country", "op": "in", "value": ["Norway", "Sweden"], "na": "remove"}]
 
     def test_not_in(self):
         actions = translate_t3_node(
             node("filter_row", {"column": "country", "op": "not_in", "value": ["Norway", "Sweden"]})
         )
-        assert actions == [{"action": "not_in", "column": "country", "values": ["Norway", "Sweden"]}]
+        assert actions == [{"action": "modif_filter", "column": "country", "op": "not_in", "value": ["Norway", "Sweden"], "na": "remove"}]
 
     def test_exclusion_row_uses_the_op_literally_no_flip(self):
         """AUDIT-1 (ui_implementation_contract.md §12g.3): the operator is the truth —
         exclusion_row does not get eq flipped to ne."""
         actions = translate_t3_node(node("exclusion_row", {"column": "sample_id", "op": "eq", "value": "S2"}))
-        assert actions == [{"action": "filter_eq", "column": "sample_id", "value": "S2"}]
+        assert actions == [{"action": "modif_filter", "column": "sample_id", "op": "eq", "value": "S2", "na": "remove"}]
 
     def test_an_unrecognised_op_raises_not_approximate(self):
         """Defensive — every real T3 op (ui_implementation_contract.md §8) is
@@ -94,12 +94,12 @@ class TestTranslateNodeFilterOps:
         """Mirrors viz_factory.render()'s own render-time auto-promotion — a stored
         node can carry op='eq' with a list value and only be promoted at render time."""
         actions = translate_t3_node(node("filter_row", {"column": "country", "op": "eq", "value": ["Norway", "Sweden"]}))
-        assert actions == [{"action": "is_in", "column": "country", "values": ["Norway", "Sweden"]}]
+        assert actions == [{"action": "modif_filter", "column": "country", "op": "in", "value": ["Norway", "Sweden"], "na": "remove"}]
 
     def test_ne_with_list_value_promotes_to_not_in(self):
         """Same auto-promotion rule, the other direction — ne/list -> not_in."""
         actions = translate_t3_node(node("filter_row", {"column": "country", "op": "ne", "value": ["Norway", "Sweden"]}))
-        assert actions == [{"action": "not_in", "column": "country", "values": ["Norway", "Sweden"]}]
+        assert actions == [{"action": "modif_filter", "column": "country", "op": "not_in", "value": ["Norway", "Sweden"], "na": "remove"}]
 
     def test_missing_column_raises(self):
         with pytest.raises(UntranslatableNode):
@@ -109,7 +109,7 @@ class TestTranslateNodeFilterOps:
 class TestTranslateNodeDropColumn:
     def test_drop_column(self):
         actions = translate_t3_node(node("drop_column", {"column": "notes"}))
-        assert actions == [{"action": "drop_columns", "columns": ["notes"]}]
+        assert actions == [{"action": "polars_drop", "columns": ["notes"]}]
 
     def test_missing_column_raises(self):
         with pytest.raises(UntranslatableNode):
@@ -161,8 +161,8 @@ class TestTranslatePlotSteps:
         ]
         actions = translate_plot_steps(nodes)
         assert actions == [
-            {"action": "filter_range", "columns": ["year"], "min": 2023},
-            {"action": "filter_range", "columns": ["year"], "max": 2025},
+            {"action": "modif_filter", "column": "year", "op": "ge", "value": 2023, "na": "remove"},
+            {"action": "modif_filter", "column": "year", "op": "le", "value": 2025, "na": "remove"},
         ]
 
     def test_aesthetic_override_skipped_not_raised(self):
@@ -171,7 +171,7 @@ class TestTranslatePlotSteps:
             node("filter_row", {"column": "year", "op": "eq", "value": 2024}),
         ]
         actions = translate_plot_steps(nodes)
-        assert actions == [{"action": "filter_eq", "column": "year", "value": 2024}]
+        assert actions == [{"action": "modif_filter", "column": "year", "op": "eq", "value": 2024, "na": "remove"}]
 
     def test_one_bad_node_fails_the_whole_plot(self):
         """Never a partial, silently-incomplete result."""
@@ -220,7 +220,7 @@ class TestBuildMode2RecipeForking:
         fork_tier2 = new_cfg["joins"]["J1__t3_p1"]["steps"]["tier2"]
         assert fork_tier2 == [
             {"action": "sort", "columns": ["id"]},
-            {"action": "filter_eq", "column": "year", "value": 2024},
+            {"action": "modif_filter", "column": "year", "op": "eq", "value": 2024, "na": "remove"},
         ]
 
     def test_empty_original_tier2_fork_is_just_the_translated_actions(self):
@@ -228,7 +228,7 @@ class TestBuildMode2RecipeForking:
         t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
         new_cfg, _ = build_mode2_recipe(raw, t3)
         assert new_cfg["joins"]["J1__t3_p1"]["steps"]["tier2"] == [
-            {"action": "filter_eq", "column": "year", "value": 2024}
+            {"action": "modif_filter", "column": "year", "op": "eq", "value": 2024, "na": "remove"}
         ]
         # tier1 (the shared trunk) is untouched, byte-identical to the original
         assert new_cfg["joins"]["J1__t3_p1"]["steps"]["tier1"] == raw["joins"]["J1"]["steps"]["tier1"]

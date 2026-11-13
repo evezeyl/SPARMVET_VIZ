@@ -115,16 +115,20 @@ class TestBuildJoinStep:
     def test_symmetric_single_key_emits_on(self):
         step = build_join_step("metadata", ["sample_id"], ["sample_id"], how="inner")
         assert step == {
-            "action": "join",
+            "action": "polars_join",
             "right_ingredient": "metadata",
-            "on": "sample_id",
+            "on": ["sample_id"],
             "how": "inner",
+            "maintain_order": "left_right",
         }
+
+    def test_a_right_join_keeps_the_order_of_the_right_table(self):
+        assert build_join_step("metadata", ["sample_id"], ["sample_id"], how="right")["maintain_order"] == "right_left"
 
     def test_asymmetric_single_key_emits_left_right_on(self):
         step = build_join_step("metadata", ["isolate_id"], ["sample_id"], how="left")
-        assert step["left_on"] == "isolate_id"
-        assert step["right_on"] == "sample_id"
+        assert step["left_on"] == ["isolate_id"]
+        assert step["right_on"] == ["sample_id"]
         assert "on" not in step
         assert step["how"] == "left"
 
@@ -197,14 +201,14 @@ class TestParseJoinStep:
 
     def test_yaml_boolean_trap_true_key(self):
         # Simulates an unquoted `on: sample_id` reloaded by PyYAML as {True: 'sample_id'}.
-        step = {"action": "join", "right_ingredient": "metadata", True: "sample_id",
+        step = {"action": "polars_join", "right_ingredient": "metadata", True: "sample_id",
                 "how": "inner"}
         p = parse_join_step(step)
         assert p["left_keys"] == ["sample_id"]
         assert p["right_keys"] == ["sample_id"]
 
     def test_how_defaults_to_left_when_absent(self):
-        step = {"action": "join", "right_ingredient": "metadata", "on": "sample_id"}
+        step = {"action": "polars_join", "right_ingredient": "metadata", "on": "sample_id"}
         p = parse_join_step(step)
         assert p["how"] == "left"
 
