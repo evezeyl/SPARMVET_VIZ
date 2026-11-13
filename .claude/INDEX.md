@@ -53,6 +53,7 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `plot_authoring_model.md` | AS BUILT / reference | 2026-11-07 | Design: Canonical Plot Model & BLUEPRINT Authoring Seam |
 | `plot_config_cascade.md` | AS BUILT / reference | 2026-11-07 | Design: Plot Configuration Priority Cascade |
 | `recipe_format_spec.md` | RECENT (redesign) | 2026-11-13 | Recipe format specification (format version 1): the one clean file; what is decided, what is open |
+| `recipe_format_work_order.md` | RECENT (redesign) | 2026-11-13 | Order of work W0 to W16 for the recipe format: owner, model and effort per item, what runs in parallel |
 | `recipe_review_st22_2026-11-11.md` | RECENT (redesign): the test recipe review, with the AMR proposals R1-R4 | 2026-11-12 | Recipe review (data scientist): 1_test_data_ST22_dummy |
 | `reproducible_export_design.md` | AS BUILT / reference | 2026-11-09 | Reproducible export & import — design discussion (2026-11-09) |
 | `ui_panel_map_current.md` | AS BUILT / reference | 2026-11-09 | SPARMVET_VIZ — UI Panel Map & CSS Selector Reference (CURRENT STATE) |
