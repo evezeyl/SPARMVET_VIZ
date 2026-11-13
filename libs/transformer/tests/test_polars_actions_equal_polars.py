@@ -79,6 +79,8 @@ CASES = [
     Case("polars_sample", BASE, {"fraction": 0.5, "with_replacement": False, "shuffle": False, "seed": 1},
          lambda lf: lf.collect().sample(fraction=0.5, with_replacement=False, shuffle=False, seed=1)),
     Case("polars_describe", NUMS, {}, lambda lf: lf.collect().describe()),
+    Case("polars_group_by", BASE, {"by": ["g"], "maintain_order": True, "named_aggs": {"n": "pl.col('id').count()", "total": "pl.col('n').sum()"}},
+         lambda lf: lf.group_by(["g"], maintain_order=True).agg(n=pl.col("id").count(), total=pl.col("n").sum())),
     # -- one expression applied to the listed columns ---------------------------------------------
     Case("polars_cast", BASE, {"columns": ["n"], "dtype": "Float64", "strict": True},
          lambda lf: lf.with_columns(pl.col("n").cast(pl.Float64, strict=True))),
@@ -96,6 +98,8 @@ CASES = [
          lambda lf: lf.with_columns(pl.col("s").str.extract("(\\w)", group_index=1))),
     Case("polars_str_split", BASE, {"columns": ["s"], "by": " ", "inclusive": False},
          lambda lf: lf.with_columns(pl.col("s").str.split(" ", inclusive=False))),
+    Case("polars_str_splitn", BASE, {"columns": ["s"], "by": " ", "n": 2, "target_column": "parts"},
+         lambda lf: lf.with_columns(pl.col("s").str.splitn(" ", 2).alias("parts"))),
     Case("polars_str_strip_chars", BASE, {"columns": ["s"], "characters": None},
          lambda lf: lf.with_columns(pl.col("s").str.strip_chars(None))),
     Case("polars_list_join", LISTS, {"columns": ["l"], "separator": "-", "ignore_nulls": True},
@@ -140,7 +144,7 @@ def test_the_cases_cover_the_planned_polars_actions():
     """The 7.5.1 list of actions that become polars_<name> (the deferred gaps are not in it)."""
     planned = {
         "select", "drop", "with_columns", "rename", "unique", "sort", "drop_nulls", "drop_nans", "explode", "unnest",
-        "unpivot", "pivot", "join", "sample", "describe", "cast", "fill_null", "fill_nan", "shift", "cum_sum",
+        "unpivot", "pivot", "join", "sample", "describe", "group_by", "str_splitn", "cast", "fill_null", "fill_nan", "shift", "cum_sum",
         "cum_count", "interpolate", "round", "str_replace_all", "str_extract", "str_split", "str_strip_chars",
         "list_join", "list_slice", "dt_truncate", "coalesce", "sum_horizontal", "mean_horizontal", "min_horizontal",
         "max_horizontal", "all_horizontal", "any_horizontal",
@@ -178,6 +182,10 @@ def test_a_missing_required_parameter_fails():
         _run("polars_sample", {"fraction": 0.5})
     with pytest.raises(TransformationError, match="decimals"):
         _run("polars_round", {"columns": ["f"]}, NUMS)
+    with pytest.raises(TransformationError, match="maintain_order"):
+        _run("polars_group_by", {"by": ["g"], "named_aggs": {"n": "pl.len()"}})      # the order of the groups is written
+    with pytest.raises(TransformationError, match="n"):
+        _run("polars_str_splitn", {"columns": ["s"], "by": " "})                   # how many parts is written
 
 
 def test_a_scalar_where_a_list_is_needed_fails():

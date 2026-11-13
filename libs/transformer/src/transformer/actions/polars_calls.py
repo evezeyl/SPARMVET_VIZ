@@ -43,12 +43,15 @@ RECIPE_NAME = {"more_exprs": "exprs", "more_by": "by", "more_columns": "columns"
 # the extra positional arguments of a call are merged into the one list the recipe writes
 MERGED = {"more_exprs", "more_by", "more_columns"}
 # the same Polars name can mean another thing in another call (`by` is a column list in sort, a separator in str.split)
-OVERRIDE = {("polars_str_split", "by"): {"widget": "string", "label": "Separator"}}
+OVERRIDE = {("polars_str_split", "by"): {"widget": "string", "label": "Separator"},
+            ("polars_str_splitn", "by"): {"widget": "string", "label": "Separator"}}
 
 # Parameters whose absence would hide a choice that changes the result: required although Polars defaults them (DEC34).
 REQUIRED = {
     "polars_unique": {"keep", "maintain_order"},
     "polars_sort": {"maintain_order"},
+    "polars_group_by": {"maintain_order"},
+    "polars_str_splitn": {"n"},
     "polars_join": {"how", "maintain_order"},
     "polars_sample": {"seed"},
     "polars_round": {"decimals"},
@@ -62,6 +65,7 @@ REQUIRED = {
 NOT_EXPOSED = {
     "polars_select": {"named_exprs": "column names only (DEC37); a computed column is a polars_with_columns step first"},
     "polars_with_columns": {"exprs": "every new column is named in `named_exprs`, so the table shows what each formula makes"},
+    "polars_group_by": {"named_by": "group by column names only; a computed key is a polars_with_columns step first"},
 }
 
 LIST_OF_COLUMNS = {"widget": "column_selector", "multi": True, "label": "Columns"}
@@ -291,6 +295,27 @@ register_action("polars_join", ui_schema=_schema(
     rules=[{"one_of": ["on", "left_on"]}]))(_join_action)
 
 
+def _group_by_schema():
+    schema = _schema("polars_group_by", FRAME, pl.LazyFrame.group_by, ("LazyFrame", "group_by"),
+                     "Group the table and aggregate with named formulas (Polars LazyFrame.group_by(...).agg(...)); `maintain_order` is written in the step so that the groups come out in a fixed order.",
+                     "- action: polars_group_by\n  by: [sample_id]\n  maintain_order: true\n  named_aggs:\n    gene_count: \"pl.col('gene').count()\"")
+    schema["polars"] = "wrapper"
+    schema["params"]["by"] = {**LIST_OF_COLUMNS, "label": "Group by columns (an empty list aggregates the whole table)", "required": True}
+    schema["params"]["named_aggs"] = {"widget": "mapping", "label": "Result column: aggregation formula (a Polars expression as text)", "required": True, "value_widget": "expression"}
+    return schema
+
+
+def _group_by_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+    clean = _checked("polars_group_by", spec)
+    aggs = {name: _formula(text) for name, text in clean["named_aggs"].items()}
+    if not clean["by"]:
+        return lf.select(**aggs)
+    return lf.group_by(clean["by"], maintain_order=clean["maintain_order"]).agg(**aggs)
+
+
+register_action("polars_group_by", ui_schema=_group_by_schema())(_group_by_action)
+
+
 # -- eager methods (the table is collected, the result goes on lazily) --------------------------------
 
 def _eager(action, method, description, example, rules=None):
@@ -369,6 +394,8 @@ _expr("polars_str_replace_all", ["Expr", "str", "replace_all"], "Replace every m
 _expr("polars_str_extract", ["Expr", "str", "extract"], "Extract a group of a regular expression (Polars str.extract).",
       "- action: polars_str_extract\n  columns: [name]\n  pattern: '(\\d+)'\n  group_index: 1")
 _expr("polars_str_split", ["Expr", "str", "split"], "Split a text column into a list at `by` (Polars str.split).", "- action: polars_str_split\n  columns: [genes]\n  by: ','")
+_expr("polars_str_splitn", ["Expr", "str", "splitn"], "Split a text column at `by` into at most `n` parts; the last part keeps the remainder (Polars str.splitn). The result is a struct column: write `target_column` to keep the source, then polars_unnest it and polars_rename the fields (field_0, field_1, ...).",
+      "- action: polars_str_splitn\n  columns: [species_type]\n  by: '/'\n  n: 2\n  target_column: parts")
 _expr("polars_str_strip_chars", ["Expr", "str", "strip_chars"], "Strip characters from both ends of a text column; without `characters` Polars strips whitespace (Polars str.strip_chars).",
       "- action: polars_str_strip_chars\n  columns: [name]")
 _expr("polars_list_join", ["Expr", "list", "join"], "Join the elements of a list column into text (Polars list.join).", "- action: polars_list_join\n  columns: [genes]\n  separator: ';'")
