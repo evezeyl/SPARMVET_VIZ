@@ -170,6 +170,7 @@ HISTORY: 6 files kept for the record (`.claude/knowledge/archive/`). Task archiv
 
 | File | Status | Last change | What it is |
 |---|---|---|---|
+| `rules_agent_channel.md` | IN FORCE (new 2026-11-13) | 2026-11-13 | Agent channel: how sessions that work at the same time share one working tree (`tmpAI/agent_channel.md`, not in git) |
 | `dasharch.md` | IN FORCE | 2026-11-07 | Dashboard Architect (ASA-Bio) Protocol |
 | `rules_agent_role_bioscientist.md` | IN FORCE | 2026-11-09 | Bio-Scientist Agent Role: Data Analysis Recipe Design Authority |
 | `rules_app_features_flags.md` | IN FORCE | 2026-11-07 | App features Feature Flags — Authoritative Reference |

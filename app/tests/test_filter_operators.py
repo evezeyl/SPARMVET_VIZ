@@ -1,21 +1,16 @@
 """
 Regression tests for the filter-operator contract (UX-FILTER-1, DEMO-3/DEMO-4).
 
-Two filter application paths exist:
-  1. _apply_filter_rows in app/modules/t3_audit_engine.py — used for the data
-     preview pane and several T2/T3 transient filter passes (moved from
-     home_theater.py in Phase 24-A, ADR-051).
-  2. The Tier 3 UI-filter loop in libs/viz_factory/src/viz_factory/viz_factory.py
-     — used when rendering plots.
+Filter rows {column, op, value, [closed]} are applied by `_apply_filter_rows` in
+app/modules/t3_audit_engine.py (the data preview and the transient filter passes) and, for plots,
+by the filter block of `render()` in libs/viz_factory/src/viz_factory/viz_factory.py. The two must give
+the same rows (otherwise plots and the data preview disagree); the shared implementation planned in
+libs/utils (package P1, `HOME-EXPLORE-1`) will make that one function, and the equivalence tests
+move with it. Known defects of the engine (#62 integer thresholds, #63 missing values) are in
+`test_filter_defects.py`.
 
-Both paths MUST produce identical results for the same {column, op, value,
-[closed]} filter row, otherwise plots and data preview would disagree.
-
-These tests reimplement both loops verbatim and assert they agree across
-every operator + value-shape combination, including:
-  - dtype-aware coercion (string operands on numeric columns)
-  - between with closed='both' (inclusive) and closed='none' (exclusive)
-  - eq/ne auto-promotion to in/not_in for list values
+Covered here: dtype-aware coercion (string operands on numeric columns); between with closed='both'
+(inclusive) and closed='none' (exclusive); eq/ne promotion to in/not_in for list values.
 
 Run from the project root:
     pytest app/tests/test_filter_operators.py -v
@@ -24,82 +19,16 @@ import polars as pl
 import pytest
 
 
-# ── Shared helpers (mirror production code from both filter paths) ────────────
+# ── The engine under test ─────────────────────────────────────────────────────
+# P0 (2026-11-13): this file used to hold a pasted copy of the filter loop, so its tests could not
+# fail when the production code changed. They now call the real function.
 
-def _is_numeric(dt) -> bool:
-    return dt is not None and any(
-        t in str(dt) for t in ("Int", "UInt", "Float", "Decimal")
-    )
-
-
-def _coerce_to_dtype(value, dt):
-    try:
-        s = str(dt) if dt is not None else ""
-        if "Float" in s or "Decimal" in s:
-            return float(value)
-        if "Int" in s or "UInt" in s:
-            return int(float(value))
-    except (ValueError, TypeError):
-        pass
-    return value
+from app.modules.t3_audit_engine import _apply_filter_rows
 
 
 def _filter_loop(lf: pl.LazyFrame, filter_rows: list[dict]) -> pl.LazyFrame:
-    """Verbatim port of the production filter loop (both paths share this logic)."""
-    schema = lf.collect_schema()
-    actual_dtypes = {n: schema[n] for n in schema.names()}
-
-    for f in filter_rows:
-        col = f.get("column")
-        op = f.get("op", "eq")
-        val = f.get("value")
-        if col is None:
-            continue
-
-        actual_dt = actual_dtypes.get(col)
-        is_numeric = _is_numeric(actual_dt)
-        is_list_val = isinstance(val, list)
-
-        if is_list_val and op in ("eq", "in"):
-            op = "in"
-        elif is_list_val and op in ("ne", "not_in"):
-            op = "not_in"
-
-        if op == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
-            lo, hi = val
-            if is_numeric:
-                lo = _coerce_to_dtype(lo, actual_dt)
-                hi = _coerce_to_dtype(hi, actual_dt)
-            closed = f.get("closed", "both")
-            lf = lf.filter(pl.col(col).is_between(lo, hi, closed=closed))
-            continue
-
-        if op in ("in", "not_in"):
-            vals = val if is_list_val else [val]
-            if is_numeric:
-                coerced_vals = [_coerce_to_dtype(v, actual_dt) for v in vals]
-                expr = pl.col(col).is_in(coerced_vals)
-            else:
-                str_vals = [str(v) for v in vals]
-                expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-            lf = lf.filter(expr if op == "in" else ~expr)
-            continue
-
-        if is_numeric:
-            val = _coerce_to_dtype(val, actual_dt)
-        if op == "eq":
-            lf = lf.filter(pl.col(col) == val)
-        elif op == "ne":
-            lf = lf.filter(pl.col(col) != val)
-        elif op == "gt":
-            lf = lf.filter(pl.col(col) > val)
-        elif op == "ge":
-            lf = lf.filter(pl.col(col) >= val)
-        elif op == "lt":
-            lf = lf.filter(pl.col(col) < val)
-        elif op == "le":
-            lf = lf.filter(pl.col(col) <= val)
-    return lf
+    """The production filter engine (the preview and the audit read through this function)."""
+    return _apply_filter_rows(lf, filter_rows)
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

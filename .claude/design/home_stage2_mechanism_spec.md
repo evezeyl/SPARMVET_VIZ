@@ -18,7 +18,7 @@
 |---|---|---|---|
 | `utils.recipe_graph` (`libs/utils`, Tier 1) | one model of the recipe: nodes, edges, steps in order, columns per node, plots, key families | `build_graph(raw, includes, schema_provider)`; `lineage_back(node)`; `lineage_forward(node)`; `nodes_with_column(name)`; `shared_columns(a, b)`; `plots_reading(node)`; `same_t1_definition(a, b)` | `utils.config_loader`; no other library |
 | `utils.node_keys` (`libs/utils`) | series keys | `canonical_steps(steps)`; `part(label, obj)`; `series_key(parts)`; `is_prefix(a, b)`; `first_difference(a, b)` | stdlib, hashing |
-| `utils.recipe_check` [RECIPE] | the one rule set | `check_recipe(raw, mode)` returns problems with a severity; `mode` is `run` (HOME rejects) or `build` (BLUEPRINT reports) | graph (columns per node) |
+| `utils.recipe_check` [RECIPE] | the one rule set | `check_recipe(raw, profile)` returns problems with a severity; `profile` is `run` (HOME rejects) or `build` (BLUEPRINT reports) | graph (columns per node) |
 | `app/modules/audit_compiler.py` | one user step becomes recipe actions in the right lists | `compile_step(step, graph) -> [Insertion]`; `insert(original_raw, insertions) -> copy_raw` (deterministic) | graph, node_keys |
 | `app/modules/audit_copy.py` | the audit copy as a file | `write_copy`, `read_copy`, `marked_steps(copy)`, `strip_marked(copy)`, `integrity_errors(copy, original)` | recipe_check |
 | `app/modules/audit_counts.py` | step-by-step counts | `flow(graph, frames, steps, entity)`: rows, entities, missing values removed, before and after each step | graph; frames injected |

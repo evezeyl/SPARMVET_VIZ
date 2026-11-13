@@ -6,7 +6,7 @@
 #   - Clear naming so logs/screenshots from CI runs are unambiguous
 #
 # Use cases:
-#   - Headless integration tests (debug_home_theater.py, future Playwright/
+#   - Headless integration tests (the browser tests of app/tests/, future Playwright/
 #     Selenium runs) that need every UI surface visible
 #   - Manual smoke tests where the tester wants to exercise the full feature
 #     set without flipping individual flags
