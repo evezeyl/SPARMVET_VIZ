@@ -76,7 +76,7 @@ HINTS: Dict[str, dict] = {
     "exprs": LIST_OF_COLUMNS, "columns": LIST_OF_COLUMNS, "subset": LIST_OF_COLUMNS, "by": LIST_OF_COLUMNS,
     "index": LIST_OF_COLUMNS, "on": LIST_OF_COLUMNS, "values": LIST_OF_COLUMNS, "left_on": LIST_OF_COLUMNS,
     "right_on": LIST_OF_COLUMNS,
-    "mapping": {"widget": "mapping", "label": "Mapping"},
+    "mapping": {"widget": "mapping", "label": "Rename mapping", "hint": "{old_name: new_name, other: new_other}"},
     "named_exprs": {"widget": "mapping", "label": "Column: formula (a Polars expression as text)"},
     "percentiles": {"widget": "list", "label": "Percentiles"},
     "keep": {"widget": "enum", "options": ["any", "first", "last", "none"]},

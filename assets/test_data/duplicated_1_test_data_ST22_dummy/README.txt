@@ -8,14 +8,14 @@ and the connector provides that location as raw_data_dir. The ingestor discovers
 files by schema ID name — it does NOT use source.path entries from the data analysis recipe.
 
 This directory simulates "pipeline output landed here" by using clean filenames
-(schema ID as filename, no date suffix) so the ingestor's glob discovery works
+(schema ID as filename, no date suffix) so the ingestor finds each file by its exact name
 directly. The 1_test_data_ST22_dummy directory keeps the original timestamped
 filenames and source.path entries for development/data_analysis_recipe testing.
 
 Naming convention
 -----------------
 Files are named exactly as their schema ID in the data analysis recipe (+ .tsv), so that
-ingestor.find_file(schema_id) finds them by exact or glob match:
+ingestor.find_file(schema_id) finds them by the exact name `<schema id>.tsv`:
 
   Summary.tsv              ← schema: Summary
   Summary_quality.tsv      ← schema: Summary_quality (copy of Summary.tsv)
@@ -25,7 +25,7 @@ ingestor.find_file(schema_id) finds them by exact or glob match:
   Quast.tsv                ← schema: Quast
   Bracken.tsv              ← schema: Bracken
   ResFinder.tsv            ← schema: ResFinder
-  MLST_results.tsv         ← schema: MLST  (glob *MLST*.tsv finds this)
+  MLST.tsv                 ← schema: MLST  (the file is named after the dataset id: no fuzzy search)
   metadata_schema.tsv      ← schema: metadata_schema
   PlasmidFinder.tsv        ← not in current ST22 data analysis recipe; kept for future use
 

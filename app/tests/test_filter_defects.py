@@ -6,7 +6,7 @@ the day the defect is fixed the mark itself fails (XPASS strict), so it cannot b
 be removed in the commit that fixes it. The expected values are the decided rules, not today's output:
 
   #62  an integer column with a non-integer threshold: compare as numbers; `>= 90.5` keeps 91 only.
-       The registered recipe actions (filter_range, filter_lt, filter_gt, filter_eq) are the reference
+       The recipe filter (`modif_filter`, what filter_range, filter_lt, filter_gt and filter_eq became) is the reference
        and already do this; the engine truncates (`int(float(value))`), so the figure and the
        reproducibility bundle disagree.
   #63  a missing value is a value (`home_audit_steps.md` section 19): `!=` and none-of keep it;
@@ -25,9 +25,21 @@ import polars as pl
 import pytest
 
 from app.modules.t3_audit_engine import _apply_filter_rows
-from transformer.actions.cleaning.core import (
-    action_filter_eq, action_filter_gt, action_filter_lt, action_filter_range,
-)
+from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+from utils.step_migration import convert_step
+
+
+def _recipe_filter(old_action):
+    """The recipe filter that the old action `old_action` became (`modif_filter`, written by the migration)."""
+    def run(lf, spec):
+        for step in convert_step({"action": old_action, **spec}):
+            lf = AVAILABLE_WRANGLING_ACTIONS[step["action"]](lf, {k: v for k, v in step.items() if k != "action"})
+        return lf
+    return run
+
+
+action_filter_eq, action_filter_gt, action_filter_lt, action_filter_range = (
+    _recipe_filter("filter_eq"), _recipe_filter("filter_gt"), _recipe_filter("filter_lt"), _recipe_filter("filter_range"))
 
 
 def ids(lf, rows):

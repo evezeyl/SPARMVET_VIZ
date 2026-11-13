@@ -1,7 +1,9 @@
 """The data analysis recipe data check, and the loud failure of a dataset that cannot be loaded (issue #18).
 
 Before: a declared field that matches no column stayed silent, and a dataset that failed to load
-was dropped from the assembly with one console line (its join steps were skipped).
+was dropped from the assembly with one console line (its join steps were skipped). In format 1 a value that does
+not fit its declared type is reported here too (the declared Polars types are applied at ingestion), and a schema has
+no `output_fields` any more.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_data_analysis_recipe_data_check.py -q
 """
@@ -43,7 +45,7 @@ analysis_groups:
 
 
 def _make_data_analysis_recipe(tmp_path: Path, *, reads_header="sample_id\treads", reads_rows=("s1\t10", "s2\t20"),
-             output_slug="reads", reads_type="numeric") -> Path:
+             reads_type="Float64") -> Path:
     """A data analysis recipe with two datasets (A, B) and a collection J joining B onto A."""
     (tmp_path / "a.tsv").write_text("sample_id\tcountry\ns1\tNO\ns2\tSE\n")
     (tmp_path / "b.tsv").write_text(reads_header + "\n" + "\n".join(reads_rows) + "\n")
@@ -53,17 +55,18 @@ def _make_data_analysis_recipe(tmp_path: Path, *, reads_header="sample_id\treads
         data_schemas:
           A:
             source: {{type: local_tsv, path: {tmp_path / 'a.tsv'}}}
+            null_values: []
+            strip: false
             input_fields:
-              sample_id: {{type: categorical}}
-              country: {{type: categorical}}
+              sample_id: {{type: Categorical}}
+              country: {{type: Categorical}}
           B:
             source: {{type: local_tsv, path: {tmp_path / 'b.tsv'}}}
+            null_values: []
+            strip: false
             input_fields:
-              sample_id: {{type: categorical}}
+              sample_id: {{type: Categorical}}
               reads: {{type: {reads_type}}}
-            output_fields:
-              sample_id: {{type: categorical}}
-              {output_slug}: {{type: numeric}}
         joins:
           J:
             ingredients:
@@ -71,10 +74,11 @@ def _make_data_analysis_recipe(tmp_path: Path, *, reads_header="sample_id\treads
               - dataset_id: B
             steps:
               tier1:
-                - action: join
+                - action: polars_join
                   right_ingredient: B
-                  'on': sample_id
+                  'on': [sample_id]
                   how: left
+                  maintain_order: left_right
           OnlyA:
             ingredients:
               - dataset_id: A
@@ -89,14 +93,6 @@ def test_a_consistent_data_analysis_recipe_has_no_problems(tmp_path):
     assert validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path) == []
 
 
-def test_a_declared_output_field_with_no_column_is_reported_with_a_hint(tmp_path):
-    data_analysis_recipe = _make_data_analysis_recipe(tmp_path, output_slug="read")
-    [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
-    assert problem.location == "data_schemas.B.output_fields.read"
-    assert "matches no column" in problem.problem
-    assert "Did you mean 'reads'?" in problem.tip
-
-
 def test_a_missing_input_column_is_reported_as_a_dataset_that_cannot_be_loaded(tmp_path):
     data_analysis_recipe = _make_data_analysis_recipe(tmp_path, reads_header="sample_id\tread_count")
     [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
@@ -105,10 +101,12 @@ def test_a_missing_input_column_is_reported_as_a_dataset_that_cannot_be_loaded(t
     assert "reads" in problem.problem
 
 
-def test_the_data_check_looks_at_column_names_not_at_values(tmp_path):
-    """Values are checked when a file is imported (issue #11); this check is about the data analysis recipe."""
+def test_a_value_that_does_not_fit_the_declared_type_is_reported_with_the_column_and_the_value(tmp_path):
+    """The declared Polars types are applied at ingestion, so the data check sees a text in a Float64 column (issue #11)."""
     data_analysis_recipe = _make_data_analysis_recipe(tmp_path, reads_rows=("s1\tabc", "s2\t20"))
-    assert validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path) == []
+    [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
+    assert problem.location == "data_schemas.B"
+    assert "column 'reads' (Float64)" in problem.problem and "'abc'" in problem.problem
 
 
 def test_a_missing_data_file_is_reported(tmp_path):
@@ -129,15 +127,16 @@ def _recipe_with_a_split_step(tmp_path: Path, code_type: str) -> Path:
         data_schemas:
           B:
             source: {{type: local_tsv, path: {tmp_path / 'b.tsv'}}}
+            null_values: []
+            strip: false
             input_fields:
-              sample_id: {{type: categorical}}
+              sample_id: {{type: Categorical}}
               code: {{type: {code_type}}}
             wrangling:
               tier1:
-                - action: split_column_to_parts
-                  column: code
-                  separator: "/"
-                  new_columns: [left, right]
+                - action: polars_str_split
+                  columns: [code]
+                  by: "/"
         joins:
           OnlyB:
             ingredients:
@@ -151,14 +150,14 @@ def _recipe_with_a_split_step(tmp_path: Path, code_type: str) -> Path:
 def test_a_step_that_cannot_run_on_the_declared_type_is_reported(tmp_path):
     """Found 2026-11-11: Detailed_summary declared a column categorical and split it as text; the check
     passed (it only planned the query) while the dataset could not be built."""
-    recipe = _recipe_with_a_split_step(tmp_path, "categorical")
+    recipe = _recipe_with_a_split_step(tmp_path, "Categorical")
     [problem] = validate_data_analysis_recipe_data(recipe, tmp_path)
     assert problem.location == "data_schemas.B"
     assert "wrangling cannot run" in problem.problem and "code" in problem.problem
 
 
 def test_the_same_step_on_a_text_column_has_no_problem(tmp_path):
-    recipe = _recipe_with_a_split_step(tmp_path, "utf8")
+    recipe = _recipe_with_a_split_step(tmp_path, "String")
     assert validate_data_analysis_recipe_data(recipe, tmp_path) == []
 
 

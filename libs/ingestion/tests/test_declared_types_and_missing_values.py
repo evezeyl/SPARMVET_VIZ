@@ -178,9 +178,18 @@ def test_a_field_can_override_strip_only(tmp_path):
 def test_the_error_names_every_column_that_does_not_fit(tmp_path):
     with pytest.raises(IngestionError) as info:
         ingest(tmp_path, "id\ta\tb\ns1\tx\tq\n", {"id": {"type": "String"}, "a": {"type": "Int64"}, "b": {"type": "Float64"}}, **EXPLICIT)
-    assert "a (Int64): 'x'" in str(info.value) and "b (Float64): 'q'" in str(info.value)
+    assert "column 'a' (Int64): 'x'" in str(info.value) and "column 'b' (Float64): 'q'" in str(info.value)
 
 
 def test_only_the_declared_columns_are_read_in_the_declared_path(tmp_path):
     df = ingest(tmp_path, "id\tkeep\tleft_out\ns1\ta\tb\n", {"id": {"type": "String"}, "keep": {"type": "String"}}, **EXPLICIT)
     assert df.columns == ["id", "keep"]
+
+
+def test_columns_with_a_different_number_of_bad_values_are_all_reported(tmp_path):
+    """Found by the Data Import panel test: one column with two bad values, one with none, one with one."""
+    with pytest.raises(IngestionError) as info:
+        ingest(tmp_path, "id\ta\tb\tc\ns1\tx\t1\t2022-01-01\ns2\ty\t2\tnot a date\ns3\t3\t4\t2022-01-03\n",
+               {"id": {"type": "String"}, "a": {"type": "Int64"}, "b": {"type": "Int64"}, "c": {"type": "Date"}}, **EXPLICIT)
+    message = str(info.value)
+    assert "column 'a' (Int64): 'x', 'y'" in message and "column 'c' (Date): 'not a date'" in message and "column 'b'" not in message

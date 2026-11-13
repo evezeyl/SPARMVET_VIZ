@@ -2394,8 +2394,8 @@ class WrangleStudio:
                     ),
                 )
 
-            elif widget_type in ("list", "mapping"):
-                # A list or a mapping is typed as one line of YAML and saved as a list or a mapping
+            elif widget_type in ("list", "mapping", "any"):
+                # A list, a mapping or a value of any form is typed as one line of YAML and saved as that value
                 # (blueprint_arch.widget_text); a string widget would save the text as a string.
                 from blueprint_arch.widget_text import value_to_text
                 elem = ui.input_text_area(

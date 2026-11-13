@@ -109,9 +109,9 @@ def apply_declared(lf: pl.LazyFrame, dataset_name: str, schema: Dict[str, Any], 
     if not parsed:
         return lf
     # one pass finds every value that the declared type cannot read, so the error names the column and the values
-    bad = lf.select([pl.col(slug).filter(flag).head(EXAMPLES).alias(slug) for slug, flag in checks.items()]).collect()
-    problems = [f"{slug} ({fields[slug]['type']}): {', '.join(repr(v) for v in bad[slug].to_list())}"
-                for slug in checks if bad[slug].len()]
+    bad = lf.select([pl.col(slug).filter(flag).unique(maintain_order=True).head(EXAMPLES).implode().alias(slug) for slug, flag in checks.items()]).collect()
+    problems = [f"column '{slug}' ({fields[slug]['type']}): {', '.join(repr(v) for v in bad[slug][0].to_list())}"
+                for slug in checks if bad[slug][0].len()]
     if problems:
         raise _fail(f"Data schema '{dataset_name}': values that do not fit the declared type: " + "; ".join(problems),
                     "Correct the data, declare the type the data really has (Float64 for decimals), or list the word in null_values if it means missing.")

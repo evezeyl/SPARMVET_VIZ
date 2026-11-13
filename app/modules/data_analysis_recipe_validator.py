@@ -153,9 +153,7 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
     builds the dataset the way the app does (input contract, tier-1 wrangling) and reports:
       - a dataset that cannot be loaded (missing file, missing input column, value that does not
         fit its type), with the engine's message and tip;
-      - an output_fields entry that matches no column of the finished dataset, with the closest
-        real column as a hint. The engine never applies output_fields of a data schema, so
-        without this check a wrong name stays silent.
+      - a wrangling step that cannot run on the declared types.
     """
     from app.modules.orchestrator import DataOrchestrator
 
@@ -193,16 +191,9 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
         except (pl.exceptions.SchemaError, pl.exceptions.ColumnNotFoundError) as exc:
             problems.append(DataAnalysisRecipeProblem(
                 name, location, f"wrangling cannot run on this dataset: {exc}",
-                "Compare the declared type of the column with what the wrangling step expects (text steps need utf8)."))
+                "Compare the declared type of the column with what the wrangling step expects (a text step needs a String column, not a Categorical one)."))
         except pl.exceptions.PolarsError:
             pass
-        for slug in _declared_columns(spec.get("output_fields")):
-            if slug in columns:
-                continue
-            close = difflib.get_close_matches(slug, columns, n=1, cutoff=0.6)
-            tip = f"Did you mean '{close[0]}'?" if close else "Use a column the dataset has after tier-1 wrangling."
-            problems.append(DataAnalysisRecipeProblem(
-                name, f"{location}.output_fields.{slug}", f"declared column '{slug}' matches no column of the dataset", tip))
     return problems
 
 

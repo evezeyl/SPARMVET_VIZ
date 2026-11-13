@@ -63,7 +63,7 @@ def test_tiered_steps_is_valid(tmp_path):
           A:
             steps:
               tier1:
-                - action: join
+                - action: polars_join
                   right_ingredient: B
                   'on': sample_id
         """)
@@ -76,7 +76,7 @@ def test_flat_assembly_steps_is_reported_once_with_location(tmp_path):
         joins:
           A:
             steps:
-              - action: join
+              - action: polars_join
                 right_ingredient: B
                 'on': sample_id
         """)
@@ -113,7 +113,7 @@ def test_all_problems_are_reported_not_only_the_first(tmp_path):
         joins:
           A:
             steps:
-              - action: join
+              - action: polars_join
                 right_ingredient: S
         """)
     assert len(validate_data_analysis_recipe(path)) == 2
@@ -127,7 +127,7 @@ def test_join_in_tier2_is_reported(tmp_path):
             steps:
               tier1: []
               tier2:
-                - action: join
+                - action: polars_join
                   right_ingredient: B
         """)
     problems = validate_data_analysis_recipe(path)

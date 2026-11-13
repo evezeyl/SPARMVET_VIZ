@@ -1263,7 +1263,7 @@ def define_server(input, output, session, *,
                             "literal_mode": "custom",
                             "hex": hex_val or "#345beb",
                         }
-            elif widget_type in ("list", "mapping"):
+            elif widget_type in ("list", "mapping", "any"):
                 # Typed as one line of YAML; saved as a list or a mapping, never as the text (spec section 8, R1).
                 from blueprint_arch.widget_text import text_to_value
                 try:

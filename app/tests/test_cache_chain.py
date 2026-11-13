@@ -21,8 +21,8 @@ from app.modules.orchestrator import TIER1_KEY_META, DataOrchestrator
 from utils.hashing import get_parquet_metadata_hash
 
 OLD_MTIME_NS = 1_000_000_000 * 10**9  # an old, fixed time (year 2001)
-FILTER_A = {"action": "filter_eq", "column": "group", "value": "A"}
-FILTER_B = {"action": "filter_eq", "column": "group", "value": "B"}
+FILTER_A = {"action": "modif_filter", "column": "group", "op": "eq", "value": "A", "na": "remove"}
+FILTER_B = {"action": "modif_filter", "column": "group", "op": "eq", "value": "B", "na": "remove"}
 
 
 class World:
@@ -46,7 +46,7 @@ class World:
         bump(self.data_file)
 
     def write_data_analysis_recipe(self, *, wrangling_tier1=(), steps_tier1=(), steps_tier2=(), plot_label="P",
-                       group_type="categorical", final_contract=None, source_path=None) -> None:
+                       group_type="Categorical", final_contract=None, source_path=None) -> None:
         frag = self.data_analysis_recipes_dir / "tiny" / "wrangling"
         frag.mkdir(parents=True, exist_ok=True)
         (frag / "T_wrangling.yaml").write_text(json.dumps({"tier1": list(wrangling_tier1), "tier2": []}))
@@ -54,12 +54,14 @@ class World:
         contract = f"    final_contract: {json.dumps(final_contract)}\n" if final_contract else ""
         entry = self.data_analysis_recipes_dir / "tiny.yaml"
         entry.write_text(f"""id: tiny
-info: {{display_name: Tiny}}
+info: {{label: Tiny}}
 data_schemas:
   T:
     source: {{type: local_tsv, path: {source_path or self.data_file}}}
+    null_values: []
+    strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}}
+      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
       group: {{original_name: group, type: {group_type}, label: Group}}
     wrangling: !include 'tiny/wrangling/T_wrangling.yaml'
 joins:
@@ -139,7 +141,7 @@ def test_data_change_rebuilds_with_the_new_rows(world):
 
 
 def test_change_in_the_entry_file_rebuilds(world):
-    world.write_data_analysis_recipe(group_type="utf8")
+    world.write_data_analysis_recipe(group_type="String")
     world.build()
     assert world.was_rewritten()
 

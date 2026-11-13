@@ -269,6 +269,7 @@ def define_data_import_server(input, output, session, *,
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         anchor_dir = bootloader.get_location("user_data") / "anchors"
 
+        from ingestion.declared import apply_declared
         from transformer.metadata_validator import MetadataValidator
         validator = MetadataValidator()
 
@@ -297,11 +298,12 @@ def define_data_import_server(input, output, session, *,
             tmp = Path(entry["tmp_path"])
             try:
                 name_lower = entry["name"].lower()
+                # Read as text: the declared types of the recipe are applied by `apply_declared` below, as at ingestion.
                 if name_lower.endswith((".xlsx", ".xls")):
-                    lf = pl.read_excel(tmp).lazy()
+                    lf = pl.read_excel(tmp).lazy().with_columns(pl.all().cast(pl.String))
                 else:
                     sep = "\t" if name_lower.endswith(".tsv") else ","
-                    lf = pl.scan_csv(tmp, separator=sep)
+                    lf = pl.scan_csv(tmp, separator=sep, infer_schema=False)
             except Exception as e:
                 entry["error"] = f"Could not read file: {e}"
                 any_error = True
@@ -311,7 +313,7 @@ def define_data_import_server(input, output, session, *,
             # Validate against contract
             try:
                 validator.validate(lf, input_fields, context=f"[{ds_id}]")
-                validator.validate_types(lf, input_fields, context=f"[{ds_id}]")
+                apply_declared(lf, ds_id, ds_schema, input_fields)
             except Exception as e:
                 tip = getattr(e, "tip", "")
                 entry["error"] = str(e) + (f" — {tip}" if tip else "")

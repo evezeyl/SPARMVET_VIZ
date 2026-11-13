@@ -132,7 +132,7 @@ def test_a_corrupt_tier2_file_is_recomputed(world):
 
 
 def test_a_tier2_step_that_removes_every_row_gives_an_empty_but_valid_tier2(world):
-    world.write_data_analysis_recipe(steps_tier2=[{"action": "filter_eq", "column": "group", "value": "Z"}])
+    world.write_data_analysis_recipe(steps_tier2=[{"action": "modif_filter", "column": "group", "op": "eq", "value": "Z", "na": "remove"}])
     assert world.read_t2() == []
     world.pin_both()
     assert world.read_t2() == []
@@ -149,7 +149,7 @@ def test_the_stored_tier2_with_categorical_columns_and_nulls_reads_back(tmp_path
     """
     w = Tier2World(tmp_path)
     w.write_data("sample_id\tgroup\ns1\tA\ns2\t\ns3\tA\ns4\tB\n")
-    w.write_data_analysis_recipe(steps_tier2=[{"action": "drop_duplicates", "columns": ["sample_id"]}])
+    w.write_data_analysis_recipe(steps_tier2=[{"action": "polars_unique", "subset": ["sample_id"], "keep": "first", "maintain_order": True}])
     first = w.read_t2()
     assert [r["sample_id"] for r in first] == ["s1", "s2", "s3", "s4"]
     assert first[1]["group"] is None
