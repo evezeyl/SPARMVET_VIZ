@@ -386,6 +386,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 11. **[MINE] Fragment form:** bare value, wrapper refused (section 5).
 12. **[MINE] `original_name` stays allowed on output lists** (it is displayed by Blueprint, `wrangle_studio.py:1310`), so the 20 ST22 contract fragments need no mass edit.
 13. **[OPEN] `scan_parquet` and `sink_parquet`** have no `ui_schema`; the rules call them engine-internal, yet 4 transformer fixture steps use them to test them. Options: give them a schema and allow them (the fixtures stay recipes), or test them outside recipes. Recommendation: a schema, allowed, with a description that says they are for tests and advanced use.
+14. **[MINE, reverses my earlier recommendation] Plot specification keys.** In the review of 2026-11-13 (Q2) I recommended to allow `family`, `pattern`, `difficulty`, `description` and `info` in a plot spec, and issue #66 says they "must not warn". The spec does the opposite: `description` and `info` move to the plot entry (one place, P3) and `family`, `pattern`, `difficulty` are refused in a pipeline spec, because nothing reads them (`_meta` only carries them through a save) and P1 says a key nobody reads does not exist. 16 of the 17 ST22 specs carry them. If you want them kept, they become documented optional keys of the spec and PS01 does not fire for them. Your call.
 
 ## 14. Tests that come out of this file (written first, they fail on today's code)
 
