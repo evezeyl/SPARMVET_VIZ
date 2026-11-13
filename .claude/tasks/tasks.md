@@ -68,6 +68,10 @@ Plan: `.claude/design/home_stage2_mechanism_spec.md` section 5 (packages P0-P12;
 
 - [ ] **HOME-DESIGN-REVIEW-1** `[opus/high]` — independent review of the decided design done 2026-11-12 (`.claude/design/home_evidence/home_design_review_2026-11-12.md`, guide problem P10). Eve decides, in order: SC1 (check on the plotted variable into the first set), SC2 (caption count for plots without a key), SC4 (remove by attribute), AR4 (entity noun field), SC5 (exclusion list), the wordings SC3/DS1/DS2, AR2 (oracle test for the action registry), AR1 (special datasets such as `metadata_schema`, stage 2). AR3/AR5/AR6 are build rules. Then the list of changed sections to read and the rewrite of `spaces/HOME.md`.
 
+### Actions must act (run-time guard; after the alias removal of the recipe migration, #78)
+
+- [ ] **ACTION-MUST-ACT-1** `[opus/high]` (Eve 2026-11-13: "we need to ensure that the action does something"): a step that cannot act fails, it never returns the frame unchanged. Measured 2026-11-13: 17 of 67 actions with required parameters accept a step without them (13 return the frame unchanged, 4 change it: `keep_columns`, `summarize`, `unpivot`, `count_by_group`) and 54 ignore a key they do not declare (`filter_gt` with `column` returns every row). Do: `register_action` checks `required` and unknown keys against the `ui_schema` with the function shared with the checker (`utils.ui_schema`, recipe session), and the silent early returns of the actions go. Tests first: `libs/transformer/tests/test_actions_must_act.py` (two `xfail(strict=True)`). Order: after the aliases (`source`, `column`, `target_column`) are gone from the shipped recipes (RECIPE-MIGRATE-1, #78); `VirulenceFinder_wrangling.yaml` works today only through the alias `source`. Draft issue: `issue-drafts/action-must-do-something.md` (Eve decides when it is filed). `libs/transformer` change: Eve's O4 permission, tests first.
+
 ### Engine warnings (independent of the audit)
 
 - [ ] **HOME-EXPLORE-8** `[sonnet/medium]` — #66 warning for plot-spec keys dropped to `_meta` (same surface as unknown `plot_defaults` keys). See brief WP8.
