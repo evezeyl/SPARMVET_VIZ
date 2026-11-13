@@ -2,7 +2,7 @@
 
 # @deps
 # provides: class:WrangleStudio, method:build_sidebar_ui (issue #42 — Blueprint's left sidebar, moved here from home_theater.py's sidebar_tools_ui(), mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type), method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc, reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)
-# consumes: app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)
+# consumes: app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094), libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # provides: function:_enum_preview_legend (BP-ENUM-PREVIEW-1), constants:_LINETYPE_DASHARRAY/_POSITION_DESC
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog, search_actions, get_actions_for_context; get_component_catalog, search_components, get_components_for_context — BP-COMPONENT-FORMS-1)
@@ -2392,6 +2392,17 @@ class WrangleStudio:
                             ),
                         )
                     ),
+                )
+
+            elif widget_type in ("list", "mapping"):
+                # A list or a mapping is typed as one line of YAML and saved as a list or a mapping
+                # (blueprint_arch.widget_text); a string widget would save the text as a string.
+                from blueprint_arch.widget_text import value_to_text
+                elem = ui.input_text_area(
+                    input_id, label,
+                    value=value_to_text(param_def, current_val),
+                    placeholder=param_def.get("hint", ""),
+                    rows=2,
                 )
 
             else:  # "string" default

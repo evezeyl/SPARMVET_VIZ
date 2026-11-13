@@ -125,6 +125,8 @@ Each entry in `params` is a dict:
 | `color` | Colour picker (hex or named) | Fill / colour overrides |
 | `column_or_literal` | Column select OR literal value | Fill values, join keys |
 | `bool` | Checkbox | Flags, on/off options |
+| `list` | A YAML list typed as one line, `[a, b]`; `items: mapping` when each item is a mapping | Values to replace, new column names, recode rules |
+| `mapping` | A YAML mapping typed as one line, `{old: new}` | Rename mapping |
 
 ### Registration is triggered by importing the source library
 

@@ -178,7 +178,7 @@ def action_pivot(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "tags": ["split", "string", "columns", "parse", "delimiter"],
     "params": {
         "columns": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
-        "new_columns": {"widget": "string", "label": "Output column names (YAML list)", "required": True, "hint": "[col_a, col_b]"},
+        "new_columns": {"widget": "list", "label": "Output column names (YAML list)", "required": True, "hint": "[col_a, col_b]"},
         "delimiter": {"widget": "string", "label": "Delimiter", "required": False, "default": " "},
         "drop_source": {"widget": "enum", "label": "Drop source column", "required": False, "default": False, "options": [True, False]},
     },

@@ -108,6 +108,8 @@ The 8-widget vocabulary (ADR-075 §2):
 | `string` | Free text |
 | `color` | A colour aesthetic binding (map-to-column vs literal) |
 | `column_or_literal` | Map to a column OR set a literal value — the ggplot/plotnine distinction |
+| `list` | A list, typed as one line of YAML (`[a, b]`); saved as a list, not as text |
+| `mapping` | A mapping, typed as one line of YAML (`{old: new}`); saved as a mapping, not as text |
 
 The **Add node** picker is searchable by tags/label and filtered by `context` so it only offers
 actions valid at the selected insertion point. The `context` tag enforces DAG validity at

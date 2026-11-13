@@ -22,7 +22,7 @@ from __future__ import annotations
 # provides: effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)
 # provides: output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
-# consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py
+# consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
@@ -1182,6 +1182,7 @@ def define_server(input, output, session, *,
 
         params_schema = ui_schema.get("params", {})
         new_params: dict = {}
+        form_errors: list = []
 
         for param_key, param_def in params_schema.items():
             widget_type = param_def.get("widget", "string")
@@ -1262,10 +1263,25 @@ def define_server(input, output, session, *,
                             "literal_mode": "custom",
                             "hex": hex_val or "#345beb",
                         }
+            elif widget_type in ("list", "mapping"):
+                # Typed as one line of YAML; saved as a list or a mapping, never as the text (spec section 8, R1).
+                from blueprint_arch.widget_text import text_to_value
+                try:
+                    val = text_to_value(param_def, safe_input(input, input_id, ""))
+                except ValueError as err:
+                    form_errors.append(f"{param_def.get('label', param_key)}: {err}")
+                    continue
+                if val is not None:
+                    new_params[param_key] = val
             else:
                 val = safe_input(input, input_id, "")
                 if val:
                     new_params[param_key] = val
+
+        if form_errors:
+            ui.notification_show(
+                "Not applied. " + " | ".join(form_errors), type="error", duration=10)
+            return
 
         # No schema registered — preserve existing params
         if not params_schema:

@@ -65,7 +65,7 @@ def action_drop_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "tags": ["replace", "values", "recode", "string"],
     "params": {
         "columns": {"widget": "column_selector", "multi": True, "label": "Columns", "required": True},
-        "to_replace": {"widget": "string", "label": "Values to replace (YAML list)", "required": True, "hint": "[old_val1, old_val2]"},
+        "to_replace": {"widget": "list", "label": "Values to replace (YAML list)", "required": True, "hint": "[old_val1, old_val2]"},
         "new_value": {"widget": "column_or_literal", "label": "Replacement value", "required": True},
     },
     "description": "Replace a specific set of values across one or more columns with a single replacement; use `recode_values` for rule-based conditional remapping.",
@@ -99,7 +99,7 @@ def action_replace_values(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFram
     "params": {
         "columns": {"widget": "column_selector", "multi": False, "label": "Source column", "required": False},
         "new_name": {"widget": "string", "label": "New name", "required": False},
-        "mapping": {"widget": "string", "label": "Rename mapping (YAML dict old: new)", "required": False, "hint": "{old_name: new_name, ...}"},
+        "mapping": {"widget": "mapping", "label": "Rename mapping (YAML dict old: new)", "required": False, "hint": "{old_name: new_name, ...}"},
     },
     "description": "Rename one or more columns; use `mapping` for bulk renames, or `columns` + `new_name` for a single column.",
     "yaml_example": "- action: rename\n  mapping: {old_col: new_col, other_col: clean_col}",
@@ -192,7 +192,7 @@ def action_unique_rows(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "params": {
         "column": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
         "new_column": {"widget": "string", "label": "Output column name (leave blank to overwrite)", "required": False},
-        "rules": {"widget": "string", "label": "Rules (YAML list of {matches/starts_with/…: val, value: out})", "required": True, "hint": "[{matches: 'S', value: 0}, {default: 1}]"},
+        "rules": {"widget": "list", "items": "mapping", "label": "Rules (YAML list of {matches/starts_with/…: val, value: out})", "required": True, "hint": "[{matches: 'S', value: 0}, {default: 1}]"},
     },
     "description": "Remap values in a column via a rule chain (exact match, prefix, suffix, substring, default); more expressive than `replace_values` for categorical cleaning.",
     "yaml_example": "- action: recode_values\n  column: resistance\n  new_column: resistance_binary\n  rules:\n    - matches: Susceptible\n      value: 0\n    - matches_any: [Resistant, Intermediate]\n      value: 1\n    - default: null",
@@ -589,7 +589,7 @@ def action_filter_lt(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "context": ["t1", "t2", "assembly"],
     "tags": ["rename", "columns"],
     "params": {
-        "mapping": {"widget": "string", "label": "Rename mapping (YAML dict old: new)", "required": False, "hint": "e.g. {old_name: new_name}"},
+        "mapping": {"widget": "mapping", "label": "Rename mapping (YAML dict old: new)", "required": False, "hint": "e.g. {old_name: new_name}"},
         "columns": {"widget": "column_selector", "multi": True, "label": "Source columns (list form)", "required": False},
         "new_names": {"widget": "string", "label": "New names (comma-separated, same order as columns)", "required": False},
     },

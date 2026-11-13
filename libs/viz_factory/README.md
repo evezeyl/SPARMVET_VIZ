@@ -267,6 +267,15 @@ These match the Gallery taxonomy (see `assets/gallery_data/TAXONOMY_CHEATSHEET.m
 
 Components do `p + geom_bar(**spec)` — the spec dict passes through directly to plotnine. The `params` dict in the schema lists the most common kwargs for the form renderer, but the user can always add additional plotnine kwargs directly in the data analysis recipe YAML. Setting `allow_extra_params: True` tells the form renderer to allow this.
 
+### Which arguments a component accepts (`viz_factory.arguments`)
+
+The schema lists only the common arguments, so it cannot say which names are valid. `allowed_arguments(name)` returns
+what the component accepts: for a geom or stat exactly what plotnine accepts (aesthetics and parameters of its geom and
+stat, plus the layer arguments), for any other plotnine class or function its signature together with the schema, and
+`None` when the names are free-form (`annotate`, `element_*`, `theme_custom`). `unknown_arguments(name, names)` lists
+the names a layer uses that the component does not accept; `argument_catalog()` returns all of it as plain data for
+the recipe checker. `tests/test_component_arguments.py` asks plotnine itself about every enumerated name.
+
 ### Accessing the component catalog
 
 ```python

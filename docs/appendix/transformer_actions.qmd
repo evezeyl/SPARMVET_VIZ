@@ -50,6 +50,8 @@ null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
 | `color` | Colour picker | Fill / colour overrides |
 | `column_or_literal` | Column select or literal | Fill values, join keys |
 | `bool` | Checkbox | Flags, on/off options |
+| `list` | A list typed as one line of YAML, `[a, b]` | Values to replace, new column names, recode rules |
+| `mapping` | A mapping typed as one line of YAML, `{old: new}` | Rename mapping |
 
 ### Annotated actions (BP-SCHEMA-1)
 

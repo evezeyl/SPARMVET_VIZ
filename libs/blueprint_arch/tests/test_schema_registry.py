@@ -43,10 +43,9 @@ REQUIRED_PARAM_KEYS = {"widget", "label", "required"}
 
 VALID_CONTEXTS = {"t1", "t2", "assembly", "plot"}
 
-VALID_WIDGETS = {
-    "column_selector", "expression", "enum", "dtype_picker",
-    "number", "string", "color", "column_or_literal", "bool",
-}
+from utils.ui_schema import WIDGETS as _WIDGETS  # noqa: E402  (one vocabulary for the registries and the form)
+
+VALID_WIDGETS = set(_WIDGETS)
 
 # Actions annotated in BP-SCHEMA-1
 ANNOTATED_ACTIONS = [

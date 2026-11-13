@@ -396,7 +396,7 @@ def action_list_join(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "tags": ["filter", "set", "whitelist"],
     "params": {
         "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
-        "values": {"widget": "string", "label": "Allowed values (comma-separated)", "required": True},
+        "values": {"widget": "list", "label": "Allowed values (YAML list)", "required": True, "hint": "[Norway, Sweden]"},
     },
     "description": "Keep rows where a column value is in an allowed set; equivalent to SQL WHERE col IN (...).",
     "yaml_example": "- action: is_in\n  column: country\n  values: [Norway, Sweden, Denmark]",
@@ -423,7 +423,7 @@ def action_is_in(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     "tags": ["filter", "set", "blacklist", "exclusion"],
     "params": {
         "column": {"widget": "column_selector", "multi": False, "label": "Column", "required": True},
-        "values": {"widget": "string", "label": "Excluded values (comma-separated)", "required": True},
+        "values": {"widget": "list", "label": "Excluded values (YAML list)", "required": True, "hint": "[Norway, Sweden]"},
     },
     "description": "Keep rows where a column value is NOT in an excluded set; equivalent to SQL WHERE col NOT IN (...).",
     "yaml_example": "- action: not_in\n  column: country\n  values: [Norway, Sweden, Denmark]",

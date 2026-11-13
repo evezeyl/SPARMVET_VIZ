@@ -25,10 +25,9 @@ ANNOTATED_ACTIONS = [
     "mutate", "sort", "is_in", "join", "unpivot", "explode",
 ]
 
-VALID_WIDGETS = {
-    "column_selector", "expression", "enum", "dtype_picker",
-    "number", "string", "color", "column_or_literal", "bool",
-}
+from utils.ui_schema import WIDGETS as _WIDGETS  # noqa: E402  (one vocabulary for the registries and the form)
+
+VALID_WIDGETS = set(_WIDGETS)
 
 VALID_CONTEXTS = {"t1", "t2", "assembly"}
 

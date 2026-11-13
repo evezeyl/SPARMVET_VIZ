@@ -11,13 +11,15 @@ Provides a unified, headless-safe catalog for the BLUEPRINT form renderer — no
 imports, no cross-lib imports. Catalogs are injected at app startup by server.py via
 register(action_schemas, component_schemas). Before registration, all getters return {}.
 
-Widget type vocabulary (params entries):
+Widget type vocabulary (params entries; the single list is `utils.ui_schema.WIDGETS`):
     column_selector   — select one or more columns from the active frame schema
     expression        — free-form Polars expression string (eval'd in mutate context)
     enum              — dropdown from a fixed list of allowed values
     dtype_picker      — dropdown of supported Polars dtype strings (cast action)
     number            — numeric input (int or float)
-    string            — plain text input
+    string            — plain text input (a scalar)
+    list              — a YAML list typed as one line; `items: mapping` when each item is a mapping
+    mapping           — a YAML mapping typed as one line (for example old name -> new name)
     color             — color picker (hex or named)
     column_or_literal — either a column name OR a literal value (user chooses)
     bool              — checkbox

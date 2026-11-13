@@ -117,7 +117,7 @@ def action_derive_categories(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyF
     "params": {
         "column": {"widget": "column_selector", "multi": False, "label": "Source column", "required": True},
         "separator": {"widget": "string", "label": "Separator", "required": False, "default": "/"},
-        "new_columns": {"widget": "string", "label": "Output column names (YAML list)", "required": True, "hint": "[part_a, part_b]"},
+        "new_columns": {"widget": "list", "label": "Output column names (YAML list)", "required": True, "hint": "[part_a, part_b]"},
     },
     "description": "Split a string column by a separator into multiple new columns; each part is assigned to a named output column.",
     "yaml_example": "- action: split_column_to_parts\n  column: species_type\n  separator: '/'\n  new_columns: [species, biotype]",
