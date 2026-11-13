@@ -20,17 +20,17 @@
 | Data analysis recipe structure integrity | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ❌ (false positive — DATA-ANALYSIS-RECIPE-INCLUDE-1: !include unsupported by debug_assembler) | 2026-05-27 | — | Local (systemd) |
 | Task-to-code drift check | Weekly | Fridays 20:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-16 | — | Local (systemd) |
 | App features file consistency | On-demand | Manual trigger | `[x] Active` | 2026-05-09 ✅ | — | — | Local (manual) |
-| Phase ordering audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
-| Changelog completeness audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
-| Template flag completeness | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
-| CSS design token compliance | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
-| Hardcoded config/path violations | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
+| Phase ordering audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-11-12 ✅ | 2026-11-19 | — | Local (systemd) |
+| Changelog completeness audit | Weekly | Thursdays 21:00 | `[x] Active` | 2026-11-12 ✅ | 2026-11-19 | — | Local (systemd) |
+| Template flag completeness | Weekly | Thursdays 21:00 | `[x] Active` | 2026-11-12 ✅ | 2026-11-19 | — | Local (systemd) |
+| CSS design token compliance | Weekly | Thursdays 21:00 | `[x] Active` | 2026-11-12 ✅ | 2026-11-19 | — | Local (systemd) |
+| Hardcoded config/path violations | Weekly | Thursdays 21:00 | `[x] Active` | 2026-11-12 ✅ | 2026-11-19 | — | Local (systemd) |
 | Documentation & README sync | On-demand | Manual trigger (or monthly) | `[ ] Planned` | — | — | — | Local (manual) |
 | Library test coverage | On-demand | Manual trigger (or pre-release) | `[x] Active` | 2026-05-09 ❌ | LIB-TESTS-BLUEPRINT-1, LIB-TESTS-VIZ-TIMEOUT-1 | 2026-05-09 | Local (manual) |
 | Package dependency health | On-demand | Manual trigger (or monthly) | `[x] Active` | 2026-05-09 ⚠️ | plotnine PATCH upgrade pending | 2026-05-09 | Local (manual) |
 | Parity mandate coverage | On-demand | Manual trigger (or after lib update) | `[x] Active` | 2026-05-09 ✅ | Fixed 2 stale → exclusions | 2026-05-09 | Local (manual) |
 | Data analysis recipe coherence | Weekly | Wednesdays 22:00 | `[x] Active` | 2026-05-20 ✅ (6/6 PASS) | 2026-05-27 | — | Local (systemd) |
-| Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-05-09 ✅ | 2026-05-15 | — | Local (systemd) |
+| Palette registry validity | Weekly | Thursdays 21:00 | `[x] Active` | 2026-11-12 ✅ | 2026-11-19 | — | Local (systemd) |
 | **Semantic doc sync** (Agent §17) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ⚠️ — 4 STALE (generate_branch_plan sig, group_plot_manager returns, get_registered_tools return, Blueprint panel table). 3 fixed this session; DOC-BLUEPRINT-PANELS-1 deferred. | — | — | Agent (on-demand) |
 | **ADR behavioral compliance** (Agent §18) | On-demand | Manual trigger | `[x] Active` | 2026-11-06 ❌ then fixed the same day: ADR-045 render write in wrangle_studio.py (ADR-045-PLOTERR-1, guarded now by app/tests/test_render_purity.py); server.py 287 lines (ADR-045-SERVER-SIZE-1, dead code removed, 237 lines). ADR-053, ADR-011, ADR-071 PASS. | — | — | Agent (on-demand) |
 | **Three-source app features consistency** (Agent §19) | On-demand | Manual trigger | `[x] Active` | 2026-05-21 ✅ — all 8 app features files PASS runtime. 4 doc-gap warnings (wrangle_studio_enabled already in matrix; audit script updated for data_analysis_recipe_edit_enabled + blueprint_agent_enabled). | — | — | Agent (on-demand) |
