@@ -8,10 +8,11 @@ N14; `columns` and `target_column` are ours and say where a method that works on
 probe frame, and the direct Polars call whose result it must equal. Determinism is stated in the step, never
 defaulted by the action (DEC34): `maintain_order`, `keep`, `seed`, `how` are written in every case.
 
-State today: none of the actions exists, so every equality test is a strict xfail with the reason "not built".
-The day an action is registered its mark fails and must be removed in that commit. Two tests are not xfail:
-the direct Polars call of every case must run (a typo in a case would hide a real failure), and every case
-must name a distinct action.
+State: the 37 actions are built (`transformer.actions.polars_calls`, W6 package 1) and every case passes. Three
+more tests guard the cases themselves: the direct Polars call of every case must run (a typo would hide a real
+failure), every case names a polars_ action, and the cases cover the planned list of 7.5.1. The last tests
+check what the actions refuse: an unknown key, a missing required parameter, a wrong form, and a step that
+would do nothing silently.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_polars_actions_equal_polars.py -q
 """
@@ -71,10 +72,10 @@ CASES = [
     Case("polars_unnest", STRUCTS, {"columns": ["st"]}, lambda lf: lf.unnest(["st"])),
     Case("polars_unpivot", BASE, {"on": ["n", "f"], "index": ["id"], "variable_name": "var", "value_name": "val"},
          lambda lf: lf.unpivot(on=["n", "f"], index=["id"], variable_name="var", value_name="val")),
-    Case("polars_pivot", BASE, {"on": "g", "index": "id", "values": "n", "aggregate_function": "first"},
-         lambda lf: lf.collect().pivot(on="g", index="id", values="n", aggregate_function="first")),
-    Case("polars_join", BASE, {"right_ingredient": "R", "on": "id", "how": "left", "maintain_order": "left_right", "__right_df__": RIGHT.lazy()},
-         lambda lf: lf.join(RIGHT.lazy(), on="id", how="left", maintain_order="left_right")),
+    Case("polars_pivot", BASE, {"on": ["g"], "index": ["id"], "values": ["n"], "aggregate_function": "first"},
+         lambda lf: lf.collect().pivot(on=["g"], index=["id"], values=["n"], aggregate_function="first")),
+    Case("polars_join", BASE, {"right_ingredient": "R", "on": ["id"], "how": "left", "maintain_order": "left_right", "__right_df__": RIGHT.lazy()},
+         lambda lf: lf.join(RIGHT.lazy(), on=["id"], how="left", maintain_order="left_right")),
     Case("polars_sample", BASE, {"fraction": 0.5, "with_replacement": False, "shuffle": False, "seed": 1},
          lambda lf: lf.collect().sample(fraction=0.5, with_replacement=False, shuffle=False, seed=1)),
     Case("polars_describe", NUMS, {}, lambda lf: lf.collect().describe()),
@@ -147,14 +148,121 @@ def test_the_cases_cover_the_planned_polars_actions():
     assert {c.action.removeprefix("polars_") for c in CASES} == planned
 
 
-# -- the equality tests: strict xfail until the action is registered -----------------------------
+# -- the equality tests --------------------------------------------------------------------------
 
-NOT_BUILT = "W6 not built: the action is not registered yet"
-
-
-@pytest.mark.parametrize("case", [pytest.param(c, id=_id(c), marks=pytest.mark.xfail(strict=True, reason=NOT_BUILT)) for c in CASES])
+@pytest.mark.parametrize("case", CASES, ids=[_id(c) for c in CASES])
 def test_the_action_equals_the_direct_polars_call(case):
     action = AVAILABLE_WRANGLING_ACTIONS[case.action]
     got = eager(action(case.frame.lazy(), dict(case.spec)))
     expected = eager(case.polars(case.frame.lazy()))
     assert_frame_equal(got, expected)
+
+
+# -- what the actions refuse (never a silent no-op, DEC36) ------------------------------------------
+
+def _run(action, spec, frame=BASE):
+    return eager(AVAILABLE_WRANGLING_ACTIONS[action](frame.lazy(), spec))
+
+
+def test_an_unknown_key_fails_and_names_the_step():
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError, match="polars_drop.*zz"):
+        _run("polars_drop", {"columns": ["g"], "zz": 1})
+
+
+def test_a_missing_required_parameter_fails():
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError, match="maintain_order"):
+        _run("polars_sort", {"by": ["n"]})                       # the order rule must be written (DEC34)
+    with pytest.raises(TransformationError, match="seed"):
+        _run("polars_sample", {"fraction": 0.5})
+    with pytest.raises(TransformationError, match="decimals"):
+        _run("polars_round", {"columns": ["f"]}, NUMS)
+
+
+def test_a_scalar_where_a_list_is_needed_fails():
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError):
+        _run("polars_select", {"exprs": "id"})
+
+
+def test_the_old_spellings_of_a_column_key_are_not_guessed():
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError, match="columns"):
+        _run("polars_drop", {"column": "g"})
+
+
+def test_a_missing_column_fails_instead_of_being_ignored():
+    with pytest.raises(Exception, match="nope"):
+        _run("polars_select", {"exprs": ["id", "nope"]})
+    with pytest.raises(Exception, match="nope"):
+        _run("polars_drop", {"columns": ["nope"], "strict": True})
+
+
+def test_both_value_and_strategy_of_fill_null_are_refused():
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError):
+        _run("polars_fill_null", {"columns": ["n"], "value": 0, "strategy": "forward"})
+    with pytest.raises(TransformationError):
+        _run("polars_fill_null", {"columns": ["n"]})
+
+
+def test_a_target_column_needs_exactly_one_column():
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError, match="target_column"):
+        _run("polars_cast", {"columns": ["n", "f"], "dtype": "Float64", "target_column": "x"})
+
+
+def test_a_formula_that_is_not_polars_fails_and_says_so():
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError):
+        _run("polars_with_columns", {"named_exprs": {"x": "1 +"}})
+
+
+@pytest.mark.parametrize("formula", [
+    "__import__('os').system('echo hacked')",
+    "pl.col('n').map_elements(lambda v: v)",
+    "pl.read_csv('/etc/passwd')",
+    "().__class__.__bases__[0].__subclasses__()",
+    "open('/etc/passwd').read()",
+])
+def test_a_formula_that_could_run_code_or_read_files_is_refused(formula):
+    """The three formula sites run only checked formulas (W3, `utils.formula_check`); here the polars_with_columns site."""
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError, match="refused"):
+        _run("polars_with_columns", {"named_exprs": {"x": formula}})
+
+
+def test_the_old_mutate_site_refuses_the_same_formulas():
+    from utils.errors import TransformationError
+    with pytest.raises(Exception, match="refused|Failed"):
+        AVAILABLE_WRANGLING_ACTIONS["mutate"](BASE.lazy(), {"column": "x", "expression": "__import__('os').system('echo hacked')"}).collect()
+
+
+# -- Eve, 2026-11-13 (Q1): a cast never truncates silently; a truncation is written in the recipe ----------
+
+def test_a_cast_to_integer_that_would_drop_decimals_fails_and_names_the_value():
+    from utils.errors import TransformationError
+    frame = pl.DataFrame({"year": [2022.0, 2022.5, None]})
+    with pytest.raises(TransformationError, match=r"year.*2022\.5"):
+        _run("polars_cast", {"columns": ["year"], "dtype": "Int64", "strict": True}, frame)
+
+
+def test_a_cast_of_whole_floats_to_integer_equals_polars():
+    frame = pl.DataFrame({"year": [2022.0, 2023.0, None]})
+    got = _run("polars_cast", {"columns": ["year"], "dtype": "Int64", "strict": True}, frame)
+    assert_frame_equal(got, frame.with_columns(pl.col("year").cast(pl.Int64)))
+
+
+def test_a_decimal_loss_written_in_the_recipe_is_possible():
+    """The maker who wants to drop decimals says so with a step of its own (round, then cast)."""
+    frame = pl.DataFrame({"year": [2022.0, 2022.5]})
+    rounded = _run("polars_round", {"columns": ["year"], "decimals": 0}, frame)
+    got = _run("polars_cast", {"columns": ["year"], "dtype": "Int64", "strict": True}, rounded)
+    assert got["year"].to_list() == [2022, 2022]            # half_to_even: 2022.5 -> 2022, a visible step
+
+
+def test_a_cast_that_loses_nothing_is_unchanged_for_other_types():
+    frame = pl.DataFrame({"n": [1, 2], "s": ["1", "2"]})
+    assert _run("polars_cast", {"columns": ["n"], "dtype": "Float64", "strict": True}, frame)["n"].dtype == pl.Float64
+    assert _run("polars_cast", {"columns": ["s"], "dtype": "Int64", "strict": True}, frame)["s"].to_list() == [1, 2]

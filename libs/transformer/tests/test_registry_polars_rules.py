@@ -14,6 +14,7 @@ the actions; the day they pass, the marks fail and are removed in that commit.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_registry_polars_rules.py -q
 """
+import importlib
 import inspect
 
 import polars as pl
@@ -27,7 +28,7 @@ PREFIX_TO_FIELD = {"polars_": {"exact", "wrapper"}, "modif_": {"modified"}, "ste
 # parameters that are ours, not Polars': where an expression is applied, a table by id, the engine's own keys
 OURS = {"columns", "target_column", "right_ingredient"}
 # Polars parameters that are written differently in a recipe because Polars takes them as *args or **kwargs
-POLARS_NAME_FOR = {"more_exprs": "exprs", "named_exprs": "named_exprs", "args": "exprs", "kwargs": "named_exprs"}
+POLARS_NAME_FOR = {"more_exprs": "exprs", "more_by": "by", "more_columns": "columns", "other": "right_ingredient"}
 # the data argument of a Polars function or method is the table the step works on, never a parameter
 DATA_ARGUMENTS = {"self", "cls"}
 
@@ -41,7 +42,7 @@ def resolve_wrapped(schema):
     entries = schema.get("wraps") or []
     if not entries:
         return None
-    obj = pl
+    obj = importlib.import_module(entries[0].get("lib", "polars"))
     for attr in entries[0]["attr_path"]:
         obj = getattr(obj, attr)
     return obj
@@ -53,9 +54,10 @@ def polars_parameter_problems(schema):
     if target is None:
         return ["a polars_ action must name the Polars call it wraps in `wraps`"]
     params = schema.get("params", {})
-    problems = []
+    omitted = schema.get("not_exposed", {})
+    problems = [f"{name!r} is not exposed and gives no reason" for name, reason in omitted.items() if not str(reason).strip()]
     for name, p in inspect.signature(target).parameters.items():
-        if name in DATA_ARGUMENTS:
+        if name in DATA_ARGUMENTS or str(omitted.get(name, "")).strip():
             continue
         ours = POLARS_NAME_FOR.get(name, name)
         if ours not in params:
@@ -96,6 +98,12 @@ def test_a_default_that_is_not_the_polars_default_is_found():
     assert any("maintain_order" in p for p in polars_parameter_problems(schema))
 
 
+def test_an_omitted_polars_parameter_needs_a_reason():
+    without = {k: v for k, v in UNIQUE_OK["params"].items() if k != "keep"}
+    assert polars_parameter_problems({**UNIQUE_OK, "params": without, "not_exposed": {"keep": "kept by the engine"}}) == []
+    assert polars_parameter_problems({**UNIQUE_OK, "params": without, "not_exposed": {"keep": " "}})
+
+
 def test_a_polars_schema_without_wraps_is_found():
     assert polars_parameter_problems({"params": {}})
 
@@ -112,7 +120,7 @@ def test_the_prefix_table_is_complete():
 
 # -- the registry (strict xfail until W6) -----------------------------------------------------
 
-NOT_BUILT = "W6 not built: the registry still has the old action names"
+NOT_BUILT = "W6 package 1 built the polars_ actions; the old unprefixed actions are removed by the migration series (run A)"
 
 
 def _actions():
@@ -134,10 +142,9 @@ def test_the_registry_field_and_the_prefix_agree():
     assert bad == []
 
 
-@pytest.mark.xfail(strict=True, reason=NOT_BUILT + " (there is no polars_ action yet)")
 def test_every_polars_action_exposes_its_polars_call_with_polars_defaults():
     polars_actions = [n for n in _actions() if n.startswith("polars_")]
-    assert len(polars_actions) >= 35, "the 37 planned polars_ actions are not all registered"
+    assert len(polars_actions) >= 37, "the 37 planned polars_ actions are not all registered"
     problems = {n: polars_parameter_problems(ACTION_SCHEMAS[n]) for n in polars_actions}
     assert {n: p for n, p in problems.items() if p} == {}
 

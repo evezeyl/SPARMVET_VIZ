@@ -5,6 +5,7 @@
 # doc: .claude/rules/rules_agent_role_bioscientist.md#8, .claude/knowledge/architecture_decisions.md (ADR-075, ADR-078)
 # @end_deps
 import polars as pl
+from utils.formula_check import evaluate_formula
 from typing import Dict, Any
 from transformer.actions.base import register_action
 from utils.errors import TransformationError
@@ -218,7 +219,7 @@ def action_mutate(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     # Evaluate the expression string within Polars context
     # Note: We assume the expression is a valid Polars string expression using pl.
     try:
-        expr = eval(expr_str, {"pl": pl})
+        expr = evaluate_formula(expr_str)  # checked before it runs: a recipe formula builds a Polars expression and nothing else
     except Exception as e:
         raise ValueError(f"Failed to evaluate expression '{expr_str}': {e}")
 
