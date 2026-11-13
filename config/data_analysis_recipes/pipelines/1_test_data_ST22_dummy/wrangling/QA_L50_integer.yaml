@@ -1,4 +1,9 @@
 # QA canary: an integer column (L50), the target for threshold filters such as ">= 8.5".
+# Since strict import (2026-11-13) L50 is declared as numeric (Float64); the explicit cast below makes it Int64 again, so the
+# canary still tests integer thresholds (#62).
 tier1:
   - action: "keep_columns"
     columns: ["sample_id", "L50"]
+  - action: "cast"
+    columns: ["L50"]
+    dtype: Int64

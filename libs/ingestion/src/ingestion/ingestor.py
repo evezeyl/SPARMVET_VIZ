@@ -106,46 +106,53 @@ class DataIngestor:
             fields_data = dataset_schema.get(
                 "input_fields") or dataset_schema.get("fields") or {}
             if fields_data:
+                # Strict import (Eve 2026-11-13, spec O22): only the declared fields enter. A declared field is
+                # found by its exact `original_name` (the slug when none is given); one the file lacks fails.
                 available_cols = lf.collect_schema().names()
-                # Create a case-insensitive map of available columns
-                ci_available = {c.lower(): c for c in available_cols}
-
-                rename_mapping = {}
+                wanted = {}   # slug -> header expected in the file
                 for key, props in fields_data.items():
-                    original = props.get("original_name")
-                    if original:
-                        # Try exact match first, then case-insensitive
-                        if original in available_cols:
-                            rename_mapping[original] = key
-                        elif original.lower() in ci_available:
-                            rename_mapping[ci_available[original.lower()]] = key
+                    wanted[key] = (props or {}).get("original_name") or key
+                absent = {slug: header for slug, header in wanted.items() if header not in available_cols}
+                if absent:
+                    pe = PipelineError(
+                        component="DataIngestor",
+                        problem=(f"Column(s) {sorted(absent)} declared in input_fields for '{dataset_name}' not found in the "
+                                 f"source file (expected file headers: {sorted(absent.values())})."),
+                        location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
+                        fix=(
+                            "The file header must match original_name exactly (spelling and case); the slug is used "
+                            "when no original_name is given. Correct original_name, or remove the declaration."
+                        ),
+                        who="data_provider",
+                        category="ingestion",
+                        surface="data_import_panel",
+                        severity="error",
+                        evidence={"missing": {s: h for s, h in absent.items()}, "available_columns": available_cols[:30]},
+                    )
+                    print(pe.format())
+                    raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
+                headers = set(wanted.values())
+                left_out = [c for c in available_cols if c not in headers]
+                # select first, then rename: an undeclared file column that already carries a slug cannot collide
+                lf = lf.select([c for c in available_cols if c in headers])
+                rename_mapping = {header: slug for slug, header in wanted.items() if header != slug}
                 if rename_mapping:
                     lf = lf.rename(rename_mapping)
-
-                # --- Non-breaking audit: warn about schema columns missing from source ---
-                # Handoff #4: Columns declared in input_fields but absent from the file
-                # are logged as warnings (not errors) to support discovery-phase development.
-                post_rename_cols = set(lf.collect_schema().names())
-                for key, props in fields_data.items():
-                    if key not in post_rename_cols:
-                        original = props.get("original_name", key)
-                        pe = PipelineError(
-                            component="DataIngestor",
-                            problem=f"Column '{key}' declared in input_fields for '{dataset_name}' but not found in source file.",
-                            location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
-                            fix=(
-                                f"Check that the source TSV contains a column named '{original}'. "
-                                "Use 'original_name:' in the input_fields declaration to remap a differently-named column. "
-                                "Downstream wrangling steps referencing this column will fail."
-                            ),
-                            who="data_provider",
-                            category="ingestion",
-                            surface="data_import_panel",
-                            severity="warning",
-                            evidence={"slug": key, "expected_source_name": original, "available_columns": list(post_rename_cols)[:20]},
-                        )
-                        print(pe.format())
+                if left_out:
+                    pe = PipelineError(
+                        component="DataIngestor",
+                        problem=(f"{len(left_out)} file columns of '{dataset_name}' are not declared in input_fields "
+                                 f"and were not imported: {left_out}."),
+                        location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
+                        fix="Declare a column in input_fields to import it; nothing else is needed if it is not used.",
+                        who="data_analysis_recipe_author",
+                        category="ingestion",
+                        surface="data_import_panel",
+                        severity="warning",
+                        evidence={"not_imported": left_out},
+                    )
+                    print(pe.format())
 
             # --- Sanitize: strip whitespace + normalize null sentinels (INGEST-SANITIZE-1) ---
             # Runs after rename so column names are stable; runs before cast so empty strings

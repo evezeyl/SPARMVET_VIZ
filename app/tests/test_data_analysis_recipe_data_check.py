@@ -101,7 +101,7 @@ def test_a_missing_input_column_is_reported_as_a_dataset_that_cannot_be_loaded(t
     data_analysis_recipe = _make_data_analysis_recipe(tmp_path, reads_header="sample_id\tread_count")
     [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
     assert problem.location == "data_schemas.B"
-    assert "cannot be loaded" in problem.problem and "Missing columns" in problem.problem
+    assert "cannot be loaded" in problem.problem and "not found in the source file" in problem.problem
     assert "reads" in problem.problem
 
 
@@ -180,7 +180,7 @@ def test_the_build_fails_loudly_when_a_dataset_it_needs_cannot_be_loaded(tmp_pat
     _make_data_analysis_recipe(tmp_path, reads_header="sample_id\tread_count")
     with pytest.raises(IngestionError) as err:
         _build(tmp_path, "J")
-    assert "'B'" in str(err.value) and "'J'" in str(err.value) and "Missing columns" in str(err.value)
+    assert "'B'" in str(err.value) and "'J'" in str(err.value) and "not found in the source file" in str(err.value)
 
 
 def test_a_broken_dataset_that_the_collection_does_not_use_does_not_stop_the_build(tmp_path):

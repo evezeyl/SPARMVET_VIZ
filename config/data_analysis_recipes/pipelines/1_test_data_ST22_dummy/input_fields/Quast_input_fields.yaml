@@ -16,3 +16,7 @@ input_fields:
     original_name: "Largest_contig"
     type: numeric
     label: "Largest Contig"
+  L50:
+    original_name: "L50"
+    type: numeric
+    label: "L50"

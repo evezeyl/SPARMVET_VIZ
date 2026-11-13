@@ -148,7 +148,7 @@ top **3** variants, counting the number of different samples (`count_distinct: s
 The gate runs once per process, at startup (ADR-094): a recipe that fails the structure check or the data check is not offered in the selector and appears beneath it, with its problems and a contact. After you fix a file, **restart the server** (F5 is not enough for this check).
 
 - [ ] **RT-30 Renamed header.** Launch deployment B (section 0) and open any retest recipe. Beneath the selector "Data analysis recipe" the panel says it lists unavailable recipes and shows `retest_broken_header` in red with
-  *"data_schemas.Genes: dataset cannot be loaded: Dataset [Genes] Validation Failed. Missing columns: ['predicted_phenotype']"*. It cannot be selected. In `retest_broken_header.yaml` change the path to `genes.tsv` (`EDIT HERE`), restart: the recipe is selectable and its plot "Genes" appears.
+  *"data_schemas.Genes: dataset cannot be loaded: Column(s) ['predicted_phenotype'] declared in input_fields for 'Genes' not found in the source file (expected file headers: ['predicted_phenotype'])"*. It cannot be selected. In `retest_broken_header.yaml` change the path to `genes.tsv` (`EDIT HERE`), restart: the recipe is selectable and its plot "Genes" appears.
 - [ ] **RT-31 Declared field with no column.** The same list shows `retest_bad_output_field` with
   *"data_schemas.Genes.output_fields.phenotype: declared column 'phenotype' matches no column of the dataset  Tip: Did you mean 'predicted_phenotype'?"*.
   Change `phenotype:` to `predicted_phenotype:` in the file, restart: it is selectable. The same check runs on demand in BLUEPRINT with "Validate data analysis recipe" (advisory there: nothing is hidden).
