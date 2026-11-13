@@ -1,22 +1,21 @@
-input_fields:
-  sample_id:
-    type: categorical
-    role: foreign_key
-    original_name: sample_id
-    label: Sample ID
-  plasmid_name:
-    type: categorical
-    original_name: Plasmid
-    label: Plasmid name
-  identity:
-    type: numeric
-    original_name: '%Identity'
-    label: Sequence Identity
-  overlap:
-    type: numeric
-    original_name: '%Overlap'
-    label: Sequence Overlap
-  accession:
-    type: categorical
-    original_name: Accession
-    label: NCBI Accession
+sample_id:
+  type: Categorical
+  role: foreign_key
+  original_name: sample_id
+  label: Sample ID
+plasmid_name:
+  type: Categorical
+  original_name: Plasmid
+  label: Plasmid name
+identity:
+  type: Float64
+  original_name: '%Identity'
+  label: Sequence Identity
+overlap:
+  type: Float64
+  original_name: '%Overlap'
+  label: Sequence Overlap
+accession:
+  type: Categorical
+  original_name: Accession
+  label: NCBI Accession

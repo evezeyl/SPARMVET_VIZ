@@ -1,31 +1,37 @@
 # AR1 Assembly steps: Sample-to-Gene Mapping (Shared)
 tier1:
   # Step 1: Build the Sample Backbone
-  - action: "join"
-    right_ingredient: "MLST"
-    "on": "sample_id"
-    how: "left"
+  - action: polars_join
+    right_ingredient: MLST
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
 
-  - action: "join"
-    right_ingredient: "metadata_schema"
-    "on": "sample_id"
-    how: "left"
+  - action: polars_join
+    right_ingredient: metadata_schema
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
 
   # Step 2: Bring in the Virulence Hits
-  - action: "join"
-    right_ingredient: "VirulenceFinder"
-    "on": "sample_id"
-    how: "left"
+  - action: polars_join
+    right_ingredient: VirulenceFinder
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
 
   # Step 3: Map/Filter against the Reference Table (Secondary Key)
-  - action: "join_filter"
-    right_ingredient: "APEC_STEC_virulence_genes"
-    left_on: "VF_gene"     # From VirulenceFinder output_fields
-    right_on: "Gene_name"  # From Reference Table input_fields
-    how: "inner"           # 'inner' acts as a whitelist filter
+  # From VirulenceFinder output_fields
+  # From Reference Table input_fields
+  - action: polars_join
+    right_ingredient: APEC_STEC_virulence_genes
+    left_on: [VF_gene]
+    right_on: [Gene_name]
+    how: inner
+    maintain_order: left_right           # 'inner' acts as a whitelist filter
 
   # Step 4: Final Tidy-up (Post-Wrangling)
-  - action: "rename"
+  - action: polars_rename
     mapping:
-      "VF_gene": "selected_virulence_genes"
-      "VF_protein": "vf_protein"
+      VF_gene: selected_virulence_genes
+      VF_protein: vf_protein

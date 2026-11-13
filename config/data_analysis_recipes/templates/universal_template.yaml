@@ -1,7 +1,10 @@
 # UNIVERSAL DATA ANALYSIS RECIPE TEMPLATE (ADR-003 / ADR-014)
 id: universal_template
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: "Universal Template"
+  label: "Universal Template"
   category: "Template"
   description: "A data-agnostic data analysis recipe with optional metadata."
   version: "1.0"
@@ -12,9 +15,11 @@ data_schemas:
     source:
       type: "local_tsv"
       path: "./path/to/data.tsv"
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields:
-      sample_id: {type: "categorical", is_primary_key: true}
-      value_col: {type: "numeric"}
+      sample_id: {type: "Categorical", is_entity_key: true}
+      value_col: {type: "Float64"}
     wrangling: []
     output_fields:
       sample_id: {type: "categorical", is_primary_key: true}

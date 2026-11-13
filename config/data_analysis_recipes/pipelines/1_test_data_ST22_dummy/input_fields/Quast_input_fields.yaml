@@ -1,22 +1,21 @@
-input_fields:
-  sample_id:
-    original_name: "sample_id"
-    type: categorical
-    label: "Sample ID"
-    is_primary_key: true
-  n50:
-    original_name: "N50"
-    type: numeric
-    label: "N50"
-  total_length:
-    original_name: "Total_length"
-    type: numeric
-    label: "Total Length"
-  largest_contig:
-    original_name: "Largest_contig"
-    type: numeric
-    label: "Largest Contig"
-  L50:
-    original_name: "L50"
-    type: numeric
-    label: "L50"
+sample_id:
+  original_name: "sample_id"
+  type: Categorical
+  label: "Sample ID"
+  is_entity_key: true
+n50:
+  original_name: "N50"
+  type: Float64
+  label: "N50"
+total_length:
+  original_name: "Total_length"
+  type: Float64
+  label: "Total Length"
+largest_contig:
+  original_name: "Largest_contig"
+  type: Float64
+  label: "Largest Contig"
+L50:
+  original_name: "L50"
+  type: Float64
+  label: "L50"

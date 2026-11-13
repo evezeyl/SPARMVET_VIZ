@@ -1,36 +1,36 @@
 tier1:
   # Assembly steps: Correlations & Specialization (Optimized Stage-Wise)
   # 1. Start with 'Summary' and filter to Phenotypes ONLY
-  - action: "filter_eq"
-    column: "category"
-    value: "phenotype"
+  - action: modif_filter
+    column: category
+    op: eq
+    value: phenotype
+    na: remove
 
   # 2. Score phenotypes: Susceptible=0, unknown=NA (ignored in sum), else=1
   # This calculates one row per sample per resistance point
-  - action: "recode_values"
-    column: "value"
-    new_column: "resistance_points"
-    rules:
-      - { matches: "Susceptible", value: 0 }
-      - { starts_with: "unknown", value: null }
-      - { default: 1 }
+  - action: polars_with_columns
+    named_exprs:
+      resistance_points: pl.when(pl.col('value') == 'Susceptible').then(pl.lit(0)).when(pl.col('value').cast(pl.String).str.starts_with('unknown')).then(pl.lit(None)).otherwise(pl.lit(1))
 
   # 3. Collapse into a Resistance Score (phenotype_count) per sample/ST
-  - action: "summarize"
-    group_by: ["sample_id", "ST"]
-    columns: ["resistance_points"]
-    agg: "sum"
-    new_name: "phenotype_count"
+  - action: polars_group_by
+    by: [sample_id, ST]
+    maintain_order: true
+    named_aggs:
+      phenotype_count: pl.col('resistance_points').sum()
 
   # 4. Join with Quality Metrics from the mirror table
-  - action: "join"
-    right_ingredient: "Summary_quality"
-    "on": "sample_id"
+  - action: polars_join
+    right_ingredient: Summary_quality
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
 
   # 5. Advanced Visualization Prep: Unpivot quality metrics for Faceted Exploration
   # This allows plotting multiple metrics against the same score in a single plot
-  - action: "unpivot"
-    index: ["sample_id", "ST", "phenotype_count"]
-    'on': ["genome_length", "N50", "contigs_sup300bp"]
-    variable_name: "quality_metric"
-    value_name: "quality_value"
+  - action: polars_unpivot
+    'on': [genome_length, N50, contigs_sup300bp]
+    variable_name: quality_metric
+    value_name: quality_value
+    index: [sample_id, ST, phenotype_count]

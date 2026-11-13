@@ -3,12 +3,12 @@
 # input_fields:
 sample_id:
   original_name: "sample_id"
-  type: categorical
+  type: Categorical
   label: "Sample ID"
-  is_primary_key: true
+  is_entity_key: true
 quality_module:
   original_name: "Quality Module"
-  type: categorical
+  type: Categorical
   label: "Quality Module" # IF YOU are sure you will not change the display it is ok to put in input field
 # NOTE: I can omit this column from the import BUT then it will be ingested as is
 # NOTE: This will prevent any standardization / renaming 
@@ -17,25 +17,25 @@ quality_module:
 taxon:
   original_name: "Detected main taxon"
   # NOTE : I can I omit type and label if my intent is to drop the column from the output
-  type: categorical # if omitted its default to categorical
+  type: Categorical # if omitted its default to categorical
   label: "Detected Main Taxon" # if omitted its default to origina_name. This is only of UI display
 # keep will require wrangling
 genotype:
   original_name: "Genotype"
-  type: categorical
+  type: Categorical
   # label ommited - I know I will do something with this data, so I will define that when I have my output_fields defined
 # keep will require wrangling
 phenotype:
   original_name: "Predicted Phenotype"
-  type: categorical
+  type: Categorical
 # keep will require wrangling
 cge_phenotype:
   original_name: "CGE Predicted Phenotype"
-  type: categorical
+  type: Categorical
 # keep will require wrangling
 plasmid:
   original_name: "Plasmid"
-  type: categorical
+  type: Categorical
 # NOTE : I want to ignore this column from the output
 # NOTE I will omit it from both input and output output_fields
 # MLST_scheme:
@@ -51,23 +51,23 @@ ST:
   # Including it in output_fields is ignored by the engine and can be confusing
   #  as the column has already been renamed to its logical slug (e.g., ST) 
   # by the time it reaches the output stage.
-  type: categorical
+  type: Categorical
   label: "ST"
 # keep interesting for stats
 genome_length:
   original_name: "Genome Length"
-  type: numeric
+  type: Float64
   label: "Genome Length"
 # keep interesting for stats
 N50:
   original_name: "N50 value"
-  type: numeric
+  type: Float64
 
   label: "N50 value"
 # keep interesting for stats
 contigs_sup300bp:
   original_name: "Number of Contigs Greater Than Or Equal To 300 bp"
-  type: numeric
+  type: Float64
   label: "Contigs >= 300bp"
 # I want to drop this column
 # quality_module_feedback:

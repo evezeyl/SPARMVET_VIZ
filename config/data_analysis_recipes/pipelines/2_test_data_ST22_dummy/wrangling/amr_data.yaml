@@ -1,8 +1,12 @@
 wrangling:
   tier1:
-    - action: filter_range
-      columns: [identity]
-      min: 90
-    - action: filter_range
-      columns: [overlap]
-      min: 60
+    - action: modif_filter
+      column: identity
+      op: ge
+      value: 90
+      na: remove
+    - action: modif_filter
+      column: overlap
+      op: ge
+      value: 60
+      na: remove

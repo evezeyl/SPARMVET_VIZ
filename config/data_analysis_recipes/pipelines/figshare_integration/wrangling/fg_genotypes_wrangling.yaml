@@ -1,5 +1,4 @@
 tier1:
-  - action: strip_whitespace
-  - action: drop_columns
-    columns:
-      - host_animal_common
+  # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
+  - action: polars_drop
+    columns: [host_animal_common]

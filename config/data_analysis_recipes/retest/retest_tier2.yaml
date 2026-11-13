@@ -3,8 +3,11 @@
 # Join "All_samples" has no tier2 step, so its T2 equals its T1 (12 rows).
 # Edit the two files marked "EDIT HERE" as described in .claude/workflows/retest_procedure.md.
 id: retest_tier2
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: RETEST Tier 2 and export
+  label: RETEST Tier 2 and export
   description: Small data analysis recipe to check that Tier 2 is stored, reused and exported correctly.
   version: '1.0'
 
@@ -13,11 +16,13 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/retest/samples.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}
-      group: {original_name: group, type: categorical, label: Group}
-      value: {original_name: value, type: numeric, label: Value}
-      year: {original_name: year, type: categorical, label: Year}
+      sample_id: {original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}
+      group: {original_name: group, type: Categorical, label: Group}
+      value: {original_name: value, type: Float64, label: Value}
+      year: {original_name: year, type: Categorical, label: Year}
     wrangling:
       tier1: []
       tier2: []
@@ -29,9 +34,11 @@ joins:
     steps:
       tier1: []            # EDIT HERE (test 3): move the tier2 step below up to this list
       tier2:               # EDIT HERE (tests 2 and 4): change min: 10 to another number
-        - action: filter_range
-          columns: [value]
-          min: 10
+        - action: modif_filter
+          column: value
+          op: ge
+          value: 10
+          na: remove
   All_samples:
     ingredients:
       - dataset_id: Samples

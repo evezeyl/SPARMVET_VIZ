@@ -3,17 +3,19 @@
 # unchanged. This is the case that the placement rule of the audit design (earliest correct point, home_audit_steps.md
 # section 5a) must handle, and the fixture for its tests. No shipped recipe had such a step.
 tier1:
-  - action: "cast"
-    columns: ["sample_id"]
-    dtype: "String"
-  - action: "join"
-    right_ingredient: "Quast"
-    "on": ["sample_id"]
-    how: "left"
-  - action: "keep_columns"
-    columns: ["sample_id", "country", "n50"]
+  - action: polars_cast
+    columns: [sample_id]
+    dtype: String
+  - action: polars_join
+    right_ingredient: Quast
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
+  - action: polars_select
+    exprs: [sample_id, country, n50]
 
 tier2:
   # appends n50_zscore = (n50 - mean over all samples) / standard deviation over all samples
-  - action: "z_score"
-    columns: ["n50"]
+  - action: polars_with_columns
+    named_exprs:
+      n50_zscore: (pl.col('n50') - pl.col('n50').mean()) / pl.col('n50').std()

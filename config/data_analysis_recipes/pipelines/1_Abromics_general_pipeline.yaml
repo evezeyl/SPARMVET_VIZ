@@ -1,6 +1,9 @@
 id: 1_Abromics_general_pipeline
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: Abromics General Pipeline
+  label: Abromics General Pipeline
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   category: Edited
   tags:
@@ -17,6 +20,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
@@ -24,6 +29,8 @@ metadata_schema:
   source:
     type: local_tsv
     path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
+  null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+  strip: true
   input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
   wrangling:
     tier1: []
@@ -34,6 +41,8 @@ additional_datasets_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
@@ -41,10 +50,12 @@ additional_datasets_schemas:
     source:
       type: local_tsv
       path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '../../../assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_input_fields.yaml'
     wrangling:
       tier1:
-      - action: strip_whitespace
+      # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
     output_fields: {}
 joins:
   AR1_MLST_Serotype_Virulence:

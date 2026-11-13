@@ -43,7 +43,9 @@ RECIPE_NAME = {"more_exprs": "exprs", "more_by": "by", "more_columns": "columns"
 # the extra positional arguments of a call are merged into the one list the recipe writes
 MERGED = {"more_exprs", "more_by", "more_columns"}
 # the same Polars name can mean another thing in another call (`by` is a column list in sort, a separator in str.split)
-OVERRIDE = {("polars_str_split", "by"): {"widget": "string", "label": "Separator"},
+OVERRIDE = {("polars_sort", "descending"): {"widget": "any", "label": "Descending: true or false for all columns, or a list with one value per column"},
+            ("polars_sort", "nulls_last"): {"widget": "any", "label": "Nulls last: true or false for all columns, or a list with one value per column"},
+            ("polars_str_split", "by"): {"widget": "string", "label": "Separator"},
             ("polars_str_splitn", "by"): {"widget": "string", "label": "Separator"}}
 
 # Parameters whose absence would hide a choice that changes the result: required although Polars defaults them (DEC34).

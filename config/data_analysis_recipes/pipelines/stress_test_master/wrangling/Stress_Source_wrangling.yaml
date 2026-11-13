@@ -1,4 +1,4 @@
 tier1:
-  - action: "rename"
+  - action: polars_rename
     mapping:
-      id: "sample_id"
+      id: sample_id

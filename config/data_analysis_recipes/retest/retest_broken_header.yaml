@@ -3,8 +3,11 @@
 # Expected: the load gate refuses the recipe at startup and the recipe choice panel lists it as
 # unavailable, naming the dataset and the missing column (retest procedure, RT-30).
 id: retest_broken_header
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: RETEST broken header
+  label: RETEST broken header
   description: The data file has a renamed column; the app must say so.
   version: '1.0'
 
@@ -13,10 +16,12 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/retest/genes_renamed_header.tsv   # EDIT HERE (test 2): use genes.tsv, reload, it works
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}
-      gene: {original_name: gene, type: categorical, label: Gene}
-      predicted_phenotype: {original_name: predicted_phenotype, type: categorical, label: Phenotype}
+      sample_id: {original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}
+      gene: {original_name: gene, type: Categorical, label: Gene}
+      predicted_phenotype: {original_name: predicted_phenotype, type: Categorical, label: Phenotype}
     wrangling:
       tier1: []
       tier2: []

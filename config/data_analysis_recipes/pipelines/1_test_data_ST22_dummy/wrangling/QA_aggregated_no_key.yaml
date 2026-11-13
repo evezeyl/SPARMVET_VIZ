@@ -3,14 +3,14 @@
 # so sample_id is gone. An audit step that removes a sample by its ID can act on T1 but has nothing to act on
 # in T2: this is the fixture for the reach tests of the audit design.
 tier1:
-  - action: "mutate"
-    column: "year_label"
-    expression: "pl.col('year').cast(pl.Int64).cast(pl.String)"
+  - action: polars_with_columns
+    named_exprs:
+      year_label: pl.col('year').cast(pl.Int64).cast(pl.String)
 
 tier2:
   # count() counts the non-empty sample_id values of each group.
-  - action: "summarize"
-    columns: ["sample_id"]
-    group_by: ["country", "year_label"]
-    agg: "count"
-    new_name: "n_samples"
+  - action: polars_group_by
+    by: [country, year_label]
+    maintain_order: true
+    named_aggs:
+      n_samples: pl.col('sample_id').count()

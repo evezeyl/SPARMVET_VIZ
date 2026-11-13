@@ -1,6 +1,9 @@
 id: figshare_integration
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: Figshare AMR Triple-Source Integration
+  label: Figshare AMR Triple-Source Integration
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   category: Integration Demo
   tags:
@@ -20,6 +23,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_metadata.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
     output_fields: !include 'figshare_integration/output_fields/fg_metadata_output_fields.yaml'
@@ -28,6 +33,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_phenotypes.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_phenotypes_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
     output_fields: !include 'figshare_integration/output_fields/fg_phenotypes_output_fields.yaml'
@@ -36,6 +43,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_genotypes.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_genotypes_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'
     output_fields: !include 'figshare_integration/output_fields/fg_genotypes_output_fields.yaml'

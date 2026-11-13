@@ -18,6 +18,38 @@ from pathlib import Path
 from utils.recipe_migration import migrate_recipe_file
 
 
+def string_columns_at(types, keys, prior_steps):
+    """Which columns are Strings after the old steps `prior_steps` ran on a schema with these declared types.
+
+    The old `strip_whitespace` without columns acted on every String column of the moment, including the ones that
+    earlier steps created (a split gives Strings). The real engine answers it on an EMPTY frame built from the declared
+    types: no data is read, the plan's schema is.
+    """
+    import polars as pl
+    from transformer.data_wrangler import DataWrangler
+    from utils.step_migration import NotConvertible, convert_step
+
+    dtypes = {"categorical": pl.Categorical, "utf8": pl.String, "string": pl.String, "character": pl.String, "numeric": pl.Float64,
+              "float": pl.Float64, "integer": pl.Int64, "int": pl.Int64, "date": pl.Date, "bool": pl.Boolean, "boolean": pl.Boolean}
+    columns = {}
+    for slug, declared in types.items():
+        if declared in dtypes:
+            columns[slug] = dtypes[declared]
+        elif declared is None:
+            columns[slug] = pl.Categorical                    # the old default type was categorical
+        else:
+            columns[slug] = getattr(pl, declared)               # a Polars name already written
+    lf = pl.DataFrame({slug: pl.Series(slug, [], dtype=dtype) for slug, dtype in columns.items()}).lazy()
+    steps = []
+    for old in prior_steps:
+        try:
+            steps += convert_step(dict(old), strings=[], keys=keys, run="B")
+        except NotConvertible:
+            continue                                          # a removed action cannot run here; the rest still can
+    lf = DataWrangler().run(lf, steps)
+    return [name for name, dtype in lf.collect_schema().items() if dtype == pl.String]
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="+", help="recipe files, or folders searched for *.yaml recipes (files with an id: line)")
@@ -32,7 +64,7 @@ def main(argv=None) -> int:
     for path in files:
         if not path.read_text(encoding="utf-8").lstrip().startswith(("id:", "#")) and "\nid:" not in path.read_text(encoding="utf-8"):
             continue
-        report = migrate_recipe_file(path, apply=args.apply, run=args.run)
+        report = migrate_recipe_file(path, apply=args.apply, run=args.run, string_columns_at=string_columns_at)
         for line in report.lines:
             print(line)
         changed += len(report.changed_files)

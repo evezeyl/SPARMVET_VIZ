@@ -1,14 +1,13 @@
-input_fields:
-  sample_id:
-    original_name: "sample_id"
-    type: categorical
-    label: "Sample ID"
-    is_primary_key: true
-  taxon_1:
-    original_name: "taxon_1"
-    type: categorical
-    label: "Primary Taxon"
-  proportion_1:
-    original_name: "proportion_1"
-    type: numeric
-    label: "Primary Proportion"
+sample_id:
+  original_name: "sample_id"
+  type: Categorical
+  label: "Sample ID"
+  is_entity_key: true
+taxon_1:
+  original_name: "taxon_1"
+  type: Categorical
+  label: "Primary Taxon"
+proportion_1:
+  original_name: "proportion_1"
+  type: Float64
+  label: "Primary Proportion"

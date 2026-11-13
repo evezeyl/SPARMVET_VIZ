@@ -11,6 +11,9 @@
 # Date: 2026-04-23
 
 id: 2_test_data_ST22_dummy
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 description: "Improved ST22 Analysis Lineage - Sequential Build"
 
 info:
@@ -20,6 +23,8 @@ metadata_schema:
   source:
     type: "local_tsv"
     path: "assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv"
+  null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+  strip: true
   input_fields: !include 2_test_data_ST22_dummy/input_fields/metadata_schema.yaml
 
 data_schemas:
@@ -27,12 +32,16 @@ data_schemas:
     source:
       type: "local_tsv"
       path: "assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv"
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include 2_test_data_ST22_dummy/input_fields/amr_data.yaml
     wrangling: !include 2_test_data_ST22_dummy/wrangling/amr_data.yaml
   plasmid_data:
     source:
       type: "local_tsv"
       path: "assets/test_data/1_test_data_ST22_dummy/test_data_PlasmidFinder_20260307_105756.tsv"
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include 2_test_data_ST22_dummy/input_fields/plasmid_data.yaml
     wrangling: !include 2_test_data_ST22_dummy/wrangling/plasmid_data.yaml
 

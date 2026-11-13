@@ -1,5 +1,9 @@
 tier1:
-  - action: "split_and_explode"
-    target_column: "gene_presence"
-    separator: ";"
-  - action: "strip_whitespace"
+  - action: polars_with_columns
+    named_exprs:
+      gene_presence: pl.col('gene_presence').cast(pl.String).str.split(';')
+  - action: polars_explode
+    columns: [gene_presence]
+  - action: polars_str_strip_chars
+    columns: [gene_presence]
+    characters: " \t\n\r\""

@@ -8,20 +8,22 @@
 steps:
   tier1:
     # Step 1: Join metadata (Source, Year, Country) on sample_id
-    - action: join
+    - action: polars_join
       right_ingredient: metadata_schema
-      'on': sample_id
+      'on': [sample_id]
       how: inner
+      maintain_order: left_right
 
     # Step 2: Cast Year: float → Int64 → String for clean discrete axis
-    - action: cast
+    - action: polars_cast
       columns: [Year]
       dtype: Int64
 
-    - action: cast
+    - action: polars_cast
       columns: [Year]
       dtype: String
 
     # Step 3: Sort for reproducible output ordering
-    - action: sort
-      columns: [Year, Source, Country]
+    - action: polars_sort
+      by: [Year, Source, Country]
+      maintain_order: true

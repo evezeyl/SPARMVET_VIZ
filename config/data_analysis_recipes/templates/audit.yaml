@@ -1,6 +1,9 @@
 id: audit
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: Lab Submission Audit
+  label: Lab Submission Audit
   category: Quality Control
   description: 'Template for auditing lab submission data: TAT monitoring, throughput,
     and status tracking.'
@@ -10,27 +13,29 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/audit_data/submission_logs.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields:
       lab_id:
         original_name: lab_id
-        type: categorical
-        is_primary_key: true
+        type: Categorical
+        is_entity_key: true
         label: Source Laboratory
       submission_date:
         original_name: submission_date
-        type: categorical
+        type: Categorical
         label: Date of Submission
       status:
         original_name: status
-        type: categorical
+        type: Categorical
         label: Processing Status
       turnaround_time:
         original_name: turnaround_time
-        type: numeric
+        type: Float64
         label: TAT (Days)
     wrangling:
       tier1:
-      - action: strip_whitespace
+      # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
     output_fields:
       lab_id:
         original_name: lab_id

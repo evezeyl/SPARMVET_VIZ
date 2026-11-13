@@ -2,8 +2,11 @@
 # output_fields declares "phenotype". Expected: the load gate refuses the recipe at startup and the
 # recipe choice panel lists it as unavailable with the reason and the tip (retest procedure, RT-31).
 id: retest_bad_output_field
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: RETEST bad output field
+  label: RETEST bad output field
   description: output_fields names a column that does not exist.
   version: '1.0'
 
@@ -12,10 +15,12 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/retest/genes.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}
-      gene: {original_name: gene, type: categorical, label: Gene}
-      predicted_phenotype: {original_name: predicted_phenotype, type: categorical, label: Phenotype}
+      sample_id: {original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}
+      gene: {original_name: gene, type: Categorical, label: Gene}
+      predicted_phenotype: {original_name: predicted_phenotype, type: Categorical, label: Phenotype}
     wrangling:
       tier1: []
       tier2: []

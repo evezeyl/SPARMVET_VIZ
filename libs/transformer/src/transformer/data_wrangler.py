@@ -15,34 +15,12 @@ from utils.pipeline_error import PipelineError
 
 class DataWrangler:
     """
-    Applies declarative YAML configuration rules to a Polars LazyFrame.
+    Applies the steps of a recipe to a Polars LazyFrame, one after the other.
 
-    It maps column names to specific transformation actions defined in
-    the central Action Registry.
+    A step names an action of the central Action Registry and carries its parameters; the action judges the step
+    (`utils.ui_schema.step_problems`) and fails on any problem. Nothing is guessed here: no column alias is read,
+    no column list is injected, nothing is added to the step.
     """
-
-    def __init__(self, data_schema: Dict[str, Any]):
-        """
-        Args:
-            data_schema: The dictionary from the YAML representing the schema (categories, types, etc.)
-        """
-        self.data_schema = data_schema
-
-    def _resolve_category_targets(self, key: str) -> List[str]:
-        """
-        If a rule targets a category (e.g. "@AMR"), this returns all column names
-        in the data_schema that have that category. Otherwise, returns the single column name.
-        """
-        if not isinstance(key, str) or not key.startswith("@"):
-            return [key]
-
-        category_name = key[1:]  # strip the '@'
-        target_cols = []
-        for col_name, col_props in self.data_schema.items():
-            if "categories" in col_props and category_name in col_props["categories"]:
-                target_cols.append(col_name)
-
-        return target_cols
 
     @staticmethod
     def _resolve_tier(wrangling_block: Any, tier: str) -> List[Dict[str, Any]]:
@@ -72,7 +50,7 @@ class DataWrangler:
             if tier == "tier2" or tier == "all":
                 t2_actions = wrangling_block.get("tier2", [])
                 for act in t2_actions:
-                    if act.get("action") in ("join", "join_filter"):
+                    if act.get("action") == "polars_join":
                         raise DataAnalysisRecipeError(
                             f"Performance Alert: Action '{act.get('action')}' found in Tier 2.",
                             tip="Relational joins are foundational. Please move this step to 'tier1' (The Trunk) to ensure it is only computed once and shared across all dependent plots."
@@ -128,74 +106,7 @@ class DataWrangler:
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
-            # 1. Resolve targets (inject back into rule for standard spec compliance)
-            raw_selectors = rule.get("columns", rule.get(
-                "column", rule.get(
-                    "source", rule.get(
-                        "source_column", rule.get("target_column", rule.get(True))))))
-
-            target_columns = []
-            if raw_selectors:
-                if isinstance(raw_selectors, str):
-                    raw_selectors = [raw_selectors]
-                for selector in raw_selectors:
-                    target_columns.extend(
-                        self._resolve_category_targets(selector))
-
-            # Ensure unique columns while preserving resolution order
-            # This 'resolved_columns' becomes the truth for the action
-            rule["columns"] = list(dict.fromkeys(target_columns))
-
-            # Advanced Error Handling: Column Presence Check with Typo Correction (ADR-034)
-            # NOTE: We only check if the column list was explicitly provided and failed to resolve.
-            # ACTIONS that create new columns (mutate, add_constant, regex_extract) are exempt
-            # if the target does not yet exist.
-            exempt_actions = ["mutate", "add_constant",
-                              "regex_extract", "divide_columns", "unpivot"]
-            import difflib
-            all_cols = transformed_lf.collect_schema().names()
-
-            # If we targeted specific columns but none are found in the CURRENT LazyFrame
-            if (rule["columns"] and
-                action_name not in exempt_actions and
-                    not any(c in all_cols for c in rule["columns"])):
-                missing = [c for c in rule["columns"] if c not in all_cols]
-                suggestions = {}
-                for m in missing:
-                    matches = difflib.get_close_matches(
-                        m, all_cols, n=1, cutoff=0.6)
-                    if matches:
-                        suggestions[m] = matches[0]
-
-                tip = f"Ensure that {missing} are defined in the schema or correctly renamed/derived in previous steps."
-                if suggestions:
-                    tip += f" Hint: Did you mean {list(suggestions.values())}?"
-
-                pe = PipelineError(
-                    component="DataWrangler",
-                    problem=f"Action '{action_name}' — column(s) {missing} not found in current frame.",
-                    location=f"wrangling step {step_idx}: action='{action_name}'",
-                    fix=tip,
-                    who="data_analysis_recipe_author",
-                    category="wrangling",
-                    surface="plot_overlay",
-                    severity="error",
-                    evidence={
-                        "missing_columns": missing,
-                        "near_match": str(suggestions) if suggestions else None,
-                        "available_columns": all_cols[:20],
-                    },
-                    reference="rules_data_analysis_recipe_structure.md §7",
-                )
-                print(pe.format())
-                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
-
-            # 2. Resolve primary keys for safety
-            pks = [col for col, props in self.data_schema.items()
-                   if isinstance(props, dict) and props.get("is_primary_key")]
-            rule["__metadata__"] = {"primary_keys": pks}
-
-            # 3. Fetch and execute the action (ADR-079 Phase 2 — DIAG-RUNTIME-WRANGLER-1).
+            # Fetch and execute the action (ADR-079 Phase 2 — DIAG-RUNTIME-WRANGLER-1).
             try:
                 action_func = get_action_function(action_name)
             except ValueError as exc:
@@ -217,7 +128,7 @@ class DataWrangler:
                 raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
 
             try:
-                transformed_lf = action_func(transformed_lf, rule)
+                transformed_lf = action_func(transformed_lf, dict(rule))
             except pl.exceptions.ColumnNotFoundError as exc:
                 pe = PipelineError(
                     component="DataWrangler",

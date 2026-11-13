@@ -2,8 +2,11 @@
 # Use this for large-scale data analysis recipes requiring modularity and shared fragments.
 
 id: complex_template
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: "Complex Enterprise Demo"
+  label: "Complex Enterprise Demo"
   description: "Modular data analysis recipe using !include for relational integrity and reuse."
   version: "1.0"
 
@@ -12,6 +15,8 @@ data_schemas:
     source:
       type: "local_tsv"
       path: "./assets/test_data/genomics_data.tsv"
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include 'complex_template/genomics_input.yaml'
     wrangling: !include 'complex_template/genomics_wrangling.yaml'
     output_fields: ["sample_id", "gene_presence"]

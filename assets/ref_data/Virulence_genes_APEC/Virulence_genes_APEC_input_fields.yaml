@@ -1,17 +1,16 @@
-input_fields:
-  Gene_name:
-    original_name: Gene_name
-    type: categorical
-    label: Gene Name
-  Location:
-    original_name: Location
-    type: categorical
-    label: Location
-  Name_plasmid:
-    original_name: Name_plasmid
-    type: categorical
-    label: Name Plasmid
-  VirulenceFinder:
-    original_name: VirulenceFinder
-    type: categorical
-    label: Virulencefinder
+Gene_name:
+  original_name: Gene_name
+  type: Categorical
+  label: Gene Name
+Location:
+  original_name: Location
+  type: Categorical
+  label: Location
+Name_plasmid:
+  original_name: Name_plasmid
+  type: Categorical
+  label: Name Plasmid
+VirulenceFinder:
+  original_name: VirulenceFinder
+  type: Categorical
+  label: Virulencefinder

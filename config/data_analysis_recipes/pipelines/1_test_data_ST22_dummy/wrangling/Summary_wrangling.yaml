@@ -7,21 +7,27 @@ tier1:
   # NOTE : unpivot implicitly drops unselected columns
 
   # NOTE Creating a long format of all those columns
-  - action: "unpivot"
-    index: ["sample_id", "ST"] # These are the columns that create the identity of the sample
-    'on': ["genotype", "phenotype", "cge_phenotype", "plasmid"]
-    variable_name: "category"
-    value_name: "value"
+  # These are the columns that create the identity of the sample
+  - action: polars_unpivot
+    'on': [genotype, phenotype, cge_phenotype, plasmid]
+    variable_name: category
+    value_name: value
+    index: [sample_id, ST]
   # split_and_explode: split a column by a separator and create a new row for each value
-  - action: "split_and_explode"
-    column: "value"
-    separator: ", "
+  - action: polars_with_columns
+    named_exprs:
+      value: pl.col('value').cast(pl.String).str.split(', ')
+  - action: polars_explode
+    columns: [value]
   # NOTE : Safety ensure that white spaces on left and right of values are removed
-  - action: "strip_whitespace"
-    columns: ["category", "value"]
+  - action: polars_str_strip_chars
+    columns: [category, value]
+    characters: " \t\n\r\""
   # NOTE : Now I want to keep only unique rows
-  - action:  "drop_duplicates"
-    columns: ["sample_id", "ST", "category", "value"]
+  - action: polars_unique
+    keep: first
+    maintain_order: true
+    subset: [sample_id, ST, category, value]
 
   
 # tier2: (future) group_by sample_id + count data_type per predicted_phenotype for barplot

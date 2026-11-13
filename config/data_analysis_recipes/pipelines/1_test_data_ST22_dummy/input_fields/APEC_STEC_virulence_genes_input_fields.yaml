@@ -1,16 +1,16 @@
 Gene_name:
   original_name: Gene_name
-  type: categorical
+  type: Categorical
   label: Gene Name
 Location:
   original_name: Location
-  type: categorical
+  type: Categorical
   label: Location
 Name_plasmid:
   original_name: Name_plasmid
-  type: categorical
+  type: Categorical
   label: Name Plasmid
 VirulenceFinder:
   original_name: VirulenceFinder
-  type: categorical
+  type: Categorical
   label: Virulencefinder

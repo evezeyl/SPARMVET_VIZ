@@ -1,14 +1,13 @@
-input_fields:
-  sample_id:
-    original_name: "sample_id"
-    type: categorical
-    label: "Sample ID"
-    is_primary_key: true
-  serotype:
-    original_name: "serotypefinder_serotype"
-    type: categorical
-    label: "Serotype (Finder)"
-  virulence_raw:
-    original_name: "virulence_finder_virulencegenes_proteinname"
-    type: categorical
-    label: "Raw Virulence Hit"
+sample_id:
+  original_name: "sample_id"
+  type: Categorical
+  label: "Sample ID"
+  is_entity_key: true
+serotype:
+  original_name: "serotypefinder_serotype"
+  type: Categorical
+  label: "Serotype (Finder)"
+virulence_raw:
+  original_name: "virulence_finder_virulencegenes_proteinname"
+  type: Categorical
+  label: "Raw Virulence Hit"

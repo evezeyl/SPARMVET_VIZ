@@ -1,42 +1,41 @@
-input_fields:
-  sample_id:
-    original_name: "sample_id"
-    type: categorical
-    label: "Sample ID"
-    is_primary_key: true
-  scheme:
-    original_name: "Scheme"
-    type: categorical
-    label: "MLST Scheme"
-  sequence_type:
-    original_name: "Sequence Type"
-    type: categorical
-    label: "Sequence Type"
-  locus_1:
-    original_name: "Locus 1"
-    type: categorical
-    label: "Locus 1"
-  locus_2:
-    original_name: "Locus 2"
-    type: categorical
-    label: "Locus 2"
-  locus_3:
-    original_name: "Locus 3"
-    type: categorical
-    label: "Locus 3"
-  locus_4:
-    original_name: "Locus 4"
-    type: categorical
-    label: "Locus 4"
-  locus_5:
-    original_name: "Locus 5"
-    type: categorical
-    label: "Locus 5"
-  locus_6:
-    original_name: "Locus 6"
-    type: categorical
-    label: "Locus 6"
-  locus_7:
-    original_name: "Locus 7"
-    type: categorical
-    label: "Locus 7"
+sample_id:
+  original_name: "sample_id"
+  type: Categorical
+  label: "Sample ID"
+  is_entity_key: true
+scheme:
+  original_name: "Scheme"
+  type: Categorical
+  label: "MLST Scheme"
+sequence_type:
+  original_name: "Sequence Type"
+  type: Categorical
+  label: "Sequence Type"
+locus_1:
+  original_name: "Locus 1"
+  type: Categorical
+  label: "Locus 1"
+locus_2:
+  original_name: "Locus 2"
+  type: Categorical
+  label: "Locus 2"
+locus_3:
+  original_name: "Locus 3"
+  type: Categorical
+  label: "Locus 3"
+locus_4:
+  original_name: "Locus 4"
+  type: Categorical
+  label: "Locus 4"
+locus_5:
+  original_name: "Locus 5"
+  type: Categorical
+  label: "Locus 5"
+locus_6:
+  original_name: "Locus 6"
+  type: Categorical
+  label: "Locus 6"
+locus_7:
+  original_name: "Locus 7"
+  type: Categorical
+  label: "Locus 7"

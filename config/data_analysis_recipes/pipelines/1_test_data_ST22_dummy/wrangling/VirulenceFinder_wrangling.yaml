@@ -1,16 +1,31 @@
 tier1:
-  - action: "keep_columns"
-    columns: ["sample_id", "serotype", "virulence_raw"]
-  - action: "split_and_explode"
-    columns: ["virulence_raw"]
-    separator: ","
-  - action: "strip_whitespace"
-    columns: ["virulence_raw"]
-  - action: "split_column"
-    source: "virulence_raw"
-    new_columns: ["VF_gene", "VF_protein"]
-    delimiter: ": "
-    drop_source: true
-  - action: "strip_whitespace"
-  - action: "unique_rows"
+  - action: polars_select
+    exprs: [sample_id, serotype, virulence_raw]
+  - action: polars_with_columns
+    named_exprs:
+      virulence_raw: pl.col('virulence_raw').cast(pl.String).str.split(',')
+  - action: polars_explode
+    columns: [virulence_raw]
+  - action: polars_str_strip_chars
+    columns: [virulence_raw]
+    characters: " \t\n\r\""
+  - action: polars_str_splitn
+    columns: [virulence_raw]
+    by: ': '
+    n: 2
+    target_column: _split_parts
+  - action: polars_unnest
+    columns: [_split_parts]
+  - action: polars_rename
+    mapping:
+      field_0: VF_gene
+      field_1: VF_protein
+  - action: polars_drop
+    columns: [virulence_raw]
+  - action: polars_str_strip_chars
+    columns: [VF_gene, VF_protein]
+    characters: " \t\n\r\""
+  - action: polars_unique
+    keep: any
+    maintain_order: true
 # tier2: not needed — wide per-gene format ready for dot/heatmap plots

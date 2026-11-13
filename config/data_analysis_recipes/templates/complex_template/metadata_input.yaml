@@ -1,7 +1,7 @@
 sample_id:
   original_name: "ID"
-  type: "numeric"
-  is_primary_key: true
+  type: "Float64"
+  is_entity_key: true
 country:
   original_name: "Location"
-  type: "categorical"
+  type: "Categorical"

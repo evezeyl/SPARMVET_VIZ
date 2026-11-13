@@ -1,14 +1,13 @@
 tier1:
-  - action: "keep_columns"
-    columns: ["sample_id", "scheme", "sequence_type"]
+  - action: polars_select
+    exprs: [sample_id, scheme, sequence_type]
   # Ingestion already turns "-", "NA", "N/A", "None", "null", "NaN" and empty cells into real
   # nulls (DataSanitizer), so rules matching those never fire: fill the nulls instead.
   # "unknown" is not one of those markers, so it is replaced here.
-  - action: "replace_values"
-    columns: ["sequence_type"]
-    to_replace: ["unknown"]
-    new_value: "Non Determined"
-  - action: "fill_nulls"
-    columns: ["sequence_type"]
-    value: "Non Determined"
+  - action: polars_with_columns
+    named_exprs:
+      sequence_type: 'pl.col(''sequence_type'').replace_strict({''unknown'': ''Non Determined''}, default=pl.col(''sequence_type''))'
+  - action: polars_fill_null
+    columns: [sequence_type]
+    value: Non Determined
 # tier2: not needed — data ready for tabular display as-is

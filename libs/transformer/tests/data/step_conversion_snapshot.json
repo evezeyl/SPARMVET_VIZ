@@ -2536,11 +2536,10 @@
  "split_and_explode": {
   "new_steps": [
    {
-    "action": "polars_str_split",
-    "by": ",",
-    "columns": [
-     "genes"
-    ]
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "genes": "pl.col('genes').cast(pl.String).str.split(',')"
+    }
    },
    {
     "action": "polars_explode",
@@ -2577,11 +2576,10 @@
  "split_and_explode default": {
   "new_steps": [
    {
-    "action": "polars_str_split",
-    "by": ",",
-    "columns": [
-     "genes"
-    ]
+    "action": "polars_with_columns",
+    "named_exprs": {
+     "genes": "pl.col('genes').cast(pl.String).str.split(',')"
+    }
    },
    {
     "action": "polars_explode",

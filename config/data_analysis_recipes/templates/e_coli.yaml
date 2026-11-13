@@ -1,6 +1,9 @@
 id: e_coli
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: E. coli Comprehensive Analysis
+  label: E. coli Comprehensive Analysis
   category: AMR Analysis
   description: 'Template for E. coli data: AMR genes, MLST, serotype, and growth phenotype.'
   version: '1.0'
@@ -9,31 +12,33 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/pipeline_output/ecoli_amr_results.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields:
       sample_id:
         original_name: sample_id
-        type: categorical
-        is_primary_key: true
+        type: Categorical
+        is_entity_key: true
         label: Sample ID
       serotype:
         original_name: serotype
-        type: categorical
+        type: Categorical
         label: Serotype
       sequence_type:
         original_name: ST
-        type: categorical
+        type: Categorical
         label: Sequence Type
       ctx_m_gene:
         original_name: bla_CTX-M
-        type: categorical
+        type: Categorical
         label: CTX-M Gene
       growth_rate:
         original_name: growth_rate
-        type: numeric
+        type: Float64
         label: Growth Rate (OD600)
     wrangling:
       tier1:
-      - action: strip_whitespace
+      # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
     output_fields:
       sample_id:
         original_name: sample_id
@@ -59,30 +64,32 @@ metadata_schema:
   source:
     type: local_tsv
     path: ./assets/pipeline_output/ecoli_metadata.tsv
+  null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+  strip: true
   input_fields:
     sample_id:
       original_name: isolate_id
-      type: categorical
-      is_primary_key: true
+      type: Categorical
+      is_entity_key: true
     collection_date:
       original_name: collection_date
-      type: categorical
+      type: Categorical
       label: Collection Date
     country_of_origin:
       original_name: country_of_origin
-      type: categorical
+      type: Categorical
       label: Country of Origin
     hospital_site:
       original_name: hospital_site
-      type: categorical
+      type: Categorical
       label: Hospital Site
     patient_age:
       original_name: patient_age
-      type: numeric
+      type: Float64
       label: Patient Age
     patient_outcome:
       original_name: patient_outcome
-      type: categorical
+      type: Categorical
       label: Outcome
   wrangling:
     tier1: []
@@ -107,10 +114,11 @@ joins:
     - dataset_id: metadata_schema
     steps:
       tier1:
-      - action: join
+      - action: polars_join
         right_ingredient: metadata_schema
-        'on': sample_id
+        'on': [sample_id]
         how: left
+        maintain_order: left_right
 plot_defaults:
   height: 450
   theme: theme_minimal

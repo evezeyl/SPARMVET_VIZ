@@ -1,27 +1,39 @@
 tier1:
   # Detailed_summary wrangling: split HSP/Total Length, compute ratio, filter per quality thresholds
-  - action: "split_column_to_parts"
-    column: "hsp_lengthtotal_length"
-    separator: "/"
-    new_columns: ["hsp_len", "total_len"]
-  - action: "cast"
-    columns: ["identity", "overlap"]
-    dtype: "Float64"
-  - action: "divide_columns"
-    numerator: "hsp_len"
-    denominator: "total_len"
-    new_column: "length_ratio"
-  - action: "filter_range"
-    columns: ["identity"]
-    min: 90
-  - action: "filter_range"
-    columns: ["overlap"]
-    min: 85
-  - action: "filter_range"
-    columns: ["length_ratio"]
-    min: 0.8
-  - action: "drop_columns"
-    columns: ["hsp_len", "total_len"]
+  - action: polars_str_splitn
+    columns: [hsp_lengthtotal_length]
+    by: /
+    n: 2
+    target_column: _split_parts
+  - action: polars_unnest
+    columns: [_split_parts]
+  - action: polars_rename
+    mapping:
+      field_0: hsp_len
+      field_1: total_len
+  - action: polars_cast
+    columns: [identity, overlap]
+    dtype: Float64
+  - action: polars_with_columns
+    named_exprs:
+      length_ratio: pl.col('hsp_len').cast(pl.Float64) / pl.col('total_len').cast(pl.Float64)
+  - action: modif_filter
+    column: identity
+    op: ge
+    value: 90
+    na: remove
+  - action: modif_filter
+    column: overlap
+    op: ge
+    value: 85
+    na: remove
+  - action: modif_filter
+    column: length_ratio
+    op: ge
+    value: 0.8
+    na: remove
+  - action: polars_drop
+    columns: [hsp_len, total_len]
 
 # tier2: (future) group_by sample_id + count data_type per predicted_phenotype for barplot
 # tier2:

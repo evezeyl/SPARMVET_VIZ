@@ -1,28 +1,28 @@
 host_animal_common:
   original_name: host_animal_common
-  type: categorical
+  type: Categorical
   label: Host Animal Common
 sample_id:
   original_name: sample_id
-  type: categorical
+  type: Categorical
   label: Sample Id
 gene:
   original_name: gene
-  type: categorical
+  type: Categorical
   label: Gene
 gene_type:
   original_name: gene_type
-  type: categorical
+  type: Categorical
   label: Gene Type
 gene_identifier:
   original_name: gene_identifier
-  type: categorical
+  type: Categorical
   label: Gene Identifier
 gene_name_family:
   original_name: gene_name_family
-  type: categorical
+  type: Categorical
   label: Gene Name Family
 resistance_class:
   original_name: resistance_class
-  type: categorical
+  type: Categorical
   label: Resistance Class

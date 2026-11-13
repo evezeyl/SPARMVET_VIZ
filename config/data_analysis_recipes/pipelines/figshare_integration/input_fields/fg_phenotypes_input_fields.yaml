@@ -1,16 +1,16 @@
 sample_id:
   original_name: sample_id
-  type: categorical
+  type: Categorical
   label: Sample Id
 mic_id:
   original_name: mic_id
-  type: categorical
+  type: Categorical
   label: Mic Id
 breakpoint:
   original_name: breakpoint
-  type: categorical
+  type: Categorical
   label: Breakpoint
 predicted_phenotype:
   original_name: phenotype
-  type: categorical
+  type: Categorical
   label: Phenotype

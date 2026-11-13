@@ -1,13 +1,19 @@
 tier1:
   # RELATIONAL ANCHOR: QC Reads
   # Combines reads metrics (FastP), assembly metrics (Quast), and taxonomy (Bracken) with metadata.
-  - action: "join"
-    right_ingredient: "Quast"
-    "on": ["sample_id"]
-  - action: "join"
-    right_ingredient: "Bracken"
-    "on": ["sample_id"]
-  - action: "join"
-    right_ingredient: "metadata_schema"
-    "on": ["sample_id"]
+  - action: polars_join
+    right_ingredient: Quast
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
+  - action: polars_join
+    right_ingredient: Bracken
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
+  - action: polars_join
+    right_ingredient: metadata_schema
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
 # tier2: not needed — wide QC table ready for tabular/faceted display

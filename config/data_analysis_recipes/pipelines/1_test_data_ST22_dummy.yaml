@@ -1,6 +1,9 @@
 id: 1_test_data_ST22_dummy
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: ST22 Dummy Dataset
+  label: ST22 Dummy Dataset
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
   category: AMR Research
@@ -18,6 +21,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Summary_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_output_fields.yaml'
@@ -26,6 +31,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
     wrangling:
       tier1: []
@@ -39,6 +46,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quality_metrics_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Quality_metrics_input_fields.yaml'
     wrangling: []
     output_fields: !include '1_test_data_ST22_dummy/output_fields/Quality_metrics_output_fields.yaml'
@@ -52,6 +61,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Detailed_Summary_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Detailed_summary_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Detailed_summary_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/Detailed_summary_output_fields.yaml'
@@ -63,6 +74,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_FastP_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/FastP_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/FastP_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/FastP_output_fields.yaml'
@@ -74,6 +87,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quast_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Quast_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Quast_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/Quast_output_fields.yaml'
@@ -85,6 +100,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Bracken_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Bracken_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Bracken_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/Bracken_output_fields.yaml'
@@ -96,6 +113,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/ResFinder_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/ResFinder_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/ResFinder_output_fields.yaml'
@@ -107,6 +126,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
@@ -120,6 +141,8 @@ additional_datasets_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
@@ -132,10 +155,12 @@ additional_datasets_schemas:
     source:
       type: local_tsv
       path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/APEC_STEC_virulence_genes_input_fields.yaml'
     wrangling:
       tier1:
-        - action: strip_whitespace
+        # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
     output_fields: {}
 
 # ── Metadata Schema ───────────────────────────────────────────────────────────
@@ -146,6 +171,8 @@ metadata_schema:
   source:
     type: local_tsv
     path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
+  null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+  strip: true
   input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
   wrangling: !include '1_test_data_ST22_dummy/wrangling/metadata_schema_wrangling.yaml'
   output_fields: !include '1_test_data_ST22_dummy/output_fields/metadata_schema_output_fields.yaml'

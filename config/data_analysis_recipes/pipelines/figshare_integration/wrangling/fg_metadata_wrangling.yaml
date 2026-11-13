@@ -1,2 +1,2 @@
 tier1:
-  - action: strip_whitespace
+  # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)

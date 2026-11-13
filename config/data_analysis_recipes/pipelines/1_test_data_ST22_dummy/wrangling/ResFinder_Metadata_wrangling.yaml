@@ -1,5 +1,7 @@
 tier1:
-  - action: "join"
-    right_ingredient: "metadata_schema"
-    "on": ["sample_id"]
+  - action: polars_join
+    right_ingredient: metadata_schema
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
 # tier2: not needed — joined wide format ready for tabular display

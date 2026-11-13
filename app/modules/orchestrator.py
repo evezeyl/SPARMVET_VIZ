@@ -14,7 +14,7 @@ from utils.hashing import get_parquet_metadata_hash
 from ingestion.ingestor import DataIngestor
 from transformer.data_wrangler import DataWrangler
 from transformer.data_assembler import DataAssembler
-from transformer.actions.persistence.anchor import action_sink_parquet
+from transformer.anchor import write_anchor
 from app.modules.cache_keys import DataAnalysisRecipeKeys, load_data_analysis_recipe, data_analysis_recipe_keys, tier2_key, tier2_steps
 
 # Parquet metadata key holding the chained Tier 1 key (ADR-089).
@@ -91,21 +91,16 @@ class DataOrchestrator:
         not fit its declared type. Shared by materialize_tier1 and the data analysis recipe data check, so
         both see the dataset the same way.
         """
-        from transformer.metadata_validator import MetadataValidator
-        validator = MetadataValidator()
         if self.discover_by_dataset_id:
             # Production path: ignore data analysis recipe source.path, discover by schema ID name in
             # raw_data_dir (mirrors Galaxy/IRIDA connector).
             ds_schema = {k: v for k, v in ds_schema.items() if k != "source"}
+        # The declared types, `strip` and `null_values` are applied by the ingestion itself; a value that does not
+        # fit its declared type fails there and names the column and the values.
         lf, _ = self.ingestor.ingest(ds_id, ds_schema)
 
-        # ADR-034: Malformed Data Gatekeeping
-        input_contract = ds_schema.get("input_fields", {})
-        validator.validate(lf, input_contract, context=f"Dataset [{ds_id}]")
-        lf = validator.enforce_schema(lf, input_contract)
-
         rules = DataWrangler._resolve_tier(ds_schema.get("wrangling", []), "tier1")
-        return DataWrangler(data_schema=input_contract).run(lf, rules)
+        return DataWrangler().run(lf, rules)
 
     def materialize_tier1(self, data_analysis_recipe_id: str, collection_id: str, output_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None) -> pl.LazyFrame:
@@ -187,11 +182,7 @@ class DataOrchestrator:
         if collection_spec is None and collection_id in ingredients:
             print(f"      └── 💾 Materializing data_schema '{collection_id}' to: {output_path}")
             lf = ingredients[collection_id]
-            action_sink_parquet(lf, {
-                "path": str(output_path),
-                "decision_hash": keys.tier1_key,
-                "metadata": {TIER1_KEY_META: keys.tier1_key},
-            })
+            write_anchor(lf, str(output_path), decision_hash=keys.tier1_key, metadata={TIER1_KEY_META: keys.tier1_key})
             print(f"[Orchestrator] ✅ materialize_tier1 DONE — '{collection_id}' (bare schema) in {time.perf_counter()-_t_start:.2f}s → {output_path}")
             return pl.scan_parquet(output_path)
 
@@ -284,20 +275,12 @@ class DataOrchestrator:
                 continue
             filtered_steps.append(step)
 
-        # ADR-089: the chained Tier 1 key replaces the old provenance (data analysis recipe entry file
-        # hash + data hash). It covers the resolved data analysis recipe including every included file,
-        # the data content and the engine version, so any upstream change rebuilds the anchor.
-        filtered_steps.append({
-            "action": "sink_parquet",
-            "path": str(output_path),
-            "force_recompute": False,
-            "upstream_provenance": keys.tier1_key,
-            "metadata": {TIER1_KEY_META: keys.tier1_key},
-        })
-
         assembler = DataAssembler(assembly_ingredients)
         lf = assembler.assemble(filtered_steps)
 
+        # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine
+        # version) is written into the anchor, so any upstream change rebuilds it.
+        lf = write_anchor(lf, str(output_path), decision_hash=keys.tier1_key, metadata={TIER1_KEY_META: keys.tier1_key})
 
         lf = self._apply_final_contract(lf, collection_spec)
 
@@ -330,15 +313,10 @@ class DataOrchestrator:
             return pl.scan_parquet(t2_path)
 
         lf_t1 = self.materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys=keys)
-        # A copy: DataWrangler.run adds keys to the step dicts in place, and these dicts belong to
-        # the data analysis recipe kept in memory, so the next key would no longer match the stored one.
-        lf_t2 = DataWrangler(data_schema={}).run(lf_t1, copy.deepcopy(steps))
+        # A copy: the dicts belong to the data analysis recipe kept in memory and the key of the next read must match.
+        lf_t2 = DataWrangler().run(lf_t1, copy.deepcopy(steps))
         print(f"[Orchestrator] ▶ Tier 2 '{collection_id}' recomputed from Tier 1 → {t2_path}")
-        return action_sink_parquet(lf_t2, {
-            "path": str(t2_path),
-            "decision_hash": key,
-            "metadata": {TIER2_KEY_META: key},
-        })
+        return write_anchor(lf_t2, str(t2_path), decision_hash=key, metadata={TIER2_KEY_META: key})
 
     def get_source_files(self, data_analysis_recipe_id: str) -> dict[str, Path]:
         """Return {dataset_id: resolved_path} for all source files in a data analysis recipe.

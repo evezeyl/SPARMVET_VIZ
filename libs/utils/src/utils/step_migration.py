@@ -337,8 +337,10 @@ def _sort(s):
 
 
 def _split_and_explode(s):
+    """The old action cast the column to String before splitting (a categorical column is a Categorical by then)."""
     col = _single(s, "columns")
-    return [{"action": "polars_str_split", "columns": [col], "by": s.get("separator", ",")},
+    sep = s.get("separator", ",")
+    return [_with({col: f"pl.col({_text(col)}).cast(pl.String).str.split({_text(sep)})"}, s),
             {"action": "polars_explode", "columns": [col]}]
 
 

@@ -1,49 +1,49 @@
 sample_id:
   original_name: sample_id
-  type: categorical
+  type: Categorical
   label: Sample Id
-  is_primary_key: true
+  is_entity_key: true
 data:
   original_name: Data
-  type: categorical
+  type: Categorical
   label: Data
 data_type:
   original_name: Data Type
-  type: categorical
+  type: Categorical
   label: Data Type
 predicted_phenotype:
   original_name: Predicted Phenotype
-  type: categorical
+  type: Categorical
   label: Predicted Phenotype
 cge_predicted_phenotype:
   original_name: CGE Predicted Phenotype
-  type: categorical
+  type: Categorical
   label: Cge Predicted Phenotype
 identity:
   original_name: '%Identity'
-  type: numeric
+  type: Float64
   label: '%Identity'
 overlap:
   original_name: '%Overlap'
-  type: numeric
+  type: Float64
   label: '%Overlap'
 hsp_lengthtotal_length:
   original_name: HSP Length/Total Length
-  type: utf8
+  type: String
   label: Hsp Length/Total Length
 contig:
   original_name: Contig
-  type: categorical
+  type: Categorical
   label: Contig
 start:
   original_name: Start
-  type: numeric
+  type: Float64
   label: Start
 end:
   original_name: End
-  type: numeric
+  type: Float64
   label: End
 accession:
   original_name: Accession
-  type: categorical
+  type: Categorical
   label: Accession

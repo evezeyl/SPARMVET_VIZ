@@ -1,18 +1,19 @@
 tier1:
-  - action: "cast"
-    columns: ["sample_id"]
-    dtype: "String"
-  - action: "add_constant"
-    new_column: "status"
-    value: "Detected"
+  - action: polars_cast
+    columns: [sample_id]
+    dtype: String
+  - action: polars_with_columns
+    named_exprs:
+      status: pl.lit('Detected')
 
 tier2:
   # Calculate total gene count per sample for sorting purposes
-  - action: "count_by_group"
-    group_by: ["sample_id"]
-    new_column: "total_gene_count"
+  - action: polars_with_columns
+    named_exprs:
+      total_gene_count: pl.len().over(['sample_id'])
 
   # Sort primarily by total count (to see most resistant isolates together)
-  - action: "sort"
-    columns: ["total_gene_count", "sample_id"]
+  - action: polars_sort
+    by: [total_gene_count, sample_id]
+    maintain_order: true
     descending: [true, false]

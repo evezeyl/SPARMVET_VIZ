@@ -1,23 +1,25 @@
 # QA canary, an EXHIBIT of a known defect (issue #68): two long tables joined on the same key multiply
 # the rows (each AMR gene row meets each virulence gene row of the sample). Do not copy this pattern.
 tier1:
-  - action: "cast"
-    columns: ["sample_id"]
-    dtype: "String"
-  - action: "join"
-    right_ingredient: "ResFinder"
-    "on": ["sample_id"]
-    how: "left"
-  - action: "join"
-    right_ingredient: "VirulenceFinder"
-    "on": ["sample_id"]
-    how: "left"
-  - action: "keep_columns"
-    columns: ["sample_id", "country", "gene", "VF_gene"]
+  - action: polars_cast
+    columns: [sample_id]
+    dtype: String
+  - action: polars_join
+    right_ingredient: ResFinder
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
+  - action: polars_join
+    right_ingredient: VirulenceFinder
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
+  - action: polars_select
+    exprs: [sample_id, country, gene, VF_gene]
 
 tier2:
-  - action: "summarize"
-    columns: ["VF_gene"]
-    group_by: ["sample_id"]
-    agg: "count"
-    new_name: "rows_per_sample"
+  - action: polars_group_by
+    by: [sample_id]
+    maintain_order: true
+    named_aggs:
+      rows_per_sample: pl.col('VF_gene').count()

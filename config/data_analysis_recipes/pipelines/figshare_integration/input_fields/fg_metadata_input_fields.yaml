@@ -1,24 +1,24 @@
 sample_id:
   original_name: sample_id
-  type: categorical
+  type: Categorical
   label: Sample Id
 host_animal_species:
   original_name: host_animal_species
-  type: categorical
+  type: Categorical
   label: Host Animal Species
 host_animal_common:
   original_name: host_animal_common
-  type: categorical
+  type: Categorical
   label: Host Animal Common
 specimen_source_tissue:
   original_name: specimen_source_tissue
-  type: categorical
+  type: Categorical
   label: Specimen Source Tissue
 final_diagnosis:
   original_name: final_diagnosis
-  type: categorical
+  type: Categorical
   label: Final Diagnosis
 animal_infection_site_uti:
   original_name: animal_infection_site_uti
-  type: categorical
+  type: Categorical
   label: Animal Infection Site Uti

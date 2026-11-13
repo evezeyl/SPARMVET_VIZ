@@ -1,6 +1,9 @@
 id: simple_template
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: Simple Demo
+  label: Simple Demo
   description: 'Minimal self-contained data analysis recipe: 1 dataset, 1 metadata, 1 assembly,
     1 plot.'
   version: '1.0'
@@ -9,22 +12,24 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/simple_data.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields:
       sample_id:
         original_name: ID
-        type: categorical
-        is_primary_key: true
+        type: Categorical
+        is_entity_key: true
       value:
         original_name: Measurement
-        type: numeric
+        type: Float64
         label: Measurement Value
       group:
         original_name: Group
-        type: categorical
+        type: Categorical
         label: Sample Group
     wrangling:
       tier1:
-      - action: strip_whitespace
+      # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
     output_fields:
       sample_id:
         original_name: sample_id
@@ -42,14 +47,16 @@ metadata_schema:
   source:
     type: local_tsv
     path: ./assets/test_data/simple_metadata.tsv
+  null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+  strip: true
   input_fields:
     sample_id:
       original_name: ID
-      type: categorical
-      is_primary_key: true
+      type: Categorical
+      is_entity_key: true
     category:
       original_name: Category
-      type: categorical
+      type: Categorical
       label: Biological Category
   wrangling:
     tier1: []
@@ -70,10 +77,11 @@ joins:
     - dataset_id: metadata_schema
     steps:
       tier1:
-      - action: join
+      - action: polars_join
         right_ingredient: metadata_schema
-        'on': sample_id
+        'on': [sample_id]
         how: left
+        maintain_order: left_right
 analysis_groups:
   Overview:
     description: 📊 Summary overview

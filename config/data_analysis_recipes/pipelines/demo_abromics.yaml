@@ -1,6 +1,9 @@
 id: demo_abromics
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: 'Demo: Abromics Pipeline (High Integrity)'
+  label: 'Demo: Abromics Pipeline (High Integrity)'
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   description: Synchronized test data for Phase 4/5 demonstration.
   version: '1.2'
@@ -9,6 +12,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/demo_high_integrity/test_data_test_data_MLST_results_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
@@ -16,6 +21,8 @@ metadata_schema:
   source:
     type: local_tsv
     path: ./assets/test_data/demo_high_integrity/test_data_test_metadata_20260307_105756.tsv
+  null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+  strip: true
   input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
   wrangling:
     tier1: []
@@ -29,10 +36,11 @@ joins:
     - dataset_id: metadata_schema
     steps:
       tier1:
-      - action: join
+      - action: polars_join
         right_ingredient: metadata_schema
-        'on': sample_id
+        'on': [sample_id]
         how: inner
+        maintain_order: left_right
     final_contract:
     - sample_id:
         type: categorical

@@ -1,6 +1,9 @@
 id: 3_test_no_joins
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: No-Joins Regression Test
+  label: No-Joins Regression Test
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   subtitle: A single data schema with no joins at all — issue #24 regression
   category: Regression Test
@@ -20,6 +23,8 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
+    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
     output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'

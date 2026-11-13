@@ -1,6 +1,6 @@
 # @deps
 # provides: class:DataIngestor, method:ingest, method:find_file
-# consumes: libs/ingestion/src/ingestion/sanitizer.py
+# consumes: libs/ingestion/src/ingestion/declared.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-INGESTION-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-013, .claude/knowledge/architecture_decisions.md#ADR-094
@@ -8,7 +8,6 @@
 import polars as pl
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
-from ingestion.sanitizer import DataSanitizer
 from utils.errors import IngestionError
 from utils.pipeline_error import PipelineError
 
@@ -43,19 +42,10 @@ class DataIngestor:
 
     def find_file(self, dataset_name: str) -> Optional[Path]:
         """
-        Attempts to locate the physical TSV file for a given dataset name.
-        Uses exact match first, then falls back to prefix/substring globbing.
+        The file of a dataset in the data folder: `<dataset id>.tsv`, the exact name (no fuzzy search; spec 7.3).
         """
         exact_match = self.data_dir / f"{dataset_name}.tsv"
-        if exact_match.exists():
-            return exact_match
-
-        # Fallback to fuzzy mapping (Recursive Discovery)
-        potential_files = list(self.data_dir.glob(f"**/*{dataset_name}*.tsv"))
-        if potential_files:
-            return potential_files[0]
-
-        return None
+        return exact_match if exact_match.exists() else None
 
     def _open(self, dataset_name: str, dataset_schema: Dict[str, Any], as_text: bool = False) -> Tuple[pl.LazyFrame, Path]:
         """Locate the file of a dataset and open it lazily; with `as_text` every column is a String (no inference)."""
@@ -149,9 +139,10 @@ class DataIngestor:
 
         return lf
 
-    def ingest_declared(self, dataset_name: str, dataset_schema: Dict[str, Any]) -> Tuple[pl.LazyFrame, Path]:
-        """Format 1: read the file as text, import only the declared fields, then apply `strip`, `null_values` and the
-        declared Polars types (`ingestion.declared`). Replaces `ingest` at the migration (spec 7.3, 7.4)."""
+    def ingest(self, dataset_name: str, dataset_schema: Dict[str, Any]) -> Tuple[pl.LazyFrame, Path]:
+        """Read the file as text, import only the declared fields, then apply `strip`, `null_values` and the declared
+        Polars types (`ingestion.declared`); a value that does not fit fails and names the column and the values
+        (spec 7.3, 7.4)."""
         from ingestion.declared import apply_declared
         lf, resolved_path = self._open(dataset_name, dataset_schema, as_text=True)
         fields = dataset_schema.get("input_fields") or {}
@@ -164,68 +155,6 @@ class DataIngestor:
         except Exception as exc:  # noqa: BLE001
             raise IngestionError(f"Failed to read '{resolved_path.name}': {type(exc).__name__}: {str(exc)[:200]}",
                                  tip="Check that the file is a valid tab-separated file and that the declared fields match it") from exc
-
-    def ingest(self, dataset_name: str, dataset_schema: Dict[str, Any]) -> Tuple[pl.LazyFrame, Path]:
-        """
-        Locates the dataset file and returns a standard Polars LazyFrame.
-
-        Raises:
-            FileNotFoundError: If the TSV file cannot be located.
-            ValueError: If the file exists but Polars fails to parse it.
-        """
-        lf, resolved_path = self._open(dataset_name, dataset_schema)
-
-        try:
-            # ADR-013: Use 'input_fields' for raw ingestion mapping
-            fields_data = dataset_schema.get(
-                "input_fields") or dataset_schema.get("fields") or {}
-            if fields_data:
-                lf = self._import_declared_columns(lf, dataset_name, fields_data)
-
-            # --- Sanitize: strip whitespace + normalize null sentinels (INGEST-SANITIZE-1) ---
-            # Runs after rename so column names are stable; runs before cast so empty strings
-            # become actual nulls before any numeric/date cast attempts.
-            lf = DataSanitizer().apply(lf)
-
-            # --- Type Casting Logic (ADR-013 Refinement) ---
-            # Automatically cast columns to standard types based on schema 'type' field.
-            cast_exprs = []
-            for key, props in fields_data.items():
-                if key not in lf.collect_schema().names():
-                    continue
-
-                target_type = props.get("type", "categorical")
-                if target_type == "numeric":
-                    cast_exprs.append(pl.col(key).cast(pl.Float64))
-                elif target_type in ("categorical", "string"):
-                    cast_exprs.append(pl.col(key).cast(pl.String))
-                elif target_type == "date":
-                    cast_exprs.append(pl.col(key).cast(pl.Date))
-
-            if cast_exprs:
-                lf = lf.with_columns(cast_exprs)
-
-            return lf, resolved_path
-        except (IngestionError, Exception) as e:
-            if isinstance(e, IngestionError):
-                raise
-            pe = PipelineError(
-                component="DataIngestor",
-                problem=f"Failed to parse '{resolved_path.name}': {type(e).__name__}: {e}",
-                location=f"DataIngestor.ingest(dataset_name='{dataset_name}')",
-                fix=(
-                    "Verify that the file is a valid TSV (tab-separated) or Parquet file. "
-                    "Common causes: wrong delimiter, encoding issues (use UTF-8), "
-                    "truncated file, or a column type mismatch during cast."
-                ),
-                who="data_provider",
-                category="ingestion",
-                surface="data_import_panel",
-                severity="error",
-                evidence={"file": str(resolved_path), "error_type": type(e).__name__, "error_detail": str(e)[:200]},
-            )
-            print(pe.format())
-            raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe) from e
 
 
 if __name__ == "__main__":

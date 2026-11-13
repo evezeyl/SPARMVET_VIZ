@@ -277,3 +277,11 @@ def test_a_right_join_keeps_the_right_table_order_as_the_old_action_did():
 def test_strip_whitespace_in_a_schema_without_string_fields_did_nothing_and_is_removed():
     """The old step acted on the String columns only; `categorical` fields were Categorical by then, so it did nothing."""
     assert convert_step({"action": "strip_whitespace"}, strings=[]) == []
+
+
+def test_split_and_explode_works_on_a_categorical_column_as_the_old_action_did():
+    """The pipeline made `categorical` fields Categorical before any step; the old action cast to String inside."""
+    frame = MAIN.select("id", "genes").with_columns(pl.col("genes").cast(pl.Categorical))
+    got = _new(convert_step({"action": "split_and_explode", "columns": ["genes"], "separator": ","}), frame)
+    expected = frame.lazy().with_columns(pl.col("genes").cast(pl.String).str.split(",")).explode("genes").collect()
+    assert got.to_dicts() == expected.to_dicts() and got["genes"].dtype == pl.String

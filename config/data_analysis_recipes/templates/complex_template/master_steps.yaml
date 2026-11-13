@@ -1,6 +1,7 @@
 steps:
   tier1:
-    - action: "join"
-      right_ingredient: "metadata"
-      'on': "sample_id"
-      how: "left"
+    - action: polars_join
+      right_ingredient: metadata
+      'on': [sample_id]
+      how: left
+      maintain_order: left_right
