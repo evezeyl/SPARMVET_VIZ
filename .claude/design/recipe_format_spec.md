@@ -1,4 +1,4 @@
-# Recipe format specification (draft v0.5, 2026-11-13)
+# Recipe format specification (draft v0.6, 2026-11-13)
 
 **Written for:** Eve, to read and confirm. After that it is the base of the tests, of the checker (`check_recipe`), of the rule file and of the user documentation.
 **Status:** DRAFT. Nothing is built from it yet. It was written by applying the decisions of 2026-11-11/12 and your answers of 2026-11-13 to the code (read at file:line) and to every recipe file in the repository (scans in `tmpAI/recipe_format/`, scratch). The worked example is `1_test_data_ST22_dummy`: section 12 and `recipe_format_st22_draft.yaml`.
@@ -7,6 +7,8 @@
 **v0.2 (same day, after your review of v0.1):** (1) comments are specified (5b): `#` comments are free and kept, and an optional `comment` key exists; (2) the example variant (gallery) is now defined from what the gallery code reads and writes (6.9). It keeps `name`, the six-axis taxonomy, `data_path`, `wrangling` with `tier3` and its own file names, and it asks for no `label` or `description`; v0.1 refused `tier3` and renamed `name`, which would have broken the gallery; (3) the taxonomy is the gallery's and does not appear in a pipeline recipe (6.8); (4) the column-name aliases are replaced by what the action schemas already declare (6.5, 11); (5) science errors of recipes are fixed, not only described (15).
 
 **v0.3 (same day, after your gallery message):** (1) the comment key is **`comment`** (singular). Blueprint already writes it on steps, layers, groups and plots (BP-COMMENTS-1, ADR-082 Q4; `blueprint_handlers.py:376-378,402-404`, `join_designer.py:153`), and ADR-083 gives every layer a `comment`. My v0.2 had `comments` and a checker that would have refused what Blueprint saves. It is renamed and accepted on every step and every layer (5b, 6.5, 6.8). (2) Section 6.9 (gallery) is **withdrawn**: you want the gallery to follow the same spec, so the v0.2 text that kept its own words is wrong. The options, with pros and cons, are in `recipe_format_gallery_options_2026-11-13.md`; 6.9 is rewritten when you choose.
+
+**v0.6 (same day, after your note on dictionaries and reuse):** (1) you remembered correctly: **ADR-041 (ENFORCED 2026-04-20)** already decides that keyed definitions are dictionaries, ordered logic is a list and fragments are flat. v0.1 to v0.5 never stated the form of each container; section 4c does, with what the repository really contains (17 list-form containers, 33 wrapped fragments, and 3 contracts that the engine silently skips). (2) Duplicate keys are a gap: PyYAML keeps the last silently, so the loader must detect them (T10). (3) Section 0b gains the candidates that may move to `utils` (your note; nothing moved). The Dockerfile is not ready and nothing is deployed: it stays a later task.
 
 **v0.5 (same day, after your question on the rules):** section 0b records the verified answer: a checker core and a specification data file in `libs/utils` respect the layering rules, with one packaging condition (found by building wheels) and one naming point to align with the HOME stage-2 draft (`mode` or `profile`).
 
@@ -57,6 +59,19 @@ This file then becomes history (marked HISTORICAL by the rule `rules_legacy_mana
 **Callers of validation or loading today** (verified): HOME's gate `bootloader.py:364-367`; the importer `bundle_importer.py:251`; Blueprint's Validate `blueprint_handlers.py:2803,2850` and six more loads; `retest_walkthrough.py:181`; the transformer pipeline `pipeline.py:49`; the cache keys `cache_keys.py:193`. New callers: the gallery, the audit copy, the forked recipe, the migration tool, the test-lab writers.
 
 **One word to align with the HOME stage-2 draft.** It writes `check_recipe(raw, mode)` with `mode` = `run` or `build`. This file writes `profile` (`run`, `build`, `gallery`). HOME already has "Exploration | Audit mode" and `view_recipe(mode)`, so a third use of "mode" would confuse. Proposal: `profile`. It needs the two sessions to agree; your call.
+
+**Things that may move to `utils` (your note; nothing is moved, there is no overview yet).** `utils` is where a primitive goes when two libraries need it (`rules_test_lab.md` 2c), so this is expected as the picture clears. Candidates I met while reading, with evidence:
+
+1. **The field-type vocabulary** lives in three places: `MetadataValidator.DTYPE_MAP` (`transformer`, `metadata_validator.py:21-37`), the cast in the ingestor (`ingestor.py:162-170`) and the upload path of the app (`data_import_handlers.py:273`). One list in the specification file, read by all.
+2. **The plot-spec key sets** `_CANONICAL_SPEC_KEYS` and `_VALID_PLOT_DEFAULTS_KEYS` (`viz_factory/plot_config_resolver.py:64-74`) are facts about the recipe format. They belong in the specification file; `viz_factory` reads them from `utils`.
+3. **Reading a step container** is written four times: `DataWrangler._resolve_tier` (`transformer`), `tier2_steps` (`app/modules/cache_keys.py:90`), `_step_blocks` (the validator) and inline in the orchestrator. One helper in `utils`; the recipe graph (ADR-099 16(d)) absorbs it.
+4. **The shape of a `ui_schema`** (label, category, context, tags, params with widgets, description, example, wraps) is described by identical docstrings in two registries (`transformer/actions/base.py`, `viz_factory/registry.py`) and read by `blueprint_arch.schema_registry` and `help_registry`. Define the shape once in `utils` (a small type and a check); each library keeps its content.
+5. **Two mechanisms for renamed keys:** `utils/legacy_keys.py` (recipe keys) and `app/modules/renamed_keys.py` (launch variables and configuration keys, ADR-091). One helper, two tables (the renamed-keys table of the specification file).
+6. **`extract_primary_keys` and the lineage helpers** of `blueprint_arch` go to `utils.recipe_graph` (decided).
+
+What stays where it is: the actions and components themselves, the `@category` selector, anything that needs Polars data or plotnine. A review of the whole of `libs/` for more candidates is task `UTILS-REUSE-REVIEW-1`, for when you want it.
+
+**The container.** The Dockerfile is not ready and nothing is deployed (your note): the packaging condition above matters when `DOCKER-RELEASE-1` is done, not before.
 
 ## 1. What you decided on 2026-11-13
 
@@ -152,10 +167,34 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 
 **Alternatives for the value.** A date (`2026-11-13`): readable, but not ordered by meaning. `major.minor` (`1.0`): the minor part cannot mean "compatible" here (see above). The app version: couples every recipe to every release. **Alternatives for the name:** `spec_version`, `recipe_format`, `schema_version`. `format_version` matches the words of this file.
 
+## 4c. The form of every container (ADR-041)
+
+**What exists.** ADR-041, ENFORCED on 2026-04-20: **keyed definitions are a dictionary, ordered logic is a list, fragments are flat.** Field definitions are a Rich Dictionary (`slug: {props}`, slugs unique); `tier1` and `tier2` are a sequential list of action mappings; an included fragment holds the value only, with no repeated anchoring key. `rules_data_engine.md` section 4 repeats it for fields. "Keyed or ordered?" is the question that decides every container below, so none is left to guess.
+
+| Container | Form | Why | Refused |
+|---|---|---|---|
+| `data_schemas`, `additional_datasets_schemas`, `joins`, `analysis_groups`, `plots` of a group, `input_fields`, `output_fields`, `final_contract`, `source`, `mapping`, `plot_defaults`, `info`, `entity`, `taxonomy` | **dictionary** | each item has an id or a name, unique, found by key | a list (also a list of names, or of one-key dictionaries) |
+| a field entry | dictionary `{type, label, ...}` or `{}` | `{}` means "as in the input" | a bare string (`sample_id: categorical`, the deprecated shorthand; none is left in the repository) |
+| `wrangling` of a schema, `steps` of a join | dictionary with `tier1` (list) and optional `tier2` (list) | the two tiers are named | a flat list, `[]` |
+| `tier1`, `tier2`, `tier3` | **list** of step mappings | the order of operations is the logic | a dictionary |
+| `ingredients` | **list** of `{dataset_id: ...}` | the first one is the base of the join | a dictionary, bare ids |
+| `layers` | **list** of `{name, params, comment}` | layers are drawn in order | a dictionary |
+| a column-selector parameter that the action's schema declares `multi` | **list** of names | the schema says it takes several | a single value `[MINE]` (2 steps in 1 file today) |
+| an included fragment | the value itself | ADR-041 point 3 | a wrapper key that repeats the include key |
+
+**What the repository contains** (scan `tmpAI/recipe_format/container_forms.py`, all kinds of recipe file, verified):
+
+- all **307 input and 162 output field entries are dictionaries**: the deprecated string shorthand is gone;
+- **17 containers are in list form.** 7 are empty `[]` written where `{}` or `{tier1: []}` belongs. 10 have content: **3 `final_contract` lists** (`demo_abromics` a list of 5 one-key dictionaries; `universal_template` and the fixture `relational_audit` lists of names), **1 `output_fields` list of names** (`complex_template`), 1 flat `wrangling` (the legacy VIGAS file), and **5 flat `steps` in join fixtures** (the main engine refuses a non-empty flat list);
+- **the engine skips a list-form `final_contract` silently** (`orchestrator.py:59-62`), so the contracts of `demo_abromics`, `universal_template` and `relational_audit` are **not applied today**. Converting `demo_abromics` to a dictionary makes it an exclusive whitelist of 5 columns: its plots must be checked at migration (#78);
+- **33 fragments carry the wrapper key** that ADR-041 point 3 prohibits (18 `input_fields`, 4 `final_contract`, 4 `spec`, 3 `steps`, 2 `output_fields`, 2 `wrangling`); the loader removes it silently, which is the compatibility default of P2;
+- **two texts contradict ADR-041**: `rules_data_analysis_recipe_structure.md` section 8 ("the included plot file must contain a single `spec:` root key") and `data_analysis_recipe_data_contract_rules.md` 4.3 (types `categorical | numeric | string | boolean | date`, where `string` was removed on 2026-05-22). Both go in the documentation sweep (#79, rule file with your double confirmation);
+- **slugs must be unique (ADR-041), but nothing checks it:** PyYAML keeps the last of two identical keys without a message (verified). The loader therefore needs a duplicate-key detection (T10).
+
 ## 5. Fragments (`!include`)
 
 - `key: !include 'path/to/file.yaml'` puts the **content of the file exactly where the key is**. The path is relative to the folder of the recipe file `[MINE: verified in config_loader.py:55, nested includes use the same folder]`.
-- **The fragment holds the value itself, with no wrapper key.** A file whose only top-level key repeats the key it is included under (`input_fields:` inside the file included as `input_fields:`) is refused with "remove the wrapper line". Today the loader removes the wrapper silently (`config_loader.py:77-97`); that is a compatibility default. The ST22 recipe has 68 includes: 56 are bare and 12 are wrapped. `[MINE: bare is the majority form; the rule file's "a plot file must have a single `spec:` root key" is wrong for 19 of 23 plot files]`
+- **The fragment holds the value itself, with no wrapper key** `[DECIDED, ADR-041 point 3, ENFORCED 2026-04-20]`. A file whose only top-level key repeats the key it is included under (`input_fields:` inside the file included as `input_fields:`) is refused with "remove the wrapper line". Today the loader removes the wrapper silently (`config_loader.py:77-97`): a compatibility default that ADR-041 itself prohibits. The ST22 recipe has 68 includes: 56 are bare and 12 are wrapped; over all recipes 33 are wrapped (4c).
 - A missing file is an error naming the file.
 - Comments: see 5b.
 
@@ -304,6 +343,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | T07 | E | unquoted `on` (a `True` key) anywhere | quote it |
 | T08 | E | root `plots:` | move into a group |
 | T09 | E | profile `run`: no group or no plot | add one |
+| T10 | E | the same key twice in one mapping (PyYAML keeps the last silently); found by the loader, ADR-041 "slugs unique" | remove one |
 | F01 | E | fragment wrapper repeats the include key | remove the wrapper line |
 | F02 | E | fragment has the wrong type (list for a mapping) | |
 | I01 | E | `info` not a mapping, or `label` missing | add `label` |
@@ -324,18 +364,21 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | FD03 | E | `is_primary_key` | `is_entity_key` |
 | FD04 | E | `source_name` | `original_name` |
 | FD05 | E | `is_entity_key` not true/false; `categories` not a list of text | |
+| FD06 | E | a field entry is a bare string (`sample_id: categorical`) | `{type: categorical}` |
 | ST01 | E | step without `action` (shorthand), or not a mapping | |
 | ST02 | E | unknown action | did-you-mean |
 | ST03 | E | parameter not in the action's schema (`comment` is allowed on every step) | did-you-mean; `column`, `source`, `target_column`, `source_column` -> `columns` where that is the name |
 | ST04 | E | required parameter missing | |
 | ST05 | E | `join` or `join_filter` in tier2 | exists today |
 | ST06 | E | formula uses an operation outside the allowed list | package H |
+| ST07 | E | a parameter declared `multi` has a single value | write a list |
 | J01 | E | unknown key in a join (`info`, `output_fields`, ...) | replacement |
 | J02 | E | join without `label` | |
 | J03 | A | join without `description` | |
 | J04 | E | `ingredients` missing, empty, not `{dataset_id}` items, unknown id, repeated id | |
 | J05 | E | `right_ingredient` not in the join's ingredients; `on` and `left_on` both or neither | |
 | J06 | E | `final_contract` not a mapping, or names a column the collection lacks | |
+| J07 | E | a join's `steps` is a flat list or `[]`, or has no `tier1` | `{tier1: [...]}` |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
 | P01 | E | plot entry without `label` or `spec`; unknown key (`info`) | `description` |
@@ -409,7 +452,8 @@ All of these are compatibility defaults under P2. Each is removed in the package
 | Where | What it tolerates | Removed with |
 |---|---|---|
 | `config_loader.py:18-41,136` | unquoted `on:` repaired with a printed warning | C (T07) |
-| `config_loader.py:77-97` | fragment wrapper key removed silently | C (F01) |
+| `config_loader.py:77-97` | fragment wrapper key removed silently (ADR-041 point 3 prohibits it) | C (F01) |
+| `config_loader.py` (PyYAML `SafeLoader`) | a repeated key in a mapping keeps the last silently | C (T10): a loader that raises on a duplicate key |
 | `config_loader.py:141-211` | judges content: structure, renamed keys, source; only part of the rules | C (moves to `check_recipe`) |
 | `data_wrangler.py:60-61` | an empty `wrangling` of any shape means "no steps" | C (S06) |
 | `data_wrangler.py:132-147` | six spellings of the column selector, guessed in a fixed order and written back into the step | C (ST03). The presence check and `@category` stay but read the parameters the action's schema declares as column selectors. Exactly 14 steps in 10 recipe files rely on a wrong spelling today (probe). No ADR decided the aliases (ADR-034 is the diagnostic message); covered by your "no compatibility default" |
@@ -445,6 +489,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 | 13 | The ST22 recipe has R1-R4 pending (anchor without ResFinder, ...) | `recipe_review_st22_2026-11-11.md` 3b | descriptions of `ST22_Anchor`, `Summary_phenotype_length_fragmentation`, `MLST_with_metadata` are written for the table **as it is today** and marked to update with R1-R4 |
 | 14 | Writing the draft: two descriptions with `: ` in plain text made the file unloadable | the IDE and `yaml.load` both refused lines 222 and 241 of the first draft | section 10 now says "folded block"; the checker's T01 names the line; the draft parses and has no element without `label`/`description` |
 | 15 | Review of v0.1: my gallery variant refused `tier3` and renamed `name` to `label`; both would break the gallery (`submit_example` writes `tier3`; the index reads `name`) | `gallery_manager.py:59-63,138` | 6.9 follows the gallery code |
+| 16 | Your note on dictionaries: ADR-041 decides the form of fields (dictionary), tiers (list) and fragments (flat); the repository has 17 list-form containers, 33 wrapped fragments and 3 contracts the engine skips silently (`demo_abromics`, `universal_template`, `relational_audit`) | 4c; scan `container_forms.py`; `orchestrator.py:59-62` | 4c states the form of every container; checks S08, J06, J07, FD06, F01, T10; the `demo_abromics` contract is checked at migration |
 
 ## 13. My choices to confirm, and the open points
 
@@ -458,7 +503,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 8. **[OPEN] Package H, the allowed list of formula operations:** derived from all recipes and shown to you before it is enforced.
 9. **[MINE] Replacing the column-name aliases** (6.5, 11): the principle is yours (no compatibility default); no ADR decides the aliases either way. It changes `libs/transformer/.../data_wrangler.py`. I treat it as decided unless you object; it is part of #76 with its tests first.
 10. **[MINE] The type vocabulary** of four values (6.4).
-11. **[MINE] Fragment form:** bare value, wrapper refused (section 5).
+11. **[DECIDED, ADR-041] Fragment form:** bare value, wrapper refused (section 5); nothing to decide, only to apply.
 12. **[MINE] `original_name` stays allowed on output lists** (it is displayed by Blueprint, `wrangle_studio.py:1310`), so the 20 ST22 contract fragments need no mass edit.
 13. **[OPEN] `scan_parquet` and `sink_parquet`** have no `ui_schema`; the rules call them engine-internal, yet 4 transformer fixture steps use them to test them. Options: give them a schema and allow them (the fixtures stay recipes), or test them outside recipes. Recommendation: a schema, allowed, with a description that says they are for tests and advanced use.
 14. **[MINE, follows your "do not confound"] Plot-spec metadata.** The taxonomy is not in a pipeline plot (6.8); `description` and `info` go to the plot entry; a note goes in `comment`. This reverses my review recommendation of 2026-11-13 and the text of issue #66. The gallery options (D2) propose exactly what you suggested: one optional key, `taxonomy`, on the plot entry, checked against a dictionary of the gallery terms. Decide there.
@@ -475,6 +520,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 - Shape tests (TEST-SHAPES-1): the shipped recipes as fixtures for no join, no key, another key name, no population table, long format.
 - Registry oracle (AR2): for every action, the parameters its code reads equal its `ui_schema.params`.
 - **Gallery protection:** the committed `gallery_index.json` equals the index rebuilt from the bundles (exists); a bundle written by `GalleryManager.submit_example` (with a `tier3` list) passes the checker; every bundle renders its preview with `generate_previews.py`; every taxonomy value is inside the cheat sheet; the tag strip of each `example_meta.md` equals `info`.
+- **Container forms (4c):** one test per refused form (a list where a dictionary belongs and the reverse, a bare string field, a flat `steps`, a wrapper key); a duplicate key is found by the loader; a `final_contract` list is refused instead of skipped; after migration the `demo_abromics` plots still render with their 5-column contract.
 - **Format version:** one test per V01 to V04; every shipped recipe, template, gallery example, written recipe and forked recipe carries `format_version: 1`; `effective_run.yaml` records it.
 - **Migration tool:** a format-0 recipe (taken from the git history of the ST22 recipe) becomes a recipe that passes the checker with advices only; running it twice changes nothing; every `#` comment is kept; the list of manual steps is printed.
 - **Comments:** a recipe with `#` comments passes untouched; every writer (Blueprint save, bootstrapper, scaffolder, the migration) keeps the comments of a fragment it edits (a before/after text comparison).
