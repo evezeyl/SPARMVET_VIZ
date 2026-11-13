@@ -4,7 +4,7 @@
 **Status:** DRAFT. Nothing is built from it yet. It states how recipes will work and how each point was decided. How it was reached is in the issues (#73 and its children), in `.claude/design/outdated/` (the earlier drafts, with the findings of applying the format to the ST22 recipe) and in git.
 **Tags.** **DECIDED**: Eve decided it (date) or an ADR does. **PROPOSED**: my choice while writing, to confirm. **OPEN**: not decided, with a recommendation; all open points are listed in section 2.3. **CODE**: fixed by code that exists (verified, file:line).
 **Terms.** *Recipe* = a data analysis recipe, a YAML file. *Schema* = a data schema (one input table). *Collection* = a join, or a schema that is plotted directly. *Tier 1/2/3* = the steps that build, reshape and finally audit a table.
-**RULE** : the recipe describe the science (data science) - it must be correctly applied and correctly designed. What the recipe specifies must be done. Libraries that depends on it must be science complient. 
+**RULE** (Eve, 2026-11-13): the recipe describes the science (data science); it must be correctly designed and correctly applied. What the recipe specifies must be done. Libraries that depend on it must be science compliant.
 
 ## 1. How it works, on one page
 
