@@ -1,4 +1,4 @@
-# Recipe format specification (draft v0.6, 2026-11-13)
+# Recipe format specification (draft v0.7, 2026-11-13)
 
 **Written for:** Eve, to read and confirm. After that it is the base of the tests, of the checker (`check_recipe`), of the rule file and of the user documentation.
 **Status:** DRAFT. Nothing is built from it yet. It was written by applying the decisions of 2026-11-11/12 and your answers of 2026-11-13 to the code (read at file:line) and to every recipe file in the repository (scans in `tmpAI/recipe_format/`, scratch). The worked example is `1_test_data_ST22_dummy`: section 12 and `recipe_format_st22_draft.yaml`.
@@ -7,6 +7,8 @@
 **v0.2 (same day, after your review of v0.1):** (1) comments are specified (5b): `#` comments are free and kept, and an optional `comment` key exists; (2) the example variant (gallery) is now defined from what the gallery code reads and writes (6.9). It keeps `name`, the six-axis taxonomy, `data_path`, `wrangling` with `tier3` and its own file names, and it asks for no `label` or `description`; v0.1 refused `tier3` and renamed `name`, which would have broken the gallery; (3) the taxonomy is the gallery's and does not appear in a pipeline recipe (6.8); (4) the column-name aliases are replaced by what the action schemas already declare (6.5, 11); (5) science errors of recipes are fixed, not only described (15).
 
 **v0.3 (same day, after your gallery message):** (1) the comment key is **`comment`** (singular). Blueprint already writes it on steps, layers, groups and plots (BP-COMMENTS-1, ADR-082 Q4; `blueprint_handlers.py:376-378,402-404`, `join_designer.py:153`), and ADR-083 gives every layer a `comment`. My v0.2 had `comments` and a checker that would have refused what Blueprint saves. It is renamed and accepted on every step and every layer (5b, 6.5, 6.8). (2) Section 6.9 (gallery) is **withdrawn**: you want the gallery to follow the same spec, so the v0.2 text that kept its own words is wrong. The options, with pros and cons, are in `recipe_format_gallery_options_2026-11-13.md`; 6.9 is rewritten when you choose.
+
+**v0.7 (same day, after your message on dictionaries, identical keys and the string type):** (1) a wrong container form is refused with a message that shows the **corrected text**, in the app and in the tests; this is added to the HOME plan and the tasks so it is not missed (4c). (2) "Identical keys": a key must be unique inside one mapping, so the same slug in every table's own `input_fields` is correct; the real hazards are a repeated key inside one mapping (T10) and a column name present in both tables of a join, which the engine renames silently to `..._right` (`QC_Reads_Anchor` has `total_reads_right` today): new check J08. (3) The type vocabulary: the record gives only "deprecated alias" as the reason `string` was removed; four lists disagree and the ingestor does not cast `utf8`; to be read from one place (decided), content to decide (6.4, point 10).
 
 **v0.6 (same day, after your note on dictionaries and reuse):** (1) you remembered correctly: **ADR-041 (ENFORCED 2026-04-20)** already decides that keyed definitions are dictionaries, ordered logic is a list and fragments are flat. v0.1 to v0.5 never stated the form of each container; section 4c does, with what the repository really contains (17 list-form containers, 33 wrapped fragments, and 3 contracts that the engine silently skips). (2) Duplicate keys are a gap: PyYAML keeps the last silently, so the loader must detect them (T10). (3) Section 0b gains the candidates that may move to `utils` (your note; nothing moved). The Dockerfile is not ready and nothing is deployed: it stays a later task.
 
@@ -62,7 +64,7 @@ This file then becomes history (marked HISTORICAL by the rule `rules_legacy_mana
 
 **Things that may move to `utils` (your note; nothing is moved, there is no overview yet).** `utils` is where a primitive goes when two libraries need it (`rules_test_lab.md` 2c), so this is expected as the picture clears. Candidates I met while reading, with evidence:
 
-1. **The field-type vocabulary** lives in three places: `MetadataValidator.DTYPE_MAP` (`transformer`, `metadata_validator.py:21-37`), the cast in the ingestor (`ingestor.py:162-170`) and the upload path of the app (`data_import_handlers.py:273`). One list in the specification file, read by all.
+1. **The field-type vocabulary** lives in three places: `MetadataValidator.DTYPE_MAP` (`transformer`, `metadata_validator.py:21-37`), the cast in the ingestor (`ingestor.py:162-170`) and the upload path of the app (`data_import_handlers.py:273`). **[DECIDED 2026-11-13: unify, read in one place.]** One list in the specification file, read by all.
 2. **The plot-spec key sets** `_CANONICAL_SPEC_KEYS` and `_VALID_PLOT_DEFAULTS_KEYS` (`viz_factory/plot_config_resolver.py:64-74`) are facts about the recipe format. They belong in the specification file; `viz_factory` reads them from `utils`.
 3. **Reading a step container** is written four times: `DataWrangler._resolve_tier` (`transformer`), `tier2_steps` (`app/modules/cache_keys.py:90`), `_step_blocks` (the validator) and inline in the orchestrator. One helper in `utils`; the recipe graph (ADR-099 16(d)) absorbs it.
 4. **The shape of a `ui_schema`** (label, category, context, tags, params with widgets, description, example, wraps) is described by identical docstrings in two registries (`transformer/actions/base.py`, `viz_factory/registry.py`) and read by `blueprint_arch.schema_registry` and `help_registry`. Define the shape once in `utils` (a small type and a check); each library keeps its content.
@@ -191,6 +193,28 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 - **two texts contradict ADR-041**: `rules_data_analysis_recipe_structure.md` section 8 ("the included plot file must contain a single `spec:` root key") and `data_analysis_recipe_data_contract_rules.md` 4.3 (types `categorical | numeric | string | boolean | date`, where `string` was removed on 2026-05-22). Both go in the documentation sweep (#79, rule file with your double confirmation);
 - **slugs must be unique (ADR-041), but nothing checks it:** PyYAML keeps the last of two identical keys without a message (verified). The loader therefore needs a duplicate-key detection (T10).
 
+**The message carries the correction** `[DECIDED 2026-11-13]`. A recipe must be a dictionary where ADR-041 says so, and the program says what to write instead, in the app and in the tests. Each container-form check generates the corrected text from what it found:
+
+| Found | The message shows (generated) |
+|---|---|
+| `final_contract: [sample_id, value_col]` | `final_contract` is a dictionary of columns. Write: `final_contract: {sample_id: {}, value_col: {}}` |
+| `final_contract: [{sample_id: {type: categorical}}, {...}]` (a list of one-key dictionaries) | the same dictionaries merged: `final_contract: {sample_id: {type: categorical}, ...}` |
+| `output_fields: []` | `output_fields: {}` |
+| `steps: [{action: join, ...}]` (a flat list) | `steps: {tier1: [{action: join, ...}]}` |
+| a wrapper line `input_fields:` inside the included file | remove the line `input_fields:` and its indentation; the file holds the fields themselves |
+| `sample_id: categorical` | `sample_id: {type: categorical}` |
+| a repeated key | names the key and both lines; remove or rename one |
+
+It shows in HOME's load gate (the reason of the rejection), in Blueprint's Validate, in the import screen and in the scripts, because they all call the same adapter (0b). Each check has a test that asserts the message **contains the corrected text** (section 14), so the suggestion cannot go stale. The migration tool applies the same corrections mechanically (4b).
+
+**Dictionaries in the file, lists made by the code.** The file keeps the dictionary; the code makes the list it needs (`list(final_contract)`, the keys of `input_fields`). No recipe writes a list of names.
+
+**Identical keys** `[verified]`. A key must be unique **inside one mapping** (ADR-041: slugs unique in their context). The same slug in different mappings is normal and correct: `sample_id` is in the `input_fields` of every table (66 field dictionaries in the repository, each its own mapping) and is a value in every row of a long table. Three things are different, and they are the real hazards:
+
+1. **A repeated key inside one mapping.** PyYAML keeps the last silently (T10).
+2. **A column name present in both tables of a join that is not a join key.** The engine calls `lf.join(...)` without a suffix (`joins.py:56-58`), so Polars renames the second column to `name_right` without a message. `QC_Reads_Anchor` has `total_reads_right` today (ST22 baseline). The join keys themselves (`sample_id` in every table) are the key family and are fine. New check **J08** (advice, suggestion: rename or drop one of the two before the join). It needs the recipe graph (columns per node), so it comes with `RECIPE-GRAPH-UTILS-1`.
+3. **Steps.** A T1 repeats the same action (three `join` steps in `QC_Reads_Anchor`), so ordered logic cannot be keyed by the action name. It stays a list (ADR-041 point 2). If you meant steps to be a dictionary too, each would need its own id as key (point 18 of section 13).
+
 ## 5. Fragments (`!include`)
 
 - `key: !include 'path/to/file.yaml'` puts the **content of the file exactly where the key is**. The path is relative to the folder of the recipe file `[MINE: verified in config_loader.py:55, nested includes use the same folder]`.
@@ -261,7 +285,19 @@ Checks: the id exists; that table carries an entity key (6.4). Without `entity` 
 | `categories` | o | list of text; a step can then select `@category` (`data_wrangler.py:31-48`) |
 
 `{}` in an output list means "keep this column as it is" (your fragments use it).
-**Type vocabulary** `[MINE]`: today three lists overlap (`metadata_validator.py:21-37` accepts `int`, `integer`, `float`, `bool`, `boolean`, PascalCase), the ingestor casts only three of them (`ingestor.py:162-170`), and `i64` (4 fixtures) is accepted by the validator and ignored by the ingestor. One list of four, each handled the same way by ingestion, by the upload check and by the contract.
+**Type vocabulary: to be read from one place `[DECIDED to unify; content OPEN, point 10]`.** Four lists disagree today. (1) `rules_data_analysis_recipe_structure.md` section 9 lists `categorical` and `utf8` only. (2) The user docs (`Standards_yaml.qmd`) list `categorical`, `numeric`, `date`, `boolean`. (3) The ingestor casts `numeric` to Float64, `categorical` or `string` to String, `date` to Date, and **nothing else** (`ingestor.py:162-170`). (4) `MetadataValidator.DTYPE_MAP` accepts 14 names (`metadata_validator.py:21-37`). **Verified by running the ingestor** on a column of digits: `categorical` and `string` give String; `utf8`, `boolean` and `i64` are **not cast** (the digits stay Int64), so `utf8` does not force text; and `string` is accepted by the ingestor but refused by `enforce_schema`. 4 fixtures declare `i64`, which nothing handles.
+
+**Why `string` was removed.** The record says only "deprecated aliases" (`LEGACY-TYPE-ALIASES-1`, the Phase 34 legacy-removal sprint, 2026-05-22: `tasks_archive_2026-05-22.md:113`, commit `125963cf`; the policy is "one authoritative way to do each thing", `rules_legacy_management.md`). No ADR gives a deeper reason. What the files show: all 6 recipes that used `string` were migrated to `categorical`, so in practice it meant "a category"; and the rule wants the author to say whether a text column is a **group** (`categorical`: identifiers, labels, repeating values, drawn as discrete groups, joined as text; `sample_id` must be one, so that digits become text and joins match) or **free text** (`utf8`). The reason is therefore my inference, not a recorded decision.
+
+**Options for the content** (the vocabulary is one list in the specification file, each entry with a one-line meaning that the error message quotes):
+
+| Option | Pros | Cons |
+|---|---|---|
+| **A. Keep four** (`categorical`, `utf8`, `numeric`, `date`); fix the ingestor so `utf8` is cast to text; the message for `string` quotes the two meanings **[recommended]** | the author states the intent; no new names; smallest change | `utf8` is the name of an encoding, not a word a scientist chooses |
+| B. Rename `utf8` to `text` | a plain word; the format changes once anyway (4b) | one more rename; `utf8` is used in 1 recipe |
+| C. Restore `string` for free text and drop `utf8` | a familiar word | the old doubt returns: is a `string` column a category? |
+| D. Add `boolean` | the docs list it | no recipe uses it, the ingestor ignores it; add it only with a real cast and a real use |
+
 
 ### 6.5 Steps and tiers
 
@@ -329,7 +365,7 @@ v0.2 kept the gallery's own file shape and words. You asked for the opposite: th
 
 ## 8. The check catalogue (one row = one test)
 
-Severity: **E** error (HOME refuses; Blueprint reports and does not block building), **A** advice (shown, never blocks). IDs are permanent; messages are generated from this table with the replacement of section 9.
+Severity: **E** error (HOME refuses; Blueprint reports and does not block building), **A** advice (shown, never blocks). IDs are permanent; messages are generated from this table with the replacement of section 9 and, for a wrong container form, the corrected text (4c).
 
 | ID | Sev | Trigger | Fix named in the message |
 |---|---|---|---|
@@ -379,6 +415,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | J05 | E | `right_ingredient` not in the join's ingredients; `on` and `left_on` both or neither | |
 | J06 | E | `final_contract` not a mapping, or names a column the collection lacks | |
 | J07 | E | a join's `steps` is a flat list or `[]`, or has no `tier1` | `{tier1: [...]}` |
+| J08 | A | a column name in both ingredients of a join, not a join key: the engine renames the second `name_right` silently (needs the recipe graph) | rename or drop one before the join |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
 | P01 | E | plot entry without `label` or `spec`; unknown key (`info`) | `description` |
@@ -490,6 +527,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 | 14 | Writing the draft: two descriptions with `: ` in plain text made the file unloadable | the IDE and `yaml.load` both refused lines 222 and 241 of the first draft | section 10 now says "folded block"; the checker's T01 names the line; the draft parses and has no element without `label`/`description` |
 | 15 | Review of v0.1: my gallery variant refused `tier3` and renamed `name` to `label`; both would break the gallery (`submit_example` writes `tier3`; the index reads `name`) | `gallery_manager.py:59-63,138` | 6.9 follows the gallery code |
 | 16 | Your note on dictionaries: ADR-041 decides the form of fields (dictionary), tiers (list) and fragments (flat); the repository has 17 list-form containers, 33 wrapped fragments and 3 contracts the engine skips silently (`demo_abromics`, `universal_template`, `relational_audit`) | 4c; scan `container_forms.py`; `orchestrator.py:59-62` | 4c states the form of every container; checks S08, J06, J07, FD06, F01, T10; the `demo_abromics` contract is checked at migration |
+| 17 | A column name in both tables of a join, not a join key, is renamed `..._right` silently | `joins.py:56-58`; ST22 baseline: `QC_Reads_Anchor.total_reads_right` | check J08 (with the recipe graph); `QC_Reads_Anchor` looked at by the data-scientist pass at migration |
 
 ## 13. My choices to confirm, and the open points
 
@@ -502,7 +540,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 7. **[OPEN] Duplicate forms in the plot specification** (`facet_by` twice; `filters` against the T3 list): left to Blueprint's owner, listed in 6.8.
 8. **[OPEN] Package H, the allowed list of formula operations:** derived from all recipes and shown to you before it is enforced.
 9. **[MINE] Replacing the column-name aliases** (6.5, 11): the principle is yours (no compatibility default); no ADR decides the aliases either way. It changes `libs/transformer/.../data_wrangler.py`. I treat it as decided unless you object; it is part of #76 with its tests first.
-10. **[MINE] The type vocabulary** of four values (6.4).
+10. **[DECIDED to unify, OPEN content] The type vocabulary** (6.4): one list in the specification file, read by the ingestor, the validators and the upload path. The content is yours: options A to D in 6.4 (recommended A).
 11. **[DECIDED, ADR-041] Fragment form:** bare value, wrapper refused (section 5); nothing to decide, only to apply.
 12. **[MINE] `original_name` stays allowed on output lists** (it is displayed by Blueprint, `wrangle_studio.py:1310`), so the 20 ST22 contract fragments need no mass edit.
 13. **[OPEN] `scan_parquet` and `sink_parquet`** have no `ui_schema`; the rules call them engine-internal, yet 4 transformer fixture steps use them to test them. Options: give them a schema and allow them (the fixtures stay recipes), or test them outside recipes. Recommendation: a schema, allowed, with a description that says they are for tests and advanced use.
@@ -510,6 +548,8 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 15. **[CODE] The `comment` key** exists (BP-COMMENTS-1) and is accepted on every step and layer. What is new and to confirm: `comment` also on `info`, a data schema, a join (5b).
 16. **[MINE] `format_version`** (4b): the name, an integer, one version read at a time, the migration tool. Say if you prefer another name (`spec_version`, `recipe_format`) or a different value form.
 17. **[OPEN] One place for the rules** (section 0 and gallery options D3): make the specification a data file, so the allowed keys, types, vocabularies (gallery terms included), renames and the version live in one file from which the checker, the filter panels and the docs read. Recommended; it shapes how #76 is built, so it should be decided before the checker starts.
+18. **[OPEN, small] Steps, ingredients and layers stay lists** (ADR-041 point 2: the order is the logic). I read "dictionaries can be transformed to lists by the code" as being about the keyed containers (fields, contracts). If you meant ordered things too (each step keyed by its own id, the order being the order in the file), say so. For: a stable address for audit, undo and the node popup. Against: YAML does not promise the order of a mapping (PyYAML keeps it), a repeated action needs an invented key, every step list of every recipe changes, and ADR-041 point 2 would be superseded. Recommendation: keep lists.
+19. **[OPEN] The level of J08** (the silent `_right` suffix): advice (recommended: it changes a name, not a number, unless a plot uses the suffixed column) or error.
 
 ## 14. Tests that come out of this file (written first, they fail on today's code)
 
@@ -521,6 +561,8 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 - Registry oracle (AR2): for every action, the parameters its code reads equal its `ui_schema.params`.
 - **Gallery protection:** the committed `gallery_index.json` equals the index rebuilt from the bundles (exists); a bundle written by `GalleryManager.submit_example` (with a `tier3` list) passes the checker; every bundle renders its preview with `generate_previews.py`; every taxonomy value is inside the cheat sheet; the tag strip of each `example_meta.md` equals `info`.
 - **Container forms (4c):** one test per refused form (a list where a dictionary belongs and the reverse, a bare string field, a flat `steps`, a wrapper key); a duplicate key is found by the loader; a `final_contract` list is refused instead of skipped; after migration the `demo_abromics` plots still render with their 5-column contract.
+- **Messages with the correction (4c):** for each container-form check the message contains the generated corrected text, compared with an expected string; HOME's gate, Blueprint's Validate and the import screen show the same message (one adapter).
+- **Types (6.4):** a table of declared type to resulting dtype, run through the ingestor for every type of the vocabulary (including digits declared as text); each refused name gives a message that quotes the meanings; no list of types exists in code (a grep test).
 - **Format version:** one test per V01 to V04; every shipped recipe, template, gallery example, written recipe and forked recipe carries `format_version: 1`; `effective_run.yaml` records it.
 - **Migration tool:** a format-0 recipe (taken from the git history of the ST22 recipe) becomes a recipe that passes the checker with advices only; running it twice changes nothing; every `#` comment is kept; the list of manual steps is printed.
 - **Comments:** a recipe with `#` comments passes untouched; every writer (Blueprint save, bootstrapper, scaffolder, the migration) keeps the comments of a fragment it edits (a before/after text comparison).
