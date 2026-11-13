@@ -41,9 +41,25 @@ def _normalise_yaml_boolean_keys(config, data_analysis_recipe_path: str) -> None
             _normalise_yaml_boolean_keys(item, data_analysis_recipe_path)
 
 
+def project_root_of(yaml_path) -> str:
+    """The folder an `!include` may not leave: the nearest ancestor of the recipe with a pyproject.toml, else the recipe's folder."""
+    folder = os.path.dirname(os.path.realpath(str(yaml_path)))
+    probe = folder
+    while True:
+        if os.path.isfile(os.path.join(probe, "pyproject.toml")):
+            return probe
+        parent = os.path.dirname(probe)
+        if parent == probe:
+            return folder
+        probe = parent
+
+
 class ConfigManager:
-    def __init__(self, yaml_path):
+    def __init__(self, yaml_path, include_root=None):
         yaml_path = str(yaml_path)
+        # An `!include` may reach anything inside this folder and nothing outside it (check T11): a recipe from
+        # outside must not read any file the user can read.
+        include_root = os.path.realpath(str(include_root)) if include_root else project_root_of(yaml_path)
         _include_errors: list[DeploymentError] = []
         # Every file read to build raw_config: the entry file first, then each !include
         # target in the order it was read. The cache chain (ADR-089) hashes this file set
@@ -53,6 +69,20 @@ class ConfigManager:
         def include_constructor(loader, node):
             included_file = loader.construct_scalar(node)
             filename = os.path.join(os.path.dirname(yaml_path), included_file)
+
+            resolved = os.path.realpath(filename)
+            if os.path.isabs(included_file) or not (resolved == include_root or resolved.startswith(include_root + os.sep)):
+                _include_errors.append(DeploymentError(
+                    component="ConfigManager",
+                    problem=(f"!include target is {'an absolute path' if os.path.isabs(included_file) else 'outside the project'}: "
+                             f"'{included_file}'"),
+                    location=f"{yaml_path} — !include {included_file}",
+                    fix=(f"Put the fragment inside the project ('{include_root}') and write its path relative to the recipe "
+                         f"(check T11)."),
+                    who="developer",
+                    reference=_REF,
+                ))
+                return {}
 
             try:
                 with open(filename, 'r') as f:

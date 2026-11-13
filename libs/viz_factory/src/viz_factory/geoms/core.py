@@ -1308,6 +1308,28 @@ def handle_stat_unique(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + stat_unique(**spec)
 
 
+def _function_from_string(text: str):
+    """A recipe's function string (a math function name or a lambda over numbers), checked, then evaluated with numpy maths only.
+
+    Before, any string was passed to eval and an unknown name only printed a warning and left the layer out
+    (spec section 15; check ST06).
+    """
+    import math
+    import numpy as np
+    from utils.errors import VisualizationError
+    from utils.formula_check import MATH_CONSTANTS, MATH_FUNCTIONS, function_string_problems
+
+    problems = function_string_problems(text)
+    if problems:
+        raise VisualizationError(
+            "stat_function: the function string is not allowed. " + " ".join(problems),
+            tip="Fix: write a lambda of one argument over numbers, for example lambda x: x * 2")
+    names = {name: getattr(np, name) for name in MATH_FUNCTIONS}
+    names.update(MATH_CONSTANTS)
+    names.update({"np": np, "math": math})
+    return eval(compile(text.strip(), "<stat_function>", "eval"), {"__builtins__": {}, **names})  # noqa: S307
+
+
 @register_plot_component("stat_function", ui_schema={
     "label": "Stat: function (plot a math function)",
     "category": "annotation",
@@ -1323,20 +1345,14 @@ def handle_stat_unique(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
     "description": "Evaluate an arbitrary function over the x range; use to overlay a theoretical curve (e.g. normal distribution, growth model) on data.",
-    "yaml_example": "layers:\n  - name: stat_function\n    params:\n      fun: dnorm",
+    "yaml_example": "layers:\n  - name: stat_function\n    params:\n      fun: \"lambda x: 2 * x\"",
 })
 def handle_stat_function(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    """Statistical function layer. 'fun' must be a callable; string lambdas are evaluated."""
+    """Statistical function layer. 'fun' is a callable, or a string from a recipe that is checked before it is evaluated."""
     spec = dict(spec)
     fun = spec.get("fun")
     if isinstance(fun, str):
-        try:
-            # Safe for developer-controlled data analysis recipes only
-            spec["fun"] = eval(fun)
-        except Exception as e:
-            print(
-                f"Warning: stat_function could not evaluate 'fun' string: {e}")
-            return p
+        spec["fun"] = _function_from_string(fun)
     return p + stat_function(**spec)
 
 

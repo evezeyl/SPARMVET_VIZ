@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import polars as pl
+from utils.formula_check import evaluate_formula
 from utils.id_patterns import PatternSuggestion, apply_pattern, suggest_regex
 from .data_structures import IDPair, MatchResult, IdTransformation
 from .matcher import exact_match, fuzzy_match_batch
@@ -234,9 +235,8 @@ def apply_recode_step(
         elif action == "lowercase":
             df = df.with_columns(pl.col(column).str.to_lowercase())
         elif action == "mutate":
-            # expression is a Polars expression string; pl and column name are in scope
-            expression = step.get("expression", "")
-            expr = eval(expression, {"pl": pl, "col": column})  # noqa: S307
+            # expression is a Polars expression string, checked (utils.formula_check) before it runs: only pl is in scope
+            expr = evaluate_formula(step.get("expression", ""))
             df = df.with_columns(expr.alias(column))
         elif action == "drop_duplicates":
             df = df.unique(subset=[column], keep="first")
