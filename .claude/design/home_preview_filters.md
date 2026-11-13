@@ -16,7 +16,7 @@ never saved, never exported and never changes a plot. To change what a plot show
 
 ## 2. Where it lives [to build]
 
-- The header strip becomes **Exploration**: one toggle **Data: Raw (T1) | Result (T2)**. The old "Plot to show"
+- The header strip becomes **Exploration**: one selector **Data: T1 | T2 | T3** of the open plot (decided 2026-11-13, Eve; replaces "Raw (T1) | Result (T2)": "Raw" meant T1, the data after the recipe's first steps, not the original file; T3 is the Result, the data the plot reads; the original source files are the roots of the lineage and are shown in the node popup). The old "Plot to show"
   choice goes (the plot is always the recipe's Result plot) and so do the grey explanations under the
   selectors: more space.
 - **My view and Compare leave the strip** and live in audit mode.
@@ -32,9 +32,9 @@ never saved, never exported and never changes a plot. To change what a plot show
 
 | Item | Behaviour |
 |---|---|
-| Row filter | Hides rows in the **data table** of the stage you are on (Raw = T1, Result = T2). [built for the table] |
+| Row filter | Hides rows in the **data table** of the stage you are on (T1, T2 or T3). [built for the table] |
 | Column selector | Hides columns in the **data table** only. [built] |
-| Plot | **Not changed.** Exploration has **one plot: the Result, immutable** (the recipe's plot), always shown whatever the Data toggle says (Raw or Result); the toggle only changes the table. Decided 2026-11-12 (Eve), replacing "Raw has no plot (NA)". [to build; today Apply also filters the My view plot] |
+| Plot | **Not changed.** Exploration has **one plot: the Result, immutable** (the recipe's plot), always shown whatever the Data selector says (T1, T2 or T3); the selector only changes the table. Decided 2026-11-12 (Eve), replacing "Raw has no plot (NA)". [to build; today Apply also filters the My view plot] |
 | Data files | Never written; the filter runs on a lazy copy at render time. [built] |
 | Export | Never exported. [built] |
 
@@ -44,7 +44,7 @@ never saved, never exported and never changes a plot. To change what a plot show
 2. **Apply**: staged rows become the *applied* list, shown in the table. [built]
 3. **Trash** on a row removes it from staged and applied at once. [built]
 4. **Reset** clears both. [built]
-5. **A change of Data view (Raw <-> Result) clears all preview filters and column choices**, with a message
+5. **A change of Data view (T1, T2, T3) clears all preview filters and column choices**, with a message
    ("3 preview filters cleared, you changed view"). [to build]
 6. **A change of recipe** clears them. [to build]
 7. Never saved in sessions, never exported. [built]
@@ -73,7 +73,7 @@ Categories: `= equals`, `≠ not equal`, `∈ any of`, `∉ none of`. Numbers: `
 
 ## 7. Feedback to the user
 
-- Badge on the table: "Viewing: Raw / Result" plus "N preview filter(s) on, not saved". [built]
+- Badge on the table: "Viewing: T1 / T2 / T3" plus "N preview filter(s) on, not saved". [built]
 - The row count line ("Viewing rows a through b of N") is the user's check that a filter worked. [built]
 - **Export and session in Exploration only (decided 2026-11-12, Eve, P4a).** The configuration offers the same export as with audit (publication bundle, reproducibility add-on, Import, ADR-097) with the audit parts absent. Preview filters and hidden columns are never saved, so they cannot be exported: the export text says "The export contains the Result plots and their data. Filters you used to look at the data are not exported." A session holds only the recipe and data reference (the contract 7.1 and 7.2 are stale on this and on the recipe files in the standard bundle: to correct in stage 3).
 - **Notice in the Filters panel (decided 2026-11-12, Eve; to build).** It never mentions a function that the configuration does not have.
