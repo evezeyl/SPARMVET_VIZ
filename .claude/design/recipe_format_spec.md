@@ -83,7 +83,7 @@ analysis_groups:
 | 11 | Every recipe has a **`format_version`** that the checker matches against the specification; the gallery has it too | Eve 2026-11-13 (idea from her review with another agent); name and form proposed (O3) |
 | 12 | One **checker in `libs/utils`** for every user of recipes (HOME, Blueprint, importer, gallery, scripts, tests) | ADR-099 16(g); verified against the layer rules (section 14) |
 | 13 | **Containers follow ADR-041** (keyed things are dictionaries, ordered logic is a list, fragments are flat). A wrong form is refused with a message that shows the corrected text, in the app and in the tests; this is also in the HOME plan | ADR-041; Eve 2026-11-13 |
-| 14 | **The form follows what depends on it** (section 5): steps stay lists, and a step that needs a name carries an `id` inside the list item (optional or required: O5); `final_contract` key order **is** the column order; the tab order **is** the key order of `analysis_groups` and `plots` | Eve 2026-11-13 |
+| 14 | **The form follows what depends on it** (section 5): steps stay lists, authors write no step name, and the app marks the steps it inserts with an `id` (O5); `final_contract` key order **is** the column order; the tab order **is** the key order of `analysis_groups` and `plots` | Eve 2026-11-13 |
 | 15 | The **field-type vocabulary is read in one place**; its content is open (O2) | Eve 2026-11-13 |
 | 16 | **The registries are fixed** (widgets for lists and dictionaries, corrected declarations), and **plot arguments are checked**: plot instructions are part of the recipe (section 8; issue #87) | Eve 2026-11-13 |
 | 17 | Errors of a recipe from a data-science point of view are **fixed**, not documented (section 17) | Eve 2026-11-11/12 |
@@ -107,7 +107,7 @@ analysis_groups:
 | O2 | **Type vocabulary** (section 7.4): which types exist | A: keep the four (`categorical`, `utf8`, `numeric`, `date`) and make the ingestor cast `utf8` to text | #84 |
 | O3 | **`format_version`**: the name and the form (an integer) | keep | #83 |
 | O4 | **`profile` or `mode`** for run/build/gallery. The HOME stage-2 draft writes `mode`; HOME already uses "mode" for Exploration/Audit | `profile`; needs both sessions to agree | #76, HOME |
-| O5 | **Step `id`**: optional or required on every step; the prefix `audit_` for ids the app writes (it is what the audit mode needs to mark and remove its own steps) | optional; `audit_` | #85 |
+| O5 | **Step marker written by the app**: the audit mode must mark the steps it inserts, to remove or undo exactly those. Proposed: the key `id` with the prefix `audit_`; the HOME session decides the final name. **Authors never write it** and the author-facing parts of the format do not offer it (Eve asked 2026-11-13: an `id` that authors do not use would confuse) | an app-written `id` with `audit_`; the HOME session confirms the name | #85, HOME |
 | O6 | **J08**, the silent `_right` column suffix when two joined tables share a non-key column: advice or error | advice (it changes a name, not a number) | #76 |
 | O7 | **Schema `output_fields`** are checked by the data check but never applied | keep as a checked declaration and say so in the rule file | section 7.3 |
 | O8 | **The two legacy files** (`VIGAS_VirulenceFinder.yaml`, `Virulence_genes_APEC_...yaml`): follow the format or remove | no reader found; confirm by searching the deployment configuration, then remove | #78 |
@@ -137,6 +137,7 @@ HOME rejects, Blueprint reports and never blocks building `[DECIDED, 5a-19]`.
 | Kind | Files | Profile | Notes |
 |---|---|---|---|
 | Pipeline recipes, templates, retest scenarios | 7 + 5 + 4 | `run` | the retest scenarios that are faulty on purpose keep their one fault and must be otherwise valid |
+| Viz-factory test recipes | 194 in `libs/viz_factory/tests/test_data` (one per plot component, the 1:1:1 evidence loop of `rules_viz_factory.md` 3) and 1 in `libs/viz_gallery/tests/data` | `run` | today in the plot engine's compact shape (`plots:` and `data_path:` at the top; 193 of 194): each becomes a standard recipe like a gallery example; one conversion tool serves them and the gallery bundles; found by Eve's question "do the library tests have recipes too?" (#89) |
 | Transformer test recipes | 68 in `libs/transformer/tests/data` | `build` | the flat form (`wrangling:` and `input_fields:` at the top) is refused: each becomes one schema with its `source` path. The runners already prefer a command-line data path to the recipe's (`rules_asset_scripts.md` 4) |
 | Legacy files | 2 | `build` | O8 |
 | Gallery bundles | 34 | `gallery` | section 9 |
@@ -319,33 +320,33 @@ The vocabulary is one list in the specification file, each entry with a one-line
 ### 7.5 Steps, tiers and step ids
 
 - A **step list** is `{tier1: [...], tier2: [...]}`. It appears as `wrangling` (schema), `steps` (join) and, at the plot entry, `steps: {tier3: [...]}` (7.7). All three are written the same way; an empty list means "equal to the previous node". `tier1` is required except at the plot entry; an unknown tier name is an error. `[DECIDED, 5a-15]`
-- A **step** is a mapping with `action` (a registered name), exactly the parameters in that action's `ui_schema.params`, and optionally `id` and `comment`; neither is a parameter and neither is passed to the action. A missing required parameter, an unknown parameter and an unknown action are errors with a did-you-mean by spelling.
+- A **step** is a mapping with `action` (a registered name), exactly the parameters in that action's `ui_schema.params`, and optionally `comment`, and `id` when the app wrote it (below); neither is a parameter and neither is passed to the action. A missing required parameter, an unknown parameter and an unknown action are errors with a did-you-mean by spelling.
 - **No guessing between spellings of a parameter.** Before a step runs, the wrangler looks for "which columns does this step work on" in six spellings in a fixed order (`columns`, `column`, `source`, `source_column`, `target_column`, and the boolean key that an unquoted `on:` becomes), expands `@category` names, checks the columns exist (ADR-034's friendly message) and **writes the result back into the step as `columns`** (`data_wrangler.py:132-147`). So a step that says `column:` for an action whose schema says `columns` works by accident. What goes is the guessing, not the presence check and not `@category`: those read **the parameters that the action's own schema declares as column selectors** (71 parameters in 59 of 65 actions). A misspelled parameter is then reported before the run with the right name (ST03). Exactly 14 steps in 10 recipe files rely on a wrong spelling today. `[PROPOSED mechanism, O15]`
 - `join` and `join_filter` only in tier1 (ST05). `join_filter` has no `how`; it is always inner (`joins.py`), so `how` on it is an error.
 - `'on'` is quoted. An unquoted `on:` becomes the boolean key `True`; today the loader repairs it with a printed warning (`config_loader.py:18-41`). It is an error (T07).
 - Formulas (`mutate` `expression`, plot function strings) may use only an allowed list of Polars operations by function name (O10).
 
-**Step ids** `[DECIDED direction; details O5]`. Steps stay lists. A step may carry an **`id`** (text), unique in its list (ST08):
+**Step ids: written by the app, not by authors** `[DECIDED direction; the name is O5]`. Steps stay lists. A step has no name in the author's recipe: nothing in a recipe refers to a step, so an author writes no `id`. The key exists for one reason: the audit mode inserts steps into the audit copy of a recipe and must be able to **mark** them (the origin marker), to **remove or undo exactly those**, and to open the right node popup. So a step the app inserts carries `id: audit_<unique suffix>`, and the invariant "the copy minus its marked steps equals the original" compares those ids.
 
 ```yaml
 tier1:
-  - id: join_quast                 # optional
-    action: join
+  - action: join                          # the author's step: no id
     right_ingredient: Quast
     'on': sample_id
     comment: reads quality and assembly quality side by side
-  - {action: join, right_ingredient: Bracken, 'on': sample_id}     # no id: fine
+  - id: audit_7f3a                        # inserted by the audit mode
+    action: filter_eq
+    column: Country
+    value: Norway
 ```
 
-*What an id is for:* a stable name for one step. The audit mode uses it to **mark the steps it inserted** (the origin marker), to **remove or undo exactly that step**, to open the right node popup, and the checker uses it in messages that must say which step failed when an action repeats (11 of the 74 non-empty step lists repeat an action; `QC_Reads_Anchor` has three `join` steps; 148 steps in those lists at least). The audit only adds steps and removes its own, so the author's steps need no id; an author may give one. No action has a parameter named `id` (checked), so there is no clash.
-
-Rules: (1) `id` is text and unique inside its list (ST08). (2) A step the app inserts **always** has an id: `audit_` plus a unique suffix; the invariant "the copy minus its marked steps equals the original" compares ids. (3) `id` and `comment` are **not part of the hash** (renaming or commenting a step must not rebuild a table); the order is. (4) The list is the order, so nothing depends on the order of a mapping.
+Rules: (1) `id` is accepted because the audit copy contains it; it is text and unique inside its list (ST08). The checker is not obliged to accept an `id` in a recipe that is not an audit copy; whether it warns is decided with the audit mode. (2) `id` and `comment` are **not part of the hash** (a mark or a note must not rebuild a table); the order is. (3) The list is the order, so nothing depends on the order of a mapping. (4) Error messages name a step by its place ("step 3 of `tier1` of `QC_Reads_Anchor`, `join`"), never by an id the author did not write. Why not the action name as the key: a table repeats actions (11 of the 74 non-empty step lists repeat one; `QC_Reads_Anchor` has three `join` steps; 148 steps in those lists at least). No action has a parameter named `id` (checked), so there is no clash.
 
 | Option | Pros | Cons |
 |---|---|---|
 | A. Steps as an ordered dictionary of ids | an id by construction | all three dangers (silent duplicates, sorted hashes, sorting writers) become real for every step; every step needs a name; 6 writers and Blueprint's form change; 148+ steps migrate; ADR-041 point 2 superseded |
-| **B. A list, `id` optional inside the item** (direction) | ids where wanted; YAML guarantees the order; a duplicate cannot drop a step silently; no migration of steps | the id is a key inside the item; a check enforces uniqueness |
-| C. A list without ids | nothing changes | no address but position |
+| **B. A list; the app marks the steps it inserts with an `id`; authors write none** (direction) | YAML guarantees the order; a duplicate cannot drop a step silently; no migration of steps; nothing new for authors | the id is a key inside the item, not the key of the container (ST08 enforces uniqueness) |
+| C. A list without any id | nothing changes | the audit mode must mark its steps another way (a separate key, or by position, which breaks when a step is inserted) |
 
 ### 7.6 Join (`joins.<id>`), a collection built from schemas
 
@@ -539,7 +540,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | ST05 | E | `join` or `join_filter` in tier2 | |
 | ST06 | E | a formula uses an operation outside the allowed list | O10 |
 | ST07 | E | a parameter declared `multi` has a single value | write a list |
-| ST08 | E | two steps of one list have the same `id`, or an `id` is not text | rename one; names both positions |
+| ST08 | E | two steps of one list have the same `id` (written by the app), or an `id` is not text | rename one; names both places |
 | ST09 | E | a reserved engine key (`__right_df__`, `__metadata__`, any `__name__`) in a step | remove it; the engine sets it |
 | ST10 | E | the value of a parameter has the wrong shape for its declared widget (a list where a scalar is declared and the reverse; a repeated key in a `mapping`) | the declared form and the corrected text |
 | J01 | E | unknown key in a join (`info`, `output_fields`, ...) | replacement |
