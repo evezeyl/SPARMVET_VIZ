@@ -566,3 +566,18 @@ Eve: Exploration has ONE plot (Result, immutable, always shown); Audit mode has 
 **Not done, by design:** ST09, ST10, AR3 against the checker (#76); alias reads in `rename` and `split_column` (#78); rule files (#79, double confirmation).
 **Process:** the other session was re-sorting `tasks.md` and `INDEX.md` while I worked; I committed only files I own, by name (`tasks.md` after their sort was committed).
 **Waiting for Eve:** the open points of spec section 2.3 (O1 to O18); answers to what the step `id` is for are in spec 7.5 and on #85.
+
+---
+## Handoff 2026-11-13 (late): the recipe format series, HOME session alone (the recipe session was closed by Eve)
+
+**State (all on `dev`, committed, suite green, golden baseline "result-identical"):** W0 golden baseline (`assets/scripts/golden_baseline.py`, `app/tests/golden/baseline.json`); W1 `step_problems` and schema `rules`; W2 `check_recipe`; W3 formula check, path checks, `!include` confinement; W4 `utils/action_names.py`; W5 `DataIngestor.ingest_declared` (`ingestion/declared.py`); W6 the new actions registered beside the old ones: `actions/polars_calls.py` (39 `polars_`), `actions/modified.py` (`modif_filter`), `actions/composite.py` (`step_top_n_other`); W7 part 1 `utils/recipe_migration.py` (keys, types, null_values, strip, spec_version).
+**Eve's rules:** sequential, one agent; Eve decides, I recommend; Polars action and nothing else where possible; no silent behaviour, no hidden default; never truncate silently (no `modif_cast`); tests for everything, mutation-checked; I am `sonnet/high` and do the medium, low and haiku items too; only `opus/high` items need Eve to change the model (W12 ADR-100, W15 science review, W3b attack design, the rule-file text). Eve is resting; she reads the report in the chat.
+**The series that remains (one atomic switch; dev must be green at every commit):**
+ S1 a converter old step to new steps (`utils/step_migration.py`) with a differential test per old action (`libs/transformer/tests/test_step_conversion.py`; templates already in `test_replacements_by_polars_steps.py`);
+ S2 migration tool part 2: rewrite the steps in the yaml text, run over `config/`, fixtures, tests (120 yaml files with old action names, 92 with old types, 36 `.py` and 22 `.py` with inline recipes);
+ S3 remove the old actions, `ingest_declared` becomes `ingest`, DataWrangler/assembler/orchestrator/MetadataValidator/audit translator/bootstrapper/id_reconciliation use the new names (constants in `utils.action_names`), the three xfail registry tests pass;
+ S4 run the tool, check the golden baseline is identical, adapt the tests;
+ S5 run B (`final_contract`, `keep_columns`, `drop_columns` to `polars_select`/`polars_drop`, `labels`), cache-version bump;
+ then W8 writers, W9 engine side, W10 tier-3 reader, W11 gallery (GALLERY-RIGOR-1), W13 documentation (DOC-MISSING-VALUES-1), W14 Blueprint, W16 ID-RECON-STEPS-1, REMOVE-CATEGORY-SELECT-1, the stale `manifest_paths` line.
+**Open for Eve (asked, not answered):** Q3 dead gallery submission code (remove or keep); the data owner's question on `NA` in `metadata_isolation_method`.
+**Files:** `.claude/design/recipe_format_spec.md` (decisions), `recipe_format_work_order.md` (W0 to W16), `home_evidence/actions_and_polars_2026-11-13.md` (sections 9 to 26, the evidence), `tmpAI/agent_channel.md` (not in git).
