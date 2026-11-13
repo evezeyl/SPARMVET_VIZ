@@ -1,4 +1,4 @@
-"""The top_n_other action: keep the N most frequent values, label the rest (issue #23).
+"""The step_top_n_other action (the old top_n_other): keep the N most frequent values, label the rest (issue #23).
 
 Several cases follow the tests of the R function it mirrors (NorwegianVeterinaryInstitute/
 2025_PAWH_APEC1, tests/testthat/test-top_n_other.R).
@@ -10,13 +10,20 @@ import random
 import polars as pl
 import pytest
 
-from transformer.actions.cleaning.analytical import action_top_n_other
+from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 from utils.errors import TransformationError
+
+action_top_n_other = AVAILABLE_WRANGLING_ACTIONS["step_top_n_other"]
+
+
+def full(spec):
+    """The step as format 1 requires it: the label and the new column are written (they used to default)."""
+    return {"other_label": "Other", "new_column": f"v_top{spec.get('n')}", **spec}
 
 
 def run(values, spec, **extra):
     frame = pl.DataFrame({"v": values, **extra}).lazy()
-    return action_top_n_other(frame, {"column": "v", **spec}).collect()
+    return action_top_n_other(frame, {"column": "v", **full(spec)}).collect()
 
 
 def test_keeps_the_n_most_frequent_and_labels_the_rest():
@@ -67,7 +74,7 @@ def test_count_distinct_ranks_by_different_samples_not_rows():
 
 def test_works_on_a_categorical_column():
     frame = pl.DataFrame({"v": ["a", "a", "b", "c"]}).with_columns(pl.col("v").cast(pl.Categorical)).lazy()
-    out = action_top_n_other(frame, {"column": "v", "n": 1}).collect()
+    out = action_top_n_other(frame, {"column": "v", **full({"n": 1})}).collect()
     assert out["v_top1"].to_list() == ["a", "a", "Other", "Other"]
 
 
@@ -93,5 +100,14 @@ def test_the_output_is_text_with_the_same_length_as_the_input():
 
 @pytest.mark.parametrize("spec", [{"n": 2}, {"column": "v"}, {"column": "v", "n": 0}, {"column": "v", "n": "3"}])
 def test_bad_parameters_are_reported(spec):
+    spec = {"other_label": "Other", "new_column": "t", **spec}
     with pytest.raises(TransformationError):
+        action_top_n_other(pl.DataFrame({"v": ["a"]}).lazy(), spec)
+
+
+@pytest.mark.parametrize("missing", ["other_label", "new_column"])
+def test_the_label_and_the_new_column_are_written_not_defaulted(missing):
+    spec = {"column": "v", "n": 1, "other_label": "Other", "new_column": "t"}
+    del spec[missing]
+    with pytest.raises(TransformationError, match=missing):
         action_top_n_other(pl.DataFrame({"v": ["a"]}).lazy(), spec)

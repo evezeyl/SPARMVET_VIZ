@@ -4,13 +4,15 @@ Polars runs many operations on several threads and promises no row order unless 
 for. Each wrangling action that could reorder rows has a stated rule, and this file checks the
 rule on data large enough that a random order would show:
 
-  summarize        groups come out in the order they first appear in the input
-  sort             rows with equal keys keep their input order (stable)
-  join             left/inner keep the order of the left table, right keeps the right table's
-  drop_duplicates  keeps the FIRST row of each duplicate group, in the input order
-  value_counts     values come out in the order they first appear
-  sample           the same seed gives the same sample; the default seed is fixed
-  top_n_other      equal counts are ranked by the value, so the same top N every run
+  polars_group_by  groups come out in the order they first appear in the input (`maintain_order` is written in the step)
+  polars_sort      rows with equal keys keep their input order (`maintain_order` is written)
+  polars_join      left/inner keep the order of the left table, right keeps the right table's (`maintain_order` is written)
+  polars_unique    keeps the FIRST row of each duplicate group, in the input order (`keep` and `maintain_order` are written)
+  polars_sample    the same seed gives the same sample; the seed is written in the step (no default seed any more)
+  step_top_n_other equal counts are ranked by the value, so the same top N every run
+
+The order rules used to be defaults of the actions (ADR-090); they are parameters that the recipe states now, so each test
+writes them.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_deterministic_order.py -q
 """
@@ -19,10 +21,41 @@ import random
 import polars as pl
 import pytest
 
-from transformer.actions.cleaning.analytical import action_sample, action_sort, action_top_n_other, action_value_counts
-from transformer.actions.cleaning.core import action_drop_duplicates, action_unique_rows
-from transformer.actions.performance.aggregation import action_summarize
-from transformer.actions.relational.joins import join_action
+import transformer.actions  # noqa: F401
+from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS as ACTIONS
+from utils.errors import TransformationError
+
+
+def action_summarize(lf, spec):
+    return ACTIONS["polars_group_by"](lf, {"by": spec["group_by"], "maintain_order": True,
+                                           "named_aggs": {f"{c}_count": f"pl.col({c!r}).count()" for c in spec["columns"]}})
+
+
+def action_sort(lf, spec):
+    return ACTIONS["polars_sort"](lf, {"maintain_order": True, **spec})
+
+
+def join_action(lf, spec):
+    how = spec["how"]
+    on = spec["on"] if isinstance(spec["on"], list) else [spec["on"]]
+    return ACTIONS["polars_join"](lf, {"right_ingredient": "R", "on": on, "how": how, "__right_df__": spec["__right_df__"],
+                                       "maintain_order": "right_left" if how == "right" else "left_right"})
+
+
+def action_drop_duplicates(lf, spec):
+    return ACTIONS["polars_unique"](lf, {"subset": spec["columns"], "keep": "first", "maintain_order": True})
+
+
+def action_unique_rows(lf, spec):
+    return ACTIONS["polars_unique"](lf, {"keep": "any", "maintain_order": True})
+
+
+def action_sample(lf, spec):
+    return ACTIONS["polars_sample"](lf, spec)
+
+
+def action_top_n_other(lf, spec):
+    return ACTIONS["step_top_n_other"](lf, {"other_label": "Other", "new_column": f"{spec['column']}_top{spec['n']}", **spec})
 
 N = 40_000
 RUNS = 5  # the same call several times: a random order differs between runs
@@ -110,20 +143,9 @@ def test_unique_rows_keeps_input_order(data):
         assert out["row_id"].to_list() == expected
 
 
-def test_value_counts_returns_values_in_first_appearance_order_with_right_counts(data):
-    groups = data["group"].to_list()
-    expected_order = first_appearance(groups)
-    expected_counts = {g: groups.count(g) for g in expected_order[:50]}
-    for _ in range(RUNS):
-        out = action_value_counts(data.lazy(), {"column": "group"}).collect()
-        assert out.columns == ["group", "count"]
-        assert out["group"].to_list() == expected_order
-        assert dict(zip(out["group"].to_list()[:50], out["count"].to_list()[:50])) == expected_counts
-
-
-def test_sample_gives_the_same_rows_every_time_by_default(data):
-    results = [action_sample(data.lazy(), {"fraction": 0.1}).collect()["row_id"].to_list() for _ in range(RUNS)]
-    assert all(r == results[0] for r in results)
+def test_sample_has_no_default_seed_any_more(data):
+    with pytest.raises(TransformationError, match="seed"):
+        action_sample(data.lazy(), {"fraction": 0.1})
 
 
 def test_sample_with_an_explicit_seed_is_repeatable_and_a_different_seed_differs(data):

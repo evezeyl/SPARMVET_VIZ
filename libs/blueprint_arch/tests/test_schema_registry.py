@@ -49,10 +49,9 @@ VALID_WIDGETS = set(_WIDGETS)
 
 # Actions annotated in BP-SCHEMA-1
 ANNOTATED_ACTIONS = [
-    "fill_nulls", "drop_nulls", "keep_columns", "drop_columns",
-    "strip_whitespace", "filter_range", "add_constant", "filter_eq",
-    "rename_columns", "regex_extract", "cast", "coalesce", "label_if",
-    "mutate", "sort", "is_in", "join", "unpivot", "explode",
+    "polars_fill_null", "polars_drop_nulls", "polars_select", "polars_drop", "polars_str_strip_chars", "modif_filter",
+    "polars_rename", "polars_str_extract", "polars_cast", "polars_coalesce", "polars_with_columns", "polars_sort",
+    "polars_join", "polars_unpivot", "polars_explode", "polars_group_by", "polars_unique", "step_top_n_other",
 ]
 
 # Components annotated in BP-SCHEMA-1
@@ -118,38 +117,28 @@ class TestActionCatalog:
 class TestActionSemanticRules:
 
     def test_join_is_assembly_context(self):
-        schema = get_action_catalog()["join"]
-        assert "assembly" in schema["context"]
+        assert get_action_catalog()["polars_join"]["context"] == ["assembly"]
 
     def test_explode_is_t2_not_t1(self):
-        schema = get_action_catalog()["explode"]
-        assert "t2" in schema["context"]
-        assert "t1" not in schema["context"]
+        schema = get_action_catalog()["polars_explode"]
+        assert "t2" in schema["context"] and "t1" not in schema["context"]
 
     def test_cast_dtype_picker_has_options(self):
-        schema = get_action_catalog()["cast"]
-        dtype_param = schema["params"]["dtype"]
-        assert dtype_param["widget"] == "dtype_picker"
-        assert "options" in dtype_param
-        assert "Int64" in dtype_param["options"]
+        dtype_param = get_action_catalog()["polars_cast"]["params"]["dtype"]
+        assert dtype_param["widget"] == "dtype_picker" and "Int64" in dtype_param["options"]
 
-    def test_sort_has_both_by_and_columns_params(self):
-        """sort accepts spec.get('by') or spec.get('columns') — both must appear."""
-        params = get_action_catalog()["sort"]["params"]
-        assert "by" in params
-        assert "columns" in params
+    def test_sort_writes_the_order_rule(self):
+        params = get_action_catalog()["polars_sort"]["params"]
+        assert params["by"]["required"] and params["maintain_order"]["required"]
+        assert "columns" not in params          # no column alias: Polars names win
 
-    def test_mutate_has_both_column_and_target_column(self):
-        """mutate accepts spec.get('column', spec.get('target_column')) — both must appear."""
-        params = get_action_catalog()["mutate"]["params"]
-        assert "column" in params
-        assert "target_column" in params
+    def test_with_columns_takes_a_mapping_of_formulas(self):
+        assert get_action_catalog()["polars_with_columns"]["params"]["named_exprs"]["widget"] == "mapping"
 
-    def test_filter_eq_has_both_column_and_columns(self):
-        """filter_eq tries column then columns[0] fallback — both must appear."""
-        params = get_action_catalog()["filter_eq"]["params"]
-        assert "column" in params
-        assert "columns" in params
+    def test_modif_filter_says_what_happens_to_a_missing_value(self):
+        params = get_action_catalog()["modif_filter"]["params"]
+        assert params["na"]["required"] and params["na"]["options"] == ["keep", "remove"]
+        assert {"column", "op", "value"} <= set(params)
 
 
 # ── Context filtering ──────────────────────────────────────────────────────────
@@ -166,12 +155,12 @@ class TestContextFiltering:
 
     def test_assembly_includes_join(self):
         assembly = get_actions_for_context("assembly")
-        assert "join" in assembly
+        assert "polars_join" in assembly
 
     def test_t2_includes_reshaping(self):
         t2 = get_actions_for_context("t2")
-        assert "unpivot" in t2
-        assert "explode" in t2
+        assert "polars_unpivot" in t2
+        assert "polars_explode" in t2
 
 
 # ── Category filtering ─────────────────────────────────────────────────────────
@@ -180,27 +169,24 @@ class TestCategoryFiltering:
 
     def test_cleaning_category(self):
         cleaning = get_actions_by_category("cleaning")
-        assert "fill_nulls" in cleaning
-        assert "drop_nulls" in cleaning
+        assert "polars_fill_null" in cleaning
+        assert "polars_drop_nulls" in cleaning
 
     def test_filtering_category(self):
         filtering = get_actions_by_category("filtering")
-        assert "filter_range" in filtering
-        assert "filter_eq" in filtering
+        assert "modif_filter" in filtering
 
     def test_derivation_category(self):
         derivation = get_actions_by_category("derivation")
-        assert "mutate" in derivation
-        assert "label_if" in derivation
-        assert "add_constant" in derivation
+        assert "polars_with_columns" in derivation
 
     def test_typing_category(self):
-        assert "cast" in get_actions_by_category("typing")
+        assert "polars_cast" in get_actions_by_category("typing")
 
     def test_relational_or_assembly_includes_join(self):
         all_names = set(get_action_catalog().keys())
         # join is in some category — just verify it appears somewhere
-        assert "join" in all_names
+        assert "polars_join" in all_names
 
 
 # ── Search ─────────────────────────────────────────────────────────────────────
@@ -208,12 +194,12 @@ class TestCategoryFiltering:
 class TestSearch:
 
     def test_search_by_exact_name(self):
-        assert "cast" in search_actions("cast")
+        assert "polars_cast" in search_actions("cast")
 
     def test_search_by_tag(self):
         results = search_actions("null")
-        assert "fill_nulls" in results
-        assert "drop_nulls" in results
+        assert "polars_fill_null" in results
+        assert "polars_drop_nulls" in results
 
     def test_search_case_insensitive(self):
         lower = set(search_actions("regex").keys())

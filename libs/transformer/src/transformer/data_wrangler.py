@@ -9,6 +9,7 @@ import polars as pl
 from typing import Dict, Any, List
 # Import the registry functions
 from transformer.registry import get_action_function
+from utils.action_names import JOIN
 from utils.errors import TransformationError, DataAnalysisRecipeError
 from utils.pipeline_error import PipelineError
 
@@ -50,7 +51,7 @@ class DataWrangler:
             if tier == "tier2" or tier == "all":
                 t2_actions = wrangling_block.get("tier2", [])
                 for act in t2_actions:
-                    if act.get("action") == "polars_join":
+                    if act.get("action") == JOIN:
                         raise DataAnalysisRecipeError(
                             f"Performance Alert: Action '{act.get('action')}' found in Tier 2.",
                             tip="Relational joins are foundational. Please move this step to 'tier1' (The Trunk) to ensure it is only computed once and shared across all dependent plots."

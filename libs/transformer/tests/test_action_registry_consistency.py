@@ -64,8 +64,9 @@ def test_AR2_an_action_reads_only_what_its_schema_declares():
     assert problems == {}, problems
 
 
-def test_AR2b_the_actions_without_a_schema_are_exactly_the_two_engine_internal_ones():
-    assert set(AVAILABLE_WRANGLING_ACTIONS) - set(ACTION_SCHEMAS) == NO_SCHEMA
+def test_AR2b_every_action_has_a_schema():
+    """scan_parquet and sink_parquet were the two engine-internal actions without a schema; they are engine functions now."""
+    assert set(AVAILABLE_WRANGLING_ACTIONS) - set(ACTION_SCHEMAS) == set()
 
 
 @pytest.mark.parametrize("name", sorted(ACTION_SCHEMAS))

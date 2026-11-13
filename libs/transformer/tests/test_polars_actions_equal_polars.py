@@ -241,12 +241,6 @@ def test_a_formula_that_could_run_code_or_read_files_is_refused(formula):
         _run("polars_with_columns", {"named_exprs": {"x": formula}})
 
 
-def test_the_old_mutate_site_refuses_the_same_formulas():
-    from utils.errors import TransformationError
-    with pytest.raises(Exception, match="refused|Failed"):
-        AVAILABLE_WRANGLING_ACTIONS["mutate"](BASE.lazy(), {"column": "x", "expression": "__import__('os').system('echo hacked')"}).collect()
-
-
 # -- Eve, 2026-11-13 (Q1): a cast never truncates silently; a truncation is written in the recipe ----------
 
 def test_a_cast_to_integer_that_would_drop_decimals_fails_and_names_the_value():

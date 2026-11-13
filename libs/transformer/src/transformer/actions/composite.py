@@ -47,7 +47,7 @@ def _schema(label, category, description, example, params, rules=None, calls=Non
      "n": {"widget": "number", "label": "How many values to keep (a whole number of at least 1)", "required": True},
      "other_label": {"widget": "string", "label": "Label of the other values", "required": True},
      "new_column": {"widget": "string", "label": "Column that receives the result", "required": True},
-     "count_distinct": {"widget": "column_selector", "multi": False, "label": "Count distinct values of this column instead of rows (off when absent)", "off_when_absent": True}}))
+     "count_distinct": {"widget": "column_selector", "multi": False, "label": "Count distinct values of this column instead of rows (off when absent)", "required": False, "off_when_absent": True}}))
 def action_step_top_n_other(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     clean = _checked("step_top_n_other", spec)
     col, n, other_label, new_col = clean["column"], clean["n"], clean["other_label"], clean["new_column"]

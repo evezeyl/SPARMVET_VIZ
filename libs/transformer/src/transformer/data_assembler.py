@@ -9,6 +9,7 @@ import os
 from typing import Dict, List, Any
 import polars as pl
 from transformer.registry import get_action_function
+from utils.action_names import JOIN
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
 
@@ -115,7 +116,7 @@ class DataAssembler:
                             step.get("on_column") or
                             step.get(True))  # Handle YAML boolean 'on'
 
-                if action_name == "polars_join" and not join_key:
+                if action_name == JOIN and not join_key:
                     actual_keys = list(step.keys())
                     pe = PipelineError(
                         component="DataAssembler",
@@ -143,7 +144,7 @@ class DataAssembler:
                 consolidated_lf = self.ingredients[first_key]
 
                 # If first step is a join involving original backbone, skip redundant init
-                if action_name == "polars_join" and right_id == first_key:
+                if action_name == JOIN and right_id == first_key:
                     continue
 
             # Execute the action via the shared registry (ADR-018).

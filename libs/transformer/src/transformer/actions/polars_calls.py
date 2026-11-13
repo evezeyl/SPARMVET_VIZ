@@ -29,6 +29,7 @@ import polars as pl
 from transformer.actions.base import ACTION_SCHEMAS, register_action
 from utils.errors import TransformationError
 from utils.formula_check import FormulaError, evaluate_formula
+from utils.polars_types import text_dtype_names
 from utils.ui_schema import step_problems
 
 # @deps
@@ -88,10 +89,28 @@ HINTS: Dict[str, dict] = {
     "validate": {"widget": "enum", "options": ["m:m", "1:m", "m:1", "1:1"]},
     "aggregate_function": {"widget": "enum", "options": ["min", "max", "first", "last", "sum", "mean", "median", "len"]},
     "column_naming": {"widget": "enum", "options": ["auto", "combine"]},
-    "dtype": {"widget": "dtype_picker", "label": "Polars dtype"},
+    "dtype": {"widget": "dtype_picker", "label": "Polars dtype", "options": list(text_dtype_names())},
 }
 # maintain_order of join is an enum of strings (Polars), of every other call a bool
 JOIN_ORDER = {"widget": "enum", "options": ["none", "left", "right", "left_right", "right_left"]}
+
+
+# Where the Blueprint picker lists an action and where in a recipe it may stand (kept from the old registry: the same
+# category and context as the action it replaces).
+ALL3, T12, ASSEMBLY, T2ASM, T2ONLY = ["t1", "t2", "assembly"], ["t1", "t2"], ["assembly"], ["t2", "assembly"], ["t2"]
+PICKER = {
+    "select": ("selection", ALL3), "drop": ("selection", ALL3), "rename": ("renaming", ALL3), "unique": ("cleaning", ALL3),
+    "sort": ("ordering", ALL3), "drop_nulls": ("cleaning", T12), "drop_nans": ("cleaning", T12), "explode": ("reshaping", T2ASM),
+    "unnest": ("reshaping", ALL3), "unpivot": ("reshaping", T2ASM), "pivot": ("reshaping", T2ASM), "join": ("relational", ASSEMBLY),
+    "sample": ("filtering", T12), "describe": ("analytical", T2ONLY), "group_by": ("aggregation", T2ASM), "with_columns": ("derivation", ALL3),
+    "cast": ("typing", ALL3), "fill_null": ("cleaning", T12), "fill_nan": ("cleaning", T12), "interpolate": ("cleaning", T12),
+    "shift": ("analytical", T12), "cum_sum": ("analytical", T12), "cum_count": ("analytical", T12), "round": ("numeric", ALL3),
+    "str_replace_all": ("string", ALL3), "str_extract": ("string", ALL3), "str_strip_chars": ("string", ALL3),
+    "str_split": ("reshaping", T12), "str_splitn": ("reshaping", T12), "list_join": ("list", T12), "list_slice": ("list", T12),
+    "dt_truncate": ("temporal", T12), "coalesce": ("cleaning", ALL3), "sum_horizontal": ("analytical", T12),
+    "mean_horizontal": ("analytical", T12), "min_horizontal": ("analytical", T12), "max_horizontal": ("analytical", T12),
+    "all_horizontal": ("analytical", T12), "any_horizontal": ("analytical", T12),
+}
 
 # (action, kind, Polars object path, class of the method, description, yaml_example, extra schema keys)
 FRAME, EAGER, EXPR, FUNCTION = "frame", "eager", "expr", "function"
@@ -151,13 +170,12 @@ def _params_from_signature(action: str, target, kind: str) -> dict:
         definition.setdefault("label", ours)
         required = (p.default is inspect.Parameter.empty and p.kind not in (p.VAR_POSITIONAL, p.VAR_KEYWORD)) \
             or ours in REQUIRED.get(action, set()) or (p.kind is p.VAR_POSITIONAL and ours in ("exprs", "columns", "by"))
-        if required:
-            definition["required"] = True
+        definition["required"] = bool(required)
         params[ours] = definition
     if kind == EXPR:
         params = {"columns": {**LIST_OF_COLUMNS, "label": "Columns the call is applied to", "required": True},
                   **params,
-                  "target_column": {"widget": "string", "label": "Write the result of the single column to this column (default: in place)"}}
+                  "target_column": {"widget": "string", "label": "Write the result of the single column to this column (default: in place)", "required": False}}
     if kind == FUNCTION:
         params["target_column"] = {"widget": "string", "label": "Column that receives the result", "required": True}
     return params
@@ -205,7 +223,8 @@ def _checked(action: str, spec: dict) -> dict:
 def _schema(action: str, kind: str, target, path, description: str, example: str, rules=None, category="polars") -> dict:
     schema = {
         "label": action.removeprefix("polars_").replace("_", " "),
-        "category": category, "context": ["t1", "t2", "assembly"], "tags": ["polars", action.removeprefix("polars_")],
+        "category": PICKER[action.removeprefix("polars_")][0], "context": list(PICKER[action.removeprefix("polars_")][1]),
+        "tags": ["polars", action.removeprefix("polars_")],
         "polars": "exact" if kind in (FRAME, EAGER) else "wrapper",
         "wraps": [_wraps(path)],
         "params": _params_from_signature(action, target, kind),
@@ -280,10 +299,10 @@ _define("polars_with_columns", FRAME, ("LazyFrame", "with_columns"), _with_colum
 
 
 def _join_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+    clean = _checked("polars_join", spec)
     right = spec.get("__right_df__")
     if right is None:
         raise TransformationError("polars_join needs the resolved right table (__right_df__)", tip="The assembler resolves `right_ingredient`")
-    clean = _checked("polars_join", spec)
     kwargs = _kwargs(clean, pl.LazyFrame.join, "polars_join")
     kwargs.pop("other", None)
     return lf.join(right, **kwargs)

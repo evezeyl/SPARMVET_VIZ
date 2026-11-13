@@ -1,4 +1,7 @@
-"""The replace_values action: replace a listed set of values, keep the rest (issue #22).
+"""The replace_values step as Polars steps: replace a listed set of values, keep the rest (issue #22).
+
+The action `replace_values` is gone: the migration writes a `polars_with_columns` formula with `replace_strict`
+(`utils.step_migration`). These tests pin that the formula keeps the behaviour of the old action.
 
 Polars 1.0 deprecated .replace()'s `default` parameter in favour of .replace_strict() --
 these tests pin the result of the fix (replace_strict) to be identical to the old
@@ -12,7 +15,15 @@ import warnings
 import polars as pl
 import pytest
 
-from transformer.actions.cleaning.core import action_replace_values
+from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+from utils.step_migration import NotConvertible, convert_step
+
+
+def action_replace_values(frame, spec):
+    """The old step as the migration converts it, run through the new actions."""
+    for step in convert_step({"action": "replace_values", **spec}):
+        frame = AVAILABLE_WRANGLING_ACTIONS[step["action"]](frame, {k: v for k, v in step.items() if k != "action"})
+    return frame
 
 
 def run(values, dtype, to_replace, new_value, columns=("v",)):
@@ -55,7 +66,7 @@ def test_does_not_raise_the_polars_replace_deprecation_warning():
 
 def test_to_replace_must_be_a_list():
     frame = pl.DataFrame({"v": ["a"]}).lazy()
-    with pytest.raises(ValueError, match="to_replace"):
+    with pytest.raises(NotConvertible, match="to_replace"):
         action_replace_values(frame, {"columns": ["v"], "to_replace": "ND", "new_value": "x"}).collect()
 
 

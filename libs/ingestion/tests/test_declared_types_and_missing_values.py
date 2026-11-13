@@ -29,7 +29,7 @@ def ingest(tmp_path, text, fields, **schema_keys):
     f = tmp_path / "S.tsv"
     f.write_text(text)
     schema = {"source": {"type": "local_tsv", "path": str(f)}, "input_fields": fields, **schema_keys}
-    lf, _ = DataIngestor(str(tmp_path)).ingest_declared("S", schema)
+    lf, _ = DataIngestor(str(tmp_path)).ingest("S", schema)
     return lf.collect()
 
 

@@ -19,10 +19,9 @@ from transformer.actions.base import ACTION_SCHEMAS
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 ANNOTATED_ACTIONS = [
-    "fill_nulls", "drop_nulls", "keep_columns", "drop_columns",
-    "strip_whitespace", "filter_range", "add_constant", "filter_eq",
-    "rename_columns", "regex_extract", "cast", "coalesce", "label_if",
-    "mutate", "sort", "is_in", "join", "unpivot", "explode",
+    "polars_fill_null", "polars_drop_nulls", "polars_select", "polars_drop", "polars_str_strip_chars", "modif_filter",
+    "polars_rename", "polars_str_extract", "polars_cast", "polars_coalesce", "polars_with_columns", "polars_sort",
+    "polars_join", "polars_unpivot", "polars_explode", "polars_group_by", "polars_unique", "step_top_n_other",
 ]
 
 from utils.ui_schema import WIDGETS as _WIDGETS  # noqa: E402  (one vocabulary for the registries and the form)
@@ -96,88 +95,50 @@ class TestSchemaStructure:
                 f"'{action_name}.{pname}' 'required' must be bool"
 
 
-# ── Semantic correctness — params match function spec.get() calls ──────────────
+# ── Semantic correctness ───────────────────────────────────────────────────────
 
 class TestParamSignatureAlignment:
 
     def test_join_has_right_ingredient_and_join_keys(self):
-        params = ACTION_SCHEMAS["join"]["params"]
-        assert "right_ingredient" in params  # data analysis recipe-level param
-        assert "on" in params
-        assert "left_on" in params
-        assert "right_on" in params
-        assert "how" in params
+        params = ACTION_SCHEMAS["polars_join"]["params"]
+        for name in ("right_ingredient", "on", "left_on", "right_on", "how", "maintain_order"):
+            assert name in params
+        assert params["how"]["required"] and params["maintain_order"]["required"]
 
-    def test_join_is_assembly_context(self):
-        assert "assembly" in ACTION_SCHEMAS["join"]["context"]
-
-    def test_join_not_in_t1(self):
-        assert "t1" not in ACTION_SCHEMAS["join"]["context"]
+    def test_join_is_assembly_context_only(self):
+        assert ACTION_SCHEMAS["polars_join"]["context"] == ["assembly"]
 
     def test_unpivot_in_t2_and_assembly(self):
-        ctx = ACTION_SCHEMAS["unpivot"]["context"]
-        assert "t2" in ctx
-        assert "assembly" in ctx
+        ctx = ACTION_SCHEMAS["polars_unpivot"]["context"]
+        assert "t2" in ctx and "assembly" in ctx
 
     def test_explode_in_t2_not_t1(self):
-        ctx = ACTION_SCHEMAS["explode"]["context"]
-        assert "t2" in ctx
-        assert "t1" not in ctx
+        ctx = ACTION_SCHEMAS["polars_explode"]["context"]
+        assert "t2" in ctx and "t1" not in ctx
 
     def test_cast_dtype_picker_options(self):
-        dtype_param = ACTION_SCHEMAS["cast"]["params"]["dtype"]
+        dtype_param = ACTION_SCHEMAS["polars_cast"]["params"]["dtype"]
         assert dtype_param["widget"] == "dtype_picker"
         for expected in ("Int64", "Float64", "String", "Boolean", "Date", "Categorical"):
-            assert expected in dtype_param["options"], \
-                f"cast dtype_picker missing option '{expected}'"
+            assert expected in dtype_param["options"], f"cast dtype_picker missing option '{expected}'"
 
-    def test_sort_has_both_by_and_columns_fallback(self):
-        """sort: spec.get('by') or spec.get('columns') — both must appear."""
-        params = ACTION_SCHEMAS["sort"]["params"]
-        assert "by" in params
-        assert "columns" in params
+    def test_sort_has_by_and_the_order_rule_and_no_alias(self):
+        params = ACTION_SCHEMAS["polars_sort"]["params"]
+        assert "by" in params and params["maintain_order"]["required"]
+        assert "columns" not in params
 
-    def test_mutate_has_both_column_aliases(self):
-        """mutate: spec.get('column', spec.get('target_column')) — both must appear."""
-        params = ACTION_SCHEMAS["mutate"]["params"]
-        assert "column" in params
-        assert "target_column" in params
+    def test_with_columns_has_named_exprs_and_no_column_alias(self):
+        params = ACTION_SCHEMAS["polars_with_columns"]["params"]
+        assert "named_exprs" in params and "column" not in params and "target_column" not in params
 
-    def test_filter_eq_has_column_and_columns_fallback(self):
-        """filter_eq: spec.get('column', spec.get('columns', ...)[0]) — both must appear."""
-        params = ACTION_SCHEMAS["filter_eq"]["params"]
-        assert "column" in params
-        assert "columns" in params
+    def test_filter_has_one_vocabulary(self):
+        params = ACTION_SCHEMAS["modif_filter"]["params"]
+        assert {"column", "op", "value", "na", "closed"} <= set(params) and "columns" not in params
+        assert params["na"]["required"]
 
-    def test_label_if_has_all_conditional_params(self):
-        params = ACTION_SCHEMAS["label_if"]["params"]
-        for key in ("column", "new_column", "predicate", "value", "then", "otherwise"):
-            assert key in params, f"label_if missing param '{key}'"
+    def test_coalesce_writes_its_target(self):
+        params = ACTION_SCHEMAS["polars_coalesce"]["params"]
+        assert "exprs" in params and params["target_column"]["required"]
 
-    def test_label_if_predicate_has_options(self):
-        pred_param = ACTION_SCHEMAS["label_if"]["params"]["predicate"]
-        assert pred_param["widget"] == "enum"
-        assert "options" in pred_param
-        for op in (">", ">=", "<", "<=", "==", "!="):
-            assert op in pred_param["options"]
-
-    def test_coalesce_has_min_items_hint(self):
-        params = ACTION_SCHEMAS["coalesce"]["params"]
-        assert "columns" in params
-        assert params["columns"].get("min_items", 0) >= 2
-
-    def test_filter_range_has_dtype_filter(self):
-        col_param = ACTION_SCHEMAS["filter_range"]["params"]["columns"]
-        assert col_param.get("dtype_filter") == ["numeric"] or \
-               "numeric" in str(col_param.get("dtype_filter", ""))
-
-    def test_rename_columns_has_mapping_and_list_form(self):
-        params = ACTION_SCHEMAS["rename_columns"]["params"]
-        assert "mapping" in params
-        assert "columns" in params
-        assert "new_names" in params
-
-    def test_regex_extract_has_all_four_params(self):
-        params = ACTION_SCHEMAS["regex_extract"]["params"]
-        for key in ("source", "pattern", "target_column", "group"):
-            assert key in params, f"regex_extract missing param '{key}'"
+    def test_rename_takes_a_mapping(self):
+        assert ACTION_SCHEMAS["polars_rename"]["params"]["mapping"]["widget"] == "mapping"

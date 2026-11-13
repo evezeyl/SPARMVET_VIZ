@@ -9,8 +9,8 @@ Rules, each executable:
   3. the schema rules of W1 (`rules`) of every action are sound (`schema_declaration_problems`).
 
 The functions that judge a schema are tested here on schemas written for the test (they run today and can
-fail: a missing parameter and a wrong default are caught). The registry tests are strict xfail until W6 builds
-the actions; the day they pass, the marks fail and are removed in that commit.
+fail: a missing parameter and a wrong default are caught). The registry tests pass: the old unprefixed
+actions are gone and every remaining action carries one of the three prefixes.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_registry_polars_rules.py -q
 """
@@ -120,23 +120,18 @@ def test_the_prefix_table_is_complete():
 
 # -- the registry (strict xfail until W6) -----------------------------------------------------
 
-NOT_BUILT = "W6 package 1 built the polars_ actions; the old unprefixed actions are removed by the migration series (run A)"
-
-
 def _actions():
     return sorted(AVAILABLE_WRANGLING_ACTIONS)
 
 
 def test_the_registry_is_not_empty():
-    assert len(_actions()) > 50
+    assert len(_actions()) >= 40
 
 
-@pytest.mark.xfail(strict=True, reason=NOT_BUILT + " (no unprefixed name may remain)")
 def test_every_action_name_has_one_of_the_three_prefixes():
     assert [n for n in _actions() if prefix_of(n) is None] == []
 
 
-@pytest.mark.xfail(strict=True, reason=NOT_BUILT + " (the field `polars` does not exist yet)")
 def test_the_registry_field_and_the_prefix_agree():
     bad = [n for n in _actions() if ACTION_SCHEMAS.get(n, {}).get("polars") not in PREFIX_TO_FIELD.get(prefix_of(n) or "", set())]
     assert bad == []

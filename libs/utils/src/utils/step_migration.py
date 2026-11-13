@@ -308,6 +308,8 @@ def _rename_columns(s):
 
 
 def _replace_values(s):
+    if not isinstance(s.get("to_replace"), list):
+        raise NotConvertible("replace_values: to_replace must be a list of the values to replace")
     mapping = {old: s.get("new_value") for old in s["to_replace"]}
     named = {c: f"pl.col({_text(c)}).replace_strict({_text(mapping)}, default=pl.col({_text(c)}))" for c in _columns(s)}
     return [_with(named, s)]

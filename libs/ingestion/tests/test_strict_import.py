@@ -20,7 +20,9 @@ from utils.errors import IngestionError
 
 
 def schema(path, **fields):
-    return {"source": {"type": "local_tsv", "path": str(path)}, "input_fields": fields}
+    """A schema in format 1: every field has a Polars type, and the missing-value keys are written (no default)."""
+    fixed = {slug: {"type": "String", **{k: ("Float64" if v == "numeric" else v) for k, v in (field or {}).items()}} for slug, field in fields.items()}
+    return {"source": {"type": "local_tsv", "path": str(path)}, "null_values": [], "strip": False, "input_fields": fixed}
 
 
 @pytest.fixture

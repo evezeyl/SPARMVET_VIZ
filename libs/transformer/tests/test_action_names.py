@@ -13,7 +13,8 @@ REPO = Path(__file__).resolve().parents[3]
 PREFIXES = ("polars_", "modif_", "step_")
 # Where a name of the new vocabulary may be spelled: the registry itself, the constants, and the tools about old names.
 ALLOWED = ("libs/transformer/src/transformer/actions/", "libs/utils/src/utils/action_names.py",
-           "libs/utils/src/utils/legacy_keys.py", "libs/utils/src/utils/recipe_migration.py")
+           "libs/utils/src/utils/legacy_keys.py", "libs/utils/src/utils/recipe_migration.py",
+           "libs/utils/src/utils/step_migration.py", "assets/scripts/migrate_recipe_format.py")
 
 
 def test_every_constant_names_a_registered_action():

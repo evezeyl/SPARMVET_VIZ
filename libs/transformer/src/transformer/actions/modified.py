@@ -26,7 +26,7 @@ OPERATORS = ["eq", "ne", "gt", "ge", "lt", "le", "in", "not_in", "between"]
 
 MODIF_FILTER_SCHEMA = {
     "label": "filter rows",
-    "category": "filtering", "context": ["t1", "t2", "assembly"], "tags": ["filter", "rows", "modified"],
+    "category": "filtering", "context": ["t1", "t2"], "tags": ["filter", "rows", "modified"],
     "polars": "modified",
     "wraps": [{"lib": "polars", "attr_path": ["LazyFrame", "filter"]}],
     "params": {
@@ -34,7 +34,7 @@ MODIF_FILTER_SCHEMA = {
         "op": {"widget": "enum", "label": "Operator", "options": OPERATORS, "required": True},
         "value": {"widget": "any", "label": "Value (a list for in and not_in, [low, high] for between)", "required": True},
         "na": {"widget": "enum", "label": "Missing values (null) in the column", "options": ["keep", "remove"], "required": True},
-        "closed": {"widget": "enum", "label": "Which ends of between are included", "options": ["both", "left", "right", "none"]},
+        "closed": {"widget": "enum", "label": "Which ends of between are included", "options": ["both", "left", "right", "none"], "required": False},
     },
     "rules": [
         {"when": {"op": ["in", "not_in"]}, "shape": {"value": "list"}, "forbid": ["closed"]},
