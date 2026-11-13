@@ -3,8 +3,7 @@
 **Owner:** @evezeyl (tester) · @dasharch (fixer)
 **Created:** 2026-06-19
 **Baseline:** `dev` branch @ Phase 34 (TEST_LAB built, BLUEPRINT full feature set, legacy removals, 8 app features files)
-**Supersedes:** [`tasks_test_ui_current.md`](../outdated/tasks/tasks_test_ui_current.md) (pinned to Phase 26 — stale; its still-open items are folded in here, see each `(carried)` tag)
-**Scope:** **Phase 2** — BLUEPRINT · GALLERY · TEST_LAB + configuration-file gating + cross-space workflow + the regression/CSS items not specific to HOME. **HOME itself was split out on 2026-11-08** into [`test_plan_home_2026-11.md`](test_plan_home_2026-11.md) (Eve: test what you actually see on launch, in that order, by itself, before anything else) — do that file first, then come back here. Comprehensive, but **prioritised** — see §0.4.
+**Scope:** **Phase 2** — BLUEPRINT · GALLERY · TEST_LAB + configuration-file gating + cross-space workflow + the regression/CSS items not specific to HOME. **HOME itself was split out on 2026-11-08** into [`test_plan_home_2026-11.md`](test_plan_home_2026-11.md) (Eve: test what you actually see on launch, in that order, by itself, before anything else) (that file now only carries its open items; the HOME of today is replaced by the redesign). Comprehensive, but **prioritised** — see §0.4.
 
 > EVE: testing in google chrome - developper console - network - cache deactivated 
 ---
@@ -46,7 +45,7 @@ You can attach a screenshot path or terminal snippet the same way. Don't fix any
 
 **Backtick hint tags:** some items carry a small tag after the ID like `` `[?]` ``, `` `[~]` `` or `` `[b]` `` — that is *my pre-flag* of the likely disposition (decision / polish / not-built), to save you guessing. The **checkbox is still the real status you set** — leave it `[ ]` until you've actually looked, then flip it.
 
-**Keep this file thin (added 2026-08-10):** the checklist line stays **one line** — ID, marker, short symptom, and a link if there's evidence. Raw material (console pastes, screenshots, my root-cause writeups, retest steps) goes in a dated findings file — `.claude/tasks/YYYYMMDD_testing_partN.md` — under a `## <ID>` heading matching the checklist ID, e.g. [`20260810_testing_part1.md`](../outdated/tasks/20260810_testing_part1.md). Link the checklist line to `filename.md#anchor`. Anything you jot in the raw file that isn't a checklist line yet, I fold into a one-liner here with a link back.
+**Keep this file thin (added 2026-08-10):** the checklist line stays **one line** — ID, marker, short symptom, and a link if there's evidence. Raw material (console pastes, screenshots, my root-cause writeups, retest steps) goes in a dated findings file — `.claude/tasks/YYYYMMDD_testing_partN.md` — under a `## <ID>` heading matching the checklist ID, e.g. [`20260810_testing_part1.md`](outdated/20260810_testing_part1.md). Link the checklist line to `filename.md#anchor`. Anything you jot in the raw file that isn't a checklist line yet, I fold into a one-liner here with a link back.
 
 ### 0.3 The round-trip (what each side does)
 
@@ -65,9 +64,7 @@ Rules of the loop: I never mark `[x]` (only you confirm a pass). You never edit 
 
 ### 0.4 Suggested testing order (priority — highest risk first)
 
-**2026-11-08: HOME moved to its own file** (`test_plan_home_2026-11.md`) and goes first, by itself,
-end to end — that file has its own launch section and its own copy of the relevant REG/CSS items.
-Once it's done, this file picks up where it left off:
+HOME is not tested from this file (see `test_plan_home_2026-11.md`). Order:
 
 1. **§3 TEST_LAB** — brand new in Phase 34, never live-tested → highest payoff
 2. **§4 BLUEPRINT** — mostly new since Phase 26 (forms, joint designer, escape hatch, undo, branch, AI agent)
@@ -92,13 +89,9 @@ grep -coE '^\s*- \[x\]' test_plan_2026-06.md   # passed
 grep -coE '^\s*- \[ \]' test_plan_2026-06.md   # untested
 ```
 
-### 0.6 Iteration Log (heartbeat — I maintain this)
+### 0.6 Iteration Log
 
-| Round | Date | Tested | Open after round | Notes |
-|---|---|---|---|---|
-| 0 | 2026-06-19 | — | — | Plan authored. Awaiting first pass. |
-| 1 | 2026-11-05 | HOME header strip, tier badges, Data Import, plot render, broken-data message | 24 passed, 128 untested, 5 blocked or polish (HOM-44 open bug in a draft) | Issues #1 to #18 handled on `dev`. Obsolete or duplicate items removed (CSS-02/03/04, HOM-04 rewritten). TEST_LAB, BLUEPRINT, GALLERY and the config-file items (CFG) not yet tested. |
-| — | 2026-11-08 | No new Eve testing this round — plan reviewed before she resumes (she asked to verify independent tasks were done, then review the plan). Checked §0.5 grep: only `PRE-01`/`REG-10` open, both already fixed and `RETEST ↻`, nothing new for me. Added `HOM-52` and `BLU-31` for two surfaces built this session that were never live-tested: the new left-sidebar "Processing Issues" panel (moved there after finding it was built but never mounted at all — F-26, `uml_findings.md`), and BLUEPRINT's inline error display for recipe-load/YAML-hatch failures (fix text shown in-panel, not just a toast). Confirmed `HOM-44` already covers the year-axis continuous-vs-filter bug Eve re-noted in `issue-drafts/20261105_notes_testing.md` — no new issue needed there, same bug, already reproduced. Section §2's config-file list (8 files) still matches what's shipped. | — |
+No round has been run on this file since the Phase 34 baseline (the old rows are in `outdated/test_plan_2026-06_before_clean.md`). Add one row per round: round, date, tested, open after the round, notes.
 
 ---
 

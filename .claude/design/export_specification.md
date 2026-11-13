@@ -1,9 +1,6 @@
 # Export Specification
-**Last updated:** 2026-05-04 (scope toggle refined to 3-way)
-**Status:** IMPLEMENTED (checked 2026-11-07) — this design is live in `app/handlers/export_handlers.py`
-(`system_tools_ui`, `export_bundle_download`), as described in `ui_implementation_contract.md §7.2/7.3`.
-`single_graph_export_handlers.py` (§8 below) was deleted outright rather than merged — its scope became
-the `[Active plot]` option of the 3-way toggle, in the same handler as everything else.
+**Last cleaned:** 2026-11-13
+**Status:** AS BUILT — live in `app/handlers/export_handlers.py` and described in `ui_implementation_contract.md` section 7.2. **Extended by the audit redesign (ADR-099)** when audit mode is built: the audit recipe (the copy with the audit steps), the exclusion and attrition tables and the hash legs (`home_stage2_mechanism_spec.md` section 4, `home_evidence/home_hash_model_2026-11-12.md`).
 **Authority:** ADR-047 (extended), tasks EXPORT-REDESIGN-1/2
 
 ---
@@ -184,12 +181,12 @@ Recursive if an ingredient is itself an assembly. Already implemented in
 
 ---
 
-## 8. Implementation pointers
+## 8. Where it lives
 
-| Component | Location | What changes |
-|---|---|---|
-| Export UI | `app/handlers/export_handlers.py` → `system_tools_ui()` | Remove `export_audit_report_ui` call; add scope toggle |
-| Audit report UI | `app/handlers/export_handlers.py` → `export_audit_report_ui()` | **Delete** — replaced by auto-inclusion logic in bundle |
-| Bundle builder | `app/handlers/export_handlers.py` → `export_bundle_download()` | Add T3 audit section to report.qmd; add t3_steps.yaml; 3-way scope logic (global / group / plot) |
-| Single graph export | `single_graph_export_handlers.py` (deleted, not merged — checked 2026-11-07) | Became the `[Active plot]` option of the 3-way scope toggle in `export_handlers.py`'s `export_bundle_download()`, not a separate merged file |
-| App features flags | No change needed | `export_enabled` already exist |
+| Component | Location |
+|---|---|
+| Export UI (scope toggle, label, format, Import block above the export form) | `app/handlers/export_handlers.py`, `system_tools_ui()` |
+| Bundle builder (global, group and plot scope; T3 audit trail in `report.qmd`; `t3_steps.yaml`; key check) | `app/handlers/export_handlers.py`, `export_bundle_download()` |
+| Bundle import and the hash checks | `app/modules/bundle_importer.py` (ADR-097) |
+| Single plot export | the `Active plot` option of the scope toggle (there is no separate handler) |
+| Gate | the flag `export_enabled`; no other flag |

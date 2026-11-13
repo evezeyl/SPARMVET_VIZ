@@ -5,7 +5,7 @@
 ## Start here
 
 1. `CLAUDE.md` (project root, Eve's file) and `.claude/rules/workspace_standard.md`: the rules.
-2. `.claude/tasks/tasks.md`: the **ACTIVE MAP** at its top: what is current, superseded and older.
+2. `.claude/tasks/tasks.md`: the live task list, sorted 2026-11-13: only open and current tasks, in four groups (HOME audit build, recipe format, configuration stage, backlog).
 3. `.claude/design/home_audit_reading_guide.md`: the HOME redesign: order of work, decision register, reading list.
 4. `.claude/design/spaces/HOME.md`: the whole of HOME in one place (built or target).
 5. `.claude/design/home_stage2_mechanism_spec.md`: the build plan P0-P12.
@@ -40,9 +40,9 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `adr076_mvp2_backend_options.md` | AS BUILT / reference | 2026-11-09 | ADR-076 MVP-2 Options — API Backend, Sandboxing, and Instructions Content |
 | `app_features_capability_matrix.md` | AS BUILT / reference | 2026-11-07 | Deployment Configuration Matrix |
 | `app_features_scoping_guide.md` | AS BUILT / reference | 2026-11-07 | Deployment Configuration Guide |
-| `design_t3_export_threading.md` | AS BUILT, partly superseded by the audit redesign (ADR-099); not moved because CLAUDE.md lists it | 2026-11-07 | Design: T3 Export Threading + Lineage Audit trail |
+| `design_t3_export_threading.md` | AS BUILT (cleaned 2026-11-13: what the export does with T3 today); replaced when audit mode is built (ADR-099) | 2026-11-13 | T3 in the export bundle and the lineage trail: as built |
 | `developer_workflow.md` | AS BUILT / reference | 2026-11-08 | Developer Workflow — End-to-End Producer Journey |
-| `export_specification.md` | AS BUILT, the export contents are extended by ADR-099 and the audit design; not moved because CLAUDE.md lists it | 2026-11-07 | Export Specification |
+| `export_specification.md` | AS BUILT (cleaned 2026-11-13); extended by the audit redesign (ADR-099) | 2026-11-13 | Export Specification |
 | `functionality_dependency_map.md` | AS BUILT / reference | 2026-11-07 | Functionality Dependency Map |
 | `home_audit_reading_guide.md` | RECENT (redesign) | 2026-11-13 | HOME filters and audit: reading guide (start here) |
 | `home_audit_steps.md` | RECENT (redesign) | 2026-11-13 | HOME: audit steps and audit mode |
@@ -52,10 +52,7 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `maps_advanced_geo.md` | AS BUILT / reference | 2026-05-22 | Advanced Geospatial Visualization — Solution B (Real Geo) |
 | `plot_authoring_model.md` | AS BUILT / reference | 2026-11-07 | Design: Canonical Plot Model & BLUEPRINT Authoring Seam |
 | `plot_config_cascade.md` | AS BUILT / reference | 2026-11-07 | Design: Plot Configuration Priority Cascade |
-| `recipe_format_gallery_options_2026-11-13.md` | RECENT (redesign) | 2026-11-13 | Gallery examples as standard recipes: what must change, options, plan (2026-11-13, version |
-| `recipe_format_review_2026-11-13.md` | RECENT (redesign) | 2026-11-13 | Recipe format: the decisions, the current state, the plan and the questions (2026-11-13) |
-| `recipe_format_spec.md` | RECENT (redesign) | 2026-11-13 | Recipe format specification (draft v0.8, 2026-11-13) |
-| `recipe_format_st22_draft.yaml` | RECENT (redesign) | 2026-11-13 | DRAFT, not loadable: the main file of 1_test_data_ST22_dummy written in the format of reci |
+| `recipe_format_spec.md` | RECENT (redesign) | 2026-11-13 | Recipe format specification (format version 1): the one clean file; what is decided, what is open |
 | `recipe_review_st22_2026-11-11.md` | RECENT (redesign): the test recipe review, with the AMR proposals R1-R4 | 2026-11-12 | Recipe review (data scientist): 1_test_data_ST22_dummy |
 | `reproducible_export_design.md` | AS BUILT / reference | 2026-11-09 | Reproducible export & import — design discussion (2026-11-09) |
 | `ui_panel_map_current.md` | AS BUILT / reference | 2026-11-09 | SPARMVET_VIZ — UI Panel Map & CSS Selector Reference (CURRENT STATE) |
@@ -94,8 +91,14 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `home_audit_first_cut.md` | HISTORY |  | A smaller first audit version (PROPOSAL, not decided) |
 | `home_audit_review_agenda_2026-11-12.md` | HISTORY |  | Audit planning review: agenda for 2026-11-12 |
 | `home_design_first_roadmap_2026-11-12.md` | HISTORY |  | HOME: design first, then mechanism, then code (roadmap and the design to agree) |
+| `recipe_format_review_2026-11-13.md` | HISTORY | 2026-11-13 | The first review of the recipe decisions and the plan |
+| `recipe_format_gallery_options_2026-11-13.md` | HISTORY | 2026-11-13 | Options and plan for gallery examples as standard recipes |
+| `recipe_format_spec_v0.8_2026-11-13.md` | HISTORY | 2026-11-13 | Recipe specification draft v0.8 with its version history and the ST22 findings |
+| `recipe_format_st22_draft.yaml` | HISTORY | 2026-11-13 | The ST22 main file in format 1 (draft, input of the ST22 migration) |
 | `home_filter_scoping_concept.md` | HISTORY |  | HOME filter scoping: concept, diagrams and test plan (DRAFT, thinking stage) |
 | `id_reconciliation_module_sketch.md` | HISTORY |  | ID Reconciliation Library — Module Structure Sketch |
+| `design_t3_export_threading_before_clean_2026-11-13.md` | HISTORY | 2026-11-13 | The T3 export threading design with its problem statements |
+| `export_specification_before_clean_2026-11-13.md` | HISTORY | 2026-11-13 | The export specification before the clean-up |
 
 ## `.claude/design/spaces/`
 
@@ -148,7 +151,13 @@ HISTORY: 6 files kept for the record (`.claude/knowledge/archive/`). Task archiv
 
 | File | Status | Last change | What it is |
 |---|---|---|---|
-| `implementation_plan_master.md` | ROADMAP before the redesign (the HOME plan is in the stage-2 spec) | 2026-11-08 | Implementation Plan Master: Dashboard Core & Plugin Validation |
+| `implementation_plan_master.md` | CURRENT roadmap (cut to one page 2026-11-13; phases 3-34 are in `outdated/`) | 2026-11-13 | Implementation Plan Master: the roadmap in one page |
+
+## `.claude/plans/outdated/`
+
+| File | Status | Last change | What it is |
+|---|---|---|---|
+| `implementation_plan_master_phases_19-34.md` | HISTORY | 2026-11-13 | The master plan with the history of phases 3 to 34 (all complete) |
 
 ## `.claude/prompts/`
 
@@ -185,11 +194,11 @@ HISTORY: 6 files kept for the record (`.claude/knowledge/archive/`). Task archiv
 
 | File | Status | Last change | What it is |
 |---|---|---|---|
-| `home_exploration_build_brief.md` | ON HOLD (detail input; the plan is the stage-2 spec) | 2026-11-12 | Build brief: HOME Exploration and engine fixes (start here in a new session) |
-| `retest_procedure_2026-11-06.md` | HISTORY-like: one-off retest of 2026-11-06; kept in place because a test and a script use it | 2026-11-07 | Retest procedure, 2026-11-06 |
-| `tasks.md` | RECENT (redesign) | 2026-11-13 | Tasks (SOLE SOURCE OF TRUTH) |
-| `test_plan_2026-06.md` | AS BUILT: the live manual test plan for Blueprint, Gallery and Test Lab; its HOME part is superseded by test_plan_home_2026-11.md | 2026-11-09 | SPARMVET_VIZ — Live App Test Plan |
-| `test_plan_home_2026-11.md` | AS BUILT: valid for HOME as built today; rewritten after the redesign (TEST-ADAPT-1) | 2026-11-12 | SPARMVET_VIZ — HOME Test Plan (Phase 1 of the split) |
+| `home_exploration_build_brief.md` | CURRENT (cut 2026-11-13): the working protocol of the build, the issue protocol, the QA canaries, details of packages P1, P3, P8 | 2026-11-13 | Build brief: working protocol and package details for the HOME work |
+| `retest_procedure_2026-11-06.md` | CURRENT manual procedure (not run yet; a test and a script use it, so its name stays) | 2026-11-07 | Retest procedure, 2026-11-06 |
+| `tasks.md` | CURRENT (sorted 2026-11-13) | 2026-11-13 | Tasks (the live list) |
+| `test_plan_2026-06.md` | CURRENT manual test plan for Blueprint, Gallery, Test Lab and the configuration gating (no round run since Phase 34) | 2026-11-13 | SPARMVET_VIZ — Live App Test Plan |
+| `test_plan_home_2026-11.md` | CURRENT stub: only the items of the old HOME ledger that are not passed; the new HOME plan is written at P9/P12 | 2026-11-13 | HOME test plan: what is still open (as-built HOME) |
 | `uml_findings.md` | AS BUILT / reference: differences found between the UML model and the repository | 2026-11-08 | UML model: findings register |
 
 ## `.claude/tasks/archives/`
@@ -210,6 +219,10 @@ HISTORY: 19 files kept for the record (`.claude/tasks/archives/`). Task archives
 | `next_session_start.md` | HISTORY |  | Start here (2026-11-12): builders and the design review side by side |
 | `project_word_mapping.md` | HISTORY |  | Mapping: the word "project" (CONFIG-PROJECT-WORD-1) |
 | `tasks_test_ui_current.md` | HISTORY |  | Live-UI Test Checklist — Current Dashboard |
+| `tasks_before_sort_2026-11-13.md` | HISTORY | 2026-11-13 | `tasks.md` before it was sorted (superseded tasks, session notes, completed-phases table) |
+| `home_exploration_build_brief_2026-11-11.md` | HISTORY | 2026-11-13 | The build brief with its work-package history and status table |
+| `test_plan_home_2026-11_ledger.md` | HISTORY | 2026-11-13 | The full HOME test ledger (30 items passed, Eve's notes, round log) |
+| `test_plan_2026-06_before_clean.md` | HISTORY | 2026-11-13 | The Phase 2 test plan with its old iteration log |
 
 ## `.claude/workflows/`
 
