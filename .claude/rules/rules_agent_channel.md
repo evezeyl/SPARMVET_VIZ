@@ -75,3 +75,10 @@ If `tmpAI/agent_channel.md` does not exist, create it with this skeleton:
 ```
 
 A row names the files or folders in editing at this moment, not the whole package. Delete the row when the work is committed.
+
+## 7. Agents agree with each other; Eve decides (added 2026-11-13, Eve)
+
+- Two sessions may talk in the channel until they agree (Eve names the number of rounds each time). **Agreeing is not deciding.** What the sessions agree on is a **recommendation to Eve**, never a decision. Nothing of it is written as DECIDED, built or migrated before Eve says yes.
+- For every agreed point the sessions hand Eve, in plain words: **what it is, why, the alternatives (including "do nothing"), the consequences for her** (science and correctness, reproducibility, simplicity of the app, work and risk), and the **recommendation with its reason**. Constraints found by one session that the other did not know are stated.
+- Science and reproducibility are not negotiable (Eve): a proposal that removes a data-science capability, changes a result silently, or makes a figure or table depend on something that is not recorded is flagged at the top of the point, even when both sessions like it.
+- A decision of Eve's is recorded with its date. A point the sessions agreed on and that Eve has not yet confirmed is marked `[AGREED BY THE SESSIONS, awaiting Eve]`.
