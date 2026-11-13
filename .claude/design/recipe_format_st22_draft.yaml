@@ -10,6 +10,7 @@
 # tmpAI/recipe_format/st22_baseline.json). Three are marked REVISE: R1-R4 (recipe_review_st22_2026-11-11.md 3b) change them.
 
 id: 1_test_data_ST22_dummy
+format_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 

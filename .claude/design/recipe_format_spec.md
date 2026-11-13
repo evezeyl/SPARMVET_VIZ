@@ -1,4 +1,4 @@
-# Recipe format specification (draft v0.3, 2026-11-13)
+# Recipe format specification (draft v0.4, 2026-11-13)
 
 **Written for:** Eve, to read and confirm. After that it is the base of the tests, of the checker (`check_recipe`), of the rule file and of the user documentation.
 **Status:** DRAFT. Nothing is built from it yet. It was written by applying the decisions of 2026-11-11/12 and your answers of 2026-11-13 to the code (read at file:line) and to every recipe file in the repository (scans in `tmpAI/recipe_format/`, scratch). The worked example is `1_test_data_ST22_dummy`: section 12 and `recipe_format_st22_draft.yaml`.
@@ -7,6 +7,8 @@
 **v0.2 (same day, after your review of v0.1):** (1) comments are specified (5b): `#` comments are free and kept, and an optional `comment` key exists; (2) the example variant (gallery) is now defined from what the gallery code reads and writes (6.9). It keeps `name`, the six-axis taxonomy, `data_path`, `wrangling` with `tier3` and its own file names, and it asks for no `label` or `description`; v0.1 refused `tier3` and renamed `name`, which would have broken the gallery; (3) the taxonomy is the gallery's and does not appear in a pipeline recipe (6.8); (4) the column-name aliases are replaced by what the action schemas already declare (6.5, 11); (5) science errors of recipes are fixed, not only described (15).
 
 **v0.3 (same day, after your gallery message):** (1) the comment key is **`comment`** (singular). Blueprint already writes it on steps, layers, groups and plots (BP-COMMENTS-1, ADR-082 Q4; `blueprint_handlers.py:376-378,402-404`, `join_designer.py:153`), and ADR-083 gives every layer a `comment`. My v0.2 had `comments` and a checker that would have refused what Blueprint saves. It is renamed and accepted on every step and every layer (5b, 6.5, 6.8). (2) Section 6.9 (gallery) is **withdrawn**: you want the gallery to follow the same spec, so the v0.2 text that kept its own words is wrong. The options, with pros and cons, are in `recipe_format_gallery_options_2026-11-13.md`; 6.9 is rewritten when you choose.
+
+**v0.4 (same day, after your next message):** (1) every recipe declares a **`format_version`** (section 4b), a good idea you took from the review of the app changes with another agent: it names the version of this specification that a file is written in, the checker refuses any other version and says which migration tool to run; (2) the gallery's `taxonomy` key is **required** in the gallery profile (optional in other recipes); (3) the question "can the allowed gallery terms be in the spec, one place instead of two?" is answered in the gallery options (D3): yes, if the specification itself is also a data file; section 0 says how.
 
 ## 0. Where this file lives and how it spreads (your question)
 
@@ -21,6 +23,8 @@ Yes, `.claude/design/` is the right place **while it is a draft**: it is the wor
 | The text of the error messages | generated from the check table (section 8), not typed twice | no drift |
 
 This file then becomes history (marked HISTORICAL by the rule `rules_legacy_management.md`) and points to those homes.
+
+**Proposal, to decide with the gallery options (D3): one place for the rules themselves.** The homes above hold the same facts in prose, in code and in tests, and they can drift. If the specification is also a **data file** in `libs/utils` (the allowed keys of each element, required or advice, the types, the vocabularies including the gallery terms, the table of renamed keys, the format version), then the checker, the filter panels, the markdown tables of the appendix, the error messages and the migration tool all read or are generated from that one file. Cross-element rules and the registries of actions and plot components stay in code. This is what makes "the authorised terms are in the spec" true in a way the program can use.
 
 ## 1. What you decided on 2026-11-13
 
@@ -66,7 +70,7 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 | Transformer test recipes | 68 in `libs/transformer/tests/data` | `build` | flat form (`wrangling:` at the top, `input_fields:` at the top) is refused: each becomes one data schema with its `source` path (section 6.3). The runners already prefer a CLI data path over the recipe's (`rules_asset_scripts.md` 4), so nothing is lost |
 | Legacy files | 2 (`VIGAS-P/VIGAS_VirulenceFinder.yaml`, `assets/ref_data/.../Virulence_genes_APEC_...yaml`) | `build` | no code reads them that I found; they follow the format or are removed, your call (13.6) |
 | Gallery bundles | 34 | a standard recipe in a `gallery` profile (proposal, 6.9) | **undecided**: `recipe_format_gallery_options_2026-11-13.md`. They follow the same spec; the profile adds the rules of an example |
-| Recipes written by the app | Blueprint "new recipe" form, test-lab bootstrapper and scaffolder, `create_data_analysis_recipe.py`, the export's forked recipe, the importer | the profile of their use | the checker runs on what they write; a test per writer |
+| Recipes written by the app | Blueprint "new recipe" form, test-lab bootstrapper and scaffolder, `create_data_analysis_recipe.py`, the export's forked recipe, the importer | the profile of their use | the checker runs on what they write; a test per writer; every writer emits `format_version` |
 | Recipes inside automatic tests | inline YAML strings in tests and fixtures | as their purpose | one shared helper writes a minimal valid recipe, so no test types the boilerplate (W1) |
 
 ## 4. File level
@@ -74,6 +78,7 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 | Key | Required | Value | Executed / shown by |
 |---|---|---|---|
 | `id` | yes | text equal to the file name without `.yaml` | selector, caches, sessions, export |
+| `format_version` | yes | an integer: the version of this specification the file is written in (`1`) | the checker (V01-V04, 4b); exports record it; the migration tool reads it |
 | `data_engine` | yes | `python-polars` (only value built) | checker now; fingerprint and export record it later (KEYS-NODE-1) |
 | `plot_engine` | yes | `python-plotnine` (only value built) | same |
 | `info` | yes | mapping (6.1) | Info panel, title banner, load gate contact |
@@ -85,7 +90,35 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 | `analysis_groups` | yes | mapping `group id -> group` (6.7) | HOME tabs |
 | `plot_defaults` | no | mapping (6.8) | plot engine |
 
-**Refused at the top level, with the replacement the message names** (section 9): `plots`, `wrangling`, `input_fields`, `output_fields`, `name`, `pipeline_id`, `description`, `metadata`, `type`, `join_manifests`, and every other unknown key (did-you-mean by spelling).
+**Refused at the top level, with the replacement the message names** (section 9; a missing `format_version` is the first of them, 4b): `plots`, `wrangling`, `input_fields`, `output_fields`, `name`, `pipeline_id`, `description`, `metadata`, `type`, `join_manifests`, and every other unknown key (did-you-mean by spelling).
+
+## 4b. The format version `[MINE: name and form; the idea is yours]`
+
+**What.** Every recipe declares `format_version: 1`, the version of this specification that the file is written in. The first confirmed specification is **format 1**; the drafts v0.x are drafts of it. The unversioned recipes of today are called **format 0**. The key is not `info.version`, which stays the author's own version of the recipe's content (`1.8`).
+
+**The app reads one version** (no compatibility, P2). A recipe with another version is refused, in both profiles, with a message that says which version the app reads and which tool migrates.
+
+**What changes the number.** Any change of *structure*: a key added, removed or renamed, a change of required-ness or meaning, a change of a closed vocabulary (the four types, the engine names). Not a new term in an *open* vocabulary (the gallery terms): those follow the app release, and an app that does not know a term refuses the recipe with "unknown term". A new optional key is a change too: with "unknown keys fail", an older checker cannot read it, so there is no "compatible minor version". That is why one integer is enough.
+
+| Check | Sev | Trigger | Message says |
+|---|---|---|---|
+| V01 | E | `format_version` missing | this recipe is in the old format 0; run the migration tool |
+| V02 | E | lower than the version the app reads | written for format N, the app reads M; migrate N to M |
+| V03 | E | higher than the app reads | written for a newer format; update the app |
+| V04 | E | not an integer (`"1"`, `1.0`, `true`) | write `format_version: 1` |
+
+**Migration** (one tool, for us and for any user's recipes): `assets/scripts/migrate_recipe_format.py --from 0 --to 1`, built on the pattern of `migrate_config_vocabulary.py` (a dry run by default, `--apply` to write, safe to run twice). It edits the text, so every `#` comment is kept. It applies the replacement table of section 9 mechanically, adds `format_version` and the two engine lines, unwraps fragments, and writes a `label` made from the id as real text for the author to edit. It does **not** invent what is not mechanical: descriptions stay empty (an advice), `entity` is not added, science is not touched; it prints the list of what a person must still do. The shipped recipes are migrated with the same tool, then reviewed by hand.
+
+**Where the number is recorded and used.** In every recipe written by the app (all writers), in the forked recipe of an export (copied), in `effective_run.yaml` of an export, and by the importer (its recipe leg says when the version differs). The spec keeps a history table:
+
+| format | specification | status |
+|---|---|---|
+| 0 | the unversioned recipes before 2026-11-13 | refused with the migration message |
+| 1 | this specification (drafts v0.1 to v0.x until Eve confirms) | to be in force |
+
+**Consequences to accept.** (a) One more required key in every recipe (16 + 68 + 34 files, all writers, many tests); the migration tool does the mechanical part. (b) An export made under format 0 cannot be re-run by an app that reads format 1 until its recipe is migrated; the migrated recipe has another hash, so the importer's recipe leg reports a difference. This follows from "no compatibility default"; the bundle still holds the original file, and the version recorded in `effective_run.yaml` says which app generation can read it. (c) A number can be wrong (someone changes keys without changing it): the checker still reads the keys, so the error shows up as an unknown or missing key. (d) The same idea may later apply to the app-features and deployment files; not proposed now.
+
+**Alternatives for the value.** A date (`2026-11-13`): readable, but not ordered by meaning. `major.minor` (`1.0`): the minor part cannot mean "compatible" here (see above). The app version: couples every recipe to every release. **Alternatives for the name:** `spec_version`, `recipe_format`, `schema_version`. `format_version` matches the words of this file.
 
 ## 5. Fragments (`!include`)
 
@@ -234,6 +267,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | T03 | E | unknown top-level key | replacement (section 9) or did-you-mean |
 | T04 | E | `id`, `data_engine`, `plot_engine`, `info`, `data_schemas`, `analysis_groups` missing | add it |
 | T05 | E | `id` differs from the file name | exists today |
+| V01-V04 | E | `format_version` missing, older, newer, or not an integer (4b) | the migration tool, or update the app |
 | T06 | E | engine value unknown, or a plot engine in the data slot | say the built values |
 | T07 | E | unquoted `on` (a `True` key) anywhere | quote it |
 | T08 | E | root `plots:` | move into a group |
@@ -295,6 +329,7 @@ Mechanism: `utils/legacy_keys.py` (today three dictionaries of renamed keys, `le
 | Where | Old | New |
 |---|---|---|
 | `info` | `display_name` | `label` |
+| top level | (no `format_version`: format 0) | `format_version: 1` and the replacements of this table, by `migrate_recipe_format.py` |
 | top level | `description` | `info.description` |
 | top level | `name`, `pipeline_id` | `info.label`, `id` |
 | top level | `metadata` | `metadata_schema` |
@@ -396,6 +431,8 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 13. **[OPEN] `scan_parquet` and `sink_parquet`** have no `ui_schema`; the rules call them engine-internal, yet 4 transformer fixture steps use them to test them. Options: give them a schema and allow them (the fixtures stay recipes), or test them outside recipes. Recommendation: a schema, allowed, with a description that says they are for tests and advanced use.
 14. **[MINE, follows your "do not confound"] Plot-spec metadata.** The taxonomy is not in a pipeline plot (6.8); `description` and `info` go to the plot entry; a note goes in `comment`. This reverses my review recommendation of 2026-11-13 and the text of issue #66. The gallery options (D2) propose exactly what you suggested: one optional key, `taxonomy`, on the plot entry, checked against a dictionary of the gallery terms. Decide there.
 15. **[CODE] The `comment` key** exists (BP-COMMENTS-1) and is accepted on every step and layer. What is new and to confirm: `comment` also on `info`, a data schema, a join (5b).
+16. **[MINE] `format_version`** (4b): the name, an integer, one version read at a time, the migration tool. Say if you prefer another name (`spec_version`, `recipe_format`) or a different value form.
+17. **[OPEN] One place for the rules** (section 0 and gallery options D3): make the specification a data file, so the allowed keys, types, vocabularies (gallery terms included), renames and the version live in one file from which the checker, the filter panels and the docs read. Recommended; it shapes how #76 is built, so it should be decided before the checker starts.
 
 ## 14. Tests that come out of this file (written first, they fail on today's code)
 
@@ -406,6 +443,8 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 - Shape tests (TEST-SHAPES-1): the shipped recipes as fixtures for no join, no key, another key name, no population table, long format.
 - Registry oracle (AR2): for every action, the parameters its code reads equal its `ui_schema.params`.
 - **Gallery protection:** the committed `gallery_index.json` equals the index rebuilt from the bundles (exists); a bundle written by `GalleryManager.submit_example` (with a `tier3` list) passes the checker; every bundle renders its preview with `generate_previews.py`; every taxonomy value is inside the cheat sheet; the tag strip of each `example_meta.md` equals `info`.
+- **Format version:** one test per V01 to V04; every shipped recipe, template, gallery example, written recipe and forked recipe carries `format_version: 1`; `effective_run.yaml` records it.
+- **Migration tool:** a format-0 recipe (taken from the git history of the ST22 recipe) becomes a recipe that passes the checker with advices only; running it twice changes nothing; every `#` comment is kept; the list of manual steps is printed.
 - **Comments:** a recipe with `#` comments passes untouched; every writer (Blueprint save, bootstrapper, scaffolder, the migration) keeps the comments of a fragment it edits (a before/after text comparison).
 - The tests that encode superseded behaviour are listed first (TEST-ADAPT-1): `test_empty_wrangling_is_valid` (`wrangling: []`), `test_tiered_steps_is_valid` and the other tests with inline recipes (no engines), the template and folder tests.
 

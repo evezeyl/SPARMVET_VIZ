@@ -1,6 +1,6 @@
 # How audit mode shows data and plots from a copy of the recipe (investigation, 2026-11-13)
 
-**Status:** reasoned from the code read today (counts verified) and from the forked-recipe test of 2026-11-12; **MINE, to confirm**. Eve's point: the audit steps are registered in a **copy of the recipe**; the rest is a consequence, so in audit the data and the plots that are shown come from that copy.
+**Status:** reasoned from the code read today (counts verified) and from the forked-recipe test of 2026-11-12; **Source of truth DECIDED by Eve 2026-11-13, with the invariant that original steps cannot be modified in the copy** (the copy minus its marked steps equals the original; tested as a property). Eve's point: the audit steps are registered in a **copy of the recipe**; the rest is a consequence, so in audit the data and the plots that are shown come from that copy.
 
 ## 1. The model
 - **Exploration** reads the original recipe and the original stored tables. Nothing changes.
