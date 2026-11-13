@@ -30,6 +30,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 
 import yaml
 
+from utils.action_names import TIER1_ONLY
 from utils.formula_check import formula_problems
 from utils.polars_types import PARAMETER_KEYS, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
@@ -41,7 +42,7 @@ TIER3_READ_BY_ENGINE = False
 PROFILES = ("run", "build", "gallery", "audit")
 _AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
-_TIER1_ONLY_DEFAULT = frozenset({"polars_join", "join", "join_filter"})
+_TIER1_ONLY_DEFAULT = TIER1_ONLY
 
 
 @lru_cache(maxsize=1)
