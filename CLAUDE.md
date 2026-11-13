@@ -174,6 +174,7 @@ Contract → CLI Execution → Materialize to `tmpAI/` → Validate → Copy to 
 - **State file**: `.claude/logs/handoffs/handoff_active.md`
 - Before stopping: write current status, modified file paths, and next step to the handoff file
 - Upon starting: read `handoff_active.md` to resume context
+- **Agent channel** (several sessions work in this repo at the same time): read `tmpAI/agent_channel.md` at the start, keep your row of "Working on now" current, post and delete messages, stage and commit by file name. Rule: `.claude/rules/rules_agent_channel.md` (this repository only; Eve 2026-11-13)
 - If chat instructions conflict with this file: HALT and request `@sync`
 
 ---

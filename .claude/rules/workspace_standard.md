@@ -38,6 +38,7 @@ This file is the **Sole Source of Authority** for agentic behavior in the SPARMV
 | **Legacy Management** | Deprecation markers, Historical preservation, Tombstone expiry — read when marking anything as deprecated/removed | [rules_legacy_management.md](./.claude/rules/rules_legacy_management.md) |
 | **Toolchain** | uv, `./.venv`, pytest, Playwright, Quarto, podman, git/gh, audit scripts, what is not installed | [rules_toolchain.md](./.claude/rules/rules_toolchain.md) |
 | **TEST_LAB** | Stateless tool principle, `libs/id_reconciliation/` boundaries, synthetic config firewall, Bootstrapper scope, single-key boundary, app features gate — read when building any TEST_LAB feature | [rules_test_lab.md](./.claude/rules/rules_test_lab.md) |
+| **Agent Channel** | Sessions that work at the same time: the shared note `tmpAI/agent_channel.md` (not in git), post/read/delete protocol, staging and commits by file name — read at the start of every session | [rules_agent_channel.md](./.claude/rules/rules_agent_channel.md) |
 
 ## 2. Primary Technical Bible
 
