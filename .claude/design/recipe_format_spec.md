@@ -92,6 +92,7 @@ analysis_groups:
 | 21 | **Gallery design D1 + D2 + D3** (section 9): an example is a standard recipe in a `gallery` profile; the key is `taxonomy` on the plot entry, required in the gallery, five axes, `geom` derived; the specification is also a data file so the gallery terms live in one place. D4 to D7 are decided when the gallery work starts | Eve 2026-11-13 |
 | 22 | **The version key is `spec_version`**, an integer (section 4.1) | Eve 2026-11-13 |
 | 23 | **J08 is an error with a guidance message:** a non-key column present in both tables of a join (silently renamed `name_right` by Polars) refuses the recipe; the message names both tables and the column and says how to rename or drop one (section 5.2) | Eve 2026-11-13 |
+| 24 | **The two legacy recipes are removed**: `config/data_analysis_recipes/VIGAS-P/` (a recipe and its fragments) and `assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_data_analysis_recipe.yaml`; no code reads them. `Virulence_genes_APEC_input_fields.yaml` in the same folder is **not** legacy: the Abromics pipeline includes it | Eve 2026-11-13 |
 | 19 | Notes, not decisions: some library code may move to `libs/utils` when two libraries need it (nothing moved; `UTILS-REUSE-REVIEW-1`); the Dockerfile is not ready and nothing is deployed (`DOCKER-RELEASE-1`) | Eve 2026-11-13 |
 
 ### 2.2 Principles (each follows from a decision above)
@@ -105,22 +106,21 @@ analysis_groups:
 
 ### 2.3 Open: what is still undecided or unclear
 
-The numbers O1 to O18 are kept as references; a decided point leaves the table (O2, O3 and O6 were decided on 2026-11-13: rows 20, 22 and 23 of section 2.1).
+The numbers O1 to O18 are kept as references; a decided point leaves the table (O2, O3, O6 and O8 were decided on 2026-11-13: rows 20, 22, 23 and 24 of section 2.1).
 
 | # | Question | Recommendation | Touches |
 |---|---|---|---|
 | O1 | **Gallery, the later decisions D4 to D7** (section 9): where an example is checked (D4), how previews are made (D5), the tag strip of `example_meta.md` (D6), the data contract of an example (D7); and whether the dead submission code is removed (G6) | D4 `check_recipe` at rebuild, at app start and in the tests; D5 previews by the app's path; D6 tag strip generated from `taxonomy`; D7 generated contract, reviewed | #82 |
 | O4 | **`profile` or `mode`** for run/build/gallery. The HOME stage-2 draft writes `mode`; HOME already uses "mode" for Exploration/Audit | `profile`; needs both sessions to agree | #76, HOME |
 | O5 | **Step marker written by the app**: the audit mode must mark the steps it inserts, to remove or undo exactly those. Proposed: the key `id` with the prefix `audit_`; the HOME session decides the final name. **Authors never write it** and the author-facing parts of the format do not offer it (Eve asked 2026-11-13: an `id` that authors do not use would confuse) | an app-written `id` with `audit_`; the HOME session confirms the name | #85, HOME |
-| O7 | **Schema `output_fields`** are checked by the data check but never applied | keep as a checked declaration and say so in the rule file | section 7.3 |
-| O8 | **The two legacy files** (`VIGAS_VirulenceFinder.yaml`, `Virulence_genes_APEC_...yaml`): follow the format or remove | no reader found; confirm by searching the deployment configuration, then remove | #78 |
+| O7 | **Schema `output_fields`.** Eve answered "remove" on 2026-11-13; **the impact found afterwards needs her confirmation**: they are read by 12 code files (Blueprint's three-column contract viewer, the recipe navigator, the agent tools, the test-lab bootstrapper and scaffolder, the validator, the loader, `metadata_validator`), they are in 23 recipe files, and ADR-013, ADR-041 and the rule file list them as part of the data contract (`input_fields`, `wrangling`, `output_fields`). Today the engine never applies them; the data check only compares them with the columns | keep as a checked declaration (no engine change), or remove them with Blueprint's viewer and 23 recipes changed | section 7.3 |
 | O9 | **Duplicate forms in a plot spec** (`facet_by` at the top and inside `mapping`; `filters` in the spec and the tier-3 list) | allowed for now; the plot-engine owner (Blueprint) simplifies | section 7.8 |
 | O10 | **Package H, the list of operations a formula may use** (`mutate` expressions, plot function strings) | derived from all recipes and shown to Eve before it is enforced | #80 |
 | O11 | **`scan_parquet` and `sink_parquet`** have no schema; 4 transformer fixtures use them | give them a schema, allowed, described as for tests and advanced use | #87 |
 | O12 | **The tier-3 container**: `steps: {tier3: [...]}` on the plot entry | keep (it mirrors `steps: {tier1, tier2}` of a join); renaming later is one line | section 7.7 |
 | O13 | **`comment` key** also on `info`, a schema and a join (it exists on steps, layers, groups and plots) | accept | section 6.2 |
 | O14 | **Schema `category`, `sub_category`** and `comment` as direct keys of a schema (replacing the retired `info:` block of a schema) | accept (Blueprint's map reads `sub_category`) | section 7.3 |
-| O15 | **Replacing the column-name aliases** (`column`, `source`, `target_column` for `columns`): no ADR decides them either way; it follows "no compatibility default" and changes `libs/transformer` | do it, tests first | #76, #78 |
+| O15 | **The column-name aliases** (`column`, `source`, `source_column`, `target_column` accepted where the schema says `columns`). Eve cannot decide yet: she asked whether they serve a human-readable name for plot axes. **Checked: no.** They are alternative spellings of the parameter that names the column a step works on; display names are the field `label`, which no plot reads today (#91, a separate feature) | do not decide now; the display-name need is #91; the aliases are decided with the checker (#76) | #76, #78, #91 |
 | O16 | **`original_name` stays allowed** on output lists (Blueprint shows it) | keep | section 7.4 |
 | O17 | **Profiles**: `run` and `build` differ only in what an empty placeholder may be | keep | section 3 |
 | O18 | **Plot-spec metadata**: the taxonomy is not in a pipeline plot; `description` and `info` go to the plot entry; a note goes in `comment` (this reverses an earlier recommendation, after "do not confound") | keep | section 7.8 |
@@ -142,7 +142,6 @@ HOME rejects, Blueprint reports and never blocks building `[DECIDED, 5a-19]`.
 | Pipeline recipes, templates, retest scenarios | 7 + 5 + 4 | `run` | the retest scenarios that are faulty on purpose keep their one fault and must be otherwise valid |
 | Viz-factory test recipes | 194 in `libs/viz_factory/tests/test_data` (one per plot component, the 1:1:1 evidence loop of `rules_viz_factory.md` 3) and 1 in `libs/viz_gallery/tests/data` | `run` | today in the plot engine's compact shape (`plots:` and `data_path:` at the top; 193 of 194): each becomes a standard recipe like a gallery example; one conversion tool serves them and the gallery bundles; found by Eve's question "do the library tests have recipes too?" (#89) |
 | Transformer test recipes | 68 in `libs/transformer/tests/data` | `build` | the flat form (`wrangling:` and `input_fields:` at the top) is refused: each becomes one schema with its `source` path. The runners already prefer a command-line data path to the recipe's (`rules_asset_scripts.md` 4) |
-| Legacy files | 2 | `build` | O8 |
 | Gallery bundles | 34 | `gallery` | section 9 |
 | Recipes written by the app | Blueprint's new-recipe form, test-lab bootstrapper and scaffolder, `create_data_analysis_recipe.py`, the export's forked recipe, the importer | their use | the checker runs on what they write; a test per writer; every writer emits `spec_version` |
 | Recipes inside automatic tests | inline YAML strings in tests and fixtures | their purpose | one shared helper writes a minimal valid recipe, so no test types the boilerplate |
