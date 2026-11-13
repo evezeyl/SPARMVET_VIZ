@@ -15,7 +15,11 @@ actions:
   - drop_nulls, sanitize_column_names, strip_whitespace, unique_rows, sample and describe_stats have no required
     parameter: acting on all columns by default is their contract, not a defect.
 
-Both tests below are `xfail(strict=True)`: they fail today, and the day the runtime guard exists (a check of
+These are the actions called directly. In a recipe a schema's wrangling goes through `DataWrangler`, which first
+maps the aliases `column`, `source`, `source_column`, `target_column` to `columns`; a join's steps (`DataAssembler`) get no
+such mapping. The recipe-level cases are in `app/tests/test_column_names_through_the_steps.py`.
+
+The two tests below are `xfail(strict=True)`: they fail today, and the day the runtime guard exists (a check of
 `required` and of unknown keys in `register_action`, planned for after the alias removal of the recipe
 migration, #78, because shipped recipes still use aliases such as `source`) the marks fail and must be
 removed in that commit. DECISION TO TAKE: the guard needs the aliases gone first (no compatibility shim,
