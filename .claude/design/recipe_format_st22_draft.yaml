@@ -1,7 +1,7 @@
 # DRAFT, not loadable: the main file of 1_test_data_ST22_dummy written in the format of recipe_format_spec.md (v0.1).
 #
 # What this draft shows: every element has `label` and `description`; the two engine keys; `entity`; no `info:` on
-# schemas, joins or plots (the author's `comments` stay, verbatim, as a key: spec 5b); the tab text is `label`, not `description`; the plot entry carries the description, the
+# schemas, joins or plots (the author's notes stay, verbatim, as the key `comment`: spec 5b); the tab text is `label`, not `description`; the plot entry carries the description, the
 # spec keeps only the grammar; `wrangling: {tier1: []}` instead of `[]`; the join contract is `final_contract`.
 # What it does not show: the fragment files (they follow in package E: wrappers removed, `column`/`source` -> `columns`,
 # `is_primary_key` -> `is_entity_key`, spec keys removed). Include paths below are those of the current recipe.
@@ -86,7 +86,7 @@ data_schemas:
       join or plot of this recipe.
     category: Gene detection
     sub_category: AMR gene / predicted phenotype detection - summary
-    comments: Filtered by % identity > 90 and % overlap > 85 Reason and legnth ratio > 0.8 assume true values
+    comment: Filtered by % identity > 90 and % overlap > 85 Reason and legnth ratio > 0.8 assume true values
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Detailed_Summary_20260307_105756.tsv
@@ -190,7 +190,7 @@ additional_datasets_schemas:
       no sample column and is used only to keep the genes of interest when it is joined.
     category: Gene detection
     sub_category: VirulenceFinder Reference dataset
-    comments: Virulence types of interest for STEC
+    comment: Virulence types of interest for STEC
     source:
       type: local_tsv
       path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv

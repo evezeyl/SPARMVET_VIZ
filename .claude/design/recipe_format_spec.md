@@ -1,10 +1,12 @@
-# Recipe format specification (draft v0.2, 2026-11-13)
+# Recipe format specification (draft v0.3, 2026-11-13)
 
 **Written for:** Eve, to read and confirm. After that it is the base of the tests, of the checker (`check_recipe`), of the rule file and of the user documentation.
 **Status:** DRAFT. Nothing is built from it yet. It was written by applying the decisions of 2026-11-11/12 and your answers of 2026-11-13 to the code (read at file:line) and to every recipe file in the repository (scans in `tmpAI/recipe_format/`, scratch). The worked example is `1_test_data_ST22_dummy`: section 12 and `recipe_format_st22_draft.yaml`.
 **Tags:** **[DECIDED]** you decided it; **[MINE]** my choice while writing, to confirm (section 13 lists them all); **[OPEN]** not decided, with a recommendation; **[CODE]** fixed by what existing code reads or writes (verified, file:line).
 
-**v0.2 (same day, after your review of v0.1):** (1) comments are specified (5b): `#` comments are free and kept, and an optional `comments` key exists; (2) the example variant (gallery) is now defined from what the gallery code reads and writes (6.9). It keeps `name`, the six-axis taxonomy, `data_path`, `wrangling` with `tier3` and its own file names, and it asks for no `label` or `description`; v0.1 refused `tier3` and renamed `name`, which would have broken the gallery; (3) the taxonomy is the gallery's and does not appear in a pipeline recipe (6.8); (4) the column-name aliases are replaced by what the action schemas already declare (6.5, 11); (5) science errors of recipes are fixed, not only described (15).
+**v0.2 (same day, after your review of v0.1):** (1) comments are specified (5b): `#` comments are free and kept, and an optional `comment` key exists; (2) the example variant (gallery) is now defined from what the gallery code reads and writes (6.9). It keeps `name`, the six-axis taxonomy, `data_path`, `wrangling` with `tier3` and its own file names, and it asks for no `label` or `description`; v0.1 refused `tier3` and renamed `name`, which would have broken the gallery; (3) the taxonomy is the gallery's and does not appear in a pipeline recipe (6.8); (4) the column-name aliases are replaced by what the action schemas already declare (6.5, 11); (5) science errors of recipes are fixed, not only described (15).
+
+**v0.3 (same day, after your gallery message):** (1) the comment key is **`comment`** (singular). Blueprint already writes it on steps, layers, groups and plots (BP-COMMENTS-1, ADR-082 Q4; `blueprint_handlers.py:376-378,402-404`, `join_designer.py:153`), and ADR-083 gives every layer a `comment`. My v0.2 had `comments` and a checker that would have refused what Blueprint saves. It is renamed and accepted on every step and every layer (5b, 6.5, 6.8). (2) Section 6.9 (gallery) is **withdrawn**: you want the gallery to follow the same spec, so the v0.2 text that kept its own words is wrong. The options, with pros and cons, are in `recipe_format_gallery_options_2026-11-13.md`; 6.9 is rewritten when you choose.
 
 ## 0. Where this file lives and how it spreads (your question)
 
@@ -63,7 +65,7 @@ There is **one format**. A recipe is checked in one of two **profiles** that dif
 | Pipeline recipes, templates, retest scenarios | 7 + 5 + 4 | `run` | the retest scenarios that are faulty on purpose keep their one fault and must be otherwise valid |
 | Transformer test recipes | 68 in `libs/transformer/tests/data` | `build` | flat form (`wrangling:` at the top, `input_fields:` at the top) is refused: each becomes one data schema with its `source` path (section 6.3). The runners already prefer a CLI data path over the recipe's (`rules_asset_scripts.md` 4), so nothing is lost |
 | Legacy files | 2 (`VIGAS-P/VIGAS_VirulenceFinder.yaml`, `assets/ref_data/.../Virulence_genes_APEC_...yaml`) | `build` | no code reads them that I found; they follow the format or are removed, your call (13.6) |
-| Gallery bundles | 34 | the **example variant** (6.9) | defined by the gallery's own code `[CODE]`: it keeps its words (`name`, the taxonomy, `tier3`); it takes the two engine keys and the unknown-key rule |
+| Gallery bundles | 34 | a standard recipe in a `gallery` profile (proposal, 6.9) | **undecided**: `recipe_format_gallery_options_2026-11-13.md`. They follow the same spec; the profile adds the rules of an example |
 | Recipes written by the app | Blueprint "new recipe" form, test-lab bootstrapper and scaffolder, `create_data_analysis_recipe.py`, the export's forked recipe, the importer | the profile of their use | the checker runs on what they write; a test per writer |
 | Recipes inside automatic tests | inline YAML strings in tests and fixtures | as their purpose | one shared helper writes a minimal valid recipe, so no test types the boilerplate (W1) |
 
@@ -99,7 +101,7 @@ Two things are called a comment. Both are allowed.
 | What | Form | Rule |
 |---|---|---|
 | A YAML comment | `# any text`, on its own line or after a value, in the recipe or in any fragment | **Free, anywhere, never refused.** It is not a key: the loader drops it, the checker never sees it, nothing validates it. It belongs to the author. **Any tool that edits a recipe or a fragment keeps every comment** (a text-level edit or a round-trip library, never `yaml.dump`); a test per writer checks it. This is the "do not remove" I meant, and it is a rule for my tools, not for you: the first line of `input_fields/Summary_input_fields.yaml` is your note "USER SAYS : do not remove my comments", and the ST22 recipe holds 150 comment lines (10 in the main file, 140 in its fragments) that explain defaults ("if omitted its default to categorical") and why a column is kept or dropped. They are documentation. |
-| A `comments` key | `comments: text`, optional, on `info`, a data schema, a join, a group and a plot entry | The author's note for the next reader: where the data came from, a caveat, who asked, why a threshold. Read by people, never executed. Shown in Blueprint's node information and in the node popup (to wire in package E, #78). It is not the `description`: the description says **what the element is** (its grain, what was removed); `comments` says anything else the next person should know. Two ST22 schemas use it today (`info.comments`, for example "Filtered by % identity > 90 ..."). `[MINE]` |
+| A `comment` key | `comment: text`, optional, on `info`, a data schema, a join, a group, a plot entry, **every step and every layer** | The author's note of **intent: why, not what** (the hint of Blueprint's comment boxes). Read by people, never executed, never passed to an action or to the plot engine. This is the standard that exists: Blueprint writes it on steps (`blueprint_handlers.py:402-404`), layers (`:376-378`) and join steps (`join_designer.py:153`), and ADR-083 lists `comment` in the layer model. Shown in Blueprint's node information and in the node popup (to wire in package E, #78). It is not the `description`: the description says **what the element is** (its grain, what was removed); `comment` says why, or anything else the next person should know. Two ST22 schemas used a plural `info.comments` (for example "Filtered by % identity > 90 ..."); it becomes `comment`. `[CODE for steps, layers, groups, plots; MINE for info, schema, join]` |
 
 ## 6. The elements
 
@@ -114,7 +116,7 @@ Columns of every table: key, required (R), optional (o), advice (a = never block
 | `subtitle` | o | shown under the title in HOME (`home_theater.py:905`) |
 | `contact` | a | who to call when the recipe fails; the load gate shows it (ADR-094) |
 | `version` | o | text |
-| `comments` | o | the author's note (5b) |
+| `comment` | o | the author's note (5b) |
 | any other key | o | **free-form**, displayed in the Info panel, never executed (`data_analysis_recipe_info.py`). This block is the only free-form block of the format |
 
 ### 6.2 `entity` (optional)
@@ -134,7 +136,7 @@ Checks: the id exists; that table carries an entity key (6.4). Without `entity` 
 | `label` | R | short name |
 | `description` | a | the grain (what one row is), the entities, what the recipe already removed, how missing values are treated (section 10) |
 | `category`, `sub_category` | o | grouping text shown in Blueprint `[MINE: replaces the retired `info:` block, 13.3]` |
-| `comments` | o | the author's note (5b); was `info.comments` |
+| `comment` | o | the author's note (5b); was `info.comments` |
 | `source` | R | `{type, path}`; `type` is `local_tsv` or `local_parquet`; `path` is relative to the project root. The fuzzy search of a file by dataset name (`ingestor.py:80-92`) is removed |
 | `input_fields` | R | mapping `column slug -> field` (6.4); `{}` means no contract |
 | `wrangling` | R | `{tier1: [...], tier2: [...]}` (6.5); `tier1` required, `tier2` optional; **`[]` and a flat list are refused** |
@@ -160,7 +162,7 @@ Checks: the id exists; that table carries an entity key (6.4). Without `entity` 
 ### 6.5 Steps and tiers
 
 - A **step list** is `{tier1: [...], tier2: [...]}`. It appears as `wrangling` (data schema), `steps` (join) and, at the plot entry, `steps: {tier3: [...]}` (6.7). All three are written the same way; an empty list means "equal to the previous node". `tier1` is required except at the plot entry; an unknown tier name is an error. `[DECIDED, 5a-15]`
-- A **step** is a mapping with `action` (a registered name) and exactly the parameters in that action's `ui_schema.params` (`libs/transformer/.../actions/base.py`). A missing required parameter, an unknown parameter and an unknown action are errors, with a did-you-mean by spelling. **The registry is the one source of the parameter contract** (W1): a test checks that the keys each action's code reads equal its schema. Today 65 of 67 actions have a schema. `scan_parquet` and `sink_parquet` have none: the rules call them engine-internal, but 4 fixture steps use them to test the actions themselves `[OPEN 13.13]`.
+- A **step** is a mapping with `action` (a registered name), exactly the parameters in that action's `ui_schema.params`, and optionally `comment` (5b; it is not a parameter and is never passed to the action) (`libs/transformer/.../actions/base.py`). A missing required parameter, an unknown parameter and an unknown action are errors, with a did-you-mean by spelling. **The registry is the one source of the parameter contract** (W1): a test checks that the keys each action's code reads equal its schema. Today 65 of 67 actions have a schema. `scan_parquet` and `sink_parquet` have none: the rules call them engine-internal, but 4 fixture steps use them to test the actions themselves `[OPEN 13.13]`.
 - **No guessing between spellings of a parameter.** Before a step runs, the wrangler looks for "which columns does this step work on" in six spellings in a fixed order (`columns`, `column`, `source`, `source_column`, `target_column`, and the boolean key that an unquoted `on:` becomes), expands `@category` names, checks that the columns exist (the friendly "did you mean" message of ADR-034), and **writes the result back into the step as `columns`** (`data_wrangler.py:132-147`). So a step that says `column:` for an action whose schema says `columns` works by accident. What goes is the guessing, not the check and not `@category`: those keep working, but they read **the parameters that the action's own schema declares as column selectors** (the schemas already do: 71 parameters in 59 of 65 actions, for example `columns`, `column`, `on`, `index`). A misspelled parameter is then reported by the checker before the run, with the right name (ST03). `[MINE: the mechanism; the principle is your "no compatibility default"]`
 - `join` and `join_filter` only in tier1 (exists today, kept). `join_filter` has no `how` parameter; it is always inner (`joins.py`), so `how` on it is an error.
 - `'on'` is quoted. An unquoted `on:` becomes the boolean key `True`; today the loader repairs it with a printed warning (`config_loader.py:18-41`). It is an error: the repair is a compatibility default.
@@ -173,7 +175,7 @@ Checks: the id exists; that table carries an entity key (6.4). Without `entity` 
 |---|---|---|
 | `label` | R | short name |
 | `description` | a | what one row is, which tables are combined and how, what is removed, what a missing value means here |
-| `comments` | o | the author's note (5b) |
+| `comment` | o | the author's note (5b) |
 | `ingredients` | R | list of `{dataset_id: <schema id>}`, at least one; **the first is the base** of the join. A bare id (`- FastP`) is refused (`orchestrator.py:173,214`) |
 | `steps` | R | step list (6.5), `{tier1: [...]}` at least |
 | `final_contract` | o | mapping `column -> field`, an **exclusive whitelist**: the collection keeps exactly these columns. A list is refused (today it is skipped silently, `orchestrator.py:59-62`); a column that the collection does not have is an error (today only printed) |
@@ -183,7 +185,7 @@ The orchestrator's silent fallbacks go: an unknown collection falls back to the 
 
 ### 6.7 Analysis group and plot entry
 
-`analysis_groups.<group id>`: `label` (R, the tab text), `description` (a), `comments` (o, 5b), `plots` (R, mapping; at least one in profile `run`). The fallback "label, else description, else id" (`home_theater.py:1119`) goes: today 4 of the 5 groups of the ST22 recipe have the tab text in `description`.
+`analysis_groups.<group id>`: `label` (R, the tab text), `description` (a), `comment` (o, 5b), `plots` (R, mapping; at least one in profile `run`). The fallback "label, else description, else id" (`home_theater.py:1119`) goes: today 4 of the 5 groups of the ST22 recipe have the tab text in `description`.
 
 `plots.<plot id>` (snake_case, **unique over all recipes**):
 
@@ -191,7 +193,7 @@ The orchestrator's silent fallbacks go: an unknown collection falls back to the 
 |---|---|---|
 | `label` | R | the plot's tab text |
 | `description` | a | what it shows, what is counted, which subset it leaves out (section 10) |
-| `comments` | o | the author's note (5b) |
+| `comment` | o | the author's note (5b) |
 | `spec` | R | the plot specification (6.8) |
 | `steps` | o | `{tier3: [...]}`: the steps applied to this plot's table, after its T2. Any registered action; the audit mode writes only filters and drops here. Omitted or empty means the plot reads its table as it is. `[DECIDED, 5a-15; name and place MINE, 13.4]` |
 
@@ -199,32 +201,15 @@ The orchestrator's silent fallbacks go: an unknown collection falls back to the 
 
 ### 6.8 Plot specification, layers, `plot_defaults`
 
-`spec` keys, the set the plot engine reads (`plot_config_resolver.py:71-74`): `target_dataset` (R, a join id or a schema id), `mapping` (R), `layers` (R, at least one geom or stat), `title`, `theme`, `facet_by`, `palette`, `labels`, `guides`, `filters`. Everything else is an error, with the replacement of section 9 where one exists (`facet_scales`, `labs`, `coordinate_flip` become layers, issue #66). `description` and `info` are refused inside a spec: they are the plot entry's (6.7). The gallery taxonomy keys `family`, `pattern`, `difficulty` are refused in a pipeline spec **because the taxonomy is the gallery's, not the recipe's** (your "do not confound"): it lives in the `info` of each gallery bundle (6.9), it is read only by `GalleryManager.rebuild_index` from there (`gallery_manager.py:133-168`), and no code reads it from a pipeline plot. 16 of the 17 ST22 specs carry three of the axes only because they were copied from gallery examples when the plots were first written (2026-04-10). If a recipe plot is offered to the Gallery later, `GalleryManager.submit_example` takes the six values as arguments (`gallery_manager.py:28-33`) and writes them into the bundle; it does not read them from the plot. A note about a plot goes in `comments` (5b). `[MINE; 13.14]`
+`spec` keys, the set the plot engine reads (`plot_config_resolver.py:71-74`): `target_dataset` (R, a join id or a schema id), `mapping` (R), `layers` (R, at least one geom or stat), `title`, `theme`, `facet_by`, `palette`, `labels`, `guides`, `filters`. Everything else is an error, with the replacement of section 9 where one exists (`facet_scales`, `labs`, `coordinate_flip` become layers, issue #66). `description` and `info` are refused inside a spec: they are the plot entry's (6.7). The gallery taxonomy keys `family`, `pattern`, `difficulty` are refused in a pipeline spec **because the taxonomy is the gallery's, not the recipe's** (your "do not confound"): it lives today in the `info` of each gallery bundle (the gallery options propose a `taxonomy` key on the plot entry instead), it is read only by `GalleryManager.rebuild_index` from there (`gallery_manager.py:133-168`), and no code reads it from a pipeline plot. 16 of the 17 ST22 specs carry three of the axes only because they were copied from gallery examples when the plots were first written (2026-04-10). If a recipe plot is offered to the Gallery later, `GalleryManager.submit_example` takes the six values as arguments (`gallery_manager.py:28-33`) and writes them into the bundle; it does not read them from the plot. A note about a plot goes in `comment` (5b). `[MINE; 13.14]`
 `mapping`: keys are aesthetic names of the plot engine (`x`, `y`, `fill`, `color`, `group`, `facet_by`, ...), values are column names of the target table (the "column exists at that node" check is package J, it needs the recipe graph).
-`layers`: list of `{name, params}`; `name` is a registered component (all 191 have a schema; none of the 167 layers in the repository has an unknown name); `params` are checked against the component's schema plus the plot engine's own arguments `[MINE: mechanism to verify in package B; today 10 parameters in 8 components are outside the schemas, all valid plotnine arguments such as `color`]`.
+`layers`: list of `{name, params, comment}` (`comment` optional, 5b; ADR-083); `name` is a registered component (all 191 have a schema; none of the 167 layers in the repository has an unknown name); `params` are checked against the component's schema plus the plot engine's own arguments `[MINE: mechanism to verify in package B; today 10 parameters in 8 components are outside the schemas, all valid plotnine arguments such as `color`]`.
 Two forms exist for the same thing (`facet_by` at the top of the spec and inside `mapping`; `filters` in the spec and the T3 list): both are read today. They stay allowed and are listed in 13.7 for the plot-engine owner (Blueprint) to simplify.
 `plot_defaults` keys: `palette`, `theme`, `default_font_family`, `facet_panel_spacing`, `legend_position`, `optimisation`, `layers` (`plot_config_resolver.py:64-67`). `height` and `show_legend` (2 templates) are errors.
 
-### 6.9 The example variant (gallery bundle) `[CODE]`
+### 6.9 The gallery: withdrawn until you choose
 
-Defined by what the gallery reads and writes, not by the recipe words. Folder `assets/gallery_data/<id>/`; the folder name is the example's id.
-
-| File or key | R | Read or shown by |
-|---|---|---|
-| `data_analysis_recipe.yaml` | R | the example's logic. **The whole file is shown to the user** as text (`gallery_yaml_preview`, `gallery_handlers.py:210-221`); `generate_previews.py` passes it to the plot engine, which reads `plots.<id>` from it. That is why its root is the plot engine's own input (`plots:`) and not a pipeline recipe (`analysis_groups`) |
-| `data_engine`, `plot_engine` | R | the checker; same values as in section 4. `[MINE: the new required keys]` |
-| `info.name` | R | the card title: the registry name in the index (`gallery_manager.py:138`) |
-| `info.submission_date` | R | written by `submit_example` (`:47`), shown |
-| `info.family`, `pattern`, `difficulty`, `geom`, `show`, `sample_size` | R | the six-axis taxonomy: `gallery_index.json` registry and pivot (`:142-168`), then the Gallery filters. The allowed values are in `assets/gallery_data/TAXONOMY_CHEATSHEET.md`, the one source (`rules_gallery_standards.md` 2) |
-| `data_path` | R | shown in the preview text; always `example_data.tsv`, because the code uses that file name (`gallery_handlers.py:198`, `generate_previews.py:38`) |
-| `wrangling` | R | `{tier1, tier2, tier3}`, shown. **`tier3` is where `submit_example` writes the example's own steps** (`gallery_manager.py:59-63`); 13 bundles carry an empty one. Steps inside are checked as in 6.5 |
-| `plots` | R | exactly one `plot id -> specification body` (`mapping`, `layers`, ...) |
-| `example_data.tsv`, `example_meta.md` | R | required by `rebuild_index` (`:117-125`). `example_meta.md` is the example's description and guidance: it holds the tag strip `> 📊 Family · ...` that must match `info` (`rules_gallery_standards.md` 3) |
-| `preview_plot.png`, `preview_thumb.png` | o | produced by `generate_previews.py`; the Gallery shows a placeholder without them |
-
-There is no `label`, `description` or `comments` key in a gallery file: the card has `name`, the text is `example_meta.md`. Unchanged on purpose: the file names (ADR-091), `gallery_index.json`, the viewer, `submit_example`. What the checker adds for the gallery is small: no unknown key, the engine keys, taxonomy values from the cheat sheet, the companion files, and the tag strip equal to `info` (an existing rule that nothing checks today).
-
-**What protects the gallery** (tests, in section 14): the committed index equals the index rebuilt from the bundles; a bundle written by `submit_example` passes the checker; every bundle renders its preview; the taxonomy of every bundle is inside the cheat sheet.
+v0.2 kept the gallery's own file shape and words. You asked for the opposite: the examples follow the same spec (they are examples of recipes), are checked by the same code as the app, and the gallery's special needs are added to the spec as a profile. Investigated, with a proof of concept that renders all 34 examples as standard recipes through the app's own path: `recipe_format_gallery_options_2026-11-13.md` (what is wrong today, six decisions with pros and cons, what changes, in which order). The recommended design adds to this spec: a `gallery` profile (section 3), one optional key on the plot entry (`taxonomy`, 6.7), one dictionary of the gallery terms, and checks in section 8. Nothing of it is in force until you choose.
 
 ## 7. Rules that span elements
 
@@ -275,7 +260,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | FD05 | E | `is_entity_key` not true/false; `categories` not a list of text | |
 | ST01 | E | step without `action` (shorthand), or not a mapping | |
 | ST02 | E | unknown action | did-you-mean |
-| ST03 | E | parameter not in the action's schema | did-you-mean; `column`, `source`, `target_column`, `source_column` -> `columns` where that is the name |
+| ST03 | E | parameter not in the action's schema (`comment` is allowed on every step) | did-you-mean; `column`, `source`, `target_column`, `source_column` -> `columns` where that is the name |
 | ST04 | E | required parameter missing | |
 | ST05 | E | `join` or `join_filter` in tier2 | exists today |
 | ST06 | E | formula uses an operation outside the allowed list | package H |
@@ -298,11 +283,8 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | PS05 | E | `theme` not a registered theme | |
 | D01 | E | unknown `plot_defaults` key | |
 | X5 | E | duplicate plot id across the recipes of a folder; duplicate recipe id | |
-| CM01 | E | `comments` is not text | |
-| EX01 | E | example variant: unknown key at the top, in `info` or in `wrangling`; a required key missing | |
-| EX02 | E | example variant: a taxonomy value outside `TAXONOMY_CHEATSHEET.md` | the allowed values |
-| EX03 | E | example variant: `data_path` is not `example_data.tsv`; the data or `example_meta.md` file missing; more or fewer than one plot | |
-| EX04 | E | example variant: the tag strip of `example_meta.md` differs from `info` (rule exists, not checked today) | |
+| CM01 | E | `comment` is not text | |
+| GP | E | gallery profile rules (one plot, `taxonomy` in the dictionary, `id` equal to the folder, companion files) | defined with the gallery decision (gallery options, section 7, item 1) |
 
 The data check (a dataset that cannot be built, an `output_fields` slug with no column) is **not** in this table: it needs the data and stays as it is (`validate_data_analysis_recipe_data`).
 
@@ -318,7 +300,7 @@ Mechanism: `utils/legacy_keys.py` (today three dictionaries of renamed keys, `le
 | top level | `metadata` | `metadata_schema` |
 | top level | `plots`, `wrangling`, `input_fields`, `output_fields` | inside a group / inside a data schema |
 | top level | `type`, `join_manifests` | removed / `joins` (exist today) |
-| data schema | `info` (`category`, `sub_category`, `comments`) | `category`, `sub_category`, `comments` directly on the schema (`info:` itself is refused) |
+| data schema | `info` (`category`, `sub_category`, `comment`) | `category`, `sub_category`, `comment` directly on the schema (`info:` itself is refused) |
 | data schema | `fields` | `input_fields` |
 | data schema | `id` (inside the schema) | removed (the key is the id) |
 | field | `is_primary_key` | `is_entity_key` |
@@ -333,7 +315,7 @@ Mechanism: `utils/legacy_keys.py` (today three dictionaries of renamed keys, `le
 | join | ingredient as a bare id | `{dataset_id: id}` |
 | plot entry | `info` (sentence) | `description` |
 | plot spec | `description`, `info` | on the plot entry |
-| plot spec | `family`, `pattern`, `difficulty` | removed from a pipeline spec: the taxonomy is the gallery's (6.9) |
+| plot spec | `family`, `pattern`, `difficulty` | removed from the spec; the proposed place is a `taxonomy` key on the plot entry (gallery options D2) |
 | plot spec | `facet_scales`, `labs`, `coordinate_flip` | `facet_wrap`/`labs`/`coord_flip` layers (issue #66) |
 | `plot_defaults` | `height`, `show_legend` | removed |
 
@@ -372,7 +354,7 @@ All of these are compatibility defaults under P2. Each is removed in the package
 | `cache_keys.py:90` (`tier2_steps`), `orchestrator.py` (Path A) | a schema's own tier-2 ignored | D |
 | `home_theater.py:1119,903` | group label falls back to `description`; reads `info.display_name` | E |
 | `blueprint_mapper.py:76-77` | node label from `display_name`, `sub_category`, or `description[:35]` | E |
-| `plot_config_resolver.py:234-236` | non-canonical spec keys moved to `_meta` and kept | C (PS01); `_meta` is retired: no pipeline spec and no gallery `plots` body needs it |
+| `plot_config_resolver.py:234-236` | non-canonical spec keys moved to `_meta` and kept | C (PS01); `_meta` is retired and replaced by declared keys (`comment`; proposed `taxonomy`); ADR-083 sections 2 and 6 to amend |
 | `bootstrapper.py:154`, `scaffolder.py:182`, `create_data_analysis_recipe.py:177`, `blueprint_handlers.py:2670` | write `display_name` / `name` | E |
 
 ## 12. What applying the spec to `1_test_data_ST22_dummy` showed
@@ -384,7 +366,7 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 | 1 | Group tab text is in `description` (4 of 5 groups) | `1_test_data_ST22_dummy.yaml:278-324`, `home_theater.py:1119` | label and description swap; the code fallback goes |
 | 2 | `info:` sentence on all 17 plot entries and `description` inside 14 of the 17 specs: the same fact twice | recipe 281-349, `plots/*.yaml` | one `description` on the entry; spec keeps only the grammar |
 | 3 | `family`, `pattern`, `difficulty` in 16 specs; copied from gallery examples in the first commit of these plots (2026-04-10); no code reads them from a pipeline plot | grep of readers: only `gallery_manager.py`, from a bundle's `info` | removed from pipeline specs; the taxonomy stays in the gallery (6.9) |
-| 4 | Schemas carry `info: {category, sub_category, comments}` (11 of 12), the comments hold real facts ("filtered by identity > 90 ...") | recipe 19-151 | `category`, `sub_category` and `comments` kept as keys on the schema (5b); the draft restores both `comments` |
+| 4 | Schemas carry `info: {category, sub_category, comments}` (11 of 12), the comments hold real facts ("filtered by identity > 90 ...") | recipe 19-151 | `category`, `sub_category` and `comment` kept as keys on the schema (5b); the draft restores both `comment` |
 | 5 | `Quality_metrics` has `wrangling: []` | recipe line 43 | `{tier1: []}` |
 | 6 | `ResFinder` tier-2 (`count_by_group`, `sort`) is ignored; the plot `amr_heatmap` reads it directly | baseline: T2 hash equals T1 hash | **change 1:** the plot gets `total_gene_count` and the sort. Evidence: pictures before and after |
 | 7 | Join `Summary_phenotype_length_fragmentation` has `info:` (a sentence) and an `output_fields` that nothing reads | recipe 195-203, `orchestrator.py:59` | `description` and `final_contract`. The whitelist lists 5 columns and the collection has 5 (126 x 5): **expected no data change; verify** |
@@ -400,8 +382,8 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 ## 13. My choices to confirm, and the open points
 
 1. **[MINE] Profiles** `run` and `build` as the only difference (section 3).
-2. **[CODE] The example variant** is defined by the gallery's own code (6.9); it is not turned into a full recipe. I added only the two engine keys and the unknown-key rule. Say if the gallery should not carry the engine keys.
-3. **[MINE] Schema `category`, `sub_category` and `comments`** kept as direct keys (6.3, 5b). Blueprint's map reads `sub_category` (`blueprint_mapper.py:76`).
+2. **[OPEN] The gallery follows the same spec** (your decision of 2026-11-13). How: `recipe_format_gallery_options_2026-11-13.md`, decisions D1 to D7, each with a recommendation.
+3. **[MINE] Schema `category`, `sub_category` and `comment`** kept as direct keys (6.3, 5b). Blueprint's map reads `sub_category` (`blueprint_mapper.py:76`).
 4. **[MINE] The T3 container is `steps: {tier3: [...]}` at the plot entry.** It mirrors `steps: {tier1, tier2}` of a join. Name and place are a placeholder; renaming later costs one line in section 6.7 and one rename in the checker.
 5. **[OPEN] Schema `output_fields`** are verified by the data check (issue #18) but never applied; the rule text calls them the published contract. Keep as a checked declaration, apply them, or remove? Recommendation: keep as a checked declaration and say so in the rule file.
 6. **[OPEN] The two legacy files:** keep (follow the format) or remove? I found no reader; to confirm with a search of the deployment configuration before deleting.
@@ -412,8 +394,8 @@ The draft is `recipe_format_st22_draft.yaml` (main file only; the fragment files
 11. **[MINE] Fragment form:** bare value, wrapper refused (section 5).
 12. **[MINE] `original_name` stays allowed on output lists** (it is displayed by Blueprint, `wrangle_studio.py:1310`), so the 20 ST22 contract fragments need no mass edit.
 13. **[OPEN] `scan_parquet` and `sink_parquet`** have no `ui_schema`; the rules call them engine-internal, yet 4 transformer fixture steps use them to test them. Options: give them a schema and allow them (the fixtures stay recipes), or test them outside recipes. Recommendation: a schema, allowed, with a description that says they are for tests and advanced use.
-14. **[MINE, follows your "do not confound"] Plot-spec metadata.** The taxonomy is not in a pipeline plot (6.8); `description` and `info` go to the plot entry; a note goes in `comments`. This reverses my review recommendation of 2026-11-13 and the text of issue #66. If you want a recipe plot to carry the taxonomy so that it can be offered to the Gallery without retyping, say so: the six keys become documented optional metadata of the plot entry, checked against the cheat sheet (EX02). I found no code for that flow today.
-15. **[MINE] The `comments` key** (5b) on five elements. Alternative: no key, only `#` comments. Recommendation: the key, because a `#` comment is invisible in Blueprint and in the node popup.
+14. **[MINE, follows your "do not confound"] Plot-spec metadata.** The taxonomy is not in a pipeline plot (6.8); `description` and `info` go to the plot entry; a note goes in `comment`. This reverses my review recommendation of 2026-11-13 and the text of issue #66. The gallery options (D2) propose exactly what you suggested: one optional key, `taxonomy`, on the plot entry, checked against a dictionary of the gallery terms. Decide there.
+15. **[CODE] The `comment` key** exists (BP-COMMENTS-1) and is accepted on every step and layer. What is new and to confirm: `comment` also on `info`, a data schema, a join (5b).
 
 ## 14. Tests that come out of this file (written first, they fail on today's code)
 
