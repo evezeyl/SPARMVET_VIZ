@@ -1,5 +1,7 @@
 # Audit Routine Registry
 
+> **PAUSED (2026-11-13, Eve): all automatic audits are off until the refactor is finished.** The four systemd user timers `sparmvet-audit-{sunday,wednesday,thursday,friday}.timer` are disabled (`systemctl --user disable --now ...`); nothing else runs audits by itself (no git hook, no CI, cron holds only the backup reminders). The scripts and the on-demand commands below still work and are run by hand. **Reactivate** after the build: `./scripts/systemd/install.sh` (it enables all four) and re-check each routine against the new code (task `AUDITS-REACTIVATE-1`).
+
 **Authority:** Operational workflow for automated hygiene checks across the SPARMVET_VIZ repository.
 
 **Purpose:** Define, schedule, and track recurring audit routines that verify code health, ADR compliance, data analysis recipe integrity, and documentation drift without manual intervention.

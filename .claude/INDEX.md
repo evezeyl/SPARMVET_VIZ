@@ -73,6 +73,7 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 
 | File | Status | Last change | What it is |
 |---|---|---|---|
+| `home_test_inventory_2026-11-13.md` | RECENT (redesign) | 2026-11-13 | P0: inventory of the tests that encode superseded behaviour, by class and package |
 | `home_attrition_report_2026-11-12.md` | RECENT (redesign) | 2026-11-12 | Attrition per step and the figure caption (proposal, 2026-11-12) |
 | `home_audit_architect_review_2026-11-12.md` | RECENT (redesign) | 2026-11-12 | The app and the audit plan seen by a software architect |
 | `home_audit_forensics_2026-11-12.md` | RECENT (redesign) | 2026-11-12 | HOME audit: forensics of the current design, and options for what is still undecided |

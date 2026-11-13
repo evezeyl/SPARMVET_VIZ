@@ -77,7 +77,10 @@ Files: `plot_config_resolver.py`, `viz_factory.py` (where unknown `plot_defaults
 ### Independent: many-to-many join warning (#68) `HOME-EXPLORE-10` `[sonnet/medium]`
 Rows before and after each join; a key repeated on both sides gives a warning (one-to-many stays silent). Edits `libs/transformer`: needs Eve's OK. Input for guard-rail J1 of the audit (#64).
 
-## 5. Questions for Eve still open
-1. P3 turns on safeguards that are specified (ADR-049) but dead today: a primary-key warning and a block on dropping a join-key column in the audit. OK?
-2. P1: may the shared filter-value code live in `libs/utils` (a new pure module)? (`libs/utils` as the home of shared graph and key code is decided in ADR-099 point 16.)
-3. Waiting for Eve outside this brief: what `ST22_Anchor` answers (#67), the resistance score of samples without phenotype (#70), the rest of the recipe hygiene (#69) (see `recipe_review_st22_2026-11-11.md` and `RECIPE-ST22-FIX-1`).
+## 5. Decisions of Eve (2026-11-13) and what is still open
+**Decided:**
+1. **P3 turns the dead safeguards on** (ADR-049): "yes, make it fail". Dropping a join-key column is refused (a failure with the reason, not a warning). For a filter on a key column the audit design stands (the key is information, the user decides, `home_audit_steps.md` section 5a): the message names the consequence. Confirm if you want that filter refused as well.
+2. **P1: the shared filter-value code lives in `libs/utils`** (a new pure module), used by the preview, the audit compiler and VizFactory.
+3. **P0 may start** (the inventory of tests that encode the old behaviour; read-only first): `.claude/design/home_evidence/home_test_inventory_2026-11-13.md`.
+4. **Automatic audits are paused** until the refactor is finished (`AUDITS-REACTIVATE-1`); run audits by hand when a package needs one.
+**Still open (Eve):** what `ST22_Anchor` answers (#67), the resistance score of samples without phenotype (#70), the rest of the recipe hygiene (#69) (see `recipe_review_st22_2026-11-11.md` and `RECIPE-ST22-FIX-1`).
