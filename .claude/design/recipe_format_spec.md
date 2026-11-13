@@ -17,7 +17,7 @@
 
 ```yaml
 id: my_recipe                          # equals the file name
-format_version: 1
+spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
@@ -80,14 +80,18 @@ analysis_groups:
 | 8 | A **`description`** on every element; where missing it is filled by the rules of section 13 | Eve 2026-11-13 |
 | 9 | Comments on recipes must be possible and are specified (section 6.2) | Eve 2026-11-13 |
 | 10 | The **gallery** follows the same specification (its examples are recipes), is checked by the same code, keeps its taxonomy and its functions, and has a **required `taxonomy` key**; its allowed terms live in the specification, one place instead of two; the work is planned now and done later (section 9) | Eve 2026-11-13 |
-| 11 | Every recipe has a **`format_version`** that the checker matches against the specification; the gallery has it too | Eve 2026-11-13 (idea from her review with another agent); name and form proposed (O3) |
+| 11 | Every recipe has a **`spec_version`** that the checker matches against the specification; the gallery has it too | Eve 2026-11-13 (idea from her review with another agent); name decided in row 22 |
 | 12 | One **checker in `libs/utils`** for every user of recipes (HOME, Blueprint, importer, gallery, scripts, tests) | ADR-099 16(g); verified against the layer rules (section 14) |
 | 13 | **Containers follow ADR-041** (keyed things are dictionaries, ordered logic is a list, fragments are flat). A wrong form is refused with a message that shows the corrected text, in the app and in the tests; this is also in the HOME plan | ADR-041; Eve 2026-11-13 |
 | 14 | **The form follows what depends on it** (section 5): steps stay lists, authors write no step name, and the app marks the steps it inserts with an `id` (O5); `final_contract` key order **is** the column order; the tab order **is** the key order of `analysis_groups` and `plots` | Eve 2026-11-13 |
-| 15 | The **field-type vocabulary is read in one place**; its content is open (O2) | Eve 2026-11-13 |
+| 15 | The **field-type vocabulary is read in one place**; its content is row 20 | Eve 2026-11-13 |
 | 16 | **The registries are fixed** (widgets for lists and dictionaries, corrected declarations), and **plot arguments are checked**: plot instructions are part of the recipe (section 8; issue #87) | Eve 2026-11-13 |
 | 17 | Errors of a recipe from a data-science point of view are **fixed**, not documented (section 17) | Eve 2026-11-11/12 |
 | 18 | The worked example is `1_test_data_ST22_dummy` (the most advanced, the default of Eve's tests) | Eve 2026-11-13 |
+| 20 | **Field types:** `categorical` (default), `utf8`, `numeric`, `date` and `boolean` (Option A plus `boolean`, section 7.4). The ingestor is fixed so that `utf8` is cast to text and `boolean` is cast with a real cast; the message for the removed `string` quotes the two meanings | Eve 2026-11-13 |
+| 21 | **Gallery design D1 + D2 + D3** (section 9): an example is a standard recipe in a `gallery` profile; the key is `taxonomy` on the plot entry, required in the gallery, five axes, `geom` derived; the specification is also a data file so the gallery terms live in one place. D4 to D7 are decided when the gallery work starts | Eve 2026-11-13 |
+| 22 | **The version key is `spec_version`**, an integer (section 4.1) | Eve 2026-11-13 |
+| 23 | **J08 is an error with a guidance message:** a non-key column present in both tables of a join (silently renamed `name_right` by Polars) refuses the recipe; the message names both tables and the column and says how to rename or drop one (section 5.2) | Eve 2026-11-13 |
 | 19 | Notes, not decisions: some library code may move to `libs/utils` when two libraries need it (nothing moved; `UTILS-REUSE-REVIEW-1`); the Dockerfile is not ready and nothing is deployed (`DOCKER-RELEASE-1`) | Eve 2026-11-13 |
 
 ### 2.2 Principles (each follows from a decision above)
@@ -101,14 +105,13 @@ analysis_groups:
 
 ### 2.3 Open: what is still undecided or unclear
 
+The numbers O1 to O18 are kept as references; a decided point leaves the table (O2, O3 and O6 were decided on 2026-11-13: rows 20, 22 and 23 of section 2.1).
+
 | # | Question | Recommendation | Touches |
 |---|---|---|---|
-| O1 | **Gallery details** (section 9): D1 an example is a standard recipe in a `gallery` profile; D2 the key is `taxonomy`, on the plot entry, required in the gallery, five axes, `geom` derived; D3 the specification is also a data file | D1 A, D2 A, D3 A. D4 to D7 (where examples are checked, how previews are made, the tag strip, the data contract of an example) can wait | #82, #76 |
-| O2 | **Type vocabulary** (section 7.4): which types exist | A: keep the four (`categorical`, `utf8`, `numeric`, `date`) and make the ingestor cast `utf8` to text | #84 |
-| O3 | **`format_version`**: the name and the form (an integer) | keep | #83 |
+| O1 | **Gallery, the later decisions D4 to D7** (section 9): where an example is checked (D4), how previews are made (D5), the tag strip of `example_meta.md` (D6), the data contract of an example (D7); and whether the dead submission code is removed (G6) | D4 `check_recipe` at rebuild, at app start and in the tests; D5 previews by the app's path; D6 tag strip generated from `taxonomy`; D7 generated contract, reviewed | #82 |
 | O4 | **`profile` or `mode`** for run/build/gallery. The HOME stage-2 draft writes `mode`; HOME already uses "mode" for Exploration/Audit | `profile`; needs both sessions to agree | #76, HOME |
 | O5 | **Step marker written by the app**: the audit mode must mark the steps it inserts, to remove or undo exactly those. Proposed: the key `id` with the prefix `audit_`; the HOME session decides the final name. **Authors never write it** and the author-facing parts of the format do not offer it (Eve asked 2026-11-13: an `id` that authors do not use would confuse) | an app-written `id` with `audit_`; the HOME session confirms the name | #85, HOME |
-| O6 | **J08**, the silent `_right` column suffix when two joined tables share a non-key column: advice or error | advice (it changes a name, not a number) | #76 |
 | O7 | **Schema `output_fields`** are checked by the data check but never applied | keep as a checked declaration and say so in the rule file | section 7.3 |
 | O8 | **The two legacy files** (`VIGAS_VirulenceFinder.yaml`, `Virulence_genes_APEC_...yaml`): follow the format or remove | no reader found; confirm by searching the deployment configuration, then remove | #78 |
 | O9 | **Duplicate forms in a plot spec** (`facet_by` at the top and inside `mapping`; `filters` in the spec and the tier-3 list) | allowed for now; the plot-engine owner (Blueprint) simplifies | section 7.8 |
@@ -141,7 +144,7 @@ HOME rejects, Blueprint reports and never blocks building `[DECIDED, 5a-19]`.
 | Transformer test recipes | 68 in `libs/transformer/tests/data` | `build` | the flat form (`wrangling:` and `input_fields:` at the top) is refused: each becomes one schema with its `source` path. The runners already prefer a command-line data path to the recipe's (`rules_asset_scripts.md` 4) |
 | Legacy files | 2 | `build` | O8 |
 | Gallery bundles | 34 | `gallery` | section 9 |
-| Recipes written by the app | Blueprint's new-recipe form, test-lab bootstrapper and scaffolder, `create_data_analysis_recipe.py`, the export's forked recipe, the importer | their use | the checker runs on what they write; a test per writer; every writer emits `format_version` |
+| Recipes written by the app | Blueprint's new-recipe form, test-lab bootstrapper and scaffolder, `create_data_analysis_recipe.py`, the export's forked recipe, the importer | their use | the checker runs on what they write; a test per writer; every writer emits `spec_version` |
 | Recipes inside automatic tests | inline YAML strings in tests and fixtures | their purpose | one shared helper writes a minimal valid recipe, so no test types the boilerplate |
 
 ## 4. File level
@@ -149,7 +152,7 @@ HOME rejects, Blueprint reports and never blocks building `[DECIDED, 5a-19]`.
 | Key | Required | Value | Executed or shown by |
 |---|---|---|---|
 | `id` | yes | text equal to the file name without `.yaml` | selector, caches, sessions, export |
-| `format_version` | yes | an integer, `1` (4.1) | the checker; exports record it |
+| `spec_version` | yes | an integer, `1` (4.1) | the checker; exports record it |
 | `data_engine` | yes | `python-polars` (the only value built) | checker now; fingerprint and export later |
 | `plot_engine` | yes | `python-plotnine` (the only value built) | same |
 | `info` | yes | mapping (7.1) | Info panel, title banner, load-gate contact |
@@ -165,7 +168,7 @@ Refused at the top level, with the replacement named (section 12): `plots`, `wra
 
 ### 4.1 The format version
 
-Every recipe declares `format_version: 1`, the version of this specification it is written in. The first confirmed specification is format 1; the unversioned recipes of today are **format 0**. The key is not `info.version`, which stays the author's own version of the recipe's content.
+Every recipe declares `spec_version: 1`, the version of this specification it is written in (the key is called `spec_version`, Eve 2026-11-13). The first confirmed specification is format 1; the unversioned recipes of today are **format 0**. The key is not `info.version`, which stays the author's own version of the recipe's content.
 
 The app reads **one** version. Any change of *structure* changes the number: a key added, removed or renamed, a change of required-ness or meaning, a change of a closed vocabulary (the types, the engine names). A new term in an *open* vocabulary (the gallery terms) does not: it ships with an app release, and an app that does not know the term refuses the recipe with "unknown term". With "unknown keys fail" a new optional key also breaks an older checker, so there is no "compatible minor version", and one integer is enough.
 
@@ -174,9 +177,9 @@ The app reads **one** version. Any change of *structure* changes the number: a k
 | V01 | E | missing | this recipe is in the old format 0; run the migration tool |
 | V02 | E | lower than the app reads | written for format N, the app reads M; migrate |
 | V03 | E | higher | written for a newer format; update the app |
-| V04 | E | not an integer (`"1"`, `1.0`, `true`) | write `format_version: 1` |
+| V04 | E | not an integer (`"1"`, `1.0`, `true`) | write `spec_version: 1` |
 
-**Migration tool:** `assets/scripts/migrate_recipe_format.py --from 0 --to 1`, on the pattern of `migrate_config_vocabulary.py`: a dry run by default, `--apply` to write, safe to run twice. It edits the text, so every `#` comment is kept. It applies the replacement table (section 12), adds `format_version` and the engine lines, unwraps fragments and writes a `label` from the id for the author to edit. It does **not** invent what is not mechanical: descriptions stay empty (an advice), `entity` is not added, science is not touched; it prints what a person must still do.
+**Migration tool:** `assets/scripts/migrate_recipe_format.py --from 0 --to 1`, on the pattern of `migrate_config_vocabulary.py`: a dry run by default, `--apply` to write, safe to run twice. It edits the text, so every `#` comment is kept. It applies the replacement table (section 12), adds `spec_version` and the engine lines, unwraps fragments and writes a `label` from the id for the author to edit. It does **not** invent what is not mechanical: descriptions stay empty (an advice), `entity` is not added, science is not touched; it prints what a person must still do.
 
 **Where the number is recorded:** every recipe written by the app, the forked recipe of an export, `effective_run.yaml`; the importer's recipe leg says when the version differs. History table: format 0, the unversioned recipes before 2026-11-13, refused with the migration message; format 1, this specification.
 
@@ -239,7 +242,7 @@ The file keeps the dictionary; the code makes the list it needs (`list(final_con
 A key must be unique **inside one mapping** (ADR-041). The same slug in different mappings is normal: `sample_id` is in the `input_fields` of every table (66 field dictionaries in the repository, each its own mapping) and in every row of a long table. The real hazards are:
 
 1. **A repeated key inside one mapping:** PyYAML keeps the last silently (T10). This holds at any depth, including a `mapping` parameter: `{a: x, a: y}` silently drops a rename.
-2. **A column name in both tables of a join that is not a join key:** the engine calls `lf.join(...)` without a suffix (`joins.py:56-58`), so Polars renames the second column to `name_right` without a message; `QC_Reads_Anchor` has `total_reads_right` today. The join keys themselves (`sample_id`) are the key family and are fine. Check **J08** (O6); it needs the recipe graph.
+2. **A column name in both tables of a join that is not a join key:** the engine calls `lf.join(...)` without a suffix (`joins.py:56-58`), so Polars renames the second column to `name_right` without a message; `QC_Reads_Anchor` has `total_reads_right` today. The join keys themselves (`sample_id`) are the key family and are fine. Check **J08** (an error with a guidance message, decision 23); it needs the recipe graph. The message names both tables and the column and says how to rename or drop one before the join. `QC_Reads_Anchor` will therefore fail the checker until it is fixed in its migration.
 3. **Steps** repeat actions (a table has three `join` steps), so ordered logic cannot be keyed by the action name; it stays a list and a step that needs a name carries an `id` (7.5).
 
 ## 6. Fragments and comments
@@ -298,7 +301,7 @@ The three sections share one id space; a repeated id is an error (today the seco
 
 | Key | Meaning |
 |---|---|
-| `type` | `categorical` (default), `utf8`, `numeric`, `date`; anything else is an error (O2) |
+| `type` | `categorical` (default), `utf8`, `numeric`, `date`, `boolean`; anything else is an error (decision 20) |
 | `original_name` | the column name in the file when it differs; shown in Blueprint. Allowed on output lists (O16) |
 | `label` | display name (default: the slug) |
 | `is_entity_key` | `true` when the column identifies the entity (it repeats in long tables). Replaces `is_primary_key` `[DECIDED]` |
@@ -306,14 +309,9 @@ The three sections share one id space; a repeated id is an error (today the seco
 
 `{}` in an output list means "keep this column as it is".
 
-**The type vocabulary** `[DECIDED to read it in one place; content OPEN, O2]`. Four lists disagree today: the rule file (`categorical`, `utf8`), the user docs (`categorical`, `numeric`, `date`, `boolean`), the ingestor (casts `numeric` to Float64, `categorical` and `string` to String, `date` to Date, **nothing else**, `ingestor.py:162-170`) and `MetadataValidator.DTYPE_MAP` (14 names, `metadata_validator.py:21-37`). Verified by running the ingestor on a column of digits: `categorical` and `string` give String; `utf8`, `boolean` and `i64` are **not cast** (the digits stay Int64), so `utf8` does not force text; `string` is accepted by the ingestor but refused by `enforce_schema`; 4 fixtures declare `i64`, which nothing handles. `string` was removed on 2026-05-22 as a "deprecated alias" (`LEGACY-TYPE-ALIASES-1`, commit `125963cf`); no ADR gives a deeper reason. What the files show: all 6 recipes that used it were migrated to `categorical`, and the rule wants the author to say whether a text column is a **group** (`categorical`: identifiers, labels, repeating values; `sample_id` must be one so that digits become text and joins match) or **free text** (`utf8`).
+**The type vocabulary** `[DECIDED 2026-11-13: one place; five types]`. Four lists disagree today: the rule file (`categorical`, `utf8`), the user docs (`categorical`, `numeric`, `date`, `boolean`), the ingestor (casts `numeric` to Float64, `categorical` and `string` to String, `date` to Date, **nothing else**, `ingestor.py:162-170`) and `MetadataValidator.DTYPE_MAP` (14 names, `metadata_validator.py:21-37`). Verified by running the ingestor on a column of digits: `categorical` and `string` give String; `utf8`, `boolean` and `i64` are **not cast** (the digits stay Int64), so `utf8` does not force text; `string` is accepted by the ingestor but refused by `enforce_schema`; 4 fixtures declare `i64`, which nothing handles. `string` was removed on 2026-05-22 as a "deprecated alias" (`LEGACY-TYPE-ALIASES-1`, commit `125963cf`); no ADR gives a deeper reason. What the files show: all 6 recipes that used it were migrated to `categorical`, and the rule wants the author to say whether a text column is a **group** (`categorical`: identifiers, labels, repeating values; `sample_id` must be one so that digits become text and joins match) or **free text** (`utf8`).
 
-| Option | Pros | Cons |
-|---|---|---|
-| **A. Keep four; fix the ingestor so `utf8` is cast to text; the message for `string` quotes the two meanings** (recommended) | the author states the intent; no new names; smallest change | `utf8` is an encoding's name, not a word a scientist chooses |
-| B. Rename `utf8` to `text` | a plain word | one more rename; used in 1 recipe |
-| C. Restore `string` for free text, drop `utf8` | a familiar word | the old doubt returns: is a `string` column a category? |
-| D. Add `boolean` | the docs list it | no recipe uses it; add only with a real cast and a real use |
+**Decided (Eve, 2026-11-13): option A plus `boolean`.** Five types: `categorical` (the default: identifiers, labels, repeating values; a group), `utf8` (free text), `numeric`, `date`, `boolean`. What changes: the ingestor casts `utf8` to text (today it does not) and `boolean` with a real cast (the accepted spellings are fixed in the vocabulary file and tested); `string` stays refused and its message quotes the two meanings (`categorical` or `utf8`); the 4 fixtures that declare `i64` are corrected. Alternatives that were not chosen: rename `utf8` to `text`; restore `string` and drop `utf8`.
 
 The vocabulary is one list in the specification file, each entry with a one-line meaning that the error message quotes (section 14).
 
@@ -411,7 +409,7 @@ Two forms exist for the same thing (`facet_by` at the top of the spec and inside
 
 **Self-consistency tests** (built, they run on the registries; no recipe needed): AR2 the keys a function reads equal its schema (a ratchet that lists the aliases of R2); AR3 every `yaml_example` agrees with its schema in names and value shapes (`test_action_schema_examples.py`; it failed on the eight of R1 before the fix, and passing it **through the checker** comes with #76); AR4 every `wraps` resolves to an importable object; AR5 every component or action named by an example is registered; AR6 no name is registered twice in the source; a layer argument that plotnine accepts (`color`, `colour`) passes and one it refuses (`foo`) fails; every enumerated geom and stat argument is accepted by plotnine and an invented one is refused; the schema parameters that plotnine refuses are a ratchet (#88).
 
-## 9. Gallery examples `[DECIDED in principle; details O1]`
+## 9. Gallery examples `[DECIDED 2026-11-13: D1, D2, D3; D4 to D7 later, O1]`
 
 **Today** (verified, `gallery_manager.py`, `gallery_viewer.py`, `generate_previews.py`): a bundle in `assets/gallery_data/<id>/` holds `data_analysis_recipe.yaml` (its own compact shape: `info` with name, date and six taxonomy values; `data_path`; one plot; `wrangling` with an optional `tier3`), `example_data.tsv`, `example_meta.md`, `preview_plot.png`, `preview_thumb.png`. `gallery_index.json` is rebuilt from the bundles (a registry and a pivot of taxonomy value to examples). The viewer filters by six axes, shows Plot / Data / YAML tabs and the guidance text. Constraints that stay: a static reference (ADR-093: no run in the app, no handoff to HOME or Blueprint), offline use, mounted only if `gallery_enabled` (ADR-071), one plot per example, the folder name as the example's id, the six filter axes and icons, the index format the viewer reads.
 
@@ -430,20 +428,20 @@ Two forms exist for the same thing (`facet_by` at the top of the spec and inside
 
 **Proof that it works** (`tmpAI/recipe_format/gallery_poc.py`, scratch): all 34 examples written as standard recipes build and render through the app's own path (ConfigManager, DataOrchestrator, VizFactory); 22 previews are pixel-identical, 10 differ only in size, 2 differ by jitter (0.9 % and 2.6 % of the pixels).
 
-**Design (to confirm, O1):**
+**Design (decided 2026-11-13):**
 
-- **D1. An example is a standard recipe** (id, `format_version`, engines, info, one schema, one group, one plot) checked in profile `gallery`. Pros: one format, one checker, one render path; an example is runnable; it shows good practice; the 34 examples become a regression suite for the plot path. Cons: the file is longer (35 to 60 lines against 25); 34 files to rewrite (scripted, reviewed); a deployment that moves the gallery folder can browse but not run the examples. Alternatives (keep the compact shape and add checks; generate a recipe from the compact shape) keep two formats or two sources.
+- **D1. An example is a standard recipe** (id, `spec_version`, engines, info, one schema, one group, one plot) checked in profile `gallery`. Pros: one format, one checker, one render path; an example is runnable; it shows good practice; the 34 examples become a regression suite for the plot path. Cons: the file is longer (35 to 60 lines against 25); 34 files to rewrite (scripted, reviewed); a deployment that moves the gallery folder can browse but not run the examples. Alternatives (keep the compact shape and add checks; generate a recipe from the compact shape) keep two formats or two sources.
 - **D2. `taxonomy` on the plot entry**, required in the gallery profile and optional in any other recipe (so a plot can be offered to the Gallery without retyping), five declared axes: `family`, `pattern`, `difficulty`, `show`, `sample_size`; `geom` is **derived** from the first `geom_*` or `stat_*` layer and still offered as a filter. It replaces the `_meta` passthrough of ADR-083. Alternatives: `info.taxonomy` (info is free-form, so the check is a special case), a sidecar file (a second format), inside the spec as ADR-083 does (the spec stops being pure grammar).
-- **D3. The specification is also a data file** in `libs/utils` (with `check_recipe`): for each element its allowed keys and their requiredness, the types, the **vocabularies** (types, engines, **the gallery terms** with label, icon, order and a line of meaning), the table of renamed keys, the format version. The checker, the filter panels, the index order, the cheat sheet, the appendix tables and the migration tool read it or are generated from it. Cross-element rules and the registries stay in code. Terms change more often than structure: a new term in an open vocabulary does not change `format_version`. A packaging condition is in section 14.
+- **D3. The specification is also a data file** in `libs/utils` (with `check_recipe`): for each element its allowed keys and their requiredness, the types, the **vocabularies** (types, engines, **the gallery terms** with label, icon, order and a line of meaning), the table of renamed keys, the format version. The checker, the filter panels, the index order, the cheat sheet, the appendix tables and the migration tool read it or are generated from it. Cross-element rules and the registries stay in code. Terms change more often than structure: a new term in an open vocabulary does not change `spec_version`. A packaging condition is in section 14.
 - **D4 to D7 (can wait until the gallery work starts):** D4 the same `check_recipe` at index rebuild, at app start (left out of the list with the reason shown, as HOME's gate) and in the tests (recommended); D5 previews by the app's path in a Tier-3 script under `assets/scripts/`; D6 keep the teaching text of `example_meta.md` and build the tag strip from `taxonomy`; D7 a data contract generated from the file and reviewed.
 
-**The gallery profile checks** `[PROPOSED, with the decision]`: exactly one group and one plot (GP01); `taxonomy` present with the five axes, each term in the vocabulary (GP02, GP03); `id` equals the folder name (GP04); the companion files exist (GP05); `format_version` present like everywhere.
+**The gallery profile checks** `[PROPOSED, with the decision]`: exactly one group and one plot (GP01); `taxonomy` present with the five axes, each term in the vocabulary (GP02, GP03); `id` equals the folder name (GP04); the companion files exist (GP05); `spec_version` present like everywhere.
 
 **An example looks like this** (`bar_simple`; `geom` is not typed, the old `data_path`, `name` and `wrangling.tier3` disappear: the path is in `source`, the name is `label`, the example's own steps are the plot's `steps: {tier3: [...]}`):
 
 ```yaml
 id: bar_simple
-format_version: 1
+spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
@@ -506,7 +504,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | T03 | E | unknown top-level key | replacement or did-you-mean |
 | T04 | E | `id`, `data_engine`, `plot_engine`, `info`, `data_schemas`, `analysis_groups` missing | add it |
 | T05 | E | `id` differs from the file name | |
-| V01-V04 | E | `format_version` missing, older, newer, not an integer (4.1) | the migration tool, or update the app |
+| V01-V04 | E | `spec_version` missing, older, newer, not an integer (4.1) | the migration tool, or update the app |
 | T06 | E | engine value unknown, or a plot engine in the data slot | say the built values |
 | T07 | E | unquoted `on` (a `True` key) anywhere | quote it |
 | T08 | E | root `plots:` | move into a group |
@@ -550,7 +548,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | J05 | E | `right_ingredient` not in the join's ingredients; `on` and `left_on` both or neither | |
 | J06 | E | `final_contract` not a mapping, or names a column the collection lacks | |
 | J07 | E | a join's `steps` is a flat list or `[]`, or has no `tier1` | `{tier1: [...]}` |
-| J08 | A | a column name in both ingredients of a join, not a join key: the engine renames the second `name_right` silently (needs the recipe graph; level O6) | rename or drop one before the join |
+| J08 | E | a column name in both ingredients of a join, not a join key: the engine renames the second `name_right` silently (needs the recipe graph) | the message names both tables and the column; rename or drop one before the join (`rename`, `drop_columns`) |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
 | P01 | E | plot entry without `label` or `spec`; unknown key (`info`) | `description` |
@@ -576,7 +574,7 @@ Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.p
 | Where | Old | New |
 |---|---|---|
 | `info` | `display_name` | `label` |
-| top level | (no `format_version`: format 0) | `format_version: 1` and the replacements of this table, by `migrate_recipe_format.py` |
+| top level | (no `spec_version`: format 0) | `spec_version: 1` and the replacements of this table, by `migrate_recipe_format.py` |
 | top level | `description` | `info.description` |
 | top level | `name`, `pipeline_id` | `info.label`, `id` |
 | top level | `metadata` | `metadata_schema` |
@@ -588,7 +586,8 @@ Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.p
 | field | `is_primary_key` | `is_entity_key` |
 | field | `source_name` | `original_name` |
 | field | `type: string`, `character` | `categorical` or `utf8` |
-| field | `type: int`, `integer`, `float`, `bool`, `boolean`, `i64`, `Int64`, `Float64`, `String`, `Boolean`, `Date`, `Categorical` | `numeric`, `categorical`, `date` |
+| field | `type: int`, `integer`, `float`, `i64`, `Int64`, `Float64`, `String`, `Date`, `Categorical` | `numeric`, `categorical`, `date` |
+| field | `type: bool`, `Boolean` | `boolean` |
 | step | `column`, `source`, `source_column`, `target_column` (where the schema says `columns`) | `columns` |
 | step | `how` on `join_filter` | removed (always inner) |
 | join | `info` (sentence) | `description` |
@@ -697,7 +696,7 @@ All are compatibility defaults under P2. Each is removed by the issue named (#76
 - **Order and ids (5, 7.5):** the key order of `final_contract` is the column order after load, run and write, in T1 **and** T2 (fails today, #86); groups and plots keep their tab order; the hash changes when the order of steps changes and does not change when an `id` or a `comment` changes; a repeated or non-text `id` is refused; an app-inserted step has an `audit_` id; the copy minus the marked steps equals the original; a scan test requires `sort_keys=False` for every `yaml.dump` and `safe_dump` of non-test code.
 - **Messages with the correction (5.1):** for each container-form check the message contains the generated corrected text; HOME's gate, Blueprint's Validate and the import screen show the same message.
 - **Types (7.4):** a table of declared type to resulting dtype, run through the ingestor for every type of the vocabulary (including digits declared as text); each refused name gives a message that quotes the meanings; no list of types exists in code (a grep test).
-- **Format version:** one test per V01 to V04; every shipped recipe, template, gallery example, written recipe and forked recipe carries `format_version: 1`; `effective_run.yaml` records it.
+- **Format version:** one test per V01 to V04; every shipped recipe, template, gallery example, written recipe and forked recipe carries `spec_version: 1`; `effective_run.yaml` records it.
 - **Migration tool:** a format-0 recipe (from the git history of the ST22 recipe) becomes a recipe that passes the checker with advices only; running it twice changes nothing; every `#` comment is kept; the list of manual steps is printed.
 - **Comments:** a recipe with `#` comments passes untouched; every writer (Blueprint save, bootstrapper, scaffolder, the migration) keeps the comments of a fragment it edits (a before/after text comparison).
 - **Gallery protection:** the committed `gallery_index.json` equals the index rebuilt from the bundles; a bundle written by `GalleryManager.submit_example` (with a `tier3` list) passes the checker; every bundle renders its preview through the app path; every taxonomy term is in the vocabulary; the tag strip of each `example_meta.md` equals `taxonomy`.
