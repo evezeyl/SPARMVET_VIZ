@@ -1,5 +1,24 @@
 {
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/coordinator_guard.py\""
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
+    "deny": [
+      "Agent(model:fable)"
+    ],
     "allow": [
       "WebFetch(domain:phac-nml.github.io)",
       "WebFetch(domain:irida.ca)",

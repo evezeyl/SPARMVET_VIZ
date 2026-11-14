@@ -36,15 +36,22 @@ Apply this to existing tasks in `.claude/tasks/tasks.md` when reviewing them. Ne
 
 ### 2.1 Dispatching agents (Eve, 2026-11-14)
 
-When one session coordinates other agents (subagents started with the Agent tool):
+When one session coordinates other agents (subagents started with the Agent tool). How to start and use it: `.claude/workflows/agent_dispatch_howto.md`. The agents are defined in `.claude/agents/` (model, effort and tools are fixed there).
 
+- **A Fable session IS the coordinator** (Eve, 2026-11-14). If your model is Fable, your first action is the trigger `-coordinate` (below), and you work as the `coordinator` agent (`.claude/agents/coordinator.md`): you plan, order, dispatch, review reports, merge, report. You do not write code or tests, do not run test suites or audits, do not read large files, do not edit records. You do it yourself only: answer Eve, plan, write a brief, read up to 100 lines to write it, a one-line fix, a merge, a `git` command. Everything else goes to a worker, and when unsure you delegate. Bash is for git only (`git status`, `log`, `diff --stat`, `worktree add`, `merge`, `branch`); a test suite, an audit, a script, `shiny run` or `quarto` is always run by the `reviewer` or a builder, and the hook refuses it otherwise. A Sonnet or Opus session is not a coordinator and works as usual.
+- **Start independent tasks together, in one message**, and give each worker its model (the `builder`, `builder-opus`, `scout`, `scribe`, `reviewer` agents carry it) and the effort of its tag. Wait for the reports; never repeat a running worker's job.
 - **Only the coordinator may be a Fable model, and only one Fable agent runs at a time.** A dispatched agent is never Fable. Reason: three Fable workers used the whole session quota in one batch, the work stopped until the quota came back, and the coordinator was blocked too.
 - **A dispatched agent runs on the model and effort of its task tag** (the table above; `haiku` or `sonnet` for almost everything). An `opus` worker only when the tag says `opus`, and then one at a time.
-- **At most 3 agents at once** (5 only for read-only work), each in its own git worktree and branch, on files no other agent edits. The coordinator reviews every diff, merges one branch at a time and runs the full test suite after each merge.
+- **At most 3 agents at once** (5 only for read-only work), each in its own git worktree and branch, on files no other agent edits. The `reviewer` reviews every diff; the coordinator merges one branch at a time and has the `reviewer` run the full test suite after each merge.
 - **An agent only implements what is decided.** A choice that is open goes back to Eve with the options; the agents never decide.
 - A stopped agent is continued by a new agent of the right model **in the same worktree**, so that no work is lost.
 - **The coordinator only coordinates** (Eve, 2026-11-14): it writes the briefs, reads the reports, decides the order, merges, and reports to Eve. Everything another agent can do is handed to a lighter agent that reports back: writing code and tests, running the test suites and the audits (the controls), surveys, reviews of a diff, the records (`tasks.md`, the handoff, the dependency index), preparing files for Eve. The coordinator does a thing itself only when briefing it would cost more than doing it (a one-line fix, a merge). Reason: the coordinator is the most expensive model; its tokens are for judgement, not for work.
 - Every worker keeps a short progress note in its worktree (`tmpAI/progress.md`: done, next, findings), so that a stop loses nothing.
+- **Changing model or effort during a task** (Eve, 2026-11-14): the coordinator stops the worker, reads its progress note, and starts a new worker of the other agent or effort in the same worktree with a new brief (done, next, instructions). Never two workers on one worktree.
+- **Open choices go to a decision panel** (Eve, 2026-11-14): when a choice has two or more valid approaches, the coordinator starts, at once and for one round, two or three viewpoints (they only recommend; scratch checks only under `tmpAI/panel/`): `panel-scientist` (scientist and data scientist: correctness, transparency, reproducibility), `panel-architect` (software architect: ADRs, boundaries), `panel-developer` (developer: effort, risk, order; merged into the architect when the question is small) and `panel-user` (a user who is not a developer: is the information needed to choose shown in plain words). Before the panel, a `scout` collects what is already DECIDED and the brief tags it DECIDED / CONFIRM / OPEN. Each viewpoint answers in at most 250 words. The coordinator shows Eve one table (option, viewpoint, pro, con, evidence) plus its recommendation, flags first anything that changes a result silently, hides a step from the user or reconsiders a decision, and **stops**. The panel recommends, Eve decides.
+- **Principles for every agent** (`.claude/workflows/agent_principles.md`, collected from Eve's standing rules): verify and never guess; science transparent and reproducible; deliver robust tools and inform the user of pitfalls, never choose for the user; no half fixes and no shims; tests that can fail; check what is decided first; keep it simple.
+- **Briefs: aim for 10 lines, never more than 20** (the extra lines only for a complex problem; Eve, 2026-11-14). **Workers report in 15 lines or fewer**; the coordinator reads reports, not diffs or logs (a `reviewer` reads the diff).
+- **Enforcement** (how it works and where it does not: `agent_dispatch_howto.md` section 7): the agent files fix each worker's model and tools; `.claude/settings.json` sets the default worker model to sonnet and refuses `Agent(model:fable)`; the hook `.claude/hooks/coordinator_guard.py` refuses, for a session in coordinator mode only (workers are not affected): Edit and Write outside `tmpAI/`, Bash commands that run suites, audits, scripts or renders, and any agent that would run on Fable (allowed: the named workers, and any other agent whose call names `model: haiku` or `sonnet`). **Use the cheapest agent that can do the task** (Eve, 2026-11-14: "you do not use a CEO of a big firm to clean your floors"): ladder in `agent_dispatch_howto.md` section 3.
 
 ---
 
@@ -91,6 +98,9 @@ If any files are returned, triage them before any other work — see `.claude/wo
 
 | File | When to read |
 |---|---|
+| `agent_dispatch_howto.md` | Starting a coordinator session, the workers, model and effort per task tag, the decision panel |
+| `agent_principles.md` | Eve's standing principles for every agent (verify, reproducible science, inform not choose, no half fixes) |
+| `design_review_personas.md` | The review method with personas (checker, scientist, data scientist, developer; others proposed) |
 | `audit_triage_protocol.md` | How to read audit reports and convert findings to tasks |
 | `implementation_workflow_transformer.md` | Implementing new wrangling decorators / T1 logic |
 | `viz_factory_implementation.md` | Registering geoms, scales, themes |
@@ -163,6 +173,8 @@ Activate when: data analysis recipe design, scientist-first interview, data grai
 |---|---|
 | `-update-all` | Update rules, workflows, knowledge, artifacts, tasks, implementation plan, ADRs, README, daily audit, and docs. Record all decisions. |
 | `-handoff` | Write concise handoff of current state to `.claude/logs/handoffs/handoff_active.md`. Append — do not delete. |
+| `-coordinate` | Coordinator mode (section 2.1): run `mkdir -p tmpAI/coordinator && touch tmpAI/coordinator/<this session's id>` (the id is the UUID folder name in the scratchpad path), then work only as the coordinator. The hook now refuses this session's Edit and Write outside `tmpAI/`. |
+| `-solo` | Leave coordinator mode: remove `tmpAI/coordinator/<this session's id>` and work as a normal session. |
 
 ---
 
