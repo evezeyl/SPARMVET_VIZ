@@ -2,7 +2,7 @@
 
 # @deps
 # provides: function:import_bundle, function:read_effective_run, class:ImportResult, class:LegResult, class:BundleImportError
-# consumes: app/modules/cache_keys.py (engine_fingerprint), app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe, ADR-077), app/modules/session_manager.py (SessionManager)
+# consumes: app/modules/cache_keys.py (engine_fingerprint), app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe, ADR-077), app/modules/session_manager.py (SessionManager), app/modules/orchestrator.py (DataOrchestrator.get_source_files — the file read is the file hashed), app/src/bootloader.py (get_imports_dir)
 # consumed_by: app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)
 # doc: .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/reproducible_export_design.md
 # @end_deps
@@ -12,8 +12,10 @@ Import a reproducibility/reimport bundle (ADR-097, #48/REPRO-IMPORT-1).
 Two-Category Law (ADR-045): Pure Python — no Shiny imports. Safe to use from tests,
 CLI scripts, and server code.
 
-File-based only (ADR-093): this writes a new recipe file into the recipes directory
-and a new session ghost under _sessions/ — it never injects bundle content into a live
+File-based only (ADR-093): this writes a new recipe file into the recipes directory,
+the data files of the bundle into a folder of their own (`<user_data>/_imports/<recipe id>/data/<dataset id>.<ext>`,
+found there by dataset id like production data, IMPORT-PATH-1: the recipe's own paths are not touched) and a new
+session ghost under _sessions/ — it never injects bundle content into a live
 wrangle_studio/home_state object. The imported recipe only becomes selectable after the
 app is reloaded (Bootloader resolves available_data_analysis_recipes once per process,
 ADR-094) — Import is honest about that rather than pretending to update it live.
@@ -23,8 +25,9 @@ non-blocking: every leg is reported match/mismatch/not_checked, a mismatch never
 the import. Four legs (design doc §6d folded the T3-steps leg in after the original
 three-leg draft):
 
-  - data        : always checkable — hashed straight from the files this bundle itself
-                  carries in data_reproducibility/.
+  - data        : always checkable — hashed from the files the imported recipe reads, which are the
+                  files this bundle carries in data_reproducibility/ (a file the recipe does not name is
+                  listed, not hashed; a dataset the recipe names and the bundle lacks is listed as missing).
   - engine      : this machine's installed versions/commit vs. what the bundle recorded.
   - recipe      : only checkable when the ORIGINAL (untranslated) recipe is still
                   available locally by id — the frozen copy inside the bundle has T3
@@ -37,6 +40,7 @@ three-leg draft):
 from __future__ import annotations
 
 import io
+import shutil
 import subprocess as _sp
 import zipfile
 from dataclasses import dataclass, field
@@ -48,6 +52,7 @@ import yaml
 
 from app.modules.cache_keys import engine_fingerprint
 from app.modules.data_analysis_recipe_validator import engine_load_problems
+from app.modules.orchestrator import IMPORT_DATA_FOLDER, DataOrchestrator
 from app.modules.session_manager import SessionManager
 
 
@@ -97,27 +102,22 @@ def read_effective_run(zip_bytes: bytes) -> dict:
         return yaml.safe_load(zf.read(name).decode())
 
 
-def _repoint_sources(recipe: dict, extracted_paths: dict[str, Path]) -> None:
-    """Point every data schema's source.path at the file extracted from this bundle.
-
-    The frozen recipe copy still carries the exporting machine's original paths, which
-    do not exist here.
-    """
-    schema_dicts: list[dict] = [recipe.get("data_schemas", {}) or {}]
-    if "metadata_schema" in recipe:
-        schema_dicts.append({"metadata_schema": recipe["metadata_schema"]})
-    schema_dicts.append(recipe.get("additional_datasets_schemas", {}) or {})
-    for schemas in schema_dicts:
-        for ds_id, schema in schemas.items():
-            if ds_id in extracted_paths and isinstance(schema, dict):
-                source = schema.setdefault("source", {})
-                source["path"] = str(extracted_paths[ds_id])
+def _data_detail(read: set[str], named: set[str], carried: set[str]) -> str:
+    detail = "Hash of the files the imported recipe reads, taken from this bundle's data_reproducibility/ folder."
+    missing = sorted(named - read)
+    unused = sorted(carried - named)
+    if missing:
+        detail += f" Missing from the bundle (the recipe names them): {', '.join(missing)}."
+    if unused:
+        detail += f" Carried by the bundle but not named by the recipe, not hashed: {', '.join(unused)}."
+    return detail
 
 
 def _verify(
     effective_run: dict,
     local_data_batch_hash: str,
     local_recipe_sha256: str | None,
+    data_detail: str,
 ) -> dict[str, LegResult]:
     legs: dict[str, LegResult] = {}
 
@@ -126,7 +126,7 @@ def _verify(
         status="match" if local_data_batch_hash == recorded_data else "mismatch",
         recorded=recorded_data,
         actual=local_data_batch_hash,
-        detail="Hash of the data files found inside this bundle's data_reproducibility/ folder.",
+        detail=data_detail,
     )
 
     recorded_engine = effective_run.get("engine_fingerprint")
@@ -210,64 +210,83 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
         frozen_recipe = yaml.safe_load(zf.read(recipe_name).decode())
         original_recipe_id = Path(recipe_name).stem
 
-        data_names = {
-            Path(n).stem: n
-            for n in names
-            if "/data_reproducibility/" in n and not n.endswith("_ERROR.txt")
-        }
+        data_names: dict[str, str] = {}
+        for n in names:
+            if "/data_reproducibility/" not in n or n.endswith("_ERROR.txt") or n.endswith("/"):
+                continue
+            ds_id = Path(n).stem
+            if ds_id in data_names:
+                raise BundleImportError(
+                    f"The bundle carries two files for dataset '{ds_id}' "
+                    f"({Path(data_names[ds_id]).name} and {Path(n).name}); one dataset needs one file."
+                )
+            data_names[ds_id] = n
         if not data_names:
             raise BundleImportError(
                 "This bundle's data_reproducibility/ folder is empty or missing — the "
                 "recipe copy exists but there is no data to run it against."
             )
 
+        recipes_dir = Path(bootloader.data_analysis_recipes_dir)
+        imports_dir = Path(bootloader.get_imports_dir())
+        # WHY the counter: two imports of one bundle in the same second must not share an id, a folder or a file.
         now = datetime.now(timezone.utc)
-        imported_id = f"{original_recipe_id}_imported_{now.strftime('%Y%m%dT%H%M%S')}"
+        base_id = f"{original_recipe_id}_imported_{now.strftime('%Y%m%dT%H%M%S')}"
+        imported_id, counter = base_id, 2
+        while (imports_dir / imported_id).exists() or (recipes_dir / f"{imported_id}.yaml").exists():
+            imported_id, counter = f"{base_id}_{counter}", counter + 1
 
-        raw_data_dir = Path(bootloader.get_location("raw_data"))
-        dest_data_dir = raw_data_dir / "_imported" / imported_id
-        dest_data_dir.mkdir(parents=True, exist_ok=True)
-        extracted_paths: dict[str, Path] = {}
+        dest_data_dir = imports_dir / imported_id / IMPORT_DATA_FOLDER
+        dest_data_dir.mkdir(parents=True)
+        dest_recipe_path = recipes_dir / f"{imported_id}.yaml"
+        carried: set[str] = set()
         for ds_id, zname in data_names.items():
-            dest = dest_data_dir / Path(zname).name
-            dest.write_bytes(zf.read(zname))
-            extracted_paths[ds_id] = dest
+            (dest_data_dir / Path(zname).name).write_bytes(zf.read(zname))
+            carried.add(ds_id)
 
-    _repoint_sources(frozen_recipe, extracted_paths)
-    frozen_recipe["id"] = imported_id
-
-    recipes_dir = Path(bootloader.data_analysis_recipes_dir)
-    dest_recipe_path = recipes_dir / f"{imported_id}.yaml"
-    dest_recipe_path.write_text(
-        yaml.safe_dump(frozen_recipe, sort_keys=False, allow_unicode=True),
-        encoding="utf-8",
-    )
-
-    # Validate before trusting ConfigManager with it: ConfigManager.load() calls
-    # sys.exit(1) on a contradictory recipe (ADR-077) — fine at app startup, fatal if it
-    # reached a running Shiny process from Import's own call. engine_load_problems()
-    # is this project's own established safe wrapper (ADR-094's HOME load gate uses the
-    # same pattern) — it intercepts SystemExit and returns problems instead of exiting.
-    # IMPORT-PATH-1 (open, a decision of Eve): only the engine's load is checked here, not the strict checker of
-    # recipe format 1. `_repoint_sources` writes the ABSOLUTE path of the extracted data into the recipe, and format 1
-    # refuses an absolute data path (PA01, DEC30). How the data of an imported bundle is found must be decided first.
-    problems = engine_load_problems(dest_recipe_path)
-    if problems:
-        raise BundleImportError(
-            "The reproducibility recipe inside this bundle could not be loaded: "
-            + "; ".join(str(p) for p in problems)
+    try:
+        # The recipe is written as the bundle carried it, only its id follows the file name (ADR-092). Its data paths
+        # are not touched: the data is found by dataset id in the folder of this import (DataOrchestrator).
+        frozen_recipe["id"] = imported_id
+        dest_recipe_path.write_text(
+            yaml.safe_dump(frozen_recipe, sort_keys=False, allow_unicode=True),
+            encoding="utf-8",
         )
+
+        # Validate before trusting ConfigManager with it: ConfigManager.load() calls
+        # sys.exit(1) on a contradictory recipe (ADR-077) — fine at app startup, fatal if it
+        # reached a running Shiny process from Import's own call. engine_load_problems()
+        # is this project's own established safe wrapper (ADR-094's HOME load gate uses the
+        # same pattern) — it intercepts SystemExit and returns problems instead of exiting.
+        problems = engine_load_problems(dest_recipe_path)
+        if problems:
+            raise BundleImportError(
+                "The reproducibility recipe inside this bundle could not be loaded: "
+                + "; ".join(str(p) for p in problems)
+            )
+    except BaseException:
+        # A refused import leaves nothing behind: no data folder, no recipe file.
+        shutil.rmtree(imports_dir / imported_id, ignore_errors=True)
+        dest_recipe_path.unlink(missing_ok=True)
+        raise
 
     sm = SessionManager(Path(bootloader.get_location("user_data")))
     local_recipe_sha256_this = sm.compute_data_analysis_recipe_sha256(dest_recipe_path)
-    data_batch_hash = sm.compute_data_batch_hash(extracted_paths)
+    # The files the engine will read for this recipe, found by the one function that also reads them: the hash,
+    # the session key and the stored keys of the imported run cover exactly these.
+    orchestrator = DataOrchestrator(
+        recipes_dir, Path(bootloader.get_location("raw_data")), imports_dir=imports_dir,
+    )
+    source_files = orchestrator.get_source_files(imported_id)
+    named = set(orchestrator.dataset_schemas(imported_id))
+    data_batch_hash = sm.compute_data_batch_hash(source_files)
     session_key = sm.compute_session_key(local_recipe_sha256_this, data_batch_hash)
     sm.write_assembly_ghost(
         session_key=session_key,
         data_analysis_recipe_id=imported_id,
         data_analysis_recipe_sha256=local_recipe_sha256_this,
         data_batch_hash=data_batch_hash,
-        source_files={k: str(v) for k, v in extracted_paths.items()},
+        source_files={k: str(v) for k, v in source_files.items()},
         parquet_paths={},
     )
 
@@ -285,7 +304,8 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
         # reach the caller.
         local_recipe_sha256_original = None
 
-    legs = _verify(effective_run, data_batch_hash, local_recipe_sha256_original)
+    legs = _verify(effective_run, data_batch_hash, local_recipe_sha256_original,
+                   _data_detail(set(source_files), named, carried))
 
     skipped = effective_run.get("t3_translation_skipped")
     skipped = skipped if isinstance(skipped, dict) else {}
